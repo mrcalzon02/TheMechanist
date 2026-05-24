@@ -24,6 +24,7 @@ public final class MechanistServerMain {
         int exit = 0;
         ServerRuntime runtime = null;
         try {
+            if (ServerAdminEntryBridge.handleIfRequested(args == null ? new String[0] : args)) return;
             runtime = ServerRuntime.initialize(args == null ? new String[0] : args);
             System.out.println(runtime.statusLine());
             if (runtime.helpRequested()) System.out.println(runtime.usageText());
@@ -138,7 +139,8 @@ final class ServerRuntime {
                 + "Server world definitions: " + ServerRuntimePaths.serverWorldDir() + "\n"
                 + "Server save slots: " + ServerRuntimePaths.serverSlotDir() + "\n"
                 + "Desktop single-player saves: " + ServerRuntimePaths.singlePlayerRoot() + "\n"
-                + NetworkPortAuthority.policySummary();
+                + NetworkPortAuthority.policySummary()
+                + ServerAdminEntryBridge.usageAddendum();
     }
 
     private static ServerConfig configFromArgs(String[] args, Properties state, boolean preferSteam) {
