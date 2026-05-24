@@ -1,19 +1,10 @@
-# Phase J — GitHub Core Import Plan
+﻿# Phase J â€” GitHub Core Import Plan
 
-This repository is now the working home for The Mechanist.
+The trimmed 0.9.10kc core package has been imported into GitHub as the new project baseline.
 
-## Incremental upload order
+## Incremental strategy
 
-1. Import core source, runtime settings, manifests, launch scripts, docs, and bundled low_32 fallback art.
-2. Add standard_64 art assets in a separate commit series.
-3. Add intermediate_128 art assets in a separate commit series.
-4. Add high_native art assets by category/shard in later controlled commits.
-5. Rebuild installer/update tooling so a local install can pull changed files from GitHub instead of relying on monolithic chat-surfaced zips.
-
-## Core policy
-
-The core game must remain runnable with bundled low_32 art. Higher tiers are optional enhancement layers until installer/update support matures.
-
-## Current branch
-
-import/0.9.10kc-core
+1. Core runtime/source import.
+2. Bundled low_32 fallback assets remain in the core game.
+3. standard_64, intermediate_128, and high_native art tiers may be imported later in controlled commits.
+4. Installer/updater work should eventually pull changed files from GitHub instead of depending on monolithic chat artifacts.

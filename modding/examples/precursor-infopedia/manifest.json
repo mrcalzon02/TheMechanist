@@ -1,0 +1,38 @@
+{
+  "id": "mechanist.example.precursor_infopedia",
+  "version": "1.0.0",
+  "schemaVersion": 1,
+  "name": "Precursor Infopedia Taxonomy Example",
+  "description": "Adds a nested lore framework for a precursor civilization with historical taxonomy entries, cross-links, and wiki search tags.",
+  "authors": [
+    "The Mechanist API Team"
+  ],
+  "license": "Example content for modder education",
+  "entrypoint": "mechanist.modapi.examples.PrecursorInfopediaMod",
+  "supportedGameVersion": "0.9.10hv",
+  "dependencies": [
+    {
+      "id": "mechanist.core",
+      "version": ">=0.9.10hv",
+      "required": true
+    }
+  ],
+  "components": {
+    "sectors": [],
+    "rooms": [],
+    "factions": [],
+    "items": [],
+    "knowledge": [],
+    "infopedia": [
+      "lore.precursor.aurelian-concordance",
+      "lore.precursor.castes",
+      "lore.precursor.reliquaries"
+    ]
+  },
+  "tags": [
+    "infopedia",
+    "lore",
+    "taxonomy",
+    "precursor"
+  ]
+}

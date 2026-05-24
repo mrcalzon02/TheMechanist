@@ -1,0 +1,36 @@
+{
+  "id": "mechanist.example.localized_gravity_anchor",
+  "version": "1.0.0",
+  "schemaVersion": 1,
+  "name": "Localized Gravity Anchor Item Example",
+  "description": "Adds a localized gravity anchor tool that adjusts physical mass parameters, consumes plasma fuel charges, and tracks durability decay.",
+  "authors": [
+    "The Mechanist API Team"
+  ],
+  "license": "Example content for modder education",
+  "entrypoint": "mechanist.modapi.examples.LocalizedGravityAnchorItemMod",
+  "supportedGameVersion": "0.9.10hv",
+  "dependencies": [
+    {
+      "id": "mechanist.core",
+      "version": ">=0.9.10hv",
+      "required": true
+    }
+  ],
+  "components": {
+    "sectors": [],
+    "rooms": [],
+    "factions": [],
+    "items": [
+      "item.localized-gravity-anchor"
+    ],
+    "knowledge": [],
+    "infopedia": []
+  },
+  "tags": [
+    "item",
+    "gravity",
+    "plasma-fuel",
+    "durability"
+  ]
+}
