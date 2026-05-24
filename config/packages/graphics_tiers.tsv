@@ -1,0 +1,6 @@
+# The Mechanist graphics package tier manifest
+# Format: tier_id<TAB>label<TAB>runtime_path<TAB>required<TAB>fallback_tier<TAB>installer_default<TAB>notes
+low_32	Core Low 32px	assets/graphics/generated/low_32	true		false	Bundled fallback tier. Must always be present and remains the final fallback for missing higher tiers.
+standard_64	Standard 64px	assets/graphics/generated/standard_64	false	low_32	true	Recommended default for most installs. Better visual quality with moderate disk/download cost.
+intermediate_128	Intermediate 128px	assets/graphics/generated/intermediate_128	false	standard_64	false	Higher quality package for stronger machines and larger displays. Falls back to standard_64 then low_32.
+high_native	Native / High	assets/graphics/generated/high_native	false	intermediate_128	false	Largest/highest source tier. Falls back to intermediate_128, then standard_64, then low_32.

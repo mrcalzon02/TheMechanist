@@ -1,0 +1,32 @@
+# The Mechanist proposed music package split
+# Format: relative_wav_file<TAB>music_key<TAB>package_tier<TAB>notes
+Underhive_PulseMainmenu.wav	MAIN_MENU	core_audio	Core default main menu music. This should remain bundled with the base install.
+Underhive_PulseCharaterSelect.wav	CHARACTER_SELECT	half_music	Character creation / world setup.
+UnderhivePulseE.wav	UNDERHIVE	half_music	Default exploration fallback.
+Underhive_Pulsecombat-1.wav	COMBAT	half_music	Primary combat loop.
+Velvet_Over_HiveNob1.wav	NOBLE	half_music	Noble zone primary.
+Seal_of_AshAdmin1.wav	ADMIN	half_music	Administratum zone primary.
+Ration_LinePDF1.wav	GUARD	half_music	PDF / Guard zone primary.
+Ferrocrete_LawEnforce1.wav	ARBITES	half_music	Arbites zone primary.
+Grey_Tile_TriageMed1.wav	MEDICAE	half_music	Medicae zone primary.
+Iron_PsalmMECH1.wav	MECHANICUS	half_music	Mechanicus zone primary.
+Mechanical_MoonHer1.wav	CULT	half_music	Cult / heretek zone primary.
+Sump_Dark_ChoirSMut1.wav	MUTANT	half_music	Mutant zone primary.
+False_Seal_RunTrain1.wav	TRAIN	half_music	Rail / train service primary.
+Rust_CrownP-1.wav	GOVERNOR_PALACE	half_music	Governor palace primary.
+Palace_of_GoldP-3battle.wav	GOVERNOR_BATTLE	full_dynamic_music	Governor palace combat pressure.
+Underhive_Pulsecombat2.wav	COMBAT	full_dynamic_music	Combat alternate.
+Chainblade_ShrineGang1.wav	GANGER	full_dynamic_music	Gang zone primary.
+Chainblade_ShrineGang2.wav	GANGER	full_dynamic_music	Gang zone alternate.
+False_Seal_RunTrain2.wav	TRAIN	full_dynamic_music	Train alternate.
+Ferrocrete_LawEnforce2.wav	ARBITES	full_dynamic_music	Arbites alternate.
+Grey_Tile_TriageMed2.wav	MEDICAE	full_dynamic_music	Medicae alternate.
+Iron_PsalmMECH2.wav	MECHANICUS	full_dynamic_music	Mechanicus alternate.
+Mechanical_MoonHer2.wav	CULT	full_dynamic_music	Cult alternate.
+Ration_LinePDF2.wav	GUARD	full_dynamic_music	Guard alternate.
+Seal_of_AshAdmin2.wav	ADMIN	full_dynamic_music	Administratum alternate.
+Sump_Dark_ChoirSMut2.wav	MUTANT	full_dynamic_music	Mutant alternate.
+Temple_of_MachineryMech3.wav	MECHANICUS	full_dynamic_music	Temple of machinery variant.
+Temple_of_MachineryMech4.wav	MECHANICUS	full_dynamic_music	Temple of machinery alternate.
+Velvet_Over_HivenNob2.wav	NOBLE	full_dynamic_music	Noble alternate.
+Velvet_RopesNob3.wav	NOBLE	full_dynamic_music	Noble alternate two.

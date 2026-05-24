@@ -1,0 +1,5 @@
+# The Mechanist audio/music package tier manifest
+# Format: tier_id<TAB>label<TAB>required<TAB>fallback_tier<TAB>installer_default<TAB>music_keys<TAB>notes
+core_audio	Core Audio / Main Menu	true		true	MAIN_MENU	Minimal always-present music/audio target. Must include a main menu loop and fall back to silence only if the file is genuinely absent.
+half_music	Half Music Package	false	core_audio	false	MAIN_MENU,CHARACTER_SELECT,UNDERHIVE,COMBAT,NOBLE,ADMIN,GUARD,ARBITES,MEDICAE,MECHANICUS,CULT,MUTANT,TRAIN,GOVERNOR_PALACE	One clean song per major zone/context. Intended for smaller install size while preserving area identity.
+full_dynamic_music	Full Dynamic Music Package	false	half_music	false	ALL	Full sector variants, alternate context tracks, and combat variants. Falls back to half_music then core_audio.
