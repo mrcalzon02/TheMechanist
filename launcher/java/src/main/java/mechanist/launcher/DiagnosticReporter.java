@@ -10,11 +10,9 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -36,13 +34,14 @@ final class DiagnosticReporter {
         Files.createDirectories(reportDir);
         Path reportFile = reportDir.resolve("diagnostic-report.md");
 
-        String body = buildReport(clientHash, timestamp, graphicsTier, audioTier, channel, recentLauncherLog);
+        ModStateDetector.ModState modState = ModStateDetector.inspect(config);
+        String body = buildReport(clientHash, timestamp, graphicsTier, audioTier, channel, recentLauncherLog, modState);
         Files.writeString(reportFile, body, StandardCharsets.UTF_8);
-        return new DiagnosticReport(clientHash, reportFile, body);
+        return new DiagnosticReport(clientHash, reportFile, body, modState.modded());
     }
 
     void openIssueDraft(DiagnosticReport report) throws IOException {
-        String title = "Launcher diagnostic report " + report.clientHash;
+        String title = (report.modded ? "Modded diagnostic report " : "Launcher diagnostic report ") + report.clientHash;
         String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
         String encodedBody = URLEncoder.encode(report.body, StandardCharsets.UTF_8);
         URI uri = URI.create(ISSUE_URL + "?title=" + encodedTitle + "&body=" + encodedBody);
@@ -50,9 +49,16 @@ final class DiagnosticReporter {
         Desktop.getDesktop().browse(uri);
     }
 
-    private String buildReport(String clientHash, String timestamp, PackageTier graphicsTier, PackageTier audioTier, String channel, String recentLauncherLog) {
+    private String buildReport(String clientHash, String timestamp, PackageTier graphicsTier, PackageTier audioTier, String channel, String recentLauncherLog, ModStateDetector.ModState modState) {
         StringBuilder sb = new StringBuilder(16_384);
         sb.append("## The Mechanist launcher diagnostic report\n\n");
+        if (modState.modded()) {
+            sb.append("## Modified-content support notice\n\n");
+            sb.append(ModStateDetector.supportWarning()).append("\n\n");
+            sb.append("Detected mod evidence:\n");
+            for (String item : modState.evidence()) sb.append("- `").append(item).append("`\n");
+            sb.append("\n");
+        }
         sb.append("Generated: `").append(timestamp).append("`\n\n");
         sb.append("### Client identity\n\n");
         sb.append("- Client hash: `").append(clientHash).append("`\n");
@@ -67,7 +73,8 @@ final class DiagnosticReporter {
         sb.append("### Launcher selections\n\n");
         sb.append("- Channel: `").append(safe(channel)).append("`\n");
         sb.append("- Graphics tier: `").append(graphicsTier == null ? "<none>" : graphicsTier.id).append("`\n");
-        sb.append("- Audio tier: `").append(audioTier == null ? "<none>" : audioTier.id).append("`\n\n");
+        sb.append("- Audio tier: `").append(audioTier == null ? "<none>" : audioTier.id).append("`\n");
+        sb.append("- Modified content detected: `").append(modState.modded()).append("`\n\n");
 
         sb.append("### Paths\n\n");
         sb.append("- Install root: `").append(redactHome(config.installRoot)).append("`\n");
@@ -165,5 +172,5 @@ final class DiagnosticReporter {
 
     private static String safe(String s) { return s == null ? "" : s.replace('`', '\''); }
 
-    record DiagnosticReport(String clientHash, Path reportFile, String body) {}
+    record DiagnosticReport(String clientHash, Path reportFile, String body, boolean modded) {}
 }
