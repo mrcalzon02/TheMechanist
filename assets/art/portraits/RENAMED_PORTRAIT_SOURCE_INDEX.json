@@ -1,0 +1,442 @@
+{
+  "note": "Renamed Protraits.zip imported as source authority; source PNGs are not bundled in core to keep download size down.",
+  "sheets": [
+    {
+      "source_file": "Administratum.png",
+      "category_key": "administratum",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/administratum",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "e04cf6f99a06ffb1"
+    },
+    {
+      "source_file": "Cultists.png",
+      "category_key": "cultists",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/cultists",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "bb5406d3041312bc"
+    },
+    {
+      "source_file": "Ecclesiarch.png",
+      "category_key": "ecclesiarch",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/ecclesiarch",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "d2bbaa9f6634e5e3"
+    },
+    {
+      "source_file": "Enforcer_Arebites.png",
+      "category_key": "enforcer_arebites",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/enforcer_arebites",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "2a3ed6b385c41e46"
+    },
+    {
+      "source_file": "Exotic_pets&swamp_creatures.png",
+      "category_key": "exotic_pets_swamp_creatures",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/exotic_pets_swamp_creatures",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "98fd4f87c426a4b5"
+    },
+    {
+      "source_file": "Farm beasts.png",
+      "category_key": "farm_beasts",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/farm_beasts",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "c0723eac61ed1112"
+    },
+    {
+      "source_file": "Gangers.png",
+      "category_key": "gangers",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/gangers",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "65e8346099af273e"
+    },
+    {
+      "source_file": "GeneStealer_Cult.png",
+      "category_key": "genestealer_cult",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/genestealer_cult",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "1db1d40b3a0a6d78"
+    },
+    {
+      "source_file": "Heretics.png",
+      "category_key": "heretics",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/heretics",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "2439dde2575604a1"
+    },
+    {
+      "source_file": "Mechanicus.png",
+      "category_key": "mechanicus",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/mechanicus",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "1d31738c4ef23656"
+    },
+    {
+      "source_file": "Medicae.png",
+      "category_key": "medicae",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/medicae",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "01c8d5e4e6a543b4"
+    },
+    {
+      "source_file": "Mutants.png",
+      "category_key": "mutants",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/mutants",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "d2ea2aad4027fada"
+    },
+    {
+      "source_file": "nobles.png",
+      "category_key": "nobles",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/nobles",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "c907ab01951e35c0"
+    },
+    {
+      "source_file": "PDF_military.png",
+      "category_key": "pdf_military",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/pdf_military",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "6a20c9b5dc197b61"
+    },
+    {
+      "source_file": "pets.png",
+      "category_key": "pets",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/pets",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "20967988b5949d01"
+    },
+    {
+      "source_file": "Rogue_automata&servitors.png",
+      "category_key": "rogue_automata_servitors",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/rogue_automata_servitors",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "54eee0d5d4e3d5f7"
+    },
+    {
+      "source_file": "Schola_children.png",
+      "category_key": "schola_children",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/schola_children",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "3582da76cb73381f"
+    },
+    {
+      "source_file": "Servants butlers and chefs.png",
+      "category_key": "servants_butlers_and_chefs",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/servants_butlers_and_chefs",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "4f631c0818723dae"
+    },
+    {
+      "source_file": "Sisters_Hospital.png",
+      "category_key": "sisters_hospital",
+      "runtime_cell_dir": "assets/art/rebase_0_9_06d/tiles/quality/low_32/cells/Protraits/sisters_hospital",
+      "source_size": [
+        1254,
+        1254
+      ],
+      "normalized_atlas": [
+        320,
+        320
+      ],
+      "grid": [
+        5,
+        5
+      ],
+      "cell_size": [
+        32,
+        32
+      ],
+      "runtime_cells": 25,
+      "sha256_16": "c737eb7298b1f84b"
+    }
+  ]
+}

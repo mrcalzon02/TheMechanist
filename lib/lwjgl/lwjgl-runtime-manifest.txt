@@ -1,0 +1,17 @@
+LWJGL runtime bootstrap manifest for The Mechanist
+
+Version: 3.4.1
+Repository: https://repo1.maven.org/maven2
+
+Base Java modules required by the client launcher:
+- org.lwjgl:lwjgl:3.4.1
+- org.lwjgl:lwjgl-glfw:3.4.1
+- org.lwjgl:lwjgl-opengl:3.4.1
+- org.lwjgl:lwjgl-stb:3.4.1
+
+Native classifiers fetched automatically at boot:
+- Windows launcher: natives-windows
+- Linux launcher: natives-linux
+
+The client launchers bootstrap missing jars into this folder before startup preflight.
+The headless server launcher does not require LWJGL.

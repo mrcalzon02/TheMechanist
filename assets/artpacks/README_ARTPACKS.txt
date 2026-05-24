@@ -1,0 +1,1 @@
+Optional higher-resolution art packs are distributed as separate ZIP files and are not bundled inside the core runtime package. The core package keeps the complete LOW 32 runtime art needed to run the game; Standard 64, Intermediate 128, and High Native packs can be installed externally when higher-resolution assets are desired.

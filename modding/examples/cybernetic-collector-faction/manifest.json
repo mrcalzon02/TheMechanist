@@ -1,0 +1,36 @@
+{
+  "id": "mechanist.example.cybernetic_collector_faction",
+  "version": "1.0.0",
+  "schemaVersion": 1,
+  "name": "Cybernetic Collector Faction Example",
+  "description": "Adds a cybernetic collector faction with a synthetic economy model, aggressive diplomatic vectors, and an isolationist cultural trait.",
+  "authors": [
+    "The Mechanist API Team"
+  ],
+  "license": "Example content for modder education",
+  "entrypoint": "mechanist.modapi.examples.CyberneticCollectorFactionMod",
+  "supportedGameVersion": "0.9.10hv",
+  "dependencies": [
+    {
+      "id": "mechanist.core",
+      "version": ">=0.9.10hv",
+      "required": true
+    }
+  ],
+  "components": {
+    "sectors": [],
+    "rooms": [],
+    "factions": [
+      "faction.cogwork-collectors"
+    ],
+    "items": [],
+    "knowledge": [],
+    "infopedia": []
+  },
+  "tags": [
+    "faction",
+    "economy",
+    "diplomacy",
+    "cybernetic"
+  ]
+}

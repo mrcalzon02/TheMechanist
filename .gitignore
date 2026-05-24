@@ -1,0 +1,30 @@
+﻿# Java build outputs
+/target/
+/build/
+/out/
+*.class
+
+# Runtime local state
+/logs/
+/saves/
+*.log
+
+# IDE/editor state
+/.idea/
+/.vscode/
+*.iml
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Bulk archives should not be committed by accident.
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+
+# Python tooling cache
+__pycache__/
+*.pyc

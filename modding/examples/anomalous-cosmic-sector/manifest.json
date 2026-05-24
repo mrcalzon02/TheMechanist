@@ -1,0 +1,36 @@
+{
+  "id": "mechanist.example.anomalous_cosmic_sector",
+  "version": "1.0.0",
+  "schemaVersion": 1,
+  "name": "Anomalous Cosmic Sector Example",
+  "description": "Adds the Null-Tide Recurrence sector with fluctuating gravity fields and a repeating spatial anomaly event that alters fleet navigation vectors.",
+  "authors": [
+    "The Mechanist API Team"
+  ],
+  "license": "Example content for modder education",
+  "entrypoint": "mechanist.modapi.examples.AnomalousCosmicSectorMod",
+  "supportedGameVersion": "0.9.10hv",
+  "dependencies": [
+    {
+      "id": "mechanist.core",
+      "version": ">=0.9.10hv",
+      "required": true
+    }
+  ],
+  "components": {
+    "sectors": [
+      "sector.null-tide-recurrence"
+    ],
+    "rooms": [],
+    "factions": [],
+    "items": [],
+    "knowledge": [],
+    "infopedia": []
+  },
+  "tags": [
+    "sector",
+    "navigation",
+    "gravity",
+    "anomaly"
+  ]
+}
