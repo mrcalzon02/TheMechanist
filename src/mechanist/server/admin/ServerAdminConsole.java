@@ -22,6 +22,7 @@ public final class ServerAdminConsole {
     private ServerAdminConsole() {}
 
     public static void show(Path gameRoot, Path logRoot, String channel, ServerUpdateService updates, ServerAdminLog adminLog) {
+        ServerMaintenanceService maintenance = new ServerMaintenanceService(logRoot.getParent() == null ? gameRoot.resolve("server") : logRoot.getParent(), adminLog);
         JFrame frame = new JFrame("The Mechanist Server Administrator");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setMinimumSize(new Dimension(900, 620));
@@ -32,7 +33,7 @@ public final class ServerAdminConsole {
         tabs.addTab("Users / Connections", placeholderPanel("No live client/session adapter is attached yet. This surface is reserved for connected users, session activity, latency, and stream-safe address display."));
         tabs.addTab("World State", placeholderPanel("World-state adapter is not attached yet. This surface is reserved for active .mechworld, save index, faction plans, production, trade, defense, and autosave state."));
         tabs.addTab("Activity Log", activityPanel(adminLog));
-        tabs.addTab("Admin Commands", commandsPanel(channel, updates, adminLog));
+        tabs.addTab("Admin Commands", commandsPanel(channel, updates, maintenance));
 
         frame.setContentPane(tabs);
         frame.pack();
@@ -70,7 +71,7 @@ public final class ServerAdminConsole {
         return p;
     }
 
-    private static JPanel commandsPanel(String channel, ServerUpdateService updates, ServerAdminLog adminLog) {
+    private static JPanel commandsPanel(String channel, ServerUpdateService updates, ServerMaintenanceService maintenance) {
         JPanel p = new JPanel(new BorderLayout(8, 8));
         DefaultTableModel model = new DefaultTableModel(new Object[] {"Field", "Value"}, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -78,15 +79,15 @@ public final class ServerAdminConsole {
         JTable table = new JTable(model);
         JButton check = new JButton("Check for Updates");
         JButton update = new JButton("Apply Update If Safe");
-        JButton saveNow = new JButton("Save Now (pending authority)");
-        JButton backup = new JButton("Create Backup (pending authority)");
-        JButton restore = new JButton("Restore Backup (pending authority)");
+        JButton saveNow = new JButton("Save Now");
+        JButton backup = new JButton("Create Backup");
+        JButton restore = new JButton("Restore Latest Backup If Safe");
 
-        check.addActionListener(e -> runStatus(model, () -> updates.checkForUpdates(channel)));
-        update.addActionListener(e -> runStatus(model, () -> updates.applyUpdate(channel, false, false)));
-        saveNow.addActionListener(e -> adminLog.record(new ServerAdminEvent(ServerAdminEvent.Kind.SAVE_NOW, "admin", "Save-now requested from admin GUI; runtime authority adapter pending.")));
-        backup.addActionListener(e -> adminLog.record(new ServerAdminEvent(ServerAdminEvent.Kind.BACKUP_CREATE, "admin", "Backup-create requested from admin GUI; runtime authority adapter pending.")));
-        restore.addActionListener(e -> adminLog.record(new ServerAdminEvent(ServerAdminEvent.Kind.BACKUP_RESTORE, "admin", "Backup-restore requested from admin GUI; runtime authority adapter pending.")));
+        check.addActionListener(e -> runUpdateStatus(model, () -> updates.checkForUpdates(channel)));
+        update.addActionListener(e -> runUpdateStatus(model, () -> updates.applyUpdate(channel, false, false)));
+        saveNow.addActionListener(e -> runMaintenanceStatus(model, () -> maintenance.saveNow(false, false)));
+        backup.addActionListener(e -> runMaintenanceStatus(model, maintenance::createBackup));
+        restore.addActionListener(e -> runMaintenanceStatus(model, () -> maintenance.restoreLatestBackup(false, false)));
 
         JPanel buttons = new JPanel(new GridBagLayout());
         GridBagConstraints b = new GridBagConstraints();
@@ -102,7 +103,7 @@ public final class ServerAdminConsole {
         return p;
     }
 
-    private static void runStatus(DefaultTableModel model, StatusSupplier supplier) {
+    private static void runUpdateStatus(DefaultTableModel model, UpdateStatusSupplier supplier) {
         model.setRowCount(0);
         model.addRow(new Object[] {"Status", "Running..."});
         new SwingWorker<ServerUpdateStatus, Void>() {
@@ -118,6 +119,27 @@ public final class ServerAdminConsole {
                     model.addRow(new Object[] {"Restart required", Boolean.toString(status.restartRequired())});
                     model.addRow(new Object[] {"Message", status.message()});
                     model.addRow(new Object[] {"Checked", status.checkedAt().toString()});
+                } catch (Exception ex) {
+                    model.addRow(new Object[] {"Error", ex.getMessage()});
+                }
+            }
+        }.execute();
+    }
+
+    private static void runMaintenanceStatus(DefaultTableModel model, MaintenanceStatusSupplier supplier) {
+        model.setRowCount(0);
+        model.addRow(new Object[] {"Status", "Running..."});
+        new SwingWorker<ServerMaintenanceResult, Void>() {
+            @Override protected ServerMaintenanceResult doInBackground() { return supplier.get(); }
+            @Override protected void done() {
+                model.setRowCount(0);
+                try {
+                    ServerMaintenanceResult result = get();
+                    model.addRow(new Object[] {"State", result.state().toString()});
+                    model.addRow(new Object[] {"Action", result.action()});
+                    model.addRow(new Object[] {"Path", result.path() == null ? "<none>" : result.path().toString()});
+                    model.addRow(new Object[] {"Message", result.message()});
+                    model.addRow(new Object[] {"Time", result.timestamp().toString()});
                 } catch (Exception ex) {
                     model.addRow(new Object[] {"Error", ex.getMessage()});
                 }
@@ -154,5 +176,6 @@ public final class ServerAdminConsole {
         p.add(new JLabel(value), g);
     }
 
-    private interface StatusSupplier { ServerUpdateStatus get(); }
+    private interface UpdateStatusSupplier { ServerUpdateStatus get(); }
+    private interface MaintenanceStatusSupplier { ServerMaintenanceResult get(); }
 }
