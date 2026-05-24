@@ -23,16 +23,23 @@ import java.awt.Insets;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public final class MechanistLauncherApp {
     private final LauncherConfig config = LauncherConfig.defaults();
     private final GitInstallService git = new GitInstallService(config, this::appendLog);
+    private final List<PackageTier> graphicsTiers = PackageCatalog.defaultGraphicsTiers(config);
+    private final List<PackageTier> audioTiers = PackageCatalog.defaultAudioTiers(config);
 
     private JFrame frame;
     private JTextArea log;
     private JLabel status;
     private JProgressBar progress;
     private JComboBox<String> channel;
+    private JComboBox<PackageTier> graphicsTier;
+    private JComboBox<PackageTier> audioTier;
+    private JLabel effectiveGraphics;
+    private JLabel effectiveAudio;
     private JButton installUpdate;
     private JButton launch;
     private JButton repair;
@@ -45,7 +52,7 @@ public final class MechanistLauncherApp {
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
         frame = new JFrame(LauncherConfig.APP_NAME + " Launcher");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(820, 560));
+        frame.setMinimumSize(new Dimension(900, 640));
         frame.setLocationByPlatform(true);
 
         JPanel root = new JPanel(new BorderLayout(14, 14));
@@ -68,7 +75,7 @@ public final class MechanistLauncherApp {
         JLabel title = new JLabel("THE MECHANIST");
         title.setForeground(new Color(226, 220, 198));
         title.setFont(new Font(Font.SERIF, Font.BOLD, 34));
-        JLabel sub = new JLabel("GitHub-backed launcher and updater — Java 17 runtime line");
+        JLabel sub = new JLabel("StellarCore launcher — install, update, repair, and select graphics/audio packages");
         sub.setForeground(new Color(170, 168, 158));
         sub.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
         p.add(title, BorderLayout.NORTH);
@@ -90,14 +97,49 @@ public final class MechanistLauncherApp {
         p.add(channel, g);
 
         g.gridx = 0; g.gridy++; g.weightx = 0;
+        p.add(label("Graphics package"), g);
+        graphicsTier = new JComboBox<>(graphicsTiers.toArray(new PackageTier[0]));
+        PackageTier defaultGraphics = PackageCatalog.defaultTier(graphicsTiers);
+        if (defaultGraphics != null) graphicsTier.setSelectedItem(defaultGraphics);
+        graphicsTier.addActionListener(e -> refreshState());
+        g.gridx = 1; g.weightx = 1;
+        p.add(graphicsTier, g);
+
+        g.gridx = 0; g.gridy++; g.weightx = 0;
+        p.add(label("Audio package"), g);
+        audioTier = new JComboBox<>(audioTiers.toArray(new PackageTier[0]));
+        PackageTier defaultAudio = PackageCatalog.defaultTier(audioTiers);
+        if (defaultAudio != null) audioTier.setSelectedItem(defaultAudio);
+        audioTier.addActionListener(e -> refreshState());
+        g.gridx = 1; g.weightx = 1;
+        p.add(audioTier, g);
+
+        g.gridx = 0; g.gridy++; g.weightx = 0;
+        p.add(label("Effective graphics"), g);
+        effectiveGraphics = value("pending install");
+        g.gridx = 1; g.weightx = 1;
+        p.add(effectiveGraphics, g);
+
+        g.gridx = 0; g.gridy++; g.weightx = 0;
+        p.add(label("Effective audio"), g);
+        effectiveAudio = value("pending install");
+        g.gridx = 1; g.weightx = 1;
+        p.add(effectiveAudio, g);
+
+        g.gridx = 0; g.gridy++; g.weightx = 0;
         p.add(label("Install root"), g);
         g.gridx = 1; g.weightx = 1;
         p.add(value(config.installRoot.toString()), g);
 
         g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Game repo"), g);
+        p.add(label("Game payload"), g);
         g.gridx = 1; g.weightx = 1;
         p.add(value(config.repoDir.toString()), g);
+
+        g.gridx = 0; g.gridy++; g.weightx = 0;
+        p.add(label("Logs"), g);
+        g.gridx = 1; g.weightx = 1;
+        p.add(value(config.logsDir.toString()), g);
 
         log = new JTextArea(16, 80);
         log.setEditable(false);
@@ -127,9 +169,11 @@ public final class MechanistLauncherApp {
         installUpdate = button("Install / Update", () -> runTask("Install / Update", false));
         repair = button("Repair", () -> runTask("Repair", true));
         launch = button("Launch Game", this::launchGame);
+        JButton writeSelections = button("Apply Package Settings", this::writePackageSelections);
         JButton openFolder = button("Open Folder", this::openInstallFolder);
         buttons.add(installUpdate, b);
         buttons.add(repair, b);
+        buttons.add(writeSelections, b);
         buttons.add(launch, b);
         buttons.add(openFolder, b);
         p.add(status, BorderLayout.NORTH);
@@ -163,6 +207,14 @@ public final class MechanistLauncherApp {
         return branch.isBlank() ? LauncherConfig.DEFAULT_BRANCH : branch;
     }
 
+    private PackageTier selectedGraphicsTier() {
+        return (PackageTier) graphicsTier.getSelectedItem();
+    }
+
+    private PackageTier selectedAudioTier() {
+        return (PackageTier) audioTier.getSelectedItem();
+    }
+
     private void runTask(String name, boolean doRepair) {
         setBusy(true, name + " running...");
         appendLog("=== " + name + " ===");
@@ -170,12 +222,15 @@ public final class MechanistLauncherApp {
             @Override protected Void doInBackground() throws Exception {
                 if (!git.gitAvailable()) throw new IOException("Git is required. Install Git for Windows or your platform package manager, then sign in for private repo access.");
                 if (doRepair) git.repair(selectedBranch()); else git.installOrUpdate(selectedBranch());
+                RuntimeSelectionWriter.writeSelections(config,
+                        PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
+                        PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
                 return null;
             }
             @Override protected void done() {
                 try {
                     get();
-                    appendLog(name + " complete.");
+                    appendLog(name + " complete. Package selections written to settings/options.properties.");
                     status.setText(name + " complete.");
                 } catch (Exception ex) {
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
@@ -190,11 +245,27 @@ public final class MechanistLauncherApp {
         worker.execute();
     }
 
+    private void writePackageSelections() {
+        try {
+            RuntimeSelectionWriter.writeSelections(config,
+                    PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
+                    PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
+            appendLog("Package selections written to " + config.repoDir.resolve("settings/options.properties"));
+            refreshState();
+        } catch (Exception ex) {
+            appendLog("ERROR writing package selections: " + ex.getMessage());
+            status.setText("Package settings write failed.");
+        }
+    }
+
     private void launchGame() {
         setBusy(true, "Launching game...");
         appendLog("Launching from " + config.repoDir);
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override protected Void doInBackground() throws Exception {
+                RuntimeSelectionWriter.writeSelections(config,
+                        PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
+                        PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
                 Path bat = config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.bat");
                 Path ps1 = config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.ps1");
                 Path linux = config.repoDir.resolve("PLAY_THE_MECHANIST_LINUX.sh");
@@ -231,8 +302,12 @@ public final class MechanistLauncherApp {
     }
 
     private void refreshState() {
+        PackageTier graphics = PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier());
+        PackageTier audio = PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier());
+        if (effectiveGraphics != null) effectiveGraphics.setText(graphics == null ? "missing low_32 fallback" : graphics.toString());
+        if (effectiveAudio != null) effectiveAudio.setText(audio == null ? "silence fallback" : audio.toString());
         launch.setEnabled(git.gameLauncherPresent());
-        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update or launch.");
+        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update, apply package settings, or launch.");
         else status.setText("Game not installed yet. Press Install / Update.");
     }
 
