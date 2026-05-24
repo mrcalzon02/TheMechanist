@@ -44,6 +44,8 @@ public final class MechanistLauncherApp {
     private JButton installUpdate;
     private JButton launch;
     private JButton repair;
+    private String lastUpdateStatus = "No update has been run in this launcher session.";
+    private String lastLaunchStatus = "No launch has been run in this launcher session.";
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new MechanistLauncherApp().show());
@@ -52,6 +54,8 @@ public final class MechanistLauncherApp {
     private void show() {
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
         frame = new JFrame(LauncherConfig.APP_NAME + " Launcher");
+        List<java.awt.Image> icons = LauncherIconAuthority.loadWindowIcons(config);
+        if (!icons.isEmpty()) frame.setIconImages(icons);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setMinimumSize(new Dimension(980, 680));
         frame.setLocationByPlatform(true);
@@ -64,6 +68,7 @@ public final class MechanistLauncherApp {
         frame.setContentPane(root);
         frame.pack();
         frame.setVisible(true);
+        appendLog("Icon authority: " + LauncherIconAuthority.status(config));
         refreshState();
     }
 
@@ -71,7 +76,7 @@ public final class MechanistLauncherApp {
         JPanel p = new JPanel(new BorderLayout(10, 8));
         p.setOpaque(false);
         JLabel title = LauncherTheme.title("THE MECHANIST");
-        JLabel sub = LauncherTheme.subtitle("StellarCore launcher — install, update, repair, diagnostics, and package selection");
+        JLabel sub = LauncherTheme.subtitle("StellarCore launcher — install, update, repair, diagnostics, package selection, and runtime verification");
         p.add(title, BorderLayout.NORTH);
         p.add(sub, BorderLayout.SOUTH);
         return p;
@@ -212,12 +217,14 @@ public final class MechanistLauncherApp {
         installUpdate = button("Install / Update", "Download or fast-forward the selected game channel and then write package/path selections.", () -> runTask("Install / Update", false));
         repair = button("Repair", "Clean and reset the local game payload from the selected channel. Use when files are missing or local edits block updates.", () -> runTask("Repair", true));
         JButton writeSelections = button("Apply Package Settings", "Write the selected graphics/audio package and runtime paths without updating or launching.", this::writePackageSelections);
+        JButton runtimeInfo = button("Runtime Info", "Show Java, OS, path, package, modified-content, and icon/runtime information for support and verification.", this::showRuntimeInfo);
         JButton reportIssue = button("Diagnostics", "Prepare a redacted diagnostic report with client hash, install state, errors, and bounded log excerpts. If active mods are detected, the launcher warns that modded reports are not accepted for base-game triage.", this::prepareDiagnostics);
         launch = button("Launch Game", "Write current selections, then start the game menu from the installed payload.", this::launchGame);
         JButton openFolder = button("Open Folder", "Open the StellarCore install folder in the operating system file browser.", this::openInstallFolder);
         buttons.add(installUpdate, b);
         buttons.add(repair, b);
         buttons.add(writeSelections, b);
+        buttons.add(runtimeInfo, b);
         buttons.add(reportIssue, b);
         buttons.add(launch, b);
         buttons.add(openFolder, b);
@@ -259,11 +266,13 @@ public final class MechanistLauncherApp {
                 try {
                     get();
                     appendLog(name + " complete. Package selections written to settings/options.properties.");
+                    lastUpdateStatus = name + " complete.";
                     status.setText(name + " complete.");
                 } catch (Exception ex) {
                     sound.warning();
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
                     appendLog("ERROR: " + cause.getMessage());
+                    lastUpdateStatus = name + " failed: " + cause.getMessage();
                     status.setText(name + " failed. See log output.");
                 } finally {
                     setBusy(false, status.getText());
@@ -286,6 +295,13 @@ public final class MechanistLauncherApp {
             appendLog("ERROR writing package selections: " + ex.getMessage());
             status.setText("Package settings write failed.");
         }
+    }
+
+    private void showRuntimeInfo() {
+        RuntimeInfoDialog.show(frame, config, selectedBranch(),
+                PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
+                PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()),
+                "lastUpdate=" + lastUpdateStatus + "; lastLaunch=" + lastLaunchStatus);
     }
 
     private void prepareDiagnostics() {
@@ -340,11 +356,12 @@ public final class MechanistLauncherApp {
                 return null;
             }
             @Override protected void done() {
-                try { get(); status.setText("Game process ended."); }
+                try { get(); lastLaunchStatus = "Game process ended."; status.setText("Game process ended."); }
                 catch (Exception ex) {
                     sound.warning();
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
                     appendLog("ERROR: " + cause.getMessage());
+                    lastLaunchStatus = "Launch failed: " + cause.getMessage();
                     status.setText("Launch failed. See log output.");
                 } finally { setBusy(false, status.getText()); }
             }
