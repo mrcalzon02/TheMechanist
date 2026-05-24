@@ -1,0 +1,29 @@
+Java build outputs:
+- target directory
+- build directory
+- out directory
+- class files
+- jar files unless deliberately committed
+
+Runtime local state:
+- logs directory
+- saves directory
+- log files
+
+Editor state:
+- IntelliJ IDEA metadata
+- VS Code metadata
+- module files
+
+OS noise:
+- macOS Finder files
+- Windows thumbnail database files
+
+Large package archives:
+- tar archives
+- compressed tar archives
+- zip archives
+
+Python tooling cache:
+- Python cache directories
+- compiled Python bytecode
