@@ -5,6 +5,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -211,7 +212,7 @@ public final class MechanistLauncherApp {
         installUpdate = button("Install / Update", "Download or fast-forward the selected game channel and then write package/path selections.", () -> runTask("Install / Update", false));
         repair = button("Repair", "Clean and reset the local game payload from the selected channel. Use when files are missing or local edits block updates.", () -> runTask("Repair", true));
         JButton writeSelections = button("Apply Package Settings", "Write the selected graphics/audio package and runtime paths without updating or launching.", this::writePackageSelections);
-        JButton reportIssue = button("Diagnostics", "Prepare a redacted diagnostic report with client hash, install state, errors, and bounded log excerpts. It opens a GitHub issue draft; nothing is uploaded silently.", this::prepareDiagnostics);
+        JButton reportIssue = button("Diagnostics", "Prepare a redacted diagnostic report with client hash, install state, errors, and bounded log excerpts. If active mods are detected, the launcher warns that modded reports are not accepted for base-game triage.", this::prepareDiagnostics);
         launch = button("Launch Game", "Write current selections, then start the game menu from the installed payload.", this::launchGame);
         JButton openFolder = button("Open Folder", "Open the StellarCore install folder in the operating system file browser.", this::openInstallFolder);
         buttons.add(installUpdate, b);
@@ -301,8 +302,15 @@ public final class MechanistLauncherApp {
                 try {
                     DiagnosticReporter.DiagnosticReport report = get();
                     appendLog("Diagnostic report prepared: " + report.reportFile());
-                    diagnostics.openIssueDraft(report);
-                    status.setText("Diagnostic report prepared. Browser opened issue draft.");
+                    if (report.modded()) {
+                        sound.warning();
+                        String message = ModStateDetector.supportWarning() + "\n\nA local diagnostic report was still written here:\n" + report.reportFile() + "\n\nThe launcher will not open a base-game issue draft for this report while modified content is detected.";
+                        JOptionPane.showMessageDialog(frame, message, "Modified content detected", JOptionPane.WARNING_MESSAGE);
+                        status.setText("Modified content detected. Diagnostic report written locally only.");
+                    } else {
+                        diagnostics.openIssueDraft(report);
+                        status.setText("Diagnostic report prepared. Browser opened issue draft.");
+                    }
                 } catch (Exception ex) {
                     sound.warning();
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
