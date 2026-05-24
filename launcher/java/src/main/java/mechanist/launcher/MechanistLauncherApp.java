@@ -13,10 +13,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -29,6 +27,7 @@ public final class MechanistLauncherApp {
     private final LauncherConfig config = LauncherConfig.defaults();
     private final GitInstallService git = new GitInstallService(config, this::appendLog);
     private final LauncherSoundFeedback sound = new LauncherSoundFeedback(config);
+    private final DiagnosticReporter diagnostics = new DiagnosticReporter(config);
     private final List<PackageTier> graphicsTiers = PackageCatalog.defaultGraphicsTiers(config);
     private final List<PackageTier> audioTiers = PackageCatalog.defaultAudioTiers(config);
 
@@ -71,7 +70,7 @@ public final class MechanistLauncherApp {
         JPanel p = new JPanel(new BorderLayout(10, 8));
         p.setOpaque(false);
         JLabel title = LauncherTheme.title("THE MECHANIST");
-        JLabel sub = LauncherTheme.subtitle("StellarCore launcher — install, update, repair, and select graphics/audio packages");
+        JLabel sub = LauncherTheme.subtitle("StellarCore launcher — install, update, repair, diagnostics, and package selection");
         p.add(title, BorderLayout.NORTH);
         p.add(sub, BorderLayout.SOUTH);
         return p;
@@ -212,11 +211,13 @@ public final class MechanistLauncherApp {
         installUpdate = button("Install / Update", "Download or fast-forward the selected game channel and then write package/path selections.", () -> runTask("Install / Update", false));
         repair = button("Repair", "Clean and reset the local game payload from the selected channel. Use when files are missing or local edits block updates.", () -> runTask("Repair", true));
         JButton writeSelections = button("Apply Package Settings", "Write the selected graphics/audio package and runtime paths without updating or launching.", this::writePackageSelections);
+        JButton reportIssue = button("Diagnostics", "Prepare a redacted diagnostic report with client hash, install state, errors, and bounded log excerpts. It opens a GitHub issue draft; nothing is uploaded silently.", this::prepareDiagnostics);
         launch = button("Launch Game", "Write current selections, then start the game menu from the installed payload.", this::launchGame);
         JButton openFolder = button("Open Folder", "Open the StellarCore install folder in the operating system file browser.", this::openInstallFolder);
         buttons.add(installUpdate, b);
         buttons.add(repair, b);
         buttons.add(writeSelections, b);
+        buttons.add(reportIssue, b);
         buttons.add(launch, b);
         buttons.add(openFolder, b);
         p.add(status, BorderLayout.NORTH);
@@ -286,6 +287,33 @@ public final class MechanistLauncherApp {
         }
     }
 
+    private void prepareDiagnostics() {
+        setBusy(true, "Preparing diagnostic report...");
+        SwingWorker<DiagnosticReporter.DiagnosticReport, Void> worker = new SwingWorker<>() {
+            @Override protected DiagnosticReporter.DiagnosticReport doInBackground() throws Exception {
+                return diagnostics.prepare(
+                        PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
+                        PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()),
+                        selectedBranch(),
+                        log == null ? "" : log.getText());
+            }
+            @Override protected void done() {
+                try {
+                    DiagnosticReporter.DiagnosticReport report = get();
+                    appendLog("Diagnostic report prepared: " + report.reportFile());
+                    diagnostics.openIssueDraft(report);
+                    status.setText("Diagnostic report prepared. Browser opened issue draft.");
+                } catch (Exception ex) {
+                    sound.warning();
+                    Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+                    appendLog("ERROR preparing diagnostic report: " + cause.getMessage());
+                    status.setText("Diagnostic report failed. See log output.");
+                } finally { setBusy(false, status.getText()); }
+            }
+        };
+        worker.execute();
+    }
+
     private void launchGame() {
         setBusy(true, "Launching game...");
         appendLog("Launching from " + config.repoDir);
@@ -332,7 +360,7 @@ public final class MechanistLauncherApp {
         if (effectiveGraphics != null) effectiveGraphics.setText(graphics == null ? "missing low_32 fallback" : graphics.toString());
         if (effectiveAudio != null) effectiveAudio.setText(audio == null ? "silence fallback" : audio.toString());
         launch.setEnabled(git.gameLauncherPresent());
-        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update, apply package settings, or launch.");
+        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update, apply package settings, report diagnostics, or launch.");
         else status.setText("Game not installed yet. Press Install / Update.");
     }
 
