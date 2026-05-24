@@ -17,40 +17,109 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public final class ServerAdminConsole {
     private ServerAdminConsole() {}
 
     public static void show(Path gameRoot, Path logRoot, String channel, ServerUpdateService updates, ServerAdminLog adminLog) {
         ServerMaintenanceService maintenance = new ServerMaintenanceService(logRoot.getParent() == null ? gameRoot.resolve("server") : logRoot.getParent(), adminLog);
+        ServerRuntimeStatusProvider statusProvider = new ServerRuntimeStatusProvider(gameRoot, logRoot.getParent(), maintenance, channel);
         JFrame frame = new JFrame("The Mechanist Server Administrator");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(900, 620));
+        frame.setMinimumSize(new Dimension(980, 680));
         frame.setLocationByPlatform(true);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Status", statusPanel(gameRoot, logRoot, channel));
+        tabs.addTab("Status", statusPanel(gameRoot, logRoot, channel, statusProvider));
         tabs.addTab("Users / Connections", placeholderPanel("No live client/session adapter is attached yet. This surface is reserved for connected users, session activity, latency, and stream-safe address display."));
-        tabs.addTab("World State", placeholderPanel("World-state adapter is not attached yet. This surface is reserved for active .mechworld, save index, faction plans, production, trade, defense, and autosave state."));
+        tabs.addTab("World State", worldStatePanel(statusProvider, maintenance));
+        tabs.addTab("Backups", backupPanel(maintenance));
         tabs.addTab("Activity Log", activityPanel(adminLog));
-        tabs.addTab("Admin Commands", commandsPanel(channel, updates, maintenance));
+        tabs.addTab("Admin Commands", commandsPanel(channel, updates, maintenance, statusProvider));
 
         frame.setContentPane(tabs);
         frame.pack();
         frame.setVisible(true);
     }
 
-    private static JPanel statusPanel(Path gameRoot, Path logRoot, String channel) {
-        JPanel p = new JPanel(new GridBagLayout());
-        GridBagConstraints g = row();
-        addRow(p, g, "Channel", channel);
-        addRow(p, g, "Game root", String.valueOf(gameRoot));
-        addRow(p, g, "Game root present", Boolean.toString(Files.isDirectory(gameRoot)));
-        addRow(p, g, "Log root", String.valueOf(logRoot));
-        addRow(p, g, "Java", System.getProperty("java.version", "<unknown>") + " / " + System.getProperty("java.vendor", "<unknown>"));
-        addRow(p, g, "OS", System.getProperty("os.name", "<unknown>") + " " + System.getProperty("os.version", ""));
-        addRow(p, g, "Authority note", "Local admin surface only; public multiplayer readiness is not implied.");
+    private static JPanel statusPanel(Path gameRoot, Path logRoot, String channel, ServerRuntimeStatusProvider statusProvider) {
+        JPanel p = new JPanel(new BorderLayout(8, 8));
+        DefaultTableModel model = new DefaultTableModel(new Object[] {"Field", "Value"}, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JButton refresh = new JButton("Refresh Status");
+        refresh.addActionListener(e -> fillStatus(model, gameRoot, logRoot, channel, statusProvider.sample()));
+        p.add(refresh, BorderLayout.NORTH);
+        p.add(new JScrollPane(new JTable(model)), BorderLayout.CENTER);
+        fillStatus(model, gameRoot, logRoot, channel, statusProvider.sample());
         return p;
+    }
+
+    private static void fillStatus(DefaultTableModel model, Path gameRoot, Path logRoot, String channel, ServerRuntimeStatus status) {
+        model.setRowCount(0);
+        model.addRow(new Object[] {"Channel", channel});
+        model.addRow(new Object[] {"Game root", String.valueOf(gameRoot)});
+        model.addRow(new Object[] {"Game root present", Boolean.toString(Files.isDirectory(gameRoot))});
+        model.addRow(new Object[] {"Log root", String.valueOf(logRoot)});
+        model.addRow(new Object[] {"Java", System.getProperty("java.version", "<unknown>") + " / " + System.getProperty("java.vendor", "<unknown>")});
+        model.addRow(new Object[] {"OS", System.getProperty("os.name", "<unknown>") + " " + System.getProperty("os.version", "")});
+        model.addRow(new Object[] {"Clients connected", Boolean.toString(status.clientsConnected())});
+        model.addRow(new Object[] {"Save active", Boolean.toString(status.savingActive())});
+        model.addRow(new Object[] {"Active world", status.activeWorld()});
+        model.addRow(new Object[] {"Save slots", Integer.toString(status.saveSlotCount())});
+        model.addRow(new Object[] {"Backups", Integer.toString(status.backupCount())});
+        model.addRow(new Object[] {"Host status", status.hostStatus()});
+        model.addRow(new Object[] {"Adapter", status.adapterStatus()});
+        model.addRow(new Object[] {"Sampled", status.sampledAt().toString()});
+        model.addRow(new Object[] {"Authority note", "Local admin surface only; public multiplayer readiness is not implied."});
+    }
+
+    private static JPanel worldStatePanel(ServerRuntimeStatusProvider statusProvider, ServerMaintenanceService maintenance) {
+        JPanel p = new JPanel(new BorderLayout(8, 8));
+        DefaultTableModel model = new DefaultTableModel(new Object[] {"Field", "Value"}, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JButton refresh = new JButton("Refresh World State");
+        refresh.addActionListener(e -> fillWorldState(model, statusProvider.sample(), maintenance.backupIndex()));
+        p.add(refresh, BorderLayout.NORTH);
+        p.add(new JScrollPane(new JTable(model)), BorderLayout.CENTER);
+        fillWorldState(model, statusProvider.sample(), maintenance.backupIndex());
+        return p;
+    }
+
+    private static void fillWorldState(DefaultTableModel model, ServerRuntimeStatus status, List<Path> backups) {
+        model.setRowCount(0);
+        model.addRow(new Object[] {"Active world", status.activeWorld()});
+        model.addRow(new Object[] {"Active world path", status.activeWorldPath() == null ? "<none>" : status.activeWorldPath().toString()});
+        model.addRow(new Object[] {"Save slot count", Integer.toString(status.saveSlotCount())});
+        model.addRow(new Object[] {"Backup count", Integer.toString(backups.size())});
+        model.addRow(new Object[] {"Clients connected", Boolean.toString(status.clientsConnected())});
+        model.addRow(new Object[] {"Save active", Boolean.toString(status.savingActive())});
+        model.addRow(new Object[] {"Faction/production summary", "Runtime adapter pending."});
+        model.addRow(new Object[] {"Ongoing faction plans", "Runtime adapter pending."});
+    }
+
+    private static JPanel backupPanel(ServerMaintenanceService maintenance) {
+        JPanel p = new JPanel(new BorderLayout(8, 8));
+        DefaultTableModel model = new DefaultTableModel(new Object[] {"Backup", "Path"}, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+        JButton refresh = new JButton("Refresh Backup Index");
+        refresh.addActionListener(e -> fillBackups(model, maintenance.backupIndex()));
+        p.add(refresh, BorderLayout.NORTH);
+        p.add(new JScrollPane(new JTable(model)), BorderLayout.CENTER);
+        fillBackups(model, maintenance.backupIndex());
+        return p;
+    }
+
+    private static void fillBackups(DefaultTableModel model, List<Path> backups) {
+        model.setRowCount(0);
+        if (backups.isEmpty()) {
+            model.addRow(new Object[] {"<none>", "No server backups found."});
+            return;
+        }
+        for (Path backup : backups) model.addRow(new Object[] {backup.getFileName().toString(), backup.toString()});
     }
 
     private static JPanel activityPanel(ServerAdminLog adminLog) {
@@ -71,7 +140,7 @@ public final class ServerAdminConsole {
         return p;
     }
 
-    private static JPanel commandsPanel(String channel, ServerUpdateService updates, ServerMaintenanceService maintenance) {
+    private static JPanel commandsPanel(String channel, ServerUpdateService updates, ServerMaintenanceService maintenance, ServerRuntimeStatusProvider statusProvider) {
         JPanel p = new JPanel(new BorderLayout(8, 8));
         DefaultTableModel model = new DefaultTableModel(new Object[] {"Field", "Value"}, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -84,10 +153,19 @@ public final class ServerAdminConsole {
         JButton restore = new JButton("Restore Latest Backup If Safe");
 
         check.addActionListener(e -> runUpdateStatus(model, () -> updates.checkForUpdates(channel)));
-        update.addActionListener(e -> runUpdateStatus(model, () -> updates.applyUpdate(channel, false, false)));
-        saveNow.addActionListener(e -> runMaintenanceStatus(model, () -> maintenance.saveNow(false, false)));
+        update.addActionListener(e -> {
+            ServerRuntimeStatus status = statusProvider.sample();
+            runUpdateStatus(model, () -> updates.applyUpdate(channel, status.clientsConnected(), status.savingActive()));
+        });
+        saveNow.addActionListener(e -> {
+            ServerRuntimeStatus status = statusProvider.sample();
+            runMaintenanceStatus(model, () -> maintenance.saveNow(status.clientsConnected(), status.savingActive()));
+        });
         backup.addActionListener(e -> runMaintenanceStatus(model, maintenance::createBackup));
-        restore.addActionListener(e -> runMaintenanceStatus(model, () -> maintenance.restoreLatestBackup(false, false)));
+        restore.addActionListener(e -> {
+            ServerRuntimeStatus status = statusProvider.sample();
+            runMaintenanceStatus(model, () -> maintenance.restoreLatestBackup(status.clientsConnected(), status.savingActive()));
+        });
 
         JPanel buttons = new JPanel(new GridBagLayout());
         GridBagConstraints b = new GridBagConstraints();
@@ -155,25 +233,6 @@ public final class ServerAdminConsole {
         area.setEditable(false);
         p.add(new JScrollPane(area), BorderLayout.CENTER);
         return p;
-    }
-
-    private static GridBagConstraints row() {
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 6, 6, 6);
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.gridx = 0;
-        g.gridy = -1;
-        return g;
-    }
-
-    private static void addRow(JPanel p, GridBagConstraints g, String label, String value) {
-        g.gridy++;
-        g.gridx = 0;
-        g.weightx = 0;
-        p.add(new JLabel(label), g);
-        g.gridx = 1;
-        g.weightx = 1;
-        p.add(new JLabel(value), g);
     }
 
     private interface UpdateStatusSupplier { ServerUpdateStatus get(); }
