@@ -1,0 +1,33 @@
+# The Mechanist runtime music manifest
+# Format: music_key<TAB>relative_wav_file<TAB>purpose
+# Keys match the ancient dynamic music hooks returned by GamePanel.desiredMusicContext().
+MAIN_MENU	Underhive_PulseMainmenu.wav	Main menu / options / loss screen loop
+CHARACTER_SELECT	Underhive_PulseCharaterSelect.wav	Character creation, knowledge, world selection, and new-game loading
+UNDERHIVE	UnderhivePulseE.wav	Default underhive exploration fallback
+COMBAT	Underhive_Pulsecombat-1.wav	Ordinary combat pressure
+COMBAT	Underhive_Pulsecombat2.wav	Ordinary combat pressure alternate
+GANGER	Chainblade_ShrineGang1.wav	Gang turf / shrine-gang pressure
+GANGER	Chainblade_ShrineGang2.wav	Gang turf alternate
+TRAIN	False_Seal_RunTrain1.wav	Train service yard / rail depot ambience
+TRAIN	False_Seal_RunTrain2.wav	Train service yard alternate
+ARBITES	Ferrocrete_LawEnforce1.wav	Arbites precinct / law-enforcement spaces
+ARBITES	Ferrocrete_LawEnforce2.wav	Arbites precinct alternate
+MEDICAE	Grey_Tile_TriageMed1.wav	Medicae / triage / infirmary spaces
+MEDICAE	Grey_Tile_TriageMed2.wav	Medicae alternate
+MECHANICUS	Iron_PsalmMECH1.wav	Mechanicus forge / relic duct spaces
+MECHANICUS	Iron_PsalmMECH2.wav	Mechanicus forge alternate
+MECHANICUS	Temple_of_MachineryMech3.wav	Temple of machinery / Mechanicus ambience
+MECHANICUS	Temple_of_MachineryMech4.wav	Temple of machinery alternate
+CULT	Mechanical_MoonHer1.wav	Cult / heretek spaces
+CULT	Mechanical_MoonHer2.wav	Cult / heretek alternate
+MUTANT	Sump_Dark_ChoirSMut1.wav	Mutant sewer camp / warrens
+MUTANT	Sump_Dark_ChoirSMut2.wav	Mutant alternate
+GUARD	Ration_LinePDF1.wav	PDF / Guard billet spaces
+GUARD	Ration_LinePDF2.wav	PDF / Guard alternate
+ADMIN	Seal_of_AshAdmin1.wav	Administratum / Imperial civic spaces
+ADMIN	Seal_of_AshAdmin2.wav	Administratum alternate
+NOBLE	Velvet_Over_HiveNob1.wav	Noble service spine / high-class spaces
+NOBLE	Velvet_Over_HivenNob2.wav	Noble alternate
+NOBLE	Velvet_RopesNob3.wav	Noble alternate two
+GOVERNOR_PALACE	Rust_CrownP-1.wav	Governor palace ambient loop
+GOVERNOR_BATTLE	Palace_of_GoldP-3battle.wav	Governor palace battle pressure
