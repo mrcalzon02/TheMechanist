@@ -5,6 +5,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -13,10 +14,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -28,6 +27,8 @@ import java.util.List;
 public final class MechanistLauncherApp {
     private final LauncherConfig config = LauncherConfig.defaults();
     private final GitInstallService git = new GitInstallService(config, this::appendLog);
+    private final LauncherSoundFeedback sound = new LauncherSoundFeedback(config);
+    private final DiagnosticReporter diagnostics = new DiagnosticReporter(config);
     private final List<PackageTier> graphicsTiers = PackageCatalog.defaultGraphicsTiers(config);
     private final List<PackageTier> audioTiers = PackageCatalog.defaultAudioTiers(config);
 
@@ -52,13 +53,10 @@ public final class MechanistLauncherApp {
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
         frame = new JFrame(LauncherConfig.APP_NAME + " Launcher");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(900, 640));
+        frame.setMinimumSize(new Dimension(980, 680));
         frame.setLocationByPlatform(true);
 
-        JPanel root = new JPanel(new BorderLayout(14, 14));
-        root.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
-        root.setBackground(new Color(22, 22, 24));
-
+        JPanel root = LauncherTheme.rootPanel();
         root.add(buildHeader(), BorderLayout.NORTH);
         root.add(buildCenter(), BorderLayout.CENTER);
         root.add(buildFooter(), BorderLayout.SOUTH);
@@ -72,108 +70,155 @@ public final class MechanistLauncherApp {
     private JPanel buildHeader() {
         JPanel p = new JPanel(new BorderLayout(10, 8));
         p.setOpaque(false);
-        JLabel title = new JLabel("THE MECHANIST");
-        title.setForeground(new Color(226, 220, 198));
-        title.setFont(new Font(Font.SERIF, Font.BOLD, 34));
-        JLabel sub = new JLabel("StellarCore launcher — install, update, repair, and select graphics/audio packages");
-        sub.setForeground(new Color(170, 168, 158));
-        sub.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        JLabel title = LauncherTheme.title("THE MECHANIST");
+        JLabel sub = LauncherTheme.subtitle("StellarCore launcher — install, update, repair, diagnostics, and package selection");
         p.add(title, BorderLayout.NORTH);
         p.add(sub, BorderLayout.SOUTH);
         return p;
     }
 
     private JPanel buildCenter() {
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setOpaque(false);
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 6, 6, 6);
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.gridx = 0; g.gridy = 0; g.weightx = 0;
-        p.add(label("Channel"), g);
-        channel = new JComboBox<>(new String[] {"main", "testing", "dev"});
-        channel.setEditable(true);
-        g.gridx = 1; g.weightx = 1;
-        p.add(channel, g);
+        JPanel container = new JPanel(new BorderLayout(12, 12));
+        container.setOpaque(false);
+        container.add(buildDashboardColumns(), BorderLayout.NORTH);
 
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Graphics package"), g);
+        log = LauncherTheme.logArea();
+        JScrollPane scroll = new JScrollPane(log);
+        scroll.setBorder(BorderFactory.createLineBorder(LauncherTheme.PANEL_EDGE));
+        LauncherTheme.tooltip(scroll, "Compact launcher log. Routine users should not need this, but install/update/repair details appear here when something needs attention.");
+        container.add(scroll, BorderLayout.CENTER);
+        return container;
+    }
+
+    private JPanel buildDashboardColumns() {
+        JPanel grid = new JPanel(new GridBagLayout());
+        grid.setOpaque(false);
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(0, 0, 0, 10);
+        g.fill = GridBagConstraints.BOTH;
+        g.gridy = 0;
+        g.weighty = 0;
+
+        g.gridx = 0; g.weightx = 0.28;
+        grid.add(buildStatusColumn(), g);
+        g.gridx = 1; g.weightx = 0.38;
+        grid.add(buildPackageColumn(), g);
+        g.gridx = 2; g.weightx = 0.34; g.insets = new Insets(0, 0, 0, 0);
+        grid.add(buildPathColumn(), g);
+        return grid;
+    }
+
+    private JPanel buildStatusColumn() {
+        JPanel p = LauncherTheme.panel();
+        p.add(sectionTitle("Status"), BorderLayout.NORTH);
+        JPanel rows = formRows();
+        GridBagConstraints g = rowConstraints();
+        addRow(rows, g, "Channel", channel = new JComboBox<>(new String[] {"main", "testing", "dev"}));
+        channel.setEditable(true);
+        LauncherTheme.tooltip(channel, "Select the update channel. Main is the normal stable development target; testing/dev are future channel hooks.");
+        effectiveGraphics = LauncherTheme.value("pending install");
+        effectiveAudio = LauncherTheme.value("pending install");
+        addRow(rows, g, "Graphics used", effectiveGraphics);
+        addRow(rows, g, "Audio used", effectiveAudio);
+        p.add(rows, BorderLayout.CENTER);
+        return p;
+    }
+
+    private JPanel buildPackageColumn() {
+        JPanel p = LauncherTheme.panel();
+        p.add(sectionTitle("Packages"), BorderLayout.NORTH);
+        JPanel rows = formRows();
+        GridBagConstraints g = rowConstraints();
+
         graphicsTier = new JComboBox<>(graphicsTiers.toArray(new PackageTier[0]));
         PackageTier defaultGraphics = PackageCatalog.defaultTier(graphicsTiers);
         if (defaultGraphics != null) graphicsTier.setSelectedItem(defaultGraphics);
-        graphicsTier.addActionListener(e -> refreshState());
-        g.gridx = 1; g.weightx = 1;
-        p.add(graphicsTier, g);
+        graphicsTier.addActionListener(e -> { sound.panel(); refreshState(); });
+        LauncherTheme.tooltip(graphicsTier, "Choose the desired graphics package. If the selected package is missing, the launcher will fall back stepwise until low_32 is available.");
+        addRow(rows, g, "Graphics", graphicsTier);
 
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Audio package"), g);
         audioTier = new JComboBox<>(audioTiers.toArray(new PackageTier[0]));
         PackageTier defaultAudio = PackageCatalog.defaultTier(audioTiers);
         if (defaultAudio != null) audioTier.setSelectedItem(defaultAudio);
-        audioTier.addActionListener(e -> refreshState());
-        g.gridx = 1; g.weightx = 1;
-        p.add(audioTier, g);
+        audioTier.addActionListener(e -> { sound.panel(); refreshState(); });
+        LauncherTheme.tooltip(audioTier, "Choose the desired music/audio package. Core includes the main menu music target; half maps one song per major zone; full includes variants.");
+        addRow(rows, g, "Audio", audioTier);
 
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Effective graphics"), g);
-        effectiveGraphics = value("pending install");
-        g.gridx = 1; g.weightx = 1;
-        p.add(effectiveGraphics, g);
-
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Effective audio"), g);
-        effectiveAudio = value("pending install");
-        g.gridx = 1; g.weightx = 1;
-        p.add(effectiveAudio, g);
-
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Install root"), g);
-        g.gridx = 1; g.weightx = 1;
-        p.add(value(config.installRoot.toString()), g);
-
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Game payload"), g);
-        g.gridx = 1; g.weightx = 1;
-        p.add(value(config.repoDir.toString()), g);
-
-        g.gridx = 0; g.gridy++; g.weightx = 0;
-        p.add(label("Logs"), g);
-        g.gridx = 1; g.weightx = 1;
-        p.add(value(config.logsDir.toString()), g);
-
-        log = new JTextArea(16, 80);
-        log.setEditable(false);
-        log.setLineWrap(true);
-        log.setWrapStyleWord(true);
-        log.setBackground(new Color(10, 12, 12));
-        log.setForeground(new Color(180, 236, 190));
-        log.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        JScrollPane scroll = new JScrollPane(log);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(72, 78, 72)));
-        g.gridx = 0; g.gridy++; g.gridwidth = 2; g.weightx = 1; g.weighty = 1; g.fill = GridBagConstraints.BOTH;
-        p.add(scroll, g);
+        JLabel hint = LauncherTheme.subtitle("Selections are written before launch and during install/update.");
+        g.gridx = 0; g.gridy++; g.gridwidth = 2; g.weightx = 1;
+        rows.add(hint, g);
+        p.add(rows, BorderLayout.CENTER);
         return p;
+    }
+
+    private JPanel buildPathColumn() {
+        JPanel p = LauncherTheme.panel();
+        p.add(sectionTitle("Install paths"), BorderLayout.NORTH);
+        JPanel rows = formRows();
+        GridBagConstraints g = rowConstraints();
+        addRow(rows, g, "Install", LauncherTheme.value(config.installRoot.toString()));
+        addRow(rows, g, "Game", LauncherTheme.value(config.repoDir.toString()));
+        addRow(rows, g, "Saves", LauncherTheme.value(config.saveDir.toString()));
+        addRow(rows, g, "Logs", LauncherTheme.value(config.logsDir.toString()));
+        p.add(rows, BorderLayout.CENTER);
+        LauncherTheme.tooltip(p, "Application files, saves, settings, logs, and cache are separated. Program Files is not used for mutable logs or saves.");
+        return p;
+    }
+
+    private JLabel sectionTitle(String text) {
+        JLabel l = new JLabel(text);
+        l.setForeground(LauncherTheme.TEXT);
+        l.setFont(LauncherTheme.SECTION);
+        return l;
+    }
+
+    private JPanel formRows() {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        return p;
+    }
+
+    private GridBagConstraints rowConstraints() {
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(5, 4, 5, 4);
+        g.fill = GridBagConstraints.HORIZONTAL;
+        g.gridx = 0;
+        g.gridy = -1;
+        return g;
+    }
+
+    private void addRow(JPanel p, GridBagConstraints g, String label, java.awt.Component value) {
+        g.gridy++;
+        g.gridx = 0;
+        g.gridwidth = 1;
+        g.weightx = 0;
+        p.add(LauncherTheme.label(label), g);
+        g.gridx = 1;
+        g.weightx = 1;
+        p.add(value, g);
     }
 
     private JPanel buildFooter() {
         JPanel p = new JPanel(new BorderLayout(8, 8));
         p.setOpaque(false);
         status = new JLabel("Ready.");
-        status.setForeground(new Color(210, 205, 188));
+        status.setForeground(LauncherTheme.TEXT);
         progress = new JProgressBar();
-        progress.setIndeterminate(false);
+        LauncherTheme.progress(progress);
         JPanel buttons = new JPanel(new GridBagLayout());
         buttons.setOpaque(false);
         GridBagConstraints b = new GridBagConstraints();
         b.insets = new Insets(0, 5, 0, 5);
-        installUpdate = button("Install / Update", () -> runTask("Install / Update", false));
-        repair = button("Repair", () -> runTask("Repair", true));
-        launch = button("Launch Game", this::launchGame);
-        JButton writeSelections = button("Apply Package Settings", this::writePackageSelections);
-        JButton openFolder = button("Open Folder", this::openInstallFolder);
+        installUpdate = button("Install / Update", "Download or fast-forward the selected game channel and then write package/path selections.", () -> runTask("Install / Update", false));
+        repair = button("Repair", "Clean and reset the local game payload from the selected channel. Use when files are missing or local edits block updates.", () -> runTask("Repair", true));
+        JButton writeSelections = button("Apply Package Settings", "Write the selected graphics/audio package and runtime paths without updating or launching.", this::writePackageSelections);
+        JButton reportIssue = button("Diagnostics", "Prepare a redacted diagnostic report with client hash, install state, errors, and bounded log excerpts. If active mods are detected, the launcher warns that modded reports are not accepted for base-game triage.", this::prepareDiagnostics);
+        launch = button("Launch Game", "Write current selections, then start the game menu from the installed payload.", this::launchGame);
+        JButton openFolder = button("Open Folder", "Open the StellarCore install folder in the operating system file browser.", this::openInstallFolder);
         buttons.add(installUpdate, b);
         buttons.add(repair, b);
         buttons.add(writeSelections, b);
+        buttons.add(reportIssue, b);
         buttons.add(launch, b);
         buttons.add(openFolder, b);
         p.add(status, BorderLayout.NORTH);
@@ -182,22 +227,10 @@ public final class MechanistLauncherApp {
         return p;
     }
 
-    private JLabel label(String text) {
-        JLabel l = new JLabel(text);
-        l.setForeground(new Color(180, 176, 158));
-        return l;
-    }
-
-    private JLabel value(String text) {
-        JLabel l = new JLabel(text);
-        l.setForeground(new Color(224, 224, 214));
-        l.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        return l;
-    }
-
-    private JButton button(String text, Runnable action) {
+    private JButton button(String text, String tooltip, Runnable action) {
         JButton b = new JButton(text);
-        b.addActionListener(e -> action.run());
+        LauncherTheme.tooltip(b, tooltip);
+        b.addActionListener(e -> { sound.button(); action.run(); });
         return b;
     }
 
@@ -207,13 +240,8 @@ public final class MechanistLauncherApp {
         return branch.isBlank() ? LauncherConfig.DEFAULT_BRANCH : branch;
     }
 
-    private PackageTier selectedGraphicsTier() {
-        return (PackageTier) graphicsTier.getSelectedItem();
-    }
-
-    private PackageTier selectedAudioTier() {
-        return (PackageTier) audioTier.getSelectedItem();
-    }
+    private PackageTier selectedGraphicsTier() { return (PackageTier) graphicsTier.getSelectedItem(); }
+    private PackageTier selectedAudioTier() { return (PackageTier) audioTier.getSelectedItem(); }
 
     private void runTask(String name, boolean doRepair) {
         setBusy(true, name + " running...");
@@ -233,6 +261,7 @@ public final class MechanistLauncherApp {
                     appendLog(name + " complete. Package selections written to settings/options.properties.");
                     status.setText(name + " complete.");
                 } catch (Exception ex) {
+                    sound.warning();
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
                     appendLog("ERROR: " + cause.getMessage());
                     status.setText(name + " failed. See log output.");
@@ -253,9 +282,44 @@ public final class MechanistLauncherApp {
             appendLog("Package selections written to " + config.repoDir.resolve("settings/options.properties"));
             refreshState();
         } catch (Exception ex) {
+            sound.warning();
             appendLog("ERROR writing package selections: " + ex.getMessage());
             status.setText("Package settings write failed.");
         }
+    }
+
+    private void prepareDiagnostics() {
+        setBusy(true, "Preparing diagnostic report...");
+        SwingWorker<DiagnosticReporter.DiagnosticReport, Void> worker = new SwingWorker<>() {
+            @Override protected DiagnosticReporter.DiagnosticReport doInBackground() throws Exception {
+                return diagnostics.prepare(
+                        PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
+                        PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()),
+                        selectedBranch(),
+                        log == null ? "" : log.getText());
+            }
+            @Override protected void done() {
+                try {
+                    DiagnosticReporter.DiagnosticReport report = get();
+                    appendLog("Diagnostic report prepared: " + report.reportFile());
+                    if (report.modded()) {
+                        sound.warning();
+                        String message = ModStateDetector.supportWarning() + "\n\nA local diagnostic report was still written here:\n" + report.reportFile() + "\n\nThe launcher will not open a base-game issue draft for this report while modified content is detected.";
+                        JOptionPane.showMessageDialog(frame, message, "Modified content detected", JOptionPane.WARNING_MESSAGE);
+                        status.setText("Modified content detected. Diagnostic report written locally only.");
+                    } else {
+                        diagnostics.openIssueDraft(report);
+                        status.setText("Diagnostic report prepared. Browser opened issue draft.");
+                    }
+                } catch (Exception ex) {
+                    sound.warning();
+                    Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+                    appendLog("ERROR preparing diagnostic report: " + cause.getMessage());
+                    status.setText("Diagnostic report failed. See log output.");
+                } finally { setBusy(false, status.getText()); }
+            }
+        };
+        worker.execute();
     }
 
     private void launchGame() {
@@ -269,20 +333,16 @@ public final class MechanistLauncherApp {
                 Path bat = config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.bat");
                 Path ps1 = config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.ps1");
                 Path linux = config.repoDir.resolve("PLAY_THE_MECHANIST_LINUX.sh");
-                if (Files.isRegularFile(bat)) {
-                    ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "cmd", "/c", bat.toString());
-                } else if (Files.isRegularFile(ps1)) {
-                    ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "powershell", "-ExecutionPolicy", "Bypass", "-File", ps1.toString());
-                } else if (Files.isRegularFile(linux)) {
-                    ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "bash", linux.toString());
-                } else {
-                    throw new IOException("No platform game launcher was found. Run Install / Update first.");
-                }
+                if (Files.isRegularFile(bat)) ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "cmd", "/c", bat.toString());
+                else if (Files.isRegularFile(ps1)) ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "powershell", "-ExecutionPolicy", "Bypass", "-File", ps1.toString());
+                else if (Files.isRegularFile(linux)) ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "bash", linux.toString());
+                else throw new IOException("No platform game launcher was found. Run Install / Update first.");
                 return null;
             }
             @Override protected void done() {
                 try { get(); status.setText("Game process ended."); }
                 catch (Exception ex) {
+                    sound.warning();
                     Throwable cause = ex.getCause() == null ? ex : ex.getCause();
                     appendLog("ERROR: " + cause.getMessage());
                     status.setText("Launch failed. See log output.");
@@ -297,6 +357,7 @@ public final class MechanistLauncherApp {
             Files.createDirectories(config.installRoot);
             if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(config.installRoot.toFile());
         } catch (Exception ex) {
+            sound.warning();
             appendLog("ERROR opening folder: " + ex.getMessage());
         }
     }
@@ -307,7 +368,7 @@ public final class MechanistLauncherApp {
         if (effectiveGraphics != null) effectiveGraphics.setText(graphics == null ? "missing low_32 fallback" : graphics.toString());
         if (effectiveAudio != null) effectiveAudio.setText(audio == null ? "silence fallback" : audio.toString());
         launch.setEnabled(git.gameLauncherPresent());
-        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update, apply package settings, or launch.");
+        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update, apply package settings, report diagnostics, or launch.");
         else status.setText("Game not installed yet. Press Install / Update.");
     }
 
@@ -316,6 +377,7 @@ public final class MechanistLauncherApp {
         repair.setEnabled(!busy);
         launch.setEnabled(!busy && git.gameLauncherPresent());
         progress.setIndeterminate(busy);
+        progress.setString(busy ? message : "Idle");
         status.setText(message);
     }
 
