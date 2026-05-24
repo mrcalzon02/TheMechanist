@@ -53,11 +53,45 @@ class SoundManager {
         put("ambient_chime", "assets/sound/core/ambient_chime_01.wav");
         put("ambient_alarm_far", "assets/sound/core/ambient_alarm_far_01.wav");
         put("ambient_door_servo", "assets/sound/core/ambient_door_servo_01.wav");
-        File musicRoot = new File(AudioPackManager.prepareAndResolveMusicRoot("assets/audiopacks", "cache/audiopacks", "assets/music/wav"));
-        music.load(musicRoot);
-        DebugLog.audit("AUDIO", "Loaded sound handles=" + sounds.size() + "; musicRoot=" + musicRoot.getPath() + "; dynamic music playlists=" + music.playlistSummary() + "; OGG originals preserved in assets/sound if present.");
+        File musicRoot = resolveMusicRoot();
+        File musicManifest = resolveMusicManifest(musicRoot);
+        music.load(musicRoot, musicManifest);
+        DebugLog.audit("AUDIO", "Loaded sound handles=" + sounds.size() + "; musicRoot=" + musicRoot.getPath() + "; musicManifest=" + (musicManifest == null ? "<none>" : musicManifest.getPath()) + "; dynamic music playlists=" + music.playlistSummary() + "; OGG originals preserved in assets/sound if present.");
     }
     void put(String key, String path) { File f = new File(path); if (f.exists()) sounds.put(key, f); else DebugLog.warn("AUDIO", "Missing sound file: " + path); }
+    File resolveMusicRoot() {
+        String configured = readOption("mechanist.musicRoot");
+        if (configured != null && !configured.isBlank()) {
+            File f = new File(configured.trim());
+            if (f.exists()) return f;
+            DebugLog.warn("MUSIC", "Configured musicRoot missing; falling back. path=" + f.getPath());
+        }
+        return new File(AudioPackManager.prepareAndResolveMusicRoot("assets/audiopacks", "cache/audiopacks", "assets/music/wav"));
+    }
+    File resolveMusicManifest(File musicRoot) {
+        String configured = readOption("mechanist.musicManifest");
+        if (configured != null && !configured.isBlank()) {
+            File f = new File(configured.trim());
+            if (f.exists()) return f;
+            DebugLog.warn("MUSIC", "Configured musicManifest missing; trying default manifest. path=" + f.getPath());
+        }
+        if (musicRoot != null) {
+            File parent = musicRoot.getParentFile();
+            if (parent != null) {
+                File f = new File(parent, "music_manifest.tsv");
+                if (f.exists()) return f;
+            }
+        }
+        File f = new File("assets/music/music_manifest.tsv");
+        return f.exists() ? f : null;
+    }
+    String readOption(String key) {
+        File f = new File("settings/options.properties");
+        if (!f.exists()) return null;
+        Properties p = new Properties();
+        try (FileInputStream in = new FileInputStream(f)) { p.load(in); return p.getProperty(key); }
+        catch (Throwable t) { DebugLog.warn("AUDIO", "Could not read options while resolving audio path: " + t.getMessage()); return null; }
+    }
     void play(String key, GameOptions opt) {
         if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
         File f = sounds.get(key); if (f == null) return;
@@ -195,14 +229,48 @@ class DynamicMusicManager {
     File currentFile = null;
     boolean transitioning = false;
 
-    void load(File root) {
+    void load(File root) { load(root, null); }
+
+    void load(File root, File manifest) {
         playlists.clear();
         if (root == null || !root.exists()) { DebugLog.warn("MUSIC", "Music directory missing: " + root); return; }
+        int manifestRows = loadManifest(root, manifest);
         File[] files = root.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".wav"));
         if (files == null) return;
         Arrays.sort(files, Comparator.comparing(File::getName));
-        for (File f : files) register(f);
-        DebugLog.audit("MUSIC", "Loaded dynamic music playlists: " + playlistSummary());
+        if (manifestRows <= 0) for (File f : files) register(f);
+        DebugLog.audit("MUSIC", "Loaded dynamic music playlists: " + playlistSummary() + "; manifestRows=" + manifestRows + "; looseFileFallback=" + (manifestRows <= 0));
+    }
+
+    int loadManifest(File root, File manifest) {
+        File m = manifest;
+        if (m == null && root != null && root.getParentFile() != null) m = new File(root.getParentFile(), "music_manifest.tsv");
+        if (m == null || !m.exists()) return 0;
+        int loaded = 0;
+        try {
+            List<String> lines = Files.readAllLines(m.toPath());
+            for (String line : lines) {
+                String trimmed = line == null ? "" : line.trim();
+                if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                String[] parts = line.split("\\t");
+                if (parts.length < 2) continue;
+                String key = parts[0].trim();
+                String rel = parts[1].trim();
+                if (key.isEmpty() || rel.isEmpty()) continue;
+                File f = root.toPath().resolve(rel).normalize().toFile();
+                if (!f.exists()) {
+                    DebugLog.warn("MUSIC", "Manifest music file missing key=" + key + " file=" + rel);
+                    continue;
+                }
+                add(key, f);
+                loaded++;
+            }
+            DebugLog.audit("MUSIC", "Loaded music manifest rows=" + loaded + " manifest=" + m.getPath());
+        } catch (Throwable t) {
+            DebugLog.error("MUSIC", "Failed to load music manifest " + m, t);
+            return 0;
+        }
+        return loaded;
     }
 
     void register(File f) {
@@ -225,7 +293,11 @@ class DynamicMusicManager {
         else add("UNDERHIVE", f);
     }
 
-    void add(String key, File f) { playlists.computeIfAbsent(key, k -> new ArrayList<>()).add(f); }
+    void add(String key, File f) {
+        if (key == null || key.isBlank() || f == null) return;
+        ArrayList<File> list = playlists.computeIfAbsent(key.trim(), k -> new ArrayList<>());
+        if (!list.contains(f)) list.add(f);
+    }
 
     String playlistSummary() {
         ArrayList<String> keys = new ArrayList<>(playlists.keySet());
@@ -333,6 +405,5 @@ class DynamicMusicManager {
         } catch(Throwable ignored) {}
     }
 }
-
 
 
