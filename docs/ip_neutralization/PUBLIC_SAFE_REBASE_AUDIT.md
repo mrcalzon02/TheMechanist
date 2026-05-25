@@ -39,6 +39,20 @@ Known from the briefing and durable docs review:
 
 First purge decision: do not add the full four-file IP-neutralization document set yet. Use this one controlled audit ledger while the docs-folder inventory and asset-risk map are assembled.
 
+## Initial known docs classification
+
+The connector currently cannot list the full `docs/` directory tree, and indexed repository search is returning false negatives even for terms already visible in known files. Until a local checkout or reliable tree listing is available, this table classifies the known files already read during the purge.
+
+| Path | Classification | Current action | Later action |
+|---|---|---|---|
+| `docs/MASTER_DEVELOPMENT_PLAN.md` | Durable | Keep | Update roadmap when rebase phase order changes |
+| `docs/STANDARDS_AND_PRACTICES.md` | Durable | Keep | Add public-safe naming/asset/legal-text gate |
+| `docs/DEVELOPMENT_HISTORY.md` | Durable | Keep | Record completed purge actions after implementation passes |
+| `docs/MASTER_GOVERNANCE_REVISION_II.md` | Durable | Keep | Add original-IP/public-safe doctrine |
+| `docs/STAGED_ASSET_INTEGRATION_PLAN.md` | Explicit user-ordered exception | Keep for now | Merge/retire after semantic asset migration is complete |
+| `docs/briefings/NEW_CONVERSATION_BRIEFING_IP_NEUTRALIZATION_REBASE.md` | Temporary handoff/briefing | Keep during active rebase only | Fold durable instructions into the four durable docs, then archive/delete |
+| `docs/ip_neutralization/PUBLIC_SAFE_REBASE_AUDIT.md` | Temporary controlled audit ledger | Keep during active rebase only | Delete or fold into durable docs when rebase closes |
+
 ## Public-safe rebase lanes
 
 ### Lane A — Audit
@@ -124,6 +138,29 @@ These are examples observed during the standards/history/plan review and must be
 
 Do not blindly delete mechanics attached to those terms. Replace the public-facing identity while preserving underlying systems where possible.
 
+## Starter original-IP replacement map
+
+These are first-pass working replacements. They are not final lore law, but they are specific enough to start removing protected identity from public-facing text.
+
+| Risk term/family | Risk | Working replacement direction | Notes |
+|---|---|---|---|
+| Imperial, when used as specific empire identity | YELLOW/RED by context | Civic, Charter, Mandate, StellarCore, City-State, Commonwealth | Generic adjective use may remain only when genuinely generic. |
+| Adeptus / Adeptus-style institution names | RED | Directorate, Ministry, Office, College, Order, Guild, Engine House | Avoid faux-Latin franchise cadence. |
+| Ecclesiarchy / Ministorum | RED | Civic Rite, Public Chapel Network, Ministry of Rites, Null Chapel, Ash Choir | Preserve civic religion/ritual maintenance without direct identity. |
+| Mechanicus / tech-priest framing | RED | Mechanist, Old Machine Cult, Engine Wardens, Rite Engineers, Foundry Rite | The project title can remain; avoid direct faction/lore borrowing. |
+| Arbites | RED | Public Order Directorate, Mandate Wardens, Civic Marshals | Keep law/security mechanics. |
+| PDF as planetary defense force | YELLOW/RED by context | Municipal Defense Force, Charter Militia, Civic Reserve | PDF file-format references are GREEN. |
+| Guard as franchise military identity | YELLOW/RED by context | Mandate Guard, Civic Guard, Line Guard, Municipal Army | Generic guard can remain for ordinary role descriptions. |
+| Servitor | RED | Bound Worker, Civic Automaton, Labor Husk, Penal Automaton, Debt-Bound Shell | Needs careful ethical/worldbuilding treatment. |
+| Genestealer | RED | Brood infiltrator, deep-cell hybrid, tunnel-born infiltrator | Avoid recognizable faction ecology. |
+| Heretic as franchise enemy class | YELLOW/RED by context | Renegade, oathbreaker, proscribed cell, taboo cultist | Generic religious use only if not derivative. |
+| Bolter / Heavy Bolter | RED | Rivet gun, storm rifle, heavy impact rifle, gyrocarbine, heavy gyro-rifle | Avoid recognizable weapon silhouette/name pairing. |
+| Lasgun / Melta / Flamer-style direct families | RED/YELLOW | charge rifle, heat lance, industrial burner, pressure torch | Rebuild item stats around original function. |
+| Medicae | YELLOW/RED | clinic, medical, field surgeon, civic medic, triage ward | Use plain language unless setting needs a specific institution. |
+| Inquisitorial / Inquisition | RED | Black Ledger Office, Internal Registry, Mandate Inspectors | Keep investigation/secret-police mechanics without naming cadence. |
+| Noble house 40K-style framing | YELLOW | Charter House, Lineage House, Estate Bloc, Patron Family | Nobility itself is generic; presentation must diverge. |
+| Hive city / underhive if used as franchise tone | YELLOW/RED by context | vaulted city, stacked city, low habitations, deep wards | Avoid direct franchise phrase clusters. |
+
 ## Replacement direction seed
 
 The safe tone is industrial civic decay, maintenance superstition, institutional brutality, and infrastructure collapse without protected franchise identity.
@@ -145,6 +182,19 @@ Possible neutral anchors for later mapping:
 
 These are not final lore law. They are placeholders for replacement planning.
 
+## First rewrite priority
+
+The first rewrite pass should not begin with deep code architecture. It should begin with public-facing language and semantic metadata:
+
+1. README/root docs.
+2. EULA/legal notice text.
+3. Launcher/installer/package strings.
+4. Player-facing menu/UI strings.
+5. Infopedia/codex strings.
+6. Semantic asset registry names/descriptions.
+7. Asset folder/file names and manifests.
+8. Only then class/package/internal code identifiers when public exposure or future modding API exposure requires it.
+
 ## Verification notes for this audit start
 
-No code was changed in this first audit-ledger creation. No compile was run. The next implementation pass should begin with a real docs-folder inventory and then update the four durable documents rather than expanding this file family.
+No gameplay code was changed in this audit-ledger update. No compile was run. The next implementation pass should continue by adding durable public-safe rules to `STANDARDS_AND_PRACTICES.md`, then begin direct replacement in public-facing docs and legal text.
