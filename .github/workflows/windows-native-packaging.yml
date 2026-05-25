@@ -1,0 +1,66 @@
+name: Windows Native Packaging
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release/update channel label"
+        required: false
+        default: "dev"
+      build_installer:
+        description: "Attempt launcher EXE installer build. Requires WiX support on runner."
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  windows-native-packaging:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Build app-images and manifest
+        shell: pwsh
+        run: |
+          $buildInstaller = "${{ github.event.inputs.build_installer }}" -eq "true"
+          $args = @(
+            "-ExecutionPolicy", "Bypass",
+            "-File", "tools/packaging/windows/build_all_native_windows.ps1",
+            "-Channel", "${{ github.event.inputs.channel }}"
+          )
+          if ($buildInstaller) { $args += "-BuildInstaller" }
+          powershell @args
+
+      - name: Assemble downloadable zips
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          if ([string]::IsNullOrWhiteSpace($version) -or $version -eq "main") { $version = "dev-${{ github.run_number }}" }
+          powershell -ExecutionPolicy Bypass -File tools/packaging/windows/package_native_outputs.ps1 -Version $version
+
+      - name: Upload native packaging artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheMechanist-Windows-Native-${{ github.run_number }}
+          path: |
+            dist/native/windows/downloads/*
+          if-no-files-found: error
