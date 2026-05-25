@@ -1,0 +1,105 @@
+id	filename	historicus_category	suggested_prefix	status	notes
+HIST-000	000_FACTION_INDEX.md	Foundational index	000	pending_ingestion	Concord Archive source entry
+HIST-001	001_CORE_SETTING_AND_AGE_OF_CONTINUITY.md	Foundational setting	001	pending_ingestion	Concord Archive source entry
+HIST-002	002A_VANTH_REACH_MEMORY_FARM.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002B_HYPERION_INTERVENTION_PASSAGE_MANUFACTORY.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002C_BLACK_VATS_OF_KHEPRION_VI.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002D_BLACK_TIDE_EVENTS_AND_COUNTERMEASURES.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002E_BURNING_OF_THE_TWELFTH_SHORE.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002F_THE_TARNISHING_AND_AUTHORITY_DRIFT.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002G_CINERIC_INCURSION_AND_INVASION_ROSTER.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002H_DEADWARD_CRUSADE_SAGAS.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002I_SUPPRESSED_SPLINTER_CONCLAVES_AND_SISTER_EMPIRES.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002J_SHORELINE_OPENING_AND_CLOSURE_DOCTRINE.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002K_FRONTIER_LOSS_AND_RETURNED_POLITIES.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-002	002_THE_CINERUM_AND_ASH_SEA.md	Historical catastrophe/frontier records	002	pending_ingestion	Concord Archive source entry
+HIST-003	003A_LEGIO_LINEA.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003B_COHORTES_FERRATA.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003C_CUSTODIA_CINERIS.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003D_PRAETORIA_CIVICA.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003E_LIMES_WARDENS.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003F_MORTIS_AUXILIA.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003G_AETERIC_GUARD.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-003	003_ETERNUS_LEGIO_AND_MILITARY.md	Military orders/security arms	003	pending_ingestion	Concord Archive source entry
+HIST-004	004A_COMMON_CONSTITUENTS_OF_THE_SPIREHOLDS.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004B_HABITATION_LABOR_AND_RATION_PRESSURE.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004C_NARCOTICS_ALCOHOL_AND_IDLENESS_MARKETS.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004D_WILD_GANGS_AND_LOWER_HOLD_ASSOCIATIONS.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004E_LOWER_SPIRE_PRESSURES_XALTECH_AND_UNBURDENED_MUTATION.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004F_ROGUE_MACHINERY_FORGOTTEN_IFF_AND_HALL_KILLERS.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004G_SECTOR_GOVERNORS_AND_VERTICAL_ASCENT.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004H_STARSICKNESS_AND_OFFWORLD_ESCAPE_CULTURES.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004I_COMMON_LIFE_ROSTER_AND_CIVIC_FIELD_MARKS.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-004	004_TURRIS_SPIREHOLDS_AND_STACKS.md	Spireholds/population conditions	004	pending_ingestion	Concord Archive source entry
+HIST-005	005A_RATION_DIRECTORATE_AND_FAMINE_COURTS.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005B_WATER_MEASURE_OFFICE_AND_CISTERN_WRITS.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005C_TRANSIT_LIFT_AUTHORITY_AND_ROUTE_LOCKS.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005D_MANUFACTORUM_FLOW_BOARD.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005E_FLEET_PROVISIONING_SYNOD.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005F_MORTIS_SUPPLY_LIAISON.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005G_CIVIC_IDENTITY_LEDGER_AND_SEAL_BANKS.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005H_DEPOT_RELIQUARIES_AND_RESERVE_VAULTS.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005I_CONVOY_FACTORS_AND_ROUTE_WARDENS.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005J_PERMIT_COURTS_AND_PROCUREMENT_SEAL_HOUSES.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005K_CONCORDIA_LOGISTICA_SUPPORT_NETWORK_ROSTER.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-005	005_CONCORDIA_LOGISTICA.md	Logistics/trade/provisioning	005	pending_ingestion	Concord Archive source entry
+HIST-006	006A_LIVING_CANON_HIERARCHY_AND_RANKS.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006B_VAST_MEDICA_WINGS_AND_HOSPICE_MONASTERIES.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006C_MONASTERIA_VITAE_AND_FURNACE_ABBEYS.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006D_ORDERS_OF_CARE_AND_RESTORATION.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006E_CANONIZED_LEADERS_AND_PUBLIC_SAINTS.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006F_HERESIES_SCHISMS_AND_CONCEALED_CONFLICTS.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006G_IDEOLOGICAL_ASSASSINS_OF_THE_CULTUS_VITAE.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006H_ORDERS_OF_THE_IDEOLOGICAL_KNIFE.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006I_CULTUS_VITAE_SUPPORT_NETWORK_ROSTER.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-006	006_CULTUS_VITAE.md	Religious/cultural doctrine	006	pending_ingestion	Concord Archive source entry
+HIST-007	007_ASHBOURNE_AND_NOBILITY.md	Nobility/charter houses	007	pending_ingestion	Concord Archive source entry
+HIST-008	008_THE_DRAUGHT_AND_IMMORTALITY.md	Continuance/immortality doctrine	008	pending_ingestion	Concord Archive source entry
+HIST-009	009_DIDAM_OF_ZALTECH.md	Named entity/archive figure	009	pending_ingestion	Concord Archive source entry
+HIST-010	010_NEZRAM_AND_MOURNING_COURT.md	Mourning court/archive figure	010	pending_ingestion	Concord Archive source entry
+HIST-011	011A_NOMENCLATURE_LEDGER_AND_IDENT_REGISTERS.md	Naming registries/identity doctrine	011	pending_ingestion	Concord Archive source entry
+HIST-011	011_COLLEGIA_MORTIS.md	Naming registries/identity doctrine	011	pending_ingestion	Concord Archive source entry
+HIST-012	012_CUSTODIA_VERITATIS.md	Truth/security archive	012	pending_ingestion	Concord Archive source entry
+HIST-013	013_NULL_COURT.md	Null court/restricted doctrine	013	pending_ingestion	Concord Archive source entry
+HIST-014	014_LIMINAL_OFFICE_AND_VOID_TRAVEL.md	Void travel/liminal office	014	pending_ingestion	Concord Archive source entry
+HIST-015	015_COHORS_NOCTIS.md	Covert/night office	015	pending_ingestion	Concord Archive source entry
+HIST-016	016_FERRUM_SANCTUM.md	Industrial sanctum	016	pending_ingestion	Concord Archive source entry
+HIST-017	017A_HOUSES_OF_CONTINUANCE.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017B_SYNOD_OF_MECHANICAL_EXCISION.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017C_ELECTRO_HOLLOW_SYNODS.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017D_SHIDNAN_SOUL_FORM_CARTOGRAPHERS.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017E_ELECTROQUANT_NEURAL_TAPPERS.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017F_WET_CORE_PRESERVATIONISTS.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017G_FOUNDRY_PATRICIANS_AND_FACTORY_BARONS.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017H_HELIUN_REMAINDER_WATCH.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017I_UNDYING_LORDS_SYNOD_ROSTER.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-017	017_UNDYING_LORDS_AND_MECHANICAL_CONTINUANCE.md	Mechanical continuance/undying houses	017	pending_ingestion	Concord Archive source entry
+HIST-018	018_HELIUN_DIVIDE.md	Historical divide	018	pending_ingestion	Concord Archive source entry
+HIST-019	019_IMMOG_AETER.md	Immortality/metaphysical doctrine	019	pending_ingestion	Concord Archive source entry
+HIST-020	020A_IDEOVORES_AND_THOUGHT_HARVESTERS.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-020	020B_RESCUE_MASKS_AND_MERCY_PRETENDERS.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-020	020C_PERFECT_LAW_AND_OBEDIENCE_IDOLS.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-020	020D_PURITIES_HUNGERS_AND_MARTYRDOM_FORMS.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-020	020E_MEMORY_PALACES_AND_CHILDHOOD_ECHOES.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-020	020F_CONCEPTUAL_VECTOR_AND_COUNTERSIGN_ROSTER.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-020	020_THE_CONCEPTUALS.md	Conceptual threats	020	pending_ingestion	Concord Archive source entry
+HIST-021	021A_LIGHTENED_BRETHREN_AND_SOFT_CELLS.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-021	021B_PAINLESS_DOCTORS_AND_HOSPICE_HANDS.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-021	021C_CHOIRS_OF_RELEASE_AND_SILENCE_SINGERS.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-021	021D_NAMELESS_HOSTS_AND_ASH_COMMUNES.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-021	021E_MARTYRS_OF_LIGHTNESS_AND_PUBLIC_DISSOLUTION.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-021	021F_UNBURDENED_SUPPRESSION_AND_RECOVERY_ROSTER.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-021	021_THE_UNBURDENED.md	Unburdened/release cults	021	pending_ingestion	Concord Archive source entry
+HIST-022	022A_RENDERS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022B_HERDERS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022C_MOURNERS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022D_CROWN_BEASTS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022E_RED_SHEPHERDS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022F_DEEP_GRAZERS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022G_CHOIR_PARASITES_AND_NAME_EATERS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022H_BESTIAE_PHENOTYPE_ROSTER_AND_FIELD_MARKS.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-022	022_BESTIAE_CINERIS_BESTIARY.md	Bestiary/field phenotypes	022	pending_ingestion	Concord Archive source entry
+HIST-023	023_DISTILLATE_ALCHEMY_AND_WEAPONIZATION.md	Distillate alchemy and weaponization	023	pending_ingestion	Concord Archive source entry
+HIST-900	SYSTEM_NAME_LEXICONS/CONCORD_APPROVED_FIRST_NAMES.txt	Naming registries/identity doctrine	900	pending_ingestion	Concord Archive lexicon
+HIST-900	SYSTEM_NAME_LEXICONS/CONCORD_APPROVED_LAST_NAMES.txt	Naming registries/identity doctrine	900	pending_ingestion	Concord Archive lexicon
+HIST-900	SYSTEM_NAME_LEXICONS/CONCORD_APPROVED_MIDDLE_NAMES.txt	Naming registries/identity doctrine	900	pending_ingestion	Concord Archive lexicon
