@@ -23,8 +23,10 @@ public final class ServerAdminConsole {
     private ServerAdminConsole() {}
 
     public static void show(Path gameRoot, Path logRoot, String channel, ServerUpdateService updates, ServerAdminLog adminLog) {
-        ServerMaintenanceService maintenance = new ServerMaintenanceService(logRoot.getParent() == null ? gameRoot.resolve("server") : logRoot.getParent(), adminLog);
-        ServerRuntimeStatusProvider statusProvider = new ServerRuntimeStatusProvider(gameRoot, logRoot.getParent(), maintenance, channel);
+        Path serverRoot = logRoot.getParent() == null ? gameRoot.resolve("server") : logRoot.getParent();
+        ServerMaintenanceService maintenance = new ServerMaintenanceService(serverRoot, adminLog);
+        ServerSafeRestartService restartService = new ServerSafeRestartService(serverRoot, updates, maintenance, adminLog);
+        ServerRuntimeStatusProvider statusProvider = new ServerRuntimeStatusProvider(gameRoot, serverRoot, maintenance, channel);
         JFrame frame = new JFrame("The Mechanist Server Administrator");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setMinimumSize(new Dimension(980, 680));
@@ -36,7 +38,7 @@ public final class ServerAdminConsole {
         tabs.addTab("World State", worldStatePanel(statusProvider, maintenance));
         tabs.addTab("Backups", backupPanel(maintenance));
         tabs.addTab("Activity Log", activityPanel(adminLog));
-        tabs.addTab("Admin Commands", commandsPanel(channel, updates, maintenance, statusProvider));
+        tabs.addTab("Admin Commands", commandsPanel(channel, updates, maintenance, restartService, statusProvider));
 
         frame.setContentPane(tabs);
         frame.pack();
@@ -140,7 +142,7 @@ public final class ServerAdminConsole {
         return p;
     }
 
-    private static JPanel commandsPanel(String channel, ServerUpdateService updates, ServerMaintenanceService maintenance, ServerRuntimeStatusProvider statusProvider) {
+    private static JPanel commandsPanel(String channel, ServerUpdateService updates, ServerMaintenanceService maintenance, ServerSafeRestartService restartService, ServerRuntimeStatusProvider statusProvider) {
         JPanel p = new JPanel(new BorderLayout(8, 8));
         DefaultTableModel model = new DefaultTableModel(new Object[] {"Field", "Value"}, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
@@ -148,6 +150,7 @@ public final class ServerAdminConsole {
         JTable table = new JTable(model);
         JButton check = new JButton("Check for Updates");
         JButton update = new JButton("Apply Update If Safe");
+        JButton safeUpdateRestart = new JButton("Safe Update + Restart Marker");
         JButton saveNow = new JButton("Save Now");
         JButton backup = new JButton("Create Backup");
         JButton restore = new JButton("Restore Latest Backup If Safe");
@@ -156,6 +159,10 @@ public final class ServerAdminConsole {
         update.addActionListener(e -> {
             ServerRuntimeStatus status = statusProvider.sample();
             runUpdateStatus(model, () -> updates.applyUpdate(channel, status.clientsConnected(), status.savingActive()));
+        });
+        safeUpdateRestart.addActionListener(e -> {
+            ServerRuntimeStatus status = statusProvider.sample();
+            runRestartStatus(model, () -> restartService.prepareUpdateRestart(channel, status));
         });
         saveNow.addActionListener(e -> {
             ServerRuntimeStatus status = statusProvider.sample();
@@ -172,6 +179,7 @@ public final class ServerAdminConsole {
         b.insets = new Insets(4, 4, 4, 4);
         b.gridx = 0; b.gridy = 0; buttons.add(check, b);
         b.gridx++; buttons.add(update, b);
+        b.gridx++; buttons.add(safeUpdateRestart, b);
         b.gridx = 0; b.gridy++; buttons.add(saveNow, b);
         b.gridx++; buttons.add(backup, b);
         b.gridx++; buttons.add(restore, b);
@@ -225,6 +233,27 @@ public final class ServerAdminConsole {
         }.execute();
     }
 
+    private static void runRestartStatus(DefaultTableModel model, RestartStatusSupplier supplier) {
+        model.setRowCount(0);
+        model.addRow(new Object[] {"Status", "Running..."});
+        new SwingWorker<ServerRestartPlan, Void>() {
+            @Override protected ServerRestartPlan doInBackground() { return supplier.get(); }
+            @Override protected void done() {
+                model.setRowCount(0);
+                try {
+                    ServerRestartPlan plan = get();
+                    model.addRow(new Object[] {"State", plan.state().toString()});
+                    model.addRow(new Object[] {"Update applied", Boolean.toString(plan.updateApplied())});
+                    model.addRow(new Object[] {"Restart required", Boolean.toString(plan.restartRequired())});
+                    model.addRow(new Object[] {"Reason", plan.reason()});
+                    model.addRow(new Object[] {"Created", plan.createdAt().toString()});
+                } catch (Exception ex) {
+                    model.addRow(new Object[] {"Error", ex.getMessage()});
+                }
+            }
+        }.execute();
+    }
+
     private static JPanel placeholderPanel(String text) {
         JPanel p = new JPanel(new BorderLayout());
         JTextArea area = new JTextArea(text);
@@ -237,4 +266,5 @@ public final class ServerAdminConsole {
 
     private interface UpdateStatusSupplier { ServerUpdateStatus get(); }
     private interface MaintenanceStatusSupplier { ServerMaintenanceResult get(); }
+    private interface RestartStatusSupplier { ServerRestartPlan get(); }
 }
