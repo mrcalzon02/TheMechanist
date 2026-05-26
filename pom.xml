@@ -148,28 +148,6 @@
             </resource>
         </resources>
         <plugins>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${maven.antrun.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>prepare-proguard-output-directories</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${project.build.directory}/proguard/client" />
-                                <mkdir dir="${project.build.directory}/proguard/server" />
-                                <mkdir dir="${project.basedir}/dist/secure-maps" />
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -271,73 +249,103 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>com.github.wvengen</groupId>
-                <artifactId>proguard-maven-plugin</artifactId>
-                <version>${proguard.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>proguard-obfuscate-desktop-fat-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>proguard</goal>
-                        </goals>
-                        <configuration>
-                            <injar>${project.build.directory}/TheMechanist-all.jar</injar>
-                            <outjar>TheMechanist-obfuscated.jar</outjar>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <proguardInclude>${project.basedir}/config/proguard/proguard-client.conf</proguardInclude>
-                            <libs>
-                                <lib>${java.home}/jmods/java.base.jmod</lib>
-                                <lib>${java.home}/jmods/java.desktop.jmod</lib>
-                                <lib>${java.home}/jmods/java.logging.jmod</lib>
-                                <lib>${java.home}/jmods/java.management.jmod</lib>
-                                <lib>${java.home}/jmods/java.naming.jmod</lib>
-                                <lib>${java.home}/jmods/java.net.http.jmod</lib>
-                                <lib>${java.home}/jmods/java.prefs.jmod</lib>
-                                <lib>${java.home}/jmods/java.sql.jmod</lib>
-                                <lib>${java.home}/jmods/java.xml.jmod</lib>
-                                <lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib>
-                                <lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib>
-                                <lib>${java.home}/jmods/jdk.unsupported.jmod</lib>
-                            </libs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>proguard-obfuscate-headless-server-fat-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>proguard</goal>
-                        </goals>
-                        <configuration>
-                            <injar>${project.build.directory}/TheMechanistServer-all.jar</injar>
-                            <outjar>TheMechanistServer-obfuscated.jar</outjar>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <proguardInclude>${project.basedir}/config/proguard/proguard-server.conf</proguardInclude>
-                            <libs>
-                                <lib>${java.home}/jmods/java.base.jmod</lib>
-                                <lib>${java.home}/jmods/java.logging.jmod</lib>
-                                <lib>${java.home}/jmods/java.management.jmod</lib>
-                                <lib>${java.home}/jmods/java.naming.jmod</lib>
-                                <lib>${java.home}/jmods/java.net.http.jmod</lib>
-                                <lib>${java.home}/jmods/java.sql.jmod</lib>
-                                <lib>${java.home}/jmods/java.xml.jmod</lib>
-                                <lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib>
-                                <lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib>
-                                <lib>${java.home}/jmods/jdk.unsupported.jmod</lib>
-                            </libs>
-                        </configuration>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.guardsquare</groupId>
-                        <artifactId>proguard-base</artifactId>
-                        <version>${proguard.base.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release-obfuscation</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>${maven.antrun.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-proguard-output-directories</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${project.build.directory}/proguard/client" />
+                                        <mkdir dir="${project.build.directory}/proguard/server" />
+                                        <mkdir dir="${project.basedir}/dist/secure-maps" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.wvengen</groupId>
+                        <artifactId>proguard-maven-plugin</artifactId>
+                        <version>${proguard.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>proguard-obfuscate-desktop-fat-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>proguard</goal>
+                                </goals>
+                                <configuration>
+                                    <injar>${project.build.directory}/TheMechanist-all.jar</injar>
+                                    <outjar>TheMechanist-obfuscated.jar</outjar>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <proguardInclude>${project.basedir}/config/proguard/proguard-client.conf</proguardInclude>
+                                    <libs>
+                                        <lib>${java.home}/jmods/java.base.jmod</lib>
+                                        <lib>${java.home}/jmods/java.desktop.jmod</lib>
+                                        <lib>${java.home}/jmods/java.logging.jmod</lib>
+                                        <lib>${java.home}/jmods/java.management.jmod</lib>
+                                        <lib>${java.home}/jmods/java.naming.jmod</lib>
+                                        <lib>${java.home}/jmods/java.net.http.jmod</lib>
+                                        <lib>${java.home}/jmods/java.prefs.jmod</lib>
+                                        <lib>${java.home}/jmods/java.sql.jmod</lib>
+                                        <lib>${java.home}/jmods/java.xml.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.unsupported.jmod</lib>
+                                    </libs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>proguard-obfuscate-headless-server-fat-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>proguard</goal>
+                                </goals>
+                                <configuration>
+                                    <injar>${project.build.directory}/TheMechanistServer-all.jar</injar>
+                                    <outjar>TheMechanistServer-obfuscated.jar</outjar>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <proguardInclude>${project.basedir}/config/proguard/proguard-server.conf</proguardInclude>
+                                    <libs>
+                                        <lib>${java.home}/jmods/java.base.jmod</lib>
+                                        <lib>${java.home}/jmods/java.logging.jmod</lib>
+                                        <lib>${java.home}/jmods/java.management.jmod</lib>
+                                        <lib>${java.home}/jmods/java.naming.jmod</lib>
+                                        <lib>${java.home}/jmods/java.net.http.jmod</lib>
+                                        <lib>${java.home}/jmods/java.sql.jmod</lib>
+                                        <lib>${java.home}/jmods/java.xml.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.unsupported.jmod</lib>
+                                    </libs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.guardsquare</groupId>
+                                <artifactId>proguard-base</artifactId>
+                                <version>${proguard.base.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
