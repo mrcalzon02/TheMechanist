@@ -28,6 +28,9 @@ $SupportLibDir = Join-Path $PackageCacheDir "support\lib"
 $ClientPackageDir = Join-Path $PackageCacheDir "client"
 $ServerPackageDir = Join-Path $PackageCacheDir "server"
 $LauncherPackageDir = Join-Path $PackageCacheDir "launcher"
+$LauncherJavaDir = Join-Path $ProjectRoot "launcher\java"
+$LauncherJarSource = Join-Path $LauncherJavaDir "target\mechanist-launcher-0.1.0.jar"
+$LauncherJar = Join-Path $LauncherPackageDir "MechanistLauncher.jar"
 $ClientAssetDir = Join-Path $ClientPackageDir "assets"
 $LauncherProfileSourceDir = Join-Path $ProjectRoot "launcher\profile-packages"
 $LauncherAssetStager = Join-Path $ProjectRoot "tools\launcher\stage_launcher_profile_assets.py"
@@ -111,11 +114,11 @@ function Write-ThinLauncherManifest {
   "platform": "windows-x64",
   "launcher": {
     "role": "installed-orchestrator",
-    "main_class": "mechanist.launcher.ThinLauncherMain",
+    "main_class": "mechanist.launcher.MechanistLauncherApp",
     "profile_packages": "packages/launcher/profile-packages",
     "owns": ["wrapper-detection", "fallback-profile-generation", "server-join-identity-bridge", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
   },
-  "client": { "path": "packages/client/$clientName", "sha256": "$(Get-Sha256 $ClientJar)", "size": $((Get-Item -LiteralPath $ClientJar).Length), "main_class": "mechanist.TheMechanist" },
+  "client": { "path": "packages/client/$clientName", "sha256": "$(Get-Sha256 $ClientJar)", "size": $((Get-Item -LiteralPath $ClientJar).Length), "main_class": "mechanist.TheMechanist", "launcher_main_class": "mechanist.launcher.ThinLauncherMain" },
   "client_assets": { "root": "packages/client/assets", "layout": "client-owned loose runtime files" },
   "server": { "path": "packages/server/$serverName", "sha256": "$(Get-Sha256 $ServerJar)", "size": $((Get-Item -LiteralPath $ServerJar).Length), "main_class": "mechanist.MechanistServerMain" },
   "launcher_profile": { "fallback_human_portraits": "launcher-human-8x8-v1", "special_portraits": "launcher-special-portraits-v1", "special_name_detection": "launcher-special-name-detection-v1", "special_publish_status": "quarantined-until-cleared", "wrapper_detection": ["steam", "gog", "none"] },
@@ -143,6 +146,8 @@ Set-Location $ProjectRoot
 Remove-Item -LiteralPath $DistDir, $RuntimeDir, $InputDir -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $DistDir, $InputDir, $AppImageDest, $ClientPackageDir, $ServerPackageDir, $SupportLibDir, $LauncherPackageDir | Out-Null
 if (-not $UseExistingJar) { & (Join-Path $ProjectRoot "scripts\security\generate-sensitive-strings.ps1"); mvn -B -DskipTests package }
+Push-Location $LauncherJavaDir
+try { mvn -B -DskipTests package } finally { Pop-Location }
 $ClientJarSource = Join-Path $TargetDir "TheMechanist-all.jar"
 $ServerJarSource = Join-Path $TargetDir "TheMechanistServer-all.jar"
 $FallbackClientJar = Join-Path $ProjectRoot "TheMechanist.jar"
@@ -151,17 +156,19 @@ if (-not (Test-Path -LiteralPath $ClientJarSource) -and $UseExistingJar -and (Te
 if (-not (Test-Path -LiteralPath $ServerJarSource) -and $UseExistingJar -and (Test-Path -LiteralPath $FallbackServerJar)) { $ServerJarSource = $FallbackServerJar }
 if (-not (Test-Path -LiteralPath $ClientJarSource)) { throw "No packageable client jar was found. Expected $ClientJarSource, or use -UseExistingJar with $FallbackClientJar present." }
 if (-not (Test-Path -LiteralPath $ServerJarSource)) { throw "No packageable server jar was found. Expected $ServerJarSource, or use -UseExistingJar with $FallbackServerJar present." }
+if (-not (Test-Path -LiteralPath $LauncherJarSource)) { throw "No packageable launcher jar was found. Expected $LauncherJarSource." }
 $ClientJar = Join-Path $ClientPackageDir "TheMechanist.jar"
 $ServerJar = Join-Path $ServerPackageDir "TheMechanistServer.jar"
 Copy-Item -LiteralPath $ClientJarSource -Destination $ClientJar -Force
 Copy-Item -LiteralPath $ServerJarSource -Destination $ServerJar -Force
+Copy-Item -LiteralPath $LauncherJarSource -Destination $LauncherJar -Force
 Stage-RuntimeDependencies
 Stage-ClientRuntimeAssets
 Stage-LauncherProfilePackages
 Write-ThinLauncherManifest -ClientJar $ClientJar -ServerJar $ServerJar
 if (Test-Path -LiteralPath $IconPath) { Copy-Item -LiteralPath $IconPath -Destination (Join-Path $InputDir "the-mechanist.ico") -Force } else { Write-Warning "Windows icon was not found at $IconPath. Installer will be produced without a custom icon." }
 & jlink --module-path $Jmods --add-modules $ClientModules --output $RuntimeDir --strip-debug --no-man-pages --no-header-files --strip-native-commands --compress=2
-function Invoke-JPackage([string]$PackageType, [string]$Destination) { New-Item -ItemType Directory -Force -Path $Destination | Out-Null; $args = @("--type", $PackageType, "--name", $AppName, "--app-version", $AppVersion, "--vendor", $Vendor, "--description", "The Mechanist thin launcher and package orchestrator", "--runtime-image", $RuntimeDir, "--input", $InputDir, "--main-jar", "packages/client/TheMechanist.jar", "--main-class", "mechanist.launcher.ThinLauncherMain", "--dest", $Destination, "--resource-dir", (Join-Path $ProjectRoot "packaging\windows")); if (Test-Path -LiteralPath $IconPath) { $args += @("--icon", $IconPath) }; if ($PackageType -eq "exe" -or $PackageType -eq "msi") { $args += @("--install-dir", $InstallDirName, "--win-menu", "--win-menu-group", "The Mechanist", "--win-shortcut", "--win-shortcut-prompt", "--win-dir-chooser", "--win-upgrade-uuid", $UpgradeUuid); if ($PerUserInstall) { $args += @("--win-per-user-install") } }; Write-Host "Running jpackage --type $PackageType ..."; & jpackage @args }
+function Invoke-JPackage([string]$PackageType, [string]$Destination) { New-Item -ItemType Directory -Force -Path $Destination | Out-Null; $args = @("--type", $PackageType, "--name", $AppName, "--app-version", $AppVersion, "--vendor", $Vendor, "--description", "The Mechanist thin launcher and package orchestrator", "--runtime-image", $RuntimeDir, "--input", $InputDir, "--main-jar", "packages/launcher/MechanistLauncher.jar", "--main-class", "mechanist.launcher.MechanistLauncherApp", "--dest", $Destination, "--resource-dir", (Join-Path $ProjectRoot "packaging\windows")); if (Test-Path -LiteralPath $IconPath) { $args += @("--icon", $IconPath) }; if ($PackageType -eq "exe" -or $PackageType -eq "msi") { $args += @("--install-dir", $InstallDirName, "--win-menu", "--win-menu-group", "The Mechanist", "--win-shortcut", "--win-shortcut-prompt", "--win-dir-chooser", "--win-upgrade-uuid", $UpgradeUuid); if ($PerUserInstall) { $args += @("--win-per-user-install") } }; Write-Host "Running jpackage --type $PackageType ..."; & jpackage @args }
 $Produced = New-Object System.Collections.Generic.List[string]
 foreach ($type in $normalizedTypes) { if ($type -eq "app-image") { Invoke-JPackage "app-image" $AppImageDest; $imageRoot = Join-Path $AppImageDest $AppName; if (-not (Test-Path -LiteralPath $imageRoot)) { throw "jpackage app-image did not produce the expected application image folder: $imageRoot" }; $portableZip = Join-Path $DistDir ("TheMechanist_launcher_windows_portable_{0}.zip" -f $AppVersion); Remove-Item -LiteralPath $portableZip -Force -ErrorAction SilentlyContinue; Compress-Archive -LiteralPath $imageRoot -DestinationPath $portableZip -Force; $Produced.Add($portableZip) | Out-Null; $exePath = Join-Path $imageRoot ("{0}.exe" -f $AppName); if (Test-Path -LiteralPath $exePath) { $Produced.Add($exePath) | Out-Null } } elseif ($type -eq "exe" -or $type -eq "msi") { if (-not $WixAvailable) { Write-Warning "Skipping $type installer because WiX Toolset 3.x was not found. Portable app-image output remains usable for testing."; continue }; Invoke-JPackage $type $DistDir; Get-ChildItem -LiteralPath $DistDir -File -Filter "*.$type" | ForEach-Object { $Produced.Add($_.FullName) | Out-Null } } }
 Get-ChildItem -LiteralPath $DistDir -File -Recurse | Where-Object { $_.Name -ne "SHA256SUMS.txt" } | Sort-Object FullName | Get-FileHash -Algorithm SHA256 | ForEach-Object { $relative = (Get-RelativePathPortable $DistDir $_.Path).Replace("\", "/"); "$($_.Hash.ToLowerInvariant())  $relative" } | Set-Content -LiteralPath (Join-Path $DistDir "SHA256SUMS.txt") -Encoding ascii
@@ -174,7 +181,7 @@ The Mechanist Windows installer outputs
 
 Version: $AppVersion
 Distribution model: installer -> thin launcher -> client -> server
-Launcher entrypoint: mechanist.launcher.ThinLauncherMain
+Launcher entrypoint: mechanist.launcher.MechanistLauncherApp
 Package identity manifest: manifests/windows-runtime-manifest.json
 Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
 Client runtime assets: packages/client/assets

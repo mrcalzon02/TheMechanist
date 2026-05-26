@@ -367,7 +367,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
     String lastStaffingAssignmentReport = "No manual staffing assignment yet.";
     String lastLogisticsReservationReport = "No logistics reservation forecast yet.";
     String lastLogisticsDeliveryIntentReport = "No logistics delivery intent recorded yet.";
-    String lastLogisticsSourceReservationReport = "No logistics source reservation token recorded yet.";
+    String lastLogisticsSourceReservationReport = "No logistics source reservation recorded yet.";
     String lastLogisticsRouteIntentReport = "No logistics route intent displayed yet.";
     String lastLogisticsRoutePreviewReport = "No logistics route readiness/manual haul preview recorded yet.";
     String lastLogisticsHaulContractReport = "No manual haul contract recorded yet.";
@@ -910,7 +910,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             action.run();
         } catch (Throwable t) {
             DebugLog.error(system, detail + " failed | state=" + stateSummary(), t);
-            logEvent("ERROR in " + system + ": " + t.getClass().getSimpleName() + " — see logs/runtime.log and logs/errors.log");
+            logEvent("ERROR in " + system + ": " + t.getClass().getSimpleName() + " - diagnostic details were recorded.");
         }
     }
 
@@ -1020,7 +1020,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             logEvent("AUTOSAVE: hourly save at turn " + turn + " after " + reason + ".");
         } catch (Throwable t) {
             DebugLog.error("AUTOSAVE_FAILED", "Hourly autosave failed at turn " + turn + " reason=" + reason, t);
-            logEvent("AUTOSAVE WARNING: could not write hourly autosave; see logs/errors.log.");
+            logEvent("AUTOSAVE WARNING: could not write hourly autosave. Diagnostic details were recorded.");
         }
     }
 
@@ -1033,7 +1033,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             logEvent("AUTOSAVE: zone-transition save at turn " + turn + " after " + reason + ".");
         } catch (Throwable t) {
             DebugLog.error("AUTOSAVE_ZONE_FAILED", "Zone-transition autosave failed at turn " + turn + " reason=" + reason, t);
-            logEvent("AUTOSAVE WARNING: could not write zone-transition autosave; see logs/errors.log.");
+            logEvent("AUTOSAVE WARNING: could not write zone-transition autosave. Diagnostic details were recorded.");
         }
     }
 
@@ -1064,7 +1064,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         Properties worldDefinition = SaveEfficiencyAuthority.worldRuntimeProperties(this);
         SaveEfficiencyAuthority.prepareCharacterSlot(this, pr, worldDefinition);
         DebugLog.audit("SAVE_DIAGNOSTIC", "keys=" + pr.size() + " " + SaveEfficiencyAuthority.auditLine("diagnostic", pr, worldDefinition) + " state=" + stateSummary());
-        logEvent("Persistence diagnostic written to current.log with " + pr.size() + " slot keys and " + worldDefinition.size() + " world-definition keys.");
+        logEvent("Persistence diagnostic recorded with " + pr.size() + " save fields and " + worldDefinition.size() + " world-definition fields.");
     }
 
     void sanityCheck(String system) {
@@ -1325,7 +1325,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 {"SENSES", "Review vision, hearing, fog of war, and recent distant sound pings."},
                 {"MAP", "Open the fogged world, sector, and zone navigation map."},
                 {"NEWS", "Read the latest known Imperial News Network bulletin and local newspaper issue."},
-                {"LOG", "Read recent event and debug messages."},
+                {"LOG", "Read recent in-game events."},
                 {"CHAT", "Open the bounded local chat window. Hotkey: Y. Messages are sanitized, rate-limited, and logged locally."},
                 {"SAVE/LOAD", "Open save/load controls and current run state."},
                 {"MENU", "Pause, save, options, or exit."}
@@ -1628,7 +1628,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 SaveLoadUiRects sl = saveLoadUiRects();
                 int topButtonH = Math.max(20, Math.min(28, sl.manual.height / 8));
                 buttons.add(new ButtonBox("SAVE DIAGNOSTIC", sl.manual.x + 14, sl.manual.y + 54, Math.max(80, sl.manual.width - 28), topButtonH,
-                        "Write a compact persistence diagnostic into current.log.", this::logPersistenceDiagnostic));
+                        "Record a compact save-health report for troubleshooting.", this::logPersistenceDiagnostic));
                 buttons.add(new ButtonBox("LOAD MENU", sl.auto.x + 14, sl.auto.y + 54, Math.max(80, sl.auto.width - 28), topButtonH,
                         "Manual saves and autosaves are listed in separate columns.", () -> logEvent("The load menu is already open.")));
                 int rowGap = Math.max(4, scaled(4));
@@ -1767,9 +1767,9 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 buttons.add(new ButtonBox("QUEUE -", bx, by+588, 145, 34, "Reduce queued runs for the selected assigned machine.", () -> adjustSelectedMachineQueue(-1)));
                 buttons.add(new ButtonBox("QUEUE +", bx+155, by+588, 145, 34, "Increase queued runs for the selected assigned machine.", () -> adjustSelectedMachineQueue(1)));
                 buttons.add(new ButtonBox("LOGISTICS", bx, by+630, 145, 34, "Forecast selected machine input reservation intent. Does not move goods yet.", this::forecastSelectedLogisticsReservation));
-                buttons.add(new ButtonBox("INTENT", bx+155, by+630, 145, 34, "Record a bounded delivery-intent token from the selected machine forecast. No goods move yet.", this::recordSelectedLogisticsDeliveryIntent));
-                buttons.add(new ButtonBox("SOURCE TOKEN", bx, by+798, 300, 34, "Record a bounded source-reservation token from the latest logistics intent. No item lock or transfer yet.", this::recordLatestLogisticsSourceReservation));
-                buttons.add(new ButtonBox("ROUTE INTENT", bx, by+840, 300, 34, "Display a bounded route-intent estimate from the latest intent/source token. No pathfinding or hauling yet.", this::displayLatestLogisticsRouteIntent));
+                buttons.add(new ButtonBox("PLAN DELIVERY", bx+155, by+630, 145, 34, "Record a bounded delivery plan from the selected machine forecast. No goods move yet.", this::recordSelectedLogisticsDeliveryIntent));
+                buttons.add(new ButtonBox("CHOOSE SOURCE", bx, by+798, 300, 34, "Record where the latest logistics plan should draw its inputs from. No item lock or transfer yet.", this::recordLatestLogisticsSourceReservation));
+                buttons.add(new ButtonBox("PLAN ROUTE", bx, by+840, 300, 34, "Estimate a manual haul route from the latest logistics source. No pathfinding or hauling yet.", this::displayLatestLogisticsRouteIntent));
                 buttons.add(new ButtonBox("HAUL PREVIEW", bx, by+882, 300, 34, "Preview readiness and warnings for a manual haul order before execution.", this::previewLatestManualHaulOrder));
                 buttons.add(new ButtonBox("HAUL CONTRACT", bx, by+924, 300, 34, "Record a bounded manual haul contract from the current logistics chain. No movement or transfer yet.", this::recordLatestManualHaulContract));
                 buttons.add(new ButtonBox("PREFLIGHT", bx, by+966, 145, 34, "Check whether the latest manual haul contract is plausibly fulfillable before manual execution.", this::preflightLatestManualHaulContract));
@@ -1914,11 +1914,11 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         if (td != null) stack.add(td.inspectLine());
         if (isDoorTile(ch)) stack.add("DOOR SURFACE: " + describeDoor(ch));
         NpcEntity npc = world.npcAt(tx, ty);
-        if (npc != null && vis) stack.add("ENTITY: #" + npc.id + " " + npc.name + " / " + npc.faction.label + " / " + npc.state);
+        if (npc != null && vis) stack.add("ENTITY: " + npc.name + " / " + npc.faction.label + " / " + npc.state);
         BaseObject obj = baseObjectAt(tx, ty);
         if (obj != null && vis) stack.add("BASE OBJECT: " + obj.name + " — " + obj.description);
         MapObjectState mos = world.mapObjectAt(tx, ty);
-        if (mos != null && vis) stack.add("FIXTURE: " + mos.type + " state=" + mos.summary());
+        if (mos != null && vis) stack.add("FIXTURE: " + fixtureInspectionLine(mos));
         PortableLightInstance light = portableLightAt(tx, ty);
         if (light != null && vis) stack.add("PORTABLE LIGHT: " + light.itemName + " / radius " + light.radius + " / expires in ~" + Math.max(1,(light.expiresTurn-turn)/Math.max(1,TURNS_PER_HOUR)) + "h / " + light.placement + ".");
         if (vis || rem) stack.add("LIGHT: " + lightDescriptionAt(tx, ty) + " — level " + lightLevelAt(tx, ty) + "/100.");
@@ -1944,6 +1944,38 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             stack.add("DESTINATION: " + transitionPreview(ch, tx, ty));
         }
         return stack;
+    }
+
+    String fixtureInspectionLine(MapObjectState mos) {
+        if (mos == null) return "unknown fixture.";
+        String label = mos.label == null || mos.label.isBlank()
+                ? (mos.type == null || mos.type.isBlank() ? "Fixture" : mos.type.replace('-', ' '))
+                : mos.label;
+        String status = fixtureStatusText(mos);
+        return status.isBlank() ? label + "." : label + " - " + status;
+    }
+
+    String fixtureStatusText(MapObjectState mos) {
+        if (mos == null) return "";
+        String type = mos.type == null ? "" : mos.type;
+        String stock = mos.stockState == null ? "" : mos.stockState;
+        if (type.contains("vending")) return mos.cooldownUntilTurn > turn ? "restocking; check back later." : "ready to use.";
+        if (type.contains("shrine")) return "available for prayer or inspection.";
+        if (type.equals("shop")) return "trade stock point.";
+        if (type.equals("sector-governor")) return stock.contains("present") ? "the exit papers may be here." : "no exit papers are visible.";
+        if (type.equals("martian-emergency-machine")) return "machine controls are present; inspect or operate if you have access.";
+        if (type.equals("contract-object")) return "sealed objective item.";
+        if (type.equals("corpse-container")) return "searchable remains.";
+        if (type.contains("explosive")) return "dangerous device; keep distance unless prepared.";
+        if (type.contains("newspaper")) return "readable public news source.";
+        if (type.equals("broadcast-device")) return "public broadcast receiver.";
+        if (type.equals("bank-terminal")) return "account access terminal.";
+        if (type.equals("bank-vault")) return stock.contains("open=true") ? "vault is open." : "vault is sealed.";
+        if (type.equals("bank-alarm-panel")) return stock.contains("disabled=true") ? "alarm panel is disabled." : "alarm panel is armed.";
+        if (type.equals("light-fixture")) return "fixed local light source.";
+        if (type.equals("light-switch")) return stock.contains("on=false") ? "local lights are off." : "local lights are on.";
+        if (type.equals("faction-journal")) return "private faction notes.";
+        return "inspectable fixture.";
     }
 
     String describeDoor(char ch) {
@@ -2437,6 +2469,15 @@ void updatePendingInteractionSummary() {
     }
 
     String worldTimeText() { return AgeAndWorldTimeAuthority.worldTimeText(worldTurn); }
+
+    String worldLocationSummary() {
+        if (atlas == null && world == null) return "No active world location.";
+        String sectorName = atlas == null || atlas.hiveWorld == null ? "unmapped" : atlas.hiveWorld.sectorName(atlas.sectorX, atlas.sectorY);
+        String sector = atlas == null ? "unknown sector" : "sector " + atlas.sectorX + "," + atlas.sectorY + " (" + sectorName + ")";
+        String zone = world == null ? "unknown zone" : world.zoneType.label + " " + world.zoneCoordText();
+        String layer = world == null ? "unknown layer" : world.layerText();
+        return sector + "; " + zone + "; " + layer + ".";
+    }
 
     void advancePlayerAndWorldTime(int deltaTurns, String reason) {
         if (deltaTurns <= 0) return;
@@ -6132,7 +6173,7 @@ boolean arbitesAuthorityText(String text) {
         String item = selectedInventoryItemName();
         if (item == null || item.equals("Imperial Script")) { lastTradeReport = "Select a carried item that is not money before selling."; logEvent(lastTradeReport); return; }
         int idx = inventory.indexOf(item);
-        if (idx < 0) { lastTradeReport = "That item is not in the raw carried inventory yet. Itemized counters will be sellable after the next economy pass."; logEvent(lastTradeReport); return; }
+        if (idx < 0) { lastTradeReport = "That item is not in your carried goods list yet. Itemized counters will be sellable after the next economy pass."; logEvent(lastTradeReport); return; }
         int value = activeTrader.sellPrice(item);
         ItemActionResult sold = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, traderShelfContainerId(activeTrader), activeTrader.name + " trader shelf", null, "sold by player to " + activeTrader.name);
         if (!sold.success) { lastTradeReport = "Sale failed: " + sold.playerText; logEvent(lastTradeReport); DebugLog.warn("TRADE_SELL_FAIL", sold.auditText + " state=" + stateSummary()); return; }
@@ -6767,7 +6808,7 @@ boolean arbitesAuthorityText(String text) {
             DebugLog.audit("ATLAS_TRANSITION", "reason="+reason+" old="+(oldWorld!=null?oldWorld.layerText():"none")+" new="+world.layerText()+" zone="+atlas.zoneX+","+atlas.zoneY+" firstType="+firstType+" event="+lastTransitionEvent+" player="+playerX+","+playerY+" state="+stateSummary());
         } catch (Throwable t) {
             DebugLog.error("ATLAS_TRANSITION_FAILED", "Failed to transition: " + reason, t);
-            logEvent("ERROR: transition failed; see logs/current.log.");
+            logEvent("ERROR: transition failed. The diagnostic log has more detail.");
             setScreen(Screen.GAME);
         }
     }
@@ -7712,7 +7753,7 @@ boolean arbitesAuthorityText(String text) {
         if (machine.assignedRecipe == null || machine.assignedRecipe.isBlank()) { logEvent("Manual operation failed: selected machine has no assigned recipe/job."); return; }
         if (ControlledProductionJobAuthority.isGeneratedAssignment(machine.assignedRecipe)) {
             FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
-            if (v == null) { logEvent("Manual operation failed: assigned generated job no longer resolves in the variant registry."); return; }
+            if (v == null) { logEvent("Manual operation failed: assigned generated job is no longer available."); return; }
             if (machine.productionQueueRemaining <= 0) { logEvent("Manual operation blocked: assigned generated job queue is complete. Use QUEUE + or reassign the job to schedule more runs."); return; }
             String problem = ControlledProductionJobAuthority.operationProblem(this, machine, v, true);
             if (problem != null) { logEvent("Manual operation blocked: " + problem); DebugLog.audit("MANUAL_GENERATED_BLOCKED", "machine=" + machine.name + " job=" + v.outputName + " reason=" + problem + " state=" + stateSummary()); return; }
@@ -8607,7 +8648,7 @@ boolean arbitesAuthorityText(String text) {
         if (c == null || c.itemInstanceIds.isEmpty()) return "no visible contents";
         String id = c.itemInstanceIds.get(0);
         ItemInstance inst = itemInstances.get(id);
-        if (inst == null) return "missing registry item " + id;
+        if (inst == null) return "missing item record";
         String trace = inst.provenance == null ? "untraced" : inst.provenance.summary();
         return inst.displayName + " [" + id + "] — " + trace;
     }
@@ -9044,7 +9085,7 @@ boolean arbitesAuthorityText(String text) {
                 DebugLog.error("LOADING_FINALIZER_THREAD_FAILED", "Background loading finalizer crashed kind=" + loadingFinalizationKind, ex);
                 SwingUtilities.invokeLater(() -> {
                     loadingStatus = "Loader failed; returned to main menu.";
-                    loadingDetail = "See logs/errors.log. The background finalizer trapped a hard fault instead of freezing at zero.";
+                    loadingDetail = "Diagnostic details were recorded. The background finalizer trapped a hard fault instead of freezing at zero.";
                     setScreen(Screen.MENU);
                 });
             } finally {
@@ -9228,7 +9269,7 @@ boolean arbitesAuthorityText(String text) {
         } catch (Throwable t) {
             loadingForTransition = false;
             DebugLog.error("LOADING_TRANSITION_FAILED", "Could not finish map transition.", t);
-            logEvent("ERROR: transition loading failed; see logs/current.log.");
+            logEvent("ERROR: transition loading failed. The diagnostic log has more detail.");
             setScreen(Screen.GAME);
         }
     }
@@ -9321,7 +9362,7 @@ boolean arbitesAuthorityText(String text) {
             DebugLog.audit("LOADING_COMPLETE", "progress=" + loadingProgress + " atlas=" + (atlas!=null?atlas.summary():"none") + " state=" + stateSummary());
         } catch (Throwable t) {
             DebugLog.error("LOADING_COMPLETE_FAILED", "Could not finish new-game loading.", t);
-            logEvent("ERROR: underhive generation failed; see logs/errors.log.");
+            logEvent("ERROR: underhive generation failed. Diagnostic details were recorded.");
             setScreen(Screen.MENU);
         }
     }
@@ -9436,7 +9477,7 @@ boolean arbitesAuthorityText(String text) {
             try {
                 g0.setColor(Color.BLACK); g0.fillRect(0,0,Math.max(1, super.getWidth()),Math.max(1, super.getHeight()));
                 g0.setColor(Color.RED); DisplayDensityAuthority.applyTinyTextRenderingHints((Graphics2D)g0); g0.setFont(new Font("Monospaced", Font.BOLD, 16));
-                g0.drawString("RENDER ERROR - see logs/errors.log", 32, 64);
+                g0.drawString("RENDER ERROR - diagnostic details recorded", 32, 64);
             } catch (Throwable ignored) {}
         }
     }
@@ -12055,7 +12096,7 @@ boolean arbitesAuthorityText(String text) {
             } else {
                 ItemDef def = ItemCatalog.get(entry);
                 if (def == null) {
-                    lines.add(tab==2?"Item registry gap":"Weapon registry gap");
+                    lines.add(tab==2?"Item catalog gap":"Weapon catalog gap");
                     lines.add("This entry exists in the menu but is not cataloged. It needs a proper entry before expansion continues.");
                 } else {
                     lines.addAll(def.detailLines());
@@ -12210,9 +12251,9 @@ boolean arbitesAuthorityText(String text) {
         } else if (entry.equals("Render Scaling / CRT Surface")) {
             lines.addAll(renderScaling.infopediaLines());
         } else if (entry.equals("Unified Input Registry / Gamepad Bridge")) {
-            lines.add("Unified input registry / gamepad bridge " + InputRegistry.VERSION + ".");
-            lines.add("Keyboard input is handled by the desktop key path while also writing into the source-aware registry.");
-            lines.add("Gamepad polling runs on a daemon background thread and posts registry updates through SwingUtilities.invokeLater.");
+            lines.add("Unified input and gamepad bridge " + InputRegistry.VERSION + ".");
+            lines.add("Keyboard input is handled by the desktop key path while also updating the shared input state.");
+            lines.add("Gamepad polling runs on a background thread and posts updates safely to the interface.");
             lines.add("The generic fallback schema maps standard SDL/Jamepad face buttons, D-pad, left stick, bumpers, start, and back/select into abstract actions.");
             lines.add("Coexistence rule: keyboard and gamepad own separate source states; releasing one source cannot turn off an action held by the other source.");
             lines.add("Runtime gamepad status: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
@@ -12654,7 +12695,7 @@ boolean arbitesAuthorityText(String text) {
         switch(entry) {
             case "Crafting Overview":
                 lines.add("Crafting system overview");
-                lines.add("Recipes are first-class data entries instead of hidden button-only actions. The WORK panel uses the same registry shown here.");
+                lines.add("Recipes are first-class data entries instead of hidden button-only actions. The WORK panel uses the same recipe list shown here.");
                 lines.add("Crafting checks knowledge, required machine, machine ceiling, pooled supplies, machine parts, carried ingredients, fatigue, and turn cost.");
                 break;
             case "Recipe Requirements":
@@ -12940,7 +12981,7 @@ boolean arbitesAuthorityText(String text) {
         String[] tabs = infopediaTabs();
         g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM));
         String subtitle = isAssetInfopediaTab(infopediaTab)
-                ? "Semantic Asset Index: registry-backed image previews, 8-character IDs, type/purpose, and in-universe descriptions. Type filter: " + SemanticAssetInfopediaAuthority.typeLabel(selectedInfopediaAssetType()) + " | Search: " + (infopediaAssetFilter.isBlank() ? "<none>" : infopediaAssetFilter) + ("infopedia-asset-filter".equals(activeScrollTag) ? " _" : "")
+                ? "Semantic Asset Index: image previews, asset codes, type/purpose, and in-universe descriptions. Type filter: " + SemanticAssetInfopediaAuthority.typeLabel(selectedInfopediaAssetType()) + " | Search: " + (infopediaAssetFilter.isBlank() ? "<none>" : infopediaAssetFilter) + ("infopedia-asset-filter".equals(activeScrollTag) ? " _" : "")
                 : "Zones, rooms, items, weapons, NPC types, and factions. Entries summarize implemented reference rules and intended doctrine.";
         center(g, GuiLayoutApi.fitLabel(subtitle, g.getFontMetrics(), modal.width-70), modal.x+modal.width/2, modal.y+102);
         int listX=modal.x+28, listY=modal.y+120, listW=285, listH=modal.height-180;
@@ -16262,7 +16303,7 @@ String traderShelfContainerId(TraderSession trader) {
     ItemActionResult transferContainerItemResultByInstanceId(String instanceId, String toContainerId, String toLabel, ArrayList<String> toLegacy, String route) {
         if (instanceId == null || instanceId.isBlank()) return ItemActionResult.fail("No item instance ID was supplied.", "container transfer by instance failed: blank id to=" + toContainerId);
         ItemInstance inst = itemInstances.get(instanceId);
-        if (inst == null) return ItemActionResult.fail("Item instance was not present in the operational registry.", "container transfer by instance failed: missing id=" + instanceId + " to=" + toContainerId);
+        if (inst == null) return ItemActionResult.fail("That item record is no longer available.", "container transfer by instance failed: missing id=" + instanceId + " to=" + toContainerId);
         String fromContainerId = inst.containerId;
         String accessProblem = ActorAccessAuthority.containerTransferProblem(this, fromContainerId, toContainerId, route);
         if (accessProblem != null) {
@@ -17568,7 +17609,7 @@ String traderShelfContainerId(TraderSession trader) {
                 int visibleInv = 12;
                 int maxStart = Math.max(0, stackLines.size() - visibleInv);
                 inventoryScroll = Math.max(0, Math.min(inventoryScroll, maxStart));
-                if (!stackLines.isEmpty()) lines.add("Inventory stacks " + stacks.size() + " / raw items " + inventory.size() + " | scroll " + inventoryScroll + "/" + maxStart + " — mouse wheel to inspect carried junk.");
+                if (!stackLines.isEmpty()) lines.add("Carried stacks " + stacks.size() + " / loose items " + inventory.size() + " | scroll " + inventoryScroll + "/" + maxStart + " - mouse wheel to inspect carried goods.");
                 for (int ii=inventoryScroll; ii<Math.min(stackLines.size(), inventoryScroll+visibleInv); ii++) lines.add(stackLines.get(ii));
                 if (stackLines.size() > inventoryScroll + visibleInv) lines.add("  ... more item stacks below ...");
                 lines.add("Base storage items: " + baseStorage.size() + " stack(s pending storage grouping)");
@@ -17634,7 +17675,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Last staffing action: " + lastStaffingAssignmentReport);
                 lines.add("Last logistics forecast: " + lastLogisticsReservationReport);
                 lines.add("Last logistics intent: " + lastLogisticsDeliveryIntentReport);
-                lines.add("Last logistics source token: " + lastLogisticsSourceReservationReport);
+                lines.add("Last logistics source: " + lastLogisticsSourceReservationReport);
                 lines.add("Last logistics route intent: " + lastLogisticsRouteIntentReport);
                 lines.add("Last logistics haul preview: " + lastLogisticsRoutePreviewReport);
                 lines.add("Last logistics haul contract: " + lastLogisticsHaulContractReport);
@@ -17710,19 +17751,19 @@ String traderShelfContainerId(TraderSession trader) {
                         lines.add((i==selectedTradeOffer?" > ":"   ") + o.displayLine(activeTrader.buyPrice(o)));
                     }
                     lines.add("");
-                    lines.add("Trader also buys carried raw inventory. Select an item in INVENTORY first, then return here and SELL.");
+                    lines.add("Trader also buys carried goods. Select an item in INVENTORY first, then return here and SELL.");
                 } else if (activeConversationNpc != null) {
                     lines.add("Conversation: " + activeConversationNpc.name + " — " + activeConversationNpc.role + " — " + activeConversationNpc.faction.label);
                     lines.add("State: " + activeConversationNpc.state + "   Symbol: " + activeConversationNpc.symbol + "   Position: " + activeConversationNpc.x + "," + activeConversationNpc.y);
                     lines.add("Current branch: " + conversationBranch);
                     lines.add("Contracts: " + contractBoardLine(activeConversationNpc.faction));
                     for (FactionContract c : factionContracts) if (!c.completed && c.faction == activeConversationNpc.faction) lines.add("  " + c.longLine());
-                    lines.add("Use GREET, ASK WORK, ASK FACTION, TAKE BOUNTY, TAKE FETCH, TURN IN, or LEAVE. Every choice is written to the in-game log and current.log.");
+                    lines.add("Use GREET, ASK WORK, ASK FACTION, TAKE BOUNTY, TAKE FETCH, TURN IN, or LEAVE. Every choice is recorded in the in-game event log.");
                 } else {
                     lines.add("No active trader or conversation. Depot fallback functions remain available if invoked from old content.");
                 }
                 lines.add("Last trade: " + lastTradeReport);
-                lines.add("All buy, sell, rumor, and haggle choices are written to the in-game log and current.log.");
+                lines.add("All buy, sell, rumor, and haggle choices are recorded in the in-game event log.");
                 break;
             case MAP:
                 if (mapTab == 0) {
@@ -17738,7 +17779,7 @@ String traderShelfContainerId(TraderSession trader) {
                 }
                 break;
             case LOG:
-                lines.add("Recent event/debug log:");
+                lines.add("Recent event log:");
                 lines.addAll(eventLog);
                 break;
             case SAVELOAD:
@@ -17746,7 +17787,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Manual saves: 4 slots. Autosaves: 5-column surface; first two are currently hourly and zone-transition autosaves.");
                 lines.add("Autosave cadence: every in-game hour (" + AUTOSAVE_INTERVAL_TURNS + " turns) and on completed zone transitions; death screen intentionally does not overwrite autosaves.");
                 lines.add("Run state: seed=" + seed + " turn=" + turn + " time=" + timeText() + " player=" + playerX + "," + playerY + " score=" + PlayerDefeatAndScoreAuthority.score(this));
-                lines.add("Atlas: " + (atlas == null ? "no atlas" : atlas.summary()));
+                lines.add("World location: " + worldLocationSummary());
                 lines.add("Character: " + (active == null ? "no active run" : active.name + " / " + active.job));
                 lines.add("Base: " + (baseClaimed ? baseX + "," + baseY + " room=" + claimedRoomId : "none"));
                 lines.add("Run counters: kills=" + runKills + " crafted=" + runCrafted + " talked=" + runNpcTalkedTo + " unconscious=" + runUnconsciousEvents + " knowledge=" + unlockedKnowledges.size() + " zones=" + visitedZoneInstances.size());
@@ -18570,7 +18611,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
                     "Left Stick / D-Pad: Move cursor/player with 0.15 deadzone",
                     "A / South Face: Confirm", "B / East Face: Back", "X / West Face: Inventory", "Y / North Face: Character",
                     "Start: Pause", "Back/Select: Look", "L/R Bumper: zoom out / zoom in",
-                    "Keyboard and controller inputs are source-aware and coexist through the unified registry.",
+                    "Keyboard and controller inputs are source-aware and can be used together.",
                     "Runtime gamepad backend: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
             }
             if (rebindingTarget != null && !rebindingTarget.isEmpty()) lines.add("REBIND FIELD: " + rebindingTarget);
@@ -18581,15 +18622,20 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             lines.add("Target FPS: " + options.targetFpsLabel() + " / Frame limiter " + options.frameLimitLabel() + " / timer delay " + options.targetTimerDelayMs() + "ms");
             lines.add("Render Quality: " + options.renderQualityLabel());
             lines.add("Visual Lighting FX: " + options.lightingFxLabel() + " / render-only deterministic lightmap");
-            lines.add("JVM Profile: " + JvmRuntimeProfileAuthority.auditSummary(jvmRuntimeProfile));
+            lines.add("Runtime Profile: " + jvmRuntimeProfile.targetLabel() + " / memory " + jvmRuntimeProfile.initialRamMb + "-" + jvmRuntimeProfile.maxRamMb + " MB / " + jvmRuntimeProfile.gc.label + ".");
             lines.add("Reduced Motion: " + (options.reducedMotion ? "ON" : "OFF"));
-            lines.add("F3 Performance Diagnostics: " + (options.diagnosticsOverlay ? "ON" : "OFF") + " / " + performanceDiagnostics.auditSummary());
-            lines.add("Frame Metrics: " + frameLimiter.snapshot(renderStressTest.active()).compactLine());
+            lines.add("F3 Performance Overlay: " + (options.diagnosticsOverlay ? "ON" : "OFF") + ".");
+            lines.add("Frame pacing: " + frameLimiter.snapshot(renderStressTest.active()).compactLine());
             lines.add("Imported Portrait Sheets: " + (options.importedPortraits ? "ON" : "OFF"));
             lines.add("Tile Icon Rendering: " + (options.tileIconRendering ? "ON" : "OFF"));
             lines.add("Art Quality Cache: " + options.artQualityLabel() + " / folder " + options.artQualityFolder());
             lines.add("Generated Art Payload: " + options.generatedAssetPayloadRootLabel());
-            try { lines.add("Generated Runtime: manifests=" + AssetManager.generatedAssetRuntime().runtimeManifestPresent() + "/" + AssetManager.generatedAssetRuntime().tierManifestPresent() + " roots=" + AssetManager.generatedAssetRuntime().generatedPayloadRoots()); } catch (Throwable ignored) { lines.add("Generated Runtime: unavailable"); }
+            try {
+                var runtime = AssetManager.generatedAssetRuntime();
+                lines.add("Generated Runtime: " + (runtime.runtimeManifestPresent() && runtime.tierManifestPresent() ? "ready" : "partial") + " / payload roots " + runtime.generatedPayloadRoots().size());
+            } catch (Throwable ignored) {
+                lines.add("Generated Runtime: unavailable");
+            }
             lines.add("Map Tile Size: " + options.mapTileSizeLabel() + " / " + options.mapTilePixelSize() + "px before GUI scale");
             lines.add("Render Scaling Profile: " + renderScaling.profileLabel() + " / option downscale " + renderScaling.downscaleLabel() + " / F10 cycles profiles.");
             lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[options.colorPreset] + " / Editing " + options.colorTargetLabel());
@@ -18621,7 +18667,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
         } else if (optionsTab == 6) {
             ArrayList<String> lines = new ArrayList<>(AccessibilityCompatibilityAuthority.optionLines(options));
             lines.add("Additional diegetic palettes now include Protan Ember, Deutan Steel, Tritan Brass, and Legibility Slate.");
-            lines.add("F3 test path: enable diagnostics, activate a CVD correction, and watch frame time for the extra backbuffer pass.");
+            lines.add("Visual-check path: enable the performance overlay, activate a color-vision correction, and watch frame pacing for the extra backbuffer pass.");
             drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
         } else {
             ArrayList<String> lines = new ArrayList<>(GameplayQualityOfLifeAuthority.optionLines(options));
@@ -19198,7 +19244,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             loadingWatchdogRepeats++;
             DebugLog.warn("LOADING_FINALIZER_WATCHDOG", "Background finalizer still running kind=" + loadingFinalizationKind + " elapsedMs=" + (now - loadingFinalizationStartMillis) + " step=" + loadingStep + " progress=" + loadingProgress + " repeat=" + loadingWatchdogRepeats);
             loadingStatus = "Still finalizing " + loadingFinalizationKind + "...";
-            loadingDetail = "The background finalizer is alive. If this repeats for too long, logs/current.log will show the stuck phase rather than silently freezing.";
+            loadingDetail = "The background finalizer is alive. If this repeats for too long, the diagnostic log will show the stuck phase rather than silently freezing.";
             lastLoadingPulseMillis = now;
         } else if (sincePulse > 2200L && sinceStart > 2200L && loadingProgress < 100) {
             loadingWatchdogRepeats++;
@@ -19216,7 +19262,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             catch (Throwable t) {
                 DebugLog.error("LOADING_PROGRESS_FAILED", "Loader progress tick failed at step=" + loadingStep + " progress=" + loadingProgress + " status=" + loadingStatus, t);
                 loadingStatus = "Loader fault caught; returning to menu.";
-                loadingDetail = "See logs/errors.log. The watchdog caught the failure instead of silently freezing at zero.";
+                loadingDetail = "Diagnostic details were recorded. The watchdog caught the failure instead of silently freezing at zero.";
                 setScreen(Screen.MENU);
             }
         }

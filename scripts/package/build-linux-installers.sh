@@ -21,6 +21,9 @@ CLIENT_PACKAGE_DIR="$PACKAGE_CACHE_DIR/client"
 SERVER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/server"
 SUPPORT_LIB_DIR="$PACKAGE_CACHE_DIR/support/lib"
 LAUNCHER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/launcher"
+LAUNCHER_JAVA_DIR="$PROJECT_ROOT/launcher/java"
+LAUNCHER_JAR_SOURCE="$LAUNCHER_JAVA_DIR/target/mechanist-launcher-0.1.0.jar"
+LAUNCHER_JAR="$LAUNCHER_PACKAGE_DIR/MechanistLauncher.jar"
 CLIENT_ASSET_DIR="$CLIENT_PACKAGE_DIR/assets"
 LAUNCHER_PROFILE_SOURCE_DIR="$PROJECT_ROOT/launcher/profile-packages"
 LAUNCHER_ASSET_STAGER="$PROJECT_ROOT/tools/launcher/stage_launcher_profile_assets.py"
@@ -142,7 +145,7 @@ $line"; fi
   "platform": "linux-x64",
   "launcher": {
     "role": "installed-orchestrator",
-    "main_class": "mechanist.launcher.ThinLauncherMain",
+    "main_class": "mechanist.launcher.MechanistLauncherApp",
     "profile_packages": "packages/launcher/profile-packages",
     "owns": ["wrapper-detection", "fallback-profile-generation", "server-join-identity-bridge", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
   },
@@ -150,7 +153,8 @@ $line"; fi
     "path": "packages/client/$client_name",
     "sha256": "$(sha256_file "$client_jar")",
     "size": $(wc -c < "$client_jar"),
-    "main_class": "mechanist.TheMechanist"
+    "main_class": "mechanist.TheMechanist",
+    "launcher_main_class": "mechanist.launcher.ThinLauncherMain"
   },
   "client_assets": {
     "root": "packages/client/assets",
@@ -191,14 +195,17 @@ rm -rf "$DIST_DIR" "$RUNTIME_DIR" "$INPUT_DIR"
 mkdir -p "$DIST_DIR" "$INPUT_DIR" "$APP_IMAGE_DIR" "$CLIENT_PACKAGE_DIR" "$SERVER_PACKAGE_DIR" "$SUPPORT_LIB_DIR" "$LAUNCHER_PACKAGE_DIR"
 "$PROJECT_ROOT/scripts/security/generate-sensitive-strings.sh"
 mvn -B -DskipTests package
+(cd "$LAUNCHER_JAVA_DIR" && mvn -B -DskipTests package)
 CLIENT_SOURCE="$TARGET_DIR/TheMechanist-all.jar"
 SERVER_SOURCE="$TARGET_DIR/TheMechanistServer-all.jar"
 if [[ ! -s "$CLIENT_SOURCE" ]]; then echo "Required development client jar was not produced: $CLIENT_SOURCE" >&2; exit 4; fi
 if [[ ! -s "$SERVER_SOURCE" ]]; then echo "Required development server jar was not produced: $SERVER_SOURCE" >&2; exit 4; fi
+if [[ ! -s "$LAUNCHER_JAR_SOURCE" ]]; then echo "Required launcher jar was not produced: $LAUNCHER_JAR_SOURCE" >&2; exit 4; fi
 CLIENT_JAR="$CLIENT_PACKAGE_DIR/TheMechanist.jar"
 SERVER_JAR="$SERVER_PACKAGE_DIR/TheMechanistServer.jar"
 cp "$CLIENT_SOURCE" "$CLIENT_JAR"
 cp "$SERVER_SOURCE" "$SERVER_JAR"
+cp "$LAUNCHER_JAR_SOURCE" "$LAUNCHER_JAR"
 stage_runtime_dependencies
 stage_client_runtime_assets
 stage_launcher_profile_packages
@@ -209,13 +216,13 @@ jlink --module-path "$JAVA_HOME/jmods" --add-modules "$CLIENT_MODULES" --output 
 build_package_type() {
     local package_type="$1" extra_args=()
     if [[ -f "$ICON_PATH" ]]; then extra_args+=(--icon "$ICON_PATH"); fi
-    jpackage --type "$package_type" --name "$APP_NAME" --app-version "$APP_VERSION" --vendor "$VENDOR" --description "The Mechanist thin launcher and package orchestrator" --runtime-image "$RUNTIME_DIR" --input "$INPUT_DIR" --main-jar "packages/client/TheMechanist.jar" --main-class "mechanist.launcher.ThinLauncherMain" --dest "$DIST_DIR" --install-dir "/opt/the-mechanist-launcher" --linux-shortcut --linux-menu-group "Game" --resource-dir "$PROJECT_ROOT/packaging/linux/resources" "${extra_args[@]}"
+    jpackage --type "$package_type" --name "$APP_NAME" --app-version "$APP_VERSION" --vendor "$VENDOR" --description "The Mechanist thin launcher and package orchestrator" --runtime-image "$RUNTIME_DIR" --input "$INPUT_DIR" --main-jar "packages/launcher/MechanistLauncher.jar" --main-class "mechanist.launcher.MechanistLauncherApp" --dest "$DIST_DIR" --install-dir "/opt/the-mechanist-launcher" --linux-shortcut --linux-menu-group "Game" --resource-dir "$PROJECT_ROOT/packaging/linux/resources" "${extra_args[@]}"
 }
 
 build_app_image() {
     local extra_args=()
     if [[ -f "$ICON_PATH" ]]; then extra_args+=(--icon "$ICON_PATH"); fi
-    jpackage --type app-image --name "$APP_NAME" --app-version "$APP_VERSION" --vendor "$VENDOR" --description "The Mechanist thin launcher and package orchestrator" --runtime-image "$RUNTIME_DIR" --input "$INPUT_DIR" --main-jar "packages/client/TheMechanist.jar" --main-class "mechanist.launcher.ThinLauncherMain" --dest "$APP_IMAGE_DIR" "${extra_args[@]}"
+    jpackage --type app-image --name "$APP_NAME" --app-version "$APP_VERSION" --vendor "$VENDOR" --description "The Mechanist thin launcher and package orchestrator" --runtime-image "$RUNTIME_DIR" --input "$INPUT_DIR" --main-jar "packages/launcher/MechanistLauncher.jar" --main-class "mechanist.launcher.MechanistLauncherApp" --dest "$APP_IMAGE_DIR" "${extra_args[@]}"
     if [[ -d "$APP_IMAGE_DIR/$APP_NAME" ]]; then
         tar -C "$APP_IMAGE_DIR" -czf "$DIST_DIR/TheMechanist_launcher_linux_portable_${APP_VERSION}.tar.gz" "$APP_NAME"
     else
@@ -234,7 +241,7 @@ The Mechanist Linux installer outputs
 
 Version: $APP_VERSION
 Distribution model: installer -> thin launcher -> client -> server
-Launcher entrypoint: mechanist.launcher.ThinLauncherMain
+Launcher entrypoint: mechanist.launcher.MechanistLauncherApp
 Package identity manifest: manifests/linux-runtime-manifest.json
 Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
 Client runtime assets: packages/client/assets

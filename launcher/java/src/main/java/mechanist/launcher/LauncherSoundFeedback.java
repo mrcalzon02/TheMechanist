@@ -10,11 +10,11 @@ import java.io.InputStream;
 import java.nio.file.Path;
 
 final class LauncherSoundFeedback {
-    private final Path repoDir;
+    private final Path clientPackageDir;
     private final Path launcherDir;
 
     LauncherSoundFeedback(LauncherConfig config) {
-        this.repoDir = config.repoDir;
+        this.clientPackageDir = config.clientPackageDir;
         this.launcherDir = config.launcherDir;
     }
 
@@ -27,8 +27,8 @@ final class LauncherSoundFeedback {
             if (playResource("/" + rel)) return;
             File launcherFile = launcherDir.resolve(rel).toFile();
             if (launcherFile.exists()) { play(launcherFile); return; }
-            File repoFile = repoDir.resolve(rel).toFile();
-            if (repoFile.exists()) { play(repoFile); return; }
+            File clientFile = clientPackageDir.resolve(rel).toFile();
+            if (clientFile.exists()) { play(clientFile); return; }
         }
     }
 

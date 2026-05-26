@@ -11,7 +11,7 @@ Before any development pass, read these documents in order:
 1. `docs/MASTER_DEVELOPMENT_PLAN.md` - current checkpoint, phase order, and movement authority.
 2. `docs/STANDARDS_AND_PRACTICES.md` - durable implementation, build, packaging, asset, UI, Java 17, security, and release-safety rules.
 3. `docs/MASTER_GOVERNANCE_REVISION_II.md` - long-term architecture doctrine and boundary discipline.
-4. `docs/DEVELOPMENT_HISTORY.md` - completed work and historical implementation facts.
+4. `docs/DEVELOPMENT_HISTORY.md` - active milestone-era completion log; older history is archived under `docs/archive/`.
 5. `docs/MILESTONE_INDEX.md` - ordered milestone navigation for detailed phase-group targets.
 6. `docs/LEGACY_MILESTONE_SOURCE_MAP.md` - source/archive map for older topical milestone files.
 
@@ -20,6 +20,8 @@ The Standards file remains hard release law. The Governance file remains design 
 ## Documentation containment
 
 Planning belongs in this master plan or in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`. Completed work belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
+
+The pre-milestone development ledger is archived at `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. Treat that archive as historical context, not the active completion log for milestone-directed work.
 
 The ordered milestone files are a user-ordered durable exception created to prevent the master plan from becoming an unsafe monolith. Do not create additional milestone, supplement, audit, addendum, or planning files unless the user explicitly orders a new phase-aligned document and the material cannot fit into an existing ordered milestone.
 

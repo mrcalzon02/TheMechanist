@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 echo ============================================================
-echo The Mechanist GitHub Launcher
+echo The Mechanist legacy launcher notice
 echo ============================================================
 echo.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0MechanistLauncher.ps1" %*

@@ -1,75 +1,49 @@
 # The Mechanist Installer Layer
 
-This folder contains the first lightweight installer wrapper for the GitHub-backed launcher.
+This folder contains the installer and native-package wrapper surface for the thin launcher.
 
 ## Purpose
 
-The installer does not package the whole game into another archive. Instead, it installs a small launcher/updater locally. That launcher maintains a Git-backed game install and pulls updates from GitHub.
+The installer should place the smallest durable launcher/orchestrator layer needed to start The Mechanist. It should not ask players to download the full development repository, and it should not treat the repository root as the runtime layout.
 
-## Windows
-
-Run:
+The active delivery shape is:
 
 ```text
-installer\windows\INSTALL_THE_MECHANIST_LAUNCHER.bat
+installer -> thin launcher -> client package -> server package
 ```
 
-The installer copies the Windows launcher into:
+## Current Package Model
+
+The installer and native package scripts are moving toward this launcher-managed layout:
 
 ```text
-%LOCALAPPDATA%\TheMechanist\launcher
+manifests/
+packages/launcher/MechanistLauncher.jar
+packages/client/TheMechanist.jar
+packages/server/TheMechanistServer.jar
+packages/support/lib/
 ```
 
-Then it creates:
+The launcher owns manifest verification, local package-seed install/update, rollback repair, and launch handoff. Legacy Git-backed installer scripts now stop with an explanatory message instead of cloning or updating the full development repository.
 
-- a local launcher batch file
-- a desktop shortcut unless disabled
-- a Start Menu shortcut unless disabled
-- an optional first update/clone of the game repository
+## Gate 2 Status
 
-## Linux
+Gate 2 is not complete yet.
 
-Run:
+Local package identity and manifest verification are in place, but publish-safe remote package acquisition still needs an authenticated artifact policy for the private central repository or a public-safe artifact channel. Private Maven or package-host access must be supplied through local credentials outside source control.
+
+## Native Package Builds
+
+Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package\build-windows-installers.ps1
+```
+
+Linux:
 
 ```bash
-chmod +x installer/linux/install-mechanist-launcher.sh
-./installer/linux/install-mechanist-launcher.sh
+./scripts/package/build-linux-installers.sh
 ```
 
-The installer copies the Linux launcher into:
-
-```text
-$XDG_DATA_HOME/TheMechanist/launcher
-```
-
-or:
-
-```text
-$HOME/.local/share/TheMechanist/launcher
-```
-
-Then it creates:
-
-- a `the-mechanist` command wrapper under `$HOME/.local/bin`
-- a desktop entry under `$HOME/.local/share/applications`
-- an optional first update/clone of the game repository
-
-## Current limitations
-
-This is still a lightweight installer wrapper, not a signed production installer.
-
-It still requires:
-
-- Git installed locally
-- GitHub authentication configured locally because the repository is private
-- Java 17+ for the game runtime
-
-## Future installer work
-
-- signed Windows installer
-- Linux AppImage/deb/rpm packaging
-- release channel selector UI
-- self-repair for broken local clones
-- save/settings migration outside tracked Git folders
-- hash/signature validation for release builds
-- security/network hardening bundle
+Full native verification still requires the appropriate local toolchain: Java 17, Maven dependency access, jpackage, Bash for Linux script checks, and platform installer tools where applicable.

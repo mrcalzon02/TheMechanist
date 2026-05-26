@@ -827,8 +827,32 @@ class FactionContract {
         return prefix + tags[r.nextInt(tags.length)];
     }
 
-    String shortLine(){ return id + " " + type.toLowerCase(Locale.ROOT) + " pays " + payout + " script" + (spawned ? " target placed" : " awaiting zone entry"); }
-    String longLine(){ return id + " [" + faction.label + " " + type + "] " + description + " Target zone " + targetZoneKey + ". Reward " + payout + " script, rep +" + repReward + "."; }
+    String shortLine(){ return displayType() + " for " + faction.label + " pays " + payout + " script" + (spawned ? "; target located" : "; awaiting zone entry"); }
+    String longLine(){ return faction.label + " " + displayType() + ": " + displayDescription() + " Location: " + displayLocation() + ". Reward " + payout + " script, rep +" + repReward + "."; }
+    String displayType(){ if ("LOCKBOX".equals(type)) return "lockbox contract"; if ("FETCH".equals(type)) return "fetch contract"; return "bounty contract"; }
+    String displayDescription(){
+        if (description == null || description.isBlank()) return "Contract details pending.";
+        String publicItem = publicRequiredItem();
+        return requiredTurnInItem == null || requiredTurnInItem.isBlank() ? description : description.replace(requiredTurnInItem, publicItem);
+    }
+    String publicRequiredItem(){
+        if (requiredTurnInItem == null || requiredTurnInItem.isBlank()) return "the required item";
+        String lower = requiredTurnInItem.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("ident chip ")) return "the target's ident chip";
+        if (lower.startsWith("sealed object ")) return "the sealed object";
+        return requiredTurnInItem;
+    }
+    String displayLocation(){
+        String[] a = targetZoneKey == null ? new String[0] : targetZoneKey.split(",");
+        if (a.length < 6) return "nearby contract zone";
+        try {
+            int sx = Integer.parseInt(a[0]), sy = Integer.parseInt(a[1]), zx = Integer.parseInt(a[2]), zy = Integer.parseInt(a[3]), floor = Integer.parseInt(a[4]);
+            boolean sewer = Boolean.parseBoolean(a[5]);
+            return (sewer ? "sewer route" : "surface route") + " near sector " + sx + "," + sy + " zone " + zx + "," + zy + " floor " + floor;
+        } catch (RuntimeException ex) {
+            return "nearby contract zone";
+        }
+    }
     String saveLine(){ return String.join("|", id,type,faction.name(),targetZoneKey,targetEntityId,targetName,requiredTurnInItem,Integer.toString(payout),Integer.toString(repReward),Boolean.toString(spawned),Boolean.toString(completed),description); }
     static FactionContract parse(String s){
         String[] a=s.split("\\|",12); if(a.length<12) return null;

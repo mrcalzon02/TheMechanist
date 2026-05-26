@@ -13,11 +13,11 @@ final class ModStateDetector {
 
     static ModState inspect(LauncherConfig config) {
         ArrayList<String> evidence = new ArrayList<>();
-        inspectPath(evidence, config.repoDir.resolve("mods"), "game payload mods directory");
+        inspectPath(evidence, config.clientPackageDir.resolve("mods"), "client package mods directory");
         inspectPath(evidence, config.installRoot.resolve("mods"), "install-root mods directory");
         Path saveParent = config.saveDir.getParent();
         if (saveParent != null) inspectPath(evidence, saveParent.resolve("mods"), "user-data mods directory");
-        inspectOptions(evidence, config.repoDir.resolve("settings/options.properties"));
+        inspectOptions(evidence, config.settingsDir.resolve("options.properties"));
         inspectOptions(evidence, config.settingsDir.resolve("options.properties"));
         return new ModState(!evidence.isEmpty(), List.copyOf(evidence));
     }

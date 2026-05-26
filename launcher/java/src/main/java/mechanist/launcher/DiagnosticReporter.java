@@ -78,21 +78,22 @@ final class DiagnosticReporter {
 
         sb.append("### Paths\n\n");
         sb.append("- Install root: `").append(redactHome(config.installRoot)).append("`\n");
-        sb.append("- Game payload: `").append(redactHome(config.repoDir)).append("`\n");
+        sb.append("- Package root: `").append(redactHome(config.packageRoot)).append("`\n");
         sb.append("- Saves: `").append(redactHome(config.saveDir)).append("`\n");
         sb.append("- Settings: `").append(redactHome(config.settingsDir)).append("`\n");
         sb.append("- Logs: `").append(redactHome(config.logsDir)).append("`\n");
         sb.append("- Cache: `").append(redactHome(config.cacheDir)).append("`\n\n");
+        sb.append("- Package seed: `").append(redactHome(config.packageSeedRoot)).append("`\n\n");
 
         sb.append("### File checks\n\n");
-        appendExists(sb, "Game repo", config.repoDir);
-        appendExists(sb, "Windows BAT launcher", config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.bat"));
-        appendExists(sb, "Windows PS1 launcher", config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.ps1"));
-        appendExists(sb, "Linux launcher", config.repoDir.resolve("PLAY_THE_MECHANIST_LINUX.sh"));
-        appendExists(sb, "Client music manifest", config.repoDir.resolve("packages/client/assets/music/music_manifest.tsv"));
-        appendExists(sb, "Client music WAV root", config.repoDir.resolve("packages/client/assets/music/wav"));
-        appendExists(sb, "Package graphics manifest", config.repoDir.resolve("config/packages/graphics_tiers.tsv"));
-        appendExists(sb, "Package audio manifest", config.repoDir.resolve("config/packages/audio_tiers.tsv"));
+        appendExists(sb, "Runtime manifests", config.manifestDir);
+        appendExists(sb, "Client package root", config.clientPackageDir);
+        appendExists(sb, "Server package root", config.serverPackageDir);
+        appendExists(sb, "Support libraries", config.supportLibraryDir);
+        appendExists(sb, "Client jar", config.clientPackageDir.resolve("TheMechanist.jar"));
+        appendExists(sb, "Server jar", config.serverPackageDir.resolve("TheMechanistServer.jar"));
+        appendExists(sb, "Client music manifest", config.clientPackageDir.resolve("assets/music/music_manifest.tsv"));
+        appendExists(sb, "Client music WAV root", config.clientPackageDir.resolve("assets/music/wav"));
         sb.append("\n");
 
         sb.append("### Recent launcher log excerpt\n\n```text\n");

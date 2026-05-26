@@ -1,73 +1,73 @@
-# The Mechanist Launcher / Updater
+# The Mechanist Launcher Status
 
-This folder contains the first GitHub-backed launcher and updater layer.
+The old Git-backed launcher scripts in this folder are retired as active bootstrap paths.
 
-## Goal
+Gate 2 requires:
 
-The project should no longer require a fresh full archive download after every development step. The canonical project state is now this GitHub repository. A local install can update by pulling changed files from GitHub.
+- installer -> thin launcher -> client/server payloads,
+- manifest-described package identity,
+- client, server, and support-library verification before launch,
+- no full development repository clone just to run the launcher.
 
-## Current launcher model
+The active launcher entrypoint is the Java launcher app packaged as:
 
-The existing root launch scripts remain valid:
+```text
+packages/launcher/MechanistLauncher.jar
+```
 
-- `RUN_THE_MECHANIST_WINDOWS.bat`
-- `RUN_THE_MECHANIST_WINDOWS.ps1`
-- `PLAY_THE_MECHANIST_LINUX.sh`
+Native package scripts stage that launcher jar beside:
 
-The launcher/updater scripts in this folder sit one level above that. They maintain a local clone/install directory, update it from GitHub, and then call the normal run script.
+```text
+manifests/*-runtime-manifest.json
+packages/client/TheMechanist.jar
+packages/server/TheMechanistServer.jar
+packages/support/lib/
+packages/launcher/profile-packages/
+```
 
-## Windows quick start
-
-Run:
+Build platform launcher packages through:
 
 ```powershell
-.\launcher\windows\MechanistLauncher.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\package\build-windows-installers.ps1
 ```
 
-or double-click:
-
-```text
-launcher\windows\RUN_MECHANIST_LAUNCHER.bat
-```
-
-Default install location:
-
-```text
-%LOCALAPPDATA%\TheMechanist\repo
-```
-
-## Linux quick start
-
-Run:
+or:
 
 ```bash
-chmod +x launcher/linux/mechanist-launcher.sh
-./launcher/linux/mechanist-launcher.sh
+./scripts/package/build-linux-installers.sh
 ```
 
-Default install location:
+The legacy `launcher/windows/MechanistLauncher.ps1` and `launcher/linux/mechanist-launcher.sh` now stop with an explanatory message instead of cloning or updating the full repository.
+
+## Local Package Seed Acquisition
+
+The launcher can acquire a verified local package seed without using the network. A seed uses the same layout as the installed package root:
 
 ```text
-$HOME/.local/share/TheMechanist/repo
+manifests/*-runtime-manifest.json
+packages/client/TheMechanist.jar
+packages/server/TheMechanistServer.jar
+packages/support/lib/
 ```
 
-## Private repository note
+Set one of these before running the launcher to point at the seed:
 
-This repository is private. Git authentication must already be available on the machine. The simplest path is to sign in with GitHub Desktop or Git Credential Manager before running the launcher/updater.
+```text
+MECHANIST_LAUNCHER_PACKAGE_SEED_ROOT
+mechanist.launcher.packageSeedRoot
+```
 
-## Art tiers
+Staged runs and smoke checks may also override launcher-managed state roots:
 
-The repository now contains the generated art tiers directly:
+```text
+MECHANIST_LAUNCHER_USER_DATA_ROOT
+MECHANIST_LAUNCHER_ROAMING_CONFIG_ROOT
+MECHANIST_LAUNCHER_LOCAL_STATE_ROOT
+mechanist.launcher.userDataRoot
+mechanist.launcher.roamingConfigRoot
+mechanist.launcher.localStateRoot
+```
 
-- `low_32`
-- `standard_64`
-- `intermediate_128`
-- `high_native`
+The seed manifest is verified before copy. Existing installed package files are backed up under the launcher cache before replacement, and the repair path can restore the latest rollback if verification later fails.
 
-The game still supports generated payload roots, but the launcher path now assumes the integrated repository tree is authoritative.
-
-## Safety policy
-
-The updater preserves local runtime state outside the repository where possible. Saves and logs should not be stored inside tracked repo folders long-term.
-
-This is the first assembled launcher layer. Installer packaging, desktop shortcuts, release channels, signature validation, and network/security hardening remain future passes.
+Runtime manifests must use schema `2`, distribution model `installer-thin-launcher-client-server`, and the current platform identifier such as `windows-x64` or `linux-x64`. Wrong-schema, wrong-model, and wrong-platform seeds are rejected before package files are trusted.

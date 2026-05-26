@@ -25,7 +25,7 @@ final class LauncherIconAuthority {
         for (String rel : ICON_CANDIDATES) {
             addClasspathIcon(icons, "/" + rel);
             addIfPresent(icons, config.launcherDir.resolve(rel));
-            addIfPresent(icons, config.repoDir.resolve(rel));
+            addIfPresent(icons, config.clientPackageDir.resolve(rel));
         }
         return icons;
     }
@@ -35,8 +35,8 @@ final class LauncherIconAuthority {
             if (LauncherIconAuthority.class.getResource("/" + rel) != null) return "bundled launcher icon: /" + rel;
             Path launcher = config.launcherDir.resolve(rel);
             if (Files.isRegularFile(launcher)) return "launcher icon: " + launcher;
-            Path repo = config.repoDir.resolve(rel);
-            if (Files.isRegularFile(repo)) return "game payload icon: " + repo;
+            Path client = config.clientPackageDir.resolve(rel);
+            if (Files.isRegularFile(client)) return "client package icon: " + client;
         }
         return "no PNG window icon found; default Java/window icon will be used";
     }

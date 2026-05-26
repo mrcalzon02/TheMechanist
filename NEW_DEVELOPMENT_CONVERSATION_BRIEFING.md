@@ -1,111 +1,35 @@
-# New Conversation Handoff — The Mechanist 0.9.10kc Core Trim
+# New Conversation Handoff - The Mechanist
 
-## Current state
-The project has completed the graphical source rebase and external art payload split. The core game now carries the bundled `low_32` generated assets required by the active semantic registry. Higher tiers are external packages and must remain out of the core game zip.
+## Current checkpoint
 
-The active core package for the next conversation is:
+The active checkpoint is Phase 4 publish-safe client containment and package/handoff hygiene.
 
-`Mech_0.9.10kc_core_trimmed_handoff.zip`
+Before any code or packaging pass, read:
 
-The active external art package model is:
+1. `docs/MASTER_DEVELOPMENT_PLAN.md`
+2. `docs/STANDARDS_AND_PRACTICES.md`
+3. `docs/MASTER_GOVERNANCE_REVISION_II.md`
+4. `docs/DEVELOPMENT_HISTORY.md`
+5. `docs/MILESTONE_INDEX.md`
+6. `docs/LEGACY_MILESTONE_SOURCE_MAP.md`
 
-- core game: bundled `low_32`
-- optional external package: `standard_64`
-- optional external package: `intermediate_128`
-- optional external package: `high_native` split into four shards
+## Gate status
 
-## Runtime graphics configuration already implemented
-The options/runtime bridge supports:
+Gate 1 documentation and repository hygiene has been checked. The master plan stays concise and points to `MILESTONE_INDEX.md`; the index lists the ordered `00` through `10` milestones; the legacy source map explains where old topical milestone files belong; README remains user-facing; and stale root command-file clutter was removed.
 
-- `generatedAssetPayloadRoot=` in `settings/options.properties`
-- `mechanist.generatedAssetRoot`
-- `mechanist.assetPayloadRoot`
-- `mechanist.assetTier`
-- `mechanist.graphicsTier`
+The pre-milestone development history has been archived at `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. New completed milestone work should be recorded in the fresh active `docs/DEVELOPMENT_HISTORY.md`.
 
-The generated-art runtime supports external payload layouts:
+Gate 2 has started and remains unfinished. The first slices retired the active full-repository Git launcher path, moved native package entrypoints toward `packages/launcher/MechanistLauncher.jar`, and added launcher-side manifest verification for client/server/support packages. The launcher now discovers nearby app-image package layouts, supports install-root and package-seed overrides for staged verification/acquisition, verifies support-library hashes from the runtime manifest, installs from a verified local seed, can repair from rollback, and rejects wrong-schema or wrong-platform manifests. Remaining Gate 2 work is publish-safe authentication for private artifact access or a public-safe artifact channel, remote acquisition/update policy, package trust/signature metadata, and full Maven/jpackage/native packaging verification.
 
-- `assets/graphics/generated/<tier>/<sheet>/<file>.png`
-- `exports/<tier>/<sheet>/<file>.png`
+Gate 3 has begun with small player-facing readability slices. Faction contract display lines now avoid internal contract IDs, raw target-zone keys, and generated ident-chip IDs, replacing them with readable contract type, faction, route, and turn-in wording. `FactionContractDisplaySmoke` covers this behavior. Inventory, workshop logistics, event log, save/load, command, diagnostics, loading, trade/conversation, options, look/auspex inspection, error handling, and reference-panel text have also been tightened to avoid raw/debug/token/atlas/log-plumbing/registry phrasing in ordinary UI. The launcher server-join identity bridge was updated to the current special-profile package API, leaving old celebrity package names only as legacy aliases.
 
-The UI exposes:
+## Active boundaries
 
-- `PAYLOAD`
-- `CLEAR PAYLOAD`
-- `ART QUALITY`
+- Keep detailed planning in the ordered milestone sequence rather than adding new loose planning files.
+- Treat legacy topical milestone files as source/archive material only.
+- Keep client launchers under `client/launchers/`, launcher bootstrap work under `launcher/`, installer work under `installer/`, server launch material under `client/server/`, and developer tooling under `tools/` or `scripts/`.
+- Do not expand into broad worldgen, live external mod loading, public multiplayer networking, or unrelated simulation systems during the current package/handoff line.
 
-## What was trimmed before handoff
-The package was aggressively culled to remove old phase-output documentation, generated QA payloads, build smoke artifacts, logs, saves, duplicated manifests, legacy registry previews, old import tools, installer/deployment scaffolding, obfuscation/security scaffolding, and accidental `.class` files inside `src/`.
+## Next pass
 
-The active retained runtime indexes are:
-
-- `assets/indexes/semantic_asset_registry.tsv`
-- `assets/indexes/semantic_portrait_entity_partitions.tsv`
-- `assets/indexes/runtime_asset_manifest.json`
-- `assets/indexes/tier_path_manifest.json`
-
-The active retained generated art payload inside the core is:
-
-- `assets/graphics/generated/low_32/...`
-
-## Installer/security status
-Installer packaging and network/security hardening were intentionally deferred. They should not be forced into this conversation's final package. The next conversation should resume them as separate phases after validating that the trimmed core launches correctly.
-
-## Recommended next phases
-
-### Phase J — Trimmed Core Launch Validation
-Validate that the trimmed package launches on Windows and Linux using the root launch scripts. Confirm bundled `low_32` art loads without an external payload. Confirm that choosing an external `standard_64` payload changes resolved generated asset paths.
-
-### Phase K — Semantic QA Promotion
-Continue replacing unresolved or legacy semantic registry rows and attach richer tags/use-cases to generated assets so room/faction/object selection becomes semantically meaningful rather than merely path-resolvable.
-
-### Phase L — Installer Packaging
-Only after the trimmed runtime is verified, rebuild Windows/Linux installers around the trimmed package. The installer should not include external high-tier art by default. It should include UI/path support for selecting optional art packages.
-
-### Phase M — Network/Security Hardening
-Revisit the network security bundle after core runtime and installers are stable. Treat security hardening as a focused implementation phase with smoke tests, not as incidental packaging sprawl.
-
-## Do not regress these rules
-- Do not re-import old art trees into the core zip.
-- Do not bundle `standard_64`, `intermediate_128`, or `high_native` into the core zip.
-- Do not keep generated QA contact sheets or old phase payloads in the runnable project.
-- Do not resurrect the unified TAR as the player-facing art distribution method.
-- Keep `low_32` bundled as the safe fallback.
-
-
----
-
-# The Mechanist 0.9.10kc — Final Download Path Index
-
-## Core game / development handoff package
-- `Mech_0.9.10kc_core_trimmed_handoff.zip`
-
-This is the lean current core package. It contains the Java source, root runnable jars, Windows/Linux launch scripts, active settings/config, active runtime indexes, bundled `low_32` generated art required by the active semantic registry, and concise handoff documentation.
-
-## External art packages
-Keep `low_32` bundled in the core game. Do not create a separate low-tier package.
-
-Download/install external tiers separately:
-
-- `mechanist_generated_art_payload_0.9.10kc_standard_64.zip`
-- `mechanist_generated_art_payload_0.9.10kc_intermediate_128.zip`
-- `mechanist_generated_art_payload_0.9.10kc_high_native_part01_of_04.zip`
-- `mechanist_generated_art_payload_0.9.10kc_high_native_part02_of_04.zip`
-- `mechanist_generated_art_payload_0.9.10kc_high_native_part03_of_04.zip`
-- `mechanist_generated_art_payload_0.9.10kc_high_native_part04_of_04.zip`
-
-## External art install rule
-Extract the desired tier package to a folder and select that folder in:
-
-`Options > Performance/Graphics > PAYLOAD`
-
-Then choose the matching:
-
-`Options > Performance/Graphics > ART QUALITY`
-
-For high/native, extract all four shard zips into the same payload folder and let the directories merge. The expected merged layout is:
-
-`assets/graphics/generated/high_native/<sheet>/<file>.png`
-
-## Important packaging note
-The earlier unified high/native TAR and single high/native ZIP are superseded. The distribution path is now tier-specific zip packages, with high/native split into four shards.
+Continue the Gate 2/Gate 3 bridge without pretending Gate 2 is closed: keep remote/private artifact acquisition marked open until publish-safe authentication exists, and continue local/offline-verifiable package and player-facing polish slices. Next package work should make the installer -> thin launcher -> client/server payload chain executable from the native app-image without relying on the full development repository layout.

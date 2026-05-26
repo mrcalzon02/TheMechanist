@@ -10,6 +10,7 @@ This document contains durable rules. It is not a changelog. When a pass complet
   - `DEVELOPMENT_HISTORY.md`
   - `MASTER_GOVERNANCE_REVISION_II.md`
 - The user explicitly ordered one specialized durable exception: `STAGED_ASSET_INTEGRATION_PLAN.md`. It exists only to preserve the long semantic-asset migration path and must not become a changelog or general planning dump. When the migration is complete, either merge its remaining durable rules into this file/master plan or archive it deliberately.
+- The pre-milestone development ledger is archived at `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. It is read-only historical context; new completed work belongs in the active `docs/DEVELOPMENT_HISTORY.md`.
 - Do not add other pass-specific Markdown files, audit notes, architecture notes, addenda, index summaries, or temporary planning documents unless the user explicitly orders a separate artifact.
 - If a pass introduces a rule, put the durable rule here.
 - If a pass changes the roadmap, put the planning change in the master plan.

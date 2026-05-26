@@ -46,8 +46,12 @@ public final class LauncherServerJoinIdentityBridge {
         p.setProperty("launcher.profile.file", normalize(profile.profileFile()));
         p.setProperty("launcher.profile.portrait.package", profile.portraitPackage());
         p.setProperty("launcher.profile.portrait.id", profile.portraitId());
-        p.setProperty("launcher.profile.celebrity.portrait.package", profile.celebrityPackage());
-        p.setProperty("launcher.profile.celebrity.name.package", profile.celebrityNamePackage());
+        p.setProperty("launcher.profile.special.portrait.package", profile.specialPortraitPackage());
+        p.setProperty("launcher.profile.special.name.package", profile.specialNamePackage());
+        p.setProperty("launcher.profile.special.publish_status", "quarantined-until-cleared");
+        // Compatibility aliases only. Do not treat these as active package identities.
+        p.setProperty("launcher.profile.celebrity.portrait.package.legacy", LauncherFallbackProfileAuthority.LEGACY_CELEBRITY_PORTRAIT_PACKAGE);
+        p.setProperty("launcher.profile.celebrity.name.package.legacy", LauncherFallbackProfileAuthority.LEGACY_CELEBRITY_NAME_PACKAGE);
         p.setProperty("launcher.wrapper.kind", wrapper.kind().name());
         p.setProperty("launcher.wrapper.steam_app_id", wrapper.steamAppId());
         p.setProperty("launcher.wrapper.steam_game_id", wrapper.steamGameId());

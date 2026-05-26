@@ -19,14 +19,14 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class MechanistLauncherApp {
     private final LauncherConfig config = LauncherConfig.defaults();
-    private final GitInstallService git = new GitInstallService(config, this::appendLog);
+    private final PackageInstallService packages = new PackageInstallService(config);
     private final LauncherSoundFeedback sound = new LauncherSoundFeedback(config);
     private final DiagnosticReporter diagnostics = new DiagnosticReporter(config);
     private final List<PackageTier> graphicsTiers = PackageCatalog.defaultGraphicsTiers(config);
@@ -76,7 +76,7 @@ public final class MechanistLauncherApp {
         JPanel p = new JPanel(new BorderLayout(10, 8));
         p.setOpaque(false);
         JLabel title = LauncherTheme.title("THE MECHANIST");
-        JLabel sub = LauncherTheme.subtitle("StellarCore launcher — install, update, repair, diagnostics, package selection, and runtime verification");
+        JLabel sub = LauncherTheme.subtitle("StellarCore launcher - manifest verification, diagnostics, package selection, and runtime launch");
         p.add(title, BorderLayout.NORTH);
         p.add(sub, BorderLayout.SOUTH);
         return p;
@@ -149,7 +149,7 @@ public final class MechanistLauncherApp {
         LauncherTheme.tooltip(audioTier, "Choose the desired music/audio package. Core includes the main menu music target; half maps one song per major zone; full includes variants.");
         addRow(rows, g, "Audio", audioTier);
 
-        JLabel hint = LauncherTheme.subtitle("Selections are written before launch and during install/update.");
+        JLabel hint = LauncherTheme.subtitle("Selections are written before launch and package verification.");
         g.gridx = 0; g.gridy++; g.gridwidth = 2; g.weightx = 1;
         rows.add(hint, g);
         p.add(rows, BorderLayout.CENTER);
@@ -162,7 +162,7 @@ public final class MechanistLauncherApp {
         JPanel rows = formRows();
         GridBagConstraints g = rowConstraints();
         addRow(rows, g, "Install", LauncherTheme.value(config.installRoot.toString()));
-        addRow(rows, g, "Game", LauncherTheme.value(config.repoDir.toString()));
+        addRow(rows, g, "Packages", LauncherTheme.value(config.packageRoot.toString()));
         addRow(rows, g, "Saves", LauncherTheme.value(config.saveDir.toString()));
         addRow(rows, g, "Logs", LauncherTheme.value(config.logsDir.toString()));
         p.add(rows, BorderLayout.CENTER);
@@ -214,8 +214,8 @@ public final class MechanistLauncherApp {
         buttons.setOpaque(false);
         GridBagConstraints b = new GridBagConstraints();
         b.insets = new Insets(0, 5, 0, 5);
-        installUpdate = button("Install / Update", "Download or fast-forward the selected game channel and then write package/path selections.", () -> runTask("Install / Update", false));
-        repair = button("Repair", "Clean and reset the local game payload from the selected channel. Use when files are missing or local edits block updates.", () -> runTask("Repair", true));
+        installUpdate = button("Verify Packages", "Verify the manifest-described client, server, and support package set without cloning a full repository.", () -> runTask("Verify Packages", false));
+        repair = button("Repair Check", "Re-run manifest/package verification. Missing packages must be restored from a verified package seed or future acquisition route.", () -> runTask("Repair Check", true));
         JButton writeSelections = button("Apply Package Settings", "Write the selected graphics/audio package and runtime paths without updating or launching.", this::writePackageSelections);
         JButton runtimeInfo = button("Runtime Info", "Show Java, OS, path, package, modified-content, and icon/runtime information for support and verification.", this::showRuntimeInfo);
         JButton reportIssue = button("Diagnostics", "Prepare a redacted diagnostic report with client hash, install state, errors, and bounded log excerpts. If active mods are detected, the launcher warns that modded reports are not accepted for base-game triage.", this::prepareDiagnostics);
@@ -255,8 +255,7 @@ public final class MechanistLauncherApp {
         appendLog("=== " + name + " ===");
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override protected Void doInBackground() throws Exception {
-                if (!git.gitAvailable()) throw new IOException("Git is required. Install Git for Windows or your platform package manager, then sign in for private repo access.");
-                if (doRepair) git.repair(selectedBranch()); else git.installOrUpdate(selectedBranch());
+                if (doRepair) packages.repair(selectedBranch()); else packages.installOrUpdate(selectedBranch());
                 RuntimeSelectionWriter.writeSelections(config,
                         PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
                         PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
@@ -265,7 +264,7 @@ public final class MechanistLauncherApp {
             @Override protected void done() {
                 try {
                     get();
-                    appendLog(name + " complete. Package selections written to settings/options.properties.");
+                    appendLog(name + " complete. Runtime manifest and package hashes verified.");
                     lastUpdateStatus = name + " complete.";
                     status.setText(name + " complete.");
                 } catch (Exception ex) {
@@ -288,7 +287,7 @@ public final class MechanistLauncherApp {
             RuntimeSelectionWriter.writeSelections(config,
                     PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
                     PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
-            appendLog("Package selections written to " + config.repoDir.resolve("settings/options.properties"));
+            appendLog("Package selections written to " + config.settingsDir.resolve("options.properties"));
             refreshState();
         } catch (Exception ex) {
             sound.warning();
@@ -340,19 +339,18 @@ public final class MechanistLauncherApp {
 
     private void launchGame() {
         setBusy(true, "Launching game...");
-        appendLog("Launching from " + config.repoDir);
+        appendLog("Launching verified client package from " + config.packageRoot);
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override protected Void doInBackground() throws Exception {
                 RuntimeSelectionWriter.writeSelections(config,
                         PackageCatalog.effectiveGraphicsTier(graphicsTiers, selectedGraphicsTier()),
                         PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier()));
-                Path bat = config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.bat");
-                Path ps1 = config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.ps1");
-                Path linux = config.repoDir.resolve("PLAY_THE_MECHANIST_LINUX.sh");
-                if (Files.isRegularFile(bat)) ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "cmd", "/c", bat.toString());
-                else if (Files.isRegularFile(ps1)) ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "powershell", "-ExecutionPolicy", "Bypass", "-File", ps1.toString());
-                else if (Files.isRegularFile(linux)) ProcessRunner.run(config.repoDir, MechanistLauncherApp.this::appendLog, "bash", linux.toString());
-                else throw new IOException("No platform game launcher was found. Run Install / Update first.");
+                Path clientJar = packages.clientJar();
+                ArrayList<String> classpath = new ArrayList<>();
+                classpath.add(clientJar.toString());
+                for (Path support : packages.supportJars()) classpath.add(support.toString());
+                ProcessRunner.run(config.installRoot, MechanistLauncherApp.this::appendLog,
+                        javaCommand(), "-cp", String.join(System.getProperty("path.separator"), classpath), "mechanist.launcher.ThinLauncherMain");
                 return null;
             }
             @Override protected void done() {
@@ -384,15 +382,16 @@ public final class MechanistLauncherApp {
         PackageTier audio = PackageCatalog.effectiveAudioTier(audioTiers, selectedAudioTier());
         if (effectiveGraphics != null) effectiveGraphics.setText(graphics == null ? "missing low_32 fallback" : graphics.toString());
         if (effectiveAudio != null) effectiveAudio.setText(audio == null ? "silence fallback" : audio.toString());
-        launch.setEnabled(git.gameLauncherPresent());
-        if (git.gameLauncherPresent()) status.setText("Game installed. Ready to update, apply package settings, report diagnostics, or launch.");
-        else status.setText("Game not installed yet. Press Install / Update.");
+        boolean ready = packages.gameLauncherPresent();
+        launch.setEnabled(ready);
+        if (ready) status.setText("Packages verified. Ready to apply package settings, report diagnostics, or launch.");
+        else status.setText("No verified package set yet. Press Verify Packages or install a package seed.");
     }
 
     private void setBusy(boolean busy, String message) {
         installUpdate.setEnabled(!busy);
         repair.setEnabled(!busy);
-        launch.setEnabled(!busy && git.gameLauncherPresent());
+        launch.setEnabled(!busy && packages.gameLauncherPresent());
         progress.setIndeterminate(busy);
         progress.setString(busy ? message : "Idle");
         status.setText(message);
@@ -402,5 +401,15 @@ public final class MechanistLauncherApp {
         if (log == null) return;
         log.append(text + System.lineSeparator());
         log.setCaretPosition(log.getDocument().getLength());
+    }
+
+    private static String javaCommand() {
+        Path javaHome = Path.of(System.getProperty("java.home", ""));
+        Path candidate = javaHome.resolve("bin").resolve(isWindows() ? "java.exe" : "java");
+        return Files.isRegularFile(candidate) ? candidate.toString() : "java";
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase().contains("win");
     }
 }

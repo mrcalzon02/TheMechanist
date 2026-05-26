@@ -11,8 +11,8 @@ final class RuntimeSelectionWriter {
     private RuntimeSelectionWriter() {}
 
     static void writeSelections(LauncherConfig config, PackageTier graphicsTier, PackageTier audioTier) throws IOException {
-        Files.createDirectories(config.repoDir.resolve("settings"));
-        Path options = config.repoDir.resolve("settings/options.properties");
+        Files.createDirectories(config.settingsDir);
+        Path options = config.settingsDir.resolve("options.properties");
         Properties props = new Properties();
         if (Files.isRegularFile(options)) {
             try (InputStream in = Files.newInputStream(options)) {
@@ -23,7 +23,7 @@ final class RuntimeSelectionWriter {
         if (graphicsTier != null) {
             props.setProperty("mechanist.graphicsTier", graphicsTier.id);
             props.setProperty("mechanist.assetTier", graphicsTier.id);
-            Path clientAssetRoot = config.repoDir.resolve("packages/client/assets");
+            Path clientAssetRoot = config.clientPackageDir.resolve("assets");
             props.setProperty("generatedAssetPayloadRoot", clientAssetRoot.toString());
             props.setProperty("mechanist.generatedAssetRoot", clientAssetRoot.toString());
             props.setProperty("mechanist.assetPayloadRoot", clientAssetRoot.toString());
@@ -31,13 +31,14 @@ final class RuntimeSelectionWriter {
 
         if (audioTier != null) {
             props.setProperty("mechanist.audioTier", audioTier.id);
-            Path clientAssetRoot = config.repoDir.resolve("packages/client/assets");
+            Path clientAssetRoot = config.clientPackageDir.resolve("assets");
             props.setProperty("mechanist.musicRoot", clientAssetRoot.resolve("music/wav").toString());
             props.setProperty("mechanist.musicManifest", clientAssetRoot.resolve("music/music_manifest.tsv").toString());
         }
 
         props.setProperty("mechanist.installRoot", config.installRoot.toString());
         props.setProperty("mechanist.gameRoot", config.gameRoot.toString());
+        props.setProperty("mechanist.packageRoot", config.packageRoot.toString());
         props.setProperty("mechanist.saveRoot", config.saveDir.toString());
         props.setProperty("mechanist.settingsRoot", config.settingsDir.toString());
         props.setProperty("mechanist.profileRoot", config.profilesDir.toString());

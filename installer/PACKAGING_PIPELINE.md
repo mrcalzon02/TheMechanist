@@ -38,7 +38,17 @@ packages/support/lib/*.jar
 
 The platform runtime manifest records package identity, version, platform, paths, sizes, hashes, and main classes. The launcher must treat that manifest as the package identity source of truth.
 
+The same layout may be used as a local package seed for acquisition testing. The launcher reads `MECHANIST_LAUNCHER_PACKAGE_SEED_ROOT` or `mechanist.launcher.packageSeedRoot`, verifies the seed manifest and listed artifacts, copies them into the install root, and stores rollback backups under the launcher cache before replacement.
+
+Manifest compatibility is part of package identity. Current launcher verification accepts schema `2`, distribution model `installer-thin-launcher-client-server`, and the platform matching the running launcher, such as `windows-x64` or `linux-x64`.
+
 Required support libraries such as LWJGL, platform native LWJGL jars, controller bridges such as Jamepad or its successor, Netty when used by a launched package, and future support libraries must be staged into `packages/support/lib/` by the packaging/update/acquisition stage. Game launchers and the client runtime must not download support libraries opportunistically during game startup.
+
+## Gate 2 open authentication dependency
+
+Gate 2 remains unfinished until publish-safe artifact authentication is defined and verified. The central project repository and any private Maven/GitHub Packages artifacts require explicit credentials outside source control, such as a local Maven `settings.xml` server entry or environment-backed token wiring. Do not hard-code credentials in this tree.
+
+Until that is in place, local package-seed verification and rollback smoke tests are valid, but remote acquisition/update readiness and full native package release readiness must remain marked open.
 
 ## Native package scripts
 
