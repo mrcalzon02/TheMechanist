@@ -1,8 +1,8 @@
-# Milestone 01 - Asset Semantics and Content Promotion
+# Milestone 01 - Asset Semantics, Content Promotion, Mod API, and Example Mods
 
-This ordered milestone document consolidates planning for semantic asset IDs, unused asset discovery, publish-safe asset clearance, world-usable asset promotion, optional art-pack handling, low_32 lean runtime packaging, blueprint-ready asset metadata, agriculture/animal/pet assets, luxury/draught assets, faction-market goods, editor palette promotion, and asset release audits.
+This ordered milestone document consolidates planning for semantic asset IDs, unused asset discovery, publish-safe asset clearance, world-usable asset promotion, optional art-pack handling, low_32 lean runtime packaging, blueprint-ready asset metadata, agriculture/animal/pet assets, luxury/draught assets, faction-market goods, editor palette promotion, Mod API examples, example mods, public modding documentation, and asset/content release audits.
 
-`MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is an ordered phase-aligned implementation target for the asset semantics/content-promotion slice of that roadmap.
+`MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is an ordered phase-aligned implementation target for the asset semantics/content-promotion/modding-documentation slice of that roadmap.
 
 This document is not a changelog. Completed implementation still belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules still belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine still belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
 
@@ -13,10 +13,12 @@ This milestone aligns and partially absorbs material from:
 - `MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md`
 - `MILESTONE_PARITY_BLUEPRINTS_AND_FACTION_MARKETS.md` where blueprint-ready room and asset definitions are required
 - `MILESTONE_SUPPLEMENT_NOBLE_LUXURY_NARCOTICS_AND_DRAUGHT_TRADE.md` where luxury, narcotic, vault, and draught assets require semantic promotion
-- `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md` where semantic names, player-facing labels, and Infopedia links depend on stable entries
+- `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md` where semantic names, player-facing labels, controller glyphs, prompts, and Infopedia links depend on stable entries
 - `MILESTONE_03_PRODUCTION_KNOWLEDGE_SKILLS_AND_ITEM_QUALITY.md` where quality bands, produced item variants, and factional mutations require stable asset categories
 - `MILESTONE_04_POPULATION_PROVENANCE_ECONOMY_AND_FACTION_MARKETS.md` where vendor goods, market fixtures, legal states, and provenance states require stable asset definitions
 - `MILESTONE_05_CONSTRUCTION_BLUEPRINTS_OWNERSHIP_AND_PLAYER_FACTION_PARITY.md` where rooms and assets need blueprint-ready definitions
+- `MILESTONE_06_VEHICLES_STRUCTURAL_SCALE_AND_STRATEGIC_POWER.md` where vehicles, feedback icons, sound hooks, headlights, and component assets require semantic definitions
+- `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` where room stamps and district stamps consume semantic palettes
 - `MILESTONE_ROADMAP_REORGANIZATION_AND_PHASE_ALIGNMENT.md`
 
 The older topical files should remain in place until their contents are fully absorbed into the ordered milestone sequence and the user explicitly approves archival, deprecation, or cleanup.
@@ -26,14 +28,14 @@ The older topical files should remain in place until their contents are fully ab
 Primary phase groups:
 
 - Phase 2 - Master asset integration and world-usable asset promotion.
-- Phase 18 - Editor, localization, modding, and content pipeline.
+- Phase 18 - Editor, localization, modding, Mod API, example mods, documentation, and content pipeline.
 - Phase 19 - Polish, packaging, QA, and release audit.
 
 Secondary dependencies:
 
 - Phase 0 - Governance, documentation, and build/package hygiene.
-- Phase 4 - UI/readability surfaces that require player-facing asset labels and no raw ID leakage.
-- Phase 6 - Production systems that consume item, machine, tool, recipe, and quality asset definitions.
+- Phase 4 - UI/readability surfaces that require player-facing asset labels, prompt glyphs, and no raw ID leakage.
+- Phase 6 - Production systems that consume item, machine, tool, recipe, quality, and Mod API content definitions.
 - Phase 9 - Item provenance and facility origin systems that depend on stable goods, fixtures, and source categories.
 - Phase 10 - Vehicle and component assets.
 - Phase 12 - Construction and blueprint systems.
@@ -44,7 +46,9 @@ Secondary dependencies:
 
 Graphical files are not automatically game content. The project may contain thousands of images, icons, tiles, portraits, overlays, room details, and object graphics, but those files only become durable game assets when they receive semantic identity, ownership, usage context, publish-safe status, and runtime/package rules.
 
-The asset pipeline must distinguish:
+Example mods and Mod API documentation are also not optional decoration. They are part of the public extension surface. If example mods teach old APIs, direct raw asset paths, obsolete package layouts, unsafe launcher assumptions, or pre-semantic content patterns, they train every future modder to build against the wrong architecture. Example mods must be treated as living compliance fixtures for the current standards.
+
+The asset/content/modding pipeline must distinguish:
 
 - File present.
 - File referenced.
@@ -59,14 +63,19 @@ The asset pipeline must distinguish:
 - File blueprint-ready.
 - File eligible for world generation.
 - File eligible for Infopedia/reference display.
+- File exposed through public Mod API.
+- File used by an example mod.
+- File safe for public documentation screenshots/examples.
 
-The game should never depend on fragile direct file paths when a stable semantic ID is required.
+The game should never depend on fragile direct file paths when a stable semantic ID is required. Public mod examples should never normalize fragile direct path usage when semantic IDs, registries, manifests, or approved APIs exist.
 
 ## Dependency rule
 
 Asset promotion precedes broad content placement. Agriculture, animal, and pet asset promotion precedes farm/garden/animal/pet room-stamp generation and pet ownership systems. Noble luxury and draught asset promotion precedes noble estate vault placement and draught item systems. Blueprint-ready asset definitions precede construction parity and faction-room blueprint sales. Vehicle component asset promotion precedes vehicle body schemas and factories. Provenance-ready item definitions precede economy/vendor claims.
 
-If an asset cannot be classified, cleared, or given a stable semantic identity, it should remain a candidate or placeholder rather than silently becoming shipped game content.
+Mod API examples depend on stable enough APIs, package layout rules, semantic asset registries, manifest/update behavior, and public documentation standards. Example mods should not be updated by copying whatever internal code happens to work. They should demonstrate the intended supported extension path.
+
+If an asset, API hook, example mod, or documentation snippet cannot be classified, cleared, or given a stable semantic identity, it should remain a candidate or internal draft rather than silently becoming shipped public guidance.
 
 ## Phase 2 - Master asset integration and promotion
 
@@ -104,12 +113,15 @@ Inventory categories should include:
 - Faction art.
 - Room-stamp details.
 - UI icons.
+- Controller glyphs.
 - Editor icons.
 - Overlays.
 - Hazards.
 - Lighting/visibility cues.
 - Objective/highlight cues.
 - Sound hook declarations where asset-backed.
+- Example-mod assets.
+- Documentation/example screenshots or illustrative assets.
 
 Exit criteria:
 
@@ -130,6 +142,8 @@ Unused assets should be classified as:
 - Superseded by better resolution.
 - Quarantined.
 - Needs source/license review.
+- Needed by example mod.
+- Needed by documentation.
 - Dead inventory.
 
 Exit criteria:
@@ -150,9 +164,11 @@ Clearance states include:
 - Needs original-setting rename.
 - Needs likeness review.
 - Needs protected-term review.
+- Needs example-mod review.
+- Needs documentation review.
 - Unknown.
 
-No unclear asset should be promoted into a public package without a clearance status.
+No unclear asset should be promoted into a public package, example mod, or public documentation without a clearance status.
 
 Exit criteria:
 
@@ -176,11 +192,13 @@ Semantic entries should include:
 - Invalid contexts.
 - Fallback behavior.
 - Editor category.
+- Mod API exposure status.
+- Example-mod eligibility.
 - Infopedia category where relevant.
 
 Exit criteria:
 
-Worldgen, UI, editor, Infopedia, room stamps, item definitions, and package tooling can consume assets through stable IDs.
+Worldgen, UI, editor, Infopedia, room stamps, item definitions, package tooling, and public mod examples can consume assets through stable IDs.
 
 ### Phase 2.5 - World-usable asset promotion pass
 
@@ -199,17 +217,17 @@ World-usable definitions should record:
 - Placement constraints.
 - Room/facility contexts.
 - Damage/durability class where applicable.
-- Whether it can appear through worldgen, construction, vendor display, inventory, decoration, or editor placement.
+- Whether it can appear through worldgen, construction, vendor display, inventory, decoration, editor placement, or example mod usage.
 
 Exit criteria:
 
-Assets become usable by rooms, facilities, items, machines, hazards, UI, and editor surfaces without one-off path hacks.
+Assets become usable by rooms, facilities, items, machines, hazards, UI, editor surfaces, and examples without one-off path hacks.
 
 ### Phase 2.6 - Placeholder-to-candidate distinction pass
 
 Placeholder art handles should be treated as candidates, not finished implementation.
 
-A placeholder may appear in diagnostics, editor preview, or internal staging, but must not silently masquerade as release-ready content.
+A placeholder may appear in diagnostics, editor preview, internal staging, or explicitly labeled example scaffolding, but must not silently masquerade as release-ready content.
 
 Exit criteria:
 
@@ -268,10 +286,12 @@ Blueprint-ready entries should record:
 - Required materials, tools, skills, knowledge, workforce, and time.
 - Whether the player can buy, earn, steal, reverse engineer, salvage, research, or capture the blueprint.
 - Whether factions can generate, build, stock, repair, expand, defend, or lose the same asset.
+- Whether the definition is public Mod API eligible.
+- Whether an example mod demonstrates the definition.
 
 Exit criteria:
 
-Faction room stamps and player construction options can share asset definitions rather than diverging.
+Faction room stamps, player construction options, and public examples can share asset definitions rather than diverging.
 
 ### Phase 2.10 - Vehicle and component asset promotion pass
 
@@ -295,6 +315,8 @@ Asset categories include:
 - Cargo beds.
 - Weapons mounts.
 - Sensors.
+- Headlights/lamp units.
+- Operation indicators.
 - Fuel systems.
 - Repair parts.
 - Component crates.
@@ -395,7 +417,7 @@ Exit criteria:
 
 Asset expansion does not undermine the old-machine viability target.
 
-## Phase 18 - Editor, audit, and Infopedia support
+## Phase 18 - Editor, audit, Mod API, example mods, and Infopedia support
 
 ### Phase 18.1 - Editor palette promotion pass
 
@@ -415,6 +437,8 @@ Editor palettes should support:
 - Publish-safe filters.
 - Placeholder/internal filters.
 - Optional-pack filters.
+- Mod API eligible filters.
+- Example-mod eligible filters.
 
 Exit criteria:
 
@@ -435,6 +459,8 @@ Editor/audit surfaces should inspect:
 - Blueprint readiness.
 - Worldgen readiness.
 - Infopedia readiness.
+- Mod API exposure status.
+- Example-mod usage status.
 - Placeholder/quarantine status.
 - Direct path fallback incidents.
 
@@ -462,6 +488,112 @@ Exit criteria:
 
 Asset display text can be made publish-safe and localization-ready.
 
+### Phase 18.5 - Mod API standards and inclusion pass
+
+The public Mod API should be revised against the current standards before it is treated as a supported extension surface.
+
+The pass should review:
+
+- Public API package boundaries.
+- Supported extension points.
+- Unsupported/internal APIs.
+- Semantic asset registry access.
+- Item, recipe, room, faction, tile, entity, sound, UI, localization, blueprint, and worldgen contribution APIs where exposed.
+- Manifest requirements.
+- Version and compatibility declarations.
+- Dependency declarations.
+- Optional art-pack override rules.
+- Launcher/client/server package expectations.
+- Save/load compatibility expectations.
+- Error reporting and diagnostics.
+- Publish-safe naming and asset rules.
+- Sandbox/safety boundaries where future external mods are allowed.
+
+Exit criteria:
+
+The Mod API documentation describes the intended supported surface rather than whatever internal classes happen to be reachable.
+
+### Phase 18.6 - Example mod revision pass
+
+Example mods must be updated to demonstrate the new standards.
+
+Example mods should demonstrate, where appropriate:
+
+- Correct mod manifest format.
+- Semantic asset registration.
+- Localization/text-key usage.
+- Publish-safe naming.
+- Item registration.
+- Recipe registration.
+- Room or stamp contribution where supported.
+- Entity or faction contribution where supported.
+- Sound hook registration where supported.
+- Optional art-pack override declaration where supported.
+- UI/Infopedia entry contribution where supported.
+- Compatibility/version declaration.
+- Java 17 build expectations where code mods exist.
+- Client/server/package boundary expectations.
+- Safe failure when an optional dependency or asset is missing.
+
+Example mods must not demonstrate:
+
+- Raw direct asset path hacks where semantic IDs are required.
+- Editing core files as the normal mod path.
+- Relying on full development repo layout.
+- Launcher/client/server boundary violations.
+- Unsafe public networking, live classpath mutation, or unsupported runtime code loading.
+- Placeholder IP/protected naming as public examples.
+- Hardcoded player-facing strings where localization keys are required.
+
+Exit criteria:
+
+Example mods teach the desired architecture instead of preserving old accidental patterns.
+
+### Phase 18.7 - Modding documentation revision pass
+
+Public modding documentation should be updated alongside example mods.
+
+Documentation should include:
+
+- What is supported now.
+- What is internal only.
+- What is planned but not supported yet.
+- How to structure a mod package.
+- How to declare dependencies.
+- How to register semantic assets.
+- How to add localization strings.
+- How to add items, recipes, rooms, or other supported content.
+- How optional art packs differ from gameplay/content mods.
+- How the installer -> thin launcher -> client/server package path affects mods.
+- How to test a mod locally.
+- How to diagnose missing assets, bad manifests, version mismatches, and unsupported APIs.
+- How publish-safe review applies to examples.
+
+Exit criteria:
+
+A future modder can follow public documentation and example mods without reverse-engineering old internal assumptions.
+
+### Phase 18.8 - Example mod and API audit surface pass
+
+Audit tooling should inspect example mods and public API documentation.
+
+Audit checks should include:
+
+- Example mod manifests parse.
+- Example mod assets have semantic IDs.
+- Example mod strings use localization keys where required.
+- Example mod assets have publish-safe status.
+- Example mod docs reference current APIs.
+- Example mods do not reference deleted/internal/obsolete APIs.
+- Example mods do not require the full development repo layout.
+- Example mods do not bypass launcher/client/server boundaries.
+- Example mods document non-goals and unsupported features.
+- Example mod packaging can be validated independently.
+
+Exit criteria:
+
+Example mods and Mod API documentation can be tested as compliance fixtures rather than manually trusted.
+
 ## Phase 19 - Release audit
 
 Before release claims for this milestone, verify:
@@ -481,10 +613,14 @@ Before release claims for this milestone, verify:
 - Asset expansion does not break startup, package size, memory, or old-hardware viability targets.
 - Editor/audit surfaces can inspect asset definitions.
 - Infopedia/player-facing labels avoid raw IDs and placeholder labels.
+- Public Mod API documentation reflects the current supported API surface.
+- Example mods use semantic assets, manifests, localization, version declarations, and publish-safe content.
+- Example mods do not rely on direct core-file edits, full repo layout, obsolete APIs, raw asset path hacks, or unsupported launcher/client/server boundary violations.
+- Example mods and modding docs clearly distinguish supported, internal-only, and future-planned features.
 
 Exit criteria:
 
-The game may claim asset promotion readiness only when graphical files have stable semantic identity, publish-safe status, usage context, runtime tier ownership, fallback behavior, and audit visibility.
+The game may claim asset promotion readiness, modding documentation readiness, or example-mod readiness only when graphical files, public examples, and documented APIs have stable semantic identity, publish-safe status, usage context, runtime/package ownership, fallback behavior, audit visibility, and alignment with the current standards.
 
 ## Non-goals for this milestone
 
@@ -496,6 +632,12 @@ This milestone does not replace optional art-pack implementation. It defines the
 
 This milestone does not make placeholder assets publish-safe. It requires placeholders to remain identifiable until replaced or explicitly approved for a temporary tier.
 
+This milestone does not guarantee public live mod loading, hot classpath mutation, multiplayer mod distribution, or external networked mod acquisition. Those remain closed unless future architecture, safety, package, and test gates explicitly open them.
+
+This milestone does not require exposing every internal system as public Mod API. It requires public documentation and example mods to match the intentionally supported surface.
+
 ## Deferred checkpoint summary
 
-The project must promote assets deliberately. Assets should be inventoried, classified, cleared, assigned semantic IDs, and given valid usage contexts before they are consumed by world generation, construction, vendors, Infopedia, pets, vehicles, noble estates, draught vaults, or production systems. The lean runtime should preserve low_32 assets for old-machine viability, while optional higher-quality packs provide overrides through validated semantic registries rather than fragile path replacement.
+The project must promote assets deliberately. Assets should be inventoried, classified, cleared, assigned semantic IDs, and given valid usage contexts before they are consumed by world generation, construction, vendors, Infopedia, pets, vehicles, noble estates, draught vaults, production systems, example mods, or public Mod API documentation. The lean runtime should preserve low_32 assets for old-machine viability, while optional higher-quality packs provide overrides through validated semantic registries rather than fragile path replacement.
+
+Example mods and Mod API documentation must be revised to the new standards before they are used as public guidance. They should demonstrate manifests, semantic assets, localization keys, supported APIs, package boundaries, version declarations, safe fallback behavior, and publish-safe content. They must not teach obsolete direct path hacks, core-file editing, full-repo dependency assumptions, unsupported launcher/client/server violations, or internal APIs as if they were public extension points.
