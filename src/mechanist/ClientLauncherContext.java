@@ -16,6 +16,7 @@ import java.util.Properties;
  */
 public final class ClientLauncherContext {
     private static volatile Snapshot cached;
+    private static volatile JoinIdentity joinIdentityCached;
 
     public record Snapshot(
             boolean present,
@@ -33,18 +34,22 @@ public final class ClientLauncherContext {
             String celebrityPortraitPackage,
             String celebrityNamePackage
     ) {
-        public boolean isSteamWrapped() {
-            return "STEAM".equalsIgnoreCase(wrapperKind);
-        }
-
-        public boolean isGogWrapped() {
-            return "GOG".equalsIgnoreCase(wrapperKind);
-        }
-
-        public boolean isWrapped() {
-            return isSteamWrapped() || isGogWrapped();
-        }
+        public boolean isSteamWrapped() { return "STEAM".equalsIgnoreCase(wrapperKind); }
+        public boolean isGogWrapped() { return "GOG".equalsIgnoreCase(wrapperKind); }
+        public boolean isWrapped() { return isSteamWrapped() || isGogWrapped(); }
     }
+
+    public record JoinIdentity(
+            boolean present,
+            Path identityFile,
+            String profileId,
+            String profileHash,
+            String auxiliaryProfileHash,
+            String wrapperKind,
+            String steamAppId,
+            String gogGameId,
+            String launcherContextFile
+    ) {}
 
     public static Snapshot current() {
         Snapshot local = cached;
@@ -63,18 +68,37 @@ public final class ClientLauncherContext {
     public static Snapshot reload() {
         synchronized (ClientLauncherContext.class) {
             cached = load();
+            joinIdentityCached = null;
             return cached;
         }
+    }
+
+    public static JoinIdentity joinIdentity() {
+        JoinIdentity local = joinIdentityCached;
+        if (local == null) {
+            synchronized (ClientLauncherContext.class) {
+                local = joinIdentityCached;
+                if (local == null) {
+                    local = loadJoinIdentity(current());
+                    joinIdentityCached = local;
+                }
+            }
+        }
+        return local;
     }
 
     public static Optional<Path> contextPathFromSystemProperty() {
         String value = System.getProperty("mechanist.launcher.context", "").trim();
         if (value.isEmpty()) return Optional.empty();
-        try {
-            return Optional.of(Path.of(value).toAbsolutePath().normalize());
-        } catch (RuntimeException ex) {
-            return Optional.empty();
-        }
+        try { return Optional.of(Path.of(value).toAbsolutePath().normalize()); }
+        catch (RuntimeException ex) { return Optional.empty(); }
+    }
+
+    public static Optional<Path> joinIdentityPathFromSystemProperty() {
+        String value = System.getProperty("mechanist.launcher.joinIdentity", "").trim();
+        if (value.isEmpty()) return Optional.empty();
+        try { return Optional.of(Path.of(value).toAbsolutePath().normalize()); }
+        catch (RuntimeException ex) { return Optional.empty(); }
     }
 
     private static Snapshot load() {
@@ -106,22 +130,60 @@ public final class ClientLauncherContext {
         }
     }
 
+    private static JoinIdentity loadJoinIdentity(Snapshot snapshot) {
+        Optional<Path> identityPath = joinIdentityPathFromSystemProperty();
+        if (identityPath.isEmpty() || !Files.isRegularFile(identityPath.get())) {
+            return new JoinIdentity(
+                    false,
+                    identityPath.orElse(null),
+                    snapshot.profileId(),
+                    snapshot.profileHash(),
+                    snapshot.profileHash(),
+                    snapshot.wrapperKind(),
+                    snapshot.steamAppId(),
+                    snapshot.gogGameId(),
+                    snapshot.contextFile() == null ? "" : snapshot.contextFile().toAbsolutePath().normalize().toString()
+            );
+        }
+        Properties p = new Properties();
+        try (var in = Files.newInputStream(identityPath.get())) {
+            p.load(in);
+            return new JoinIdentity(
+                    true,
+                    identityPath.get(),
+                    prop(p, "server_join.profile_id", prop(p, "profile.id", snapshot.profileId())),
+                    prop(p, "server_join.profile_hash", prop(p, "profile.hash", snapshot.profileHash())),
+                    prop(p, "security.auxiliary_profile_hash", snapshot.profileHash()),
+                    prop(p, "server_join.wrapper_kind", snapshot.wrapperKind()),
+                    prop(p, "launcher.wrapper.steam_app_id", snapshot.steamAppId()),
+                    prop(p, "launcher.wrapper.gog_game_id", snapshot.gogGameId()),
+                    prop(p, "launcher.context.file", snapshot.contextFile() == null ? "" : snapshot.contextFile().toAbsolutePath().normalize().toString())
+            );
+        } catch (IOException ex) {
+            return new JoinIdentity(
+                    false,
+                    identityPath.get(),
+                    snapshot.profileId(),
+                    snapshot.profileHash(),
+                    snapshot.profileHash(),
+                    snapshot.wrapperKind(),
+                    snapshot.steamAppId(),
+                    snapshot.gogGameId(),
+                    snapshot.contextFile() == null ? "" : snapshot.contextFile().toAbsolutePath().normalize().toString()
+            );
+        }
+    }
+
     private static Snapshot fromSystemPropertiesOnly(Path path) {
         return new Snapshot(
                 false,
                 path,
                 normalizeWrapper(System.getProperty("mechanist.launcher.wrapper", "NONE")),
-                "",
-                "",
-                "",
+                "", "", "",
                 "system-properties-only",
                 System.getProperty("mechanist.launcher.profile", ""),
                 System.getProperty("mechanist.launcher.profileHash", ""),
-                "",
-                "",
-                "",
-                "",
-                ""
+                "", "", "", "", ""
         );
     }
 
