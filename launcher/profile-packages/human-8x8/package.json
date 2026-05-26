@@ -1,13 +1,21 @@
 {
-  "schema": 1,
+  "schema": 2,
   "package_id": "launcher-human-8x8-v1",
   "owner": "thin-launcher",
   "purpose": "fallback-client-profile-human-portrait-seed",
   "description": "Launcher-safe minimal 8x8 human portrait package used for fallback client profile generation before the full client asset catalog is available.",
+  "source_policy": {
+    "mode": "map-existing-client-source-asset",
+    "required_existing_asset_hint": "8X8 Source",
+    "do_not_generate_replacement_art": true,
+    "do_not_copy_full_client_portrait_catalog": true,
+    "exact_asset_path_status": "pending-source-tree-location-audit"
+  },
   "grid": {
     "columns": 8,
     "rows": 8,
-    "expected_entries": 64
+    "expected_entries": 64,
+    "source_cell_order": "row-major"
   },
   "selection_rule": "profile.hash modulo 64",
   "allowed_scope": [
