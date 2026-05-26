@@ -1,170 +1,346 @@
-# Milestone Index and Phase Partition Map
+# Milestone Index and Ordered Phase-Aligned Map
 
-This document is a controlled index for distributed milestone documents. It exists because `MASTER_DEVELOPMENT_PLAN.md` has grown large enough that some detailed phase clusters should be maintained in separate milestone documents rather than expanded through repeated full-file replacement.
+This document is the navigation surface for the ordered milestone system. It replaces the earlier candidate/topical milestone map with the current phase-aligned `00` through `09` sequence.
 
-`MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is a secondary navigation aid for milestone-sized phase groups and must be referenced from the master plan during the next safe index patch.
+`MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is the milestone navigation index. Individual ordered milestone files carry detailed implementation targets for large phase groups.
 
-## Document ownership rule
+This document is not a changelog. Completed implementation belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
 
-Milestone documents are allowed only when a phase cluster becomes too large or too detailed to safely maintain inside the master plan.
+## Document authority rule
 
-Milestone documents must:
+Read planning and implementation documents in this order:
 
-- Map back to existing master-plan phase numbers.
-- Group related work by functional milestone.
-- Preserve the master plan's dependency logic.
-- Include player-facing goals, data/editor implications, release-audit implications, and non-goals.
-- Avoid becoming changelogs, scratchpads, or disconnected design dumps.
-- Avoid raw implementation claims unless code/data has actually been implemented.
+1. `MASTER_DEVELOPMENT_PLAN.md` - roadmap authority, active checkpoint, phase boundaries, and dependency map.
+2. `STANDARDS_AND_PRACTICES.md` - durable implementation, build, packaging, coding, and release-safety rules.
+3. `MASTER_GOVERNANCE_REVISION_II.md` - high-level governance and doctrine.
+4. `DEVELOPMENT_HISTORY.md` - completed implementation history.
+5. Ordered milestone documents - detailed phase-aligned implementation targets.
+6. Legacy topical milestone and supplement files - source/archive material until fully absorbed and explicitly cleaned up.
 
-Milestone documents must not replace:
+If documents conflict, do not guess. Prefer the master plan for roadmap authority, standards for implementation rules, governance for doctrine, and the newest ordered milestone for detailed implementation targeting unless the user explicitly overrides.
 
-- `MASTER_DEVELOPMENT_PLAN.md` for roadmap authority.
-- `DEVELOPMENT_HISTORY.md` for completed work.
-- `STANDARDS_AND_PRACTICES.md` for durable implementation rules.
-- `MASTER_GOVERNANCE_REVISION_II.md` for high-level doctrine.
+## Ordered milestone sequence
 
-## Current milestone documents
+### `MILESTONE_00_GOVERNANCE_PACKAGE_AND_INDEX.md`
 
-### `MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md`
+Focus:
 
-Phase groups:
+- Milestone reading order.
+- Anti-sprawl rules.
+- Package and publish-safe gates.
+- Active checkpoint discipline.
+- Codex handoff rules.
+- Legacy milestone cleanup policy.
 
-- Phase 2 - Asset promotion.
-- Phase 4 - UI/input/render feedback.
-- Phase 16 - World generation and room stamps.
-- Phase 17 - Economy, ownership, pets, and care.
-- Phase 18 - Editor/audit content pipeline.
-- Phase 19 - Release audit.
+Primary function:
 
-Scope:
+This is the capstone and rulebook for using the ordered milestone set without creating a second unmanaged planning pile.
 
-- Farms.
-- Gardens.
-- Hydroponics.
-- Mushroom beds.
-- Cloning rooms.
-- Incubators.
-- Animal pens.
-- Livestock rooms.
-- Pet zoos.
-- Pet vendors.
-- Kennels.
-- Catteries.
-- Rodent cages.
-- Pet buying/adoption.
-- Pet ownership and naming.
-- Pet feeding, watering, and care.
-- Mandatory pettible flags for non-hostile pets.
-- Dog head pats.
-- Cat scritches.
-- Mouse and rat nose boops.
-- Bark, meow, purr, squeak, chitter, and equivalent feedback hooks.
-- Hostile, inaccessible, owner-forbidden, frightened, or unsafe interaction blocks.
+### `MILESTONE_01_ASSET_SEMANTICS_AND_CONTENT_PROMOTION.md`
 
-Status:
+Focus:
 
-- Created as a controlled milestone document.
-- Needs a small `MASTER_DEVELOPMENT_PLAN.md` index reference during a safe master-plan patch.
-- Issue #38 remains the recovery/migration tracker until the master plan has a direct pointer to the milestone.
+- Semantic asset IDs.
+- Asset Tools integration.
+- Unused asset discovery.
+- Publish-safe asset clearance.
+- World-usable asset promotion.
+- Optional art packs.
+- Low_32 lean runtime tier.
+- Agriculture, animal, pet, noble, draught, vehicle, quality, and blueprint-ready asset definitions.
 
-## Candidate future milestone partitions
-
-These are not created yet. They are candidate groups to prevent the master plan from becoming unreadable or unsafe to edit.
-
-### Candidate - Asset Promotion and Package Readiness
-
-Likely phase groups:
+Primary phases:
 
 - Phase 2.
 - Phase 18 asset/editor portions.
 - Phase 19 asset release-audit portions.
 
-Purpose:
+### `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md`
 
-Track semantic asset IDs, unused asset discovery, publish-safe asset clearance, optional art packs, low_32 lean runtime packaging, external registry declaration rules, editor palette integration, and release audit requirements.
+Focus:
 
-### Candidate - Population, Provenance, and Economic Identity
+- `Look` versus `Examine`.
+- Intelligence-based entity examination.
+- Refreshed intent and state checks.
+- Character-sheet-like examination screens.
+- Body-plan and injury approximation.
+- Quest objective arrows and pulsing highlights.
+- Pet interaction feedback.
+- Access, ownership, construction, and market denial messages.
+- Infopedia hot linking and deep entries.
 
-Likely phase groups:
+Primary phases:
+
+- Phase 4.
+- Phase 14 readability portions.
+- Phase 15 biography/social identity portions.
+- Phase 17 quest/pet/economy readability portions.
+- Phase 18 Infopedia/editor portions.
+- Phase 19 UI/readability audits.
+
+### `MILESTONE_03_PRODUCTION_KNOWLEDGE_SKILLS_AND_ITEM_QUALITY.md`
+
+Focus:
+
+- Knowledge-quality fabrication.
+- Machine and facility knowledge.
+- Blueprint and schematic quality.
+- Skill tree separate from Knowledge Tree.
+- XP-based skill progression.
+- Item quality bands.
+- Production inspection and forecasting.
+- Quality provenance.
+- Factional production mutations.
+- Batch defects, counterfeit, and contamination.
+
+Primary phases:
+
+- Phase 6.
+- Phase 9 quality provenance portions.
+- Phase 15 skill tree portions.
+- Phase 17 trainer/specialist portions.
+- Phase 18 editor/Infopedia portions.
+- Phase 19 production-quality audits.
+
+### `MILESTONE_04_POPULATION_PROVENANCE_ECONOMY_AND_FACTION_MARKETS.md`
+
+Focus:
+
+- Population provenance.
+- Workforce identity.
+- Item provenance.
+- Supply ecology.
+- Faction vendors.
+- Critical suppliers.
+- Food, water, weapons, ammunition, medical, construction, animal, and pet markets.
+- Illicit narcotics faction production and sale.
+- Noble luxury, narcotics, and draught trade.
+- Rare off-world draught items as extremely valuable vault goods.
+
+Primary phases:
 
 - Phase 8.
 - Phase 9.
-- Phase 17 economy/contract portions.
-- Phase 19 provenance audit portions.
+- Phase 16 vendor/facility placement portions.
+- Phase 17 economy/vendor portions.
+- Phase 18 editor/Infopedia portions.
+- Phase 19 economy/provenance audits.
 
-Purpose:
+### `MILESTONE_05_CONSTRUCTION_BLUEPRINTS_OWNERSHIP_AND_PLAYER_FACTION_PARITY.md`
 
-Track population provenance, workforce identity, item provenance, facility production, contract sources, role-aware labor, reinforcement origins, and the bridge between who exists and who made or handled a thing.
+Focus:
 
-### Candidate - Vehicles, Structural Scale, and Strategic Power
+- Player/faction construction parity.
+- Room and asset blueprints.
+- Blueprint legality and access.
+- Permits, licenses, restricted plans, stolen plans, black-market plans.
+- Ownership categories.
+- Construction validation and blueprint execution.
+- Player expansion heat and suspicion.
+- Blueprint vendors and representatives.
+- Symmetric faction acquisition.
 
-Likely phase groups:
-
-- Phase 10.
-- Phase 14 vehicle/combat portions.
-- Phase 16 vehicle district portions.
-- Phase 19 vehicle release-audit portions.
-
-Purpose:
-
-Track vehicle assets, component factories, manufacturers, body schemas, damage models, repairs, ownership, road-only movement, motor pools, APCs, tanks, strategic faction power, and comparative damage/durability scale.
-
-### Candidate - Ages of Control and Faction Schemes
-
-Likely phase groups:
-
-- Phase 11.
-- Phase 16 Ages-of-Control worldgen integration.
-- Phase 17 scheme quest lifecycle portions.
-- Phase 19 scheme release-audit portions.
-
-Purpose:
-
-Track historical zone generation, room control, faction expansion, concessions, assaults, sabotage, political schemes, cross-zone plans, active gameplay scheme activation, visible events, and scheme-quest windows.
-
-### Candidate - Quest Lifecycle, Guidance, Evidence, and Standing
-
-Likely phase groups:
-
-- Phase 4 quest overlay portions.
-- Phase 17 quest/contract portions.
-- Phase 18 scheme quest editor/audit portions.
-- Phase 19 quest release-audit portions.
-
-Purpose:
-
-Track quest lifecycle timing, non-synchronized activation times, minimum two-day active windows, planning/execution/cooldown states, NPC countdowns, neutral missed-quest standing behavior, objective arrows, pulsing highlights, zero-weight quest items, proof-of-death evidence, and compact player-facing mission text.
-
-### Candidate - Construction, Ownership, Heat, and Player-Faction Emergence
-
-Likely phase groups:
+Primary phases:
 
 - Phase 7.
 - Phase 12.
-- Phase 17 player expansion heat portions.
-- Phase 19 expansion heat release-audit portions.
+- Phase 16 construction/vendor placement portions.
+- Phase 17 blueprint economy and expansion heat portions.
+- Phase 18 editor/Infopedia portions.
+- Phase 19 parity/construction audits.
 
-Purpose:
+### `MILESTONE_06_VEHICLES_STRUCTURAL_SCALE_AND_STRATEGIC_POWER.md`
 
-Track access checks, ownership categories, player-owned rooms, machines, vehicles, bases, defenses, player expansion heat, suspicion, faction attention thresholds, and the transition from individual survival to faction-scale visibility.
+Focus:
+
+- Vehicle classes and variants.
+- Vehicle component schemas.
+- Vehicle integrity and endurance.
+- Manufacturers, models, and variants.
+- Vehicle factories and component factories.
+- Vehicle provenance ledgers.
+- Vehicle ownership and access.
+- Road, parking, garage, depot, and sidewalk movement constraints.
+- Mounted weapon scale.
+- Structural target scale.
+- APCs and tanks as sector-level balance-of-power assets.
+
+Primary phases:
+
+- Phase 10.
+- Phase 14 vehicle/combat/structural portions.
+- Phase 16 vehicle facility portions.
+- Phase 17 vehicle doctrine/contracts portions.
+- Phase 18 vehicle editor/Infopedia portions.
+- Phase 19 vehicle/structural audits.
+
+### `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md`
+
+Focus:
+
+- Ages of Control.
+- Historical zone generation.
+- Leadership schemes.
+- Room control changes.
+- Visible active scheme events.
+- Planning, execution, and cooldown quest lifecycles.
+- Minimum two-day active quest windows.
+- Non-synchronized activation times.
+- Zero-weight quest-critical items.
+- Proof-of-death evidence.
+- Leadership journals and sellable intelligence.
+
+Primary phases:
+
+- Phase 11.
+- Phase 16 Ages-of-Control/worldgen integration.
+- Phase 17 scheme quests/intelligence sale portions.
+- Phase 18 editor/Infopedia portions.
+- Phase 19 scheme/quest/intelligence audits.
+
+### `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md`
+
+Focus:
+
+- Body-state simulation.
+- Wounds, pain, bleeding, infection, shock.
+- Field treatment.
+- Clinic treatment.
+- Surgery.
+- Recovery, treatment risk, and failure.
+- Prosthetics.
+- Cybernetics.
+- Prosthetic/cybernetic quality and malfunction.
+- Medical skills.
+- Narcotics and drug body effects.
+- Addiction/dependency framework if implemented later.
+
+Primary phases:
+
+- Phase 9 medical item/provenance portions.
+- Phase 14 body/health/medical/cybernetic portions.
+- Phase 15 body identity and skill portions.
+- Phase 17 clinic/vendor/trainer portions.
+- Phase 18 editor/Infopedia portions.
+- Phase 19 medical/body audits.
+
+### `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md`
+
+Focus:
+
+- Asset Tools-driven worldgen asset discovery.
+- Semantic asset palettes.
+- Zone families.
+- District stamps.
+- Room stamps.
+- Facility stamps.
+- Road, alley, parking, frontage, sewer, and maintenance corridors.
+- Residential, market, industrial, medical, security, civic, temple, noble, illicit, agriculture, animal, pet, vehicle, hazard, and utility spaces.
+- Faction theme integration.
+- Vendor, NPC, workforce, container, loot, journal, and evidence anchors.
+- Ages of Control room mutation.
+- Active scheme room events.
+
+Primary phases:
+
+- Phase 2 asset readiness portions.
+- Phase 8/9/10/11 provenance dependencies.
+- Phase 12 construction/ownership context.
+- Phase 16 worldgen/stamp implementation.
+- Phase 17 economy/vendor/pet/quest context.
+- Phase 18 editor/Infopedia portions.
+- Phase 19 worldgen/stamp audits.
+
+## Legacy topical files and supplements
+
+The following topical files remain source material until explicitly archived, deprecated, or deleted by user approval:
+
+- `MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md`
+- `MILESTONE_EXAMINATION_AND_INFOPEDIA_SYSTEMS.md`
+- `MILESTONE_PARITY_BLUEPRINTS_AND_FACTION_MARKETS.md`
+- `MILESTONE_KNOWLEDGE_SKILLS_MEDICAL_AND_FABRICATION_SYSTEMS.md`
+- `MILESTONE_SUPPLEMENT_ILLICIT_NARCOTICS_FACTION_PRODUCTION.md`
+- `MILESTONE_SUPPLEMENT_NOBLE_LUXURY_NARCOTICS_AND_DRAUGHT_TRADE.md`
+- `MILESTONE_ROADMAP_REORGANIZATION_AND_PHASE_ALIGNMENT.md`
+
+Current status:
+
+- Their key planning content has been aligned into the ordered milestone sequence.
+- They should not be treated as the primary implementation entry point.
+- They should not be deleted without explicit user approval.
+- A later cleanup pass may mark them as superseded, move them to an archive folder, or delete them after verification.
 
 ## Master-plan patch target
 
-During the next safe `MASTER_DEVELOPMENT_PLAN.md` patch, add a short reference near `## Durable phase roadmap`:
+The next safe master-plan edit should add a compact reference to this index rather than listing every milestone file.
+
+Suggested master-plan reference:
 
 ```text
-Detailed phase-group expansions may live in controlled milestone documents when the master plan becomes unsafe to edit monolithically. See `docs/MILESTONE_INDEX.md` for the active milestone map and `docs/MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md` for agriculture, animal-room, pet-room, pet-entity, pet-care, and pettible-interaction roadmap details.
+Detailed phase-group expansions are maintained in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`. The master plan remains the authoritative roadmap and phase map; ordered milestones provide implementation-depth targets for Codex and later development passes.
 ```
 
-Also update the master plan dependency rule to include:
-
-```text
-agricultural, animal, and pet asset promotion precedes farm/garden/animal/pet room-stamp generation and pet ownership systems
-```
+This keeps `MASTER_DEVELOPMENT_PLAN.md` from becoming a giant list of every milestone document.
 
 ## Anti-sprawl rule
 
-Do not create a milestone document merely because an idea is large. Create one only when a functional phase group has enough detailed requirements that keeping the full expansion inside `MASTER_DEVELOPMENT_PLAN.md` would make the master plan harder to review, harder to patch, or more dangerous to update.
+Do not create new milestone files unless the user explicitly orders a new phase-aligned document or a genuinely new implementation lane cannot fit into the ordered sequence.
 
-When uncertain, keep the master plan as the index, use this file as the milestone map, and create at most one milestone document for a tightly related phase cluster.
+Add future notes to the correct ordered milestone whenever possible:
+
+- Assets and publish-safety -> Milestone 01.
+- UI, inspection, Infopedia, readability -> Milestone 02.
+- Production, knowledge, skills, item quality -> Milestone 03.
+- Population, provenance, markets, vendors, luxury, draught, economy -> Milestone 04.
+- Construction, blueprints, ownership, access, parity, heat -> Milestone 05.
+- Vehicles, structural scale, motor pools, road/parking, strategic assets -> Milestone 06.
+- Ages, schemes, quests, journals, intelligence sale -> Milestone 07.
+- Medicine, body states, cybernetics, prosthetics, drug effects -> Milestone 08.
+- Worldgen, districts, room/facility stamps, faction theming -> Milestone 09.
+
+## Codex handoff rule
+
+Codex handoffs should be narrow, testable, and tied to one ordered milestone at a time.
+
+A handoff should include:
+
+- Active checkpoint.
+- Target ordered milestone.
+- Exact files/packages to inspect first.
+- Expected runtime behavior.
+- Non-goals.
+- Verification steps.
+- Compile/build expectations.
+- Documentation update targets.
+
+Do not hand Codex the entire milestone sequence as one implementation request. That creates a giant untestable instruction cloud instead of a safe development pass.
+
+## Current recommended next pass
+
+The next recommended documentation pass is:
+
+1. Add the compact `MILESTONE_INDEX.md` reference to `MASTER_DEVELOPMENT_PLAN.md`.
+2. Prepare a Codex handoff brief that points Codex to the master plan, standards/practices, governance, development history, and this ordered milestone index.
+3. Keep the first Codex task narrow, preferably documentation/package alignment or a small Milestone 01/02 runtime-support slice.
+
+## Verification checklist
+
+Before declaring milestone consolidation complete, verify:
+
+- `MILESTONE_00_GOVERNANCE_PACKAGE_AND_INDEX.md` exists.
+- `MILESTONE_01_ASSET_SEMANTICS_AND_CONTENT_PROMOTION.md` exists.
+- `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md` exists.
+- `MILESTONE_03_PRODUCTION_KNOWLEDGE_SKILLS_AND_ITEM_QUALITY.md` exists.
+- `MILESTONE_04_POPULATION_PROVENANCE_ECONOMY_AND_FACTION_MARKETS.md` exists.
+- `MILESTONE_05_CONSTRUCTION_BLUEPRINTS_OWNERSHIP_AND_PLAYER_FACTION_PARITY.md` exists.
+- `MILESTONE_06_VEHICLES_STRUCTURAL_SCALE_AND_STRATEGIC_POWER.md` exists.
+- `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md` exists.
+- `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md` exists.
+- `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` exists.
+- `MASTER_DEVELOPMENT_PLAN.md` references this index.
+- Topical files are preserved until cleanup approval.
+- The next Codex handoff is narrow and testable.
+
+## Deferred checkpoint summary
+
+The milestone index is now the ordered navigation surface for detailed planning. The master development plan remains the authority. Ordered milestones provide implementation depth. Legacy topical files remain source material until cleanup is explicitly approved. Future work should patch the correct ordered milestone rather than creating new scattered planning files.
