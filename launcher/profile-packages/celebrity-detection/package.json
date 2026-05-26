@@ -1,14 +1,17 @@
 {
-  "schema": 2,
-  "package_id": "launcher-celebrity-name-detection-v1",
+  "schema": 3,
+  "package_id": "launcher-special-name-detection-v1",
+  "legacy_package_id": "launcher-celebrity-name-detection-v1",
   "owner": "thin-launcher",
-  "purpose": "pre-client-name-lock-detection",
-  "description": "Launcher-side package for detecting whether fallback profile identity/name inputs should trigger a name-locked celebrity/special portrait package before the full client asset catalog is mounted.",
+  "purpose": "pre-client-special-name-lock-detection",
+  "publish_status": "quarantined-until-cleared",
+  "description": "Launcher-side package for detecting approved special/name-locked profile inputs before the full client asset catalog is mounted.",
   "source_policy": {
-    "mode": "migrate-approved-client-name-lock-definitions",
-    "required_existing_source_hint": "approved celebrity/name-lock definitions in main client",
+    "mode": "migrate-approved-cleared-name-lock-definitions-only",
+    "required_existing_source_hint": "approved cleared special/name-lock definitions in main client",
     "do_not_generate_replacement_names": true,
     "do_not_use_network_lookup": true,
+    "do_not_use_real_person_identity_without_clearance": true,
     "exact_source_path_status": "pending-source-tree-location-audit"
   },
   "matching_policy": {
@@ -22,11 +25,11 @@
     "network_lookup": false,
     "telemetry_upload": false
   },
-  "portrait_package": "launcher-celebrity-portraits-v1",
+  "portrait_package": "launcher-special-portraits-v1",
   "entries": [],
   "notes": [
-    "Approved name-lock definitions should be migrated from the main client once the exact source path is located.",
-    "This package exists so the launcher owns the detection boundary and the client receives an explicit launch context rather than independently guessing wrapper/profile identity.",
-    "Do not invent replacement celebrity mappings during launcher migration. Only migrate approved existing mappings."
+    "This package replaces legacy celebrity-facing wording with publish-safe special/name-lock terminology.",
+    "Do not ship real-person name or likeness mappings unless rights, license, parody, or original-character clearance is documented.",
+    "This package exists so the launcher owns the detection boundary and the client receives an explicit launch context rather than independently guessing wrapper/profile identity."
   ]
 }
