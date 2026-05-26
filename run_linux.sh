@@ -5,8 +5,16 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$APP_DIR" || exit 1
 LOG_FILE="$APP_DIR/launch_linux.log"
 LWJGL_VERSION="3.4.1"
-LWJGL_REPO="https://repo1.maven.org/maven2"
-LWJGL_MODULES=("lwjgl" "lwjgl-glfw" "lwjgl-opengl" "lwjgl-stb")
+LWJGL_REQUIRED_FILES=(
+  "lwjgl-$LWJGL_VERSION.jar"
+  "lwjgl-glfw-$LWJGL_VERSION.jar"
+  "lwjgl-opengl-$LWJGL_VERSION.jar"
+  "lwjgl-stb-$LWJGL_VERSION.jar"
+  "lwjgl-$LWJGL_VERSION-natives-linux.jar"
+  "lwjgl-glfw-$LWJGL_VERSION-natives-linux.jar"
+  "lwjgl-opengl-$LWJGL_VERSION-natives-linux.jar"
+  "lwjgl-stb-$LWJGL_VERSION-natives-linux.jar"
+)
 
 valid_jar() {
   local file="$1"
@@ -20,66 +28,31 @@ sys.exit(0 if p.read_bytes()[:4] == b"PK\x03\x04" else 1)
 PY
 }
 
-download_file() {
-  local url="$1"
-  local target="$2"
-  local tmp="${target}.tmp"
-  rm -f "$tmp"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fL --retry 3 --connect-timeout 20 --max-time 120 -o "$tmp" "$url" || return 1
-  elif command -v wget >/dev/null 2>&1; then
-    wget -O "$tmp" "$url" || return 1
-  elif command -v python3 >/dev/null 2>&1; then
-    python3 - "$url" "$tmp" <<'PY' || return 1
-import sys, urllib.request
-url, out = sys.argv[1], sys.argv[2]
-req = urllib.request.Request(url, headers={"User-Agent":"TheMechanist-Runtime-Bootstrap/1.0"})
-with urllib.request.urlopen(req, timeout=120) as r, open(out, 'wb') as fh:
-    while True:
-        chunk = r.read(1024*256)
-        if not chunk: break
-        fh.write(chunk)
-PY
-  else
-    echo "ERROR: no curl, wget, or python3 available for optional runtime bootstrap."
-    return 1
-  fi
-  valid_jar "$tmp" || return 1
-  mv -f "$tmp" "$target"
-}
-
-ensure_lwjgl_runtime() {
-  if [[ "${MECHANIST_DISABLE_LWJGL_BOOTSTRAP:-}" == "true" ]]; then
-    echo "LWJGL bootstrap disabled by MECHANIST_DISABLE_LWJGL_BOOTSTRAP=true."
-    return 0
-  fi
-  local lib_dir="$APP_DIR/lib/lwjgl"
-  mkdir -p "$lib_dir"
-  echo "LWJGL bootstrap: version=$LWJGL_VERSION platform=linux target=$lib_dir"
-  local module file url target
-  for module in "${LWJGL_MODULES[@]}"; do
-    file="${module}-${LWJGL_VERSION}.jar"
-    url="${LWJGL_REPO}/org/lwjgl/${module}/${LWJGL_VERSION}/${file}"
-    target="$lib_dir/$file"
-    if valid_jar "$target"; then
-      echo "LWJGL present: lib/lwjgl/$file"
-    else
-      echo "Installing optional LWJGL runtime jar: $file"
-      download_file "$url" "$target" || { echo "ERROR: failed to install optional LWJGL jar: $file"; return 23; }
+assert_packaged_lwjgl_runtime() {
+  local lib_dir="$APP_DIR/lib"
+  local missing=()
+  local required hit found
+  for required in "${LWJGL_REQUIRED_FILES[@]}"; do
+    found=0
+    if [[ -d "$lib_dir" ]]; then
+      while IFS= read -r -d '' hit; do
+        if valid_jar "$hit"; then
+          found=1
+          break
+        fi
+      done < <(find "$lib_dir" -type f -name "$required" -print0 2>/dev/null)
+    fi
+    if [[ "$found" -eq 0 ]]; then
+      missing+=("$required")
     fi
   done
-  for module in "${LWJGL_MODULES[@]}"; do
-    file="${module}-${LWJGL_VERSION}-natives-linux.jar"
-    url="${LWJGL_REPO}/org/lwjgl/${module}/${LWJGL_VERSION}/${file}"
-    target="$lib_dir/$file"
-    if valid_jar "$target"; then
-      echo "LWJGL present: lib/lwjgl/$file"
-    else
-      echo "Installing optional LWJGL native jar: $file"
-      download_file "$url" "$target" || { echo "ERROR: failed to install optional LWJGL native jar: $file"; return 23; }
-    fi
-  done
-  echo "LWJGL bootstrap complete."
+  if [[ "${#missing[@]}" -gt 0 ]]; then
+    echo "ERROR: packaged LWJGL runtime is incomplete. Missing or invalid files:"
+    printf '  %s\n' "${missing[@]}"
+    echo "LWJGL must be bundled by the installer/package build, not downloaded at game launch."
+    return 23
+  fi
+  echo "Packaged LWJGL runtime verified for Linux: version=$LWJGL_VERSION"
 }
 
 build_classpath() {
@@ -111,7 +84,7 @@ build_classpath() {
 
   echo "Java version:"
   java -version 2>&1
-  ensure_lwjgl_runtime || exit $?
+  assert_packaged_lwjgl_runtime || exit $?
   if [[ -d "$APP_DIR/lib" ]]; then
     echo "Runtime dependency jars under lib/:"
     find "$APP_DIR/lib" -type f -name '*.jar' -print | sort || true
