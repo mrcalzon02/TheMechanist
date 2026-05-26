@@ -29,16 +29,16 @@ If documents conflict, do not guess. Prefer the master plan for phase/dependency
 
 The current ordered milestone sequence is:
 
-- `MILESTONE_00_GOVERNANCE_PACKAGE_AND_INDEX.md` - governance, package, milestone reading order, anti-sprawl, and Codex handoff rules.
-- `MILESTONE_01_ASSET_SEMANTICS_AND_CONTENT_PROMOTION.md` - semantic asset IDs, asset promotion, Asset Tools integration, publish-safe clearance, optional packs, and content readiness.
-- `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md` - Look/Examine, UI readability, Infopedia depth, quest guidance, pet feedback, and player-facing clarity.
+- `MILESTONE_00_GOVERNANCE_PACKAGE_AND_INDEX.md` - governance, package, milestone reading order, anti-sprawl, editor-suite routing, and Codex handoff rules.
+- `MILESTONE_01_ASSET_SEMANTICS_AND_CONTENT_PROMOTION.md` - semantic asset IDs, asset promotion, Asset Tools integration, publish-safe clearance, optional packs, Mod API, example mods, and content readiness.
+- `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md` - Look/Examine, UI readability, Infopedia depth, player movement, input rebinding, quest guidance, pet feedback, controls, and player-facing clarity.
 - `MILESTONE_03_PRODUCTION_KNOWLEDGE_SKILLS_AND_ITEM_QUALITY.md` - knowledge-quality fabrication, machine/facility knowledge, item quality, factional mutations, and skill tree.
-- `MILESTONE_04_POPULATION_PROVENANCE_ECONOMY_AND_FACTION_MARKETS.md` - population provenance, item provenance, economy, vendors, illicit markets, noble luxury, and draught goods.
+- `MILESTONE_04_POPULATION_PROVENANCE_ECONOMY_AND_FACTION_MARKETS.md` - population provenance, item provenance, raw-material provenance, deferred sector simulation, reinforcement imports, economy, vendors, illicit markets, noble luxury, and draught goods.
 - `MILESTONE_05_CONSTRUCTION_BLUEPRINTS_OWNERSHIP_AND_PLAYER_FACTION_PARITY.md` - construction parity, blueprints, access, ownership, permits, licenses, and player expansion heat.
-- `MILESTONE_06_VEHICLES_STRUCTURAL_SCALE_AND_STRATEGIC_POWER.md` - vehicles, body schemas, factories, structural damage scale, road/parking limits, and strategic vehicle power.
-- `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md` - Ages of Control, active faction schemes, quest lifecycles, leadership journals, and intelligence sale.
+- `MILESTONE_06_VEHICLES_STRUCTURAL_SCALE_AND_STRATEGIC_POWER.md` - vehicles, body schemas, factories, structural damage scale, operation feedback, road/parking limits, and strategic vehicle power.
+- `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md` - Ages of Control, active faction schemes, quest lifecycles, Quest Editor, leadership journals, and intelligence sale.
 - `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md` - body states, medicine, narcotic effects, surgery, prosthetics, cybernetics, and treatment systems.
-- `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` - worldgen, districts, room stamps, facility stamps, faction theming, and Asset Tools-driven spatial integration.
+- `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` - worldgen, districts, room stamps, facility stamps, faction theming, room/object/entity/feature editing, and Asset Tools-driven spatial integration.
 
 ## Active checkpoint discipline
 
@@ -54,21 +54,75 @@ Current checkpoint context:
 
 Ordered milestones are implementation targets, not permission to ignore the active checkpoint.
 
+## Editor suite governance map
+
+The project should converge toward an integrated editor suite rather than isolated one-off tools. Editors are not merely developer luxuries; they are the safest way to prevent central-class sprawl, hidden constants, unreviewable content, inconsistent player-facing labels, and hand-authored data mistakes.
+
+Editor surfaces should be data-owned, audit-friendly, localization-aware, publish-safe, and able to validate content before it reaches ordinary gameplay. Raw IDs may be visible inside editor/developer views, but ordinary player UI should continue to hide internal implementation identifiers.
+
+Editor coverage should be routed through the ordered milestones as follows:
+
+- Asset, semantic asset, optional art pack, Mod API, example mod, localization asset label, and content-promotion editors belong primarily to Milestone 01.
+- UI/menu, controls/rebinding, movement ghost, Infopedia, examination, prompt, and player-readability editors/audits belong primarily to Milestone 02.
+- Item quality, production, recipe, machine knowledge, skill tree, factional production mutation, and fabrication editors belong primarily to Milestone 03.
+- Faction, population, economy, market, vendor, raw-material source, shipment, reinforcement import, deferred sector simulation, and probability-ledger editors belong primarily to Milestone 04.
+- Construction, blueprint, ownership, permit/license, access, room acquisition, and player/faction parity editors belong primarily to Milestone 05.
+- Vehicle, vehicle component, manufacturer, body schema, repair, mounted weapon, operation feedback, headlight, sound, cargo, crew, and strategic vehicle editors belong primarily to Milestone 06.
+- Quest, scheme, Ages of Control, leadership journal, intelligence sale, objective graph, evidence, reward/consequence, and quest validation editors belong primarily to Milestone 07.
+- Body, medicine, injury, treatment, narcotic effect, prosthetic, cybernetic, surgery, and clinic-service editors belong primarily to Milestone 08.
+- Worldgen, zone family, district, room stamp, facility stamp, object, entity placement, feature, hazard, room ownership, faction theme, container/evidence placement, and spatial-audit editors belong primarily to Milestone 09.
+
+The editor suite should eventually include at least:
+
+- Asset editor.
+- Item editor.
+- Object editor.
+- Feature editor.
+- Room stamp editor.
+- District stamp editor.
+- Worldgen/zone editor.
+- Faction editor.
+- Entity/NPC editor.
+- Vehicle editor.
+- Quest editor.
+- Scheme/Ages editor.
+- Economy/vendor/provenance editor.
+- Construction/blueprint editor.
+- Production/recipe/machine editor.
+- Body/medical/cybernetic editor.
+- Infopedia/localization editor.
+- Input/control profile editor.
+- Mod API/example mod validation surface.
+
+No editor is allowed to become a new uncontrolled design silo. Each editor must declare its owning milestone, data source, player-facing localization fields, validation rules, package/export behavior, and audit outputs.
+
+## Deferred simulation governance map
+
+Simulation fidelity should scale by relevance.
+
+- Immediate player-visible reality may instantiate detailed actors, items, vehicles, rooms, hazards, sounds, and interactions.
+- Local districts may run operational ledgers for workers, vendors, rooms, supplies, schemes, contracts, vehicles, and production.
+- Distant zones and out-of-sector systems should defer into probability ledgers using faction strength, influence, wealth, route access, supply pressure, raw-material availability, reinforcement demand, and source provenance.
+
+Out-of-sector systems should not pretend to fully simulate every mine, shipment, traveler, worker, or faction actor. They should produce auditable outcomes: shipments arrive or fail, reinforcements become available or expire, shortages worsen or ease, prices move, faction strength changes, faction influence changes, and schemes progress or stall.
+
+When distant simulation creates a local effect, that effect should preserve provenance. Imported people, raw materials, weapons, food, medicine, luxury goods, draught goods, vehicles, and supplies should be able to say whether they came from local mining, local salvage, local production, outside-sector shipment, off-world import, train arrival, black-market route, faction reserve, or unresolved fallback.
+
 ## Anti-sprawl rule
 
 Do not create new milestone files unless the user explicitly orders a new phase-aligned document or a genuinely new implementation lane cannot fit into the existing ordered sequence.
 
 New ideas should normally be added to the correct ordered milestone:
 
-- Assets, semantic IDs, optional packs, publish-safety -> Milestone 01.
-- UI, inspection, Infopedia, player-facing readability -> Milestone 02.
+- Assets, semantic IDs, optional packs, publish-safety, Mod API, example mods -> Milestone 01.
+- UI, inspection, Infopedia, player-facing readability, movement, input, controls -> Milestone 02.
 - Production, knowledge, skills, quality, factional production mutations -> Milestone 03.
-- Population, provenance, vendors, markets, luxury, narcotics economy, draught trade -> Milestone 04.
+- Population, provenance, vendors, markets, luxury, narcotics economy, draught trade, raw-material provenance, reinforcement imports, deferred simulation -> Milestone 04.
 - Construction, blueprints, ownership, access, parity, heat -> Milestone 05.
-- Vehicles, structural scale, vehicle factories, road/parking, strategic assets -> Milestone 06.
-- Ages of Control, schemes, quests, leadership journals, intelligence sale -> Milestone 07.
+- Vehicles, structural scale, vehicle factories, road/parking, strategic assets, vehicle feedback -> Milestone 06.
+- Ages of Control, schemes, quests, Quest Editor, leadership journals, intelligence sale -> Milestone 07.
 - Medicine, body states, cybernetics, prosthetics, narcotic effects -> Milestone 08.
-- Worldgen, districts, room/facility stamps, faction theming -> Milestone 09.
+- Worldgen, districts, room/facility stamps, faction theming, objects, features, entity placement -> Milestone 09.
 
 If a new note does not clearly belong anywhere, add a short planning note to `MASTER_DEVELOPMENT_PLAN.md` only if it affects phase authority, or ask for user direction before creating another document.
 
@@ -161,6 +215,8 @@ Before calling the ordered milestone consolidation complete, verify:
 - Topical source files are not treated as primary implementation entry points.
 - The active checkpoint remains visible.
 - Package/publish-safe gates remain visible.
+- The editor suite has an owning milestone route for faction, room, entity, vehicle, object, item, feature, quest, worldgen, economy, and simulation tools.
+- Deferred out-of-sector simulation routes through probability/provenance/faction-strength systems instead of full distant ticking.
 - The next Codex handoff is narrow and testable.
 
 ## Non-goals
@@ -175,6 +231,10 @@ This document does not change the active checkpoint by itself.
 
 This document does not permit uncontrolled documentation sprawl.
 
+This document does not require all editors to be implemented before gameplay development continues. It defines their governance route and prevents them from becoming scattered one-off tools.
+
 ## Deferred checkpoint summary
 
 The milestone system should now function as a phase-aligned implementation map. The master plan remains the authority. The ordered milestones provide depth. The index provides navigation. Topical files become source material until explicitly cleaned up. Codex handoffs should be narrow, compile-safe, and tied to one ordered milestone at a time.
+
+The editor suite should converge under owned milestone routes rather than isolated source sprawl. Faction, room, entity, vehicle, object, item, feature, quest, worldgen, economy, and simulation editors should be data-owned, validation-aware, localization-aware, publish-safe, and auditable. Deferred out-of-sector simulation should collapse distant activity into probability/provenance/faction-strength ledgers while preserving source provenance for people, raw materials, shipments, and supplies that enter the playable sector.
