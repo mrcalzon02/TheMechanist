@@ -1,0 +1,35 @@
+{
+  "schema": 3,
+  "package_id": "launcher-special-name-detection-v1",
+  "legacy_package_id": "launcher-celebrity-name-detection-v1",
+  "owner": "thin-launcher",
+  "purpose": "pre-client-special-name-lock-detection",
+  "publish_status": "quarantined-until-cleared",
+  "description": "Launcher-side package for detecting approved special/name-locked profile inputs before the full client asset catalog is mounted.",
+  "source_policy": {
+    "mode": "migrate-approved-cleared-name-lock-definitions-only",
+    "required_existing_source_hint": "approved cleared special/name-lock definitions in main client",
+    "do_not_generate_replacement_names": true,
+    "do_not_use_network_lookup": true,
+    "do_not_use_real_person_identity_without_clearance": true,
+    "exact_source_path_status": "pending-source-tree-location-audit"
+  },
+  "matching_policy": {
+    "normalize_case": true,
+    "strip_punctuation": true,
+    "collapse_whitespace": true,
+    "match_modes": ["exact-normalized", "alias-normalized"]
+  },
+  "privacy_policy": {
+    "local_only": true,
+    "network_lookup": false,
+    "telemetry_upload": false
+  },
+  "portrait_package": "launcher-special-portraits-v1",
+  "entries": [],
+  "notes": [
+    "This package replaces legacy celebrity-facing wording with publish-safe special/name-lock terminology.",
+    "Do not ship real-person name or likeness mappings unless rights, license, parody, or original-character clearance is documented.",
+    "This package exists so the launcher owns the detection boundary and the client receives an explicit launch context rather than independently guessing wrapper/profile identity."
+  ]
+}
