@@ -58,7 +58,7 @@ public final class ThinLauncherMain {
         Files.createDirectories(contextDir);
         Path context = contextDir.resolve("last-launch-context.properties");
         Properties p = new Properties();
-        p.setProperty("schema", "1");
+        p.setProperty("schema", "2");
         p.setProperty("created_at", Instant.now().toString());
         p.setProperty("app.home", appHome.toAbsolutePath().normalize().toString());
         p.setProperty("user.root", userRoot.toAbsolutePath().normalize().toString());
@@ -72,8 +72,12 @@ public final class ThinLauncherMain {
         p.setProperty("profile.file", profile.profileFile().toAbsolutePath().normalize().toString());
         p.setProperty("profile.portrait.package", profile.portraitPackage());
         p.setProperty("profile.portrait.id", profile.portraitId());
-        p.setProperty("profile.celebrity.portrait.package", profile.celebrityPackage());
-        p.setProperty("profile.celebrity.name.package", profile.celebrityNamePackage());
+        p.setProperty("profile.special.portrait.package", profile.specialPortraitPackage());
+        p.setProperty("profile.special.name.package", profile.specialNamePackage());
+        p.setProperty("profile.special.publish_status", "quarantined-until-cleared");
+        // Compatibility aliases only. Do not treat these as active package identities.
+        p.setProperty("profile.celebrity.portrait.package.legacy", LauncherFallbackProfileAuthority.LEGACY_CELEBRITY_PORTRAIT_PACKAGE);
+        p.setProperty("profile.celebrity.name.package.legacy", LauncherFallbackProfileAuthority.LEGACY_CELEBRITY_NAME_PACKAGE);
         try (var out = Files.newOutputStream(context)) {
             p.store(out, "The Mechanist launcher context handoff");
         }
