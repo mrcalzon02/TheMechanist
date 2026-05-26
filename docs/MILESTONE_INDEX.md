@@ -200,14 +200,16 @@ Focus:
 - Zero-weight quest-critical items.
 - Proof-of-death evidence.
 - Leadership journals and sellable intelligence.
+- Dedicated Quest Editor / editor-grade quest authoring surface.
+- Quest objective graphs, branching, alternate resolutions, rewards, evidence, validation, and smoke testing.
 
 Primary phases:
 
 - Phase 11.
 - Phase 16 Ages-of-Control/worldgen integration.
 - Phase 17 scheme quests/intelligence sale portions.
-- Phase 18 editor/Infopedia portions.
-- Phase 19 scheme/quest/intelligence audits.
+- Phase 18 Quest Editor, scheme editor, audit, and Infopedia portions.
+- Phase 19 scheme/quest/intelligence/editor audits.
 
 ### `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md`
 
@@ -297,7 +299,7 @@ Add future notes to the correct ordered milestone whenever possible:
 - Population, provenance, markets, vendors, luxury, draught, economy -> Milestone 04.
 - Construction, blueprints, ownership, access, parity, heat -> Milestone 05.
 - Vehicles, structural scale, vehicle feedback, motor pools, road/parking, strategic assets -> Milestone 06.
-- Ages, schemes, quests, journals, intelligence sale -> Milestone 07.
+- Ages, schemes, quests, Quest Editor, journals, intelligence sale -> Milestone 07.
 - Medicine, body states, cybernetics, prosthetics, drug effects -> Milestone 08.
 - Worldgen, districts, room/facility stamps, faction theming -> Milestone 09.
 
