@@ -33,7 +33,7 @@ download_file() {
     python3 - "$url" "$tmp" <<'PY' || return 1
 import sys, urllib.request
 url, out = sys.argv[1], sys.argv[2]
-req = urllib.request.Request(url, headers={"User-Agent":"TheMechanist-LWJGL-Bootstrap/0.9.10iy"})
+req = urllib.request.Request(url, headers={"User-Agent":"TheMechanist-Runtime-Bootstrap/1.0"})
 with urllib.request.urlopen(req, timeout=120) as r, open(out, 'wb') as fh:
     while True:
         chunk = r.read(1024*256)
@@ -41,7 +41,7 @@ with urllib.request.urlopen(req, timeout=120) as r, open(out, 'wb') as fh:
         fh.write(chunk)
 PY
   else
-    echo "ERROR: no curl, wget, or python3 available for LWJGL bootstrap."
+    echo "ERROR: no curl, wget, or python3 available for optional runtime bootstrap."
     return 1
   fi
   valid_jar "$tmp" || return 1
@@ -64,8 +64,8 @@ ensure_lwjgl_runtime() {
     if valid_jar "$target"; then
       echo "LWJGL present: lib/lwjgl/$file"
     else
-      echo "Installing LWJGL runtime: $file"
-      download_file "$url" "$target" || { echo "ERROR: failed to install LWJGL jar: $file"; return 23; }
+      echo "Installing optional LWJGL runtime jar: $file"
+      download_file "$url" "$target" || { echo "ERROR: failed to install optional LWJGL jar: $file"; return 23; }
     fi
   done
   for module in "${LWJGL_MODULES[@]}"; do
@@ -75,8 +75,8 @@ ensure_lwjgl_runtime() {
     if valid_jar "$target"; then
       echo "LWJGL present: lib/lwjgl/$file"
     else
-      echo "Installing LWJGL runtime: $file"
-      download_file "$url" "$target" || { echo "ERROR: failed to install LWJGL native jar: $file"; return 23; }
+      echo "Installing optional LWJGL native jar: $file"
+      download_file "$url" "$target" || { echo "ERROR: failed to install optional LWJGL native jar: $file"; return 23; }
     fi
   done
   echo "LWJGL bootstrap complete."
