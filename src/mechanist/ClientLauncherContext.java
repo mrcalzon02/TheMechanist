@@ -31,8 +31,9 @@ public final class ClientLauncherContext {
             String profileFile,
             String portraitPackage,
             String portraitId,
-            String celebrityPortraitPackage,
-            String celebrityNamePackage
+            String specialPortraitPackage,
+            String specialNamePackage,
+            String specialPublishStatus
     ) {
         public boolean isSteamWrapped() { return "STEAM".equalsIgnoreCase(wrapperKind); }
         public boolean isGogWrapped() { return "GOG".equalsIgnoreCase(wrapperKind); }
@@ -122,8 +123,9 @@ public final class ClientLauncherContext {
                     prop(p, "profile.file", ""),
                     prop(p, "profile.portrait.package", ""),
                     prop(p, "profile.portrait.id", ""),
-                    prop(p, "profile.celebrity.portrait.package", ""),
-                    prop(p, "profile.celebrity.name.package", "")
+                    prop(p, "profile.special.portrait.package", prop(p, "profile.celebrity.portrait.package", "")),
+                    prop(p, "profile.special.name.package", prop(p, "profile.celebrity.name.package", "")),
+                    prop(p, "profile.special.publish_status", "quarantined-until-cleared")
             );
         } catch (IOException ex) {
             return fromSystemPropertiesOnly(context.get());
@@ -183,7 +185,7 @@ public final class ClientLauncherContext {
                 "system-properties-only",
                 System.getProperty("mechanist.launcher.profile", ""),
                 System.getProperty("mechanist.launcher.profileHash", ""),
-                "", "", "", "", ""
+                "", "", "", "", "", ""
         );
     }
 
