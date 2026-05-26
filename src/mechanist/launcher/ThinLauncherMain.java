@@ -28,11 +28,14 @@ public final class ThinLauncherMain {
         LauncherWrapperDetector.WrapperEnvironment wrapper = LauncherWrapperDetector.detect(appHome);
         LauncherFallbackProfileAuthority.LauncherProfile profile = LauncherFallbackProfileAuthority.ensureFallbackProfile(appHome, userRoot, wrapper);
         Path contextFile = writeLaunchContext(appHome, userRoot, wrapper, profile);
+        LauncherServerJoinIdentityBridge.JoinIdentityRecord joinIdentity =
+                LauncherServerJoinIdentityBridge.write(userRoot, contextFile, wrapper, profile);
 
         System.setProperty("mechanist.launcher.context", contextFile.toAbsolutePath().normalize().toString());
         System.setProperty("mechanist.launcher.wrapper", wrapper.kind().name());
         System.setProperty("mechanist.launcher.profile", profile.profileId());
         System.setProperty("mechanist.launcher.profileHash", profile.profileHash());
+        System.setProperty("mechanist.launcher.joinIdentity", joinIdentity.primaryFile().toAbsolutePath().normalize().toString());
 
         System.out.println("The Mechanist thin launcher context prepared");
         System.out.println("app.home=" + appHome.toAbsolutePath().normalize());
@@ -40,6 +43,7 @@ public final class ThinLauncherMain {
         System.out.println("wrapper.kind=" + wrapper.kind());
         System.out.println("profile.id=" + profile.profileId());
         System.out.println("launch.context=" + contextFile.toAbsolutePath().normalize());
+        System.out.println("join.identity=" + joinIdentity.primaryFile().toAbsolutePath().normalize());
 
         launchClientInProcess(args);
     }
