@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "package_id": "launcher-celebrity-name-detection-v1",
+  "owner": "thin-launcher",
+  "purpose": "pre-client-name-lock-detection",
+  "description": "Launcher-side package for detecting whether fallback profile identity/name inputs should trigger a name-locked celebrity/special portrait package before the full client asset catalog is mounted.",
+  "matching_policy": {
+    "normalize_case": true,
+    "strip_punctuation": true,
+    "collapse_whitespace": true,
+    "match_modes": ["exact-normalized", "alias-normalized"]
+  },
+  "privacy_policy": {
+    "local_only": true,
+    "network_lookup": false,
+    "telemetry_upload": false
+  },
+  "portrait_package": "launcher-celebrity-portraits-v1",
+  "entries": [],
+  "notes": [
+    "Entries are intentionally empty until approved name-lock definitions are migrated into this launcher-owned package.",
+    "This package exists so the launcher owns the detection boundary and the client receives an explicit launch context rather than independently guessing wrapper/profile identity."
+  ]
+}
