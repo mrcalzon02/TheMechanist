@@ -23,6 +23,16 @@ The long-term main menu should become a launcher/orchestrator for the game clien
 
 Current permitted work is Phase 4 UI, input, rendering, and presentation containment. The local launcher/tools boundary and Sector Editor Audit tooling are no longer the active target; they return to the Phase 15 editor/modding line unless explicitly reopened. The project must not claim live external mod loading, classpath mutation, multiplayer, hot restart, or server authority before those systems have explicit architecture, safety, package, and test gates.
 
+## Distribution path doctrine
+
+The intended user execution path is installer → thin launcher → client → server. The installer installs the smallest durable launcher/orchestrator layer and any files required for that launcher to start, present diagnostics, verify manifests, and manage updates. The installer must not require the end user to download or unpack the full development repository.
+
+The thin launcher owns acquisition, verification, installation, update, rollback, and launch of the client package, headless/internal server package, Java runtime image when bundled, and runtime support libraries. Support libraries include graphical/native dependencies such as LWJGL, controller/input bridges such as Jamepad or its replacement, networking/runtime libraries such as Netty when used by a launched package, and any future explicitly required support library. These libraries are acquired and verified as launcher-managed package artifacts before the client starts; the game client must not opportunistically download libraries during game launch.
+
+The client is a launched runtime package, not the updater. It may verify that required support libraries are present and fail loudly with a visible log if the thin launcher or manifest acquisition failed, but it must not mutate its own classpath by downloading dependencies at startup. The client may start or connect to the local/internal server lane after its own package and support-library set has passed manifest and integrity verification.
+
+The server is a separate launched authority package with its own manifest identity, runtime profile, storage namespace, and verification path. The server must not depend on graphical client libraries unless an explicitly tested shared package requires them. Client/server package identity, checksums, versions, and compatibility constraints must be visible in launcher manifests rather than inferred from loose repository layout.
+
 ## Shared authority doctrine
 
 Every durable shared framework reduces the cost of future content.
