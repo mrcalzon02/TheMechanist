@@ -2,7 +2,7 @@
 set -u
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$APP_DIR" || exit 1
-chmod +x run_linux.sh PLAY_THE_MECHANIST_LINUX.sh install_linux_launcher.sh "The Mechanist.desktop" 2>/dev/null || true
+chmod +x run_linux.sh PLAY_THE_MECHANIST_LINUX.sh RUN_MECHANIST_SERVER_LINUX.sh install_linux_launcher.sh "The Mechanist.desktop" 2>/dev/null || true
 mkdir -p "$HOME/Desktop" "$HOME/.local/share/applications"
 
 # Install the application icon into the user's hicolor theme so .desktop launchers
@@ -27,3 +27,4 @@ if command -v gio >/dev/null 2>&1; then
 fi
 echo "Linux launcher permissions and The Mechanist icon refreshed. Try double-clicking PLAY_THE_MECHANIST_LINUX.sh or The Mechanist.desktop."
 echo "If your file manager still blocks launchers, run: ./run_linux.sh"
+echo "For the headless server launcher, run: ./RUN_MECHANIST_SERVER_LINUX.sh"
