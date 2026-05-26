@@ -1,9 +1,16 @@
 {
-  "schema": 1,
+  "schema": 2,
   "package_id": "launcher-celebrity-portraits-v1",
   "owner": "thin-launcher",
   "purpose": "pre-client-name-locked-portrait-selection",
   "description": "Launcher-side package for name-locked celebrity/special portrait handoff before the full client asset catalog is mounted.",
+  "source_policy": {
+    "mode": "map-existing-client-source-asset",
+    "required_existing_asset_hint": "celebrity portrait asset in main client",
+    "do_not_generate_replacement_art": true,
+    "do_not_copy_full_client_portrait_catalog": true,
+    "exact_asset_path_status": "pending-source-tree-location-audit"
+  },
   "privacy_policy": {
     "local_only": true,
     "network_lookup": false,
@@ -16,7 +23,7 @@
   },
   "entries": [],
   "notes": [
-    "Entries are intentionally empty until approved name-locked portrait definitions are migrated into this launcher-owned package.",
+    "The approved celebrity portrait asset already exists in the main client asset set. This launcher package must map that asset by exact path once the asset-tree audit locates it.",
     "Do not include the full game portrait catalog in the launcher. The launcher needs only the minimal fallback human package and approved name-locked/special portrait package."
   ]
 }
