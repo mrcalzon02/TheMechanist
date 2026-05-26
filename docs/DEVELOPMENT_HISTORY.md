@@ -105,3 +105,13 @@ The sanitizer intentionally does not own gameplay truth, logs, or diagnostics. D
 Added `PlayerFacingCopySanitizerSmoke` to guard against leaking raw target-zone keys, contract identifiers, filesystem paths, or Java/runtime implementation wording back into ordinary player-facing copy.
 
 Verification: `PlayerFacingCopySanitizerSmoke` added and validated logically against known Gate 3 leak categories. Full recursive compile and runtime smoke were not run through this connector session.
+
+## Gate 3 - Shared UI Text Adapter Slice
+
+Added `PlayerFacingUiText` as a thin adapter layer for high-traffic player-facing surfaces including Look/Examine, transition denial, inventory denial, construction denial, trade denial, save/load summaries, and diagnostic notices.
+
+The adapter layer routes ordinary panel text through the shared sanitizer authority while preserving readable fallback wording and avoiding direct implementation residue in command, inventory, trade, route, and inspection surfaces.
+
+Added `PlayerFacingUiTextSmoke` to guard against regressions where target-zone keys, runtime class names, filesystem paths, or registry/debug wording leak back into ordinary player-facing UI text.
+
+Verification: `PlayerFacingUiTextSmoke` added and validated logically against the Gate 3 containment targets. Full recursive compile and runtime smoke were not run through this connector session.
