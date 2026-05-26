@@ -10,6 +10,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         PlayerFacingInspectionTextSmoke.main(args);
         PlayerFacingActionTextSmoke.main(args);
         PlayerFacingTextWrapSmoke.main(args);
+        PlayerFacingPanelBodySmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 
