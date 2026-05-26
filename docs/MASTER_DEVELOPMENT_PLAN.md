@@ -2,7 +2,7 @@
 
 This document is the authoritative roadmap, checkpoint, and handoff control surface for The Mechanist. It is not a changelog, implementation transcript, asset index, or full design bible. Detailed phase-group expansions now live in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`.
 
-This revision intentionally cleanses the master plan of obsolete duplicated phase detail and redirects implementation-depth planning to the ordered milestone documents. The master plan remains the place to determine the active checkpoint, the current gates, the dependency order, and the correct next handoff target.
+This revision intentionally keeps the master plan concise and redirects implementation-depth planning to the ordered milestone documents. The master plan remains the place to determine the active checkpoint, the current gates, the dependency order, and the correct next handoff target.
 
 ## Authority documents
 
@@ -13,6 +13,7 @@ Before any development pass, read these documents in order:
 3. `docs/MASTER_GOVERNANCE_REVISION_II.md` - long-term architecture doctrine and boundary discipline.
 4. `docs/DEVELOPMENT_HISTORY.md` - completed work and historical implementation facts.
 5. `docs/MILESTONE_INDEX.md` - ordered milestone navigation for detailed phase-group targets.
+6. `docs/LEGACY_MILESTONE_SOURCE_MAP.md` - source/archive map for older topical milestone files.
 
 The Standards file remains hard release law. The Governance file remains design ethos and architectural boundary law. This master plan controls movement and handoff order.
 
@@ -22,7 +23,7 @@ Planning belongs in this master plan or in the ordered milestone sequence indexe
 
 The ordered milestone files are a user-ordered durable exception created to prevent the master plan from becoming an unsafe monolith. Do not create additional milestone, supplement, audit, addendum, or planning files unless the user explicitly orders a new phase-aligned document and the material cannot fit into an existing ordered milestone.
 
-Legacy topical milestone files remain source material only until the user approves archival, deprecation, or deletion. They are not the preferred Codex implementation entry point.
+Legacy topical milestone files are source/archive material only. Their canonical ordered homes are mapped in `LEGACY_MILESTONE_SOURCE_MAP.md`. They are not preferred Codex implementation entry points.
 
 ## Active checkpoint
 
@@ -38,7 +39,7 @@ The active target remains to make the Swing client playable, readable, and safe 
 - Packaging and publish-safe hygiene for the installer -> thin launcher -> client/server execution path.
 - Narrow authority extraction when touching a UI/input/render/package subsystem.
 - Small persistence/server-boundary repairs required to keep the bridged single-player runtime safe.
-- Milestone-index and Codex-handoff preparation.
+- Milestone-index, legacy-source-map, and Codex-handoff preparation.
 
 ### Not active now
 
@@ -57,13 +58,14 @@ Each gate should leave the repository buildable and reviewable. Do not start a l
 Required outcomes:
 
 - `MASTER_DEVELOPMENT_PLAN.md` remains concise and points to `MILESTONE_INDEX.md` for detailed phase-group planning.
-- `MILESTONE_INDEX.md` lists the ordered `00` through `09` milestone sequence.
+- `MILESTONE_INDEX.md` lists the ordered `00` through `10` milestone sequence.
+- `LEGACY_MILESTONE_SOURCE_MAP.md` maps older topical files to ordered milestone homes.
 - Standards and governance remain recognized constraints for all future code/package work.
-- Legacy topical milestone files are preserved as source material until cleanup approval.
+- Legacy topical milestone files are preserved as source/archive material until cleanup verification approves movement or deletion.
 - README remains user-facing and does not become roadmap/changelog/standards content.
 - Root-level command files and scripts remain partitioned into client, launcher, installer, server, tooling, or docs locations as appropriate.
 
-Done when: a new developer or Codex session can identify the active checkpoint, ordered milestones, standards, governance, and next pass without reading the old topical sprawl.
+Done when: a new developer or Codex session can identify the active checkpoint, ordered milestones, standards, governance, source-map boundary, and next pass without reading the old topical sprawl.
 
 ### Gate 2 - Bootstrap and package identity hygiene
 
@@ -119,8 +121,9 @@ Current ordered milestones:
 - `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md`
 - `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md`
 - `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md`
+- `MILESTONE_10_PERSISTENCE_SAVE_SCHEMA_MIGRATION_AND_BACKUPS.md`
 
-Use `MILESTONE_INDEX.md` to choose the correct detailed milestone for any future pass. Do not add new topical milestone files for material that belongs in an existing ordered milestone.
+Use `MILESTONE_INDEX.md` to choose the correct detailed milestone for any future pass. Use `LEGACY_MILESTONE_SOURCE_MAP.md` only when tracing old topical source material.
 
 ## Global dependency order
 
@@ -131,13 +134,15 @@ The ordered milestone sequence preserves these major dependency rules:
 - Knowledge-quality fabrication, machine knowledge, skills, and item quality precede deep production claims.
 - Population provenance precedes item provenance.
 - Item provenance precedes robust economy and faction markets.
+- Deferred out-of-sector simulation and top-down world events consume provenance, faction strength, influence, routes, economy, and persistence rules.
 - Vehicle/component provenance precedes vehicle factories, vehicle deployment, and strategic vehicle power.
 - Comparative damage/durability scale precedes vehicle, machine, wall, mounted-weapon, and structural combat integration.
 - Construction blueprints, access rules, ownership, and parity precede broad player/faction construction claims.
 - Ages of Control and leadership schemes consume population, item/facility, vehicle, and room-control provenance.
-- Scheme quests require timing windows, target guidance, reliable evidence, and missed-window standing rules.
+- Scheme quests require timing windows, target guidance, reliable evidence, missed-window standing rules, and Quest Editor validation.
 - Medical, cybernetic, prosthetic, narcotic, and body systems require readable body-state, treatment, item-quality, facility, and Infopedia support.
-- Worldgen/district/room-stamp expansion consumes Asset Tools output, semantic assets, provenance systems, faction identity, Ages of Control, and room/facility audit surfaces.
+- Worldgen/district/room-stamp expansion consumes Asset Tools output, semantic assets, provenance systems, faction identity, Ages of Control, top-down world events, and room/facility audit surfaces.
+- Persistence/save ownership applies to every milestone before publish-safe claims: world truth to world save, player-character truth to player save, settings to profile/settings, launcher state to launcher/cache manifests, and editor-authored definitions to versioned content definitions.
 
 ## Quality-of-life and sensibility evaluator
 
@@ -175,19 +180,20 @@ A valid handoff includes:
 
 The safest first handoff after this cleanup is documentation/package alignment rather than simulation expansion:
 
-1. Read `MASTER_DEVELOPMENT_PLAN.md`, `STANDARDS_AND_PRACTICES.md`, `MASTER_GOVERNANCE_REVISION_II.md`, `DEVELOPMENT_HISTORY.md`, and `MILESTONE_INDEX.md`.
-2. Verify `MILESTONE_00` through `MILESTONE_09` exist.
+1. Read `MASTER_DEVELOPMENT_PLAN.md`, `STANDARDS_AND_PRACTICES.md`, `MASTER_GOVERNANCE_REVISION_II.md`, `DEVELOPMENT_HISTORY.md`, `MILESTONE_INDEX.md`, and `LEGACY_MILESTONE_SOURCE_MAP.md`.
+2. Verify `MILESTONE_00` through `MILESTONE_10` exist.
 3. Verify legacy topical milestone files are not treated as primary entry points.
 4. Verify bootstrap/package docs and scripts still reflect installer -> thin launcher -> client/server.
 5. Verify thin launcher and installer do not depend on the full client/server payload or full project tree before manifest acquisition.
 6. Report exact files touched, exact verification run, and anything not tested.
 
-After that, the first runtime-support slice should be either:
+After that, the first runtime-support slice should be one of:
 
-- Milestone 01: asset/semantic audit support needed by later worldgen, or
-- Milestone 02: UI/readability support for player-facing inspection, Look/Examine groundwork, and Infopedia reference hygiene.
+- Milestone 01: asset/semantic audit support needed by later worldgen.
+- Milestone 02: UI/readability support for player-facing inspection, controls, movement, Look/Examine groundwork, and Infopedia reference hygiene.
+- Milestone 10: persistence ownership and save/load boundary support required before large systems write durable state.
 
-Do not begin Milestone 09 worldgen expansion as the first Codex runtime task. It depends on assets, readability, provenance, parity, vehicle, scheme, and medical/body system foundations.
+Do not begin Milestone 09 worldgen expansion as the first Codex runtime task. It depends on assets, readability, provenance, parity, vehicle, scheme, medical/body, world-event, and persistence foundations.
 
 ## Reviewed constraints from Standards and Governance
 
@@ -200,8 +206,9 @@ This cleanup was prepared against these standing constraints:
 - UI/player-facing surfaces must avoid raw IDs, placeholder text, phase labels, and debug excuses.
 - New graphical references route toward the Semantic Asset Registry and Asset Tools outputs rather than scattered direct file paths.
 - Sector/server authority remains closed to public networking and live external mod loading until explicit architecture, safety, package, and test gates exist.
-- Simulation depth must scale by relevance: immediate reality near the player, operational ledgers for local districts, and strategic summaries for distant systems.
+- Simulation depth must scale by relevance: immediate reality near the player, operational ledgers for local districts, and strategic/deferred summaries for distant systems.
 - Asset files, atlas cells, and placeholders are not implementation until semantic runtime identity, consuming authority, inspection/use meaning, placement/generation path, and fallback behavior exist.
+- Every persistent system must define world/player/profile/launcher-cache/editor-content ownership before publish-safe save/load claims.
 
 ## Current handoff status
 
@@ -209,18 +216,19 @@ Milestone consolidation is complete enough for Codex handoff preparation.
 
 Completed handoff-prep state:
 
-- `MILESTONE_00` through `MILESTONE_09` exist.
+- `MILESTONE_00` through `MILESTONE_10` exist.
 - `MILESTONE_INDEX.md` points to the ordered sequence.
-- This master plan now points to `MILESTONE_INDEX.md` instead of duplicating large milestone detail.
+- `LEGACY_MILESTONE_SOURCE_MAP.md` maps stale topical files to canonical ordered homes.
+- This master plan points to `MILESTONE_INDEX.md` instead of duplicating large milestone detail.
 - Obsolete candidate/topical roadmap duplication has been removed from this master plan.
-- Legacy topical milestone files are preserved as source material pending explicit cleanup approval.
+- Legacy topical milestone files are preserved as source/archive material pending final cleanup approval.
 
 Remaining before first implementation handoff:
 
-- Optionally add a short entry to `DEVELOPMENT_HISTORY.md` noting the milestone consolidation and master-plan cleanup.
-- Optionally mark legacy topical milestone files as superseded, archived, or source-only after user approval.
+- Optionally add a short entry to `DEVELOPMENT_HISTORY.md` noting milestone consolidation, source-map cleanup, and master-plan refresh.
+- Optionally move legacy topical files into an archive folder after user approval and verification that no unique requirements remain only in legacy files.
 - Select the first narrow Codex task.
 
 ## Anti-drift directive
 
-When uncertain, do not create another document and do not expand scope. Read the master plan, standards, governance, history, and milestone index. Pick one gate or one ordered milestone slice. Make the smallest compile-safe, smoke-testable implementation that advances the active checkpoint.
+When uncertain, do not create another document and do not expand scope. Read the master plan, standards, governance, history, milestone index, and legacy source map. Pick one gate or one ordered milestone slice. Make the smallest compile-safe, smoke-testable implementation that advances the active checkpoint.
