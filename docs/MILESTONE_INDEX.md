@@ -15,7 +15,7 @@ Read planning and implementation documents in this order:
 3. `MASTER_GOVERNANCE_REVISION_II.md` - high-level governance and doctrine.
 4. `DEVELOPMENT_HISTORY.md` - completed implementation history.
 5. Ordered milestone documents - detailed phase-aligned implementation targets.
-6. Legacy topical milestone and supplement files - source/archive material until fully absorbed and explicitly cleaned up.
+6. `LEGACY_MILESTONE_SOURCE_MAP.md` and legacy topical milestone/supplement files - source/archive material only, not primary implementation entry points.
 
 If documents conflict, do not guess. Prefer the master plan for roadmap authority, standards for implementation rules, governance for doctrine, and the newest ordered milestone for detailed implementation targeting unless the user explicitly overrides.
 
@@ -303,7 +303,9 @@ This milestone defines what belongs in the world save, player save, profile/sett
 
 ## Legacy topical files and supplements
 
-The following topical files remain source material until explicitly archived, deprecated, or deleted by user approval:
+`LEGACY_MILESTONE_SOURCE_MAP.md` is the cleanup boundary for older topical milestone and supplement files.
+
+The following files remain source/archive material only and are no longer primary implementation entry points:
 
 - `MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md`
 - `MILESTONE_EXAMINATION_AND_INFOPEDIA_SYSTEMS.md`
@@ -316,8 +318,9 @@ The following topical files remain source material until explicitly archived, de
 Current status:
 
 - Their key planning content has been aligned into the ordered milestone sequence.
+- Their canonical ordered homes are listed in `LEGACY_MILESTONE_SOURCE_MAP.md`.
 - They should not be treated as the primary implementation entry point.
-- They should not be deleted without explicit user approval.
+- They should not be deleted without a later verification pass.
 - A later cleanup pass may mark them as superseded, move them to an archive folder, or delete them after verification.
 
 ## Master-plan patch target
@@ -381,12 +384,13 @@ Before declaring milestone consolidation complete, verify:
 - `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md` exists.
 - `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` exists.
 - `MILESTONE_10_PERSISTENCE_SAVE_SCHEMA_MIGRATION_AND_BACKUPS.md` exists.
+- `LEGACY_MILESTONE_SOURCE_MAP.md` exists.
 - `MASTER_DEVELOPMENT_PLAN.md` references this index.
-- Topical files are preserved until cleanup approval.
+- Topical files are preserved as source/archive material only until a later verification cleanup.
 - The next Codex handoff is narrow and testable.
 
 ## Deferred checkpoint summary
 
-The milestone index is now the ordered navigation surface for detailed planning. The master development plan remains the authority. Ordered milestones provide implementation depth. Legacy topical files remain source material until cleanup is explicitly approved. Future work should patch the correct ordered milestone rather than creating new scattered planning files.
+The milestone index is now the ordered navigation surface for detailed planning. The master development plan remains the authority. Ordered milestones provide implementation depth. Legacy topical files become source/archive material only through `LEGACY_MILESTONE_SOURCE_MAP.md` until a later verification cleanup. Future work should patch the correct ordered milestone rather than creating new scattered planning files.
 
 The milestone chain now includes a dedicated persistence/save-schema milestone. World truth belongs in world saves. Player-character truth belongs in player saves. Profile/settings truth belongs in profile/settings saves. Launcher/cache state belongs in launcher/cache manifests. Editor-authored definitions belong in versioned content definitions. Every future system must define what it saves, where it saves, how it migrates, and how save/load is validated.
