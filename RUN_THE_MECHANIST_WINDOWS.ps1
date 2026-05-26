@@ -59,20 +59,11 @@ function Invoke-JavaVersionProbe {
         $stderr = $process.StandardError.ReadToEnd()
         if (-not $process.WaitForExit(10000)) {
             try { $process.Kill() } catch { }
-            return [pscustomobject]@{
-                ExitCode = -10000
-                Output = 'java -version timed out after 10 seconds'
-            }
+            return [pscustomobject]@{ ExitCode = -10000; Output = 'java -version timed out after 10 seconds' }
         }
-        return [pscustomobject]@{
-            ExitCode = $process.ExitCode
-            Output = (($stdout + [Environment]::NewLine + $stderr).Trim())
-        }
+        return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = (($stdout + [Environment]::NewLine + $stderr).Trim()) }
     } catch {
-        return [pscustomobject]@{
-            ExitCode = -9999
-            Output = $_.Exception.Message
-        }
+        return [pscustomobject]@{ ExitCode = -9999; Output = $_.Exception.Message }
     } finally {
         if ($null -ne $process) { $process.Dispose() }
     }
@@ -87,18 +78,9 @@ function Get-JavaInfo {
     $version = $null
     foreach ($line in ($probe.Output -split "`r?`n")) {
         $text = [string]$line
-        if ($text -match 'java version "(.+?)"') {
-            $version = $Matches[1]
-            break
-        }
-        if ($text -match 'openjdk version "(.+?)"') {
-            $version = $Matches[1]
-            break
-        }
-        if ($text -match '^\s*java\.version\s*=\s*(.+?)\s*$') {
-            $version = $Matches[1]
-            break
-        }
+        if ($text -match 'java version "(.+?)"') { $version = $Matches[1]; break }
+        if ($text -match 'openjdk version "(.+?)"') { $version = $Matches[1]; break }
+        if ($text -match '^\s*java\.version\s*=\s*(.+?)\s*$') { $version = $Matches[1]; break }
     }
     $major = Convert-JavaMajorVersion $version
     [pscustomobject]@{
@@ -111,10 +93,7 @@ function Get-JavaInfo {
 }
 
 function Add-CandidatePath {
-    param(
-        [System.Collections.Generic.List[string]] $List,
-        [string] $PathText
-    )
+    param([System.Collections.Generic.List[string]] $List, [string] $PathText)
     if ([string]::IsNullOrWhiteSpace($PathText)) { return }
     if (-not (Test-Path -LiteralPath $PathText -PathType Leaf)) { return }
     $resolved = (Resolve-Path -LiteralPath $PathText).Path
@@ -125,19 +104,14 @@ function Add-CandidatePath {
 }
 
 function Add-GlobCandidatePaths {
-    param(
-        [System.Collections.Generic.List[string]] $List,
-        [string[]] $Patterns
-    )
+    param([System.Collections.Generic.List[string]] $List, [string[]] $Patterns)
     foreach ($pattern in $Patterns) {
         if ([string]::IsNullOrWhiteSpace($pattern)) { continue }
         try {
             foreach ($hit in Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue) {
                 Add-CandidatePath $List $hit.FullName
             }
-        } catch {
-            # Directory probing is best-effort; failure here should not stop launch discovery.
-        }
+        } catch { }
     }
 }
 
@@ -168,22 +142,17 @@ function Find-Java17OrNewer {
         foreach ($cmd in Get-Command java.exe -All -ErrorAction SilentlyContinue) {
             Add-CandidatePath $candidates $cmd.Source
         }
-    } catch {
-        # PATH probing is best-effort.
-    }
+    } catch { }
 
     $seen = @()
     foreach ($candidate in $candidates) {
         $info = Get-JavaInfo $candidate
         if ($null -eq $info) { continue }
         $seen += $info
-        if ($info.Major -ge 17) {
-            return [pscustomobject]@{ Selected = $info; Seen = $seen }
-        }
+        if ($info.Major -ge 17) { return [pscustomobject]@{ Selected = $info; Seen = $seen } }
     }
     return [pscustomobject]@{ Selected = $null; Seen = $seen }
 }
-
 
 function Build-MechanistClasspath {
     param([string] $RootPath, [string] $JarPath)
@@ -221,10 +190,17 @@ function Write-DependencyClasspathReport {
     }
 }
 
-
 $LwjglVersion = '3.4.1'
-$LwjglRepository = 'https://repo1.maven.org/maven2'
-$LwjglModules = @('lwjgl', 'lwjgl-glfw', 'lwjgl-opengl', 'lwjgl-stb')
+$LwjglRequiredFiles = @(
+    "lwjgl-$LwjglVersion.jar",
+    "lwjgl-glfw-$LwjglVersion.jar",
+    "lwjgl-opengl-$LwjglVersion.jar",
+    "lwjgl-stb-$LwjglVersion.jar",
+    "lwjgl-$LwjglVersion-natives-windows.jar",
+    "lwjgl-glfw-$LwjglVersion-natives-windows.jar",
+    "lwjgl-opengl-$LwjglVersion-natives-windows.jar",
+    "lwjgl-stb-$LwjglVersion-natives-windows.jar"
+)
 
 function Test-MechanistValidJar {
     param([string] $Path)
@@ -242,57 +218,32 @@ function Test-MechanistValidJar {
     }
 }
 
-function Get-MechanistLwjglArtifacts {
-    $artifacts = [System.Collections.Generic.List[object]]::new()
-    foreach ($module in $LwjglModules) {
-        $file = "$module-$LwjglVersion.jar"
-        $url = "$LwjglRepository/org/lwjgl/$module/$LwjglVersion/$file"
-        $artifacts.Add([pscustomobject]@{ File = $file; Url = $url }) | Out-Null
-    }
-    foreach ($module in $LwjglModules) {
-        $file = "$module-$LwjglVersion-natives-windows.jar"
-        $url = "$LwjglRepository/org/lwjgl/$module/$LwjglVersion/$file"
-        $artifacts.Add([pscustomobject]@{ File = $file; Url = $url }) | Out-Null
-    }
-    return $artifacts
-}
-
-function Ensure-MechanistLwjglRuntime {
+function Assert-PackagedLwjglRuntime {
     param([string] $RootPath)
-    if ([string]::Equals($env:MECHANIST_DISABLE_LWJGL_BOOTSTRAP, 'true', [System.StringComparison]::OrdinalIgnoreCase)) {
-        Write-LogLine 'LWJGL bootstrap disabled by MECHANIST_DISABLE_LWJGL_BOOTSTRAP=true.'
-        return
-    }
-    $libDir = Join-Path $RootPath 'lib\lwjgl'
-    New-Item -ItemType Directory -Force -Path $libDir | Out-Null
-    Write-LogLine "LWJGL bootstrap: version=$LwjglVersion platform=windows target=$libDir"
-    foreach ($artifact in (Get-MechanistLwjglArtifacts)) {
-        $target = Join-Path $libDir $artifact.File
-        if (Test-MechanistValidJar $target) {
-            Write-LogLine "LWJGL present: lib/lwjgl/$($artifact.File)"
-            continue
+    $libRoot = Join-Path $RootPath 'lib'
+    $missing = [System.Collections.Generic.List[string]]::new()
+    foreach ($file in $LwjglRequiredFiles) {
+        $hits = @()
+        if (Test-Path -LiteralPath $libRoot -PathType Container) {
+            $hits = @(Get-ChildItem -LiteralPath $libRoot -Recurse -File -Filter $file -ErrorAction SilentlyContinue)
         }
-        Write-Host "Installing optional LWJGL runtime: $($artifact.File)"
-        Write-LogLine "LWJGL download: $($artifact.Url)"
-        $tmp = "$target.tmp"
-        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        try {
-            Invoke-WebRequest -Uri $artifact.Url -OutFile $tmp -UseBasicParsing
-            if (-not (Test-MechanistValidJar $tmp)) {
-                throw "Downloaded file is not a valid jar."
-            }
-            Move-Item -LiteralPath $tmp -Destination $target -Force
-            Write-LogLine "LWJGL installed: lib/lwjgl/$($artifact.File)"
-        } catch {
-            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-            Write-LogLine "ERROR: LWJGL bootstrap failed for $($artifact.File): $($_.Exception.Message)"
-            Write-Host "ERROR: Could not install optional LWJGL runtime jar: $($artifact.File)"
-            Write-Host 'The launcher could not install optional rendering runtime libraries. Connect to the internet or pre-populate lib\lwjgl, then run again.'
-            Write-Host "See log: $LogFile"
-            exit 23
+        $valid = $false
+        foreach ($hit in $hits) {
+            if (Test-MechanistValidJar $hit.FullName) { $valid = $true; break }
         }
+        if (-not $valid) { $missing.Add($file) | Out-Null }
     }
-    Write-LogLine 'LWJGL bootstrap complete.'
+    if ($missing.Count -gt 0) {
+        Write-LogLine 'ERROR: packaged LWJGL runtime is incomplete. Missing or invalid files:'
+        foreach ($item in $missing) { Write-LogLine "  $item" }
+        Write-Host 'ERROR: The installed package is missing required LWJGL runtime files.'
+        Write-Host 'LWJGL must be bundled by the installer/package build, not downloaded at game launch.'
+        Write-Host 'Missing files:'
+        foreach ($item in $missing) { Write-Host "  $item" }
+        Write-Host "See log: $LogFile"
+        exit 23
+    }
+    Write-LogLine "Packaged LWJGL runtime verified for Windows: version=$LwjglVersion"
 }
 
 Set-Content -Path $LogFile -Value '==================================================' -Encoding UTF8
@@ -322,9 +273,7 @@ if ($result.Seen.Count -eq 0) {
         Write-LogLine "  $($candidate.Path) :: version=$($candidate.Version) :: major=$($candidate.Major) :: exit=$($candidate.ExitCode)"
         if ($candidate.Major -lt 17) {
             $firstLine = (($candidate.Output -split "`r?`n") | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1)
-            if (-not [string]::IsNullOrWhiteSpace($firstLine)) {
-                Write-LogLine "    probe: $firstLine"
-            }
+            if (-not [string]::IsNullOrWhiteSpace($firstLine)) { Write-LogLine "    probe: $firstLine" }
         }
     }
 }
@@ -349,7 +298,7 @@ Write-Host "Using Java: $javaExe"
 Write-Host "Detected Java version: $($result.Selected.Version)"
 Write-Host ''
 
-Ensure-MechanistLwjglRuntime $Root
+Assert-PackagedLwjglRuntime $Root
 $classPath = Build-MechanistClasspath $Root $jar
 Write-DependencyClasspathReport $Root
 Write-LogLine "Classpath: $classPath"
