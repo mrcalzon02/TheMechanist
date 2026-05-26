@@ -272,7 +272,7 @@ function Ensure-MechanistLwjglRuntime {
             Write-LogLine "LWJGL present: lib/lwjgl/$($artifact.File)"
             continue
         }
-        Write-Host "Installing LWJGL runtime: $($artifact.File)"
+        Write-Host "Installing optional LWJGL runtime: $($artifact.File)"
         Write-LogLine "LWJGL download: $($artifact.Url)"
         $tmp = "$target.tmp"
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
@@ -286,8 +286,8 @@ function Ensure-MechanistLwjglRuntime {
         } catch {
             Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
             Write-LogLine "ERROR: LWJGL bootstrap failed for $($artifact.File): $($_.Exception.Message)"
-            Write-Host "ERROR: Could not install LWJGL runtime jar: $($artifact.File)"
-            Write-Host 'The desktop client now requires LWJGL. Connect to the internet or pre-populate lib\lwjgl, then run again.'
+            Write-Host "ERROR: Could not install optional LWJGL runtime jar: $($artifact.File)"
+            Write-Host 'The launcher could not install optional rendering runtime libraries. Connect to the internet or pre-populate lib\lwjgl, then run again.'
             Write-Host "See log: $LogFile"
             exit 23
         }
