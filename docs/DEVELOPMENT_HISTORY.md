@@ -128,3 +128,13 @@ The suite now executes:
 This provides a stable narrow verification surface for future Gate 3 UI cleanup work before broader recursive compile or packaging verification passes are run.
 
 Verification: smoke suite entry point added and logically validated against the current Gate 3 containment coverage set.
+
+## Gate 3 - Shared Denial Message Composer Slice
+
+Added `PlayerFacingDenialText` as a shared denial-feedback composer for movement, interaction, transition, inventory, construction, trade, combat, save/load, and option-setting failures.
+
+The composer routes rejection reasons through the shared sanitizer authority and applies stable readable prefixes and fallback wording instead of exposing runtime classes, raw zone keys, registry handles, filesystem paths, or debug phrasing directly to ordinary players.
+
+Added `PlayerFacingDenialTextSmoke` to guard against regressions where denial messages leak target-zone save keys, runtime class names, filesystem paths, generated IDs, or raw registry/debug wording.
+
+Verification: `PlayerFacingDenialTextSmoke` added and logically validated against the active Gate 3 denial-message containment targets.
