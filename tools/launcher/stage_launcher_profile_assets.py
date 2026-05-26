@@ -7,7 +7,7 @@ any full portrait catalog. It only looks for approved source hints used by the t
 launcher profile packages:
 
 - 8X8 Source / 8x8 source portrait sheet
-- existing celebrity portrait asset
+- approved cleared special/name-locked portrait asset
 
 Packaging scripts may call this helper before jpackage. If an exact source cannot be
 found, it writes a clear audit report and returns non-zero unless --allow-missing is set.
@@ -28,6 +28,7 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
 @dataclass(frozen=True)
 class AssetRule:
     package_id: str
+    package_dir_name: str
     output_subdir: str
     required_hint: str
     filename_tokens_any_order: tuple[str, ...]
@@ -37,17 +38,19 @@ class AssetRule:
 RULES = (
     AssetRule(
         package_id="launcher-human-8x8-v1",
+        package_dir_name="human-8x8",
         output_subdir="human-8x8/assets",
         required_hint="8X8 Source",
         filename_tokens_any_order=("8", "source"),
         fallback_tokens=("8x8", "8X8", "human8x8", "human-8x8"),
     ),
     AssetRule(
-        package_id="launcher-celebrity-portraits-v1",
-        output_subdir="celebrity-portraits/assets",
-        required_hint="celebrity portrait asset in main client",
-        filename_tokens_any_order=("celebrity",),
-        fallback_tokens=("special portrait", "name locked", "namelocked", "famous"),
+        package_id="launcher-special-portraits-v1",
+        package_dir_name="special-portraits",
+        output_subdir="special-portraits/assets",
+        required_hint="approved cleared special/name-locked portrait asset in main client",
+        filename_tokens_any_order=("special",),
+        fallback_tokens=("name locked", "namelocked", "profile special", "special portrait"),
     ),
 )
 
@@ -123,8 +126,7 @@ def main(argv: list[str]) -> int:
 
     for rule in RULES:
         source, candidates = choose_candidate(asset_root, rule)
-        package_dir_name = "human-8x8" if rule.package_id == "launcher-human-8x8-v1" else "celebrity-portraits"
-        manifest = launcher_root / package_dir_name / "package.json"
+        manifest = launcher_root / rule.package_dir_name / "package.json"
         entry: dict[str, object] = {
             "package_id": rule.package_id,
             "required_hint": rule.required_hint,
