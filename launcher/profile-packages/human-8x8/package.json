@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "package_id": "launcher-human-8x8-v1",
+  "owner": "thin-launcher",
+  "purpose": "fallback-client-profile-human-portrait-seed",
+  "description": "Launcher-safe minimal 8x8 human portrait package used for fallback client profile generation before the full client asset catalog is available.",
+  "grid": {
+    "columns": 8,
+    "rows": 8,
+    "expected_entries": 64
+  },
+  "selection_rule": "profile.hash modulo 64",
+  "allowed_scope": [
+    "fallback-profile-generation",
+    "thin-launcher-identity-preview",
+    "pre-client-profile-repair"
+  ],
+  "forbidden_scope": [
+    "full-client-random-portrait-pool",
+    "npc-generation",
+    "creature-generation",
+    "faction-portrait-flattening"
+  ],
+  "entries": [
+    "human8x8-00", "human8x8-01", "human8x8-02", "human8x8-03", "human8x8-04", "human8x8-05", "human8x8-06", "human8x8-07",
+    "human8x8-08", "human8x8-09", "human8x8-10", "human8x8-11", "human8x8-12", "human8x8-13", "human8x8-14", "human8x8-15",
+    "human8x8-16", "human8x8-17", "human8x8-18", "human8x8-19", "human8x8-20", "human8x8-21", "human8x8-22", "human8x8-23",
+    "human8x8-24", "human8x8-25", "human8x8-26", "human8x8-27", "human8x8-28", "human8x8-29", "human8x8-30", "human8x8-31",
+    "human8x8-32", "human8x8-33", "human8x8-34", "human8x8-35", "human8x8-36", "human8x8-37", "human8x8-38", "human8x8-39",
+    "human8x8-40", "human8x8-41", "human8x8-42", "human8x8-43", "human8x8-44", "human8x8-45", "human8x8-46", "human8x8-47",
+    "human8x8-48", "human8x8-49", "human8x8-50", "human8x8-51", "human8x8-52", "human8x8-53", "human8x8-54", "human8x8-55",
+    "human8x8-56", "human8x8-57", "human8x8-58", "human8x8-59", "human8x8-60", "human8x8-61", "human8x8-62", "human8x8-63"
+  ]
+}
