@@ -2,41 +2,33 @@
 
 You must accept this notice before accessing the application, menus, gameplay, server tools, profile creation, chat, or local content.
 
-This development build stores local settings, profile identifiers, diagnostics, chat logs, and save data on this machine for operation, debugging, and continuity.
+This development build stores local settings, profile identifiers, diagnostics, chat logs, and save data on this machine for operation, debugging, continuity, crash review, local hosting, and save recovery.
 
-Network and server features may record profile, wrapper, installation, session, moderation, and administrative identifiers when those systems are active.
+Network and server features may record profile, wrapper, installation, session, moderation, and administrative identifiers when those systems are active. Multiplayer, mod synchronization, hosting, and administrative features may also write server logs, connection records, world identifiers, player identifiers, moderation records, and content-integrity reports.
 
-Do not use the application if you are not legally permitted to do so in your region or if you do not agree to local/profile logging required for the runtime.
+Do not use the application if you are not legally permitted to do so in your region, if you do not agree to the local/profile logging required for the runtime, or if you do not agree to the project terms below.
 
-## Intellectual Property Disclaimer & Fan Project Acknowledgment
+## Project Identity and Content Notice
 
-**IMPORTANT NOTICE: UNOFFICIAL FAN-MADE CONTENT**
+The Mechanist is an original civic-industrial survival simulation project in active development. Its setting, factions, institutions, lore systems, asset registries, and public-facing documentation are intended to stand as original project material.
 
-### 1. Absolute Admission of Non-Ownership
+The project is undergoing an active public-safe namespace and semantic-identity transition. Older prototype terminology, placeholder metadata, development notes, or private test material may still exist in non-public or transitional surfaces while the rebase is completed. Public-facing releases should use only owned, original, licensed, or otherwise cleared material.
 
-This project is an entirely unofficial, non-commercial, fan-made application. The developer of this program explicitly admits, acknowledges, and declares that they do not own, do not hold a license to, and do not claim any proprietary rights over any intellectual property owned by Games Workshop Limited.
+## Third-Party Rights
 
-### 2. Explicit Recognition of Games Workshop Trademarks
+Third-party trademarks, copyrighted works, brands, names, logos, characters, settings, and other protected material remain the property of their respective owners.
 
-All names, phrases, titles, characters, factions, logistics, lore, settings, vehicles, weapons, locations, and associated imagery used within this program are the exclusive, copyrighted property and registered trademarks of Games Workshop Limited, its subsidiaries, and its licensors.
+No reference to a third-party mark or work creates endorsement, sponsorship, affiliation, ownership, or permission. No project file, modding hook, example, or asset path grants any user permission to upload, distribute, publish, or commercialize infringing material.
 
-This includes, but is strictly not limited to, all content relating to: Warhammer, Warhammer 40,000, Warhammer Age of Sigmar, Space Marine, Chaos, Citadel, Forge World, and all related logos, insignia, devices, and nomenclatures.
+## User Content, Mods, and Imported Assets
 
-### 3. Zero Commerce & Non-Profit Compliance
+Users are responsible for any content they import, create, modify, package, publish, or distribute through the application, editor, modding tools, local folders, external repositories, or workshop-style publication routes.
 
-This project is created and distributed as a pure hobbyist endeavor.
+Do not import, publish, or distribute content that you do not own or have permission to use. The application may reject, quarantine, or refuse to load files that fail security checks, integrity checks, path-safety checks, or content policy checks.
 
-**No Commercial Value:** This program is 100% free of charge.
+## No Warranty
 
-**No Revenue Generation:** The developer receives no direct financial compensation, ad revenue, subscription fees, or other monetization.
-
-**No Infringement Intended:** This project is designed purely for the personal enjoyment of the fan community and is not intended to compete with, replace, or infringe upon official Games Workshop products, software, or licensed media.
-
-### 4. Severability and Absolution of Liability
-
-By executing this application, the user acknowledges that this software is completely unaffiliated with, unauthorized by, and unendorsed by Games Workshop Limited. The developer stands completely absolved of any implication of official corporate association.
-
-If Games Workshop Limited objects to the existence of this fan project, the program will be permanently removed and terminated immediately upon official request.
+This is development software. It may contain defects, incomplete features, broken saves, unstable tools, rendering problems, logging errors, packaging issues, or compatibility failures. Use it at your own risk and keep backups of important files.
 
 ## Consent Persistence
 
