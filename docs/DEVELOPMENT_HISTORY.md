@@ -126,6 +126,7 @@ The suite now executes:
 - `PlayerFacingUiTextSmoke`
 - `PlayerFacingDenialTextSmoke`
 - `PlayerFacingInspectionTextSmoke`
+- `PlayerFacingActionTextSmoke`
 
 This provides a stable narrow verification surface for future Gate 3 UI cleanup work before broader recursive compile or packaging verification passes are run.
 
@@ -160,3 +161,13 @@ The helper routes ordinary action-result text through the shared sanitizer autho
 Added `PlayerFacingActionTextSmoke` to guard against regressions where action-result surfaces leak registry handles, runtime identifiers, target-zone keys, UUIDs, filesystem paths, or debug-oriented wording.
 
 Verification: `PlayerFacingActionTextSmoke` added and logically validated against the active Gate 3 action-feedback containment targets.
+
+## Gate 3 - Shared Text Wrapping Helper Slice
+
+Added `PlayerFacingTextWrap` as a shared readable line-wrapping authority for ordinary gameplay panels, event logs, inspection windows, tooltip bodies, and other bounded player-facing text surfaces.
+
+The helper routes incoming text through the shared sanitizer authority before applying deterministic whitespace wrapping, helping future UI migrations avoid inconsistent local wrapping logic and reducing the chance of raw implementation residue overflowing into visible UI panels.
+
+Added `PlayerFacingTextWrapSmoke` to guard against regressions where wrapped output leaks registry handles, target-zone keys, filesystem paths, or oversized lines outside the requested wrap width.
+
+Verification: `PlayerFacingTextWrapSmoke` added and logically validated against the active Gate 3 readable-panel containment targets.
