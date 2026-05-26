@@ -1,6 +1,6 @@
 # Milestone Index and Ordered Phase-Aligned Map
 
-This document is the navigation surface for the ordered milestone system. It replaces the earlier candidate/topical milestone map with the current phase-aligned `00` through `09` sequence.
+This document is the navigation surface for the ordered milestone system. It replaces the earlier candidate/topical milestone map with the current phase-aligned `00` through `10` sequence.
 
 `MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is the milestone navigation index. Individual ordered milestone files carry detailed implementation targets for large phase groups.
 
@@ -271,6 +271,36 @@ Primary phases:
 - Phase 18 editor/Infopedia portions.
 - Phase 19 worldgen/stamp audits.
 
+### `MILESTONE_10_PERSISTENCE_SAVE_SCHEMA_MIGRATION_AND_BACKUPS.md`
+
+Focus:
+
+- World file versus player file separation.
+- Profile/settings save separation.
+- Launcher/cache/manifest state separation.
+- Editor/content definition persistence.
+- Save schema versioning.
+- Save migrations.
+- Atomic saves.
+- Backups and autosaves.
+- Save/load validation.
+- Stale reference handling.
+- Missing mod/content fallback and quarantine.
+- Server-authoritative world save behavior.
+- Client snapshot separation.
+- Privacy/redaction for diagnostics.
+
+Primary phases:
+
+- Cross-cutting all phases.
+- Phase 0 governance/build/package hygiene.
+- Phase 18 editor/content pipeline persistence.
+- Phase 19 release/save/load QA.
+
+Primary function:
+
+This milestone defines what belongs in the world save, player save, profile/settings save, launcher/cache state, and editor/content definitions. It is the persistence gate for every other milestone.
+
 ## Legacy topical files and supplements
 
 The following topical files remain source material until explicitly archived, deprecated, or deleted by user approval:
@@ -309,6 +339,7 @@ Add future notes to the correct ordered milestone whenever possible:
 - Ages, schemes, quests, Quest Editor, journals, intelligence sale -> Milestone 07.
 - Medicine, body states, cybernetics, prosthetics, drug effects -> Milestone 08.
 - Worldgen, districts, room/facility stamps, faction theming -> Milestone 09.
+- Persistence, save ownership, migrations, backups, autosaves, stale references, world/player/profile separation -> Milestone 10.
 
 ## Codex handoff rule
 
@@ -332,7 +363,7 @@ Do not hand Codex the entire milestone sequence as one implementation request. T
 The next recommended development pass is:
 
 1. Prepare a Codex handoff brief that points Codex to the master plan, standards/practices, governance, development history, and this ordered milestone index.
-2. Keep the first Codex task narrow, preferably documentation/package alignment or a small Milestone 01/02 runtime-support slice.
+2. Keep the first Codex task narrow, preferably documentation/package alignment or a small Milestone 01/02/10 runtime-support slice.
 3. Do not start broad worldgen or simulation expansion until the active publish-safe checkpoint is satisfied.
 
 ## Verification checklist
@@ -349,6 +380,7 @@ Before declaring milestone consolidation complete, verify:
 - `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md` exists.
 - `MILESTONE_08_MEDICAL_CYBERNETICS_NARCOTICS_AND_BODY_SYSTEMS.md` exists.
 - `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` exists.
+- `MILESTONE_10_PERSISTENCE_SAVE_SCHEMA_MIGRATION_AND_BACKUPS.md` exists.
 - `MASTER_DEVELOPMENT_PLAN.md` references this index.
 - Topical files are preserved until cleanup approval.
 - The next Codex handoff is narrow and testable.
@@ -356,3 +388,5 @@ Before declaring milestone consolidation complete, verify:
 ## Deferred checkpoint summary
 
 The milestone index is now the ordered navigation surface for detailed planning. The master development plan remains the authority. Ordered milestones provide implementation depth. Legacy topical files remain source material until cleanup is explicitly approved. Future work should patch the correct ordered milestone rather than creating new scattered planning files.
+
+The milestone chain now includes a dedicated persistence/save-schema milestone. World truth belongs in world saves. Player-character truth belongs in player saves. Profile/settings truth belongs in profile/settings saves. Launcher/cache state belongs in launcher/cache manifests. Editor-authored definitions belong in versioned content definitions. Every future system must define what it saves, where it saves, how it migrates, and how save/load is validated.
