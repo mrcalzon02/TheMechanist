@@ -133,7 +133,7 @@ Done when: the build artifacts are reproducible, the touched publish-safe path h
 
 Roadmap rule: each former required outcome is now a required subphase/runtime pass. A subphase is not complete because a note exists; it is complete only when the owning authority exists, the old behavior still works or is intentionally migrated, and the verification path is named.
 
-Dependency rule: asset promotion precedes broad content placement; population provenance precedes item provenance. The game should know what visual assets are usable in world space before it tries to place them broadly, and it should know who exists, where they live, where they work, what faction they belong to, and what machines or rooms they operate before it tries to explain who produced an item.
+Dependency rule: asset promotion precedes broad content placement; population provenance precedes item provenance; item provenance precedes Ages of Control zone-history generation. The game should know what visual assets are usable in world space before it tries to place them broadly, should know who exists and who works where before it tries to explain who produced an item, and should know population/item provenance before using historical faction plans to generate aged control, expansion, loss, production, defense, and decay inside zones.
 
 ### Clarity and overview revision path
 
@@ -178,8 +178,8 @@ Immediate clarification backlog:
 - Phase 5.1 through Phase 5.8 need secondary expansion because operations, hauling, reservations, route readiness, delivery intent, contracts, and preflight feedback will define much of the later automation model.
 - Phase 6.1 through Phase 6.6 need secondary expansion because production and machine operation can easily become hidden timers unless the data model, UI inspection, staffing fallback, and interruption semantics are specified.
 - Phase 8.1 through Phase 8.12 need secondary expansion before population simulation work begins because demographic origin, age promotion, faction membership, workplace assignment, room occupancy, and reinforcement requests become foundational inputs for item provenance and faction continuity.
-- Phase 9 and Phase 14 need secondary expansion before broad world-content work resumes because item/facility provenance and district simulation can otherwise sprawl into unbounded content generation.
-- Phase 17.1 through Phase 17.13 need secondary expansion before any release-candidate claim because packaging, asset packs, compatibility, old-machine viability, and regression checklists require measurable acceptance criteria.
+- Phase 10.1 through Phase 10.16 need secondary expansion before historical zone generation work begins because Ages of Control, leadership schemes, faction expansion, concessions, assaults, defense, population drift, production plans, room control, and active gameplay scheme activation can otherwise become unbounded worldgen prose rather than inspectable generation ledgers.
+- Phase 15 and Phase 18 need secondary expansion before broad world-content or release-candidate work resumes because district simulation, asset packs, old-machine viability, and regression checklists require measurable acceptance criteria.
 
 Example clarification pattern:
 
@@ -296,7 +296,7 @@ Exit criteria: graphical assets are no longer a passive pile of files. The proje
 
 Goal: make generated spaces physically connect, face one another, and produce believable civic, industrial, commercial, residential, sewer, and exterior-boundary layouts.
 
-Completion state: closed as of 0.9.10fz for durable-phase scheduling. Phase 3 established roaded and roadless zone families, descriptor-backed tile identity, road/sidewalk distinction, exterior maintenance boundary layers, world-generation weight semantics, and inspection surfaces sufficient to expose spatial defects. Remaining deep world-generation expansion belongs to later durable world/facility phases, especially Phase 9 and Phase 14, unless a Phase 4 presentation/input defect requires a narrow repair.
+Completion state: closed as of 0.9.10fz for durable-phase scheduling. Phase 3 established roaded and roadless zone families, descriptor-backed tile identity, road/sidewalk distinction, exterior maintenance boundary layers, world-generation weight semantics, and inspection surfaces sufficient to expose spatial defects. Remaining deep world-generation expansion belongs to later durable world/facility phases, especially Phase 9, Phase 10, and Phase 15, unless a Phase 4 presentation/input defect requires a narrow repair.
 
 Completed subphases:
 
@@ -425,157 +425,188 @@ Required subphases:
 
 Exit criteria: the world can explain item origin and supply pressure through facilities, machines, factions, trade paths, salvage paths, and the populations or workers responsible for production and handling.
 
-### Phase 10 - Construction, bases, rooms, defenses, and ownership
+### Phase 10 - Ages of Control, faction leadership schemes, and zone generation history
+
+Goal: make zone generation a historical simulation of control, expansion, loss, recovery, production, population movement, political schemes, assaults, defense, decay, and faction leadership decisions instead of a one-shot placement of rooms.
+
+This phase consumes Phase 8 population provenance and Phase 9 item/facility provenance. Once the simulation knows who lives in a zone, who works there, what is produced there, which facilities exist, and what factions have access to people and goods, world generation can model each zone as the result of multiple historical ages. Each age records who controlled the zone, what their leadership wanted, how much they expanded, what they built, what they lost, who moved in or out, what production succeeded or failed, what assaults or defenses occurred, and how later factions inherited, contested, repaired, repurposed, or degraded the rooms left behind.
+
+Required subphases:
+
+- Phase 10.1 - Zone-generation mechanics review pass. Audit current zone generation, room minimums, room type guarantees, room ownership assignment, faction control assignment, population target injection, facility placement, production placement, and historical metadata gaps.
+- Phase 10.2 - Age-of-control data model pass. Define an ordered zone-history record containing age name/index, controlling faction, dominant faction advantage, rival factions, leadership scheme, population trend, production trend, room changes, facility changes, conflict events, political events, decay events, and inheritance into the next age.
+- Phase 10.3 - Initial viability age pass. The first playable viability age for a zone should create at least 20 rooms and include at least one room of every required type for minimum zone viability before later ages expand, repurpose, damage, or transfer control.
+- Phase 10.4 - Dominant-faction advantage pass. The dominant faction in a zone should receive real advantages in keeping or expanding control, but not immunity from decline, assault, intrigue, population loss, production failure, or concessions.
+- Phase 10.5 - Leadership scheme definition pass. Define leadership schemes such as expansion, consolidation, fortification, production surge, housing boom, political capture, intrigue, sabotage, assault preparation, recovery, retreat, austerity, decadence, and managed decay.
+- Phase 10.6 - Expansion and room-growth pass. During expansion ages, faction schemes may add rooms, enlarge districts, improve production capacity, increase housing capacity, add defenses, add service rooms, or create new facility clusters using promoted Phase 2 assets.
+- Phase 10.7 - Loss, concession, and room-control transfer pass. During decline, conflict, or negotiated concession ages, room ownership and facility control can transfer from one faction to another, become neutral, become contested, become abandoned, or become degraded.
+- Phase 10.8 - Population drift and demographic shock pass. Each age can produce population boom, population loss, migration, reinforcement arrival, evacuation, displacement, labor import, prison intake, disease loss, recruitment, or faction membership promotion using Phase 8 provenance.
+- Phase 10.9 - Production plan success/failure pass. Faction production schemes should consume Phase 9 item/facility provenance to decide whether a zone gained workshops, lost machines, expanded supply chains, suffered shortages, produced surplus, or degraded into scavenging.
+- Phase 10.10 - Assault, defense, and conflict-history pass. Historical assaults and defenses should leave traces such as damaged rooms, reinforced checkpoints, abandoned rooms, contested borders, new barricades, population losses, weapon stockpiles, or faction-control scars.
+- Phase 10.11 - Political plan and intrigue pass. Faction leadership may pursue influence, bribery, infiltration, administrative capture, religious/civic legitimacy, blackmail, legal control, or covert displacement that changes room control without direct combat.
+- Phase 10.12 - Degradation and maintenance-failure pass. Ages can decay infrastructure, degrade rooms, break machines, reduce housing quality, create hazards, block corridors, damage utilities, or create abandoned pockets when maintenance or political will fails.
+- Phase 10.13 - Cross-zone sector scheme pass. Leadership schemes must not be only local. A faction controlling or contesting several zones in a sector may plan expansion corridors, production chains, assaults, defenses, migration routes, reinforcement paths, trade plans, and political capture across multiple zones.
+- Phase 10.14 - Ongoing gameplay scheme activation pass. The same leadership-scheme framework used during world generation should later support active gameplay planning, so factions can continue to expand, assault, reinforce, build, lose, recover, scheme, and change room control after game start.
+- Phase 10.15 - Zone history inspection pass. Provide compact audit surfaces that explain the current zone layout as a sequence of ages: who controlled it, what they built, what they lost, who moved, what production changed, and why the zone looks the way it does.
+- Phase 10.16 - Deterministic generation and save compatibility pass. Age histories must be deterministic from seed/world settings where appropriate, persist enough history for inspection and ongoing gameplay, and avoid save bloat by aggregating historical events until player interaction requires detail.
+
+Exit criteria: a zone is generated as the visible result of historical control rather than a static room scatter. Minimum viable zones begin with at least 20 rooms and at least one room of every required type, then subsequent ages can expand, lose, regain, repurpose, damage, or transfer rooms according to faction leadership schemes, population provenance, item/facility provenance, and sector-wide faction plans. The same leadership scheme model can later activate during ongoing gameplay rather than existing only as worldgen flavor text.
+
+### Phase 11 - Construction, bases, rooms, defenses, and ownership
 
 Goal: make player and faction spaces physically meaningful.
 
 Required subphases:
 
-- Phase 10.1 - Construction validation pass.
-- Phase 10.2 - No-self-entombment pass.
-- Phase 10.3 - Placement feedback pass.
-- Phase 10.4 - Validation inspection pass.
-- Phase 10.5 - Base ownership metadata pass.
-- Phase 10.6 - Room metadata pass.
-- Phase 10.7 - Passive defense physicalization pass.
-- Phase 10.8 - Doors, gates, and barricades integration pass.
-- Phase 10.9 - Alarms, cameras, traps, defensive furniture, and checkpoint integration pass.
+- Phase 11.1 - Construction validation pass.
+- Phase 11.2 - No-self-entombment pass.
+- Phase 11.3 - Placement feedback pass.
+- Phase 11.4 - Validation inspection pass.
+- Phase 11.5 - Base ownership metadata pass.
+- Phase 11.6 - Room metadata pass.
+- Phase 11.7 - Passive defense physicalization pass.
+- Phase 11.8 - Doors, gates, and barricades integration pass.
+- Phase 11.9 - Alarms, cameras, traps, defensive furniture, and checkpoint integration pass.
 
 Exit criteria: buildings and rooms govern access, cover, raids, ownership, and later combat.
 
-### Phase 11 - Hazards, lighting, darkness, and traps
+### Phase 12 - Hazards, lighting, darkness, and traps
 
 Goal: make dangerous spaces readable and mechanically consistent.
 
 Required subphases:
 
-- Phase 11.1 - Gas, fumes, sludge, and sewer hazard pass.
-- Phase 11.2 - Shorted wire, jagged passage, overheating factory, freezer space, and industrial kill-zone pass.
-- Phase 11.3 - Trap system pass.
-- Phase 11.4 - Warning overlay pass.
-- Phase 11.5 - Lighting and visibility integration pass.
-- Phase 11.6 - Sound, pathing, health, equipment, and generation integration pass.
+- Phase 12.1 - Gas, fumes, sludge, and sewer hazard pass.
+- Phase 12.2 - Shorted wire, jagged passage, overheating factory, freezer space, and industrial kill-zone pass.
+- Phase 12.3 - Trap system pass.
+- Phase 12.4 - Warning overlay pass.
+- Phase 12.5 - Lighting and visibility integration pass.
+- Phase 12.6 - Sound, pathing, health, equipment, and generation integration pass.
 
 Exit criteria: a player can see danger, understand danger, and trace the system that produced it.
 
-### Phase 12 - Combat, health, unconsciousness, death, saves, and feedback
+### Phase 13 - Combat, health, unconsciousness, death, saves, and feedback
 
 Goal: make violence and failure robust enough for a survival sim.
 
 Required subphases:
 
-- Phase 12.1 - Combat and combat-feedback review pass.
-- Phase 12.2 - Health, unconsciousness, armor, cover, weapons, ammunition, and death review pass.
-- Phase 12.3 - Unconscious player relocation pass.
-- Phase 12.4 - You Lost screen cause/killer/weapon/survival pass.
-- Phase 12.5 - You Lost score categories pass: kills, crafted items, knowledge, sectors, zones, NPCs, wealth, bases, recruits, and weighted values.
-- Phase 12.6 - Load Save menu handoff pass.
-- Phase 12.7 - Save UI manual slot pass.
-- Phase 12.8 - Autosave column and autosave trigger pass.
+- Phase 13.1 - Combat and combat-feedback review pass.
+- Phase 13.2 - Health, unconsciousness, armor, cover, weapons, ammunition, and death review pass.
+- Phase 13.3 - Unconscious player relocation pass.
+- Phase 13.4 - You Lost screen cause/killer/weapon/survival pass.
+- Phase 13.5 - You Lost score categories pass: kills, crafted items, knowledge, sectors, zones, NPCs, wealth, bases, recruits, and weighted values.
+- Phase 13.6 - Load Save menu handoff pass.
+- Phase 13.7 - Save UI manual slot pass.
+- Phase 13.8 - Autosave column and autosave trigger pass.
 
 Exit criteria: injury, defeat, recovery, save/load, and final loss are coherent and testable.
 
-### Phase 13 - Character creation, names, ranks, rosters, and social identity
+### Phase 14 - Character creation, names, ranks, rosters, and social identity
 
 Goal: stop treating characters and factions as thin placeholders.
 
 Required subphases:
 
-- Phase 13.1 - Deterministic stat distribution pass.
-- Phase 13.2 - Editable character-name entry pass.
-- Phase 13.3 - Original-setting first-name pool pass.
-- Phase 13.4 - Original-setting last-name pool pass.
-- Phase 13.5 - Original-setting singular-name pool pass.
-- Phase 13.6 - Faction rank taxonomy pass.
-- Phase 13.7 - Leaders, deputies, supervisors, workers, guards, clergy, representatives, and specialists roster pass.
-- Phase 13.8 - Rank-to-facility and rank-to-room authority pass.
-- Phase 13.9 - Rank-to-production, quest, and command-chain authority pass.
-- Phase 13.10 - Player portrait baseline/base human pool pass.
-- Phase 13.11 - Faction and creature portrait exact-folder authority pass.
+- Phase 14.1 - Deterministic stat distribution pass.
+- Phase 14.2 - Editable character-name entry pass.
+- Phase 14.3 - Original-setting first-name pool pass.
+- Phase 14.4 - Original-setting last-name pool pass.
+- Phase 14.5 - Original-setting singular-name pool pass.
+- Phase 14.6 - Faction rank taxonomy pass.
+- Phase 14.7 - Leaders, deputies, supervisors, workers, guards, clergy, representatives, and specialists roster pass.
+- Phase 14.8 - Rank-to-facility and rank-to-room authority pass.
+- Phase 14.9 - Rank-to-production, quest, and command-chain authority pass.
+- Phase 14.10 - Player portrait baseline/base human pool pass.
+- Phase 14.11 - Faction and creature portrait exact-folder authority pass.
 
 Exit criteria: factions can produce named people with roles, ranks, continuity, and command meaning.
 
-### Phase 14 - World generation, districts, sewers, temples, estates, and strategic simulation
+### Phase 15 - World generation, districts, sewers, temples, estates, and strategic simulation
 
-Goal: make the world a layered industrial city instead of a collection of local rooms.
+Goal: make the world a layered industrial city whose zones inherit visible history from assets, population provenance, item/facility provenance, and Ages of Control rather than existing as isolated local rooms.
 
 Required subphases:
 
-- Phase 14.1 - Hab block and apartment district-stamp pass.
-- Phase 14.2 - Market and commercial district-stamp pass.
-- Phase 14.3 - Industrial sector district-stamp pass.
-- Phase 14.4 - Estate and elite-service district-stamp pass.
-- Phase 14.5 - Sewer, precinct, clinic, temple, military, utility, waste, cargo, and faction-compound district-stamp pass.
-- Phase 14.6 - Neutral civic-faith institution pass near plazas.
-- Phase 14.7 - Temple room layout pass: nave halls, pillars, relic alcoves, prayer nooks, candle racks, donation boxes, and supplicant kitchens.
-- Phase 14.8 - Temple staffing pass: clergy, pilgrims, guards, and non-hostile head officiants.
-- Phase 14.9 - Civic absolution service pass. The head officiant may offer a costly standing-repair service tied to hunger/sleep/time costs and limited civil-faction standing restoration.
-- Phase 14.10 - Distant-zone operational ledger simulation pass.
-- Phase 14.11 - Population-provenance worldgen integration pass. Ensure district generation assigns plausible population origins, occupancy, workforce, faction affiliation, and age cohorts rather than raw population numbers only.
-- Phase 14.12 - Asset-promotion worldgen integration pass. Ensure promoted Phase 2 assets are usable by room stamps, district stamps, facility stamps, and audit surfaces through semantic IDs.
+- Phase 15.1 - Hab block and apartment district-stamp pass.
+- Phase 15.2 - Market and commercial district-stamp pass.
+- Phase 15.3 - Industrial sector district-stamp pass.
+- Phase 15.4 - Estate and elite-service district-stamp pass.
+- Phase 15.5 - Sewer, precinct, clinic, temple, military, utility, waste, cargo, and faction-compound district-stamp pass.
+- Phase 15.6 - Neutral civic-faith institution pass near plazas.
+- Phase 15.7 - Temple room layout pass: nave halls, pillars, relic alcoves, prayer nooks, candle racks, donation boxes, and supplicant kitchens.
+- Phase 15.8 - Temple staffing pass: clergy, pilgrims, guards, and non-hostile head officiants.
+- Phase 15.9 - Civic absolution service pass. The head officiant may offer a costly standing-repair service tied to hunger/sleep/time costs and limited civil-faction standing restoration.
+- Phase 15.10 - Distant-zone operational ledger simulation pass.
+- Phase 15.11 - Population-provenance worldgen integration pass. Ensure district generation assigns plausible population origins, occupancy, workforce, faction affiliation, and age cohorts rather than raw population numbers only.
+- Phase 15.12 - Asset-promotion worldgen integration pass. Ensure promoted Phase 2 assets are usable by room stamps, district stamps, facility stamps, and audit surfaces through semantic IDs.
+- Phase 15.13 - Ages-of-control worldgen integration pass. Ensure zone generation consumes Phase 10 histories so district stamps and room layouts reflect expansion, loss, concessions, defense, production success/failure, degradation, population movement, and faction leadership schemes.
 
-Exit criteria: local zones, offscreen districts, factions, population continuity anchors, asset placement, and facility provenance form one scalable world model.
+Exit criteria: local zones, offscreen districts, factions, population continuity anchors, asset placement, facility provenance, room control history, and leadership schemes form one scalable world model.
 
-### Phase 15 - Economy, quests, contracts, and faction reputation
+### Phase 16 - Economy, quests, contracts, and faction reputation
 
 Goal: convert faction presence into work, risk, trade, and standing.
 
 Required subphases:
 
-- Phase 15.1 - Faction representative contract surface pass.
-- Phase 15.2 - Fetch-item contract pass.
-- Phase 15.3 - Bounty contract pass.
-- Phase 15.4 - Contract identity pass: item, target, source, destination, reward, expiry, reputation effect, and failure state.
-- Phase 15.5 - Distance-abstraction economy pass.
-- Phase 15.6 - Local-detail economy pass where relevant.
-- Phase 15.7 - Population-aware contract source pass. Allow contracts to reference workforce, residents, specialists, leaders, reinforcements, and facility staff when those people are relevant to the work.
+- Phase 16.1 - Faction representative contract surface pass.
+- Phase 16.2 - Fetch-item contract pass.
+- Phase 16.3 - Bounty contract pass.
+- Phase 16.4 - Contract identity pass: item, target, source, destination, reward, expiry, reputation effect, and failure state.
+- Phase 16.5 - Distance-abstraction economy pass.
+- Phase 16.6 - Local-detail economy pass where relevant.
+- Phase 16.7 - Population-aware contract source pass. Allow contracts to reference workforce, residents, specialists, leaders, reinforcements, and facility staff when those people are relevant to the work.
+- Phase 16.8 - Leadership-scheme contract pass. Allow faction leaders and representatives to produce contracts that reflect active schemes such as expansion, defense, production surge, sabotage, political capture, or recovery.
 
-Exit criteria: quests and economy produce work tied to faction facilities, population roles, item provenance, and actual supply needs.
+Exit criteria: quests and economy produce work tied to faction facilities, population roles, item provenance, actual supply needs, and active leadership plans.
 
-### Phase 16 - Editor, localization, modding, and content pipeline
+### Phase 17 - Editor, localization, modding, and content pipeline
 
 Goal: make content creation durable instead of hand-editing fragile code.
 
 Required subphases:
 
-- Phase 16.1 - Zone-stamp editor pass.
-- Phase 16.2 - Feature/entity/faction editor pass.
-- Phase 16.3 - Machinery/recipe/item/tile editor pass.
-- Phase 16.4 - Mods / Tools local tooling entry pass.
-- Phase 16.5 - External mod loading claim ban pass until architecture is verified.
-- Phase 16.6 - Keyed localization file pass.
-- Phase 16.7 - Editor interoperability and customizability pass.
-- Phase 16.8 - Runtime-definition consumption pass for future stamps and content.
-- Phase 16.9 - In-game editor surface containment pass.
-- Phase 16.10 - Detached external editor window closure pass.
-- Phase 16.11 - Asset promotion editor pass. Let promoted Phase 2 world assets appear in editor palettes through semantic categories and publish-safe labels.
-- Phase 16.12 - Population provenance editor/audit pass. Let future editor/audit surfaces inspect population origins, role distributions, room occupancy, and workforce assignments without raw internal IDs.
+- Phase 17.1 - Zone-stamp editor pass.
+- Phase 17.2 - Feature/entity/faction editor pass.
+- Phase 17.3 - Machinery/recipe/item/tile editor pass.
+- Phase 17.4 - Mods / Tools local tooling entry pass.
+- Phase 17.5 - External mod loading claim ban pass until architecture is verified.
+- Phase 17.6 - Keyed localization file pass.
+- Phase 17.7 - Editor interoperability and customizability pass.
+- Phase 17.8 - Runtime-definition consumption pass for future stamps and content.
+- Phase 17.9 - In-game editor surface containment pass.
+- Phase 17.10 - Detached external editor window closure pass.
+- Phase 17.11 - Asset promotion editor pass. Let promoted Phase 2 world assets appear in editor palettes through semantic categories and publish-safe labels.
+- Phase 17.12 - Population provenance editor/audit pass. Let future editor/audit surfaces inspect population origins, role distributions, room occupancy, and workforce assignments without raw internal IDs.
+- Phase 17.13 - Ages-of-control editor/audit pass. Let future editor/audit surfaces inspect zone ages, control changes, leadership schemes, room transfers, production outcomes, and historical scars without requiring raw internal IDs.
 
-Exit criteria: content can be added through data/editor surfaces instead of central-code sprawl, and both asset promotion and population provenance can be inspected or extended through owned data surfaces.
+Exit criteria: content can be added through data/editor surfaces instead of central-code sprawl, and asset promotion, population provenance, item provenance, and ages-of-control histories can be inspected or extended through owned data surfaces.
 
-### Phase 17 - Polish, packaging, QA, and endgame readiness
+### Phase 18 - Polish, packaging, QA, and endgame readiness
 
 Goal: turn the simulation into a coherent playable loop.
 
 Required subphases:
 
-- Phase 17.1 - Lean core archive pass with low_32 assets.
-- Phase 17.2 - Optional art/audio pack pass.
-- Phase 17.3 - Installer bootstrap independence pass.
-- Phase 17.4 - Thin launcher bootstrap independence pass.
-- Phase 17.5 - Main client/server payload download and manifest pass.
-- Phase 17.6 - Bootstrap artifact dependency rejection pass.
-- Phase 17.7 - Java 17 compatibility pass.
-- Phase 17.8 - Old-machine viability pass.
-- Phase 17.9 - Save/load regression checklist pass.
-- Phase 17.10 - Worldgen/pathing/construction regression checklist pass.
-- Phase 17.11 - Combat/logistics/staffing regression checklist pass.
-- Phase 17.12 - UI/asset fallback regression checklist pass.
-- Phase 17.13 - Root new-conversation briefing continuity pass.
-- Phase 17.14 - Master asset integration release audit. Verify promoted assets, unused assets, quarantined assets, package ownership, optional packs, and semantic IDs before release-candidate packaging.
-- Phase 17.15 - Population provenance release audit. Verify population ledgers, workforce assignments, reinforcement requests, age promotion, and item-provenance handoff before release-candidate claims.
+- Phase 18.1 - Lean core archive pass with low_32 assets.
+- Phase 18.2 - Optional art/audio pack pass.
+- Phase 18.3 - Installer bootstrap independence pass.
+- Phase 18.4 - Thin launcher bootstrap independence pass.
+- Phase 18.5 - Main client/server payload download and manifest pass.
+- Phase 18.6 - Bootstrap artifact dependency rejection pass.
+- Phase 18.7 - Java 17 compatibility pass.
+- Phase 18.8 - Old-machine viability pass.
+- Phase 18.9 - Save/load regression checklist pass.
+- Phase 18.10 - Worldgen/pathing/construction regression checklist pass.
+- Phase 18.11 - Combat/logistics/staffing regression checklist pass.
+- Phase 18.12 - UI/asset fallback regression checklist pass.
+- Phase 18.13 - Root new-conversation briefing continuity pass.
+- Phase 18.14 - Master asset integration release audit. Verify promoted assets, unused assets, quarantined assets, package ownership, optional packs, and semantic IDs before release-candidate packaging.
+- Phase 18.15 - Population provenance release audit. Verify population ledgers, workforce assignments, reinforcement requests, age promotion, and item-provenance handoff before release-candidate claims.
+- Phase 18.16 - Ages-of-control release audit. Verify zone-history ledgers, minimum viable room generation, historical room control changes, faction scheme outcomes, active gameplay scheme handoff, and player-facing inspection surfaces before release-candidate claims.
 
-Exit criteria: development can proceed phase by phase without losing context, duplicating authorities, inventing fake implementation, shipping unclear assets, or claiming provenance systems that do not yet have population/workforce context.
+Exit criteria: development can proceed phase by phase without losing context, duplicating authorities, inventing fake implementation, shipping unclear assets, or claiming provenance/history systems that do not yet have population, workforce, production, room-control, and leadership-scheme context.
 
 ## Deferred checkpoint lines
 
@@ -599,6 +630,10 @@ Next persistence targets, when reopened:
 ### Population, workforce, and provenance continuity
 
 Population provenance is the prerequisite bridge between world generation and item provenance. Future persistence and world-ledger work should preserve the distinction between aggregated population groups, individually tracked actors, room occupancy, faction membership, age cohorts, promotion eligibility, workforce assignment, and machine/facility operation. Do not require every background resident to become a full actor, but do preserve enough ledger context to answer who lives here, who works here, who operates this, who made that, who requested reinforcements, and who can rise into faction structure.
+
+### Ages of Control and faction leadership schemes
+
+Ages of Control are the historical bridge between item/population provenance and final zone layout. Future worldgen and active gameplay planning should use shared leadership-scheme records so faction leaders can pursue expansion, consolidation, production, defense, assault, political capture, intrigue, recovery, retreat, or degradation both during initial world generation and after game start. Zone layout should preserve enough history to explain why rooms exist, who built them, who lost them, who controls them now, and what scars or successes remain.
 
 ### Faction and personnel parity
 
