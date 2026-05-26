@@ -115,3 +115,16 @@ The adapter layer routes ordinary panel text through the shared sanitizer author
 Added `PlayerFacingUiTextSmoke` to guard against regressions where target-zone keys, runtime class names, filesystem paths, or registry/debug wording leak back into ordinary player-facing UI text.
 
 Verification: `PlayerFacingUiTextSmoke` added and validated logically against the Gate 3 containment targets. Full recursive compile and runtime smoke were not run through this connector session.
+
+## Gate 3 - Player-Facing Smoke Suite Consolidation
+
+Added `Gate3PlayerFacingTextSmokeSuite` as a single-entry smoke runner for the active Gate 3 readability and containment guards.
+
+The suite now executes:
+- `FactionContractDisplaySmoke`
+- `PlayerFacingCopySanitizerSmoke`
+- `PlayerFacingUiTextSmoke`
+
+This provides a stable narrow verification surface for future Gate 3 UI cleanup work before broader recursive compile or packaging verification passes are run.
+
+Verification: smoke suite entry point added and logically validated against the current Gate 3 containment coverage set.
