@@ -127,6 +127,7 @@ The suite now executes:
 - `PlayerFacingDenialTextSmoke`
 - `PlayerFacingInspectionTextSmoke`
 - `PlayerFacingActionTextSmoke`
+- `PlayerFacingTextWrapSmoke`
 
 This provides a stable narrow verification surface for future Gate 3 UI cleanup work before broader recursive compile or packaging verification passes are run.
 
@@ -171,3 +172,13 @@ The helper routes incoming text through the shared sanitizer authority before ap
 Added `PlayerFacingTextWrapSmoke` to guard against regressions where wrapped output leaks registry handles, target-zone keys, filesystem paths, or oversized lines outside the requested wrap width.
 
 Verification: `PlayerFacingTextWrapSmoke` added and logically validated against the active Gate 3 readable-panel containment targets.
+
+## Gate 3 - Shared Panel Body Formatter Slice
+
+Added `PlayerFacingPanelBody` as a shared bounded panel-body formatter combining sanitization and deterministic wrapping for ordinary gameplay windows.
+
+The formatter is intended as a migration target for event logs, inventory descriptions, contract details, Look/Auspex bodies, dialogue panes, and ordinary overlay windows that currently rely on scattered local formatting behavior.
+
+Added `PlayerFacingPanelBodySmoke` to guard against regressions where panel bodies leak registry handles, target-zone keys, filesystem paths, or oversized wrapped lines into ordinary player-facing windows.
+
+Verification: `PlayerFacingPanelBodySmoke` added and logically validated against the active Gate 3 bounded-panel readability targets.
