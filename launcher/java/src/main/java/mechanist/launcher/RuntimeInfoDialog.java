@@ -43,7 +43,7 @@ final class RuntimeInfoDialog {
         add(model, "Modified content", Boolean.toString(ModStateDetector.inspect(config).modded()));
         add(model, "Icon authority", LauncherIconAuthority.status(config));
         add(model, "Game payload present", Boolean.toString(Files.isDirectory(config.repoDir)));
-        add(model, "Music manifest present", Boolean.toString(Files.isRegularFile(config.repoDir.resolve("assets/music/music_manifest.tsv"))));
+        add(model, "Music manifest present", Boolean.toString(Files.isRegularFile(config.repoDir.resolve("packages/client/assets/music/music_manifest.tsv"))));
         add(model, "Launcher status", launcherStatus == null ? "" : launcherStatus);
 
         JTable table = new JTable(model);

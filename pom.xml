@@ -135,10 +135,24 @@
         <sourceDirectory>${project.basedir}/src</sourceDirectory>
         <resources>
             <resource>
+                <directory>${project.basedir}/client/assets</directory>
+                <targetPath>assets</targetPath>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/client/modding</directory>
+                <targetPath>modding</targetPath>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
                 <directory>${project.basedir}</directory>
                 <includes>
-                    <include>assets/**</include>
-                    <include>modding/**</include>
                     <include>EULA.md</include>
                     <include>README.md</include>
                     <include>SERVER_README.md</include>

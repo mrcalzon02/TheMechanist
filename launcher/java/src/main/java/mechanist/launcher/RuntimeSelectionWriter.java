@@ -23,15 +23,17 @@ final class RuntimeSelectionWriter {
         if (graphicsTier != null) {
             props.setProperty("mechanist.graphicsTier", graphicsTier.id);
             props.setProperty("mechanist.assetTier", graphicsTier.id);
-            props.setProperty("generatedAssetPayloadRoot", config.repoDir.toString());
-            props.setProperty("mechanist.generatedAssetRoot", config.repoDir.toString());
-            props.setProperty("mechanist.assetPayloadRoot", config.repoDir.toString());
+            Path clientAssetRoot = config.repoDir.resolve("packages/client/assets");
+            props.setProperty("generatedAssetPayloadRoot", clientAssetRoot.toString());
+            props.setProperty("mechanist.generatedAssetRoot", clientAssetRoot.toString());
+            props.setProperty("mechanist.assetPayloadRoot", clientAssetRoot.toString());
         }
 
         if (audioTier != null) {
             props.setProperty("mechanist.audioTier", audioTier.id);
-            props.setProperty("mechanist.musicRoot", config.repoDir.resolve("assets/music/wav").toString());
-            props.setProperty("mechanist.musicManifest", config.repoDir.resolve("assets/music/music_manifest.tsv").toString());
+            Path clientAssetRoot = config.repoDir.resolve("packages/client/assets");
+            props.setProperty("mechanist.musicRoot", clientAssetRoot.resolve("music/wav").toString());
+            props.setProperty("mechanist.musicManifest", clientAssetRoot.resolve("music/music_manifest.tsv").toString());
         }
 
         props.setProperty("mechanist.installRoot", config.installRoot.toString());

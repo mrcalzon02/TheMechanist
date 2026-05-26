@@ -1,0 +1,21 @@
+{
+  "version": "0.9.10kc-phase-c",
+  "default_tier": "low_32",
+  "preferred_runtime_tier_order": [
+    "standard_64",
+    "low_32",
+    "intermediate_128",
+    "high_native"
+  ],
+  "tier_roots": {
+    "high_native": "assets/graphics/generated/high_native",
+    "intermediate_128": "assets/graphics/generated/intermediate_128",
+    "standard_64": "assets/graphics/generated/standard_64",
+    "low_32": "assets/graphics/generated/low_32"
+  },
+  "notes": [
+    "low_32 remains the safest default for existing tile/cell rendering until render scale is audited.",
+    "standard_64 is recommended for UI/browser previews and high-DPI display modes.",
+    "high_native should remain editor/QA/source-review only unless runtime memory budget is explicitly widened."
+  ]
+}

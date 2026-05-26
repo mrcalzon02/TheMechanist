@@ -57,7 +57,9 @@ public final class AppIconAuthority {
 
     private static Image loadIcon(int size) {
         String filePath = String.format(FILE_PATTERN, size);
-        File file = new File(filePath);
+        File file = new File("packages/client", filePath);
+        if (!file.isFile()) file = new File("client", filePath);
+        if (!file.isFile()) file = new File(filePath);
         if (file.isFile()) {
             try {
                 return ImageIO.read(file);

@@ -28,3 +28,8 @@ Thumbs.db
 # Python tooling cache
 __pycache__/
 *.pyc
+
+# Launcher-managed LWJGL runtime cache
+/lib/lwjgl/*.jar
+!/lib/lwjgl/README.md
+!/lib/lwjgl/lwjgl-runtime-manifest.txt

@@ -198,9 +198,15 @@ class TileArtSystem {
 
     File resolveRuntimeCellFile(String path) {
         if (path == null || path.isBlank()) return null;
+        String p = path.replace('\\', '/');
+        if (p.startsWith("assets/")) {
+            File packagedClientOwned = new File("packages/client", p);
+            if (packagedClientOwned.exists()) return packagedClientOwned;
+            File clientOwned = new File("client", p);
+            if (clientOwned.exists()) return clientOwned;
+        }
         File direct = new File(path);
         if (direct.exists()) return direct;
-        String p = path.replace('\\', '/');
         ArrayList<String> candidates = new ArrayList<>();
         candidates.add(p);
         candidates.add(p.replace("assets/art/rebase_0_9_06d", "assets/a/r"));
@@ -463,14 +469,6 @@ class ArtPackManager {
             Path cacheDir = Paths.get(cacheDirName);
             Files.createDirectories(packDir);
             Files.createDirectories(cacheDir);
-            Path readme = packDir.resolve("README_ARTPACKS.txt");
-            if (!Files.exists(readme)) {
-                Files.writeString(readme,
-                    "Drop The Mechanist art-pack ZIP files here.\n" +
-                    "On launch, the game unpacks them into cache/artpacks. The bundled LOW 32 tier remains available inside core.\n" +
-                    "Optional overlay packs may contain only assets/a/r/tiles/quality/standard_64, intermediate_128, or high_native.\n" +
-                    "Full legacy packs containing source/Title are also accepted. Missing selected tiers fall back to bundled LOW 32.\n");
-            }
             ArrayList<Path> zips = new ArrayList<>();
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(packDir, "*.zip")) {
                 for (Path p : stream) zips.add(p);
@@ -482,11 +480,26 @@ class ArtPackManager {
         } catch (Throwable t) {
             DebugLog.error("ART_PACK", "Art-pack prepare failed; falling back to bundled art if present.", t);
         }
-        if (Files.isDirectory(Paths.get(bundledFallbackRoot))) {
-            DebugLog.audit("ART_PACK", "Using bundled art root=" + bundledFallbackRoot);
-            return bundledFallbackRoot;
+        String fallbackRoot = resolveBundledFallbackRoot(bundledFallbackRoot);
+        if (Files.isDirectory(Paths.get(fallbackRoot))) {
+            DebugLog.audit("ART_PACK", "Using bundled art root=" + fallbackRoot);
+            return fallbackRoot;
         }
         DebugLog.warn("ART_PACK", "No external or bundled art pack found. Tile/icon rendering will fall back to ASCII and generated UI.");
+        return fallbackRoot;
+    }
+
+    static String resolveBundledFallbackRoot(String bundledFallbackRoot) {
+        if (bundledFallbackRoot == null || bundledFallbackRoot.isBlank()) return bundledFallbackRoot;
+        if (Files.exists(Paths.get(bundledFallbackRoot))) return bundledFallbackRoot;
+        String normalized = bundledFallbackRoot.replace('\\', '/');
+        if (normalized.startsWith("packages/client/assets/")) {
+            String suffix = normalized.substring("packages/client/assets/".length());
+            String clientOwned = "client/assets/" + suffix;
+            if (Files.exists(Paths.get(clientOwned))) return clientOwned;
+            String legacyRoot = "assets/" + suffix;
+            if (Files.exists(Paths.get(legacyRoot))) return legacyRoot;
+        }
         return bundledFallbackRoot;
     }
 
@@ -595,13 +608,6 @@ class AudioPackManager {
             Path cacheDir = Paths.get(cacheDirName);
             Files.createDirectories(packDir);
             Files.createDirectories(cacheDir);
-            Path readme = packDir.resolve("README_AUDIOPACKS.txt");
-            if (!Files.exists(readme)) {
-                Files.writeString(readme,
-                    "Drop The Mechanist audio/music-pack ZIP files here.\n" +
-                    "On launch, the game unpacks them into cache/audiopacks and searches for a folder containing WAV tracks.\n" +
-                    "Expected runtime root shape inside the zip: wav/*.wav or assets/music/wav/*.wav.\n");
-            }
             ArrayList<Path> zips = new ArrayList<>();
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(packDir, "*.zip")) {
                 for (Path p : stream) zips.add(p);
@@ -613,12 +619,13 @@ class AudioPackManager {
         } catch (Throwable t) {
             DebugLog.error("AUDIO_PACK", "Audio-pack prepare failed; falling back to bundled music if present.", t);
         }
-        if (Files.isDirectory(Paths.get(bundledFallbackRoot))) {
-            DebugLog.audit("AUDIO_PACK", "Using bundled music root=" + bundledFallbackRoot);
-            return bundledFallbackRoot;
+        String fallbackRoot = ArtPackManager.resolveBundledFallbackRoot(bundledFallbackRoot);
+        if (Files.isDirectory(Paths.get(fallbackRoot))) {
+            DebugLog.audit("AUDIO_PACK", "Using bundled music root=" + fallbackRoot);
+            return fallbackRoot;
         }
         DebugLog.warn("AUDIO_PACK", "No external or bundled music pack found. Dynamic music will remain silent unless music assets are installed.");
-        return bundledFallbackRoot;
+        return fallbackRoot;
     }
 
     static String findWavRoot(Path cacheDir) {
@@ -682,7 +689,7 @@ class ImageCache {
         loadPortraitSheet("assets/imported_tech_priests/graphics/gui/portraits/alternative_human_augmented_portrait_sheet_c.png");
         loadPortraitSheet("assets/imported_tech_priests/graphics/gui/portraits/planetary_magos_portrait_sheet_a.png");
         load("title_mechanist", "assets/generated/the_mechanist_title.png");
-        artRootPath = ArtPackManager.prepareAndResolveRoot("assets/artpacks", "cache/artpacks", "assets/a/r");
+        artRootPath = ArtPackManager.prepareAndResolveRoot("packages/client/assets/artpacks", "cache/artpacks", "packages/client/assets/a/r");
         load("title_mechanist_rebase", artRootPath + "/source/Title/TITEL.png");
         load("subtitle_rebase", artRootPath + "/source/Title/Sub title.png");
         load("new_world_backdrop_rebase", artRootPath + "/source/Background/Backdrop.png");
@@ -844,7 +851,7 @@ class ImageCache {
     }
     void reloadArtQuality(GameOptions options) {
         semanticAssetImageCache.clear();
-        artRootPath = ArtPackManager.prepareAndResolveRoot("assets/artpacks", "cache/artpacks", "assets/a/r");
+        artRootPath = ArtPackManager.prepareAndResolveRoot("packages/client/assets/artpacks", "cache/artpacks", "packages/client/assets/a/r");
         tileArt.load(artRootPath, options == null ? 0 : options.artQualityIndex);
         npcPortraitCells.clear();
         npcPortraitRanges.clear();
@@ -971,9 +978,18 @@ class ImageCache {
         if (neutral != null && neutral[1] > neutral[0] && !npcPortraitCells.isEmpty()) return npcPortraitCells.get(neutral[0] + Math.floorMod(portraitIndex, neutral[1]-neutral[0]));
         return generatedPlayerHumanFallbackPortrait();
     }
-    ArrayList<String> loadIntroCrawlLines() {
+        ArrayList<String> loadIntroCrawlLines() {
         ArrayList<String> lines = new ArrayList<>();
         Path p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+        if (artRootPath != null && artRootPath.replace('\\', '/').startsWith("assets/")) {
+            p = Paths.get("packages", "client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+            if (!Files.exists(p)) {
+                p = Paths.get("client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+            }
+            if (!Files.exists(p)) {
+                p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+            }
+        }
         try {
             if (Files.exists(p)) {
                 for (String raw : Files.readAllLines(p)) {
@@ -995,6 +1011,12 @@ class ImageCache {
     BufferedImage read(String path) {
         try {
             File f = new File(path);
+            if (!f.exists() && path != null && path.replace('\\', '/').startsWith("assets/")) {
+                File packagedClientOwned = new File("packages/client", path);
+                if (packagedClientOwned.exists()) f = packagedClientOwned;
+                File clientOwned = new File("client", path);
+                if (!f.exists() && clientOwned.exists()) f = clientOwned;
+            }
             if (!f.exists() && path != null) {
                 File shortRoot = new File(path.replace('\\', '/').replace("assets/art/rebase_0_9_06d", "assets/a/r"));
                 if (shortRoot.exists()) f = shortRoot;

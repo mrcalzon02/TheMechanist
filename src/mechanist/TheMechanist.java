@@ -665,39 +665,39 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         if (screen == Screen.INTRO_CRAWL) return DynamicMusicManager.SILENCE;
         if (screen == Screen.CHARACTER || screen == Screen.KNOWLEDGE || screen == Screen.WORLD_SELECT || screen == Screen.WORLD_SETUP || (screen == Screen.LOADING && loadingForNewGame)) return "CHARACTER_SELECT";
         if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.PAUSE || screen == Screen.ZONE_SPLASH || screen == Screen.LOADING) {
-            if (governorBattleMusicUntilTurn > turn || hostileGovernorPressureNearby()) return "GOVERNOR_BATTLE";
+            if (governorBattleMusicUntilTurn > turn || hostileGovernorPressureNearby()) return "ESTATE_BATTLE";
             if (combatMusicUntilTurn > turn || hostilePressureNearby()) return "COMBAT";
             return zoneAmbientMusicContext();
         }
-        return "UNDERHIVE";
+        return "LOW_HABITATION";
     }
 
     String zoneAmbientMusicContext() {
-        if (world == null) return "UNDERHIVE";
+        if (world == null) return "LOW_HABITATION";
         RoomProfile rp = world.roomProfile(world.roomIdAt(playerX, playerY));
         String roomText = ((rp == null ? "" : rp.name) + " " + (rp == null ? "" : rp.descriptor) + " " + (rp == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
-        if (roomText.contains("medicae") || roomText.contains("clinic") || roomText.contains("triage") || roomText.contains("infirmary")) return "MEDICAE";
-        if (roomText.contains("cult imperialis") || roomText.contains("ministorum") || roomText.contains("ecclesiarchy")) return "ADMIN";
+        if (roomText.contains("clinic") || roomText.contains("triage") || roomText.contains("infirmary")) return "TRIAGE";
+        if (roomText.contains("rite") || roomText.contains("chapel") || roomText.contains("choir")) return "CIVIC_RECORDS";
         switch (world.zoneType) {
-            case GANGER_TURF: return "GANGER";
-            case ARBITES_PRECINCT_EDGE: return "ARBITES";
-            case ADMINISTRATUM_ARCHIVE: return "ADMIN";
-            case IMPERIAL_GUARD_BILLET: return "GUARD";
+            case GANGER_TURF: return "GANG_TURF";
+            case ARBITES_PRECINCT_EDGE: return "PUBLIC_ORDER";
+            case ADMINISTRATUM_ARCHIVE: return "CIVIC_RECORDS";
+            case IMPERIAL_GUARD_BILLET: return "CHARTER_GUARD";
             case MECHANICUS_FORGE_CLOISTER:
-            case MECHANICUS_RELIC_DUCT: return "MECHANICUS";
-            case CULTIST_SEWER_CAMP: return "CULT";
+            case MECHANICUS_RELIC_DUCT: return "ENGINE_HOUSE";
+            case CULTIST_SEWER_CAMP: return "PROSCRIBED_CELL";
             case MUTANT_SEWER_CAMP:
-            case MUTANT_WARRENS: return "MUTANT";
+            case MUTANT_WARRENS: return "OUTCAST";
             case TRAIN_SERVICE_YARD:
             case NEUTRAL_RAIL_DEPOT: return "TRAIN";
-            case SECTOR_GOVERNORS_MANSION: return "GOVERNOR_PALACE";
-            case NOBLE_SERVICE_SPINE: return "NOBLE";
+            case SECTOR_GOVERNORS_MANSION: return "ESTATE_PALACE";
+            case NOBLE_SERVICE_SPINE: return "ESTATE";
             case NEUTRAL_CIVILIAN_FLOOR:
             case HAB_STACK:
             case SUMP_MARKET:
             case TRASH_WARREN:
             case SEWER_CONDUIT:
-            default: return "UNDERHIVE";
+            default: return "LOW_HABITATION";
         }
     }
 

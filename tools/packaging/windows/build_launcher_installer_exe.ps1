@@ -8,6 +8,7 @@ $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..")
 $LauncherDir = Join-Path $RepoRoot "launcher\java"
 $OutRoot = Join-Path $RepoRoot $OutputDir
 $InstallerRoot = Join-Path $OutRoot "launcher-installer"
+$LauncherResourceRoot = Join-Path $LauncherDir "src\main\resources"
 
 function Step($Message) {
     Write-Host ""
@@ -54,6 +55,20 @@ try {
 
 $LauncherJar = Join-Path $LauncherDir "target\mechanist-launcher-0.1.0.jar"
 if (-not (Test-Path -LiteralPath $LauncherJar)) { throw "Launcher jar not found: $LauncherJar" }
+$RequiredLauncherResources = @(
+    "assets\app\icons\the-mechanist-256.png",
+    "assets\app\icons\the-mechanist-128.png",
+    "assets\app\icons\the-mechanist-64.png",
+    "assets\sound\core\ambient_press_01.wav",
+    "assets\sound\core\ambient_chime_01.wav",
+    "assets\sound\core\ambient_alarm_far_01.wav"
+)
+foreach ($rel in $RequiredLauncherResources) {
+    $path = Join-Path $LauncherResourceRoot $rel
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        throw "Launcher-owned resource missing: $path"
+    }
+}
 
 Step "Scanning launcher jar for Java 17 classfile compatibility"
 python (Join-Path $RepoRoot "tools\packaging\scan_java17_classfiles.py") $LauncherJar

@@ -58,7 +58,22 @@ class SoundManager {
         music.load(musicRoot, musicManifest);
         DebugLog.audit("AUDIO", "Loaded sound handles=" + sounds.size() + "; musicRoot=" + musicRoot.getPath() + "; musicManifest=" + (musicManifest == null ? "<none>" : musicManifest.getPath()) + "; dynamic music playlists=" + music.playlistSummary() + "; OGG originals preserved in assets/sound if present.");
     }
-    void put(String key, String path) { File f = new File(path); if (f.exists()) sounds.put(key, f); else DebugLog.warn("AUDIO", "Missing sound file: " + path); }
+    void put(String key, String path) {
+        File f = runtimeAssetFile(path);
+        if (f.exists()) sounds.put(key, f);
+        else DebugLog.warn("AUDIO", "Missing sound file: " + path);
+    }
+    File runtimeAssetFile(String path) {
+        if (path != null && path.replace('\\', '/').startsWith("assets/")) {
+            File packagedClientOwned = new File("packages/client", path);
+            if (packagedClientOwned.exists()) return packagedClientOwned;
+            File clientOwned = new File("client", path);
+            if (clientOwned.exists()) return clientOwned;
+        }
+        File f = new File(path);
+        if (f.exists()) return f;
+        return f;
+    }
     File resolveMusicRoot() {
         String configured = readOption("mechanist.musicRoot");
         if (configured != null && !configured.isBlank()) {
@@ -66,7 +81,7 @@ class SoundManager {
             if (f.exists()) return f;
             DebugLog.warn("MUSIC", "Configured musicRoot missing; falling back. path=" + f.getPath());
         }
-        return new File(AudioPackManager.prepareAndResolveMusicRoot("assets/audiopacks", "cache/audiopacks", "assets/music/wav"));
+        return new File(AudioPackManager.prepareAndResolveMusicRoot("packages/client/assets/audiopacks", "cache/audiopacks", "packages/client/assets/music/wav"));
     }
     File resolveMusicManifest(File musicRoot) {
         String configured = readOption("mechanist.musicManifest");
@@ -82,7 +97,7 @@ class SoundManager {
                 if (f.exists()) return f;
             }
         }
-        File f = new File("assets/music/music_manifest.tsv");
+        File f = runtimeAssetFile("assets/music/music_manifest.tsv");
         return f.exists() ? f : null;
     }
     String readOption(String key) {
@@ -276,21 +291,21 @@ class DynamicMusicManager {
     void register(File f) {
         String n = f.getName().toLowerCase(Locale.ROOT);
         if (n.contains("mainmenu")) add("MAIN_MENU", f);
-        else if (n.contains("charaterselect") || n.contains("characterselect")) add("CHARACTER_SELECT", f);
-        else if (n.contains("p-3battle") || n.contains("palace_of_gold") || n.contains("palace of gold")) add("GOVERNOR_BATTLE", f);
-        else if (n.contains("p-1") || n.contains("rust crown") || n.contains("rust_crown")) add("GOVERNOR_PALACE", f);
+        else if (n.contains("characterselect")) add("CHARACTER_SELECT", f);
+        else if (n.contains("estate_battle") || n.contains("palace_of_gold") || n.contains("palace of gold")) add("ESTATE_BATTLE", f);
+        else if (n.contains("estate_palace") || n.contains("rust crown") || n.contains("rust_crown")) add("ESTATE_PALACE", f);
         else if (n.contains("combat")) add("COMBAT", f);
-        else if (n.contains("gang") || n.contains("chainblade")) add("GANGER", f);
-        else if (n.contains("law") || n.contains("enforce") || n.contains("ferrocrete")) add("ARBITES", f);
-        else if (n.contains("triage") || n.contains("med")) add("MEDICAE", f);
-        else if (n.contains("her") || n.contains("mechanical_moon") || n.contains("mechanical moon")) add("CULT", f);
-        else if (n.contains("mech") || n.contains("machinery") || n.contains("iron_psalm") || n.contains("iron psalm")) add("MECHANICUS", f);
-        else if (n.contains("mut") || n.contains("sump_dark_choir") || n.contains("sump dark choir")) add("MUTANT", f);
+        else if (n.contains("gang")) add("GANG_TURF", f);
+        else if (n.contains("publicorder") || n.contains("public_order") || n.contains("ferrocrete")) add("PUBLIC_ORDER", f);
+        else if (n.contains("triage")) add("TRIAGE", f);
+        else if (n.contains("proscribed") || n.contains("mechanical_moon") || n.contains("mechanical moon")) add("PROSCRIBED_CELL", f);
+        else if (n.contains("engine") || n.contains("machinery")) add("ENGINE_HOUSE", f);
+        else if (n.contains("outcast") || n.contains("sump_dark_choir") || n.contains("sump dark choir")) add("OUTCAST", f);
         else if (n.contains("train") || n.contains("false_seal") || n.contains("false seal")) add("TRAIN", f);
-        else if (n.contains("pdf") || n.contains("ration_line") || n.contains("ration line")) add("GUARD", f);
-        else if (n.contains("admin") || n.contains("seal_of_ash") || n.contains("seal of ash")) add("ADMIN", f);
-        else if (n.contains("nob") || n.contains("velvet")) add("NOBLE", f);
-        else add("UNDERHIVE", f);
+        else if (n.contains("charter") || n.contains("ration_line") || n.contains("ration line")) add("CHARTER_GUARD", f);
+        else if (n.contains("records") || n.contains("seal_of_ash") || n.contains("seal of ash")) add("CIVIC_RECORDS", f);
+        else if (n.contains("estate") || n.contains("velvet")) add("ESTATE", f);
+        else add("LOW_HABITATION", f);
     }
 
     void add(String key, File f) {
@@ -323,7 +338,7 @@ class DynamicMusicManager {
 
     File choose(String key) {
         ArrayList<File> list = playlists.get(key);
-        if ((list == null || list.isEmpty()) && !"UNDERHIVE".equals(key)) list = playlists.get("UNDERHIVE");
+        if ((list == null || list.isEmpty()) && !"LOW_HABITATION".equals(key)) list = playlists.get("LOW_HABITATION");
         if ((list == null || list.isEmpty()) && !"MAIN_MENU".equals(key)) list = playlists.get("MAIN_MENU");
         if (list == null || list.isEmpty()) return null;
         return list.get(rng.nextInt(list.size()));

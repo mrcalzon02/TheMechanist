@@ -11,7 +11,7 @@ DIST_DIR="$PROJECT_ROOT/dist/installers/linux"
 APP_IMAGE_DIR="$DIST_DIR/app-image"
 RUNTIME_DIR="$PROJECT_ROOT/build/jlink/runtime-launcher-linux"
 INPUT_DIR="$PROJECT_ROOT/build/package-input/linux-launcher"
-ICON_PATH="$PROJECT_ROOT/assets/app/icons/the-mechanist-256.png"
+ICON_PATH="$PROJECT_ROOT/client/assets/app/icons/the-mechanist-256.png"
 CLIENT_MODULES="$(tr -d '\r\n ' < "$PROJECT_ROOT/packaging/jlink/client-modules.txt")"
 JLINK_OPTIONS=(--strip-debug --no-man-pages --no-header-files --strip-native-commands --compress=2)
 DEPENDENCY_STAGE_DIR="$TARGET_DIR/package-runtime-deps"
@@ -21,6 +21,7 @@ CLIENT_PACKAGE_DIR="$PACKAGE_CACHE_DIR/client"
 SERVER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/server"
 SUPPORT_LIB_DIR="$PACKAGE_CACHE_DIR/support/lib"
 LAUNCHER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/launcher"
+CLIENT_ASSET_DIR="$CLIENT_PACKAGE_DIR/assets"
 LAUNCHER_PROFILE_SOURCE_DIR="$PROJECT_ROOT/launcher/profile-packages"
 LAUNCHER_ASSET_STAGER="$PROJECT_ROOT/tools/launcher/stage_launcher_profile_assets.py"
 LWJGL_VERSION="3.4.1"
@@ -92,12 +93,32 @@ stage_launcher_profile_packages() {
         echo "Missing launcher asset staging helper: $LAUNCHER_ASSET_STAGER" >&2
         exit 24
     fi
-    python3 "$LAUNCHER_ASSET_STAGER" --project-root "$PROJECT_ROOT" --asset-root assets --launcher-package-root launcher/profile-packages --allow-missing
+    python3 "$LAUNCHER_ASSET_STAGER" --project-root "$PROJECT_ROOT" --asset-root client/assets --launcher-package-root launcher/profile-packages --allow-missing
     local dest="$LAUNCHER_PACKAGE_DIR/profile-packages"
     rm -rf "$dest"
     mkdir -p "$LAUNCHER_PACKAGE_DIR"
     cp -a "$LAUNCHER_PROFILE_SOURCE_DIR" "$dest"
     echo "Launcher profile packages staged in $dest"
+}
+
+stage_client_runtime_assets() {
+    local source="$PROJECT_ROOT/client/assets"
+    if [[ ! -d "$source" ]]; then
+        echo "Missing client asset source directory: $source" >&2
+        exit 25
+    fi
+    rm -rf "$CLIENT_ASSET_DIR"
+    mkdir -p "$CLIENT_PACKAGE_DIR"
+    cp -a "$source" "$CLIENT_PACKAGE_DIR/"
+    echo "Client runtime assets staged in $CLIENT_ASSET_DIR"
+    local name client_source
+    for name in config settings profiles modding; do
+        client_source="$PROJECT_ROOT/client/$name"
+        if [[ -e "$client_source" ]]; then
+            rm -rf "$CLIENT_PACKAGE_DIR/$name"
+            cp -a "$client_source" "$CLIENT_PACKAGE_DIR/"
+        fi
+    done
 }
 
 write_thin_launcher_manifest() {
@@ -130,6 +151,10 @@ $line"; fi
     "sha256": "$(sha256_file "$client_jar")",
     "size": $(wc -c < "$client_jar"),
     "main_class": "mechanist.TheMechanist"
+  },
+  "client_assets": {
+    "root": "packages/client/assets",
+    "layout": "client-owned loose runtime files"
   },
   "server": {
     "path": "packages/server/$server_name",
@@ -174,6 +199,7 @@ SERVER_JAR="$SERVER_PACKAGE_DIR/TheMechanistServer.jar"
 cp "$CLIENT_SOURCE" "$CLIENT_JAR"
 cp "$SERVER_SOURCE" "$SERVER_JAR"
 stage_runtime_dependencies
+stage_client_runtime_assets
 stage_launcher_profile_packages
 write_thin_launcher_manifest "$CLIENT_JAR" "$SERVER_JAR"
 
@@ -210,6 +236,7 @@ Distribution model: installer -> thin launcher -> client -> server
 Launcher entrypoint: mechanist.launcher.ThinLauncherMain
 Package identity manifest: manifests/linux-runtime-manifest.json
 Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
+Client runtime assets: packages/client/assets
 Wrapper detection: Steam/GOG/none, evaluated by thin launcher before client start
 Fallback profile generation: launcher-owned, hash-based
 Server join identity bridge: launcher-owned profile hash written before client start

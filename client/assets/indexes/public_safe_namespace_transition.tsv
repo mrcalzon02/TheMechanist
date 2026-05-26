@@ -1,0 +1,20 @@
+namespace_layer	current_direction	target_direction	priority	status	notes
+project_identity	40k-adjacent industrial dystopia	Original civic-industrial continuity civilization	critical	active	Primary thematic transition.
+faction_identity	Inherited archetype cadence	Institutional civic continuity orders	critical	active	Must avoid recognizable franchise faction clustering.
+world_identity	Hive-world inheritance	Spireholds, low habitations, ash seas, continuity polities	critical	active	Core setting divergence.
+military_identity	Imperial military framing	Mandate and civic military doctrine	high	active	Preserve systems, replace identity shell.
+religious_identity	Ecclesiarchal/mechanistic inheritance	Civic rites, ash choirs, continuity cults, foundry rites	critical	active	Major public-facing differentiation layer.
+industrial_identity	Machine worship inheritance	Continuance doctrine, infrastructure preservation, engine orders	critical	active	Retain industrial mysticism while diverging culturally.
+security_identity	Arbites/inquisition inheritance	Public Order Directorate, Internal Registry, Black Ledger Offices	high	active	Preserve investigation/security mechanics.
+identity_system	Simple random names	Registry-driven identity doctrine	critical	active	Concord lexicons become canonical substrate.
+lore_delivery	Scattered codex references	Historicus archival doctrine	critical	active	Historicus becomes canonical lore authority.
+ui_language	Franchise-adjacent wording	Civic-industrial archival language	medium	pending_review	Requires broad string audit.
+asset_metadata	Legacy semantic names	Registry-backed original semantic taxonomy	critical	active	Should precede visual divergence.
+asset_filenames	Inherited terminology in paths	Neutral semantic path architecture	medium	pending_inventory	Delay until metadata layer stabilizes.
+portrait_partitions	Franchise faction partitions	Institutional/cultural lineage partitions	high	pending_review	Tie into Concord registries.
+weapon_taxonomy	Bolter/lasgun lineage	Impact/charge/industrial ballistic taxonomy	high	pending_review	Must alter both naming and silhouette.
+vehicle_taxonomy	Imperial armor cadence	Civic-industrial armored logistics and war platforms	medium	pending_review	Requires later art divergence.
+historical_doctrine	Borrowed galactic decline framing	Continuity collapse, ash economies, registry persistence	critical	active	Concord Archive becomes backbone.
+population_simulation	Generic settlement population	Registry-linked lineage and habitation simulation	critical	active	Supports long-term simulation goals.
+modding_identity	Lore-dependent mod assumptions	Semantic registry and Historicus-backed extension system	medium	future	Important before public mod ecosystem growth.
+public_release_surface	Prototype/fan-project appearance	Independent original simulation project	critical	active	Required for long-term survivability.

@@ -89,8 +89,8 @@ final class DiagnosticReporter {
         appendExists(sb, "Windows BAT launcher", config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.bat"));
         appendExists(sb, "Windows PS1 launcher", config.repoDir.resolve("RUN_THE_MECHANIST_WINDOWS.ps1"));
         appendExists(sb, "Linux launcher", config.repoDir.resolve("PLAY_THE_MECHANIST_LINUX.sh"));
-        appendExists(sb, "Music manifest", config.repoDir.resolve("assets/music/music_manifest.tsv"));
-        appendExists(sb, "Music WAV root", config.repoDir.resolve("assets/music/wav"));
+        appendExists(sb, "Client music manifest", config.repoDir.resolve("packages/client/assets/music/music_manifest.tsv"));
+        appendExists(sb, "Client music WAV root", config.repoDir.resolve("packages/client/assets/music/wav"));
         appendExists(sb, "Package graphics manifest", config.repoDir.resolve("config/packages/graphics_tiers.tsv"));
         appendExists(sb, "Package audio manifest", config.repoDir.resolve("config/packages/audio_tiers.tsv"));
         sb.append("\n");

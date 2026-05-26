@@ -1,0 +1,21 @@
+priority	layer	old_term_family	risk	public_safe_replacement	status	notes
+1	metadata	Imperial setting identity	YELLOW_RED	Civic / Charter / Mandate / StellarCore	pending_review	Generic adjective use may remain only when not functioning as inherited setting identity.
+1	metadata	Adeptus-style institution names	RED	Directorate / Ministry / Office / College / Order / Guild / Engine House	pending_review	Avoid faux-Latin franchise cadence in public-facing labels.
+1	metadata	Mechanicus / tech-priest framing	RED	Mechanist / Engine Wardens / Foundry Rite / Old Machine Cult	pending_review	Project title can remain; faction identity must diverge.
+1	metadata	Ecclesiarchy / Ministorum	RED	Civic Rite / Null Chapel / Ash Choir / Ministry of Rites	pending_review	Preserve civic religion and ritual maintenance without direct identity.
+1	metadata	Arbites	RED	Public Order Directorate / Mandate Wardens / Civic Marshals	pending_review	Keep law/security mechanics.
+1	metadata	PDF as planetary defense force	YELLOW_RED	Municipal Defense Force / Charter Militia / Civic Reserve	pending_review	PDF file-format references are safe and unrelated.
+1	metadata	Guard as franchise military identity	YELLOW_RED	Mandate Guard / Civic Guard / Line Guard / Municipal Army	pending_review	Generic guard roles may remain when not a named faction.
+1	language	Servitor	RED	Bound Worker / Civic Automaton / Labor Husk / Penal Automaton	pending_review	Needs ethical/worldbuilding divergence and visual divergence.
+1	language	Genestealer	RED	Brood infiltrator / deep-cell hybrid / tunnel-born infiltrator	pending_review	Avoid recognizable faction ecology and terminology.
+1	language	Heretic as franchise enemy taxonomy	YELLOW_RED	Renegade / oathbreaker / proscribed cell / taboo cultist	pending_review	Generic religious use only when not derivative.
+1	language	Bolter / Heavy Bolter	RED	Impact rifle / gyrocarbine / heavy impact rifle / rivet cannon	pending_review	Avoid name plus silhouette pairing.
+1	language	Lasgun / Melta / Flamer direct families	YELLOW_RED	Charge rifle / heat lance / industrial burner / pressure torch	pending_review	Rebuild item stats around original functional identity.
+1	language	Medicae	YELLOW_RED	Clinic / medical / field surgeon / civic medic / triage ward	pending_review	Use plain language unless setting-specific institution is needed.
+1	semantic_identity	Inquisitorial / Inquisition	RED	Black Ledger Office / Internal Registry / Mandate Inspectors	pending_review	Keep investigation/secret-police mechanics without name cadence.
+1	semantic_identity	Hive / Underhive	YELLOW_RED	Vaulted City / Stacked City / Low Habitations / Deep Wards	pending_review	Avoid direct franchise phrase clusters.
+1	semantic_identity	Noble House 40K-style framing	YELLOW	Charter House / Lineage House / Estate Bloc / Patron Family	pending_review	Nobility is generic; presentation and cadence must diverge.
+2	UI exposure	Sector Audit visible label	GREEN_KEEP	Zone Audit	completed_existing	Existing standard already says user-facing generation inspection is Zone Audit.
+2	UI exposure	Coming soon / placeholder / phase labels in player UI	YELLOW	Current diegetic or immediately useful text only	pending_review	Player-facing text standard already prohibits this.
+3	filenames_manifests	Asset filenames containing protected faction/weapon/institution terms	RED	Original semantic folder and file names	pending_inventory	Do metadata/language pass first so rename targets are stable.
+4	silhouette_art	Logos, faction icons, armor silhouettes, weapon silhouettes	RED_YELLOW	Redraw, diverge, quarantine, or remove	pending_visual_audit	Defer until semantic identity map stabilizes.

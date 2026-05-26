@@ -18,7 +18,7 @@ $DistDir = Join-Path $ProjectRoot "dist\installers\windows"
 $RuntimeDir = Join-Path $ProjectRoot "build\jlink\runtime-launcher-windows"
 $InputDir = Join-Path $ProjectRoot "build\package-input\windows-launcher"
 $AppImageDest = Join-Path $DistDir "app-image"
-$IconPath = Join-Path $ProjectRoot "assets\app\icons\the-mechanist.ico"
+$IconPath = Join-Path $ProjectRoot "client\assets\app\icons\the-mechanist.ico"
 $ModuleFile = Join-Path $ProjectRoot "packaging\jlink\client-modules.txt"
 $WindowsReadme = Join-Path $DistDir "WINDOWS_INSTALLERS_README.txt"
 $DependencyStageDir = Join-Path $TargetDir "package-runtime-deps"
@@ -28,6 +28,7 @@ $SupportLibDir = Join-Path $PackageCacheDir "support\lib"
 $ClientPackageDir = Join-Path $PackageCacheDir "client"
 $ServerPackageDir = Join-Path $PackageCacheDir "server"
 $LauncherPackageDir = Join-Path $PackageCacheDir "launcher"
+$ClientAssetDir = Join-Path $ClientPackageDir "assets"
 $LauncherProfileSourceDir = Join-Path $ProjectRoot "launcher\profile-packages"
 $LauncherAssetStager = Join-Path $ProjectRoot "tools\launcher\stage_launcher_profile_assets.py"
 $LwjglVersion = "3.4.1"
@@ -71,12 +72,28 @@ function Stage-LauncherProfilePackages {
     if (-not (Test-Path -LiteralPath $LauncherProfileSourceDir -PathType Container)) { throw "Missing launcher profile package source directory: $LauncherProfileSourceDir" }
     Require-Command python
     if (-not (Test-Path -LiteralPath $LauncherAssetStager -PathType Leaf)) { throw "Missing launcher asset staging helper: $LauncherAssetStager" }
-    & python $LauncherAssetStager --project-root $ProjectRoot --asset-root assets --launcher-package-root launcher/profile-packages --allow-missing
+    & python $LauncherAssetStager --project-root $ProjectRoot --asset-root client/assets --launcher-package-root launcher/profile-packages --allow-missing
     $dest = Join-Path $LauncherPackageDir "profile-packages"
     Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $LauncherPackageDir | Out-Null
     Copy-Item -LiteralPath $LauncherProfileSourceDir -Destination $dest -Recurse -Force
     Write-Host "Launcher profile packages staged in $dest"
+}
+
+function Stage-ClientRuntimeAssets {
+    $source = Join-Path $ProjectRoot "client\assets"
+    if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing client asset source directory: $source" }
+    Remove-Item -LiteralPath $ClientAssetDir -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $ClientPackageDir | Out-Null
+    Copy-Item -LiteralPath $source -Destination $ClientPackageDir -Recurse -Force
+    Write-Host "Client runtime assets staged in $ClientAssetDir"
+    foreach ($name in @("config", "settings", "profiles", "modding")) {
+        $clientSource = Join-Path $ProjectRoot ("client\" + $name)
+        if (Test-Path -LiteralPath $clientSource) {
+            Remove-Item -LiteralPath (Join-Path $ClientPackageDir $name) -Recurse -Force -ErrorAction SilentlyContinue
+            Copy-Item -LiteralPath $clientSource -Destination $ClientPackageDir -Recurse -Force
+        }
+    }
 }
 
 function Write-ThinLauncherManifest {
@@ -99,6 +116,7 @@ function Write-ThinLauncherManifest {
     "owns": ["wrapper-detection", "fallback-profile-generation", "server-join-identity-bridge", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
   },
   "client": { "path": "packages/client/$clientName", "sha256": "$(Get-Sha256 $ClientJar)", "size": $((Get-Item -LiteralPath $ClientJar).Length), "main_class": "mechanist.TheMechanist" },
+  "client_assets": { "root": "packages/client/assets", "layout": "client-owned loose runtime files" },
   "server": { "path": "packages/server/$serverName", "sha256": "$(Get-Sha256 $ServerJar)", "size": $((Get-Item -LiteralPath $ServerJar).Length), "main_class": "mechanist.MechanistServerMain" },
   "launcher_profile": { "fallback_human_portraits": "launcher-human-8x8-v1", "celebrity_portraits": "launcher-celebrity-portraits-v1", "celebrity_name_detection": "launcher-celebrity-name-detection-v1", "wrapper_detection": ["steam", "gog", "none"] },
   "support_libraries": [
@@ -138,6 +156,7 @@ $ServerJar = Join-Path $ServerPackageDir "TheMechanistServer.jar"
 Copy-Item -LiteralPath $ClientJarSource -Destination $ClientJar -Force
 Copy-Item -LiteralPath $ServerJarSource -Destination $ServerJar -Force
 Stage-RuntimeDependencies
+Stage-ClientRuntimeAssets
 Stage-LauncherProfilePackages
 Write-ThinLauncherManifest -ClientJar $ClientJar -ServerJar $ServerJar
 if (Test-Path -LiteralPath $IconPath) { Copy-Item -LiteralPath $IconPath -Destination (Join-Path $InputDir "the-mechanist.ico") -Force } else { Write-Warning "Windows icon was not found at $IconPath. Installer will be produced without a custom icon." }
@@ -158,6 +177,7 @@ Distribution model: installer -> thin launcher -> client -> server
 Launcher entrypoint: mechanist.launcher.ThinLauncherMain
 Package identity manifest: manifests/windows-runtime-manifest.json
 Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
+Client runtime assets: packages/client/assets
 Wrapper detection: Steam/GOG/none, evaluated by thin launcher before client start
 Fallback profile generation: launcher-owned, hash-based
 Server join identity bridge: launcher-owned profile hash written before client start
