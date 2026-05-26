@@ -20,6 +20,7 @@ Allowed now:
 - Small persistence/server-boundary repairs only when needed to keep the bridged single-player runtime publish-safe.
 - Documentation cleanup inside the four durable documents.
 - Publish-safe terminology cleanup on package-facing, player-facing, manifest, launcher, installer, and documentation surfaces.
+- Clarity and overview expansion of broad roadmap phases/subphases when that expansion prevents vague implementation work.
 
 Not active now:
 
@@ -130,6 +131,58 @@ Done when: the build artifacts are reproducible, the touched publish-safe path h
 ## Durable phase roadmap
 
 Roadmap rule: each former required outcome is now a required subphase/runtime pass. A subphase is not complete because a note exists; it is complete only when the owning authority exists, the old behavior still works or is intentionally migrated, and the verification path is named.
+
+### Clarity and overview revision path
+
+Purpose: prevent broad phase names and generic pass labels from becoming vague implementation permission. Any roadmap entry that is too broad, too general, or insufficiently specified must receive a secondary clarification expansion before it can be treated as ready for implementation.
+
+This path applies recursively to gates, phases, subphases, deferred checkpoint lines, and any newly introduced runtime pass. A phase may remain high-level for orientation, but the next actionable slice beneath it must be specific enough that a developer can identify the owning authority, the affected data, the affected UI/runtime surfaces, the intended efficiency or functionality gain, the non-goals, and the verification path.
+
+Trigger terms requiring clarification include but are not limited to: `authority pass`, `integration pass`, `audit pass`, `review pass`, `polish pass`, `containment pass`, `migration pass`, `viability pass`, `hygiene pass`, `system pass`, `support pass`, `cleanup pass`, `expansion pass`, `stabilization pass`, and any phase whose description could be satisfied by a note rather than code, data, tests, tooling, or a player-visible/system-visible result.
+
+Required clarification outputs for a broad phase/subphase:
+
+- Overview: state the practical runtime problem being solved in concrete terms.
+- Owning authority: name the class, package, data file, tool module, manifest family, or planned authority that owns the work.
+- Current behavior: describe how the system behaves now, including known defects, duplicated logic, missing data, player confusion, performance cost, or packaging risk.
+- Desired behavior: describe the functional or systemic improvement that should exist after completion.
+- Efficiency path: explain how the pass reduces repeated code, prevents central-class growth, improves runtime performance, reduces packaging risk, clarifies data ownership, improves player comprehension, or makes later work cheaper.
+- Functional expansion path: explain what new meaningful gameplay, tooling, packaging, UI, audit, or simulation capability becomes possible because of the pass.
+- Extents and limits: name what is in scope, what is explicitly out of scope, and what must not be claimed as implemented.
+- Progression steps: break the pass into ordered child steps small enough to review, compile, and smoke individually.
+- Data and save impact: state whether saves, manifests, asset indexes, settings, localization, package layout, or world files are touched and how compatibility is preserved.
+- UI/player-facing impact: state whether player-facing strings, panels, commands, diagnostics, overlays, or infopedia surfaces are touched.
+- Performance and old-hardware impact: state whether the pass can affect hot loops, allocations, asset loading, rendering, startup, save/load, or package size.
+- Publish-safe impact: state whether names, assets, likenesses, lore terms, package metadata, or public docs are exposed and whether clearance/quarantine is required.
+- Verification path: name compile checks, smoke checks, asset/package validation, UI checks, save/load checks, or manual inspection steps required for completion.
+
+Specificity floor: a clarified pass must not merely say `improve`, `audit`, `integrate`, `support`, or `clean up`. It must name the system being improved, the runtime surface that changes, the mechanism of change, and the condition that proves the change worked. If those facts are unknown, the required next step is a clarification pass, not implementation.
+
+Clarification progression order:
+
+- First clarify the active checkpoint and near-term gates.
+- Then clarify any phase being touched by current implementation work.
+- Then clarify phases that are prerequisites for packaging, publish safety, save compatibility, or player-facing stability.
+- Deferred phases may remain summarized until reopened, but once reopened they must receive the same overview and specificity expansion before implementation.
+
+A valid clarification expansion may add child steps such as `Phase 6.1a`, `Phase 6.1b`, and `Phase 6.1c` under an existing subphase. It must not create a new standalone document. If the expansion becomes too large for a small edit, it still belongs in this master plan unless it is a durable implementation rule for `STANDARDS_AND_PRACTICES.md` or completed work for `DEVELOPMENT_HISTORY.md`.
+
+Immediate clarification backlog:
+
+- Phase 1.6 through Phase 1.16 need secondary expansion because names such as construction authority, machine operation authority, staffing authority, logistics authority, and localization authority identify the intended owners but not the child runtime seams, extraction order, or verification criteria.
+- Phase 4.11 through Phase 4.15 need secondary expansion because display density, graphics/runtime profiles, diagnostics/QOL/defaults, and accessibility are active publish-safe systems with performance, UI, and settings implications.
+- Phase 5.1 through Phase 5.8 need secondary expansion because operations, hauling, reservations, route readiness, delivery intent, contracts, and preflight feedback will define much of the later automation model.
+- Phase 6.1 through Phase 6.6 need secondary expansion because production and machine operation can easily become hidden timers unless the data model, UI inspection, staffing fallback, and interruption semantics are specified.
+- Phase 8 and Phase 13 need secondary expansion before broad world-content work resumes because facility/provenance/district passes can otherwise sprawl into unbounded content generation.
+- Phase 16.1 through Phase 16.13 need secondary expansion before any release-candidate claim because packaging, asset packs, compatibility, old-machine viability, and regression checklists require measurable acceptance criteria.
+
+Example clarification pattern:
+
+- Broad entry: `Phase 1.6 - Construction authority pass.`
+- Clarified child pass: `Phase 1.6a - Construction command intake`. Define the command record, source UI surfaces, validation inputs, and rejection messages.
+- Clarified child pass: `Phase 1.6b - Construction placement validation`. Define collision checks, access checks, no-self-entombment rules, cost checks, and preview feedback.
+- Clarified child pass: `Phase 1.6c - Construction execution authority`. Define work operation records, material reservation, interruption handling, save/load behavior, and inspection output.
+- Completion proof: compile, place/cancel/build smoke, save/load during pending construction, and player-facing rejection message inspection.
 
 ### Phase 0 - Governance, documentation, and build hygiene
 
