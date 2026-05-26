@@ -20,6 +20,8 @@ PACKAGE_CACHE_DIR="$INPUT_DIR/packages"
 CLIENT_PACKAGE_DIR="$PACKAGE_CACHE_DIR/client"
 SERVER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/server"
 SUPPORT_LIB_DIR="$PACKAGE_CACHE_DIR/support/lib"
+LAUNCHER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/launcher"
+LAUNCHER_PROFILE_SOURCE_DIR="$PROJECT_ROOT/launcher/profile-packages"
 LWJGL_VERSION="3.4.1"
 REQUIRED_LWJGL_FILES=(
   "lwjgl-$LWJGL_VERSION.jar"
@@ -91,6 +93,18 @@ stage_runtime_dependencies() {
     echo "Launcher-managed Linux support libraries staged in $SUPPORT_LIB_DIR"
 }
 
+stage_launcher_profile_packages() {
+    if [[ ! -d "$LAUNCHER_PROFILE_SOURCE_DIR" ]]; then
+        echo "Missing launcher profile package source directory: $LAUNCHER_PROFILE_SOURCE_DIR" >&2
+        exit 24
+    fi
+    local dest="$LAUNCHER_PACKAGE_DIR/profile-packages"
+    rm -rf "$dest"
+    mkdir -p "$LAUNCHER_PACKAGE_DIR"
+    cp -a "$LAUNCHER_PROFILE_SOURCE_DIR" "$dest"
+    echo "Launcher profile packages staged in $dest"
+}
+
 write_thin_launcher_manifest() {
     local client_jar="$1"
     local server_jar="$2"
@@ -117,7 +131,9 @@ $line"
   "platform": "linux-x64",
   "launcher": {
     "role": "installed-orchestrator",
-    "owns": ["manifest-verification", "package-acquisition", "update", "rollback", "launch"]
+    "main_class": "mechanist.launcher.ThinLauncherMain",
+    "profile_packages": "packages/launcher/profile-packages",
+    "owns": ["wrapper-detection", "fallback-profile-generation", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
   },
   "client": {
     "path": "packages/client/$client_name",
@@ -130,6 +146,12 @@ $line"
     "sha256": "$(sha256_file "$server_jar")",
     "size": $(wc -c < "$server_jar"),
     "main_class": "mechanist.MechanistServerMain"
+  },
+  "launcher_profile": {
+    "fallback_human_portraits": "launcher-human-8x8-v1",
+    "celebrity_portraits": "launcher-celebrity-portraits-v1",
+    "celebrity_name_detection": "launcher-celebrity-name-detection-v1",
+    "wrapper_detection": ["steam", "gog", "none"]
   },
   "support_libraries": [
 $support_json
@@ -157,7 +179,7 @@ fi
 
 cd "$PROJECT_ROOT"
 rm -rf "$DIST_DIR" "$RUNTIME_DIR" "$INPUT_DIR"
-mkdir -p "$DIST_DIR" "$INPUT_DIR" "$APP_IMAGE_DIR" "$CLIENT_PACKAGE_DIR" "$SERVER_PACKAGE_DIR" "$SUPPORT_LIB_DIR"
+mkdir -p "$DIST_DIR" "$INPUT_DIR" "$APP_IMAGE_DIR" "$CLIENT_PACKAGE_DIR" "$SERVER_PACKAGE_DIR" "$SUPPORT_LIB_DIR" "$LAUNCHER_PACKAGE_DIR"
 
 "$PROJECT_ROOT/scripts/security/generate-sensitive-strings.sh"
 mvn -B -DskipTests package
@@ -177,6 +199,7 @@ SERVER_JAR="$SERVER_PACKAGE_DIR/TheMechanistServer.jar"
 cp "$CLIENT_SOURCE" "$CLIENT_JAR"
 cp "$SERVER_SOURCE" "$SERVER_JAR"
 stage_runtime_dependencies
+stage_launcher_profile_packages
 write_thin_launcher_manifest "$CLIENT_JAR" "$SERVER_JAR"
 
 jlink \
@@ -200,7 +223,7 @@ build_package_type() {
       --runtime-image "$RUNTIME_DIR" \
       --input "$INPUT_DIR" \
       --main-jar "packages/client/TheMechanist.jar" \
-      --main-class "mechanist.TheMechanist" \
+      --main-class "mechanist.launcher.ThinLauncherMain" \
       --dest "$DIST_DIR" \
       --install-dir "/opt/the-mechanist-launcher" \
       --linux-shortcut \
@@ -223,7 +246,7 @@ build_app_image() {
       --runtime-image "$RUNTIME_DIR" \
       --input "$INPUT_DIR" \
       --main-jar "packages/client/TheMechanist.jar" \
-      --main-class "mechanist.TheMechanist" \
+      --main-class "mechanist.launcher.ThinLauncherMain" \
       --dest "$APP_IMAGE_DIR" \
       "${extra_args[@]}"
     if [[ -d "$APP_IMAGE_DIR/$APP_NAME" ]]; then
@@ -250,8 +273,12 @@ The Mechanist Linux installer outputs
 
 Version: $APP_VERSION
 Distribution model: installer -> thin launcher -> client -> server
+Launcher entrypoint: mechanist.launcher.ThinLauncherMain
 Package identity manifest: manifests/linux-runtime-manifest.json
-Launcher-managed packages: packages/client, packages/server, packages/support/lib
+Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
+Wrapper detection: Steam/GOG/none, evaluated by thin launcher before client start
+Fallback profile generation: launcher-owned, hash-based
+Launcher portrait/name packages: human 8x8, celebrity portrait manifest, celebrity name detection manifest
 LWJGL/support libraries: staged into packages/support/lib at package-build time
 Game-launch dependency downloads: forbidden
 
@@ -260,6 +287,7 @@ Recommended Linux testing order:
 2. Confirm manifests/linux-runtime-manifest.json exists inside the installed image.
 3. Confirm packages/client/TheMechanist.jar and packages/server/TheMechanistServer.jar exist.
 4. Confirm packages/support/lib contains LWJGL core/native jars and runtime dependency jars.
-5. Test DEB/RPM installer behavior after portable app-image verification.
+5. Confirm packages/launcher/profile-packages contains the launcher profile packages.
+6. Test DEB/RPM installer behavior after portable app-image verification.
 EOF
 echo "Linux installers written to $DIST_DIR"
