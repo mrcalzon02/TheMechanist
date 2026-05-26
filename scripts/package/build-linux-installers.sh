@@ -136,7 +136,7 @@ $line"; fi
     done < <(find "$SUPPORT_LIB_DIR" -type f -name '*.jar' -print0 | sort -z)
     cat > "$MANIFEST_DIR/linux-runtime-manifest.json" <<EOF
 {
-  "schema": 1,
+  "schema": 2,
   "distribution_model": "installer-thin-launcher-client-server",
   "version": "$APP_VERSION",
   "platform": "linux-x64",
@@ -164,8 +164,9 @@ $line"; fi
   },
   "launcher_profile": {
     "fallback_human_portraits": "launcher-human-8x8-v1",
-    "celebrity_portraits": "launcher-celebrity-portraits-v1",
-    "celebrity_name_detection": "launcher-celebrity-name-detection-v1",
+    "special_portraits": "launcher-special-portraits-v1",
+    "special_name_detection": "launcher-special-name-detection-v1",
+    "special_publish_status": "quarantined-until-cleared",
     "wrapper_detection": ["steam", "gog", "none"]
   },
   "support_libraries": [
@@ -240,7 +241,7 @@ Client runtime assets: packages/client/assets
 Wrapper detection: Steam/GOG/none, evaluated by thin launcher before client start
 Fallback profile generation: launcher-owned, hash-based
 Server join identity bridge: launcher-owned profile hash written before client start
-Launcher portrait/name packages: human 8x8, celebrity portrait manifest, celebrity name detection manifest
+Launcher portrait/name packages: human 8x8, special portrait manifest, special name detection manifest; special mappings are quarantined until cleared
 LWJGL/support libraries: staged into packages/support/lib at package-build time
 Game-launch dependency downloads: forbidden
 
