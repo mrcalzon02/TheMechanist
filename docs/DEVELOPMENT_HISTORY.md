@@ -125,6 +125,7 @@ The suite now executes:
 - `PlayerFacingCopySanitizerSmoke`
 - `PlayerFacingUiTextSmoke`
 - `PlayerFacingDenialTextSmoke`
+- `PlayerFacingInspectionTextSmoke`
 
 This provides a stable narrow verification surface for future Gate 3 UI cleanup work before broader recursive compile or packaging verification passes are run.
 
@@ -149,3 +150,13 @@ The helper routes inspection detail through the shared sanitizer authority while
 Added `PlayerFacingInspectionTextSmoke` to guard against regressions where inspection surfaces leak runtime implementation names, raw identifiers, registry handles, or filesystem paths.
 
 Verification: `PlayerFacingInspectionTextSmoke` added and logically validated against the active Gate 3 inspection containment targets.
+
+## Gate 3 - Shared Action Feedback Helper Slice
+
+Added `PlayerFacingActionText` as a shared readable success/action-feedback helper for interaction, inventory, construction, trade, travel, and combat result messages.
+
+The helper routes ordinary action-result text through the shared sanitizer authority while preserving concise readable event phrasing for event logs, toast notifications, and ordinary gameplay feedback surfaces.
+
+Added `PlayerFacingActionTextSmoke` to guard against regressions where action-result surfaces leak registry handles, runtime identifiers, target-zone keys, UUIDs, filesystem paths, or debug-oriented wording.
+
+Verification: `PlayerFacingActionTextSmoke` added and logically validated against the active Gate 3 action-feedback containment targets.
