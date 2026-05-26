@@ -1,8 +1,8 @@
-# Milestone 04 - Population Provenance, Economy, Faction Markets, and Deferred Sector Simulation
+# Milestone 04 - Population Provenance, Economy, Faction Markets, Deferred Sector Simulation, and World Events
 
-This ordered milestone document consolidates the population, provenance, economy, faction vendor, illicit-market, noble-luxury, narcotics, draught, faction-market, raw-material-source, out-of-sector shipment, reinforcement-import, and deferred sector-simulation planning that was previously distributed across topical milestone files and supplements.
+This ordered milestone document consolidates the population, provenance, economy, faction vendor, illicit-market, noble-luxury, narcotics, draught, faction-market, raw-material-source, out-of-sector shipment, reinforcement-import, deferred sector-simulation, and top-down world-event planning that was previously distributed across topical milestone files and supplements.
 
-`MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is an ordered phase-aligned implementation target for the economic/provenance/faction-market/deferred-simulation slice of that roadmap.
+`MASTER_DEVELOPMENT_PLAN.md` remains the authoritative roadmap, active checkpoint, phase list, and dependency map. This file is an ordered phase-aligned implementation target for the economic/provenance/faction-market/deferred-simulation/world-event slice of that roadmap.
 
 This document is not a changelog. Completed implementation still belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules still belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine still belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
 
@@ -14,9 +14,10 @@ This milestone aligns and partially absorbs material from:
 - `MILESTONE_KNOWLEDGE_SKILLS_MEDICAL_AND_FABRICATION_SYSTEMS.md`
 - `MILESTONE_SUPPLEMENT_ILLICIT_NARCOTICS_FACTION_PRODUCTION.md`
 - `MILESTONE_SUPPLEMENT_NOBLE_LUXURY_NARCOTICS_AND_DRAUGHT_TRADE.md`
-- `MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md` where animal, agriculture, pet vendor, and civilian-market content touches economy or provenance
-- `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md` where faction schemes consume influence, strength, economy, reinforcement, and intelligence state
-- `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` where train/import nodes, markets, vendors, storage rooms, raw material depots, and reinforcement arrival contexts become generated spaces
+- `MILESTONE_WORLD_CONTENT_AND_PET_SYSTEMS.md` where animal, agriculture, pet vendor, and civilian-market content touches economy or provenance.
+- `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md` where news, rumors, market warnings, objective guidance, and player-facing explanation expose events to the player.
+- `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md` where faction schemes must be distinguished from non-faction world events.
+- `MILESTONE_09_WORLDGEN_DISTRICTS_ROOMS_AND_FACILITY_STAMPS.md` where disasters, accidents, edicts, blockades, room destruction, room creation, train/import nodes, markets, vendors, storage rooms, raw material depots, and reinforcement arrival contexts become generated or mutated spaces.
 - `MILESTONE_ROADMAP_REORGANIZATION_AND_PHASE_ALIGNMENT.md`
 
 The older topical files should remain in place until their contents are fully absorbed into the ordered milestone sequence and the user explicitly approves archival, deprecation, or cleanup.
@@ -27,30 +28,32 @@ Primary phase groups:
 
 - Phase 8 - Population provenance, workforce context, demographic continuity, migration, and reinforcement imports.
 - Phase 9 - Item provenance, raw-material provenance, facility origin, shipment origin, and supply ecology.
-- Phase 16 - World generation, districts, facilities, vendors, train/import nodes, out-of-sector abstraction, and economy-supporting room stamps.
-- Phase 17 - Economy, quests, contracts, faction reputation, vendors, markets, faction reinforcement demand, and market pressure.
-- Phase 18 - Editor, localization, modding, economy/faction/population/source editor support, and content pipeline.
+- Phase 16 - World generation, districts, facilities, vendors, train/import nodes, out-of-sector abstraction, top-down world events, and economy-supporting room stamps.
+- Phase 17 - Economy, quests, contracts, faction reputation, vendors, markets, faction reinforcement demand, market pressure, news/rumor exposure, and civic/event consequences.
+- Phase 18 - Editor, localization, modding, economy/faction/population/source/world-event editor support, and content pipeline.
 - Phase 19 - Polish, packaging, QA, and release audit.
 
 Secondary dependencies:
 
-- Phase 2 - Asset promotion for vendor goods, narcotics, luxury items, draught items, market fixtures, vault containers, food goods, medical goods, trade items, shipment crates, raw material piles, and train/import-node assets.
+- Phase 2 - Asset promotion for vendor goods, narcotics, luxury items, draught items, market fixtures, vault containers, food goods, medical goods, trade items, shipment crates, raw material piles, event markers, news/rumor assets, and train/import-node assets.
+- Phase 4 - News, rumors, market notices, event logs, event warnings, player-facing feedback, and readable UI exposure.
 - Phase 6 - Production chains for goods that are manufactured rather than spawned.
-- Phase 7 - Ownership, access, legality, stolen goods, restricted goods, forbidden access, customs/seizure rules, and import permissions.
-- Phase 11 - Leadership schemes that consume economic/provenance data and influence/strength/probability calculations.
+- Phase 7 - Ownership, access, legality, stolen goods, restricted goods, forbidden access, customs/seizure rules, import permissions, emergency closures, and edict enforcement.
+- Phase 11 - Leadership schemes that consume economic/provenance data and influence/strength/probability calculations while remaining separate from top-down non-faction world events.
 - Phase 12 - Player-owned construction and expansion heat feeding economic/faction response.
+- Phase 13 - Disasters, hazards, spire quakes, infrastructure failures, fires, collapse, blocked routes, and environmental event consequences.
 - Phase 14 - Medical/narcotic item effects where economy intersects health.
-- Phase 15 - Faction ranks, leaders, representatives, reinforcement staff, train arrivals, migrant workers, and imported faction members.
+- Phase 15 - Faction ranks, leaders, representatives, reinforcement staff, train arrivals, migrant workers, imported faction members, rumor carriers, officials, and event reporters.
 
 ## Core goal
 
-The world should be able to explain who lives in a zone, who works there, who produces goods, which faction controls which facilities, why a vendor has its stock, where critical supplies come from, why a faction trades in certain goods, how raw materials entered the sector, why a faction is able to replenish lost members, and how markets change when faction control, scarcity, corruption, luxury demand, illicit production, shipments, reinforcements, or player activity changes.
+The world should be able to explain who lives in a zone, who works there, who produces goods, which faction controls which facilities, why a vendor has its stock, where critical supplies come from, why a faction trades in certain goods, how raw materials entered the sector, why a faction is able or unable to replenish lost members, which external events are disrupting trade, and how markets change when faction control, scarcity, corruption, luxury demand, illicit production, shipments, reinforcements, disasters, edicts, blockades, or player activity changes.
 
-Economy should not be a disconnected loot table. Faction markets should emerge from population, facilities, provenance, supply routes, faction identity, legality, storage, risk, reputation, leadership schemes, outside-sector supply, reinforcement routes, and deferred probability-based simulation.
+Economy should not be a disconnected loot table. Faction markets should emerge from population, facilities, provenance, supply routes, faction identity, legality, storage, risk, reputation, leadership schemes, outside-sector supply, reinforcement routes, deferred probability-based simulation, and top-down world events.
 
 ## Deferred simulation doctrine
 
-The game should not fully simulate every person, item, shipment, machine, faction decision, and mine outside the player's immediate world context. Out-of-sector and distant-sector behavior should defer into probability, strength, influence, supply, demand, source-provenance, and cooldown ledgers.
+The game should not fully simulate every person, item, shipment, machine, faction decision, and mine outside the player's immediate world context. Out-of-sector and distant-sector behavior should defer into probability, strength, influence, supply, demand, source-provenance, event modifiers, and cooldown ledgers.
 
 Distant systems should answer useful questions without pretending to run full local simulation:
 
@@ -61,24 +64,37 @@ Distant systems should answer useful questions without pretending to run full lo
 - Did a faction's strength or influence increase?
 - Did a rival intercept supplies?
 - Did the train/import node have capacity?
-- Did available rooms allow the new people to enter and remain?
+- Did a top-down event close the train route?
+- Did a tithing decree drain faction reserves?
+- Did an export ban prevent off-map sales?
+- Did available rooms allow new people to enter and remain?
 - Did an expired reinforcement window waste the opportunity?
 
 The result should be deterministic enough to save/load and audit, but abstract enough to preserve performance. Immediate reality near the player can run high detail. Local districts can run operational ledgers. Out-of-sector systems can run probabilistic summaries.
 
+## Top-down world event doctrine
+
+Top-down world events are not ordinary faction schemes. They are external or systemic conditions that happen to the sector, the spire, the rail network, the civic order, the market environment, or surrounding sectors. They may be caused by accidents, infrastructure failures, distant wars, sector edicts, spire quakes, taxation, tithing decrees, epidemics, weather or atmospheric failures, route closures, religious/civic decrees, blockades, disasters, or other higher-order pressures.
+
+A faction may exploit, suffer from, respond to, or be blamed for a top-down event, but the event itself should not be authored as that faction's plan unless the cause is explicitly factional. This distinction matters. A gang raid is a scheme. A spire quake is a world event. A faction blockade is a scheme. An external-sector export ban or imperial tax decree is a top-down world event. A noble plot to close a market is a scheme. A civic tithing decree that affects all markets is a top-down world event.
+
+Top-down world events should be generated, curated, and validated for suitability. They should not simply be random punishment. Each event should define scale, duration, eligible zones/sectors, economy effects, population effects, reinforcement effects, room/worldgen effects, news/rumor exposure, internal-vendor exceptions, off-map trade restrictions, and cleanup/aftermath rules.
+
+World events should be visible through news, rumors, vendor explanations, faction chatter, market notices, civic announcements, train-station messages, and Infopedia/event-log references where appropriate. The player should be able to hear that trains are out, exports are banned, a tithe has been imposed, a quake has damaged a district, or reinforcement shipments are delayed before the effects feel arbitrary.
+
 ## Dependency rule
 
-Population provenance precedes item provenance. Item provenance precedes robust economy. Robust economy precedes believable faction vendors and market stock. Vendor stock should be connected to facility origin, faction identity, supply pressure, legality, access rules, raw material source, shipment route, or outside-sector fallback wherever possible.
+Population provenance precedes item provenance. Item provenance precedes robust economy. Robust economy precedes believable faction vendors and market stock. Vendor stock should be connected to facility origin, faction identity, supply pressure, legality, access rules, raw material source, shipment route, world-event modifier, or outside-sector fallback wherever possible.
 
 Illicit narcotics economies depend on production rooms, recipes, provenance, market access, and faction preference. Noble luxury and draught economies depend on noble estate rooms, vault custody, off-world provenance, house ownership, scarcity, and sale restrictions. Critical vendors depend on facilities, stock rules, ownership/access checks, player-facing explanations, and source-provenance fallbacks when local production cannot account for supply.
 
-Out-of-sector simulation depends on probability ledgers, faction influence, faction strength, route access, source provenance, import nodes, storage capacity, housing capacity, room availability, local demand, and cooldown timers. If a distant raw material, person, or shipment appears inside the playable sector, the game should still be able to say whether it came from local mining, local salvage, local production, an outside-sector shipment, a faction import, a train arrival, or an unresolved fallback source.
+Out-of-sector simulation depends on probability ledgers, faction influence, faction strength, route access, source provenance, import nodes, storage capacity, housing capacity, room availability, local demand, event modifiers, and cooldown timers. If a distant raw material, person, or shipment appears inside the playable sector, the game should still be able to say whether it came from local mining, local salvage, local production, an outside-sector shipment, a faction import, a train arrival, a temporary event exception, or an unresolved fallback source.
 
 ## Phase 8 - Population provenance and economic identity
 
 ### Phase 8.1 - Abstract population target intake
 
-Population targets produced during world generation should be treated as inputs to economic identity, not merely numbers. A zone with 400 residents, an industrial faction, and active market rooms should not produce the same economy as a low-population sewer district, noble estate, military compound, or illicit gang territory.
+Population targets produced during world generation should be treated as inputs to economic identity, not merely numbers. A zone with 400 residents, an industrial faction, and active market rooms should not produce the same economy as a low-population sewer district, noble estate, military compound, illicit gang territory, or disaster-damaged district.
 
 Population targets should be connected to:
 
@@ -93,10 +109,11 @@ Population targets should be connected to:
 - Supply consumption.
 - Faction recruitment and reinforcement.
 - Vendor viability.
+- World-event disruption.
 
 Exit criteria:
 
-Population counts can influence economic demand, labor availability, vendor viability, and supply pressure.
+Population counts can influence economic demand, labor availability, vendor viability, supply pressure, and event vulnerability.
 
 ### Phase 8.2 - Population origin and demand profile
 
@@ -112,10 +129,11 @@ Examples:
 - Noble households create luxury, servants, security, private medicine, controlled narcotics, vault, and prestige-good demand.
 - Gang dependents create food, protection, narcotics, black-market, stolen goods, and coercive economies.
 - Imported faction members arriving from outside the sector create temporary lodging, onboarding, equipment, food, rank-assignment, and faction-integration demand.
+- Disaster refugees, stranded travelers, and people displaced by quakes or route closures create temporary shelter, ration, medical, and employment pressure.
 
 Exit criteria:
 
-The world can distinguish not only how many people exist, but what their presence does to demand, labor, faction replenishment, and faction markets.
+The world can distinguish not only how many people exist, but what their presence does to demand, labor, faction replenishment, crisis pressure, and faction markets.
 
 ### Phase 8.3 - Workforce assignment and economic production
 
@@ -140,6 +158,8 @@ Workforce records should support:
 - Imported replacement members.
 - Reinforcement intake staff.
 - Train/import-node workers.
+- Disaster repair crews.
+- Civic/tithe/tax collectors where represented.
 
 Exit criteria:
 
@@ -155,7 +175,7 @@ Split triggers include:
 - The player takes a contract from the representative.
 - The player attacks, hires, rescues, arrests, examines, tracks, or trades with the actor.
 - The actor owns a pet, vehicle, room, vault, store, or quest-critical item relevant to the player.
-- The actor is a faction leader, representative, specialist, noble, broker, doctor, smuggler, handler, imported reinforcement officer, or named criminal.
+- The actor is a faction leader, representative, specialist, noble, broker, doctor, smuggler, handler, imported reinforcement officer, disaster official, event witness, rumor carrier, or named criminal.
 
 Exit criteria:
 
@@ -177,6 +197,7 @@ Reinforcement logic should track:
 - Food/water/support capacity.
 - Import route availability.
 - Train/import-node access.
+- World-event restrictions.
 - Reinforcement request cooldown.
 - Semi-random reinforcement availability timer.
 - Bulk group size.
@@ -192,7 +213,7 @@ Factions can replenish lost people through readable, capacity-limited, timer-bas
 
 ### Phase 8.6 - Reinforcement cooldown, capacity, and expiration pass
 
-Bulk reinforcement availability should not be constant or guaranteed. A faction that requests replacements should receive a countdown/cooldown window before reinforcements become available, with semi-random variation based on faction influence, strength, route access, leadership competence, wealth, outside support, danger, and recent losses.
+Bulk reinforcement availability should not be constant or guaranteed. A faction that requests replacements should receive a countdown/cooldown window before reinforcements become available, with semi-random variation based on faction influence, strength, route access, leadership competence, wealth, outside support, danger, world-event restrictions, and recent losses.
 
 Rules should include:
 
@@ -202,6 +223,7 @@ Rules should include:
 - Housing/barracks/room-capacity check.
 - Food/supply support check where implemented.
 - Import node availability check.
+- World-event closure or delay check.
 - Expiration if the faction cannot receive the group.
 - Delayed arrival if route or train access is blocked where implemented.
 - Partial arrival if capacity is limited where implemented.
@@ -234,6 +256,7 @@ Provenance may include:
 - Shipment route.
 - Outside-sector source.
 - Local raw-material source.
+- World-event exception or disruption.
 - Theft, salvage, counterfeit, contamination, or black-market status.
 
 Exit criteria:
@@ -242,7 +265,7 @@ Items can be explained as goods with origins, not just free-floating inventory o
 
 ### Phase 9.2 - Food, water, and survival supply provenance
 
-Food and water supply should connect to farms, gardens, hydroponics, mushroom rooms, kitchens, markets, trade routes, storage rooms, water recyclers, purification systems, scavenging, faction stores, ration systems, outside shipments, or emergency import fallbacks.
+Food and water supply should connect to farms, gardens, hydroponics, mushroom rooms, kitchens, markets, trade routes, storage rooms, water recyclers, purification systems, scavenging, faction stores, ration systems, outside shipments, emergency imports, or emergency event fallbacks.
 
 Vendor stock should distinguish:
 
@@ -256,10 +279,12 @@ Vendor stock should distinguish:
 - Black-market food.
 - Noble imported foods.
 - Outside-sector shipments.
+- Disaster relief stock.
+- Tithe-taxed or rationed stock.
 
 Exit criteria:
 
-Food vendors and supply shortages can be explained by facilities, trade routes, shipment routes, and faction control.
+Food vendors and supply shortages can be explained by facilities, trade routes, shipment routes, world events, and faction control.
 
 ### Phase 9.3 - Weapons, ammunition, and security-supply provenance
 
@@ -277,10 +302,12 @@ Vendor stock should distinguish:
 - Faction surplus.
 - Black-market arms.
 - Outside-sector arms shipments.
+- Blockade-restricted stock.
+- Emergency confiscated stock where applicable.
 
 Exit criteria:
 
-Ammunition and weapon vendors are tied to faction identity, legality, supply routes, and production/storage facilities.
+Ammunition and weapon vendors are tied to faction identity, legality, supply routes, production/storage facilities, and event restrictions.
 
 ### Phase 9.4 - Medicine, narcotics, and pharmaceutical provenance
 
@@ -295,6 +322,7 @@ Provenance should support:
 - Noble physician supply.
 - Off-world import.
 - Outside-sector shipment.
+- Relief shipment.
 - Counterfeit batch.
 - Contaminated batch.
 - Restricted medicine.
@@ -306,7 +334,7 @@ Provenance should support:
 
 Exit criteria:
 
-Medical and narcotic goods can be distinguished by source, legality, quality, risk, and faction economy.
+Medical and narcotic goods can be distinguished by source, legality, quality, risk, event disruption, and faction economy.
 
 ### Phase 9.5 - Noble luxury and draught provenance
 
@@ -323,11 +351,12 @@ Draught provenance should support:
 - Broker, smuggler, physician, or merchant source.
 - Vault custody history.
 - Whether it is genuine, diluted, counterfeit, contaminated, stolen, misdeclared, or house-certified.
+- Whether it is affected by blockade, tax, seizure, or tithing edict.
 - Whether it is for household use, prestige, gifting, bargaining, blackmail, medical privilege, private indulgence, inheritance, or hoarding.
 
 Exit criteria:
 
-Draught items are traceable, protected, and exceptional rather than generic valuables.
+Draught items are traceable, protected, event-sensitive, and exceptional rather than generic valuables.
 
 ### Phase 9.6 - Pet, animal, and agricultural goods provenance
 
@@ -342,10 +371,11 @@ Examples:
 - Water station source.
 - Veterinary or handler care source.
 - Seeds, crops, fungi, cloning samples, animal products, and pet supplies.
+- Event-driven animal disease, feed shortage, or import restriction where implemented.
 
 Exit criteria:
 
-Animal/pet/agriculture economy connects to rooms, handlers, vendors, and ownership rather than appearing as isolated flavor.
+Animal/pet/agriculture economy connects to rooms, handlers, vendors, ownership, and event pressure rather than appearing as isolated flavor.
 
 ### Phase 9.7 - Raw material source provenance and fallback pass
 
@@ -368,13 +398,14 @@ Raw material source categories include:
 - Military import.
 - Black-market import.
 - Emergency fallback source.
+- World-event relief or seizure source.
 - Unknown/unresolved source flagged for audit.
 
-When a local production chain requires raw materials that have not been fully simulated, the system should use provenance fallbacks rather than silent spawning. A fallback should record what was assumed, why it was allowed, which faction/source supplied it, whether it was local or external, and whether the assumption should be audited later.
+When a local production chain requires raw materials that have not been fully simulated, the system should use provenance fallbacks rather than silent spawning. A fallback should record what was assumed, why it was allowed, which faction/source supplied it, whether it was local or external, whether an event changed the source, and whether the assumption should be audited later.
 
 Exit criteria:
 
-Mined, quarried, salvaged, shipped, imported, or fallback raw materials have explainable source provenance.
+Mined, quarried, salvaged, shipped, imported, event-supplied, or fallback raw materials have explainable source provenance.
 
 ### Phase 9.8 - Shipment and import provenance pass
 
@@ -390,6 +421,7 @@ Shipment records should include:
 - Value.
 - Legal/restricted/illicit status.
 - Quality/contamination/counterfeit risk.
+- Event modifier.
 - Interception risk.
 - Delay risk.
 - Arrival time/window.
@@ -399,7 +431,7 @@ Exit criteria:
 
 External supply supports the economy without requiring every distant factory or mine to run at full local detail.
 
-## Phase 16 - Facility, vendor, and deferred simulation generation
+## Phase 16 - Facility, vendor, deferred simulation, and world-event generation
 
 ### Phase 16.1 - Critical vendor and facility placement
 
@@ -540,6 +572,7 @@ Deferred ledgers should track:
 - Rival interference.
 - Leadership competence.
 - Scheme pressure.
+- Top-down event pressure.
 - Player-caused heat or disruption.
 
 Exit criteria:
@@ -562,6 +595,7 @@ Calculation inputs may include:
 - Market scarcity.
 - Available raw materials.
 - Available train/import capacity.
+- World-event modifiers.
 - Previous successes/failures.
 - Player interference.
 - Heat/suspicion.
@@ -583,12 +617,81 @@ Outputs may include:
 - Faction strength changed.
 - Faction influence changed.
 - Scheme advanced or faltered.
+- Event conditions improved or worsened.
 
 Exit criteria:
 
-Abstract simulation outcomes are explainable by faction factors instead of arbitrary random rolls.
+Abstract simulation outcomes are explainable by faction factors and world-event modifiers instead of arbitrary random rolls.
 
-## Phase 17 - Faction markets, contracts, reinforcement, and trade behavior
+### Phase 16.8 - Top-down world event generation pass
+
+World events should be generated and curated separately from faction schemes.
+
+Event families include:
+
+- Spire quake.
+- Structural collapse.
+- Fire or industrial accident.
+- Gas leak or toxic spill.
+- Disease outbreak or quarantine.
+- Train outage.
+- Import node closure.
+- Export ban.
+- Off-map sales blockade.
+- Sector trade blockade.
+- Tithing decree.
+- Tax edict.
+- Confiscation order.
+- Civic inspection sweep.
+- Rationing order.
+- Religious/civic observance affecting commerce.
+- Weather, atmospheric, or pressure-system failure where setting supports it.
+- Distant war or security alert.
+- External sector unrest.
+- Supply shock.
+- Relief shipment.
+- Reconstruction grant.
+- Infrastructure repair period.
+
+Each event should define:
+
+- Event type.
+- Start date/time.
+- Duration.
+- Scope: room, zone, level, sector, outside-sector, faction-neutral, or specific market category.
+- Severity.
+- Probability/eligibility rules.
+- News/rumor exposure.
+- Economy modifiers.
+- Population modifiers.
+- Shipment/import/export modifiers.
+- Reinforcement modifiers.
+- Room creation/destruction/damage hooks.
+- Vendor restrictions and exceptions.
+- Aftermath cleanup or recovery.
+
+Exit criteria:
+
+Top-down events become structured world-state records rather than untracked flavor text.
+
+### Phase 16.9 - World event room and facility mutation pass
+
+Top-down events may create, destroy, damage, close, repair, or repurpose rooms and facilities.
+
+Examples:
+
+- A spire quake damages rooms, blocks corridors, creates rubble, breaks utilities, closes train routes, and generates repair work.
+- A reconstruction grant creates repair sites, temporary storage, contractor rooms, or public works offices.
+- A quarantine closes clinics, markets, or housing blocks and creates checkpoints.
+- A tax/tithe edict creates collection offices, inspection points, seizure storage, and temporary market restrictions.
+- A train outage closes import nodes, strands travelers, blocks reinforcements, and delays shipments.
+- A relief shipment creates temporary aid distribution rooms or market surpluses.
+
+Exit criteria:
+
+World events can affect physical space and facility availability, not only prices.
+
+## Phase 17 - Faction markets, contracts, reinforcement, world events, and trade behavior
 
 ### Phase 17.1 - Faction vendor identity pass
 
@@ -616,9 +719,9 @@ Food, supplies, weapons, ammunition, medicine, tools, and construction goods are
 
 Critical stock should be provenance-aware where possible:
 
-- Food from farms, kitchens, markets, trade, hydroponics, scavenging, or faction stores.
-- Weapons and ammunition from armories, depots, workshops, factories, trade routes, black markets, or stockpiles.
-- Medical goods from clinics, labs, trade, scavenging, or faction stores.
+- Food from farms, kitchens, markets, trade, hydroponics, scavenging, faction stores, or relief shipments.
+- Weapons and ammunition from armories, depots, workshops, factories, trade routes, black markets, stockpiles, or embargoed/imported sources.
+- Medical goods from clinics, labs, trade, scavenging, relief stock, or faction stores.
 - Construction goods from workshops, depots, industrial suppliers, salvage, merchants, local mines, or outside-sector raw-material shipments.
 - Blueprint stock from faction identity, facilities, knowledge, licensing, and reputation.
 
@@ -640,7 +743,7 @@ They may:
 - Trade narcotics for weapons, food, medicine, protection, favors, information, or territory.
 - Use narcotics as leverage, bribery, addiction pressure, recruitment bait, or social control.
 - Protect narcotics production rooms as high-value facilities.
-- Hide production from law enforcement, inspectors, hostile factions, or rivals.
+- Hide production from law enforcement, inspectors, hostile factions, rivals, or civic sweeps.
 
 Exit criteria:
 
@@ -656,7 +759,7 @@ Behavior should include:
 - Selected narcotics or high-status medicines may be traded through official, private, or black-market channels.
 - Nobles may use luxury items, rare medicines, and controlled substances as gifts, bribes, favors, blackmail tools, or hospitality.
 - Nobles may pay extremely well for draught items but refuse to sell their own.
-- Acquiring, stealing, exposing, adulterating, or returning draught items should affect relations, heat, reputation, and schemes.
+- Acquiring, stealing, exposing, adulterating, taxing, confiscating, or returning draught items should affect relations, heat, reputation, and schemes.
 
 Draught items should be visible as known desires, rumors, vault contents, quest targets, or political goods rather than normal shop stock.
 
@@ -666,7 +769,7 @@ Noble trade supports luxury goods and narcotics while preserving draught items a
 
 ### Phase 17.5 - Faction market legality and access pass
 
-Markets should distinguish legal, restricted, illicit, stolen, counterfeit, military, noble-only, faction-only, license-gated, reputation-gated, and black-market goods.
+Markets should distinguish legal, restricted, illicit, stolen, counterfeit, military, noble-only, faction-only, license-gated, reputation-gated, event-restricted, rationed, taxed, embargoed, and black-market goods.
 
 Access can be affected by:
 
@@ -681,6 +784,7 @@ Access can be affected by:
 - Law enforcement pressure.
 - Noble invitation or patronage.
 - Criminal reputation.
+- Top-down world events.
 
 Exit criteria:
 
@@ -708,10 +812,14 @@ Examples:
 - Escort reinforcement arrivals.
 - Clear the train/import node.
 - Recover lost raw material shipments.
+- Repair quake-damaged facilities.
+- Move goods before an export ban closes.
+- Distribute relief supplies.
+- Evacuate stranded travelers.
 
 Exit criteria:
 
-Contracts reflect real faction supply pressure, illicit economy, noble privilege, reinforcement needs, and market needs.
+Contracts reflect real faction supply pressure, illicit economy, noble privilege, reinforcement needs, world events, and market needs.
 
 ### Phase 17.7 - Reinforcement import and faction recovery pass
 
@@ -726,12 +834,56 @@ Faction recovery behavior should include:
 - Reserve room/barracks/housing capacity where possible.
 - Import members in bulk through the import node when the timer matures.
 - Expire the opportunity if no room or support exists.
+- Delay or cancel arrivals when a world event closes train/import routes.
 - Assign arrivals to faction roles, guards, workers, specialists, or reserves.
 - Attach provenance to imported people.
 
 Exit criteria:
 
 Faction member replenishment becomes a timed, capacity-limited, infrastructure-aware process.
+
+### Phase 17.8 - News, rumor, and market-notice exposure pass
+
+Top-down world events should be surfaced through the rumor/news system before or while they affect the player.
+
+Exposure channels include:
+
+- News bulletins.
+- Rumors.
+- Vendor chatter.
+- Train station notices.
+- Civic proclamations.
+- Temple/civic announcements.
+- Market boards.
+- Courier talk.
+- Faction representative dialogue.
+- Event log entries.
+- Infopedia/world-state references where appropriate.
+
+Event rumors should support uncertainty. Early rumors may be incomplete, wrong, exaggerated, delayed, propaganda-shaped, or faction-biased. Confirmed notices should be clearer and more actionable.
+
+Exit criteria:
+
+The player can discover why markets, shipments, reinforcements, rooms, or routes have changed.
+
+### Phase 17.9 - Off-map trade restriction and internal-vendor exception pass
+
+World events may restrict off-map sales, imports, exports, or settlement with outside buyers without shutting down every local/internal vendor.
+
+Rules should distinguish:
+
+- Internal faction vendors still buying/selling from internal stock.
+- Local market vendors still trading locally available goods.
+- Off-map export buyers refusing goods during export bans.
+- Outside suppliers failing or delaying imports.
+- Smugglers ignoring or bypassing official restrictions at higher risk/cost.
+- Civic/military/noble edicts restricting specific goods.
+- Tax/tithe decrees reducing profit or increasing cost.
+- Blockades preventing sale settlement until lifted.
+
+Exit criteria:
+
+A blockade or export ban can close off-map sales while local/internal commerce remains coherent.
 
 ## Phase 18 - Editor, audit, and Infopedia support
 
@@ -762,14 +914,18 @@ Editor/audit surfaces should inspect:
 - Reinforcement request state.
 - Train/import-node state.
 - Deferred simulation ledgers.
+- Top-down world-event definitions.
+- Event-to-economy modifiers.
+- Event-to-room/facility mutation hooks.
+- Event news/rumor exposure.
 
 Exit criteria:
 
-Economy and provenance can be audited through data surfaces rather than hidden in scattered source logic.
+Economy, provenance, reinforcements, and world events can be audited through data surfaces rather than hidden in scattered source logic.
 
-### Phase 18.2 - Faction, population, and deferred simulation editor pass
+### Phase 18.2 - Faction, population, deferred simulation, and world-event editor pass
 
-The editor suite should include faction/population/deferred-simulation authoring and audit surfaces.
+The editor suite should include faction/population/deferred-simulation/world-event authoring and audit surfaces.
 
 Editor targets should include:
 
@@ -792,33 +948,40 @@ Editor targets should include:
 - Probability inputs and weights.
 - Probability output explanations.
 - Route/interception risks.
+- Top-down world-event families.
+- Event suitability/eligibility rules.
+- Event duration/severity tables.
+- Event economy modifiers.
+- Event room/facility mutation hooks.
+- Event news/rumor templates.
+- Event expiration and recovery rules.
 
 Exit criteria:
 
-Faction recovery, deferred simulation, and population provenance can be authored and audited instead of hidden in opaque random code.
+Faction recovery, deferred simulation, population provenance, and top-down world events can be authored and audited instead of hidden in opaque random code.
 
-### Phase 18.3 - Economy and provenance Infopedia pass
+### Phase 18.3 - Economy, event, and provenance Infopedia pass
 
-Infopedia entries should explain faction markets and item provenance in player-facing terms.
+Infopedia entries should explain faction markets, item provenance, world events, and event consequences in player-facing terms.
 
 Entries should answer:
 
 - What this item is.
 - Who commonly makes it.
 - Which factions commonly sell it.
-- Whether it is legal, restricted, illicit, military, noble-only, counterfeit, stolen, or black-market.
+- Whether it is legal, restricted, illicit, military, noble-only, counterfeit, stolen, black-market, event-restricted, embargoed, rationed, or taxed.
 - What facilities produce or store it.
 - What it is made from.
-- Whether it came from local mining, local salvage, local production, outside-sector shipment, train import, off-world import, or an unknown/fallback source.
+- Whether it came from local mining, local salvage, local production, outside-sector shipment, train import, off-world import, event relief, confiscation, or an unknown/fallback source.
 - What it can be used to make.
 - What quality/provenance states matter.
 - Why a faction may want it.
 - Why it may be unavailable.
-- What risks, heat, suspicion, or reputation effects may apply.
+- What risks, heat, suspicion, reputation, tax, tithe, blockade, or event effects may apply.
 
 Exit criteria:
 
-The player can use the Infopedia to understand markets, provenance, supply, legality, value, shipments, and source assumptions without external notes.
+The player can use the Infopedia to understand markets, provenance, supply, legality, value, shipments, world events, and source assumptions without external notes.
 
 ## Phase 19 - Release audit
 
@@ -832,32 +995,41 @@ Before release claims for this milestone, verify:
 - Noble factions and Ashbourne houses can participate in luxury/narcotics trade where implemented.
 - Draught items are explicitly extremely valuable rare off-world substances.
 - Draught items are normally not for sale and appear in secured noble estate contexts.
-- Item provenance distinguishes legal, restricted, illicit, stolen, counterfeit, contaminated, noble-owned, local-source, outside-sector, train-imported, and off-world goods where relevant.
-- Raw material provenance fallbacks identify local mining, local salvage, local stockpiles, outside-sector shipments, train imports, off-world imports, or unresolved audit states.
-- Faction reinforcement imports use timers/cooldowns, capacity checks, import-node logic, and provenance where implemented.
+- Item provenance distinguishes legal, restricted, illicit, stolen, counterfeit, contaminated, noble-owned, local-source, outside-sector, train-imported, event-restricted, and off-world goods where relevant.
+- Raw material provenance fallbacks identify local mining, local salvage, local stockpiles, outside-sector shipments, train imports, off-world imports, event relief/seizure, or unresolved audit states.
+- Faction reinforcement imports use timers/cooldowns, capacity checks, import-node logic, event restrictions, and provenance where implemented.
 - Reinforcement opportunities can expire when the faction lacks room/barracks/housing/support capacity where implemented.
-- Deferred out-of-sector simulation uses probability, influence, strength, route, and supply ledgers rather than full distant ticking where implemented.
-- Contracts can reference supply pressure, faction markets, illicit goods, luxury goods, draught items, raw material shipments, train/import nodes, reinforcement arrivals, and vendor needs.
+- Deferred out-of-sector simulation uses probability, influence, strength, route, event, and supply ledgers rather than full distant ticking where implemented.
+- Top-down world events are distinct from faction schemes.
+- Top-down world events define duration, severity, scope, economy effects, population effects, shipment/import/export effects, reinforcement effects, room/facility mutation hooks, and news/rumor exposure where implemented.
+- Train outages can block or delay reinforcements and shipments where implemented.
+- Export bans or blockades can stop off-map sales while internal/local vendors continue coherently where implemented.
+- Tax edicts, tithing decrees, rationing orders, disasters, and infrastructure failures affect markets in readable ways where implemented.
+- Contracts can reference supply pressure, faction markets, illicit goods, luxury goods, draught items, raw material shipments, train/import nodes, reinforcement arrivals, world events, and vendor needs.
 - Player-facing text avoids raw IDs and placeholder labels.
 - Editor/audit surfaces can inspect the relevant data definitions.
-- Infopedia entries explain major exposed market/provenance/reinforcement/deferred-simulation mechanics.
+- Infopedia and rumor/news systems explain major exposed market/provenance/reinforcement/deferred-simulation/world-event mechanics.
 
 Exit criteria:
 
-The game may claim population-backed economy, provenance-aware markets, illicit narcotics economies, noble luxury trade, draught goods, faction vendors, raw-material provenance, reinforcement imports, and deferred out-of-sector simulation only when these systems are inspectable, player-readable, and tied to facilities, factions, population, probability ledgers, shipments, and item origins.
+The game may claim population-backed economy, provenance-aware markets, illicit narcotics economies, noble luxury trade, draught goods, faction vendors, raw-material provenance, reinforcement imports, deferred out-of-sector simulation, and top-down world events only when these systems are inspectable, player-readable, and tied to facilities, factions, population, probability ledgers, shipments, item origins, news/rumor exposure, and event consequences.
 
 ## Non-goals for this milestone
 
 This milestone does not complete all item effects, medical effects, addiction mechanics, combat mechanics, construction implementation, vehicle implementation, or full faction AI. It defines how economy and provenance should consume those systems when they exist.
 
-This milestone does not require every background item to carry full provenance. It requires provenance when the item is important enough for trade, legality, quality, faction identity, quests, inspection, production, source fallback, or player decision-making.
+This milestone does not require every background item to carry full provenance. It requires provenance when the item is important enough for trade, legality, quality, faction identity, quests, inspection, production, source fallback, event consequence, or player decision-making.
 
 This milestone does not require every out-of-sector actor or item to be individually simulated. Deferred simulation is explicitly allowed and preferred for distant systems.
 
 This milestone does not make draught items ordinary vendor goods. Draught items are exceptional valuables and should remain locked-vault/prestige/quest/political objects unless a future explicit exception is added.
 
+This milestone does not make every top-down world event a disaster or punishment. Events may be negative, positive, mixed, localized, sector-wide, temporary, chronic, announced, rumored, hidden, or delayed depending on suitability and design context.
+
 ## Deferred checkpoint summary
 
 Population provenance should feed economic demand, workforce availability, facility operation, item provenance, vendor stock, contracts, faction recovery, and faction market behavior. Illicit factions should prefer narcotics manufacturing and sale when their identity supports it. Noble factions, especially the Ashbourne houses, should participate in luxury goods and narcotics trade while hoarding rare draught items as extremely valuable off-world substances kept in locked vaults or secured noble estate spaces rather than ordinary vendor stock.
 
-Distant and out-of-sector systems should defer to probability-ledger simulation rather than full ticking. Raw materials should retain source-provenance fallbacks for local mining, local salvage, local stockpiles, outside-sector shipments, train imports, off-world imports, or unresolved audit states. Factions that lose people should be able to request bulk replacements through a timed, semi-random reinforcement availability system, with capacity checks and expiration if they cannot house or support the arrivals. A train/import node around level 5, zone 2,2 may serve as an early data-driven importation target until the map/import-node system is generalized.
+Distant and out-of-sector systems should defer to probability-ledger simulation rather than full ticking. Raw materials should retain source-provenance fallbacks for local mining, local salvage, local stockpiles, outside-sector shipments, train imports, off-world imports, event relief/seizure sources, or unresolved audit states. Factions that lose people should be able to request bulk replacements through a timed, semi-random reinforcement availability system, with capacity checks and expiration if they cannot house or support the arrivals. A train/import node around level 5, zone 2,2 may serve as an early data-driven importation target until the map/import-node system is generalized.
+
+Top-down world events should be generated and curated as a separate system from faction schemes. Spire quakes, train outages, export bans, blockades, tax edicts, tithing decrees, rationing orders, relief shipments, infrastructure failures, and other systemic events should appear through news and rumors, affect markets and trade, alter shipments/imports/exports/reinforcements, sometimes damage or create rooms/facilities, and preserve internal/local vendor behavior where broader off-map trade is restricted.
