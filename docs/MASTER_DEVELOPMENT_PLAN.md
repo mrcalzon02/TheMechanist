@@ -21,6 +21,7 @@ Allowed now:
 - Documentation cleanup inside the four durable documents.
 - Publish-safe terminology cleanup on package-facing, player-facing, manifest, launcher, installer, and documentation surfaces.
 - Clarity and overview expansion of broad roadmap phases/subphases when that expansion prevents vague implementation work.
+- Opening and closing QOL/sensibility evaluation for every major phase or reopened phase segment.
 
 Not active now:
 
@@ -183,6 +184,40 @@ Example clarification pattern:
 - Clarified child pass: `Phase 1.6b - Construction placement validation`. Define collision checks, access checks, no-self-entombment rules, cost checks, and preview feedback.
 - Clarified child pass: `Phase 1.6c - Construction execution authority`. Define work operation records, material reservation, interruption handling, save/load behavior, and inspection output.
 - Completion proof: compile, place/cancel/build smoke, save/load during pending construction, and player-facing rejection message inspection.
+
+### Phase quality-of-life and sensibility evaluator
+
+Purpose: every major phase must be evaluated as a player-facing product slice, not merely as an internal engineering exercise. A system can compile and still be useless, opaque, cluttered, misleading, or nonsensical to the player. This evaluator is mandatory at the beginning and end of every major phase segment and every reopened phase segment.
+
+Opening evaluator: before implementation begins on a major phase or reopened segment, answer these questions in the pass plan or implementation notes:
+
+- Player usefulness: what does this phase make easier, clearer, more interesting, safer, faster, or more meaningful for the player?
+- Player visibility: is the created or changed system visible to the player, indirectly visible through diagnostics/infopedia/status panels, or entirely internal?
+- Information value: what information is being displayed, and why does the player need it at that moment?
+- Clutter rejection: what information should not be shown because it is noise, debug residue, redundant state, or internal implementation detail?
+- Identifier hygiene: are long package IDs, item IDs, asset IDs, Java class names, manifest keys, registry names, or internal handles hidden from ordinary player-facing UI unless a developer/audit surface explicitly needs them?
+- Placeholder audit: does any visible text, icon, title, faction name, item name, tooltip, warning, button, or panel still look like placeholder material that needs revision?
+- End-to-end logic: does the proposed system make coherent, cogent sense from player action to system response to feedback to save/load persistence?
+- Compact transparency: is the information presented compactly and plainly, with enough explanation to be understood but not enough to drown the player?
+- Sensible defaults: does the system choose defaults that a normal player would understand without reading development notes?
+- Failure readability: when the system refuses an action, breaks, blocks, or waits, does it tell the player the real reason in useful language?
+
+Closing evaluator: before a major phase or reopened segment may be marked complete, answer these questions against the implemented result:
+
+- Did the implementation produce a player-useful improvement, or only an internal rearrangement?
+- If the result is internal-only, is there a justified reason it should remain invisible, and is any required diagnostic/audit surface available to developers?
+- Is every player-facing string final enough for the current publish-safe tier, or does it need localization/keying/rewrite before release?
+- Are internal package IDs, registry IDs, asset handles, UUIDs, debug keys, stack-trace labels, or class names hidden from normal UI?
+- Are technical identifiers still visible only in explicit developer/audit/diagnostic surfaces?
+- Is every visible panel, tooltip, alert, button, title, list row, and status line compact, transparent, and useful?
+- Does any display surface show duplicated information, stale information, hidden timers, misleading state, or clutter that should be collapsed or removed?
+- Does the system make sense end to end when used by a player who has not read the source code?
+- Does the implementation preserve old-hardware readability and performance by avoiding unnecessary redraws, allocations, oversized text blocks, asset bloat, and hot-loop string churn?
+- Does the result remain publish-safe by avoiding uncleared names, likenesses, protected terms, placeholder lore, or unlicensed asset references?
+
+Evaluator enforcement: no major phase may be considered complete unless its closing evaluator has a positive answer or a named follow-up subphase for every negative answer. If the negative answer affects player comprehension, publish safety, save/load safety, or package integrity, the follow-up must be scheduled before any release-candidate claim.
+
+Evaluator placement: this section is considered prepended and appended to every `### Phase N` segment. During later clarification expansion, phase-specific QOL child checks may be written directly under the affected phase, but the generic evaluator remains binding even when not repeated verbatim under each heading.
 
 ### Phase 0 - Governance, documentation, and build hygiene
 
