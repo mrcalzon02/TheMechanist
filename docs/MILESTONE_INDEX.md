@@ -48,12 +48,16 @@ Focus:
 - Optional art packs.
 - Low_32 lean runtime tier.
 - Agriculture, animal, pet, noble, draught, vehicle, quality, and blueprint-ready asset definitions.
+- Public Mod API standards.
+- Example mod revision.
+- Modding documentation revision.
+- Example-mod and API audit surfaces.
 
 Primary phases:
 
 - Phase 2.
-- Phase 18 asset/editor portions.
-- Phase 19 asset release-audit portions.
+- Phase 18 asset/editor/modding/API/example documentation portions.
+- Phase 19 asset, Mod API, and example-mod release-audit portions.
 
 ### `MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md`
 
@@ -287,7 +291,7 @@ Do not create new milestone files unless the user explicitly orders a new phase-
 
 Add future notes to the correct ordered milestone whenever possible:
 
-- Assets and publish-safety -> Milestone 01.
+- Assets, publish-safety, Mod API, example mods, modding docs -> Milestone 01.
 - UI, inspection, Infopedia, readability, movement, input, controls, rebinding -> Milestone 02.
 - Production, knowledge, skills, item quality -> Milestone 03.
 - Population, provenance, markets, vendors, luxury, draught, economy -> Milestone 04.
