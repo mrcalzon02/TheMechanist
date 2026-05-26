@@ -22,6 +22,7 @@ SERVER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/server"
 SUPPORT_LIB_DIR="$PACKAGE_CACHE_DIR/support/lib"
 LAUNCHER_PACKAGE_DIR="$PACKAGE_CACHE_DIR/launcher"
 LAUNCHER_PROFILE_SOURCE_DIR="$PROJECT_ROOT/launcher/profile-packages"
+LAUNCHER_ASSET_STAGER="$PROJECT_ROOT/tools/launcher/stage_launcher_profile_assets.py"
 LWJGL_VERSION="3.4.1"
 REQUIRED_LWJGL_FILES=(
   "lwjgl-$LWJGL_VERSION.jar"
@@ -54,12 +55,8 @@ sys.exit(0 if p.read_bytes()[:4] == b"PK\x03\x04" else 1)
 PY
 }
 
-sha256_file() {
-    sha256sum "$1" | awk '{print tolower($1)}'
-}
-
-relative_path() {
-    python3 - "$1" "$2" <<'PY'
+sha256_file() { sha256sum "$1" | awk '{print tolower($1)}'; }
+relative_path() { python3 - "$1" "$2" <<'PY'
 import os, sys
 print(os.path.relpath(sys.argv[2], sys.argv[1]).replace(os.sep, '/'))
 PY
@@ -70,20 +67,13 @@ stage_runtime_dependencies() {
     mkdir -p "$DEPENDENCY_STAGE_DIR" "$SUPPORT_LIB_DIR"
     mvn -B -DincludeScope=runtime -Dmdep.copyPom=false -DoutputDirectory="$DEPENDENCY_STAGE_DIR" dependency:copy-dependencies
     cp -a "$DEPENDENCY_STAGE_DIR"/. "$SUPPORT_LIB_DIR"/
-
-    local missing=()
-    local required hit found
+    local missing=() required hit found
     for required in "${REQUIRED_LWJGL_FILES[@]}"; do
         found=0
         while IFS= read -r -d '' hit; do
-            if valid_jar "$hit"; then
-                found=1
-                break
-            fi
+            if valid_jar "$hit"; then found=1; break; fi
         done < <(find "$SUPPORT_LIB_DIR" -type f -name "$required" -print0 2>/dev/null)
-        if [[ "$found" -eq 0 ]]; then
-            missing+=("$required")
-        fi
+        if [[ "$found" -eq 0 ]]; then missing+=("$required"); fi
     done
     if [[ "${#missing[@]}" -gt 0 ]]; then
         echo "Packaged Linux LWJGL runtime is incomplete. Missing or invalid:" >&2
@@ -98,6 +88,11 @@ stage_launcher_profile_packages() {
         echo "Missing launcher profile package source directory: $LAUNCHER_PROFILE_SOURCE_DIR" >&2
         exit 24
     fi
+    if [[ ! -f "$LAUNCHER_ASSET_STAGER" ]]; then
+        echo "Missing launcher asset staging helper: $LAUNCHER_ASSET_STAGER" >&2
+        exit 24
+    fi
+    python3 "$LAUNCHER_ASSET_STAGER" --project-root "$PROJECT_ROOT" --asset-root assets --launcher-package-root launcher/profile-packages --allow-missing
     local dest="$LAUNCHER_PACKAGE_DIR/profile-packages"
     rm -rf "$dest"
     mkdir -p "$LAUNCHER_PACKAGE_DIR"
@@ -106,8 +101,7 @@ stage_launcher_profile_packages() {
 }
 
 write_thin_launcher_manifest() {
-    local client_jar="$1"
-    local server_jar="$2"
+    local client_jar="$1" server_jar="$2"
     mkdir -p "$MANIFEST_DIR"
     local client_name server_name support_json entry rel
     client_name="$(basename "$client_jar")"
@@ -116,12 +110,8 @@ write_thin_launcher_manifest() {
     while IFS= read -r -d '' entry; do
         rel="$(relative_path "$PACKAGE_CACHE_DIR" "$entry")"
         local line="      {\"path\": \"$rel\", \"sha256\": \"$(sha256_file "$entry")\", \"size\": $(wc -c < "$entry")}"
-        if [[ -z "$support_json" ]]; then
-            support_json="$line"
-        else
-            support_json="$support_json,
-$line"
-        fi
+        if [[ -z "$support_json" ]]; then support_json="$line"; else support_json="$support_json,
+$line"; fi
     done < <(find "$SUPPORT_LIB_DIR" -type f -name '*.jar' -print0 | sort -z)
     cat > "$MANIFEST_DIR/linux-runtime-manifest.json" <<EOF
 {
@@ -133,7 +123,7 @@ $line"
     "role": "installed-orchestrator",
     "main_class": "mechanist.launcher.ThinLauncherMain",
     "profile_packages": "packages/launcher/profile-packages",
-    "owns": ["wrapper-detection", "fallback-profile-generation", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
+    "owns": ["wrapper-detection", "fallback-profile-generation", "server-join-identity-bridge", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
   },
   "client": {
     "path": "packages/client/$client_name",
@@ -167,33 +157,18 @@ require_tool jpackage
 require_tool mvn
 require_tool python3
 
-if [[ -z "${JAVA_HOME:-}" ]]; then
-    echo "JAVA_HOME is not set. Set JAVA_HOME to a Java 17 JDK before packaging." >&2
-    exit 2
-fi
-
-if [[ ! -d "$JAVA_HOME/jmods" ]]; then
-    echo "JAVA_HOME does not point to a full JDK with jmods: $JAVA_HOME" >&2
-    exit 2
-fi
+if [[ -z "${JAVA_HOME:-}" ]]; then echo "JAVA_HOME is not set. Set JAVA_HOME to a Java 17 JDK before packaging." >&2; exit 2; fi
+if [[ ! -d "$JAVA_HOME/jmods" ]]; then echo "JAVA_HOME does not point to a full JDK with jmods: $JAVA_HOME" >&2; exit 2; fi
 
 cd "$PROJECT_ROOT"
 rm -rf "$DIST_DIR" "$RUNTIME_DIR" "$INPUT_DIR"
 mkdir -p "$DIST_DIR" "$INPUT_DIR" "$APP_IMAGE_DIR" "$CLIENT_PACKAGE_DIR" "$SERVER_PACKAGE_DIR" "$SUPPORT_LIB_DIR" "$LAUNCHER_PACKAGE_DIR"
-
 "$PROJECT_ROOT/scripts/security/generate-sensitive-strings.sh"
 mvn -B -DskipTests package
-
 CLIENT_SOURCE="$TARGET_DIR/TheMechanist-all.jar"
 SERVER_SOURCE="$TARGET_DIR/TheMechanistServer-all.jar"
-if [[ ! -s "$CLIENT_SOURCE" ]]; then
-    echo "Required development client jar was not produced: $CLIENT_SOURCE" >&2
-    exit 4
-fi
-if [[ ! -s "$SERVER_SOURCE" ]]; then
-    echo "Required development server jar was not produced: $SERVER_SOURCE" >&2
-    exit 4
-fi
+if [[ ! -s "$CLIENT_SOURCE" ]]; then echo "Required development client jar was not produced: $CLIENT_SOURCE" >&2; exit 4; fi
+if [[ ! -s "$SERVER_SOURCE" ]]; then echo "Required development server jar was not produced: $SERVER_SOURCE" >&2; exit 4; fi
 CLIENT_JAR="$CLIENT_PACKAGE_DIR/TheMechanist.jar"
 SERVER_JAR="$SERVER_PACKAGE_DIR/TheMechanistServer.jar"
 cp "$CLIENT_SOURCE" "$CLIENT_JAR"
@@ -202,53 +177,18 @@ stage_runtime_dependencies
 stage_launcher_profile_packages
 write_thin_launcher_manifest "$CLIENT_JAR" "$SERVER_JAR"
 
-jlink \
-  --module-path "$JAVA_HOME/jmods" \
-  --add-modules "$CLIENT_MODULES" \
-  --output "$RUNTIME_DIR" \
-  "${JLINK_OPTIONS[@]}"
+jlink --module-path "$JAVA_HOME/jmods" --add-modules "$CLIENT_MODULES" --output "$RUNTIME_DIR" "${JLINK_OPTIONS[@]}"
 
 build_package_type() {
-    local package_type="$1"
-    local extra_args=()
-    if [[ -f "$ICON_PATH" ]]; then
-        extra_args+=(--icon "$ICON_PATH")
-    fi
-    jpackage \
-      --type "$package_type" \
-      --name "$APP_NAME" \
-      --app-version "$APP_VERSION" \
-      --vendor "$VENDOR" \
-      --description "The Mechanist thin launcher and package orchestrator" \
-      --runtime-image "$RUNTIME_DIR" \
-      --input "$INPUT_DIR" \
-      --main-jar "packages/client/TheMechanist.jar" \
-      --main-class "mechanist.launcher.ThinLauncherMain" \
-      --dest "$DIST_DIR" \
-      --install-dir "/opt/the-mechanist-launcher" \
-      --linux-shortcut \
-      --linux-menu-group "Game" \
-      --resource-dir "$PROJECT_ROOT/packaging/linux/resources" \
-      "${extra_args[@]}"
+    local package_type="$1" extra_args=()
+    if [[ -f "$ICON_PATH" ]]; then extra_args+=(--icon "$ICON_PATH"); fi
+    jpackage --type "$package_type" --name "$APP_NAME" --app-version "$APP_VERSION" --vendor "$VENDOR" --description "The Mechanist thin launcher and package orchestrator" --runtime-image "$RUNTIME_DIR" --input "$INPUT_DIR" --main-jar "packages/client/TheMechanist.jar" --main-class "mechanist.launcher.ThinLauncherMain" --dest "$DIST_DIR" --install-dir "/opt/the-mechanist-launcher" --linux-shortcut --linux-menu-group "Game" --resource-dir "$PROJECT_ROOT/packaging/linux/resources" "${extra_args[@]}"
 }
 
 build_app_image() {
     local extra_args=()
-    if [[ -f "$ICON_PATH" ]]; then
-        extra_args+=(--icon "$ICON_PATH")
-    fi
-    jpackage \
-      --type app-image \
-      --name "$APP_NAME" \
-      --app-version "$APP_VERSION" \
-      --vendor "$VENDOR" \
-      --description "The Mechanist thin launcher and package orchestrator" \
-      --runtime-image "$RUNTIME_DIR" \
-      --input "$INPUT_DIR" \
-      --main-jar "packages/client/TheMechanist.jar" \
-      --main-class "mechanist.launcher.ThinLauncherMain" \
-      --dest "$APP_IMAGE_DIR" \
-      "${extra_args[@]}"
+    if [[ -f "$ICON_PATH" ]]; then extra_args+=(--icon "$ICON_PATH"); fi
+    jpackage --type app-image --name "$APP_NAME" --app-version "$APP_VERSION" --vendor "$VENDOR" --description "The Mechanist thin launcher and package orchestrator" --runtime-image "$RUNTIME_DIR" --input "$INPUT_DIR" --main-jar "packages/client/TheMechanist.jar" --main-class "mechanist.launcher.ThinLauncherMain" --dest "$APP_IMAGE_DIR" "${extra_args[@]}"
     if [[ -d "$APP_IMAGE_DIR/$APP_NAME" ]]; then
         tar -C "$APP_IMAGE_DIR" -czf "$DIST_DIR/TheMechanist_launcher_linux_portable_${APP_VERSION}.tar.gz" "$APP_NAME"
     else
@@ -258,13 +198,7 @@ build_app_image() {
 }
 
 build_package_type deb
-
-if command -v rpmbuild >/dev/null 2>&1; then
-    build_package_type rpm
-else
-    echo "rpmbuild was not found; DEB was produced and RPM packaging was skipped on this runner." >&2
-fi
-
+if command -v rpmbuild >/dev/null 2>&1; then build_package_type rpm; else echo "rpmbuild was not found; DEB was produced and RPM packaging was skipped on this runner." >&2; fi
 build_app_image
 find "$DIST_DIR" -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > "$DIST_DIR/SHA256SUMS.txt"
 cat > "$DIST_DIR/LINUX_INSTALLERS_README.txt" <<EOF
@@ -278,6 +212,7 @@ Package identity manifest: manifests/linux-runtime-manifest.json
 Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
 Wrapper detection: Steam/GOG/none, evaluated by thin launcher before client start
 Fallback profile generation: launcher-owned, hash-based
+Server join identity bridge: launcher-owned profile hash written before client start
 Launcher portrait/name packages: human 8x8, celebrity portrait manifest, celebrity name detection manifest
 LWJGL/support libraries: staged into packages/support/lib at package-build time
 Game-launch dependency downloads: forbidden
@@ -287,7 +222,7 @@ Recommended Linux testing order:
 2. Confirm manifests/linux-runtime-manifest.json exists inside the installed image.
 3. Confirm packages/client/TheMechanist.jar and packages/server/TheMechanistServer.jar exist.
 4. Confirm packages/support/lib contains LWJGL core/native jars and runtime dependency jars.
-5. Confirm packages/launcher/profile-packages contains the launcher profile packages.
+5. Confirm packages/launcher/profile-packages contains the launcher profile packages and asset-staging report.
 6. Test DEB/RPM installer behavior after portable app-image verification.
 EOF
 echo "Linux installers written to $DIST_DIR"
