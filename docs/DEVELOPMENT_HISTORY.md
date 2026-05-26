@@ -6,7 +6,7 @@ The pre-milestone development ledger was archived at:
 
 `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`
 
-Use this file for new completed work from the ordered milestone-development plan onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `MILESTONE_INDEX.md`.
+Use this file for new completed work from the ordered milestone-development plan onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `docs/MILESTONE_INDEX.md`.
 
 ## Milestone Development Baseline
 
@@ -95,3 +95,13 @@ Continued the player-facing copy cleanup by removing explicit log-file paths fro
 Also tightened reference-panel wording that exposed implementation terms such as registry gaps and shared input registries. Crafting, input, item-transfer, and generated-job messages now use player-readable catalog, recipe-list, shared-input, and item-record language.
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; searched `TheMechanist.java` for the retired player-facing log-file, registry, raw, and debug phrases.
+
+## Gate 3 - Shared Player-Facing Copy Sanitizer Slice
+
+Added `PlayerFacingCopySanitizer` as a shared Gate 3 authority for ordinary player-facing text cleanup. The sanitizer removes or rewrites raw zone keys, generated contract IDs, ident-chip IDs, filesystem paths, Java/runtime class names, UUIDs, registry-style key/value fragments, and other implementation residue before text reaches ordinary UI surfaces.
+
+The sanitizer intentionally does not own gameplay truth, logs, or diagnostics. Developer audit surfaces may retain the original messages while ordinary player panels route through the sanitized copy path.
+
+Added `PlayerFacingCopySanitizerSmoke` to guard against leaking raw target-zone keys, contract identifiers, filesystem paths, or Java/runtime implementation wording back into ordinary player-facing copy.
+
+Verification: `PlayerFacingCopySanitizerSmoke` added and validated logically against known Gate 3 leak categories. Full recursive compile and runtime smoke were not run through this connector session.
