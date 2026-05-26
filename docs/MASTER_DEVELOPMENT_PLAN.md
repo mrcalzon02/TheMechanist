@@ -133,7 +133,7 @@ Done when: the build artifacts are reproducible, the touched publish-safe path h
 
 Roadmap rule: each former required outcome is now a required subphase/runtime pass. A subphase is not complete because a note exists; it is complete only when the owning authority exists, the old behavior still works or is intentionally migrated, and the verification path is named.
 
-Dependency rule: asset promotion precedes broad content placement; population provenance precedes item provenance; item provenance precedes vehicle provenance; vehicle provenance precedes Ages of Control zone-history generation. The game should know what visual assets are usable in world space before placing them broadly, should know who exists and who works where before explaining who produced an item, should know which component and factory chains can produce vehicles before factions deploy them, and should know vehicle capacity/loss/ownership before using historical faction plans to generate aged control, expansion, assaults, defenses, production, and decay inside zones.
+Dependency rule: asset promotion precedes broad content placement; comparative damage/durability balance precedes vehicle, machine, wall, and heavy-weapon integration; population provenance precedes item provenance; item provenance precedes vehicle provenance; vehicle provenance precedes Ages of Control zone-history generation. The game should know what visual assets are usable in world space before placing them broadly, should know the relative scale between handheld weapons, mounted weapons, vehicles, machines, and walls before assigning damage values, should know who exists and who works where before explaining who produced an item, should know which component and factory chains can produce vehicles before factions deploy them, and should know vehicle capacity/loss/ownership before using historical faction plans to generate aged control, expansion, assaults, defenses, production, and decay inside zones.
 
 ### Clarity and overview revision path
 
@@ -173,13 +173,13 @@ A valid clarification expansion may add child steps such as `Phase 6.1a`, `Phase
 Immediate clarification backlog:
 
 - Phase 1.6 through Phase 1.16 need secondary expansion because names such as construction authority, machine operation authority, staffing authority, logistics authority, and localization authority identify the intended owners but not the child runtime seams, extraction order, or verification criteria.
-- Phase 2.1 through Phase 2.14 need secondary expansion because master asset integration must identify real graphical assets, promote unused assets into usable world-space definitions, and expose usage readiness without silently bloating runtime packages.
-- Phase 4.11 through Phase 4.15 need secondary expansion because display density, graphics/runtime profiles, diagnostics/QOL/defaults, and accessibility are active publish-safe systems with performance, UI, and settings implications.
+- Phase 2.1 through Phase 2.15 need secondary expansion because master asset integration must identify real graphical assets, promote unused assets into usable world-space definitions, expose usage readiness, and assign comparative damage/durability tiers without silently bloating runtime packages.
+- Phase 4.11 through Phase 4.16 need secondary expansion because display density, graphics/runtime profiles, diagnostics/QOL/defaults, accessibility, and large-entity targeting are active publish-safe systems with performance, UI, and settings implications.
 - Phase 5.1 through Phase 5.8 need secondary expansion because operations, hauling, reservations, route readiness, delivery intent, contracts, and preflight feedback will define much of the later automation model.
 - Phase 6.1 through Phase 6.6 need secondary expansion because production and machine operation can easily become hidden timers unless the data model, UI inspection, staffing fallback, and interruption semantics are specified.
 - Phase 8.1 through Phase 8.12 need secondary expansion before population simulation work begins because demographic origin, age promotion, faction membership, workplace assignment, room occupancy, and reinforcement requests become foundational inputs for item provenance and faction continuity.
-- Phase 10.1 through Phase 10.18 need secondary expansion before vehicle systems begin because vehicles require promoted vehicle assets, component factories, vehicle factories, ownership ledgers, body schemas, part integrity, repairs, faction control, transit behavior, and sector-level military balance.
-- Phase 11.1 through Phase 11.16 need secondary expansion before historical zone generation work begins because Ages of Control, leadership schemes, faction expansion, concessions, assaults, defense, population drift, production plans, vehicle deployment/loss, room control, and active gameplay scheme activation can otherwise become unbounded worldgen prose rather than inspectable generation ledgers.
+- Phase 10.1 through Phase 10.20 need secondary expansion before vehicle systems begin because vehicles require promoted vehicle assets, component factories, vehicle factories, ownership ledgers, body schemas, part integrity, repairs, faction control, transit behavior, comparative durability, road-only movement, and sector-level military balance.
+- Phase 11.1 through Phase 11.18 need secondary expansion before historical zone generation work begins because Ages of Control, leadership schemes, faction expansion, concessions, assaults, defense, population drift, production plans, vehicle deployment/loss, room control, player-visible scheme events, and active gameplay scheme activation can otherwise become unbounded worldgen prose rather than inspectable generation ledgers.
 - Phase 16 and Phase 19 need secondary expansion before broad world-content or release-candidate work resumes because district simulation, asset packs, old-machine viability, and regression checklists require measurable acceptance criteria.
 
 Example clarification pattern:
@@ -290,8 +290,9 @@ Required subphases:
 - Phase 2.12 - Editor palette promotion pass. Make promoted world assets available to the in-game editor and future stamp editor through semantic categories rather than raw filenames.
 - Phase 2.13 - Worldgen integration readiness pass. Mark which promoted assets are ready for room stamps, facility stamps, district generation, road/corridor placement, sewer placement, industrial placement, hazard placement, or faction compound placement.
 - Phase 2.14 - Asset bloat and old-hardware pass. Prevent broad promotion from bloating startup, memory use, packaging size, or hot-loop rendering; use indexed lookup, lazy loading, quality tiers, and explicit package ownership.
+- Phase 2.15 - Comparative damage/durability tier asset pass. Assign world-scale balance categories to weapons, walls, machines, doors, vehicles, mounted weapons, and structural assets so later systems cannot accidentally treat a handheld dagger, rifle, APC, tank, block wall, or industrial machine as comparable durability/damage peers.
 
-Exit criteria: graphical assets are no longer a passive pile of files. The project can list what exists, what is unused, what is unsafe, what is world-usable, what has been promoted, where it may appear, and what future phase should integrate it. Direct path fallback is visible, high-error assets have semantic IDs, and world/editor systems can consume promoted assets through stable registry entries.
+Exit criteria: graphical assets are no longer a passive pile of files. The project can list what exists, what is unused, what is unsafe, what is world-usable, what has been promoted, where it may appear, what broad balance scale it belongs to, and what future phase should integrate it. Direct path fallback is visible, high-error assets have semantic IDs, and world/editor systems can consume promoted assets through stable registry entries.
 
 ### Phase 3 - Room, road, frontage, plaza, alley, parking, and spatial integration - COMPLETE
 
@@ -332,6 +333,7 @@ Required subphases:
 - Phase 4.13 - Render-only lighting authority pass.
 - Phase 4.14 - Diagnostics/QOL/defaults authority pass.
 - Phase 4.15 - Accessibility authority pass.
+- Phase 4.16 - Large-entity targeting and interaction pass. Ensure vehicles, walls, machines, and other large durable targets use appropriate hit areas, selection feedback, access/ownership messaging, road/parking constraints, and repair/damage inspection without making them feel like ordinary handheld-target entities.
 
 Exit criteria: the UI does not spill outside frames, target coordinates match what is rendered, and presentation features do not mask gameplay information.
 
@@ -453,9 +455,11 @@ Required subphases:
 - Phase 10.15 - Military asset balance pass. Track APC and tank counts as sector-level balance-of-power factors that affect assaults, defenses, negotiations, deterrence, route control, and faction confidence.
 - Phase 10.16 - Leadership vehicle scheme pass. Allow faction leaders to plan vehicle construction, acquisition, deployment, destruction, capture, repair, concealment, escort, convoy use, and production-capacity expansion.
 - Phase 10.17 - Vehicle loss and salvage pass. Destroyed, abandoned, captured, or disabled vehicles should become salvage, wrecks, repair projects, trophies, hazards, or contested assets depending on context.
-- Phase 10.18 - Save/load and old-hardware pass. Persist vehicle ledgers and component states without bloating saves; use aggregate records for distant vehicles and full part schemas only for player-visible or strategically relevant vehicles.
+- Phase 10.18 - Comparative damage and durability scale pass. Handheld/entity weapons, mounted weapons, vehicles, walls, machines, and structural objects must not share the same damage tier. Mounted vehicle weapons should be roughly an order of magnitude above the deadliest player/entity-wielded weapons, and vehicle durability should be roughly an order of magnitude above ordinary player/entity endurance and health. Walls and industrial machines should sit on comparable structural scales. A dagger should require effectively absurd repeated effort, on the order of a thousand concentrated turns, to do meaningful damage to a vehicle, wall, or machine; a powerful anti-armor/plasma-class weapon might do meaningful damage after a much smaller number of attacks, such as roughly a dozen, depending on target and component.
+- Phase 10.19 - Road, parking, and sidewalk transit constraint pass. Vehicles are true endgame entities and must be transit-limited. Ordinary vehicles may travel on roads, alleys, lanes, garages, depots, ramps, vehicle yards, and parking lots only. They cannot be driven freely anywhere on the map. At most, owned vehicles may be allowed to park on sidewalks or designated curb/sidewalk-adjacent parking spots when the player exits, with the vehicle automatically resolving to a legal nearby parking position.
+- Phase 10.20 - Save/load and old-hardware pass. Persist vehicle ledgers and component states without bloating saves; use aggregate records for distant vehicles and full part schemas only for player-visible or strategically relevant vehicles.
 
-Exit criteria: vehicles have production origin, component origin, ownership, access rules, inspectable body schemas, damage/repair states, factory support chains, faction usage doctrine, and strategic meaning. A faction’s cars, trucks, bikes, APCs, and tanks are not merely placed sprites; they are assets that can move people and goods, consume production capacity, alter balance of power, be damaged, be repaired, be captured, be destroyed, and influence zone and sector history.
+Exit criteria: vehicles have production origin, component origin, ownership, access rules, inspectable body schemas, damage/repair states, factory support chains, faction usage doctrine, relative durability/damage scale, road/parking-constrained movement, and strategic meaning. A faction’s cars, trucks, bikes, APCs, and tanks are not merely placed sprites; they are assets that can move people and goods, consume production capacity, alter balance of power, be damaged, be repaired, be captured, be destroyed, and influence zone and sector history.
 
 ### Phase 11 - Ages of Control, faction leadership schemes, and zone generation history
 
@@ -480,10 +484,11 @@ Required subphases:
 - Phase 11.13 - Degradation and maintenance-failure pass. Ages can decay infrastructure, degrade rooms, break machines, damage vehicles, reduce housing quality, create hazards, block corridors, damage utilities, or create abandoned pockets when maintenance or political will fails.
 - Phase 11.14 - Cross-zone sector scheme pass. Leadership schemes must not be only local. A faction controlling or contesting several zones in a sector may plan expansion corridors, production chains, vehicle routes, assaults, defenses, migration routes, reinforcement paths, trade plans, and political capture across multiple zones.
 - Phase 11.15 - Ongoing gameplay scheme activation pass. The same leadership-scheme framework used during world generation should later support active gameplay planning, so factions can continue to expand, assault, reinforce, build, deploy vehicles, lose vehicles, recover, scheme, and change room control after game start.
-- Phase 11.16 - Zone history inspection pass. Provide compact audit surfaces that explain the current zone layout as a sequence of ages: who controlled it, what they built, what they lost, who moved, what production changed, what vehicles mattered, and why the zone looks the way it does.
-- Phase 11.17 - Deterministic generation and save compatibility pass. Age histories must be deterministic from seed/world settings where appropriate, persist enough history for inspection and ongoing gameplay, and avoid save bloat by aggregating historical events until player interaction requires detail.
+- Phase 11.16 - Player-visible active scheme event pass. Active faction schemes in the player’s current zone should have a chance to become visible world events rather than hidden ledger math. If a faction attempts to seize a room, annex a facility, reinforce a checkpoint, storm a room, sabotage a machine, defend territory, or counterattack another faction, the player should be able to witness appropriate actors, movement, combat, warnings, noise, aftermath, and control-state changes when they are nearby or when zone visibility rules allow it.
+- Phase 11.17 - Zone history inspection pass. Provide compact audit surfaces that explain the current zone layout as a sequence of ages: who controlled it, what they built, what they lost, who moved, what production changed, what vehicles mattered, what active schemes are known or rumored, and why the zone looks the way it does.
+- Phase 11.18 - Deterministic generation and save compatibility pass. Age histories must be deterministic from seed/world settings where appropriate, persist enough history for inspection and ongoing gameplay, and avoid save bloat by aggregating historical events until player interaction requires detail.
 
-Exit criteria: a zone is generated as the visible result of historical control rather than a static room scatter. Minimum viable zones begin with at least 20 rooms and at least one room of every required type, then subsequent ages can expand, lose, regain, repurpose, damage, or transfer rooms according to faction leadership schemes, population provenance, item/facility provenance, vehicle provenance, and sector-wide faction plans. The same leadership scheme model can later activate during ongoing gameplay rather than existing only as worldgen flavor text.
+Exit criteria: a zone is generated as the visible result of historical control rather than a static room scatter. Minimum viable zones begin with at least 20 rooms and at least one room of every required type, then subsequent ages can expand, lose, regain, repurpose, damage, or transfer rooms according to faction leadership schemes, population provenance, item/facility provenance, vehicle provenance, and sector-wide faction plans. The same leadership scheme model can later activate during ongoing gameplay, and active schemes in the player’s zone can surface as visible assaults, defenses, reinforcements, sabotage, control transfers, or aftermath rather than existing only as hidden simulation flavor.
 
 ### Phase 12 - Construction, bases, rooms, defenses, and ownership
 
@@ -531,11 +536,12 @@ Required subphases:
 - Phase 14.4 - You Lost screen cause/killer/weapon/survival pass.
 - Phase 14.5 - You Lost score categories pass: kills, crafted items, knowledge, sectors, zones, NPCs, wealth, bases, recruits, vehicles owned, vehicles destroyed, vehicles captured, and weighted values.
 - Phase 14.6 - Vehicle combat and damage bridge pass. Ensure vehicle damage, crew harm, component failure, weapon hits, armor protection, ramming/crash damage, and vehicle destruction can later connect to the combat system.
-- Phase 14.7 - Load Save menu handoff pass.
-- Phase 14.8 - Save UI manual slot pass.
-- Phase 14.9 - Autosave column and autosave trigger pass.
+- Phase 14.7 - Structural and vehicle weapon-scale balance pass. Ensure melee weapons, handheld firearms, heavy handheld weapons, anti-armor weapons, mounted weapons, walls, machines, and vehicles use distinct armor/durability/damage scales so a pocket knife does not threaten a tank, but rare endgame anti-armor weapons can meaningfully damage structural or vehicle targets over a plausible number of attacks.
+- Phase 14.8 - Load Save menu handoff pass.
+- Phase 14.9 - Save UI manual slot pass.
+- Phase 14.10 - Autosave column and autosave trigger pass.
 
-Exit criteria: injury, defeat, recovery, save/load, vehicle loss, and final loss are coherent and testable.
+Exit criteria: injury, defeat, recovery, save/load, vehicle loss, structural damage, and final loss are coherent and testable.
 
 ### Phase 15 - Character creation, names, ranks, rosters, and social identity
 
@@ -620,7 +626,7 @@ Required subphases:
 - Phase 18.12 - Asset promotion editor pass. Let promoted Phase 2 world assets appear in editor palettes through semantic categories and publish-safe labels.
 - Phase 18.13 - Population provenance editor/audit pass. Let future editor/audit surfaces inspect population origins, role distributions, room occupancy, and workforce assignments without raw internal IDs.
 - Phase 18.14 - Vehicle provenance editor/audit pass. Let future editor/audit surfaces inspect vehicle origin, owner, manufacturer, component schema, part damage, repair needs, cargo, crew, motor-pool assignment, and strategic faction value without raw internal IDs.
-- Phase 18.15 - Ages-of-control editor/audit pass. Let future editor/audit surfaces inspect zone ages, control changes, leadership schemes, room transfers, production outcomes, vehicle outcomes, and historical scars without requiring raw internal IDs.
+- Phase 18.15 - Ages-of-control editor/audit pass. Let future editor/audit surfaces inspect zone ages, control changes, leadership schemes, room transfers, production outcomes, vehicle outcomes, visible scheme events, and historical scars without requiring raw internal IDs.
 
 Exit criteria: content can be added through data/editor surfaces instead of central-code sprawl, and asset promotion, population provenance, item provenance, vehicle provenance, and ages-of-control histories can be inspected or extended through owned data surfaces.
 
@@ -643,12 +649,12 @@ Required subphases:
 - Phase 19.11 - Combat/logistics/staffing regression checklist pass.
 - Phase 19.12 - UI/asset fallback regression checklist pass.
 - Phase 19.13 - Root new-conversation briefing continuity pass.
-- Phase 19.14 - Master asset integration release audit. Verify promoted assets, unused assets, quarantined assets, package ownership, optional packs, and semantic IDs before release-candidate packaging.
+- Phase 19.14 - Master asset integration release audit. Verify promoted assets, unused assets, quarantined assets, package ownership, optional packs, semantic IDs, and comparative damage/durability tier labels before release-candidate packaging.
 - Phase 19.15 - Population provenance release audit. Verify population ledgers, workforce assignments, reinforcement requests, age promotion, and item-provenance handoff before release-candidate claims.
-- Phase 19.16 - Vehicle provenance release audit. Verify vehicle assets, component assets, manufacturers, component factories, vehicle factories, ownership ledgers, body schemas, damage/repair loops, transit behavior, faction control, and strategic balance tracking before release-candidate claims.
-- Phase 19.17 - Ages-of-control release audit. Verify zone-history ledgers, minimum viable room generation, historical room control changes, faction scheme outcomes, vehicle outcomes, active gameplay scheme handoff, and player-facing inspection surfaces before release-candidate claims.
+- Phase 19.16 - Vehicle provenance release audit. Verify vehicle assets, component assets, manufacturers, component factories, vehicle factories, ownership ledgers, body schemas, damage/repair loops, road/parking transit limits, faction control, and strategic balance tracking before release-candidate claims.
+- Phase 19.17 - Ages-of-control release audit. Verify zone-history ledgers, minimum viable room generation, historical room control changes, faction scheme outcomes, vehicle outcomes, player-visible active scheme events, active gameplay scheme handoff, and player-facing inspection surfaces before release-candidate claims.
 
-Exit criteria: development can proceed phase by phase without losing context, duplicating authorities, inventing fake implementation, shipping unclear assets, or claiming provenance/history systems that do not yet have population, workforce, production, vehicle, room-control, and leadership-scheme context.
+Exit criteria: development can proceed phase by phase without losing context, duplicating authorities, inventing fake implementation, shipping unclear assets, or claiming provenance/history systems that do not yet have population, workforce, production, vehicle, room-control, active-scheme visibility, and leadership-scheme context.
 
 ## Deferred checkpoint lines
 
@@ -675,11 +681,15 @@ Population provenance is the prerequisite bridge between world generation and it
 
 ### Vehicle provenance and faction vehicle power
 
-Vehicles are faction assets, transport entities, production-chain outputs, repair projects, and strategic power markers. Future world-ledger work should preserve the distinction between vehicle model, variant, manufacturer, component provenance, current owner, former owners, faction assignment, crew access, cargo access, body schema, component integrity, repair history, deployment history, and military/economic value. Civilian vehicles, commercial vehicles, industrial vehicles, APCs, and tanks should not be interchangeable; heavy military assets must affect sector-level balance of power and leadership scheme planning.
+Vehicles are faction assets, transport entities, production-chain outputs, repair projects, and strategic power markers. Future world-ledger work should preserve the distinction between vehicle model, variant, manufacturer, component provenance, current owner, former owners, faction assignment, crew access, cargo access, body schema, component integrity, repair history, deployment history, and military/economic value. Civilian vehicles, commercial vehicles, industrial vehicles, APCs, and tanks should not be interchangeable; heavy military assets must affect sector-level balance of power and leadership scheme planning. Vehicles must be transit-limited to roads, alleys, vehicle yards, depots, garages, parking lots, and designated curb/sidewalk parking behavior; they must not become free-roaming map traversal tools.
+
+### Comparative durability and damage scale
+
+Handheld weapons, mounted weapons, vehicles, machines, and structural walls must exist on intentionally different scale tiers. Ordinary handheld tools and light weapons should not be meaningful anti-vehicle, anti-machine, or anti-wall options. Mounted weapons and dedicated anti-armor or structural weapons should be exceptional, expensive, loud, risky, and balance-shaping. Structural targets and vehicles should expose damage through component/state degradation rather than behaving like ordinary character health bars.
 
 ### Ages of Control and faction leadership schemes
 
-Ages of Control are the historical bridge between item/population/vehicle provenance and final zone layout. Future worldgen and active gameplay planning should use shared leadership-scheme records so faction leaders can pursue expansion, consolidation, production, vehicle buildup, defense, assault, political capture, intrigue, recovery, retreat, or degradation both during initial world generation and after game start. Zone layout should preserve enough history to explain why rooms exist, who built them, who lost them, who controls them now, what vehicles or military assets mattered, and what scars or successes remain.
+Ages of Control are the historical bridge between item/population/vehicle provenance and final zone layout. Future worldgen and active gameplay planning should use shared leadership-scheme records so faction leaders can pursue expansion, consolidation, production, vehicle buildup, defense, assault, political capture, intrigue, recovery, retreat, or degradation both during initial world generation and after game start. Zone layout should preserve enough history to explain why rooms exist, who built them, who lost them, who controls them now, what vehicles or military assets mattered, and what scars or successes remain. Active schemes should be able to become player-visible events in the current zone when appropriate, including room assaults, counterattacks, defensive musters, sabotage, reinforcement arrivals, and post-conflict aftermath.
 
 ### Faction and personnel parity
 
