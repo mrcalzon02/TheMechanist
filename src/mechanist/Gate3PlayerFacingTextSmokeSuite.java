@@ -1,6 +1,6 @@
 package mechanist;
 
-/** Runs the narrow Gate 3 readability smoke checks from one entry point. */
+/** Runs the narrow Gate 3 readability checks from one entry point. */
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) {
         FactionContractDisplaySmoke.main(args);
@@ -14,6 +14,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         PlayerFacingEventLogTextSmoke.main(args);
         PlayerFacingTooltipTextSmoke.main(args);
         PlayerFacingListRowTextSmoke.main(args);
+        PlayerFacingMenuOptionTextSmoke.main(args);
+        Gate3PresentationAuditSmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 
