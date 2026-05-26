@@ -61,22 +61,25 @@ Focus:
 
 - `Look` versus `Examine`.
 - Intelligence-based entity examination.
-- Refreshed intent and state checks.
-- Character-sheet-like examination screens.
-- Body-plan and injury approximation.
+- Player movement usability.
+- Manual movement ghost target placement.
+- Keyboard/mouse/keypad rebinding.
+- Controller/gamepad rebinding.
+- Control profiles, conflict detection, prompt glyphs, deadzones, sensitivity, axis inversion, and safe recovery.
+- Conversation, trade, inventory, base inventory, faction member, production, construction, controls, and other menu uniformity passes.
 - Quest objective arrows and pulsing highlights.
 - Pet interaction feedback.
-- Access, ownership, construction, and market denial messages.
+- Access, ownership, construction, movement, and market denial messages.
 - Infopedia hot linking and deep entries.
 
 Primary phases:
 
 - Phase 4.
 - Phase 14 readability portions.
-- Phase 15 biography/social identity portions.
-- Phase 17 quest/pet/economy readability portions.
-- Phase 18 Infopedia/editor portions.
-- Phase 19 UI/readability audits.
+- Phase 15 biography/social identity and roster portions.
+- Phase 17 quest/pet/economy/trade/input readability portions.
+- Phase 18 Infopedia/editor/menu/input audit portions.
+- Phase 19 UI/readability/control audits.
 
 ### `MILESTONE_03_PRODUCTION_KNOWLEDGE_SKILLS_AND_ITEM_QUALITY.md`
 
@@ -161,6 +164,10 @@ Focus:
 - Vehicle provenance ledgers.
 - Vehicle ownership and access.
 - Road, parking, garage, depot, and sidewalk movement constraints.
+- Operating-vehicle pulsing indicators.
+- Forward-facing headlight/light cones.
+- Ambient running sounds.
+- Planned/fine-tuned vehicle movement controls.
 - Mounted weapon scale.
 - Structural target scale.
 - APCs and tanks as sector-level balance-of-power assets.
@@ -168,11 +175,11 @@ Focus:
 Primary phases:
 
 - Phase 10.
-- Phase 14 vehicle/combat/structural portions.
-- Phase 16 vehicle facility portions.
+- Phase 14 vehicle/combat/structural/feedback portions.
+- Phase 16 vehicle facility and lighting portions.
 - Phase 17 vehicle doctrine/contracts portions.
-- Phase 18 vehicle editor/Infopedia portions.
-- Phase 19 vehicle/structural audits.
+- Phase 18 vehicle editor/Infopedia/feedback portions.
+- Phase 19 vehicle/structural/operation-feedback audits.
 
 ### `MILESTONE_07_AGES_OF_CONTROL_SCHEMES_AND_QUEST_LIFECYCLES.md`
 
@@ -272,15 +279,7 @@ Current status:
 
 ## Master-plan patch target
 
-The next safe master-plan edit should add a compact reference to this index rather than listing every milestone file.
-
-Suggested master-plan reference:
-
-```text
-Detailed phase-group expansions are maintained in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`. The master plan remains the authoritative roadmap and phase map; ordered milestones provide implementation-depth targets for Codex and later development passes.
-```
-
-This keeps `MASTER_DEVELOPMENT_PLAN.md` from becoming a giant list of every milestone document.
+The master plan has been patched to point to this index rather than listing every milestone file. Future master-plan edits should remain compact and should not duplicate the ordered milestone sequence.
 
 ## Anti-sprawl rule
 
@@ -289,11 +288,11 @@ Do not create new milestone files unless the user explicitly orders a new phase-
 Add future notes to the correct ordered milestone whenever possible:
 
 - Assets and publish-safety -> Milestone 01.
-- UI, inspection, Infopedia, readability -> Milestone 02.
+- UI, inspection, Infopedia, readability, movement, input, controls, rebinding -> Milestone 02.
 - Production, knowledge, skills, item quality -> Milestone 03.
 - Population, provenance, markets, vendors, luxury, draught, economy -> Milestone 04.
 - Construction, blueprints, ownership, access, parity, heat -> Milestone 05.
-- Vehicles, structural scale, motor pools, road/parking, strategic assets -> Milestone 06.
+- Vehicles, structural scale, vehicle feedback, motor pools, road/parking, strategic assets -> Milestone 06.
 - Ages, schemes, quests, journals, intelligence sale -> Milestone 07.
 - Medicine, body states, cybernetics, prosthetics, drug effects -> Milestone 08.
 - Worldgen, districts, room/facility stamps, faction theming -> Milestone 09.
@@ -317,11 +316,11 @@ Do not hand Codex the entire milestone sequence as one implementation request. T
 
 ## Current recommended next pass
 
-The next recommended documentation pass is:
+The next recommended development pass is:
 
-1. Add the compact `MILESTONE_INDEX.md` reference to `MASTER_DEVELOPMENT_PLAN.md`.
-2. Prepare a Codex handoff brief that points Codex to the master plan, standards/practices, governance, development history, and this ordered milestone index.
-3. Keep the first Codex task narrow, preferably documentation/package alignment or a small Milestone 01/02 runtime-support slice.
+1. Prepare a Codex handoff brief that points Codex to the master plan, standards/practices, governance, development history, and this ordered milestone index.
+2. Keep the first Codex task narrow, preferably documentation/package alignment or a small Milestone 01/02 runtime-support slice.
+3. Do not start broad worldgen or simulation expansion until the active publish-safe checkpoint is satisfied.
 
 ## Verification checklist
 
