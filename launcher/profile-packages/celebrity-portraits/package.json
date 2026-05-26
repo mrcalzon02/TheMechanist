@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "package_id": "launcher-celebrity-portraits-v1",
+  "owner": "thin-launcher",
+  "purpose": "pre-client-name-locked-portrait-selection",
+  "description": "Launcher-side package for name-locked celebrity/special portrait handoff before the full client asset catalog is mounted.",
+  "privacy_policy": {
+    "local_only": true,
+    "network_lookup": false,
+    "telemetry_upload": false
+  },
+  "selection_policy": {
+    "source": "launcher-celebrity-name-detection-v1",
+    "fallback_if_no_match": "launcher-human-8x8-v1",
+    "client_may_replace_after_verified_full_asset_catalog": true
+  },
+  "entries": [],
+  "notes": [
+    "Entries are intentionally empty until approved name-locked portrait definitions are migrated into this launcher-owned package.",
+    "Do not include the full game portrait catalog in the launcher. The launcher needs only the minimal fallback human package and approved name-locked/special portrait package."
+  ]
+}
