@@ -124,10 +124,11 @@ The suite now executes:
 - `FactionContractDisplaySmoke`
 - `PlayerFacingCopySanitizerSmoke`
 - `PlayerFacingUiTextSmoke`
+- `PlayerFacingDenialTextSmoke`
 
 This provides a stable narrow verification surface for future Gate 3 UI cleanup work before broader recursive compile or packaging verification passes are run.
 
-Verification: smoke suite entry point added and logically validated against the current Gate 3 containment coverage set.
+Verification: smoke suite entry point updated and logically validated against the current Gate 3 containment coverage set.
 
 ## Gate 3 - Shared Denial Message Composer Slice
 
@@ -138,3 +139,13 @@ The composer routes rejection reasons through the shared sanitizer authority and
 Added `PlayerFacingDenialTextSmoke` to guard against regressions where denial messages leak target-zone save keys, runtime class names, filesystem paths, generated IDs, or raw registry/debug wording.
 
 Verification: `PlayerFacingDenialTextSmoke` added and logically validated against the active Gate 3 denial-message containment targets.
+
+## Gate 3 - Shared Inspection Text Helper Slice
+
+Added `PlayerFacingInspectionText` as a shared readable-inspection helper for Look/Auspex-style tile, fixture, actor, item, and route observations.
+
+The helper routes inspection detail through the shared sanitizer authority while preserving short readable observation phrasing and avoiding direct exposure of runtime classes, save-state identifiers, registry handles, filesystem paths, UUIDs, and debug wording in ordinary inspection panels.
+
+Added `PlayerFacingInspectionTextSmoke` to guard against regressions where inspection surfaces leak runtime implementation names, raw identifiers, registry handles, or filesystem paths.
+
+Verification: `PlayerFacingInspectionTextSmoke` added and logically validated against the active Gate 3 inspection containment targets.
