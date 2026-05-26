@@ -116,7 +116,14 @@ Focus:
 - Population provenance.
 - Workforce identity.
 - Item provenance.
-- Supply ecology.
+- Raw material source provenance and fallback.
+- Shipment and import provenance.
+- Deferred out-of-sector simulation.
+- Probability, influence, and strength ledgers.
+- Bulk faction reinforcement imports through train/import nodes.
+- Top-down world events distinct from faction schemes.
+- News and rumor exposure for events.
+- Spire quakes, train outages, export bans, blockades, tax edicts, tithing decrees, rationing orders, relief shipments, and infrastructure failures.
 - Faction vendors.
 - Critical suppliers.
 - Food, water, weapons, ammunition, medical, construction, animal, and pet markets.
@@ -128,10 +135,10 @@ Primary phases:
 
 - Phase 8.
 - Phase 9.
-- Phase 16 vendor/facility placement portions.
-- Phase 17 economy/vendor portions.
-- Phase 18 editor/Infopedia portions.
-- Phase 19 economy/provenance audits.
+- Phase 16 vendor/facility/deferred-simulation/world-event placement portions.
+- Phase 17 economy/vendor/reinforcement/world-event portions.
+- Phase 18 editor/Infopedia/world-event audit portions.
+- Phase 19 economy/provenance/deferred-simulation/world-event audits.
 
 ### `MILESTONE_05_CONSTRUCTION_BLUEPRINTS_OWNERSHIP_AND_PLAYER_FACTION_PARITY.md`
 
@@ -260,7 +267,7 @@ Primary phases:
 - Phase 8/9/10/11 provenance dependencies.
 - Phase 12 construction/ownership context.
 - Phase 16 worldgen/stamp implementation.
-- Phase 17 economy/vendor/pet/quest context.
+- Phase 17 economy/vendor/pet/quest/world-event context.
 - Phase 18 editor/Infopedia portions.
 - Phase 19 worldgen/stamp audits.
 
@@ -296,7 +303,7 @@ Add future notes to the correct ordered milestone whenever possible:
 - Assets, publish-safety, Mod API, example mods, modding docs -> Milestone 01.
 - UI, inspection, Infopedia, readability, movement, input, controls, rebinding -> Milestone 02.
 - Production, knowledge, skills, item quality -> Milestone 03.
-- Population, provenance, markets, vendors, luxury, draught, economy -> Milestone 04.
+- Population, provenance, markets, vendors, luxury, draught, economy, deferred simulation, reinforcement imports, top-down world events -> Milestone 04.
 - Construction, blueprints, ownership, access, parity, heat -> Milestone 05.
 - Vehicles, structural scale, vehicle feedback, motor pools, road/parking, strategic assets -> Milestone 06.
 - Ages, schemes, quests, Quest Editor, journals, intelligence sale -> Milestone 07.
