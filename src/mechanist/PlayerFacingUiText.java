@@ -43,8 +43,8 @@ final class PlayerFacingUiText {
 
     static String diagnosticNotice(String action) {
         String cleaned = cleanStatusPart(action, false);
-        if (cleaned.isBlank()) return "The issue was recorded for review.";
-        return cleaned + " The issue was recorded for review.";
+        if (cleaned.isBlank()) return "Diagnostic details were recorded.";
+        return cleaned + " Diagnostic details were recorded.";
     }
 
     static String controlHint(String action, String keyName, String detail) {

@@ -64,7 +64,6 @@ Gate 2 remains unfinished. The launcher no longer depends on a full development-
 
 Current status: local package identity, manifest verification, rollback repair, compatibility checks, and smoke tests are in place. Remaining Gate 2 work is publish-safe authentication, remote acquisition/update policy, package signing or equivalent trust metadata, and full Windows/Linux native packaging verification with Maven, jpackage, Bash, and platform installer tools available.
 
-<<<<<<< HEAD
 ## Gate 3 - Presentation Audit and Smoke Consolidation Slice
 
 Expanded `Gate3PlayerFacingTextSmokeSuite` to include:
@@ -77,8 +76,6 @@ The audit routes a deliberately implementation-heavy payload through the sanitiz
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; consolidated smoke-suite entry point updated to include the cross-stack presentation audit.
 
-=======
->>>>>>> origin/main
 ## Gate 3 - Panel Text Containment Slice
 
 Continued Gate 3 by cleaning ordinary player panels that exposed implementation wording. Inventory now says carried stacks and loose items instead of raw items, workshop logistics buttons and status lines use plan/source/route wording instead of source-token phrasing, the log panel is labeled as an event log, and save/load shows a readable world location summary instead of the atlas debug summary.
@@ -107,7 +104,6 @@ Continued Gate 3 by tightening remaining options, loading, profile, and referenc
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; launcher package sources and `PackageInstallServiceSmoke` passed; searched `TheMechanist.java` for the retired milestone-number, diagnostic-log, F3 diagnostics, runtime-gamepad, abstract-input, and fallback-profile audit-summary phrases.
 
-<<<<<<< HEAD
 ## Gate 1/Gate 3 - History Reconciliation and Smoke Repair Slice
 
 Assessed the current gate state and repaired a literal merge-conflict block that had remained in the active development history. The history now preserves both the Gate 3 presentation-audit consolidation entry and the subsequent UI/readability slices without conflict markers.
@@ -231,16 +227,94 @@ Continued Milestone 02 production-menu work by adding a compact selected-machine
 The guidance uses player-facing wording for missing machines, unfinished construction, broken machinery, missing inputs, unavailable knowledge, manual operation, and worker assignment instead of relying only on the longer production/logistics status lists.
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
-=======
-## Gate 3 - Presentation Audit and Smoke Consolidation Slice
 
-Expanded `Gate3PlayerFacingTextSmokeSuite` to include `PlayerFacingMenuOptionTextSmoke` and `Gate3PresentationAuditSmoke`.
+## Gate 3 - Movement Planning Audit Slice
 
-Added `Gate3PresentationAuditSmoke` as a broader cross-stack verification pass exercising the shared Gate 3 presentation surfaces together instead of only validating isolated helper behavior.
+Continued Milestone 02 and Phase 18 movement-planning audit work by adding a `Movement Planning Audit` entry to the Infopedia AUDITS tab. The audit records movement mode labels, range/cost, manual targeting input methods, confirm/cancel behavior, valid target rules, invalid feedback strings, route preview behavior, hazard warnings, interaction approach assistance, overlay separation, and stale-preview clearing.
 
-The audit routes a deliberately implementation-heavy payload through the sanitizer, UI detail formatter, denial formatter, inspection formatter, action formatter, panel formatter, event-log formatter, tooltip formatter, compact row formatter, and menu-option formatter before verifying that no runtime identifiers, filesystem paths, target-zone keys, registry handles, UUIDs, or runtime-class references survive into ordinary player-facing output.
+This gives the movement ghost and interaction-approach system an inspectable player-facing reference surface instead of leaving the rules implicit in input handling and rendering code.
 
-Verification: consolidated smoke-suite entry point updated successfully after prior connector write rejection; cross-stack presentation audit smoke added and logically validated against active Gate 3 containment targets.
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Menu Definition Audit Slice
+
+Continued Milestone 02 and Phase 18 menu-uniformity audit work by adding a `Menu Definition Audit` entry to the Infopedia AUDITS tab. The audit records major panel purpose, close/back behavior, core action, disabled-state rule, and transfer or permission boundaries for Look, Interact, Inventory, Build, Workbench, Bases, Trade, Map, Senses, Save/Load, News, and Infopedia.
+
+This creates a player-facing reference surface for menu ownership and uniformity expectations so future panels can be checked against stable title, prompt, data-source, disabled-reason, transfer, permission, and raw-ID leakage rules.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Examine and Infopedia Audit Slice
+
+Continued Milestone 02 and Phase 18 audit work by adding an `Examine and Infopedia Link Audit` entry to the Infopedia AUDITS tab. The audit summarizes examine sections, repeated-examine depth behavior, confidence/no-hidden-state boundaries, live Infopedia categories, and related-link filtering.
+
+This gives the player-facing reference layer an inspectable audit surface for future Examine, Infopedia, link, category, and mechanic-entry expansion instead of relying only on source inspection.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Infopedia Mechanics Coverage Slice
+
+Continued Milestone 02 and Phase 18 Infopedia coverage by adding player-facing reference entries for Look and Examine, Movement Planning, Interaction Approach Planning, Inventory and Transfer, Base Storage, Pet Care, and Context Prompts.
+
+These entries explain the newly exposed Gate 3 mechanics in ordinary player terms, including what the systems show, when actions are blocked, how transfer protection works, how approach planning chooses adjacent tiles, and why prompts may be ready or disabled in the current context.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Infopedia Related-Link Navigation Slice
+
+Continued Milestone 02 and Phase 18 Infopedia work by adding related-entry navigation to the Infopedia surface. Entries now append a compact related-entry section, and the panel exposes LINK buttons that jump directly to the first valid related entries across tabs.
+
+The related links are filtered against real Infopedia entries before display, so the player sees navigable reference paths between zones, rooms, items, survival, combat, body, medical, heat, XP, knowledge, crafting, production, audits, defenses, NPCs, factions, tiles, and assets without broken placeholder links.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Context-Sensitive Input Prompt Slice
+
+Continued Milestone 02 and Phase 17 input-readability work by adding context prompt lines to the shared panel text surface. Look, Interact, Inventory, Build, Workbench, Bases, Trade, Map, Senses, and Save/Load now show current binding labels for the most relevant action in that panel.
+
+Prompts now distinguish ready actions from disabled actions with player-facing reasons, such as needing an adjacent interaction target, a selected carried item, a claimed room, a chosen build tile, an active trader, or a loaded world.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Movement-to-Interaction Planning Slice
+
+Continued Milestone 02 and Phase 17 movement-usability work by connecting manual movement planning to the current selected interaction target. When a selected entity, fixture, door, machine, pet, vendor, or other usable target is too far away, the interaction preflight now names a reachable approach tile when one can be found.
+
+Starting PLAN MOVE now prefers that interaction approach tile, draws the movement preview to it, and labels the preview as an approach path for the selected target so the player can deliberately move into range instead of bumping around for adjacency.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Transfer Workflow Consistency Slice
+
+Continued Milestone 02 and Phase 17 transfer-readability work by adding a shared transfer-preview grammar to trade, inventory, and base storage surfaces. Buy, sell, selected-inventory, STASH, and TAKE previews now expose source, target, quantity, capacity state, permission/access state, quest/evidence protection, risk, and reversibility in the same player-facing shape.
+
+The related actions now enforce the highest-risk previewed rules: purchases are blocked before payment if carry capacity would overflow, quest/evidence items are blocked from ordinary sale, and base stashing respects available storage capacity.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Expansion Heat Readability Slice
+
+Continued Milestone 02 and Phase 17 expansion-readability work by adding heat guidance to base management and build details. Claimed bases now explain current gang heat, Arbites suspicion, raid pressure, major heat drivers, suspicion drivers, and practical relief paths such as permits, security, closing illegal counters, or moving restricted goods.
+
+Construction previews now include a heat-impact line for selected builds, distinguishing quiet survival fixtures, public services, restricted builds, defenses, laboratories, chemical work, and other visible expansion before the player places them.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Pet Care Readability Slice
+
+Continued Milestone 02 and Phase 17 pet-readability work by adding care guidance to animal Examine and Look surfaces. Companion animals now expose readable ownership, adoption/sale context, hunger, thirst, rest, shelter, temperament, accessibility, and petting permission before the player tries to interact.
+
+Non-pet animals still explain why contact is blocked, while pet actors distinguish bonded handlers, possible market contexts, unsafe or frightened posture, distance blocking, and the specific gentle interaction currently available.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Market Legality Guidance Slice
+
+Continued Milestone 02 and Phase 17 market-readability work by adding market-status guidance to trade offer and sale previews. Trade screens now distinguish ordinary stock, supply-chain stock, access tools, weapon goods, medical/drug goods, noble paper assets, controlled faction/military goods, and illicit/black-market goods before buying or selling.
+
+The added read is separate from price and legal-risk text so the player can understand not only whether an item is risky, but why the local market treats it as restricted, scarce, licensed, or faction-sensitive.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
 
 ## Gate 3 - Presentation Facade and Evaluation Slice
 
@@ -249,4 +323,51 @@ Evaluated the prior Gate 3 work and identified that further helper proliferation
 Also resolved unresolved merge-conflict markers in this development-history file while preserving both sides of the useful Gate 3 record. Further Gate 3 work should prioritize concrete migration of existing UI/gameplay callsites onto `PlayerFacingText` where exact files can be safely fetched and patched.
 
 Verification: history conflict markers removed; facade added for future direct callsite migrations. Full recursive compile was not run through this connector session.
->>>>>>> origin/main
+
+## Gate 3 - Base Storage Guidance Slice
+
+Continued Milestone 02 base-storage readability work by adding transfer guidance to the base management panel. Claimed-base storage now explains access, capacity pressure, STASH/TAKE behavior, quest/evidence protection, and risky stored goods before the player moves items.
+
+Stash and recovery messages now use the player-facing origin line instead of legacy roadmap wording, and the shared diagnostic/panel-body text smoke failures exposed during verification were repaired.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed; active development-history conflict markers were removed.
+
+## Gate 3 - Faction Roster Guidance Slice
+
+Continued Milestone 02 faction-member readability work by adding roster guidance to the base management panel. The base screen now explains command limits, recruit capacity, doctrine gates, each recruit's role, faction, skill, loyalty, current duty, availability, and best next assignment.
+
+Recruit rows now distinguish guard duty, skilled labor, unreliable labor, machine crew suitability, commerce/logistics roles, clinic support, and low-risk assignments without exposing internal worker records.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Faction Member Equipment Guidance Slice
+
+Continued Milestone 02 faction-member equipment readability by adding equipment authority and gear candidate guidance to the base roster. The base screen now tells the player whether recruit gear review is available, what doctrine/claim limits apply, and which carried or stored items look suitable for recruit support.
+
+Recruit rows now include gear advice matched to duty and role, such as armor/weapons for guards, lawful clothing for market staff, tools for machine workers, medical stock for clinic workers, and low-risk gear for low-loyalty recruits.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Examine Condition Readability Slice
+
+Continued Milestone 02 and Phase 14 readability work by adding condition estimates to Examine. People, animals, and constructed base objects now show body-plan, injury, armor/protection, and combat-readiness reads in broad player-facing language instead of raw health or integrity numbers.
+
+The condition read distinguishes humanoids, minor actors, animal body types, protected/story-critical figures, injured targets, visible armor levels, armed threats, fragile objects, sturdy objects, and defensive fixtures without revealing hidden internal state.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Medical Status Guidance Slice
+
+Continued Milestone 02 and Phase 14 medical-readability work by adding treatment guidance to the character and build panels. The UI now translates bleeding, infection risk, pain, fatigue, sleep debt, wounds, stimulant strain, medical stock, and clinic support into readable status and treatment-priority lines.
+
+The guidance distinguishes urgent bleeding care, infection pressure, crippled limb caution, severe pain, exhaustion, sleep recovery, stimulant crash risk, carried medical aid, and base medical reserves without turning the panel into raw status-effect soup.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Quest Evidence Readability Slice
+
+Continued Milestone 02 and Phase 17 quest-readability work by adding evidence reads to Examine and conversation contract guidance. Visible bounty targets, sealed retrieval objects, leader journals, and corpse containers now explain what kind of proof or evidence they represent without exposing raw contract records.
+
+Contract conversation choices now summarize whether the required proof item is carried and ready for turn-in, and ordinary bounty/lockbox log messages now use public proof wording instead of raw contract identifiers.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.

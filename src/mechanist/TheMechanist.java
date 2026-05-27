@@ -2037,6 +2037,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             lines.add("EXAMINE: " + npc.name);
             if (npc.isAnimalActor()) {
                 lines.add(npc.animalLine() + ".");
+                lines.addAll(petCareReadabilityLines(npc, tx, ty, false));
             } else {
                 AgeAndWorldTimeAuthority.synchronizeNpc(npc, worldTurn);
                 lines.add((npc.role == null || npc.role.isBlank() ? "Underhive resident" : npc.role)
@@ -2047,6 +2048,10 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             IntentReadResult intent = intentReadFor(npc);
             if (intent != null && intent.available) lines.add(intent.summary);
             lines.add("Visible equipment: " + visibleNpcEquipmentLine(npc) + ".");
+            String evidence = questEvidenceReadLine(npc);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add(npcConditionReadLine(npc));
+            lines.add(npcCombatReadinessLine(npc));
             if (depth >= 2) lines.add(npcThreatReadLine(npc, intent));
             if (depth >= 3) lines.add(npcSensesReadLine(npc, intent));
             return lines;
@@ -2055,7 +2060,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         if (obj != null) {
             lines.add("EXAMINE: " + obj.name);
             lines.add(obj.description == null || obj.description.isBlank() ? "A constructed object in this room." : obj.description);
-            lines.add("Condition read: attention " + obj.attention + ", cost " + obj.cost + ", integrity " + obj.integrity + ".");
+            lines.add(baseObjectConditionReadLine(obj));
             if (depth >= 2) lines.add(baseObjectUseReadLine(obj));
             if (depth >= 3) lines.add(baseObjectWorkReadLine(obj));
             return lines;
@@ -2065,6 +2070,8 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             String label = mos.label == null || mos.label.isBlank() ? "Fixture" : mos.label;
             lines.add("EXAMINE: " + label);
             lines.add(fixtureInspectionLine(mos));
+            String evidence = questEvidenceReadLine(mos);
+            if (!evidence.isBlank()) lines.add(evidence);
             lines.add("Use Interact for available actions.");
             if (depth >= 2) lines.add("Closer read: " + fixtureStatusText(mos));
             if (depth >= 3) lines.add("Territory read: " + ownershipText(tx, ty) + ".");
@@ -2087,6 +2094,191 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         if (depth >= 2) lines.add("Floor read: " + roomContextReadLine(tx, ty) + ".");
         if (depth >= 3) lines.add("Approach read: movement here is " + (world.walkable(tx, ty) ? "possible if the route stays clear" : "blocked until the obstacle changes") + ".");
         return lines;
+    }
+
+    String questEvidenceReadLine(NpcEntity npc) {
+        if (npc == null) return "";
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed) continue;
+            if ("BOUNTY".equals(c.type) && c.targetEntityId != null && c.targetEntityId.equals(npc.id)) {
+                String proof = c.publicRequiredItem();
+                String state = npc.hp <= 0 ? "proof should be recoverable from the body" : "proof is only recoverable after the target is dealt with";
+                return "Quest evidence: this appears to match an active " + c.faction.label + " bounty; " + proof + " is the turn-in proof, and " + state + ".";
+            }
+        }
+        return "";
+    }
+
+    String questEvidenceReadLine(MapObjectState m) {
+        if (m == null) return "";
+        if ("contract-object".equals(m.type)) {
+            FactionContract c = contractForTargetEntity(m.id);
+            if (c != null) return "Quest evidence: sealed retrieval objective for " + c.faction.label + "; take the sealed object and return it unopened.";
+            return "Quest evidence: sealed retrieval objective; take it only if you intend to carry contract evidence.";
+        }
+        if ("faction-journal".equals(m.type)) return "Quest evidence: faction leader journal; stealing it creates physical intelligence that the INN may buy.";
+        if ("corpse-container".equals(m.type)) return "Quest evidence: remains may contain proof items, stolen goods, or recoverable equipment; inspect before taking all.";
+        return "";
+    }
+
+    FactionContract contractForTargetEntity(String targetEntityId) {
+        if (targetEntityId == null || targetEntityId.isBlank()) return null;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && targetEntityId.equals(c.targetEntityId)) return c;
+        return null;
+    }
+
+    String npcConditionReadLine(NpcEntity npc) {
+        if (npc == null) return "Condition read: no body is readable.";
+        String body = npc.isAnimalActor() ? animalBodyPlanLine(npc) : humanoidBodyPlanLine(npc);
+        String injury = npcInjuryEstimate(npc);
+        String armor = npcArmorEstimate(npc);
+        return "Condition read: " + body + "; " + injury + "; " + armor + ".";
+    }
+
+    String npcCombatReadinessLine(NpcEntity npc) {
+        if (npc == null) return "Combat readiness: unknown.";
+        if (npc.hp >= 9000) return "Combat readiness: protected or story-critical; ordinary violence is unlikely to resolve this cleanly.";
+        if (npc.isAnimalActor()) {
+            if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) return "Combat readiness: animal is dangerous if approached or cornered.";
+            return "Combat readiness: animal is not presenting as an armed combatant.";
+        }
+        int danger = Math.max(0, npc.equipmentTier) + (ItemCatalog.isFirearmLike(npc.equippedRangedWeapon) ? 2 : 0) + (npc.equippedExplosive == null || npc.equippedExplosive.isBlank() ? 0 : 2);
+        if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) danger += 2;
+        if (danger >= 6) return "Combat readiness: severe threat; armor, ranged weapon, or explosive risk is visible.";
+        if (danger >= 3) return "Combat readiness: armed and risky; plan cover, distance, or escape.";
+        if (danger >= 1) return "Combat readiness: lightly armed or protected.";
+        return "Combat readiness: no obvious combat kit.";
+    }
+
+    String humanoidBodyPlanLine(NpcEntity npc) {
+        if (npc.isMinorActor()) return "smaller humanoid frame";
+        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("servitor")) return "augmented humanoid frame";
+        return "humanoid body plan";
+    }
+
+    String animalBodyPlanLine(NpcEntity npc) {
+        String key = ((npc.creatureKind == null ? "" : npc.creatureKind) + " " + (npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("hound") || key.contains("dog") || key.contains("mastiff")) return "quadruped predator/companion body";
+        if (key.contains("cat")) return "small agile quadruped body";
+        if (key.contains("rat") || key.contains("mouse")) return "small skittering animal body";
+        if (key.contains("lizard")) return "low reptilian body";
+        if (key.contains("glowfish")) return "contained aquatic body";
+        if ("farm-animal".equals(npc.creatureKind)) return "working animal body";
+        return "non-human animal body";
+    }
+
+    ArrayList<String> petCareReadabilityLines(NpcEntity npc, int tx, int ty, boolean compact) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null || !npc.isAnimalActor()) return lines;
+        String prefix = compact ? "" : "Pet care: ";
+        if (!npc.isPetActor()) {
+            lines.add(prefix + animalContactBlockedLine(npc));
+            lines.add("Animal care: " + animalNeedReadLine(npc) + "; " + animalShelterReadLine(tx, ty) + ".");
+            return lines;
+        }
+        lines.add(prefix + animalNeedReadLine(npc) + "; " + petTemperamentReadLine(npc) + ".");
+        lines.add("Ownership: " + petOwnershipReadLine(npc, tx, ty));
+        lines.add("Adoption/sale: " + petAdoptionSaleReadLine(npc, tx, ty));
+        lines.add("Access: " + petAccessibilityReadLine(npc, tx, ty) + " " + pettingPermissionReadLine(npc, tx, ty));
+        lines.add("Shelter: " + animalShelterReadLine(tx, ty) + ".");
+        return lines;
+    }
+
+    String animalNeedReadLine(NpcEntity npc) {
+        if (npc == null) return "basic needs are unreadable";
+        ArrayList<String> needs = new ArrayList<>();
+        if (npc.hunger >= 8) needs.add("very hungry");
+        else if (npc.hunger >= 5) needs.add("hungry");
+        else needs.add("fed enough for now");
+        if (npc.thirst >= 8) needs.add("very thirsty");
+        else if (npc.thirst >= 5) needs.add("thirsty");
+        else needs.add("watered enough for now");
+        if (npc.sleepDebt >= 10) needs.add("badly tired");
+        else if (npc.sleepDebt >= 6) needs.add("tired");
+        else needs.add("rested enough for now");
+        return String.join(", ", needs);
+    }
+
+    String petTemperamentReadLine(NpcEntity npc) {
+        if (npc == null) return "temperament unclear";
+        String state = npc.state == null ? "" : npc.state.toLowerCase(Locale.ROOT);
+        if ("hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "frightened or hostile enough that touching is unsafe";
+        if (state.contains("guard") || state.contains("duty") || state.contains("patrol")) return "trained and alert, but not openly hostile";
+        if (state.contains("fright") || state.contains("fear") || state.contains("tense")) return "nervous and needs space";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "friendly toward its handler";
+        return "calm enough to consider a gentle approach";
+    }
+
+    String petOwnershipReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no readable ownership.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "handled companion of " + npc.companionOf + "; taking or commanding it is not implied.";
+        String territory = ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+        if (territory.contains("faction") || territory.contains("owned") || territory.contains("restricted")) return "local territory claims custody; ask, buy, or be invited before treating it as yours.";
+        return "no visible personal handler; still not automatically yours.";
+    }
+
+    String petAdoptionSaleReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null || !npc.isPetActor()) return "not a companion adoption target.";
+        String context = (describeTile(world != null && world.inBounds(tx, ty) ? world.tiles[tx][ty] : ' ') + " " + roomContextReadLine(tx, ty) + " " + ownershipText(tx, ty)).toLowerCase(Locale.ROOT);
+        if (context.contains("market") || context.contains("shop") || context.contains("stall")) return "possible vendor or adoption context, but no purchase is confirmed until a trade/service option says so.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "already bonded to a handler; not for sale from this screen.";
+        return "no adoption or sale offer is visible from here.";
+    }
+
+    String petAccessibilityReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no animal is reachable.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return npc.name + " is too far away; move adjacent first.";
+        if (!isVisible(tx, ty)) return npc.name + " is not clearly visible enough for safe contact.";
+        return npc.name + " is close enough for gentle contact.";
+    }
+
+    String pettingPermissionReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "Petting is unavailable.";
+        if (!npc.isPetActor()) return animalContactBlockedLine(npc);
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "Petting is blocked because it is not safe to touch.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return "Petting is blocked by distance.";
+        return "Interact or PET can offer " + petGestureName(npc) + ".";
+    }
+
+    String animalShelterReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "shelter is unreadable";
+        String tile = describeTile(world.tiles[tx][ty]).toLowerCase(Locale.ROOT);
+        String room = roomContextReadLine(tx, ty).toLowerCase(Locale.ROOT);
+        if (room.contains("room") || tile.contains("floor") || tile.contains("hab") || tile.contains("market")) return "under cover or inside a usable space";
+        if (tile.contains("sewer") || tile.contains("hazard") || tile.contains("waste")) return "poor shelter with environmental stress";
+        return "shelter looks uncertain";
+    }
+
+    String npcInjuryEstimate(NpcEntity npc) {
+        if (npc.hp >= 9000) return "no readable injury under protected status";
+        if (npc.hp <= 0) return "down or dying";
+        if (npc.hp <= 3) return "badly hurt";
+        if (npc.hp <= 7) return "wounded";
+        if (npc.hp <= 11) return "scuffed or tired";
+        return "looks healthy";
+    }
+
+    String npcArmorEstimate(NpcEntity npc) {
+        String armor = npc.equippedArmor == null ? "" : npc.equippedArmor.trim();
+        if (armor.isBlank()) return "no obvious armor";
+        int value = ItemCatalog.priceFor(armor);
+        if (value >= 35 || armor.toLowerCase(Locale.ROOT).contains("carapace")) return "heavy visible protection: " + armor;
+        if (value >= 14 || armor.toLowerCase(Locale.ROOT).contains("flak") || armor.toLowerCase(Locale.ROOT).contains("vest")) return "moderate visible protection: " + armor;
+        return "light visible protection: " + armor;
+    }
+
+    String baseObjectConditionReadLine(BaseObject obj) {
+        if (obj == null) return "Condition read: no constructed object is readable.";
+        String condition;
+        if (obj.integrity <= 0) condition = "broken";
+        else if (obj.underConstruction) condition = "under construction";
+        else if (obj.integrity <= 4) condition = "fragile";
+        else if (obj.integrity <= 10) condition = "worn but usable";
+        else if (obj.integrity <= 20) condition = "sturdy";
+        else condition = "heavily built";
+        String armor = obj.cover > 0 ? "cover value visible" : "no obvious cover";
+        String danger = obj.armed ? "armed or defensive fixture" : (obj.attention >= 3 ? "valuable enough to attract attention" : "low immediate danger");
+        return "Condition read: " + condition + "; " + armor + "; " + danger + ".";
     }
 
     String npcThreatReadLine(NpcEntity npc, IntentReadResult intent) {
@@ -2227,7 +2419,10 @@ void updatePendingInteractionSummary() {
         if (world == null) { pendingInteractionSummary = "No world loaded."; return; }
         if (!world.inBounds(lookX, lookY)) { pendingInteractionSummary = "No reachable target selected."; return; }
         if (Math.abs(lookX-playerX) > 1 || Math.abs(lookY-playerY) > 1) {
-            pendingInteractionSummary = "Selected target is too far away to use. Move next to it first.";
+            Point approach = selectedInteractionApproachTile();
+            pendingInteractionSummary = approach == null
+                    ? "Selected target is too far away to use. Move next to it first."
+                    : "Selected target is too far away to use. PLAN MOVE can approach " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ".";
             return;
         }
         NpcEntity npc = world.npcAt(lookX, lookY);
@@ -2271,6 +2466,19 @@ void updatePendingInteractionSummary() {
             pendingInteractionSummary = governorPreview(lookX, lookY) + " Use BRIBE GOVERNOR or ATTACK GOVERNOR.";
         } else {
             pendingInteractionSummary = "Interact with " + target + "? Time: " + turns + " turn(s), modified by Agility.";
+        }
+    }
+
+    void addInfopediaRelatedEntryButtons(Rectangle modal, java.util.List<String> entries) {
+        if (entries == null || entries.isEmpty()) return;
+        String selectedEntry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        ArrayList<String> related = infopediaRelatedEntries(infopediaTab, selectedEntry);
+        int rx = modal.x + modal.width - 456;
+        int ry = modal.y + modal.height - 86;
+        for (int i=0; i<Math.min(3, related.size()); i++) {
+            String target = related.get(i);
+            final String jump = target;
+            buttons.add(new ButtonBox("LINK: " + TextSurfaceApi.ellipsize(target, 22), rx + i * 148, ry, 140, 30, "Open related Infopedia entry: " + target, () -> openInfopediaEntry(jump)));
         }
     }
 
@@ -6416,9 +6624,20 @@ boolean arbitesAuthorityText(String text) {
         if (npc.isTrader()) lines.add("  TRADE: open stock, sale preview, price reads, and rumor options.");
         if (hasOpenContractForFaction(npc.faction)) lines.add("  TAKE BOUNTY / TAKE FETCH: accept available faction work if you want the obligation.");
         else lines.add("  TAKE BOUNTY / TAKE FETCH: no obvious open work from this faction right now.");
+        lines.addAll(contractEvidenceGuidanceLines(npc.faction));
         if (hasCompletableContractForFaction(npc.faction)) lines.add("  TURN IN: a carried objective appears eligible for reward or completion.");
         else lines.add("  TURN IN: no matching carried proof or delivery is apparent.");
         lines.add("  LEAVE: close the conversation safely.");
+        return lines;
+    }
+
+    ArrayList<String> contractEvidenceGuidanceLines(Faction f) {
+        ArrayList<String> lines = new ArrayList<>();
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed || c.faction != f) continue;
+            String carrying = contractTurnInReady(c) ? "carried and ready for turn-in" : "not carried yet";
+            lines.add("  Evidence for " + c.displayType() + ": " + c.publicRequiredItem() + " is " + carrying + ".");
+        }
         return lines;
     }
 
@@ -6476,6 +6695,8 @@ boolean arbitesAuthorityText(String text) {
         lines.add("Selected offer: " + offer.name + " for " + buyPrice + " script.");
         lines.add("Price read: catalog value about " + catalogValue + "; " + tradePricePressureLine(buyPrice, catalogValue) + ".");
         lines.add("Stock context: " + tradeStockContextLine(offer));
+        lines.add("Market status: " + tradeMarketStatusLine(offer.name, def, true));
+        lines.add("Transfer preview: " + tradeBuyTransferPreviewLine(offer, buyPrice));
         lines.add("Likely use: " + itemLikelyActionLine(offer.name, def));
         lines.add("Legal risk: " + itemLegalRiskLine(offer.name, def));
         lines.add("Origin: " + tradeOfferOriginLine(offer));
@@ -6498,8 +6719,77 @@ boolean arbitesAuthorityText(String text) {
         int catalogValue = Math.max(1, ItemCatalog.priceFor(item));
         lines.add("Sale preview: " + item + " x" + carried + " would sell for " + sellPrice + " script each.");
         lines.add("Seller read: catalog value about " + catalogValue + "; " + tradePricePressureLine(sellPrice, catalogValue) + ".");
+        lines.add("Market status: " + tradeMarketStatusLine(item, ItemCatalog.get(item), false));
+        lines.add("Transfer preview: " + tradeSellTransferPreviewLine(item, sellPrice));
         lines.add("Sale caution: " + itemLegalRiskLine(item, ItemCatalog.get(item)));
         return lines;
+    }
+
+    String tradeBuyTransferPreviewLine(TradeOffer offer, int price) {
+        if (offer == null) return transferWorkflowPreviewLine("buy", "trader shelf", "carried inventory", "selected stock", 1, "blocked: no selected stock", "blocked: no offer", "not quest evidence", "unknown risk", "funds are unchanged if the item transfer fails");
+        boolean funds = countMoney() >= price;
+        boolean capacity = inventoryWeight() + 1 <= carryCapacity();
+        String capacityLine = capacity ? "capacity ok" : "blocked: carried load would exceed capacity";
+        String permission = funds ? "payment ready" : "blocked: need " + price + " script";
+        String risk = tradeMarketStatusLine(offer.name, offer.catalogDef(), true);
+        return transferWorkflowPreviewLine("buy", activeTrader == null ? "trader shelf" : activeTrader.name + " shelf", "carried inventory", offer.name, 1, capacityLine, permission, "not quest evidence", risk, "reversible only by selling later, usually at a different price");
+    }
+
+    String tradeSellTransferPreviewLine(String item, int price) {
+        boolean present = item != null && countInventory(item) > 0;
+        String capacity = present ? "source has a carried copy" : "blocked: no carried copy";
+        String permission = activeTrader == null ? "blocked: no active trader" : "counter can buy one carried copy for " + price + " script";
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: check turn-ins before selling" : "not marked as quest evidence";
+        String risk = itemLegalRiskLine(item, ItemCatalog.get(item));
+        return transferWorkflowPreviewLine("sell", "carried inventory", activeTrader == null ? "trader shelf" : activeTrader.name + " shelf", item == null ? "selected item" : item, 1, capacity, permission, quest, risk, "not guaranteed reversible after sale");
+    }
+
+    String inventoryTransferWorkflowPreviewLine(String item) {
+        if (item == null || item.isBlank()) return "select a carried item to see drop, equip, sell, stash, or use transfer rules.";
+        String source = "carried inventory";
+        String target = isInClaimedRoom(playerX, playerY) ? "base storage, equipment, trader, or discard target depending on action" : "equipment, trader, or discard target depending on action";
+        String capacity = "carry load " + inventoryWeight() + "/" + carryCapacity();
+        String permission = "actions still check access, ownership, target range, and container authority at confirmation";
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: protect until the right turn-in" : "not marked as quest evidence";
+        String risk = baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("selected item", source, target, item, countInventory(item), capacity, permission, quest, risk, "drop/sell/consume may not be reversible; stash/take and equip/unequip usually are");
+    }
+
+    String baseStashTransferPreviewLine() {
+        String item = inventory.isEmpty() ? null : inventory.get(inventory.size() - 1);
+        String capacity = baseStorage.size() < baseStorageCapacity() ? "base storage has room" : "blocked: base storage is full";
+        String permission = baseStorageAccessLine();
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: stored safely, but do not sell or route casually" : "not marked as quest evidence";
+        String risk = item == null ? "no selected carried item" : baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("stash", "carried inventory", "claimed base storage", item == null ? "last carried item" : item, 1, capacity, permission, quest, risk, "reversible with TAKE while capacity allows");
+    }
+
+    String baseTakeTransferPreviewLine() {
+        String item = baseStorage.isEmpty() ? null : baseStorage.get(baseStorage.size() - 1);
+        String capacity = inventoryWeight() + 1 <= carryCapacity() ? "carry capacity ok" : "blocked: carried load would exceed capacity";
+        String permission = baseStorageAccessLine();
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: carrying it may expose it to sale/drop mistakes" : "not marked as quest evidence";
+        String risk = item == null ? "no stored item selected" : baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("take", "claimed base storage", "carried inventory", item == null ? "newest stored item" : item, 1, capacity, permission, quest, risk, "reversible with STASH while storage has room");
+    }
+
+    String transferWorkflowPreviewLine(String action, String source, String target, String item, int quantity, String capacity, String permission, String quest, String risk, String reversal) {
+        String safeItem = item == null || item.isBlank() ? "selected item" : item;
+        int qty = Math.max(1, quantity);
+        return action + " " + safeItem + " x" + qty + " from " + source + " to " + target + "; " + capacity + "; " + permission + "; " + quest + "; risk: " + risk + "; " + reversal + ".";
+    }
+
+    String tradeMarketStatusLine(String item, ItemDef def, boolean buying) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use) + " " + (activeTrader == null ? "" : activeTrader.archetype + " " + activeTrader.zoneLabel)).toLowerCase(Locale.ROOT);
+        if (text.contains("noble") || text.contains("permit") || text.contains("stock certificate") || text.contains("gold")) return "status-sensitive noble or paper asset; licenses, reputation, and witnesses may matter.";
+        if (text.contains("arbites") || text.contains("guard") || text.contains("military") || text.contains("munitorum") || text.contains("bolter") || text.contains("carapace")) return "controlled faction or military good; carrying or reselling it can draw authority attention.";
+        if (text.contains("cult") || text.contains("heretic") || text.contains("profane") || text.contains("narcotic") || text.contains("black-market") || text.contains("black market")) return "illicit or black-market good; useful, valuable, and dangerous if searched.";
+        if (ItemCatalog.isFirearmLike(item) || ItemCatalog.isExplosiveLike(item)) return "weapon market good; legality depends on faction space, permits, and who sees the transfer.";
+        if (text.contains("data spike") || text.contains("lockpick") || text.contains("keycard") || text.contains("hacking")) return "access tool; ordinary traders may sell it, but secure areas treat it as suspicious.";
+        if (text.contains("medical") || text.contains("medicae") || text.contains("injector") || text.contains("stim")) return "medical or drug good; clinics value it, law may care if it looks counterfeit or combat-ready.";
+        if (activeTrader != null && activeTrader.supplyChainSummary != null && !activeTrader.supplyChainSummary.isBlank()) return "supply-chain stock; availability depends on this trader's current route and local pressure.";
+        if (buying) return "ordinary local stock while this trader has it.";
+        return "ordinary resale good unless local ownership or faction pressure says otherwise.";
     }
 
     String tradePricePressureLine(int actual, int catalogValue) {
@@ -6531,6 +6821,11 @@ boolean arbitesAuthorityText(String text) {
         TradeOffer offer = selectedTradeOffer();
         if (offer == null) { lastTradeReport = "No selected trade offer."; logEvent(lastTradeReport); return; }
         int price = activeTrader.buyPrice(offer);
+        if (inventoryWeight() + 1 > carryCapacity()) {
+            lastTradeReport = "Purchase blocked: carried inventory would exceed Strength-derived carry capacity. " + tradeBuyTransferPreviewLine(offer, price);
+            logEvent(lastTradeReport);
+            return;
+        }
         if (!spendImperialScript(price)) {
             lastTradeReport = activeTrader.name + " taps the price slate. Need " + price + " imperial script.";
             logEvent(lastTradeReport); DebugLog.audit("TRADE_BUY_FAIL", lastTradeReport + " state=" + stateSummary()); return;
@@ -6555,6 +6850,11 @@ boolean arbitesAuthorityText(String text) {
         if (item == null || item.equals("Imperial Script")) { lastTradeReport = "Select a carried item that is not money before selling."; logEvent(lastTradeReport); return; }
         int idx = inventory.indexOf(item);
         if (idx < 0) { lastTradeReport = "That item is not in your carried goods list yet. Itemized counters will be sellable after the next economy pass."; logEvent(lastTradeReport); return; }
+        if (isQuestOrEvidenceItem(item)) {
+            lastTradeReport = "Sale blocked: " + item + " looks like quest evidence or delivery proof. Turn it in, stash it, or inspect contracts before selling.";
+            logEvent(lastTradeReport);
+            return;
+        }
         int value = activeTrader.sellPrice(item);
         ItemActionResult sold = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, traderShelfContainerId(activeTrader), activeTrader.name + " trader shelf", null, "sold by player to " + activeTrader.name);
         if (!sold.success) { lastTradeReport = "Sale failed: " + sold.playerText; logEvent(lastTradeReport); DebugLog.warn("TRADE_SELL_FAIL", sold.auditText + " state=" + stateSummary()); return; }
@@ -7451,6 +7751,7 @@ boolean arbitesAuthorityText(String text) {
         lines.add("Cost: supplies " + selected.supplyCost + ", parts " + selected.partCost + ", components " + selected.componentCostSummary(4) + ".");
         lines.add("Readiness: " + constructionReadinessLine(selected));
         lines.add("Permission risk: " + constructionPermissionRiskLine(selected));
+        lines.add("Heat impact: " + constructionExpansionHeatLine(selected));
         lines.add("Placement rule: " + constructionPlacementHintLine(selected));
         return lines;
     }
@@ -7472,6 +7773,20 @@ boolean arbitesAuthorityText(String text) {
         if (low.contains("chem") || low.contains("distillation") || low.contains("fume") || low.contains("injector")) return "suspicious workshop profile; faction or law attention may rise around chemical work.";
         if (r.attention > 0) return "some attention; visible improvements can attract claims, raids, or inspection.";
         return "low attention; ordinary survival or storage construction.";
+    }
+
+    String constructionExpansionHeatLine(BuildRecipe r) {
+        if (r == null) return "choose a build to see whether it looks quiet, commercial, restricted, or defensive.";
+        String category = constructionCategoryFor(r);
+        String attention = r.attention <= 0 ? "quiet" : (r.attention <= 1 ? "minor" : (r.attention <= 3 ? "noticeable" : "high"));
+        String after = "Current base pressure is " + heatPressureBand(gangHeat, suspicion, baseRaidPressure(baseSecurityRating())) + ".";
+        if (r.requiredFaction != Faction.NONE) return attention + " restricted build in " + category + "; missing authority can turn attention into inspection or faction trouble. " + after;
+        String low = r.name == null ? "" : r.name.toLowerCase(Locale.ROOT);
+        if (low.contains("turret") || low.contains("sensor") || low.contains("security") || low.contains("armory")) return attention + " defense/security build; it improves raid survival but tells rivals the room is worth attacking. " + after;
+        if (low.contains("shop") || low.contains("business") || low.contains("clinic")) return attention + " public-facing service build; permits and staffing decide whether it looks lawful or suspicious. " + after;
+        if (low.contains("lab") || low.contains("chem") || low.contains("distillation") || low.contains("injector")) return attention + " laboratory or chemical build; expect legal and faction curiosity if it operates in the open. " + after;
+        if (r.attention > 0) return attention + " visible expansion in " + category + "; security, permits, and quiet storage reduce the follow-up risk. " + after;
+        return "quiet " + category + " build; ordinary survival improvements add little pressure by themselves. " + after;
     }
 
     String constructionPlacementHintLine(BuildRecipe r) {
@@ -8570,7 +8885,7 @@ boolean arbitesAuthorityText(String text) {
         FactionContract c = FactionContract.create(type, f, atlas, world, rng, factionStanding.getOrDefault(f, 0));
         factionContracts.add(c);
         lastContractFaction = f;
-        conversationBranch = f.label + " issues contract " + c.id + ": " + c.description;
+        conversationBranch = f.label + " issues a " + c.displayType() + ": " + c.displayDescription();
         logEvent("CONTRACT ACCEPTED: " + c.longLine());
         spawnContractTargetsForCurrentWorld();
         gainXp("Contracts", 1, "accepted faction contract");
@@ -8588,7 +8903,7 @@ boolean arbitesAuthorityText(String text) {
                 factionStanding.put(f, factionStanding.getOrDefault(f,0) + c.repReward);
                 knowledgeCredits += (c.type.equals("FETCH") ? 1 : 0);
                 xp += 4;
-                conversationBranch = f.label + " pays " + c.payout + " script for " + c.id + ". Standing +" + c.repReward + ".";
+                conversationBranch = f.label + " pays " + c.payout + " script for the " + c.displayType() + ". Standing +" + c.repReward + ".";
                 logEvent("CONTRACT PAID: " + conversationBranch);
                 advanceTurn("turns in " + c.requiredTurnInItem + ".");
                 return;
@@ -8626,7 +8941,7 @@ boolean arbitesAuthorityText(String text) {
         n.hp = 16 + Math.max(0, factionStanding.getOrDefault(c.faction,0));
         world.npcs.add(n);
         c.spawned = true;
-        logEvent("CONTRACT TARGET SPAWNED: " + n.name + " is somewhere in this zone. Retrieve " + c.requiredTurnInItem + " from the body.");
+        logEvent("CONTRACT TARGET SPAWNED: " + n.name + " is somewhere in this zone. Retrieve " + c.publicRequiredItem() + " from the body.");
         DebugLog.audit("CONTRACT_SPAWN_BOUNTY", c.longLine() + " at " + p.x + "," + p.y + " zone=" + keySafe(c.targetZoneKey));
     }
 
@@ -8661,7 +8976,7 @@ boolean arbitesAuthorityText(String text) {
             if (c.completed || !c.type.equals("BOUNTY")) continue;
             if (c.targetEntityId.equals(target.id) && !inventory.contains(c.requiredTurnInItem)) {
                 addInventoryItem(c.requiredTurnInItem, ItemProvenanceRecord.found(c.requiredTurnInItem, world, turn, "body of " + target.name));
-                logEvent("CONTRACT LOOT: recovered " + c.requiredTurnInItem + " from " + target.name + ". Return to the " + c.faction.label + " representative for payment.");
+                logEvent("CONTRACT LOOT: recovered " + c.publicRequiredItem() + " from " + target.name + ". Return to the " + c.faction.label + " representative for payment.");
                 c.spawned = false;
                 return;
             }
@@ -9149,13 +9464,13 @@ boolean arbitesAuthorityText(String text) {
         FactionContract found = null;
         for (FactionContract c : factionContracts) if (!c.completed && "LOCKBOX".equals(c.type)) { found = c; break; }
         if (found == null) { logEvent("LOCKBOX CONTRACT: no active noble-bank retrieval job is open."); return; }
-        if (!inventory.contains(found.requiredTurnInItem)) { logEvent("LOCKBOX CONTRACT: you need " + found.requiredTurnInItem + " for " + found.id + ". Current report: " + lastBankLockboxContractReport); return; }
+        if (!inventory.contains(found.requiredTurnInItem)) { logEvent("LOCKBOX CONTRACT: you need " + found.publicRequiredItem() + " for the active noble retrieval job. Current report: " + lastBankLockboxContractReport); return; }
         removeInventoryItem(found.requiredTurnInItem);
         found.completed = true;
         addImperialScript(found.payout);
         factionStanding.put(Faction.NOBLE, factionStanding.getOrDefault(Faction.NOBLE, 0) + found.repReward);
         suspicion += Math.max(1, found.payout / 800);
-        lastBankLockboxContractReport = "Completed " + found.id + " by delivering " + found.requiredTurnInItem + "; paid " + found.payout + " script and gained noble standing +" + found.repReward + ".";
+        lastBankLockboxContractReport = "Completed the noble retrieval job by delivering " + found.publicRequiredItem() + "; paid " + found.payout + " script and gained noble standing +" + found.repReward + ".";
         logEvent("LOCKBOX CONTRACT PAID: " + lastBankLockboxContractReport);
         recordPlayerNewsEvent("bank-heist", "private lockbox changed hands", Faction.NOBLE, "rumor claims sealed bank property changed hands outside ordinary branch custody", 3);
         DebugLog.audit("BANK_LOCKBOX_CONTRACT_TURNIN", found.longLine() + " state=" + stateSummary());
@@ -9486,11 +9801,12 @@ boolean arbitesAuthorityText(String text) {
     void stashOneItem() {
         if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Storage requires standing in your claimed room for now."); return; }
         if (inventory.isEmpty()) { logEvent("Inventory is empty. Even poverty has inventory management."); return; }
+        if (baseStorage.size() >= baseStorageCapacity()) { logEvent("Stash blocked: base storage is full. " + baseStashTransferPreviewLine()); return; }
         String sourceItem = inventory.get(inventory.size()-1);
         ItemActionResult moved = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, inventory.size()-1, CONTAINER_BASE_STORAGE, "Claimed base storage", baseStorage, "stashed into player base storage");
         String item = moved.success ? moved.itemName : sourceItem;
         if (!moved.success) DebugLog.warn("CONTAINER_TRANSFER", moved.auditText + " state=" + stateSummary());
-        logEvent("Stashed " + item + " in base storage. " + provenanceSummaryForItem(item));
+        logEvent("Stashed " + item + " in base storage. Origin: " + itemPlayerFacingOriginLine(item));
     }
 
     void takeOneItem() {
@@ -9501,7 +9817,7 @@ boolean arbitesAuthorityText(String text) {
         ItemActionResult moved = transferContainerItemResultAt(CONTAINER_BASE_STORAGE, baseStorage, baseStorage.size()-1, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, "recovered from player base storage");
         String item = moved.success ? moved.itemName : sourceItem;
         if (!moved.success) DebugLog.warn("CONTAINER_TRANSFER", moved.auditText + " state=" + stateSummary());
-        logEvent("Recovered " + item + " from base storage. " + provenanceSummaryForItem(item));
+        logEvent("Recovered " + item + " from base storage. Origin: " + itemPlayerFacingOriginLine(item));
     }
 
     int carryCapacity() {
@@ -12404,6 +12720,7 @@ boolean arbitesAuthorityText(String text) {
             buttons.add(new ButtonBox("FILTER", modal.x+430, modal.y+22, 92, 30, "Focus the semantic asset text filter. Type to search IDs, names, paths, and descriptions.", () -> { activeScrollTag = "infopedia-asset-filter"; repaint(); }));
             buttons.add(new ButtonBox("CLEAR", modal.x+530, modal.y+22, 82, 30, "Clear the semantic asset filter.", () -> { infopediaAssetFilter = ""; infopediaSelected = 0; infopediaScroll = 0; activeScrollTag = "infopedia-list"; repaint(); }));
         }
+        addInfopediaRelatedEntryButtons(modal, entries);
     }
 
     void cycleInfopediaTab(int delta) {
@@ -12479,6 +12796,79 @@ boolean arbitesAuthorityText(String text) {
         repaint();
     }
 
+    void openInfopediaEntry(String target) {
+        if (target == null || target.isBlank()) return;
+        for (int t=0; t<infopediaTabs().length; t++) {
+            java.util.List<String> entries = infopediaEntries(t);
+            for (int i=0; i<entries.size(); i++) {
+                if (entries.get(i).equalsIgnoreCase(target) || ItemQuality.namesMatch(entries.get(i), target)) {
+                    infopediaTab = t;
+                    infopediaSelected = i;
+                    int visible = Math.max(1, (uiLayout().modal.height-228)/32);
+                    infopediaScroll = Math.max(0, i - visible / 2);
+                    infopediaDetailScroll = 0;
+                    activeScrollTag = "infopedia-detail";
+                    logEvent("INFOPEDIA LINK: opened " + entries.get(i) + ".");
+                    repaint();
+                    return;
+                }
+            }
+        }
+        logEvent("INFOPEDIA LINK: no entry found for " + target + ".");
+    }
+
+    ArrayList<String> infopediaRelatedEntries(int tab, String entry) {
+        ArrayList<String> raw = new ArrayList<>();
+        if (entry == null) return raw;
+        String low = entry.toLowerCase(Locale.ROOT);
+        if (tab == 0) Collections.addAll(raw, entry + " Rooms", "Heat and Suspicion Overview", "Vendor & Shop Stock Rules");
+        else if (tab == 1) Collections.addAll(raw, "Scavenge XP", "Vendor & Shop Stock Rules", "Actor Access / Permission Ledger");
+        else if (tab == 2 || tab == 3) Collections.addAll(raw, "Item Quality Ladder", "Vendor & Shop Stock Rules", "Contraband and Law Status Ledger");
+        else if (tab == 4) Collections.addAll(raw, "Look and Examine", "Movement Planning", "Inventory and Transfer", "Medical Overview", "Body Overview", "Food and Water", "Sleep and Exhaustion");
+        else if (tab == 5) Collections.addAll(raw, "Body Injuries and Incapacitation", "Damage and Armor", "Targeted Attacks", "Medical Overview");
+        else if (tab == 6) Collections.addAll(raw, "Medical Overview", "Bandages and Field Dressings", "Splints", "Incapacitation");
+        else if (tab == 7) Collections.addAll(raw, "Body Overview", "Bleeding", "Infection Risk", "Doctors and Clinics");
+        else if (tab == 8) Collections.addAll(raw, "Hourly Decay", "Heat Sources", "Suspicion Sources", "Avoiding Attention");
+        else if (tab == 9) Collections.addAll(raw, "Task XP", "Combat XP", "Trade XP", "Construction XP");
+        else if (tab == 10) Collections.addAll(raw, "Knowledge Tree Authority", "Purchasing Knowledge", "Training Sources", "Crafting Overview");
+        else if (tab == 11) Collections.addAll(raw, "Recipe Requirements", "Machine Quality Ceilings", "Production Ledger Overview", "Item Quality Ladder");
+        else if (tab == 12 || tab == 13) Collections.addAll(raw, "Audit Overview", "Examine and Infopedia Link Audit", "Menu Definition Audit", "Movement Planning Audit", "Production Ledger Overview", "Actor Access / Permission Ledger", "Unified Input Registry / Gamepad Bridge");
+        else if (tab == 14) Collections.addAll(raw, "Passive Defense Effects", "Defense Semantic Audit", "Heat and Suspicion Overview", "Construction XP");
+        else if (tab == 15) Collections.addAll(raw, "Faction Variant Production Rules", "Hostile Intent Barks", "Heat and Suspicion Overview", "Vendor & Shop Stock Rules");
+        else if (tab == 16) Collections.addAll(raw, "Faction Variant Production Rules", "Heat and Suspicion Overview", "Vendor & Shop Stock Rules");
+        else if (tab == 17) Collections.addAll(raw, "Actor Access / Permission Ledger", "Heat and Suspicion Overview", "Look and Examine", "Movement Planning");
+        else if (tab == 18) Collections.addAll(raw, "Construction Validation Inspection", "Audit Overview", "Tile Asset Mapping");
+        if (low.contains("medical") || low.contains("bleeding") || low.contains("infection") || low.contains("pain")) raw.add("Medical Overview");
+        if (low.contains("heat") || low.contains("suspicion") || low.contains("permit")) raw.add("Heat and Suspicion Overview");
+        if (low.contains("trade") || low.contains("vendor") || low.contains("market")) raw.add("Vendor & Shop Stock Rules");
+        if (low.contains("recipe") || low.contains("production") || low.contains("machine")) raw.add("Production Ledger Overview");
+        return existingInfopediaRelatedEntries(raw, entry);
+    }
+
+    ArrayList<String> existingInfopediaRelatedEntries(java.util.List<String> candidates, String currentEntry) {
+        ArrayList<String> out = new ArrayList<>();
+        if (candidates == null) return out;
+        HashSet<String> seen = new HashSet<>();
+        for (String candidate : candidates) {
+            String found = findInfopediaEntryLabel(candidate);
+            if (found == null || found.equalsIgnoreCase(currentEntry)) continue;
+            String key = found.toLowerCase(Locale.ROOT);
+            if (seen.add(key)) out.add(found);
+            if (out.size() >= 6) break;
+        }
+        return out;
+    }
+
+    String findInfopediaEntryLabel(String target) {
+        if (target == null || target.isBlank()) return null;
+        for (int t=0; t<infopediaTabs().length; t++) {
+            for (String entry : infopediaEntries(t)) {
+                if (entry.equalsIgnoreCase(target) || ItemQuality.namesMatch(entry, target)) return entry;
+            }
+        }
+        return null;
+    }
+
     String[] infopediaTabs() { return new String[]{"ZONES", "ROOMS", "ITEMS", "WEAPONS", "SURVIVAL", "COMBAT", "BODY", "MEDICAL", "HEAT", "XP", "KNOWLEDGE", "CRAFTING", "PRODUCTION", "AUDITS", "DEFENSES", "NPCS", "FACTIONS", "TILES", "ASSETS"}; }
 
     java.util.List<String> infopediaEntries(int tab) {
@@ -12509,6 +12899,7 @@ boolean arbitesAuthorityText(String text) {
                 break;
             case 4:
                 Collections.addAll(out, "Calendar and Time", "Food and Water", "Sleep and Exhaustion", "Stimulants and Recovery", "Survival Failure States");
+                Collections.addAll(out, "Look and Examine", "Movement Planning", "Interaction Approach Planning", "Inventory and Transfer", "Base Storage", "Pet Care", "Context Prompts");
                 break;
             case 5:
                 Collections.addAll(out, "Combat Command", "Hit Chance and Defense", "Damage and Armor", "Targeted Attacks", "Body Injuries and Incapacitation", "Hostile Intent Barks");
@@ -12548,7 +12939,7 @@ boolean arbitesAuthorityText(String text) {
                 }
                 break;
             case 13:
-                Collections.addAll(out, "Audit Overview", "Industrial Itemization Audit", "Faction Variant Audit", "Chemical Equipment Audit", "Live Placement Audit", "Facility Output Modifier Audit", "Build Requirement Cost Audit", "Production Container Authority Audit", "Persistent Stock Container Audit", "Persistent Stock Pickup UX Audit", "Actor Access Permission Audit", "Authority Alignment Audit", "Production Ledger Display Audit", "Economic Topology Audit", "Economic Generation Bias Audit", "Local Topology Metadata Audit", "Economic Topology Preview Audit", "Economic Topology Reporting Overlay Audit", "Economic Topology Map Intel Bridge Audit", "Retarget Readiness Audit", "Runtime Separation Audit", "Launcher / Client / Server Runtime Audit", "Launcher Shell State Audit", "User Profile Audit", "Render Scaling / CRT Audit", "Unified Input Registry Audit", "Construction Validation Inspection", "Progressive Construction Audit", "Staffing Labor Bridge", "Manual Staffing Assignment Bridge", "Logistics Reservation Scaffold", "Logistics Delivery Intent Bridge", "Logistics Route Readiness Preview", "Logistics Manual Haul Contract", "Logistics Haul Fulfillment Preflight");
+                Collections.addAll(out, "Audit Overview", "Examine and Infopedia Link Audit", "Menu Definition Audit", "Movement Planning Audit", "Industrial Itemization Audit", "Faction Variant Audit", "Chemical Equipment Audit", "Live Placement Audit", "Facility Output Modifier Audit", "Build Requirement Cost Audit", "Production Container Authority Audit", "Persistent Stock Container Audit", "Persistent Stock Pickup UX Audit", "Actor Access Permission Audit", "Authority Alignment Audit", "Production Ledger Display Audit", "Economic Topology Audit", "Economic Generation Bias Audit", "Local Topology Metadata Audit", "Economic Topology Preview Audit", "Economic Topology Reporting Overlay Audit", "Economic Topology Map Intel Bridge Audit", "Retarget Readiness Audit", "Runtime Separation Audit", "Launcher / Client / Server Runtime Audit", "Launcher Shell State Audit", "User Profile Audit", "Render Scaling / CRT Audit", "Unified Input Registry Audit", "Construction Validation Inspection", "Progressive Construction Audit", "Staffing Labor Bridge", "Manual Staffing Assignment Bridge", "Logistics Reservation Scaffold", "Logistics Delivery Intent Bridge", "Logistics Route Readiness Preview", "Logistics Manual Haul Contract", "Logistics Haul Fulfillment Preflight");
                 break;
             case 14:
                 Collections.addAll(out, "Defense Build Surface", "Defense Semantic Audit", "Passive Defense Effects");
@@ -12856,6 +13247,18 @@ boolean arbitesAuthorityText(String text) {
         return lines;
     }
 
+    java.util.List<String> infopediaDetailLinesWithRelated(int tab, String entry) {
+        ArrayList<String> lines = new ArrayList<>(infopediaDetailLines(tab, entry));
+        ArrayList<String> related = infopediaRelatedEntries(tab, entry);
+        if (!related.isEmpty()) {
+            lines.add("");
+            lines.add("Related entries:");
+            for (String r : related) lines.add("  LINK: " + r);
+            lines.add("Use the LINK buttons below the detail pane to jump directly to the first related entries.");
+        }
+        return lines;
+    }
+
     java.util.List<String> auditInfopediaLines(String entry) {
         ArrayList<String> lines = new ArrayList<>();
         if (entry == null) entry = "";
@@ -12863,6 +13266,40 @@ boolean arbitesAuthorityText(String text) {
             lines.add("Audit overview");
             lines.add("Scope: summarizes the major production authority audits currently exposed through Infopedia.");
             lines.addAll(ProductionLedgerDisplayApi.auditSummaryLines());
+        } else if (entry.equals("Examine and Infopedia Link Audit")) {
+            lines.add("Examine and Infopedia link audit");
+            lines.add("Scope: checks whether the player-facing examination and reference layers expose useful categories without leaking hidden implementation state.");
+            lines.add("Examine sections currently covered: visible identity, animal/pet read, intent read, visible equipment, quest/evidence read, condition read, combat readiness, threat read, senses read, fixture/object use read, and approach read.");
+            lines.add("Refresh cadence: repeating Examine on the same target within six world turns increases detail depth up to three steps.");
+            lines.add("Confidence boundary: unknown, hidden, private, or off-screen state should be described as unreadable or estimated rather than exposed through raw records.");
+            lines.add("Infopedia categories currently indexed: " + String.join(", ", infopediaTabs()) + ".");
+            lines.add("Related-link surface: valid related entries are filtered against the live Infopedia index before LINK buttons appear.");
+            lines.add("Current selected entry: " + (infopediaEntries(infopediaTab).isEmpty() ? "none" : infopediaEntries(infopediaTab).get(Math.max(0, Math.min(infopediaSelected, infopediaEntries(infopediaTab).size()-1)))) + ".");
+            lines.add("Audit expectation: new Look, Examine, interaction, transfer, construction, prompt, and mechanic entries should add related references instead of becoming isolated glossary stubs.");
+        } else if (entry.equals("Menu Definition Audit")) {
+            lines.add("Menu definition audit");
+            lines.add("Scope: player-facing ledger for major panel purpose, close behavior, core action, disabled-state rule, and special transfer/permission concerns.");
+            lines.add("LOOK: inspect selected tile; closes with cancel; core actions Examine and Interact; disabled when tile is not visible or selected.");
+            lines.add("INTERACT: commits adjacent target action; closes with cancel; core action Confirm; disabled when target is out of range, with PLAN MOVE approach guidance where possible.");
+            lines.add("INVENTORY: reviews carried goods, equipment, load, and selected item transfer preview; core actions use/equip/drop/context; disabled when no carried item is selected.");
+            lines.add("BUILD: claims rooms, selects construction, and confirms placement; core action Confirm; disabled by missing claim, invalid tile, missing materials, knowledge, faction, or component rules.");
+            lines.add("WORKBENCH: runs production and logistics previews; core action Confirm; disabled by missing machine, recipe, input, knowledge, worker, or queue readiness.");
+            lines.add("BASES: manages claimed-base storage, roster, business, heat, security, and production; transfer actions use shared source/target/capacity/protection wording.");
+            lines.add("TRADE: handles conversation, buy/sell, prices, stock, market legality, contracts, and evidence turn-in; buy/sell block on funds, capacity, source item, trader state, and quest protection.");
+            lines.add("MAP, SENSES, SAVE/LOAD, NEWS, and INFOPEDIA: reference or navigation surfaces; they should use stable close/back behavior, scroll containment, and prompt lines rather than hidden key assumptions.");
+            lines.add("Audit expectation: new menus should define title, purpose, prompt line, primary data source, disabled reasons, transfer behavior, permission checks, and raw-ID leakage boundary before release claims.");
+        } else if (entry.equals("Movement Planning Audit")) {
+            lines.add("Movement planning audit");
+            lines.add("Scope: manual movement ghost placement, route preview, valid-target rules, invalid feedback, and interaction-driven approach behavior.");
+            lines.add("Current mode: " + movementModeLabel() + " | range " + movementModeRange() + " | per-tile cost " + movementTurnCost() + " | active state " + activeMotionStateLabel() + ".");
+            lines.add("Input methods: PLAN MOVE opens manual targeting; arrows/WASD or controller movement nudge the target; confirm executes the preview; cancel clears it.");
+            lines.add("Valid target rule: target must be in bounds, walkable, not the player's current tile, and not occupied by an NPC.");
+            lines.add("Invalid feedback strings: outside known map, current position, destination occupied, door closed, path blocked, or cannot reach from here.");
+            lines.add("Path preview: route uses a bounded walkable-path search from the player to the selected target and divides movement into current-mode action chunks.");
+            lines.add("Hazard warning: preview reports a hazard ahead when any preview path tile contains a visible environmental hazard record.");
+            lines.add("Interaction helper: if Look/Interact selects a distant usable target, PLAN MOVE prefers a reachable adjacent approach tile and labels it as an approach path.");
+            lines.add("Overlay priority: movement preview draws as route rings and target rectangle, separate from Look selection, build placement, ownership tint, and directional movement ghost.");
+            lines.add("Focus reset: executing, cancelling, timing out, changing movement mode, or leaving gameplay clears stale preview state.");
         } else if (entry.equals("Industrial Itemization Audit")) {
             lines.addAll(RecipeGraphAuditApi.audit().lines());
         } else if (entry.equals("Faction Variant Audit")) {
@@ -13014,6 +13451,48 @@ boolean arbitesAuthorityText(String text) {
                 lines.add("Coffee and stim items reduce immediate sleep debt or fatigue pressure, but repeated abuse creates stimulant strain and later backlash.");
                 lines.add("Current fatigue: " + fatigue + "; stimulant strain: " + stimulantStrain + ".");
                 lines.add("Design rule: stimulants buy time; they do not replace food, water, sleep, or actual medical work.");
+                break;
+            case "Look and Examine":
+                lines.add("Look and Examine reference");
+                lines.add("Look gives immediate visible context for the selected tile: tile identity, ownership, light/noise, stacked contents, obvious NPC or object detail, and whether deeper examination is useful.");
+                lines.add("Examine spends time to read the selected visible target more carefully. Repeating Examine on the same target within a few turns can reveal deeper threat, senses, condition, evidence, and interaction context.");
+                lines.add("Boundary: Examine reports known or observable reads. It should not reveal hidden identities, private contract state, or internal records unless the world has exposed them.");
+                break;
+            case "Movement Planning":
+                lines.add("Movement planning reference");
+                lines.add("PLAN MOVE lets the player choose a movement endpoint, preview the route, see hazards, and confirm instead of relying only on directional movement.");
+                lines.add("Movement mode changes range, time cost, noise, fatigue, and observation. The preview divides long routes into action chunks based on the current movement mode.");
+                lines.add("Current movement: " + movementModeLabel() + ", range " + movementModeRange() + ", cost " + movementTurnCost() + " turn(s) per tile.");
+                break;
+            case "Interaction Approach Planning":
+                lines.add("Interaction approach planning reference");
+                lines.add("When a selected interaction target is too far away, the interaction preflight can nominate a reachable adjacent approach tile.");
+                lines.add("Starting PLAN MOVE from that context prefers the approach tile and labels the preview as an approach path, helping with doors, NPCs, pets, containers, machines, vendors, and other exact-range targets.");
+                lines.add("If no approach tile is shown, the target may already be adjacent, blocked, unreachable, or not an interaction target.");
+                break;
+            case "Inventory and Transfer":
+                lines.add("Inventory and transfer reference");
+                lines.add("Item movement uses a shared preflight grammar: source, target, quantity, capacity, permission/access, quest/evidence protection, risk, and whether the move is reversible.");
+                lines.add("Carried load currently reads " + carryStatusText() + ". Overflow blocks purchase and recovery actions before the item moves.");
+                lines.add("Quest and evidence items are protected from ordinary sale so proof, delivery goods, journals, and active turn-in objects do not vanish through routine commerce.");
+                break;
+            case "Base Storage":
+                lines.add("Base storage reference");
+                lines.add("Claimed-base storage lets the player STASH the newest carried item and TAKE the newest stored item while standing inside the claimed room.");
+                lines.add("Storage reports access, capacity, quest protection, and risk categories such as weapons, suspicious tools, commerce goods, survival reserves, and medical reserves.");
+                lines.add("Current storage: " + baseStorage.size() + "/" + baseStorageCapacity() + " item(s). " + baseStorageRiskSummaryLine());
+                break;
+            case "Pet Care":
+                lines.add("Pet care reference");
+                lines.add("Companion animals expose ownership, adoption/sale context, hunger, thirst, rest, shelter, temperament, accessibility, and petting permission through Look and Examine.");
+                lines.add("Petting requires a companion animal, safe temperament, visibility, and adjacency. Non-pet animals explain why contact is blocked instead of pretending to be inert scenery.");
+                lines.add("Pet systems should feel like visible living systems, not hidden timers.");
+                break;
+            case "Context Prompts":
+                lines.add("Context prompt reference");
+                lines.add("Major panels show prompt lines using the current input binding label and the current context: ready actions are named, and blocked actions explain what is missing.");
+                lines.add("Examples include moving adjacent before confirming Interact, selecting an item before inventory actions, choosing a build tile before construction confirmation, and needing an active trader before trade confirmation.");
+                lines.add("Keyboard and controller prompts share abstract action names so rebinding and profile work can update prompts without rewriting every panel.");
                 break;
             default:
                 lines.add("Survival failure-state reference");
@@ -13543,7 +14022,7 @@ boolean arbitesAuthorityText(String text) {
         drawSlicedFrame(g,detailX,detailY,detailW,detailH,"inner");
         String entry = entries.isEmpty()?"No entry":entries.get(Math.max(0,Math.min(infopediaSelected,entries.size()-1)));
         drawInfopediaIcon(g, detailX+24, detailY+52, 128, 128, infopediaTab, entry);
-        java.util.List<String> details = infopediaDetailLines(infopediaTab, entry);
+        java.util.List<String> details = infopediaDetailLinesWithRelated(infopediaTab, entry);
         drawScrollableWrappedLines(g, details, detailX+178, detailY+58, detailW-210, detailH-96, infopediaDetailScroll, "infopedia-detail");
     }
 
@@ -14700,6 +15179,14 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
     void beginManualMovementPlan() {
         if (world == null || screen != Screen.GAME) return;
         manualMovementPlanActive = true;
+        Point approach = selectedInteractionApproachTile();
+        if (approach != null) {
+            updateMouseMovementPreviewTo(approach.x, approach.y);
+            manualMovementPlanActive = true;
+            logEvent("Movement target planning: approaching " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ". Confirm with Enter/E/Space, cancel with Escape.");
+            repaint();
+            return;
+        }
         int tx = playerX;
         int ty = playerY;
         int dx = lastMoveDx == 0 && lastMoveDy == 0 ? 1 : lastMoveDx;
@@ -14765,9 +15252,62 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
             return;
         }
         String hazard = movementPathHazardWarning(path);
+        String approach = interactionApproachStatusFor(tx, ty);
         mouseMovePreviewStatus = "Movement target ready"
                 + (hazard.isEmpty() ? "" : "; " + hazard)
+                + (approach.isEmpty() ? "" : "; " + approach)
                 + " | steps " + steps + " | " + chunks + " action(s) at " + movementModeLabel();
+    }
+
+    Point selectedInteractionApproachTile() {
+        if (world == null || !world.inBounds(lookX, lookY)) return null;
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return null;
+        if (Math.abs(lookX - playerX) <= 1 && Math.abs(lookY - playerY) <= 1) return null;
+        ArrayList<Point> candidates = new ArrayList<>();
+        for (int dy=-1; dy<=1; dy++) for (int dx=-1; dx<=1; dx++) {
+            if (dx == 0 && dy == 0) continue;
+            int x = lookX + dx, y = lookY + dy;
+            if (!world.inBounds(x, y) || !world.walkable(x, y)) continue;
+            if (world.npcAt(x, y) != null) continue;
+            if (x == playerX && y == playerY) continue;
+            candidates.add(new Point(x, y));
+        }
+        Point best = null;
+        int bestScore = Integer.MAX_VALUE;
+        for (Point p : candidates) {
+            ArrayList<Point> path = findPreviewPath(playerX, playerY, p.x, p.y, 80);
+            if (path.isEmpty()) continue;
+            int score = path.size() * 10 + Math.abs(p.x - playerX) + Math.abs(p.y - playerY);
+            if (best == null || score < bestScore) { best = p; bestScore = score; }
+        }
+        return best;
+    }
+
+    boolean hasSelectedInteractionTarget(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return false;
+        if (world.npcAt(tx, ty) != null) return true;
+        if (baseObjectAt(tx, ty) != null) return true;
+        if (world.mapObjectAt(tx, ty) != null) return true;
+        char ch = world.tiles[tx][ty];
+        return isDoorTile(ch) || isIntermapTransitTile(ch) || isVendingMachine(ch) || isShrine(ch) || isEmergencyMachine(ch) || ch == 'Q' || ch == 'T';
+    }
+
+    String interactionTargetLabel(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "the selected target";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return npc.name;
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) return obj.name;
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) return mos.label == null || mos.label.isBlank() ? "fixture" : mos.label;
+        return describeTile(world.tiles[tx][ty]);
+    }
+
+    String interactionApproachStatusFor(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty) || !world.inBounds(lookX, lookY)) return "";
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return "";
+        if (Math.abs(tx - lookX) <= 1 && Math.abs(ty - lookY) <= 1 && !(tx == lookX && ty == lookY)) return "approach tile for " + interactionTargetLabel(lookX, lookY);
+        return "";
     }
 
     String directMovementTargetBlockReason(int tx, int ty) {
@@ -15634,6 +16174,71 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
                 + " | " + promptLabel(InputAction.MAP) + " map"
                 + " | F1 slate"
                 + " | " + promptLabel(InputAction.PAUSE) + " menu";
+    }
+
+    ArrayList<String> contextInputPromptLines(PanelMode mode) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (mode == null) return lines;
+        switch (mode) {
+            case LOOK:
+                lines.add(contextPromptLine(InputAction.EXAMINE, "examine selected tile", selectedLookNpc() != null || baseObjectAt(lookX, lookY) != null || world != null && world.inBounds(lookX, lookY), "select a visible tile first"));
+                lines.add(contextPromptLine(InputAction.INTERACT, "open interaction at selected tile", world != null && world.inBounds(lookX, lookY), "no selected tile"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close look", true, ""));
+                break;
+            case INTERACT:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "commit selected interaction", world != null && world.inBounds(lookX, lookY) && Math.abs(lookX - playerX) <= 1 && Math.abs(lookY - playerY) <= 1, "move adjacent first"));
+                lines.add(contextPromptLine(InputAction.PLAN_MOVE, "approach selected target", selectedInteractionApproachTile() != null, "already adjacent or no reachable approach tile"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "back out", true, ""));
+                break;
+            case INVENTORY:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "use or equip selected carried item", selectedInventoryItemName() != null, "no carried item selected"));
+                lines.add(contextPromptLine(InputAction.INTERACT, "take, drop, or context item action", selectedInventoryItemName() != null, "no carried item selected"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close inventory", true, ""));
+                break;
+            case BUILD:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "confirm selected build placement", buildPlacementActive && pendingBuildRecipe != null, "choose a build and valid tile first"));
+                lines.add(contextPromptLine(InputAction.BUILD, baseClaimed ? "open construction and base tools" : "claim a room or open build tools", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "cancel placement or close build", true, ""));
+                break;
+            case WORKBENCH:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "run selected workbench action", selectedWorkerMachine() != null || hasBaseObject('w'), "build or select a machine first"));
+                lines.add(contextPromptLine(InputAction.INVENTORY, "check inputs and outputs", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close workbench", true, ""));
+                break;
+            case BASES:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "use highlighted base action", baseClaimed, "claim a room first"));
+                lines.add(contextPromptLine(InputAction.BUILD, "return to construction tools", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close base management", true, ""));
+                break;
+            case TRADE:
+                lines.add(contextPromptLine(InputAction.CONFIRM, activeTrader != null ? "buy selected offer" : "choose conversation option", activeTrader != null && selectedTradeOffer() != null || activeConversationNpc != null, "no active trader or speaker"));
+                lines.add(contextPromptLine(InputAction.INVENTORY, "change selected sell item", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "leave trade or conversation", true, ""));
+                break;
+            case MAP:
+                lines.add(contextPromptLine(InputAction.MOVE_LEFT, "pan or change map focus", world != null, "no map loaded"));
+                lines.add(contextPromptLine(InputAction.ZOOM_IN, "zoom map/world view where supported", worldZoomControlActive(), "zoom unavailable here"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close map", true, ""));
+                break;
+            case SENSES:
+                lines.add(contextPromptLine(InputAction.LOOK, "inspect visible source", world != null, "no world loaded"));
+                lines.add(contextPromptLine(InputAction.PLAN_MOVE, "plan around hazards or darkness", world != null, "no world loaded"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close senses", true, ""));
+                break;
+            case SAVELOAD:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "activate selected save/load control", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close save/load", true, ""));
+                break;
+            default:
+                lines.add(contextPromptLine(InputAction.CANCEL, "back out", true, ""));
+                break;
+        }
+        return lines;
+    }
+
+    String contextPromptLine(InputAction action, String use, boolean enabled, String disabledReason) {
+        String state = enabled ? "ready" : "disabled: " + (disabledReason == null || disabledReason.isBlank() ? "not available in this context" : disabledReason);
+        return "Prompt: " + promptLabel(action) + " - " + use + " (" + state + ").";
     }
 
     String promptLabel(InputAction action) {
@@ -16906,7 +17511,7 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         if (lookedNpc != null) {
             if (lookedNpc.isAnimalActor()) {
                 lines.add("ANIMAL: " + lookedNpc.animalLine());
-                lines.add("PETTING: " + (lookedNpc.isPetActor() ? "Interact or PET can offer " + petGestureName(lookedNpc) + "." : animalContactBlockedLine(lookedNpc)));
+                for (String petLine : petCareReadabilityLines(lookedNpc, tx, ty, true)) lines.add("PET: " + petLine);
             }
             else {
                 AgeAndWorldTimeAuthority.synchronizeNpc(lookedNpc, worldTurn);
@@ -17705,7 +18310,9 @@ String traderShelfContainerId(TraderSession trader) {
         lines.add("Location: " + loc + " | Claimed room id " + claimedRoomId + ".");
         lines.add("Size/status: " + baseSizeStatusLine());
         lines.add("Population: recruits " + factionRecruits.size() + "/" + recruitCapacity() + " | available labor " + availableRecruitLabor() + " | security staff " + securityStaffCount() + ".");
+        lines.addAll(baseRosterGuidanceLines());
         lines.add("Business permits: " + businessPermitCount() + " | open businesses " + openBusinessCount() + " | illegal businesses " + illegalBusinessCount() + " | security rating " + baseSecurityRating() + " | likely raid pressure: " + zoneRaidThreatName() + ".");
+        lines.addAll(baseExpansionHeatGuidanceLines());
         lines.add("Raid risk: pressure " + baseRaidPressure(baseSecurityRating()) + " | chance " + baseRaidChance(baseSecurityRating()) + "% per hourly pressure check | " + baseRaidWarningLine() + ".");
         lines.add("Faction rivalry: " + highestFactionMarketPressureLine() + " | faction power " + playerFactionPower() + " | strategic raid chance " + strategicRaidChance() + "% hourly.");
         lines.add("Contested markets: " + contestedMarketSummaryLine() + ".");
@@ -17722,15 +18329,294 @@ String traderShelfContainerId(TraderSession trader) {
         lines.add("");
         lines.add("Storage and reserves:");
         lines.add("  Carried construction supplies: " + supplies + " | machine parts: " + machineParts + " | food reserve: " + food + " | water reserve: " + water + ".");
+        lines.addAll(baseStorageGuidanceLines());
         LinkedHashMap<String,Integer> stacks = stackInventory(baseStorage);
         if (stacks.isEmpty()) lines.add("  Base storage is empty.");
-        else for (Map.Entry<String,Integer> e : stacks.entrySet()) lines.add("  Stored: " + e.getKey() + " x" + e.getValue() + " | value each " + ItemCatalog.priceFor(e.getKey()) + ".");
+        else for (Map.Entry<String,Integer> e : stacks.entrySet()) lines.add("  Stored: " + e.getKey() + " x" + e.getValue() + " | value each " + ItemCatalog.priceFor(e.getKey()) + " | " + baseStoredItemSafetyLine(e.getKey()));
         lines.add("");
         lines.add("Owned businesses / services / traders:");
         lines.addAll(ownedBusinessLines());
         lines.add("");
         lines.add("Management note: permits make businesses lawful. Illegal businesses still run, but raise heat and can trigger Arbites, ganger, mutant, or cultist raids by zone.");
         return lines;
+    }
+
+    ArrayList<String> baseRosterGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Roster command: " + baseRosterCommandLine());
+        lines.add("Equipment authority: " + factionMemberEquipmentAuthorityLine());
+        lines.add("Equipment candidates: " + factionMemberEquipmentCandidateLine());
+        if (factionRecruits.isEmpty()) {
+            lines.add("  Roster empty: recruit people through conversation once berthing doctrine and free cots exist.");
+            lines.add("  Next recruit use: build cots, unlock Recruit Berthing Doctrine, then look for talkable locals with useful roles.");
+            return lines;
+        }
+        for (RecruitWorker r : factionRecruits) lines.add("  " + recruitRosterLine(r));
+        return lines;
+    }
+
+    String factionMemberEquipmentAuthorityLine() {
+        if (factionRecruits.isEmpty()) return "no controlled member is available for gear assignment.";
+        if (!hasKnowledge("Workshop Labor Discipline")) return "direct equipment handoff waits for Workshop Labor Discipline; use storage and duty assignment for now.";
+        if (!baseClaimed || world == null || !isInClaimedRoom(playerX, playerY)) return "gear review is safest inside the claimed room with the roster present.";
+        return "authorized recruits may be reviewed for gear, but transfers must respect duty, access, ownership, and carry safety.";
+    }
+
+    String factionMemberEquipmentCandidateLine() {
+        ArrayList<String> carried = factionMemberEquipmentCandidates(inventory, 3);
+        ArrayList<String> stored = factionMemberEquipmentCandidates(baseStorage, 3);
+        String c = carried.isEmpty() ? "no obvious carried gear" : "carried " + String.join(", ", carried);
+        String s = stored.isEmpty() ? "no obvious stored gear" : "stored " + String.join(", ", stored);
+        return c + "; " + s + ".";
+    }
+
+    ArrayList<String> factionMemberEquipmentCandidates(List<String> items, int limit) {
+        ArrayList<String> out = new ArrayList<>();
+        if (items == null) return out;
+        LinkedHashMap<String,Integer> stacks = stackInventory(items);
+        for (String item : stacks.keySet()) {
+            if (out.size() >= Math.max(1, limit)) break;
+            if (factionMemberGearUseLine(item) != null) out.add(item + " x" + stacks.get(item));
+        }
+        return out;
+    }
+
+    String factionMemberGearUseLine(String item) {
+        if (item == null) return null;
+        String low = item.toLowerCase(Locale.ROOT);
+        if (looksWearable(item)) return "cover/disguise";
+        if (ItemCatalog.isFirearmLike(item) || low.contains("knife") || low.contains("maul") || low.contains("baton") || low.contains("shotgun") || low.contains("pistol")) return "security weapon";
+        if (low.contains("armor") || low.contains("vest") || low.contains("coat")) return "protection";
+        if (low.contains("tool") || low.contains("data spike") || low.contains("lockpick")) return "work or access tool";
+        if (low.contains("med") || low.contains("bandage") || low.contains("field dressing") || low.contains("antiseptic")) return "medical support";
+        if (PortableLightProfile.isLightItem(item)) return "light support";
+        return null;
+    }
+
+    String baseRosterCommandLine() {
+        if (!hasKnowledge("Recruit Berthing Doctrine")) return "recruiting is limited until Recruit Berthing Doctrine is known.";
+        if (!hasKnowledge("Workshop Labor Discipline")) return "recruits can join, but machine assignment needs Workshop Labor Discipline.";
+        if (factionRecruits.size() >= recruitCapacity()) return "berths are full; build more cots or release pressure before recruiting.";
+        return "recruitment and assignment are available within cot capacity and station access.";
+    }
+
+    String recruitRosterLine(RecruitWorker r) {
+        if (r == null) return "Unknown worker - unavailable record.";
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty;
+        return r.name + " - " + safeRecruitRole(r) + " | " + factionLabel(r.faction) + " | skill " + r.skill + " | loyalty " + r.loyalty + " | duty " + duty + " | " + recruitAvailabilityLine(r) + " | best next: " + recruitBestAssignmentLine(r) + " | gear: " + recruitGearAdviceLine(r);
+    }
+
+    String safeRecruitRole(RecruitWorker r) {
+        return r == null || r.role == null || r.role.isBlank() ? "base worker" : r.role;
+    }
+
+    String recruitAvailabilityLine(RecruitWorker r) {
+        if (r == null) return "availability unknown";
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty)) return "on guard duty; unavailable for crew shifts";
+        if (r.loyalty <= 2) return "available but unreliable; keep risk low";
+        if (r.skill >= 4) return "available skilled labor";
+        return "available general labor";
+    }
+
+    String recruitBestAssignmentLine(RecruitWorker r) {
+        if (r == null) return "inspect roster";
+        String role = safeRecruitRole(r).toLowerCase(Locale.ROOT);
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty)) return "guard posts, alarms, and raid defense";
+        if (role.contains("guard") || role.contains("arbites") || role.contains("soldier") || role.contains("ganger")) return "security or dangerous hauling";
+        if (role.contains("trader") || role.contains("clerk") || role.contains("merchant")) return "shop counters, logistics, or market-facing work";
+        if (role.contains("mechanic") || role.contains("tech") || role.contains("adept") || role.contains("worker")) return "workbench, forge, condenser, or machine crew";
+        if (role.contains("medic") || role.contains("medicae") || role.contains("doctor")) return "clinic stall or medical stock support";
+        if (r.skill >= 4) return "highest-value production station";
+        if (r.loyalty <= 2) return "low-risk labor until trust improves";
+        return "general labor or the next unstafed machine";
+    }
+
+    String recruitGearAdviceLine(RecruitWorker r) {
+        if (r == null) return "review manually";
+        String role = safeRecruitRole(r).toLowerCase(Locale.ROOT);
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty) || role.contains("guard") || role.contains("soldier") || role.contains("ganger")) return "prioritize armor, weapon, and light";
+        if (role.contains("trader") || role.contains("clerk") || role.contains("merchant")) return "prioritize lawful clothing and permits";
+        if (role.contains("mechanic") || role.contains("tech") || role.contains("adept") || role.contains("worker")) return "prioritize tools and protective clothing";
+        if (role.contains("medic") || role.contains("medicae") || role.contains("doctor")) return "prioritize medical stock and clean clothing";
+        if (r.loyalty <= 2) return "avoid valuable gear until trust improves";
+        return "match gear to assigned station";
+    }
+
+    ArrayList<String> baseExpansionHeatGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        int security = baseSecurityRating();
+        int pressure = baseRaidPressure(security);
+        lines.add("Expansion heat: " + heatPressureBand(gangHeat, suspicion, pressure) + " | gang heat " + gangHeat + " | Arbites suspicion " + suspicion + " | raid pressure " + pressure + ".");
+        lines.add("Heat drivers: " + baseExpansionHeatDriverLine());
+        lines.add("Suspicion drivers: " + baseExpansionSuspicionDriverLine());
+        lines.add("Heat relief: " + baseExpansionHeatReliefLine(security));
+        return lines;
+    }
+
+    String heatPressureBand(int heat, int suspicionValue, int pressure) {
+        int total = Math.max(0, heat) + Math.max(0, suspicionValue) + Math.max(0, pressure / 2);
+        if (total >= 32) return "severe";
+        if (total >= 20) return "high";
+        if (total >= 10) return "rising";
+        if (total >= 4) return "watchful";
+        return "quiet";
+    }
+
+    String baseExpansionHeatDriverLine() {
+        LinkedHashMap<String,Integer> drivers = new LinkedHashMap<>();
+        if (illegalBusinessCount() > 0) drivers.put("illegal open business", illegalBusinessCount());
+        if (openBusinessCount() > 0) drivers.put("public shop/service traffic", openBusinessCount());
+        for (BaseObject obj : baseObjects) {
+            String tag = baseObjectExpansionHeatTag(obj);
+            if (tag == null) continue;
+            drivers.put(tag, drivers.getOrDefault(tag, 0) + 1);
+        }
+        int restricted = restrictedStoredGoodsCount();
+        if (restricted > 0) drivers.put("restricted stored goods", restricted);
+        if (drivers.isEmpty()) return "no major expansion drivers beyond ordinary survival presence.";
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : drivers.entrySet()) parts.add(e.getKey() + " x" + e.getValue());
+        return String.join(", ", parts) + ".";
+    }
+
+    String baseExpansionSuspicionDriverLine() {
+        ArrayList<String> drivers = new ArrayList<>();
+        if (illegalBusinessCount() > 0) drivers.add("unpermitted commerce");
+        if (restrictedStoredGoodsCount() > 0) drivers.add("search-sensitive storage");
+        if (baseDefenseAttentionCount() > 0) drivers.add("visible defenses");
+        if (baseLabOrChemCount() > 0) drivers.add("lab or chemical work");
+        if (suspicion >= 12) drivers.add("existing Arbites record");
+        if (drivers.isEmpty()) return "no obvious legal driver beyond normal property traces.";
+        return String.join(", ", drivers) + ".";
+    }
+
+    String baseExpansionHeatReliefLine(int security) {
+        ArrayList<String> relief = new ArrayList<>();
+        if (businessPermitCount() > 0) relief.add("permits cover " + businessPermitCount() + " business asset(s)");
+        if (security > 0) relief.add("security rating " + security + " deters raids");
+        if (illegalBusinessCount() > 0) relief.add("buy permits or close illegal counters");
+        if (restrictedStoredGoodsCount() > 0) relief.add("move restricted goods into safer handoff or contract paths");
+        if (relief.isEmpty()) relief.add("keep expansion quiet, permitted, and lightly defended until income supports guards");
+        return String.join("; ", relief) + ".";
+    }
+
+    String baseObjectExpansionHeatTag(BaseObject obj) {
+        if (obj == null || obj.integrity <= 0) return null;
+        String low = obj.name == null ? "" : obj.name.toLowerCase(Locale.ROOT);
+        if (obj.armed || low.contains("turret") || low.contains("sensor") || low.contains("security") || low.contains("barricade") || low.contains("barracks")) return "defense/security fixture";
+        if (obj.isBusinessAsset()) return obj.permittedBusiness ? "licensed business" : "unlicensed business";
+        if (low.contains("clinic") || low.contains("medicae")) return "clinic service";
+        if (low.contains("lab") || low.contains("chem") || low.contains("distillation") || low.contains("injector") || low.contains("fume")) return "lab or chemical machine";
+        if (low.contains("workbench") || low.contains("forge") || low.contains("machine") || low.contains("condenser")) return "production machine";
+        if (obj.attention >= 3) return "valuable visible fixture";
+        return null;
+    }
+
+    int restrictedStoredGoodsCount() {
+        int count = 0;
+        for (String item : baseStorage) {
+            String risk = baseStoredItemSafetyLine(item).toLowerCase(Locale.ROOT);
+            if (risk.contains("restricted") || risk.contains("suspicious") || risk.contains("weapon") || risk.contains("quest/evidence")) count++;
+        }
+        return count;
+    }
+
+    int baseDefenseAttentionCount() {
+        int count = 0;
+        for (BaseObject obj : baseObjects) if ("defense/security fixture".equals(baseObjectExpansionHeatTag(obj))) count++;
+        return count;
+    }
+
+    int baseLabOrChemCount() {
+        int count = 0;
+        for (BaseObject obj : baseObjects) if ("lab or chemical machine".equals(baseObjectExpansionHeatTag(obj))) count++;
+        return count;
+    }
+
+    ArrayList<String> baseStorageGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        int cap = baseStorageCapacity();
+        int used = baseStorage.size();
+        lines.add("  Storage access: " + baseStorageAccessLine());
+        lines.add("  Capacity read: " + used + "/" + cap + " stored item(s); " + baseStorageCapacityPressureLine(used, cap));
+        lines.add("  Transfer safety: STASH moves the last carried item into base storage; TAKE recovers the newest stored item if carry capacity allows.");
+        lines.add("  STASH preview: " + baseStashTransferPreviewLine());
+        lines.add("  TAKE preview: " + baseTakeTransferPreviewLine());
+        lines.add("  Quest protection: " + baseQuestProtectionLine());
+        lines.add("  Risk read: " + baseStorageRiskSummaryLine());
+        return lines;
+    }
+
+    int baseStorageCapacity() {
+        int cap = 6;
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || obj.integrity <= 0) continue;
+            if (obj.symbol == 's') cap += Math.max(0, obj.capacity);
+            else if (obj.symbol == 'G' || obj.symbol == 'q' || obj.symbol == 'k') cap += Math.max(0, obj.capacity / 2);
+            else if (obj.isBusinessAsset()) cap += Math.max(0, obj.capacity / 3);
+        }
+        return Math.max(cap, baseStorage.size());
+    }
+
+    String baseStorageAccessLine() {
+        if (!baseClaimed) return "unavailable until a room is claimed.";
+        if (world == null) return "available from the claimed base record once the world view is active.";
+        if (!isInClaimedRoom(playerX, playerY)) return "stand inside the claimed room to stash or take goods.";
+        return "ready here in the claimed room.";
+    }
+
+    String baseStorageCapacityPressureLine(int used, int cap) {
+        if (cap <= 0) return "no storage capacity is available yet.";
+        if (used >= cap) return "storage is full until you build crates/logistics or remove goods.";
+        if (used >= Math.max(1, cap * 3 / 4)) return "storage is getting crowded.";
+        return "storage has usable room.";
+    }
+
+    String baseQuestProtectionLine() {
+        int protectedCount = 0;
+        for (String item : baseStorage) if (isQuestOrEvidenceItem(item)) protectedCount++;
+        if (protectedCount <= 0) return "no obvious quest evidence or delivery item is stored here.";
+        return protectedCount + " stored item(s) look like quest evidence or delivery goods; check contracts before selling, dropping, or routing them.";
+    }
+
+    String baseStorageRiskSummaryLine() {
+        int restricted = 0, weapons = 0, commerce = 0, fragile = 0;
+        for (String item : baseStorage) {
+            String risk = baseStoredItemSafetyLine(item).toLowerCase(Locale.ROOT);
+            if (risk.contains("restricted") || risk.contains("suspicious") || risk.contains("illicit")) restricted++;
+            if (risk.contains("weapon")) weapons++;
+            if (risk.contains("commerce")) commerce++;
+            if (risk.contains("medical") || risk.contains("survival")) fragile++;
+        }
+        ArrayList<String> bits = new ArrayList<>();
+        if (restricted > 0) bits.add(restricted + " restricted/suspicious");
+        if (weapons > 0) bits.add(weapons + " weapon-linked");
+        if (commerce > 0) bits.add(commerce + " commerce-useful");
+        if (fragile > 0) bits.add(fragile + " survival/medical");
+        return bits.isEmpty() ? "no obvious high-risk stored goods." : String.join(", ", bits) + " stored stack(s).";
+    }
+
+    String baseStoredItemSafetyLine(String item) {
+        if (item == null || item.isBlank()) return "unknown stored item";
+        String low = item.toLowerCase(Locale.ROOT);
+        if (isQuestOrEvidenceItem(item)) return "quest/evidence item; protect it until the right turn-in";
+        if (ItemCatalog.isFirearmLike(item) || low.contains("knife") || low.contains("pistol") || low.contains("shotgun") || low.contains("grenade")) return "weapon-linked; raids, law, or rivals may care";
+        if (low.contains("data spike") || low.contains("lockpick") || low.contains("keycard") || low.contains("stolen") || low.contains("profane") || low.contains("contraband")) return "restricted or suspicious if searched";
+        if (low.contains("permit") || low.contains("stock certificate") || low.contains("gold") || low.contains("trade chit")) return "commerce-useful; consider banking, permits, or contracts";
+        if (low.contains("med") || low.contains("bandage") || low.contains("field dressing") || low.contains("antiseptic")) return "medical reserve; keep near clinics or dangerous work";
+        if (low.contains("ration") || low.contains("food") || low.contains("water")) return "survival reserve; keep some carried before travel";
+        return "ordinary stored goods";
+    }
+
+    boolean isQuestOrEvidenceItem(String item) {
+        if (item == null) return false;
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("ident chip") || low.contains("sealed object") || low.contains("lockbox") || low.contains("leader journal") || low.contains("evidence")) return true;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && c.requiredTurnInItem != null && ItemQuality.namesMatch(item, c.requiredTurnInItem)) return true;
+        return false;
     }
 
     String baseDisplayName() {
@@ -18371,6 +19257,62 @@ String traderShelfContainerId(TraderSession trader) {
         return n;
     }
 
+    ArrayList<String> playerMedicalGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Medical read: " + playerMedicalStatusLine());
+        lines.add("Treatment priority: " + playerTreatmentPriorityLine());
+        lines.add("Drug risk: " + stimulantRiskLine());
+        lines.add("Available aid: carried " + carriedMedicalAidCount() + ", base medical reserve " + medicalStockCount() + ", clinic support " + clinicSupportLine() + ".");
+        return lines;
+    }
+
+    String playerMedicalStatusLine() {
+        ArrayList<String> bits = new ArrayList<>();
+        if (bleeding > 0) bits.add(bleeding >= 3 ? "serious bleeding" : "minor bleeding");
+        if (infectionRisk > 0) bits.add(infectionRisk >= 5 ? "high infection risk" : "infection risk");
+        if (pain > 0) bits.add(pain >= 12 ? "severe pain" : (pain >= 6 ? "pain affecting focus" : "manageable pain"));
+        if (fatigue >= 20) bits.add("near collapse from fatigue");
+        else if (fatigue >= 10) bits.add("tired");
+        if (sleepNeed >= MAX_SLEEP_NEED) bits.add("dangerous sleep debt");
+        else if (sleepNeed >= MAX_SLEEP_NEED / 2) bits.add("mounting sleep debt");
+        if (wounds >= 12) bits.add("heavy wounds");
+        else if (wounds > 0) bits.add("wounded");
+        if (bits.isEmpty()) return "stable enough for ordinary action.";
+        return String.join(", ", bits) + ".";
+    }
+
+    String playerTreatmentPriorityLine() {
+        if (bleeding > 0) return "stop bleeding first with bandages, field dressings, sleep recovery, or clinic support.";
+        if (infectionRisk >= 5) return "find antiseptic, medicae care, or a clinic before infection pressure worsens.";
+        if (crippledLegCount() > 0) return "avoid long movement and seek recovery; damaged legs raise travel risk.";
+        if (crippledArmCount() > 0) return "avoid precision work and fighting until arms or hands recover.";
+        if (pain >= 12) return "rest or medical help before combat; pain can make good choices expensive.";
+        if (fatigue >= 20 || sleepNeed >= MAX_SLEEP_NEED / 2) return "sleep in a cot if food and water allow it.";
+        if (wounds > 0) return "rest, use medical supplies, or visit a clinic before the next fight.";
+        return "keep food, water, and medical supplies ready before taking risks.";
+    }
+
+    String stimulantRiskLine() {
+        if (stimulantStrain <= 0) return "no current stimulant strain is apparent.";
+        if (stimulantStrain >= 8) return "heavy stimulant strain; more wakefulness drugs may trade sleep debt for dangerous crash pressure.";
+        if (stimulantStrain >= 4) return "moderate stimulant strain; use more only if escape matters more than recovery.";
+        return "light stimulant strain; still plan real sleep soon.";
+    }
+
+    int carriedMedicalAidCount() {
+        int n = 0;
+        for (String item : inventory) {
+            String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+            if (low.contains("bandage") || low.contains("medkit") || low.contains("antiseptic") || low.contains("field dressing") || low.contains("injector") || low.contains("medicae")) n++;
+        }
+        return n;
+    }
+
+    String clinicSupportLine() {
+        for (BaseObject obj : baseObjects) if (obj != null && obj.integrity > 0 && (obj.symbol == 'M' || obj.name.toLowerCase(Locale.ROOT).contains("medicae") || obj.name.toLowerCase(Locale.ROOT).contains("clinic"))) return "available at base";
+        return "not built here";
+    }
+
     ArrayList<String> ownedBusinessLines() {
         ArrayList<String> lines = new ArrayList<>();
         int businessCount = 0;
@@ -18388,6 +19330,7 @@ String traderShelfContainerId(TraderSession trader) {
 
     List<String> panelLines() {
         ArrayList<String> lines = new ArrayList<>();
+        lines.addAll(contextInputPromptLines(panelMode));
         switch(panelMode) {
             case LOOK:
                 char here = selectedTile();
@@ -18416,6 +19359,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Carry load: " + carryStatusText() + "   Supplies: " + supplies + "   Food: " + food + "/15   Water: " + water + "/15   Machine parts: " + machineParts);
                 lines.add("Imperial Script: carried " + countMoney() + " | banked " + totalBankedCash() + " | base stash " + countBaseStoredScript() + " — tracked as weightless cash, not a carried item stack.");
                 lines.add("Strength increases carry capacity; Endurance adds a smaller support bonus. Overload adds +1 time to movement per excess bulk.");
+                lines.add("Transfer preview: " + inventoryTransferWorkflowPreviewLine(selectedInventoryItemName()));
                 LinkedHashMap<String,Integer> stacks = stackInventory(inventory);
                 if (stacks.isEmpty()) lines.add("  - nothing, which is technically light.");
                 ArrayList<String> stackLines = new ArrayList<>();
@@ -18443,6 +19387,8 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Body endurance / agility map and equipment status:");
                 for (BodyPart bp : active.body.values()) lines.add("  " + bp.displayLine());
                 lines.add("");
+                lines.addAll(playerMedicalGuidanceLines());
+                lines.add("");
                 lines.add("Death rule: any vital body endurance reduced to zero is fatal; non-vital skills such as Firearms, Melee, Charm, Faith, Vision, Hearing, and Mechanics can be impaired without instant death.");
                 lines.add("Attribute links: Head governs Intellect/Nerve/Vision/Hearing/Firearms; Hands+Head govern Mechanics; Arms+Hands govern Melee; Torso governs Faith; limbs/torso govern Strength.");
                 lines.add("Character subpanels: FACTIONS and DISGUISE are accessed from this dossier.");
@@ -18453,6 +19399,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Standing at " + playerX + "," + playerY + ". " + ownershipText(playerX, playerY));
                 lines.add("Supplies: " + supplies + "   Food: " + food + "/15   Water: " + water + "/15   Sleep need: " + sleepNeed + "/" + MAX_SLEEP_NEED + "   Stim strain: " + stimulantStrain + "   Machine parts: " + machineParts + "   Fatigue: " + fatigue + "   Wounds: " + wounds);
                 lines.add("Body states: bleeding " + bleeding + "   infection risk " + infectionRisk + "   pain " + pain + "   crippled legs " + crippledLegCount() + "   crippled arms/hands " + crippledArmCount());
+                lines.addAll(playerMedicalGuidanceLines());
                 lines.add("Base storage: " + baseStorage.size() + " item(s). Built objects: " + baseObjects.size());
                 for (BaseObject obj : baseObjects) lines.add("  " + obj.symbol + " " + obj.name + " at " + obj.x + "," + obj.y + " quality=" + obj.qualityName + " faction=" + factionLabel(obj.faction) + " integrity=" + obj.integrity + " charges=" + obj.charges + " attention+" + obj.attention + (obj.armed ? " ARMED" : ""));
                 lines.add("Build menu is now a right-side construction list. Pick an object, move the room-bound build cursor, then press E to confirm placement.");

@@ -43,7 +43,7 @@ final class PlayerFacingPanelBody {
     private static String cleanPanelPart(String text, boolean title) {
         if (text == null || text.isBlank()) return "";
 
-        String cleaned = text
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
                 .replace(':', ' ')
                 .replace('\r', ' ')
                 .replace('\t', ' ')
