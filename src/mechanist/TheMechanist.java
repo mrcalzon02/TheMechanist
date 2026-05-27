@@ -1410,7 +1410,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             } else if (optionsTab == 4) {
                 buttons.add(new ButtonBox("DOWNSCALE: " + options.downscaleLabel() + " ▼", x, y, bw, bhOpt, "Choose the internal render-buffer scale. Lower values reduce Java2D render cost.", () -> toggleGraphicsDropdown(3)));
                 buttons.add(new ButtonBox("TARGET FPS: " + options.targetFpsLabel() + " ▼", x+gap, y, bw, bhOpt, "Set best-effort Swing frame pacing. Server simulation is not tied to FPS.", () -> toggleGraphicsDropdown(4)));
-                buttons.add(new ButtonBox("FRAME LIMIT " + options.frameLimitLabel(), x+gap, y+rowStep*5, bw, bhOpt, "Toggle strict target-FPS pacing versus uncapped diagnostic rendering.", this::toggleFrameLimiter));
+                buttons.add(new ButtonBox("FRAME LIMIT " + options.frameLimitLabel(), x+gap, y+rowStep*5, bw, bhOpt, "Toggle strict target-FPS pacing versus uncapped rendering.", this::toggleFrameLimiter));
                 buttons.add(new ButtonBox("ART QUALITY: " + options.artQualityLabel(), x, y+rowStep, bw, bhOpt, "Cycle deterministic source-art cache: Low 32, Standard 64, Intermediate 128, or High Native. Reloads tile and portrait cells.", this::cycleArtQuality));
                 buttons.add(new ButtonBox("TILE SIZE: " + options.mapTileSizeLabel(), x+gap, y+rowStep, bw, bhOpt, "Cycle on-screen tile footprint. Compact helps old hardware and small screens; high is for close inspection.", this::cycleMapTileSize));
                 buttons.add(new ButtonBox("TILE ART " + onOff(options.tileIconRendering), x+gap*2, y+rowStep, bw, bhOpt, "Toggle tile-icon map rendering. ASCII fallback remains preserved.", () -> { options.tileIconRendering=!options.tileIconRendering; options.save(); logEvent("Tile icon rendering " + (options.tileIconRendering?"enabled":"disabled") + "."); repaint(); }));
@@ -1422,7 +1422,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 buttons.add(new ButtonBox("BRIGHT +", x+gap*2, y+rowStep*3, bw, bhOpt, "Brighten the currently selected color key.", () -> adjustSelectedColor(12)));
                 buttons.add(new ButtonBox("BRIGHT -", x+gap*2, y+rowStep*4, bw, bhOpt, "Darken the currently selected color key.", () -> adjustSelectedColor(-12)));
                 buttons.add(new ButtonBox("PAYLOAD: " + options.generatedAssetPayloadRootShortLabel(), x, y+rowStep*4, bw, bhOpt, "Select an external generated-art payload folder. Supports Phase B2/B3 exports or canonical assets/graphics/generated roots.", this::chooseGeneratedAssetPayloadRoot));
-                buttons.add(new ButtonBox("F3 DIAG " + onOff(options.diagnosticsOverlay), x+gap, y+rowStep*4, bw, bhOpt, "Toggle the F3 performance diagnostics overlay: FPS, paint time, JVM memory, GC, render state, and lighting status.", this::togglePerformanceDiagnostics));
+                buttons.add(new ButtonBox("F3 PERF " + onOff(options.diagnosticsOverlay), x+gap, y+rowStep*4, bw, bhOpt, "Toggle the F3 performance overlay: FPS, paint time, JVM memory, GC, render state, and lighting status.", this::togglePerformanceDiagnostics));
                 buttons.add(new ButtonBox("CLEAR PAYLOAD", x+gap*2, y+rowStep*5, bw, bhOpt, "Clear the external generated-art payload root and fall back to bundled low_32 art.", this::clearGeneratedAssetPayloadRoot));
                 addGraphicsDropdownButtons(x, y, bw, gap);
             } else if (optionsTab == 5) {
@@ -1695,7 +1695,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 buttons.add(new ButtonBox("SENSOR", bx, by + step*(n++), bw, bh, BuildRecipe.securitySensorMast().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.securitySensorMast())));
                 buttons.add(new ButtonBox("L TURRET", bx, by + step*(n++), bw, bh, BuildRecipe.lightStubTurret().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.lightStubTurret())));
                 buttons.add(new ButtonBox("DEF INFO", bx, by + step*(n++), bw, bh, "Open the Infopedia defense index and inspect the semantic/stat profiles for buildable defenses.", this::openDefenseInfopedia));
-                buttons.add(new ButtonBox("VALIDATE", bx, by + step*(n++), bw, bh, "Open construction validation diagnostics for the selected placement; runs on demand only.", this::openConstructionValidationInfopedia));
+                buttons.add(new ButtonBox("VALIDATE", bx, by + step*(n++), bw, bh, "Open the construction placement report for the selected tile; runs on demand only.", this::openConstructionValidationInfopedia));
             } else if (panelMode == PanelMode.BASES) {
                 int bx = w - 360;
                 int by = Math.max(170, h/2 - 140);
@@ -6808,7 +6808,7 @@ boolean arbitesAuthorityText(String text) {
             DebugLog.audit("ATLAS_TRANSITION", "reason="+reason+" old="+(oldWorld!=null?oldWorld.layerText():"none")+" new="+world.layerText()+" zone="+atlas.zoneX+","+atlas.zoneY+" firstType="+firstType+" event="+lastTransitionEvent+" player="+playerX+","+playerY+" state="+stateSummary());
         } catch (Throwable t) {
             DebugLog.error("ATLAS_TRANSITION_FAILED", "Failed to transition: " + reason, t);
-            logEvent("ERROR: transition failed. The diagnostic log has more detail.");
+            logEvent("ERROR: transition failed. Diagnostic details were recorded.");
             setScreen(Screen.GAME);
         }
     }
@@ -9269,7 +9269,7 @@ boolean arbitesAuthorityText(String text) {
         } catch (Throwable t) {
             loadingForTransition = false;
             DebugLog.error("LOADING_TRANSITION_FAILED", "Could not finish map transition.", t);
-            logEvent("ERROR: transition loading failed. The diagnostic log has more detail.");
+            logEvent("ERROR: transition loading failed. Diagnostic details were recorded.");
             setScreen(Screen.GAME);
         }
     }
@@ -9975,7 +9975,7 @@ boolean arbitesAuthorityText(String text) {
             showTimedAlert("USER PROFILE", body + " " + userProfile.provider + " // " + userProfile.shortId(), 5200);
         } else {
             FallbackProfileManagementAuthority.openProfileManager(this, userProfile, options, jvmRuntimeProfile, renderScaling, this::repaint);
-            logEvent("Fallback local profile manager opened: " + FallbackProfileManagementAuthority.auditSummary(userProfile));
+            logEvent("Fallback local profile manager opened.");
         }
         repaint();
     }
@@ -12078,7 +12078,7 @@ boolean arbitesAuthorityText(String text) {
             } else if (entry.equals("Faction Variant Production Rules")) {
                 lines.add("Faction manufacturing identity reference");
                 lines.add("Scope: explains why two goods with the same base item may differ by maker, doctrine, quality, social meaning, lawful status, and production inputs.");
-                lines.add("0.8.95 formula: base draft recipe + faction manufacturing identity + quality authority + knowledge category + machine tier = generated faction recipe variant.");
+                lines.add("Formula: base draft recipe + faction manufacturing identity + quality authority + knowledge category + machine tier = generated faction recipe variant.");
                 lines.add("Generated faction variants remain draft/provenance-facing for now; they are not wholesale-injected into the player workbench list.");
                 lines.add("Civilian goods favor availability; military goods favor rugged durability; noble goods favor comfort/status; Mechanicus goods favor throughput/efficiency with higher power and maintenance demands; scavver goods favor repairability with serious defect risk.");
                 lines.add("Recipe knowledge is quality-bound. Machines cannot exceed their own quality ceiling even when the actor knows a better pattern.");
@@ -12092,7 +12092,7 @@ boolean arbitesAuthorityText(String text) {
                 lines.add("Example: a Junk Micro Assembler can only make Junk outputs even if the player owns better knowledge. The pamphlet may be holy; the machine remains a coughing brick.");
                 lines.add("Example generated recipe previews:");
                 lines.addAll(ProductionRecipe.sampleLines());
-                lines.add("0.8.95 status: faction variants now use these quality/knowledge/machine authorities; input-material, facility, and worker ceilings remain explicit hooks that default open until those ledgers carry quality tiers.");
+                lines.add("Current status: faction variants use these quality, knowledge, and machine authorities; input-material, facility, and worker ceilings remain explicit hooks that stay permissive until those ledgers carry quality tiers.");
             } else {
                 ItemDef def = ItemCatalog.get(entry);
                 if (def == null) {
@@ -12359,7 +12359,7 @@ boolean arbitesAuthorityText(String text) {
         } else if (entry.equals("Economic Topology Preview Audit")) {
             lines.addAll(EconomicTopologyPreviewConsumerAuthority.infopediaLines());
             lines.add("");
-            lines.add(EconomicTopologyPreviewConsumerAuthority.auditSummary());
+            lines.add("Preview role: construction, route intent, and haul-readiness hints share one advisory language.");
             lines.addAll(EconomicTopologyPreviewConsumerAuthority.statusLines(this));
         } else if (entry.equals("Economic Topology Reporting Overlay Audit")) {
             lines.addAll(EconomicTopologyReportingOverlayAuthority.auditLines(this));
@@ -12373,26 +12373,36 @@ boolean arbitesAuthorityText(String text) {
             lines.add(launcherRuntime.statusLine());
             lines.addAll(launcherRuntime.infopediaLines());
         } else if (entry.equals("Launcher Shell State Audit")) {
-            lines.add(launcherShell.statusLine());
-            lines.add(LauncherShellStateAuthority.auditSummary());
+            lines.addAll(launcherShell.displayLines(launcherRuntime, userProfile));
+            lines.add("Menu role: start, load, options, editor/mods, multiplayer, infopedia, and profile routes are coordinated through the launcher shell.");
             lines.addAll(launcherShell.infopediaLines(launcherRuntime, userProfile));
         } else if (entry.equals("User Profile Audit")) {
-            lines.add(UserProfileAuthority.auditSummary(userProfile));
-            lines.addAll(userProfile.lines());
+            lines.add("Profile role: " + (userProfile == null ? "local operator profile pending." : userProfile.provider + " profile for " + userProfile.displayName + "."));
+            if (userProfile == null) {
+                lines.add("Profile details: local operator profile is not available yet.");
+            } else {
+                lines.add("Profile provider: " + userProfile.provider + ".");
+                lines.add("Display name: " + userProfile.displayName + ".");
+                lines.add("Profile link: " + (userProfile.externalUri.isEmpty() ? "internal profile only." : "available through the platform wrapper."));
+            }
         } else if (entry.equals("Render Scaling / CRT Audit")) {
-            lines.add(renderScaling.auditSummary());
+            lines.add("Active rendering: " + renderScaling.profileLabel() + ", downscale " + renderScaling.downscaleLabel() + ", internal buffer " + renderScaling.internalWidth() + "x" + renderScaling.internalHeight() + ".");
             lines.addAll(renderScaling.infopediaLines());
         } else if (entry.equals("Unified Input Registry Audit")) {
-            lines.add(InputRegistry.auditSummary());
-            lines.add(KeyboardInputBridge.auditSummary());
-            lines.add(GenericControllerSchema.auditSummary());
-            lines.add(GamepadInputEngine.auditSummary());
-            lines.add("runtimeGamepadStatus=" + (gamepadInputEngine == null ? "not-started" : gamepadInputEngine.status()));
-            lines.add("activeAbstractInput=" + inputRegistry.compactStatus());
+            lines.add("Input model: keyboard and gamepad can drive the same action list without replacing each other.");
+            lines.add("Keyboard: movement, confirmation, menus, look, map, zoom, attack, and reload feed the shared action list.");
+            lines.add("Controller: generic face buttons, d-pad, sticks, bumpers, start, and back are mapped with a small deadzone.");
+            String gamepadStatus = gamepadInputEngine == null ? "not started" : gamepadInputEngine.status();
+            String lowGamepadStatus = gamepadStatus.toLowerCase(Locale.ROOT);
+            if (lowGamepadStatus.contains("jamepad") || lowGamepadStatus.contains("maven") || lowGamepadStatus.contains("jitpack")) {
+                gamepadStatus = "No hardware controller poller is active; keyboard input remains active.";
+            }
+            lines.add("Gamepad status: " + gamepadStatus);
+            lines.add("Active input: " + inputRegistry.compactStatus() + ".");
         } else if (entry.equals("Construction Validation Inspection")) {
             lines.addAll(ConstructionValidationInspectionAuthority.buildInspectionLines(this));
         } else if (entry.equals("Progressive Construction Audit")) {
-            lines.add(ProgressiveConstructionAuthority.auditSummary(this));
+            lines.add("Progressive construction: staged sites accept materials and labor over time, show tile progress, and finish into the planned structure.");
             for (BaseObject obj : baseObjects) if (obj != null && obj.underConstruction) lines.add(ProgressiveConstructionAuthority.progressLine(obj));
             lines.add("Visual rule: staged construction fades from pale blue ghost coloration toward final built status color as per-tile progress approaches completion.");
             lines.add("Work rule: interacting with an under-construction tile contributes available components and tool-adjusted labor; walls, doors, and terrain clearance resolve through tool-modified deconstruction time.");
@@ -19244,7 +19254,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             loadingWatchdogRepeats++;
             DebugLog.warn("LOADING_FINALIZER_WATCHDOG", "Background finalizer still running kind=" + loadingFinalizationKind + " elapsedMs=" + (now - loadingFinalizationStartMillis) + " step=" + loadingStep + " progress=" + loadingProgress + " repeat=" + loadingWatchdogRepeats);
             loadingStatus = "Still finalizing " + loadingFinalizationKind + "...";
-            loadingDetail = "The background finalizer is alive. If this repeats for too long, the diagnostic log will show the stuck phase rather than silently freezing.";
+            loadingDetail = "The background finalizer is alive. If this repeats for too long, diagnostic details will show the stuck phase rather than silently freezing.";
             lastLoadingPulseMillis = now;
         } else if (sincePulse > 2200L && sinceStart > 2200L && loadingProgress < 100) {
             loadingWatchdogRepeats++;

@@ -74,4 +74,36 @@ Added `Gate3PresentationAuditSmoke` as a broader cross-stack verification pass e
 
 The audit routes a deliberately implementation-heavy payload through the sanitizer, UI detail formatter, denial formatter, inspection formatter, action formatter, panel formatter, event-log formatter, tooltip formatter, compact row formatter, and menu-option formatter before verifying that no runtime identifiers, filesystem paths, target-zone keys, registry handles, UUIDs, or runtime-class references survive into ordinary player-facing output.
 
+<<<<<<< Updated upstream
 Verification: consolidated smoke-suite entry point updated successfully after prior connector write rejection; cross-stack presentation audit smoke added and logically validated against active Gate 3 containment targets.
+=======
+Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed.
+
+## Gate 3 - Panel Text Containment Slice
+
+Continued Gate 3 by cleaning ordinary player panels that exposed implementation wording. Inventory now says carried stacks and loose items instead of raw items, workshop logistics buttons and status lines use plan/source/route wording instead of source-token phrasing, the log panel is labeled as an event log, and save/load shows a readable world location summary instead of the atlas debug summary.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; searched the touched UI surface for the retired raw/debug/token/atlas phrases.
+
+## Gate 3 - Inspection and Diagnostics Copy Slice
+
+Continued the UI containment pass across high-traffic inspection and menu copy. The command bar, save diagnostic button, transition failure messages, trade sale fallback, conversation/trade panel notes, loading detail, and generated-runtime options line now avoid ordinary-player references to debug logs or raw runtime plumbing.
+
+Look/auspex tile inspection now hides NPC internal IDs and map-object save summaries. Fixture inspection uses readable labels and short fixture-status text for vending machines, shrines, shops, governors, emergency machines, contract objects, remains, explosives, newspapers, broadcast devices, bank fixtures, light fixtures, and faction journals.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; searched `TheMechanist.java` for the retired player-facing phrases.
+
+## Gate 3 - Error and Reference Text Containment Slice
+
+Continued the player-facing copy cleanup by removing explicit log-file paths from autosave, loading, generation, and render-failure messages. Those failures now tell the player that diagnostic details were recorded while keeping the real detailed logs in the diagnostic/audit path.
+
+Also tightened reference-panel wording that exposed implementation terms such as registry gaps and shared input registries. Crafting, input, item-transfer, and generated-job messages now use player-readable catalog, recipe-list, shared-input, and item-record language.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; searched `TheMechanist.java` for the retired player-facing log-file, registry, raw, and debug phrases.
+
+## Gate 3 - Options and Audit Copy Containment Slice
+
+Continued Gate 3 by tightening remaining options, loading, profile, and reference/audit panel text that still exposed milestone numbers, audit-summary strings, or low-level input/render labels to ordinary UI readers. The performance overlay button, frame limiter tooltip, construction validation tooltip, transition failure messages, fallback profile manager event, faction production reference, input reference, render reference, launcher-shell reference, economic-topology preview reference, and progressive-construction reference now use player-readable status language while preserving detailed audit output in the diagnostic path.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; launcher package sources and `PackageInstallServiceSmoke` passed; searched `TheMechanist.java` for the retired milestone-number, diagnostic-log, F3 diagnostics, runtime-gamepad, abstract-input, and fallback-profile audit-summary phrases.
+>>>>>>> Stashed changes
