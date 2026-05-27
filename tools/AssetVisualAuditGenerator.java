@@ -6,42 +6,32 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
- * Builds a local HTML visual audit sheet for high-native renamed asset packs.
+ * Builds a local HTML visual audit sheet for every PNG under assets/.
  *
- * Run from the repository root after regenerating docs/ASSET_MANIFEST.md:
+ * Run from the repository root:
  *   javac tools/AssetVisualAuditGenerator.java
  *   java -cp tools AssetVisualAuditGenerator
+ *
+ * Optional arguments:
+ *   java -cp tools AssetVisualAuditGenerator [assetRoot] [outputHtml]
  */
 public final class AssetVisualAuditGenerator {
-    private static final Path MANIFEST = Paths.get("docs", "ASSET_MANIFEST.md");
+    private static final Path ASSET_ROOT = Paths.get("assets");
     private static final Path OUTPUT = Paths.get("docs", "ASSET_VISUAL_SHEET.html");
-    private static final Pattern BACKTICK_PATH = Pattern.compile("`([^`]+)`");
-
-    private static final List<String> CLEAN_GROUPS = List.of(
-            "Enforcer_Assets",
-            "Automata_Drones",
-            "Subversive_Cult",
-            "subversive-cult-walls",
-            "subversive_cult_floors",
-            "Forge_Engineers"
-    );
 
     private AssetVisualAuditGenerator() { }
 
     public static void main(String[] args) throws IOException {
-        Path manifest = args.length >= 1 ? Paths.get(args[0]) : MANIFEST;
+        Path assetRoot = args.length >= 1 ? Paths.get(args[0]) : ASSET_ROOT;
         Path output = args.length >= 2 ? Paths.get(args[1]) : OUTPUT;
 
-        if (!Files.isRegularFile(manifest)) throw new IOException("Missing manifest: " + manifest.toAbsolutePath());
+        if (!Files.isDirectory(assetRoot)) throw new IOException("Missing asset root: " + assetRoot.toAbsolutePath());
 
-        List<String> imagePaths = collectImagePaths(manifest);
+        List<String> imagePaths = collectImagePaths(assetRoot);
         String html = renderHtml(imagePaths);
 
         Path parent = output.toAbsolutePath().getParent();
@@ -52,27 +42,17 @@ public final class AssetVisualAuditGenerator {
         System.out.println("Images included: " + imagePaths.size());
     }
 
-    private static List<String> collectImagePaths(Path manifest) throws IOException {
-        Set<String> paths = new LinkedHashSet<>();
-        for (String line : Files.readAllLines(manifest, StandardCharsets.UTF_8)) {
-            Matcher matcher = BACKTICK_PATH.matcher(line);
-            while (matcher.find()) {
-                String path = matcher.group(1).replace('\\', '/');
-                if (isIncludedImage(path)) paths.add(path);
-            }
+    private static List<String> collectImagePaths(Path assetRoot) throws IOException {
+        Path normalizedRoot = assetRoot.toAbsolutePath().normalize();
+        List<String> paths = new ArrayList<>();
+        try (Stream<Path> stream = Files.walk(normalizedRoot)) {
+            stream.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".png"))
+                    .map(path -> normalizedRoot.relativize(path.toAbsolutePath().normalize()).toString().replace('\\', '/'))
+                    .sorted(Comparator.naturalOrder())
+                    .forEach(paths::add);
         }
-        List<String> sorted = new ArrayList<>(paths);
-        sorted.sort(Comparator.naturalOrder());
-        return sorted;
-    }
-
-    private static boolean isIncludedImage(String path) {
-        if (!path.endsWith(".png")) return false;
-        if (!path.startsWith("graphics/generated/high_native/")) return false;
-        for (String group : CLEAN_GROUPS) {
-            if (path.contains("/" + group + "/")) return true;
-        }
-        return false;
+        return paths;
     }
 
     private static String renderHtml(List<String> imagePaths) {
@@ -118,14 +98,12 @@ public final class AssetVisualAuditGenerator {
         out.append("</div>\n");
         out.append("<textarea id=\"exportBox\" placeholder=\"Selected asset paths will appear here after export.\"></textarea>\n");
         out.append("</div>\n");
-
         out.append("<script>\n");
         out.append("function toggleCard(card){const box=card.querySelector('input[type=checkbox]');box.checked=!box.checked;updateCard(card,box.checked);}\n");
         out.append("function toggleCheckbox(box){updateCard(box.closest('.card'),box.checked);}\n");
         out.append("function updateCard(card,selected){if(selected){card.classList.add('selected');}else{card.classList.remove('selected');}}\n");
         out.append("function exportSelected(){const selected=[...document.querySelectorAll('.card.selected')].map(c=>c.dataset.path);const output=selected.join('\\n');document.getElementById('exportBox').value=output;if(output.length>0&&navigator.clipboard){navigator.clipboard.writeText(output).catch(()=>{});}}\n");
         out.append("</script>\n");
-
         out.append("</body>\n</html>\n");
         return out.toString();
     }
