@@ -44,6 +44,16 @@ Manifest compatibility is part of package identity. Current launcher verificatio
 
 Required support libraries such as LWJGL, platform native LWJGL jars, controller bridges such as Jamepad or its successor, Netty when used by a launched package, and future support libraries must be staged into `packages/support/lib/` by the packaging/update/acquisition stage. Game launchers and the client runtime must not download support libraries opportunistically during game startup.
 
+## Local package seed builder
+
+When Maven or private dependency authentication is unavailable, use the local Gate 4 seed builder to verify the manifest package chain from source:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\packaging\stage_local_package_seed.ps1 -Version gate4-local
+```
+
+The builder compiles client/server and launcher sources with `javac --release 17`, creates executable client, server, and launcher jars, stages them under `build/local-package-seed/`, writes the platform runtime manifest, and scans the staged jars for Java 17 classfile compatibility. Add `-IncludeAssets` when the local check needs a copied `packages/client/assets` tree.
+
 ## Gate 2 open authentication dependency
 
 Gate 2 remains unfinished until publish-safe artifact authentication is defined and verified. The central project repository and any private Maven/GitHub Packages artifacts require explicit credentials outside source control, such as a local Maven `settings.xml` server entry or environment-backed token wiring. Do not hard-code credentials in this tree.

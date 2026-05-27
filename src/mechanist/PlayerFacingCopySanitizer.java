@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 final class PlayerFacingCopySanitizer {
     private static final Pattern RAW_ZONE_KEY = Pattern.compile("\\b-?\\d+,-?\\d+,-?\\d+,-?\\d+,-?\\d+,(?:true|false)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern UUID_TOKEN = Pattern.compile("\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern REGISTRY_KEY_VALUE = Pattern.compile("\\bregistryKey\\s*[=:]\\s*[^\\s,;)]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern INTERNAL_KEY_VALUE = Pattern.compile("\\b(?:id|uuid|guid|targetZoneKey|registryKey|assetPath|atlasKey|manifestKey|packageName|className)\\s*[=:]\\s*[^\\s,;)]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern WINDOWS_PATH = Pattern.compile("\\b[A-Za-z]:\\\\[^\\r\\n\\t ]+");
     private static final Pattern UNIX_ABSOLUTE_PATH = Pattern.compile("(?<!:)\\B/(?:[^\\s/]+/)+[^\\s]+");
@@ -32,6 +33,7 @@ final class PlayerFacingCopySanitizer {
         String cleaned = Objects.toString(text, "");
         cleaned = GENERATED_IDENT_CHIP.matcher(cleaned).replaceAll("the target's ident chip");
         cleaned = RAW_ZONE_KEY.matcher(cleaned).replaceAll("the marked route");
+        cleaned = REGISTRY_KEY_VALUE.matcher(cleaned).replaceAll("catalog entry");
         cleaned = INTERNAL_KEY_VALUE.matcher(cleaned).replaceAll("internal record");
         cleaned = UUID_TOKEN.matcher(cleaned).replaceAll("internal record");
         cleaned = WINDOWS_PATH.matcher(cleaned).replaceAll("diagnostic details");

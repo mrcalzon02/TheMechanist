@@ -27,6 +27,9 @@ final class GenericControllerSchema {
         registry.setDigital(InputSource.GAMEPAD, InputAction.CHARACTER, pad.y);
         registry.setDigital(InputSource.GAMEPAD, InputAction.PAUSE, pad.start);
         registry.setDigital(InputSource.GAMEPAD, InputAction.LOOK, pad.back);
+        registry.setDigital(InputSource.GAMEPAD, InputAction.EXAMINE, pad.a);
+        registry.setDigital(InputSource.GAMEPAD, InputAction.INTERACT, pad.a);
+        registry.setDigital(InputSource.GAMEPAD, InputAction.PLAN_MOVE, pad.rightY > 0.75f);
         registry.setDigital(InputSource.GAMEPAD, InputAction.ZOOM_OUT, pad.leftBumper);
         registry.setDigital(InputSource.GAMEPAD, InputAction.ZOOM_IN, pad.rightBumper);
         registry.setDigital(InputSource.GAMEPAD, InputAction.ATTACK, pad.rightY < -0.75f);

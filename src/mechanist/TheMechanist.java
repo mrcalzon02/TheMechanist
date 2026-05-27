@@ -133,10 +133,14 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
     boolean inventoryTargetColumnActive = false;
     boolean mouseMovePreviewActive = false;
     boolean mouseMovePreviewValid = false;
+    boolean manualMovementPlanActive = false;
     int mouseMoveTargetX = -1, mouseMoveTargetY = -1;
     final ArrayList<Point> mouseMovePreviewPath = new ArrayList<>();
     String mouseMovePreviewStatus = "No mouse movement preview.";
     long mouseMovePreviewLastMillis = 0L;
+    int lastExamineX = -1, lastExamineY = -1;
+    long lastExamineWorldTurn = -1L;
+    int repeatedExamineCount = 0;
     int selectedCraftRecipeIndex = 0;
     int mapTab = 0; // 0 = sector slice map, 1 = room type/intel ledger
     int characterScroll = 0;
@@ -1315,6 +1319,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             String[][] defs = {
                 {"WAIT", "Pass one turn. Later this advances faction pressure and danger."},
                 {"MOVE MODE", "Cycle walk / run / sprint. R also cycles movement mode; each mode has different range, time, noise, and fatigue cost."},
+                {"PLAN MOVE", "Choose an exact movement destination, preview the route, then confirm. Hotkey: P; arrows/WASD nudge the target."},
                 {"LOOK", "Inspect the selected or current tile."},
                 {"INTERACT", "Use, talk, recruit, trade, or operate the tile here."},
                 {"COMBAT", "Open the red targeting reticle. Melee is adjacent; ranged weapons show range, fire mode, line obstruction, and preliminary hit chance."},
@@ -1406,7 +1411,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 buttons.add(new ButtonBox("PLAYSTATION", x+gap*2, y, bw, bhOpt, "Show PlayStation controller layout.", () -> { controlsTab=2; repaint(); }));
                 buttons.add(new ButtonBox("STEAM", x, y+rowStep, bw, bhOpt, "Show Steam Deck/controller layout.", () -> { controlsTab=3; repaint(); }));
                 buttons.add(new ButtonBox("GENERIC", x+gap, y+rowStep, bw, bhOpt, "Show generic SDL/Jamepad fallback layout.", () -> { controlsTab=4; repaint(); }));
-                buttons.add(new ButtonBox("REBIND SELECT", x+gap*2, y+rowStep, bw, bhOpt, "Open binding capture field for the selected control.", () -> { rebindingTarget="Select a command, then press the new key/controller input. Capture active."; logEvent("Rebind capture opened."); repaint(); }));
+                buttons.add(new ButtonBox("RECOVERY", x+gap*2, y+rowStep, bw, bhOpt, "Show required controls, contextual overlaps, and safe fallback notes.", () -> { rebindingTarget="Recovery reference: keep movement, confirm, cancel/back, pause, and menu access available."; logEvent("Controls recovery reference opened."); repaint(); }));
             } else if (optionsTab == 4) {
                 buttons.add(new ButtonBox("DOWNSCALE: " + options.downscaleLabel() + " ▼", x, y, bw, bhOpt, "Choose the internal render-buffer scale. Lower values reduce Java2D render cost.", () -> toggleGraphicsDropdown(3)));
                 buttons.add(new ButtonBox("TARGET FPS: " + options.targetFpsLabel() + " ▼", x+gap, y, bw, bhOpt, "Set best-effort Swing frame pacing. Server simulation is not tied to FPS.", () -> toggleGraphicsDropdown(4)));
@@ -1486,6 +1491,16 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             }
             if (panelMode == PanelMode.INFOPEDIA) {
                 addInfopediaButtons();
+            } else if (panelMode == PanelMode.LOOK) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14;
+                int by = cmd.y + 64;
+                int bw = Math.max(120, cmd.width - 28);
+                buttons.add(new ButtonBox("EXAMINE", bx, by, bw, 36, "Open a focused reading of the selected visible person, fixture, object, or tile.", this::examineSelectedLookTarget));
+                NpcEntity pet = selectedLookNpc();
+                if (pet != null && pet.isPetActor()) {
+                    buttons.add(new ButtonBox("PET", bx, by + 44, bw, 36, "Offer a gentle pet interaction if the companion animal is close enough and calm.", this::petSelectedLookPet));
+                }
             } else if (panelMode == PanelMode.INTERACT) {
                 UiLayout L = uiLayout();
                 int bx = L.command.x + 14;
@@ -1798,6 +1813,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         switch(label) {
             case "WAIT": waitOneTurn(); break;
             case "MOVE MODE": cycleMovementMode(); break;
+            case "PLAN MOVE": beginManualMovementPlan(); break;
             case "LOOK": interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); break;
             case "INTERACT": beginInteractMode(); break;
             case "COMBAT": beginCombatTargeting(); break;
@@ -1978,6 +1994,226 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
         return "inspectable fixture.";
     }
 
+    void examineSelectedLookTarget() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        if (!world.inBounds(tx, ty) || !isVisible(tx, ty)) {
+            showTimedAlert("EXAMINE", "Too little is visible from here. Move closer, improve the light, or use Look on a visible tile first.", 4200);
+            return;
+        }
+        updateExamineFocus(tx, ty);
+        ArrayList<String> lines = examineLinesAt(tx, ty);
+        String title = lines.isEmpty() ? "EXAMINE" : lines.remove(0);
+        String body = lines.isEmpty() ? "No further readable detail is available." : String.join(" ", lines);
+        showTimedAlert(title, body, 7600);
+        logEvent(title + ": " + body);
+        advanceTurn("examines the selected target.");
+    }
+
+    void updateExamineFocus(int tx, int ty) {
+        boolean sameTarget = tx == lastExamineX && ty == lastExamineY && lastExamineWorldTurn >= 0L
+                && worldTurn - lastExamineWorldTurn <= 6L;
+        repeatedExamineCount = sameTarget ? Math.min(3, repeatedExamineCount + 1) : 1;
+        lastExamineX = tx;
+        lastExamineY = ty;
+        lastExamineWorldTurn = worldTurn;
+    }
+
+    int examineDepth() {
+        return Math.max(1, Math.min(3, repeatedExamineCount));
+    }
+
+    ArrayList<String> examineLinesAt(int tx, int ty) {
+        ArrayList<String> lines = new ArrayList<>();
+        int depth = examineDepth();
+        if (world == null || !world.inBounds(tx, ty)) {
+            lines.add("EXAMINE");
+            lines.add("There is nothing reliable to examine there.");
+            return lines;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            lines.add("EXAMINE: " + npc.name);
+            if (npc.isAnimalActor()) {
+                lines.add(npc.animalLine() + ".");
+            } else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(npc, worldTurn);
+                lines.add((npc.role == null || npc.role.isBlank() ? "Underhive resident" : npc.role)
+                        + " aligned with " + (npc.faction == null ? "no known faction" : npc.faction.label) + ".");
+                lines.add("Age read: " + npc.ageLine() + ".");
+                lines.add(npc.isMinorActor() ? "Rank read: member only; no formal rank before adulthood." : "Rank read: " + npc.factionRankTitle + ".");
+            }
+            IntentReadResult intent = intentReadFor(npc);
+            if (intent != null && intent.available) lines.add(intent.summary);
+            lines.add("Visible equipment: " + visibleNpcEquipmentLine(npc) + ".");
+            if (depth >= 2) lines.add(npcThreatReadLine(npc, intent));
+            if (depth >= 3) lines.add(npcSensesReadLine(npc, intent));
+            return lines;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) {
+            lines.add("EXAMINE: " + obj.name);
+            lines.add(obj.description == null || obj.description.isBlank() ? "A constructed object in this room." : obj.description);
+            lines.add("Condition read: attention " + obj.attention + ", cost " + obj.cost + ", integrity " + obj.integrity + ".");
+            if (depth >= 2) lines.add(baseObjectUseReadLine(obj));
+            if (depth >= 3) lines.add(baseObjectWorkReadLine(obj));
+            return lines;
+        }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) {
+            String label = mos.label == null || mos.label.isBlank() ? "Fixture" : mos.label;
+            lines.add("EXAMINE: " + label);
+            lines.add(fixtureInspectionLine(mos));
+            lines.add("Use Interact for available actions.");
+            if (depth >= 2) lines.add("Closer read: " + fixtureStatusText(mos));
+            if (depth >= 3) lines.add("Territory read: " + ownershipText(tx, ty) + ".");
+            return lines;
+        }
+        EnvironmentalHazardRecord hazard = hazardAt(tx, ty);
+        if (hazard != null) {
+            lines.add("EXAMINE: " + hazard.label);
+            lines.add(hazard.warningText());
+            lines.add("Severity: " + hazard.severityText() + ".");
+            if (depth >= 2) lines.add("Avoidance read: plan around it before committing movement.");
+            if (depth >= 3) lines.add("Context read: light " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+            return lines;
+        }
+        char ch = world.tiles[tx][ty];
+        lines.add("EXAMINE: " + describeTile(ch));
+        lines.add("Ownership: " + ownershipText(tx, ty) + ".");
+        lines.add("Light: " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+        if (isDoorTile(ch)) lines.add("Door read: " + describeDoor(ch) + ". Interact can test access.");
+        if (depth >= 2) lines.add("Floor read: " + roomContextReadLine(tx, ty) + ".");
+        if (depth >= 3) lines.add("Approach read: movement here is " + (world.walkable(tx, ty) ? "possible if the route stays clear" : "blocked until the obstacle changes") + ".");
+        return lines;
+    }
+
+    String npcThreatReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null) return "Threat read: no person is readable there.";
+        if (npc.isAnimalActor()) return "Threat read: posture matters more than equipment.";
+        String gear = visibleNpcEquipmentLine(npc);
+        String mood = isHostileNpc(npc) ? "dangerous now" : ("Hostile".equalsIgnoreCase(npc.state) ? "openly hostile" : "not openly hostile");
+        String intentText = intent == null || !intent.available || intent.intent == null || intent.intent.isBlank() ? "intent unclear" : intent.intent.toLowerCase(Locale.ROOT);
+        return "Threat read: " + mood + "; " + intentText + "; " + gear + ".";
+    }
+
+    String npcSensesReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null || npc.isAnimalActor()) return "Senses read: only broad posture is readable.";
+        int vision = intent != null && intent.available ? intent.visionRange : npcVisionRange(npc);
+        int hearing = intent != null && intent.available ? intent.hearingRange : npcHearingRange(npc);
+        String motion = npc.activeMotionLabel() == null || npc.activeMotionLabel().isBlank() ? "unclear motion" : npc.activeMotionLabel();
+        String line = "Senses read: vision about " + vision + ", hearing about " + hearing + ", motion " + motion.toLowerCase(Locale.ROOT);
+        if (intent != null && intent.available && intent.attackLine) line += "; has a clear attack line";
+        return line + ".";
+    }
+
+    String baseObjectUseReadLine(BaseObject obj) {
+        if (obj == null) return "Use read: no object is readable there.";
+        if (obj.underConstruction) return "Use read: construction is incomplete and needs staged work.";
+        if (obj.isBusinessAsset()) return "Use read: service counter; " + obj.businessReturnLine(this);
+        if (obj.armed) return "Use read: armed fixture; approach and interaction may carry risk.";
+        if (obj.assignedRecipe != null && !obj.assignedRecipe.isBlank()) return "Use read: assigned to " + obj.assignedRecipe + ".";
+        return "Use read: stable built object; Interact or base management may expose its work path.";
+    }
+
+    String baseObjectWorkReadLine(BaseObject obj) {
+        if (obj == null) return "Work read: nothing usable is visible.";
+        String quality = obj.qualityName == null || obj.qualityName.isBlank() ? "common" : obj.qualityName.toLowerCase(Locale.ROOT);
+        String worker = obj.assignedWorker == null || obj.assignedWorker.isBlank() ? "no assigned worker" : "worker " + obj.assignedWorker;
+        String queue = obj.productionQueueRemaining > 0 ? "queued work " + obj.productionQueueRemaining + "/" + Math.max(1, obj.productionQueueTarget) : "no queued work";
+        return "Work read: " + quality + " quality, " + worker + ", " + queue + ".";
+    }
+
+    String roomContextReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "no reliable room context";
+        int roomId = world.roomIdAt(tx, ty);
+        if (roomId < 0) return "open passage or edge space";
+        return "room space with " + ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+    }
+
+    String visibleNpcEquipmentLine(NpcEntity npc) {
+        if (npc == null || npc.isAnimalActor()) return "no obvious carried gear";
+        ArrayList<String> gear = new ArrayList<>();
+        if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) gear.add(npc.equippedMeleeWeapon);
+        if (npc.equippedRangedWeapon != null && !npc.equippedRangedWeapon.isBlank()) gear.add(npc.equippedRangedWeapon);
+        if (npc.equippedArmor != null && !npc.equippedArmor.isBlank()) gear.add(npc.equippedArmor);
+        if (gear.isEmpty()) return "no obvious carried gear";
+        return String.join(", ", gear.subList(0, Math.min(3, gear.size())));
+    }
+
+    void petSelectedLookPet() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        petNpcAt(tx, ty, true);
+        repaint();
+    }
+
+    void petNpcAt(int tx, int ty, boolean alert) {
+        if (world == null || !world.inBounds(tx, ty)) {
+            showPetFeedback("PET", "There is no reachable companion animal there.", alert);
+            return;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc == null) {
+            showPetFeedback("PET", "There is no companion animal there.", alert);
+            return;
+        }
+        if (!npc.isPetActor()) {
+            showPetFeedback("PET", animalContactBlockedLine(npc), alert);
+            if (npc.isAnimalActor()) advanceTurn("checks an animal's mood.");
+            return;
+        }
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) {
+            showPetFeedback("PET", npc.name + " is too far away for a gentle greeting.", alert);
+            return;
+        }
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) {
+            showPetFeedback("PET", npc.name + " is too tense to touch safely.", alert);
+            advanceTurn("backs off from a tense companion animal.");
+            return;
+        }
+        String line = petInteractionLine(npc);
+        showPetFeedback("PET", line, alert);
+        logEvent("PET: " + line);
+        advanceTurn("pets " + npc.name + ".");
+    }
+
+    void showPetFeedback(String title, String body, boolean alert) {
+        if (alert) showTimedAlert(title, body, 4600);
+        else logEvent(title + ": " + body);
+    }
+
+    String animalContactBlockedLine(NpcEntity npc) {
+        if (npc == null) return "There is no companion animal there.";
+        if (!npc.isAnimalActor()) return npc.name + " is a person, not a pet.";
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return npc.name + " is not safe to touch.";
+        if ("farm-animal".equals(npc.creatureKind)) return npc.name + " is working stock, not a companion animal; it keeps a cautious distance.";
+        if ("kennel-animal".equals(npc.creatureKind)) return npc.name + " is on duty and should not be distracted.";
+        return npc.name + " is not tame enough to pet.";
+    }
+
+    String petInteractionLine(NpcEntity npc) {
+        String key = ((npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return npc.name + " accepts careful ear scritches and pretends it was their idea.";
+        if (key.contains("rat") || key.contains("mouse")) return npc.name + " receives a tiny nose boop and chirrs at the attention.";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return npc.name + " leans into a head pat.";
+        if (key.contains("lizard")) return npc.name + " permits a cautious chin rub.";
+        if (key.contains("glowfish")) return npc.name + " watches your fingertip tap the bowl and glows a little brighter.";
+        return npc.name + " accepts a gentle petting gesture.";
+    }
+
+    String petGestureName(NpcEntity npc) {
+        String key = ((npc == null || npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc == null || npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return "ear scritches";
+        if (key.contains("rat") || key.contains("mouse")) return "a nose boop";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return "a head pat";
+        if (key.contains("lizard")) return "a chin rub";
+        if (key.contains("glowfish")) return "a bowl tap";
+        return "a gentle petting gesture";
+    }
+
     String describeDoor(char ch) {
         if (ch == '/') return "open archway";
         if (ch == '|') return "hinged scrap door";
@@ -1989,13 +2225,25 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
 
 void updatePendingInteractionSummary() {
         if (world == null) { pendingInteractionSummary = "No world loaded."; return; }
+        if (!world.inBounds(lookX, lookY)) { pendingInteractionSummary = "No reachable target selected."; return; }
+        if (Math.abs(lookX-playerX) > 1 || Math.abs(lookY-playerY) > 1) {
+            pendingInteractionSummary = "Selected target is too far away to use. Move next to it first.";
+            return;
+        }
+        NpcEntity npc = world.npcAt(lookX, lookY);
+        if (npc != null) {
+            if (npc.isPetActor()) pendingInteractionSummary = "Pet interaction: " + npc.name + " is close enough for " + petGestureName(npc) + ".";
+            else if (npc.isAnimalActor()) pendingInteractionSummary = "Animal interaction blocked: " + animalContactBlockedLine(npc);
+            else pendingInteractionSummary = "Talk to " + npc.name + ", " + (npc.role == null || npc.role.isBlank() ? "local resident" : npc.role) + ".";
+            return;
+        }
         BaseObject obj = baseObjectAt(lookX, lookY);
         char ch = world.tiles[lookX][lookY];
         int turns = agilityActionCost(ch, obj);
         String target = obj != null ? obj.name : describeTile(ch);
         if (obj == null && isDoorTile(ch)) {
             int diff = (ch=='/'?0:(ch=='|'?8:(ch=='L'?14:(ch=='V'?16:22))));
-            pendingInteractionSummary = "Door access: " + target + " at " + lookX + "," + lookY + ". Time: " + turns + " turn(s). Difficulty estimate " + diff + ". Closed doors block line-of-sight until opened.";
+            pendingInteractionSummary = "Door access: " + target + ". Time: " + turns + " turn(s). Difficulty estimate " + diff + ". " + doorPreflightHint(ch);
         } else if (obj != null && obj.symbol == 'c') {
             int cost = sleepFoodWaterCost(pendingSleepHours);
             pendingInteractionSummary = "Sleep on cot for " + pendingSleepHours + "h? Time: " + sleepTurnCost(pendingSleepHours) + " turns. Cost: " + cost + " food + " + cost + " water. Reduces sleep need up to " + sleepTurnCost(pendingSleepHours) + "/" + MAX_SLEEP_NEED + ". Max 8h.";
@@ -2022,8 +2270,17 @@ void updatePendingInteractionSummary() {
         } else if (obj == null && ch == 'Q') {
             pendingInteractionSummary = governorPreview(lookX, lookY) + " Use BRIBE GOVERNOR or ATTACK GOVERNOR.";
         } else {
-            pendingInteractionSummary = "Interact with " + target + " at " + lookX + "," + lookY + "? Time: " + turns + " turn(s), modified by Agility.";
+            pendingInteractionSummary = "Interact with " + target + "? Time: " + turns + " turn(s), modified by Agility.";
         }
+    }
+
+    String doorPreflightHint(char ch) {
+        if (ch == '/') return "Open passage; no door work needed.";
+        if (ch == '|') return "Closed door; opening may make sight lines and sound travel farther.";
+        if (ch == 'L') return "Locked or chained; keys, lockpicks, tools, Mechanics, or Intellect can help.";
+        if (ch == 'V') return "Vent panel; tools or a careful access check may be needed.";
+        if (ch == 'X') return "Electronic security; a keycard, hacking tools, data spike, or skill check may be needed.";
+        return "Sealed access; ordinary interaction may not be enough.";
     }
 
     boolean isVendingMachine(char ch) { return PublicServiceMediaAuthority.isVendingSymbol(ch); }
@@ -6130,6 +6387,57 @@ boolean arbitesAuthorityText(String text) {
         return "You are speaking to " + npc.faction.label + ". Local standing reads " + standing + " — " + mood + ". " + npc.originSummary();
     }
 
+    String conversationStandingLine(NpcEntity npc) {
+        if (npc == null) return "unknown.";
+        int standing = factionStanding.getOrDefault(npc.faction, 0);
+        String mood = standing > 35 ? "welcoming" : standing > 10 ? "open" : standing < -35 ? "dangerous" : standing < -10 ? "cold" : "watchful";
+        String special = npc.isProtectedCleric() ? " This office is protected neutral ground." : "";
+        return npc.faction.label + " standing " + standing + ", " + mood + "." + special;
+    }
+
+    String conversationSpeakerReadLine(NpcEntity npc) {
+        if (npc == null) return "No speaker is selected.";
+        String role = npc.role == null || npc.role.isBlank() ? "local contact" : npc.role;
+        String state = npc.state == null || npc.state.isBlank() ? "available" : npc.state.toLowerCase(Locale.ROOT);
+        if (npc.isTrader()) return role + " with trade access; buy, sell, haggle, or ask for rumor if the counter is open.";
+        if (npc.isProtectedCleric()) return role + " offering temple conversation, faction context, and protected exit.";
+        if (npc.faction == Faction.ARBITES) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
+        if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return role + " from a coercive local power; jobs and threats may blur together.";
+        return role + " currently " + state + "; conversation can reveal work, faction context, or turn-in options.";
+    }
+
+    ArrayList<String> conversationChoiceGuidanceLines(NpcEntity npc) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null) return lines;
+        lines.add("Choices:");
+        lines.add("  GREET: refresh the current topic without committing to work or trade.");
+        lines.add("  ASK WORK: hear what this contact considers useful work.");
+        lines.add("  ASK FACTION: show standing, faction identity, and broad relationship context.");
+        if (npc.isTrader()) lines.add("  TRADE: open stock, sale preview, price reads, and rumor options.");
+        if (hasOpenContractForFaction(npc.faction)) lines.add("  TAKE BOUNTY / TAKE FETCH: accept available faction work if you want the obligation.");
+        else lines.add("  TAKE BOUNTY / TAKE FETCH: no obvious open work from this faction right now.");
+        if (hasCompletableContractForFaction(npc.faction)) lines.add("  TURN IN: a carried objective appears eligible for reward or completion.");
+        else lines.add("  TURN IN: no matching carried proof or delivery is apparent.");
+        lines.add("  LEAVE: close the conversation safely.");
+        return lines;
+    }
+
+    boolean hasOpenContractForFaction(Faction f) {
+        return activeContractFor(f, "BOUNTY") == null || activeContractFor(f, "FETCH") == null;
+    }
+
+    boolean hasCompletableContractForFaction(Faction f) {
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed || c.faction != f) continue;
+            if (contractTurnInReady(c)) return true;
+        }
+        return false;
+    }
+
+    boolean contractTurnInReady(FactionContract c) {
+        return c != null && c.requiredTurnInItem != null && inventory.contains(c.requiredTurnInItem);
+    }
+
     TradeOffer selectedTradeOffer() {
         if (activeTrader == null || activeTrader.offers.isEmpty()) return null;
         selectedTradeOffer = Math.max(0, Math.min(selectedTradeOffer, activeTrader.offers.size()-1));
@@ -6143,6 +6451,79 @@ boolean arbitesAuthorityText(String text) {
         lastTradeReport = "Selected offer: " + offer.name + " for " + activeTrader.buyPrice(offer) + " imperial script.";
         DebugLog.audit("TRADE_SELECT", lastTradeReport + " state=" + stateSummary());
         repaint();
+    }
+
+    ArrayList<String> selectedTradeReadabilityLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) {
+            lines.add("Selected offer: no active trader.");
+            return lines;
+        }
+        TradeOffer offer = selectedTradeOffer();
+        if (offer == null) lines.add("Selected offer: this trader has no visible stock right now.");
+        else lines.addAll(tradeOfferDetailLines(offer));
+        String sellItem = selectedInventoryItemName();
+        lines.addAll(tradeSellPreviewLines(sellItem));
+        return lines;
+    }
+
+    ArrayList<String> tradeOfferDetailLines(TradeOffer offer) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (offer == null || activeTrader == null) return lines;
+        ItemDef def = offer.catalogDef();
+        int buyPrice = activeTrader.buyPrice(offer);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(offer.name));
+        lines.add("Selected offer: " + offer.name + " for " + buyPrice + " script.");
+        lines.add("Price read: catalog value about " + catalogValue + "; " + tradePricePressureLine(buyPrice, catalogValue) + ".");
+        lines.add("Stock context: " + tradeStockContextLine(offer));
+        lines.add("Likely use: " + itemLikelyActionLine(offer.name, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(offer.name, def));
+        lines.add("Origin: " + tradeOfferOriginLine(offer));
+        return lines;
+    }
+
+    ArrayList<String> tradeSellPreviewLines(String item) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) return lines;
+        if (item == null || item.equals("Imperial Script")) {
+            lines.add("Sale preview: select a carried item in INVENTORY before selling.");
+            return lines;
+        }
+        int carried = countInventory(item);
+        if (carried <= 0) {
+            lines.add("Sale preview: " + item + " is a counter or resource stack, not a sellable carried copy yet.");
+            return lines;
+        }
+        int sellPrice = activeTrader.sellPrice(item);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(item));
+        lines.add("Sale preview: " + item + " x" + carried + " would sell for " + sellPrice + " script each.");
+        lines.add("Seller read: catalog value about " + catalogValue + "; " + tradePricePressureLine(sellPrice, catalogValue) + ".");
+        lines.add("Sale caution: " + itemLegalRiskLine(item, ItemCatalog.get(item)));
+        return lines;
+    }
+
+    String tradePricePressureLine(int actual, int catalogValue) {
+        int base = Math.max(1, catalogValue);
+        if (actual >= Math.ceil(base * 1.35)) return "the counter is charging a heavy premium";
+        if (actual > base) return "the counter is above ordinary catalog value";
+        if (actual == base) return "the counter matches ordinary catalog value";
+        if (actual <= Math.floor(base * 0.55)) return "the counter is paying hard-bargain resale rates";
+        return "the counter is below ordinary catalog value";
+    }
+
+    String tradeStockContextLine(TradeOffer offer) {
+        if (offer == null) return "no selected stock.";
+        String source = offer.catalogDef() == null ? "local trader stock" : offer.catalogDef().source;
+        String category = offer.catalogDef() == null ? offer.category : offer.catalogDef().category;
+        return category + " from " + source + "; trader markup " + activeTrader.markupPct + "% and haggle discount " + activeTrader.discountPct + "% are already included.";
+    }
+
+    String tradeOfferOriginLine(TradeOffer offer) {
+        if (offer == null || offer.provenance == null) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        String s = offer.provenance.summary();
+        if (s == null || s.isBlank()) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
     }
 
     void tradeBuySelected() {
@@ -6433,7 +6814,11 @@ boolean arbitesAuthorityText(String text) {
         if (tx < 0 || ty < 0 || tx >= world.w || ty >= world.h) { DebugLog.warn("INTERACT", "target out of bounds. " + stateSummary()); logEvent("Cannot interact: target out of bounds."); return; }
         if (Math.abs(tx-playerX) > 1 || Math.abs(ty-playerY) > 1) { logEvent("Cannot interact: target must be adjacent to your character."); return; }
         NpcEntity npc = world.npcAt(tx, ty);
-        if (npc != null) { talkToNpc(npc); advanceTurn("speaks with " + npc.name + "."); return; }
+        if (npc != null) {
+            if (npc.isPetActor()) { petNpcAt(tx, ty, false); updatePendingInteractionSummary(); return; }
+            if (npc.isAnimalActor()) { logEvent("PET: " + animalContactBlockedLine(npc)); advanceTurn("checks an animal's mood."); updatePendingInteractionSummary(); return; }
+            talkToNpc(npc); advanceTurn("speaks with " + npc.name + "."); return;
+        }
         BaseObject obj = baseObjectAt(tx, ty);
         if (obj != null) { interactBaseObject(obj); advanceTurn("interacts with " + obj.name + "."); return; }
         if (mapObjectAt(tx, ty, "planted-explosive") != null) { disarmExplosiveAt(tx, ty); updatePendingInteractionSummary(); return; }
@@ -7042,6 +7427,161 @@ boolean arbitesAuthorityText(String text) {
         String compProblem = buildComponentRequirementProblem(r);
         if (!"OK".equals(compProblem)) return compProblem;
         return "OK";
+    }
+
+    ArrayList<String> constructionMenuGuidanceLines(BuildRecipe selected) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (!baseClaimed) {
+            lines.add("Build access: claim a room before placing construction.");
+            lines.add("Good first builds after claiming: Storage Crate, Sleeping Cot, Water Barrel, then Scrap Workbench.");
+            return lines;
+        }
+        if (world == null || !isInClaimedRoom(playerX, playerY)) {
+            lines.add("Build access: stand inside your claimed room before placing construction.");
+            lines.add("The list still shows what you can prepare, but placement waits for claimed-room footing.");
+            return lines;
+        }
+        if (selected == null) {
+            lines.add("Build categories: survival, storage, production, commerce, logistics, and defense.");
+            lines.add("Suggested next build: " + suggestedConstructionChoiceLine() + ".");
+            lines.add("Resources: supplies " + supplies + ", machine parts " + machineParts + ", stored components " + constructionComponentReadinessLine() + ".");
+            return lines;
+        }
+        lines.add("Build category: " + constructionCategoryFor(selected) + ".");
+        lines.add("Cost: supplies " + selected.supplyCost + ", parts " + selected.partCost + ", components " + selected.componentCostSummary(4) + ".");
+        lines.add("Readiness: " + constructionReadinessLine(selected));
+        lines.add("Permission risk: " + constructionPermissionRiskLine(selected));
+        lines.add("Placement rule: " + constructionPlacementHintLine(selected));
+        return lines;
+    }
+
+    String constructionReadinessLine(BuildRecipe r) {
+        String structural = buildStructuralRequirementProblem(r);
+        String components = buildComponentRequirementProblem(r);
+        if ("OK".equals(structural) && "OK".equals(components)) return "ready to place if the target tile is clear and inside the claimed room.";
+        if (!"OK".equals(structural)) return "blocked because it " + structural;
+        return "blocked because it " + components;
+    }
+
+    String constructionPermissionRiskLine(BuildRecipe r) {
+        if (r == null) return "unknown.";
+        if (r.requiredFaction != Faction.NONE) return "restricted profile; expected affiliation is " + r.requiredFaction.label + ".";
+        String low = r.name.toLowerCase(Locale.ROOT);
+        if (r.attention >= 4 || low.contains("turret") || low.contains("sensor") || low.contains("security") || low.contains("shield")) return "high attention; security, gangs, or law may notice a fortified room.";
+        if (low.contains("shop") || low.contains("business") || low.contains("clinic")) return "commercial attention; permits and local standing affect how lawful it looks.";
+        if (low.contains("chem") || low.contains("distillation") || low.contains("fume") || low.contains("injector")) return "suspicious workshop profile; faction or law attention may rise around chemical work.";
+        if (r.attention > 0) return "some attention; visible improvements can attract claims, raids, or inspection.";
+        return "low attention; ordinary survival or storage construction.";
+    }
+
+    String constructionPlacementHintLine(BuildRecipe r) {
+        if (r == null) return "choose a build first.";
+        if (r.symbol == 'd' || r.symbol == 'D' || r.symbol == 'Y' || r.symbol == 'W' || r.symbol == 'S' || r.symbol == 'R') return "best used as a choke point, cover edge, or room boundary inside your claim.";
+        if (r.symbol == 'c' || r.symbol == 'u' || r.symbol == 's') return "place where you can reach it quickly without blocking door paths.";
+        if (r.requiresWorkbench) return "needs workshop access and enough open room for service traffic.";
+        if (r.attention >= 3) return "keep paths open; valuable or armed builds invite trouble.";
+        return "place on a clear tile inside the claimed room.";
+    }
+
+    String constructionCategoryFor(BuildRecipe r) {
+        if (r == null) return "none";
+        String n = r.name.toLowerCase(Locale.ROOT);
+        if (n.contains("cot") || n.contains("water") || n.contains("condenser") || n.contains("ration")) return "survival";
+        if (n.contains("storage") || n.contains("crate")) return "storage";
+        if (n.contains("workbench") || n.contains("forge") || n.contains("lab") || n.contains("chem") || n.contains("distillation") || n.contains("sterile") || n.contains("fume") || n.contains("injector")) return "production";
+        if (n.contains("shop") || n.contains("business") || n.contains("clinic") || n.contains("decor")) return "commerce and services";
+        if (n.contains("carry") || n.contains("supply") || n.contains("logistics")) return "logistics";
+        if (n.contains("barricade") || n.contains("post") || n.contains("barracks") || n.contains("turret") || n.contains("shield") || n.contains("sandbag") || n.contains("wire") || n.contains("wall") || n.contains("door") || n.contains("sensor") || n.contains("security")) return "defense and access";
+        return "general construction";
+    }
+
+    String suggestedConstructionChoiceLine() {
+        if (!hasBaseObject('s')) return "Storage Crate for safe capacity";
+        if (!hasBaseObject('c')) return "Sleeping Cot for recovery";
+        if (!hasBaseObject('u')) return "Water Barrel for reserve water";
+        if (!hasBaseObject('w')) return "Scrap Workbench to unlock repair and fabrication paths";
+        if (!hasKnowledge("Commerce Permits")) return "Watch Post or Barricade before risky commerce";
+        return "choose production, commerce, logistics, or defense based on your next goal";
+    }
+
+    String constructionComponentReadinessLine() {
+        String[] samples = {"Tool bundle", "Rivet set", "Wire bundle", "Circuit wafer"};
+        ArrayList<String> bits = new ArrayList<>();
+        for (String s : samples) {
+            int have = countBuildComponent(s);
+            if (have > 0) bits.add(s + " x" + have);
+        }
+        return bits.isEmpty() ? "no common build components visible" : String.join(", ", bits);
+    }
+
+    ArrayList<String> selectedProductionGuidanceLines(BaseObject machine) {
+        ArrayList<String> lines = new ArrayList<>();
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        CraftingRecipe recipe = null;
+        if (!recipes.isEmpty()) {
+            selectedCraftRecipeIndex = Math.max(0, Math.min(selectedCraftRecipeIndex, recipes.size() - 1));
+            recipe = recipes.get(selectedCraftRecipeIndex);
+        }
+        if (machine == null) {
+            lines.add("Production guidance: build or select a workbench, condenser, forge, lab, or security node before assigning production.");
+            lines.add("Next unblock: use BUILD for the missing machine, then return here to choose a recipe.");
+            return lines;
+        }
+        lines.add("Production guidance: " + machine.name + " is " + productionMachineStateLine(machine) + ".");
+        lines.add("Recipe read: " + productionRecipeReadLine(recipe, machine));
+        lines.add("Input read: " + productionInputReadLine(recipe, machine));
+        lines.add("Output read: " + productionOutputReadLine(recipe, machine));
+        lines.add("Worker and queue: " + productionWorkerQueueLine(machine));
+        lines.add("Next unblock: " + productionNextUnblockLine(recipe, machine));
+        return lines;
+    }
+
+    String productionMachineStateLine(BaseObject machine) {
+        if (machine == null) return "not selected";
+        if (machine.integrity <= 0) return "broken and cannot run";
+        if (machine.underConstruction) return "still under construction";
+        String q = machine.qualityName == null || machine.qualityName.isBlank() ? "Common" : machine.qualityName;
+        return "available at " + q + " quality with integrity " + machine.integrity;
+    }
+
+    String productionRecipeReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null) return "no visible recipe is selected.";
+        if (recipe.disabled) return "unlock production knowledge to reveal real recipes.";
+        String problem = recipe.assignmentProblem(this, machine);
+        String status = problem == null ? "fits this machine" : "does not fit yet: " + problem;
+        return recipe.name + " -> " + recipe.outputBaseItem + "; " + status;
+    }
+
+    String productionInputReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null || recipe.disabled) return "no recipe inputs available.";
+        String problem = recipe.blockingProblemForMachine(this, machine);
+        return recipe.inputSummary() + (problem == null ? "; inputs are ready." : "; blocked: " + problem);
+    }
+
+    String productionOutputReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null || recipe.disabled) return "no output forecast available.";
+        String quality = machine == null ? "unknown quality" : cappedProductionQuality(machine, recipe.requiredKnowledge);
+        return recipe.outputCount + "x " + recipe.outputBaseItem + " at up to " + quality + "; takes " + recipe.turnCost + " turn(s), fatigue +" + recipe.fatigueCost + ", XP +" + recipe.xpGain + " " + recipe.xpSkill + ".";
+    }
+
+    String productionWorkerQueueLine(BaseObject machine) {
+        if (machine == null) return "no machine selected.";
+        String worker = machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "no assigned worker" : "worker " + machine.assignedWorker;
+        String recipe = machine.assignedRecipe == null || machine.assignedRecipe.isBlank() ? "no assigned recipe" : "assigned recipe " + machine.assignedRecipe;
+        return worker + "; " + recipe + "; queue " + machine.productionQueueRemaining + "/" + Math.max(1, machine.productionQueueTarget) + ".";
+    }
+
+    String productionNextUnblockLine(CraftingRecipe recipe, BaseObject machine) {
+        if (machine == null) return "select or build a production machine.";
+        if (machine.integrity <= 0) return "repair or replace the damaged machine.";
+        if (machine.underConstruction) return "finish the staged construction before production.";
+        if (recipe == null || recipe.disabled) return "unlock production knowledge or select another visible recipe.";
+        String problem = recipe.blockingProblemForMachine(this, machine);
+        if (problem == null) {
+            if (machine.assignedWorker == null || machine.assignedWorker.isBlank()) return "run manually or assign a worker if recruit labor is available.";
+            return "queue or run the selected recipe when ready.";
+        }
+        return problem;
     }
 
     String buildStructuralRequirementProblem(BuildRecipe r) {
@@ -14153,20 +14693,103 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
 
     void clearMouseMovementPreview(String reason) {
         if (mouseMovePreviewActive) DebugLog.audit("MOUSE_MOVE_PREVIEW_CLEAR", reason + " target=" + mouseMoveTargetX + "," + mouseMoveTargetY);
+        manualMovementPlanActive = false;
         mouseMovePreviewActive = false; mouseMovePreviewValid = false; mouseMoveTargetX = mouseMoveTargetY = -1; mouseMovePreviewPath.clear(); mouseMovePreviewStatus = "No mouse movement preview.";
+    }
+
+    void beginManualMovementPlan() {
+        if (world == null || screen != Screen.GAME) return;
+        manualMovementPlanActive = true;
+        int tx = playerX;
+        int ty = playerY;
+        int dx = lastMoveDx == 0 && lastMoveDy == 0 ? 1 : lastMoveDx;
+        int dy = lastMoveDx == 0 && lastMoveDy == 0 ? 0 : lastMoveDy;
+        for (int i = 0; i < Math.max(1, movementModeRange()); i++) {
+            int nx = playerX + dx * (i + 1);
+            int ny = playerY + dy * (i + 1);
+            if (world.inBounds(nx, ny) && world.walkable(nx, ny)) { tx = nx; ty = ny; }
+            else break;
+        }
+        if (tx == playerX && ty == playerY) {
+            int[][] dirs = {{1,0},{0,1},{-1,0},{0,-1}};
+            for (int[] d : dirs) {
+                int nx = playerX + d[0], ny = playerY + d[1];
+                if (world.inBounds(nx, ny) && world.walkable(nx, ny)) { tx = nx; ty = ny; break; }
+            }
+        }
+        updateMouseMovementPreviewTo(tx, ty);
+        manualMovementPlanActive = true;
+        logEvent("Movement target planning: nudge with arrows or WASD, confirm with Enter/E/Space, cancel with Escape.");
+        repaint();
+    }
+
+    void nudgeManualMovementPlan(int dx, int dy) {
+        if (world == null || dx == 0 && dy == 0) return;
+        if (!manualMovementPlanActive) beginManualMovementPlan();
+        int baseX = mouseMoveTargetX >= 0 ? mouseMoveTargetX : playerX;
+        int baseY = mouseMoveTargetY >= 0 ? mouseMoveTargetY : playerY;
+        int tx = Math.max(0, Math.min(world.w - 1, baseX + dx));
+        int ty = Math.max(0, Math.min(world.h - 1, baseY + dy));
+        updateMouseMovementPreviewTo(tx, ty);
+        manualMovementPlanActive = true;
+        repaint();
+    }
+
+    void confirmManualMovementPlan() {
+        if (!manualMovementPlanActive) return;
+        executeMouseMovementPreview();
+    }
+
+    void cancelManualMovementPlan(String reason) {
+        clearMouseMovementPreview(reason);
+        logEvent("Movement target planning cancelled.");
+        repaint();
     }
 
     void updateMouseMovementPreviewTo(int tx, int ty) {
         mouseMovePreviewActive = true; mouseMoveTargetX = tx; mouseMoveTargetY = ty; mouseMovePreviewLastMillis = System.currentTimeMillis(); mouseMovePreviewPath.clear();
-        if (world == null || !world.inBounds(tx, ty)) { mouseMovePreviewValid = false; mouseMovePreviewStatus = "invalid: outside known map"; return; }
-        if (!world.walkable(tx, ty)) { mouseMovePreviewValid = false; mouseMovePreviewStatus = "invalid: solid terrain at " + tx + "," + ty; return; }
+        String directBlock = directMovementTargetBlockReason(tx, ty);
+        if (directBlock != null) {
+            mouseMovePreviewValid = false;
+            mouseMovePreviewStatus = directBlock;
+            return;
+        }
         ArrayList<Point> path = findPreviewPath(playerX, playerY, tx, ty, 80);
         mouseMovePreviewPath.addAll(path);
         mouseMovePreviewValid = !path.isEmpty();
         int steps = Math.max(0, path.size());
         int range = Math.max(1, movementModeRange());
         int chunks = steps == 0 ? 0 : (int)Math.ceil(steps / (double)range);
-        mouseMovePreviewStatus = (mouseMovePreviewValid ? "path " : "no path ") + playerX + "," + playerY + "→" + tx + "," + ty + " | steps " + steps + " | " + chunks + " move action(s) at " + movementModeLabel();
+        if (!mouseMovePreviewValid) {
+            mouseMovePreviewStatus = "Cannot reach from here.";
+            return;
+        }
+        String hazard = movementPathHazardWarning(path);
+        mouseMovePreviewStatus = "Movement target ready"
+                + (hazard.isEmpty() ? "" : "; " + hazard)
+                + " | steps " + steps + " | " + chunks + " action(s) at " + movementModeLabel();
+    }
+
+    String directMovementTargetBlockReason(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "Movement target is outside the known map.";
+        if (tx == playerX && ty == playerY) return "Movement target is your current position.";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return "Destination occupied.";
+        if (!world.walkable(tx, ty)) {
+            char ch = world.tiles[tx][ty];
+            if (isDoorTile(ch) || ch == 'D') return "Door is closed.";
+            return "Path blocked.";
+        }
+        return null;
+    }
+
+    String movementPathHazardWarning(java.util.List<Point> path) {
+        if (path == null || path.isEmpty()) return "";
+        for (Point p : path) {
+            EnvironmentalHazardRecord h = hazardAt(p.x, p.y);
+            if (h != null) return "hazard ahead";
+        }
+        return "";
     }
 
     ArrayList<Point> findPreviewPath(int sx, int sy, int tx, int ty, int maxNodes) {
@@ -14218,7 +14841,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
 
     void drawMouseMovementPreview(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
         if (!mouseMovePreviewActive) return;
-        if (System.currentTimeMillis() - mouseMovePreviewLastMillis > 4000L) { clearMouseMovementPreview("timeout"); return; }
+        if (!manualMovementPlanActive && System.currentTimeMillis() - mouseMovePreviewLastMillis > 4000L) { clearMouseMovementPreview("timeout"); return; }
         Graphics2D gg = (Graphics2D) g.create();
         int range = Math.max(1, movementModeRange());
         for (int i=0; i<mouseMovePreviewPath.size(); i++) {
@@ -14238,8 +14861,10 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
         gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
         FontMetrics fm = gg.getFontMetrics();
         int bw = Math.min(380, Math.max(160, fm.stringWidth(mouseMovePreviewStatus) + 18));
-        int bx = Math.max(8, Math.min(getWidth() - bw - 8, mouseX + 18));
-        int by = Math.max(8, Math.min(getHeight() - 42, mouseY + 18));
+        int anchorX = mouseX >= 0 ? mouseX : getWidth() / 2;
+        int anchorY = mouseY >= 0 ? mouseY : Math.max(42, getHeight() / 2);
+        int bx = Math.max(8, Math.min(getWidth() - bw - 8, anchorX + 18));
+        int by = Math.max(8, Math.min(getHeight() - 42, anchorY + 18));
         gg.setColor(new Color(0,0,0,220)); gg.fillRoundRect(bx, by, bw, 28, 8, 8);
         gg.setColor(mouseMovePreviewValid ? new Color(120,230,150) : new Color(250,90,70)); gg.drawRoundRect(bx, by, bw, 28, 8, 8);
         drawUiTextLine(gg, GuiLayoutApi.fitLabel(mouseMovePreviewStatus, fm, bw-16), bx+9, by+19);
@@ -14985,7 +15610,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         String serverAction = serverSnapshot == null || serverSnapshot.player() == null ? (singlePlayerSectorBridge == null ? "" : singlePlayerSectorBridge.activeActionDisplayLine()) : serverSnapshot.player().activeAction();
         if (serverAction != null && !serverAction.isBlank() && !"none".equalsIgnoreCase(serverAction)) slate.add("Server action: " + serverAction);
         if (serverSnapshot != null) slate.add("Server snapshot v" + serverSnapshot.version() + " | tiles " + serverSnapshot.visibleTiles().size() + " | NPCs " + serverSnapshot.visibleNpcs().size() + " | objects " + serverSnapshot.visibleObjects().size());
-        slate.add("Keys: WASD/Arrows move | R mode | . wait | L look | E interact | I inventory | C character | B build | M map | F1 tactical slate | ESC menu");
+        slate.add(tacticalPromptLine());
         int yy = r.y + 32;
         java.util.List<String> wrappedSlate = TextLayoutAuthority.wrapAllPixels(g, g.getFont(), slate, r.width - 36);
         for (String wrapped : wrappedSlate) {
@@ -14994,6 +15619,27 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
             yy += Math.max(12, fm.getHeight());
         }
         g.setClip(old);
+    }
+
+    String tacticalPromptLine() {
+        return "Controls: "
+                + "WASD or arrows move"
+                + " | " + promptLabel(InputAction.PLAN_MOVE) + " plan move"
+                + " | " + promptLabel(InputAction.WAIT) + " wait"
+                + " | " + promptLabel(InputAction.LOOK) + " look"
+                + " | " + promptLabel(InputAction.INTERACT) + " interact"
+                + " | " + promptLabel(InputAction.INVENTORY) + " inventory"
+                + " | " + promptLabel(InputAction.CHARACTER) + " character"
+                + " | " + promptLabel(InputAction.BUILD) + " build"
+                + " | " + promptLabel(InputAction.MAP) + " map"
+                + " | F1 slate"
+                + " | " + promptLabel(InputAction.PAUSE) + " menu";
+    }
+
+    String promptLabel(InputAction action) {
+        String prompt = keyboardPromptFor(action);
+        int idx = prompt.indexOf(':');
+        return idx >= 0 ? prompt.substring(idx + 1).trim() : prompt;
     }
 
     void drawRightPanelFrame(Graphics2D g) {
@@ -15291,16 +15937,81 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         drawMiniStackIcon(g, sel == null ? target : sel, x+44, infoY+20, Math.max(42, bottomBoxH-40));
         ArrayList<String> info=new ArrayList<>();
         if (sel != null) {
-            info.add("SELECTED: " + sel);
-            info.add("Action: " + itemActionSummary(sel));
-            info.add(provenanceSummaryForItem(sel));
+            info.addAll(inventoryItemDetailLines(sel, false));
         } else if (target != null) {
-            info.add("TARGET: " + target);
-            info.add("This is the current floor/feature target. Carried inventory is empty or no carried stack is selected.");
+            info.addAll(inventoryItemDetailLines(target, true));
         } else info.add("No carried item or target item selected.");
         g.setFont(smallFont);
         g.setColor(optionColor(GameOptions.TEXT_MAIN));
         drawScrollableWrappedLines(g, info, x+104, infoY+30, w-150, bottomBoxH-42, inventoryItemDescriptionScroll, "inventory-info");
+    }
+
+    ArrayList<String> inventoryItemDetailLines(String item, boolean targetStack) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (item == null || item.isBlank()) {
+            lines.add(targetStack ? "No target stack selected." : "No carried stack selected.");
+            return lines;
+        }
+        ItemDef def = ItemCatalog.get(item);
+        String cleanName = ItemQuality.stripManufacturingIdentity(item);
+        lines.add((targetStack ? "TARGET: " : "SELECTED: ") + item);
+        lines.add("Stack: " + inventoryStackContextLine(item, targetStack));
+        lines.add("Quality and value: " + itemQualityValueLine(item));
+        lines.add("Category: " + itemCategoryLine(item, def));
+        lines.add("Likely action: " + itemLikelyActionLine(item, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(item, def));
+        lines.add("Origin: " + itemPlayerFacingOriginLine(item));
+        if (def != null && def.description != null && !def.description.isBlank()) lines.add("Read: " + def.description);
+        else lines.add("Read: " + cleanName + " has no reliable catalog description yet.");
+        return lines;
+    }
+
+    String inventoryStackContextLine(String item, boolean targetStack) {
+        int count = targetStack ? currentTargetInventoryStacks().getOrDefault(item, 1) : displayedInventoryStacks().getOrDefault(item, countInventory(item));
+        String place = targetStack ? "visible at the current floor or container target" : "carried in your inventory";
+        return Math.max(1, count) + " " + (count == 1 ? "copy" : "copies") + " " + place + ".";
+    }
+
+    String itemQualityValueLine(String item) {
+        int tier = Math.max(0, Math.min(ItemQuality.NAMES.length - 1, ItemQuality.tierIndex(item)));
+        String quality = ItemQuality.NAMES[tier];
+        int value = Math.max(1, ItemCatalog.priceFor(item));
+        return quality + " quality, about " + value + " script before local markup, barter pressure, or faction demand.";
+    }
+
+    String itemCategoryLine(String item, ItemDef def) {
+        if (def != null) return def.category + (def.weapon ? " / weapon" : "");
+        String low = item.toLowerCase(Locale.ROOT);
+        if (looksWearable(item)) return "clothing or disguise";
+        if (low.contains("ration") || low.contains("food") || low.contains("water") || low.contains("canteen")) return "survival supply";
+        if (low.contains("scrap") || low.contains("machine") || low.contains("supplies") || low.contains("tool")) return "tool or work material";
+        if (PortableLightProfile.isLightItem(item)) return "portable light";
+        return "uncataloged carried object";
+    }
+
+    String itemLikelyActionLine(String item, ItemDef def) {
+        if (def != null && def.use != null && !def.use.isBlank()) return def.use + " " + itemActionSummary(item);
+        return itemActionSummary(item);
+    }
+
+    String itemLegalRiskLine(String item, ItemDef def) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use)).toLowerCase(Locale.ROOT);
+        if (text.contains("contraband") || text.contains("illicit") || text.contains("black-market") || text.contains("black market") || text.contains("stolen") || text.contains("leader journal") || text.contains("profane") || text.contains("heretic")) return "restricted or suspicious if searched by law, guild, or faction authority.";
+        if (text.contains("permit") || text.contains("ticket") || text.contains("ration") || text.contains("water") || text.contains("food") || text.contains("medical") || text.contains("field dressing")) return "ordinary possession unless a local authority has posted tighter rules.";
+        if (def != null && def.weapon) return "weapon possession can draw attention in lawful, noble, or guarded spaces.";
+        if (ItemCatalog.isFirearmLike(item)) return "firearm-like gear can draw attention in lawful, noble, or guarded spaces.";
+        if (looksWearable(item) && factionForClothingItem(item) != Faction.NONE) return "faction clothing may help or endanger you depending on who sees it.";
+        if (text.contains("keycard") || text.contains("data spike") || text.contains("lockpick") || text.contains("hacking")) return "access tools may look suspicious near secure doors, vaults, or patrols.";
+        return "no obvious legal risk from the item name alone.";
+    }
+
+    String itemPlayerFacingOriginLine(String item) {
+        ItemProvenanceRecord pr = provenanceForItem(item);
+        if (pr == null) return "no reliable origin is recorded for this stack.";
+        String s = pr.summary();
+        if (s == null || s.isBlank()) return "no reliable origin is recorded for this stack.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
     }
 
     void drawInventoryIconGrid(Graphics2D g, LinkedHashMap<String,Integer> stacks, int selectedIndex, int x, int y, int w, int h, String context) {
@@ -15682,6 +16393,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
             if(world != null){
                 info.add("Current named sector: " + world.sectorName);
                 info.add("Current named zone: " + world.zoneName);
+                info.addAll(contractObjectiveGuidanceLines());
                 info.add("Compact zone history: " + world.zoneHistory);
                 String zkey = atlas.hiveWorld.zoneKey(world.sectorX, world.sectorY, world.zoneX, world.zoneY, world.floor, world.sewerLayer);
                 info.add("Faction-control epochs:");
@@ -15723,6 +16435,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
             g.setColor(new Color(10,12,12)); g.fillRoundRect(px,py,cell,cell,10,10);
             g.setColor(current ? new Color(245,220,130) : factionUiColorForZone(zt)); g.drawRoundRect(px,py,cell,cell,10,10);
             if(current){ g.drawRoundRect(px+3,py+3,cell-6,cell-6,8,8); }
+            drawContractObjectiveMarker(g, xx + 1, yy + 1, mapLayerView, px, py, cell);
             g.setFont(titleFont); g.setColor(factionUiColorForZone(zt)); center(g,icon,px+cell/2,py+cell/2-2);
             g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
             drawCenteredZoneLabel(g, name, px+6, py+cell-34, cell-12, 28);
@@ -15730,6 +16443,92 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
             if(yy<2){ g.setColor(new Color(210,190,120)); center(g,"↓",px+cell/2,py+cell+18); }
         }
         g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, "Selected slice: " + MapLayerSurfaceAuthority.label(mapLayerView), x+w/2, y+20);
+    }
+
+    ArrayList<String> contractObjectiveGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        ArrayList<FactionContract> activeContracts = activeVisibleContracts();
+        if (activeContracts.isEmpty()) {
+            lines.add("Objective guidance: no active faction contracts are being tracked.");
+            return lines;
+        }
+        lines.add("Objective guidance:");
+        for (FactionContract c : activeContracts) {
+            ContractZoneTarget target = contractZoneTarget(c);
+            String state = c.spawned ? "target sign reported" : "search the destination zone";
+            String route = target == null ? "nearby contract zone" : readableContractRoute(target);
+            String marker = target != null && contractTargetOnCurrentMapLayer(target) ? "Map marker visible on this slice." : "Change map slice or travel toward the listed route.";
+            lines.add("- " + c.displayType() + " for " + c.faction.label + ": " + state + "; " + route + ". " + marker);
+        }
+        return lines;
+    }
+
+    ArrayList<FactionContract> activeVisibleContracts() {
+        ArrayList<FactionContract> out = new ArrayList<>();
+        for (FactionContract c : factionContracts) if (c != null && !c.completed) out.add(c);
+        return out;
+    }
+
+    ContractZoneTarget contractZoneTarget(FactionContract c) {
+        if (c == null || c.targetZoneKey == null || c.targetZoneKey.isBlank()) return null;
+        String[] a = c.targetZoneKey.split(",");
+        if (a.length < 6) return null;
+        try {
+            return new ContractZoneTarget(Integer.parseInt(a[0]), Integer.parseInt(a[1]), Integer.parseInt(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4]), Boolean.parseBoolean(a[5]));
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    boolean contractTargetOnCurrentMapLayer(ContractZoneTarget target) {
+        if (atlas == null || target == null) return false;
+        return target.sectorX == atlas.sectorX && target.sectorY == atlas.sectorY
+                && MapLayerSurfaceAuthority.displayLayerIndex(target.floor, target.sewer) == mapLayerView;
+    }
+
+    String readableContractRoute(ContractZoneTarget target) {
+        if (target == null) return "nearby contract zone";
+        String layer = target.sewer ? "sewer route" : "surface route";
+        if (atlas != null && target.sectorX == atlas.sectorX && target.sectorY == atlas.sectorY) {
+            int dx = target.zoneX - atlas.zoneX;
+            int dy = target.zoneY - atlas.zoneY;
+            String direction = dx == 0 && dy == 0 ? "this zone" : (Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? "east" : "west") : (dy > 0 ? "south" : "north"));
+            return layer + " " + direction + " on floor " + target.floor;
+        }
+        return layer + " in a neighboring sector on floor " + target.floor;
+    }
+
+    void drawContractObjectiveMarker(Graphics2D g, int zx, int zy, int layerIndex, int px, int py, int cell) {
+        ArrayList<FactionContract> matches = new ArrayList<>();
+        for (FactionContract c : activeVisibleContracts()) {
+            ContractZoneTarget target = contractZoneTarget(c);
+            if (target != null && contractTargetOnCurrentMapLayer(target) && target.zoneX == zx && target.zoneY == zy) matches.add(c);
+        }
+        if (matches.isEmpty()) return;
+        int pulse = (int)((System.currentTimeMillis() / 240L) % 4L);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setStroke(new BasicStroke(2.0f + pulse));
+        gg.setColor(new Color(255, 225, 95, 210));
+        gg.drawRoundRect(px + 6 + pulse, py + 6 + pulse, Math.max(8, cell - 12 - pulse * 2), Math.max(8, cell - 12 - pulse * 2), 10, 10);
+        gg.setFont(smallFont.deriveFont(Font.BOLD, Math.max(9f, smallFont.getSize2D() - 2f)));
+        gg.setColor(new Color(20, 14, 4, 225));
+        gg.fillRoundRect(px + 8, py + 8, Math.min(cell - 16, 94), 22, 8, 8);
+        gg.setColor(new Color(255, 235, 120));
+        gg.drawString(matches.size() == 1 ? "OBJECTIVE" : matches.size() + " OBJECTIVES", px + 14, py + 24);
+        gg.dispose();
+    }
+
+    static final class ContractZoneTarget {
+        final int sectorX, sectorY, zoneX, zoneY, floor;
+        final boolean sewer;
+        ContractZoneTarget(int sectorX, int sectorY, int zoneX, int zoneY, int floor, boolean sewer) {
+            this.sectorX = sectorX;
+            this.sectorY = sectorY;
+            this.zoneX = zoneX;
+            this.zoneY = zoneY;
+            this.floor = floor;
+            this.sewer = sewer;
+        }
     }
 
     ZoneType zoneTypeForMapCell(int zx, int zy, int layerIndex) {
@@ -15964,7 +16763,7 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         UiLayout L = uiLayout();
         int x = Math.max(18, L.map.x);
         int w = Math.max(360, Math.min(L.map.width, L.command.x - x - 18));
-        int h = panelMode == PanelMode.WORKBENCH ? Math.max(190, Math.min(230, getHeight() / 3)) : Math.max(154, Math.min(184, getHeight() / 4));
+        int h = panelMode == PanelMode.WORKBENCH ? Math.max(190, Math.min(230, getHeight() / 3)) : Math.max(210, Math.min(250, getHeight() / 3));
         int y = Math.max(10, Math.min(18, L.map.y - h - 6));
         if (y < 10) y = 10;
         updatePendingBuildSummary();
@@ -15989,6 +16788,7 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Cursor is room-bound. Select a construction from the right-side build menu, move with WASD/arrows, then press E to confirm.");
         lines.add("Pending: " + pendingBuildSummary);
+        if (panelMode == PanelMode.BUILD) lines.addAll(constructionMenuGuidanceLines(pendingBuildRecipe));
         if (pendingBuildRecipe != null) lines.add(ObjectSemanticAssetAuthority.semanticSummaryForName(pendingBuildRecipe.name));
         lines.add("Requirements use Mechanics + Intellect. Build time uses Strength + Agility. Failure risk is reduced by Intellect + Faith.");
         if (panelMode == PanelMode.BUILD) {
@@ -16104,7 +16904,10 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
             if (bo != null) lines.add("BASE OBJECT: " + bo.name + " | attention " + bo.attention + " | cost " + bo.cost);
         }
         if (lookedNpc != null) {
-            if (lookedNpc.isAnimalActor()) lines.add("ANIMAL: " + lookedNpc.animalLine());
+            if (lookedNpc.isAnimalActor()) {
+                lines.add("ANIMAL: " + lookedNpc.animalLine());
+                lines.add("PETTING: " + (lookedNpc.isPetActor() ? "Interact or PET can offer " + petGestureName(lookedNpc) + "." : animalContactBlockedLine(lookedNpc)));
+            }
             else {
                 AgeAndWorldTimeAuthority.synchronizeNpc(lookedNpc, worldTurn);
                 lines.add("AGE: " + lookedNpc.ageYears + " years / " + lookedNpc.ageBand);
@@ -16184,10 +16987,11 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         drawUiTextLine(g, "MECHANDRITE / INTERACT", x + 14, y + 28);
         String target = (obj != null ? obj.name + ": " + obj.description : describeTile(ch));
         ArrayList<String> lines = new ArrayList<>();
-        lines.add("Cursor " + tx + "," + ty + " | Adjacent-bound target | " + target);
+        lines.add("Selected target | Adjacent use required | " + target);
         String summary = hoveredButtonDescription();
         if (summary == null || summary.isEmpty()) summary = pendingInteractionSummary;
-        lines.add("Context: " + summary);
+        lines.add("Preflight: " + pendingInteractionSummary);
+        if (!summary.equals(pendingInteractionSummary)) lines.add("Context: " + summary);
         lines.add("Move cursor: WASD/Arrows | Confirm: far-right command button/Enter | Leave: ESC");
         g.setFont(smallFont);
         g.setColor(optionColor(GameOptions.TEXT_MAIN));
@@ -17665,6 +18469,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Recruit labor: " + factionRecruits.size() + "/" + recruitCapacity() + " workers. Requires Recruit Berthing Doctrine for hiring and Workshop Labor Discipline for assignment.");
                 BaseObject sm = selectedWorkerMachine();
                 lines.add("Selected machine: " + (sm==null?"none":sm.name + " [" + sm.qualityName + "] recipe=" + (sm.assignedRecipe==null||sm.assignedRecipe.isBlank()?"none":sm.assignedRecipe) + " worker=" + (sm.assignedWorker==null||sm.assignedWorker.isBlank()?"none":sm.assignedWorker) + " queue=" + sm.productionQueueRemaining + "/" + Math.max(1, sm.productionQueueTarget)));
+                lines.addAll(selectedProductionGuidanceLines(sm));
                 lines.addAll(MachineOperationStatusBridge.statusLines(this));
                 lines.addAll(StaffingLaborBridgeAuthority.statusLines(this));
                 lines.addAll(ManualStaffingAssignmentAuthority.statusLines(this));
@@ -17761,14 +18566,18 @@ String traderShelfContainerId(TraderSession trader) {
                         lines.add((i==selectedTradeOffer?" > ":"   ") + o.displayLine(activeTrader.buyPrice(o)));
                     }
                     lines.add("");
-                    lines.add("Trader also buys carried goods. Select an item in INVENTORY first, then return here and SELL.");
+                    lines.addAll(selectedTradeReadabilityLines());
+                    lines.add("");
+                    lines.add("Trader also buys the carried item currently selected in INVENTORY.");
                 } else if (activeConversationNpc != null) {
                     lines.add("Conversation: " + activeConversationNpc.name + " — " + activeConversationNpc.role + " — " + activeConversationNpc.faction.label);
-                    lines.add("State: " + activeConversationNpc.state + "   Symbol: " + activeConversationNpc.symbol + "   Position: " + activeConversationNpc.x + "," + activeConversationNpc.y);
-                    lines.add("Current branch: " + conversationBranch);
+                    lines.add("Standing: " + conversationStandingLine(activeConversationNpc));
+                    lines.add("Speaker read: " + conversationSpeakerReadLine(activeConversationNpc));
+                    lines.add("Current topic: " + conversationBranch);
+                    lines.addAll(conversationChoiceGuidanceLines(activeConversationNpc));
                     lines.add("Contracts: " + contractBoardLine(activeConversationNpc.faction));
                     for (FactionContract c : factionContracts) if (!c.completed && c.faction == activeConversationNpc.faction) lines.add("  " + c.longLine());
-                    lines.add("Use GREET, ASK WORK, ASK FACTION, TAKE BOUNTY, TAKE FETCH, TURN IN, or LEAVE. Every choice is recorded in the in-game event log.");
+                    lines.add("Every choice is recorded in the in-game event log.");
                 } else {
                     lines.add("No active trader or conversation. Depot fallback functions remain available if invoked from old content.");
                 }
@@ -18531,6 +19340,187 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
     void adjustSelectedColor(int delta) { logEvent(OptionsBoundaryAuthority.adjustSelectedColor(options, delta)); repaint(); }
     Color optionColor(int key) { return OptionsBoundaryAuthority.optionColor(options, key); }
 
+    ArrayList<String> controlsReferenceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(controlProfileTitle());
+        lines.add("Action names are shared across keyboard and controller paths; context decides whether a prompt moves, examines, interacts, confirms, or backs out.");
+        lines.add("Required recovery actions: Move, Confirm, Cancel/Back, Pause/Menu, and a keyboard/mouse fallback.");
+        for (InputAction action : InputAction.values()) {
+            lines.add(inputActionLabel(action) + " | " + inputActionContext(action) + " | "
+                    + keyboardPromptFor(action) + " | " + controllerPromptFor(action)
+                    + (requiredInputAction(action) ? " | required" : ""));
+        }
+        lines.add("Context overlap: E examines while the Look panel is open and interacts from the game surface; A/Cross confirms in menus and examines/interacts only where that panel owns the prompt.");
+        lines.add("Safe fallback: Escape/B/Circle backs out, and keyboard movement remains available if a controller is missing or reconnecting.");
+        if (rebindingTarget != null && !rebindingTarget.isEmpty()) lines.add(rebindingTarget);
+        return lines;
+    }
+
+    String controlProfileTitle() {
+        switch (controlsTab) {
+            case 1: return "XBOX CONTROL REFERENCE";
+            case 2: return "PLAYSTATION CONTROL REFERENCE";
+            case 3: return "STEAM DECK CONTROL REFERENCE";
+            case 4: return "GENERIC CONTROLLER REFERENCE";
+            default: return "KEYBOARD AND MOUSE CONTROL REFERENCE";
+        }
+    }
+
+    boolean requiredInputAction(InputAction action) {
+        return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT
+                || action == InputAction.MOVE_RIGHT || action == InputAction.CONFIRM || action == InputAction.CANCEL
+                || action == InputAction.PAUSE;
+    }
+
+    String inputActionLabel(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Move / nudge up";
+            case MOVE_DOWN: return "Move / nudge down";
+            case MOVE_LEFT: return "Move / nudge left";
+            case MOVE_RIGHT: return "Move / nudge right";
+            case CONFIRM: return "Confirm / choose";
+            case CANCEL: return "Cancel / back";
+            case WAIT: return "Wait one turn";
+            case INTERACT: return "Interact";
+            case EXAMINE: return "Examine visible target";
+            case INVENTORY: return "Inventory";
+            case CHARACTER: return "Character dossier";
+            case BUILD: return "Build and base tools";
+            case SENSES: return "Senses";
+            case PLAN_MOVE: return "Plan exact movement";
+            case PAUSE: return "Pause / menu";
+            case LOOK: return "Look";
+            case MAP: return "Map";
+            case ZOOM_IN: return "Zoom in";
+            case ZOOM_OUT: return "Zoom out";
+            case ATTACK: return "Combat targeting";
+            case RELOAD: return "Reload";
+            default: return action.name();
+        }
+    }
+
+    String inputActionContext(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "movement, targeting, lists";
+            case CONFIRM: return "menus, targeting, planning";
+            case CANCEL: return "global recovery";
+            case WAIT: return "game surface";
+            case INTERACT: return "game surface and interact panel";
+            case EXAMINE: return "Look panel";
+            case INVENTORY: case CHARACTER: case BUILD: case SENSES: case LOOK: case MAP: return "game surface";
+            case PLAN_MOVE: return "game surface movement planning";
+            case PAUSE: return "global menu";
+            case ZOOM_IN: case ZOOM_OUT: return "map and viewport";
+            case ATTACK: case RELOAD: return "combat";
+            default: return "general";
+        }
+    }
+
+    String keyboardPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Keyboard: W / Up";
+            case MOVE_DOWN: return "Keyboard: S / Down";
+            case MOVE_LEFT: return "Keyboard: A / Left";
+            case MOVE_RIGHT: return "Keyboard: D / Right";
+            case CONFIRM: return "Keyboard: Enter / Space";
+            case CANCEL: return "Keyboard: Escape";
+            case WAIT: return "Keyboard: . / Numpad 5";
+            case INTERACT: return "Keyboard: E";
+            case EXAMINE: return "Keyboard: E while looking";
+            case INVENTORY: return "Keyboard: I";
+            case CHARACTER: return "Keyboard: C";
+            case BUILD: return "Keyboard: B";
+            case SENSES: return "Keyboard: G";
+            case PLAN_MOVE: return "Keyboard: P";
+            case PAUSE: return "Keyboard: Escape";
+            case LOOK: return "Keyboard: L";
+            case MAP: return "Keyboard: M";
+            case ZOOM_IN: return "Keyboard: Home / wheel up";
+            case ZOOM_OUT: return "Keyboard: End / wheel down";
+            case ATTACK: return "Keyboard: F";
+            case RELOAD: return "Keyboard: X";
+            default: return "Keyboard: unassigned";
+        }
+    }
+
+    String controllerPromptFor(InputAction action) {
+        switch (controlsTab) {
+            case 1: return xboxPromptFor(action);
+            case 2: return playstationPromptFor(action);
+            case 3: return steamPromptFor(action);
+            case 4: return genericPromptFor(action);
+            default: return "Controller: see controller tabs";
+        }
+    }
+
+    String xboxPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Xbox: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Xbox: A";
+            case CANCEL: return "Xbox: B";
+            case INVENTORY: return "Xbox: X";
+            case CHARACTER: return "Xbox: Y";
+            case PAUSE: return "Xbox: Menu";
+            case LOOK: return "Xbox: View";
+            case ZOOM_IN: return "Xbox: RB";
+            case ZOOM_OUT: return "Xbox: LB";
+            case ATTACK: return "Xbox: right stick up";
+            case PLAN_MOVE: return "Xbox: right stick down";
+            default: return "Xbox: keyboard fallback";
+        }
+    }
+
+    String playstationPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "PlayStation: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "PlayStation: Cross";
+            case CANCEL: return "PlayStation: Circle";
+            case INVENTORY: return "PlayStation: Square";
+            case CHARACTER: return "PlayStation: Triangle";
+            case PAUSE: return "PlayStation: Options";
+            case LOOK: return "PlayStation: Share/Create";
+            case ZOOM_IN: return "PlayStation: R1";
+            case ZOOM_OUT: return "PlayStation: L1";
+            case ATTACK: return "PlayStation: right stick up";
+            case PLAN_MOVE: return "PlayStation: right stick down";
+            default: return "PlayStation: keyboard fallback";
+        }
+    }
+
+    String steamPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Steam: stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Steam: A";
+            case CANCEL: return "Steam: B";
+            case INVENTORY: return "Steam: X";
+            case CHARACTER: return "Steam: Y";
+            case PAUSE: return "Steam: Menu";
+            case LOOK: return "Steam: View";
+            case ZOOM_IN: return "Steam: R1";
+            case ZOOM_OUT: return "Steam: L1";
+            case ATTACK: return "Steam: right stick up";
+            case PLAN_MOVE: return "Steam: right stick down";
+            default: return "Steam: keyboard fallback";
+        }
+    }
+
+    String genericPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Generic: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Generic: south face";
+            case CANCEL: return "Generic: east face";
+            case INVENTORY: return "Generic: west face";
+            case CHARACTER: return "Generic: north face";
+            case PAUSE: return "Generic: Start";
+            case LOOK: return "Generic: Back/Select";
+            case ZOOM_IN: return "Generic: right bumper";
+            case ZOOM_OUT: return "Generic: left bumper";
+            case ATTACK: return "Generic: right stick up";
+            case PLAN_MOVE: return "Generic: right stick down";
+            default: return "Generic: keyboard fallback";
+        }
+    }
+
     void drawOptions(Graphics2D g) {
         int W = getWidth(), H = getHeight();
         g.setColor(optionColor(GameOptions.BACKGROUND));
@@ -18598,33 +19588,8 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming cogitator." );
             drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
         } else if (optionsTab == 3) {
-            ArrayList<String> lines = new ArrayList<>();
-            if (controlsTab == 0) {
-                Collections.addAll(lines,
-                    "KEYBOARD LAYOUT",
-                    "Move / Look Cursor: WASD or Arrow Keys",
-                    "Wait/settle motion: .  or NUMPAD 5  or WAIT command button",
-                    "Look: L", "Interact: E", "Inventory: I", "Character Dossier: C",
-                    "Build / Base: B", "Senses / Fog / Hearing: G", "Map: M",
-                    "World Zoom: Mouse Wheel / Home zooms in / End zooms out",
-                    "Factions and Disguise live inside Character Dossier.",
-                    "Command Selection: TAB / Up / Down", "Activate Button: ENTER / SPACE", "Pause / Back: ESC");
-            } else if (controlsTab == 1) {
-                Collections.addAll(lines,"XBOX CONTROLLER LAYOUT","Left Stick / D-Pad: Move cursor/player","A: Confirm / Interact","B: Back","X: Inventory","Y: Character","Menu: Pause","Bumpers: world zoom binding");
-            } else if (controlsTab == 2) {
-                Collections.addAll(lines,"PLAYSTATION CONTROLLER LAYOUT","Left Stick / D-Pad: Move cursor/player","Cross: Confirm / Interact","Circle: Back","Square: Inventory","Triangle: Character","Options: Pause","L1/R1: world zoom binding");
-            } else if (controlsTab == 3) {
-                Collections.addAll(lines,"STEAM DECK / STEAM CONTROLLER LAYOUT","Left Pad / Stick: Movement","A: Confirm","B: Back","X/Y: Inventory / Character","Menu: Pause","Rear grips: quick-command bindings.");
-            } else {
-                Collections.addAll(lines,
-                    "GENERIC SDL/JAMEPAD CONTROLLER LAYOUT",
-                    "Left Stick / D-Pad: Move cursor/player with 0.15 deadzone",
-                    "A / South Face: Confirm", "B / East Face: Back", "X / West Face: Inventory", "Y / North Face: Character",
-                    "Start: Pause", "Back/Select: Look", "L/R Bumper: zoom out / zoom in",
-                    "Keyboard and controller inputs are source-aware and can be used together.",
-                    "Runtime gamepad backend: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
-            }
-            if (rebindingTarget != null && !rebindingTarget.isEmpty()) lines.add("REBIND FIELD: " + rebindingTarget);
+            ArrayList<String> lines = controlsReferenceLines();
+            if (controlsTab == 4) lines.add("Runtime controller status: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
             drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
         } else if (optionsTab == 4) {
             ArrayList<String> lines = new ArrayList<>();
@@ -19021,7 +19986,8 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             return;
         }
         if (code==KeyEvent.VK_ESCAPE) {
-            if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("keyboard cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
             else if (screen==Screen.PANEL) closePanel();
             else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
             else if (screen==Screen.SECTOR_AUDIT) setScreen(Screen.MODS);
@@ -19099,6 +20065,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
         if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && code == KeyEvent.VK_T) { throwSelectedPortableLight(); return; }
         if (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT)) {
             if ((code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_E) && panelMode == PanelMode.INTERACT) { confirmInteraction(); repaint(); return; }
+            if (code==KeyEvent.VK_E && panelMode == PanelMode.LOOK) { examineSelectedLookTarget(); repaint(); return; }
             if (code==KeyEvent.VK_ENTER && panelMode == PanelMode.COMBAT) { confirmCombatTarget(); repaint(); return; }
             if (code==KeyEvent.VK_ENTER) { activateSelectedButtonUniversal(); return; }
         }
@@ -19162,7 +20129,17 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) { characterNameEditActive=false; candidateIndex=(candidateIndex+1)%candidates.size(); jobIndex=0; jobDossierScroll=0; jobDossierTab=0; logEvent("Selected candidate " + candidates.get(candidateIndex).name); repaint(); return; }
         }
         if (screen != Screen.GAME || world == null) return;
+        if (manualMovementPlanActive) {
+            int mdx = 0, mdy = 0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) mdx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) mdx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) mdy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) mdy=1;
+            if (mdx != 0 || mdy != 0) { nudgeManualMovementPlan(mdx, mdy); return; }
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_E) { confirmManualMovementPlan(); return; }
+        }
         if (code==KeyEvent.VK_R) { cycleMovementMode(); repaint(); return; }
+        if (code==KeyEvent.VK_P) { beginManualMovementPlan(); return; }
         if (code==KeyEvent.VK_PERIOD || code==KeyEvent.VK_NUMPAD5) { waitOneTurn(); repaint(); return; }
         if (code==KeyEvent.VK_L) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
         if (code==KeyEvent.VK_E) {
@@ -19194,7 +20171,8 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
         // Keyboard retains the existing direct KeyEvent path. This timer consumer only
         // translates GAMEPAD source states so a controller release cannot erase a held key.
         if (inputRegistry.consumePressed(InputAction.PAUSE, InputSource.GAMEPAD) || inputRegistry.consumePressed(InputAction.CANCEL, InputSource.GAMEPAD)) {
-            if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("gamepad cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
             else if (screen==Screen.PANEL) closePanel();
             else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
             else setScreen(Screen.MENU);
@@ -19202,7 +20180,8 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             return;
         }
         if (inputRegistry.consumePressed(InputAction.CONFIRM, InputSource.GAMEPAD)) {
-            if (screen == Screen.INTRO_CRAWL) continueFromIntroCrawl();
+            if (screen == Screen.GAME && manualMovementPlanActive) confirmManualMovementPlan();
+            else if (screen == Screen.INTRO_CRAWL) continueFromIntroCrawl();
             else if (screen == Screen.ZONE_SPLASH) continueFromZoneSplash();
             else activateSelectedButtonUniversal();
             repaint();
@@ -19210,6 +20189,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
         if (inputRegistry.consumePressed(InputAction.INVENTORY, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.INVENTORY); return; }
         if (inputRegistry.consumePressed(InputAction.CHARACTER, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.CHARACTER); return; }
         if (inputRegistry.consumePressed(InputAction.LOOK, InputSource.GAMEPAD) && screen == Screen.GAME) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
+        if (inputRegistry.consumePressed(InputAction.PLAN_MOVE, InputSource.GAMEPAD) && screen == Screen.GAME) { beginManualMovementPlan(); return; }
         if (inputRegistry.consumePressed(InputAction.ZOOM_IN, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(1, "gamepad bumper");
         if (inputRegistry.consumePressed(InputAction.ZOOM_OUT, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(-1, "gamepad bumper");
         if (now < nextUnifiedInputRepeatMillis) return;
@@ -19220,7 +20200,9 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
         if (inputRegistry.isActiveFromSource(InputAction.MOVE_DOWN, InputSource.GAMEPAD)) dy++;
         if (dx == 0 && dy == 0) return;
         nextUnifiedInputRepeatMillis = now + 125L;
-        if (screen == Screen.GAME && world != null) {
+        if (screen == Screen.GAME && world != null && manualMovementPlanActive) {
+            nudgeManualMovementPlan(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.GAME && world != null) {
             queueOrExecuteMovementInput(Integer.compare(dx, 0), Integer.compare(dy, 0));
         } else if (screen == Screen.PANEL && panelMode == PanelMode.LOOK && world != null) {
             lookCursorActive = true;

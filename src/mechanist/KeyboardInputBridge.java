@@ -32,12 +32,21 @@ final class KeyboardInputBridge {
                 registry.setDigital(InputSource.KEYBOARD, InputAction.CONFIRM, down); break;
             case KeyEvent.VK_ESCAPE:
                 registry.setDigital(InputSource.KEYBOARD, InputAction.CANCEL, down); registry.setDigital(InputSource.KEYBOARD, InputAction.PAUSE, down); break;
+            case KeyEvent.VK_PERIOD:
+            case KeyEvent.VK_NUMPAD5:
+                registry.setDigital(InputSource.KEYBOARD, InputAction.WAIT, down); break;
             case KeyEvent.VK_E:
-                registry.setDigital(InputSource.KEYBOARD, InputAction.INTERACT, down); break;
+                registry.setDigital(InputSource.KEYBOARD, InputAction.INTERACT, down); registry.setDigital(InputSource.KEYBOARD, InputAction.EXAMINE, down); break;
             case KeyEvent.VK_I:
                 registry.setDigital(InputSource.KEYBOARD, InputAction.INVENTORY, down); break;
             case KeyEvent.VK_C:
                 registry.setDigital(InputSource.KEYBOARD, InputAction.CHARACTER, down); break;
+            case KeyEvent.VK_B:
+                registry.setDigital(InputSource.KEYBOARD, InputAction.BUILD, down); break;
+            case KeyEvent.VK_G:
+                registry.setDigital(InputSource.KEYBOARD, InputAction.SENSES, down); break;
+            case KeyEvent.VK_P:
+                registry.setDigital(InputSource.KEYBOARD, InputAction.PLAN_MOVE, down); break;
             case KeyEvent.VK_L:
                 registry.setDigital(InputSource.KEYBOARD, InputAction.LOOK, down); break;
             case KeyEvent.VK_M:

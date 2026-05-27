@@ -14,6 +14,10 @@ final class PlayerFacingPanelBody {
     private PlayerFacingPanelBody() { }
 
     static String format(String body, int wrapWidth) {
+        if (body == null || body.isBlank()) {
+            return "";
+        }
+
         List<String> wrapped = PlayerFacingTextWrap.wrap(body, wrapWidth);
 
         if (wrapped.isEmpty()) {
