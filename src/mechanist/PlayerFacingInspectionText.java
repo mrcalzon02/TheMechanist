@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.util.Locale;
+
 /**
  * Shared Gate 3 helper for readable Look/Auspex inspection summaries.
  *
@@ -8,6 +10,8 @@ package mechanist;
  * ordinary gameplay inspection panels.</p>
  */
 final class PlayerFacingInspectionText {
+    private static final String NO_READABLE_DETAILS = "No readable details are available yet.";
+
     private PlayerFacingInspectionText() { }
 
     static String tile(String tileName, String detail) {
@@ -31,20 +35,50 @@ final class PlayerFacingInspectionText {
     }
 
     private static String describe(String title, String detail, String fallback) {
-        String safeTitle = PlayerFacingCopySanitizer.forOrdinaryPlayer(title)
-                .replace(':', ' ')
-                .trim();
+        String safeTitle = cleanTitle(title);
+        String safeDetail = cleanDetail(detail);
 
-        String safeDetail = PlayerFacingCopySanitizer.forOrdinaryPlayer(detail);
-
-        if (safeDetail.isBlank() || "No readable details are available yet.".equals(safeDetail)) {
+        if (safeDetail.isBlank()) {
             return fallback;
         }
 
-        if (safeTitle.isBlank() || "No readable details are available yet.".equals(safeTitle)) {
+        if (safeTitle.isBlank()) {
             return safeDetail;
         }
 
+        if (safeDetail.equalsIgnoreCase(safeTitle)) {
+            return safeTitle;
+        }
+
         return safeTitle + ": " + safeDetail;
+    }
+
+    private static String cleanTitle(String title) {
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(title)
+                .replace(':', ' ')
+                .replace('\n', ' ')
+                .replace('\r', ' ')
+                .trim();
+        if (isEmptyInspectionText(cleaned)) return "";
+        return cleaned;
+    }
+
+    private static String cleanDetail(String detail) {
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(detail)
+                .replace('\r', ' ')
+                .trim();
+        if (isEmptyInspectionText(cleaned)) return "";
+        return cleaned;
+    }
+
+    private static boolean isEmptyInspectionText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals(NO_READABLE_DETAILS.toLowerCase(Locale.ROOT))
+                || normalized.equals("internal record")
+                || normalized.equals("diagnostic details")
+                || normalized.equals("runtime service")
+                || normalized.equals("catalog")
+                || normalized.equals("the marked route");
     }
 }
