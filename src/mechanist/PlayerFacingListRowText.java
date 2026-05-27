@@ -34,6 +34,26 @@ final class PlayerFacingListRowText {
         return clampRow(safePrimary + " — " + safeSecondary);
     }
 
+    static String contractRow(String mission, String details, int wrapWidth) {
+        String safeMission = cleanContractPart(mission, true, wrapWidth);
+        String safeDetails = cleanContractPart(details, false, wrapWidth);
+
+        if (safeMission.isBlank() && safeDetails.isBlank()) return "Mission details unavailable.";
+        if (safeMission.isBlank()) return safeDetails;
+        if (safeDetails.isBlank() || safeDetails.equalsIgnoreCase(safeMission)) return safeMission;
+        return clampRow(safeMission + " — " + safeDetails);
+    }
+
+    static String contractDetail(String title, String body, int wrapWidth) {
+        String safeTitle = cleanContractPart(title, true, wrapWidth);
+        String safeBody = cleanContractPart(body, false, wrapWidth);
+
+        if (safeTitle.isBlank() && safeBody.isBlank()) return "Mission details unavailable.";
+        if (safeTitle.isBlank()) return safeBody;
+        if (safeBody.isBlank() || safeBody.equalsIgnoreCase(safeTitle)) return safeTitle;
+        return safeTitle + "\n" + safeBody;
+    }
+
     private static String cleanRowPart(String text, boolean primary, int wrapWidth) {
         String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
                 .replace(':', ' ')
@@ -53,6 +73,12 @@ final class PlayerFacingListRowText {
                 .trim();
         if (isEmptyRowText(wrapped)) return "";
         return clampRow(wrapped.endsWith(".") ? wrapped : wrapped + ".");
+    }
+
+    private static String cleanContractPart(String text, boolean title, int wrapWidth) {
+        String cleaned = cleanRowPart(text, title, wrapWidth);
+        if (isEmptyContractText(cleaned)) return "";
+        return cleaned;
     }
 
     private static String clampRow(String row) {
@@ -76,5 +102,21 @@ final class PlayerFacingListRowText {
                 || normalized.equals("contract")
                 || normalized.equals("row")
                 || normalized.equals("list");
+    }
+
+    private static boolean isEmptyContractText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("objective id")
+                || normalized.equals("objective key")
+                || normalized.equals("contract id")
+                || normalized.equals("reward token")
+                || normalized.equals("route state")
+                || normalized.equals("faction key")
+                || normalized.equals("mission token")
+                || normalized.equals("target token")
+                || normalized.equals("turn in token")
+                || normalized.equals("debug mission")
+                || normalized.equals("debug objective");
     }
 }
