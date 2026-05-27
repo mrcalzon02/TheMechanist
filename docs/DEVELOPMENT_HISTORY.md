@@ -219,3 +219,11 @@ Continued Milestone 02 conversation-readability work by expanding dialogue panel
 The conversation panel no longer depends on raw map symbol/position details for ordinary dialogue context and instead presents relationship and consequence information in player-facing terms.
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 3 - Production Panel Guidance Slice
+
+Continued Milestone 02 production-menu work by adding a compact selected-machine guidance block to the workbench panel. The panel now summarizes machine state, selected recipe fit, inputs, output forecast, worker/queue state, and the next unblock action before the player queues or runs production.
+
+The guidance uses player-facing wording for missing machines, unfinished construction, broken machinery, missing inputs, unavailable knowledge, manual operation, and worker assignment instead of relying only on the longer production/logistics status lists.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
