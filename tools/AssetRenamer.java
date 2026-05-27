@@ -66,7 +66,7 @@ public final class AssetRenamer {
             Matcher matcher = BACKTICK_PATH.matcher(line);
             while (matcher.find()) {
                 String path = matcher.group(1);
-                if (path.contains("Adeptus_Arbites_assets") || path.contains("Automata_servitors")) {
+                if (containsRenameTarget(path)) {
                     paths.add(path);
                 }
             }
@@ -74,10 +74,21 @@ public final class AssetRenamer {
         return paths;
     }
 
+    private static boolean containsRenameTarget(String path) {
+        return path.contains("Adeptus_Arbites_assets")
+                || path.contains("Automata_servitors")
+                || path.contains("GeneStealer_Cult")
+                || path.contains("genestealer-Cult-Walls")
+                || path.contains("Mechanicus");
+    }
+
     private static String renamePath(String path) {
         return path
                 .replace("Adeptus_Arbites_assets", "Enforcer_Assets")
-                .replace("Automata_servitors", "Automata_Drones");
+                .replace("Automata_servitors", "Automata_Drones")
+                .replace("GeneStealer_Cult", "Subversive_Cult")
+                .replace("genestealer-Cult-Walls", "subversive-cult-walls")
+                .replace("Mechanicus", "Forge_Engineers");
     }
 
     private static Path resolveInsideAssets(Path assetRoot, String manifestPath) throws IOException {
