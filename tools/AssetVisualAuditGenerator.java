@@ -81,21 +81,52 @@ public final class AssetVisualAuditGenerator {
         out.append("<meta charset=\"utf-8\">\n");
         out.append("<title>The Mechanist Asset Visual Audit</title>\n");
         out.append("<style>\n");
-        out.append("body{font-family:Arial,sans-serif;margin:24px;background:#111;color:#eee;}\n");
-        out.append("h1{margin-bottom:4px;} .meta{color:#aaa;margin-bottom:20px;}\n");
+        out.append("body{font-family:Arial,sans-serif;margin:0;background:#111;color:#eee;}\n");
+        out.append(".toolbar{position:sticky;top:0;z-index:50;background:#181818;padding:16px;border-bottom:1px solid #333;display:flex;gap:12px;align-items:center;}\n");
+        out.append("button{background:#2b6cb0;color:#fff;border:none;border-radius:6px;padding:10px 14px;font-weight:bold;cursor:pointer;}\n");
+        out.append("button:hover{background:#3d7fd1;}\n");
+        out.append(".meta{color:#aaa;}\n");
+        out.append(".page{padding:24px;}\n");
         out.append(".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}\n");
-        out.append(".card{background:#1b1b1b;border:1px solid #333;border-radius:8px;padding:10px;overflow:hidden;}\n");
+        out.append(".card{background:#1b1b1b;border:2px solid #333;border-radius:8px;padding:10px;overflow:hidden;cursor:pointer;transition:border-color .15s ease,transform .15s ease;}\n");
+        out.append(".card:hover{border-color:#666;transform:translateY(-1px);}\n");
+        out.append(".card.selected{border-color:#ff5757;box-shadow:0 0 0 2px rgba(255,87,87,.25);}\n");
         out.append(".card img{display:block;width:100%;height:auto;image-rendering:auto;background:#222;border-radius:4px;}\n");
         out.append(".name{font-size:12px;line-height:1.35;margin-top:8px;overflow-wrap:anywhere;color:#ddd;}\n");
+        out.append(".check{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:12px;color:#bbb;}\n");
+        out.append("textarea{width:100%;height:180px;margin-top:18px;background:#101010;color:#f0f0f0;border:1px solid #333;padding:12px;border-radius:8px;font-family:monospace;}\n");
         out.append("</style>\n</head>\n<body>\n");
+        out.append("<div class=\"toolbar\">\n");
+        out.append("<button onclick=\"exportSelected()\">Export Target List</button>\n");
+        out.append("<div class=\"meta\">Generated at ").append(escape(Instant.now().toString())).append(" | Images: ").append(imagePaths.size()).append(" | Click tiles to flag possible infringement.</div>\n");
+        out.append("</div>\n");
+        out.append("<div class=\"page\">\n");
         out.append("<h1>The Mechanist Asset Visual Audit</h1>\n");
-        out.append("<div class=\"meta\">Generated at ").append(escape(Instant.now().toString())).append("; images: ").append(imagePaths.size()).append("</div>\n");
         out.append("<div class=\"grid\">\n");
+
+        int index = 0;
         for (String path : imagePaths) {
             String src = "../assets/" + path;
-            out.append("<div class=\"card\"><img src=\"").append(escape(src)).append("\" alt=\"").append(escape(path)).append("\"><div class=\"name\">").append(escape(path)).append("</div></div>\n");
+            String id = "asset_" + index++;
+            out.append("<div class=\"card\" data-path=\"").append(escape(path)).append("\" onclick=\"toggleCard(this)\">\n");
+            out.append("<img src=\"").append(escape(src)).append("\" alt=\"").append(escape(path)).append("\">\n");
+            out.append("<div class=\"name\">").append(escape(path)).append("</div>\n");
+            out.append("<label class=\"check\"><input type=\"checkbox\" id=\"").append(id).append("\" onclick=\"event.stopPropagation();toggleCheckbox(this);\"> Flag for review</label>\n");
+            out.append("</div>\n");
         }
-        out.append("</div>\n</body>\n</html>\n");
+
+        out.append("</div>\n");
+        out.append("<textarea id=\"exportBox\" placeholder=\"Selected asset paths will appear here after export.\"></textarea>\n");
+        out.append("</div>\n");
+
+        out.append("<script>\n");
+        out.append("function toggleCard(card){const box=card.querySelector('input[type=checkbox]');box.checked=!box.checked;updateCard(card,box.checked);}\n");
+        out.append("function toggleCheckbox(box){updateCard(box.closest('.card'),box.checked);}\n");
+        out.append("function updateCard(card,selected){if(selected){card.classList.add('selected');}else{card.classList.remove('selected');}}\n");
+        out.append("function exportSelected(){const selected=[...document.querySelectorAll('.card.selected')].map(c=>c.dataset.path);const output=selected.join('\\n');document.getElementById('exportBox').value=output;if(output.length>0&&navigator.clipboard){navigator.clipboard.writeText(output).catch(()=>{});}}\n");
+        out.append("</script>\n");
+
+        out.append("</body>\n</html>\n");
         return out.toString();
     }
 
