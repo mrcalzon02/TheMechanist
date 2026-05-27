@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.util.Locale;
+
 /**
  * Shared Gate 3 composer for ordinary player-facing denial feedback.
  *
@@ -9,6 +11,8 @@ package mechanist;
  * registry handles, Java class names, paths, or debug-only wording.</p>
  */
 final class PlayerFacingDenialText {
+    private static final String NO_READABLE_DETAILS = "No readable details are available yet.";
+
     enum Context {
         LOOK("Inspection unavailable", "There is nothing useful to inspect here."),
         INTERACTION("Interaction unavailable", "That cannot be used right now."),
@@ -34,8 +38,8 @@ final class PlayerFacingDenialText {
 
     static String message(Context context, String reason) {
         Context resolved = context == null ? Context.INTERACTION : context;
-        String cleanReason = PlayerFacingCopySanitizer.forOrdinaryPlayer(reason);
-        if (cleanReason.isBlank() || "No readable details are available yet.".equals(cleanReason)) {
+        String cleanReason = cleanReason(reason);
+        if (cleanReason.isBlank()) {
             return resolved.fallback;
         }
         return resolved.title + ": " + cleanReason;
@@ -54,4 +58,33 @@ final class PlayerFacingDenialText {
     static String trade(String reason) { return message(Context.TRADE, reason); }
 
     static String combat(String reason) { return message(Context.COMBAT, reason); }
+
+    private static String cleanReason(String reason) {
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(reason)
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
+
+        if (isEmptyReason(cleaned)) return "";
+        return cleaned.endsWith(".") ? cleaned : cleaned + ".";
+    }
+
+    private static boolean isEmptyReason(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals(NO_READABLE_DETAILS.toLowerCase(Locale.ROOT))
+                || normalized.equals("internal record")
+                || normalized.equals("diagnostic details")
+                || normalized.equals("runtime service")
+                || normalized.equals("catalog")
+                || normalized.equals("the marked route")
+                || normalized.equals("debug")
+                || normalized.equals("error")
+                || normalized.equals("exception")
+                || normalized.equals("failed")
+                || normalized.equals("blocked")
+                || normalized.equals("missing")
+                || normalized.equals("unavailable")
+                || normalized.equals("denied");
+    }
 }

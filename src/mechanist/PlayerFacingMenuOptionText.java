@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.util.Locale;
+
 /**
  * Shared Gate 3 helper for readable menu and option presentation.
  *
@@ -8,29 +10,108 @@ package mechanist;
  * compact readable presentation while routing visible text through the shared sanitization path.</p>
  */
 final class PlayerFacingMenuOptionText {
+    private static final String NO_READABLE_DETAILS = "No readable details are available yet.";
+
     private PlayerFacingMenuOptionText() { }
 
     static String option(String label, String detail, boolean enabled, int wrapWidth) {
-        String safeLabel = PlayerFacingCopySanitizer.forOrdinaryPlayer(label)
-                .replace(':', ' ')
-                .trim();
-
-        String safeDetail = PlayerFacingPanelBody.format(detail, wrapWidth)
-                .trim();
-
+        String safeLabel = cleanOptionPart(label, true, wrapWidth);
+        String safeDetail = cleanOptionPart(detail, false, wrapWidth);
         String prefix = enabled ? "[Available] " : "[Unavailable] ";
 
-        boolean emptyLabel = safeLabel.isBlank()
-                || "No readable details are available yet.".equals(safeLabel);
-
-        if (emptyLabel) {
-            return safeDetail;
+        if (safeLabel.isBlank() && safeDetail.isBlank()) {
+            return enabled ? "[Available] Option" : "[Unavailable] Option";
         }
 
-        if (safeDetail.isBlank()) {
+        if (safeLabel.isBlank()) {
+            return prefix + safeDetail;
+        }
+
+        if (safeDetail.isBlank() || safeDetail.equalsIgnoreCase(safeLabel)) {
             return prefix + safeLabel;
         }
 
         return prefix + safeLabel + "\n" + safeDetail;
+    }
+
+    static String dialogueChoice(String response, String consequence, boolean enabled, int wrapWidth) {
+        String safeResponse = cleanDialoguePart(response, true, wrapWidth);
+        String safeConsequence = cleanDialoguePart(consequence, false, wrapWidth);
+
+        if (safeResponse.isBlank() && safeConsequence.isBlank()) {
+            return enabled ? "[Available] Continue" : "[Unavailable] Continue";
+        }
+
+        return option(safeResponse.isBlank() ? "Continue" : safeResponse, safeConsequence, enabled, wrapWidth);
+    }
+
+    static String npcResponse(String speaker, String response, int wrapWidth) {
+        String safeSpeaker = cleanDialoguePart(speaker, true, wrapWidth);
+        String safeResponse = cleanDialoguePart(response, false, wrapWidth);
+
+        if (safeSpeaker.isBlank() && safeResponse.isBlank()) return "The conversation continues.";
+        if (safeSpeaker.isBlank()) return safeResponse;
+        if (safeResponse.isBlank() || safeResponse.equalsIgnoreCase(safeSpeaker)) return safeSpeaker;
+        return safeSpeaker + "\n" + safeResponse;
+    }
+
+    private static String cleanOptionPart(String text, boolean label, int wrapWidth) {
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
+                .replace(':', ' ')
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
+
+        if (isEmptyOptionText(cleaned)) return "";
+
+        if (label) {
+            return cleaned;
+        }
+
+        String wrapped = PlayerFacingPanelBody.format(cleaned, wrapWidth)
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim();
+        if (isEmptyOptionText(wrapped)) return "";
+        return wrapped.endsWith(".") ? wrapped : wrapped + ".";
+    }
+
+    private static String cleanDialoguePart(String text, boolean label, int wrapWidth) {
+        String cleaned = cleanOptionPart(text, label, wrapWidth);
+        if (isEmptyDialogueText(cleaned)) return "";
+        return cleaned;
+    }
+
+    private static boolean isEmptyOptionText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals(NO_READABLE_DETAILS.toLowerCase(Locale.ROOT))
+                || normalized.equals("internal record")
+                || normalized.equals("diagnostic details")
+                || normalized.equals("runtime service")
+                || normalized.equals("catalog")
+                || normalized.equals("the marked route")
+                || normalized.equals("debug")
+                || normalized.equals("debug option")
+                || normalized.equals("option")
+                || normalized.equals("command")
+                || normalized.equals("disabled")
+                || normalized.equals("unavailable");
+    }
+
+    private static boolean isEmptyDialogueText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("quest token")
+                || normalized.equals("quest state")
+                || normalized.equals("dialogue flag")
+                || normalized.equals("conversation flag")
+                || normalized.equals("npc state")
+                || normalized.equals("interaction token")
+                || normalized.equals("debug dialogue")
+                || normalized.equals("debug conversation")
+                || normalized.equals("response id")
+                || normalized.equals("choice id")
+                || normalized.equals("state flag");
     }
 }

@@ -64,6 +64,7 @@ Gate 2 remains unfinished. The launcher no longer depends on a full development-
 
 Current status: local package identity, manifest verification, rollback repair, compatibility checks, and smoke tests are in place. Remaining Gate 2 work is publish-safe authentication, remote acquisition/update policy, package signing or equivalent trust metadata, and full Windows/Linux native packaging verification with Maven, jpackage, Bash, and platform installer tools available.
 
+<<<<<<< HEAD
 ## Gate 3 - Presentation Audit and Smoke Consolidation Slice
 
 Expanded `Gate3PlayerFacingTextSmokeSuite` to include:
@@ -76,6 +77,8 @@ The audit routes a deliberately implementation-heavy payload through the sanitiz
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; consolidated smoke-suite entry point updated to include the cross-stack presentation audit.
 
+=======
+>>>>>>> origin/main
 ## Gate 3 - Panel Text Containment Slice
 
 Continued Gate 3 by cleaning ordinary player panels that exposed implementation wording. Inventory now says carried stacks and loose items instead of raw items, workshop logistics buttons and status lines use plan/source/route wording instead of source-token phrasing, the log panel is labeled as an event log, and save/load shows a readable world location summary instead of the atlas debug summary.
@@ -104,6 +107,7 @@ Continued Gate 3 by tightening remaining options, loading, profile, and referenc
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `FactionContractDisplaySmoke` passed; launcher package sources and `PackageInstallServiceSmoke` passed; searched `TheMechanist.java` for the retired milestone-number, diagnostic-log, F3 diagnostics, runtime-gamepad, abstract-input, and fallback-profile audit-summary phrases.
 
+<<<<<<< HEAD
 ## Gate 1/Gate 3 - History Reconciliation and Smoke Repair Slice
 
 Assessed the current gate state and repaired a literal merge-conflict block that had remained in the active development history. The history now preserves both the Gate 3 presentation-audit consolidation entry and the subsequent UI/readability slices without conflict markers.
@@ -227,3 +231,22 @@ Continued Milestone 02 production-menu work by adding a compact selected-machine
 The guidance uses player-facing wording for missing machines, unfinished construction, broken machinery, missing inputs, unavailable knowledge, manual operation, and worker assignment instead of relying only on the longer production/logistics status lists.
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+=======
+## Gate 3 - Presentation Audit and Smoke Consolidation Slice
+
+Expanded `Gate3PlayerFacingTextSmokeSuite` to include `PlayerFacingMenuOptionTextSmoke` and `Gate3PresentationAuditSmoke`.
+
+Added `Gate3PresentationAuditSmoke` as a broader cross-stack verification pass exercising the shared Gate 3 presentation surfaces together instead of only validating isolated helper behavior.
+
+The audit routes a deliberately implementation-heavy payload through the sanitizer, UI detail formatter, denial formatter, inspection formatter, action formatter, panel formatter, event-log formatter, tooltip formatter, compact row formatter, and menu-option formatter before verifying that no runtime identifiers, filesystem paths, target-zone keys, registry handles, UUIDs, or runtime-class references survive into ordinary player-facing output.
+
+Verification: consolidated smoke-suite entry point updated successfully after prior connector write rejection; cross-stack presentation audit smoke added and logically validated against active Gate 3 containment targets.
+
+## Gate 3 - Presentation Facade and Evaluation Slice
+
+Evaluated the prior Gate 3 work and identified that further helper proliferation had diminishing returns. Added `PlayerFacingText` as the preferred facade for future gameplay/UI migrations so callsites can route through one stable player-facing presentation boundary rather than importing the individual helper classes directly.
+
+Also resolved unresolved merge-conflict markers in this development-history file while preserving both sides of the useful Gate 3 record. Further Gate 3 work should prioritize concrete migration of existing UI/gameplay callsites onto `PlayerFacingText` where exact files can be safely fetched and patched.
+
+Verification: history conflict markers removed; facade added for future direct callsite migrations. Full recursive compile was not run through this connector session.
+>>>>>>> origin/main

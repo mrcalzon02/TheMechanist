@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.util.Locale;
+
 /**
  * Shared Gate 3 helper for readable positive-action feedback.
  *
@@ -8,6 +10,8 @@ package mechanist;
  * ordinary gameplay feedback surfaces.</p>
  */
 final class PlayerFacingActionText {
+    private static final String NO_READABLE_DETAILS = "No readable details are available yet.";
+
     private PlayerFacingActionText() { }
 
     static String interaction(String action, String detail) {
@@ -35,30 +39,41 @@ final class PlayerFacingActionText {
     }
 
     private static String describe(String action, String detail, String fallback) {
-        String safeAction = PlayerFacingCopySanitizer.forOrdinaryPlayer(action)
+        String safeAction = cleanActionPart(action, true);
+        String safeDetail = cleanActionPart(detail, false);
+
+        if (safeAction.isBlank() && safeDetail.isBlank()) return fallback;
+        if (safeDetail.isBlank()) return safeAction;
+        if (safeAction.isBlank()) return safeDetail;
+        if (safeDetail.equalsIgnoreCase(safeAction)) return safeAction;
+        return safeAction + ": " + safeDetail;
+    }
+
+    private static String cleanActionPart(String text, boolean title) {
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
                 .replace(':', ' ')
+                .replace('\r', ' ')
+                .replace('\n', ' ')
                 .trim();
 
-        String safeDetail = PlayerFacingCopySanitizer.forOrdinaryPlayer(detail);
+        if (isEmptyActionText(cleaned)) return "";
+        if (title) return cleaned;
+        return cleaned.endsWith(".") ? cleaned : cleaned + ".";
+    }
 
-        boolean emptyAction = safeAction.isBlank()
-                || "No readable details are available yet.".equals(safeAction);
-
-        boolean emptyDetail = safeDetail.isBlank()
-                || "No readable details are available yet.".equals(safeDetail);
-
-        if (emptyAction && emptyDetail) {
-            return fallback;
-        }
-
-        if (emptyDetail) {
-            return safeAction;
-        }
-
-        if (emptyAction) {
-            return safeDetail;
-        }
-
-        return safeAction + ": " + safeDetail;
+    private static boolean isEmptyActionText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals(NO_READABLE_DETAILS.toLowerCase(Locale.ROOT))
+                || normalized.equals("internal record")
+                || normalized.equals("diagnostic details")
+                || normalized.equals("runtime service")
+                || normalized.equals("catalog")
+                || normalized.equals("the marked route")
+                || normalized.equals("debug")
+                || normalized.equals("action")
+                || normalized.equals("result")
+                || normalized.equals("success")
+                || normalized.equals("completed");
     }
 }
