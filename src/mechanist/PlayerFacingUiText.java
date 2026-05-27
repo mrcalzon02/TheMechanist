@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.util.Locale;
+
 /**
  * Gate 3 adapter layer for ordinary player-facing UI text.
  *
@@ -9,6 +11,8 @@ package mechanist;
  * audit logs outside this class.</p>
  */
 final class PlayerFacingUiText {
+    private static final String NO_READABLE_DETAILS = "No readable details are available yet.";
+
     private PlayerFacingUiText() { }
 
     static String lookDetail(String subject, String detail) {
@@ -43,6 +47,37 @@ final class PlayerFacingUiText {
         return cleaned + " Diagnostic details were recorded.";
     }
 
+    static String controlHint(String action, String keyName, String detail) {
+        String safeAction = cleanGuidancePart(action, true);
+        String safeKey = cleanGuidancePart(keyName, true);
+        String safeDetail = cleanGuidancePart(detail, false);
+
+        if (safeAction.isBlank() && safeKey.isBlank() && safeDetail.isBlank()) {
+            return "Open the controls menu for available commands.";
+        }
+
+        StringBuilder line = new StringBuilder();
+        if (!safeAction.isBlank()) line.append(safeAction);
+        if (!safeKey.isBlank()) {
+            if (line.length() > 0) line.append(" — ");
+            line.append(safeKey);
+        }
+        if (!safeDetail.isBlank()) {
+            if (line.length() > 0) line.append("\n");
+            line.append(safeDetail);
+        }
+        return line.toString();
+    }
+
+    static String helpPanel(String title, String body, int wrapWidth) {
+        String safeTitle = cleanGuidancePart(title, true);
+        String safeBody = cleanGuidancePart(body, false);
+        if (safeTitle.isBlank() && safeBody.isBlank()) return "Controls\nOpen the controls menu for available commands.";
+        if (safeTitle.isBlank()) return PlayerFacingPanelBody.format(safeBody, wrapWidth);
+        if (safeBody.isBlank()) return safeTitle;
+        return safeTitle + "\n" + PlayerFacingPanelBody.format(safeBody, wrapWidth);
+    }
+
     static String titledLine(String title, String detail, String fallback) {
         String safeTitle = sanitizeTitle(title);
         String safeDetail = PlayerFacingCopySanitizer.forOrdinaryPlayer(detail);
@@ -61,5 +96,36 @@ final class PlayerFacingUiText {
         String safe = PlayerFacingCopySanitizer.forOrdinaryPlayer(title);
         if ("No readable details are available yet.".equals(safe)) return "";
         return safe.replace(':', ' ').trim();
+    }
+
+    private static String cleanGuidancePart(String text, boolean title) {
+        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
+                .replace(':', ' ')
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replace('\t', ' ')
+                .trim();
+        if (isEmptyGuidanceText(cleaned)) return "";
+        if (title) return cleaned;
+        return cleaned.endsWith(".") ? cleaned : cleaned + ".";
+    }
+
+    private static boolean isEmptyGuidanceText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals(NO_READABLE_DETAILS.toLowerCase(Locale.ROOT))
+                || normalized.equals("internal record")
+                || normalized.equals("diagnostic details")
+                || normalized.equals("runtime service")
+                || normalized.equals("catalog")
+                || normalized.equals("the marked route")
+                || normalized.equals("debug")
+                || normalized.equals("input")
+                || normalized.equals("control")
+                || normalized.equals("keybinding")
+                || normalized.equals("command")
+                || normalized.equals("binding")
+                || normalized.equals("handler")
+                || normalized.equals("listener");
     }
 }
