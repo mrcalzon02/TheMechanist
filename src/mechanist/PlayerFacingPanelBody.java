@@ -7,8 +7,8 @@ import java.util.Locale;
 /**
  * Shared Gate 3 formatter for bounded ordinary panel body text.
  *
- * <p>This helper combines sanitization and deterministic wrapping so gameplay/UI callsites can
- * migrate away from scattered local formatting behavior. The output is intended for event logs,
+ * <p>This helper combines local cleanup and deterministic wrapping so gameplay/UI callsites can
+ * migrate away from scattered formatting behavior. The output is intended for event logs,
  * inspection panels, conversation bodies, contract detail panes, inventory descriptions, and
  * ordinary overlay windows.</p>
  */
@@ -18,16 +18,8 @@ final class PlayerFacingPanelBody {
     private PlayerFacingPanelBody() { }
 
     static String format(String body, int wrapWidth) {
-<<<<<<< HEAD
-        if (body == null || body.isBlank()) {
-            return "";
-        }
-
-        List<String> wrapped = PlayerFacingTextWrap.wrap(body, wrapWidth);
-=======
         String cleanBody = cleanPanelPart(body, false);
         if (cleanBody.isBlank()) return "";
->>>>>>> origin/main
 
         List<String> wrapped = PlayerFacingTextWrap.wrap(cleanBody, wrapWidth);
         List<String> visible = new ArrayList<>();
@@ -49,14 +41,17 @@ final class PlayerFacingPanelBody {
     }
 
     private static String cleanPanelPart(String text, boolean title) {
-        String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
+        if (text == null || text.isBlank()) return "";
+
+        String cleaned = text
                 .replace(':', ' ')
                 .replace('\r', ' ')
+                .replace('\t', ' ')
                 .trim();
 
         if (title) cleaned = cleaned.replace('\n', ' ').trim();
         if (isEmptyPanelText(cleaned)) return "";
-        return cleaned;
+        return cleaned.replaceAll("\\s+", " ").trim();
     }
 
     private static boolean isEmptyPanelText(String text) {
