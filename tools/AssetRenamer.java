@@ -79,6 +79,7 @@ public final class AssetRenamer {
                 || path.contains("Automata_servitors")
                 || path.contains("GeneStealer_Cult")
                 || path.contains("genestealer-Cult-Walls")
+                || path.contains("genestealer_Cult_floors")
                 || path.contains("Mechanicus");
     }
 
@@ -88,6 +89,7 @@ public final class AssetRenamer {
                 .replace("Automata_servitors", "Automata_Drones")
                 .replace("GeneStealer_Cult", "Subversive_Cult")
                 .replace("genestealer-Cult-Walls", "subversive-cult-walls")
+                .replace("genestealer_Cult_floors", "subversive_cult_floors")
                 .replace("Mechanicus", "Forge_Engineers");
     }
 
