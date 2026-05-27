@@ -34,6 +34,27 @@ final class PlayerFacingMenuOptionText {
         return prefix + safeLabel + "\n" + safeDetail;
     }
 
+    static String dialogueChoice(String response, String consequence, boolean enabled, int wrapWidth) {
+        String safeResponse = cleanDialoguePart(response, true, wrapWidth);
+        String safeConsequence = cleanDialoguePart(consequence, false, wrapWidth);
+
+        if (safeResponse.isBlank() && safeConsequence.isBlank()) {
+            return enabled ? "[Available] Continue" : "[Unavailable] Continue";
+        }
+
+        return option(safeResponse.isBlank() ? "Continue" : safeResponse, safeConsequence, enabled, wrapWidth);
+    }
+
+    static String npcResponse(String speaker, String response, int wrapWidth) {
+        String safeSpeaker = cleanDialoguePart(speaker, true, wrapWidth);
+        String safeResponse = cleanDialoguePart(response, false, wrapWidth);
+
+        if (safeSpeaker.isBlank() && safeResponse.isBlank()) return "The conversation continues.";
+        if (safeSpeaker.isBlank()) return safeResponse;
+        if (safeResponse.isBlank() || safeResponse.equalsIgnoreCase(safeSpeaker)) return safeSpeaker;
+        return safeSpeaker + "\n" + safeResponse;
+    }
+
     private static String cleanOptionPart(String text, boolean label, int wrapWidth) {
         String cleaned = PlayerFacingCopySanitizer.forOrdinaryPlayer(text)
                 .replace(':', ' ')
@@ -55,6 +76,12 @@ final class PlayerFacingMenuOptionText {
         return wrapped.endsWith(".") ? wrapped : wrapped + ".";
     }
 
+    private static String cleanDialoguePart(String text, boolean label, int wrapWidth) {
+        String cleaned = cleanOptionPart(text, label, wrapWidth);
+        if (isEmptyDialogueText(cleaned)) return "";
+        return cleaned;
+    }
+
     private static boolean isEmptyOptionText(String text) {
         if (text == null || text.isBlank()) return true;
         String normalized = text.trim().toLowerCase(Locale.ROOT);
@@ -70,5 +97,21 @@ final class PlayerFacingMenuOptionText {
                 || normalized.equals("command")
                 || normalized.equals("disabled")
                 || normalized.equals("unavailable");
+    }
+
+    private static boolean isEmptyDialogueText(String text) {
+        if (text == null || text.isBlank()) return true;
+        String normalized = text.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("quest token")
+                || normalized.equals("quest state")
+                || normalized.equals("dialogue flag")
+                || normalized.equals("conversation flag")
+                || normalized.equals("npc state")
+                || normalized.equals("interaction token")
+                || normalized.equals("debug dialogue")
+                || normalized.equals("debug conversation")
+                || normalized.equals("response id")
+                || normalized.equals("choice id")
+                || normalized.equals("state flag");
     }
 }
