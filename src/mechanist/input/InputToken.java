@@ -93,7 +93,7 @@ public record InputToken(InputDevice device, String code, String displayName) {
             if (word.isBlank()) {
                 continue;
             }
-            if (!result.isEmpty()) {
+            if (result.length() > 0) {
                 result.append(' ');
             }
             result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
