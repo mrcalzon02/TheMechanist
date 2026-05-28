@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Builds a local HTML visual audit sheet for every PNG under assets/.
+ * Builds a local HTML visual audit sheet for PNG assets.
  *
  * Run from the repository root:
  *   javac tools/AssetVisualAuditGenerator.java
@@ -18,44 +18,65 @@ import java.util.stream.Stream;
  *
  * Optional arguments:
  *   java -cp tools AssetVisualAuditGenerator [assetRoot] [outputHtml]
+ *   java -cp tools AssetVisualAuditGenerator --high-native-only
  */
 public final class AssetVisualAuditGenerator {
     private static final Path ASSET_ROOT = Paths.get("assets");
     private static final Path OUTPUT = Paths.get("docs", "ASSET_VISUAL_SHEET.html");
+    private static final String HIGH_NATIVE_PREFIX = "graphics/generated/high_native/";
 
     private AssetVisualAuditGenerator() { }
 
     public static void main(String[] args) throws IOException {
-        Path assetRoot = args.length >= 1 ? Paths.get(args[0]) : ASSET_ROOT;
-        Path output = args.length >= 2 ? Paths.get(args[1]) : OUTPUT;
+        boolean highNativeOnly = hasFlag(args, "--high-native-only");
+        List<String> positional = positionalArgs(args);
+        Path assetRoot = positional.size() >= 1 ? Paths.get(positional.get(0)) : ASSET_ROOT;
+        Path output = positional.size() >= 2 ? Paths.get(positional.get(1)) : OUTPUT;
 
         if (!Files.isDirectory(assetRoot)) throw new IOException("Missing asset root: " + assetRoot.toAbsolutePath());
 
-        List<String> imagePaths = collectImagePaths(assetRoot);
-        String html = renderHtml(imagePaths);
+        List<String> imagePaths = collectImagePaths(assetRoot, highNativeOnly);
+        String html = renderHtml(imagePaths, highNativeOnly);
 
         Path parent = output.toAbsolutePath().getParent();
         if (parent != null) Files.createDirectories(parent);
         Files.writeString(output, html, StandardCharsets.UTF_8);
 
         System.out.println("Wrote visual audit sheet: " + output.toAbsolutePath());
+        System.out.println("Mode: " + (highNativeOnly ? "high native only" : "all PNG assets"));
         System.out.println("Images included: " + imagePaths.size());
     }
 
-    private static List<String> collectImagePaths(Path assetRoot) throws IOException {
+    private static boolean hasFlag(String[] args, String flag) {
+        for (String arg : args) {
+            if (flag.equalsIgnoreCase(arg)) return true;
+        }
+        return false;
+    }
+
+    private static List<String> positionalArgs(String[] args) {
+        List<String> positional = new ArrayList<>();
+        for (String arg : args) {
+            if (!arg.startsWith("--")) positional.add(arg);
+        }
+        return positional;
+    }
+
+    private static List<String> collectImagePaths(Path assetRoot, boolean highNativeOnly) throws IOException {
         Path normalizedRoot = assetRoot.toAbsolutePath().normalize();
         List<String> paths = new ArrayList<>();
         try (Stream<Path> stream = Files.walk(normalizedRoot)) {
             stream.filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".png"))
                     .map(path -> normalizedRoot.relativize(path.toAbsolutePath().normalize()).toString().replace('\\', '/'))
+                    .filter(path -> !highNativeOnly || path.startsWith(HIGH_NATIVE_PREFIX))
                     .sorted(Comparator.naturalOrder())
                     .forEach(paths::add);
         }
         return paths;
     }
 
-    private static String renderHtml(List<String> imagePaths) {
+    private static String renderHtml(List<String> imagePaths, boolean highNativeOnly) {
         StringBuilder out = new StringBuilder();
         out.append("<!doctype html>\n<html lang=\"en\">\n<head>\n");
         out.append("<meta charset=\"utf-8\">\n");
@@ -78,7 +99,10 @@ public final class AssetVisualAuditGenerator {
         out.append("</style>\n</head>\n<body>\n");
         out.append("<div class=\"toolbar\">\n");
         out.append("<button onclick=\"exportSelected()\">Export Target List</button>\n");
-        out.append("<div class=\"meta\">Generated at ").append(escape(Instant.now().toString())).append(" | Images: ").append(imagePaths.size()).append(" | Click tiles to flag possible infringement.</div>\n");
+        out.append("<div class=\"meta\">Generated at ").append(escape(Instant.now().toString()))
+                .append(" | Mode: ").append(highNativeOnly ? "high-native source assets only" : "all PNG assets")
+                .append(" | Images: ").append(imagePaths.size())
+                .append(" | Click tiles to flag possible infringement.</div>\n");
         out.append("</div>\n");
         out.append("<div class=\"page\">\n");
         out.append("<h1>The Mechanist Asset Visual Audit</h1>\n");
