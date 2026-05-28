@@ -1,38 +1,45 @@
-# The Mechanist — Repository Workspace
+# The Mechanist - Repository Workspace
 
-The root of this repository is a development workspace, not the final client package layout.
+This repository is the development workspace for The Mechanist. It is not the final installed client layout.
 
 The intended user delivery path is:
 
 ```text
-installer → thin launcher → client → server
+PACKAGE_installer -> PACKAGE_launcher -> PACKAGE_client -> packaged server payload
 ```
 
-## Top-level workspace map
+## Top-Level Workspace Map
 
-- `client/` — client/runtime distribution boundary. Client-facing readme, runtime package notes, shipped client/server package contents, and client distribution rules belong here.
-- `launcher/` — thin launcher and package-orchestration workspace. Manifest verification, acquisition/update/rollback, diagnostics, and launch handoff belong here.
-- `installer/` — installer/native packaging workspace. Installer metadata, packaging materials, and installer-facing docs belong here.
-- `docs/` — durable governance, standards, development history, and master plan only.
-- `src/` — Java source tree while the build remains Maven-rooted.
-- `assets/` — source/runtime asset inputs while the asset and package pipelines remain Maven-rooted.
-- `scripts/` — development/build automation. Scripts should migrate under their owning workspace as the build system is refactored.
-- `modding/` — public modding API references and examples where present.
-- `tools/` — developer tooling and verification helpers.
+- `PACKAGE_client/` - shipped client/runtime package boundary. Client launch files, runtime assets, config, bundled libraries, server payload material, modding examples, and client-facing notes belong here.
+- `PACKAGE_launcher/` - thin launcher and package-orchestration workspace. Launcher code, launcher resources, package acquisition, verification, diagnostics, update, rollback, and launch handoff belong here.
+- `PACKAGE_installer/` - installer/native packaging workspace. Installer scripts, wrapper material, packaging notes, and installer-facing docs belong here.
+- `ROOT_docs/` - durable governance, standards, development history, milestone planning, handoff, and archived planning material.
+- `ROOT_SRC_assets/` - protected source asset vault. These files are upstream source material and must not be edited in place.
+- `ROOT_tools/` - developer tooling and verification helpers that are not part of the shipped runtime package.
+- `scripts/` - current build/package automation that has not yet been moved under a tighter owning workspace.
+- `src/` - Java source tree while the build remains Maven-rooted.
 
-## Current development focus
+## Asset Rule
 
-The current line is public-safe rebase and delivery-path cleanup. Older prototype identity is being replaced by original civic-industrial setting architecture while preserving the simulation/client/server systems that remain useful.
+Do not use documentation manifests as a substitute for the real file architecture.
 
-## Durable governance
+`ROOT_SRC_assets/` is the preserved source vault. When an asset is transformed, renamed, compressed, resized, cleared for runtime use, or otherwise made game-ready, place the resulting file in the folder where the consuming runtime actually loads it, such as `PACKAGE_client/assets/` or `PACKAGE_launcher/java/src/main/resources/assets/`. Documentation may describe the rule, but it must not create a pointer-only layer that pretends assets have moved.
 
-Read these before code/package work:
+Generated indexes may exist only when code, tooling, or packaging consumes them. They are not the authority for where files belong.
 
-- `docs/MASTER_DEVELOPMENT_PLAN.md`
-- `docs/STANDARDS_AND_PRACTICES.md`
-- `docs/DEVELOPMENT_HISTORY.md`
-- `docs/MASTER_GOVERNANCE_REVISION_II.md`
+## Current Development Focus
 
-## Distribution notes
+The current line is public-safe rebase and delivery-path cleanup. Older prototype identity is being replaced by original civic-industrial setting architecture while preserving useful simulation, client, launcher, and server systems.
 
-A user should not need to clone or download the whole repository to run the launcher. The installer should install the thin launcher; the launcher should acquire and verify client, server, and support-library packages through manifests. The game client may verify package completeness, but it must not download dependencies during game launch.
+## Durable Governance
+
+Read these before code, package, or asset work:
+
+- `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md`
+- `ROOT_docs/STANDARDS_AND_PRACTICES.md`
+- `ROOT_docs/DEVELOPMENT_HISTORY.md`
+- `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md`
+
+## Distribution Notes
+
+A user should not need the whole development repository to run the launcher. The installer should install the thin launcher; the launcher should acquire and verify client, server, and support-library packages. Package manifests are allowed for acquisition and integrity checks, but they must not replace the physical runtime asset layout. The game client may verify package completeness, but it must not download dependencies during game launch.

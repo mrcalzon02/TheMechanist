@@ -2,7 +2,7 @@
 
 This document marks the older topical milestone and supplement files as **legacy source material**. They are preserved for traceability, but they are no longer the preferred implementation entry point.
 
-Use the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md` for active planning and Codex handoff.
+Use the ordered milestone sequence indexed by `ROOT_docs/MILESTONE_INDEX.md` for active planning and Codex handoff.
 
 ## Authority rule
 

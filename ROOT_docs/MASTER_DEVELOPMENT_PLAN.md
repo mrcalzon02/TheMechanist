@@ -1,6 +1,6 @@
 # The Mechanist - Master Development Plan
 
-This document is the authoritative roadmap, checkpoint, and handoff control surface for The Mechanist. It is not a changelog, implementation transcript, asset index, or full design bible. Detailed phase-group expansions now live in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`.
+This document is the authoritative roadmap, checkpoint, and handoff control surface for The Mechanist. It is not a changelog, implementation transcript, asset index, or full design bible. Detailed phase-group expansions now live in the ordered milestone sequence indexed by `ROOT_docs/MILESTONE_INDEX.md`.
 
 This revision intentionally keeps the master plan concise and redirects implementation-depth planning to the ordered milestone documents. The master plan remains the place to determine the active checkpoint, the current gates, the dependency order, and the correct next handoff target.
 
@@ -8,20 +8,20 @@ This revision intentionally keeps the master plan concise and redirects implemen
 
 Before any development pass, read these documents in order:
 
-1. `docs/MASTER_DEVELOPMENT_PLAN.md` - current checkpoint, phase order, and movement authority.
-2. `docs/STANDARDS_AND_PRACTICES.md` - durable implementation, build, packaging, asset, UI, Java 17, security, and release-safety rules.
-3. `docs/MASTER_GOVERNANCE_REVISION_II.md` - long-term architecture doctrine and boundary discipline.
-4. `docs/DEVELOPMENT_HISTORY.md` - active milestone-era completion log; older history is archived under `docs/archive/`.
-5. `docs/MILESTONE_INDEX.md` - ordered milestone navigation for detailed phase-group targets.
-6. `docs/LEGACY_MILESTONE_SOURCE_MAP.md` - source/archive map for older topical milestone files.
+1. `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md` - current checkpoint, phase order, and movement authority.
+2. `ROOT_docs/STANDARDS_AND_PRACTICES.md` - durable implementation, build, packaging, asset, UI, Java 17, security, and release-safety rules.
+3. `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md` - long-term architecture doctrine and boundary discipline.
+4. `ROOT_docs/DEVELOPMENT_HISTORY.md` - active milestone-era completion log; older history is archived under `ROOT_docs/archive/`.
+5. `ROOT_docs/MILESTONE_INDEX.md` - ordered milestone navigation for detailed phase-group targets.
+6. `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md` - source/archive map for older topical milestone files.
 
 The Standards file remains hard release law. The Governance file remains design ethos and architectural boundary law. This master plan controls movement and handoff order.
 
 ## Documentation containment
 
-Planning belongs in this master plan or in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`. Completed work belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
+Planning belongs in this master plan or in the ordered milestone sequence indexed by `ROOT_docs/MILESTONE_INDEX.md`. Completed work belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
 
-The pre-milestone development ledger is archived at `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. Treat that archive as historical context, not the active completion log for milestone-directed work.
+The pre-milestone development ledger is archived at `ROOT_docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. Treat that archive as historical context, not the active completion log for milestone-directed work.
 
 The ordered milestone files are a user-ordered durable exception created to prevent the master plan from becoming an unsafe monolith. Do not create additional milestone, supplement, audit, addendum, or planning files unless the user explicitly orders a new phase-aligned document and the material cannot fit into an existing ordered milestone.
 
@@ -37,7 +37,7 @@ The active target remains to make the Swing client playable, readable, and safe 
 
 - Phase 0 governance and build hygiene.
 - Phase 4 UI, input, rendering, accessibility, display, graphics, options, and presentation containment.
-- Documentation cleanup that improves handoff clarity without inventing new document sprawl.
+- Documentation cleanup that improves handoff clarity, updates stale path references to the implemented `ROOT_*` and `PACKAGE_*` structure, and does not invent new document sprawl.
 - Packaging and publish-safe hygiene for the installer -> thin launcher -> client/server execution path.
 - Narrow authority extraction when touching a UI/input/render/package subsystem.
 - Small persistence/server-boundary repairs required to keep the bridged single-player runtime safe.
@@ -74,11 +74,11 @@ Done when: a new developer or Codex session can identify the active checkpoint, 
 Required outcomes:
 
 - The intended execution path remains installer -> thin launcher -> client/server payloads.
-- The installer installs the thin launcher and only the launcher support set required to start, diagnose, acquire manifests, verify payloads, and manage updates.
+- The installer installs the thin launcher and only the launcher support set required to start, diagnose, acquire package manifests, verify payloads, and manage updates.
 - The thin launcher acquires and verifies client, server, Java runtime image when bundled, LWJGL/native graphics libraries when required, controller/input libraries, Netty/runtime libraries when used, and other support libraries before launching the client.
 - The client must not opportunistically download support libraries at game launch.
 - Thin launcher and installer must not require the full repository, main client jar, server jar, main asset tree, optional packs, or subsidiary main-project files before bootstrap.
-- Client/server package identity, checksums, versions, and compatibility constraints belong in launcher manifests rather than loose repo layout inference.
+- Client/server package identity, checksums, versions, and compatibility constraints belong in launcher package manifests rather than loose repo layout inference. Runtime assets still belong in the physical package folders that consume them; manifests do not replace placement.
 
 Done when: the bootstrap chain can be reasoned about without downloading the entire development repo just to start the thin launcher.
 
@@ -109,7 +109,7 @@ Done when: a delivered artifact is reproducible, Java 17-compatible, and verifie
 
 ## Ordered milestone sequence
 
-Detailed phase-group expansions are maintained in the ordered milestone sequence indexed by `docs/MILESTONE_INDEX.md`. The master plan intentionally does not duplicate those documents.
+Detailed phase-group expansions are maintained in the ordered milestone sequence indexed by `ROOT_docs/MILESTONE_INDEX.md`. The master plan intentionally does not duplicate those documents.
 
 Current ordered milestones:
 
@@ -182,11 +182,11 @@ A valid handoff includes:
 
 The safest first handoff after this cleanup is documentation/package alignment rather than simulation expansion:
 
-1. Read `MASTER_DEVELOPMENT_PLAN.md`, `STANDARDS_AND_PRACTICES.md`, `MASTER_GOVERNANCE_REVISION_II.md`, `DEVELOPMENT_HISTORY.md`, `MILESTONE_INDEX.md`, and `LEGACY_MILESTONE_SOURCE_MAP.md`.
+1. Read `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md`, `ROOT_docs/STANDARDS_AND_PRACTICES.md`, `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md`, `ROOT_docs/DEVELOPMENT_HISTORY.md`, `ROOT_docs/MILESTONE_INDEX.md`, and `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md`.
 2. Verify `MILESTONE_00` through `MILESTONE_10` exist.
 3. Verify legacy topical milestone files are not treated as primary entry points.
-4. Verify bootstrap/package docs and scripts still reflect installer -> thin launcher -> client/server.
-5. Verify thin launcher and installer do not depend on the full client/server payload or full project tree before manifest acquisition.
+4. Verify bootstrap/package docs and scripts still reflect `PACKAGE_installer/` -> `PACKAGE_launcher/` -> `PACKAGE_client/` and the packaged server payload.
+5. Verify thin launcher and installer do not depend on the full client/server payload or full project tree before package manifest acquisition.
 6. Report exact files touched, exact verification run, and anything not tested.
 
 After that, the first runtime-support slice should be one of:
@@ -206,7 +206,7 @@ This cleanup was prepared against these standing constraints:
 - The thin launcher owns acquisition, verification, update, rollback, and launch; the client does not mutate its own classpath by downloading support libraries at startup.
 - LWJGL and other graphical/native dependencies must be treated as shipped runtime assets, not just Maven declarations.
 - UI/player-facing surfaces must avoid raw IDs, placeholder text, phase labels, and debug excuses.
-- New graphical references route toward the Semantic Asset Registry and Asset Tools outputs rather than scattered direct file paths.
+- New graphical references route toward the Semantic Asset Registry and Asset Tools outputs rather than scattered direct file paths, and compiled/runtime-ready assets are placed under their consuming package tree rather than represented only by documentation manifests.
 - Sector/server authority remains closed to public networking and live external mod loading until explicit architecture, safety, package, and test gates exist.
 - Simulation depth must scale by relevance: immediate reality near the player, operational ledgers for local districts, and strategic/deferred summaries for distant systems.
 - Asset files, atlas cells, and placeholders are not implementation until semantic runtime identity, consuming authority, inspection/use meaning, placement/generation path, and fallback behavior exist.

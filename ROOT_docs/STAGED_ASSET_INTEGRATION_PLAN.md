@@ -7,6 +7,9 @@ This plan must be read before any asset-loader, item-icon, tile-art, portrait, m
 ## Permanent context reminders
 
 - The asset migration is an in-game systems migration, not a detached utility-window project. Player-facing asset browsing belongs inside the main game Infopedia/menu surface.
+- `ROOT_SRC_assets/` is preserved source material. Do not modify those files in place.
+- Runtime-ready outputs belong in the consuming package tree, especially `PACKAGE_client/assets/` for client game assets and `PACKAGE_launcher/java/src/main/resources/assets/` for launcher assets.
+- Do not use docs or manifest files as a substitute for physical placement. A package manifest may verify or acquire a payload, but the asset itself must live where the runtime architecture consumes it.
 - New graphical references should resolve through a semantic ID, not fragile direct path calls.
 - The target public handle is an exact 8-character ID such as `TILE-A01`, `OBJ-WB01`, `WEAP-K01`, or `MACH-A01`.
 - The semantic registry must describe what the asset means, not only where the file lives. The Infopedia needs name, type, preview, ID, and in-universe description.
@@ -58,7 +61,7 @@ Operable actions:
 
 - Add an immutable Java 17 `AssetMetadata` record containing ID, path/URI, name, asset type, and semantic description.
 - Add an `AssetType` enum with at least: `PORTRAIT`, `WALL_TILE`, `OBJECT`, and `MACHINE`; likely also include floor, road, sidewalk, corridor, item icon, weapon icon, armor icon, UI icon, fixture, corpse/decay, and unknown/internal categories.
-- Add `AssetRegistry`, able to load a machine-readable registry file from `assets/indexes/` or an equivalent approved data path.
+- Add `AssetRegistry`, able to load a machine-readable registry file from `PACKAGE_client/assets/indexes/` or an equivalent approved package data path.
 - Add `AssetManager.getAsset(String assetId)` as the central cached image-access method.
 - Add a generated or hand-authored missing-asset fallback image/icon.
 - Add a starter semantic registry file with the high-error assets first: water barrels, supply shelves, cots, scrap knife, bolter/ranged weapons, roads, sidewalks, walls, maintenance corridors, corpse tiles, and key machine/object previews.
@@ -151,7 +154,7 @@ Likely next stage after that:
 
 Stage 3 completion note:
 
-- Completed as 0.9.10jv. The registry expanded from 26 starter rows to 277 semantic asset rows with no duplicate IDs and no duplicate asset paths. Added `assets/indexes/high_error_asset_reconciliation.tsv` as a focused crosswalk for known bad assignments, including water barrel versus shelf, cot/bed/clothing, scrap knife versus bolter/firearm, road/sidewalk/corridor/wall families, corpse/decay markers, and emergency machines. Added `SemanticAssetHighErrorReconciliationSmoke` to verify category coverage, searchability, path uniqueness, and crosswalk references. No item/tile/world render migration was performed in this stage.
+- Completed as 0.9.10jv. The registry expanded from 26 starter rows to 277 semantic asset rows with no duplicate IDs and no duplicate asset paths. Added `PACKAGE_client/assets/indexes/high_error_asset_reconciliation.tsv` as a focused crosswalk for known bad assignments, including water barrel versus shelf, cot/bed/clothing, scrap knife versus bolter/firearm, road/sidewalk/corridor/wall families, corpse/decay markers, and emergency machines. Added `SemanticAssetHighErrorReconciliationSmoke` to verify category coverage, searchability, path uniqueness, and crosswalk references. No item/tile/world render migration was performed in this stage.
 
 ## Stage 4 — UI preview and item/icon migration — COMPLETE IN 0.9.10jw
 
@@ -265,7 +268,7 @@ Completion definition — what should have just been completed when Stage 7 is d
 
 Stage 7 completion note:
 
-- Completed as 0.9.10jz. Added `SemanticAssetPathAudit` as the source scanner and `SemanticAssetDirectPathAuditSmoke` as the enforcement smoke. Added `assets/indexes/semantic_asset_direct_path_allowlist.tsv` to make low-level exceptions explicit and `assets/indexes/semantic_asset_direct_path_baseline.tsv` to quantify existing legacy graphical path debt. The audit currently reports 263 direct graphical path findings: 222 approved low-level/media-bridge findings, 41 baselined legacy findings, and 0 unbaselined runtime references. Future direct image-path additions outside approved loaders or accepted baseline debt fail this stage smoke. Registry path existence is rechecked as part of the same smoke.
+- Completed as 0.9.10jz. Added `SemanticAssetPathAudit` as the source scanner and `SemanticAssetDirectPathAuditSmoke` as the enforcement smoke. Added `PACKAGE_client/assets/indexes/semantic_asset_direct_path_allowlist.tsv` to make low-level exceptions explicit and `PACKAGE_client/assets/indexes/semantic_asset_direct_path_baseline.tsv` to quantify existing legacy graphical path debt. The audit currently reports 263 direct graphical path findings: 222 approved low-level/media-bridge findings, 41 baselined legacy findings, and 0 unbaselined runtime references. Future direct image-path additions outside approved loaders or accepted baseline debt fail this stage smoke. Registry path existence is rechecked as part of the same smoke.
 
 Immediate next action after Stage 7:
 

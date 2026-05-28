@@ -1,35 +1,34 @@
 # New Conversation Handoff - The Mechanist
 
-## Current checkpoint
+## Current Checkpoint
 
-The active checkpoint is Phase 4 publish-safe client containment and package/handoff hygiene.
+The active checkpoint is Phase 4 publish-safe client containment and package/handoff hygiene, with an immediate documentation repair focus: make the written project map match the implemented `ROOT_*` and `PACKAGE_*` structure.
 
-Before any code or packaging pass, read:
+Before any code, package, or asset pass, read:
 
-1. `docs/MASTER_DEVELOPMENT_PLAN.md`
-2. `docs/STANDARDS_AND_PRACTICES.md`
-3. `docs/MASTER_GOVERNANCE_REVISION_II.md`
-4. `docs/DEVELOPMENT_HISTORY.md`
-5. `docs/MILESTONE_INDEX.md`
-6. `docs/LEGACY_MILESTONE_SOURCE_MAP.md`
+1. `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md`
+2. `ROOT_docs/STANDARDS_AND_PRACTICES.md`
+3. `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md`
+4. `ROOT_docs/DEVELOPMENT_HISTORY.md`
+5. `ROOT_docs/MILESTONE_INDEX.md`
+6. `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md`
 
-## Gate status
+## Active Workspace Boundaries
 
-Gate 1 documentation and repository hygiene has been checked. The master plan stays concise and points to `MILESTONE_INDEX.md`; the index lists the ordered `00` through `10` milestones; the legacy source map explains where old topical milestone files belong; README remains user-facing; and stale root command-file clutter was removed.
+- Keep durable planning in `ROOT_docs/`, preferably in the master plan, standards, development history, governance, or ordered milestone sequence.
+- Treat `ROOT_SRC_assets/` as protected source material. Do not modify those files in place.
+- Put transformed, renamed, compressed, cleared, or runtime-ready assets into the consuming package tree, usually `PACKAGE_client/assets/` or `PACKAGE_launcher/java/src/main/resources/assets/`.
+- Keep client launch material under `PACKAGE_client/`, launcher bootstrap work under `PACKAGE_launcher/`, installer work under `PACKAGE_installer/`, server launch/package material under `PACKAGE_client/server/`, and developer tooling under `ROOT_tools/` or `scripts/`.
+- Do not create pointer-only docs, manifest-only maps, or placeholder README layers to stand in for moving files into the correct architecture.
 
-The pre-milestone development history has been archived at `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. New completed milestone work should be recorded in the fresh active `docs/DEVELOPMENT_HISTORY.md`.
+## Gate Status
 
-Gate 2 has started and remains unfinished. The first slices retired the active full-repository Git launcher path, moved native package entrypoints toward `packages/launcher/MechanistLauncher.jar`, and added launcher-side manifest verification for client/server/support packages. The launcher now discovers nearby app-image package layouts, supports install-root and package-seed overrides for staged verification/acquisition, verifies support-library hashes from the runtime manifest, installs from a verified local seed, can repair from rollback, and rejects wrong-schema or wrong-platform manifests. Remaining Gate 2 work is publish-safe authentication for private artifact access or a public-safe artifact channel, remote acquisition/update policy, package trust/signature metadata, and full Maven/jpackage/native packaging verification.
+Gate 1 documentation and repository hygiene is reopened for structure alignment. The older docs still described pre-reorganization paths such as `docs/`, `client/`, `launcher/`, `installer/`, `assets/`, and `tools/`. Those names are no longer the repository map. The active map is `ROOT_docs/`, `ROOT_SRC_assets/`, `ROOT_tools/`, `PACKAGE_client/`, `PACKAGE_launcher/`, and `PACKAGE_installer/`.
 
-Gate 3 has begun with small player-facing readability slices. Faction contract display lines now avoid internal contract IDs, raw target-zone keys, and generated ident-chip IDs, replacing them with readable contract type, faction, route, and turn-in wording. `FactionContractDisplaySmoke` covers this behavior. Inventory, workshop logistics, event log, save/load, command, diagnostics, loading, trade/conversation, options, look/auspex inspection, error handling, and reference-panel text have also been tightened to avoid raw/debug/token/atlas/log-plumbing/registry phrasing in ordinary UI. The launcher server-join identity bridge was updated to the current special-profile package API, leaving old celebrity package names only as legacy aliases.
+Gate 2 remains unfinished. The execution path is still installer -> thin launcher -> client/server payloads. Package manifests are acceptable for acquisition, verification, update, rollback, and integrity checks, but not as a fake composition layer for runtime assets. Runtime assets must physically live under the package tree that consumes them.
 
-## Active boundaries
+Gate 3 has begun with player-facing readability slices. Continue keeping raw IDs, debug residue, registry plumbing, manifest keys, and package implementation details out of ordinary UI unless the surface is explicitly an audit/developer surface.
 
-- Keep detailed planning in the ordered milestone sequence rather than adding new loose planning files.
-- Treat legacy topical milestone files as source/archive material only.
-- Keep client launchers under `client/launchers/`, launcher bootstrap work under `launcher/`, installer work under `installer/`, server launch material under `client/server/`, and developer tooling under `tools/` or `scripts/`.
-- Do not expand into broad worldgen, live external mod loading, public multiplayer networking, or unrelated simulation systems during the current package/handoff line.
+## Next Pass
 
-## Next pass
-
-Continue the Gate 2/Gate 3 bridge without pretending Gate 2 is closed: keep remote/private artifact acquisition marked open until publish-safe authentication exists, and continue local/offline-verifiable package and player-facing polish slices. Next package work should make the installer -> thin launcher -> client/server payload chain executable from the native app-image without relying on the full development repository layout.
+Continue the Gate 1/Gate 2 bridge by making docs and package guidance reflect the actual structure. Do not broaden into worldgen, live external mod loading, public multiplayer networking, or unrelated simulation systems during this repair line.

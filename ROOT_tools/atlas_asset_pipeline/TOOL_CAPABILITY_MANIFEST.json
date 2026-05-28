@@ -1,0 +1,56 @@
+{
+  "name": "atlas_asset_pipeline",
+  "license": "MIT",
+  "entry_point": "atlas_pipeline.py",
+  "actions": {
+    "slice": {
+      "script": "dynamic_atlas_slicer.py",
+      "description": "Detect atlas geometry, generate review overlays, export audit JSON/TSV, and optionally emit preview slices."
+    },
+    "compile": {
+      "script": "adaptive_asset_compiler.py",
+      "description": "Compile selected atlas cells into selected square resolution packages with optional crispness, brightness, and contrast adjustments.",
+      "sizes": [16, 32, 64, 128, 256, 512, 1024],
+      "metadata_output": "asset_compile_manifest.json"
+    },
+    "cell-targets": {
+      "script": "cell_tool_targets.py",
+      "description": "Convert selected review cells into bounded image-edit target configs."
+    },
+    "censor-boxes": {
+      "script": "image_tools/censor_texture_atlases.py",
+      "description": "Apply coordinate-bounded mechanical edits to source atlases."
+    },
+    "context-stamp": {
+      "script": "image_tools/context_stamp_infill_boxes.py",
+      "description": "Apply crisp context-stamp infill to specified source boxes."
+    },
+    "texture-infill": {
+      "script": "image_tools/infill_scrubbed_texture_boxes.py",
+      "description": "Fill specified boxes using nearby source texture patches."
+    },
+    "procedural-infill": {
+      "script": "image_tools/procedural_texture_infill_boxes.py",
+      "description": "Fill specified boxes using local procedural texture statistics."
+    },
+    "template-scrub": {
+      "script": "image_tools/scrub_all_asset_template_matches.py",
+      "description": "Scan configured roots for template matches and scrub bounded matches."
+    },
+    "index-content": {
+      "script": "semantic_asset_indexer.py",
+      "description": "Build a 256px semantic/content tag index for compiled tiles, applying atlas/row/cell descriptors from configs/deep_asset_descriptors.json, and register it in asset_compile_manifest.json.",
+      "metadata_output": [
+        "compiled_assets/asset_content_index_256px.json",
+        "compiled_assets/asset_content_index_256px.tsv",
+        "configs/deep_asset_descriptors.json"
+      ]
+    }
+  },
+  "primary_outputs": [
+    "atlas_slice_preview/atlas_slicing_audit.json",
+    "atlas_slice_preview/atlas_grid_preview_index.html",
+    "compiled_assets/",
+    "compiled_assets/asset_content_index_256px.json"
+  ]
+}

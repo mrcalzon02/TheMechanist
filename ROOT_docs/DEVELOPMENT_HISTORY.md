@@ -4,9 +4,9 @@ This is the active milestone-development history for The Mechanist.
 
 The pre-milestone development ledger was archived at:
 
-`docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`
+`ROOT_docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`
 
-Use this file for new completed work from the ordered milestone-development plan onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `docs/MILESTONE_INDEX.md`.
+Use this file for new completed work from the ordered milestone-development plan onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `ROOT_docs/MILESTONE_INDEX.md`.
 
 ## Milestone Development Baseline
 
@@ -18,7 +18,7 @@ Initial baseline actions:
 - Created this new active development history for upcoming milestone work.
 - Preserved the Gate 1 documentation and repository hygiene result in the archived record and carried the active handoff forward through `NEW_DEVELOPMENT_CONVERSATION_BRIEFING.md`.
 
-Verification: archive file exists under `docs/archive/`; a new active `docs/DEVELOPMENT_HISTORY.md` exists in its original authority location; no source compile was needed because this was documentation structure work only.
+Verification: archive file exists under `ROOT_docs/archive/`; a new active `ROOT_docs/DEVELOPMENT_HISTORY.md` exists in its authority location; no source compile was needed because this was documentation structure work only.
 
 ## Gate 2 - Bootstrap and Package Identity Hygiene Slice
 
@@ -371,3 +371,19 @@ Continued Milestone 02 and Phase 17 quest-readability work by adding evidence re
 Contract conversation choices now summarize whether the required proof item is carried and ready for turn-in, and ordinary bounty/lockbox log messages now use public proof wording instead of raw contract identifiers.
 
 Verification: full recursive `src` compile passed with `javac --release 17`; `Gate3PlayerFacingTextSmokeSuite` passed.
+
+## Gate 1 - Workspace Structure Documentation Repair
+
+Reopened documentation hygiene for the condensed project layout and corrected the active handoff map from the stale `docs/`, `client/`, `launcher/`, `installer/`, `assets/`, and `tools/` roots to the implemented `ROOT_docs/`, `ROOT_SRC_assets/`, `ROOT_tools/`, `PACKAGE_client/`, `PACKAGE_launcher/`, and `PACKAGE_installer/` roots.
+
+The root README, new-conversation handoff, master plan, standards, staged asset integration plan, milestone index, and legacy source map now state that `ROOT_SRC_assets/` is protected source material and that transformed/runtime-ready assets must be placed in the consuming package tree rather than represented by pointer-only docs or manifest layers. Removed the generated `ROOT_docs/ASSET_MANIFEST.md` inventory from durable docs so file lists do not masquerade as architecture.
+
+Verification: documentation-only pass. Confirmed `ROOT_docs/ASSET_MANIFEST.md` is removed and `PACKAGE_client/assets/indexes/` exists. Ran a targeted path-reference scan over the edited authority/handoff files; remaining old root names are either delivery-language wording or explicit warnings about the retired layout.
+
+## Gate 1 - Repository File Manifest
+
+Added `ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv` as the user-ordered discovery index for every non-`.git` file in the workspace, including binary images, audio, jars, package files, source, tools, and documentation. Each row records relative path, file kind, text/binary classification, extension, byte size, modified UTC time, and SHA-256 hash so non-code assets can be found without relying on text search.
+
+Added `ROOT_tools/update-repository-file-manifest.ps1` to regenerate the index whenever a file is added, removed, renamed, moved, or replaced. Standards now record this as a discovery-only exception, not a runtime asset composition layer.
+
+Verification: generated the manifest with 980 indexed file rows; imported the TSV successfully; confirmed it reports 407 binary files and includes `PACKAGE_client/assets/` and `ROOT_SRC_assets/` image/audio entries.

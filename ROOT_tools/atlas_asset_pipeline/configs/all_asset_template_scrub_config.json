@@ -1,0 +1,73 @@
+{
+  "threshold": 0.72,
+  "mode": "edge_infill",
+  "pixel_size": 10,
+  "padding": 3,
+  "scales": [1.0],
+  "flip_horizontal": true,
+  "templates": [
+    {
+      "path": "../template_crops/aquila_small_top.png",
+      "threshold": 0.72,
+      "padding": 2,
+      "mode": "edge_infill",
+      "pixel_size": 10
+    },
+    {
+      "path": "../template_crops/aquila_panel_a.png",
+      "threshold": 0.72,
+      "padding": 3,
+      "mode": "edge_infill",
+      "pixel_size": 12
+    },
+    {
+      "path": "../template_crops/aquila_panel_b.png",
+      "threshold": 0.72,
+      "padding": 3,
+      "mode": "edge_infill",
+      "pixel_size": 12
+    },
+    {
+      "path": "../template_crops/aquila_b_wing_plain_top_left.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    },
+    {
+      "path": "../template_crops/aquila_b_wing_red_panel.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    },
+    {
+      "path": "../template_crops/aquila_b_skull_grate.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    },
+    {
+      "path": "../template_crops/aquila_b_wing_wall_mid.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    },
+    {
+      "path": "../template_crops/aquila_b_wing_city_left.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    },
+    {
+      "path": "../template_crops/aquila_b_wing_city_mid.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    },
+    {
+      "path": "../template_crops/aquila_b_wing_city_right.png",
+      "threshold": 0.86,
+      "padding": 2,
+      "mode": "edge_infill"
+    }
+  ]
+}

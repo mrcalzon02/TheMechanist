@@ -4,21 +4,37 @@ This document contains durable rules. It is not a changelog. When a pass complet
 
 ## Documentation containment standard
 
-- `docs/` normally contains exactly four durable development documents:
+- `ROOT_docs/` is the durable development-document root. The active authority set is:
   - `MASTER_DEVELOPMENT_PLAN.md`
   - `STANDARDS_AND_PRACTICES.md`
   - `DEVELOPMENT_HISTORY.md`
   - `MASTER_GOVERNANCE_REVISION_II.md`
-- The user explicitly ordered one specialized durable exception: `STAGED_ASSET_INTEGRATION_PLAN.md`. It exists only to preserve the long semantic-asset migration path and must not become a changelog or general planning dump. When the migration is complete, either merge its remaining durable rules into this file/master plan or archive it deliberately.
-- The pre-milestone development ledger is archived at `docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. It is read-only historical context; new completed work belongs in the active `docs/DEVELOPMENT_HISTORY.md`.
-- Do not add other pass-specific Markdown files, audit notes, architecture notes, addenda, index summaries, or temporary planning documents unless the user explicitly orders a separate artifact.
+  - `MILESTONE_INDEX.md`
+  - ordered milestone files `MILESTONE_00` through `MILESTONE_10`
+  - `LEGACY_MILESTONE_SOURCE_MAP.md`
+- Archived, deferred, packaging, launcher, UI, and handoff documents may remain under named `ROOT_docs/` subfolders, but they are context material unless an authority document explicitly promotes them for the current pass.
+- The user explicitly ordered one specialized durable exception: `STAGED_ASSET_INTEGRATION_PLAN.md`. It exists only to preserve the long semantic-asset migration path and must not become a changelog, file manifest, or general planning dump. When the migration is complete, either merge its remaining durable rules into this file/master plan or archive it deliberately.
+- The pre-milestone development ledger is archived at `ROOT_docs/archive/DEVELOPMENT_HISTORY_PRE_MILESTONE_DEVELOPMENT.md`. It is read-only historical context; new completed work belongs in the active `ROOT_docs/DEVELOPMENT_HISTORY.md`.
+- Do not add other pass-specific Markdown files, audit notes, architecture notes, addenda, index summaries, generated file inventories, or temporary planning documents unless the user explicitly orders a separate artifact.
 - If a pass introduces a rule, put the durable rule here.
 - If a pass changes the roadmap, put the planning change in the master plan.
 - If a pass implements or repairs something, put the completion note in development history.
 - If a pass changes long-term doctrine, put the doctrine in governance.
 - README is user-facing. It may describe how to run the game and what the current build generally does. It must not become a changelog, roadmap, standards file, or asset-index commentary dump.
 - `NEW_DEVELOPMENT_CONVERSATION_BRIEFING.md` is a short resumption brief, not a second master plan.
-- Generated indexes and manifests belong under `assets/indexes/` or a tool/module path only when consumed by code, tools, or packaging.
+- Generated indexes and manifests belong under the consuming package asset tree, such as `PACKAGE_client/assets/indexes/`, or under a tool/module path only when consumed by code, tools, or packaging. They must not be placed in `ROOT_docs/` as project-structure authority.
+- User-ordered repository discovery exception: `ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv` lists every non-`.git` file, including binary assets, so images, audio, jars, docs, tools, and package files remain findable even when their content is not text-searchable. Regenerate it with `ROOT_tools/update-repository-file-manifest.ps1` whenever any file is added, removed, renamed, or moved. This index is for discovery only and must not be used as a runtime composition layer.
+
+## Repository layout and asset placement standard
+
+- The implemented top-level workspace names are authoritative: `ROOT_docs/`, `ROOT_SRC_assets/`, `ROOT_tools/`, `PACKAGE_client/`, `PACKAGE_launcher/`, `PACKAGE_installer/`, `scripts/`, and `src/`.
+- Do not write new instructions that point to nonexistent legacy roots such as `docs/`, `client/`, `launcher/`, `installer/`, `assets/`, or `tools/` unless the instruction is explicitly discussing an old archived layout.
+- `ROOT_SRC_assets/` is a protected source vault. Do not edit files there in place.
+- When an asset is modified, renamed, compressed, converted, resized, cleared, or otherwise compiled for runtime use, place the output into the folder where the consuming architecture actually loads it.
+- Runtime client assets belong under `PACKAGE_client/assets/` unless a specific client package subfolder owns them.
+- Launcher runtime assets belong under `PACKAGE_launcher/java/src/main/resources/assets/` unless a launcher packaging script requires another owned launcher resource folder.
+- Documentation may explain asset flow, but it must not create pointer-only manifests, placeholder README ladders, or false composition maps in place of moving the actual runtime files.
+- Package manifests are allowed for acquisition, verification, update, rollback, and integrity checks. They are not allowed to stand in for physical asset placement.
 
 
 
@@ -34,12 +50,12 @@ This document contains durable rules. It is not a changelog. When a pass complet
 - Construction recipes, built base objects, map fixtures, interactables, traps, lights, and editor palette entries that have entered Stage 6 must expose or resolve a semantic asset ID before falling back to older tile-art aliases. Construction/editor UI should show asset IDs and registry previews so wrong-object art is caught during normal inspection instead of later gameplay surprise.
 - Portrait, faction, creature, servitor, child, pet, and name-locked profile art that has entered Stage 8 must be partitioned by semantic metadata. Ordinary player character creation may only draw from explicitly allowed human/profile partitions; name-locked portraits, creature/pet/beast portraits, servitors/automata, mutants, children, and hostile faction portrait pools must not leak into ordinary random player generation.
 - Migrated semantic asset families that have entered Stage 9 must fail visibly with typed missing-art fallbacks rather than silently falling through to semantically wrong legacy art. Missing item, wall, floor, road, sidewalk, corridor, object, fixture, machine, portrait, UI, armor, weapon, and corpse/decay art must be distinguishable during normal play/audit.
-- Remaining legacy graphical loader boundaries must be listed in `assets/indexes/semantic_asset_deferred_legacy.tsv` with an owner, reason, and next action. This ledger is not permission for new direct path usage; it is a shrinking containment list for unavoidable pre-Stage-10 bridges.
+- Remaining legacy graphical loader boundaries must be listed in `PACKAGE_client/assets/indexes/semantic_asset_deferred_legacy.tsv` with an owner, reason, and next action. This ledger is not permission for new direct path usage; it is a shrinking containment list for unavoidable pre-Stage-10 bridges.
 
 ## Application icon and launcher asset standard
 
 - The program icon is a first-class runtime asset, not only a desktop-launcher decoration.
-- Keep the Java/Swing window icon, taskbar icon attempt, Linux `.desktop` `Icon=` identifier, and installer-copied hicolor PNG assets aligned to the same `assets/app/icons/the-mechanist-*` source set.
+- Keep the Java/Swing window icon, taskbar icon attempt, Linux `.desktop` `Icon=` identifier, and installer-copied hicolor PNG assets aligned to the packaged `PACKAGE_client/assets/app/icons/the-mechanist-*` and launcher resource icon sets.
 - Do not replace the icon by editing only the `.desktop` file; update the bundled icon assets and the runtime icon authority together so the extracted zip, jar resource path, and installed launcher remain consistent.
 
 
@@ -287,8 +303,8 @@ This document contains durable rules. It is not a changelog. When a pass complet
 
 - Every player-facing semantic asset entry must have an ID, type/purpose, path/URI, asset name, and non-empty semantic description. The semantic description should explain intended use and should call out important forbidden substitutions when an asset is easily confused with another family.
 - The Infopedia is the audit surface for semantic assets. If an asset appears in-game and is not explicitly hidden/internal, it should eventually be discoverable by ID, type, image preview, and description through an in-game Infopedia asset index.
-- Follow `docs/STAGED_ASSET_INTEGRATION_PLAN.md` for the asset migration order. Do not jump directly to full render-path replacement before the registry foundation, Infopedia browser, high-error category indexing, and preview migration stages have been completed and tested.
-- Stage 7 direct graphical path enforcement is active. New gameplay/UI code must not introduce raw graphical file paths, direct `ImageIO.read(...)`, direct `new ImageIcon(...)`, or resource image loads outside approved low-level loader/import/migration surfaces. `assets/indexes/semantic_asset_direct_path_allowlist.tsv` records explicit exceptions and `assets/indexes/semantic_asset_direct_path_baseline.tsv` records temporary legacy debt; additions outside those channels are regressions until deliberately accepted.
+- Follow `ROOT_docs/STAGED_ASSET_INTEGRATION_PLAN.md` for the asset migration order. Do not jump directly to full render-path replacement before the registry foundation, Infopedia browser, high-error category indexing, and preview migration stages have been completed and tested.
+- Stage 7 direct graphical path enforcement is active. New gameplay/UI code must not introduce raw graphical file paths, direct `ImageIO.read(...)`, direct `new ImageIcon(...)`, or resource image loads outside approved low-level loader/import/migration surfaces. `PACKAGE_client/assets/indexes/semantic_asset_direct_path_allowlist.tsv` records explicit exceptions and `PACKAGE_client/assets/indexes/semantic_asset_direct_path_baseline.tsv` records temporary legacy debt; additions outside those channels are regressions until deliberately accepted.
 - Folder names and semantic categories are authoritative.
 - Player character/profile portraits may use only explicit player-human/profile folders; if the art pack lacks such a folder, the ordinary administratum human bucket is the only allowed standard fallback.
 - Faction NPC portraits may use only exact matching faction/category buckets or a safe neutral human fallback where appropriate.
@@ -462,7 +478,7 @@ If a change cannot name the owning phase, authority, durable rule, and verificat
 
 - The fallback desktop runtime must fail closed behind the EULA consent gate until `settings/legal.properties` contains `eula_consented=true`.
 - Refusing the EULA exits the application immediately; accepting it persists consent locally before normal boot/menu/game access continues.
-- The root package must include `EULA.md` beside `README.md`; any runtime EULA text update must be mirrored there, while `docs/` remains limited to the four durable development documents.
+- The client package must include `PACKAGE_client/EULA.md` beside its client-facing README material; any runtime EULA text update must be mirrored there, while legal notes stay out of unrelated gameplay UI.
 - Fan-project intellectual-property disclaimers shown in the EULA gate must remain player-facing legal notice text, not scattered through unrelated gameplay UI.
 - Gameplay/debug/server console commands must be registered through a named command authority with rank requirements, sanitized input, history bounds, and fail-closed handling for destructive or remote multiplayer operations that are not yet wired to a live server transport.
 - Commands listed for future multiplayer enforcement may be registered and audited before networking opens, but they must not pretend to enforce remote bans, kicks, identity blocks, or database changes until the backing server authority exists.
@@ -478,8 +494,8 @@ If a change cannot name the owning phase, authority, durable rule, and verificat
 ## Modding API and template standard
 
 - Public modder-facing API seams belong under `src/mechanist/modapi/` and must remain narrower and more stable than editor internals.
-- Example mod content belongs under `modding/examples/` with a valid `manifest.json` and a complete Java entrypoint implementing `ModIntegrationHook`.
-- Modding documentation belongs under `modding/` rather than `docs/` so the durable `docs/` set remains exactly four files.
+- Example mod content belongs under `PACKAGE_client/modding/examples/` with a valid `manifest.json` and a complete Java entrypoint implementing `ModIntegrationHook`.
+- Modding documentation belongs under `PACKAGE_client/modding/` rather than `ROOT_docs/` unless it is durable internal planning.
 - Example manifests must keep `id`, Java `entrypoint`, and Java `modId()` aligned.
 - Example mod hooks must validate callback targets and return without mutation when invoked for unrelated sectors, rooms, factions, items, knowledge nodes, or lore queries.
 - Long-running mod export, validation, upload, and file scanning must remain outside the Swing Event Dispatch Thread.
@@ -542,4 +558,4 @@ Desktop graphical dependencies that are treated as required by client rendering 
 
 Any packaged client or server jar that claims Java 17 compatibility must be compiled with `javac --release 17` or an equivalent toolchain target. Before shipping an archive, scan the jar classfiles and verify no class has a major version above 61. A launcher smoke passing under a newer local JDK is not sufficient proof that the package will run on a user's Java 17 installation.
 
-The repository includes `tools/build/verify_java17_classfiles.py` and `tools/build/verify_java17_classfiles.ps1` as release-gate helpers. These helpers are not optional decoration: when packaging through a manual/non-Maven path, run one of them against `TheMechanist.jar`, `TheMechanistServer.jar`, and any loose class output that will ship. If the helper reports any classfile above major 61, stop the release and rebuild with the correct target before producing the zip.
+The repository includes Java 17 classfile release-gate helpers under `ROOT_tools/build/` when that tooling is present, with older equivalents possibly still under `scripts/` during migration. These helpers are not optional decoration: when packaging through a manual/non-Maven path, run the available verifier against `TheMechanist.jar`, `TheMechanistServer.jar`, and any loose class output that will ship. If the helper reports any classfile above major 61, stop the release and rebuild with the correct target before producing the zip.

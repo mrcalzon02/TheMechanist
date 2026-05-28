@@ -285,7 +285,7 @@ In the Caul Trench Muster Error, a Legio company marched with seventeen soldiers
 
 In the Virellian Cradle Petition, an entire maternity ward named children after a local saint during a month of plague deliverance. The saint's name was approved. The mass devotion was legal. The result was ninety-two thousand near-identical registry entries within one provincial cycle. The Collegia required forty years to untangle mortuary obligations from the resulting name cluster. The Cultus Vitae still refuses to admit fault. The Logistica still refuses to admit anyone warned it in time. The Null Court has forbidden public performance of the saint's hymn within registry halls.
 
-In the Del Monto aftermath, discussed under Null Court seal, obscure legal wording caused whole underhive strata to become entangled under a single civic name-form. That event is not treated here except to state the obvious Mortis lesson: if language alone defines citizenship, a bad sentence can manufacture a crowd wearing one face.
+In the Del Monto aftermath, discussed under Null Court seal, obscure legal wording caused whole lower-stack strata to become entangled under a single civic name-form. That event is not treated here except to state the obvious Mortis lesson: if language alone defines citizenship, a bad sentence can manufacture a crowd wearing one face.
 
 Names repeat.
 
