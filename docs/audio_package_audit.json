@@ -1,13 +1,13 @@
 {
   "schema": "mechanist.audio_package_audit.v1",
-  "generated_utc": "2026-05-28T23:36:12+00:00",
+  "generated_utc": "2026-05-28T23:41:14+00:00",
   "dry_run": false,
   "package_client": "C:\\GITS\\The Mechanist\\TheMechanist\\PACKAGE_client",
   "audio_file_count": 261,
   "package_audio_file_count": 229,
   "external_audio_file_count": 32,
   "java_audio_reference_count": 35,
-  "missing_package_reference_count": 8,
+  "missing_package_reference_count": 7,
   "copied_all_audio_count": 0,
   "audio_files": [
     {
@@ -2217,11 +2217,11 @@
       "source_file": "src/mechanist/MediaRuntimeFramework.java",
       "line": 636,
       "reference": "*.wav",
-      "exists_in_package": false,
-      "exists_in_repo": false,
+      "exists_in_package": true,
+      "exists_in_repo": true,
       "candidate_count": 0,
       "candidates": "",
-      "action": "missing_from_package",
+      "action": "ignored_glob_pattern",
       "copied_to": ""
     }
   ],

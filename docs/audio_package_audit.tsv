@@ -294,4 +294,4 @@ java_reference	src/mechanist/AudioRuntimeFramework.java	52	assets/sound/core/amb
 java_reference	src/mechanist/AudioRuntimeFramework.java	53	assets/sound/core/ambient_chime_01.wav	True	False	2	ok	
 java_reference	src/mechanist/AudioRuntimeFramework.java	54	assets/sound/core/ambient_alarm_far_01.wav	True	False	2	ok	
 java_reference	src/mechanist/AudioRuntimeFramework.java	55	assets/sound/core/ambient_door_servo_01.wav	True	False	1	ok	
-java_reference	src/mechanist/MediaRuntimeFramework.java	636	*.wav	False	False	0	missing_from_package	
+java_reference	src/mechanist/MediaRuntimeFramework.java	636	*.wav	True	True	0	ignored_glob_pattern	
