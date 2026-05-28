@@ -1,0 +1,17 @@
+record_type	kind	name	owner	start_line	end_line	line_count	public	package_private	top_level_index	extract_recommendation	extraction_phase	notes
+top_level_declaration	class	TheMechanist		16	46	31	true	false	1	keep_in_place	phase_0_anchor	Public application entrypoint. Keep file anchor stable while extracting siblings.
+top_level_declaration	class	GamePanel		48	21290	21243	false	true	2	defer	phase_2_gamepanel	Large stateful runtime panel. Do not split until top-level sibling classes are extracted and compile-clean.
+method_candidate	method	rebuildButtons	GamePanel	1091	1809	719				inspect_later	phase_3_internal_method_extraction	oversized_method_candidate
+method_candidate	method	interactAt	GamePanel	7112	7200	89				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	drawSectorAuditDiagnosticOverlays	GamePanel	11635	11714	80				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	drawIntroCrawl	GamePanel	12032	12163	132				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	drawCharacter	GamePanel	12513	12681	169				inspect_later	phase_3_internal_method_extraction	oversized_method_candidate
+method_candidate	method	infopediaEntries	GamePanel	12874	12965	92				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	infopediaDetailLines	GamePanel	12967	13106	140				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	productionInfopediaLines	GamePanel	13108	13248	141				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	auditInfopediaLines	GamePanel	13262	13391	130				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	drawGame	GamePanel	14736	14872	137				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	panelLines	GamePanel	19331	19581	251				inspect_later	phase_3_internal_method_extraction	oversized_method_candidate
+method_candidate	method	drawOptions	GamePanel	20471	20600	130				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	mouseClicked	GamePanel	20774	20871	98				inspect_later	phase_3_internal_method_extraction	large_method_candidate
+method_candidate	method	handleKeyPressed	GamePanel	20877	21116	240				inspect_later	phase_3_internal_method_extraction	oversized_method_candidate
