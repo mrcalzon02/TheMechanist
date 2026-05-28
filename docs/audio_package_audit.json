@@ -1,11 +1,11 @@
 {
   "schema": "mechanist.audio_package_audit.v1",
-  "generated_utc": "2026-05-28T23:41:14+00:00",
+  "generated_utc": "2026-05-28T23:49:08+00:00",
   "dry_run": false,
   "package_client": "C:\\GITS\\The Mechanist\\TheMechanist\\PACKAGE_client",
   "audio_file_count": 261,
-  "package_audio_file_count": 229,
-  "external_audio_file_count": 32,
+  "package_audio_file_count": 156,
+  "external_audio_file_count": 105,
   "java_audio_reference_count": 35,
   "missing_package_reference_count": 7,
   "copied_all_audio_count": 0,
@@ -354,24 +354,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/A_car_engine_#4-1779775163346.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/A_car_engine_#4-1779775163346.wav",
       "package_client": true,
       "size_bytes": 176478,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/A_mountain_of_collap_#3-1779775094194.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -382,24 +368,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/A_simple_security_al_#1-1779774863188.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/A_simple_security_al_#1-1779774863188.wav",
       "package_client": true,
       "size_bytes": 352878,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#1-1779775475631.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -410,24 +382,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.wav",
       "package_client": true,
       "size_bytes": 352878,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#3-1779775482933.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -438,24 +396,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.wav",
       "package_client": true,
       "size_bytes": 352878,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#1-1779775450325.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -466,24 +410,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#2-1779775454199.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#2-1779775454199.wav",
       "package_client": true,
       "size_bytes": 176478,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#3-1779775457522.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -494,24 +424,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#4-1779775463068.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#4-1779775463068.wav",
       "package_client": true,
       "size_bytes": 176478,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#1-1779775758544.mp3",
-      "package_client": true,
-      "size_bytes": 12717,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -522,13 +438,6 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.mp3",
-      "package_client": true,
-      "size_bytes": 12717,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.wav",
       "package_client": true,
       "size_bytes": 84750,
@@ -536,24 +445,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.mp3",
-      "package_client": true,
-      "size_bytes": 12717,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.wav",
       "package_client": true,
       "size_bytes": 84750,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#4-1779775802264.mp3",
-      "package_client": true,
-      "size_bytes": 12717,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -571,24 +466,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Book flip.mp3",
-      "package_client": true,
-      "size_bytes": 12207,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Book flip.wav",
       "package_client": true,
       "size_bytes": 90190,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Book snap.mp3",
-      "package_client": true,
-      "size_bytes": 10744,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -599,24 +480,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Box close.mp3",
-      "package_client": true,
-      "size_bytes": 8556,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Box close.wav",
       "package_client": true,
       "size_bytes": 77902,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Cathonk.mp3",
-      "package_client": true,
-      "size_bytes": 8086,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -627,24 +494,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Chainsaw_sounds_#2-1779775306406.mp3",
-      "package_client": true,
-      "size_bytes": 73197,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Chainsaw_sounds_#2-1779775306406.wav",
       "package_client": true,
       "size_bytes": 529278,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Chainsaw_strikes_met_#3-1779775359727.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -655,24 +508,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Clak.mp3",
-      "package_client": true,
-      "size_bytes": 7928,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Clak.wav",
       "package_client": true,
       "size_bytes": 57422,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Clankingkeys.mp3",
-      "package_client": true,
-      "size_bytes": 104583,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -683,24 +522,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Command-key.mp3",
-      "package_client": true,
-      "size_bytes": 7876,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Command-key.wav",
       "package_client": true,
       "size_bytes": 63566,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Door close.mp3",
-      "package_client": true,
-      "size_bytes": 13978,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -711,24 +536,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/door open.mp3",
-      "package_client": true,
-      "size_bytes": 18776,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/door open.wav",
       "package_client": true,
       "size_bytes": 176206,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Drawer.mp3",
-      "package_client": true,
-      "size_bytes": 17366,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -746,24 +557,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Gas mask breathing.mp3",
-      "package_client": true,
-      "size_bytes": 87672,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Gas mask breathing.wav",
       "package_client": true,
       "size_bytes": 751694,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Hammer_banging_on_a__#2-1779775124149.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -774,24 +571,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Hollow metal.mp3",
-      "package_client": true,
-      "size_bytes": 8031,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Hollow metal.wav",
       "package_client": true,
       "size_bytes": 69710,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Hollow_hallway_foots_#1-1779774967000.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -802,24 +585,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Industrial_ambience,-1779774930869.mp3",
-      "package_client": true,
-      "size_bytes": 195022,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Industrial_ambience,-1779774930869.wav",
       "package_client": true,
       "size_bytes": 1423950,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Kwap.mp3",
-      "package_client": true,
-      "size_bytes": 5267,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -844,24 +613,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/lightsa&alarm-button.mp3",
-      "package_client": true,
-      "size_bytes": 14184,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/lightsa&alarm-button.wav",
       "package_client": true,
       "size_bytes": 133198,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Machine running.mp3",
-      "package_client": true,
-      "size_bytes": 104456,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -872,24 +627,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Machine start.mp3",
-      "package_client": true,
-      "size_bytes": 198492,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/machine sounds/Machine start.wav",
       "package_client": true,
       "size_bytes": 1478734,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Machine wind down.mp3",
-      "package_client": true,
-      "size_bytes": 91780,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -900,24 +641,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Machinery.mp3",
-      "package_client": true,
-      "size_bytes": 81395,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/machine sounds/Machinery.wav",
       "package_client": true,
       "size_bytes": 700494,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Metal drag.mp3",
-      "package_client": true,
-      "size_bytes": 29330,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -928,24 +655,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Metal thwak.mp3",
-      "package_client": true,
-      "size_bytes": 6989,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/machine sounds/Metal thwak.wav",
       "package_client": true,
       "size_bytes": 57422,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk.mp3",
-      "package_client": true,
-      "size_bytes": 6988,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -956,24 +669,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk3.mp3",
-      "package_client": true,
-      "size_bytes": 9178,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk3.wav",
       "package_client": true,
       "size_bytes": 79950,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/padded_hallway_foots_#2-1779775030644.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -984,13 +683,6 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Pencil drag.mp3",
-      "package_client": true,
-      "size_bytes": 36614,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Pencil drag.wav",
       "package_client": true,
       "size_bytes": 354382,
@@ -998,24 +690,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Pencil draw.mp3",
-      "package_client": true,
-      "size_bytes": 13559,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Pencil draw.wav",
       "package_client": true,
       "size_bytes": 127054,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Pencil tap.mp3",
-      "package_client": true,
-      "size_bytes": 6440,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1033,24 +711,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Purchase-Coins.mp3",
-      "package_client": true,
-      "size_bytes": 13254,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Purchase-Coins.wav",
       "package_client": true,
       "size_bytes": 88142,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Quiet_Mouse_noises_#2-1779775529981.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1068,24 +732,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Scratch crunch.mp3",
-      "package_client": true,
-      "size_bytes": 56317,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Scratch crunch.wav",
       "package_client": true,
       "size_bytes": 325710,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Shifting cloth.mp3",
-      "package_client": true,
-      "size_bytes": 40923,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1110,24 +760,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Snap.mp3",
-      "package_client": true,
-      "size_bytes": 5372,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Snap.wav",
       "package_client": true,
       "size_bytes": 41038,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/The_steady_backgroun_#4-1779774908427.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1142,13 +778,6 @@
       "package_client": true,
       "size_bytes": 96276,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Typing sounds.mp3",
-      "package_client": true,
-      "size_bytes": 113210,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1243,24 +872,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#1-1779775413485.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#1-1779775413485.wav",
       "package_client": true,
       "size_bytes": 352878,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#2-1779775421710.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1271,24 +886,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#3-1779775426871.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#3-1779775426871.wav",
       "package_client": true,
       "size_bytes": 352878,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#4-1779775429322.mp3",
-      "package_client": true,
-      "size_bytes": 49581,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1299,24 +900,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Bash.mp3",
-      "package_client": true,
-      "size_bytes": 7773,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/Bash.wav",
       "package_client": true,
       "size_bytes": 94986,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#1-1779775214720.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1327,24 +914,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#2-1779775220509.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#2-1779775220509.wav",
       "package_client": true,
       "size_bytes": 176478,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#3-1779775224048.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1355,24 +928,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/FLAME.mp3",
-      "package_client": true,
-      "size_bytes": 28390,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/FLAME.wav",
       "package_client": true,
       "size_bytes": 229302,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Granade.mp3",
-      "package_client": true,
-      "size_bytes": 24831,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1383,24 +942,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Impact_sounds_laser_#2-1779775267671.mp3",
-      "package_client": true,
-      "size_bytes": 25389,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/Impact_sounds_laser_#2-1779775267671.wav",
       "package_client": true,
       "size_bytes": 176478,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/LAS.mp3",
-      "package_client": true,
-      "size_bytes": 8016,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1411,24 +956,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Lightning-crackle.mp3",
-      "package_client": true,
-      "size_bytes": 3888,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/Lightning-crackle.wav",
       "package_client": true,
       "size_bytes": 181046,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Plas.mp3",
-      "package_client": true,
-      "size_bytes": 5808,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1439,24 +970,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/RELOAD.mp3",
-      "package_client": true,
-      "size_bytes": 8769,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/RELOAD.wav",
       "package_client": true,
       "size_bytes": 40782,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Shot.mp3",
-      "package_client": true,
-      "size_bytes": 14568,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1467,13 +984,6 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Slice.mp3",
-      "package_client": true,
-      "size_bytes": 5808,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/Slice.wav",
       "package_client": true,
       "size_bytes": 38494,
@@ -1481,24 +991,10 @@
       "copy_candidate": false
     },
     {
-      "path": "PACKAGE_client/assets/sound/effects/Weapons/Thundering.mp3",
-      "package_client": true,
-      "size_bytes": 23353,
-      "extension": ".mp3",
-      "copy_candidate": false
-    },
-    {
       "path": "PACKAGE_client/assets/sound/effects/Weapons/Thundering.wav",
       "package_client": true,
       "size_bytes": 192474,
       "extension": ".wav",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/effects/Whump.mp3",
-      "package_client": true,
-      "size_bytes": 5343,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1597,13 +1093,6 @@
       "package_client": true,
       "size_bytes": 25334,
       "extension": ".ogg",
-      "copy_candidate": false
-    },
-    {
-      "path": "PACKAGE_client/assets/sound/voice/new_world_intro_crawl_narration.mp3",
-      "package_client": true,
-      "size_bytes": 3249567,
-      "extension": ".mp3",
       "copy_candidate": false
     },
     {
@@ -1834,6 +1323,517 @@
       "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet RopesNob3.mp3",
       "package_client": false,
       "size_bytes": 6884669,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/A_car_engine_#4-1779775163346.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/A_mountain_of_collap_#3-1779775094194.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/A_simple_security_al_#1-1779774863188.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#1-1779775475631.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#3-1779775482933.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#1-1779775450325.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#2-1779775454199.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#3-1779775457522.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#4-1779775463068.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#1-1779775758544.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#4-1779775802264.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Book flip.mp3",
+      "package_client": false,
+      "size_bytes": 12207,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Book snap.mp3",
+      "package_client": false,
+      "size_bytes": 10744,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Box close.mp3",
+      "package_client": false,
+      "size_bytes": 8556,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Cathonk.mp3",
+      "package_client": false,
+      "size_bytes": 8086,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Chainsaw_sounds_#2-1779775306406.mp3",
+      "package_client": false,
+      "size_bytes": 73197,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Chainsaw_strikes_met_#3-1779775359727.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Clak.mp3",
+      "package_client": false,
+      "size_bytes": 7928,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Clankingkeys.mp3",
+      "package_client": false,
+      "size_bytes": 104583,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Command-key.mp3",
+      "package_client": false,
+      "size_bytes": 7876,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Door close.mp3",
+      "package_client": false,
+      "size_bytes": 13978,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/door open.mp3",
+      "package_client": false,
+      "size_bytes": 18776,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Drawer.mp3",
+      "package_client": false,
+      "size_bytes": 17366,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Gas mask breathing.mp3",
+      "package_client": false,
+      "size_bytes": 87672,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Hammer_banging_on_a__#2-1779775124149.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Hollow metal.mp3",
+      "package_client": false,
+      "size_bytes": 8031,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Hollow_hallway_foots_#1-1779774967000.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Industrial_ambience,-1779774930869.mp3",
+      "package_client": false,
+      "size_bytes": 195022,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Kwap.mp3",
+      "package_client": false,
+      "size_bytes": 5267,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/lightsa&alarm-button.mp3",
+      "package_client": false,
+      "size_bytes": 14184,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine running.mp3",
+      "package_client": false,
+      "size_bytes": 104456,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine start.mp3",
+      "package_client": false,
+      "size_bytes": 198492,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine wind down.mp3",
+      "package_client": false,
+      "size_bytes": 91780,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machinery.mp3",
+      "package_client": false,
+      "size_bytes": 81395,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal drag.mp3",
+      "package_client": false,
+      "size_bytes": 29330,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal thwak.mp3",
+      "package_client": false,
+      "size_bytes": 6989,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal wonk.mp3",
+      "package_client": false,
+      "size_bytes": 6988,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal wonk3.mp3",
+      "package_client": false,
+      "size_bytes": 9178,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/padded_hallway_foots_#2-1779775030644.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Pencil drag.mp3",
+      "package_client": false,
+      "size_bytes": 36614,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Pencil draw.mp3",
+      "package_client": false,
+      "size_bytes": 13559,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Pencil tap.mp3",
+      "package_client": false,
+      "size_bytes": 6440,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Purchase-Coins.mp3",
+      "package_client": false,
+      "size_bytes": 13254,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Quiet_Mouse_noises_#2-1779775529981.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Scratch crunch.mp3",
+      "package_client": false,
+      "size_bytes": 56317,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Shifting cloth.mp3",
+      "package_client": false,
+      "size_bytes": 40923,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Snap.mp3",
+      "package_client": false,
+      "size_bytes": 5372,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/The_steady_backgroun_#4-1779774908427.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Typing sounds.mp3",
+      "package_client": false,
+      "size_bytes": 113210,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#1-1779775413485.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#2-1779775421710.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#3-1779775426871.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#4-1779775429322.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bash.mp3",
+      "package_client": false,
+      "size_bytes": 7773,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#1-1779775214720.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#2-1779775220509.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#3-1779775224048.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/FLAME.mp3",
+      "package_client": false,
+      "size_bytes": 28390,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Granade.mp3",
+      "package_client": false,
+      "size_bytes": 24831,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Impact_sounds_laser_#2-1779775267671.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/LAS.mp3",
+      "package_client": false,
+      "size_bytes": 8016,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Lightning-crackle.mp3",
+      "package_client": false,
+      "size_bytes": 3888,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Plas.mp3",
+      "package_client": false,
+      "size_bytes": 5808,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/RELOAD.mp3",
+      "package_client": false,
+      "size_bytes": 8769,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Shot.mp3",
+      "package_client": false,
+      "size_bytes": 14568,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Slice.mp3",
+      "package_client": false,
+      "size_bytes": 5808,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Thundering.mp3",
+      "package_client": false,
+      "size_bytes": 23353,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Whump.mp3",
+      "package_client": false,
+      "size_bytes": 5343,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/voice/new_world_intro_crawl_narration.mp3",
+      "package_client": false,
+      "size_bytes": 3249567,
       "extension": ".mp3",
       "copy_candidate": true
     }

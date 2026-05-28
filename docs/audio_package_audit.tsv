@@ -48,120 +48,67 @@ audio_file	PACKAGE_client/assets/sound/core/footstep_debris_01.wav	True	10628	.w
 audio_file	PACKAGE_client/assets/sound/core/footstep_grate_01.wav	True	8864	.wav	False			
 audio_file	PACKAGE_client/assets/sound/core/footstep_metal_01.wav	True	7982	.wav	False			
 audio_file	PACKAGE_client/assets/sound/core/footstep_sludge_01.wav	True	11068	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/A_car_engine_#4-1779775163346.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/A_car_engine_#4-1779775163346.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/A_mountain_of_collap_#3-1779775094194.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/A_mountain_of_collap_#3-1779775094194.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/A_simple_security_al_#1-1779774863188.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/A_simple_security_al_#1-1779774863188.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#1-1779775475631.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#1-1779775475631.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#3-1779775482933.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#3-1779775482933.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#1-1779775450325.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#1-1779775450325.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#2-1779775454199.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#2-1779775454199.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#3-1779775457522.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#3-1779775457522.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#4-1779775463068.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Dog_bark_#4-1779775463068.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#1-1779775758544.mp3	True	12717	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#1-1779775758544.wav	True	84750	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.mp3	True	12717	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.wav	True	84750	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.mp3	True	12717	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.wav	True	84750	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#4-1779775802264.mp3	True	12717	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Animal sounds/Gargling_creature_no_#4-1779775802264.wav	True	84750	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/bash.wav	True	47532	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Book flip.mp3	True	12207	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Book flip.wav	True	90190	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Book snap.mp3	True	10744	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Book snap.wav	True	100430	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Box close.mp3	True	8556	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Box close.wav	True	77902	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Cathonk.mp3	True	8086	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Cathonk.wav	True	63566	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Chainsaw_sounds_#2-1779775306406.mp3	True	73197	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Chainsaw_sounds_#2-1779775306406.wav	True	529278	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Chainsaw_strikes_met_#3-1779775359727.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Chainsaw_strikes_met_#3-1779775359727.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Clak.mp3	True	7928	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Clak.wav	True	57422	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Clankingkeys.mp3	True	104583	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Clankingkeys.wav	True	708686	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Command-key.mp3	True	7876	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Command-key.wav	True	63566	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Door close.mp3	True	13978	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Door close.wav	True	120910	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/door open.mp3	True	18776	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/door open.wav	True	176206	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Drawer.mp3	True	17366	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Drawer.wav	True	159822	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/flame.wav	True	114690	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Gas mask breathing.mp3	True	87672	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Gas mask breathing.wav	True	751694	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Hammer_banging_on_a__#2-1779775124149.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Hammer_banging_on_a__#2-1779775124149.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Hollow metal.mp3	True	8031	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Hollow metal.wav	True	69710	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Hollow_hallway_foots_#1-1779774967000.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Hollow_hallway_foots_#1-1779774967000.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Industrial_ambience,-1779774930869.mp3	True	195022	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Industrial_ambience,-1779774930869.wav	True	1423950	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Kwap.mp3	True	5267	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Kwap.wav	True	41038	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/las.wav	True	48924	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/lightning_crackle.wav	True	90562	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/lightsa&alarm-button.mp3	True	14184	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/lightsa&alarm-button.wav	True	133198	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machine running.mp3	True	104456	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machine running.wav	True	737358	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machine start.mp3	True	198492	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machine start.wav	True	1478734	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machine wind down.mp3	True	91780	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machine wind down.wav	True	737358	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machinery.mp3	True	81395	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Machinery.wav	True	700494	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal drag.mp3	True	29330	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal drag.wav	True	234134	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal thwak.mp3	True	6989	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal thwak.wav	True	57422	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk.mp3	True	6988	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk.wav	True	57422	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk3.mp3	True	9178	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/machine sounds/Metal wonk3.wav	True	79950	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/padded_hallway_foots_#2-1779775030644.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/padded_hallway_foots_#2-1779775030644.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Pencil drag.mp3	True	36614	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Pencil drag.wav	True	354382	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Pencil draw.mp3	True	13559	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Pencil draw.wav	True	127054	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Pencil tap.mp3	True	6440	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Pencil tap.wav	True	53326	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/plas.wav	True	36332	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Purchase-Coins.mp3	True	13254	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Purchase-Coins.wav	True	88142	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Quiet_Mouse_noises_#2-1779775529981.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Quiet_Mouse_noises_#2-1779775529981.wav	True	176478	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/reload.wav	True	20430	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Scratch crunch.mp3	True	56317	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Scratch crunch.wav	True	325710	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Shifting cloth.mp3	True	40923	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Shifting cloth.wav	True	440398	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/shot.wav	True	103372	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/slice.wav	True	19286	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Snap.mp3	True	5372	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Snap.wav	True	41038	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/The_steady_backgroun_#4-1779774908427.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/The_steady_backgroun_#4-1779774908427.wav	True	176478	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/thundering.wav	True	96276	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Typing sounds.mp3	True	113210	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Typing sounds.wav	True	917582	.wav	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/blahblah_01.ogg	True	23289	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/blahblah_02.ogg	True	24254	.ogg	False			
@@ -175,43 +122,24 @@ audio_file	PACKAGE_client/assets/sound/effects/Voice/blahblah_09.ogg	True	50321	
 audio_file	PACKAGE_client/assets/sound/effects/Voice/blahblah_10.ogg	True	45630	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/blahblah_11.ogg	True	44475	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/blahblah_12.ogg	True	40255	.ogg	False			
-audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#1-1779775413485.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#1-1779775413485.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#2-1779775421710.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#2-1779775421710.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#3-1779775426871.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#3-1779775426871.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#4-1779775429322.mp3	True	49581	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Voice/Gas_mask_sounds_#4-1779775429322.wav	True	352878	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bash.mp3	True	7773	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bash.wav	True	94986	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#1-1779775214720.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#1-1779775214720.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#2-1779775220509.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#2-1779775220509.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#3-1779775224048.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Bullet_impacts_with__#3-1779775224048.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/FLAME.mp3	True	28390	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/FLAME.wav	True	229302	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Granade.mp3	True	24831	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Granade.wav	True	258126	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Impact_sounds_laser_#2-1779775267671.mp3	True	25389	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Impact_sounds_laser_#2-1779775267671.wav	True	176478	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/LAS.mp3	True	8016	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/LAS.wav	True	97770	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Lightning-crackle.mp3	True	3888	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Lightning-crackle.wav	True	181046	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Plas.mp3	True	5808	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Plas.wav	True	72586	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/RELOAD.mp3	True	8769	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/RELOAD.wav	True	40782	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Shot.mp3	True	14568	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Shot.wav	True	206666	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Slice.mp3	True	5808	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Slice.wav	True	38494	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Weapons/Thundering.mp3	True	23353	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Weapons/Thundering.wav	True	192474	.wav	False			
-audio_file	PACKAGE_client/assets/sound/effects/Whump.mp3	True	5343	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/effects/Whump.wav	True	63910	.wav	False			
 audio_file	PACKAGE_client/assets/sound/voice/blahblah_01.ogg	True	23289	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/voice/blahblah_02.ogg	True	24254	.ogg	False			
@@ -226,7 +154,6 @@ audio_file	PACKAGE_client/assets/sound/voice/blahblah_10.ogg	True	45630	.ogg	Fal
 audio_file	PACKAGE_client/assets/sound/voice/blahblah_11.ogg	True	44475	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/voice/blahblah_12.ogg	True	40255	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/voice/blahblahtech.ogg	True	25334	.ogg	False			
-audio_file	PACKAGE_client/assets/sound/voice/new_world_intro_crawl_narration.mp3	True	3249567	.mp3	False			
 audio_file	PACKAGE_client/assets/sound/voice/new_world_intro_crawl_narration.wav	True	35422286	.wav	False			
 audio_file	PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_alarm_far_01.wav	False	55168	.wav	True			
 audio_file	PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_chime_01.wav	False	48554	.wav	True			
@@ -260,6 +187,79 @@ audio_file	ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Temple of Machinery
 audio_file	ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet Over HivenNob2.mp3	False	3899725	.mp3	True			
 audio_file	ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet Over HiveNob1.mp3	False	4370717	.mp3	True			
 audio_file	ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet RopesNob3.mp3	False	6884669	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/A_car_engine_#4-1779775163346.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/A_mountain_of_collap_#3-1779775094194.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/A_simple_security_al_#1-1779774863188.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#1-1779775475631.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#3-1779775482933.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#1-1779775450325.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#2-1779775454199.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#3-1779775457522.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#4-1779775463068.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#1-1779775758544.mp3	False	12717	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.mp3	False	12717	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.mp3	False	12717	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#4-1779775802264.mp3	False	12717	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Book flip.mp3	False	12207	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Book snap.mp3	False	10744	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Box close.mp3	False	8556	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Cathonk.mp3	False	8086	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Chainsaw_sounds_#2-1779775306406.mp3	False	73197	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Chainsaw_strikes_met_#3-1779775359727.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Clak.mp3	False	7928	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Clankingkeys.mp3	False	104583	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Command-key.mp3	False	7876	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Door close.mp3	False	13978	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/door open.mp3	False	18776	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Drawer.mp3	False	17366	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Gas mask breathing.mp3	False	87672	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Hammer_banging_on_a__#2-1779775124149.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Hollow metal.mp3	False	8031	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Hollow_hallway_foots_#1-1779774967000.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Industrial_ambience,-1779774930869.mp3	False	195022	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Kwap.mp3	False	5267	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/lightsa&alarm-button.mp3	False	14184	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine running.mp3	False	104456	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine start.mp3	False	198492	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine wind down.mp3	False	91780	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machinery.mp3	False	81395	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal drag.mp3	False	29330	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal thwak.mp3	False	6989	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal wonk.mp3	False	6988	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal wonk3.mp3	False	9178	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/padded_hallway_foots_#2-1779775030644.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Pencil drag.mp3	False	36614	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Pencil draw.mp3	False	13559	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Pencil tap.mp3	False	6440	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Purchase-Coins.mp3	False	13254	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Quiet_Mouse_noises_#2-1779775529981.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Scratch crunch.mp3	False	56317	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Shifting cloth.mp3	False	40923	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Snap.mp3	False	5372	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/The_steady_backgroun_#4-1779774908427.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Typing sounds.mp3	False	113210	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#1-1779775413485.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#2-1779775421710.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#3-1779775426871.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#4-1779775429322.mp3	False	49581	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bash.mp3	False	7773	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#1-1779775214720.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#2-1779775220509.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#3-1779775224048.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/FLAME.mp3	False	28390	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Granade.mp3	False	24831	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Impact_sounds_laser_#2-1779775267671.mp3	False	25389	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/LAS.mp3	False	8016	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Lightning-crackle.mp3	False	3888	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Plas.mp3	False	5808	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/RELOAD.mp3	False	8769	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Shot.mp3	False	14568	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Slice.mp3	False	5808	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Thundering.mp3	False	23353	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Whump.mp3	False	5343	.mp3	True			
+audio_file	ROOT_SRC_assets/ROOT_Sounds/voice/new_world_intro_crawl_narration.mp3	False	3249567	.mp3	True			
 java_reference	src/mechanist/AudioRuntimeFramework.java	22	assets/sound/wav/tp_gui_button_press_01.wav	False	False	0	missing_from_package	
 java_reference	src/mechanist/AudioRuntimeFramework.java	23	assets/sound/wav/tp_gui_panel_open_01.wav	False	False	0	missing_from_package	
 java_reference	src/mechanist/AudioRuntimeFramework.java	24	assets/sound/wav/tp_gui_panel_close_01.wav	False	False	0	missing_from_package	
