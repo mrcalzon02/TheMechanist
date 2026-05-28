@@ -93,6 +93,10 @@ def iter_java_files() -> Iterable[Path]:
             yield path
 
 
+def is_glob_reference(reference: str) -> bool:
+    return any(token in reference for token in ("*", "?", "[", "]"))
+
+
 def collect_audio_files() -> list[AudioFileRecord]:
     records: list[AudioFileRecord] = []
     for path in iter_files(REPO_ROOT, AUDIO_EXTENSIONS):
@@ -130,7 +134,6 @@ def find_candidates(reference: str, audio_records: list[AudioFileRecord]) -> lis
 def choose_candidate(candidates: list[Path]) -> Path | None:
     non_package = [path for path in candidates if not path.resolve().is_relative_to(PACKAGE_CLIENT.resolve())]
     if non_package:
-        # Prefer ROOT_SRC_assets, then assets, then anything else outside package.
         def score(path: Path) -> tuple[int, int, str]:
             parts = set(path.parts)
             if "ROOT_SRC_assets" in parts:
@@ -159,7 +162,6 @@ def copy_all_discovered_audio(audio_records: list[AudioFileRecord], dry_run: boo
         if not record.copy_candidate:
             continue
         source = REPO_ROOT / record.path
-        # Preserve enough path structure to avoid collisions while keeping the package self-contained.
         if "ROOT_SRC_assets" in source.parts:
             idx = source.parts.index("ROOT_SRC_assets")
             rel_tail = Path(*source.parts[idx + 1:])
@@ -189,6 +191,19 @@ def collect_references(audio_records: list[AudioFileRecord], copy_missing: bool,
         for line_no, line in enumerate(lines, start=1):
             for match in JAVA_AUDIO_REFERENCE_RE.finditer(line):
                 reference = match.group("path")
+                if is_glob_reference(reference):
+                    references.append(AudioReferenceRecord(
+                        source_file=rel(java_file),
+                        line=line_no,
+                        reference=reference,
+                        exists_in_package=True,
+                        exists_in_repo=True,
+                        candidate_count=0,
+                        candidates="",
+                        action="ignored_glob_pattern",
+                        copied_to="",
+                    ))
+                    continue
                 package_path = package_path_for_reference(reference)
                 repo_path = repo_path_for_reference(reference)
                 candidates = find_candidates(reference, audio_records)
@@ -227,6 +242,7 @@ def write_tsv(audio_files: list[AudioFileRecord], references: list[AudioReferenc
 
 
 def write_json(audio_files: list[AudioFileRecord], references: list[AudioReferenceRecord], copied_all: list[tuple[str, str]], output: Path, dry_run: bool) -> None:
+    missing = [item for item in references if not item.exists_in_package]
     payload = {
         "schema": "mechanist.audio_package_audit.v1",
         "generated_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
@@ -236,7 +252,7 @@ def write_json(audio_files: list[AudioFileRecord], references: list[AudioReferen
         "package_audio_file_count": sum(1 for item in audio_files if item.package_client),
         "external_audio_file_count": sum(1 for item in audio_files if not item.package_client),
         "java_audio_reference_count": len(references),
-        "missing_package_reference_count": sum(1 for item in references if not item.exists_in_package),
+        "missing_package_reference_count": len(missing),
         "copied_all_audio_count": len(copied_all),
         "audio_files": [asdict(item) for item in audio_files],
         "java_references": [asdict(item) for item in references],
@@ -263,7 +279,6 @@ def main() -> int:
     copied_all: list[tuple[str, str]] = []
     if args.copy_all_discovered_audio:
         copied_all = copy_all_discovered_audio(audio_files, args.dry_run)
-        # Re-collect after copy for accurate counts on real runs.
         if not args.dry_run:
             audio_files = collect_audio_files()
             references = collect_references(audio_files, False, False)
