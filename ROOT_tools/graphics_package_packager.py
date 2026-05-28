@@ -2,10 +2,16 @@
 """Package compiled graphical assets into client-selectable graphics packages.
 
 This command copies actual files into PACKAGE_client/assets/graphics/packages.
-It does not leave the client pointing at ROOT_tools or loose source locations.
+It does not leave the client pointing at ROOT_tools, source assets, or loose
+locations outside the package.
 
-Default behavior creates/refreshes the uncompressed ready-to-use default_32 package.
-Higher-resolution packages can be staged as unzipped folders or compressed zip bundles.
+Default behavior creates/refreshes the uncompressed ready-to-use default_32
+package. Higher-resolution packages can be staged as unzipped folders or
+compressed zip bundles.
+
+Packaging rule:
+  destination packages must contain real copied asset files. Pointer-only README,
+  empty marker, or manifest-only packages are invalid.
 """
 
 from __future__ import annotations
@@ -21,6 +27,9 @@ ROOT_TOOLS = Path(__file__).resolve().parent
 REPO_ROOT = ROOT_TOOLS.parent
 COMPILED_ROOT = REPO_ROOT / "ROOT_tools/atlas_asset_pipeline/compiled_assets"
 PACKAGE_ROOT = REPO_ROOT / "PACKAGE_client/assets/graphics/packages"
+POINTER_ONLY_FILENAMES = {"README.md", "README.txt", ".gitkeep", ".keep"}
+MANIFEST_FILENAMES = {"package_info.json"}
+ASSET_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".json", ".tsv", ".csv", ".txt"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,8 +42,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def source_files(source: Path) -> list[Path]:
+    files = [path for path in sorted(source.rglob("*")) if path.is_file()]
+    real_files = [path for path in files if path.name not in POINTER_ONLY_FILENAMES]
+    if not real_files:
+        raise RuntimeError(
+            "Refusing to create a graphics package with no real source files. "
+            f"Source folder was empty or marker-only: {source}"
+        )
+    return real_files
+
+
 def copy_tree(source: Path, destination: Path, dry_run: bool) -> int:
-    files = [path for path in source.rglob("*") if path.is_file()]
+    files = source_files(source)
     if dry_run:
         return len(files)
     if destination.exists():
@@ -57,13 +77,30 @@ def write_manifest(package_dir: Path, package_id: str, display_name: str, source
         "compressed": False,
         "ready_to_use": True,
         "file_count": file_count,
+        "self_contained": True,
+        "pointer_only_package": False,
         "generated_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
     }
     if not dry_run:
         (package_dir / "package_info.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
+def validate_packaged_folder(package_dir: Path) -> None:
+    files = [path for path in package_dir.rglob("*") if path.is_file()]
+    real_payload = [
+        path for path in files
+        if path.name not in POINTER_ONLY_FILENAMES
+        and path.name not in MANIFEST_FILENAMES
+    ]
+    if not real_payload:
+        raise RuntimeError(
+            "Invalid graphics package: package contains no real payload files after packaging. "
+            f"Destination: {package_dir}"
+        )
+
+
 def zip_package(package_dir: Path, zip_path: Path, dry_run: bool) -> int:
+    validate_packaged_folder(package_dir)
     files = [path for path in package_dir.rglob("*") if path.is_file()]
     if dry_run:
         return len(files)
@@ -88,12 +125,17 @@ def main() -> int:
 
     zip_path = PACKAGE_ROOT / f"{args.package_id}.zip"
     if args.compressed:
-        zip_count = zip_package(package_dir, zip_path, args.dry_run)
-        if not args.dry_run and package_dir.exists():
-            shutil.rmtree(package_dir)
-        print(f"Packaged compressed graphics bundle: {zip_path} ({zip_count} files)")
+        if args.dry_run:
+            print(f"Would package compressed graphics bundle: {zip_path} ({file_count} source files)")
+        else:
+            zip_count = zip_package(package_dir, zip_path, False)
+            if package_dir.exists():
+                shutil.rmtree(package_dir)
+            print(f"Packaged compressed graphics bundle: {zip_path} ({zip_count} files)")
     else:
-        print(f"Packaged uncompressed graphics folder: {package_dir} ({file_count} files)")
+        if not args.dry_run:
+            validate_packaged_folder(package_dir)
+        print(f"Packaged uncompressed graphics folder: {package_dir} ({file_count} source files)")
 
     if args.dry_run:
         print("Dry run only; no files were written.")
