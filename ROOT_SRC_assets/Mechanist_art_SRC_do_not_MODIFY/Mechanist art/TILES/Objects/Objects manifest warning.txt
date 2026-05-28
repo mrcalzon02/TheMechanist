@@ -1,0 +1,11 @@
+Some of the assets in this asset list have been detected to be incorrectly sized the two examples are the Domestic.png and trainstuff.png Which may require dynamic slicing 
+
+Tables.png  Is a 5 by 5 sheet of rows of increasing quality of table A dynamic entertainment asset for homes and barracks varying quality levels and variation by column.
+
+FARMstuff.png   The first two rows of this Sprite sheet are planted crops The third row is trees Rows 4 and 5 are shrubberies and gardens  .
+
+Medicaie.png  The first row is variations of medical bed The second row is variations of autodoc  An automated health recovery machine The third row is medical stations  The 4th row is diagnostic stations the 5th row is medical surgery machinery 
+
+Vending.png Is assorted vending machines of varieties and kinds Dynamic content determination will be necessary. As many are generic vending machines row one column three is illicit chemicals Row 2 column 5 is water row 2 column 3 is an Imperial Shrine row one column three is an ammo dispenser row 4 column 2 is a medical dispenser row column three is an illicit chemical dispenser Row 4 column 5 is a parts dispensary row column one is the standard vending machine  Column one is the standard newspaper vending machine  Row 5 column 5 is the standard automated teller machine 
+
+I trust to your image recognition and purposeful detection to determine the content of the other images and assuaged purpose and intent with somatic assignment  Based on the image location and internal context clues .

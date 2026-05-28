@@ -1,1 +1,0 @@
-Core sound cues: lightweight WAV files for footsteps and readable ambient machinery, radio, television, spark, pipe, vent, pressure, servo, drip, sludge, chime, alarm, and door-servo feedback. Optional audiopacks may replace or extend them; missing cues must fall back cleanly.
