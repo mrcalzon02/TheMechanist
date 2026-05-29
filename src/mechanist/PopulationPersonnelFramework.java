@@ -195,12 +195,12 @@ class AnimalPopulationApi {
             Faction f = w.roomFaction(i);
             String low = roomText(rp).toLowerCase(Locale.ROOT);
             boolean kennelish = low.contains("security") || low.contains("barracks") || low.contains("guard") || low.contains("watch") || low.contains("training") || low.contains("kennel");
-            if(!kennelish && !(f==Faction.CIVIC WARDENS || f==Faction.IMPERIAL_GUARD || f==Faction.SORORITAS || (f!=null && f.name().startsWith("NOBLE")))) continue;
-            double chance = (f==Faction.CIVIC WARDENS ? 0.36 : f==Faction.IMPERIAL_GUARD ? 0.22 : (f!=null && f.name().startsWith("NOBLE")) ? 0.18 : 0.08);
+            if(!kennelish && !(f==Faction.CIVIC_WARDENS || f==Faction.IMPERIAL_GUARD || f==Faction.SORORITAS || (f!=null && f.name().startsWith("NOBLE")))) continue;
+            double chance = (f==Faction.CIVIC_WARDENS ? 0.36 : f==Faction.IMPERIAL_GUARD ? 0.22 : (f!=null && f.name().startsWith("NOBLE")) ? 0.18 : 0.08);
             if(r.nextDouble() > chance) continue;
             Point pt = w.randomOpenPointInRoom(w.rooms.get(i));
             if(pt == null) continue;
-            AnimalProfile p = f==Faction.CIVIC WARDENS ? KENNEL[0] : (f==Faction.IMPERIAL_GUARD ? KENNEL[1] : KENNEL[Math.floorMod(r.nextInt(), KENNEL.length)]);
+            AnimalProfile p = f==Faction.CIVIC_WARDENS ? KENNEL[0] : (f==Faction.IMPERIAL_GUARD ? KENNEL[1] : KENNEL[Math.floorMod(r.nextInt(), KENNEL.length)]);
             NpcEntity n = createAnimal(p, f == null ? Faction.NONE : f, w.zoneType, pt.x, pt.y, r, null);
             n.state = "Guard";
             attachAnimalProvenance(n, w, i, "kennel/security animal stock", r);
@@ -263,7 +263,7 @@ class AnimalPopulationApi {
         if(owner == null) return 0;
         Faction f = owner.faction;
         if(f == Faction.NOBLE || (f != null && f.name().startsWith("NOBLE")) || w.zoneType==ZoneType.SECTOR_GOVERNORS_MANSION || w.zoneType==ZoneType.NOBLE_SERVICE_SPINE) return 0.34;
-        if(f == Faction.CIVIC WARDENS) return 0.12;
+        if(f == Faction.CIVIC_WARDENS) return 0.12;
         if(f == Faction.HIVER || (f != null && f.name().startsWith("HIVER")) || w.zoneType==ZoneType.HAB_STACK || w.zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR) return 0.08;
         if(f == Faction.MUTANT || f == Faction.CULTIST || f == Faction.HERETIC) return 0.10;
         if(f == Faction.BANDIT || (f != null && f.name().startsWith("GANGER"))) return 0.06;
@@ -274,7 +274,7 @@ class AnimalPopulationApi {
         if(owner != null && (owner.faction == Faction.MUTANT)) return PETS[3];
         if(owner != null && (owner.faction == Faction.CULTIST || owner.faction == Faction.HERETIC)) return PETS[4];
         if(owner != null && (owner.faction == Faction.NOBLE || (owner.faction != null && owner.faction.name().startsWith("NOBLE")))) return pick(r, new AnimalProfile[]{PETS[0],PETS[1],PETS[6]});
-        if(owner != null && owner.faction == Faction.CIVIC WARDENS) return KENNEL[0];
+        if(owner != null && owner.faction == Faction.CIVIC_WARDENS) return KENNEL[0];
         return pick(r, PETS);
     }
 
@@ -586,16 +586,16 @@ class PersonnelPopulationApi {
     static String sourceKindFor(String low, ZoneType z, Faction f){
         if(low.contains("rail") || z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return "rail intake roster";
         if(low.contains("creche") || low.contains("daycare")) return "creche population ledger";
-        if(low.contains("barracks") || low.contains("billet") || low.contains("drill") || f == Faction.IMPERIAL_GUARD || f == Faction.CIVIC WARDENS) return "barracks duty roster";
+        if(low.contains("barracks") || low.contains("billet") || low.contains("drill") || f == Faction.IMPERIAL_GUARD || f == Faction.CIVIC_WARDENS) return "barracks duty roster";
         if(low.contains("household") || f == Faction.NOBLE || (f != null && f.name().startsWith("NOBLE"))) return "household servant ledger";
-        if(f == Faction.MECHANIST COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return "forge creche ledger";
+        if(f == Faction.MECHANIST_COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return "forge creche ledger";
         if(f == Faction.CULTIST || f == Faction.HERETIC) return "hidden congregation roster";
         if(f != null && f.name().startsWith("GANGER")) return "gang crash-barracks roster";
         if(f == Faction.MUTANT) return "sump brood ledger";
         return "local hab work roster";
     }
     static String labelFor(String kind, Faction f, String roomName, ZoneType z){ return (f==null?"Unaligned":f.label) + " " + kind + " from " + roomName + " in " + (z==null?"unknown zone":z.label); }
-    static Faction normalizeFaction(Faction f, ZoneType z){ if(f != null && f != Faction.NONE) return f; if(z == ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN; if(z == ZoneType.HAB_STACK || z == ZoneType.NEUTRAL_CIVILIAN_FLOOR) return Faction.HIVER; if(z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return Faction.CIVIC LEDGER OFFICE; return Faction.NONE; }
+    static Faction normalizeFaction(Faction f, ZoneType z){ if(f != null && f != Faction.NONE) return f; if(z == ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN; if(z == ZoneType.HAB_STACK || z == ZoneType.NEUTRAL_CIVILIAN_FLOOR) return Faction.HIVER; if(z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return Faction.CIVIC_LEDGER_OFFICE; return Faction.NONE; }
     static String originModeFor(String kind){ if(kind == null) return "arcology-born"; if(kind.contains("rail")) return "rail-arrival"; if(kind.contains("creche")) return "creche-raised"; if(kind.contains("barracks")) return "barracks-raised"; if(kind.contains("household")) return "household-born"; if(kind.contains("gang")) return "gang-raised"; return "arcology-born"; }
     static String upbringingFromLedger(RoomPopulationLedger l, ZoneType z){ return "managed by " + l.sourceLabel + "; facility " + l.facilitySummary() + "; capacity " + l.capacity + ", available reserve " + l.available + ", assigned " + l.assigned + ", dead " + l.dead + "."; }
 }
@@ -655,16 +655,16 @@ class PersonnelProvenanceApi {
     static String modeFor(Faction f, ZoneType z, Random r){
         int roll = r == null ? 0 : r.nextInt(100);
         if(z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD || roll < 22) return "rail-arrival";
-        if(f == Faction.IMPERIAL_GUARD || f == Faction.CIVIC WARDENS) return roll < 45 ? "rail-mustered" : "barracks-raised";
-        if(f == Faction.MECHANIST COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return roll < 35 ? "rail-transferred" : "creche-raised";
+        if(f == Faction.IMPERIAL_GUARD || f == Faction.CIVIC_WARDENS) return roll < 45 ? "rail-mustered" : "barracks-raised";
+        if(f == Faction.MECHANIST_COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return roll < 35 ? "rail-transferred" : "creche-raised";
         if(f == Faction.NOBLE || (f != null && f.name().startsWith("NOBLE"))) return "household-born";
         return roll < 70 ? "arcology-born" : "rail-arrival";
     }
     static String poolFor(Faction f, ZoneType z){
         if(f == Faction.INN) return "Concord News Network newsroom roster";
         if(f == Faction.IMPERIAL_GUARD) return "billet barracks replacement pool";
-        if(f == Faction.CIVIC WARDENS) return "precinct duty roster";
-        if(f == Faction.MECHANIST COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return "forge creche and lay-bound Labor Automaton pool";
+        if(f == Faction.CIVIC_WARDENS) return "precinct duty roster";
+        if(f == Faction.MECHANIST_COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return "forge creche and lay-bound Labor Automaton pool";
         if(f == Faction.MUTANT) return "sump brood hollow";
         if(f == Faction.CULTIST || f == Faction.HERETIC) return "hidden congregation cell";
         if(f != null && f.name().startsWith("GANGER")) return "gang crash-barracks roster";
@@ -676,8 +676,8 @@ class PersonnelProvenanceApi {
     static String upbringingFor(Faction f, ZoneType z, String mode){
         if(mode != null && mode.contains("rail")) return "arrived through a rail hub from elsewhere in the arcology and was absorbed into the local roster";
         if(f == Faction.IMPERIAL_GUARD) return "raised or processed through barracks discipline, mess lines, drill rooms, and quartermaster issue";
-        if(f == Faction.CIVIC WARDENS) return "processed through precinct dormitories, duty halls, holding blocks, and procedural obedience";
-        if(f == Faction.MECHANIST COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return "grown through a forge creche among nutrient galleys, machine chapels, and anti-human maintenance spaces";
+        if(f == Faction.CIVIC_WARDENS) return "processed through precinct dormitories, duty halls, holding blocks, and procedural obedience";
+        if(f == Faction.MECHANIST_COLLEGIA || (f != null && f.name().startsWith("MECHANIST COLLEGIA"))) return "grown through a forge creche among nutrient galleys, machine chapels, and anti-human maintenance spaces";
         if(f == Faction.NOBLE || (f != null && f.name().startsWith("NOBLE"))) return "kept within household service corridors, rich rooms, and hereditary obligation";
         return "born into local arcology rooms, creches, kitchens, queues, and corridor work";
     }
@@ -851,7 +851,7 @@ class NpcEntity {
     }
 
     int reserveReloadsForFaction() {
-        boolean armedProfessional = faction == Faction.IMPERIAL_GUARD || faction == Faction.CIVIC WARDENS || faction == Faction.SORORITAS || faction == Faction.NOBLE || (faction != null && faction.name().startsWith("GANGER")) || faction == Faction.BANDIT;
+        boolean armedProfessional = faction == Faction.IMPERIAL_GUARD || faction == Faction.CIVIC_WARDENS || faction == Faction.SORORITAS || faction == Faction.NOBLE || (faction != null && faction.name().startsWith("GANGER")) || faction == Faction.BANDIT;
         int base = armedProfessional ? 2 : 1;
         if (intellect >= 8) base++;
         if (faction == Faction.IMPERIAL_GUARD || faction == Faction.SORORITAS) base++;
@@ -869,9 +869,9 @@ class NpcEntity {
     String chooseMeleeWeapon(Random r) {
         String[] pool;
         if (faction == Faction.SORORITAS) pool = new String[]{"Chainsword","Power Sword","Power Maul","Knife"};
-        else if (faction == Faction.CIVIC WARDENS) pool = new String[]{"Civic Wardens shock maul","Power Maul","Knife"};
+        else if (faction == Faction.CIVIC_WARDENS) pool = new String[]{"Civic Wardens shock maul","Power Maul","Knife"};
         else if (faction == Faction.IMPERIAL_GUARD) pool = new String[]{"Guard trench knife","Munitorum Shovel","Chainsword","Knife"};
-        else if (faction == Faction.MECHANIST COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Mechanist Collegia arc prod","Ritual wrench","Omnissian Axe","Broken servo-arm club"};
+        else if (faction == Faction.MECHANIST_COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Mechanist Collegia arc prod","Ritual wrench","Omnissian Axe","Broken servo-arm club"};
         else if (faction == Faction.MUTANT) pool = new String[]{"Mutant scrap axe","Mutant tusk club","Mutant bone maul","Trash-hook spear"};
         else if (faction == Faction.CULTIST || faction == Faction.HERETIC) pool = new String[]{"Cult ritual blade","Heretic nail flail","Toxic Knife","Knife"};
         else if (faction == Faction.NOBLE || (faction != null && faction.name().startsWith("NOBLE"))) pool = new String[]{"Duelling Sword","Power Sword","Monoblade sliver","Sword"};
@@ -883,9 +883,9 @@ class NpcEntity {
     String chooseRangedWeapon(Random r) {
         String[] pool;
         if (faction == Faction.SORORITAS) pool = new String[]{"Mass-Reactive Carbine","Bolt Pistol","Flamer","Hand Flamer","Laspistol"};
-        else if (faction == Faction.CIVIC WARDENS) pool = new String[]{"Shotgun","Webber","Laspistol","Stub Revolver","Bolt Pistol"};
+        else if (faction == Faction.CIVIC_WARDENS) pool = new String[]{"Shotgun","Webber","Laspistol","Stub Revolver","Bolt Pistol"};
         else if (faction == Faction.IMPERIAL_GUARD) pool = new String[]{"Light Rifle","Guard lascarbine","Laspistol","Autogun","Longlas","Shotgun"};
-        else if (faction == Faction.MECHANIST COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Arc Rifle","Laspistol","Jury-rigged laslock","Plasma Pistol","Plasma Gun"};
+        else if (faction == Faction.MECHANIST_COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Arc Rifle","Laspistol","Jury-rigged laslock","Plasma Pistol","Plasma Gun"};
         else if (faction == Faction.MUTANT) pool = new String[]{"Chem sprayer","Acid Spitter","Pipe shotgun","Zip pistol"};
         else if (faction == Faction.CULTIST || faction == Faction.HERETIC) pool = new String[]{"Cult martyr pistol","Stub pistol","Autopistol","Hand Flamer"};
         else if (faction == Faction.NOBLE || (faction != null && faction.name().startsWith("NOBLE"))) pool = new String[]{"Noble dueling pistol","Needle Pistol","Plasma Pistol","Stub Revolver"};
@@ -897,9 +897,9 @@ class NpcEntity {
     String chooseArmor(Random r) {
         String[] pool;
         if (faction == Faction.SORORITAS) pool = new String[]{"Guard flak vest","Civic Wardens riot visor","Battered helmet"};
-        else if (faction == Faction.CIVIC WARDENS) pool = new String[]{"Civic Wardens riot visor","Guard flak vest","Baton-dented vest"};
+        else if (faction == Faction.CIVIC_WARDENS) pool = new String[]{"Civic Wardens riot visor","Guard flak vest","Baton-dented vest"};
         else if (faction == Faction.IMPERIAL_GUARD) pool = new String[]{"Guard flak vest","Battered helmet","Rail worker hazard coat"};
-        else if (faction == Faction.MECHANIST COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Mechanist Collegia rubberized apron","Battered helmet","Work gloves"};
+        else if (faction == Faction.MECHANIST_COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Mechanist Collegia rubberized apron","Battered helmet","Work gloves"};
         else if (faction == Faction.NOBLE || (faction != null && faction.name().startsWith("NOBLE"))) pool = new String[]{"Noble fur-lined coat","Guard flak vest","Battered helmet"};
         else if (faction == Faction.BANDIT || (faction != null && faction.name().startsWith("GANGER"))) pool = new String[]{"Damaged ganger coat","Battered helmet","Padded coat"};
         else pool = new String[]{"Padded coat","Battered helmet","Plain civilian coat"};
@@ -909,9 +909,9 @@ class NpcEntity {
     String chooseExplosive(Random r) {
         String[] pool;
         if (faction == Faction.IMPERIAL_GUARD) pool = new String[]{"Frag grenade","Krak grenade","Smoke grenade"};
-        else if (faction == Faction.CIVIC WARDENS) pool = new String[]{"Smoke grenade","Frag grenade","Web cartridge"};
+        else if (faction == Faction.CIVIC_WARDENS) pool = new String[]{"Smoke grenade","Frag grenade","Web cartridge"};
         else if (faction == Faction.SORORITAS) pool = new String[]{"Frag grenade","Melta grenade"};
-        else if (faction == Faction.MECHANIST COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Krak grenade","Melta grenade","Plasma bomb"};
+        else if (faction == Faction.MECHANIST_COLLEGIA || (faction != null && faction.name().startsWith("MECHANIST COLLEGIA"))) pool = new String[]{"Krak grenade","Melta grenade","Plasma bomb"};
         else if (faction == Faction.BANDIT || (faction != null && faction.name().startsWith("GANGER"))) pool = new String[]{"Tripwire mine","Frag grenade","Satchel charge"};
         else if (faction == Faction.CULTIST || faction == Faction.HERETIC) pool = new String[]{"Satchel charge","Plasma bomb","Frag grenade"};
         else if (faction == Faction.NOBLE || (faction != null && faction.name().startsWith("NOBLE"))) pool = new String[]{"Motion claymore","Smoke grenade","Melta grenade"};
@@ -1036,8 +1036,8 @@ class NpcEntity {
         if (isTrader() && hour >= 7 && hour <= 20) { state = "Trade"; return; }
         if (faction == Faction.MINISTORUM) { state = (hour % 5 == 0) ? "Prayer" : "Pilgrim Service"; return; }
         if (faction == Faction.SORORITAS) { state = "Guard"; return; }
-        if (faction == Faction.CIVIC WARDENS || faction == Faction.IMPERIAL_GUARD) { state = (hour % 3 == 0) ? "Guard" : "Patrol"; return; }
-        if (faction == Faction.MECHANIST COLLEGIA || faction.name().startsWith("MECHANIST COLLEGIA")) { state = (hour % 4 == 0) ? "Inspect" : "Patrol"; return; }
+        if (faction == Faction.CIVIC_WARDENS || faction == Faction.IMPERIAL_GUARD) { state = (hour % 3 == 0) ? "Guard" : "Patrol"; return; }
+        if (faction == Faction.MECHANIST_COLLEGIA || faction.name().startsWith("MECHANIST COLLEGIA")) { state = (hour % 4 == 0) ? "Inspect" : "Patrol"; return; }
         if (faction == Faction.MUTANT || faction == Faction.CULTIST || faction == Faction.HERETIC) { state = "Hostile"; return; }
         state = (hour >= 8 && hour <= 18) ? "Wander" : "Idle";
     }
@@ -1156,7 +1156,7 @@ class NpcEntity {
     boolean isTrader() { return role != null && role.contains("Trader"); }
 
     static NpcEntity tradeClerkFor(ZoneType z, int x, int y, Random r) {
-        NpcEntity n = create(Faction.CIVIC LEDGER OFFICE, z, x, y, r);
+        NpcEntity n = create(Faction.CIVIC_LEDGER_OFFICE, z, x, y, r);
         n.role = "Trader-Clerk";
         n.state = "Trade";
         n.symbol = 'T';
@@ -1169,8 +1169,8 @@ class NpcEntity {
         if (f == Faction.SORORITAS) return "Sister of Battle Guard";
         if (f == Faction.INN) return r.nextDouble() < 0.34 ? "Reporter" : (r.nextDouble() < 0.55 ? "Editor" : "Broadcaster");
         if (z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.SUMP_MARKET) return r.nextDouble() < 0.45 ? "Trader" : "Local";
-        if (z == ZoneType.NEUTRAL_CIVILIAN_FLOOR && (f == Faction.CIVIC LEDGER OFFICE || f == Faction.NONE || f == Faction.SCAVENGER)) return r.nextDouble() < 0.18 ? "Trader" : "Civilian";
-        if (z == ZoneType.MECHANICUS_FORGE_CLOISTER && (f == Faction.MECHANIST COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA"))) return r.nextDouble() < 0.22 ? "Trader-Machinist" : "Adept";
+        if (z == ZoneType.NEUTRAL_CIVILIAN_FLOOR && (f == Faction.CIVIC_LEDGER_OFFICE || f == Faction.NONE || f == Faction.SCAVENGER)) return r.nextDouble() < 0.18 ? "Trader" : "Civilian";
+        if (z == ZoneType.MECHANICUS_FORGE_CLOISTER && (f == Faction.MECHANIST_COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA"))) return r.nextDouble() < 0.22 ? "Trader-Machinist" : "Adept";
         if (z == ZoneType.GANGER_TURF && (f == Faction.BANDIT || f.name().startsWith("GANGER"))) return r.nextDouble() < 0.16 ? "Trader-Fence" : "Ganger";
         return "Resident";
     }
@@ -1179,11 +1179,11 @@ class NpcEntity {
         if (f == Faction.MINISTORUM) return 'c';
         if (f == Faction.SORORITAS) return 'S';
         if (f == Faction.INN) return 'q';
-        if (f == Faction.CIVIC WARDENS) return 'A';
+        if (f == Faction.CIVIC_WARDENS) return 'A';
         if (f == Faction.IMPERIAL_GUARD) return 'M';
         if (f == Faction.MUTANT) return 'm';
         if (f == Faction.CULTIST || f == Faction.HERETIC) return 'H';
-        if (f == Faction.MECHANIST COLLEGIA || f == Faction.MECHANICUS_CLOISTER_RED || f == Faction.MECHANICUS_CLOISTER_RUST || f == Faction.MECHANICUS_CLOISTER_VOID) return 'q';
+        if (f == Faction.MECHANIST_COLLEGIA || f == Faction.MECHANICUS_CLOISTER_RED || f == Faction.MECHANICUS_CLOISTER_RUST || f == Faction.MECHANICUS_CLOISTER_VOID) return 'q';
         if (f == Faction.BANDIT || f.name().startsWith("GANGER")) return 'g';
         if (f == Faction.NOBLE || f.name().startsWith("NOBLE")) return 'n';
         if (f == Faction.HIVER || f.name().startsWith("HIVER")) return 'h';
@@ -1194,9 +1194,9 @@ class NpcEntity {
         if (f == Faction.MINISTORUM) return r.nextBoolean()?"Prayer":"Pilgrim Service";
         if (f == Faction.SORORITAS) return "Guard";
         if (f == Faction.INN) return r.nextBoolean()?"Reporting":"Editing";
-        if (f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD) return r.nextBoolean()?"Patrol":"Guard";
+        if (f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD) return r.nextBoolean()?"Patrol":"Guard";
         if (f == Faction.MUTANT || f == Faction.CULTIST || f == Faction.HERETIC) return r.nextBoolean()?"Hostile":"Wander";
-        if (f == Faction.MECHANIST COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA")) return r.nextBoolean()?"Inspect":"Patrol";
+        if (f == Faction.MECHANIST_COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA")) return r.nextBoolean()?"Inspect":"Patrol";
         return r.nextBoolean()?"Idle":"Wander";
     }
 

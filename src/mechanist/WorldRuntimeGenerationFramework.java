@@ -1254,13 +1254,13 @@ class World {
     Faction dominantContinuityFactionForZone(){
         if(zoneType==ZoneType.MUTANT_SEWER_CAMP || zoneType==ZoneType.MUTANT_WARRENS) return Faction.MUTANT;
         if(zoneType==ZoneType.CULTIST_SEWER_CAMP) return Faction.CULTIST;
-        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.CIVIC WARDENS;
+        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.CIVIC_WARDENS;
         if(zoneType==ZoneType.IMPERIAL_GUARD_BILLET) return Faction.IMPERIAL_GUARD;
-        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return Faction.MECHANIST COLLEGIA;
+        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return Faction.MECHANIST_COLLEGIA;
         if(zoneType==ZoneType.GANGER_TURF) return Faction.BANDIT;
         if(zoneType==ZoneType.SECTOR_GOVERNORS_MANSION || zoneType==ZoneType.NOBLE_SERVICE_SPINE) return Faction.NOBLE;
         if(zoneType==ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN;
-        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE) return Faction.CIVIC LEDGER OFFICE;
+        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE) return Faction.CIVIC_LEDGER_OFFICE;
         if(zoneType==ZoneType.NEUTRAL_RAIL_DEPOT || zoneType==ZoneType.SUMP_MARKET) return Faction.HIVER;
         if(zoneType==ZoneType.HAB_STACK || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR) return Faction.HIVER;
         if(zoneType==ZoneType.SEWER_CONDUIT) return Faction.SCAVENGER;
@@ -1904,13 +1904,13 @@ class World {
     Faction plazaFactionForZone(){
         switch(zoneType){
             case GANGER_TURF: return Faction.BANDIT;
-            case ARBITES_PRECINCT_EDGE: return Faction.CIVIC WARDENS;
+            case ARBITES_PRECINCT_EDGE: return Faction.CIVIC_WARDENS;
             case MECHANICUS_RELIC_DUCT:
-            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST COLLEGIA;
+            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST_COLLEGIA;
             case MUTANT_WARRENS:
             case MUTANT_SEWER_CAMP: return Faction.MUTANT;
             case CULTIST_SEWER_CAMP: return Faction.CULTIST;
-            case ADMINISTRATUM_ARCHIVE: return Faction.CIVIC LEDGER OFFICE;
+            case ADMINISTRATUM_ARCHIVE: return Faction.CIVIC_LEDGER_OFFICE;
             case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
             case NOBLE_SERVICE_SPINE: return Faction.NOBLE;
             default: return Faction.NONE;
@@ -2976,9 +2976,9 @@ class World {
             Faction[] gangs = {Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH,Faction.HIVER_BLOCK_AUREL,Faction.HIVER_BLOCK_MARROW,Faction.HIVER_BLOCK_SUMPLEDGER};
             return r.nextDouble()<0.45 ? gangs[r.nextInt(gangs.length)] : Faction.NONE;
         }
-        if (floor == 5) return r.nextDouble()<0.25 ? Faction.CIVIC LEDGER OFFICE : Faction.NONE;
+        if (floor == 5) return r.nextDouble()<0.25 ? Faction.CIVIC_LEDGER_OFFICE : Faction.NONE;
         if (zoneType == ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN;
-        Faction[] upper = {Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY,Faction.CIVIC WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANICUS_CLOISTER_RED,Faction.MECHANICUS_CLOISTER_RUST,Faction.MECHANICUS_CLOISTER_VOID};
+        Faction[] upper = {Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY,Faction.CIVIC_WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANICUS_CLOISTER_RED,Faction.MECHANICUS_CLOISTER_RUST,Faction.MECHANICUS_CLOISTER_VOID};
         return r.nextDouble()<0.55 ? upper[r.nextInt(upper.length)] : Faction.NONE;
     }
 
@@ -3117,14 +3117,14 @@ class World {
         if(roomId >= 0 && roomId < roomProfiles.size() && EcclesiarchyTempleApi.isTempleRoom(roomProfiles.get(roomId))) return Faction.MINISTORUM;
         if(zoneType==ZoneType.MUTANT_SEWER_CAMP || zoneType==ZoneType.MUTANT_WARRENS) return Faction.MUTANT;
         if(zoneType==ZoneType.CULTIST_SEWER_CAMP) return Faction.CULTIST;
-        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.CIVIC WARDENS;
+        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.CIVIC_WARDENS;
         if(zoneType==ZoneType.IMPERIAL_GUARD_BILLET) return Faction.IMPERIAL_GUARD;
-        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return r.nextBoolean()?Faction.MECHANICUS_CLOISTER_RED:Faction.MECHANIST COLLEGIA;
+        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return r.nextBoolean()?Faction.MECHANICUS_CLOISTER_RED:Faction.MECHANIST_COLLEGIA;
         if(zoneType==ZoneType.GANGER_TURF) { Faction[] gangs={Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH}; return gangs[r.nextInt(gangs.length)]; }
         if(zoneType==ZoneType.SECTOR_GOVERNORS_MANSION) return Faction.NOBLE;
         if(zoneType==ZoneType.NOBLE_SERVICE_SPINE) { Faction[] nobles={Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY}; return nobles[r.nextInt(nobles.length)]; }
         if(zoneType==ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN;
-        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR || zoneType==ZoneType.SUMP_MARKET || zoneType==ZoneType.NEUTRAL_RAIL_DEPOT) return r.nextDouble()<0.18?Faction.CIVIC WARDENS:Faction.CIVIC LEDGER OFFICE;
+        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR || zoneType==ZoneType.SUMP_MARKET || zoneType==ZoneType.NEUTRAL_RAIL_DEPOT) return r.nextDouble()<0.18?Faction.CIVIC_WARDENS:Faction.CIVIC_LEDGER_OFFICE;
         if(zoneType==ZoneType.HAB_STACK) return Faction.HIVER;
         if(zoneType==ZoneType.SEWER_CONDUIT) return r.nextDouble()<0.12?Faction.MUTANT:Faction.NONE;
         return roomFaction(roomId)==Faction.NONE?Faction.SCAVENGER:roomFaction(roomId);

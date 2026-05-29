@@ -5,7 +5,7 @@ final class FactionContractDisplaySmoke {
         FactionContract contract = new FactionContract();
         contract.id = "B-12345";
         contract.type = "BOUNTY";
-        contract.faction = Faction.CIVIC WARDENS;
+        contract.faction = Faction.CIVIC_WARDENS;
         contract.targetZoneKey = "1,1,2,3,4,false";
         contract.targetName = "Wanted fugitive Kessel Grint";
         contract.requiredTurnInItem = "Ident chip B-12345";

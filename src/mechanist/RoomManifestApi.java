@@ -36,22 +36,22 @@ class RoomManifestApi {
                 break;
             case MECHANICUS_FORGE_CLOISTER: case MECHANICUS_RELIC_DUCT:
                 out.add(module("Mechanist Collegia Nutrient And Diagnostic Spine","DATA_STACK",18,3,5,5,1,-7,
-                    spec("CAFETERIA","Stamped Mechanist Collegia Nutrient Galley","anti-human nutrient galley: jagged dispensers, standing brackets, feed tubes, cable gutters, and no concession to comfort",50,Faction.MECHANIST COLLEGIA,new String[]{"nutrient paste tube","sealed water ration","filter cartridge"},new char[]{'T','N','q'}),
-                    spec("CLINIC","Stamped Mechanist Collegia Diagnostic Bay","diagnostic bay of hard tables, red lenses, hanging tools, and repair doctrine that treats flesh as warranty debt",48,Faction.MECHANIST COLLEGIA,new String[]{"machine parts","filter cartridge","logic Engine shard"},new char[]{'u','R','q'})));
+                    spec("CAFETERIA","Stamped Mechanist Collegia Nutrient Galley","anti-human nutrient galley: jagged dispensers, standing brackets, feed tubes, cable gutters, and no concession to comfort",50,Faction.MECHANIST_COLLEGIA,new String[]{"nutrient paste tube","sealed water ration","filter cartridge"},new char[]{'T','N','q'}),
+                    spec("CLINIC","Stamped Mechanist Collegia Diagnostic Bay","diagnostic bay of hard tables, red lenses, hanging tools, and repair doctrine that treats flesh as warranty debt",48,Faction.MECHANIST_COLLEGIA,new String[]{"machine parts","filter cartridge","logic Engine shard"},new char[]{'u','R','q'})));
                 out.add(module("Mechanist Collegia Data Chapel And Rest Cells","DATA_STACK",20,3,5,5,3,7,
-                    spec("LIBRARY","Stamped Data-Chapel Library","learning chamber of data stacks, prayer terminals, cable lecterns, and knowledge stored as obedience",48,Faction.MECHANIST COLLEGIA,new String[]{"data slate","logic Engine shard","ritual scrap"},new char[]{'l','R','q'}),
-                    spec("DORMITORY","Stamped Augmetic Rest Cells","rest-cell row where bodies dock in narrow recesses beside tool arms, cable loops, and devotional hazard signage",42,Faction.MECHANIST COLLEGIA,new String[]{"machine oil smear","cloth scraps","wire bundle"},new char[]{'c','s','R'})));
+                    spec("LIBRARY","Stamped Data-Chapel Library","learning chamber of data stacks, prayer terminals, cable lecterns, and knowledge stored as obedience",48,Faction.MECHANIST_COLLEGIA,new String[]{"data slate","logic Engine shard","ritual scrap"},new char[]{'l','R','q'}),
+                    spec("DORMITORY","Stamped Augmetic Rest Cells","rest-cell row where bodies dock in narrow recesses beside tool arms, cable loops, and devotional hazard signage",42,Faction.MECHANIST_COLLEGIA,new String[]{"machine oil smear","cloth scraps","wire bundle"},new char[]{'c','s','R'})));
                 break;
             case ARBITES_PRECINCT_EDGE:
                 out.add(module("Civic Wardens Holding Cell Row","CELL_ROW",20,3,4,4,1,-7,
-                    spec("SECURITY","Stamped Holding Cell Row","cell-row stamp: bars, benches, floor drains, camera angles, and architecture designed to make procedure feel inevitable",42,Faction.CIVIC WARDENS,new String[]{"key chit","cloth scraps","citation token"},new char[]{'X','b'}),
-                    spec("CLINIC","Stamped Precinct Wound Room","small processing aid room for people injured by law before paperwork has decided why",34,Faction.CIVIC WARDENS,new String[]{"bandage roll","sealed water ration","citation token"},new char[]{'u','c'}),
-                    spec("STOREFRONT","Stamped Complaint Counter","barred public counter for accusations, notices, fines, and the administrative conversion of distress",36,Faction.CIVIC WARDENS,new String[]{"citation token","permit slip","data slate"},new char[]{'T','X'})));
+                    spec("SECURITY","Stamped Holding Cell Row","cell-row stamp: bars, benches, floor drains, camera angles, and architecture designed to make procedure feel inevitable",42,Faction.CIVIC_WARDENS,new String[]{"key chit","cloth scraps","citation token"},new char[]{'X','b'}),
+                    spec("CLINIC","Stamped Precinct Wound Room","small processing aid room for people injured by law before paperwork has decided why",34,Faction.CIVIC_WARDENS,new String[]{"bandage roll","sealed water ration","citation token"},new char[]{'u','c'}),
+                    spec("STOREFRONT","Stamped Complaint Counter","barred public counter for accusations, notices, fines, and the administrative conversion of distress",36,Faction.CIVIC_WARDENS,new String[]{"citation token","permit slip","data slate"},new char[]{'T','X'})));
                 break;
             case ADMINISTRATUM_ARCHIVE:
                 out.add(module("Civic Ledger Office Dead-File Library Spine","DATA_STACK",20,3,5,5,1,-7,
-                    spec("LIBRARY","Stamped Dead-File Library","shelved archive stamp with index cages, dead files, damp ledgers, and knowledge arranged to deny use",46,Faction.CIVIC LEDGER OFFICE,new String[]{"old book","data slate","form packet"},new char[]{'l','X'}),
-                    spec("TRAINING","Stamped Clerk Instruction Room","learning room for stamps, ledgers, denial scripts, and the sacred art of non-responsibility",30,Faction.CIVIC LEDGER OFFICE,new String[]{"training manual","ink vial","permit slip"},new char[]{'l','q'})));
+                    spec("LIBRARY","Stamped Dead-File Library","shelved archive stamp with index cages, dead files, damp ledgers, and knowledge arranged to deny use",46,Faction.CIVIC_LEDGER_OFFICE,new String[]{"old book","data slate","form packet"},new char[]{'l','X'}),
+                    spec("TRAINING","Stamped Clerk Instruction Room","learning room for stamps, ledgers, denial scripts, and the sacred art of non-responsibility",30,Faction.CIVIC_LEDGER_OFFICE,new String[]{"training manual","ink vial","permit slip"},new char[]{'l','q'})));
                 break;
             case NEUTRAL_CIVILIAN_FLOOR: case HAB_STACK:
                 out.add(module("Civilian Apartment Creche Cluster","HAB",18,3,5,5,1,-7,
@@ -97,15 +97,15 @@ class RoomManifestApi {
                 add(out,"SECURITY","Trophy Security Gallery","ornate security room where display weapons, cameras, and house guards turn vanity into surveillance",38,Faction.NOBLE,new String[]{"house token","weapon part","trade chit"},new char[]{'X','!'});
                 break;
             case MECHANICUS_FORGE_CLOISTER: case MECHANICUS_RELIC_DUCT:
-                add(out,"DORMITORY","Augmetic Rest Cell","anti-human rest slit with metal ribs, recharge hooks, prayer ports, and a cot designed by someone with a grudge against vertebrae",40,Faction.MECHANIST COLLEGIA,new String[]{"wire bundle","cloth scraps","machine oil smear"},new char[]{'c','s','N'});
-                add(out,"CAFETERIA","Nutrient Reclamation Galley","narrow feeding gallery of measured nutrient taps, waste bins, harsh counters, and devotional efficiency",45,Faction.MECHANIST COLLEGIA,new String[]{"nutrient paste","sealed water ration","filter cartridge"},new char[]{'T','q','N'});
-                add(out,"KITCHEN","Nutrient Processing Cell","machine-heavy food processor room where organic need is converted into metered slurry and quiet shame",42,Faction.MECHANIST COLLEGIA,new String[]{"filter cartridge","machine parts","nutrient paste"},new char[]{'q','N','F'});
-                add(out,"FOOD_STORE","Nutrient and Lubricant Storehouse","separated lockers for human nutrient paste, sacred lubricants, and fluids nobody should confuse",45,Faction.MECHANIST COLLEGIA,new String[]{"sacred machine oil","filter cartridge","sealed water ration"},new char[]{'u','X','q'});
-                add(out,"WAREHOUSE","Component Warehouse","jagged metal storage grid of bins, cable reels, component crates, and labels written for machines first",55,Faction.MECHANIST COLLEGIA,new String[]{"machine parts","wire bundle","logic Engine shard"},new char[]{'b','N','q'});
-                add(out,"STOREFRONT","Inspection Counter Shrine","counter-shrine where tools are issued, blessed, counted, and accused before use",46,Faction.MECHANIST COLLEGIA,new String[]{"repair token","machine parts","ritual salt"},new char[]{'T','q'});
-                add(out,"LIBRARY","Data-Chapel Learning Bay","learning chamber of red lenses, data-slates, catechism shelves, and machine-readable doctrine",44,Faction.MECHANIST COLLEGIA,new String[]{"data slate","logic Engine shard","wire bundle"},new char[]{'l','q','N'});
-                add(out,"TRAINING","Servo-Calibration Training Bay","hazardous training bay for augmetic calibration, tool rites, target servitors, and unacceptable softness correction",36,Faction.MECHANIST COLLEGIA,new String[]{"machine parts","wire bundle","training cog"},new char[]{'!','N'});
-                add(out,"SPECIALTY","Cable Chapel","hostile devotional utility chamber where cables descend like vines and every surface prefers steel to skin",48,Faction.MECHANIST COLLEGIA,new String[]{"wire bundle","sacred machine oil","machine parts"},new char[]{'N','q','l'});
+                add(out,"DORMITORY","Augmetic Rest Cell","anti-human rest slit with metal ribs, recharge hooks, prayer ports, and a cot designed by someone with a grudge against vertebrae",40,Faction.MECHANIST_COLLEGIA,new String[]{"wire bundle","cloth scraps","machine oil smear"},new char[]{'c','s','N'});
+                add(out,"CAFETERIA","Nutrient Reclamation Galley","narrow feeding gallery of measured nutrient taps, waste bins, harsh counters, and devotional efficiency",45,Faction.MECHANIST_COLLEGIA,new String[]{"nutrient paste","sealed water ration","filter cartridge"},new char[]{'T','q','N'});
+                add(out,"KITCHEN","Nutrient Processing Cell","machine-heavy food processor room where organic need is converted into metered slurry and quiet shame",42,Faction.MECHANIST_COLLEGIA,new String[]{"filter cartridge","machine parts","nutrient paste"},new char[]{'q','N','F'});
+                add(out,"FOOD_STORE","Nutrient and Lubricant Storehouse","separated lockers for human nutrient paste, sacred lubricants, and fluids nobody should confuse",45,Faction.MECHANIST_COLLEGIA,new String[]{"sacred machine oil","filter cartridge","sealed water ration"},new char[]{'u','X','q'});
+                add(out,"WAREHOUSE","Component Warehouse","jagged metal storage grid of bins, cable reels, component crates, and labels written for machines first",55,Faction.MECHANIST_COLLEGIA,new String[]{"machine parts","wire bundle","logic Engine shard"},new char[]{'b','N','q'});
+                add(out,"STOREFRONT","Inspection Counter Shrine","counter-shrine where tools are issued, blessed, counted, and accused before use",46,Faction.MECHANIST_COLLEGIA,new String[]{"repair token","machine parts","ritual salt"},new char[]{'T','q'});
+                add(out,"LIBRARY","Data-Chapel Learning Bay","learning chamber of red lenses, data-slates, catechism shelves, and machine-readable doctrine",44,Faction.MECHANIST_COLLEGIA,new String[]{"data slate","logic Engine shard","wire bundle"},new char[]{'l','q','N'});
+                add(out,"TRAINING","Servo-Calibration Training Bay","hazardous training bay for augmetic calibration, tool rites, target servitors, and unacceptable softness correction",36,Faction.MECHANIST_COLLEGIA,new String[]{"machine parts","wire bundle","training cog"},new char[]{'!','N'});
+                add(out,"SPECIALTY","Cable Chapel","hostile devotional utility chamber where cables descend like vines and every surface prefers steel to skin",48,Faction.MECHANIST_COLLEGIA,new String[]{"wire bundle","sacred machine oil","machine parts"},new char[]{'N','q','l'});
                 break;
             case HAB_STACK: case NEUTRAL_CIVILIAN_FLOOR:
                 add(out,"DORMITORY","Civilian Dormitory Bay","compact hab dormitory with worker cots, sinks, dressers, cabinets, laundry bundles, and the privacy of a rumor",38,Faction.HIVER,new String[]{"sealed water ration","cloth scraps","cheap trinket"},new char[]{'c','u','s'});
@@ -119,22 +119,22 @@ class RoomManifestApi {
                 add(out,"DAYCARE","Creche Daycare Room","crowded child-care room with cheap mats, low tables, food stains, and too few adults for too many futures",28,Faction.HIVER,new String[]{"toy cog","cloth scraps","cheap meal tin"},new char[]{'d','c','T'});
                 break;
             case ARBITES_PRECINCT_EDGE:
-                add(out,"BARRACKS","Civic Wardens Duty Barracks","severe duty dormitory with lockered bunks, armor stands, discipline plaques, and lighting chosen for interrogation practice",40,Faction.CIVIC WARDENS,new String[]{"citation token","shock baton part","cloth scraps"},new char[]{'c','s','X'});
-                add(out,"CAFETERIA","Precinct Mess Slot","narrow mess with fixed benches, monitored tables, trash bins, and a service slit that discourages lingering",38,Faction.CIVIC WARDENS,new String[]{"ration tin","sealed water ration","citation token"},new char[]{'T','b','N'});
-                add(out,"FOOD_STORE","Evidence Ration Storehouse","food and water cage separated from confiscated goods by labels, bars, and institutional suspicion",36,Faction.CIVIC WARDENS,new String[]{"ration tin","sealed water ration","key chit"},new char[]{'u','X','q'});
-                add(out,"WAREHOUSE","Contraband Product Warehouse","sealed warehouse of confiscated products, illegal tools, weapons, paperwork, and unanswered ownership questions",48,Faction.CIVIC WARDENS,new String[]{"contraband packet","machine parts","trade chit"},new char[]{'b','X'});
-                add(out,"STOREFRONT","Public Complaint Counter","barred public counter for accusations, fines, notices, and the conversion of suffering into forms",34,Faction.CIVIC WARDENS,new String[]{"citation token","permit slip","data slate"},new char[]{'T','X'});
-                add(out,"SECURITY","Holding Cell Row","security room of bars, benches, drain grates, and the smell of procedure becoming violence",35,Faction.CIVIC WARDENS,new String[]{"key chit","cloth scraps","dirty water"},new char[]{'X','b'});
-                add(out,"TRAINING","Compliance Training Room","training room with baton lanes, restraint hooks, case diagrams, and target silhouettes shaped like citizens",30,Faction.CIVIC WARDENS,new String[]{"training baton","citation token","shock baton part"},new char[]{'!','X'});
+                add(out,"BARRACKS","Civic Wardens Duty Barracks","severe duty dormitory with lockered bunks, armor stands, discipline plaques, and lighting chosen for interrogation practice",40,Faction.CIVIC_WARDENS,new String[]{"citation token","shock baton part","cloth scraps"},new char[]{'c','s','X'});
+                add(out,"CAFETERIA","Precinct Mess Slot","narrow mess with fixed benches, monitored tables, trash bins, and a service slit that discourages lingering",38,Faction.CIVIC_WARDENS,new String[]{"ration tin","sealed water ration","citation token"},new char[]{'T','b','N'});
+                add(out,"FOOD_STORE","Evidence Ration Storehouse","food and water cage separated from confiscated goods by labels, bars, and institutional suspicion",36,Faction.CIVIC_WARDENS,new String[]{"ration tin","sealed water ration","key chit"},new char[]{'u','X','q'});
+                add(out,"WAREHOUSE","Contraband Product Warehouse","sealed warehouse of confiscated products, illegal tools, weapons, paperwork, and unanswered ownership questions",48,Faction.CIVIC_WARDENS,new String[]{"contraband packet","machine parts","trade chit"},new char[]{'b','X'});
+                add(out,"STOREFRONT","Public Complaint Counter","barred public counter for accusations, fines, notices, and the conversion of suffering into forms",34,Faction.CIVIC_WARDENS,new String[]{"citation token","permit slip","data slate"},new char[]{'T','X'});
+                add(out,"SECURITY","Holding Cell Row","security room of bars, benches, drain grates, and the smell of procedure becoming violence",35,Faction.CIVIC_WARDENS,new String[]{"key chit","cloth scraps","dirty water"},new char[]{'X','b'});
+                add(out,"TRAINING","Compliance Training Room","training room with baton lanes, restraint hooks, case diagrams, and target silhouettes shaped like citizens",30,Faction.CIVIC_WARDENS,new String[]{"training baton","citation token","shock baton part"},new char[]{'!','X'});
                 break;
             case ADMINISTRATUM_ARCHIVE:
-                add(out,"DORMITORY","Clerk Dormitory Ledger Cell","clerk sleep cell with bunk slots, ink stains, personal forms, and fatigue stacked like paperwork",34,Faction.CIVIC LEDGER OFFICE,new String[]{"permit slip","cloth scraps","ink vial"},new char[]{'c','s','l'});
-                add(out,"CAFETERIA","Stamp-Clerk Canteen","thin canteen with table lines, queue rails, food bins, and a counter that probably needs three signatures",36,Faction.CIVIC LEDGER OFFICE,new String[]{"cheap meal tin","sealed water ration","permit slip"},new char[]{'T','b','N'});
-                add(out,"FOOD_STORE","Ration File Storehouse","food storehouse where ration crates and paperwork are both shelved as if edible",42,Faction.CIVIC LEDGER OFFICE,new String[]{"sealed water ration","cheap meal tin","form packet"},new char[]{'u','l','q'});
-                add(out,"WAREHOUSE","Form Product Warehouse","warehouse for paper, stamps, slates, cabinets, rejected lives, and other civic Ledger Office products",50,Faction.CIVIC LEDGER OFFICE,new String[]{"form packet","data slate","ink vial"},new char[]{'b','l'});
-                add(out,"STOREFRONT","Permit Appeal Counter","service counter with queue rails and a tactical architecture of delay",35,Faction.CIVIC LEDGER OFFICE,new String[]{"permit slip","trade chit","stamp token"},new char[]{'T','X'});
-                add(out,"LIBRARY","Dead-File Library Vault","record library of shelves, dead files, index plates, and knowledge arranged to prevent use",42,Faction.CIVIC LEDGER OFFICE,new String[]{"old book","data slate","form packet"},new char[]{'l','X'});
-                add(out,"TRAINING","Clerk Instruction Room","learning room for stamps, ledgers, denial scripts, and the sacred art of not being responsible",26,Faction.CIVIC LEDGER OFFICE,new String[]{"training manual","ink vial","permit slip"},new char[]{'l','q'});
+                add(out,"DORMITORY","Clerk Dormitory Ledger Cell","clerk sleep cell with bunk slots, ink stains, personal forms, and fatigue stacked like paperwork",34,Faction.CIVIC_LEDGER_OFFICE,new String[]{"permit slip","cloth scraps","ink vial"},new char[]{'c','s','l'});
+                add(out,"CAFETERIA","Stamp-Clerk Canteen","thin canteen with table lines, queue rails, food bins, and a counter that probably needs three signatures",36,Faction.CIVIC_LEDGER_OFFICE,new String[]{"cheap meal tin","sealed water ration","permit slip"},new char[]{'T','b','N'});
+                add(out,"FOOD_STORE","Ration File Storehouse","food storehouse where ration crates and paperwork are both shelved as if edible",42,Faction.CIVIC_LEDGER_OFFICE,new String[]{"sealed water ration","cheap meal tin","form packet"},new char[]{'u','l','q'});
+                add(out,"WAREHOUSE","Form Product Warehouse","warehouse for paper, stamps, slates, cabinets, rejected lives, and other civic Ledger Office products",50,Faction.CIVIC_LEDGER_OFFICE,new String[]{"form packet","data slate","ink vial"},new char[]{'b','l'});
+                add(out,"STOREFRONT","Permit Appeal Counter","service counter with queue rails and a tactical architecture of delay",35,Faction.CIVIC_LEDGER_OFFICE,new String[]{"permit slip","trade chit","stamp token"},new char[]{'T','X'});
+                add(out,"LIBRARY","Dead-File Library Vault","record library of shelves, dead files, index plates, and knowledge arranged to prevent use",42,Faction.CIVIC_LEDGER_OFFICE,new String[]{"old book","data slate","form packet"},new char[]{'l','X'});
+                add(out,"TRAINING","Clerk Instruction Room","learning room for stamps, ledgers, denial scripts, and the sacred art of not being responsible",26,Faction.CIVIC_LEDGER_OFFICE,new String[]{"training manual","ink vial","permit slip"},new char[]{'l','q'});
                 break;
             case SUMP_MARKET:
                 add(out,"DORMITORY","Market Stall Sleeper Row","sleeping stalls behind curtains, crates, and merchandise; home and storefront share the same bad air",34,Faction.NONE,new String[]{"cloth scraps","cheap meal tin","trade chit"},new char[]{'c','b','T'});
@@ -175,11 +175,11 @@ class RoomManifestApi {
     private static Faction factionFor(ZoneType z){
         switch(z){
             case GANGER_TURF: return Faction.BANDIT;
-            case ARBITES_PRECINCT_EDGE: return Faction.CIVIC WARDENS;
-            case MECHANICUS_RELIC_DUCT: case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST COLLEGIA;
+            case ARBITES_PRECINCT_EDGE: return Faction.CIVIC_WARDENS;
+            case MECHANICUS_RELIC_DUCT: case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST_COLLEGIA;
             case MUTANT_WARRENS: case MUTANT_SEWER_CAMP: return Faction.MUTANT;
             case CULTIST_SEWER_CAMP: return Faction.CULTIST;
-            case ADMINISTRATUM_ARCHIVE: return Faction.CIVIC LEDGER OFFICE;
+            case ADMINISTRATUM_ARCHIVE: return Faction.CIVIC_LEDGER_OFFICE;
             case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
             case NOBLE_SERVICE_SPINE: case SECTOR_GOVERNORS_MANSION: return Faction.NOBLE;
             default: return Faction.NONE;

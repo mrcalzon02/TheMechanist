@@ -192,9 +192,9 @@ final class LootDropSystemAuthority {
         double tier = clamp01(sectorZoneTier);
         int base = switch (faction == null ? Faction.NONE : faction) {
             case NOBLE, NOBLE_HOUSE_VARN, NOBLE_HOUSE_KASTOR, NOBLE_HOUSE_MORVAIN, NOBLE_HOUSE_CYRA, NOBLE_HOUSE_DRAKE, NOBLE_HOUSE_TOLL, NOBLE_HOUSE_OSSUARY -> 65;
-            case CIVIC WARDENS, IMPERIAL_GUARD, SORORITAS -> 22;
-            case CIVIC LEDGER OFFICE, MINISTORUM, INN -> 18;
-            case MECHANIST COLLEGIA, MECHANICUS_CLOISTER_RED, MECHANICUS_CLOISTER_RUST, MECHANICUS_CLOISTER_VOID -> 14;
+            case CIVIC_WARDENS, IMPERIAL_GUARD, SORORITAS -> 22;
+            case CIVIC_LEDGER_OFFICE, MINISTORUM, INN -> 18;
+            case MECHANIST_COLLEGIA, MECHANICUS_CLOISTER_RED, MECHANICUS_CLOISTER_RUST, MECHANICUS_CLOISTER_VOID -> 14;
             case HIVER, HIVER_BLOCK_AUREL, HIVER_BLOCK_MARROW, HIVER_BLOCK_SUMPLEDGER -> 5;
             case SCAVENGER, BANDIT, GANGER_IRON_RATS, GANGER_BLACK_SUMP, GANGER_CANDLE_JACKS, GANGER_RED_GRIN, GANGER_CHAIN_SAINTS, GANGER_ASH_MARKET, GANGER_WIRE_WOLVES, GANGER_DROWNED_9TH -> 3;
             default -> 2;
@@ -256,7 +256,7 @@ final class LootDropSystemAuthority {
     }
 
     private static boolean highThreatFaction(Faction faction) {
-        return faction == Faction.CIVIC WARDENS || faction == Faction.IMPERIAL_GUARD || faction == Faction.SORORITAS || faction == Faction.ROGUE_MACHINE || faction == Faction.MECHANIST COLLEGIA || isNobleOrHouse(faction);
+        return faction == Faction.CIVIC_WARDENS || faction == Faction.IMPERIAL_GUARD || faction == Faction.SORORITAS || faction == Faction.ROGUE_MACHINE || faction == Faction.MECHANIST_COLLEGIA || isNobleOrHouse(faction);
     }
 
     private static boolean highThreatZone(ZoneType zt) {

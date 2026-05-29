@@ -3961,9 +3961,9 @@ void updatePendingInteractionSummary() {
         switch(npc.faction) {
             case MINISTORUM: line = npc.name + " murmurs a lawful prayer beside candle smoke and hungry pilgrims."; break;
             case SORORITAS: line = npc.name + " watches the nave in absolute silence, which is worse than a threat."; break;
-            case CIVIC WARDENS: line = npc.name + " snaps: Move along. Papers ready if asked."; break;
+            case CIVIC_WARDENS: line = npc.name + " snaps: Move along. Papers ready if asked."; break;
             case IMPERIAL_GUARD: line = npc.name + " checks a las-pack and watches the corridor."; break;
-            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: line = npc.name + " murmurs a binharic maintenance cant."; break;
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: line = npc.name + " murmurs a binharic maintenance cant."; break;
             case MUTANT: line = npc.name + " scrapes along the wall, wet breathing behind broken teeth."; break;
             case CULTIST: case HERETIC: line = npc.name + " whispers to something that is not visibly present."; break;
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: line = npc.name + " eyes your kit and weighs the odds."; break;
@@ -3977,9 +3977,9 @@ void updatePendingInteractionSummary() {
         switch(f) {
             case MINISTORUM: return new Color(235,210,120);
             case SORORITAS: return new Color(230,230,235);
-            case CIVIC WARDENS: return new Color(90,150,255);
+            case CIVIC_WARDENS: return new Color(90,150,255);
             case IMPERIAL_GUARD: return new Color(120,190,115);
-            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(210,80,70);
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(210,80,70);
             case MUTANT: return new Color(115,210,100);
             case CULTIST: case HERETIC: return new Color(190,80,210);
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(230,70,55);
@@ -4099,9 +4099,9 @@ void updatePendingInteractionSummary() {
         if (npc == null) return 0;
         switch(npc.faction) {
             case SORORITAS: return 5;
-            case CIVIC WARDENS: case IMPERIAL_GUARD: return 3;
+            case CIVIC_WARDENS: case IMPERIAL_GUARD: return 3;
             case MINISTORUM: return 1;
-            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return 2;
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return 2;
             case MUTANT: case ROGUE_MACHINE: return 2;
             case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 2;
             default: return 1;
@@ -5109,7 +5109,7 @@ void updatePendingInteractionSummary() {
         if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) return npc.equippedMeleeWeapon;
         switch (npc.faction) {
             case SORORITAS: return "Chainsword";
-            case CIVIC WARDENS: return "Civic Wardens shock maul";
+            case CIVIC_WARDENS: return "Civic Wardens shock maul";
             case IMPERIAL_GUARD: return "Guard trench knife";
             case MUTANT: return "Mutant scrap axe";
             case ROGUE_MACHINE: return "machine talons";
@@ -6455,9 +6455,9 @@ boolean arbitesAuthorityText(String text) {
         switch (npc.faction) {
             case MINISTORUM: return "Kneel if you require mercy. Stand if you require paperwork. The Emperor receives both.";
             case SORORITAS: return "The temple is under watch. Be grateful the warning is verbal.";
-            case CIVIC WARDENS: return "Papers. Now. Or explain why your boots are nervous.";
+            case CIVIC_WARDENS: return "Papers. Now. Or explain why your boots are nervous.";
             case IMPERIAL_GUARD: return "Keep moving, civilian. This corridor is not a democracy.";
-            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return "State your malfunction, flesh-unit.";
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return "State your malfunction, flesh-unit.";
             case MUTANT: return "The shape in the dark makes no civilized offer.";
             case CULTIST: case HERETIC: return "It smiles with too many certainties.";
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return "Talk quick. Pay quicker.";
@@ -9603,9 +9603,9 @@ boolean arbitesAuthorityText(String text) {
         ArrayList<String> loot = new ArrayList<>();
         if (target == null) return loot;
         switch(target.faction) {
-            case CIVIC WARDENS: loot.add("Shock baton"); loot.add("Pale Compliance"); break;
+            case CIVIC_WARDENS: loot.add("Shock baton"); loot.add("Pale Compliance"); break;
             case IMPERIAL_GUARD: loot.add("Las charge pack"); loot.add("Guard ration tin"); break;
-            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: loot.add("Circuit wafer"); loot.add("Mechanist Collegia nutrient ampoule"); break;
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: loot.add("Circuit wafer"); loot.add("Mechanist Collegia nutrient ampoule"); break;
             case MUTANT: loot.add("Hide strip bundle"); loot.add("Sumpkalm"); break;
             case CULTIST: case HERETIC: loot.add("Choir Ash"); loot.add("Cult ritual blade"); break;
             case ROGUE_MACHINE: loot.add("Servo actuator set"); loot.add("Circuit wafer"); break;
@@ -10430,7 +10430,7 @@ boolean arbitesAuthorityText(String text) {
         setScreen(Screen.MENU);
     }
 
-                                                                                                                                                                                                                                void drawBoot(Graphics2D g) {
+                                                                                                                                                                                                                                    void drawBoot(Graphics2D g) {
         bootSurfacePainter.paint(g, this);
     }
 
@@ -15418,7 +15418,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
     int factionIntentMasking(Faction f) {
         if (f == null) return 0;
         switch(f) {
-            case CIVIC WARDENS: case IMPERIAL_GUARD: case SORORITAS: return 8;
+            case CIVIC_WARDENS: case IMPERIAL_GUARD: case SORORITAS: return 8;
             case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 7;
             case CULTIST: case HERETIC: return 10;
             case ROGUE_MACHINE: return 12;
@@ -17235,7 +17235,7 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         center(g, "Press ENTER, SPACE, or click to continue into the zone.", W/2, H-115);
     }
 
-                                                                                                                                                                                                                                void drawLoading(Graphics2D g) {
+                                                                                                                                                                                                                                    void drawLoading(Graphics2D g) {
         loadingSurfacePainter.paint(g, this);
     }
 
@@ -19678,10 +19678,10 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
 
     Color colorForFaction(Faction f) {
         switch (f) {
-            case CIVIC WARDENS: return new Color(70, 115, 210);
+            case CIVIC_WARDENS: return new Color(70, 115, 210);
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(150, 55, 45);
-            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
-            case CIVIC LEDGER OFFICE: return new Color(145, 125, 95);
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
+            case CIVIC_LEDGER_OFFICE: return new Color(145, 125, 95);
             case MINISTORUM: return new Color(180, 150, 70);
             case SORORITAS: return new Color(210, 210, 210);
             case IMPERIAL_GUARD: return new Color(85, 135, 85);
