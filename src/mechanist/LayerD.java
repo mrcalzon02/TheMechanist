@@ -74,4 +74,10 @@ public class LayerD {
         panel.graphicsDropdown = -1;
         panel.repaint();
     }
+
+    static void setTargetFpsIndex(GamePanel panel, int idx) {
+        panel.logEvent(OptionsBoundaryAuthority.setTargetFpsIndex(panel.options, idx));
+        panel.graphicsDropdown = -1;
+        panel.repaint();
+    }
 }
