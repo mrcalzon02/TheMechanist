@@ -16,7 +16,9 @@ import java.util.List;
 class GamePanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener, ActionListener {
     enum Screen { BOOT, MENU, MODS, MULTIPLAYER, EDITOR, SECTOR_AUDIT, WORLD_SELECT, WORLD_SETUP, CHARACTER, KNOWLEDGE, INTRO_CRAWL, GAME, OPTIONS, PAUSE, PANEL, LOADING, ZONE_SPLASH, CAPTURE, LOST }
     enum PanelMode { NONE, LOOK, COMBAT, INTERACT, SCAVENGE, INVENTORY, CHARACTER, BUILD, WORKBENCH, BASES, TRADE, MAP, FACTIONS, DISGUISE, SENSES, LOG, SAVELOAD, NEWS, INFOPEDIA }
-
+private final ScreenPainter mainMenuPainter = new MainMenuSurfacePainter();
+    private final ScreenPainter multiplayerPainter = new MultiplayerSurfacePainter();
+    private final ScreenPainter introCrawlPainter = new IntroCrawlSurfacePainter();
     Screen screen = Screen.BOOT;
     Screen previousScreen = Screen.BOOT;
     long bootStartMillis = System.currentTimeMillis();
@@ -11861,6 +11863,11 @@ boolean arbitesAuthorityText(String text) {
     }
 
     void drawMultiplayerSurface(Graphics2D g) {
+        multiplayerPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_MULTIPLAYER(Graphics2D g) {
         int W = getWidth();
         Rectangle panel = multiplayerMenuPanelRect();
         Rectangle content = multiplayerContentRect(panel);
@@ -11941,6 +11948,11 @@ boolean arbitesAuthorityText(String text) {
     }
 
     void drawMenu(Graphics2D g) {
+        mainMenuPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_DRAWMENU(Graphics2D g) {
         int W = getWidth(), H = getHeight();
         BufferedImage title = images.get("title_mechanist_rebase");
         if (title == null) title = images.get("title_mechanist");
@@ -11998,6 +12010,11 @@ boolean arbitesAuthorityText(String text) {
     }
 
     void drawIntroCrawl(Graphics2D g) {
+        introCrawlPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_INTRO_CRAWL(Graphics2D g) {
         int W = getWidth(), H = getHeight();
         long elapsed = Math.max(0L, System.currentTimeMillis() - introCrawlStartMillis);
         BufferedImage backdrop = images.get("new_world_backdrop_rebase");
