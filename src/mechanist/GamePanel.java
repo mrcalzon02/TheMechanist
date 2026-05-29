@@ -2546,7 +2546,7 @@ void updatePendingInteractionSummary() {
     static boolean sameFactionFamilyStatic(Faction a, Faction b) {
         if (a == null || b == null) return false;
         if (a == b) return true;
-        if ((a == Faction.MECHANIST COLLEGIA || a.name().startsWith("MECHANIST COLLEGIA")) && (b == Faction.MECHANIST COLLEGIA || b.name().startsWith("MECHANIST COLLEGIA"))) return true;
+        if ((a == Faction.MECHANIST_COLLEGIA || a.name().startsWith("MECHANIST COLLEGIA")) && (b == Faction.MECHANIST_COLLEGIA || b.name().startsWith("MECHANIST COLLEGIA"))) return true;
         if ((a == Faction.MINISTORUM || a == Faction.SORORITAS) && (b == Faction.MINISTORUM || b == Faction.SORORITAS)) return true;
         if ((a == Faction.BANDIT || a.name().startsWith("GANGER")) && (b == Faction.BANDIT || b.name().startsWith("GANGER"))) return true;
         if ((a == Faction.HIVER || a.name().startsWith("HIVER")) && (b == Faction.HIVER || b.name().startsWith("HIVER"))) return true;
@@ -4690,7 +4690,7 @@ void updatePendingInteractionSummary() {
         int rid = world.roomIdAt(m.x,m.y);
         if (rid < 0) return true;
         Faction f = rid < world.roomFactions.size() ? world.roomFactions.get(rid) : Faction.NONE;
-        return f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f == Faction.MINISTORUM || f == Faction.CIVIC LEDGER OFFICE || f == Faction.HIVER || f == Faction.NONE;
+        return f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f == Faction.MINISTORUM || f == Faction.CIVIC_LEDGER_OFFICE || f == Faction.HIVER || f == Faction.NONE;
     }
 
     void tickCorpseEcology() {
@@ -4716,10 +4716,10 @@ void updatePendingInteractionSummary() {
         if (world == null || m == null) return;
         String cid = m.stockState == null || m.stockState.isBlank() ? corpseLootContainerId(m.id) : m.stockState;
         java.util.List<String> items = drainContainerItemNames(cid, 999);
-        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC WARDENS.name();
+        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC_WARDENS.name();
         ensureContainer(evidence, "Civic Wardens evidence lockup");
-        for (String item : items) addItemToContainerResult(evidence, "Civic Wardens evidence lockup", item, ItemProvenanceRecord.of(item, Faction.CIVIC WARDENS, "corpse evidence pickup", world, turn, "stripped from corpse", "evidence lockup for later resale"), null, "corpse evidence transfer");
-        addItemToContainerResult(CONTAINER_FACTION_STOCK_PREFIX + Faction.HIVER.name(), "Public nutrient reclamation stock", "Corpse-starch ration slab", ItemProvenanceRecord.of("Corpse-starch ration slab", Faction.CIVIC WARDENS, "morgue to waste reclamation", world, turn, "body processed after public corpse pickup", "nutrient bricks sold onward"), null, "corpse reclamation");
+        for (String item : items) addItemToContainerResult(evidence, "Civic Wardens evidence lockup", item, ItemProvenanceRecord.of(item, Faction.CIVIC_WARDENS, "corpse evidence pickup", world, turn, "stripped from corpse", "evidence lockup for later resale"), null, "corpse evidence transfer");
+        addItemToContainerResult(CONTAINER_FACTION_STOCK_PREFIX + Faction.HIVER.name(), "Public nutrient reclamation stock", "Corpse-starch ration slab", ItemProvenanceRecord.of("Corpse-starch ration slab", Faction.CIVIC_WARDENS, "morgue to waste reclamation", world, turn, "body processed after public corpse pickup", "nutrient bricks sold onward"), null, "corpse reclamation");
         restoreMapObjectUnderlyingTile(m);
         world.mapObjects.remove(m);
         suspicion = Math.max(0, suspicion - 1);
@@ -4791,7 +4791,7 @@ void updatePendingInteractionSummary() {
         if (world == null) return Faction.NONE;
         int rid = world.roomIdAt(x,y);
         if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
-        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.CIVIC WARDENS : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
+        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.CIVIC_WARDENS : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
     }
 
     String applyStrayImpactDamage(int x, int y, int dmg, String source) {
@@ -5160,8 +5160,8 @@ void updatePendingInteractionSummary() {
             case 'g': return Faction.BANDIT;
             case 'm': return Faction.MUTANT;
             case 'R': return Faction.ROGUE_MACHINE;
-            case 'A': return Faction.CIVIC WARDENS;
-            case 'p': return Faction.CIVIC WARDENS;
+            case 'A': return Faction.CIVIC_WARDENS;
+            case 'p': return Faction.CIVIC_WARDENS;
             case 'b': return Faction.BANDIT;
             case 'h': return Faction.HIVER;
             case 'n': return Faction.NOBLE;
@@ -5184,7 +5184,7 @@ void updatePendingInteractionSummary() {
         String text = ((rp.name == null ? "" : rp.name) + " " + (rp.descriptor == null ? "" : rp.descriptor) + " " + (rp.featureText == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
         if (!text.contains("faction-only") && !text.contains("gang colors") && !text.contains("marked patron")) return Faction.NONE;
         if (text.contains("bandit") || text.contains("gang")) return Faction.BANDIT;
-        if (text.contains("civic Wardens") || text.contains("precinct")) return Faction.CIVIC WARDENS;
+        if (text.contains("civic Wardens") || text.contains("precinct")) return Faction.CIVIC_WARDENS;
         if (text.contains("noble")) return Faction.NOBLE;
         if (text.contains("guard") || text.contains("military") || text.contains("pdf")) return Faction.IMPERIAL_GUARD;
         if (text.contains("hiver")) return Faction.HIVER;
@@ -5202,7 +5202,7 @@ void updatePendingInteractionSummary() {
         if (activeFaction() == witness) return false;
         if (witness == Faction.ROGUE_MACHINE || witness == Faction.MUTANT) return false;
         if (equippedClothing.alignedFaction == witness) return false;
-        if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.CIVIC WARDENS) return true;
+        if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.CIVIC_WARDENS) return true;
         if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.BANDIT) return true;
         if (equippedClothing.alignedFaction == Faction.NONE && witness == Faction.BANDIT) return true;
         return factionStanding.getOrDefault(witness, 0) < -3;
@@ -5218,7 +5218,7 @@ void updatePendingInteractionSummary() {
         int chance = equippedClothing.disguiseBase + charm * 3 + nerve * 2 + intellect;
         if (equippedClothing.damaged) chance -= 22;
         if (activeMotionIsSneak()) chance -= 45; // if you belong here, why are you hiding?
-        if (witness == Faction.CIVIC WARDENS) chance -= 10;
+        if (witness == Faction.CIVIC_WARDENS) chance -= 10;
         return Math.max(5, Math.min(95, chance));
     }
 
@@ -5230,7 +5230,7 @@ void updatePendingInteractionSummary() {
         int chance = 20 + charm * 4 + nerve * 3 + intellect * 2;
         if (activeFaction() == witness) return 95;
         if (equippedClothing != null && equippedClothing.alignedFaction == witness) chance += 10;
-        if (witness == Faction.CIVIC WARDENS) chance -= 12;
+        if (witness == Faction.CIVIC_WARDENS) chance -= 12;
         return Math.max(5, Math.min(90, chance));
     }
 
@@ -5727,7 +5727,7 @@ void updatePendingInteractionSummary() {
         if ("Hostile".equalsIgnoreCase(npc.state)) base += 18;
         if ("Patrol".equalsIgnoreCase(npc.state) || "Guard".equalsIgnoreCase(npc.state)) base += 10;
         if ("Trade".equalsIgnoreCase(npc.state) || "Prayer".equalsIgnoreCase(npc.state) || "Pilgrim Service".equalsIgnoreCase(npc.state)) base += 5;
-        if (npc.faction == Faction.ROGUE_MACHINE || npc.faction == Faction.MECHANIST COLLEGIA || (npc.faction != null && npc.faction.name().startsWith("MECHANIST COLLEGIA"))) base += 4;
+        if (npc.faction == Faction.ROGUE_MACHINE || npc.faction == Faction.MECHANIST_COLLEGIA || (npc.faction != null && npc.faction.name().startsWith("MECHANIST COLLEGIA"))) base += 4;
         if (activeMotionStateIndex == MOTION_STATIONARY) base += 8;
         if (activeMotionStateIndex == MOTION_SNEAK) base += 4;
         if (activeMotionStateIndex == MOTION_RUN) base -= 10;
@@ -5935,7 +5935,7 @@ void updatePendingInteractionSummary() {
         int roll = rng.nextInt(100) + 1;
         int chance = interrogationChance(witness);
         DebugLog.audit("INTERROGATION", "witness=" + witness + " reason=" + reason + " roll=" + roll + " chance=" + chance + " clothing=" + equippedClothing.name + " state=" + stateSummary());
-        if (witness == Faction.CIVIC WARDENS && turn < arbitesInspectionCooldownUntilTurn) {
+        if (witness == Faction.CIVIC_WARDENS && turn < arbitesInspectionCooldownUntilTurn) {
             lastInterrogation = "Civic Wardens scrutiny delayed: recent inspection cooldown until turn " + arbitesInspectionCooldownUntilTurn + ".";
             lastArbitesPatrolReport = lastInterrogation;
             return;
@@ -5943,13 +5943,13 @@ void updatePendingInteractionSummary() {
         if (roll <= chance) {
             lastInterrogation = "Talked past " + witness.label + " scrutiny. Roll " + roll + " <= " + chance + ".";
             logEvent("Interrogation survived: " + witness.label + " accepts your explanation for now.");
-            if (witness == Faction.CIVIC WARDENS) {
+            if (witness == Faction.CIVIC_WARDENS) {
                 arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
                 lastArbitesPatrolReport = lastInterrogation + " Next street inspection no sooner than " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
             }
         } else {
             factionStanding.put(witness, factionStanding.getOrDefault(witness, 0) - 1);
-            if (witness == Faction.CIVIC WARDENS) {
+            if (witness == Faction.CIVIC_WARDENS) {
                 suspicion += 3;
                 arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
                 boolean captured = roll >= chance + 12 || suspicion >= 10 || reason.toLowerCase(Locale.ROOT).contains("trespass");
@@ -5969,7 +5969,7 @@ void updatePendingInteractionSummary() {
             }
             if (witness == Faction.BANDIT) gangHeat += 2;
             lastInterrogation = "Failed " + witness.label + " interrogation. Roll " + roll + " > " + chance + ". Temporary hostility active.";
-            if (witness == Faction.CIVIC WARDENS) lastArbitesPatrolReport = lastInterrogation + " Inspection cooldown until " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
+            if (witness == Faction.CIVIC_WARDENS) lastArbitesPatrolReport = lastInterrogation + " Inspection cooldown until " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
             temporaryHostileTurns.put(witness, 8);
             logEvent("FAILED INTERROGATION: " + witness.label + " turns hostile while nearby.");
         }
@@ -6017,7 +6017,7 @@ void updatePendingInteractionSummary() {
         String reason = "civil/noble-sector patrol sweep in " + world.zoneType.label + " with heat " + gangHeat + " and suspicion " + suspicion;
         lastArbitesPatrolReport = "Civic Wardens patrol initiates inspection: " + reason + ".";
         logEvent("CIVIC WARDENS PATROL: " + lastArbitesPatrolReport);
-        handleInterrogation(Faction.CIVIC WARDENS, reason);
+        handleInterrogation(Faction.CIVIC_WARDENS, reason);
     }
 
 boolean arbitesAuthorityText(String text) {
@@ -6053,7 +6053,7 @@ boolean arbitesAuthorityText(String text) {
         pain = Math.min(24, pain + 2 + severity);
         wounds = Math.min(19, wounds + Math.max(1, severity / 2));
         suspicion = Math.max(0, suspicion - (4 + severity));
-        temporaryHostileTurns.remove(Faction.CIVIC WARDENS);
+        temporaryHostileTurns.remove(Faction.CIVIC_WARDENS);
         arbitesCaptureCooldownUntilTurn = Math.max(arbitesCaptureCooldownUntilTurn, turn + ARBITES_CAPTURE_COOLDOWN_TURNS);
         arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
         int endBanked = totalBankedCash();
@@ -6133,7 +6133,7 @@ boolean arbitesAuthorityText(String text) {
     int arbitesEvidenceItemLoss(int severity) {
         if (inventory.isEmpty()) return 0;
         int target = Math.min(inventory.size(), Math.max(1, severity / 2));
-        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC WARDENS.name();
+        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC_WARDENS.name();
         ensureContainer(evidence, "Civic Wardens evidence lockup");
         int moved = 0;
         for (int i=0; i<target && !inventory.isEmpty(); i++) {
@@ -6519,7 +6519,7 @@ boolean arbitesAuthorityText(String text) {
         suspicion = Math.max(0, suspicion - 8);
         gangHeat = Math.max(0, gangHeat - 3);
         int restored = 0;
-        Faction[] civil = {Faction.CIVIC LEDGER OFFICE, Faction.CIVIC WARDENS, Faction.IMPERIAL_GUARD, Faction.MINISTORUM, Faction.SORORITAS, Faction.MECHANIST COLLEGIA, Faction.MECHANICUS_CLOISTER_RED, Faction.MECHANICUS_CLOISTER_RUST, Faction.MECHANICUS_CLOISTER_VOID, Faction.HIVER, Faction.HIVER_BLOCK_AUREL, Faction.HIVER_BLOCK_MARROW, Faction.HIVER_BLOCK_SUMPLEDGER, Faction.NOBLE, Faction.NOBLE_HOUSE_VARN, Faction.NOBLE_HOUSE_KASTOR, Faction.NOBLE_HOUSE_MORVAIN, Faction.NOBLE_HOUSE_CYRA, Faction.NOBLE_HOUSE_DRAKE, Faction.NOBLE_HOUSE_TOLL, Faction.NOBLE_HOUSE_OSSUARY};
+        Faction[] civil = {Faction.CIVIC_LEDGER_OFFICE, Faction.CIVIC_WARDENS, Faction.IMPERIAL_GUARD, Faction.MINISTORUM, Faction.SORORITAS, Faction.MECHANIST_COLLEGIA, Faction.MECHANICUS_CLOISTER_RED, Faction.MECHANICUS_CLOISTER_RUST, Faction.MECHANICUS_CLOISTER_VOID, Faction.HIVER, Faction.HIVER_BLOCK_AUREL, Faction.HIVER_BLOCK_MARROW, Faction.HIVER_BLOCK_SUMPLEDGER, Faction.NOBLE, Faction.NOBLE_HOUSE_VARN, Faction.NOBLE_HOUSE_KASTOR, Faction.NOBLE_HOUSE_MORVAIN, Faction.NOBLE_HOUSE_CYRA, Faction.NOBLE_HOUSE_DRAKE, Faction.NOBLE_HOUSE_TOLL, Faction.NOBLE_HOUSE_OSSUARY};
         for (Faction f : civil) {
             int old = factionStanding.getOrDefault(f, 0);
             int neu = old < 0 ? Math.min(0, old + 12) : Math.min(35, old + 3);
@@ -6550,8 +6550,8 @@ boolean arbitesAuthorityText(String text) {
         if (npc.isProtectedCleric()) return "I keep the Cult Imperialis open, hear confession, ration mercy, and record which souls still pretend to be redeemable.";
         if (npc.faction == Faction.MINISTORUM) return "Candles, sermons, kitchens, pilgrim lines, and the quiet arithmetic of guilt.";
         if (npc.faction == Faction.SORORITAS) return "I guard the sanctuary. There are no softer words for it.";
-        if (npc.faction == Faction.CIVIC WARDENS) return "I preserve order. You may experience that as pain.";
-        if (npc.faction == Faction.MECHANIST COLLEGIA || npc.faction.name().startsWith("MECHANIST COLLEGIA")) return "Maintenance is worship. Failure is merely heresy wearing dust.";
+        if (npc.faction == Faction.CIVIC_WARDENS) return "I preserve order. You may experience that as pain.";
+        if (npc.faction == Faction.MECHANIST_COLLEGIA || npc.faction.name().startsWith("MECHANIST COLLEGIA")) return "Maintenance is worship. Failure is merely heresy wearing dust.";
         if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return "I collect what weaker people foolishly describe as theirs.";
         if (npc.faction == Faction.MUTANT) return "Work is where the ceiling drips and the knives sleep badly.";
         if (npc.faction == Faction.CULTIST || npc.faction == Faction.HERETIC) return "The work is listening. The reward is being heard.";
@@ -6581,7 +6581,7 @@ boolean arbitesAuthorityText(String text) {
         String state = npc.state == null || npc.state.isBlank() ? "available" : npc.state.toLowerCase(Locale.ROOT);
         if (npc.isTrader()) return role + " with trade access; buy, sell, haggle, or ask for rumor if the counter is open.";
         if (npc.isProtectedCleric()) return role + " offering temple conversation, faction context, and protected exit.";
-        if (npc.faction == Faction.CIVIC WARDENS) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
+        if (npc.faction == Faction.CIVIC_WARDENS) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
         if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return role + " from a coercive local power; jobs and threats may blur together.";
         return role + " currently " + state + "; conversation can reveal work, faction context, or turn-in options.";
     }
@@ -6925,7 +6925,7 @@ boolean arbitesAuthorityText(String text) {
 
     void recordProminentKillForNews(NpcEntity target, String context) {
         if (target == null) return;
-        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.CIVIC WARDENS || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
+        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.CIVIC_WARDENS || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
         if (!prominent) return;
         String rank = (target.factionRankTitle == null || target.factionRankTitle.isBlank()) ? ("rank " + target.factionRank) : target.factionRankTitle;
         recordPlayerNewsEvent("prominent-kill", rank + " " + target.name, target.faction, "killed or incapacitated during " + context + " near " + (world == null ? "unknown" : world.zoneCoordText()), Math.max(4, 10 - Math.max(1, target.factionRank)));
@@ -7476,7 +7476,7 @@ boolean arbitesAuthorityText(String text) {
         active.zoneVisitCounts.put(world.zoneType.label, visits);
         int baseChance = 18 + Math.min(20, visits * 2);
         if (atlas != null && atlas.floor <= 2) baseChance += 8;
-        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.CIVIC WARDENS && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
+        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.CIVIC_WARDENS && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
         int roll = rng.nextInt(100);
         if (roll >= baseChance) { lastTransitionEvent = "No event. roll=" + roll + " chance=" + baseChance; return ""; }
         String[] benign = {
@@ -8244,7 +8244,7 @@ boolean arbitesAuthorityText(String text) {
         if (machineParts < 1) { logEvent("Production blocked: forging supplies needs 1 machine part."); return; }
         machineParts -= 1;
         String q = cappedProductionQuality(forge, "Scrap-Forging Doctrine");
-        Faction pf = productionFactionFor(forge, Faction.MECHANIST COLLEGIA);
+        Faction pf = productionFactionFor(forge, Faction.MECHANIST_COLLEGIA);
         ProductionRecipe r = ProductionRecipe.create("Construction supplies", pf, q, "Scrap-Forging Doctrine", forge.name);
         supplies += r.outputCharges();
         addInventoryItem(r.outputItemName(), ItemProvenanceRecord.produced(r, forge, world, turn, active == null ? "player" : active.name));
@@ -8934,11 +8934,11 @@ boolean arbitesAuthorityText(String text) {
     String keySafe(String s) { return s == null ? "" : s; }
 
     Faction rivalFactionForContract(Faction f) {
-        if (f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f.name().startsWith("NOBLE")) return Faction.BANDIT;
-        if (f == Faction.BANDIT || f.name().startsWith("GANGER")) return Faction.CIVIC WARDENS;
-        if (f == Faction.MECHANIST COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA")) return Faction.ROGUE_MACHINE;
+        if (f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f.name().startsWith("NOBLE")) return Faction.BANDIT;
+        if (f == Faction.BANDIT || f.name().startsWith("GANGER")) return Faction.CIVIC_WARDENS;
+        if (f == Faction.MECHANIST_COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA")) return Faction.ROGUE_MACHINE;
         if (f == Faction.MUTANT) return Faction.CULTIST;
-        if (f == Faction.CULTIST || f == Faction.HERETIC) return Faction.CIVIC WARDENS;
+        if (f == Faction.CULTIST || f == Faction.HERETIC) return Faction.CIVIC_WARDENS;
         return Faction.BANDIT;
     }
 
@@ -10430,7 +10430,7 @@ boolean arbitesAuthorityText(String text) {
         setScreen(Screen.MENU);
     }
 
-                                                                                                                                                                                                                        void drawBoot(Graphics2D g) {
+                                                                                                                                                                                                                            void drawBoot(Graphics2D g) {
         bootSurfacePainter.paint(g, this);
     }
 
@@ -12596,7 +12596,7 @@ boolean arbitesAuthorityText(String text) {
             dossier.add("Starting inventory:");
             for (String item : jp.startingItems()) dossier.add("- " + item);
             dossier.add("");
-            if (jp.faction == Faction.CIVIC WARDENS) dossier.add("Warning: most gangers will treat this start as a walking arrest warrant.");
+            if (jp.faction == Faction.CIVIC_WARDENS) dossier.add("Warning: most gangers will treat this start as a walking arrest warrant.");
             else if (jp.faction == Faction.BANDIT) dossier.add("Warning: law enforcement and rival crews will not admire your career path.");
             else if (jp.faction == Faction.SCAVENGER) dossier.add("Scavenger-aligned clothing is broadly tolerated, except by bandits, and often questioned by Civic Wardens patrols.");
             else if (jp.faction == Faction.NONE) dossier.add("No faction backing. Better skills, fewer friends, and the full warmth of underhive hospitality.");
@@ -13790,9 +13790,9 @@ boolean arbitesAuthorityText(String text) {
         if (n.contains("GANGER") || f==Faction.BANDIT) return "local criminal power, heat pressure, fences, and violent control of turf";
         if (n.contains("HIVER") || f==Faction.HIVER) return "civilian labor/population bloc for habs, markets, and ordinary survival";
         if (n.contains("NOBLE") || f==Faction.NOBLE) return "upper-spire property, permits, luxury goods, servants, and status pressure";
-        if (f==Faction.CIVIC WARDENS) return "law enforcement, suspicion pressure, paperwork, and coercive order";
+        if (f==Faction.CIVIC_WARDENS) return "law enforcement, suspicion pressure, paperwork, and coercive order";
         if (f==Faction.IMPERIAL_GUARD) return "military logistics, rations, armor, weapons, and depot discipline";
-        if (f==Faction.CIVIC LEDGER OFFICE) return "records, permits, forms, and bureaucratic access";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "records, permits, forms, and bureaucratic access";
         if (f==Faction.SCAVENGER) return "salvage economy, low-trust goods, trash routes, and survival barter";
         return "specialized local faction with its own standing, hostility, and production bias";
     }
@@ -13804,9 +13804,9 @@ boolean arbitesAuthorityText(String text) {
         if (n.contains("GANGER") || f==Faction.BANDIT) return "ganger turf, fences, stash rooms, intimidation routes";
         if (n.contains("HIVER") || f==Faction.HIVER) return "hab stacks, civilian floors, markets, work spaces";
         if (n.contains("NOBLE") || f==Faction.NOBLE) return "noble service spines, permit channels, high-status trade";
-        if (f==Faction.CIVIC WARDENS) return "precinct edges, checkpoints, holding rooms, evidence counters";
+        if (f==Faction.CIVIC_WARDENS) return "precinct edges, checkpoints, holding rooms, evidence counters";
         if (f==Faction.IMPERIAL_GUARD) return "billets, depots, ration stores, munition rooms";
-        if (f==Faction.CIVIC LEDGER OFFICE) return "archives, permit counters, clerk routes";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "archives, permit counters, clerk routes";
         if (f==Faction.SCAVENGER) return "trash warrens, sewer edges, marginal markets";
         return "zone-appropriate rooms, representatives, patrols, traders, or locked areas";
     }
@@ -13818,9 +13818,9 @@ boolean arbitesAuthorityText(String text) {
         if (n.contains("GANGER") || f==Faction.BANDIT) return "weapons, lock tools, stimulants, stolen goods, and cheap armor";
         if (n.contains("HIVER") || f==Faction.HIVER) return "rations, water, cots, basic tools, permits, and ordinary supplies";
         if (n.contains("NOBLE") || f==Faction.NOBLE) return "permits, fine rations, clean water, luxury scraps, legal shields, and high value services";
-        if (f==Faction.CIVIC WARDENS) return "paperwork, restraints, armor, rations, water, and restricted services";
+        if (f==Faction.CIVIC_WARDENS) return "paperwork, restraints, armor, rations, water, and restricted services";
         if (f==Faction.IMPERIAL_GUARD) return "military ration packs, field water, rugged tools, armor, and weapons";
-        if (f==Faction.CIVIC LEDGER OFFICE) return "forms, permits, records, stamps, and legal access";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "forms, permits, records, stamps, and legal access";
         if (f==Faction.SCAVENGER) return "junk tools, improvised water, dirty food, salvage, and cheap components";
         return "locally biased catalog stock and faction-site production profile";
     }
@@ -15447,7 +15447,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
     int npcVisionRange(NpcEntity npc) {
         if (npc == null) return 5;
         int base = 5 + Math.max(0, npc.idleBias);
-        if (npc.faction == Faction.CIVIC WARDENS || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 3;
+        if (npc.faction == Faction.CIVIC_WARDENS || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 3;
         if (npc.faction == Faction.MUTANT) base -= 1;
         if (npc.faction == Faction.ROGUE_MACHINE) base += 4;
         if ("Guard".equalsIgnoreCase(npc.state) || "Patrol".equalsIgnoreCase(npc.state)) base += 2;
@@ -15460,7 +15460,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
         if (npc == null) return 6;
         int base = 6 + Math.max(0, npc.idleBias);
         if (npc.faction == Faction.MUTANT) base += 3;
-        if (npc.faction == Faction.CIVIC WARDENS || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 2;
+        if (npc.faction == Faction.CIVIC_WARDENS || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 2;
         if (npc.faction == Faction.ROGUE_MACHINE) base += 4;
         if ("Sleep".equalsIgnoreCase(npc.state)) base -= 3;
         base += npcMotionHearingModifier(npc);
@@ -16897,7 +16897,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
             factionGroup(Faction.HIVER,Faction.HIVER_BLOCK_AUREL,Faction.HIVER_BLOCK_MARROW,Faction.HIVER_BLOCK_SUMPLEDGER),
             factionGroup(Faction.BANDIT,Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH),
             factionGroup(Faction.NOBLE,Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY),
-            factionGroup(Faction.SCAVENGER,Faction.CIVIC LEDGER OFFICE,Faction.CIVIC WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANIST COLLEGIA),
+            factionGroup(Faction.SCAVENGER,Faction.CIVIC_LEDGER_OFFICE,Faction.CIVIC_WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANIST_COLLEGIA),
             factionGroup(Faction.MUTANT,Faction.CULTIST,Faction.ROGUE_MACHINE,Faction.HERETIC)
         };
         String[] titles={"HIVER BLOCKS","GANGS","NOBLE HOUSES","CIVIL / LAW","OUTCASTS"};
@@ -17235,7 +17235,7 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         center(g, "Press ENTER, SPACE, or click to continue into the zone.", W/2, H-115);
     }
 
-                                                                                                                                                                                                                        void drawLoading(Graphics2D g) {
+                                                                                                                                                                                                                            void drawLoading(Graphics2D g) {
         loadingSurfacePainter.paint(g, this);
     }
 
@@ -17879,7 +17879,7 @@ String traderShelfContainerId(TraderSession trader) {
 
     Faction factionForClothingItem(String item) {
         String low = item.toLowerCase(Locale.ROOT);
-        if (low.contains("civic Wardens") || low.contains("patrol coat")) return Faction.CIVIC WARDENS;
+        if (low.contains("civic Wardens") || low.contains("patrol coat")) return Faction.CIVIC_WARDENS;
         if (low.contains("bandit") || low.contains("gang colors")) return Faction.BANDIT;
         if (low.contains("hiver") || low.contains("workwear")) return Faction.HIVER;
         if (low.contains("scavenger") || low.contains("rags")) return Faction.SCAVENGER;
@@ -17906,7 +17906,7 @@ String traderShelfContainerId(TraderSession trader) {
         Faction f = factionForClothingItem(item);
         int base = damaged ? 26 : 46;
         int defense = damaged ? 1 : 2;
-        if (f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD) { defense += damaged ? 1 : 2; base -= 4; }
+        if (f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD) { defense += damaged ? 1 : 2; base -= 4; }
         if (f == Faction.MECHANICUS_CLOISTER_RED) { defense += 1; base += 2; }
         ItemActionResult moved = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, equipmentContainerIdForSlot(2), "Player equipment slot: Clothing", null, "equipped by player as clothing");
         if (!moved.success) { logEvent("Cannot equip " + item + ": " + moved.playerText); return; }
@@ -18839,10 +18839,10 @@ String traderShelfContainerId(TraderSession trader) {
         if (obj == null) return Faction.BANDIT;
         switch (obj.symbol) {
             case 'B': return Faction.HIVER;
-            case 'M': return Faction.CIVIC WARDENS;
-            case 'w': return Faction.MECHANIST COLLEGIA;
-            case 'f': return Faction.MECHANIST COLLEGIA;
-            case 'l': return Faction.CIVIC LEDGER OFFICE;
+            case 'M': return Faction.CIVIC_WARDENS;
+            case 'w': return Faction.MECHANIST_COLLEGIA;
+            case 'f': return Faction.MECHANIST_COLLEGIA;
+            case 'l': return Faction.CIVIC_LEDGER_OFFICE;
             case 'u': case 'e': return Faction.HIVER_BLOCK_SUMPLEDGER;
             case 's': return Faction.BANDIT;
             default: return Faction.BANDIT;
@@ -18852,10 +18852,10 @@ String traderShelfContainerId(TraderSession trader) {
     Faction rivalFactionForRecipe(CraftingRecipe r, ProductionRecipe pr) {
         String text = ((r == null ? "" : (r.name + " " + r.outputBaseItem + " " + r.requiredKnowledge)) + " " + (pr == null ? "" : pr.outputItemName())).toLowerCase(Locale.ROOT);
         if (text.contains("water") || text.contains("ration") || text.contains("food")) return Faction.HIVER_BLOCK_SUMPLEDGER;
-        if (text.contains("med") || text.contains("bandage") || text.contains("antiseptic") || text.contains("splint")) return Faction.CIVIC WARDENS;
+        if (text.contains("med") || text.contains("bandage") || text.contains("antiseptic") || text.contains("splint")) return Faction.CIVIC_WARDENS;
         if (text.contains("weapon") || text.contains("ammo") || text.contains("stub") || text.contains("blade")) return Faction.BANDIT;
-        if (text.contains("construction") || text.contains("machine") || text.contains("forge") || text.contains("logic Engine")) return Faction.MECHANIST COLLEGIA;
-        if (text.contains("knowledge") || text.contains("doctrine") || text.contains("permit")) return Faction.CIVIC LEDGER OFFICE;
+        if (text.contains("construction") || text.contains("machine") || text.contains("forge") || text.contains("logic Engine")) return Faction.MECHANIST_COLLEGIA;
+        if (text.contains("knowledge") || text.contains("doctrine") || text.contains("permit")) return Faction.CIVIC_LEDGER_OFFICE;
         return Faction.BANDIT;
     }
 
@@ -18909,7 +18909,7 @@ String traderShelfContainerId(TraderSession trader) {
         int sy = atlas == null ? 1 : atlas.sectorY;
         npcFactionSites.add(NpcFactionSite.create("Civic Water Refinery", Faction.HIVER, "utility refinery", sx, sy, 2, 2, 4, "Clean water", "Water bottle", "Water purification"));
         npcFactionSites.add(NpcFactionSite.create("Astra Militarum Commissary Store", Faction.IMPERIAL_GUARD, "ration depot", sx, sy, 2, 3, 5, "Emergency rations", "Field dressings", "Field logistics"));
-        npcFactionSites.add(NpcFactionSite.create("Local Mechanist Collegia Parts Cloister", Faction.MECHANIST COLLEGIA, "parts forge", sx, sy, 3, 2, 5, "Machine part", "Sacred wire bundle", "Mechanist Collegia fabrication"));
+        npcFactionSites.add(NpcFactionSite.create("Local Mechanist Collegia Parts Cloister", Faction.MECHANIST_COLLEGIA, "parts forge", sx, sy, 3, 2, 5, "Machine part", "Sacred wire bundle", "Mechanist Collegia fabrication"));
         npcFactionSites.add(NpcFactionSite.create("Ash Market Backroom", Faction.BANDIT, "black market shop", sx, sy, 1, 2, 3, "Lockpicks", "Stub rounds", "illicit resale"));
         npcFactionSites.add(NpcFactionSite.create("Noble Service Pantry", Faction.NOBLE, "licensed high table", sx, sy, 2, 1, 6, "Fine Emergency rations", "Medkit", "noble household supply"));
         npcFactionSites.add(NpcFactionSite.create("Concord News Network Press Bureau", Faction.INN, "news printing and broadcast bureau", sx, sy, 1, 2, 6, "Fresh INN newspaper", "Radio set", "sanctioned public news distribution"));
@@ -18921,7 +18921,7 @@ String traderShelfContainerId(TraderSession trader) {
         seedNpcFactionProductionSites();
         Faction f = faction == null ? Faction.NONE : faction;
         for (NpcFactionSite site : npcFactionSites) if (sameFactionFamily(site.faction, f) || site.faction == f) return site;
-        if (zone == ZoneType.MECHANICUS_FORGE_CLOISTER) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.MECHANIST COLLEGIA) return site;
+        if (zone == ZoneType.MECHANICUS_FORGE_CLOISTER) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.MECHANIST_COLLEGIA) return site;
         if (zone == ZoneType.IMPERIAL_GUARD_BILLET) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.IMPERIAL_GUARD) return site;
         if (zone == ZoneType.NOBLE_SERVICE_SPINE) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.NOBLE) return site;
         if (zone == ZoneType.IMPERIAL_NEWS_NETWORK) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.INN) return site;
@@ -18992,8 +18992,8 @@ String traderShelfContainerId(TraderSession trader) {
             case ADMINISTRATUM_ARCHIVE:
             case NEUTRAL_CIVILIAN_FLOOR:
             case NOBLE_SERVICE_SPINE:
-            case NEUTRAL_RAIL_DEPOT: return Faction.CIVIC WARDENS;
-            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST COLLEGIA;
+            case NEUTRAL_RAIL_DEPOT: return Faction.CIVIC_WARDENS;
+            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST_COLLEGIA;
             case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
             case GANGER_TURF:
             case SUMP_MARKET:

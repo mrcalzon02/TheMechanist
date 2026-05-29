@@ -168,12 +168,3 @@ Types: `6`
 | `drawRankBadge` | 39 | 15937-15975 | screen/overlay painter candidate |
 | `overlayColor` | 7 | 15977-15983 | screen/overlay painter candidate |
 | `drawRecentActionFeed` | 49 | 15985-16033 | screen/overlay painter candidate |
-
-## Slices emitted
-
-| Method | Category | Lines | Output |
-|---|---|---:|---|
-| `drawBootGear` | `render` | 9 | `docs/gamepanel_catalog/slices/render/10437_GamePanel_drawBootGear.javafrag` |
-| `drawIntroCrawl` | `render` | 3 | `docs/gamepanel_catalog/slices/render/11957_GamePanel_drawIntroCrawl.javafrag` |
-| `drawGame` | `render` | 137 | `docs/gamepanel_catalog/slices/render/14666_GamePanel_drawGame.javafrag` |
-| `drawOptions` | `render` | 130 | `docs/gamepanel_catalog/slices/render/20346_GamePanel_drawOptions.javafrag` |

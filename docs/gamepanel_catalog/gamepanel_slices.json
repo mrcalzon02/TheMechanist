@@ -1,44 +1,7 @@
 {
   "schema": "mechanist.gamepanel_slices.v1",
-  "time": "2026-05-29T16:21:00.462967+00:00",
+  "time": "2026-05-29T16:25:35.961120+00:00",
   "source": "C:\\GITS\\The Mechanist\\TheMechanist\\src\\mechanist\\GamePanel.java",
-  "slice_count": 4,
-  "slices": [
-    {
-      "name": "drawBootGear",
-      "owner": "GamePanel",
-      "category": "render",
-      "start_line": 10437,
-      "end_line": 10445,
-      "line_count": 9,
-      "output": "docs/gamepanel_catalog/slices/render/10437_GamePanel_drawBootGear.javafrag"
-    },
-    {
-      "name": "drawIntroCrawl",
-      "owner": "GamePanel",
-      "category": "render",
-      "start_line": 11957,
-      "end_line": 11959,
-      "line_count": 3,
-      "output": "docs/gamepanel_catalog/slices/render/11957_GamePanel_drawIntroCrawl.javafrag"
-    },
-    {
-      "name": "drawGame",
-      "owner": "GamePanel",
-      "category": "render",
-      "start_line": 14666,
-      "end_line": 14802,
-      "line_count": 137,
-      "output": "docs/gamepanel_catalog/slices/render/14666_GamePanel_drawGame.javafrag"
-    },
-    {
-      "name": "drawOptions",
-      "owner": "GamePanel",
-      "category": "render",
-      "start_line": 20346,
-      "end_line": 20475,
-      "line_count": 130,
-      "output": "docs/gamepanel_catalog/slices/render/20346_GamePanel_drawOptions.javafrag"
-    }
-  ]
+  "slice_count": 0,
+  "slices": []
 }
