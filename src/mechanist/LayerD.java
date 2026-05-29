@@ -40,4 +40,10 @@ public class LayerD {
         }
         return false;
     }
+
+    static void setWindowMode(GamePanel panel, int mode) {
+        panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode));
+        panel.graphicsDropdown = -1;
+        panel.repaint();
+    }
 }
