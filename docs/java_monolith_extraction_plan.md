@@ -12,12 +12,11 @@ This plan is for behavior-preserving extraction only. Do not combine file moves 
 
 ## Summary
 
-- Top-level declarations found: `2`
+- Top-level declarations found: `1`
 - First-phase same-package extraction candidates: `0`
-- Large method candidates for later inspection: `14`
+- Large method candidates for later inspection: `0`
 - Entry anchor: `TheMechanist` lines `16-46`
-- Deferred runtime panel: `GamePanel` lines `48-21290` (21243 lines)
-- Approximate scanned line extent: `21290`
+- Approximate scanned line extent: `46`
 
 ## Phase 0 — Preserve anchors
 
@@ -37,25 +36,6 @@ java -jar .\target\the-mechanist-0.9.10iz.jar
 ## Phase 2 — Defer GamePanel internal splitting
 
 After top-level sibling extraction is compile-clean, split `GamePanel` by delegation seams rather than stealing state all at once. Candidate seams include options controls, graphics package selection, render surfaces, input routing, lifecycle, debug surfaces, and screen routing.
-
-## Later large-method inspection candidates
-
-| Owner | Method | Lines | Start | End | Notes |
-|---|---|---|---|---|---|
-| GamePanel | rebuildButtons | 719 | 1091 | 1809 | oversized_method_candidate |
-| GamePanel | panelLines | 251 | 19331 | 19581 | oversized_method_candidate |
-| GamePanel | handleKeyPressed | 240 | 20877 | 21116 | oversized_method_candidate |
-| GamePanel | drawCharacter | 169 | 12513 | 12681 | oversized_method_candidate |
-| GamePanel | productionInfopediaLines | 141 | 13108 | 13248 | large_method_candidate |
-| GamePanel | infopediaDetailLines | 140 | 12967 | 13106 | large_method_candidate |
-| GamePanel | drawGame | 137 | 14736 | 14872 | large_method_candidate |
-| GamePanel | drawIntroCrawl | 132 | 12032 | 12163 | large_method_candidate |
-| GamePanel | auditInfopediaLines | 130 | 13262 | 13391 | large_method_candidate |
-| GamePanel | drawOptions | 130 | 20471 | 20600 | large_method_candidate |
-| GamePanel | mouseClicked | 98 | 20774 | 20871 | large_method_candidate |
-| GamePanel | infopediaEntries | 92 | 12874 | 12965 | large_method_candidate |
-| GamePanel | interactAt | 89 | 7112 | 7200 | large_method_candidate |
-| GamePanel | drawSectorAuditDiagnosticOverlays | 80 | 11635 | 11714 | large_method_candidate |
 
 ## Commit discipline
 

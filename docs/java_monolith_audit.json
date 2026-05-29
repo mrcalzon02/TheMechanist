@@ -1,8 +1,8 @@
 {
   "schema": "mechanist.java_monolith_audit.v1",
   "source": "C:\\GITS\\The Mechanist\\TheMechanist\\src\\mechanist\\TheMechanist.java",
-  "top_level_declaration_count": 2,
-  "large_method_candidate_count": 14,
+  "top_level_declaration_count": 1,
+  "large_method_candidate_count": 0,
   "declarations": [
     {
       "kind": "class",
@@ -16,133 +16,7 @@
       "extract_recommendation": "keep_in_place",
       "extraction_phase": "phase_0_anchor",
       "notes": "Public application entrypoint. Keep file anchor stable while extracting siblings."
-    },
-    {
-      "kind": "class",
-      "name": "GamePanel",
-      "start_line": 48,
-      "end_line": 21290,
-      "line_count": 21243,
-      "public": false,
-      "package_private": true,
-      "top_level_index": 2,
-      "extract_recommendation": "defer",
-      "extraction_phase": "phase_2_gamepanel",
-      "notes": "Large stateful runtime panel. Do not split until top-level sibling classes are extracted and compile-clean."
     }
   ],
-  "large_methods": [
-    {
-      "owner": "GamePanel",
-      "name": "rebuildButtons",
-      "start_line": 1091,
-      "approximate_end_line": 1809,
-      "approximate_line_count": 719,
-      "notes": "oversized_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "interactAt",
-      "start_line": 7112,
-      "approximate_end_line": 7200,
-      "approximate_line_count": 89,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "drawSectorAuditDiagnosticOverlays",
-      "start_line": 11635,
-      "approximate_end_line": 11714,
-      "approximate_line_count": 80,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "drawIntroCrawl",
-      "start_line": 12032,
-      "approximate_end_line": 12163,
-      "approximate_line_count": 132,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "drawCharacter",
-      "start_line": 12513,
-      "approximate_end_line": 12681,
-      "approximate_line_count": 169,
-      "notes": "oversized_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "infopediaEntries",
-      "start_line": 12874,
-      "approximate_end_line": 12965,
-      "approximate_line_count": 92,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "infopediaDetailLines",
-      "start_line": 12967,
-      "approximate_end_line": 13106,
-      "approximate_line_count": 140,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "productionInfopediaLines",
-      "start_line": 13108,
-      "approximate_end_line": 13248,
-      "approximate_line_count": 141,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "auditInfopediaLines",
-      "start_line": 13262,
-      "approximate_end_line": 13391,
-      "approximate_line_count": 130,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "drawGame",
-      "start_line": 14736,
-      "approximate_end_line": 14872,
-      "approximate_line_count": 137,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "panelLines",
-      "start_line": 19331,
-      "approximate_end_line": 19581,
-      "approximate_line_count": 251,
-      "notes": "oversized_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "drawOptions",
-      "start_line": 20471,
-      "approximate_end_line": 20600,
-      "approximate_line_count": 130,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "mouseClicked",
-      "start_line": 20774,
-      "approximate_end_line": 20871,
-      "approximate_line_count": 98,
-      "notes": "large_method_candidate"
-    },
-    {
-      "owner": "GamePanel",
-      "name": "handleKeyPressed",
-      "start_line": 20877,
-      "approximate_end_line": 21116,
-      "approximate_line_count": 240,
-      "notes": "oversized_method_candidate"
-    }
-  ]
+  "large_methods": []
 }
