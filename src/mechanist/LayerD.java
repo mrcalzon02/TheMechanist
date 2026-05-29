@@ -60,4 +60,12 @@ public class LayerD {
         applyWindowMode(panel);
         panel.repaint();
     }
+
+    static void setDownscaleIndex(GamePanel panel, int idx) {
+        panel.logEvent(OptionsBoundaryAuthority.setDownscaleIndex(panel.options, idx));
+        panel.renderScaling.applyOptions(panel.options);
+        panel.graphicsDropdown = -1;
+        DebugLog.audit("RENDER_DOWNSCALE", panel.renderScaling.auditSummary());
+        panel.repaint();
+    }
 }
