@@ -1,0 +1,198 @@
+name: Apply MediaRuntime tile path patch
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/apply-media-runtime-tile-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-patch:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply surgical MediaRuntime tile path patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = 'src/mechanist/MediaRuntimeFramework.java'
+          $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+
+          if ($text -notmatch 'import java\.util\.Locale;') {
+            $text = $text.Replace("import java.util.*;`n", "import java.util.*;`nimport java.util.Locale;`n")
+          }
+
+          $oldLoad = @'
+    void load(String rootPath, int qualityIndex) {
+        byGlyph.clear();
+        byAlias.clear();
+        bySemantic.clear();
+        File root = new File(rootPath);
+        if (!root.exists()) return;
+        loadedQualityFolder = qualityFolderFor(qualityIndex);
+        String cellRoot = qualityCellRoot(rootPath, loadedQualityFolder);
+        try {
+'@
+          $newLoad = @'
+    void load(String rootPath, int qualityIndex) {
+        byGlyph.clear();
+        byAlias.clear();
+        bySemantic.clear();
+        String resolvedRootPath = ArtPackManager.resolveInstalledArtRoot(rootPath);
+        File root = new File(resolvedRootPath);
+        if (!root.exists()) {
+            DebugLog.warn("TILE_ART", "Tile art root does not exist. requestedRoot=" + rootPath
+                    + " resolvedRoot=" + resolvedRootPath
+                    + " runtime=" + RuntimePathResolver.workingDirectorySummary());
+            return;
+        }
+        loadedQualityFolder = qualityFolderFor(qualityIndex);
+        String cellRoot = qualityCellRoot(resolvedRootPath, loadedQualityFolder);
+        int cellPngCount = ArtPackManager.countPngFiles(Paths.get(cellRoot));
+        DebugLog.audit("TILE_ART", "tile root requested=" + rootPath
+                + " resolved=" + resolvedRootPath
+                + " quality=" + loadedQualityFolder
+                + " cellRoot=" + cellRoot
+                + " cellRootExists=" + Files.isDirectory(Paths.get(cellRoot))
+                + " pngCount=" + cellPngCount);
+        try {
+'@
+          if (-not $text.Contains($oldLoad)) { throw 'Expected TileArtSystem.load block not found.' }
+          $text = $text.Replace($oldLoad, $newLoad)
+          $text = $text.Replace('            loadSemanticIcons(rootPath, loadedQualityFolder);', '            loadSemanticIcons(resolvedRootPath, loadedQualityFolder);')
+
+          $oldResolveStart = @'
+    File resolveRuntimeCellFile(String path) {
+        if (path == null || path.isBlank()) return null;
+        String p = path.replace('\\', '/');
+'@
+          $newResolveStart = @'
+    File resolveRuntimeCellFile(String path) {
+        if (path == null || path.isBlank()) return null;
+        String p = path.replace('\\', '/');
+        File resolved = RuntimePathResolver.resolveAssetFile(p);
+        if (resolved.exists()) return resolved;
+'@
+          if (-not $text.Contains($oldResolveStart)) { throw 'Expected resolveRuntimeCellFile start block not found.' }
+          $text = $text.Replace($oldResolveStart, $newResolveStart)
+
+          $oldArtClass = "class ArtPackManager {`n"
+          $newArtClass = @'
+class ArtPackManager {
+    static String resolveInstalledArtRoot(String requestedRoot) {
+        ArrayList<Path> candidates = new ArrayList<>();
+        if (requestedRoot != null && !requestedRoot.isBlank()) {
+            candidates.add(Paths.get(requestedRoot));
+            File runtimeResolved = RuntimePathResolver.resolveAssetFile(requestedRoot);
+            candidates.add(runtimeResolved.toPath());
+        }
+        candidates.add(RuntimePathResolver.resolveAssetFile("assets/a/r").toPath());
+        candidates.add(RuntimePathResolver.resolveAssetFile("PACKAGE_client/assets/a/r").toPath());
+        candidates.add(RuntimePathResolver.resolveAssetFile("client/assets/a/r").toPath());
+        candidates.add(Paths.get("assets/a/r"));
+
+        for (Path candidate : candidates) {
+            if (candidate == null) continue;
+            Path normalized = candidate.toAbsolutePath().normalize();
+            if (Files.isDirectory(normalized.resolve("tiles").resolve("quality").resolve("low_32").resolve("cells"))) {
+                return normalized.toString();
+            }
+        }
+        return requestedRoot;
+    }
+
+'@
+          if (-not $text.Contains($oldArtClass)) { throw 'Expected ArtPackManager class declaration not found.' }
+          $text = $text.Replace($oldArtClass, $newArtClass)
+
+          $text = $text.Replace('        String fallbackRoot = resolveBundledFallbackRoot(bundledFallbackRoot);', '        String fallbackRoot = resolveInstalledArtRoot(resolveBundledFallbackRoot(bundledFallbackRoot));')
+
+          $oldQualityRoot = @'
+    static Path resolveQualityRoot(String bundledRoot, String folder) {
+        String wanted = (folder == null || folder.isBlank()) ? "low_32" : folder;
+        Path local = Paths.get(bundledRoot, "tiles", "quality", wanted);
+        if (Files.isDirectory(local.resolve("cells"))) return local;
+        Path external = findQualityRoot(Paths.get("cache", "artpacks"), wanted);
+        if (external != null) return external;
+        Path bundledLow = Paths.get(bundledRoot, "tiles", "quality", "low_32");
+        if (Files.isDirectory(bundledLow.resolve("cells"))) {
+            DebugLog.warn("ART_PACK", "Requested art tier '" + wanted + "' is not installed; falling back to bundled low_32.");
+            return bundledLow;
+        }
+        return local;
+    }
+'@
+          $newQualityRoot = @'
+    static Path resolveQualityRoot(String bundledRoot, String folder) {
+        String wanted = (folder == null || folder.isBlank()) ? "low_32" : folder;
+        String resolvedBundledRoot = resolveInstalledArtRoot(bundledRoot);
+        Path local = Paths.get(resolvedBundledRoot, "tiles", "quality", wanted);
+        if (Files.isDirectory(local.resolve("cells"))) return local;
+        Path external = findQualityRoot(Paths.get("cache", "artpacks"), wanted);
+        if (external != null) return external;
+        Path bundledLow = Paths.get(resolvedBundledRoot, "tiles", "quality", "low_32");
+        if (Files.isDirectory(bundledLow.resolve("cells"))) {
+            DebugLog.warn("ART_PACK", "Requested art tier '" + wanted + "' is not installed; falling back to bundled low_32.");
+            return bundledLow;
+        }
+        return local;
+    }
+'@
+          if (-not $text.Contains($oldQualityRoot)) { throw 'Expected resolveQualityRoot block not found.' }
+          $text = $text.Replace($oldQualityRoot, $newQualityRoot)
+
+          $oldCellsRoot = @'
+    static String resolveQualityCellsRoot(String bundledRoot, String folder) {
+        Path q = resolveQualityRoot(bundledRoot, folder);
+        Path cells = q.resolve("cells");
+        if (Files.isDirectory(cells)) return cells.toString();
+        return Paths.get(bundledRoot, "tiles", "cells").toString();
+    }
+'@
+          $newCellsRoot = @'
+    static String resolveQualityCellsRoot(String bundledRoot, String folder) {
+        Path q = resolveQualityRoot(bundledRoot, folder);
+        Path cells = q.resolve("cells");
+        if (Files.isDirectory(cells)) return cells.toString();
+        String resolvedBundledRoot = resolveInstalledArtRoot(bundledRoot);
+        return Paths.get(resolvedBundledRoot, "tiles", "cells").toString();
+    }
+
+    static int countPngFiles(Path root) {
+        if (root == null || !Files.isDirectory(root)) return 0;
+        try (java.util.stream.Stream<Path> stream = Files.walk(root)) {
+            return (int) stream
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName() != null && p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".png"))
+                    .count();
+        } catch (Throwable ignored) {
+            return 0;
+        }
+    }
+'@
+          if (-not $text.Contains($oldCellsRoot)) { throw 'Expected resolveQualityCellsRoot block not found.' }
+          $text = $text.Replace($oldCellsRoot, $newCellsRoot)
+
+          Set-Content -LiteralPath $path -Value $text -Encoding UTF8
+
+      - name: Commit patched MediaRuntime and remove one-shot workflow
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/apply-media-runtime-tile-patch.yml
+          git add src/mechanist/MediaRuntimeFramework.java
+          git diff --cached --stat
+          git commit -m 'Runtime: repair tile art package path resolution [skip ci]'
+          git push
