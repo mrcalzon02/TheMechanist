@@ -7,4 +7,8 @@ public class LayerI {
         if (value) return "ON";
         return "OFF";
     }
+
+    static int atLeastOne(int value) {
+        return Math.max(1, value);
+    }
 }
