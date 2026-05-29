@@ -20,4 +20,13 @@ public class LayerF {
         DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(panel.userProfile));
         panel.repaint();
     }
+
+    static void toggleHighContrastText(GamePanel panel) {
+        panel.options.highContrastText = !panel.options.highContrastText;
+        panel.options.save();
+        panel.logEvent("High contrast text containers " + (panel.options.highContrastText ? "enabled" : "disabled") + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(panel.options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(panel.userProfile));
+        panel.repaint();
+    }
 }
