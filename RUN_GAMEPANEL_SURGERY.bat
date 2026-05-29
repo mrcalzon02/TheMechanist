@@ -43,8 +43,9 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/6] Running all currently automated GamePanel surgery stages...
-python .\ROOT_tools\gamepanel_surgery.py --stage all
+echo [2/6] Running exactly one auto-detected GamePanel surgery stage...
+echo       This is intentionally single-stage to prevent unattended loops.
+python .\ROOT_tools\gamepanel_surgery.py --stage next
 if errorlevel 1 (
     echo.
     echo [FAIL] GamePanel surgery or compile failed.
@@ -63,6 +64,7 @@ if exist "src\mechanist\GamePanel.java.bak" (
 echo.
 echo [4/6] Checking repository changes...
 git status --short
+set HAS_CHANGES=
 for /f %%A in ('git status --porcelain') do set HAS_CHANGES=1
 if not defined HAS_CHANGES (
     echo.
@@ -87,7 +89,7 @@ git reset -- src\mechanist\GamePanel.java.bak >nul 2>nul
 
 echo.
 echo [6/6] Committing and pushing...
-git commit -m "Architecture: run automated GamePanel surgery"
+git commit -m "Architecture: run automated GamePanel surgery stage"
 if errorlevel 1 (
     echo.
     echo [WARN] git commit did not create a commit. This may mean there were no staged changes.
@@ -103,7 +105,8 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
-echo DONE - GamePanel surgery, catalog refresh, compile, commit, push.
+echo DONE - One GamePanel surgery stage, catalog refresh, compile, commit, push.
+echo Rerun this batch file when you want the next automated stage.
 echo ============================================================
 pause
 exit /b 0
