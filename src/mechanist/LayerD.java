@@ -68,4 +68,10 @@ public class LayerD {
         DebugLog.audit("RENDER_DOWNSCALE", panel.renderScaling.auditSummary());
         panel.repaint();
     }
+
+    static void setColorPreset(GamePanel panel, int idx) {
+        panel.logEvent(OptionsBoundaryAuthority.setColorPreset(panel.options, idx));
+        panel.graphicsDropdown = -1;
+        panel.repaint();
+    }
 }
