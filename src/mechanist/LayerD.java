@@ -80,4 +80,8 @@ public class LayerD {
         panel.graphicsDropdown = -1;
         panel.repaint();
     }
+
+    static void setRenderQualityIndex(GamePanel panel, int idx) {
+        LayerC.setRenderQualityIndex(panel, idx);
+    }
 }
