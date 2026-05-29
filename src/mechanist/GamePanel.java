@@ -10430,7 +10430,7 @@ boolean arbitesAuthorityText(String text) {
         setScreen(Screen.MENU);
     }
 
-                                                                                                                                                                                                                            void drawBoot(Graphics2D g) {
+                                                                                                                                                                                                                                void drawBoot(Graphics2D g) {
         bootSurfacePainter.paint(g, this);
     }
 
@@ -17235,7 +17235,7 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         center(g, "Press ENTER, SPACE, or click to continue into the zone.", W/2, H-115);
     }
 
-                                                                                                                                                                                                                            void drawLoading(Graphics2D g) {
+                                                                                                                                                                                                                                void drawLoading(Graphics2D g) {
         loadingSurfacePainter.paint(g, this);
     }
 
