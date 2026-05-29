@@ -5,7 +5,7 @@
 // Category: render
 // This is an examination slice, not compiled source.
 
- private void drawBootGear(Graphics2D g, int cx, int cy, int size, long elapsed) {
+    void drawBootGear(Graphics2D g, int cx, int cy, int size, long elapsed) {
         BufferedImage frame = images.getBootSpinnerFrame(elapsed / 420); // slower rough-assets medallion animation
         if (frame != null) {
             int s = size;
