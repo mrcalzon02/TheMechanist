@@ -8,4 +8,36 @@ public class LayerD {
         panel.logEvent("Graphics dropdown " + (panel.graphicsDropdown < 0 ? "closed" : "opened") + ".");
         panel.repaint();
     }
+
+    static boolean isGraphicsDropdownButton(GamePanel panel, ButtonBox b) {
+        if (b == null || b.label == null) return false;
+        String label = b.label.trim();
+        if (label.startsWith("> ")) label = label.substring(2).trim();
+        if (panel.graphicsDropdown == 0) {
+            return label.equals("Windowed") || label.equals("Borderless Windowed") || label.equals("Exclusive Fullscreen");
+        }
+        if (panel.graphicsDropdown == 1) {
+            for (int i = 0; i < DisplayResolutionAuthority.choiceCount(); i++) {
+                if (label.equals(DisplayResolutionAuthority.modeLabel(i))) return true;
+            }
+            return false;
+        }
+        if (panel.graphicsDropdown == 2) {
+            for (String name : GameOptions.PALETTE_NAMES) if (label.equals(name)) return true;
+            return false;
+        }
+        if (panel.graphicsDropdown == 3) {
+            for (String name : GameOptions.DOWNSCALE_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        if (panel.graphicsDropdown == 4) {
+            for (String name : GameOptions.TARGET_FPS_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        if (panel.graphicsDropdown == 5) {
+            for (String name : GameOptions.RENDER_QUALITY_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        return false;
+    }
 }
