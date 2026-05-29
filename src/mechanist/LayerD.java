@@ -46,4 +46,11 @@ public class LayerD {
         panel.graphicsDropdown = -1;
         panel.repaint();
     }
+
+    static void applyWindowMode(GamePanel panel) {
+        panel.renderScaling.applyOptions(panel.options);
+        panel.logEvent(WindowModeSurfaceAuthority.apply(panel, panel.options));
+        DebugLog.audit("GRAPHICS_APPLY", panel.renderScaling.auditSummary());
+        panel.repaint();
+    }
 }
