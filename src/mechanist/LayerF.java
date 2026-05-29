@@ -29,4 +29,11 @@ public class LayerF {
         DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(panel.userProfile));
         panel.repaint();
     }
+
+    static void toggleInstantDialogueText(GamePanel panel) {
+        panel.options.instantDialogueText = !panel.options.instantDialogueText;
+        panel.options.save();
+        panel.logEvent("Instant conversation text " + (panel.options.instantDialogueText ? "enabled" : "disabled") + ".");
+        panel.repaint();
+    }
 }
