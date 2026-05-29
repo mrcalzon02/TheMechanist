@@ -1,0 +1,135 @@
+// Extracted from src/mechanist/GamePanel.java lines 12000-12131.
+// This is an examination slice, not compiled source.
+
+    void drawIntroCrawl(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        long elapsed = Math.max(0L, System.currentTimeMillis() - introCrawlStartMillis);
+        BufferedImage backdrop = images.get("new_world_backdrop_rebase");
+        if (backdrop != null) {
+            double scale = Math.max(W / (double)Math.max(1, backdrop.getWidth()), H / (double)Math.max(1, backdrop.getHeight()));
+            int bw = Math.max(W, (int)Math.round(backdrop.getWidth() * scale));
+            int bh = Math.max(H, (int)Math.round(backdrop.getHeight() * scale));
+            g.drawImage(backdrop, (W-bw)/2, (H-bh)/2, bw, bh, null);
+        } else {
+            g.setColor(new Color(5, 6, 8)); g.fillRect(0,0,W,H);
+        }
+        drawIntroCloudLayer(g, images.get("clouds_slow_rebase"), elapsed, 0.012, 34, 0.48f);
+        drawIntroCloudLayer(g, images.get("clouds_fast_rebase"), elapsed, 0.026, 0, 0.38f);
+        g.setColor(new Color(0,0,0,126)); g.fillRect(0,0,W,H);
+        drawSlicedFrame(g, 26, 26, W-52, H-52, "outer");
+
+        int panelW = Math.min(Math.max(520, W - 240), W - 130);
+        int panelX = (W - panelW) / 2;
+        int panelY = Math.max(96, H / 5);
+        int panelH = Math.max(280, H - panelY - 86);
+        g.setColor(new Color(5,7,7,186)); g.fillRoundRect(panelX, panelY, panelW, panelH, 18, 18);
+        g.setColor(new Color(156,132,78,190)); g.drawRoundRect(panelX, panelY, panelW, panelH, 18, 18);
+
+        g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(26f, Math.min(42f, H / 14f))));
+        g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        center(g, "NEW WORLD INSERTION", W/2, Math.max(60, panelY - 44));
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(11f, Math.min(15f, H / 48f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, active == null ? "Unnamed operator" : active.name + " // " + active.job, W/2, Math.max(82, panelY - 18));
+
+        if (introCrawlLines.isEmpty()) introCrawlLines = images.loadIntroCrawlLines();
+        Font crawlFont = smallFont.deriveFont(Font.PLAIN, Math.max(13f, Math.min(17f, H / 42f)));
+        FontMetrics fm = g.getFontMetrics(crawlFont);
+        ArrayList<String> wrapped = new ArrayList<>();
+        int wrapChars = Math.max(38, (panelW - 84) / Math.max(7, fm.charWidth('M')));
+        for (String line : introCrawlLines) {
+            String cleaned = line == null ? "" : line.trim();
+            if (cleaned.isEmpty()) { wrapped.add(""); continue; }
+            wrapped.addAll(TextSurfaceApi.wrap(cleaned, wrapChars));
+            wrapped.add("");
+        }
+        while (!wrapped.isEmpty() && wrapped.get(wrapped.size()-1).isEmpty()) wrapped.remove(wrapped.size()-1);
+        if (wrapped.isEmpty()) wrapped.add("The arcology opens beneath you.");
+
+        final long leadInMs = 900L;
+        final long blankMs = 760L;
+        final long linePauseMs = 460L;
+        final long charMs = introCrawlCharMillisForTarget(wrapped, leadInMs, blankMs, linePauseMs, INTRO_CRAWL_TEXT_TARGET_MS);
+        int lineH = Math.max(24, fm.getHeight() + 8);
+        long t = Math.max(0L, elapsed - leadInMs);
+        long cursor = 0L;
+        int currentLine = 0;
+        int visibleChars = 0;
+        float liftFraction = 0f;
+        boolean finished = false;
+        for (int i = 0; i < wrapped.size(); i++) {
+            String line = wrapped.get(i);
+            long typeMs = line.isEmpty() ? blankMs : Math.max(780L, line.length() * charMs);
+            if (t < cursor) {
+                currentLine = Math.max(0, i - 1);
+                visibleChars = wrapped.get(currentLine).length();
+                liftFraction = 0f;
+                break;
+            }
+            if (t < cursor + typeMs) {
+                currentLine = i;
+                if (line.isEmpty()) visibleChars = 0;
+                else if (options.instantDialogueText) visibleChars = line.length();
+                else visibleChars = Math.max(0, Math.min(line.length(), (int)((t - cursor) / Math.max(1L, charMs))));
+                liftFraction = 0f;
+                break;
+            }
+            if (t < cursor + typeMs + linePauseMs) {
+                currentLine = i;
+                visibleChars = line.length();
+                liftFraction = (float)((t - cursor - typeMs) / (double)Math.max(1L, linePauseMs));
+                break;
+            }
+            cursor += typeMs + linePauseMs;
+            if (i == wrapped.size() - 1) {
+                currentLine = i;
+                visibleChars = line.length();
+                liftFraction = 1f;
+                finished = true;
+            }
+        }
+
+        Graphics2D clip = (Graphics2D)g.create();
+        clip.setClip(panelX + 28, panelY + 22, panelW - 56, panelH - 44);
+        clip.setFont(crawlFont);
+        int baseY = panelY + panelH - 44;
+        int lift = Math.round(liftFraction * lineH);
+        for (int i = Math.max(0, currentLine - 22); i <= currentLine && i < wrapped.size(); i++) {
+            String line = wrapped.get(i);
+            String shown = line;
+            if (i == currentLine && visibleChars < line.length()) shown = line.substring(0, Math.max(0, Math.min(visibleChars, line.length())));
+            int yy = baseY - (currentLine - i) * lineH - lift;
+            if (yy < panelY + 18 || yy > panelY + panelH - 8) continue;
+            if (shown.isEmpty()) continue;
+            int distanceFromCenter = Math.abs((panelY + panelH / 2) - yy);
+            int alpha = Math.max(72, Math.min(238, 238 - distanceFromCenter / 3));
+            clip.setColor(options.highContrastText ? Color.WHITE : new Color(224, 213, 166, alpha));
+            center(clip, shown, panelX + panelW/2, yy);
+        }
+        // Subtle typewriter cursor on the actively printing line. It is centered
+        // with the line so the crawl remains cinematic instead of becoming a
+        // left-aligned terminal dump.
+        if (currentLine < wrapped.size()) {
+            String line = wrapped.get(currentLine);
+            if (!line.isEmpty() && visibleChars < line.length() && ((elapsed / 360L) % 2L == 0L)) {
+                String shown = line.substring(0, Math.max(0, Math.min(visibleChars, line.length())));
+                int yy = baseY - lift;
+                int sw = clip.getFontMetrics().stringWidth(shown);
+                int cx = panelX + panelW / 2;
+                int cursorX = cx - sw / 2 + sw + 4;
+                if (yy >= panelY + 18 && yy <= panelY + panelH - 8) {
+                    clip.setColor(new Color(224, 213, 166, 185));
+                    clip.drawLine(cursorX, yy - fm.getAscent() + 2, cursorX, yy + 3);
+                }
+            }
+        }
+        clip.dispose();
+
+        g.setFont(smallFont.deriveFont(Font.PLAIN, Math.max(10f, Math.min(12f, H / 62f))));
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "SKIP remains available in the lower right.", W/2, H-54);
+
+        long textTotalMs = introCrawlTextDurationMillis(wrapped, leadInMs, charMs, blankMs, linePauseMs);
+        long fullCrawlMs = Math.max(textTotalMs + INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS, INTRO_CRAWL_AUDIO_EXPECTED_MS + INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS);
+        if (elapsed > fullCrawlMs) continueFromIntroCrawl();
+    }

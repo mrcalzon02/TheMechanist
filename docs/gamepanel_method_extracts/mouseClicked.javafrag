@@ -1,0 +1,101 @@
+// Extracted from src/mechanist/GamePanel.java lines 20742-20839.
+// This is an examination slice, not compiled source.
+
+    @Override public void mouseClicked(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        if (screen == Screen.INTRO_CRAWL) { continueFromIntroCrawl(); return; }
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        int mx = mp.x, my = mp.y;
+        if (screen==Screen.ZONE_SPLASH) { continueFromZoneSplash(); repaint(); requestFocusInWindow(); return; }
+        if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mx, my, SwingUtilities.isRightMouseButton(e))) { requestFocusInWindow(); return; }
+        if (screen == Screen.SECTOR_AUDIT && auditZoneDropdownOpen) {
+            for (int i=buttons.size()-1;i>=0;i--) {
+                ButtonBox b = buttons.get(i);
+                boolean zoneSelectorControl = isZoneAuditDropdownButton(b) || (b != null && b.label != null && b.label.startsWith("ZONE:"));
+                if (zoneSelectorControl && b.contains(mx, my)) {
+                    selectedButton=i;
+                    sounds.play("button", options);
+                    runGuarded("MOUSE", "click zone audit selector " + b.label, b.action);
+                    repaint();
+                    requestFocusInWindow();
+                    return;
+                }
+            }
+            Rectangle dd = zoneAuditDropdownOuterRect(uiLayout());
+            if (dd.contains(mx, my)) { repaint(); requestFocusInWindow(); return; }
+            auditZoneDropdownOpen = false;
+            repaint();
+            requestFocusInWindow();
+            return;
+        }
+        if (screen == Screen.SECTOR_AUDIT && auditWorld != null) {
+            Point tile = screenPointToAuditTile(mx, my);
+            if (tile != null) { auditCursorX = tile.x; auditCursorY = tile.y; repaint(); requestFocusInWindow(); return; }
+        }
+        if (screen == Screen.GAME && world != null && firstPersonRenderViewport.handleMouseClicked(this, e, mx, my)) {
+            requestFocusInWindow();
+            return;
+        }
+        if (screen == Screen.GAME && world != null) {
+            Point tile = screenPointToWorldTile(mx, my);
+            if (SwingUtilities.isRightMouseButton(e) && tile != null) {
+                if (tile.x == playerX && tile.y == playerY) {
+                    clearMouseMovementPreview("right-click self opens look targeting");
+                    interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK);
+                    repaint(); requestFocusInWindow(); return;
+                }
+                if (mouseMovePreviewActive) clearMouseMovementPreview("right-click toggle");
+                else updateMouseMovementPreviewTo(tile.x, tile.y);
+                repaint(); requestFocusInWindow(); return;
+            }
+            if (SwingUtilities.isLeftMouseButton(e) && mouseMovePreviewActive) {
+                executeMouseMovementPreview();
+                requestFocusInWindow(); return;
+            }
+        }
+        if (screen == Screen.PANEL && world != null && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT)) {
+            Point tile = screenPointToWorldTile(mx, my);
+            if (tile != null && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e))) {
+                targetPanelCursorFromMouse(tile.x, tile.y);
+                repaint(); requestFocusInWindow(); return;
+            }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && handleInventoryStackPanelClick(mx, my)) { requestFocusInWindow(); return; }
+        if (findScrollRegion(mx,my) != null) { handleScrollbarClick(mx,my); repaint(); requestFocusInWindow(); return; }
+        if (screen == Screen.KNOWLEDGE && handleKnowledgeTreeClick(mx, my)) { requestFocusInWindow(); return; }
+        if (screen==Screen.OPTIONS && graphicsDropdown>=0) {
+            // Open dropdowns are modal blockers. They must consume the click before
+            // any button underneath them can receive it. This prevents selecting a
+            // dropdown value while also triggering an obscured option button.
+            for (int i=buttons.size()-1;i>=0;i--) {
+                ButtonBox b = buttons.get(i);
+                if (isGraphicsDropdownButton(b) && b.contains(mx, my)) {
+                    selectedButton=i;
+                    sounds.play("button", options);
+                    runGuarded("MOUSE", "click dropdown " + b.label, b.action);
+                    repaint();
+                    return;
+                }
+            }
+            // Clicked outside the dropdown: close it and swallow the click.
+            graphicsDropdown=-1;
+            repaint();
+            requestFocusInWindow();
+            return;
+        }
+        if (screen == Screen.CHARACTER) {
+            if (characterNameEditRect.contains(mx, my)) {
+                characterNameEditActive = true;
+                requestFocusInWindow();
+                repaint();
+                return;
+            } else if (characterNameEditActive) {
+                Candidate c = candidates.isEmpty() ? null : candidates.get(candidateIndex);
+                if (c != null) { c.name = CharacterCreationAuthority.sanitizePlayerName(c.name, rng); refreshNameLockedCandidateState(c); }
+                characterNameEditActive = false;
+            }
+        }
+        for (int i=buttons.size()-1;i>=0;i--) if (buttonIsModalInteractive(buttons.get(i)) && buttons.get(i).contains(mx, my)) { selectedButton=i; sounds.play("button", options); runGuarded("MOUSE", "click button " + buttons.get(i).label, buttons.get(i).action); repaint(); return; }
+        requestFocusInWindow();
+    }

@@ -1,0 +1,140 @@
+// Extracted from src/mechanist/GamePanel.java lines 14704-14840.
+// This is an examination slice, not compiled source.
+
+    void drawGame(Graphics2D g) {
+        g.setFont(asciiFont);
+        Rectangle map = mapRect();
+        int cellW = mapCellW(g);
+        int cellH = mapCellH(g);
+        int worldW = world == null ? 0 : world.w;
+        int worldH = world == null ? 0 : world.h;
+        MapViewportTransformAuthority.Viewport viewport = MapViewportTransformAuthority.compute(
+                map, worldW, worldH, playerX, playerY, cellW, cellH,
+                10, tileIconMode() ? 10 : 10 + g.getFontMetrics(asciiFont).getAscent());
+        int cols = viewport.cols;
+        int rows = viewport.rows;
+        int camX = viewport.camX;
+        int camY = viewport.camY;
+        updateSensoryModel("paint");
+
+        // The active map is now a deliberately blank black CRT pane.  The clip prevents
+        // ASCII and fog highlights from bleeding into the surrounding chrome or command panel.
+        g.setColor(Color.BLACK);
+        g.fillRect(map.x, map.y, map.width, map.height);
+        g.setColor(new Color(92, 76, 48));
+        g.drawRect(map.x, map.y, map.width, map.height);
+        Shape oldClip = g.getClip();
+        g.setClip(map.x + 7, map.y + 7, map.width - 14, map.height - 14);
+        int ox = viewport.ox;
+        int oy = viewport.oy;
+
+        if (world != null) {
+            for (int sy = 0; sy < rows; sy++) {
+                int y = camY + sy;
+                if (y < 0 || y >= world.h) continue;
+                for (int sx = 0; sx < cols; sx++) {
+                    int x = camX + sx;
+                    if (x < 0 || x >= world.w) continue;
+                    boolean vis = isVisible(x, y);
+                    boolean rem = isRemembered(x, y);
+                    char ch = world.tiles[x][y];
+                    if (vis) {
+                        if (tileIconMode()) drawMapTileIcon(g, ch, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 1.0f, true);
+                        else { g.setColor(colorForTile(x, y, ch)); g.drawString(String.valueOf(ch), ox + sx * cellW, oy + sy * cellH); }
+                        drawLightDarknessOverlay(g, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, true);
+                    } else if (rem) {
+                        char memory = ((ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch)) ? '#' : (ch == InterstitialInfrastructureApi.VOID_SPACE ? ' ' : '.'));
+                        if (tileIconMode()) drawMapTileIcon(g, memory, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 0.34f, false);
+                        else { g.setColor(new Color(42, 42, 45)); g.drawString(String.valueOf(memory), ox + sx * cellW, oy + sy * cellH); }
+                        drawLightDarknessOverlay(g, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, false);
+                    }
+                }
+            }
+
+            for (SensePing ping : sensePings) {
+                if (ping.ttl > 0 && !isVisible(ping.x, ping.y) && ping.x >= camX && ping.y >= camY && ping.x < camX + cols && ping.y < camY + rows) {
+                    g.setColor(new Color(210, 190, 105));
+                    if (tileIconMode()) {
+                        int px = ox + (ping.x - camX) * cellW, py = oy + (ping.y - camY) * cellH;
+                        g.drawOval(px + cellW/4, py + cellH/4, Math.max(4, cellW/2), Math.max(4, cellH/2));
+                        g.drawString("?", px + Math.max(2, cellW/3), py + Math.max(12, (cellH*2)/3));
+                    } else g.drawString("?", ox + (ping.x - camX) * cellW, oy + (ping.y - camY) * cellH);
+                }
+            }
+            if (world != null && world.mapObjects != null) {
+                for (MapObjectState mo : world.mapObjects) {
+                    if (mo != null && isVisible(mo.x, mo.y) && mo.x >= camX && mo.y >= camY && mo.x < camX + cols && mo.y < camY + rows && world != null && world.inBounds(mo.x, mo.y) && !isDoorTile(world.tiles[mo.x][mo.y]) && world.tiles[mo.x][mo.y] != 'D') {
+                        g.setColor(new Color(170, 215, 155));
+                        if (tileIconMode()) drawMapFeatureIcon(g, mo, ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH, cellW, cellH, new Color(100, 210, 160, 70));
+                        else g.drawString(String.valueOf(mo.glyph), ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH);
+                    }
+                }
+            }
+            for (BaseObject obj : baseObjects) {
+                if (isVisible(obj.x, obj.y) && obj.x >= camX && obj.y >= camY && obj.x < camX + cols && obj.y < camY + rows) {
+                    g.setColor(new Color(170, 230, 155));
+                    if (tileIconMode()) drawMapObjectIcon(g, obj, ox + (obj.x - camX) * cellW, oy + (obj.y - camY) * cellH, cellW, cellH, new Color(120, 230, 135, 80));
+                    else g.drawString(String.valueOf(obj.symbol), ox + (obj.x - camX) * cellW, oy + (obj.y - camY) * cellH);
+                }
+            }
+            drawPortableLightObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawZoneLightFixtureObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            visualLighting.render(this, g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawEnvironmentalHazardOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawTrapWarningOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            if (baseClaimed && isVisible(baseX, baseY) && baseX >= camX && baseY >= camY && baseX < camX + cols && baseY < camY + rows) {
+                g.setColor(new Color(220, 240, 180));
+                if (tileIconMode()) {
+                    int px = ox + (baseX - camX) * cellW, py = oy + (baseY - camY) * cellH;
+                    g.drawRect(px+2, py+2, Math.max(4,cellW-4), Math.max(4,cellH-4));
+                    g.drawString("B", px + Math.max(3,cellW/3), py + Math.max(12,(cellH*2)/3));
+                } else g.drawString("B", ox + (baseX - camX) * cellW, oy + (baseY - camY) * cellH);
+            }
+            if ((lookCursorActive || interactCursorActive) && lookX >= camX && lookY >= camY && lookX < camX + cols && lookY < camY + rows) {
+                int sx = lookX - camX, sy = lookY - camY;
+                g.setColor(interactCursorActive ? new Color(120, 220, 180) : new Color(235, 205, 120));
+                int rx = ox + sx * cellW - 2;
+                int ry = oy + sy * cellH - 2;
+                g.drawRect(rx, ry, cellW + 4, cellH + 4);
+            }
+            if (buildPlacementActive && buildX >= camX && buildY >= camY && buildX < camX + cols && buildY < camY + rows) {
+                int sx = buildX - camX, sy = buildY - camY;
+                boolean ok = rawCanPlacePendingBuildAt(buildX, buildY).startsWith("OK");
+                g.setColor(ok ? new Color(105, 235, 125) : new Color(235, 70, 55));
+                if (tileIconMode()) {
+                    g.drawRect(ox + sx * cellW - 2, oy + sy * cellH - 2, cellW + 4, cellH + 4);
+                    g.drawString(ok ? "+" : "X", ox + sx * cellW + Math.max(3, cellW/3), oy + sy * cellH + Math.max(12, (cellH*2)/3));
+                } else {
+                    g.drawRect(ox + sx * cellW - 3, oy + sy * cellH - cellH + 2, cellW + 6, cellH + 5);
+                    g.drawString(ok ? "+" : "X", ox + sx * cellW, oy + sy * cellH);
+                }
+            }
+            drawMovementGhostPath(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawMouseMovementPreview(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawLookIntentOverlay(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawCombatTargetOverlay(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawCombatAnimations(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawExplosionAnimations(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            if (world != null) {
+                for (NpcEntity npc : world.npcs) {
+                    if (npc.x >= camX && npc.y >= camY && npc.x < camX + cols && npc.y < camY + rows && isVisible(npc.x, npc.y)) {
+                        g.setColor(npcColor(npc.faction));
+                        Point off = npcSlideOffsetPixels(npc, cellW, cellH);
+                        if (tileIconMode()) drawNpcMapIcon(g, npc, ox + (npc.x - camX) * cellW + off.x, oy + (npc.y - camY) * cellH + off.y, cellW, cellH);
+                        else g.drawString(String.valueOf(npc.symbol), ox + (npc.x - camX) * cellW + off.x, oy + (npc.y - camY) * cellH + off.y);
+                    }
+                }
+            }
+            if (playerX >= camX && playerY >= camY && playerX < camX + cols && playerY < camY + rows) {
+                g.setColor(Color.WHITE);
+                Point off = playerSlideOffsetPixels(cellW, cellH);
+                if (tileIconMode()) drawPlayerMapIcon(g, ox + (playerX - camX) * cellW + off.x, oy + (playerY - camY) * cellH + off.y, cellW, cellH);
+                else g.drawString("@", ox + (playerX - camX) * cellW + off.x, oy + (playerY - camY) * cellH + off.y);
+            }
+        }
+        g.setClip(oldClip);
+
+        drawRightPanelFrame(g);
+        if (tacticalSlateVisible) drawCommandTablet(g, camX, camY);
+        drawRecentActionFeed(g);
+    }

@@ -1,0 +1,56 @@
+{
+  "schema": "mechanist.gamepanel_method_extracts.v1",
+  "time": "2026-05-29T00:55:25.350256+00:00",
+  "source": "C:\\GITS\\The Mechanist\\TheMechanist\\src\\mechanist\\GamePanel.java",
+  "methods": [
+    {
+      "name": "rebuildButtons",
+      "start_line": 1059,
+      "end_line": 1777,
+      "line_count": 719,
+      "output": "docs/gamepanel_method_extracts/rebuildButtons.javafrag"
+    },
+    {
+      "name": "drawIntroCrawl",
+      "start_line": 12000,
+      "end_line": 12131,
+      "line_count": 132,
+      "output": "docs/gamepanel_method_extracts/drawIntroCrawl.javafrag"
+    },
+    {
+      "name": "drawGame",
+      "start_line": 14704,
+      "end_line": 14840,
+      "line_count": 137,
+      "output": "docs/gamepanel_method_extracts/drawGame.javafrag"
+    },
+    {
+      "name": "panelLines",
+      "start_line": 19299,
+      "end_line": 19549,
+      "line_count": 251,
+      "output": "docs/gamepanel_method_extracts/panelLines.javafrag"
+    },
+    {
+      "name": "drawOptions",
+      "start_line": 20439,
+      "end_line": 20568,
+      "line_count": 130,
+      "output": "docs/gamepanel_method_extracts/drawOptions.javafrag"
+    },
+    {
+      "name": "mouseClicked",
+      "start_line": 20742,
+      "end_line": 20839,
+      "line_count": 98,
+      "output": "docs/gamepanel_method_extracts/mouseClicked.javafrag"
+    },
+    {
+      "name": "handleKeyPressed",
+      "start_line": 20845,
+      "end_line": 21084,
+      "line_count": 240,
+      "output": "docs/gamepanel_method_extracts/handleKeyPressed.javafrag"
+    }
+  ]
+}
