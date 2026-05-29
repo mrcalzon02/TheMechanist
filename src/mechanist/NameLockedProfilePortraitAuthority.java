@@ -64,7 +64,7 @@ final class NameLockedProfilePortraitAuthority {
         add("weshammer", "Weshammer", "Cinematic Chronicler", "weshammer.png", list("Wes"), list("PROFILE_PORTRAIT_WESHAMMER", "CHRONICLE_TOKEN"));
         add("chapter_master_valrak", "Chapter Master Valrak", "Son of Dorn", "chapter_master_valrak.png", list("Valrak", "CMValrak"), list("PROFILE_PORTRAIT_VALRAK", "FORTIFICATION_SEAL"));
         add("majorkill", "Majorkill", "Outback Marauder", "majorkill.png", list("MajorKill", "Major Kill"), list("PROFILE_PORTRAIT_MAJORKILL", "BRAWLER_TOKEN"));
-        add("oculus_imperia", "Oculus Imperia", "Imperial Historian", "oculus_imperia.png", list("OculusImperia", "ScribeOculus", "Oculus"), list("PROFILE_PORTRAIT_OCULUS", "HISTORIAN_QUILL"));
+        add("oculus_imperia", "Oculus Imperia", "Concord Historian", "oculus_imperia.png", list("OculusImperia", "ScribeOculus", "Oculus"), list("PROFILE_PORTRAIT_OCULUS", "HISTORIAN_QUILL"));
         add("baldermorts_guide", "Baldermort's Guide", "The Resonant Orator", "baldermorts_guide.png", list("Baldermort", "Baldermorts Guide", "Baldermort's Guide"), list("PROFILE_PORTRAIT_BALDERMORT", "ORATOR_TOKEN"));
         add("arbitor_ian", "Arbitor Ian", "Chronology Archivist", "arbitor_ian.png", list("ArbitorIan", "Ian"), list("PROFILE_PORTRAIT_ARBITOR_IAN", "ARCHIVE_STAMP"));
         add("wolf_lord_rho", "Wolf Lord Rho", "Saga Narrator", "wolf_lord_rho.png", list("WolfLordRho", "Rho"), list("PROFILE_PORTRAIT_WOLF_LORD_RHO", "SAGA_MARK"));

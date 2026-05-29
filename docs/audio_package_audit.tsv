@@ -155,6 +155,13 @@ audio_file	PACKAGE_client/assets/sound/voice/blahblah_11.ogg	True	44475	.ogg	Fal
 audio_file	PACKAGE_client/assets/sound/voice/blahblah_12.ogg	True	40255	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/voice/blahblahtech.ogg	True	25334	.ogg	False			
 audio_file	PACKAGE_client/assets/sound/voice/new_world_intro_crawl_narration.wav	True	35422286	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/machine_start.wav	True	1478734	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/tp_gui_button_press_01.wav	True	63566	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/tp_gui_panel_close_01.wav	True	120910	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/tp_gui_panel_open_01.wav	True	90190	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/tp_gui_portrait_select_01.wav	True	63566	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/tp_gui_tab_change_01.wav	True	100430	.wav	False			
+audio_file	PACKAGE_client/assets/sound/wav/typing_sounds.wav	True	708686	.wav	False			
 audio_file	PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_alarm_far_01.wav	False	55168	.wav	True			
 audio_file	PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_chime_01.wav	False	48554	.wav	True			
 audio_file	PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_press_01.wav	False	31796	.wav	True			
@@ -260,13 +267,13 @@ audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Slice.mp3	False	5808	.mp3
 audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Thundering.mp3	False	23353	.mp3	True			
 audio_file	ROOT_SRC_assets/ROOT_Sounds/effects/Whump.mp3	False	5343	.mp3	True			
 audio_file	ROOT_SRC_assets/ROOT_Sounds/voice/new_world_intro_crawl_narration.mp3	False	3249567	.mp3	True			
-java_reference	src/mechanist/AudioRuntimeFramework.java	22	assets/sound/wav/tp_gui_button_press_01.wav	False	False	0	missing_from_package	
-java_reference	src/mechanist/AudioRuntimeFramework.java	23	assets/sound/wav/tp_gui_panel_open_01.wav	False	False	0	missing_from_package	
-java_reference	src/mechanist/AudioRuntimeFramework.java	24	assets/sound/wav/tp_gui_panel_close_01.wav	False	False	0	missing_from_package	
-java_reference	src/mechanist/AudioRuntimeFramework.java	25	assets/sound/wav/tp_gui_portrait_select_01.wav	False	False	0	missing_from_package	
-java_reference	src/mechanist/AudioRuntimeFramework.java	26	assets/sound/wav/tp_gui_tab_change_01.wav	False	False	0	missing_from_package	
-java_reference	src/mechanist/AudioRuntimeFramework.java	27	assets/sound/wav/typing_sounds.wav	False	False	0	missing_from_package	
-java_reference	src/mechanist/AudioRuntimeFramework.java	28	assets/sound/wav/machine_start.wav	False	False	0	missing_from_package	
+java_reference	src/mechanist/AudioRuntimeFramework.java	22	assets/sound/wav/tp_gui_button_press_01.wav	True	False	1	ok	
+java_reference	src/mechanist/AudioRuntimeFramework.java	23	assets/sound/wav/tp_gui_panel_open_01.wav	True	False	1	ok	
+java_reference	src/mechanist/AudioRuntimeFramework.java	24	assets/sound/wav/tp_gui_panel_close_01.wav	True	False	1	ok	
+java_reference	src/mechanist/AudioRuntimeFramework.java	25	assets/sound/wav/tp_gui_portrait_select_01.wav	True	False	1	ok	
+java_reference	src/mechanist/AudioRuntimeFramework.java	26	assets/sound/wav/tp_gui_tab_change_01.wav	True	False	1	ok	
+java_reference	src/mechanist/AudioRuntimeFramework.java	27	assets/sound/wav/typing_sounds.wav	True	False	1	ok	
+java_reference	src/mechanist/AudioRuntimeFramework.java	28	assets/sound/wav/machine_start.wav	True	False	1	ok	
 java_reference	src/mechanist/AudioRuntimeFramework.java	29	assets/sound/voice/new_world_intro_crawl_narration.wav	True	False	1	ok	
 java_reference	src/mechanist/AudioRuntimeFramework.java	30	assets/sound/effects/bash.wav	True	False	2	ok	
 java_reference	src/mechanist/AudioRuntimeFramework.java	31	assets/sound/effects/flame.wav	True	False	2	ok	

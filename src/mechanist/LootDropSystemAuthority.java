@@ -192,9 +192,9 @@ final class LootDropSystemAuthority {
         double tier = clamp01(sectorZoneTier);
         int base = switch (faction == null ? Faction.NONE : faction) {
             case NOBLE, NOBLE_HOUSE_VARN, NOBLE_HOUSE_KASTOR, NOBLE_HOUSE_MORVAIN, NOBLE_HOUSE_CYRA, NOBLE_HOUSE_DRAKE, NOBLE_HOUSE_TOLL, NOBLE_HOUSE_OSSUARY -> 65;
-            case ARBITES, IMPERIAL_GUARD, SORORITAS -> 22;
-            case ADMINISTRATUM, MINISTORUM, INN -> 18;
-            case MECHANICUS, MECHANICUS_CLOISTER_RED, MECHANICUS_CLOISTER_RUST, MECHANICUS_CLOISTER_VOID -> 14;
+            case CIVIC WARDENS, IMPERIAL_GUARD, SORORITAS -> 22;
+            case CIVIC LEDGER OFFICE, MINISTORUM, INN -> 18;
+            case MECHANIST COLLEGIA, MECHANICUS_CLOISTER_RED, MECHANICUS_CLOISTER_RUST, MECHANICUS_CLOISTER_VOID -> 14;
             case HIVER, HIVER_BLOCK_AUREL, HIVER_BLOCK_MARROW, HIVER_BLOCK_SUMPLEDGER -> 5;
             case SCAVENGER, BANDIT, GANGER_IRON_RATS, GANGER_BLACK_SUMP, GANGER_CANDLE_JACKS, GANGER_RED_GRIN, GANGER_CHAIN_SAINTS, GANGER_ASH_MARKET, GANGER_WIRE_WOLVES, GANGER_DROWNED_9TH -> 3;
             default -> 2;
@@ -209,8 +209,8 @@ final class LootDropSystemAuthority {
 
     static String tableNameForZone(ZoneType zt, String purposeText) {
         String hay = (safe(purposeText) + " " + (zt == null ? "" : zt.label) + " " + (zt == null ? "" : zt.descriptor)).toLowerCase(Locale.ROOT);
-        if (has(hay, "manufact", "forge", "mechanicus", "workshop", "machine", "component", "warehouse", "freight", "cargo")) return "manufacturing";
-        if (has(hay, "guard", "pdf", "arbites", "precinct", "billet", "barracks", "armory", "munition")) return "pdf_guard";
+        if (has(hay, "manufact", "forge", "mechanist Collegia", "workshop", "machine", "component", "warehouse", "freight", "cargo")) return "manufacturing";
+        if (has(hay, "guard", "pdf", "civic Wardens", "precinct", "billet", "barracks", "armory", "munition")) return "pdf_guard";
         if (has(hay, "noble", "governor", "spire", "mansion", "service spine", "vault")) return "noble";
         if (has(hay, "trash", "dump", "scav", "sump", "warren", "refuse")) return "trash_scavenge";
         if (has(hay, "cult", "mutant", "heretic", "sewer camp")) return "cult_mutant";
@@ -256,7 +256,7 @@ final class LootDropSystemAuthority {
     }
 
     private static boolean highThreatFaction(Faction faction) {
-        return faction == Faction.ARBITES || faction == Faction.IMPERIAL_GUARD || faction == Faction.SORORITAS || faction == Faction.ROGUE_MACHINE || faction == Faction.MECHANICUS || isNobleOrHouse(faction);
+        return faction == Faction.CIVIC WARDENS || faction == Faction.IMPERIAL_GUARD || faction == Faction.SORORITAS || faction == Faction.ROGUE_MACHINE || faction == Faction.MECHANIST COLLEGIA || isNobleOrHouse(faction);
     }
 
     private static boolean highThreatZone(ZoneType zt) {
@@ -335,9 +335,9 @@ final class LootDropSystemAuthority {
         String low = safe(weapon).toLowerCase(Locale.ROOT);
         if (low.contains("las")) return "Las charge pack";
         if (low.contains("shotgun")) return "Shotgun shells";
-        if (low.contains("bolt") || low.contains("bolter")) return "Bolt shells";
+        if (low.contains("bolt") || low.contains("mass-Reactive Carbine")) return "Bolt shells";
         if (low.contains("plasma")) return "Plasma fuel flask";
-        if (low.contains("flamer")) return "Promethium canister";
+        if (low.contains("flamer")) return "Industrial Fuelgel canister";
         if (low.contains("melta")) return "Melta fuel canister";
         return "Stub rounds";
     }

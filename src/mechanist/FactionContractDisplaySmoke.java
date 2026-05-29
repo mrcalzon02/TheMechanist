@@ -5,7 +5,7 @@ final class FactionContractDisplaySmoke {
         FactionContract contract = new FactionContract();
         contract.id = "B-12345";
         contract.type = "BOUNTY";
-        contract.faction = Faction.ARBITES;
+        contract.faction = Faction.CIVIC WARDENS;
         contract.targetZoneKey = "1,1,2,3,4,false";
         contract.targetName = "Wanted fugitive Kessel Grint";
         contract.requiredTurnInItem = "Ident chip B-12345";
@@ -15,7 +15,7 @@ final class FactionContractDisplaySmoke {
 
         String shortLine = contract.shortLine();
         String longLine = contract.longLine();
-        if (!shortLine.contains("bounty contract for Adeptus Arbites pays 120 script")) {
+        if (!shortLine.contains("bounty contract for Adeptus Civic Wardens pays 120 script")) {
             throw new AssertionError("Contract short line was not readable: " + shortLine);
         }
         if (shortLine.contains("B-12345") || longLine.contains("B-12345")) {

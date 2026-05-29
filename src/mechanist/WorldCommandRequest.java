@@ -95,7 +95,7 @@ record AdminAddMoneyCommand(String playerId, int amount) implements WorldCommand
     public void apply(GamePanel game) {
         if (game == null) return;
         game.addImperialScript(Math.max(0, amount));
-        game.logEvent("ADMIN: credited " + amount + " Imperial Script through the local server authority.");
+        game.logEvent("ADMIN: credited " + amount + " Concord Script through the local server authority.");
     }
 }
 

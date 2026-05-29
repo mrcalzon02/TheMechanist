@@ -246,7 +246,7 @@ class LightingNoiseMetadataApi {
         if(z==ZoneType.SECTOR_GOVERNORS_MANSION || z==ZoneType.NOBLE_SERVICE_SPINE) return new ZoneLightingProfile("upper noble maintained",78,62,4,7,48,78,5,72,8,96,"warm amber");
         if(z==ZoneType.ADMINISTRATUM_ARCHIVE || z==ZoneType.IMPERIAL_NEWS_NETWORK || z==ZoneType.ARBITES_PRECINCT_EDGE) return new ZoneLightingProfile("civic sanctioned",62,48,3,6,38,65,5,58,15,90,"white");
         if(z==ZoneType.IMPERIAL_GUARD_BILLET || z==ZoneType.MECHANICUS_FORGE_CLOISTER || z==ZoneType.MECHANICUS_RELIC_DUCT) return new ZoneLightingProfile("industrial duty",54,42,3,6,36,70,5,42,24,84,"blue white");
-        if(z==ZoneType.GANGER_TURF || z==ZoneType.TRASH_WARREN || z==ZoneType.MUTANT_WARRENS) return new ZoneLightingProfile("lower hive scavenged",30,20,2,5,20,44,7,20,42,66,"amber");
+        if(z==ZoneType.GANGER_TURF || z==ZoneType.TRASH_WARREN || z==ZoneType.MUTANT_WARRENS) return new ZoneLightingProfile("lower arcology scavenged",30,20,2,5,20,44,7,20,42,66,"amber");
         return new ZoneLightingProfile("civil hab functional",48,36,3,5,30,56,6,38,24,78,"white");
     }
     static ZoneLightSourceRecord makeLight(World w, ZoneLightingProfile p, int x, int y, int roomId, Random r, String kind){

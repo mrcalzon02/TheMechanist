@@ -12,7 +12,7 @@ package mechanist;
  * - define central-anchor intent,
  * - define edge-band policy,
  * - expose validation profile,
- * - preserve a minimum edge safety band for hive exterior wall systems.
+ * - preserve a minimum edge safety band for arcology exterior wall systems.
  */
 public final class ZoneGenerationContext {
     public static final int MIN_EDGE_SAFETY_BAND_TILES = 5;

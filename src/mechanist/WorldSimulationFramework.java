@@ -65,11 +65,11 @@ class WorldSaveInfo {
                         Properties pr = new Properties();
                         try(InputStream in = Files.newInputStream(p)){ pr.load(in); }
                         long seed = Persistence.getLong(pr, "worlddef.seed", 0L);
-                        String hive = pr.getProperty("worlddef.hiveName", p.getFileName().toString());
+                        String arcology = pr.getProperty("worlddef.hiveName", p.getFileName().toString());
                         String id = pr.getProperty("worlddef.worldId", p.getFileName().toString().replace(".mechworld", ""));
                         WorldSetupSettings settings = WorldSetupSettings.decode(pr.getProperty("worlddef.setup", ""));
                         String progress = pr.getProperty("worlddef.progressStage", "unknown") + " " + pr.getProperty("worlddef.progressCompleted", "0") + "/" + pr.getProperty("worlddef.progressTotal", "0");
-                        out.add(new WorldSaveInfo(p, seed, hive, id, settings, progress));
+                        out.add(new WorldSaveInfo(p, seed, arcology, id, settings, progress));
                     }catch(Exception ex){ DebugLog.warn("WORLD_SELECTOR", "Could not inspect world file " + p + ": " + ex.getMessage()); }
                 });
             }
@@ -238,7 +238,7 @@ class WorldGenerationProgressApi {
         if(d == null) return;
         WorldNamingApi.populateDefinition(d);
         d.progressLedger.clear();
-        record(d, STAGE_NAMES, "Hive, sector, and zone naming", 1, 1, "complete");
+        record(d, STAGE_NAMES, "Arcology, sector, and zone naming", 1, 1, "complete");
         record(d, STAGE_HISTORY, "Compact zone-history seed", WORLD_ZONE_SLICES, Math.min(WORLD_ZONE_SLICES, d.zoneHistory.size()), d.zoneHistory.size() >= WORLD_ZONE_SLICES ? "complete" : "partial");
         record(d, STAGE_FACTION_EPOCHS, "Faction-control epoch synthesis", WORLD_ZONE_SLICES, Math.min(WORLD_ZONE_SLICES, d.zoneEpochs.size()), d.zoneEpochs.size() >= WORLD_ZONE_SLICES ? "complete" : "partial");
         record(d, STAGE_FACILITY_HISTORY, "Facility establishment synthesis", WORLD_ZONE_SLICES, Math.min(WORLD_ZONE_SLICES, d.zoneFacilities.size()), d.zoneFacilities.size() >= WORLD_ZONE_SLICES ? "complete" : "partial");
@@ -258,7 +258,7 @@ class WorldGenerationProgressApi {
         d.progressLedger.remove("12.deep-generational-item-history-" + legacyDeferredSuffix());
         if(d.sectorNames.isEmpty() || d.zoneNames.isEmpty() || d.zoneHistory.isEmpty()) WorldNamingApi.populateDefinition(d);
         if(d.progressLedger.isEmpty()){
-            record(d, STAGE_NAMES, "Hive, sector, and zone naming", 1, 1, "complete");
+            record(d, STAGE_NAMES, "Arcology, sector, and zone naming", 1, 1, "complete");
             record(d, STAGE_HISTORY, "Compact zone-history seed", WORLD_ZONE_SLICES, Math.min(WORLD_ZONE_SLICES, d.zoneHistory.size()), d.zoneHistory.size() >= WORLD_ZONE_SLICES ? "complete" : "partial");
             record(d, STAGE_FACTION_EPOCHS, "Faction-control epoch synthesis", WORLD_ZONE_SLICES, Math.min(WORLD_ZONE_SLICES, d.zoneEpochs.size()), d.zoneEpochs.size() >= WORLD_ZONE_SLICES ? "complete" : "partial");
             record(d, STAGE_FACILITY_HISTORY, "Facility establishment synthesis", WORLD_ZONE_SLICES, Math.min(WORLD_ZONE_SLICES, d.zoneFacilities.size()), d.zoneFacilities.size() >= WORLD_ZONE_SLICES ? "complete" : "partial");
@@ -327,7 +327,7 @@ class WorldGenerationProgressApi {
     }
     static java.util.List<String> progressLines(HiveWorldDefinition d){
         ArrayList<String> out = new ArrayList<>();
-        if(d == null){ out.add("No hive world definition loaded."); return out; }
+        if(d == null){ out.add("No arcology world definition loaded."); return out; }
         out.add("World generation progress for " + d.hiveName + ": " + d.progressSummary());
         for(String key: stageOrder()){
             WorldGenerationProgressRecord rec = read(d, key);
@@ -366,7 +366,7 @@ class WorldNamingApi {
     static final String[] ZONE_NOUNS = {"Annex", "Block", "Gallery", "Yard", "Queue", "Duct", "Atrium", "Depot", "Cistern", "Archive", "Billet", "Market", "Cloister", "Warren", "Plaza"};
     static String hiveName(long seed){
         Random r = new Random(seed ^ 0x4817E11L);
-        return "Hive " + HIVE_PREFIX[Math.floorMod(r.nextInt(), HIVE_PREFIX.length)] + "-" + HIVE_SUFFIX[Math.floorMod(r.nextInt(), HIVE_SUFFIX.length)];
+        return "Arcology " + HIVE_PREFIX[Math.floorMod(r.nextInt(), HIVE_PREFIX.length)] + "-" + HIVE_SUFFIX[Math.floorMod(r.nextInt(), HIVE_SUFFIX.length)];
     }
     static String worldId(String hiveName, long seed){
         String clean = hiveName.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
@@ -423,9 +423,9 @@ class WorldNamingApi {
     }
     static String factionFounderFor(ZoneType zt, Random r){
         if(zt==ZoneType.IMPERIAL_GUARD_BILLET) return "A Guard quartermaster detachment";
-        if(zt==ZoneType.MECHANICUS_FORGE_CLOISTER || zt==ZoneType.MECHANICUS_RELIC_DUCT) return "A Mechanicus maintenance covenant";
-        if(zt==ZoneType.ARBITES_PRECINCT_EDGE) return "An Arbites docket office";
-        if(zt==ZoneType.ADMINISTRATUM_ARCHIVE) return "An Administratum filing clan";
+        if(zt==ZoneType.MECHANICUS_FORGE_CLOISTER || zt==ZoneType.MECHANICUS_RELIC_DUCT) return "A Mechanist Collegia maintenance covenant";
+        if(zt==ZoneType.ARBITES_PRECINCT_EDGE) return "An Civic Wardens docket office";
+        if(zt==ZoneType.ADMINISTRATUM_ARCHIVE) return "An Civic Ledger Office filing clan";
         if(zt==ZoneType.NOBLE_SERVICE_SPINE || zt==ZoneType.SECTOR_GOVERNORS_MANSION) return "A noble household compact";
         if(zt==ZoneType.GANGER_TURF) return "A gang succession crew";
         if(zt==ZoneType.MUTANT_WARRENS || zt==ZoneType.MUTANT_SEWER_CAMP) return "A mutant kin-band";
@@ -452,15 +452,15 @@ class WorldHistoryApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markFactionEpochsAdvanced(d);
-        if(made > 0) DebugLog.audit("WORLD_HISTORY_BATCH", "seededFactionEpochs=" + made + " progress=" + d.zoneEpochs.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("WORLD_HISTORY_BATCH", "seededFactionEpochs=" + made + " progress=" + d.zoneEpochs.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
     static String ensureZoneEpoch(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for faction-control history.";
+        if(d == null || key == null) return "No arcology-world definition loaded for faction-control history.";
         if(!d.zoneEpochs.containsKey(key)){
             d.zoneEpochs.put(key, buildEpochLedger(d, key));
             WorldGenerationProgressApi.markFactionEpochsAdvanced(d);
-            DebugLog.audit("WORLD_HISTORY_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("WORLD_HISTORY_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneEpochs.get(key);
     }
@@ -513,11 +513,11 @@ class WorldHistoryApi {
     static ArrayList<String> controlSequenceFor(ZoneType zt, Random r){
         ArrayList<String> out = new ArrayList<>();
         out.add("Civic works charter");
-        if(zt==ZoneType.IMPERIAL_GUARD_BILLET){ out.add("Administratum requisition office"); out.add("Imperial Guard logistics command"); }
-        else if(zt==ZoneType.MECHANICUS_FORGE_CLOISTER || zt==ZoneType.MECHANICUS_RELIC_DUCT){ out.add("Mechanicus maintenance covenant"); out.add("Forge-cloister machine cult"); }
+        if(zt==ZoneType.IMPERIAL_GUARD_BILLET){ out.add("Civic Ledger Office requisition office"); out.add("Concord Guard logistics command"); }
+        else if(zt==ZoneType.MECHANICUS_FORGE_CLOISTER || zt==ZoneType.MECHANICUS_RELIC_DUCT){ out.add("Mechanist Collegia maintenance covenant"); out.add("Forge-cloister machine cult"); }
         else if(zt==ZoneType.NOBLE_SERVICE_SPINE || zt==ZoneType.SECTOR_GOVERNORS_MANSION){ out.add("Noble household compact"); out.add("household security and servants' guild"); }
-        else if(zt==ZoneType.ARBITES_PRECINCT_EDGE){ out.add("Administratum docket office"); out.add("Arbites precinct authority"); }
-        else if(zt==ZoneType.ADMINISTRATUM_ARCHIVE){ out.add("filing clan dynasty"); out.add("Administratum archive mandate"); }
+        else if(zt==ZoneType.ARBITES_PRECINCT_EDGE){ out.add("Civic Ledger Office docket office"); out.add("Civic Wardens precinct authority"); }
+        else if(zt==ZoneType.ADMINISTRATUM_ARCHIVE){ out.add("filing clan dynasty"); out.add("Civic Ledger Office archive mandate"); }
         else if(zt==ZoneType.GANGER_TURF){ out.add("hab cooperative collapse"); out.add("gang succession crew"); }
         else if(zt==ZoneType.SUMP_MARKET || zt==ZoneType.NEUTRAL_RAIL_DEPOT || zt==ZoneType.TRAIN_SERVICE_YARD){ out.add("rail and market charter"); out.add("merchant-broker compact"); }
         else if(zt==ZoneType.MUTANT_WARRENS || zt==ZoneType.MUTANT_SEWER_CAMP){ out.add("abandoned civic claim"); out.add("mutant kin-band"); }
@@ -587,17 +587,17 @@ class ProductionFacilityOutputSimulationApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markProductionOutputAdvanced(d);
-        if(made > 0) DebugLog.audit("PRODUCTION_OUTPUT_BATCH", "seededProductionLedgers=" + made + " progress=" + d.zoneProduction.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("PRODUCTION_OUTPUT_BATCH", "seededProductionLedgers=" + made + " progress=" + d.zoneProduction.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
 
     static String ensureZoneProduction(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for production output history.";
+        if(d == null || key == null) return "No arcology-world definition loaded for production output history.";
         if(!d.zoneProduction.containsKey(key)){
             ZoneFacilityHistoryApi.ensureZoneFacilities(d, key);
             d.zoneProduction.put(key, buildProductionLedger(d, key));
             WorldGenerationProgressApi.markProductionOutputAdvanced(d);
-            DebugLog.audit("PRODUCTION_OUTPUT_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("PRODUCTION_OUTPUT_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneProduction.get(key);
     }
@@ -708,17 +708,17 @@ class ProductionFacilityOutputSimulationApi {
         String text = (safe(e.purpose) + " " + safe(e.roomType) + " " + safe(e.productFocus) + " " + (zt == null ? "" : zt.label)).toLowerCase(Locale.ROOT);
         if(has(text,"orchard","bio-garden","garden","luxury provisioning")) add(out,"Noble orchard fruit crate","Bio-garden truffle tin","High-quality amasec bottle","Ploin juice flask","Noble preserved delicacy");
         if(has(text,"hydroponic","greenhouse","agri","farm")) add(out,"Hydroponic protein grain","Marsh-rice sack","Vorder leaf bundle","Ploin juice flask","Caba nut packet","Recaf tin");
-        if(has(text,"vat","reclamation","nutrient","algae","corpse-starch","soylens")) add(out,"Soylens viridian algae cake","Corpse-starch ration slab","Triglyceride gel tube","Amino-porridge ration bowl","Mechanicus nutrient ampoule");
+        if(has(text,"vat","reclamation","nutrient","algae","corpse-starch","soylens")) add(out,"Soylens viridian algae cake","Corpse-starch ration slab","Triglyceride gel tube","Amino-porridge ration bowl","Mechanist Collegia nutrient ampoule");
         if(has(text,"sump","fungus","sewer","mutant","forager","wall-rat")) add(out,"Sump fungus loaf","Wall-rat meat strip","Soylens viridian algae cake","Low-quality amasec bottle","Water purification tab");
         if(has(text,"ration","food","kitchen","mess","galley","canteen","pantry","nutrient")) add(out,"Emergency rations","Plain ration pack","Water ration","Sealed water ration","Kitchen grease tin","Recaf tin","Ploin juice flask");
-        if(has(text,"guard","munition","arms","drill","quartermaster")) add(out,"Guard field ration tin","Guard drill manual","Guard flak vest","Guard entrenching tool","Guard lascarbine","Lasgun","Laspistol","Autogun","Shotgun","Las charge pack","Autogun magazine");
-        if(has(text,"mechanicus","diagnostic","maintenance","forge","cable","doctrine")) add(out,"Mechanicus calibration probe","Mechanicus nutrient ampoule","Mechanicus catechism strip","Sacred wire bundle","Machine oil vial","Mechanicus tool roll","Arc Rifle","Omnissian Axe","Emergency Cutter","Emergency Drill","Arc capacitor pack");
+        if(has(text,"guard","munition","arms","drill","quartermaster")) add(out,"Guard field ration tin","Guard drill manual","Guard flak vest","Guard entrenching tool","Guard lascarbine","Light Rifle","Laspistol","Autogun","Shotgun","Las charge pack","Autogun magazine");
+        if(has(text,"mechanist Collegia","diagnostic","maintenance","forge","cable","doctrine")) add(out,"Mechanist Collegia calibration probe","Mechanist Collegia nutrient ampoule","Mechanist Collegia catechism strip","Sacred wire bundle","Machine oil vial","Mechanist Collegia tool roll","Arc Rifle","Omnissian Axe","Emergency Cutter","Emergency Drill","Arc capacitor pack");
         if(has(text,"noble","luxury","house","salon","estate")) add(out,"Noble preserved delicacy","Noble etiquette card","Noble signet wax kit","Noble fur-lined coat","Noble dueling pistol","Duelling Sword","Needle Pistol","Power Sword","Inferno Pistol","Dueling pistol cartridge box","Pearl Obscura","High Amasec","Gildwine","Sable Nectar","Spire Lotus");
-        if(has(text,"arbites","evidence","detention","law","complaint")) add(out,"Arbites restraint kit","Arbites casebook excerpt","Arbites riot visor","Arbites shock maul","Shock baton","Power Maul","Webber","Shotgun","Arbites suppression shells","Web cartridge");
+        if(has(text,"civic Wardens","evidence","detention","law","complaint")) add(out,"Civic Wardens restraint kit","Civic Wardens casebook excerpt","Civic Wardens riot visor","Civic Wardens shock maul","Shock baton","Power Maul","Webber","Shotgun","Civic Wardens suppression shells","Web cartridge");
         if(has(text,"chem","drug","narcotic","stimulant","vice","bar","pleasure","labor dosing")) add(out,"Lho-Sticks","Recaf","Street Stimm","Grin Powder","Night Milk","Low Amasec","Shiftwake","Grey Mercy","Pipe Bloom","Crude chem bench","Reagent preparation bench","Chemical reagent rack","Narcotic drying rack","Pellet press","Labor dosing dispenser");
         if(has(text,"gang","ganger","stolen","fighting","contraband","black trade")) add(out,"Autopistol","Stub Revolver","Stub pistol","Pipe shotgun","Zip pistol","Scrap autogun","Ganger chain cleaver","Ganger buzz-cleaver","Shot shell handful","Stub cartridge box","Street Stimm","Redline","Slaught","Smokeghost");
         if(has(text,"mutant","warren","scrap hoard","forager")) add(out,"Mutant bone maul","Mutant scrap axe","Mutant tusk club","Rebar maul","Sump hook blade","Chem sprayer","Sumpkalm","Brine Joy","Glowgut Mash","Rustmilk");
-        if(has(text,"cult","ritual","offering","chapel","hidden knife")) add(out,"Cult ritual blade","Toxic Knife","Heretic nail flail","Cult martyr pistol","Hand Flamer","Promethium canister","Witchsalt","Choir Ash","Black Benediction","Vox-Dust");
+        if(has(text,"cult","ritual","offering","chapel","hidden knife")) add(out,"Cult ritual blade","Toxic Knife","Heretic nail flail","Cult martyr pistol","Hand Flamer","Industrial Fuelgel canister","Witchsalt","Choir Ash","Black Benediction","Vox-Dust");
         if(has(text,"warehouse","store","cargo","freight","product","storage")) add(out,"Warehouse inventory tag bundle","Construction supplies","Tool bundle","Machine part","Wire bundle");
         if(has(text,"clinic","aid","medical","medicae")) add(out,"Bandage roll","Field dressings","Antiseptic vial","Splint kit","Medkit","Medi-Stimm","White Mercy","Clotfoam Ampoule","Nerve Lace","Sterile medicae clean bench","Injector filling station","Cold storage locker");
         if(has(text,"learning","archive","library","form","record","clerk","chapel")) add(out,"Primer slate","Blank form packet","Data spike","Warehouse inventory tag bundle");
@@ -775,17 +775,17 @@ class ProductionDistributionApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markStockMovementAdvanced(d);
-        if(made > 0) DebugLog.audit("STOCK_MOVEMENT_BATCH", "seededStockMovementLedgers=" + made + " progress=" + d.zoneStockMovements.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("STOCK_MOVEMENT_BATCH", "seededStockMovementLedgers=" + made + " progress=" + d.zoneStockMovements.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
 
     static String ensureZoneStockMovements(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for production distribution history.";
+        if(d == null || key == null) return "No arcology-world definition loaded for production distribution history.";
         if(!d.zoneStockMovements.containsKey(key)){
             ProductionFacilityOutputSimulationApi.ensureZoneProduction(d, key);
             d.zoneStockMovements.put(key, buildStockMovementLedger(d, key));
             WorldGenerationProgressApi.markStockMovementAdvanced(d);
-            DebugLog.audit("STOCK_MOVEMENT_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("STOCK_MOVEMENT_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneStockMovements.get(key);
     }
@@ -895,7 +895,7 @@ class ProductionDistributionApi {
 
     static String destinationFor(ZoneProductionOutputRecord out, ZoneType zt, Random r){
         String text = (safe(out.facilityPurpose) + " " + safe(out.outputFocus) + " " + safe(out.sampleItems) + " " + (zt == null ? "" : zt.label)).toLowerCase(Locale.ROOT);
-        if(has(text,"munition","weapon","armor","guard","arbites","restraint")) return pick(r, "armory issue locker", "security room cache", "quartermaster cage", "evidence storehouse");
+        if(has(text,"munition","weapon","armor","guard","civic Wardens","restraint")) return pick(r, "armory issue locker", "security room cache", "quartermaster cage", "evidence storehouse");
         if(has(text,"ration","food","water","nutrient","galley","mess","pantry")) return pick(r, "food storehouse", "mess-hall pantry", "ration issue counter", "kitchen reserve shelf");
         if(has(text,"cargo","warehouse","freight","tool","part","wire","component")) return pick(r, "product warehouse", "cargo cage", "maintenance storehouse", "freight pallet row");
         if(has(text,"market","trade","chit","scale","salon","ticket")) return pick(r, "storefront shelf", "market counter", "trader shelf", "barter cage");
@@ -964,17 +964,17 @@ class HistoricalConflictLossApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markConflictLossAdvanced(d);
-        if(made > 0) DebugLog.audit("CONFLICT_LOSS_BATCH", "seededConflictLossLedgers=" + made + " progress=" + d.zoneConflictLosses.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("CONFLICT_LOSS_BATCH", "seededConflictLossLedgers=" + made + " progress=" + d.zoneConflictLosses.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
 
     static String ensureZoneConflictLoss(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for conflict/loss history.";
+        if(d == null || key == null) return "No arcology-world definition loaded for conflict/loss history.";
         if(!d.zoneConflictLosses.containsKey(key)){
             ProductionDistributionApi.ensureZoneStockMovements(d, key);
             d.zoneConflictLosses.put(key, buildConflictLossLedger(d, key));
             WorldGenerationProgressApi.markConflictLossAdvanced(d);
-            DebugLog.audit("CONFLICT_LOSS_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("CONFLICT_LOSS_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneConflictLosses.get(key);
     }
@@ -1068,10 +1068,10 @@ class HistoricalConflictLossApi {
         ArrayList<String> extras = new ArrayList<>();
         String text = (safe(rec.eventType) + " " + safe(rec.actor) + " " + safe(rec.destination)).toLowerCase(Locale.ROOT);
         if(has(text,"theft","gang","black-market")) add(extras,"Stolen goods marker","Trade chit","Scrap knife");
-        if(has(text,"seizure","arbites","confiscation")) add(extras,"Arbites casebook excerpt","Arbites restraint kit","Secure vault key");
-        if(has(text,"collapse","abandoned","buried")) add(extras,"Collapsed hive salvage","Tool bundle","Emergency rations");
+        if(has(text,"seizure","civic Wardens","confiscation")) add(extras,"Civic Wardens casebook excerpt","Civic Wardens restraint kit","Secure vault key");
+        if(has(text,"collapse","abandoned","buried")) add(extras,"Collapsed arcology salvage","Tool bundle","Emergency rations");
         if(has(text,"cult","heretic")) add(extras,"Contraband charm","Cult reliquary packet","Hidden knife");
-        if(has(text,"mechanicus","automata","machine")) add(extras,"Rogue automata service core","Mechanicus calibration probe","Sacred wire bundle");
+        if(has(text,"mechanist Collegia","automata","machine")) add(extras,"Rogue automata service core","Mechanist Collegia calibration probe","Sacred wire bundle");
         for(String e: extras) if(e != null && ItemCatalog.get(e) != null && !samples.contains(e)) samples.add(e);
         if(samples.isEmpty()) return;
         if(rng == null) rng = new Random(0);
@@ -1095,9 +1095,9 @@ class HistoricalConflictLossApi {
     static String eventTypeFor(ZoneStockMovementRecord m, ZoneType zt, Random r){
         String text = (safe(m.destination) + " " + safe(m.movementKind) + " " + safe(m.controller) + " " + (zt == null ? "" : zt.label)).toLowerCase(Locale.ROOT);
         if(has(text,"gang","sump","market")) return pick(r,"gang theft","black-market diversion","protection racket skimming");
-        if(has(text,"arbites","evidence","security")) return pick(r,"Arbites seizure","evidence-room loss","confiscation transfer");
+        if(has(text,"civic Wardens","evidence","security")) return pick(r,"Civic Wardens seizure","evidence-room loss","confiscation transfer");
         if(has(text,"guard","munition","armory")) return pick(r,"Guard requisition","munition loss","barracks raid");
-        if(has(text,"mechanicus","forge","component","machine")) return pick(r,"Mechanicus quarantine","rogue automata abandonment","sealed tech interdiction");
+        if(has(text,"mechanist Collegia","forge","component","machine")) return pick(r,"Mechanist Collegia quarantine","rogue automata abandonment","sealed tech interdiction");
         if(has(text,"cult","sewer","mutant")) return pick(r,"cult diversion","mutant raid","sewer collapse abandonment");
         if(has(text,"noble","pantry","salon")) return pick(r,"household concealment","servant theft","succession seizure");
         return pick(r,"abandoned reserve","collapse burial","clerical misrouting","worker theft");
@@ -1105,9 +1105,9 @@ class HistoricalConflictLossApi {
     static String actorFor(String event, ZoneType zt, ZoneStockMovementRecord m, Random r){
         String e = safe(event).toLowerCase(Locale.ROOT);
         if(has(e,"gang","protection","black-market")) return pick(r,"local gang crew","sump market fence","cargo-yard thieves");
-        if(has(e,"arbites","evidence","confiscation")) return pick(r,"Arbites evidence detail","precinct quartermaster","overworked complaint counter");
+        if(has(e,"civic Wardens","evidence","confiscation")) return pick(r,"Civic Wardens evidence detail","precinct quartermaster","overworked complaint counter");
         if(has(e,"guard","munition","barracks")) return pick(r,"Guard quartermaster","deserter cell","munitorum clerk");
-        if(has(e,"mechanicus","automata","tech")) return pick(r,"Mechanicus seal crew","rogue maintenance automata","red-robed audit cell");
+        if(has(e,"mechanist Collegia","automata","tech")) return pick(r,"Mechanist Collegia seal crew","rogue maintenance automata","red-robed audit cell");
         if(has(e,"cult","heretic")) return pick(r,"hidden cult cell","heretical quartermaster","sewer preacher gang");
         if(has(e,"mutant")) return pick(r,"mutant brood","sump scavenger pack","collapse-pocket brutes");
         if(has(e,"noble","servant","succession")) return pick(r,"noble house steward","servant smuggling ring","inheritance guard detail");
@@ -1117,8 +1117,8 @@ class HistoricalConflictLossApi {
         String e = safe(event).toLowerCase(Locale.ROOT);
         if(has(e,"theft","diversion","racket")) return pick(r,"black-market shelf","gang stash room","pawn cage","hidden cache");
         if(has(e,"seizure","confiscation","evidence")) return pick(r,"evidence locker","sealed precinct crate","contraband warehouse","case-room shelf");
-        if(has(e,"collapse","burial")) return pick(r,"buried interstitial debris pocket","collapsed service niche","forgotten wall cache","intra-hive rubble seam");
-        if(has(e,"quarantine","interdiction","automata")) return pick(r,"sealed Mechanicus alcove","hivewall maintenance room","abandoned interwall danger room","diagnostic bay dead shelf");
+        if(has(e,"collapse","burial")) return pick(r,"buried interstitial debris pocket","collapsed service niche","forgotten wall cache","intra-arcology rubble seam");
+        if(has(e,"quarantine","interdiction","automata")) return pick(r,"sealed Mechanist Collegia alcove","hivewall maintenance room","abandoned interwall danger room","diagnostic bay dead shelf");
         if(has(e,"cult","heretic")) return pick(r,"cult reliquary cache","sealed drain shrine","hidden knife chapel","interwall heretic room");
         return pick(r,"forgotten cache","abandoned storeroom","room cache reserve","hivewall maintenance locker");
     }
@@ -1200,17 +1200,17 @@ class HistoricalItemMaterializationApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markItemMaterializationAdvanced(d);
-        if(made > 0) DebugLog.audit("ITEM_MATERIALIZATION_BATCH", "seededMaterializedItemLedgers=" + made + " progress=" + d.zoneMaterializedItems.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("ITEM_MATERIALIZATION_BATCH", "seededMaterializedItemLedgers=" + made + " progress=" + d.zoneMaterializedItems.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
 
     static String ensureZoneMaterializedItems(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for concrete item materialization.";
+        if(d == null || key == null) return "No arcology-world definition loaded for concrete item materialization.";
         if(!d.zoneMaterializedItems.containsKey(key)){
             HistoricalConflictLossApi.ensureZoneConflictLoss(d, key);
             d.zoneMaterializedItems.put(key, buildMaterializationLedger(d, key));
             WorldGenerationProgressApi.markItemMaterializationAdvanced(d);
-            DebugLog.audit("ITEM_MATERIALIZATION_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("ITEM_MATERIALIZATION_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneMaterializedItems.get(key);
     }
@@ -1244,7 +1244,7 @@ class HistoricalItemMaterializationApi {
             String age = ageBandFor(d, key, l, r);
             String dest = m == null ? "facility reserve" : m.destination;
             if(l != null && l.destination != null && !l.destination.isBlank()) dest = l.destination;
-            String note = "materialized selectively from compact production/distribution/conflict ledgers; not a full-hive item simulation";
+            String note = "materialized selectively from compact production/distribution/conflict ledgers; not a full-arcology item simulation";
             rows.add("M" + (n++) + ": item=" + item + " :: quality=" + q + " :: facility=" + safe(p.facilityId) + " :: production=" + safe(p.id) + " :: movement=" + (m==null?"none":safe(m.id)) + " :: loss=" + (l==null?"none":safe(l.id)) + " :: age=" + age + " :: destination=" + safe(dest) + " :: " + note);
         }
         for(ZoneConflictLossRecord l : conflicts){
@@ -1373,7 +1373,7 @@ class HistoricalItemMaterializationApi {
         int score = 2;
         if(p != null) score += Math.min(2, Math.max(0, p.batches / 2));
         if(m != null && has(safe(m.movementKind).toLowerCase(Locale.ROOT), "requisition", "charter", "archive", "warehouse")) score++;
-        if(l != null && has((safe(l.severity)+" "+safe(l.eventType)).toLowerCase(Locale.ROOT), "major", "severe", "interdiction", "quarantine", "noble", "mechanicus")) score++;
+        if(l != null && has((safe(l.severity)+" "+safe(l.eventType)).toLowerCase(Locale.ROOT), "major", "severe", "interdiction", "quarantine", "noble", "mechanist Collegia")) score++;
         if(d != null && d.zoneEpochs != null) score += Math.min(1, d.zoneEpochs.size() / Math.max(1, WorldGenerationProgressApi.WORLD_ZONE_SLICES));
         if(r != null && r.nextInt(100) < 18) score++;
         score = Math.max(0, Math.min(5, score)); // cap ordinary world materialization two tiers below Archeotech maximum.
@@ -1421,17 +1421,17 @@ class PopulationWorkAssignmentApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markLaborAssignmentAdvanced(d);
-        if(made > 0) DebugLog.audit("LABOR_ASSIGNMENT_BATCH", "seededLaborLedgers=" + made + " progress=" + d.zoneLaborAssignments.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("LABOR_ASSIGNMENT_BATCH", "seededLaborLedgers=" + made + " progress=" + d.zoneLaborAssignments.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
 
     static String ensureZoneLaborAssignments(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for population work-assignment history.";
+        if(d == null || key == null) return "No arcology-world definition loaded for population work-assignment history.";
         if(!d.zoneLaborAssignments.containsKey(key)){
             HistoricalItemMaterializationApi.ensureZoneMaterializedItems(d, key);
             d.zoneLaborAssignments.put(key, buildLaborLedger(d, key));
             WorldGenerationProgressApi.markLaborAssignmentAdvanced(d);
-            DebugLog.audit("LABOR_ASSIGNMENT_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("LABOR_ASSIGNMENT_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneLaborAssignments.get(key);
     }
@@ -1521,10 +1521,10 @@ class PopulationWorkAssignmentApi {
     static String sourcePoolFor(ZoneFacilityLedgerEntry e, ZoneType zt, Random r){
         String text = all(e, zt);
         if(has(text,"guard","military","munition","drill","barracks")) return pick(r,"Guard barracks roster","quartermaster detail pool","muster overflow ledger");
-        if(has(text,"mechanicus","forge","nutrient","diagnostic","cable","vat")) return pick(r,"forge creche ledger","tech-adept duty chain","vat-adept roster");
+        if(has(text,"mechanist Collegia","forge","nutrient","diagnostic","cable","vat")) return pick(r,"forge creche ledger","tech-adept duty chain","vat-adept roster");
         if(has(text,"noble","house","orchard","garden","salon","luxury")) return pick(r,"household staff book","garden-serf line","estate steward rolls");
-        if(has(text,"arbites","evidence","holding","law")) return pick(r,"precinct roster","custody clerk pool","watch rotation ledger");
-        if(has(text,"archive","administratum","form","queue","clerk")) return pick(r,"filing clan dorm","archive worker pool","ledger apprentice roll");
+        if(has(text,"civic Wardens","evidence","holding","law")) return pick(r,"precinct roster","custody clerk pool","watch rotation ledger");
+        if(has(text,"archive","civic Ledger Office","form","queue","clerk")) return pick(r,"filing clan dorm","archive worker pool","ledger apprentice roll");
         if(has(text,"rail","market","cargo","freight","hydroponic","farm")) return pick(r,"rail intake ledger","porter guild roster","market stall kin-list");
         if(has(text,"gang","stolen","chem","fighting")) return pick(r,"crash-room roster","debtor crew pool","fence ledger");
         if(has(text,"mutant","fungus","wall-rat","kin")) return pick(r,"kin-band reserve","forager brood-list","sump sleeping hollow");
@@ -1550,7 +1550,7 @@ class PopulationWorkAssignmentApi {
         String text = all(e, zt);
         int base = 2 + (r == null ? 0 : r.nextInt(5));
         if(has(text,"warehouse","barracks","mess","orchard","garden","hydroponic","vat","munition","rail","market")) base += 2;
-        if(has(text,"noble","governor","guard","mechanicus")) base += 1;
+        if(has(text,"noble","governor","guard","mechanist Collegia")) base += 1;
         return Math.max(1, Math.min(12, base));
     }
 
@@ -1600,16 +1600,16 @@ class ZoneFacilityHistoryApi {
             if(made >= limit) break;
         }
         WorldGenerationProgressApi.markFacilityHistoryAdvanced(d);
-        if(made > 0) DebugLog.audit("FACILITY_HISTORY_BATCH", "seededFacilityLedgers=" + made + " progress=" + d.zoneFacilities.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " hive=" + d.hiveName);
+        if(made > 0) DebugLog.audit("FACILITY_HISTORY_BATCH", "seededFacilityLedgers=" + made + " progress=" + d.zoneFacilities.size() + "/" + WorldGenerationProgressApi.WORLD_ZONE_SLICES + " arcology=" + d.hiveName);
         return made;
     }
     static String ensureZoneFacilities(HiveWorldDefinition d, String key){
-        if(d == null || key == null) return "No hive-world definition loaded for facility history.";
+        if(d == null || key == null) return "No arcology-world definition loaded for facility history.";
         if(!d.zoneFacilities.containsKey(key)){
             WorldHistoryApi.ensureZoneEpoch(d, key);
             d.zoneFacilities.put(key, buildFacilityLedger(d, key));
             WorldGenerationProgressApi.markFacilityHistoryAdvanced(d);
-            DebugLog.audit("FACILITY_HISTORY_ON_DEMAND", "zoneKey=" + key + " hive=" + d.hiveName);
+            DebugLog.audit("FACILITY_HISTORY_ON_DEMAND", "zoneKey=" + key + " arcology=" + d.hiveName);
         }
         return d.zoneFacilities.get(key);
     }
@@ -1703,19 +1703,19 @@ class ZoneFacilityHistoryApi {
             rows.add(row("arms issue", "Munition Warehouse", "charge packs, flak, entrenching tools", "quartermaster detail"));
             rows.add(row("training", "Drill Hall", "drill manuals and combat readiness", "training cadre"));
         } else if(zt==ZoneType.MECHANICUS_FORGE_CLOISTER || zt==ZoneType.MECHANICUS_RELIC_DUCT){
-            rows.add(row("forge labor retention", "Augmetic Rest Cell", "servitor-adjacent worker recovery", "forge creche ledger"));
+            rows.add(row("forge labor retention", "Augmetic Rest Cell", "bound Labor Automaton-adjacent worker recovery", "forge creche ledger"));
             rows.add(row("nutrient service", "Nutrient Reclamation Galley", "nutrient ampoules and reclaimed water", "galley acolytes"));
-            rows.add(row("nutrient vat agriculture", "Mechanicus Nutrient Vat Tank Gallery", "soylens viridian algae cakes, corpse-starch slabs, and nutrient ampoules", "vat adepts"));
+            rows.add(row("nutrient vat agriculture", "Mechanist Collegia Nutrient Vat Tank Gallery", "soylens viridian algae cakes, corpse-starch slabs, and nutrient ampoules", "vat adepts"));
             rows.add(row("maintenance production", "Diagnostic Bay", "calibration probes, sacred wire, machine oil", "tech-adept duty chain"));
             rows.add(row("learning and doctrine", "Cable Chapel", "catechism strips and access rites", "data-chapel novices"));
         } else if(zt==ZoneType.NOBLE_SERVICE_SPINE || zt==ZoneType.SECTOR_GOVERNORS_MANSION){
-            rows.add(row("household habitation", "Lavish Servitor-Tended Dormitory", "servant continuity and noble comforts", "household staff book"));
+            rows.add(row("household habitation", "Lavish Bound Labor Automaton-Tended Dormitory", "servant continuity and noble comforts", "household staff book"));
             rows.add(row("luxury provisioning", "Noble Kitchen Gallery", "preserved delicacies and etiquette supplies", "kitchen retinue"));
             rows.add(row("luxury bio-garden agriculture", "Artificial-Sun Orchard and Bio-Garden", "orchard fruit, bio-garden truffles, caba nuts, high-quality amasec, and ploin juice", "gardeners and vintner-serfs"));
             rows.add(row("secure storage", "House Product Warehouse", "signet wax, luxury ammunition, reserved goods", "estate steward rolls"));
             rows.add(row("education and command", "Private Storefront Salon", "patronage, tutoring, and favors", "household tutor line"));
         } else if(zt==ZoneType.ARBITES_PRECINCT_EDGE){
-            rows.add(row("law housing", "Arbites Duty Barracks", "watch rotations", "precinct roster"));
+            rows.add(row("law housing", "Civic Wardens Duty Barracks", "watch rotations", "precinct roster"));
             rows.add(row("detention", "Holding Cell Row", "prisoner intake and restraint kits", "custody ledger"));
             rows.add(row("evidence control", "Evidence Storehouse", "casebooks, seized weapons, citation goods", "evidence clerk pool"));
             rows.add(row("public interface", "Public Complaint Counter", "complaints, warrants, and fear", "counter staff"));
@@ -1774,9 +1774,9 @@ class CampaignWorldApi {
         try{
             Files.createDirectories(worldDir());
             Properties p = SaveEfficiencyAuthority.worldDefinitionProperties(d);
-            try(OutputStream out = Files.newOutputStream(worldFile(d))){ p.store(out, "The Mechanist generated hive world definition"); }
+            try(OutputStream out = Files.newOutputStream(worldFile(d))){ p.store(out, "The Mechanist generated arcology world definition"); }
             DebugLog.audit("CAMPAIGN_WORLD_SAVE", "file=" + worldFile(d).toAbsolutePath() + " " + d.summary() + " " + SaveEfficiencyAuthority.catalog("world-definition", p));
-        }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_SAVE", "Failed to save generated hive world definition.", ex); }
+        }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_SAVE", "Failed to save generated arcology world definition.", ex); }
     }
     static HiveWorldDefinition loadOrCreate(long seed){ return loadOrCreate(seed, WorldSetupSettings.standard()); }
     static HiveWorldDefinition loadOrCreate(long seed, WorldSetupSettings settings){
@@ -1790,7 +1790,7 @@ class CampaignWorldApi {
                 d = HiveWorldDefinition.readFrom(p, seed);
                 if(settings != null && !d.hasExplicitSettings()) d.applySettings(settings);
                 DebugLog.audit("CAMPAIGN_WORLD_LOAD", "file=" + f.toAbsolutePath() + " " + d.summary());
-            }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_LOAD", "Could not read generated hive world file; regenerating from seed.", ex); }
+            }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_LOAD", "Could not read generated arcology world file; regenerating from seed.", ex); }
         } else {
             saveWorldDefinition(d);
         }

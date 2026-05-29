@@ -137,7 +137,7 @@ final class TileInfopediaAuthority {
         add(new Entry("Door / Double Sector", "DOORS", 'D', "tile.door/door_double", "maintenance-bulkhead double doors and major transition doors", new String[]{"door_double"},
                 "Base layer: door.", "Used for road-end double doors at the inner maintenance bulkhead and other major transition doors."));
 
-        add(new Entry("Fixture / Imperial Shrine", "FIXTURES", 'I', "tile.overlay/imperial_shrine", "roadside shrine, chapel room, morale fixture", new String[]{"imperial_shrine", "shrine_or_shield"},
+        add(new Entry("Fixture / Concord Shrine", "FIXTURES", 'I', "tile.overlay/imperial_shrine", "roadside shrine, chapel room, morale fixture", new String[]{"imperial_shrine", "shrine_or_shield"},
                 "Overlay/fixture tile.", "Draws over an inferred underlay; should not render on blackness unless the underlay is void."));
         add(new Entry("Fixture / Vending Food", "FIXTURES", '1', "tile.overlay/vending_food", "food source, civilian support, faction room support", new String[]{"vending_food"},
                 "Overlay/fixture tile.", "Provides visible food-source support for rooms and frontage."));

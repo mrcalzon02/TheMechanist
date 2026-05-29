@@ -28,7 +28,7 @@ class EcclesiarchyTempleApi {
     }
 
     static RoomProfile templeProfile(ZoneType z, Random r) {
-        String zone = z == null ? "hive zone" : z.label;
+        String zone = z == null ? "arcology zone" : z.label;
         String desc = "Cult Imperialis temple stamp near the central plaza: long wide nave, pillar rows, saint alcoves, candle racks, holy relic niches, prayer nooks, donation box, and supplicant kitchen feeding priests, pilgrims, and Sister guards in " + zone;
         RoomProfile rp = RoomProfile.themedRoom("Cult Imperialis Temple Nave", desc, 62, Faction.MINISTORUM,
             new String[]{"pilgrim ration", "prayer candle bundle", "saint token", "donation chit", "devotional pamphlet", "thin soup ration"},
@@ -49,7 +49,7 @@ class EcclesiarchyTempleApi {
             }
         }
         lines.add("Ecclesiarchy temple audit: templeRooms=" + temples + " protectedHeadClerics=" + head + " priestsPilgrims=" + priests + " sororitasGuards=" + sisters);
-        lines.add("Required service: head cleric is non-hostile/non-targetable and offers 24h Imperial forgiveness prayer with hunger/water/sleep/fatigue cost and civil Imperial standing recovery.");
+        lines.add("Required service: head cleric is non-hostile/non-targetable and offers 24h Concord forgiveness prayer with hunger/water/sleep/fatigue cost and civil Concord standing recovery.");
         return lines;
     }
 }

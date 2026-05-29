@@ -87,7 +87,7 @@ final class KnowledgeBranchDefinitions {
     private static KnowledgeTree buildFabrication(int points, Set<String> known, Map<String, KnowledgeDef> defs) {
         KnowledgeTree t = tree("fabrication", "Fabrication Doctrine", points, known);
         chain(t, defs, known, 80, 70, 190, 0, List.of(), QUALITY_SPINE);
-        add(t, defs, known, "Archeotech Production Rites", 80 + 190 * 7, 70, List.of("Archeotech Pattern Recognition", "Mechanicus Fabrication Rites"));
+        add(t, defs, known, "Archeotech Production Rites", 80 + 190 * 7, 70, List.of("Archeotech Pattern Recognition", "Mechanist Collegia Fabrication Rites"));
         int y = 175;
         for (String category : KnowledgeTreeApi.CATEGORIES) {
             addProductionCategory(t, defs, known, category, 80, y, categoryRootPrerequisites(category));
@@ -128,9 +128,9 @@ final class KnowledgeBranchDefinitions {
         chain(t, defs, known, 80, 55, 190, 0, List.of(), "Improvised Blades", "Scrap Knife Handling", "Club and Tool Fighting", "Trench Melee", "Shock Assault Doctrine");
         chain(t, defs, known, 80, 145, 190, 0, List.of(), "Stub Weapon Familiarity", "Ballistic Maintenance", "Ammunition Recognition", "Rifle Discipline", "Heavy Ballistic Weapon Handling");
         chain(t, defs, known, 80, 235, 190, 0, List.of(), "Power Cell Recognition", "Las Weapon Familiarity", "Energy Weapon Maintenance", "Overheat Discipline", "High-Energy Weapon Doctrine");
-        chain(t, defs, known, 80, 325, 190, 0, List.of(), "Scavenger Clothing Familiarity", "Padded Protection", "Flak Layering", "Arbites Armor Recognition", "PDF Armor Familiarity", "Heavy Protective Doctrine");
+        chain(t, defs, known, 80, 325, 190, 0, List.of(), "Scavenger Clothing Familiarity", "Padded Protection", "Flak Layering", "Civic Wardens Armor Recognition", "PDF Armor Familiarity", "Heavy Protective Doctrine");
         chain(t, defs, known, 80, 415, 190, 0, List.of(), "Trip Hazard Recognition", "Simple Trap Disarming", "Door Security Awareness", "Alarm Fixture Recognition", "Defensive Room Planning", "Security Network Authority");
-        add(t, defs, known, "Security Cogitator Rites", 840, 505, List.of("Alarm Fixture Recognition", "Cogitator Interface Familiarity"));
+        add(t, defs, known, "Security Logic Engine Rites", 840, 505, List.of("Alarm Fixture Recognition", "Logic Engine Interface Familiarity"));
         return t;
     }
 
@@ -148,12 +148,12 @@ final class KnowledgeBranchDefinitions {
         KnowledgeTree t = tree("civic", "Civic, Faction & Commerce", points, known);
         chain(t, defs, known, 80, 55, 190, 0, List.of(), "Barter Familiarity", "Price Recognition", "Trade Ledger Reading", "Vendor Trust", "Contract Negotiation", "Licensed Commerce");
         add(t, defs, known, "Commercial Ledgers", 270, 115, List.of("Price Recognition"));
-        add(t, defs, known, "Commerce Permits", 650, 115, List.of("Trade Ledger Reading", "Administratum Forms"));
-        chain(t, defs, known, 80, 175, 190, 0, List.of(), "Civic Signage Recognition", "Hab Block Rules", "Administratum Forms", "Permit Filing", "Civic Room Authority", "District Governance Access");
-        chain(t, defs, known, 80, 275, 190, 0, List.of(), "Faction Color Recognition", "Local Reputation Awareness", "Civilian Authority Customs", "Arbites Protocol", "Mechanicus Protocol", "Noble House Protocol");
+        add(t, defs, known, "Commerce Permits", 650, 115, List.of("Trade Ledger Reading", "Civic Ledger Office Forms"));
+        chain(t, defs, known, 80, 175, 190, 0, List.of(), "Civic Signage Recognition", "Hab Block Rules", "Civic Ledger Office Forms", "Permit Filing", "Civic Room Authority", "District Governance Access");
+        chain(t, defs, known, 80, 275, 190, 0, List.of(), "Faction Color Recognition", "Local Reputation Awareness", "Civilian Authority Customs", "Civic Wardens Protocol", "Mechanist Collegia Protocol", "Noble House Protocol");
         chain(t, defs, known, 80, 375, 190, 0, List.of(), "Trespass Awareness", "Door Permission Recognition", "Container Ownership Recognition", "Restricted Area Awareness", "Permit-Based Access", "Faction Access Authority");
         add(t, defs, known, "Civilian Provisioning Patterns", 650, 475, List.of("Licensed Commerce", "Civil Operating Doctrine"));
-        add(t, defs, known, "Military Logistics Patterns", 840, 475, List.of("Arbites Protocol", "Contract Negotiation"));
+        add(t, defs, known, "Military Logistics Patterns", 840, 475, List.of("Civic Wardens Protocol", "Contract Negotiation"));
         add(t, defs, known, "Civil Operating Doctrine", 650, 565, List.of("Permit Filing", "Civilian Authority Customs", "Container Ownership Recognition"));
         add(t, defs, known, "Faction Service Access", 840, 565, List.of("Civil Operating Doctrine", "Vendor Trust", "Local Reputation Awareness"));
         add(t, defs, known, "District Permit Authority", 1030, 565, List.of("District Governance Access", "Faction Access Authority", "Licensed Commerce"));
@@ -164,12 +164,12 @@ final class KnowledgeBranchDefinitions {
     private static KnowledgeTree buildMechanist(int points, Set<String> known, Map<String, KnowledgeDef> defs) {
         KnowledgeTree t = tree("mechanist", "Mechanist / Archeotech", points, known);
         chain(t, defs, known, 80, 65, 200, 0, List.of(), "Machine Respect", "Maintenance Litany", "Machine Appeasement", "Sanctified Repair Practice", "Machine Spirit Interpretation");
-        chain(t, defs, known, 80, 165, 200, 0, List.of(), "Terminal Recognition", "Data Slate Reading", "Cogitator Interface Familiarity", "Archive Query Discipline", "Machine Logic Interpretation", "Restricted Data Handling");
+        chain(t, defs, known, 80, 165, 200, 0, List.of(), "Terminal Recognition", "Data Slate Reading", "Logic Engine Interface Familiarity", "Archive Query Discipline", "Machine Logic Interpretation", "Restricted Data Handling");
         chain(t, defs, known, 80, 265, 200, 0, List.of(), "Ancient Component Recognition", "Forbidden Pattern Caution", "Archeotech Signal Recognition", "Fragmentary STC Interpretation", "Dangerous Device Procedure");
         add(t, defs, known, "Scrap-Forging Doctrine", 480, 370, List.of("Machine Respect", "Hand Assembly", "Junk Fabrication Patterns"));
         add(t, defs, known, "Mechanist Initiate Doctrine", 680, 370, List.of("Maintenance Litany", "Data Slate Reading", "Scrap-Forging Doctrine"));
-        add(t, defs, known, "Mechanicus Fabrication Rites", 880, 370, List.of("Mechanist Initiate Doctrine", "Serviceable Fabrication Patterns", "Mechanicus Protocol"));
-        add(t, defs, known, "Sacred Systems Familiarity", 1080, 370, List.of("Machine Spirit Interpretation", "Machine Logic Interpretation", "Mechanicus Fabrication Rites"));
+        add(t, defs, known, "Mechanist Collegia Fabrication Rites", 880, 370, List.of("Mechanist Initiate Doctrine", "Serviceable Fabrication Patterns", "Mechanist Collegia Protocol"));
+        add(t, defs, known, "Sacred Systems Familiarity", 1080, 370, List.of("Machine Spirit Interpretation", "Machine Logic Interpretation", "Mechanist Collegia Fabrication Rites"));
         add(t, defs, known, "Archeotech Pattern Recognition", 1080, 470, List.of("Archeotech Signal Recognition", "Restricted Data Handling", "Fine Fabrication Patterns"));
         add(t, defs, known, "Archeotech Production Rites", 1280, 470, List.of("Archeotech Pattern Recognition", "Sacred Systems Familiarity", "Noble Manufactury Patterns"));
         return t;

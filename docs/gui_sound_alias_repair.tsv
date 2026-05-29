@@ -1,0 +1,8 @@
+target	source	action	note
+PACKAGE_client/assets/sound/wav/tp_gui_button_press_01.wav	PACKAGE_client/assets/sound/effects/Command-key.wav	copied	copied real existing wav payload
+PACKAGE_client/assets/sound/wav/tp_gui_panel_open_01.wav	PACKAGE_client/assets/sound/effects/Book flip.wav	copied	copied real existing wav payload
+PACKAGE_client/assets/sound/wav/tp_gui_panel_close_01.wav	PACKAGE_client/assets/sound/effects/Door close.wav	copied	copied real existing wav payload
+PACKAGE_client/assets/sound/wav/tp_gui_portrait_select_01.wav	PACKAGE_client/assets/sound/effects/Cathonk.wav	copied	copied real existing wav payload
+PACKAGE_client/assets/sound/wav/tp_gui_tab_change_01.wav	PACKAGE_client/assets/sound/effects/Book snap.wav	copied	copied real existing wav payload
+PACKAGE_client/assets/sound/wav/typing_sounds.wav	PACKAGE_client/assets/sound/effects/Clankingkeys.wav	copied	copied real existing wav payload
+PACKAGE_client/assets/sound/wav/machine_start.wav	PACKAGE_client/assets/sound/effects/machine sounds/Machine start.wav	copied	copied real existing wav payload

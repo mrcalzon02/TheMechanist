@@ -140,7 +140,7 @@ final class RoadTransitFixtureAuthority {
     static String inspectionLine(MapObjectState m) {
         String t = AssetIntegrationDisciplineAuthority.canonicalType(m == null ? null : m.type);
         if (AssetIntegrationDisciplineAuthority.ROAD_ALCOVE_FIXTURE.equals(t)) return "ROAD ALCOVE: a small lay-by cut into the frontage. It is useful for foot traffic, shelter, and service-attachment metadata, and it is inspected as a civic fixture here.";
-        if (AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE.equals(t)) return "ROADSIDE PARK: a small public breathing space with a planter and enough open paving to mark civic intent in a place that otherwise smells like promethium and damp concrete.";
+        if (AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE.equals(t)) return "ROADSIDE PARK: a small public breathing space with a planter and enough open paving to mark civic intent in a place that otherwise smells like industrial Fuelgel and damp concrete.";
         if (AssetIntegrationDisciplineAuthority.TAXI_BOOTH.equals(t)) return "TRANSIT BOOTH: a taxi-call and toll surface. It exposes route/service metadata here; boarding, fare execution, recall, and traffic are not exposed by this inspected fixture.";
         if (AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER.equals(t)) return "PARKING MARKER: a vehicle set-down bay with readable access metadata and no live storage, fueling, ownership, or driving behavior attached.";
         if (AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t)) return "VEHICLE STAGING POINT: a passive roadside vehicle marker used to keep the street readable without spawning a movable vehicle entity.";

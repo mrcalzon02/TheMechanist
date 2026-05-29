@@ -102,7 +102,7 @@ final class NobleEstateSecurityFixtureAuthority {
         if (contains(text, "vault", "safe", "panic", "treasury", "relic", "heirloom", "lockbox")) return pickType(r, Variant.VOID_SHIELD_DOME, Variant.SHIELD_RELAY, Variant.SECURITY_PANEL, Variant.GILDED_SENTRY);
         if (contains(text, "gallery", "hunting", "dueling", "trophy", "armory", "weapon", "guard")) return pickType(r, Variant.GILDED_SENTRY, Variant.LASER_PYLON, Variant.SECURITY_PANEL, Variant.CORNER_TOWER);
         if (contains(text, "garden", "orchard", "atrium", "conservatory", "courtyard", "perimeter")) return pickType(r, Variant.ENERGY_FENCE, Variant.CORNER_TOWER, Variant.WALL_PANEL, Variant.SHIELD_RELAY);
-        if (contains(text, "security", "alarm", "sensor", "camera", "control", "cogitator")) return pickType(r, Variant.SECURITY_PANEL, Variant.SHIELD_RELAY, Variant.LASER_PYLON, Variant.GILDED_SENTRY);
+        if (contains(text, "security", "alarm", "sensor", "camera", "control", "logic Engine")) return pickType(r, Variant.SECURITY_PANEL, Variant.SHIELD_RELAY, Variant.LASER_PYLON, Variant.GILDED_SENTRY);
         if (contains(text, "wall", "partition", "barricade", "hardpoint", "fortified")) return pickType(r, Variant.WALL_PANEL, Variant.GATE, Variant.ENERGY_FENCE, Variant.CORNER_TOWER);
         if (w != null && (w.zoneType == ZoneType.SECTOR_GOVERNORS_MANSION || w.zoneType == ZoneType.NOBLE_SERVICE_SPINE)) {
             int roll = r.nextInt(100);

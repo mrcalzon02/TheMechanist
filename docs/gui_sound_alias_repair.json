@@ -1,0 +1,53 @@
+{
+  "schema": "mechanist.gui_sound_alias_repair.v1",
+  "generated_utc": "2026-05-28T23:53:52+00:00",
+  "apply": true,
+  "record_count": 7,
+  "copied_count": 7,
+  "would_copy_count": 0,
+  "missing_source_count": 0,
+  "records": [
+    {
+      "target": "PACKAGE_client/assets/sound/wav/tp_gui_button_press_01.wav",
+      "source": "PACKAGE_client/assets/sound/effects/Command-key.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    },
+    {
+      "target": "PACKAGE_client/assets/sound/wav/tp_gui_panel_open_01.wav",
+      "source": "PACKAGE_client/assets/sound/effects/Book flip.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    },
+    {
+      "target": "PACKAGE_client/assets/sound/wav/tp_gui_panel_close_01.wav",
+      "source": "PACKAGE_client/assets/sound/effects/Door close.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    },
+    {
+      "target": "PACKAGE_client/assets/sound/wav/tp_gui_portrait_select_01.wav",
+      "source": "PACKAGE_client/assets/sound/effects/Cathonk.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    },
+    {
+      "target": "PACKAGE_client/assets/sound/wav/tp_gui_tab_change_01.wav",
+      "source": "PACKAGE_client/assets/sound/effects/Book snap.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    },
+    {
+      "target": "PACKAGE_client/assets/sound/wav/typing_sounds.wav",
+      "source": "PACKAGE_client/assets/sound/effects/Clankingkeys.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    },
+    {
+      "target": "PACKAGE_client/assets/sound/wav/machine_start.wav",
+      "source": "PACKAGE_client/assets/sound/effects/machine sounds/Machine start.wav",
+      "action": "copied",
+      "note": "copied real existing wav payload"
+    }
+  ]
+}

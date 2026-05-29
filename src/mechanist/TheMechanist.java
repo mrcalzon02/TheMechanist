@@ -417,7 +417,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
     String lastPublicNewsBulletin = "No public faction news bulletin has been assembled yet.";
     final LinkedHashMap<Integer,String> innDailyIssues = new LinkedHashMap<>();
     int innLastIssueDay = -1;
-    String lastInnNewsIssue = "No Imperial News Network issue has been printed yet.";
+    String lastInnNewsIssue = "No Concord News Network issue has been printed yet.";
     String lastBroadcastReport = "No INN radio or pict-screen broadcast has been received yet.";
     final ArrayList<PlayerNewsEvent> playerNewsEvents = new ArrayList<>();
     String lastPlayerNewsReport = "No player-linked public news item has been filed yet.";
@@ -434,11 +434,11 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
     int bankHeistAlarmCooldownUntilTurn = 0;
     final LinkedHashSet<String> lootedBankVaultIds = new LinkedHashSet<>();
     final LinkedHashSet<String> disabledBankAlarmPanelIds = new LinkedHashSet<>();
-    String lastCrimePunishmentReport = "No Arbites capture sentence has been recorded yet.";
-    String lastCustodyReportDetailed = "No detailed Arbites custody report has been recorded yet.";
+    String lastCrimePunishmentReport = "No Civic Wardens capture sentence has been recorded yet.";
+    String lastCustodyReportDetailed = "No detailed Civic Wardens custody report has been recorded yet.";
     int arbitesCaptureCooldownUntilTurn = 0;
     int arbitesInspectionCooldownUntilTurn = 0;
-    String lastArbitesPatrolReport = "No Arbites patrol sweep has challenged you yet.";
+    String lastArbitesPatrolReport = "No Civic Wardens patrol sweep has challenged you yet.";
     String lastItemLedgerAuditReport = "No item ledger audit has run yet.";
     Faction lastContractFaction = Faction.NONE;
     int offworldTicketsFound = 0;
@@ -1112,7 +1112,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             return;
         }
         if (screen == Screen.BOOT) {
-            buttons.add(new ButtonBox("SKIP BOOT", w-190, h-72, 160, 38, "Bypass the cogitator-style boot sequence and go to the main menu.", () -> finishBootSequence("button")));
+            buttons.add(new ButtonBox("SKIP BOOT", w-190, h-72, 160, 38, "Bypass the logic Engine-style boot sequence and go to the main menu.", () -> finishBootSequence("button")));
         } else if (screen == Screen.INTRO_CRAWL) {
             buttons.add(new ButtonBox("SKIP", Math.max(24, w-142), Math.max(24, h-66), 112, 32, "Skip the cinematic crawl and enter the generated zone.", () -> continueFromIntroCrawl()));
         } else if (screen == Screen.MENU) {
@@ -1245,7 +1245,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             buttons.add(new ButtonBox("WORLD +", start + (bw + 10), y, bw, bh, "Select next existing generated world.", () -> { if(!availableWorlds.isEmpty()) selectedWorldIndex = Math.floorMod(selectedWorldIndex+1, availableWorlds.size()); repaint(); }));
             buttons.add(new ButtonBox("USE WORLD", start + (bw + 10) * 2, y, bw, bh, "Use the selected existing world definition, then proceed to character creation.", this::useSelectedWorldForCharacterCreation));
             buttons.add(new ButtonBox("DELETE", start + (bw + 10) * 3, y, bw, bh, "Delete the selected generated world definition from the world list.", this::deleteSelectedWorldDefinition));
-            buttons.add(new ButtonBox("GENERATE NEW", start + (bw + 10) * 4, y, bw, bh, "Open world-generation settings for a new world.", () -> { pendingWorldSetup = WorldSetupSettings.standard(); lastWorldSetupReport = "Configure a new hive world, then generate it before selecting a character."; setScreen(Screen.WORLD_SETUP); }));
+            buttons.add(new ButtonBox("GENERATE NEW", start + (bw + 10) * 4, y, bw, bh, "Open world-generation settings for a new world.", () -> { pendingWorldSetup = WorldSetupSettings.standard(); lastWorldSetupReport = "Configure a new arcology world, then generate it before selecting a character."; setScreen(Screen.WORLD_SETUP); }));
             buttons.add(new ButtonBox("BACK", 20, 20, 110, 38, "Return to main menu.", () -> setScreen(Screen.MENU)));
         } else if (screen == Screen.WORLD_SETUP) {
             Rectangle generateSafe = worldSetupGenerateInnerSafeRect();
@@ -1329,7 +1329,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 {"BASES", "Open player-faction base management: population, storage, production, businesses, traders, and services."},
                 {"SENSES", "Review vision, hearing, fog of war, and recent distant sound pings."},
                 {"MAP", "Open the fogged world, sector, and zone navigation map."},
-                {"NEWS", "Read the latest known Imperial News Network bulletin and local newspaper issue."},
+                {"NEWS", "Read the latest known Concord News Network bulletin and local newspaper issue."},
                 {"LOG", "Read recent in-game events."},
                 {"CHAT", "Open the bounded local chat window. Hotkey: Y. Messages are sanitized, rate-limited, and logged locally."},
                 {"SAVE/LOAD", "Open save/load controls and current run state."},
@@ -1529,15 +1529,15 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                     by += 44;
                 }
                 if (selectedInteractionCanSellJournalsToINN()) {
-                    buttons.add(new ButtonBox("SELL JOURNALS", bx, by, bw, 36, "Sell stolen faction leader journals to the Imperial News Network. Rank-one leader journals pay 5000 script.", this::sellLeaderJournalsToINN));
+                    buttons.add(new ButtonBox("SELL JOURNALS", bx, by, bw, 36, "Sell stolen faction leader journals to the Concord News Network. Rank-one leader journals pay 5000 script.", this::sellLeaderJournalsToINN));
                     by += 44;
                 }
                 if (selectedInteractionIsBankTerminal()) {
                     buttons.add(new ButtonBox("OPEN ACCOUNT", bx, by, bw, 36, "Open an account at the selected bank if you can pay its fee.", this::openSelectedBankAccount));
                     by += 44;
-                    buttons.add(new ButtonBox("DEPOSIT ALL", bx, by, bw, 36, "Deposit all carried Imperial Script into the selected account.", this::depositAllToSelectedBank));
+                    buttons.add(new ButtonBox("DEPOSIT ALL", bx, by, bw, 36, "Deposit all carried Concord Script into the selected account.", this::depositAllToSelectedBank));
                     by += 44;
-                    buttons.add(new ButtonBox("WITHDRAW 100", bx, by, bw, 36, "Withdraw up to 100 Imperial Script from this account.", () -> withdrawFromSelectedBank(100)));
+                    buttons.add(new ButtonBox("WITHDRAW 100", bx, by, bw, 36, "Withdraw up to 100 Concord Script from this account.", () -> withdrawFromSelectedBank(100)));
                     by += 44;
                     buttons.add(new ButtonBox("WITHDRAW ALL", bx, by, bw, 36, "Withdraw as much of this account balance as carry capacity permits.", () -> withdrawFromSelectedBank(Integer.MAX_VALUE)));
                     by += 44;
@@ -1591,7 +1591,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 buttons.add(new ButtonBox("FOOD", bx, by+44, bw, 36, "Search specifically for edible rations or food-adjacent misery.", () -> scavengeFor("Food")));
                 buttons.add(new ButtonBox("WATER", bx, by+88, bw, 36, "Search specifically for sealed water, filters, canteens, or fluid containers.", () -> scavengeFor("Water")));
                 buttons.add(new ButtonBox("PARTS", bx, by+132, bw, 36, "Search specifically for mechanical scrap, machine parts, wire, and salvage.", () -> scavengeFor("Machine parts")));
-                buttons.add(new ButtonBox("BEG SCRIPT", bx, by+176, bw, 36, "Panhandle, plead, threaten, or perform the local poverty ritual for Imperial Script. Zone risk applies.", () -> scavengeFor("Beg for money")));
+                buttons.add(new ButtonBox("BEG SCRIPT", bx, by+176, bw, 36, "Panhandle, plead, threaten, or perform the local poverty ritual for Concord Script. Zone risk applies.", () -> scavengeFor("Beg for money")));
                 buttons.add(new ButtonBox("CACHE LEDGER", bx, by+220, bw, 36, "Inspect this room's persistent cache inventory without transferring items.", this::inspectCurrentRoomCache));
                 buttons.add(new ButtonBox("BACK", bx, by+264, bw, 36, "Return to adjacent interaction mode.", () -> openPanel(PanelMode.INTERACT)));
             } else if (panelMode == PanelMode.INVENTORY) {
@@ -1721,15 +1721,15 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 buttons.add(new ButtonBox("GUARD DUTY", bx, by+168, 300, 34, "Assign the next available recruit to security duty, or rotate guards back into general labor.", this::toggleRecruitGuardDuty));
                 buttons.add(new ButtonBox("RAID DRILL", bx, by+210, 300, 34, "Run a defensive drill and show the current raid risk math without forcing an attack.", this::runBaseRaidDrill));
                 buttons.add(new ButtonBox("CARGO AUDIT", bx, by+252, 300, 34, "Review cargo transfer range, logistics capacity, and transfer readiness between owned bases.", this::runCargoNetworkAudit));
-                buttons.add(new ButtonBox("STASH CASH", bx, by+294, 145, 34, "Move all carried Imperial Script into your claimed-base cash stash.", this::stashAllScriptAtBase));
-                buttons.add(new ButtonBox("TAKE CASH", bx+155, by+294, 145, 34, "Withdraw up to 100 Imperial Script from your claimed-base cash stash.", () -> takeScriptFromBase(100)));
+                buttons.add(new ButtonBox("STASH CASH", bx, by+294, 145, 34, "Move all carried Concord Script into your claimed-base cash stash.", this::stashAllScriptAtBase));
+                buttons.add(new ButtonBox("TAKE CASH", bx+155, by+294, 145, 34, "Withdraw up to 100 Concord Script from your claimed-base cash stash.", () -> takeScriptFromBase(100)));
             } else if (panelMode == PanelMode.TRADE) {
                 Rectangle cmd = commandPanelRect();
                 int bx = cmd.x + 14; int by = cmd.y + 64; int bw = Math.max(120, cmd.width - 28);
                 if (activeTrader != null) {
                     buttons.add(new ButtonBox("OFFER -", bx, by, bw, 36, "Move to previous trader offer.", () -> tradeOfferMove(-1)));
                     buttons.add(new ButtonBox("OFFER +", bx, by+44, bw, 36, "Move to next trader offer.", () -> tradeOfferMove(1)));
-                    buttons.add(new ButtonBox("BUY", bx, by+88, bw, 36, "Buy the selected trader offer using imperial script.", this::tradeBuySelected));
+                    buttons.add(new ButtonBox("BUY", bx, by+88, bw, 36, "Buy the selected trader offer using concord script.", this::tradeBuySelected));
                     buttons.add(new ButtonBox("SELL", bx, by+132, bw, 36, "Sell the currently selected inventory item to this trader.", this::tradeSellSelected));
                     buttons.add(new ButtonBox("HAGGLE", bx, by+176, bw, 36, "Attempt a Charm-based haggle. Repeated attempts may anger the trader and raise prices.", this::tradeHaggle));
                     buttons.add(new ButtonBox("RUMOR", bx, by+220, bw, 36, "Ask this trader for zone-appropriate rumors.", this::tradeAskTraderRumors));
@@ -1743,7 +1743,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                     buttons.add(new ButtonBox("TAKE FETCH", bx, by+264, bw, 36, "Accept this faction's single active retrieval contract. Sealed cargo spawns in an adjacent zone container.", this::acceptFetchContract));
                     buttons.add(new ButtonBox("TURN IN", bx, by+308, bw, 36, "Turn in a matching ident chip or sealed object for script and faction standing.", this::turnInFactionContract));
                     if (activeConversationNpc != null && activeConversationNpc.isProtectedCleric()) {
-                        buttons.add(new ButtonBox("PRAY 24H", bx, by+352, bw, 36, "Undertake a 24-hour rite of Imperial forgiveness. Costs food, water, fatigue, and sleep debt; restores some civil Imperial standing.", this::prayImperialForgivenessService));
+                        buttons.add(new ButtonBox("PRAY 24H", bx, by+352, bw, 36, "Undertake a 24-hour rite of Concord forgiveness. Costs food, water, fatigue, and sleep debt; restores some civil Concord standing.", this::prayImperialForgivenessService));
                         buttons.add(new ButtonBox("LEAVE", bx, by+396, bw, 36, "End the conversation and return to the game.", this::npcLeaveConversation));
                     } else {
                         buttons.add(new ButtonBox("LEAVE", bx, by+352, bw, 36, "End the conversation and return to the game.", this::npcLeaveConversation));
@@ -1951,7 +1951,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
             stack.add("FEATURES: " + rp.featureText);
             stack.add("OWNERSHIP: " + ownershipText(tx, ty));
         } else if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE) {
-            stack.add("INTERSTITIAL HIVE MASS: " + describeTile(ch));
+            stack.add("INTERSTITIAL ARCOLOGY MASS: " + describeTile(ch));
         } else {
             stack.add("CORRIDOR/OPENWORK: " + describeTile(ch));
         }
@@ -2152,7 +2152,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
 
     String humanoidBodyPlanLine(NpcEntity npc) {
         if (npc.isMinorActor()) return "smaller humanoid frame";
-        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("servitor")) return "augmented humanoid frame";
+        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("bound Labor Automaton")) return "augmented humanoid frame";
         return "humanoid body plan";
     }
 
@@ -2507,7 +2507,7 @@ void updatePendingInteractionSummary() {
     String vendingStockText(char ch) { return PublicServiceMediaAuthority.vendingStockText(ch); }
 
     String shrinePreview(char ch, int x, int y) {
-        if (ch == 'I') return "Imperial shrine: " + imperialShrineName(x,y) + ". A legal devotional fixture for brief prayer and composure.";
+        if (ch == 'I') return "Concord shrine: " + imperialShrineName(x,y) + ". A legal devotional fixture for brief prayer and composure.";
         return "Heretical shrine: " + chaosShrineName(x,y) + ". Illegal, dangerous, and probably listening.";
     }
 
@@ -2574,7 +2574,7 @@ void updatePendingInteractionSummary() {
     static boolean sameFactionFamilyStatic(Faction a, Faction b) {
         if (a == null || b == null) return false;
         if (a == b) return true;
-        if ((a == Faction.MECHANICUS || a.name().startsWith("MECHANICUS")) && (b == Faction.MECHANICUS || b.name().startsWith("MECHANICUS"))) return true;
+        if ((a == Faction.MECHANIST COLLEGIA || a.name().startsWith("MECHANIST COLLEGIA")) && (b == Faction.MECHANIST COLLEGIA || b.name().startsWith("MECHANIST COLLEGIA"))) return true;
         if ((a == Faction.MINISTORUM || a == Faction.SORORITAS) && (b == Faction.MINISTORUM || b == Faction.SORORITAS)) return true;
         if ((a == Faction.BANDIT || a.name().startsWith("GANGER")) && (b == Faction.BANDIT || b.name().startsWith("GANGER"))) return true;
         if ((a == Faction.HIVER || a.name().startsWith("HIVER")) && (b == Faction.HIVER || b.name().startsWith("HIVER"))) return true;
@@ -2715,7 +2715,7 @@ void updatePendingInteractionSummary() {
         }
         int cost = vendingCost(ch);
         if (!spendImperialScript(cost)) {
-            logEvent("The " + vendingName(ch) + " demands " + cost + " Imperial Script. You have " + countMoney() + ".");
+            logEvent("The " + vendingName(ch) + " demands " + cost + " Concord Script. You have " + countMoney() + ".");
             DebugLog.audit("VENDING_PURCHASE_FAIL", vendingName(ch)+" cost="+cost+" money="+countMoney()+" state="+stateSummary());
             advanceTurn("fails to purchase from " + vendingName(ch) + ".");
             return;
@@ -2769,13 +2769,13 @@ void updatePendingInteractionSummary() {
     }
 
     String governorPreview(int x, int y) {
-        return "SECTOR GOVERNOR AUDIENCE: fee " + governorAudienceFee() + " Imperial Script. Some governors have a seed-bound off-world ticket; some will take your money anyway.";
+        return "SECTOR GOVERNOR AUDIENCE: fee " + governorAudienceFee() + " Concord Script. Some governors have a seed-bound off-world ticket; some will take your money anyway.";
     }
 
     void bribeSectorGovernor() {
         if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor bribe failed: no sector governor is selected."); return; }
         int fee = governorAudienceFee();
-        if (!spendImperialScript(fee)) { logEvent("Governor bribe failed: the chamberlain requires " + fee + " Imperial Script. You have " + countMoney() + "."); return; }
+        if (!spendImperialScript(fee)) { logEvent("Governor bribe failed: the chamberlain requires " + fee + " Concord Script. You have " + countMoney() + "."); return; }
         governorBribesPaid++;
         suspicion = Math.max(0, suspicion - 3);
         if (governorHasTicket()) {
@@ -3090,7 +3090,7 @@ void updatePendingInteractionSummary() {
         updateSensoryModel("unconscious relocation");
         DebugLog.audit("PLAYER_UNCONSCIOUS", "cause=" + cause + " attacker=" + attacker + " weapon=" + weapon + " scriptLost=" + stolenScript + " inventoryLost=" + stolenItems + " wake=" + playerX + "," + playerY + " state=" + stateSummary());
         logEvent("UNCONSCIOUS: " + cause + ". You are carried, dragged, ransomed, or simply found later and wake at " + wakePointLabel(wake) + ".");
-        if (stolenScript > 0) logEvent("SCRIPT STOLEN: " + stolenScript + " Imperial Script was lifted from your pockets while you were out.");
+        if (stolenScript > 0) logEvent("SCRIPT STOLEN: " + stolenScript + " Concord Script was lifted from your pockets while you were out.");
         if (stolenItems > 0) logEvent("ITEMS LOST: " + stolenItems + " carried item(s) were gone when you woke.");
         maybeAutosave("unconscious recovery");
     }
@@ -3161,7 +3161,7 @@ void updatePendingInteractionSummary() {
         if (shouldPlayerDieNow()) {
             triggerPlayerDeath(cause, attacker, weapon, location);
         } else if (shouldPlayerFallUnconsciousNow()) {
-            if (arbitesAuthorityText(attacker) || arbitesAuthorityText(weapon)) handleArbitesCapture("incapacitated by Arbites authority", Math.max(2, suspicion / 4 + wounds / 6));
+            if (arbitesAuthorityText(attacker) || arbitesAuthorityText(weapon)) handleArbitesCapture("incapacitated by Civic Wardens authority", Math.max(2, suspicion / 4 + wounds / 6));
             else handlePlayerUnconsciousness(cause, attacker, weapon, false);
         }
     }
@@ -3512,7 +3512,7 @@ void updatePendingInteractionSummary() {
         if (z.contains("noble") || z.contains("governor")) return pickWeightedCue(
             new String[]{"ambient_tv","ambient_radio","ambient_chime","ambient_servitor","ambient_door_servo"},
             new int[]{30,26,16,16,12});
-        if (z.contains("industrial") || z.contains("mechanicus") || z.contains("factory")) return pickWeightedCue(
+        if (z.contains("industrial") || z.contains("mechanist Collegia") || z.contains("factory")) return pickWeightedCue(
             new String[]{"ambient_machine","ambient_spark","ambient_press","ambient_servo","ambient_alarm_far","ambient_vent"},
             new int[]{30,20,18,14,8,10});
         if (z.contains("market") || z.contains("hab")) return pickWeightedCue(
@@ -3989,9 +3989,9 @@ void updatePendingInteractionSummary() {
         switch(npc.faction) {
             case MINISTORUM: line = npc.name + " murmurs a lawful prayer beside candle smoke and hungry pilgrims."; break;
             case SORORITAS: line = npc.name + " watches the nave in absolute silence, which is worse than a threat."; break;
-            case ARBITES: line = npc.name + " snaps: Move along. Papers ready if asked."; break;
+            case CIVIC WARDENS: line = npc.name + " snaps: Move along. Papers ready if asked."; break;
             case IMPERIAL_GUARD: line = npc.name + " checks a las-pack and watches the corridor."; break;
-            case MECHANICUS: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: line = npc.name + " murmurs a binharic maintenance cant."; break;
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: line = npc.name + " murmurs a binharic maintenance cant."; break;
             case MUTANT: line = npc.name + " scrapes along the wall, wet breathing behind broken teeth."; break;
             case CULTIST: case HERETIC: line = npc.name + " whispers to something that is not visibly present."; break;
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: line = npc.name + " eyes your kit and weighs the odds."; break;
@@ -4005,9 +4005,9 @@ void updatePendingInteractionSummary() {
         switch(f) {
             case MINISTORUM: return new Color(235,210,120);
             case SORORITAS: return new Color(230,230,235);
-            case ARBITES: return new Color(90,150,255);
+            case CIVIC WARDENS: return new Color(90,150,255);
             case IMPERIAL_GUARD: return new Color(120,190,115);
-            case MECHANICUS: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(210,80,70);
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(210,80,70);
             case MUTANT: return new Color(115,210,100);
             case CULTIST: case HERETIC: return new Color(190,80,210);
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(230,70,55);
@@ -4127,9 +4127,9 @@ void updatePendingInteractionSummary() {
         if (npc == null) return 0;
         switch(npc.faction) {
             case SORORITAS: return 5;
-            case ARBITES: case IMPERIAL_GUARD: return 3;
+            case CIVIC WARDENS: case IMPERIAL_GUARD: return 3;
             case MINISTORUM: return 1;
-            case MECHANICUS: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return 2;
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return 2;
             case MUTANT: case ROGUE_MACHINE: return 2;
             case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 2;
             default: return 1;
@@ -4159,10 +4159,10 @@ void updatePendingInteractionSummary() {
         String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
         if (!ItemCatalog.isFirearmLike(weapon)) return "";
         if (w.contains("las")) return "Las charge pack";
-        if (w.contains("flamer") || w.contains("flame") || w.contains("promethium") || w.contains("chem sprayer") || w.contains("acid spitter")) return "Promethium canister";
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("chem sprayer") || w.contains("acid spitter")) return "Industrial Fuelgel canister";
         if (w.contains("melta") || w.contains("inferno")) return "Melta charge cell";
         if (w.contains("plasma")) return "Plasma flask";
-        if (w.contains("bolt") || w.contains("bolter")) return "Bolt round magazine";
+        if (w.contains("bolt") || w.contains("mass-Reactive Carbine")) return "Bolt round magazine";
         if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "Arc capacitor pack";
         if (w.contains("webber") || w.contains("web ")) return "Web cartridge";
         if (w.contains("needle") || w.contains("toxin")) return "Needle toxin vial";
@@ -4522,7 +4522,7 @@ void updatePendingInteractionSummary() {
         if (low.contains("flamer") || low.contains("melta")) return 4;
         if (low.contains("pistol") || low.contains("revolver")) return 7;
         if (low.contains("stubber") || low.contains("carbine") || low.contains("webber")) return 9;
-        if (low.contains("rifle") || low.contains("las") || low.contains("bolter")) return 12;
+        if (low.contains("rifle") || low.contains("las") || low.contains("mass-Reactive Carbine")) return 12;
         if (low.contains("autocannon") || low.contains("long")) return 14;
         return 8;
     }
@@ -4718,7 +4718,7 @@ void updatePendingInteractionSummary() {
         int rid = world.roomIdAt(m.x,m.y);
         if (rid < 0) return true;
         Faction f = rid < world.roomFactions.size() ? world.roomFactions.get(rid) : Faction.NONE;
-        return f == Faction.ARBITES || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f == Faction.MINISTORUM || f == Faction.ADMINISTRATUM || f == Faction.HIVER || f == Faction.NONE;
+        return f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f == Faction.MINISTORUM || f == Faction.CIVIC LEDGER OFFICE || f == Faction.HIVER || f == Faction.NONE;
     }
 
     void tickCorpseEcology() {
@@ -4744,14 +4744,14 @@ void updatePendingInteractionSummary() {
         if (world == null || m == null) return;
         String cid = m.stockState == null || m.stockState.isBlank() ? corpseLootContainerId(m.id) : m.stockState;
         java.util.List<String> items = drainContainerItemNames(cid, 999);
-        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.ARBITES.name();
-        ensureContainer(evidence, "Arbites evidence lockup");
-        for (String item : items) addItemToContainerResult(evidence, "Arbites evidence lockup", item, ItemProvenanceRecord.of(item, Faction.ARBITES, "corpse evidence pickup", world, turn, "stripped from corpse", "evidence lockup for later resale"), null, "corpse evidence transfer");
-        addItemToContainerResult(CONTAINER_FACTION_STOCK_PREFIX + Faction.HIVER.name(), "Public nutrient reclamation stock", "Corpse-starch ration slab", ItemProvenanceRecord.of("Corpse-starch ration slab", Faction.ARBITES, "morgue to waste reclamation", world, turn, "body processed after public corpse pickup", "nutrient bricks sold onward"), null, "corpse reclamation");
+        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC WARDENS.name();
+        ensureContainer(evidence, "Civic Wardens evidence lockup");
+        for (String item : items) addItemToContainerResult(evidence, "Civic Wardens evidence lockup", item, ItemProvenanceRecord.of(item, Faction.CIVIC WARDENS, "corpse evidence pickup", world, turn, "stripped from corpse", "evidence lockup for later resale"), null, "corpse evidence transfer");
+        addItemToContainerResult(CONTAINER_FACTION_STOCK_PREFIX + Faction.HIVER.name(), "Public nutrient reclamation stock", "Corpse-starch ration slab", ItemProvenanceRecord.of("Corpse-starch ration slab", Faction.CIVIC WARDENS, "morgue to waste reclamation", world, turn, "body processed after public corpse pickup", "nutrient bricks sold onward"), null, "corpse reclamation");
         restoreMapObjectUnderlyingTile(m);
         world.mapObjects.remove(m);
         suspicion = Math.max(0, suspicion - 1);
-        logEvent("CORPSE CLEANUP: " + witnesses + " witnesses report a public body. Arbites collect it, strip inventory to evidence lockup, and route the remains to nutrient reclamation. Because of course they do.");
+        logEvent("CORPSE CLEANUP: " + witnesses + " witnesses report a public body. Civic Wardens collect it, strip inventory to evidence lockup, and route the remains to nutrient reclamation. Because of course they do.");
         DebugLog.audit("CORPSE_AUTHORITY_PICKUP", "id=" + m.id + " witnesses=" + witnesses + " items=" + items.size() + " turn=" + turn);
     }
 
@@ -4807,7 +4807,7 @@ void updatePendingInteractionSummary() {
             if (!world.inBounds(x,y)) continue;
             char ch = world.tiles[x][y];
             if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == '%' || ch == '&' || ch == '^' || ch == '8' || ch == '0') {
-                if (rng.nextInt(100) < 35) { world.tiles[x][y] = '*'; terrainIntegrity.remove(key); logEvent("HIVE-QUAKE FILL: overhead debris slumps into an intra-wall breach at " + x + "," + y + ". The hive repairs itself by dropping masonry on the problem."); }
+                if (rng.nextInt(100) < 35) { world.tiles[x][y] = '*'; terrainIntegrity.remove(key); logEvent("ARCOLOGY-QUAKE FILL: overhead debris slumps into an intra-wall breach at " + x + "," + y + ". The arcology repairs itself by dropping masonry on the problem."); }
             } else if (ch == '*' || ch == '#' || isDoorTile(ch)) {
                 Faction f = factionControllingTile(x,y);
                 if (f != Faction.NONE && rng.nextInt(100) < 45) { world.tiles[x][y] = '#'; terrainIntegrity.put(key, defaultTerrainIntegrity('#')); logEvent("FACTION REPAIR: " + f.label + " workers draw supplies from nearby stock and patch damaged wall/door structure at " + x + "," + y + "."); }
@@ -4819,7 +4819,7 @@ void updatePendingInteractionSummary() {
         if (world == null) return Faction.NONE;
         int rid = world.roomIdAt(x,y);
         if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
-        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.ARBITES : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
+        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.CIVIC WARDENS : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
     }
 
     String applyStrayImpactDamage(int x, int y, int dmg, String source) {
@@ -5137,7 +5137,7 @@ void updatePendingInteractionSummary() {
         if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) return npc.equippedMeleeWeapon;
         switch (npc.faction) {
             case SORORITAS: return "Chainsword";
-            case ARBITES: return "Arbites shock maul";
+            case CIVIC WARDENS: return "Civic Wardens shock maul";
             case IMPERIAL_GUARD: return "Guard trench knife";
             case MUTANT: return "Mutant scrap axe";
             case ROGUE_MACHINE: return "machine talons";
@@ -5188,8 +5188,8 @@ void updatePendingInteractionSummary() {
             case 'g': return Faction.BANDIT;
             case 'm': return Faction.MUTANT;
             case 'R': return Faction.ROGUE_MACHINE;
-            case 'A': return Faction.ARBITES;
-            case 'p': return Faction.ARBITES;
+            case 'A': return Faction.CIVIC WARDENS;
+            case 'p': return Faction.CIVIC WARDENS;
             case 'b': return Faction.BANDIT;
             case 'h': return Faction.HIVER;
             case 'n': return Faction.NOBLE;
@@ -5212,7 +5212,7 @@ void updatePendingInteractionSummary() {
         String text = ((rp.name == null ? "" : rp.name) + " " + (rp.descriptor == null ? "" : rp.descriptor) + " " + (rp.featureText == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
         if (!text.contains("faction-only") && !text.contains("gang colors") && !text.contains("marked patron")) return Faction.NONE;
         if (text.contains("bandit") || text.contains("gang")) return Faction.BANDIT;
-        if (text.contains("arbites") || text.contains("precinct")) return Faction.ARBITES;
+        if (text.contains("civic Wardens") || text.contains("precinct")) return Faction.CIVIC WARDENS;
         if (text.contains("noble")) return Faction.NOBLE;
         if (text.contains("guard") || text.contains("military") || text.contains("pdf")) return Faction.IMPERIAL_GUARD;
         if (text.contains("hiver")) return Faction.HIVER;
@@ -5230,7 +5230,7 @@ void updatePendingInteractionSummary() {
         if (activeFaction() == witness) return false;
         if (witness == Faction.ROGUE_MACHINE || witness == Faction.MUTANT) return false;
         if (equippedClothing.alignedFaction == witness) return false;
-        if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.ARBITES) return true;
+        if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.CIVIC WARDENS) return true;
         if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.BANDIT) return true;
         if (equippedClothing.alignedFaction == Faction.NONE && witness == Faction.BANDIT) return true;
         return factionStanding.getOrDefault(witness, 0) < -3;
@@ -5246,7 +5246,7 @@ void updatePendingInteractionSummary() {
         int chance = equippedClothing.disguiseBase + charm * 3 + nerve * 2 + intellect;
         if (equippedClothing.damaged) chance -= 22;
         if (activeMotionIsSneak()) chance -= 45; // if you belong here, why are you hiding?
-        if (witness == Faction.ARBITES) chance -= 10;
+        if (witness == Faction.CIVIC WARDENS) chance -= 10;
         return Math.max(5, Math.min(95, chance));
     }
 
@@ -5258,7 +5258,7 @@ void updatePendingInteractionSummary() {
         int chance = 20 + charm * 4 + nerve * 3 + intellect * 2;
         if (activeFaction() == witness) return 95;
         if (equippedClothing != null && equippedClothing.alignedFaction == witness) chance += 10;
-        if (witness == Faction.ARBITES) chance -= 12;
+        if (witness == Faction.CIVIC WARDENS) chance -= 12;
         return Math.max(5, Math.min(90, chance));
     }
 
@@ -5305,8 +5305,8 @@ void updatePendingInteractionSummary() {
         if (world.sewerLayer || z.contains("sewer") || z.contains("sump")) return 4;
         if (z.contains("noble") || z.contains("governor")) return 28;
         if (z.contains("hiver") || z.contains("civilian") || z.contains("civil") || z.contains("hab") || z.contains("market")) return 24;
-        if (z.contains("arbites") || z.contains("administratum") || z.contains("news") || z.contains("civic")) return 22;
-        if (z.contains("mechanicus") || z.contains("forge") || z.contains("industrial") || z.contains("guard")) return 17;
+        if (z.contains("civic Wardens") || z.contains("civic Ledger Office") || z.contains("news") || z.contains("civic")) return 22;
+        if (z.contains("mechanist Collegia") || z.contains("forge") || z.contains("industrial") || z.contains("guard")) return 17;
         if (z.contains("ganger") || z.contains("mutant") || z.contains("trash") || z.contains("abandoned") || z.contains("cult")) return 7;
         return 14;
     }
@@ -5755,7 +5755,7 @@ void updatePendingInteractionSummary() {
         if ("Hostile".equalsIgnoreCase(npc.state)) base += 18;
         if ("Patrol".equalsIgnoreCase(npc.state) || "Guard".equalsIgnoreCase(npc.state)) base += 10;
         if ("Trade".equalsIgnoreCase(npc.state) || "Prayer".equalsIgnoreCase(npc.state) || "Pilgrim Service".equalsIgnoreCase(npc.state)) base += 5;
-        if (npc.faction == Faction.ROGUE_MACHINE || npc.faction == Faction.MECHANICUS || (npc.faction != null && npc.faction.name().startsWith("MECHANICUS"))) base += 4;
+        if (npc.faction == Faction.ROGUE_MACHINE || npc.faction == Faction.MECHANIST COLLEGIA || (npc.faction != null && npc.faction.name().startsWith("MECHANIST COLLEGIA"))) base += 4;
         if (activeMotionStateIndex == MOTION_STATIONARY) base += 8;
         if (activeMotionStateIndex == MOTION_SNEAK) base += 4;
         if (activeMotionStateIndex == MOTION_RUN) base -= 10;
@@ -5963,41 +5963,41 @@ void updatePendingInteractionSummary() {
         int roll = rng.nextInt(100) + 1;
         int chance = interrogationChance(witness);
         DebugLog.audit("INTERROGATION", "witness=" + witness + " reason=" + reason + " roll=" + roll + " chance=" + chance + " clothing=" + equippedClothing.name + " state=" + stateSummary());
-        if (witness == Faction.ARBITES && turn < arbitesInspectionCooldownUntilTurn) {
-            lastInterrogation = "Arbites scrutiny delayed: recent inspection cooldown until turn " + arbitesInspectionCooldownUntilTurn + ".";
+        if (witness == Faction.CIVIC WARDENS && turn < arbitesInspectionCooldownUntilTurn) {
+            lastInterrogation = "Civic Wardens scrutiny delayed: recent inspection cooldown until turn " + arbitesInspectionCooldownUntilTurn + ".";
             lastArbitesPatrolReport = lastInterrogation;
             return;
         }
         if (roll <= chance) {
             lastInterrogation = "Talked past " + witness.label + " scrutiny. Roll " + roll + " <= " + chance + ".";
             logEvent("Interrogation survived: " + witness.label + " accepts your explanation for now.");
-            if (witness == Faction.ARBITES) {
+            if (witness == Faction.CIVIC WARDENS) {
                 arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
                 lastArbitesPatrolReport = lastInterrogation + " Next street inspection no sooner than " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
             }
         } else {
             factionStanding.put(witness, factionStanding.getOrDefault(witness, 0) - 1);
-            if (witness == Faction.ARBITES) {
+            if (witness == Faction.CIVIC WARDENS) {
                 suspicion += 3;
                 arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
                 boolean captured = roll >= chance + 12 || suspicion >= 10 || reason.toLowerCase(Locale.ROOT).contains("trespass");
                 if (captured) {
                     if (turn < arbitesCaptureCooldownUntilTurn) {
-                        lastInterrogation = "Failed Arbites interrogation, but recent custody paperwork blocks a fresh jail processing until " + TimeSurfaceApi.timeTextAtTurn(arbitesCaptureCooldownUntilTurn) + ". They rough you up, record your face, and move you along.";
+                        lastInterrogation = "Failed Civic Wardens interrogation, but recent custody paperwork blocks a fresh jail processing until " + TimeSurfaceApi.timeTextAtTurn(arbitesCaptureCooldownUntilTurn) + ". They rough you up, record your face, and move you along.";
                         lastArbitesPatrolReport = lastInterrogation;
                         pain = Math.min(24, pain + 2);
                         fatigue = Math.min(30, fatigue + 1);
-                        logEvent("ARBITES INSPECTION: " + lastInterrogation);
+                        logEvent("CIVIC WARDENS INSPECTION: " + lastInterrogation);
                         return;
                     }
-                    lastInterrogation = "Failed Arbites interrogation hard enough to be processed. Roll " + roll + " > " + chance + ".";
+                    lastInterrogation = "Failed Civic Wardens interrogation hard enough to be processed. Roll " + roll + " > " + chance + ".";
                     handleArbitesCapture("failed interrogation: " + reason, Math.max(1, (roll - chance) / 10 + suspicion / 6));
                     return;
                 }
             }
             if (witness == Faction.BANDIT) gangHeat += 2;
             lastInterrogation = "Failed " + witness.label + " interrogation. Roll " + roll + " > " + chance + ". Temporary hostility active.";
-            if (witness == Faction.ARBITES) lastArbitesPatrolReport = lastInterrogation + " Inspection cooldown until " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
+            if (witness == Faction.CIVIC WARDENS) lastArbitesPatrolReport = lastInterrogation + " Inspection cooldown until " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
             temporaryHostileTurns.put(witness, 8);
             logEvent("FAILED INTERROGATION: " + witness.label + " turns hostile while nearby.");
         }
@@ -6043,15 +6043,15 @@ void updatePendingInteractionSummary() {
         int chance = Math.min(70, 10 + pressure * 5);
         if (rng.nextInt(100) >= chance) return;
         String reason = "civil/noble-sector patrol sweep in " + world.zoneType.label + " with heat " + gangHeat + " and suspicion " + suspicion;
-        lastArbitesPatrolReport = "Arbites patrol initiates inspection: " + reason + ".";
-        logEvent("ARBITES PATROL: " + lastArbitesPatrolReport);
-        handleInterrogation(Faction.ARBITES, reason);
+        lastArbitesPatrolReport = "Civic Wardens patrol initiates inspection: " + reason + ".";
+        logEvent("CIVIC WARDENS PATROL: " + lastArbitesPatrolReport);
+        handleInterrogation(Faction.CIVIC WARDENS, reason);
     }
 
 boolean arbitesAuthorityText(String text) {
         if (text == null) return false;
         String l = text.toLowerCase(Locale.ROOT);
-        return l.contains("arbites") || l.contains("law enforcement") || l.contains("precinct") || l.contains("suppression") || l.contains("riot");
+        return l.contains("civic Wardens") || l.contains("law enforcement") || l.contains("precinct") || l.contains("suppression") || l.contains("riot");
     }
 
     void handleArbitesCapture(String reason, int severity) {
@@ -6074,24 +6074,24 @@ boolean arbitesAuthorityText(String text) {
             if (loss.contains("FATAL CUSTODY TRAUMA")) fatalCustodyStatLoss = true;
         }
         int itemLoss = arbitesEvidenceItemLoss(severity);
-        advancePlayerAndWorldTime(jailHours * TURNS_PER_HOUR, "Arbites custody time");
+        advancePlayerAndWorldTime(jailHours * TURNS_PER_HOUR, "Civic Wardens custody time");
         int fatigueBefore = fatigue, sleepBefore = sleepNeed, painBefore = pain, woundsBefore = wounds;
         fatigue = Math.min(30, fatigue + 4 + severity);
         sleepNeed = Math.min(MAX_SLEEP_NEED, sleepNeed + jailHours * TURNS_PER_HOUR / 2);
         pain = Math.min(24, pain + 2 + severity);
         wounds = Math.min(19, wounds + Math.max(1, severity / 2));
         suspicion = Math.max(0, suspicion - (4 + severity));
-        temporaryHostileTurns.remove(Faction.ARBITES);
+        temporaryHostileTurns.remove(Faction.CIVIC WARDENS);
         arbitesCaptureCooldownUntilTurn = Math.max(arbitesCaptureCooldownUntilTurn, turn + ARBITES_CAPTURE_COOLDOWN_TURNS);
         arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
         int endBanked = totalBankedCash();
-        lastCrimePunishmentReport = "Captured by Arbites for " + reason + ". Hard time " + jailHours + "h, fine assessed " + baseFine + ", collected " + finePaid + ", stat loss " + String.join(", ", losses) + ", evidence items lost " + itemLoss + ".";
+        lastCrimePunishmentReport = "Captured by Civic Wardens for " + reason + ". Hard time " + jailHours + "h, fine assessed " + baseFine + ", collected " + finePaid + ", stat loss " + String.join(", ", losses) + ", evidence items lost " + itemLoss + ".";
         ArrayList<String> detail = new ArrayList<>();
-        detail.add("ADEPTUS ARBITES CUSTODY REPORT");
+        detail.add("ADEPTUS CIVIC WARDENS CUSTODY REPORT");
         detail.add("Cause: " + reason + ".");
         detail.add("Severity: " + severity + " / 8.");
         detail.add("Time taken: " + jailHours + " local hour(s). Turn " + startTurn + " -> " + turn + ".");
-        detail.add("Fine assessed: " + baseFine + " Imperial Script. Paid/seized: " + finePaid + ". Unpaid docket remainder: " + unpaidFine + ".");
+        detail.add("Fine assessed: " + baseFine + " Concord Script. Paid/seized: " + finePaid + ". Unpaid docket remainder: " + unpaidFine + ".");
         detail.add("Carried script: " + startCarried + " -> " + carriedScript + ". Banked script: " + startBanked + " -> " + endBanked + ". Base stash: " + startBaseStash + " -> " + baseStashedScript + ".");
         detail.add("Items confiscated into evidence: " + itemLoss + ".");
         detail.add("Stat damage: " + (losses.isEmpty() ? "none" : String.join(", ", losses)) + ".");
@@ -6099,24 +6099,24 @@ boolean arbitesAuthorityText(String text) {
         detail.add("Street inspection cooldown until: " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".");
         detail.add("Fresh jail-processing cooldown until: " + TimeSurfaceApi.timeTextAtTurn(arbitesCaptureCooldownUntilTurn) + ".");
         if (fatalCustodyStatLoss) detail.add("Outcome: fatal custody trauma. A core stat reached zero.");
-        else detail.add("Outcome: released from holding near an Arbites authority point. The paperwork is not apology; it is inventory.");
+        else detail.add("Outcome: released from holding near an Civic Wardens authority point. The paperwork is not apology; it is inventory.");
         lastCustodyReportDetailed = String.join("\n", detail);
         lastInterrogation = lastCrimePunishmentReport;
         if (fatalCustodyStatLoss) {
             lastCrimePunishmentReport += " The beating reduced a core stat to zero; death in police custody recorded.";
             lastInterrogation = lastCrimePunishmentReport;
             lastCustodyReportDetailed += "\nFinal status: death in police custody.";
-            logEvent("ARBITES CUSTODY DEATH: " + lastCrimePunishmentReport);
+            logEvent("CIVIC WARDENS CUSTODY DEATH: " + lastCrimePunishmentReport);
             DebugLog.audit("ARBITES_CUSTODY_DEATH", lastCustodyReportDetailed.replace('\n',' ') + " state=" + stateSummary());
-            triggerPlayerDeath("death in Arbites police custody after repeated beatings", "Adeptus Arbites custody", "institutional brutality", "precinct holding cell");
+            triggerPlayerDeath("death in Civic Wardens police custody after repeated beatings", "Adeptus Civic Wardens custody", "institutional brutality", "precinct holding cell");
             return;
         }
         Point release = nearestArbitesReleasePoint();
         if (release != null) { playerX = release.x; playerY = release.y; lookX = playerX; lookY = playerY; }
-        updateSensoryModel("Arbites release");
-        logEvent("ARBITES CAPTURE: " + lastCrimePunishmentReport);
+        updateSensoryModel("Civic Wardens release");
+        logEvent("CIVIC WARDENS CAPTURE: " + lastCrimePunishmentReport);
         DebugLog.audit("ARBITES_CAPTURE", lastCustodyReportDetailed.replace('\n',' ') + " state=" + stateSummary());
-        maybeAutosave("Arbites release");
+        maybeAutosave("Civic Wardens release");
         setScreen(Screen.CAPTURE);
         repaint();
     }
@@ -6161,12 +6161,12 @@ boolean arbitesAuthorityText(String text) {
     int arbitesEvidenceItemLoss(int severity) {
         if (inventory.isEmpty()) return 0;
         int target = Math.min(inventory.size(), Math.max(1, severity / 2));
-        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.ARBITES.name();
-        ensureContainer(evidence, "Arbites evidence lockup");
+        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC WARDENS.name();
+        ensureContainer(evidence, "Civic Wardens evidence lockup");
         int moved = 0;
         for (int i=0; i<target && !inventory.isEmpty(); i++) {
             int idx = rng.nextInt(inventory.size());
-            ItemActionResult r = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, evidence, "Arbites evidence lockup", null, "confiscated during Arbites capture");
+            ItemActionResult r = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, evidence, "Civic Wardens evidence lockup", null, "confiscated during Civic Wardens capture");
             if (r.success) moved++;
         }
         return moved;
@@ -6326,7 +6326,7 @@ boolean arbitesAuthorityText(String text) {
         double base = 0.003; // very rare baseline
         if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) base += 0.012;
         if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) base += 0.008;
-        if (rn.contains("machine") || rn.contains("cogitator") || rn.contains("vault") || rn.contains("archive") || rn.contains("security")) base += 0.010;
+        if (rn.contains("machine") || rn.contains("logic Engine") || rn.contains("vault") || rn.contains("archive") || rn.contains("security")) base += 0.010;
         return Math.min(0.035, base);
     }
 
@@ -6348,20 +6348,20 @@ boolean arbitesAuthorityText(String text) {
             int fine = Math.min(countMoney(), Math.max(1, risk/12));
             if (fine > 0) spendImperialScript(fine);
             suspicion += Math.max(1, risk/20);
-            lastScavengeReport = "Arbites attention catches your begging. Fine: " + fine + " script. Suspicion rises to " + suspicion + ".";
+            lastScavengeReport = "Civic Wardens attention catches your begging. Fine: " + fine + " script. Suspicion rises to " + suspicion + ".";
             logEvent(lastScavengeReport);
         } else if (roll <= chance) {
             int amount = Math.max(1, 1 + rng.nextInt(Math.max(2, payoutBase/12 + 1)));
             addImperialScript(amount);
             purgePhysicalScriptInstances("begging payout must remain tracked cash");
-            lastScavengeReport = "Begged for Imperial Script in " + zt.label + ": gained " + amount + " tracked cash, not an inventory item.";
+            lastScavengeReport = "Begged for Concord Script in " + zt.label + ": gained " + amount + " tracked cash, not an inventory item.";
             logEvent(lastScavengeReport);
         } else {
-            lastScavengeReport = "Begged for Imperial Script in " + zt.label + ": nothing but contempt.";
+            lastScavengeReport = "Begged for Concord Script in " + zt.label + ": nothing but contempt.";
             logEvent(lastScavengeReport);
         }
         showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
-        for (int i=0;i<Math.max(2, 6 - stat("Agility",5)/3);i++) advanceTurn("begs for Imperial Script.");
+        for (int i=0;i<Math.max(2, 6 - stat("Agility",5)/3);i++) advanceTurn("begs for Concord Script.");
         repaint();
     }
 
@@ -6483,9 +6483,9 @@ boolean arbitesAuthorityText(String text) {
         switch (npc.faction) {
             case MINISTORUM: return "Kneel if you require mercy. Stand if you require paperwork. The Emperor receives both.";
             case SORORITAS: return "The temple is under watch. Be grateful the warning is verbal.";
-            case ARBITES: return "Papers. Now. Or explain why your boots are nervous.";
+            case CIVIC WARDENS: return "Papers. Now. Or explain why your boots are nervous.";
             case IMPERIAL_GUARD: return "Keep moving, civilian. This corridor is not a democracy.";
-            case MECHANICUS: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return "State your malfunction, flesh-unit.";
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return "State your malfunction, flesh-unit.";
             case MUTANT: return "The shape in the dark makes no civilized offer.";
             case CULTIST: case HERETIC: return "It smiles with too many certainties.";
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return "Talk quick. Pay quicker.";
@@ -6543,11 +6543,11 @@ boolean arbitesAuthorityText(String text) {
         water = Math.max(0, water - 3);
         fatigue = Math.min(25, fatigue + 6);
         sleepNeed = Math.min(MAX_SLEEP_NEED, sleepNeed + turnsSpent);
-        advancePlayerAndWorldTime(turnsSpent, "Imperial forgiveness prayer service");
+        advancePlayerAndWorldTime(turnsSpent, "Concord forgiveness prayer service");
         suspicion = Math.max(0, suspicion - 8);
         gangHeat = Math.max(0, gangHeat - 3);
         int restored = 0;
-        Faction[] civil = {Faction.ADMINISTRATUM, Faction.ARBITES, Faction.IMPERIAL_GUARD, Faction.MINISTORUM, Faction.SORORITAS, Faction.MECHANICUS, Faction.MECHANICUS_CLOISTER_RED, Faction.MECHANICUS_CLOISTER_RUST, Faction.MECHANICUS_CLOISTER_VOID, Faction.HIVER, Faction.HIVER_BLOCK_AUREL, Faction.HIVER_BLOCK_MARROW, Faction.HIVER_BLOCK_SUMPLEDGER, Faction.NOBLE, Faction.NOBLE_HOUSE_VARN, Faction.NOBLE_HOUSE_KASTOR, Faction.NOBLE_HOUSE_MORVAIN, Faction.NOBLE_HOUSE_CYRA, Faction.NOBLE_HOUSE_DRAKE, Faction.NOBLE_HOUSE_TOLL, Faction.NOBLE_HOUSE_OSSUARY};
+        Faction[] civil = {Faction.CIVIC LEDGER OFFICE, Faction.CIVIC WARDENS, Faction.IMPERIAL_GUARD, Faction.MINISTORUM, Faction.SORORITAS, Faction.MECHANIST COLLEGIA, Faction.MECHANICUS_CLOISTER_RED, Faction.MECHANICUS_CLOISTER_RUST, Faction.MECHANICUS_CLOISTER_VOID, Faction.HIVER, Faction.HIVER_BLOCK_AUREL, Faction.HIVER_BLOCK_MARROW, Faction.HIVER_BLOCK_SUMPLEDGER, Faction.NOBLE, Faction.NOBLE_HOUSE_VARN, Faction.NOBLE_HOUSE_KASTOR, Faction.NOBLE_HOUSE_MORVAIN, Faction.NOBLE_HOUSE_CYRA, Faction.NOBLE_HOUSE_DRAKE, Faction.NOBLE_HOUSE_TOLL, Faction.NOBLE_HOUSE_OSSUARY};
         for (Faction f : civil) {
             int old = factionStanding.getOrDefault(f, 0);
             int neu = old < 0 ? Math.min(0, old + 12) : Math.min(35, old + 3);
@@ -6559,7 +6559,7 @@ boolean arbitesAuthorityText(String text) {
         conversationBranch = activeConversationNpc.name + ": Twenty-four hours. Knees, hunger, thirst, and sleep offered up. Forgiveness is not innocence, but it is a receipt.";
         lastConversation = conversationBranch;
         logConversation("MINISTORUM_FORGIVENESS", conversationBranch);
-        logEvent("IMPERIAL FORGIVENESS RITE: 24h prayer completed. Food " + oldFood + "->" + food + ", water " + oldWater + "->" + water + ", sleep " + oldSleep + "->" + sleepNeed + ", fatigue " + oldFatigue + "->" + fatigue + ", suspicion " + oldSuspicion + "->" + suspicion + ", heat " + oldHeat + "->" + gangHeat + ", civil standing restored +" + restored + ".");
+        logEvent("CONCORD FORGIVENESS RITE: 24h prayer completed. Food " + oldFood + "->" + food + ", water " + oldWater + "->" + water + ", sleep " + oldSleep + "->" + sleepNeed + ", fatigue " + oldFatigue + "->" + fatigue + ", suspicion " + oldSuspicion + "->" + suspicion + ", heat " + oldHeat + "->" + gangHeat + ", civil standing restored +" + restored + ".");
         DebugLog.audit("MINISTORUM_FORGIVENESS", "cleric=" + activeConversationNpc.name + " hours=" + hours + " restored=" + restored + " food=" + oldFood + "->" + food + " water=" + oldWater + "->" + water + " sleep=" + oldSleep + "->" + sleepNeed + " fatigue=" + oldFatigue + "->" + fatigue + " suspicion=" + oldSuspicion + "->" + suspicion + " heat=" + oldHeat + "->" + gangHeat + " state=" + stateSummary());
         updateSensoryModel("after Ministorum forgiveness prayer");
         repaint();
@@ -6573,13 +6573,13 @@ boolean arbitesAuthorityText(String text) {
     }
 
     String npcWorkLine(NpcEntity npc) {
-        if (npc == null) return "Work? The hive eats work and calls the crumbs wages.";
+        if (npc == null) return "Work? The arcology eats work and calls the crumbs wages.";
         if (npc.role != null && npc.role.contains("Trader")) return "I move goods from desperate hands to doomed hands. Coin makes it respectable.";
         if (npc.isProtectedCleric()) return "I keep the Cult Imperialis open, hear confession, ration mercy, and record which souls still pretend to be redeemable.";
         if (npc.faction == Faction.MINISTORUM) return "Candles, sermons, kitchens, pilgrim lines, and the quiet arithmetic of guilt.";
         if (npc.faction == Faction.SORORITAS) return "I guard the sanctuary. There are no softer words for it.";
-        if (npc.faction == Faction.ARBITES) return "I preserve order. You may experience that as pain.";
-        if (npc.faction == Faction.MECHANICUS || npc.faction.name().startsWith("MECHANICUS")) return "Maintenance is worship. Failure is merely heresy wearing dust.";
+        if (npc.faction == Faction.CIVIC WARDENS) return "I preserve order. You may experience that as pain.";
+        if (npc.faction == Faction.MECHANIST COLLEGIA || npc.faction.name().startsWith("MECHANIST COLLEGIA")) return "Maintenance is worship. Failure is merely heresy wearing dust.";
         if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return "I collect what weaker people foolishly describe as theirs.";
         if (npc.faction == Faction.MUTANT) return "Work is where the ceiling drips and the knives sleep badly.";
         if (npc.faction == Faction.CULTIST || npc.faction == Faction.HERETIC) return "The work is listening. The reward is being heard.";
@@ -6609,7 +6609,7 @@ boolean arbitesAuthorityText(String text) {
         String state = npc.state == null || npc.state.isBlank() ? "available" : npc.state.toLowerCase(Locale.ROOT);
         if (npc.isTrader()) return role + " with trade access; buy, sell, haggle, or ask for rumor if the counter is open.";
         if (npc.isProtectedCleric()) return role + " offering temple conversation, faction context, and protected exit.";
-        if (npc.faction == Faction.ARBITES) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
+        if (npc.faction == Faction.CIVIC WARDENS) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
         if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return role + " from a coercive local power; jobs and threats may blur together.";
         return role + " currently " + state + "; conversation can reveal work, faction context, or turn-in options.";
     }
@@ -6667,7 +6667,7 @@ boolean arbitesAuthorityText(String text) {
         if (activeTrader == null || activeTrader.offers.isEmpty()) return;
         selectedTradeOffer = Math.floorMod(selectedTradeOffer + delta, activeTrader.offers.size());
         TradeOffer offer = selectedTradeOffer();
-        lastTradeReport = "Selected offer: " + offer.name + " for " + activeTrader.buyPrice(offer) + " imperial script.";
+        lastTradeReport = "Selected offer: " + offer.name + " for " + activeTrader.buyPrice(offer) + " concord script.";
         DebugLog.audit("TRADE_SELECT", lastTradeReport + " state=" + stateSummary());
         repaint();
     }
@@ -6706,7 +6706,7 @@ boolean arbitesAuthorityText(String text) {
     ArrayList<String> tradeSellPreviewLines(String item) {
         ArrayList<String> lines = new ArrayList<>();
         if (activeTrader == null) return lines;
-        if (item == null || item.equals("Imperial Script")) {
+        if (item == null || item.equals("Concord Script")) {
             lines.add("Sale preview: select a carried item in INVENTORY before selling.");
             return lines;
         }
@@ -6782,7 +6782,7 @@ boolean arbitesAuthorityText(String text) {
     String tradeMarketStatusLine(String item, ItemDef def, boolean buying) {
         String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use) + " " + (activeTrader == null ? "" : activeTrader.archetype + " " + activeTrader.zoneLabel)).toLowerCase(Locale.ROOT);
         if (text.contains("noble") || text.contains("permit") || text.contains("stock certificate") || text.contains("gold")) return "status-sensitive noble or paper asset; licenses, reputation, and witnesses may matter.";
-        if (text.contains("arbites") || text.contains("guard") || text.contains("military") || text.contains("munitorum") || text.contains("bolter") || text.contains("carapace")) return "controlled faction or military good; carrying or reselling it can draw authority attention.";
+        if (text.contains("civic Wardens") || text.contains("guard") || text.contains("military") || text.contains("munitorum") || text.contains("mass-Reactive Carbine") || text.contains("carapace")) return "controlled faction or military good; carrying or reselling it can draw authority attention.";
         if (text.contains("cult") || text.contains("heretic") || text.contains("profane") || text.contains("narcotic") || text.contains("black-market") || text.contains("black market")) return "illicit or black-market good; useful, valuable, and dangerous if searched.";
         if (ItemCatalog.isFirearmLike(item) || ItemCatalog.isExplosiveLike(item)) return "weapon market good; legality depends on faction space, permits, and who sees the transfer.";
         if (text.contains("data spike") || text.contains("lockpick") || text.contains("keycard") || text.contains("hacking")) return "access tool; ordinary traders may sell it, but secure areas treat it as suspicious.";
@@ -6827,7 +6827,7 @@ boolean arbitesAuthorityText(String text) {
             return;
         }
         if (!spendImperialScript(price)) {
-            lastTradeReport = activeTrader.name + " taps the price slate. Need " + price + " imperial script.";
+            lastTradeReport = activeTrader.name + " taps the price slate. Need " + price + " concord script.";
             logEvent(lastTradeReport); DebugLog.audit("TRADE_BUY_FAIL", lastTradeReport + " state=" + stateSummary()); return;
         }
         ItemActionResult bought = buyTraderOfferIntoInventory(activeTrader, offer);
@@ -6838,7 +6838,7 @@ boolean arbitesAuthorityText(String text) {
             DebugLog.warn("TRADE_BUY_FAIL", bought.auditText + " state=" + stateSummary());
             return;
         }
-        lastTradeReport = "ITEM PURCHASED: Bought " + offer.name + " for " + price + " imperial script from " + activeTrader.name + ". " + (bought.provenance == null ? "Origin transferred without detailed ledger." : bought.provenance.summary());
+        lastTradeReport = "ITEM PURCHASED: Bought " + offer.name + " for " + price + " concord script from " + activeTrader.name + ". " + (bought.provenance == null ? "Origin transferred without detailed ledger." : bought.provenance.summary());
         logEvent(lastTradeReport); logConversation("TRADE_BUY", lastTradeReport); gainXp("Commerce", 1, "purchase");
         DebugLog.audit("TRADE_OPTION", "BUY item=" + offer.name + " price=" + price + " trader=" + activeTrader.name + " instance=" + bought.itemInstanceId + " state=" + stateSummary());
         advanceTurn("buys " + offer.name + ".");
@@ -6847,7 +6847,7 @@ boolean arbitesAuthorityText(String text) {
     void tradeSellSelected() {
         if (activeTrader == null) { tradeSellScrap(); return; }
         String item = selectedInventoryItemName();
-        if (item == null || item.equals("Imperial Script")) { lastTradeReport = "Select a carried item that is not money before selling."; logEvent(lastTradeReport); return; }
+        if (item == null || item.equals("Concord Script")) { lastTradeReport = "Select a carried item that is not money before selling."; logEvent(lastTradeReport); return; }
         int idx = inventory.indexOf(item);
         if (idx < 0) { lastTradeReport = "That item is not in your carried goods list yet. Itemized counters will be sellable after the next economy pass."; logEvent(lastTradeReport); return; }
         if (isQuestOrEvidenceItem(item)) {
@@ -6859,7 +6859,7 @@ boolean arbitesAuthorityText(String text) {
         ItemActionResult sold = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, traderShelfContainerId(activeTrader), activeTrader.name + " trader shelf", null, "sold by player to " + activeTrader.name);
         if (!sold.success) { lastTradeReport = "Sale failed: " + sold.playerText; logEvent(lastTradeReport); DebugLog.warn("TRADE_SELL_FAIL", sold.auditText + " state=" + stateSummary()); return; }
         addImperialScript(value);
-        lastTradeReport = "ITEM SOLD: Sold " + item + " to " + activeTrader.name + " for " + value + " imperial script. " + (sold.provenance == null ? "Origin transferred without detailed ledger." : sold.provenance.summary());
+        lastTradeReport = "ITEM SOLD: Sold " + item + " to " + activeTrader.name + " for " + value + " concord script. " + (sold.provenance == null ? "Origin transferred without detailed ledger." : sold.provenance.summary());
         logEvent(lastTradeReport); logConversation("TRADE_SELL", lastTradeReport); gainXp("Commerce", 1, "sale");
         DebugLog.audit("TRADE_OPTION", "SELL item=" + item + " value=" + value + " trader=" + activeTrader.name + " instance=" + sold.itemInstanceId + " state=" + stateSummary());
         advanceTurn("sells " + item + ".");
@@ -6915,7 +6915,7 @@ boolean arbitesAuthorityText(String text) {
         if (list == null || list.isEmpty()) return 0;
         int n = 0;
         for (int i=list.size()-1; i>=0; i--) {
-            if ("Imperial Script".equalsIgnoreCase(String.valueOf(list.get(i)))) { list.remove(i); n++; }
+            if ("Concord Script".equalsIgnoreCase(String.valueOf(list.get(i)))) { list.remove(i); n++; }
         }
         return n;
     }
@@ -6923,7 +6923,7 @@ boolean arbitesAuthorityText(String text) {
     void purgePhysicalScriptInstances(String reason) {
         ArrayList<String> removeIds = new ArrayList<>();
         for (ItemInstance inst : itemInstances.values()) {
-            if (inst != null && "Imperial Script".equalsIgnoreCase(inst.displayName)) removeIds.add(inst.id);
+            if (inst != null && "Concord Script".equalsIgnoreCase(inst.displayName)) removeIds.add(inst.id);
         }
         if (!removeIds.isEmpty()) {
             for (String id : removeIds) itemInstances.remove(id);
@@ -6953,7 +6953,7 @@ boolean arbitesAuthorityText(String text) {
 
     void recordProminentKillForNews(NpcEntity target, String context) {
         if (target == null) return;
-        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.ARBITES || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
+        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.CIVIC WARDENS || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
         if (!prominent) return;
         String rank = (target.factionRankTitle == null || target.factionRankTitle.isBlank()) ? ("rank " + target.factionRank) : target.factionRankTitle;
         recordPlayerNewsEvent("prominent-kill", rank + " " + target.name, target.faction, "killed or incapacitated during " + context + " near " + (world == null ? "unknown" : world.zoneCoordText()), Math.max(4, 10 - Math.max(1, target.factionRank)));
@@ -6997,7 +6997,7 @@ boolean arbitesAuthorityText(String text) {
         logEvent("INN BROADCAST: " + issue);
         lastInnNewsIssue = issue;
         DebugLog.audit("INN_READ_LATEST", "day=" + currentInnDay() + " issue=" + issue + " state=" + stateSummary());
-        advanceTurn("reads or listens to the Imperial News Network.");
+        advanceTurn("reads or listens to the Concord News Network.");
         repaint();
     }
 
@@ -7005,11 +7005,11 @@ boolean arbitesAuthorityText(String text) {
         int day = currentInnDay();
         String issue = ImperialNewsNetworkApi.ensureDailyIssue(this, day, rng);
         if (!spendImperialScript(1)) {
-            logEvent("INN VENDING: the newspaper machine demands 1 Imperial Script for today's sanctioned truth. You lack even that much optimism.");
+            logEvent("INN VENDING: the newspaper machine demands 1 Concord Script for today's sanctioned truth. You lack even that much optimism.");
             return;
         }
         String item = "Fresh INN newspaper";
-        addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.INN, "Imperial News Network dispenser", world, turn, "daily newspaper issue day " + day, "sold to player from newspaper vending machine"));
+        addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.INN, "Concord News Network dispenser", world, turn, "daily newspaper issue day " + day, "sold to player from newspaper vending machine"));
         logEvent("INN VENDING: bought today's newspaper. " + issue);
         lastInnNewsIssue = issue;
         MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER);
@@ -7149,7 +7149,7 @@ boolean arbitesAuthorityText(String text) {
                 break;
             case 'A':
                 suspicion = Math.max(0, suspicion - 1);
-                logEvent("You present yourself to Arbites authority. Paperwork becomes a weapon pointed both ways.");
+                logEvent("You present yourself to Civic Wardens authority. Paperwork becomes a weapon pointed both ways.");
                 break;
             case '1': case '2': case '3': case '4': case '5':
                 interactVendingMachine(tx, ty, here);
@@ -7204,8 +7204,8 @@ boolean arbitesAuthorityText(String text) {
         String label = door=='/'?"open archway":(door=='|'?"hinged scrap door":(door=='L'?"locked or chained door":(door=='V'?"ventilation panel":(door=='X'?"electronic security door":"sealed vault door"))));
         if (door == '/') { logEvent("The open archway offers no barrier. You pass through if you dare."); return; }
 
-        boolean mechanicalTools = countInventory("Lockpicks")>0 || countInventory("Tool bundle")>0 || countInventory("Mechanicus tool roll")>0;
-        boolean electronicTools = countInventory("Hacking tools")>0 || countInventory("Mechanicus tool roll")>0 || countDataSpikes()>0 || countInventory("Keycard")>0;
+        boolean mechanicalTools = countInventory("Lockpicks")>0 || countInventory("Tool bundle")>0 || countInventory("Mechanist Collegia tool roll")>0;
+        boolean electronicTools = countInventory("Hacking tools")>0 || countInventory("Mechanist Collegia tool roll")>0 || countDataSpikes()>0 || countInventory("Keycard")>0;
         boolean secureVaultKey = countInventory("Secure vault key")>0 || countInventory("Vault key")>0;
 
         if (door == 'Z') {
@@ -7302,7 +7302,7 @@ boolean arbitesAuthorityText(String text) {
         if (!selectedInteractionIsSectorRail()) { logEvent("Sector rail failed: select a rail platform or depot counter inside a Neutral Rail Depot."); return; }
         int fare = sectorRailFare();
         if (!spendImperialScript(fare)) {
-            logEvent("Sector rail blocked: passage to another sector costs " + fare + " Imperial Script. You have " + countMoney() + ".");
+            logEvent("Sector rail blocked: passage to another sector costs " + fare + " Concord Script. You have " + countMoney() + ".");
             return;
         }
         int abandonedObjects = baseObjects.size();
@@ -7504,14 +7504,14 @@ boolean arbitesAuthorityText(String text) {
         active.zoneVisitCounts.put(world.zoneType.label, visits);
         int baseChance = 18 + Math.min(20, visits * 2);
         if (atlas != null && atlas.floor <= 2) baseChance += 8;
-        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.ARBITES && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
+        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.CIVIC WARDENS && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
         int roll = rng.nextInt(100);
         if (roll >= baseChance) { lastTransitionEvent = "No event. roll=" + roll + " chance=" + baseChance; return ""; }
         String[] benign = {
             "A maintenance procession passes in the distance, lamps bobbing like tired insects.",
             "A child watches you from a vent grille, then vanishes before the question can form.",
             "A vox-speaker coughs three words of a sermon before dying into static.",
-            "A freight chain rattles somewhere behind the wall, dragging unseen tonnage through the hive bones.",
+            "A freight chain rattles somewhere behind the wall, dragging unseen tonnage through the arcology bones.",
             "Someone has chalked a warning on the doorframe. The spelling is poor. The fear is not."
         };
         int rarity = rng.nextInt(100);
@@ -8029,15 +8029,15 @@ boolean arbitesAuthorityText(String text) {
             case 'R': obj.integrity = 18; obj.cover = 1; obj.armed = true; obj.description = "A razor wire coil. Inspectable area-denial hardware; movement injury hooks wait for hazard authority."; break;
             case 'W': obj.integrity = 70; obj.cover = 5; obj.description = "A reinforced defensive wall panel. Physical hard cover and perimeter structure for gate/sector defense."; break;
             case 'N': obj.integrity = 24; obj.capacity = 3; obj.charges = 1; obj.description = "A security sensor mast. Visible detection hardware for alarm, LOS, and ownership-safe routing."; break;
-            case 'Y': obj.integrity = 65; obj.cover = 3; obj.description = "An Arbites reinforced door. Precinct-grade choke point with access-control binding."; break;
-            case 'J': obj.integrity = 78; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "An Arbites suppression turret profile. Built and inspectable with passive security coverage."; break;
+            case 'Y': obj.integrity = 65; obj.cover = 3; obj.description = "An Civic Wardens reinforced door. Precinct-grade choke point with access-control binding."; break;
+            case 'J': obj.integrity = 78; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "An Civic Wardens suppression turret profile. Built and inspectable with passive security coverage."; break;
             case 'U': obj.integrity = 70; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "A heavy stub turret profile. Physical weapon mount only until ammo, power, staffing, and hostility rules exist."; break;
             case 'Z': obj.integrity = 62; obj.cover = 2; obj.armed = false; obj.capacity = 5; obj.description = "A gilded noble sentry turret profile. Expensive visible deterrent; autonomous targeting intentionally dormant."; break;
-            case 'P': obj.integrity = 30; obj.cover = 1; obj.capacity = 2; obj.description = "A precinct defensive fixture set. Arbites room props, checkpoint furnishings, and service/security anchors."; break;
+            case 'P': obj.integrity = 30; obj.cover = 1; obj.capacity = 2; obj.description = "A precinct defensive fixture set. Civic Wardens room props, checkpoint furnishings, and service/security anchors."; break;
             case 'e': obj.integrity = 9; obj.capacity = 16; obj.charges = 1; obj.description = "An emergency atmospheric condenser. Slowly turns poisoned damp into drinkable reserve."; break;
             case 'f': obj.integrity = 12; obj.capacity = 10; obj.description = "A micro forge. Converts scrap and parts into sturdier construction supplies."; break;
             case 'l': obj.integrity = 8; obj.description = "A micro lab. Early research foundation for base doctrine and ugly learning."; break;
-            case 'x': obj.integrity = 10; obj.armed = true; obj.description = "A security cogitator node. Improves base management and makes raids feel personally insulted."; break;
+            case 'x': obj.integrity = 10; obj.armed = true; obj.description = "A security logic Engine node. Improves base management and makes raids feel personally insulted."; break;
             case 'L': obj.integrity = 10; obj.capacity = 6; obj.charges = 0; obj.description = "Specialized laboratory or chemical apparatus. It satisfies non-consumed equipment requirements for generated chem/medicae recipes when placed in a valid room."; break;
             case 'B': obj.integrity = 9; obj.capacity = 18; obj.description = "A shop counter. Permitted counters produce lawful income; unpermitted counters sell anyway and raise heat."; break;
             case 'M': obj.integrity = 8; obj.capacity = 10; obj.description = "A medicae stall. Consumes medical goods for service income and can support recovery-oriented business later."; break;
@@ -8272,7 +8272,7 @@ boolean arbitesAuthorityText(String text) {
         if (machineParts < 1) { logEvent("Production blocked: forging supplies needs 1 machine part."); return; }
         machineParts -= 1;
         String q = cappedProductionQuality(forge, "Scrap-Forging Doctrine");
-        Faction pf = productionFactionFor(forge, Faction.MECHANICUS);
+        Faction pf = productionFactionFor(forge, Faction.MECHANIST COLLEGIA);
         ProductionRecipe r = ProductionRecipe.create("Construction supplies", pf, q, "Scrap-Forging Doctrine", forge.name);
         supplies += r.outputCharges();
         addInventoryItem(r.outputItemName(), ItemProvenanceRecord.produced(r, forge, world, turn, active == null ? "player" : active.name));
@@ -8962,11 +8962,11 @@ boolean arbitesAuthorityText(String text) {
     String keySafe(String s) { return s == null ? "" : s; }
 
     Faction rivalFactionForContract(Faction f) {
-        if (f == Faction.ARBITES || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f.name().startsWith("NOBLE")) return Faction.BANDIT;
-        if (f == Faction.BANDIT || f.name().startsWith("GANGER")) return Faction.ARBITES;
-        if (f == Faction.MECHANICUS || f.name().startsWith("MECHANICUS")) return Faction.ROGUE_MACHINE;
+        if (f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f.name().startsWith("NOBLE")) return Faction.BANDIT;
+        if (f == Faction.BANDIT || f.name().startsWith("GANGER")) return Faction.CIVIC WARDENS;
+        if (f == Faction.MECHANIST COLLEGIA || f.name().startsWith("MECHANIST COLLEGIA")) return Faction.ROGUE_MACHINE;
         if (f == Faction.MUTANT) return Faction.CULTIST;
-        if (f == Faction.CULTIST || f == Faction.HERETIC) return Faction.ARBITES;
+        if (f == Faction.CULTIST || f == Faction.HERETIC) return Faction.CIVIC WARDENS;
         return Faction.BANDIT;
     }
 
@@ -9072,7 +9072,7 @@ boolean arbitesAuthorityText(String text) {
         addInventoryItem(item, ItemProvenanceRecord.of(item, p.faction, p.leaderName + " private room", world, turn, "leader journal: " + p.shortLine(), "stolen from faction leader journal object"));
         world.mapObjects.remove(m);
         if (world.inBounds(tx,ty)) world.tiles[tx][ty] = '.';
-        logEvent("STEAL JOURNAL: lifted " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, p) + " Imperial Script if sold to the press.");
+        logEvent("STEAL JOURNAL: lifted " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, p) + " Concord Script if sold to the press.");
         DebugLog.audit("FACTION_JOURNAL_STOLEN", "plan=" + p.id + " faction=" + p.faction + " item=" + item + " at=" + tx + "," + ty + " state=" + stateSummary());
         advanceTurn("steals a faction leader journal.");
         updatePendingInteractionSummary(); repaint();
@@ -9101,7 +9101,7 @@ boolean arbitesAuthorityText(String text) {
             sold++; paid += bounty;
         }
         if (sold <= 0) { logEvent("INN BOUNTY: no stolen faction leader journals carried. Editors cannot pay for paranoia without paperwork."); return; }
-        logEvent("INN BOUNTY: sold " + sold + " stolen leader journal(s) for " + paid + " Imperial Script. The editor smiles like a guillotine learning to read.");
+        logEvent("INN BOUNTY: sold " + sold + " stolen leader journal(s) for " + paid + " Concord Script. The editor smiles like a guillotine learning to read.");
         DebugLog.audit("INN_JOURNAL_BOUNTY", "sold=" + sold + " paid=" + paid + " cash=" + countMoney() + " state=" + stateSummary());
         advanceTurn("sells stolen leader journals to the INN."); repaint();
     }
@@ -9114,7 +9114,7 @@ boolean arbitesAuthorityText(String text) {
         if (n <= 0) { logEvent("BASE CASH: you have no carried script to stash."); return; }
         spendImperialScript(n);
         baseStashedScript += n;
-        logEvent("BASE CASH: stashed " + n + " Imperial Script in your claimed-room cash box. Base stash now " + baseStashedScript + ".");
+        logEvent("BASE CASH: stashed " + n + " Concord Script in your claimed-room cash box. Base stash now " + baseStashedScript + ".");
         DebugLog.audit("BASE_SCRIPT_STASH", "amount=" + n + " baseScript=" + baseStashedScript + " state=" + stateSummary());
         advanceTurn("stashes base cash."); repaint();
     }
@@ -9125,7 +9125,7 @@ boolean arbitesAuthorityText(String text) {
         if (n <= 0) { logEvent("BASE CASH: no base-stashed script is available."); return; }
         baseStashedScript -= n;
         addImperialScript(n);
-        logEvent("BASE CASH: withdrew " + n + " Imperial Script from your claimed-room stash. Base stash now " + baseStashedScript + ".");
+        logEvent("BASE CASH: withdrew " + n + " Concord Script from your claimed-room stash. Base stash now " + baseStashedScript + ".");
         DebugLog.audit("BASE_SCRIPT_WITHDRAW", "amount=" + n + " baseScript=" + baseStashedScript + " state=" + stateSummary());
         advanceTurn("withdraws base cash."); repaint();
     }
@@ -9153,14 +9153,14 @@ boolean arbitesAuthorityText(String text) {
         BankProfile b = BankProfile.byId(MapObjectState.itemNameFromStock(m.stockState));
         boolean branch = m.stockState != null && m.stockState.contains("kind=branch");
         boolean open = openBankAccounts.contains(b.id);
-        return b.label + " " + (branch?"branch office":"credit terminal kiosk") + " / aligned with " + b.noblePatron + ". Open fee " + b.openFee + " script. Balance " + bankBalance(b.id) + ". Carried cash " + countMoney() + ". " + b.reputation + (open?" Account open.":" Account not open.") + (b.arbitesFineProtected?" Arbites fine seizure protection: strong.":" Arbites fine seizure protection: ordinary.");
+        return b.label + " " + (branch?"branch office":"credit terminal kiosk") + " / aligned with " + b.noblePatron + ". Open fee " + b.openFee + " script. Balance " + bankBalance(b.id) + ". Carried cash " + countMoney() + ". " + b.reputation + (open?" Account open.":" Account not open.") + (b.arbitesFineProtected?" Civic Wardens fine seizure protection: strong.":" Civic Wardens fine seizure protection: ordinary.");
     }
 
     void openSelectedBankAccount() {
         BankProfile b = selectedBankProfile();
         if (b == null) { logEvent("BANK: no bank selected."); return; }
         if (openBankAccounts.contains(b.id)) { logEvent("BANK: account already open at " + b.label + ". Balance " + bankBalance(b.id) + " script."); return; }
-        if (!spendImperialScript(b.openFee)) { logEvent("BANK: " + b.label + " requires " + b.openFee + " Imperial Script to open an account. You carry " + countMoney() + "."); return; }
+        if (!spendImperialScript(b.openFee)) { logEvent("BANK: " + b.label + " requires " + b.openFee + " Concord Script to open an account. You carry " + countMoney() + "."); return; }
         openBankAccounts.add(b.id); bankBalances.putIfAbsent(b.id, 0);
         lastBankReport = "Opened account at " + b.label + ".";
         logEvent("BANK: opened account at " + b.label + " for " + b.openFee + " script. " + b.reputation);
@@ -9175,11 +9175,11 @@ boolean arbitesAuthorityText(String text) {
         if (!openBankAccounts.contains(b.id)) { logEvent("BANK: open an account at " + b.label + " before depositing."); return; }
         int cash = countMoney();
         int n = Math.min(cash, amount == Integer.MAX_VALUE ? cash : Math.max(0, amount));
-        if (n <= 0) { logEvent("BANK: you have no carried Imperial Script to deposit."); return; }
+        if (n <= 0) { logEvent("BANK: you have no carried Concord Script to deposit."); return; }
         spendImperialScript(n);
         bankBalances.put(b.id, bankBalance(b.id) + n);
         lastBankReport = "Deposited " + n + " script into " + b.label + ".";
-        logEvent("BANK: deposited " + n + " Imperial Script into " + b.label + ". Balance now " + bankBalance(b.id) + ".");
+        logEvent("BANK: deposited " + n + " Concord Script into " + b.label + ". Balance now " + bankBalance(b.id) + ".");
         DebugLog.audit("BANK_DEPOSIT", "bank=" + b.id + " amount=" + n + " balance=" + bankBalance(b.id) + " cash=" + countMoney() + " state=" + stateSummary());
         advanceTurn("deposits bank cash."); repaint();
     }
@@ -9197,7 +9197,7 @@ boolean arbitesAuthorityText(String text) {
         bankBalances.put(b.id, bal - n);
         addImperialScript(delivered);
         lastBankReport = "Withdrew " + delivered + " script from " + b.label + " after fee " + fee + ".";
-        logEvent("BANK: withdrew " + delivered + " Imperial Script from " + b.label + " (fee " + fee + "). Balance now " + bankBalance(b.id) + ".");
+        logEvent("BANK: withdrew " + delivered + " Concord Script from " + b.label + " (fee " + fee + "). Balance now " + bankBalance(b.id) + ".");
         DebugLog.audit("BANK_WITHDRAW", "bank=" + b.id + " gross=" + n + " fee=" + fee + " delivered=" + delivered + " balance=" + bankBalance(b.id) + " state=" + stateSummary());
         advanceTurn("withdraws bank cash."); repaint();
     }
@@ -9270,7 +9270,7 @@ boolean arbitesAuthorityText(String text) {
         if (countInventory("Secure vault key") > 0) score += 55;
         if (countInventory("Data spike") > 0) score += 30;
         if (countInventory("Lockpicks") > 0) score += 18;
-        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanicus tool roll") > 0) score += 12;
+        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanist Collegia tool roll") > 0) score += 12;
         if ("SNEAK".equals(movementModeLabel()) || "SNEAK".equals(activeMotionStateLabel())) score += 8;
         return score;
     }
@@ -9374,7 +9374,7 @@ boolean arbitesAuthorityText(String text) {
         int score = stat("Intellect", 6) * 5 + stat("Agility", 6) * 3;
         if (countInventory("Data spike") > 0) score += 22;
         if (countInventory("Lockpicks") > 0) score += 8;
-        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanicus tool roll") > 0) score += 16;
+        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanist Collegia tool roll") > 0) score += 16;
         if ("SNEAK".equals(movementModeLabel()) || "SNEAK".equals(activeMotionStateLabel())) score += 10;
         int diff = b == null ? 60 : (b.upperHive ? 105 : (b.midHive ? 82 : 58));
         int roll = rng.nextInt(100);
@@ -9525,7 +9525,7 @@ boolean arbitesAuthorityText(String text) {
         String cid = persistentContainerIdForObject(m);
         ContainerRecord c = itemContainers.get(cid);
         logEvent("PERSISTENT STOCK: " + m.label + " / " + cid + " / items " + (c == null ? 0 : c.itemInstanceIds.size()) + ".");
-        if (m.vendCount > 0) logEvent("PERSISTENT STOCK: corpse still has " + m.vendCount + " imperial script recoverable on search.");
+        if (m.vendCount > 0) logEvent("PERSISTENT STOCK: corpse still has " + m.vendCount + " concord script recoverable on search.");
         if (c == null || c.itemInstanceIds.isEmpty()) { logEvent("PERSISTENT STOCK: container is empty; confirm/take-all will clear the abandoned marker."); return; }
         int shown = 0;
         for (String id : c.itemInstanceIds) {
@@ -9552,7 +9552,7 @@ boolean arbitesAuthorityText(String text) {
         int before = containerItemCount(cid);
         int scriptTaken = collectCorpseScriptIfPresent(m);
         if (before <= 0) {
-            if (scriptTaken > 0) logEvent("TAKE ALL: recovered " + scriptTaken + " imperial script from " + m.label + ".");
+            if (scriptTaken > 0) logEvent("TAKE ALL: recovered " + scriptTaken + " concord script from " + m.label + ".");
             else logEvent("TAKE ALL: " + m.label + " is empty. Clearing marker.");
             cleanupPersistentStockMarkerIfEmpty(m, cid); updatePendingInteractionSummary(); return;
         }
@@ -9567,7 +9567,7 @@ boolean arbitesAuthorityText(String text) {
             if (moved >= 25) { block = "bulk-transfer safety cap reached"; break; }
         }
         if (moved > 0) {
-            logEvent("TAKE ALL: recovered " + moved + " item(s)" + (scriptTaken > 0 ? " and " + scriptTaken + " imperial script" : "") + " from " + m.label + ": " + compactStackSummary(taken) + ". Remaining " + containerItemCount(cid) + ".");
+            logEvent("TAKE ALL: recovered " + moved + " item(s)" + (scriptTaken > 0 ? " and " + scriptTaken + " concord script" : "") + " from " + m.label + ": " + compactStackSummary(taken) + ". Remaining " + containerItemCount(cid) + ".");
             gainXp("Scavenge", Math.max(1, Math.min(3, moved)), "persistent stock bulk pickup");
             advanceTurn("bulk-loots persistent stock container.");
         }
@@ -9631,9 +9631,9 @@ boolean arbitesAuthorityText(String text) {
         ArrayList<String> loot = new ArrayList<>();
         if (target == null) return loot;
         switch(target.faction) {
-            case ARBITES: loot.add("Shock baton"); loot.add("Pale Compliance"); break;
+            case CIVIC WARDENS: loot.add("Shock baton"); loot.add("Pale Compliance"); break;
             case IMPERIAL_GUARD: loot.add("Las charge pack"); loot.add("Guard ration tin"); break;
-            case MECHANICUS: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: loot.add("Circuit wafer"); loot.add("Mechanicus nutrient ampoule"); break;
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: loot.add("Circuit wafer"); loot.add("Mechanist Collegia nutrient ampoule"); break;
             case MUTANT: loot.add("Hide strip bundle"); loot.add("Sumpkalm"); break;
             case CULTIST: case HERETIC: loot.add("Choir Ash"); loot.add("Cult ritual blade"); break;
             case ROGUE_MACHINE: loot.add("Servo actuator set"); loot.add("Circuit wafer"); break;
@@ -9741,13 +9741,13 @@ boolean arbitesAuthorityText(String text) {
         int scriptTaken = collectCorpseScriptIfPresent(found);
         ItemActionResult moved = transferFirstContainerItemToInventory(cid, "looted from persistent corpse container " + found.id);
         if (!moved.success) {
-            if (scriptTaken > 0) logEvent("CORPSE SCRIPT: recovered " + scriptTaken + " imperial script from " + found.label + ".");
+            if (scriptTaken > 0) logEvent("CORPSE SCRIPT: recovered " + scriptTaken + " concord script from " + found.label + ".");
             logEvent("CORPSE EMPTY: " + moved.playerText + " Clearing abandoned marker.");
             cleanupPersistentStockMarkerIfEmpty(found, cid);
             return;
         }
         int remain = containerItemCount(cid);
-        logEvent("CORPSE LOOT: recovered " + moved.itemName + " [" + moved.itemInstanceId + "]" + (scriptTaken > 0 ? " and " + scriptTaken + " imperial script" : "") + " from " + found.label + ". Remaining items: " + remain + ".");
+        logEvent("CORPSE LOOT: recovered " + moved.itemName + " [" + moved.itemInstanceId + "]" + (scriptTaken > 0 ? " and " + scriptTaken + " concord script" : "") + " from " + found.label + ". Remaining items: " + remain + ".");
         gainXp("Scavenge", 1, "corpse loot");
         cleanupPersistentStockMarkerIfEmpty(found, cid);
         advanceTurn("loots corpse container.");
@@ -9891,7 +9891,7 @@ boolean arbitesAuthorityText(String text) {
             "Process: WorldAtlas.generateScaffold() builds active slice now; provenance-aware full-sector pregen remains lazy/runtime bounded.",
             "Process: atlas.currentWorld() resolves the active zone and confirms structured hab/sewer room templates.",
             "Process: edge doors, hatch/ladder links, elevator caps, and transition spawn hints are being checked.",
-            "Process: zone type doctrine assigns gangs, Arbites, Mechanicus, civilians, sewer camps, or service-spine control.",
+            "Process: zone type doctrine assigns gangs, Civic Wardens, Mechanist Collegia, civilians, sewer camps, or service-spine control.",
             "Process: room descriptors, scavenge tables, shop/vending hooks, and Infopedia zone names are being indexed.",
             "Process: visibleTiles, rememberedTiles, sense pings, event log state, and panel caches are being prepared.",
             "Process: world.startPoint()/ensurePlayerSpawnPoint() must return a walkable tile with a valid room id."
@@ -10094,11 +10094,11 @@ boolean arbitesAuthorityText(String text) {
 
     String zoneFirstImpression(ZoneType z) {
         switch(z) {
-            case NEUTRAL_CIVILIAN_FLOOR: return "The air here is stale but organized. Queue rails, hab doors, ration counters, and tired civilians form the soft machinery of sanctioned poverty. Arbites eyes linger at checkpoints, not hostile, but always counting permits, packages, and faces.";
+            case NEUTRAL_CIVILIAN_FLOOR: return "The air here is stale but organized. Queue rails, hab doors, ration counters, and tired civilians form the soft machinery of sanctioned poverty. Civic Wardens eyes linger at checkpoints, not hostile, but always counting permits, packages, and faces.";
             case GANGER_TURF: return "Painted warnings crawl across the walls. The corridors smell of cheap propellant, spoiled protein, and recently decided violence. Every door feels claimed, every shadow priced, and every stranger judged by whether they can bleed.";
             case MUTANT_SEWER_CAMP: return "The sewer is no longer merely infrastructure. It has become habitation: hide tents, bone heaps, fungal mats, and territorial claw marks. Things shift in the wet dark with the confidence of locals who have forgotten human law.";
             case CULTIST_SEWER_CAMP: return "The drains here have been painted with devotional filth. Candles gutter in sump niches where no sane worker would kneel. The hymns are quiet, broken, and too close to the rhythm of dripping water.";
-            case SEWER_CONDUIT: return "This is the honest underbelly of the hive: pipe thunder, rusted ladders, black water, and maintenance labels nobody living still respects. Sound carries strangely here, then vanishes into machinery.";
+            case SEWER_CONDUIT: return "This is the honest underbelly of the arcology: pipe thunder, rusted ladders, black water, and maintenance labels nobody living still respects. Sound carries strangely here, then vanishes into machinery.";
             case ARBITES_PRECINCT_EDGE: return "Authority has mass here. Blue steel doors, public counters, holding cells, and weapon ports make the architecture itself feel like a threat. Even silence sounds like paperwork being prepared against you.";
             case MECHANICUS_FORGE_CLOISTER: return "Red utility lamps pulse over conduit shrines and machine cells. The air tastes of hot metal and old incense. Every wall implies that a machine is listening, or worse, waiting for proper authorization.";
             case IMPERIAL_GUARD_BILLET: return "Bunks, ration crates, armory cages, and bored soldiers occupy the space with military exhaustion. Discipline is present, but so is hunger, boredom, and the hard practicality of people trained to shoot first when confused.";
@@ -10106,7 +10106,7 @@ boolean arbitesAuthorityText(String text) {
             case NOBLE_SERVICE_SPINE: return "The walls are cleaner here in the way servant corridors are clean: polished where watched, rotten where ignored. Locked pantries, service bells, and hidden security slits remind you that nobility begins above and leaks downward as danger.";
             case ADMINISTRATUM_ARCHIVE: return "Paper, dust, stamps, counters, and cages. The room is not designed to kill you quickly, only to bury you beneath procedure until hunger performs the execution.";
             case NEUTRAL_RAIL_DEPOT: return "The sector breathes through this place. Rail locks, cargo cages, depot clerks, and quiet guards make an uneasy peace around trade. Everyone is neutral because everyone is being watched.";
-            default: return "The zone resolves out of smoke and geometry: walls, doors, stale air, and the private misery of whatever faction has made this slice of the hive its own.";
+            default: return "The zone resolves out of smoke and geometry: walls, doors, stale air, and the private misery of whatever faction has made this slice of the arcology its own.";
         }
     }
 
@@ -10477,7 +10477,7 @@ boolean arbitesAuthorityText(String text) {
         center(g, "THE MECHANIST", cx, 78);
         drawBootGear(g, Math.min(w-100, cx + 260), 82, Math.max(68, Math.min(104, h/6)), elapsed);
         g.setFont(uiFont); g.setColor(new Color(145, 214, 145));
-        center(g, "UNDERHIVE COGITATOR NODE // COLD WAKE SEQUENCE", cx, 122);
+        center(g, "UNDERHIVE LOGIC ENGINE NODE // COLD WAKE SEQUENCE", cx, 122);
 
         String[] lines = {
             "[0001] Power feed accepted. Brownout ghosts contained.",
@@ -10673,7 +10673,7 @@ boolean arbitesAuthorityText(String text) {
             World w = new World(auditSeed, d.width, d.height);
             w.zoneType = auditZoneType();
             w.sewerLayer = auditSewerLayer;
-            w.hiveName = "Audit Hive";
+            w.hiveName = "Audit Arcology";
             w.sectorName = "Zone Audit";
             w.zoneName = "Zone Audit " + w.zoneType.label + (w.sewerLayer ? " Sewer" : " Floor");
             w.zoneHistory = "Full-bright Zone Audit slice generated outside character play for placement and obstruction inspection.";
@@ -10816,7 +10816,7 @@ boolean arbitesAuthorityText(String text) {
     void multiplayerHostCurrentWorld() {
         WorldSetupSettings settings = (worldSetup == null ? WorldSetupSettings.standard() : worldSetup.copy());
         long hostSeed = seed == 0L ? System.currentTimeMillis() : seed;
-        String hostWorldName = selectedWorldSummary == null || selectedWorldSummary.isBlank() ? "Mechanist Hosted Hive" : selectedWorldSummary;
+        String hostWorldName = selectedWorldSummary == null || selectedWorldSummary.isBlank() ? "Mechanist Hosted Arcology" : selectedWorldSummary;
         HostBindingResult result = multiplayerMenu.hostFromWorld(hostSeed, hostWorldName, "local-hosted-world", settings, ServerConfig.DEFAULT_MAX_PLAYERS);
         logEvent("MULTIPLAYER HOST: " + result.compactLine());
         showTimedAlert(result.success() ? "HOST BOUND" : "HOST FAILED", result.compactLine(), 5200);
@@ -10844,7 +10844,7 @@ boolean arbitesAuthorityText(String text) {
         selectedWorldIndex = Math.max(0, Math.min(selectedWorldIndex, Math.max(0, availableWorlds.size()-1)));
         if (availableWorlds.isEmpty()) {
             pendingWorldSetup = WorldSetupSettings.standard();
-            lastWorldSetupReport = "No saved world definitions found. Configure and generate a new hive world first.";
+            lastWorldSetupReport = "No saved world definitions found. Configure and generate a new arcology world first.";
             setScreen(Screen.WORLD_SETUP);
         } else {
             lastWorldSetupReport = "Found " + availableWorlds.size() + " saved world definition(s). Select one or generate a new world.";
@@ -10895,7 +10895,7 @@ boolean arbitesAuthorityText(String text) {
         selectedWorldIndex = Math.max(0, Math.min(idx, Math.max(0, availableWorlds.size() - 1)));
         if (availableWorlds.isEmpty()) {
             pendingWorldSetup = WorldSetupSettings.standard();
-            lastWorldSetupReport += " No saved worlds remain; generate a new hive world before character creation.";
+            lastWorldSetupReport += " No saved worlds remain; generate a new arcology world before character creation.";
         }
         repaint();
     }
@@ -10920,7 +10920,7 @@ boolean arbitesAuthorityText(String text) {
         g.setColor(optionColor(GameOptions.BACKGROUND)); g.fillRect(0,0,W,H);
         drawSlicedFrame(g, 20, 20, W-40, H-40, "outer");
         g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, H / 15f))));
-        g.setColor(optionColor(GameOptions.TEXT_TITLE)); center(g, "SELECT HIVE WORLD", W/2, Math.max(62, H/8));
+        g.setColor(optionColor(GameOptions.TEXT_TITLE)); center(g, "SELECT ARCOLOGY WORLD", W/2, Math.max(62, H/8));
         g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
         center(g, "World files are listed above; action buttons are deliberately kept below the list.", W/2, Math.max(92, H/8 + 28));
         int margin = Math.max(34, W / 22);
@@ -10947,7 +10947,7 @@ boolean arbitesAuthorityText(String text) {
         g.setColor(optionColor(GameOptions.BACKGROUND)); g.fillRect(0,0,W,H);
         drawSlicedFrame(g, 20, 20, W-40, H-40, "outer");
         g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, H / 15f))));
-        g.setColor(optionColor(GameOptions.TEXT_TITLE)); center(g, "GENERATE HIVE WORLD", W/2, Math.max(58, H/8));
+        g.setColor(optionColor(GameOptions.TEXT_TITLE)); center(g, "GENERATE ARCOLOGY WORLD", W/2, Math.max(58, H/8));
         g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
         center(g, "Simulation information stays left; controls stay right so low-resolution layouts do not trample themselves.", W/2, Math.max(90, H/8 + 28));
         int margin = Math.max(34, W / 22);
@@ -11141,8 +11141,8 @@ boolean arbitesAuthorityText(String text) {
 
     String[][] inGameEditorPalettes() {
         return new String[][]{
-                {"Items", "sealed ration", "stubcarbine", "cogitator core", "repair kit", "water canister", "scrap bundle"},
-                {"Entity Spawners", "civilian spawn", "guard patrol node", "scavenger camp node", "servitor route", "trader counter", "hostile ambush"},
+                {"Items", "sealed ration", "stubcarbine", "logic Engine core", "repair kit", "water canister", "scrap bundle"},
+                {"Entity Spawners", "civilian spawn", "guard patrol node", "scavenger camp node", "bound Labor Automaton route", "trader counter", "hostile ambush"},
                 {"Floor Tiles", "worn-plasteel", "oil-stained iron", "stone and brass", "deck plating", "ceramite tile", "sump grate"},
                 {"Wall Tiles", "hab partition", "bulkhead wall", "gothic stone", "corrugated barricade", "sealed hatch", "service conduit"},
                 {"Objects", "cot", "sink", "dresser", "cabinet", "generator", "pillar", "altar", "terminal", "crate", "candle rack"}
@@ -12072,7 +12072,7 @@ boolean arbitesAuthorityText(String text) {
             wrapped.add("");
         }
         while (!wrapped.isEmpty() && wrapped.get(wrapped.size()-1).isEmpty()) wrapped.remove(wrapped.size()-1);
-        if (wrapped.isEmpty()) wrapped.add("The hive opens beneath you.");
+        if (wrapped.isEmpty()) wrapped.add("The arcology opens beneath you.");
 
         final long leadInMs = 900L;
         final long blankMs = 760L;
@@ -12666,9 +12666,9 @@ boolean arbitesAuthorityText(String text) {
             dossier.add("Starting inventory:");
             for (String item : jp.startingItems()) dossier.add("- " + item);
             dossier.add("");
-            if (jp.faction == Faction.ARBITES) dossier.add("Warning: most gangers will treat this start as a walking arrest warrant.");
+            if (jp.faction == Faction.CIVIC WARDENS) dossier.add("Warning: most gangers will treat this start as a walking arrest warrant.");
             else if (jp.faction == Faction.BANDIT) dossier.add("Warning: law enforcement and rival crews will not admire your career path.");
-            else if (jp.faction == Faction.SCAVENGER) dossier.add("Scavenger-aligned clothing is broadly tolerated, except by bandits, and often questioned by Arbites patrols.");
+            else if (jp.faction == Faction.SCAVENGER) dossier.add("Scavenger-aligned clothing is broadly tolerated, except by bandits, and often questioned by Civic Wardens patrols.");
             else if (jp.faction == Faction.NONE) dossier.add("No faction backing. Better skills, fewer friends, and the full warmth of underhive hospitality.");
             else dossier.add("Faction-aligned start. Your clothes open some doors and paint a target on your back for enemy factions.");
             if (jp.faction != Faction.NONE) dossier.add("Affiliation rule: true members of this faction do not roll disguise checks against their own faction merely because of clothing.");
@@ -12946,7 +12946,7 @@ boolean arbitesAuthorityText(String text) {
                 out.addAll(DefenseSemanticIntegration.labels());
                 break;
             case 15:
-                Collections.addAll(out, "Civilian", "Trader", "Hiver", "Scavenger", "Ganger", "Arbites", "Imperial Guard", "Mechanicus Adept", "Mutant", "Cultist", "Outcast", "Passive: Vending Machine", "Passive: Imperial Shrine", "Passive: Heretical Shrine");
+                Collections.addAll(out, "Civilian", "Trader", "Hiver", "Scavenger", "Ganger", "Civic Wardens", "Concord Guard", "Mechanist Collegia Adept", "Mutant", "Cultist", "Outcast", "Passive: Vending Machine", "Passive: Concord Shrine", "Passive: Heretical Shrine");
                 break;
             case 16:
                 for (Faction f : Faction.visibleFactions()) out.add(f.label);
@@ -13011,7 +13011,7 @@ boolean arbitesAuthorityText(String text) {
                 lines.add("Scope: explains why two goods with the same base item may differ by maker, doctrine, quality, social meaning, lawful status, and production inputs.");
                 lines.add("Formula: base draft recipe + faction manufacturing identity + quality authority + knowledge category + machine tier = generated faction recipe variant.");
                 lines.add("Generated faction variants remain draft/provenance-facing for now; they are not wholesale-injected into the player workbench list.");
-                lines.add("Civilian goods favor availability; military goods favor rugged durability; noble goods favor comfort/status; Mechanicus goods favor throughput/efficiency with higher power and maintenance demands; scavver goods favor repairability with serious defect risk.");
+                lines.add("Civilian goods favor availability; military goods favor rugged durability; noble goods favor comfort/status; Mechanist Collegia goods favor throughput/efficiency with higher power and maintenance demands; scavver goods favor repairability with serious defect risk.");
                 lines.add("Recipe knowledge is quality-bound. Machines cannot exceed their own quality ceiling even when the actor knows a better pattern.");
                 lines.addAll(FactionManufacturingProfile.summaryLines());
                 lines.add("Example generated faction variants:");
@@ -13617,7 +13617,7 @@ boolean arbitesAuthorityText(String text) {
                 break;
             default:
                 lines.add("Prosthetics system reference");
-                lines.add("Reserved prosthetics should replace or augment damaged limbs through clinics, Mechanicus service, rare parts, faction access, and cost.");
+                lines.add("Reserved prosthetics should replace or augment damaged limbs through clinics, Mechanist Collegia service, rare parts, faction access, and cost.");
                 break;
         }
         return lines;
@@ -13628,7 +13628,7 @@ boolean arbitesAuthorityText(String text) {
         switch(entry) {
             case "Heat and Suspicion Overview":
                 lines.add("Attention pressure overview");
-                lines.add("Current pressure: gang heat " + gangHeat + ", Arbites suspicion " + suspicion + ". Heat is criminal/local danger; suspicion is procedural/legal attention.");
+                lines.add("Current pressure: gang heat " + gangHeat + ", Civic Wardens suspicion " + suspicion + ". Heat is criminal/local danger; suspicion is procedural/legal attention.");
                 break;
             case "Hourly Decay":
                 lines.add("Attention decay reference");
@@ -13640,7 +13640,7 @@ boolean arbitesAuthorityText(String text) {
                 lines.add("Heat rises from criminal violence, gang spaces, failed illegal work, noisy construction, obvious theft, hostile attention, and reckless underhive behavior.");
                 break;
             case "Suspicion Sources":
-                lines.add("Arbites suspicion source reference");
+                lines.add("Civic Wardens suspicion source reference");
                 lines.add("Suspicion rises from law attention, illegal shrine/vending/security interactions, visible contraband work, official failures, and poor disguise outcomes.");
                 break;
             default:
@@ -13755,18 +13755,18 @@ boolean arbitesAuthorityText(String text) {
         switch(entry) {
             case "Civilian": lines.add("Role: noncombat local population, service customers, witnesses, and ambient underhive pressure."); lines.add("Behavior: usually wanders, idles, flees danger, or seeks needs providers rather than picking fights."); break;
             case "Trader": lines.add("Role: opens trade sessions and supplies catalog-backed stock with prices, markups, haggle, and provenance handoff."); lines.add("Operational note: trader shelves now have generated containers for bought/sold item movement."); break;
-            case "Hiver": lines.add("Role: ordinary hive resident; baseline faction texture for habs, markets, work floors, and neutral civilian spaces."); lines.add("Gameplay use: social camouflage and crowd density rather than specialized services."); break;
+            case "Hiver": lines.add("Role: ordinary arcology resident; baseline faction texture for habs, markets, work floors, and neutral civilian spaces."); lines.add("Gameplay use: social camouflage and crowd density rather than specialized services."); break;
             case "Scavenger": lines.add("Role: marginal salvage actor tied to trash warrens, sewer edges, and low-trust trading."); lines.add("Expected goods: cheap tools, bad food, improvised water, lock tools, and scrap."); break;
             case "Ganger": lines.add("Role: hostile or coercive local criminal power; raises heat and controls gang rooms."); lines.add("Behavior: can threaten, patrol, attack, or trade through fences depending on context."); break;
-            case "Arbites": lines.add("Role: law enforcement pressure and procedural brutality rather than civic comfort."); lines.add("Behavior: interrogations, checkpoints, suspicion reactions, restricted stock, and faction-only spaces."); break;
-            case "Imperial Guard": lines.add("Role: military presence around billets, depots, and field logistics."); lines.add("Expected goods: rations, water, armor, weapons, and rugged tools."); break;
-            case "Mechanicus Adept": lines.add("Role: machine-cult worker, trader, tutor, or gatekeeper around forge cloisters and relic ducts."); lines.add("Expected goods: machine parts, sacred wire, tool rolls, data spikes, and machine doctrine."); break;
+            case "Civic Wardens": lines.add("Role: law enforcement pressure and procedural brutality rather than civic comfort."); lines.add("Behavior: interrogations, checkpoints, suspicion reactions, restricted stock, and faction-only spaces."); break;
+            case "Concord Guard": lines.add("Role: military presence around billets, depots, and field logistics."); lines.add("Expected goods: rations, water, armor, weapons, and rugged tools."); break;
+            case "Mechanist Collegia Adept": lines.add("Role: machine-cult worker, trader, tutor, or gatekeeper around forge cloisters and relic ducts."); lines.add("Expected goods: machine parts, sacred wire, tool rolls, data spikes, and machine doctrine."); break;
             case "Mutant": lines.add("Role: hostile or semi-feral sewer/warren threat with its own camps and warning signs."); lines.add("Behavior: generally attacks on sight in mutant layers."); break;
             case "Cultist": lines.add("Role: heretical sewer-camp threat tied to illegal shrines, ritual objects, and hidden danger."); lines.add("Behavior: generally hostile when discovered in cult spaces."); break;
             case "Outcast": lines.add("Role: disconnected survivor used for marginal spaces, barter, rumor, or faction ambiguity."); lines.add("Behavior: should not automatically share civilian trust or ganger hostility."); break;
             case "Passive: Vending Machine": lines.add("Role: passive service object pretending to be an NPC entry for inspection/trade convenience."); lines.add("Use: sells ration/water/supply goods from map-object state and logs stock/cooldown changes."); break;
-            case "Passive: Imperial Shrine": lines.add("Role: passive loyal shrine fixture for interaction, attention, and faith/social consequences."); lines.add("Use: should support lawful/Imperial flavor without duplicating heretical shrine risk."); break;
-            default: lines.add("Role: passive illegal shrine fixture with cult risk, suspicion/heat consequences, and forbidden-service hooks."); lines.add("Use: distinct from Imperial shrines because interacting with it should be socially and legally dangerous."); break;
+            case "Passive: Concord Shrine": lines.add("Role: passive loyal shrine fixture for interaction, attention, and faith/social consequences."); lines.add("Use: should support lawful/Concord flavor without duplicating heretical shrine risk."); break;
+            default: lines.add("Role: passive illegal shrine fixture with cult risk, suspicion/heat consequences, and forbidden-service hooks."); lines.add("Use: distinct from Concord shrines because interacting with it should be socially and legally dangerous."); break;
         }
         lines.add("Actor standard: every active NPC now has a stable numeric identifier and string ID for logging/save tracking.");
         return lines;
@@ -13824,7 +13824,7 @@ boolean arbitesAuthorityText(String text) {
         if (f==null) return "entry exists in the menu without a current faction enum binding";
         String n=f.name();
         if (f==Faction.NONE) return "used when ownership should be deliberately absent, not merely unknown";
-        if (n.contains("CLOISTER_RED")) return "red-robed forge alignment; favor orthodox machine service and visible Mechanicus authority";
+        if (n.contains("CLOISTER_RED")) return "red-robed forge alignment; favor orthodox machine service and visible Mechanist Collegia authority";
         if (n.contains("CLOISTER_RUST")) return "rust-cloister alignment; favor maintenance, salvage, and worn machine infrastructure";
         if (n.contains("CLOISTER_VOID")) return "void-cloister alignment; favor sealed systems, space-adjacent hardware, and stranger machine rites";
         if (n.contains("BLOCK_AUREL")) return "hiver block identity for local civilian loyalty, grudges, and housing politics";
@@ -13856,13 +13856,13 @@ boolean arbitesAuthorityText(String text) {
         if (f==null) return "unresolved faction label";
         String n=f.name();
         if (f==Faction.NONE) return "neutral/no-faction marker for generic objects and unowned systems";
-        if (n.contains("MECHANICUS")) return "machine authority, technical services, machine goods, and doctrine gates";
+        if (n.contains("MECHANIST COLLEGIA")) return "machine authority, technical services, machine goods, and doctrine gates";
         if (n.contains("GANGER") || f==Faction.BANDIT) return "local criminal power, heat pressure, fences, and violent control of turf";
         if (n.contains("HIVER") || f==Faction.HIVER) return "civilian labor/population bloc for habs, markets, and ordinary survival";
         if (n.contains("NOBLE") || f==Faction.NOBLE) return "upper-spire property, permits, luxury goods, servants, and status pressure";
-        if (f==Faction.ARBITES) return "law enforcement, suspicion pressure, paperwork, and coercive order";
+        if (f==Faction.CIVIC WARDENS) return "law enforcement, suspicion pressure, paperwork, and coercive order";
         if (f==Faction.IMPERIAL_GUARD) return "military logistics, rations, armor, weapons, and depot discipline";
-        if (f==Faction.ADMINISTRATUM) return "records, permits, forms, and bureaucratic access";
+        if (f==Faction.CIVIC LEDGER OFFICE) return "records, permits, forms, and bureaucratic access";
         if (f==Faction.SCAVENGER) return "salvage economy, low-trust goods, trash routes, and survival barter";
         return "specialized local faction with its own standing, hostility, and production bias";
     }
@@ -13870,13 +13870,13 @@ boolean arbitesAuthorityText(String text) {
     String factionPresenceText(Faction f) {
         if (f==null) return "unknown";
         String n=f.name();
-        if (n.contains("MECHANICUS")) return "forge cloisters, relic ducts, machine rooms, technical traders";
+        if (n.contains("MECHANIST COLLEGIA")) return "forge cloisters, relic ducts, machine rooms, technical traders";
         if (n.contains("GANGER") || f==Faction.BANDIT) return "ganger turf, fences, stash rooms, intimidation routes";
         if (n.contains("HIVER") || f==Faction.HIVER) return "hab stacks, civilian floors, markets, work spaces";
         if (n.contains("NOBLE") || f==Faction.NOBLE) return "noble service spines, permit channels, high-status trade";
-        if (f==Faction.ARBITES) return "precinct edges, checkpoints, holding rooms, evidence counters";
+        if (f==Faction.CIVIC WARDENS) return "precinct edges, checkpoints, holding rooms, evidence counters";
         if (f==Faction.IMPERIAL_GUARD) return "billets, depots, ration stores, munition rooms";
-        if (f==Faction.ADMINISTRATUM) return "archives, permit counters, clerk routes";
+        if (f==Faction.CIVIC LEDGER OFFICE) return "archives, permit counters, clerk routes";
         if (f==Faction.SCAVENGER) return "trash warrens, sewer edges, marginal markets";
         return "zone-appropriate rooms, representatives, patrols, traders, or locked areas";
     }
@@ -13884,13 +13884,13 @@ boolean arbitesAuthorityText(String text) {
     String factionTradeBiasText(Faction f) {
         if (f==null) return "unknown";
         String n=f.name();
-        if (n.contains("MECHANICUS")) return "machine parts, sacred wire, data spikes, tool rolls, relays, and fabrication doctrine";
+        if (n.contains("MECHANIST COLLEGIA")) return "machine parts, sacred wire, data spikes, tool rolls, relays, and fabrication doctrine";
         if (n.contains("GANGER") || f==Faction.BANDIT) return "weapons, lock tools, stimulants, stolen goods, and cheap armor";
         if (n.contains("HIVER") || f==Faction.HIVER) return "rations, water, cots, basic tools, permits, and ordinary supplies";
         if (n.contains("NOBLE") || f==Faction.NOBLE) return "permits, fine rations, clean water, luxury scraps, legal shields, and high value services";
-        if (f==Faction.ARBITES) return "paperwork, restraints, armor, rations, water, and restricted services";
+        if (f==Faction.CIVIC WARDENS) return "paperwork, restraints, armor, rations, water, and restricted services";
         if (f==Faction.IMPERIAL_GUARD) return "military ration packs, field water, rugged tools, armor, and weapons";
-        if (f==Faction.ADMINISTRATUM) return "forms, permits, records, stamps, and legal access";
+        if (f==Faction.CIVIC LEDGER OFFICE) return "forms, permits, records, stamps, and legal access";
         if (f==Faction.SCAVENGER) return "junk tools, improvised water, dirty food, salvage, and cheap components";
         return "locally biased catalog stock and faction-site production profile";
     }
@@ -13901,10 +13901,10 @@ boolean arbitesAuthorityText(String text) {
     String likelyNpcText(ZoneType z) {
         if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.MUTANT_WARRENS) return "mutants only, generally hostile";
         if (z==ZoneType.CULTIST_SEWER_CAMP) return "cultists only, generally hostile";
-        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "Arbites and police clerks";
-        if (z==ZoneType.IMPERIAL_GUARD_BILLET) return "Imperial Guard personnel";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens and police clerks";
+        if (z==ZoneType.IMPERIAL_GUARD_BILLET) return "Concord Guard personnel";
         if (z==ZoneType.GANGER_TURF) return "gangers, fences, intimidated locals";
-        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER) return "Mechanicus adepts, workers, servitor-adjacent personnel";
+        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER) return "Mechanist Collegia adepts, workers, bound Labor Automaton-adjacent personnel";
         if (z==ZoneType.NEUTRAL_CIVILIAN_FLOOR || z==ZoneType.SUMP_MARKET || z==ZoneType.NEUTRAL_RAIL_DEPOT) return "civilians, traders, police presence";
         return "zone-appropriate civilians, outcasts, or local owners";
     }
@@ -14006,7 +14006,7 @@ boolean arbitesAuthorityText(String text) {
         Rectangle modal = uiLayout().modal;
         g.setColor(new Color(3,4,4,248)); g.fillRect(modal.x, modal.y, modal.width, modal.height);
         drawSlicedFrame(g, modal.x, modal.y, modal.width, modal.height, "inner");
-        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"INFOPEDIA // UNDERHIVE COGITATOR", modal.x+modal.width/2, modal.y+45);
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"INFOPEDIA // UNDERHIVE LOGIC ENGINE", modal.x+modal.width/2, modal.y+45);
         String[] tabs = infopediaTabs();
         g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM));
         String subtitle = isAssetInfopediaTab(infopediaTab)
@@ -15036,7 +15036,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
 
     String projectileGlyphForWeapon(String weapon, boolean hit, int frame) {
         String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
-        if (w.contains("flamer") || w.contains("flame") || w.contains("promethium") || w.contains("melta") || w.contains("inferno")) return (frame % 3 == 0) ? "=0)" : (frame % 3 == 1 ? "=o)" : "==)" );
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("melta") || w.contains("inferno")) return (frame % 3 == 0) ? "=0)" : (frame % 3 == 1 ? "=o)" : "==)" );
         if (w.contains("las") || w.contains("laser")) return "~~~~";
         if (w.contains("plasma")) return "~~O~";
         if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "~Z~";
@@ -15488,7 +15488,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
     int factionIntentMasking(Faction f) {
         if (f == null) return 0;
         switch(f) {
-            case ARBITES: case IMPERIAL_GUARD: case SORORITAS: return 8;
+            case CIVIC WARDENS: case IMPERIAL_GUARD: case SORORITAS: return 8;
             case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 7;
             case CULTIST: case HERETIC: return 10;
             case ROGUE_MACHINE: return 12;
@@ -15517,7 +15517,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
     int npcVisionRange(NpcEntity npc) {
         if (npc == null) return 5;
         int base = 5 + Math.max(0, npc.idleBias);
-        if (npc.faction == Faction.ARBITES || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 3;
+        if (npc.faction == Faction.CIVIC WARDENS || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 3;
         if (npc.faction == Faction.MUTANT) base -= 1;
         if (npc.faction == Faction.ROGUE_MACHINE) base += 4;
         if ("Guard".equalsIgnoreCase(npc.state) || "Patrol".equalsIgnoreCase(npc.state)) base += 2;
@@ -15530,7 +15530,7 @@ void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, in
         if (npc == null) return 6;
         int base = 6 + Math.max(0, npc.idleBias);
         if (npc.faction == Faction.MUTANT) base += 3;
-        if (npc.faction == Faction.ARBITES || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 2;
+        if (npc.faction == Faction.CIVIC WARDENS || npc.faction == Faction.IMPERIAL_GUARD || npc.faction == Faction.SORORITAS) base += 2;
         if (npc.faction == Faction.ROGUE_MACHINE) base += 4;
         if ("Sleep".equalsIgnoreCase(npc.state)) base -= 3;
         base += npcMotionHearingModifier(npc);
@@ -16259,7 +16259,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
 
     void drawPause(Graphics2D g) {
         g.setFont(titleFont); g.setColor(new Color(200,184,132)); center(g, "PAUSED", getWidth()/2, 135);
-        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_MAIN)); center(g, "The sump holds its breath. Autosave watches from a cracked cogitator.", getWidth()/2, 185);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_MAIN)); center(g, "The sump holds its breath. Autosave watches from a cracked logic Engine.", getWidth()/2, 185);
     }
 
     void drawCaptureScreen(Graphics2D g) {
@@ -16269,7 +16269,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         drawSlicedFrame(g, 42, 42, W-84, H-84, "inner");
         g.setFont(titleFont);
         g.setColor(new Color(105, 155, 230));
-        center(g, "ARBITES CUSTODY REPORT", W/2, 105);
+        center(g, "CIVIC WARDENS CUSTODY REPORT", W/2, 105);
         g.setFont(uiFont);
         g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
         center(g, "Released from holding. Read what the law has done to you before limping onward.", W/2, 150);
@@ -16278,14 +16278,14 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         for (String raw : report.split("\\n")) lines.add(raw);
         lines.add("");
         lines.add("Current carried Script: " + countMoney() + "   Banked Script: " + totalBankedCash() + "   Base stash: " + baseStashedScript + ".");
-        lines.add("Heat: " + gangHeat + "   Arbites suspicion: " + suspicion + "   Next inspection: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesInspectionCooldownUntilTurn)) + ".");
+        lines.add("Heat: " + gangHeat + "   Civic Wardens suspicion: " + suspicion + "   Next inspection: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesInspectionCooldownUntilTurn)) + ".");
         lines.add("Next jail processing: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesCaptureCooldownUntilTurn)) + ".");
         g.setFont(uiFont);
         g.setColor(optionColor(GameOptions.TEXT_MAIN));
         drawScrollableWrappedLines(g, lines, 86, 190, W-172, H-340, 0, "capturescreen");
         g.setFont(smallFont);
         g.setColor(optionColor(GameOptions.TEXT_DIM));
-        center(g, "Press Enter/Space/Escape or click ACKNOWLEDGE to return to the hive.", W/2, H-185);
+        center(g, "Press Enter/Space/Escape or click ACKNOWLEDGE to return to the arcology.", W/2, H-185);
     }
 
     void drawLostScreen(Graphics2D g) {
@@ -16323,7 +16323,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         g.setColor(optionColor(GameOptions.TEXT_MAIN));
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Choose what you are trying to find. Targeted searching improves odds for that category but still uses room and zone tables.");
-        lines.add("Imperial Script begging is zone-dependent: noble and administratum districts pay best but draw Arbites attention; mutant/cultist zones disable it outright.");
+        lines.add("Concord Script begging is zone-dependent: noble and civic Ledger Office districts pay best but draw Civic Wardens attention; mutant/cultist zones disable it outright.");
         lines.add("Last result: " + lastScavengeReport);
         lines.add("Room cache: " + lastRoomCacheReport);
         int yy = r.y + 64;
@@ -16728,7 +16728,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         if (!a.isBlank()) {
             bonus += 1;
             if (a.contains("armor") || a.contains("armour") || a.contains("flak") || a.contains("carapace") || a.contains("cuirass") || a.contains("breastplate")) bonus += 2;
-            if (a.contains("arbites") || a.contains("suppression") || a.contains("riot")) bonus += 1;
+            if (a.contains("civic Wardens") || a.contains("suppression") || a.contains("riot")) bonus += 1;
         }
         if (!h.isBlank()) {
             bonus += 1;
@@ -16967,7 +16967,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
             factionGroup(Faction.HIVER,Faction.HIVER_BLOCK_AUREL,Faction.HIVER_BLOCK_MARROW,Faction.HIVER_BLOCK_SUMPLEDGER),
             factionGroup(Faction.BANDIT,Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH),
             factionGroup(Faction.NOBLE,Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY),
-            factionGroup(Faction.SCAVENGER,Faction.ADMINISTRATUM,Faction.ARBITES,Faction.IMPERIAL_GUARD,Faction.MECHANICUS),
+            factionGroup(Faction.SCAVENGER,Faction.CIVIC LEDGER OFFICE,Faction.CIVIC WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANIST COLLEGIA),
             factionGroup(Faction.MUTANT,Faction.CULTIST,Faction.ROGUE_MACHINE,Faction.HERETIC)
         };
         String[] titles={"HIVER BLOCKS","GANGS","NOBLE HOUSES","CIVIL / LAW","OUTCASTS"};
@@ -16991,7 +16991,7 @@ void drawCommandTablet(Graphics2D g, int camX, int camY) {
         if(mapTab==0){
             info.add("Current slice: "+MapLayerSurfaceAuthority.label(mapLayerView));
             if(atlas != null){
-                info.add("Hive world: " + atlas.hiveWorld.hiveName + " [" + atlas.hiveWorld.worldId + "]");
+                info.add("Arcology world: " + atlas.hiveWorld.hiveName + " [" + atlas.hiveWorld.worldId + "]");
                 info.add("Worldgen progress: " + atlas.hiveWorld.progressSummary());
                 info.addAll(WorldGenerationProgressApi.progressLines(atlas.hiveWorld));
             }
@@ -17175,10 +17175,10 @@ void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h
         return new Color(120,150,120);
     }
     Color factionUiColor(int xx,int yy){
-        if(xx==2&&yy==1) return new Color(70,130,220); // Arbites blue
+        if(xx==2&&yy==1) return new Color(70,130,220); // Civic Wardens blue
         if(xx==1&&yy==0) return new Color(190,55,45); // gangs red
         if(xx==1&&yy==1) return new Color(210,190,110); // trade neutral
-        if(xx==2&&yy==2) return new Color(150,80,190); // forge/mechanicus
+        if(xx==2&&yy==2) return new Color(150,80,190); // forge/mechanist Collegia
         if(xx==1&&yy==2) return new Color(160,130,70); // noble
         if(xx==0&&yy==0) return new Color(160,210,150); // civil
         return new Color(120,150,120);
@@ -17700,12 +17700,12 @@ String traderShelfContainerId(TraderSession trader) {
     }
 
     void addInventoryItem(String item, ItemProvenanceRecord provenance) {
-        if ("Imperial Script".equalsIgnoreCase(String.valueOf(item))) { addImperialScript(1); return; }
+        if ("Concord Script".equalsIgnoreCase(String.valueOf(item))) { addImperialScript(1); return; }
         addItemToContainer(CONTAINER_PLAYER_INVENTORY, "Player carried inventory", item, provenance, inventory);
     }
 
     void addBaseStorageItem(String item, ItemProvenanceRecord provenance) {
-        if ("Imperial Script".equalsIgnoreCase(String.valueOf(item))) { baseStashedScript++; return; }
+        if ("Concord Script".equalsIgnoreCase(String.valueOf(item))) { baseStashedScript++; return; }
         addItemToContainer(CONTAINER_BASE_STORAGE, "Claimed base storage", item, provenance, baseStorage);
     }
 
@@ -17997,18 +17997,18 @@ String traderShelfContainerId(TraderSession trader) {
         if (low.contains("newspaper") || low.contains("paper mush")) return "News item: USE reads the INN issue or discovers that damp paper has won.";
         if (low.contains("radio") || low.contains("pict-screen") || low.contains("pict screen") || low.contains("television")) return "Broadcast receiver: USE monitors current INN radio/pict bulletins without needing a vending machine.";
         if (PortableLightProfile.isLightItem(item)) return "Portable light: USE activates/carries/wears it, DROP leaves an active light on the floor, THROW LIGHT tosses it ahead. Radius and burn time depend on the item.";
-        if (low.contains("used food tin") || low.contains("ration wrapper")) return "Common hive trash. Reserved recycling hooks may recover scrap or contamination value.";
+        if (low.contains("used food tin") || low.contains("ration wrapper")) return "Common arcology trash. Reserved recycling hooks may recover scrap or contamination value.";
         if (low.contains("map") || low.contains("survey")) return "Navigation utility: USE studies it and reduces local risk pressure.";
         return "No direct use action wired yet. Drop is available.";
     }
 
     Faction factionForClothingItem(String item) {
         String low = item.toLowerCase(Locale.ROOT);
-        if (low.contains("arbites") || low.contains("patrol coat")) return Faction.ARBITES;
+        if (low.contains("civic Wardens") || low.contains("patrol coat")) return Faction.CIVIC WARDENS;
         if (low.contains("bandit") || low.contains("gang colors")) return Faction.BANDIT;
         if (low.contains("hiver") || low.contains("workwear")) return Faction.HIVER;
         if (low.contains("scavenger") || low.contains("rags")) return Faction.SCAVENGER;
-        if (low.contains("mechanicus") || low.contains("robe") || low.contains("tech-priest")) return Faction.MECHANICUS_CLOISTER_RED;
+        if (low.contains("mechanist Collegia") || low.contains("robe") || low.contains("tech-priest")) return Faction.MECHANICUS_CLOISTER_RED;
         if (low.contains("guard") || low.contains("uniform")) return Faction.IMPERIAL_GUARD;
         return Faction.NONE;
     }
@@ -18031,7 +18031,7 @@ String traderShelfContainerId(TraderSession trader) {
         Faction f = factionForClothingItem(item);
         int base = damaged ? 26 : 46;
         int defense = damaged ? 1 : 2;
-        if (f == Faction.ARBITES || f == Faction.IMPERIAL_GUARD) { defense += damaged ? 1 : 2; base -= 4; }
+        if (f == Faction.CIVIC WARDENS || f == Faction.IMPERIAL_GUARD) { defense += damaged ? 1 : 2; base -= 4; }
         if (f == Faction.MECHANICUS_CLOISTER_RED) { defense += 1; base += 2; }
         ItemActionResult moved = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, equipmentContainerIdForSlot(2), "Player equipment slot: Clothing", null, "equipped by player as clothing");
         if (!moved.success) { logEvent("Cannot equip " + item + ": " + moved.playerText); return; }
@@ -18051,7 +18051,7 @@ String traderShelfContainerId(TraderSession trader) {
             removeInventoryAtWithTrace(idx);
             applyMedicalItemEffect(item, low, oldWounds, oldFatigue);
         } else if (low.contains("leader journal")) {
-            logEvent("STOLEN JOURNAL: " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, null) + " Imperial Script. Sell at an INN bureau or newspaper dispenser contact point.");
+            logEvent("STOLEN JOURNAL: " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, null) + " Concord Script. Sell at an INN bureau or newspaper dispenser contact point.");
             return;
         } else if (low.contains("sealed bank lockbox") || low.contains("stock certificate") || low.contains("house gold")) {
             logEvent("BANK HEIST LOOT: " + item + " is valuable, incriminating, and best sold through a trader, faction contact, or noble heist quest profile. Merely staring at it does not launder it.");
@@ -18068,7 +18068,7 @@ String traderShelfContainerId(TraderSession trader) {
         } else if (low.contains("data spike") || low.contains("keycard") || low.contains("lockpick") || low.contains("hacking tools") || low.contains("tool roll") || low.contains("tool bundle")) {
             logEvent(item + " is now active as a carried tool. Door, vault, vending, and interaction checks automatically read it from inventory; it is not consumed by manual USE.");
             return;
-        } else if (low.contains("trade chit") || low.contains("imperial script")) {
+        } else if (low.contains("trade chit") || low.contains("concord script")) {
             logEvent(item + " is currency. Use TRADE/VEND/SERVICE menus to spend it; direct USE would merely annoy the coin.");
             return;
         } else if (low.contains("map") || low.contains("survey")) {
@@ -18337,7 +18337,7 @@ String traderShelfContainerId(TraderSession trader) {
         lines.add("Owned businesses / services / traders:");
         lines.addAll(ownedBusinessLines());
         lines.add("");
-        lines.add("Management note: permits make businesses lawful. Illegal businesses still run, but raise heat and can trigger Arbites, ganger, mutant, or cultist raids by zone.");
+        lines.add("Management note: permits make businesses lawful. Illegal businesses still run, but raise heat and can trigger Civic Wardens, ganger, mutant, or cultist raids by zone.");
         return lines;
     }
 
@@ -18424,7 +18424,7 @@ String traderShelfContainerId(TraderSession trader) {
         String role = safeRecruitRole(r).toLowerCase(Locale.ROOT);
         String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
         if ("security".equals(duty)) return "guard posts, alarms, and raid defense";
-        if (role.contains("guard") || role.contains("arbites") || role.contains("soldier") || role.contains("ganger")) return "security or dangerous hauling";
+        if (role.contains("guard") || role.contains("civic Wardens") || role.contains("soldier") || role.contains("ganger")) return "security or dangerous hauling";
         if (role.contains("trader") || role.contains("clerk") || role.contains("merchant")) return "shop counters, logistics, or market-facing work";
         if (role.contains("mechanic") || role.contains("tech") || role.contains("adept") || role.contains("worker")) return "workbench, forge, condenser, or machine crew";
         if (role.contains("medic") || role.contains("medicae") || role.contains("doctor")) return "clinic stall or medical stock support";
@@ -18449,7 +18449,7 @@ String traderShelfContainerId(TraderSession trader) {
         ArrayList<String> lines = new ArrayList<>();
         int security = baseSecurityRating();
         int pressure = baseRaidPressure(security);
-        lines.add("Expansion heat: " + heatPressureBand(gangHeat, suspicion, pressure) + " | gang heat " + gangHeat + " | Arbites suspicion " + suspicion + " | raid pressure " + pressure + ".");
+        lines.add("Expansion heat: " + heatPressureBand(gangHeat, suspicion, pressure) + " | gang heat " + gangHeat + " | Civic Wardens suspicion " + suspicion + " | raid pressure " + pressure + ".");
         lines.add("Heat drivers: " + baseExpansionHeatDriverLine());
         lines.add("Suspicion drivers: " + baseExpansionSuspicionDriverLine());
         lines.add("Heat relief: " + baseExpansionHeatReliefLine(security));
@@ -18488,7 +18488,7 @@ String traderShelfContainerId(TraderSession trader) {
         if (restrictedStoredGoodsCount() > 0) drivers.add("search-sensitive storage");
         if (baseDefenseAttentionCount() > 0) drivers.add("visible defenses");
         if (baseLabOrChemCount() > 0) drivers.add("lab or chemical work");
-        if (suspicion >= 12) drivers.add("existing Arbites record");
+        if (suspicion >= 12) drivers.add("existing Civic Wardens record");
         if (drivers.isEmpty()) return "no obvious legal driver beyond normal property traces.";
         return String.join(", ", drivers) + ".";
     }
@@ -18748,7 +18748,7 @@ String traderShelfContainerId(TraderSession trader) {
         addInventoryItem("Noble Commerce Permit", ItemProvenanceRecord.of("Noble Commerce Permit", Faction.NOBLE, "noble commerce office", world, turn, "paid permit fee", "issued to player faction"));
         factionStanding.put(Faction.NOBLE, factionStanding.getOrDefault(Faction.NOBLE,0)+1);
         suspicion = Math.max(0, suspicion - 1);
-        logEvent("PERMIT BOUGHT: Noble Commerce Permit acquired for " + cost + " script. Noble standing +1; Arbites suspicion -1.");
+        logEvent("PERMIT BOUGHT: Noble Commerce Permit acquired for " + cost + " script. Noble standing +1; Civic Wardens suspicion -1.");
         DebugLog.audit("BUSINESS_PERMIT_BUY", "cost="+cost+" permits="+businessPermitCount()+" money="+countMoney()+" state="+stateSummary());
         repaint();
     }
@@ -18868,7 +18868,7 @@ String traderShelfContainerId(TraderSession trader) {
             case NEUTRAL_CIVILIAN_FLOOR:
             case NOBLE_SERVICE_SPINE:
             case NEUTRAL_RAIL_DEPOT:
-                return "Adeptus Arbites enforcement team";
+                return "Adeptus Civic Wardens enforcement team";
             case GANGER_TURF:
             case SUMP_MARKET:
             case TRASH_WARREN:
@@ -18879,7 +18879,7 @@ String traderShelfContainerId(TraderSession trader) {
             case CULTIST_SEWER_CAMP:
                 return "cultist assault cell";
             default:
-                return gangHeat > suspicion ? "local ganger crew" : "Adeptus Arbites inspection team";
+                return gangHeat > suspicion ? "local ganger crew" : "Adeptus Civic Wardens inspection team";
         }
     }
 
@@ -18964,10 +18964,10 @@ String traderShelfContainerId(TraderSession trader) {
         if (obj == null) return Faction.BANDIT;
         switch (obj.symbol) {
             case 'B': return Faction.HIVER;
-            case 'M': return Faction.ARBITES;
-            case 'w': return Faction.MECHANICUS;
-            case 'f': return Faction.MECHANICUS;
-            case 'l': return Faction.ADMINISTRATUM;
+            case 'M': return Faction.CIVIC WARDENS;
+            case 'w': return Faction.MECHANIST COLLEGIA;
+            case 'f': return Faction.MECHANIST COLLEGIA;
+            case 'l': return Faction.CIVIC LEDGER OFFICE;
             case 'u': case 'e': return Faction.HIVER_BLOCK_SUMPLEDGER;
             case 's': return Faction.BANDIT;
             default: return Faction.BANDIT;
@@ -18977,10 +18977,10 @@ String traderShelfContainerId(TraderSession trader) {
     Faction rivalFactionForRecipe(CraftingRecipe r, ProductionRecipe pr) {
         String text = ((r == null ? "" : (r.name + " " + r.outputBaseItem + " " + r.requiredKnowledge)) + " " + (pr == null ? "" : pr.outputItemName())).toLowerCase(Locale.ROOT);
         if (text.contains("water") || text.contains("ration") || text.contains("food")) return Faction.HIVER_BLOCK_SUMPLEDGER;
-        if (text.contains("med") || text.contains("bandage") || text.contains("antiseptic") || text.contains("splint")) return Faction.ARBITES;
+        if (text.contains("med") || text.contains("bandage") || text.contains("antiseptic") || text.contains("splint")) return Faction.CIVIC WARDENS;
         if (text.contains("weapon") || text.contains("ammo") || text.contains("stub") || text.contains("blade")) return Faction.BANDIT;
-        if (text.contains("construction") || text.contains("machine") || text.contains("forge") || text.contains("cogitator")) return Faction.MECHANICUS;
-        if (text.contains("knowledge") || text.contains("doctrine") || text.contains("permit")) return Faction.ADMINISTRATUM;
+        if (text.contains("construction") || text.contains("machine") || text.contains("forge") || text.contains("logic Engine")) return Faction.MECHANIST COLLEGIA;
+        if (text.contains("knowledge") || text.contains("doctrine") || text.contains("permit")) return Faction.CIVIC LEDGER OFFICE;
         return Faction.BANDIT;
     }
 
@@ -19034,10 +19034,10 @@ String traderShelfContainerId(TraderSession trader) {
         int sy = atlas == null ? 1 : atlas.sectorY;
         npcFactionSites.add(NpcFactionSite.create("Civic Water Refinery", Faction.HIVER, "utility refinery", sx, sy, 2, 2, 4, "Clean water", "Water bottle", "Water purification"));
         npcFactionSites.add(NpcFactionSite.create("Astra Militarum Commissary Store", Faction.IMPERIAL_GUARD, "ration depot", sx, sy, 2, 3, 5, "Emergency rations", "Field dressings", "Field logistics"));
-        npcFactionSites.add(NpcFactionSite.create("Local Mechanicus Parts Cloister", Faction.MECHANICUS, "parts forge", sx, sy, 3, 2, 5, "Machine part", "Sacred wire bundle", "Mechanicus fabrication"));
+        npcFactionSites.add(NpcFactionSite.create("Local Mechanist Collegia Parts Cloister", Faction.MECHANIST COLLEGIA, "parts forge", sx, sy, 3, 2, 5, "Machine part", "Sacred wire bundle", "Mechanist Collegia fabrication"));
         npcFactionSites.add(NpcFactionSite.create("Ash Market Backroom", Faction.BANDIT, "black market shop", sx, sy, 1, 2, 3, "Lockpicks", "Stub rounds", "illicit resale"));
         npcFactionSites.add(NpcFactionSite.create("Noble Service Pantry", Faction.NOBLE, "licensed high table", sx, sy, 2, 1, 6, "Fine Emergency rations", "Medkit", "noble household supply"));
-        npcFactionSites.add(NpcFactionSite.create("Imperial News Network Press Bureau", Faction.INN, "news printing and broadcast bureau", sx, sy, 1, 2, 6, "Fresh INN newspaper", "Radio set", "sanctioned public news distribution"));
+        npcFactionSites.add(NpcFactionSite.create("Concord News Network Press Bureau", Faction.INN, "news printing and broadcast bureau", sx, sy, 1, 2, 6, "Fresh INN newspaper", "Radio set", "sanctioned public news distribution"));
         FactionStrategySimulationApi.ensurePlans(this);
         DebugLog.audit("NPC_FACTION_SITE_SEED", "seeded=" + npcFactionSites.size() + " plans=" + factionStrategicPlans.size() + " state=" + stateSummary());
     }
@@ -19046,7 +19046,7 @@ String traderShelfContainerId(TraderSession trader) {
         seedNpcFactionProductionSites();
         Faction f = faction == null ? Faction.NONE : faction;
         for (NpcFactionSite site : npcFactionSites) if (sameFactionFamily(site.faction, f) || site.faction == f) return site;
-        if (zone == ZoneType.MECHANICUS_FORGE_CLOISTER) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.MECHANICUS) return site;
+        if (zone == ZoneType.MECHANICUS_FORGE_CLOISTER) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.MECHANIST COLLEGIA) return site;
         if (zone == ZoneType.IMPERIAL_GUARD_BILLET) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.IMPERIAL_GUARD) return site;
         if (zone == ZoneType.NOBLE_SERVICE_SPINE) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.NOBLE) return site;
         if (zone == ZoneType.IMPERIAL_NEWS_NETWORK) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.INN) return site;
@@ -19117,8 +19117,8 @@ String traderShelfContainerId(TraderSession trader) {
             case ADMINISTRATUM_ARCHIVE:
             case NEUTRAL_CIVILIAN_FLOOR:
             case NOBLE_SERVICE_SPINE:
-            case NEUTRAL_RAIL_DEPOT: return Faction.ARBITES;
-            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANICUS;
+            case NEUTRAL_RAIL_DEPOT: return Faction.CIVIC WARDENS;
+            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST COLLEGIA;
             case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
             case GANGER_TURF:
             case SUMP_MARKET:
@@ -19351,13 +19351,13 @@ String traderShelfContainerId(TraderSession trader) {
                 break;
             case SCAVENGE:
                 lines.add("Targeted scavenging submenu. Current target: " + selectedScavengeTarget);
-                lines.add("General, Food, Water, Parts, or Beg for Imperial Script. Begging has zone-based payout and Arbites risk.");
+                lines.add("General, Food, Water, Parts, or Beg for Concord Script. Begging has zone-based payout and Civic Wardens risk.");
                 lines.add(lastScavengeReport);
                 lines.add("Room cache ledger: " + lastRoomCacheReport);
                 break;
             case INVENTORY:
                 lines.add("Carry load: " + carryStatusText() + "   Supplies: " + supplies + "   Food: " + food + "/15   Water: " + water + "/15   Machine parts: " + machineParts);
-                lines.add("Imperial Script: carried " + countMoney() + " | banked " + totalBankedCash() + " | base stash " + countBaseStoredScript() + " — tracked as weightless cash, not a carried item stack.");
+                lines.add("Concord Script: carried " + countMoney() + " | banked " + totalBankedCash() + " | base stash " + countBaseStoredScript() + " — tracked as weightless cash, not a carried item stack.");
                 lines.add("Strength increases carry capacity; Endurance adds a smaller support bonus. Overload adds +1 time to movement per excess bulk.");
                 lines.add("Transfer preview: " + inventoryTransferWorkflowPreviewLine(selectedInventoryItemName()));
                 LinkedHashMap<String,Integer> stacks = stackInventory(inventory);
@@ -19462,7 +19462,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.addAll(baseManagementLines());
                 break;
             case FACTIONS:
-                lines.add("Gang heat: " + gangHeat + "   Arbites suspicion: " + suspicion + "   Turn: " + turn);
+                lines.add("Gang heat: " + gangHeat + "   Civic Wardens suspicion: " + suspicion + "   Turn: " + turn);
                 lines.add("Temporary hostilities: " + hostilitySummary());
                 for (Faction f : Faction.visibleFactions()) lines.add("  " + f.label + " standing " + factionStanding.getOrDefault(f,0));
                 lines.add(baseClaimed ? "Your base exists. That makes you visible." : "No base yet. You are merely suspiciously alive.");
@@ -19474,11 +19474,11 @@ String traderShelfContainerId(TraderSession trader) {
             case DISGUISE:
                 lines.add("Equipped clothing: " + equippedClothing.name + (equippedClothing.damaged ? " (damaged)" : ""));
                 lines.add("Aligned identity: " + equippedClothing.alignedFaction.label + "   Defense: " + equippedClothing.defense + "   Base cover: " + equippedClothing.disguiseBase + "%");
-                lines.add("Scavenger rags begin neutral, but bandits prey on them and Arbites interrogate them.");
+                lines.add("Scavenger rags begin neutral, but bandits prey on them and Civic Wardens interrogate them.");
                 lines.add("Disguise checks fire near witnesses or inside faction-only areas.");
                 lines.add("Last disguise failure: " + lastDisguiseFailure.label);
                 lines.add("Last interrogation: " + lastInterrogation);
-                lines.add("Last Arbites patrol: " + lastArbitesPatrolReport);
+                lines.add("Last Civic Wardens patrol: " + lastArbitesPatrolReport);
                 lines.add("Last custody report: " + lastCrimePunishmentReport);
                 lines.add("Inspection cooldown until: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesInspectionCooldownUntilTurn)) + "   Jail processing cooldown until: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesCaptureCooldownUntilTurn)));
                 lines.add("Disguise surface: equip clothing, inspect cover strength, watch damage, and track paper/permit support through inventory and faction checks.");
@@ -19505,7 +19505,7 @@ String traderShelfContainerId(TraderSession trader) {
                     lines.add("Trader: " + activeTrader.name + " — " + activeTrader.archetype + " — " + activeTrader.zoneLabel);
                     if (activeTrader.sourceSite != null) lines.add("Supply source: " + activeTrader.sourceSite.summaryLine());
                     if (activeTrader.supplyChainSummary != null && !activeTrader.supplyChainSummary.isBlank()) lines.add("Supply chain: " + activeTrader.supplyChainSummary);
-                    lines.add("Money: " + countMoney() + " imperial script/chits. Discount: " + activeTrader.discountPct + "%  Markup: " + activeTrader.markupPct + "%  Haggle attempts: " + activeTrader.haggleAttempts);
+                    lines.add("Money: " + countMoney() + " concord script/chits. Discount: " + activeTrader.discountPct + "%  Markup: " + activeTrader.markupPct + "%  Haggle attempts: " + activeTrader.haggleAttempts);
                     lines.add("Conversation branch: " + conversationBranch);
                     lines.add("Offers:");
                     for (int i=0;i<activeTrader.offers.size();i++) {
@@ -19572,7 +19572,7 @@ String traderShelfContainerId(TraderSession trader) {
                 lines.add("Tracked: player, atlas coordinates, visited zone records, faction standings, hostility timers, item-instance containers, base objects, current-zone NPCs, shops, persistent stock, machine locks, production queues, and survival/defeat counters.");
                 break;
             case INFOPEDIA:
-                lines.add("Infopedia is rendered by the dedicated tabbed cogitator panel.");
+                lines.add("Infopedia is rendered by the dedicated tabbed logic Engine panel.");
                 break;
             default:
                 lines.add("No panel selected.");
@@ -19720,11 +19720,11 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             case '-': return "exterior hivewall maintenance corridor; narrow, dangerous, and wrapped around the bounded zone envelope.";
             case '#': return "bulkhead wall; not walkable.";
             case '%': return "intra-floor support beam mass; structural blocker between rooms.";
-            case '&': return "gantry lattice sealed inside the hive wall mass; not a usable walkway from this side.";
+            case '&': return "gantry lattice sealed inside the arcology wall mass; not a usable walkway from this side.";
             case '^': return "buried conveyor way; solid machinery path between forgotten production spaces.";
             case '8': return "pipe and pressure-vessel bundle; solid utility mass.";
             case '0': return "cable conduit column; sealed support/infrastructure blocker.";
-            case '*': return "collapsed hive debris; rubble from an older internal failure.";
+            case '*': return "collapsed arcology debris; rubble from an older internal failure.";
             case '?': return "buried cache signature; something was sealed or lost inside the wall mass.";
             case '!': return "dangerous buried reserve marker; forgotten supplies or hazard locked inside the interstitial mass.";
             case ' ': return "void space; empty intrahive abyss beyond the bounded wall envelope.";
@@ -19744,13 +19744,13 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             case 'g': return "ganger presence; predatory local power.";
             case 'm': return "mutant presence; desperate and dangerous.";
             case 'R': return "rogue machine; autonomous industrial hazard.";
-            case 'A': return "Arbites patrol point; law arrives with boots and paperwork.";
+            case 'A': return "Civic Wardens patrol point; law arrives with boots and paperwork.";
             case '1': return "food vending machine; legal 12-hour cooldown or illegal hacked 1-hour cycle.";
-            case '2': return "armor vending cabinet; crude protective stock dispensed for imperial script.";
+            case '2': return "armor vending cabinet; crude protective stock dispensed for concord script.";
             case '3': return "weapons vending cage; dangerous stock, dangerous paperwork.";
             case '4': return "construction material vending locker; scrap, fasteners, and machine parts.";
             case '5': return "survival supplies vending stack; rations, canteens, and field goods.";
-            case 'I': return "Imperial shrine; dedicated to a local saint, legal to pray at and harder to explain ignoring.";
+            case 'I': return "Concord shrine; dedicated to a local saint, legal to pray at and harder to explain ignoring.";
             case '$': return "donation box or trade lockbox; someone will notice if it goes light.";
             case 'W': return "saint alcove or relic niche; devotional architecture with a witness problem.";
             case 'T': return "trade depot; recruitment and supplies will live here.";
@@ -19782,8 +19782,8 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             case 'e': return "atmospheric condenser EMM; workbench-built emergency machine.";
             case 'f': return "micro forge EMM; workbench-built fabrication machine.";
             case 'l': return "micro lab EMM; crude base research station.";
-            case 'x': return "security cogitator node; faction-gated base management machine.";
-            case 'p': return "Arbites faction-only precinct interior; wrong cover means immediate trouble.";
+            case 'x': return "security logic Engine node; faction-gated base management machine.";
+            case 'p': return "Civic Wardens faction-only precinct interior; wrong cover means immediate trouble.";
             case 'b': return "bandit faction-only den; a marked patron or gang colors are expected.";
             case 'h': return "hiver-only block; locals know who belongs.";
             case 'n': return "noble-aligned secure room; poverty itself is probable cause.";
@@ -19803,10 +19803,10 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
 
     Color colorForFaction(Faction f) {
         switch (f) {
-            case ARBITES: return new Color(70, 115, 210);
+            case CIVIC WARDENS: return new Color(70, 115, 210);
             case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(150, 55, 45);
-            case MECHANICUS: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
-            case ADMINISTRATUM: return new Color(145, 125, 95);
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
+            case CIVIC LEDGER OFFICE: return new Color(145, 125, 95);
             case MINISTORUM: return new Color(180, 150, 70);
             case SORORITAS: return new Color(210, 210, 210);
             case IMPERIAL_GUARD: return new Color(85, 135, 85);
@@ -20532,7 +20532,7 @@ void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
             lines.add("MUSIC: " + (options.musicEnabled ? "ON" : "OFF") + " / " + options.musicVolume + "%");
             lines.add("VOICE / CONVERSATION: " + (options.conversationSound ? "ON" : "OFF") + " / " + options.conversationVolume + "%");
             lines.add("BOOT SOUND: " + (options.bootSound ? "ON" : "OFF"));
-            lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming cogitator." );
+            lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming logic Engine." );
             drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
         } else if (optionsTab == 3) {
             ArrayList<String> lines = controlsReferenceLines();

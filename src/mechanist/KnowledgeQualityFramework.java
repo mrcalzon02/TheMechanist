@@ -43,14 +43,14 @@ class KnowledgeDef {
         add(m, "Potable Water Discipline", "survival/water", 3, "water guild notes, medicae warnings, purifier slates", "potable water labeling, safe storage, and sanitation-adjacent water practices");
         add(m, "Water Recycler Operation", "survival/water/infrastructure", 5, "utility workers, recycler rooms, municipal slates", "water recycler operation and medium-scale water recovery systems");
         add(m, "Municipal Purification Systems", "survival/water/infrastructure", 7, "public works ledgers, guild engineers, district utility plans", "municipal purifiers and district water-room support");
-        add(m, "Closed-Cycle Water Authority", "survival/water/infrastructure", 10, "sealed utility schools, Mechanicus supervision, district charters", "closed-cycle water systems and high-trust district water authority");
+        add(m, "Closed-Cycle Water Authority", "survival/water/infrastructure", 10, "sealed utility schools, Mechanist Collegia supervision, district charters", "closed-cycle water systems and high-trust district water authority");
 
         add(m, "Rough Bedding", "survival/habitation", 1, "dormitories, shanties, work camps", "rough bedding, rest recognition, and very basic sleep-space setup");
         add(m, "Cot Assembly", "survival/habitation", 1, "hab workers, medicae triage areas, barracks stores", "cot assembly and correct generic cot usage");
         add(m, "Dormitory Layout", "survival/habitation", 2, "hab wardens, barracks supervisors, labor bosses", "dormitory room stamps and predictable cot/sink/dresser layout logic");
         add(m, "Hab-Cell Furnishing", "survival/habitation", 3, "tenement stewards, hab repair crews, cheap landlords", "basic hab-cell furniture, cabinets, and small apartment support");
         add(m, "Communal Sanitation", "survival/habitation/sanitation", 4, "washrooms, civic ordinances, medicae warnings", "shared sanitation fixtures and disease-risk mitigation in habitation spaces");
-        add(m, "Apartment Block Planning", "survival/habitation/civic", 6, "hab planners, administratum surveys, slum improvement charters", "multi-room apartment stamps and predictable residential room clusters");
+        add(m, "Apartment Block Planning", "survival/habitation/civic", 6, "hab planners, civic Ledger Office surveys, slum improvement charters", "multi-room apartment stamps and predictable residential room clusters");
         add(m, "Civilian Habitation Authority", "survival/habitation/civic", 8, "civic permits, hab-block administrators, faction housing offices", "civilian housing permissions and higher-density habitation planning");
 
         add(m, "Scrap Recognition", "survival/salvage", 1, "trash heaps, work yards, scavver camps", "recognition of useful scrap and junk containers");
@@ -66,18 +66,18 @@ class KnowledgeDef {
         add(m, "Base Logistics Discipline", "faction/logistics", 3, "quartermasters, cargo scribes, supply-route ledgers", "carrying stations, supply posts, logistics centers, and later inter-base cargo transfer");
 
         // Fabrication quality spine and faction production.
-        add(m, "Scrap-Forging Doctrine", "mechanist/fabrication", 2, "Mechanicus traders, forge tutors, data slates, Micro Lab", "Micro Forge construction and supply conversion recipes");
+        add(m, "Scrap-Forging Doctrine", "mechanist/fabrication", 2, "Mechanist Collegia traders, forge tutors, data slates, Micro Lab", "Micro Forge construction and supply conversion recipes");
         add(m, "Junk Fabrication Patterns", "quality/production", 1, "trash slates, bad tutors, broken manuals, desperate practice", "Junk recipes and Junk machine operation; low value, low charges, high defect risk");
         add(m, "Common Fabrication Patterns", "quality/production", 2, "working manuals, guild basics, civic workshops", "Common recipes, common workshop repeatability, and ordinary civic production");
         add(m, "Serviceable Fabrication Patterns", "quality/production", 4, "guild trainers, shop ledgers, working manuals, stable Micro Lab research", "Serviceable recipes and baseline reliable faction production");
         add(m, "Fine Fabrication Patterns", "quality/production", 6, "skilled artisans, better instruments, inspected shop ledgers", "Fine recipes, better tolerances, and skilled-workshop outputs");
         add(m, "Masterwork Fabrication Patterns", "quality/production", 8, "expert artificers, master shops, rare ledgers", "Masterwork recipes and rare expert production patterns");
         add(m, "Noble Manufactury Patterns", "quality/production", 11, "noble factors, restricted guild schools, high-status contracts", "Noble recipes, high-value goods, comfort infrastructure, and prestige outputs");
-        add(m, "Archeotech Pattern Recognition", "quality/production/archeotech", 14, "sealed vault data, Mechanicus custody, forbidden manuals", "recognition of archeotech pattern risks, impossible tolerances, and relic production ceilings");
-        add(m, "Archeotech Production Rites", "quality/production/archeotech", 15, "Mechanicus vaults, forbidden data, relic machines, extreme faction trust", "Archeotech recipes, relic machinery ceilings, exceptional power/medical/weapon/clothing outputs");
+        add(m, "Archeotech Pattern Recognition", "quality/production/archeotech", 14, "sealed vault data, Mechanist Collegia custody, forbidden manuals", "recognition of archeotech pattern risks, impossible tolerances, and relic production ceilings");
+        add(m, "Archeotech Production Rites", "quality/production/archeotech", 15, "Mechanist Collegia vaults, forbidden data, relic machines, extreme faction trust", "Archeotech recipes, relic machinery ceilings, exceptional power/medical/weapon/clothing outputs");
         add(m, "Civilian Provisioning Patterns", "faction/production", 2, "markets, hab kitchens, civic stores", "civilian faction equivalents for rations, water, cots, tools, and shop goods");
         add(m, "Military Logistics Patterns", "faction/production", 4, "Astra Militarum quartermasters, depots, contraband manuals", "military ration packs, rugged tools, armor, weapons, and field infrastructure");
-        add(m, "Mechanicus Fabrication Rites", "faction/production", 5, "forge cloisters, tech-adepts, machine cult data", "Mechanicus machine goods, relays, boilers, assemblers, and efficient production recipes");
+        add(m, "Mechanist Collegia Fabrication Rites", "faction/production", 5, "forge cloisters, tech-adepts, machine cult data", "Mechanist Collegia machine goods, relays, boilers, assemblers, and efficient production recipes");
 
         // Infrastructure and utilities.
         add(m, "Civic Footpath Recognition", "infrastructure/roads", 1, "street use, signs, maintenance paint", "recognition of sidewalks, road edges, and safe footpath tiles");
@@ -85,19 +85,19 @@ class KnowledgeDef {
         add(m, "Plaza Layout Doctrine", "infrastructure/plaza", 3, "civic planners, plaza maps, district center surveys", "central plaza placement and civic-zone anchor logic");
         add(m, "Road-to-Plaza Joining", "infrastructure/plaza/roads", 4, "road crews, plaza plans, survey stakes", "joining roads inward so plazas connect to the circulation fabric");
         add(m, "Traffic Channel Planning", "infrastructure/roads", 6, "watch posts, hauler routes, municipal ledgers", "traffic channels, road continuity, and better road-based room frontage");
-        add(m, "District Circulation Planning", "infrastructure/roads/district", 8, "district plans, Administratum zoning records, utility surveys", "large-scale movement planning across plazas, roads, corridors, and transition routes");
+        add(m, "District Circulation Planning", "infrastructure/roads/district", 8, "district plans, Civic Ledger Office zoning records, utility surveys", "large-scale movement planning across plazas, roads, corridors, and transition routes");
         add(m, "Maintenance Access Recognition", "infrastructure/maintenance", 1, "service hatches, worker markings, utility rooms", "recognition of maintenance corridors and access strips");
         add(m, "Utility Corridor Orientation", "infrastructure/maintenance", 2, "utility workers, corridor stamps, service plans", "directional maintenance corridor orientation and same-family tile joining");
         add(m, "Bulkhead Service Routes", "infrastructure/maintenance", 4, "bulkhead crews, void-safety manuals, service maps", "bulkhead-adjacent service routes and safer transition placement");
         add(m, "External Void Corridor Safety", "infrastructure/void", 6, "voidside workers, hazard briefings, exterior maintenance doctrine", "external void corridor rules and edge-safety discipline");
         add(m, "Maintenance Network Continuity", "infrastructure/maintenance", 8, "district utility offices, maintenance supervisors, route ledgers", "connected maintenance service networks instead of isolated bands");
-        add(m, "District Service Spine Planning", "infrastructure/maintenance/district", 10, "public works planners, Mechanicus utility surveys", "district-scale utility spines and long-run maintenance access planning");
+        add(m, "District Service Spine Planning", "infrastructure/maintenance/district", 10, "public works planners, Mechanist Collegia utility surveys", "district-scale utility spines and long-run maintenance access planning");
         add(m, "Torch and Lamp Handling", "infrastructure/lighting", 1, "lamplighters, hab stewards, emergency lamps", "basic lamp recognition and hand-placed light safety");
         add(m, "Local Fixture Illumination", "infrastructure/lighting", 2, "workshop lamps, wall fixtures, dormitory lighting", "local light fixtures and room-level illumination planning");
         add(m, "Wall-Respecting Light Casting", "infrastructure/lighting", 4, "lighting audits, maintenance workers, line-of-sight repair notes", "light that illuminates blocking walls without bleeding through them");
         add(m, "Grid Light Discipline", "infrastructure/lighting", 6, "utility diagrams, emergency lighting tests", "consistent grid lighting, improved falloff, and dark-space readability");
         add(m, "Emergency Lighting Networks", "infrastructure/lighting", 8, "generator rooms, safety officers, alarm stations", "emergency light networks and power-loss visibility support");
-        add(m, "Civic Lighting Authority", "infrastructure/lighting/civic", 10, "municipal departments, Administratum lighting budgets", "district lighting authority and larger safe-lit civic spaces");
+        add(m, "Civic Lighting Authority", "infrastructure/lighting/civic", 10, "municipal departments, Civic Ledger Office lighting budgets", "district lighting authority and larger safe-lit civic spaces");
         add(m, "Waste Channel Recognition", "infrastructure/sewer", 1, "sewer grates, sump drains, bad smells with doctrine", "waste channel and sewer tile recognition");
         add(m, "Sewer Corridor Navigation", "infrastructure/sewer", 2, "sump guides, maintenance workers, hazard maps", "sewer corridor navigation and specialized sewer corridor awareness");
         add(m, "Drainage Tile Discipline", "infrastructure/sewer", 3, "drain plans, utility stamps, flood marks", "drainage-tile placement, orientation, and obstruction warnings");
@@ -117,14 +117,14 @@ class KnowledgeDef {
         add(m, "Basic Machine Operation", "industry/machine", 2, "machine rooms, manuals, foreman supervision", "basic machine operation and early apparatus use");
         add(m, "Maintenance Cycle Awareness", "industry/machine", 4, "maintenance logs, tool cabinets, machine faults", "maintenance cycle awareness and machine status interpretation");
         add(m, "Machine Safety Discipline", "industry/machine", 5, "factory warnings, injury reports, safety briefings", "safer machine use, jam/fault recognition, and reduced catastrophic errors");
-        add(m, "Industrial Apparatus Operation", "industry/machine", 7, "factory supervisors, Mechanicus notes, production lines", "industrial apparatus operation and larger machinery permissions");
-        add(m, "Automated Production Cells", "industry/machine/automation", 10, "cogitator stations, factory relays, automation records", "automated production-cell authority and later staffed/automated machine queues");
+        add(m, "Industrial Apparatus Operation", "industry/machine", 7, "factory supervisors, Mechanist Collegia notes, production lines", "industrial apparatus operation and larger machinery permissions");
+        add(m, "Automated Production Cells", "industry/machine/automation", 10, "logic Engine stations, factory relays, automation records", "automated production-cell authority and later staffed/automated machine queues");
         add(m, "Scrap Material Recognition", "industry/materials", 1, "scrap bins, warehouses, refit yards", "scrap material recognition and material-family sorting");
         add(m, "Wood-Cloth-Metal Sorting", "industry/materials", 2, "warehouse sorters, workshops, recycler bins", "wood, cloth, and metal sorting without confusing base material families");
         add(m, "Component Recovery", "industry/materials", 3, "machine junk, toolboxes, repair rooms", "component recovery from salvage and ruined machinery");
         add(m, "Industrial Component Handling", "industry/materials", 5, "depots, fabrication rooms, stockroom clerks", "industrial component handling and safer supply-room routing");
         add(m, "Refined Material Processing", "industry/materials", 7, "refineries, smelters, chemical rooms", "refined material processing and stronger production chains");
-        add(m, "Specialist Material Chains", "industry/materials", 10, "guild schools, restricted manifests, Mechanicus tutors", "specialist material chains and rare input handling");
+        add(m, "Specialist Material Chains", "industry/materials", 10, "guild schools, restricted manifests, Mechanist Collegia tutors", "specialist material chains and rare input handling");
         add(m, "Container Discipline", "industry/logistics", 1, "stockrooms, scavenging, warehouse floors", "container recognition and basic storage behavior");
         add(m, "Stockpile Recognition", "industry/logistics", 2, "haulers, stockrooms, cargo clerks", "stockpile recognition and local supply grouping");
         add(m, "Supply Shelf Practice", "industry/logistics", 3, "shop shelves, storehouse workers, item ledgers", "supply shelf use and correct shelf/barrel icon semantics");
@@ -133,8 +133,8 @@ class KnowledgeDef {
         add(m, "District Logistics Authority", "industry/logistics", 9, "district depots, transit offices, munitorum ledgers", "district-scale logistics permissions and supply planning");
         add(m, "Workshop Doctrine", "industry/convergence", 5, "manual craft, machines, and materials studied together", "workshop-level industrial workflow doctrine");
         add(m, "Industrial Workflow Doctrine", "industry/convergence", 8, "factories, production rooms, queue audits", "multi-room industrial workflow and operation queues");
-        add(m, "Production Line Authority", "industry/convergence", 12, "major factories, administratum audits, Mechanicus approval", "production line authority and advanced manufacturing orchestration");
-        add(m, "Workshop Labor Discipline", "faction/automation", 2, "factory foremen, Mechanicus adepts, labor unions", "recruit assignment to machines and production control");
+        add(m, "Production Line Authority", "industry/convergence", 12, "major factories, civic Ledger Office audits, Mechanist Collegia approval", "production line authority and advanced manufacturing orchestration");
+        add(m, "Workshop Labor Discipline", "faction/automation", 2, "factory foremen, Mechanist Collegia adepts, labor unions", "recruit assignment to machines and production control");
 
         // Security and fieldcraft.
         add(m, "Improvised Blades", "security/melee", 1, "street fights, scrap knives, desperate lessons", "improvised blade recognition and crude melee handling");
@@ -147,15 +147,15 @@ class KnowledgeDef {
         add(m, "Ammunition Recognition", "security/ballistics", 3, "range tables, quartermasters, corpses searched carefully", "ammunition identification and safer ballistic supply handling");
         add(m, "Rifle Discipline", "security/ballistics", 5, "PDF drills, guard veterans, training ranges", "rifle use, range discipline, and field maintenance");
         add(m, "Heavy Ballistic Weapon Handling", "security/ballistics", 8, "heavy weapon crews, munitorum stores, dangerous tutors", "heavy stubber/autocannon class familiarity and crewed-weapon literacy");
-        add(m, "Power Cell Recognition", "security/energy", 1, "power rooms, las cells, Mechanicus warnings", "power cell recognition and energy weapon caution");
-        add(m, "Las Weapon Familiarity", "security/energy", 3, "PDF instructors, lasgun drills, forge tutors", "las weapon familiarity and cell handling");
-        add(m, "Energy Weapon Maintenance", "security/energy", 5, "Mechanicus notes, charged benches, tech-adepts", "energy weapon maintenance and risk management");
+        add(m, "Power Cell Recognition", "security/energy", 1, "power rooms, las cells, Mechanist Collegia warnings", "power cell recognition and energy weapon caution");
+        add(m, "Las Weapon Familiarity", "security/energy", 3, "PDF instructors, light Rifle drills, forge tutors", "las weapon familiarity and cell handling");
+        add(m, "Energy Weapon Maintenance", "security/energy", 5, "Mechanist Collegia notes, charged benches, tech-adepts", "energy weapon maintenance and risk management");
         add(m, "Overheat Discipline", "security/energy", 6, "weapon failure reports, forge warnings, field drills", "overheat discipline and thermal risk literacy");
         add(m, "High-Energy Weapon Doctrine", "security/energy", 9, "restricted armories, tech-priest supervision, elite training", "high-energy weapon doctrine and late-game weapon permissions");
         add(m, "Scavenger Clothing Familiarity", "security/armor", 1, "rags, labor clothes, bad weather", "scavenger clothing recognition and basic equipment/clothing literacy");
         add(m, "Padded Protection", "security/armor", 2, "tailors, street armorers, workwear stores", "padded protection and early armor layering");
         add(m, "Flak Layering", "security/armor", 4, "PDF stores, militarized tailors, armorers", "flak armor layering and medium protective gear literacy");
-        add(m, "Arbites Armor Recognition", "security/armor/faction", 5, "Arbites precincts, evidence lockers, legal warnings", "Arbites armor recognition and restricted armor awareness");
+        add(m, "Civic Wardens Armor Recognition", "security/armor/faction", 5, "Civic Wardens precincts, evidence lockers, legal warnings", "Civic Wardens armor recognition and restricted armor awareness");
         add(m, "PDF Armor Familiarity", "security/armor/faction", 5, "PDF depots, quartermasters, veterans", "PDF armor familiarity and militia-grade protection literacy");
         add(m, "Heavy Protective Doctrine", "security/armor", 8, "heavy armor stores, military tutors, battlefield experience", "heavy protective doctrine and late armor permissions");
         add(m, "Trip Hazard Recognition", "security/traps", 1, "bad alleys, worksite hazards, obvious wires", "trap and trip-hazard recognition");
@@ -163,8 +163,8 @@ class KnowledgeDef {
         add(m, "Door Security Awareness", "security/traps/doors", 3, "locks, bad doors, patrol notes", "door security awareness and transition/access risk reading");
         add(m, "Alarm Fixture Recognition", "security/traps/alarm", 5, "alarm stations, security rooms, electrics", "alarm fixture recognition and later installation permissions");
         add(m, "Defensive Room Planning", "security/traps/rooms", 7, "guards, checkpoint planners, patrol supervisors", "defensive room planning with doors, cover, traps, and sightlines");
-        add(m, "Security Network Authority", "security/traps/network", 11, "Arbites, Mechanicus security, district command", "security-network authority and advanced base-defense orchestration");
-        add(m, "Security Cogitator Rites", "security/cogitator", 3, "Arbites/Mechanicus services, restricted slates", "Security Cogitator Node construction, powered defense turrets, and base-defense automation");
+        add(m, "Security Network Authority", "security/traps/network", 11, "Civic Wardens, Mechanist Collegia security, district command", "security-network authority and advanced base-defense orchestration");
+        add(m, "Security Logic Engine Rites", "security/logic Engine", 3, "Civic Wardens/Mechanist Collegia services, restricted slates", "Security Logic Engine Node construction, powered defense turrets, and base-defense automation");
 
         // Medicine and biology.
         add(m, "Wound Recognition", "medical/first-aid", 1, "injuries, medicae signs, practical fear", "wound recognition and first-aid targeting");
@@ -174,7 +174,7 @@ class KnowledgeDef {
         add(m, "Clinic Procedure", "medical/first-aid", 6, "clinic slates, medicae queues, sterile-room discipline", "clinic procedure and treatment-room permissions");
         add(m, "Emergency Medical Authority", "medical/first-aid", 9, "emergency clinics, medicae sanction, triage command", "emergency medical authority and stronger recovery services");
         add(m, "Filth Recognition", "medical/sanitation", 1, "trash rooms, corpse odor, sewer life", "filth recognition and contamination warnings");
-        add(m, "Corpse Handling Discipline", "medical/sanitation/corpse", 2, "Arbites cleanup, medicae warnings, death rooms", "corpse containers, cleanup handling, and decay/skeleton flow literacy");
+        add(m, "Corpse Handling Discipline", "medical/sanitation/corpse", 2, "Civic Wardens cleanup, medicae warnings, death rooms", "corpse containers, cleanup handling, and decay/skeleton flow literacy");
         add(m, "Waste Isolation", "medical/sanitation", 3, "sewer crews, waste rooms, public health warnings", "waste isolation and safer dirty-room handling");
         add(m, "Disease Vector Awareness", "medical/sanitation", 5, "medicae warnings, plague stories, sanitation records", "disease vector awareness and infection-risk literacy");
         add(m, "Sanitation Room Procedure", "medical/sanitation", 6, "washroom supervisors, medicae sanitation, waste ledgers", "sanitation room procedure and safer communal wash spaces");
@@ -192,20 +192,20 @@ class KnowledgeDef {
         add(m, "Trade Ledger Reading", "civic/commerce", 3, "shopkeepers, scribe ledgers, guild records", "trade ledger reading and more reliable buy/sell decisions");
         add(m, "Vendor Trust", "civic/commerce", 5, "repeated business, faction reputation, shop records", "vendor trust and better service access");
         add(m, "Contract Negotiation", "civic/commerce/contracts", 6, "contract desks, faction reps, job boards", "contract negotiation and better reward/risk literacy");
-        add(m, "Licensed Commerce", "civic/commerce/legal", 8, "permits, counters, noble factors, Administratum offices", "licensed commerce and lawful business operation");
+        add(m, "Licensed Commerce", "civic/commerce/legal", 8, "permits, counters, noble factors, Civic Ledger Office offices", "licensed commerce and lawful business operation");
         add(m, "Commercial Ledgers", "commerce", 1, "shopkeepers, traders, guild records", "faction stores, pricing bonuses, business operation literacy");
-        add(m, "Commerce Permits", "commerce/legal", 2, "noble factors, administratum counters, traders with paperwork", "shop counters, lawful business licensing, and illegal-commerce risk literacy");
-        add(m, "Civic Signage Recognition", "civic/administratum", 1, "signs, placards, public warnings", "civic signage recognition and legal-zone reading");
-        add(m, "Hab Block Rules", "civic/administratum", 2, "hab notices, rent ledgers, wardens", "hab block rules and civilian housing legality");
-        add(m, "Administratum Forms", "civic/administratum", 3, "forms, queues, stamps, clerk hostility", "Administratum forms and basic paper authority");
-        add(m, "Permit Filing", "civic/administratum", 4, "permit desks, civic counters, faction paperwork", "permit filing and restricted construction/service requests");
-        add(m, "Civic Room Authority", "civic/administratum", 6, "zoning offices, civic ledgers, room audits", "civic room authority and lawful room-purpose understanding");
-        add(m, "District Governance Access", "civic/administratum", 10, "district offices, senior clerks, high standing", "district governance access and advanced civil services");
+        add(m, "Commerce Permits", "commerce/legal", 2, "noble factors, civic Ledger Office counters, traders with paperwork", "shop counters, lawful business licensing, and illegal-commerce risk literacy");
+        add(m, "Civic Signage Recognition", "civic/civic Ledger Office", 1, "signs, placards, public warnings", "civic signage recognition and legal-zone reading");
+        add(m, "Hab Block Rules", "civic/civic Ledger Office", 2, "hab notices, rent ledgers, wardens", "hab block rules and civilian housing legality");
+        add(m, "Civic Ledger Office Forms", "civic/civic Ledger Office", 3, "forms, queues, stamps, clerk hostility", "Civic Ledger Office forms and basic paper authority");
+        add(m, "Permit Filing", "civic/civic Ledger Office", 4, "permit desks, civic counters, faction paperwork", "permit filing and restricted construction/service requests");
+        add(m, "Civic Room Authority", "civic/civic Ledger Office", 6, "zoning offices, civic ledgers, room audits", "civic room authority and lawful room-purpose understanding");
+        add(m, "District Governance Access", "civic/civic Ledger Office", 10, "district offices, senior clerks, high standing", "district governance access and advanced civil services");
         add(m, "Faction Color Recognition", "civic/faction", 1, "banners, uniforms, signs, hard lessons", "faction color and symbol recognition");
         add(m, "Local Reputation Awareness", "civic/faction", 2, "rumor, shop reactions, patrol treatment", "local reputation awareness and faction consequence literacy");
         add(m, "Civilian Authority Customs", "civic/faction", 3, "market stewards, clerks, hab bosses", "civilian authority customs and basic lawful interaction");
-        add(m, "Arbites Protocol", "civic/faction/security", 5, "precinct warnings, legal briefings, survivor stories", "Arbites protocol and law-enforcement interaction literacy");
-        add(m, "Mechanicus Protocol", "civic/faction/mechanicus", 5, "forge etiquette, tech-adept warnings, machine cult rites", "Mechanicus protocol and safer machine-cult service access");
+        add(m, "Civic Wardens Protocol", "civic/faction/security", 5, "precinct warnings, legal briefings, survivor stories", "Civic Wardens protocol and law-enforcement interaction literacy");
+        add(m, "Mechanist Collegia Protocol", "civic/faction/mechanist Collegia", 5, "forge etiquette, tech-adept warnings, machine cult rites", "Mechanist Collegia protocol and safer machine-cult service access");
         add(m, "Noble House Protocol", "civic/faction/noble", 7, "estate rules, servants, livery, social punishment", "Noble house protocol and high-status social access");
         add(m, "Trespass Awareness", "civic/access", 1, "locked doors, angry guards, bad exits", "trespass awareness and restricted-zone reading");
         add(m, "Door Permission Recognition", "civic/access", 2, "door signs, guards, civic maps", "door permission recognition and access checks");
@@ -220,22 +220,22 @@ class KnowledgeDef {
         // Mechanist and archeotech doctrine.
         add(m, "Machine Respect", "mechanist/reverence", 1, "machine rooms, foreman warnings, pain from mistakes", "machine respect and basic caution around machinery");
         add(m, "Maintenance Litany", "mechanist/reverence", 2, "repair prayers, machine oil notes, worker tradition", "maintenance litany and simple machine appeasement routines");
-        add(m, "Machine Appeasement", "mechanist/reverence", 4, "Mechanicus adepts, ritual notes, machine misbehavior", "machine appeasement and better repair/maintenance interpretation");
+        add(m, "Machine Appeasement", "mechanist/reverence", 4, "Mechanist Collegia adepts, ritual notes, machine misbehavior", "machine appeasement and better repair/maintenance interpretation");
         add(m, "Sanctified Repair Practice", "mechanist/reverence", 6, "sacred oil, sanctioned repair benches, forge tutors", "sanctified repair practice and later machine-sanctity hooks");
         add(m, "Machine Spirit Interpretation", "mechanist/reverence", 9, "tech-priests, fault patterns, machine behavior", "machine spirit interpretation and high-trust machine diagnostics");
         add(m, "Terminal Recognition", "mechanist/data", 1, "terminals, data plates, shop consoles", "terminal recognition and safe interface caution");
         add(m, "Data Slate Reading", "mechanist/data", 2, "data slates, manuals, corrupted notes", "data slate reading and improved doctrine discovery");
-        add(m, "Cogitator Interface Familiarity", "mechanist/data", 4, "cogitator stations, clerks, tech-adepts", "cogitator interface familiarity and simple terminal use");
+        add(m, "Logic Engine Interface Familiarity", "mechanist/data", 4, "logic Engine stations, clerks, tech-adepts", "logic Engine interface familiarity and simple terminal use");
         add(m, "Archive Query Discipline", "mechanist/data", 6, "archives, search forms, data indexes", "archive query discipline and better information retrieval");
-        add(m, "Machine Logic Interpretation", "mechanist/data", 8, "logic diagrams, failure analysis, Mechanicus instruction", "machine logic interpretation and supervised automation literacy");
+        add(m, "Machine Logic Interpretation", "mechanist/data", 8, "logic diagrams, failure analysis, Mechanist Collegia instruction", "machine logic interpretation and supervised automation literacy");
         add(m, "Restricted Data Handling", "mechanist/data", 11, "restricted archives, sealed access, dangerous data", "restricted data handling and late knowledge-gate interactions");
-        add(m, "Ancient Component Recognition", "mechanist/archeotech", 3, "old parts, strange power signatures, Mechanicus warnings", "ancient component recognition and salvage caution");
+        add(m, "Ancient Component Recognition", "mechanist/archeotech", 3, "old parts, strange power signatures, Mechanist Collegia warnings", "ancient component recognition and salvage caution");
         add(m, "Forbidden Pattern Caution", "mechanist/archeotech", 5, "bad stories, sealed warnings, tech-priest refusal", "forbidden pattern caution and safer relic handling");
         add(m, "Archeotech Signal Recognition", "mechanist/archeotech", 8, "scanner anomalies, vault slates, relic rooms", "archeotech signal recognition and relic trace reading");
-        add(m, "Fragmentary STC Interpretation", "mechanist/archeotech", 12, "fragmentary prints, vault data, Mechanicus oversight", "fragmentary STC interpretation and partial relic-pattern decoding");
+        add(m, "Fragmentary STC Interpretation", "mechanist/archeotech", 12, "fragmentary prints, vault data, Mechanist Collegia oversight", "fragmentary STC interpretation and partial relic-pattern decoding");
         add(m, "Dangerous Device Procedure", "mechanist/archeotech", 14, "sealed devices, explosion reports, sanctioned supervision", "dangerous device procedure and late relic operation caution");
         add(m, "Mechanist Initiate Doctrine", "mechanist/convergence", 4, "machine respect, data slates, early fabrication", "combined machine, data, and fabrication initiation");
-        add(m, "Sacred Systems Familiarity", "mechanist/convergence", 9, "Mechanicus service, cogitators, machine rites", "sacred systems familiarity and cross-linked advanced machine doctrine");
+        add(m, "Sacred Systems Familiarity", "mechanist/convergence", 9, "Mechanist Collegia service, cogitators, machine rites", "sacred systems familiarity and cross-linked advanced machine doctrine");
     }
     static void add(LinkedHashMap<String,KnowledgeDef> m, String n, String f, int c, String s, String u){ m.put(n, new KnowledgeDef(n,f,c,s,u)); }
     static KnowledgeDef get(String n){ return all().get(n); }
@@ -378,10 +378,10 @@ class KnowledgeTreeApi {
     static String sourceFor(String cat, String band) {
         String c = cat.toLowerCase(Locale.ROOT);
         String b = band.toLowerCase(Locale.ROOT);
-        if (b.contains("archeotech")) return "sealed vault data, Mechanicus relic custody, forbidden manuals, extreme faction trust";
+        if (b.contains("archeotech")) return "sealed vault data, Mechanist Collegia relic custody, forbidden manuals, extreme faction trust";
         if (b.contains("noble")) return "noble factors, guild tutors, estate ledgers, restricted manufactury schools";
-        if (c.contains("ballistics")) return "armorers, guard quartermasters, gangers, Arbites evidence lockers";
-        if (c.contains("energy")) return "Mechanicus tutors, power-room slates, forge diagnostic benches";
+        if (c.contains("ballistics")) return "armorers, guard quartermasters, gangers, Civic Wardens evidence lockers";
+        if (c.contains("energy")) return "Mechanist Collegia tutors, power-room slates, forge diagnostic benches";
         if (c.contains("water")) return "water guild notes, condenser manuals, sump reclamation workers";
         if (c.contains("food") || c.contains("agricultural")) return "kitchens, vat tenders, hydroponic workers, orchard serfs";
         if (c.contains("textile")) return "tailors, uniform stores, armorers, hab laundries";
