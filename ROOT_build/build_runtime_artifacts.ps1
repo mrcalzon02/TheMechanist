@@ -33,6 +33,23 @@ function Reset-Dir([string] $Path) {
     New-Item -ItemType Directory -Force -Path $Path | Out-Null
 }
 
+function Assert-DifferentArtifacts([string] $ClientJarPath, [string] $ServerJarPath) {
+    $clientInfo = Get-Item -LiteralPath $ClientJarPath
+    $serverInfo = Get-Item -LiteralPath $ServerJarPath
+    Write-Host "Client jar: $($clientInfo.FullName) size=$($clientInfo.Length)"
+    Write-Host "Server jar: $($serverInfo.FullName) size=$($serverInfo.Length)"
+    if ($clientInfo.Length -eq $serverInfo.Length) {
+        throw 'Client and server jars have identical size after distinct build; refusing artifact split.'
+    }
+    $clientHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $ClientJarPath).Hash
+    $serverHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $ServerJarPath).Hash
+    Write-Host "Client SHA256: $clientHash"
+    Write-Host "Server SHA256: $serverHash"
+    if ($clientHash -eq $serverHash) {
+        throw 'Client and server jars have identical SHA-256 after distinct build; refusing artifact split.'
+    }
+}
+
 Write-Step 'Preparing runtime artifact build directories'
 $javac = Require-Command 'javac.exe'
 $jar = Require-Command 'jar.exe'
@@ -43,12 +60,14 @@ New-Item -ItemType Directory -Force -Path $ServerPackage | Out-Null
 
 Write-Step 'Collecting client source files'
 $clientSources = Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'src') -Recurse -File -Filter '*.java' |
+    Where-Object { $_.FullName -notlike '*\src\mechanist\TheMechanistServer.java' } |
     Sort-Object FullName
 if ($clientSources.Count -lt 1) {
     throw 'No Java sources found for client build.'
 }
 $clientSources | ForEach-Object { $_.FullName } | Set-Content -Path $ClientSourcesFile -Encoding UTF8
 Write-Host "Client source files: $($clientSources.Count)"
+Write-Host 'Client-only exclusion: src\mechanist\TheMechanistServer.java'
 
 Write-Step 'Compiling client classes'
 & $javac -encoding UTF-8 -d $ClientClasses "@$ClientSourcesFile"
@@ -86,13 +105,7 @@ if (Test-Path -LiteralPath $ServerJar) {
 if ($LASTEXITCODE -ne 0) { throw "Server jar failed with exit code $LASTEXITCODE" }
 
 Write-Step 'Artifact summary'
-$clientInfo = Get-Item -LiteralPath $ClientJar
-$serverInfo = Get-Item -LiteralPath $ServerJar
-Write-Host "Client jar: $($clientInfo.FullName) size=$($clientInfo.Length)"
-Write-Host "Server jar: $($serverInfo.FullName) size=$($serverInfo.Length)"
-if ($clientInfo.Length -eq $serverInfo.Length) {
-    throw 'Client and server jars have identical size after distinct build; refusing artifact split.'
-}
+Assert-DifferentArtifacts $ClientJar $ServerJar
 
 if (-not $SkipAudit) {
     Write-Step 'Auditing runtime jars'
