@@ -470,14 +470,14 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
     String lastDefeatLocation = "unknown";
     String lastDefeatSummary = "No loss screen has been generated.";
     ArrayList<String> lastLossScoreLines = new ArrayList<>();
-    static final long INTRO_CRAWL_TEXT_TARGET_MS = 202_000L;
-    static final long INTRO_CRAWL_AUDIO_EXPECTED_MS = 202_000L;
+    static final long INTRO_CRAWL_TEXT_TARGET_MS = 252_000L;
+    static final long INTRO_CRAWL_AUDIO_EXPECTED_MS = 258_665L;
     // 0.9.10fo: live playback showed the final narration word was cut off by
     // the automatic screen handoff. Keep the crawl close to the audio, but hold
     // the intro surface several seconds past the measured file length so Java
     // Sound startup latency and frame timing cannot amputate the tail.
-    static final long INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS = 202_000L;
-    long introCrawlStartMillis = 202_000L;
+    static final long INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS = 6_500L;
+    long introCrawlStartMillis = 0L;
     boolean introCrawlQueuedZoneSplash = false;
     String introCrawlReturnReason = "first entry after character insertion";
     ArrayList<String> introCrawlLines = new ArrayList<>();
@@ -1236,7 +1236,7 @@ class GamePanel extends JPanel implements MouseListener, MouseMotionListener, Mo
                 "Cycle room/zone density and room-count pressure.",
                 "Cycle world price difficulty for trading.",
                 "Cycle crafting resource difficulty.",
-                "Toggle unlimited personal inventory independent of STR/END.",
+                "Toggle unlimited personal inventory independent of Strength/Endurance.",
                 "Cycle how many history-generation batches run before start."
             };
             int cols = 2;
@@ -10917,7 +10917,7 @@ boolean arbitesAuthorityText(String text) {
         g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, H / 15f))));
         g.setColor(optionColor(GameOptions.TEXT_TITLE)); center(g, "GENERATE ARCOLOGY WORLD", W/2, Math.max(58, H/8));
         g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
-        center(g, "Info left. Controls right. Compact layout enforced.", W/2, Math.max(90, H/8 + 28));
+        center(g, "Simulation information stays left; controls stay right so low-resolution layouts do not trample themselves.", W/2, Math.max(90, H/8 + 28));
         int margin = Math.max(34, W / 22);
         int top = Math.max(122, H / 5);
         int gap = Math.max(14, W / 55);
@@ -10949,7 +10949,7 @@ boolean arbitesAuthorityText(String text) {
         drawUiTextLine(g, "Max: " + WorldSetupSettings.ZONE_SIZE[3] + " / 100%", barX + Math.max(120, barW - 178), barY + 44);
         int noteY = barY + 70;
         g.setColor(new Color(190,150,100));
-        for (String line : TextSurfaceApi.wrap("Simulation age adds history batches before start. Higher values improve provenance but costs time.", Math.max(42, (infoW-48)/8))) { drawUiTextLine(g, line, margin+24, noteY); noteY += 21; }
+        for (String line : TextSurfaceApi.wrap("Simulation age runs additional history batches before world save/start. Higher values improve provenance ledgers but cost generation time. Hoarder mode decouples personal inventory from Strength and Endurance.", Math.max(42, (infoW-48)/8))) { drawUiTextLine(g, line, margin+24, noteY); noteY += 21; }
         g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
         center(g, lastWorldSetupReport, W/2, H-42);
     }
@@ -12000,7 +12000,7 @@ boolean arbitesAuthorityText(String text) {
     void drawIntroCrawl(Graphics2D g) {
         int W = getWidth(), H = getHeight();
         long elapsed = Math.max(0L, System.currentTimeMillis() - introCrawlStartMillis);
-        BufferedImage backdrop = images.get("source/Background/Backdrop.png");
+        BufferedImage backdrop = images.get("new_world_backdrop_rebase");
         if (backdrop != null) {
             double scale = Math.max(W / (double)Math.max(1, backdrop.getWidth()), H / (double)Math.max(1, backdrop.getHeight()));
             int bw = Math.max(W, (int)Math.round(backdrop.getWidth() * scale));
@@ -12009,8 +12009,8 @@ boolean arbitesAuthorityText(String text) {
         } else {
             g.setColor(new Color(5, 6, 8)); g.fillRect(0,0,W,H);
         }
-        drawIntroCloudLayer(g, images.get("source/Background/CLOUDS1slow.png"), elapsed, 0.012, 34, 0.48f);
-        drawIntroCloudLayer(g, images.get("source/Background/Clouds2fast.png"), elapsed, 0.026, 0, 0.38f);
+        drawIntroCloudLayer(g, images.get("clouds_slow_rebase"), elapsed, 0.012, 34, 0.48f);
+        drawIntroCloudLayer(g, images.get("clouds_fast_rebase"), elapsed, 0.026, 0, 0.38f);
         g.setColor(new Color(0,0,0,126)); g.fillRect(0,0,W,H);
         drawSlicedFrame(g, 26, 26, W-52, H-52, "outer");
 
