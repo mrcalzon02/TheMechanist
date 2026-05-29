@@ -53,4 +53,11 @@ public class LayerD {
         DebugLog.audit("GRAPHICS_APPLY", panel.renderScaling.auditSummary());
         panel.repaint();
     }
+
+    static void setResolutionIndex(GamePanel panel, int idx) {
+        panel.logEvent(OptionsBoundaryAuthority.setResolutionIndex(panel.options, idx));
+        panel.graphicsDropdown = -1;
+        applyWindowMode(panel);
+        panel.repaint();
+    }
 }
