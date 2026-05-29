@@ -32,14 +32,40 @@ EXACT_REPLACEMENTS = {
     "faction.CIVIC LEDGER OFFICE": "Faction.CIVIC_LEDGER_OFFICE",
     "faction.IMPERIAL GUARD": "Faction.IMPERIAL_GUARD",
     "faction.ROGUE MACHINE": "Faction.ROGUE_MACHINE",
+    "CONTAINER FACTION STOCK PREFIX": "CONTAINER_FACTION_STOCK_PREFIX",
+    "CONTAINER FACTION STORAGE PREFIX": "CONTAINER_FACTION_STORAGE_PREFIX",
+    "CONTAINER FACTION STOCK": "CONTAINER_FACTION_STOCK",
 }
 
 # Repair enum-style member references after Faction. when a phrase got split by spaces.
 # Example: Faction.CIVIC WARDENS -> Faction.CIVIC_WARDENS
-FACTION_FRACTURE_RE = re.compile(r"\bFaction\.([A-Z][A-Z0-9_]*)(?:\s+([A-Z][A-Z0-9_]*))+")
+FACTION_FRACTURE_RE = re.compile(r"\bFaction\.([A-Z][A-Z0-9_]*(?:\s+[A-Z][A-Z0-9_]*)+)")
 
 # Repair the specific lower-case typo seen in local compile output.
-LOWER_FACTION_FRACTURE_RE = re.compile(r"\bfaction\.([A-Z][A-Z0-9_]*)(?:\s+([A-Z][A-Z0-9_]*))+")
+LOWER_FACTION_FRACTURE_RE = re.compile(r"\bfaction\.([A-Z][A-Z0-9_]*(?:\s+[A-Z][A-Z0-9_]*)+)")
+
+# Repair direct all-caps constants that became token phrases in executable code.
+# This intentionally only targets uppercase phrases immediately followed by Java member operators.
+UPPER_CONSTANT_MEMBER_RE = re.compile(
+    r"\b([A-Z][A-Z0-9_]*(?:\s+[A-Z][A-Z0-9_]*){1,5})(?=\s*(?:\+|\.|\(|;|,|\)|\]|==|!=|<=|>=|<|>|&&|\|\|))"
+)
+
+# Phrases that are safe to compact in code. Do not make this a natural-language fixer.
+SAFE_UPPER_CONSTANT_PHRASE_PREFIXES = (
+    "CONTAINER ",
+    "ITEM ",
+    "NPC ",
+    "WORLD ",
+    "ZONE ",
+    "SECTOR ",
+    "FACTION ",
+    "TILE ",
+    "ROAD ",
+    "ROOM ",
+    "BUILD ",
+    "SAVE ",
+    "LOAD ",
+)
 
 
 def repair_text(text: str) -> tuple[str, int]:
@@ -53,15 +79,24 @@ def repair_text(text: str) -> tuple[str, int]:
     def faction_repl(match: re.Match[str]) -> str:
         nonlocal count
         count += 1
-        return "Faction." + "_".join(match.group(0).split("Faction.", 1)[1].split())
+        return "Faction." + "_".join(match.group(1).split())
 
     def lower_faction_repl(match: re.Match[str]) -> str:
         nonlocal count
         count += 1
-        return "Faction." + "_".join(match.group(0).split("faction.", 1)[1].split())
+        return "Faction." + "_".join(match.group(1).split())
+
+    def upper_constant_repl(match: re.Match[str]) -> str:
+        nonlocal count
+        phrase = match.group(1)
+        if not phrase.startswith(SAFE_UPPER_CONSTANT_PHRASE_PREFIXES):
+            return phrase
+        count += 1
+        return "_".join(phrase.split())
 
     text = FACTION_FRACTURE_RE.sub(faction_repl, text)
     text = LOWER_FACTION_FRACTURE_RE.sub(lower_faction_repl, text)
+    text = UPPER_CONSTANT_MEMBER_RE.sub(upper_constant_repl, text)
     return text, count
 
 
