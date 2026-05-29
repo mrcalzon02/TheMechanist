@@ -8,4 +8,10 @@ public class LayerC {
         panel.logEvent(OptionsBoundaryAuthority.setLightingFxIndex(panel.options, next));
         panel.repaint();
     }
+
+    static void toggleReducedMotion(GamePanel panel) {
+        panel.logEvent(OptionsBoundaryAuthority.toggleReducedMotion(panel.options));
+        DisplayScaleOptionsSubsystem.applyOptions(panel);
+        panel.repaint();
+    }
 }
