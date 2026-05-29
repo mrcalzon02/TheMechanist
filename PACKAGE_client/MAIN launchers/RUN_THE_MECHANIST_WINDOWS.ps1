@@ -34,6 +34,7 @@ Set-Content -Path $LogFile -Value '=============================================
 Write-LogLine "The Mechanist segmented Windows client launcher started at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff')"
 Write-LogLine "Script dir: $ScriptDir"
 Write-LogLine "Runtime root: $RuntimeRoot"
+Write-LogLine "Initial working directory: $((Get-Location).Path)"
 
 if (-not (Test-Path -LiteralPath $JarPath -PathType Leaf)) {
     Write-Host "ERROR: TheMechanist.jar was not found at $JarPath"
@@ -47,6 +48,13 @@ if ($null -eq $java) {
     Write-LogLine 'ERROR: Java was not found on PATH.'
     exit 17
 }
+
+# Runtime assets are package-relative. Force the process working directory to the
+# package root before preflight or launch so sound, art, settings, profiles, and
+# saves resolve identically from double-click launchers, terminals, and packaged
+# shortcuts.
+Set-Location -LiteralPath $RuntimeRoot
+Write-LogLine "Runtime working directory: $((Get-Location).Path)"
 
 $classPath = Build-Classpath
 Write-LogLine "Classpath: $classPath"
