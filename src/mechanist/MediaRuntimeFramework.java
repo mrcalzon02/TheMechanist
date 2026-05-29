@@ -461,180 +461,6 @@ class TileArtSystem {
 }
 
 
-class ArtPackManager {
-    static String resolveInstalledArtRoot(String requestedRoot) {
-        ArrayList<Path> candidates = new ArrayList<>();
-        if (requestedRoot != null && !requestedRoot.isBlank()) {
-            candidates.add(Paths.get(requestedRoot));
-            File runtimeResolved = RuntimePathResolver.resolveAssetFile(requestedRoot);
-            if (runtimeResolved != null) candidates.add(runtimeResolved.toPath());
-        }
-        candidates.add(RuntimePathResolver.resolveAssetFile("assets/a/r").toPath());
-        candidates.add(RuntimePathResolver.resolveAssetFile("PACKAGE_client/assets/a/r").toPath());
-        candidates.add(RuntimePathResolver.resolveAssetFile("client/assets/a/r").toPath());
-        candidates.add(Paths.get("assets/a/r"));
-
-        for (Path candidate : candidates) {
-            if (candidate == null) continue;
-            Path normalized = candidate.toAbsolutePath().normalize();
-            if (Files.isDirectory(normalized.resolve("tiles").resolve("quality").resolve("low_32").resolve("cells"))) {
-                return normalized.toString();
-            }
-        }
-        return requestedRoot;
-    }
-
-    static int countPngFiles(Path root) {
-        if (root == null || !Files.isDirectory(root)) return 0;
-        try (java.util.stream.Stream<Path> stream = Files.walk(root)) {
-            return (int) stream
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName() != null && p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".png"))
-                    .count();
-        } catch (Throwable ignored) {
-            return 0;
-        }
-    }
-    static String prepareAndResolveRoot(String packDirName, String cacheDirName, String bundledFallbackRoot) {
-        try {
-            Path packDir = Paths.get(packDirName);
-            Path cacheDir = Paths.get(cacheDirName);
-            Files.createDirectories(packDir);
-            Files.createDirectories(cacheDir);
-            ArrayList<Path> zips = new ArrayList<>();
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(packDir, "*.zip")) {
-                for (Path p : stream) zips.add(p);
-            } catch (Throwable ignored) {}
-            Collections.sort(zips, Comparator.comparing(Path::toString));
-            for (Path zip : zips) unpackIfNeeded(zip, cacheDir.resolve(safeStem(zip.getFileName().toString())));
-            String resolved = findRuntimeRoot(cacheDir);
-            if (resolved != null) { DebugLog.audit("ART_PACK", "Resolved external art root=" + resolved); return resolved; }
-        } catch (Throwable t) {
-            DebugLog.error("ART_PACK", "Art-pack prepare failed; falling back to bundled art if present.", t);
-        }
-        String fallbackRoot = resolveInstalledArtRoot(resolveBundledFallbackRoot(bundledFallbackRoot));
-        if (Files.isDirectory(Paths.get(fallbackRoot))) {
-            DebugLog.audit("ART_PACK", "Using bundled art root=" + fallbackRoot);
-            return fallbackRoot;
-        }
-        DebugLog.warn("ART_PACK", "No external or bundled art pack found. Tile/icon rendering will fall back to ASCII and generated UI.");
-        return fallbackRoot;
-    }
-
-    static String resolveBundledFallbackRoot(String bundledFallbackRoot) {
-        if (bundledFallbackRoot == null || bundledFallbackRoot.isBlank()) return bundledFallbackRoot;
-        if (Files.exists(Paths.get(bundledFallbackRoot))) return bundledFallbackRoot;
-        String normalized = bundledFallbackRoot.replace('\\', '/');
-        if (normalized.startsWith("packages/client/assets/")) {
-            String suffix = normalized.substring("packages/client/assets/".length());
-            String clientOwned = "client/assets/" + suffix;
-            if (Files.exists(Paths.get(clientOwned))) return clientOwned;
-            String legacyRoot = "assets/" + suffix;
-            if (Files.exists(Paths.get(legacyRoot))) return legacyRoot;
-        }
-        return bundledFallbackRoot;
-    }
-
-    static Path resolveQualityRoot(String bundledRoot, String folder) {
-        String wanted = (folder == null || folder.isBlank()) ? "low_32" : folder;
-        String resolvedBundledRoot = resolveInstalledArtRoot(bundledRoot);
-        Path local = Paths.get(resolvedBundledRoot, "tiles", "quality", wanted);
-        if (Files.isDirectory(local.resolve("cells"))) return local;
-        Path external = findQualityRoot(Paths.get("cache", "artpacks"), wanted);
-        if (external != null) return external;
-        Path bundledLow = Paths.get(resolvedBundledRoot, "tiles", "quality", "low_32");
-        if (Files.isDirectory(bundledLow.resolve("cells"))) {
-            DebugLog.warn("ART_PACK", "Requested art tier '" + wanted + "' is not installed; falling back to bundled low_32.");
-            return bundledLow;
-        }
-        return local;
-    }
-
-    static String resolveQualityCellsRoot(String bundledRoot, String folder) {
-        Path q = resolveQualityRoot(bundledRoot, folder);
-        Path cells = q.resolve("cells");
-        if (Files.isDirectory(cells)) return cells.toString();
-        String resolvedBundledRoot = resolveInstalledArtRoot(bundledRoot);
-        return Paths.get(resolvedBundledRoot, "tiles", "cells").toString();
-    }
-
-    static Path findQualityRoot(Path cacheDir, String folder) {
-        if (!Files.isDirectory(cacheDir)) return null;
-        ArrayList<Path> hits = new ArrayList<>();
-        try (java.util.stream.Stream<Path> stream = Files.walk(cacheDir, 10)) {
-            stream.filter(Files::isDirectory).forEach(p -> {
-                try {
-                    if (p.getFileName() != null
-                            && p.getFileName().toString().equals(folder)
-                            && Files.isDirectory(p.resolve("cells"))
-                            && p.toString().replace('\\','/').contains("/tiles/quality/")) {
-                        hits.add(p);
-                    }
-                } catch (Throwable ignored) {}
-            });
-        } catch (Throwable ignored) {}
-        if (hits.isEmpty()) return null;
-        hits.sort(Comparator.comparing(Path::toString));
-        return hits.get(hits.size()-1);
-    }
-
-    static String safeStem(String filename) {
-        String s = filename == null ? "artpack" : filename.replaceAll("(?i)\\.zip$", "");
-        s = s.replaceAll("[^A-Za-z0-9._-]+", "_");
-        return s.isBlank() ? "artpack" : s;
-    }
-
-    static void unpackIfNeeded(Path zip, Path dest) {
-        try {
-            Files.createDirectories(dest);
-            Path marker = dest.resolve(".unpacked.marker");
-            String stamp = zip.toAbsolutePath() + "|" + Files.size(zip) + "|" + Files.getLastModifiedTime(zip).toMillis();
-            if (Files.exists(marker) && Files.readString(marker).equals(stamp)) return;
-            deleteTreeContents(dest);
-            Files.createDirectories(dest);
-            try (java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(Files.newInputStream(zip))) {
-                java.util.zip.ZipEntry entry;
-                while ((entry = zin.getNextEntry()) != null) {
-                    Path out = dest.resolve(entry.getName()).normalize();
-                    if (!out.startsWith(dest)) { DebugLog.warn("ART_PACK", "Skipped suspicious zip entry " + entry.getName()); continue; }
-                    if (entry.isDirectory()) Files.createDirectories(out);
-                    else {
-                        Files.createDirectories(out.getParent());
-                        Files.copy(zin, out, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                    zin.closeEntry();
-                }
-            }
-            Files.writeString(marker, stamp);
-            DebugLog.audit("ART_PACK", "Unpacked " + zip + " -> " + dest);
-        } catch (Throwable t) {
-            DebugLog.error("ART_PACK", "Could not unpack art pack " + zip, t);
-        }
-    }
-
-    static void deleteTreeContents(Path dir) throws IOException {
-        if (!Files.exists(dir)) return;
-        ArrayList<Path> paths = new ArrayList<>();
-        try (java.util.stream.Stream<Path> stream = Files.walk(dir)) { stream.forEach(paths::add); }
-        paths.sort(Comparator.reverseOrder());
-        for (Path p : paths) if (!p.equals(dir)) Files.deleteIfExists(p);
-    }
-
-    static String findRuntimeRoot(Path cacheDir) {
-        if (!Files.isDirectory(cacheDir)) return null;
-        ArrayList<Path> hits = new ArrayList<>();
-        try (java.util.stream.Stream<Path> stream = Files.walk(cacheDir, 6)) {
-            stream.filter(Files::isDirectory).forEach(p -> {
-                if (Files.isDirectory(p.resolve("tiles/quality")) && Files.isDirectory(p.resolve("source/Title"))) hits.add(p);
-            });
-        } catch (Throwable ignored) {}
-        if (hits.isEmpty()) return null;
-        hits.sort(Comparator.comparing(Path::toString));
-        return hits.get(hits.size()-1).toString();
-    }
-}
-
-
 class AudioPackManager {
     static String prepareAndResolveMusicRoot(String packDirName, String cacheDirName, String bundledFallbackRoot) {
         try {
@@ -647,7 +473,7 @@ class AudioPackManager {
                 for (Path p : stream) zips.add(p);
             } catch (Throwable ignored) {}
             Collections.sort(zips, Comparator.comparing(Path::toString));
-            for (Path zip : zips) ArtPackManager.unpackIfNeeded(zip, cacheDir.resolve(ArtPackManager.safeStem(zip.getFileName().toString())));
+            for (Path zip : zips) unpackIfNeeded(zip, cacheDir.resolve(safeStem(zip.getFileName().toString())));
             String resolved = findWavRoot(cacheDir);
             if (resolved != null) { DebugLog.audit("AUDIO_PACK", "Resolved external music root=" + resolved); return resolved; }
         } catch (Throwable t) {
@@ -676,6 +502,48 @@ class AudioPackManager {
         if (hits.isEmpty()) return null;
         hits.sort(Comparator.comparing(Path::toString));
         return hits.get(hits.size()-1).toString();
+    }
+
+    static String safeStem(String filename) {
+        String s = filename == null ? "audiopack" : filename.replaceAll("(?i)\\.zip$", "");
+        s = s.replaceAll("[^A-Za-z0-9._-]+", "_");
+        return s.isBlank() ? "audiopack" : s;
+    }
+
+    static void unpackIfNeeded(Path zip, Path dest) {
+        try {
+            Files.createDirectories(dest);
+            Path marker = dest.resolve(".unpacked.marker");
+            String stamp = zip.toAbsolutePath() + "|" + Files.size(zip) + "|" + Files.getLastModifiedTime(zip).toMillis();
+            if (Files.exists(marker) && Files.readString(marker).equals(stamp)) return;
+            deleteTreeContents(dest);
+            Files.createDirectories(dest);
+            try (java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(Files.newInputStream(zip))) {
+                java.util.zip.ZipEntry entry;
+                while ((entry = zin.getNextEntry()) != null) {
+                    Path out = dest.resolve(entry.getName()).normalize();
+                    if (!out.startsWith(dest)) { DebugLog.warn("AUDIO_PACK", "Skipped suspicious zip entry " + entry.getName()); continue; }
+                    if (entry.isDirectory()) Files.createDirectories(out);
+                    else {
+                        Files.createDirectories(out.getParent());
+                        Files.copy(zin, out, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    zin.closeEntry();
+                }
+            }
+            Files.writeString(marker, stamp);
+            DebugLog.audit("AUDIO_PACK", "Unpacked " + zip + " -> " + dest);
+        } catch (Throwable t) {
+            DebugLog.error("AUDIO_PACK", "Could not unpack audio pack " + zip, t);
+        }
+    }
+
+    static void deleteTreeContents(Path dir) throws IOException {
+        if (!Files.exists(dir)) return;
+        ArrayList<Path> paths = new ArrayList<>();
+        try (java.util.stream.Stream<Path> stream = Files.walk(dir)) { stream.forEach(paths::add); }
+        paths.sort(Comparator.reverseOrder());
+        for (Path p : paths) if (!p.equals(dir)) Files.deleteIfExists(p);
     }
 }
 
@@ -1103,4 +971,3 @@ class ImageCache {
         return cache.get("mechanical_skull_gear_emblem");
     }
 }
-
