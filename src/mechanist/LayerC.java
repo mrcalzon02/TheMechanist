@@ -28,4 +28,12 @@ public class LayerC {
         panel.graphicsDropdown = -1;
         panel.repaint();
     }
+
+    static void toggleRenderStressTest(GamePanel panel) {
+        panel.logEvent(panel.renderStressTest.toggle(panel.frameLimiter));
+        panel.options.diagnosticsOverlay = true;
+        panel.performanceDiagnostics.setVisible(true);
+        panel.options.save();
+        panel.repaint();
+    }
 }
