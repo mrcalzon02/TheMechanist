@@ -15,6 +15,7 @@ import java.util.List;
 
 public class TheMechanist {
     public static void main(String[] args) {
+        if (ClientPackageLaunchAuthority.relaunchFromPackageRootIfRequired(args)) return;
         JvmRuntimeProfileAuthority.RuntimeConfig startupJvmProfile = JvmRuntimeProfileAuthority.load();
         JvmRuntimeProfileAuthority.configureEarlyJava2dProperties(startupJvmProfile);
         DisplayDensityAuthority.configureJvmDisplayPropertiesBeforeSwing();
@@ -44,4 +45,3 @@ public class TheMechanist {
         });
     }
 }
-
