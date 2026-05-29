@@ -15,4 +15,8 @@ public class LayerI {
     static int boundedPercent(int value) {
         return Math.max(0, Math.min(100, value));
     }
+
+    static double uiScaleFactor(GamePanel panel) {
+        return DisplayDensityAuthority.clampScale(panel.options.uiScale / 100.0f);
+    }
 }
