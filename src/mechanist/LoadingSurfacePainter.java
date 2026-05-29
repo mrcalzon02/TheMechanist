@@ -1,0 +1,71 @@
+package mechanist;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+
+/**
+ * Stateless extracted rendering surface for loading screen.
+ *
+ * Source: GamePanel.drawLoading(Graphics2D g)
+ */
+final class LoadingSurfacePainter implements ScreenPainter {
+    @Override
+    public void paint(Graphics2D g, GamePanel panel) {
+        int W = panel.getWidth(), H = panel.getHeight();
+        g.setColor(new Color(3,5,7)); g.fillRect(0,0,W,H);
+        long t = System.currentTimeMillis()/180;
+        g.setFont(new Font("Monospaced", Font.BOLD, Math.max(12, options.fontScale/6)));
+        // Smog clouds drifting slowly.
+        for (int i=0;i<7;i++) {
+            int x = (int)((i*210 - (t*(i+1))%260) % (W+260)) - 130;
+            int y = 55 + (i%3)*34;
+            g.setColor(i%2==0 ? new Color(32,42,58) : new Color(18,24,34));
+            g.drawString("  .--.     .---.        .--. ", x, y);
+            g.drawString(" (    )~~ (     )  ~~  (    )", x, y+16);
+        }
+        int baseY = H - 245;
+        g.setFont(new Font("Monospaced", Font.BOLD, Math.max(12, options.fontScale/6-1)));
+        String[] city = {
+            "                         |]        ||         [|                 ",
+            "             ||         /||\\      ||        /||\\        ||    ",
+            "       []   /||\\      /_||_\\    /||\\     /_||_\\      /||\\  ",
+            "      /__\\  ||    []    ||      /_||_\\      ||     []   ||    ",
+            "  __||__||__||___/\\____||___[]___||____/\\___||____/\\__||__  ",
+            " /############################################################\\ ",
+            "/################################################################\\"
+        };
+        for (int i=0;i<city.length;i++) {
+            float f = i/(float)Math.max(1, city.length-1);
+            g.setColor(new Color((int)(70+95*f), (int)(55+35*f), (int)(50+25*f)));
+            panel.center(g, city[i], W/2, baseY + i*24);
+        }
+        // Smokestacks and textual puffs.
+        g.setFont(new Font("Monospaced", Font.BOLD, Math.max(11, options.fontScale/6-2)));
+        String[][] puffs = {{"  .-.  "," (ASH) ","  `-`  "},{" .---. ","(SMOG )"," `---` "},{" RED ","DUSK "," GLOW "},{" .BLUE ","(BLACK)"," `SKY` "},{" GOLD ","{SUN}"," WOUND"}};
+        for (int i=0;i<5;i++) {
+            int sx = W/2 - 310 + i*155;
+            int puffY = baseY - 45 - (int)((System.currentTimeMillis()/120 + i*23) % 110);
+            g.setColor(new Color(80,80,86)); g.drawString("||||", sx, baseY+48);
+            g.setColor(i%2==0 ? new Color(205,145,65) : new Color(70,95,130));
+            for(int j=0;j<puffs[i%puffs.length].length;j++) g.drawString(puffs[i%puffs.length][j], sx-30, puffY+j*16);
+        }
+        g.setFont(titleFont);
+        g.setColor(new Color(220,174,78)); panel.center(g, "THE MECHANIST", W/2, 70);
+        ArrayList<String> loaderLines = new ArrayList<>();
+        loaderLines.add("ACTIVE LOADER STEP " + Math.min(8, Math.max(1, panel.loadingStep / 3 + 1)) + "/8: " + panel.loadingStatus);
+        loaderLines.add(panel.loadingDetail);
+        loaderLines.add("Progress " + panel.loadingProgress + "% | seed=" + panel.loadingSeed + " | transition=" + (panel.loadingForTransition ? pendingTransitionReason : "new game") + ".");
+        panel.drawTextPanel(g, Math.max(70, W/2 - 430), H - 150, Math.min(860, W - 140), 72, loaderLines, false);
+        int bx=120, by=H-62, bw=W-240, bh=24;
+        BufferedImage medal = images.getBootSpinnerFrame(System.currentTimeMillis()/420);
+        if (medal != null) {
+            int ms = 58;
+            g.drawImage(medal, bx - ms - 18, by - 17, ms, ms, null);
+        }
+        g.setColor(new Color(10,12,14)); g.fillRect(bx, by, bw, bh);
+        g.setColor(new Color(120,105,72)); g.drawRect(bx, by, bw, bh);
+        int fill = Math.max(0, Math.min(bw-2, (bw-2)*panel.loadingProgress/100));
+        g.setColor(new Color(170,128,50)); g.fillRect(bx+1, by+1, fill, bh-1);
+        g.setFont(smallFont); g.setColor(new Color(235,220,165)); panel.center(g, "Generating world atlas: " + panel.loadingProgress + "%", W/2, by+18);
+    }
+}
