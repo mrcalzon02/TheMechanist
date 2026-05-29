@@ -19,4 +19,8 @@ public class LayerI {
     static double uiScaleFactor(GamePanel panel) {
         return DisplayDensityAuthority.clampScale(panel.options.uiScale / 100.0f);
     }
+
+    static int scaled(GamePanel panel, int value) {
+        return Math.max(1, (int)Math.round(value * uiScaleFactor(panel)));
+    }
 }
