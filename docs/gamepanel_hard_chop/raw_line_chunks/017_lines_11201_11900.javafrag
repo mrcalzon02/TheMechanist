@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 11201-11900
+
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, entity.name() + "  [" + roomW + "x" + roomH + "]", center.x + 18, center.y + 58);
+        Rectangle grid = inGameRoomGridRect();
+        g.setColor(new Color(10, 10, 10, 235));
+        g.fillRect(grid.x, grid.y, grid.width, grid.height);
+        g.setColor(new Color(130,112,70,150));
+        g.drawRect(grid.x, grid.y, grid.width, grid.height);
+        int cell = Math.max(10, Math.min(42, Math.min((grid.width - 12) / Math.max(1, roomW), (grid.height - 12) / Math.max(1, roomH))));
+        int gridW = cell * roomW;
+        int gridH = cell * roomH;
+        int ox = grid.x + (grid.width - gridW) / 2;
+        int oy = grid.y + (grid.height - gridH) / 2;
+        Map<String,String> cells = decodeEditorGrid(String.valueOf(props.getOrDefault("layoutCells", "")));
+        String floor = String.valueOf(props.getOrDefault("floorMaterial", "worn-plasteel"));
+        for (int y=0; y<roomH; y++) for (int x=0; x<roomW; x++) {
+            boolean wall = x == 0 || y == 0 || x == roomW-1 || y == roomH-1;
+            int px = ox + x*cell, py = oy + y*cell;
+            g.setColor(wall ? new Color(88,72,48) : editorFloorColor(floor));
+            g.fillRect(px, py, cell, cell);
+            String placed = cells.get(x + "," + y);
+            if (placed != null && !placed.isBlank()) {
+                BufferedImage placedImg = ObjectSemanticAssetAuthority.imageForAssetId(ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), placed));
+                if (placedImg != null) {
+                    g.drawImage(placedImg, px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), null);
+                    g.setColor(new Color(12, 12, 8, 130));
+                    g.drawRoundRect(px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), 6, 6);
+                } else {
+                    g.setColor(new Color(42, 86, 74, 215));
+                    g.fillRoundRect(px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), 6, 6);
+                    g.setColor(new Color(235, 212, 128));
+                    String mark = placed.length() <= 2 ? placed : placed.substring(0, 1).toUpperCase(Locale.ROOT);
+                    center(g, mark, px + cell/2, py + cell/2 + 5);
+                }
+            }
+            g.setColor(new Color(0,0,0,140));
+            g.drawRect(px, py, cell, cell);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, "Palette: " + inGameEditorPaletteCategory() + " / " + inGameEditorSelectedPaletteItem() + " | assetId=" + ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), inGameEditorSelectedPaletteItem()), center.x + 18, center.y + center.height - 28);
+    }
+
+    void drawInGameEditorInspector(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle right) {
+        g.setFont(smallFont);
+        if (entity == null) return;
+        if ("Room Editor".equals(inGameEditorName())) {
+            String assetId = ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), inGameEditorSelectedPaletteItem());
+            BufferedImage icon = ObjectSemanticAssetAuthority.imageForAssetId(assetId);
+            int box = Math.max(64, Math.min(96, right.width / 3));
+            int ix = right.x + right.width - box - 16;
+            int iy = right.y + 42;
+            g.setColor(new Color(8, 10, 9, 235));
+            g.fillRect(ix, iy, box, box);
+            g.setColor(new Color(130,112,70,180));
+            g.drawRect(ix, iy, box, box);
+            if (icon != null) g.drawImage(icon, ix + 4, iy + 4, box - 8, box - 8, null);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, "Palette assetId=" + assetId, right.x + 14, iy + box + 18);
+        }
+        int y = right.y + ("Room Editor".equals(inGameEditorName()) ? 322 : 44);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "SELECTED", right.x + 14, y); y += 22;
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(entity.name(), g.getFontMetrics(), right.width - 28), right.x + 14, y); y += 22;
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(entity.id(), g.getFontMetrics(), right.width - 28), right.x + 14, y); y += 24;
+        int maxY = right.y + right.height - 126;
+        for (Map.Entry<String,Object> e : entity.properties().entrySet()) {
+            if (y > maxY) break;
+            String value = String.valueOf(e.getValue());
+            if ("layoutCells".equals(e.getKey())) value = decodeEditorGrid(value).size() + " painted cells";
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(e.getKey() + ": " + value, g.getFontMetrics(), right.width - 28), right.x + 14, y);
+            y += 20;
+        }
+    }
+
+    int editorInt(Object raw, int min, int max, int fallback) {
+        int v = fallback;
+        if (raw instanceof Number n) v = n.intValue();
+        else if (raw != null) try { v = Integer.parseInt(String.valueOf(raw).trim()); } catch (NumberFormatException ignored) {}
+        return Math.max(min, Math.min(max, v));
+    }
+    Color editorFloorColor(String floor) {
+        String f = floor == null ? "" : floor.toLowerCase(Locale.ROOT);
+        if (f.contains("oil")) return new Color(44, 48, 36);
+        if (f.contains("stone")) return new Color(62, 55, 46);
+        if (f.contains("deck")) return new Color(48, 56, 58);
+        if (f.contains("ceramite")) return new Color(64, 64, 60);
+        if (f.contains("sump")) return new Color(38, 56, 48);
+        return new Color(50, 54, 48);
+    }
+    Map<String,String> decodeEditorGrid(String raw) {
+        LinkedHashMap<String,String> out = new LinkedHashMap<>();
+        if (raw == null || raw.isBlank()) return out;
+        for (String part : raw.split(";")) {
+            int eq = part.indexOf('=');
+            if (eq <= 0) continue;
+            String key = part.substring(0, eq).trim();
+            String val = part.substring(eq+1).trim();
+            if (key.matches("\\d+,\\d+") && !val.isBlank()) out.put(key, val);
+        }
+        return out;
+    }
+    String encodeEditorGrid(Map<String,String> cells) {
+        if (cells == null || cells.isEmpty()) return "";
+        ArrayList<String> keys = new ArrayList<>(cells.keySet());
+        keys.sort((a,b) -> {
+            String[] aa=a.split(","); String[] bb=b.split(",");
+            int ay=Integer.parseInt(aa[1]), by=Integer.parseInt(bb[1]);
+            if (ay != by) return Integer.compare(ay, by);
+            return Integer.compare(Integer.parseInt(aa[0]), Integer.parseInt(bb[0]));
+        });
+        StringBuilder sb = new StringBuilder();
+        for (String k : keys) {
+            if (sb.length() > 0) sb.append(';');
+            sb.append(k).append('=').append(cells.get(k).replace(';', ',').replace('=', ':'));
+        }
+        return sb.toString();
+    }
+    Point inGameEditorGridCellAt(int mx, int my) {
+        if (!"Room Editor".equals(inGameEditorName())) return null;
+        SimulationEditorRepository.EditableEntity entity = inGameEditorEntity();
+        if (entity == null) return null;
+        Map<String,Object> props = entity.properties();
+        int roomW = editorInt(props.get("width"), 1, 32, 8);
+        int roomH = editorInt(props.get("height"), 1, 32, 6);
+        Rectangle grid = inGameRoomGridRect();
+        int cell = Math.max(10, Math.min(42, Math.min((grid.width - 12) / Math.max(1, roomW), (grid.height - 12) / Math.max(1, roomH))));
+        int ox = grid.x + (grid.width - cell * roomW) / 2;
+        int oy = grid.y + (grid.height - cell * roomH) / 2;
+        if (mx < ox || my < oy || mx >= ox + cell*roomW || my >= oy + cell*roomH) return null;
+        return new Point((mx - ox) / cell, (my - oy) / cell);
+    }
+    boolean handleInGameEditorGridPaint(int mx, int my, boolean erase) {
+        Point cell = inGameEditorGridCellAt(mx, my);
+        if (cell == null) return false;
+        SimulationEditorRepository.EntityRef ref = inGameEditorRef();
+        if (ref == null) return false;
+        Object old = inGameEditorRepository.property(ref, "layoutCells");
+        Map<String,String> cells = decodeEditorGrid(String.valueOf(old == null ? "" : old));
+        String key = cell.x + "," + cell.y;
+        if (erase) cells.remove(key); else cells.put(key, inGameEditorSelectedPaletteItem());
+        String next = encodeEditorGrid(cells);
+        inGameEditorUndoRedo.execute(new EditorCommand.PropertyChange(inGameEditorRepository, ref, "layoutCells", old == null ? "" : old, next, inGameEditorEventBus));
+        inGameEditorStatus = (erase ? "Erased" : "Placed " + inGameEditorSelectedPaletteItem()) + " at room cell " + cell.x + "," + cell.y + ".";
+        repaint();
+        return true;
+    }
+
+
+    Rectangle sectorAuditMapRect() { return uiLayout().map; }
+
+    Point screenPointToAuditTile(int sx, int sy) {
+        if (auditWorld == null) return null;
+        Rectangle map = inputMapRect();
+        int cellW = auditMapCellW(null);
+        int cellH = auditMapCellH(null);
+        int cols = Math.max(1, (map.width - 18) / Math.max(1, cellW));
+        int rows = Math.max(1, (map.height - 18) / Math.max(1, cellH));
+        int camX = Math.max(0, Math.min(auditWorld.w - cols, auditCursorX - cols / 2));
+        int camY = Math.max(0, Math.min(auditWorld.h - rows, auditCursorY - rows / 2));
+        int ox = map.x + 10, oy = map.y + 10;
+        int drawW = cols * Math.max(1, cellW);
+        int drawH = rows * Math.max(1, cellH);
+        if (sx < ox || sy < oy || sx >= ox + drawW || sy >= oy + drawH) return null;
+        int tx = camX + Math.floorDiv(sx - ox, Math.max(1, cellW));
+        int ty = camY + Math.floorDiv(sy - oy, Math.max(1, cellH));
+        if (!auditWorld.inBounds(tx, ty)) return null;
+        return new Point(tx, ty);
+    }
+
+    void drawSectorAuditSurface(Graphics2D g) {
+        advanceAuditTracePlaybackIfNeeded();
+        if (auditWorld == null) regenerateSectorAuditWorld("draw missing audit world");
+        UiLayout L = uiLayout();
+        Rectangle map = L.map;
+        g.setFont(auditAsciiFont());
+        int cellW = auditMapCellW(g);
+        int cellH = auditMapCellH(g);
+        int cols = Math.max(1, (map.width - 18) / Math.max(1, cellW));
+        int rows = Math.max(1, (map.height - 18) / Math.max(1, cellH));
+        int camX = auditWorld == null ? 0 : Math.max(0, Math.min(auditWorld.w - cols, auditCursorX - cols / 2));
+        int camY = auditWorld == null ? 0 : Math.max(0, Math.min(auditWorld.h - rows, auditCursorY - rows / 2));
+        g.setColor(Color.BLACK);
+        g.fillRect(map.x, map.y, map.width, map.height);
+        drawSlicedFrame(g, map.x, map.y, map.width, map.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-map", map.x, map.y, map.width, map.height);
+        Shape oldClip = g.getClip();
+        g.setClip(map.x + 7, map.y + 7, map.width - 14, map.height - 14);
+        int ox = map.x + 10;
+        int oy = sectorAuditTileIconMode() ? map.y + 10 : map.y + 10 + g.getFontMetrics(auditAsciiFont()).getAscent();
+        if (auditWorld != null) {
+            World oldWorld = world;
+            boolean[][] oldVisibleTiles = visibleTiles;
+            boolean[][] oldRememberedTiles = rememberedTiles;
+            world = auditWorld;
+            visibleTiles = SectorAuditRuntimeAuthority.fullBrightMask(auditWorld);
+            rememberedTiles = visibleTiles;
+            try {
+                for (int sy = 0; sy < rows; sy++) {
+                    int y = camY + sy;
+                    if (y < 0 || y >= auditWorld.h) continue;
+                    for (int sx = 0; sx < cols; sx++) {
+                        int x = camX + sx;
+                        if (x < 0 || x >= auditWorld.w) continue;
+                        char ch = auditWorld.tiles[x][y];
+                        if (sectorAuditTileIconMode()) drawMapTileIcon(g, ch, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 1.0f, true);
+                        else { g.setColor(colorForTile(x, y, ch)); g.drawString(String.valueOf(ch), ox + sx * cellW, oy + sy * cellH); }
+                    }
+                }
+                if (auditWorld.mapObjects != null) {
+                    for (MapObjectState mo : auditWorld.mapObjects) {
+                        if (mo == null || mo.x < camX || mo.y < camY || mo.x >= camX + cols || mo.y >= camY + rows) continue;
+                        if (sectorAuditTileIconMode()) drawMapFeatureIcon(g, mo, ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH, cellW, cellH, new Color(100, 210, 160, 70));
+                        else { g.setColor(new Color(170, 215, 155)); g.drawString(String.valueOf(mo.glyph), ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH); }
+                    }
+                }
+                if (auditWorld.lightSources != null) drawZoneLightFixtureObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.hazardWarnings != null) drawEnvironmentalHazardOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.trapRecords != null) drawTrapWarningOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.npcs != null) {
+                    for (NpcEntity npc : auditWorld.npcs) {
+                        if (npc == null || npc.x < camX || npc.y < camY || npc.x >= camX + cols || npc.y >= camY + rows) continue;
+                        if (sectorAuditTileIconMode()) drawNpcMapIcon(g, npc, ox + (npc.x - camX) * cellW, oy + (npc.y - camY) * cellH, cellW, cellH);
+                        else { g.setColor(npcColor(npc.faction)); g.drawString(String.valueOf(npc.symbol), ox + (npc.x - camX) * cellW, oy + (npc.y - camY) * cellH); }
+                    }
+                }
+                drawSectorAuditDiagnosticOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                drawSectorAuditTraceMarker(g, camX, camY, ox, oy, cellW, cellH);
+                drawZoneAuditGenerationLogOverlay(g, map, camX, camY, ox, oy, cellW, cellH);
+            } finally { world = oldWorld; visibleTiles = oldVisibleTiles; rememberedTiles = oldRememberedTiles; }
+            int sx = auditCursorX - camX, sy = auditCursorY - camY;
+            if (sx >= 0 && sy >= 0 && sx < cols && sy < rows) {
+                int rx = ox + sx * cellW, ry = oy + sy * cellH;
+                g.setColor(new Color(245, 210, 95));
+                g.drawRect(rx - 2, ry - 2, cellW + 4, cellH + 4);
+                g.drawLine(rx + cellW/2, ry - 5, rx + cellW/2, ry + Math.max(2, cellH/4));
+                g.drawLine(rx + cellW/2, ry + cellH + 5, rx + cellW/2, ry + cellH - Math.max(2, cellH/4));
+                g.drawLine(rx - 5, ry + cellH/2, rx + Math.max(2, cellW/4), ry + cellH/2);
+                g.drawLine(rx + cellW + 5, ry + cellH/2, rx + cellW - Math.max(2, cellW/4), ry + cellH/2);
+            }
+        }
+        g.setClip(oldClip);
+        drawSectorAuditCommandPanel(g, L);
+        drawSectorAuditInfoPanel(g, L);
+        drawSectorAuditZoneDropdown(g, L);
+    }
+
+
+
+    java.util.List<String> auditTileInspectionLines(int x, int y) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (auditWorld == null || !auditWorld.inBounds(x, y)) return lines;
+        char ch = auditWorld.tiles[x][y];
+        int roomId = auditWorld.roomIdAt(x, y);
+        RoomProfile rp = roomId >= 0 && roomId < auditWorld.roomProfiles.size() ? auditWorld.roomProfiles.get(roomId) : null;
+        Faction owner = auditWorld.roomFaction(roomId);
+        CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(auditWorld, x, y, ch);
+        lines.add("Observed tile: glyph '" + ch + "' floor/wall layer=" + (d == null ? "unknown" : d.baseLayer + "/" + d.family) + " roomId=" + roomId + " owner=" + (owner == null ? "none" : owner.label) + ".");
+        if (rp != null) lines.add("Room: " + rp.name + " — " + rp.descriptor + " features=" + rp.featureText + ".");
+        ArrayList<String> occupants = new ArrayList<>();
+        NpcEntity npc = auditWorld.npcAt(x, y);
+        if (npc != null) occupants.add("entity=" + npc.name + " / " + npc.role + " / " + (npc.faction == null ? "none" : npc.faction.label));
+        MapObjectState mo = auditWorld.mapObjectAt(x, y);
+        if (mo != null) occupants.add("object=" + mo.summary() + " | assetId=" + ObjectSemanticAssetAuthority.assetIdForMapObject(mo));
+        if (auditWorld.lightSources != null) for (ZoneLightSourceRecord l : auditWorld.lightSources) if (l != null && l.x == x && l.y == y) occupants.add("light=" + l.stockState() + " | assetId=" + ObjectSemanticAssetAuthority.assetIdForLight(l));
+        if (auditWorld.trapRecords != null) for (TrapRecord t : auditWorld.trapRecords) if (t != null && t.x == x && t.y == y) occupants.add("trap=" + t.label + " / " + t.type + " / " + t.state + " / effect=" + t.effect + " severity=" + t.severity + " | assetId=" + ObjectSemanticAssetAuthority.assetIdForTrap(t));
+        if (auditWorld.hazardWarnings != null) for (EnvironmentalHazardRecord hz : auditWorld.hazardWarnings) if (hz != null && hz.x == x && hz.y == y) occupants.add("hazard=" + hz.label + " / " + hz.severityText() + " / " + hz.warningText());
+        if (occupants.isEmpty()) lines.add("Tile contents: no entity, object/container, light, trap, or hazard record on the selected cell.");
+        else lines.addAll(occupants);
+        return lines;
+    }
+
+    void drawSectorAuditTraceMarker(Graphics2D g, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        if (step == null || auditWorld == null || !auditWorld.inBounds(step.x, step.y)) return;
+        int sx = ox + (step.x - camX) * cellW;
+        int sy = oy + (step.y - camY) * cellH;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setStroke(new BasicStroke(Math.max(2f, cellW / 9f)));
+        if (step.ghostRect != null) {
+            Rectangle gr = step.ghostRect;
+            int gx1 = Math.max(gr.x, camX), gy1 = Math.max(gr.y, camY);
+            int gx2 = Math.min(gr.x + gr.width, camX + Math.max(1, (mapRect().width - 18) / Math.max(1, cellW)));
+            int gy2 = Math.min(gr.y + gr.height, camY + Math.max(1, (mapRect().height - 18) / Math.max(1, cellH)));
+            if (gx1 < gx2 && gy1 < gy2) {
+                int rx = ox + (gx1 - camX) * cellW;
+                int ry = oy + (gy1 - camY) * cellH;
+                int rw = Math.max(1, (gx2 - gx1) * cellW);
+                int rh = Math.max(1, (gy2 - gy1) * cellH);
+                gg.setComposite(AlphaComposite.SrcOver.derive(step.rejected ? 0.18f : 0.16f));
+                gg.setColor(step.rejected ? new Color(255, 70, 45) : new Color(245, 225, 95));
+                gg.fillRect(rx, ry, rw, rh);
+                gg.setComposite(AlphaComposite.SrcOver.derive(0.82f));
+                gg.drawRect(rx, ry, Math.max(1, rw - 1), Math.max(1, rh - 1));
+            }
+        }
+        if (sx + cellW >= ox && sy + cellH >= oy && sx <= ox + Math.max(1, auditWorld.w) * cellW && sy <= oy + Math.max(1, auditWorld.h) * cellH) {
+            gg.setComposite(AlphaComposite.SrcOver);
+            if (step.rejected) {
+                gg.setColor(new Color(255, 70, 45, 230));
+                gg.drawLine(sx + 3, sy + 3, sx + cellW - 4, sy + cellH - 4);
+                gg.drawLine(sx + cellW - 4, sy + 3, sx + 3, sy + cellH - 4);
+            } else {
+                gg.setColor(new Color(245, 225, 95, 235));
+                gg.drawRect(sx + 2, sy + 2, Math.max(3, cellW - 5), Math.max(3, cellH - 5));
+                gg.drawLine(sx + cellW / 2, sy - Math.max(2, cellH / 3), sx + cellW / 2, sy + cellH + Math.max(2, cellH / 3));
+                gg.drawLine(sx - Math.max(2, cellW / 3), sy + cellH / 2, sx + cellW + Math.max(2, cellW / 3), sy + cellH / 2);
+            }
+        }
+        gg.dispose();
+    }
+
+    void drawZoneAuditGenerationLogOverlay(Graphics2D g, Rectangle map, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return;
+        int current = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        int lines = Math.max(6, Math.min(12, map.height / 42));
+        int start = Math.max(0, current - lines + 2);
+        int end = Math.min(auditTraceSteps.size(), start + lines);
+        int panelW = Math.max(330, Math.min(560, map.width / 2));
+        int lineH = Math.max(15, g.getFontMetrics(smallFont).getHeight() + 2);
+        int panelH = 14 + (end - start) * lineH;
+        int px = map.x + 18;
+        int py = map.y + 18;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setColor(new Color(0, 0, 0, 178));
+        gg.fillRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setColor(new Color(145, 118, 64, 155));
+        gg.drawRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D() - 3f)));
+        FontMetrics fm = gg.getFontMetrics();
+        int y = py + 12 + fm.getAscent();
+        for (int i = start; i < end; i++) {
+            SectorGenerationTraceAuthority.Step st = auditTraceSteps.get(i);
+            boolean selected = i == current;
+            if (selected) {
+                gg.setColor(new Color(145, 118, 64, 210));
+                gg.fillRect(px + 6, y - fm.getAscent() - 2, panelW - 12, lineH);
+            }
+            gg.setColor(st.rejected ? new Color(255, 145, 115) : (selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN)));
+            String line = st.line(auditTraceSteps.size());
+            int maxChars = Math.max(24, (panelW - 18) / Math.max(5, fm.charWidth('W')));
+            if (line.length() > maxChars) line = line.substring(0, Math.max(0, maxChars - 1)) + "…";
+            drawUiTextLine(gg, line, px + 10, y);
+            y += lineH;
+        }
+        gg.dispose();
+    }
+
+    void drawSectorAuditDiagnosticOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (auditWorld == null || auditOverlayMode == 0) return;
+        int mode = Math.floorMod(auditOverlayMode, SectorAuditRuntimeAuthority.OVERLAY_LABELS.length);
+        Composite oldComposite = g.getComposite();
+        Stroke oldStroke = g.getStroke();
+        if (mode == 2) { // rooms
+            for (int i = 0; i < auditWorld.rooms.size(); i++) {
+                Rectangle rr = auditWorld.rooms.get(i);
+                int x1 = Math.max(rr.x, camX), y1 = Math.max(rr.y, camY);
+                int x2 = Math.min(rr.x + rr.width, camX + cols), y2 = Math.min(rr.y + rr.height, camY + rows);
+                if (x1 >= x2 || y1 >= y2) continue;
+                boolean flagged = false;
+                if (auditSnapshot != null) for (SectorAuditRuntimeAuthority.AuditFinding f : auditSnapshot.findings) if (f.category.equals("ROOM") && f.label.contains(" " + i)) { flagged = true; break; }
+                g.setComposite(AlphaComposite.SrcOver.derive(flagged ? 0.28f : 0.15f));
+                g.setColor(flagged ? new Color(230, 80, 70) : new Color(90, 150, 230));
+                g.fillRect(ox + (x1 - camX) * cellW, oy + (y1 - camY) * cellH, Math.max(1, (x2 - x1) * cellW), Math.max(1, (y2 - y1) * cellH));
+                g.setComposite(AlphaComposite.SrcOver.derive(0.72f));
+                g.drawRect(ox + (x1 - camX) * cellW, oy + (y1 - camY) * cellH, Math.max(1, (x2 - x1) * cellW - 1), Math.max(1, (y2 - y1) * cellH - 1));
+            }
+        } else if (mode == 3 || mode == 4 || mode == 5 || mode >= 6) {
+            for (int sy=0; sy<rows; sy++) {
+                int y = camY + sy;
+                if (y < 0 || y >= auditWorld.h) continue;
+                for (int sx=0; sx<cols; sx++) {
+                    int x = camX + sx;
+                    if (x < 0 || x >= auditWorld.w) continue;
+                    char ch = auditWorld.tiles[x][y];
+                    CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(auditWorld, x, y, ch);
+                    Color color = null;
+                    float alpha = 0.0f;
+                    if (mode == 3) { // roads
+                        if (ch == RoadGridIntegrationAuthority.ROAD_LANE) { color = "intersection".equals(d == null ? null : d.shape) ? new Color(245, 210, 80) : new Color(80, 165, 245); alpha = 0.28f; }
+                        else if (ch == RoadGridIntegrationAuthority.SIDEWALK) { color = new Color(120, 220, 130); alpha = 0.20f; }
+                    } else if (mode == 4) { // boundary
+                        if (ch == InterstitialInfrastructureApi.VOID_SPACE) { color = new Color(120, 90, 200); alpha = 0.28f; }
+                        else if (d != null && "exterior_maintenance_bulkhead".equals(d.family)) { color = new Color(240, 180, 75); alpha = 0.30f; }
+                        else if (ch == '-') { color = new Color(85, 210, 190); alpha = 0.18f; }
+                    } else if (mode == 5) { // descriptors
+                        if (d != null && "fallback".equals(d.baseLayer)) { color = new Color(245, 70, 95); alpha = 0.36f; }
+                        else if (d != null && d.hasOverlay()) { color = new Color(210, 100, 245); alpha = 0.22f; }
+                    } else if (mode == 6) { // interactables
+                        if (auditTileHasInteractable(x, y)) { color = new Color(90, 240, 170); alpha = 0.30f; }
+                    } else if (mode == 7) { // containers
+                        if (auditTileHasContainer(x, y)) { color = new Color(225, 185, 90); alpha = 0.32f; }
+                    } else if (mode == 8) { // lights
+                        if (auditTileHasLight(x, y)) { color = new Color(255, 238, 130); alpha = 0.36f; }
+                    } else if (mode == 9) { // traps
+                        if (auditTileHasTrap(x, y)) { color = new Color(245, 80, 80); alpha = 0.36f; }
+                    } else if (mode == 10) { // entities
+                        if (auditTileHasEntity(x, y)) { color = new Color(125, 180, 255); alpha = 0.34f; }
+                    } else if (mode == 11) { // transitions
+                        if (auditTileHasTransition(x, y, ch)) { color = new Color(255, 150, 75); alpha = 0.36f; }
+                    }
+                    if (color != null) {
+                        g.setComposite(AlphaComposite.SrcOver.derive(alpha));
+                        g.setColor(color);
+                        g.fillRect(ox + sx * cellW, oy + sy * cellH, cellW, cellH);
+                    }
+                }
+            }
+        }
+        if (mode == 1 && auditSnapshot != null) {
+            for (int i=0; i<auditSnapshot.findings.size(); i++) {
+                SectorAuditRuntimeAuthority.AuditFinding f = auditSnapshot.findings.get(i);
+                if (f.x < camX || f.y < camY || f.x >= camX + cols || f.y >= camY + rows) continue;
+                int rx = ox + (f.x - camX) * cellW, ry = oy + (f.y - camY) * cellH;
+                boolean selected = i == Math.floorMod(auditFindingIndex, Math.max(1, auditSnapshot.findings.size()));
+                g.setComposite(AlphaComposite.SrcOver.derive(selected ? 0.82f : 0.48f));
+                g.setColor(f.severity.equals("ERROR") ? new Color(245, 75, 65) : new Color(245, 210, 75));
+                g.setStroke(new BasicStroke(selected ? 3f : 1.5f));
+                g.drawRect(rx + 1, ry + 1, Math.max(3, cellW - 2), Math.max(3, cellH - 2));
+                if (selected) {
+                    g.drawLine(rx, ry, rx + cellW, ry + cellH);
+                    g.drawLine(rx + cellW, ry, rx, ry + cellH);
+                }
+            }
+        }
+        g.setStroke(oldStroke);
+        g.setComposite(oldComposite);
+    }
+
+
+    boolean auditTileHasInteractable(int x, int y) {
+        if (auditWorld == null) return false;
+        MapObjectState mo = auditWorld.mapObjectAt(x, y);
+        if (mo != null) return true;
+        char ch = auditWorld.inBounds(x, y) ? auditWorld.tiles[x][y] : 0;
+        return auditWorld.isDoorSymbol(ch) || ch == 'S' || ch == 'E' || ch == 'v' || ch == '<' || ch == '>';
+    }
+
+    boolean auditTileHasContainer(int x, int y) {
+        if (auditWorld == null || auditWorld.mapObjects == null) return false;
+        for (MapObjectState mo : auditWorld.mapObjects) {
+            if (mo == null || mo.x != x || mo.y != y) continue;
+            String low = ((mo.type == null ? "" : mo.type) + " " + (mo.label == null ? "" : mo.label) + " " + (mo.stockState == null ? "" : mo.stockState)).toLowerCase(Locale.ROOT);
+            if (low.contains("container") || low.contains("crate") || low.contains("stock") || low.contains("vault") || low.contains("cache") || low.contains("corpse")) return true;
+        }
+        char ch = auditWorld.inBounds(x, y) ? auditWorld.tiles[x][y] : 0;
+        return ch == 'b' || ch == 's' || ch == 'q' || ch == '?' || ch == '$' || ch == 'r';
+    }
+
+    boolean auditTileHasLight(int x, int y) {
+        if (auditWorld == null || auditWorld.lightSources == null) return false;
+        for (ZoneLightSourceRecord l : auditWorld.lightSources) if (l != null && l.x == x && l.y == y) return true;
+        return false;
+    }
+
+    boolean auditTileHasTrap(int x, int y) {
+        if (auditWorld == null) return false;
+        if (auditWorld.trapRecords != null) for (TrapRecord t : auditWorld.trapRecords) if (t != null && t.x == x && t.y == y) return true;
+        if (auditWorld.mapObjects != null) for (MapObjectState mo : auditWorld.mapObjects) {
+            if (mo == null || mo.x != x || mo.y != y) continue;
+            String low = ((mo.type == null ? "" : mo.type) + " " + (mo.label == null ? "" : mo.label)).toLowerCase(Locale.ROOT);
+            if (low.contains("trap") || low.contains("mine") || low.contains("explosive") || low.contains("alarm")) return true;
+        }
+        return false;
+    }
+
+    boolean auditTileHasEntity(int x, int y) {
+        return auditWorld != null && auditWorld.npcAt(x, y) != null;
+    }
+
+    boolean auditTileHasTransition(int x, int y, char ch) {
+        if (auditWorld == null) return false;
+        if (auditWorld.isDoorSymbol(ch) && (ch == 'D' || x <= 1 || y <= 1 || x >= auditWorld.w - 2 || y >= auditWorld.h - 2)) return true;
+        return ch == 'S' || ch == 'E' || ch == 'v' || ch == '<' || ch == '>';
+    }
+
+    Rectangle zoneAuditDropdownOuterRect(UiLayout L) {
+        if (L == null) L = uiLayout();
+        ZoneType[] zones = ZoneType.values();
+        int screenPad = Math.max(8, scaled(8));
+        int cols = zones.length > 14 ? 2 : 1;
+        int rowH = Math.max(22, Math.min(28, L.command.height / 24));
+        int rows = Math.max(1, (int)Math.ceil(zones.length / (double)Math.max(1, cols)));
+        int w = Math.min(Math.max(360, getWidth() - screenPad * 2), Math.max(300, cols * 190 + 36));
+        int h = Math.min(Math.max(160, L.command.height - 18), Math.max(110, 20 + rows * rowH + Math.max(0, rows - 1) * 4));
+        int x = Math.max(screenPad, L.command.x - w - 10);
+        if (x + w > getWidth() - screenPad) x = Math.max(screenPad, getWidth() - screenPad - w);
+        int y = Math.max(screenPad, L.command.y + 10);
+        if (y + h > getHeight() - screenPad) y = Math.max(screenPad, getHeight() - screenPad - h);
+        return new Rectangle(x, y, w, h);
+    }
+
+    Rectangle zoneAuditDropdownInnerRect(UiLayout L) {
+        Rectangle r = zoneAuditDropdownOuterRect(L);
+        return new Rectangle(r.x + 10, r.y + 10, Math.max(1, r.width - 20), Math.max(1, r.height - 20));
+    }
+
+    boolean isZoneAuditDropdownButton(ButtonBox b) {
+        if (b == null || b.label == null || !auditZoneDropdownOpen || screen != Screen.SECTOR_AUDIT) return false;
+        ZoneType[] zones = ZoneType.values();
+        String label = b.label.replace("▶", "").trim();
+        for (ZoneType z : zones) if (label.equals(z.label)) return true;
+        return false;
+    }
+
+    void drawSectorAuditZoneDropdown(Graphics2D g, UiLayout L) {
+        if (!auditZoneDropdownOpen || L == null) return;
+        ZoneType[] zones = ZoneType.values();
+        if (zones.length == 0) return;
+        Rectangle outer = zoneAuditDropdownOuterRect(L);
+        Rectangle inner = zoneAuditDropdownInnerRect(L);
+        g.setColor(new Color(0,0,0,232));
+        g.fillRoundRect(outer.x, outer.y, outer.width, outer.height, 10, 10);
+        drawSlicedFrame(g, outer.x, outer.y, outer.width, outer.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-zone-selector", outer.x, outer.y, outer.width, outer.height);
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(8f, smallFont.getSize2D()-3f)));
+        FontMetrics fm = g.getFontMetrics();
+        int colGap = Math.max(6, Math.min(10, inner.width / 38));
+        int rowGap = Math.max(3, Math.min(5, inner.height / 80));
+        int cols = Math.max(1, Math.min(3, (inner.width + colGap) / 170));
+        int rows = Math.max(1, (int)Math.ceil(zones.length / (double)cols));
+        int cellW = Math.max(120, (inner.width - colGap * Math.max(0, cols - 1)) / cols);
+        int cellH = Math.max(18, Math.min(25, (inner.height - rowGap * Math.max(0, rows - 1)) / rows));
+        Shape oldClip = g.getClip();
+        g.setClip(outer.x + 6, outer.y + 6, outer.width - 12, outer.height - 12);
+        for (int i = 0; i < zones.length; i++) {
+            int col = i % cols;
+            int row = i / cols;
+            int x = inner.x + col * (cellW + colGap);
+            int y = inner.y + row * (cellH + rowGap);
+            ZoneType z = zones[i];
+            boolean selected = i == auditZoneTypeIndex;
+            g.setColor(selected ? new Color(60,48,24,235) : new Color(10,10,10,188));
+            g.fillRoundRect(x, y, cellW, cellH, 6, 6);
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel((selected ? "▶ " : "") + z.label, fm, cellW - 10), x + 6, y + Math.max(13, fm.getAscent() + 2));
+        }
+        g.setClip(oldClip);
+    }
+
+    void drawSectorAuditCommandPanel(Graphics2D g, UiLayout L) {
+        // 0.9.10iq: the sector-audit command frame is now button-only. The former
+        // explanatory body copy lived under the buttons and made the right rail read
+        // like a collision bug at Windows test density.
+        drawRightPanelFrame(g);
+    }
+
+    void drawSectorAuditInfoPanel(Graphics2D g, UiLayout L) {
+        Rectangle t = L.tactical;
+        g.setColor(new Color(6,7,7,238));
+        g.fillRect(t.x, t.y, t.width, t.height);
+        drawSlicedFrame(g, t.x, t.y, t.width, t.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-report", t.x, t.y, t.width, t.height);
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(9f, smallFont.getSize2D()-2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "ZONE AUDIT REPORT", t.x + 12, t.y + 20);
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        ArrayList<String> lines = new ArrayList<>();
+        if (auditWorld == null) lines.add("No audit world generated.");
+        else {
+            char ch = auditWorld.inBounds(auditCursorX, auditCursorY) ? auditWorld.tiles[auditCursorX][auditCursorY] : '?';
+            CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(auditWorld, auditCursorX, auditCursorY, ch);
+            lines.add("Zone: " + auditWorld.zoneType.label + " | " + auditWorld.w + "x" + auditWorld.h + " | weight " + WorldGenerationApi.worldgenWeightBandLabel(auditZoneSizeIndex) + " | density " + WorldSetupSettings.ZONE_DENSITY[Math.max(0, Math.min(3, auditZoneDensityIndex))] + " | overlay " + SectorAuditRuntimeAuthority.overlayLabel(auditOverlayMode) + ".");
+            SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+            if (step != null) lines.add(step.line(auditTraceSteps == null ? 0 : auditTraceSteps.size()) + (auditTracePlaying ? " | playing." : " | paused."));
+            lines.add("Cursor: " + auditCursorX + "," + auditCursorY + " glyph '" + ch + "' room " + auditWorld.roomIdAt(auditCursorX, auditCursorY) + " faction " + auditWorld.roomFaction(auditWorld.roomIdAt(auditCursorX, auditCursorY)).label + ".");
+            if (d != null) lines.add("Tile descriptor: " + d.inspectLine() + ".");
+            lines.addAll(auditTileInspectionLines(auditCursorX, auditCursorY));
+            lines.addAll(SectorAuditRuntimeAuthority.compactPanelLines(auditSnapshot, auditFindingIndex));
+            lines.add(auditReport);
+        }
+        int y = t.y + 42;
+        Shape old = g.getClip();
+        g.setClip(t.x + 8, t.y + 28, t.width - 16, t.height - 36);
+        FontMetrics reportMetrics = g.getFontMetrics();
+        for (String line : TextSurfaceApi.wrap(String.join(" ", lines), Math.max(54, (t.width - 24) / Math.max(6, reportMetrics.charWidth('W'))))) {
+            if (y > t.y + t.height - 8) break;
+            drawUiTextLine(g, line, t.x + 12, y);
+            y += Math.max(12, reportMetrics.getHeight() + 1);
+        }
+        g.setClip(old);
+    }
+
+    Rectangle multiplayerMenuPanelRect() {
+        int W = getWidth(), H = getHeight();
+        int marginX = Math.max(34, Math.min(70, W / 22));
+        int marginY = Math.max(44, Math.min(76, H / 14));
+        int panelW = Math.min(1280, Math.max(760, W - marginX * 2));
+        int panelH = Math.min(Math.max(520, H - marginY * 2), H - Math.max(72, marginY));
+        return new Rectangle((W - panelW) / 2, Math.max(42, (H - panelH) / 2), panelW, panelH);
+    }
+
+    Rectangle multiplayerContentRect(Rectangle panel) {
+        int pad = Math.max(24, Math.min(36, panel.width / 32));
+        int gap = Math.max(16, Math.min(24, panel.width / 52));
+        int actionW = Math.max(270, Math.min(390, (panel.width - pad * 2 - gap) / 3));
+        int contentW = Math.max(360, panel.width - pad * 2 - gap - actionW);
+        return new Rectangle(panel.x + pad, panel.y + 66, contentW, Math.max(180, panel.height - 132));
+    }
+
+    Rectangle multiplayerActionRect(Rectangle panel) {
+        Rectangle content = multiplayerContentRect(panel);
+        int gap = Math.max(16, Math.min(24, panel.width / 52));
+        int x = content.x + content.width + gap;
+        return new Rectangle(x, content.y, Math.max(240, panel.x + panel.width - 24 - x), content.height);
+    }
+
+    void drawMultiplayerSurface(Graphics2D g) {
+        multiplayerPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_MULTIPLAYER(Graphics2D g) {
+        int W = getWidth();
+        Rectangle panel = multiplayerMenuPanelRect();
+        Rectangle content = multiplayerContentRect(panel);
+        Rectangle action = multiplayerActionRect(panel);
+        g.setColor(new Color(0, 0, 0, 196));
+        g.fillRoundRect(panel.x, panel.y, panel.width, panel.height, 16, 16);
+        drawSlicedFrame(g, panel.x, panel.y, panel.width, panel.height, "inner");
+        stampUiFrameId(g, "F", "multiplayer-menu", panel.x, panel.y, panel.width, panel.height);
+        g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, panel.height / 12f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "MULTIPLAYER CONNECTION", W / 2, panel.y + 42);
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+
+        g.setColor(new Color(12, 14, 13, 226));
+        g.fillRoundRect(content.x, content.y, content.width, content.height, 12, 12);
+        g.setColor(new Color(145, 118, 64, 135));
+        g.drawRoundRect(content.x, content.y, content.width, content.height, 12, 12);
+        g.setColor(new Color(12, 14, 13, 220));
+        g.fillRoundRect(action.x, action.y, action.width, action.height, 12, 12);
+        g.setColor(new Color(145, 118, 64, 125));
+        g.drawRoundRect(action.x, action.y, action.width, action.height, 12, 12);
+
+        int leftX = content.x + 14;
+        int textW = Math.max(240, content.width - 28);
+        int y = content.y + 26;
+        Shape oldClip = g.getClip();
+        g.setClip(content.x + 8, content.y + 8, content.width - 16, content.height - 16);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Direct address:", leftX, y); y += fm.getHeight() + 4;
+        String direct = (multiplayerMenu.inputActive() ? "> " : "  ") + multiplayerMenu.directInput() + (multiplayerMenu.inputActive() && (System.currentTimeMillis() / 450) % 2 == 0 ? "_" : "");
+        g.setColor(new Color(18, 22, 20, 230));
+        g.fillRoundRect(leftX, y - fm.getAscent() - 5, textW, fm.getHeight() + 12, 8, 8);
+        g.setColor(multiplayerMenu.inputActive() ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+        g.drawString(GuiLayoutApi.fitLabel(direct, fm, Math.max(220, textW - 12)), leftX + 8, y);
+        y += fm.getHeight() + 24;
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        g.drawString("IPv4 example: 192.168.1.10:25565", leftX, y); y += fm.getHeight();
+        g.drawString("IPv6 example: [2001:db8::1]:25565", leftX, y); y += fm.getHeight() + 18;
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Recent servers:", leftX, y); y += fm.getHeight() + 4;
+        java.util.List<MultiplayerMenuController.ConnectionHistoryItem> history = multiplayerMenu.history();
+        for (int i = 0; i < Math.min(5, history.size()); i++) {
+            boolean selected = i == multiplayerMenu.historyIndex();
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString((selected ? "> " : "  ") + GuiLayoutApi.fitLabel(history.get(i).shortLine(), fm, Math.max(220, textW - 8)), leftX, y);
+            y += fm.getHeight() + 2;
+        }
+        if (history.isEmpty()) { g.setColor(optionColor(GameOptions.TEXT_DIM)); g.drawString("  No connection history yet.", leftX, y); y += fm.getHeight() + 2; }
+        y += 14;
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Favorites:", leftX, y); y += fm.getHeight() + 4;
+        java.util.List<MultiplayerMenuController.FavoriteServer> favs = multiplayerMenu.favorites();
+        for (int i = 0; i < Math.min(5, favs.size()); i++) {
+            boolean selected = i == multiplayerMenu.favoriteIndex();
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString((selected ? "> " : "  ") + GuiLayoutApi.fitLabel(favs.get(i).shortLine(), fm, Math.max(220, textW - 8)), leftX, y);
+            y += fm.getHeight() + 2;
+        }
+        if (favs.isEmpty()) { g.setColor(optionColor(GameOptions.TEXT_DIM)); g.drawString("  No favorite servers saved.", leftX, y); y += fm.getHeight() + 2; }
+
+        int statusY = Math.max(y + 14, content.y + content.height - 74);
+        g.setColor(new Color(18, 22, 20, 225));
+        g.fillRoundRect(leftX, statusY, textW, 60, 10, 10);
+        g.setColor(new Color(145, 118, 64, 120));
+        g.drawRoundRect(leftX, statusY, textW, 60, 10, 10);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        java.util.List<String> wrapped = GuiLayoutApi.wrapText(multiplayerMenu.status(), fm, Math.max(220, textW - 18));
+        int yy = statusY + 20;
+        for (int i = 0; i < Math.min(2, wrapped.size()); i++) { g.drawString(wrapped.get(i), leftX + 9, yy); yy += fm.getHeight(); }
+        g.setColor(multiplayerMenu.hasActiveHost() ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+        g.drawString(GuiLayoutApi.fitLabel(multiplayerMenu.activeHostLine(), fm, Math.max(220, textW - 18)), leftX + 9, statusY + 50);
+        g.setClip(oldClip);
+
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(9f, smallFont.getSize2D() - 2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "CONNECTION COMMANDS", action.x + action.width / 2, action.y + 22);
+    }
+
+    void drawMenu(Graphics2D g) {
+        mainMenuPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_DRAWMENU(Graphics2D g) {

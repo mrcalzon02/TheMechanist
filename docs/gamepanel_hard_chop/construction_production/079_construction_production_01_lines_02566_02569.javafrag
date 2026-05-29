@@ -1,0 +1,15 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: construction_production_01_lines_02566_02569
+// Category: construction_production
+// Source lines: 2566-2569
+// Method count: 1
+//
+// Methods in this fragment:
+// - machinePowered :: lines 2566-2569 (4) :: boolean machinePowered(char ch)
+
+    boolean machinePowered(char ch) {
+        if (ch == 'F' || ch == 'U' || ch == 'Z') return true;
+        return world == null || !poweredDownSlices.contains(String.valueOf(world.locationKey()));
+    }

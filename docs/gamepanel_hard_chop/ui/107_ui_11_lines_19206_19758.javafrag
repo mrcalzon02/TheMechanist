@@ -1,0 +1,285 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: ui_11_lines_19206_19758
+// Category: ui
+// Source lines: 19206-19758
+// Method count: 3
+//
+// Methods in this fragment:
+// - panelLines :: lines 19206-19456 (251) :: List<String> panelLines()
+// - readableButtonHeight :: lines 19741-19741 (1) :: int readableButtonHeight(int preferred)
+// - applyOptions :: lines 19745-19758 (14) :: void applyOptions()
+
+    List<String> panelLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.addAll(contextInputPromptLines(panelMode));
+        switch(panelMode) {
+            case LOOK:
+                char here = selectedTile();
+                lines.add("Selected tile " + selectedCoordText() + ": '" + here + "' — " + describeTile(here));
+                lines.add("Use arrows/WASD while this panel is open to move the look cursor.");
+                lines.add("Cursor mode: " + (lookCursorActive ? "remote inspection" : "standing tile"));
+                lines.add("Room ownership: " + ownershipText(lookCursorActive ? lookX : playerX, lookCursorActive ? lookY : playerY));
+                BaseObject inspectObj = baseObjectAt(lookCursorActive ? lookX : playerX, lookCursorActive ? lookY : playerY);
+                if (inspectObj != null) lines.add("Base object: " + inspectObj.name + " attention=" + inspectObj.attention + " cost=" + inspectObj.cost);
+                lines.add("Look details: tracks, danger signs, loot hints, room ownership, and line-of-sight are reported when the current tile exposes them.");
+                break;
+            case INTERACT:
+                lines.add("Interaction cursor: " + lookX + "," + lookY + " adjacent to @ " + playerX + "," + playerY + ".");
+                lines.add(pendingInteractionSummary);
+                lines.add("Press CONFIRM to commit the action and spend the listed time. Transit doors show their destination before you travel. Rail depots can validate an Off-world ticket or abandon this sector for a new one.");
+                lines.add("Cot sleep: 1-8 hours, limited by food/water. Each recovery chunk consumes food and water.");
+                lines.add("Scavenge: available in unclaimed rooms. Room type and zone type control loot chances. " + lastScavengeReport);
+                break;
+            case SCAVENGE:
+                lines.add("Targeted scavenging submenu. Current target: " + selectedScavengeTarget);
+                lines.add("General, Food, Water, Parts, or Beg for Concord Script. Begging has zone-based payout and Civic Wardens risk.");
+                lines.add(lastScavengeReport);
+                lines.add("Room cache ledger: " + lastRoomCacheReport);
+                break;
+            case INVENTORY:
+                lines.add("Carry load: " + carryStatusText() + "   Supplies: " + supplies + "   Food: " + food + "/15   Water: " + water + "/15   Machine parts: " + machineParts);
+                lines.add("Concord Script: carried " + countMoney() + " | banked " + totalBankedCash() + " | base stash " + countBaseStoredScript() + " — tracked as weightless cash, not a carried item stack.");
+                lines.add("Strength increases carry capacity; Endurance adds a smaller support bonus. Overload adds +1 time to movement per excess bulk.");
+                lines.add("Transfer preview: " + inventoryTransferWorkflowPreviewLine(selectedInventoryItemName()));
+                LinkedHashMap<String,Integer> stacks = stackInventory(inventory);
+                if (stacks.isEmpty()) lines.add("  - nothing, which is technically light.");
+                ArrayList<String> stackLines = new ArrayList<>();
+                for (Map.Entry<String,Integer> e : stacks.entrySet()) stackLines.add("  - " + e.getKey() + (e.getValue() > 1 ? " x" + e.getValue() : "") + " [bulk " + e.getValue() + "]");
+                int visibleInv = 12;
+                int maxStart = Math.max(0, stackLines.size() - visibleInv);
+                inventoryScroll = Math.max(0, Math.min(inventoryScroll, maxStart));
+                if (!stackLines.isEmpty()) lines.add("Carried stacks " + stacks.size() + " / loose items " + inventory.size() + " | scroll " + inventoryScroll + "/" + maxStart + " - mouse wheel to inspect carried goods.");
+                for (int ii=inventoryScroll; ii<Math.min(stackLines.size(), inventoryScroll+visibleInv); ii++) lines.add(stackLines.get(ii));
+                if (stackLines.size() > inventoryScroll + visibleInv) lines.add("  ... more item stacks below ...");
+                lines.add("Base storage items: " + baseStorage.size() + " stack(s pending storage grouping)");
+                lines.add("Selected movement: " + movementModeLabel() + " range " + movementModeRange() + " cost " + movementTurnCost() + " turn(s) per tile. Active motion state: " + activeMotionStateLabel() + ".");
+                String bwName = bestWeaponName();
+                boolean bwRanged = bwName != null && ItemCatalog.isFirearmLike(bwName);
+                lines.add("Best weapon: " + (bwName == null ? "Bare hands" : bwName) + " | attack method " + (bwRanged ? "ranged" : "melee") + " | range " + weaponRange(bwName) + " | fire modes SNAP/AIMED/BURST from COMBAT targeting.");
+                if (bwRanged) lines.add("Loaded state: " + ammoStatusForWeapon(bwName) + ". Reload with X; NPCs now track their own loaded shots and reserve reloads.");
+                lines.add("Targeting feedback reports range, fire mode, hit %, obstruction/cover penalty, intervening entities, doors/features, and shield mitigation estimates.");
+                break;
+            case CHARACTER:
+                lines.add(active.name + " — " + active.job);
+                lines.add("Carry load: " + carryStatusText());
+                lines.add("Stats:");
+                for (Map.Entry<String,Integer> e: active.stats.entrySet()) lines.add(String.format("  %-12s %2d", e.getKey()+":", e.getValue()));
+                lines.add("");
+                lines.add("Body endurance / agility map and equipment status:");
+                for (BodyPart bp : active.body.values()) lines.add("  " + bp.displayLine());
+                lines.add("");
+                lines.addAll(playerMedicalGuidanceLines());
+                lines.add("");
+                lines.add("Death rule: any vital body endurance reduced to zero is fatal; non-vital skills such as Firearms, Melee, Charm, Faith, Vision, Hearing, and Mechanics can be impaired without instant death.");
+                lines.add("Attribute links: Head governs Intellect/Nerve/Vision/Hearing/Firearms; Hands+Head govern Mechanics; Arms+Hands govern Melee; Torso governs Faith; limbs/torso govern Strength.");
+                lines.add("Character subpanels: FACTIONS and DISGUISE are accessed from this dossier.");
+                lines.add("Faction identity: " + equippedClothing.alignedFaction.label + " via " + equippedClothing.name + ".");
+                break;
+            case BUILD:
+                lines.add(baseClaimed ? "Base claimed room " + claimedRoomId + " at " + baseX + "," + baseY : "No base claimed.");
+                lines.add("Standing at " + playerX + "," + playerY + ". " + ownershipText(playerX, playerY));
+                lines.add("Supplies: " + supplies + "   Food: " + food + "/15   Water: " + water + "/15   Sleep need: " + sleepNeed + "/" + MAX_SLEEP_NEED + "   Stim strain: " + stimulantStrain + "   Machine parts: " + machineParts + "   Fatigue: " + fatigue + "   Wounds: " + wounds);
+                lines.add("Body states: bleeding " + bleeding + "   infection risk " + infectionRisk + "   pain " + pain + "   crippled legs " + crippledLegCount() + "   crippled arms/hands " + crippledArmCount());
+                lines.addAll(playerMedicalGuidanceLines());
+                lines.add("Base storage: " + baseStorage.size() + " item(s). Built objects: " + baseObjects.size());
+                for (BaseObject obj : baseObjects) lines.add("  " + obj.symbol + " " + obj.name + " at " + obj.x + "," + obj.y + " quality=" + obj.qualityName + " faction=" + factionLabel(obj.faction) + " integrity=" + obj.integrity + " charges=" + obj.charges + " attention+" + obj.attention + (obj.armed ? " ARMED" : ""));
+                lines.add("Build menu is now a right-side construction list. Pick an object, move the room-bound build cursor, then press E to confirm placement.");
+                lines.add("Current builds: storage, workbench, barricade, cot, water barrel, alarm. The separate WORK command appears on the active screen only after a Scrap Workbench exists.");
+                lines.add("Warning: defenses raise attention. If it is worth defending, it is worth stealing.");
+                break;
+            case WORKBENCH:
+                lines.add("SCRAP WORKBENCH — ACTIVE");
+                lines.add("Process scrap: converts one Scrap bit into supplies and a machine part.");
+                lines.add("Repair clothing: consumes supplies and machine parts to restore damaged worn clothing.");
+                lines.add("Assemble parts: converts mechanical detritus plus supplies into machine parts for EMM construction.");
+                lines.add("Fabrication builds: Atmos Condenser, Micro Forge, Micro Lab, Security Node. Some machines require knowledge unlocks before construction.");
+                lines.add("Production actions: Condense Water, Forge Supplies, Lab Research, and selected recipes are gated by knowledge, machine quality ceilings, and inputs.");
+                lines.add("Recruit labor: " + factionRecruits.size() + "/" + recruitCapacity() + " workers. Requires Recruit Berthing Doctrine for hiring and Workshop Labor Discipline for assignment.");
+                BaseObject sm = selectedWorkerMachine();
+                lines.add("Selected machine: " + (sm==null?"none":sm.name + " [" + sm.qualityName + "] recipe=" + (sm.assignedRecipe==null||sm.assignedRecipe.isBlank()?"none":sm.assignedRecipe) + " worker=" + (sm.assignedWorker==null||sm.assignedWorker.isBlank()?"none":sm.assignedWorker) + " queue=" + sm.productionQueueRemaining + "/" + Math.max(1, sm.productionQueueTarget)));
+                lines.addAll(selectedProductionGuidanceLines(sm));
+                lines.addAll(MachineOperationStatusBridge.statusLines(this));
+                lines.addAll(StaffingLaborBridgeAuthority.statusLines(this));
+                lines.addAll(ManualStaffingAssignmentAuthority.statusLines(this));
+                lines.addAll(StaffingRoleSkillValidationAuthority.statusLines(this));
+                lines.addAll(LogisticsReservationForecastAuthority.statusLines(this));
+                lines.addAll(LogisticsDeliveryIntentAuthority.statusLines(this));
+                lines.addAll(LogisticsStorageCandidateAuthority.statusLines(this));
+                lines.addAll(LogisticsSourceReservationAuthority.statusLines(this));
+                lines.addAll(LogisticsRouteIntentAuthority.statusLines(this));
+                lines.addAll(LogisticsRouteReadinessPreviewAuthority.statusLines(this));
+                lines.addAll(EconomicTopologyPreviewConsumerAuthority.statusLines(this));
+                lines.addAll(EconomicTopologyReportingOverlayAuthority.statusLines(this));
+                lines.addAll(RetargetReadinessAuditAuthority.statusLines(this));
+                lines.addAll(LogisticsManualHaulContractAuthority.statusLines(this));
+                lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.statusLines(this));
+                lines.addAll(LogisticsContractLifecycleAuthority.statusLines(this));
+                lines.addAll(LogisticsManualHaulExecutionAuthority.statusLines(this));
+                lines.add("Last staffing action: " + lastStaffingAssignmentReport);
+                lines.add("Last logistics forecast: " + lastLogisticsReservationReport);
+                lines.add("Last logistics intent: " + lastLogisticsDeliveryIntentReport);
+                lines.add("Last logistics source: " + lastLogisticsSourceReservationReport);
+                lines.add("Last logistics route intent: " + lastLogisticsRouteIntentReport);
+                lines.add("Last logistics haul preview: " + lastLogisticsRoutePreviewReport);
+                lines.add("Last logistics haul contract: " + lastLogisticsHaulContractReport);
+                lines.add("Last logistics haul preflight: " + lastLogisticsHaulPreflightReport);
+                lines.add("Last logistics lifecycle check: " + lastLogisticsContractLifecycleReport);
+                lines.add("Last logistics haul execution: " + lastLogisticsHaulExecutionReport);
+                lines.add("Crew shifts produce into base storage, not carried inventory, so faction work becomes base economy rather than pocket crafting.");
+                FactionRecipeVariant gv = selectedGeneratedProductionJob();
+                lines.add("Generated-job filters: category=" + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex) + " status=" + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex) + " visible=" + visibleGeneratedProductionJobs().size());
+                lines.add("Controlled generated job: " + (gv == null ? "none available under current filters" : gv.outputName + " — " + ControlledProductionJobAuthority.shortStatus(this, sm, gv)));
+                lines.add("Queue forecast: " + (gv == null ? lastGeneratedProductionQueueReport : ControlledProductionJobAuthority.queueForecastLine(this, sm, gv)));
+                lines.add("Manual fallback: use MANUAL RUN on an assigned eligible machine when recruit labor is unavailable; the player pays the listed turn/fatigue cost.");
+                lines.add("Supplies: " + supplies + "   Machine parts: " + machineParts + "   Scrap bits: " + countInventory("Scrap bit") + "   Detritus: " + countInventory("Mechanical detritus"));
+                java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+                lines.add("Known craft recipes:");
+                for (int i=0; i<recipes.size(); i++) {
+                    CraftingRecipe cr = recipes.get(i);
+                    lines.add((i==selectedCraftRecipeIndex?" > ":"   ") + cr.name + " — " + cr.shortStatus(this));
+                }
+                break;
+            case BASES:
+                lines.addAll(baseManagementLines());
+                break;
+            case FACTIONS:
+                lines.add("Gang heat: " + gangHeat + "   Civic Wardens suspicion: " + suspicion + "   Turn: " + turn);
+                lines.add("Temporary hostilities: " + hostilitySummary());
+                for (Faction f : Faction.visibleFactions()) lines.add("  " + f.label + " standing " + factionStanding.getOrDefault(f,0));
+                lines.add(baseClaimed ? "Your base exists. That makes you visible." : "No base yet. You are merely suspiciously alive.");
+                lines.add("Faction-only zones require matching cover or lawful permission later.");
+                lines.add("Last conversation: " + lastConversation);
+                lines.add("Faction representatives 'q' remain talkable for trade, bribes, and standing repair.");
+                lines.addAll(factionStrategyLines());
+                break;
+            case DISGUISE:
+                lines.add("Equipped clothing: " + equippedClothing.name + (equippedClothing.damaged ? " (damaged)" : ""));
+                lines.add("Aligned identity: " + equippedClothing.alignedFaction.label + "   Defense: " + equippedClothing.defense + "   Base cover: " + equippedClothing.disguiseBase + "%");
+                lines.add("Scavenger rags begin neutral, but bandits prey on them and Civic Wardens interrogate them.");
+                lines.add("Disguise checks fire near witnesses or inside faction-only areas.");
+                lines.add("Last disguise failure: " + lastDisguiseFailure.label);
+                lines.add("Last interrogation: " + lastInterrogation);
+                lines.add("Last Civic Wardens patrol: " + lastArbitesPatrolReport);
+                lines.add("Last custody report: " + lastCrimePunishmentReport);
+                lines.add("Inspection cooldown until: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesInspectionCooldownUntilTurn)) + "   Jail processing cooldown until: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesCaptureCooldownUntilTurn)));
+                lines.add("Disguise surface: equip clothing, inspect cover strength, watch damage, and track paper/permit support through inventory and faction checks.");
+                break;
+            case SENSES:
+                lines.add("Vision range: " + visionRange() + "   Detailed vision: " + detailVisionRange() + "   Hearing range: " + hearingRange() + "   Active motion: " + activeMotionStateLabel());
+                lines.add(portableLightStatusLine());
+                lines.add("Dropped/thrown lights in this zone: " + portableLights.size() + ". " + lastPortableLightReport);
+                lines.add("Zone fixtures: " + (world==null?0:world.lightSources.size()) + " lights / " + (world==null?0:world.noiseSources.size()) + " noise sources. " + (world==null?lastZoneLightingReport:world.lightNoiseSummary));
+                lines.add("Hearing field: " + (world==null?"No active world.":world.hearingFieldSummary));
+                lines.add("Hazard warning overlays: " + (world==null?0:world.hazardWarnings.size()) + ". " + (world==null?lastHazardVisibilityReport:world.hazardVisibilitySummary));
+                lines.add(lastLightRenderReport);
+                lines.add("Stationary gives best senses/aim. Walk observes. Run/sprint shrink senses but improve evasion. Sneak is quiet, hard to detect, poor for disguise and immediate aim.");
+                lines.add("Visible tiles last pass: " + lastVisibleCount + "   Heard pings: " + lastHeardCount);
+                lines.add("Walls block line-of-sight. Remembered tiles fade to crude floor/wall memory.");
+                lines.add("Noisy machinery 'N' raises hearing difficulty inside its operating radius.");
+                lines.add("Last senses report: " + lastSensesReport);
+                if (sensePings.isEmpty()) lines.add("No active distant sound pings.");
+                for (SensePing ping : sensePings) lines.add("  ? " + ping.label + " at " + ping.x + "," + ping.y + " ttl=" + ping.ttl);
+                break;
+            case TRADE:
+                lines.add("BRANCHING TRADE CONVERSATION");
+                if (activeTrader != null) {
+                    lines.add("Trader: " + activeTrader.name + " — " + activeTrader.archetype + " — " + activeTrader.zoneLabel);
+                    if (activeTrader.sourceSite != null) lines.add("Supply source: " + activeTrader.sourceSite.summaryLine());
+                    if (activeTrader.supplyChainSummary != null && !activeTrader.supplyChainSummary.isBlank()) lines.add("Supply chain: " + activeTrader.supplyChainSummary);
+                    lines.add("Money: " + countMoney() + " concord script/chits. Discount: " + activeTrader.discountPct + "%  Markup: " + activeTrader.markupPct + "%  Haggle attempts: " + activeTrader.haggleAttempts);
+                    lines.add("Conversation branch: " + conversationBranch);
+                    lines.add("Offers:");
+                    for (int i=0;i<activeTrader.offers.size();i++) {
+                        TradeOffer o = activeTrader.offers.get(i);
+                        lines.add((i==selectedTradeOffer?" > ":"   ") + o.displayLine(activeTrader.buyPrice(o)));
+                    }
+                    lines.add("");
+                    lines.addAll(selectedTradeReadabilityLines());
+                    lines.add("");
+                    lines.add("Trader also buys the carried item currently selected in INVENTORY.");
+                } else if (activeConversationNpc != null) {
+                    lines.add("Conversation: " + activeConversationNpc.name + " — " + activeConversationNpc.role + " — " + activeConversationNpc.faction.label);
+                    lines.add("Standing: " + conversationStandingLine(activeConversationNpc));
+                    lines.add("Speaker read: " + conversationSpeakerReadLine(activeConversationNpc));
+                    lines.add("Current topic: " + conversationBranch);
+                    lines.addAll(conversationChoiceGuidanceLines(activeConversationNpc));
+                    lines.add("Contracts: " + contractBoardLine(activeConversationNpc.faction));
+                    for (FactionContract c : factionContracts) if (!c.completed && c.faction == activeConversationNpc.faction) lines.add("  " + c.longLine());
+                    lines.add("Every choice is recorded in the in-game event log.");
+                } else {
+                    lines.add("No active trader or conversation. Depot fallback functions remain available if invoked from old content.");
+                }
+                lines.add("Last trade: " + lastTradeReport);
+                lines.add("All buy, sell, rumor, and haggle choices are recorded in the in-game event log.");
+                break;
+            case MAP:
+                if (mapTab == 0) {
+                    lines.add("DIEGETIC SECTOR MAP — SLICE " + MapLayerSurfaceAuthority.label(mapLayerView));
+                    lines.add("World intent: 3x3 sectors, each with 3x3 zones per floor, 10 floors, and sewer B-layers.");
+                    lines.add("Current sector: " + (atlas == null ? "unknown" : atlas.sectorX + "," + atlas.sectorY) + " of 3x3. Current zone: " + (world == null ? "unknown" : world.zoneCoordText()) + ". Current layer: " + (world == null ? "unknown" : world.layerText()) + ".");
+                    lines.add("Use LAYER -/+ buttons or mouse wheel to scroll through floor/sewer slices.");
+                    if (world != null) lines.addAll(world.diegeticMapLines(mapLayerView));
+                } else {
+                    lines.add("ROOM TYPE / SCAVENGE INTEL");
+                    lines.add("Room descriptors are separated from the map so the map remains readable.");
+                    if (world != null) lines.addAll(visibleRoomIntelLines());
+                }
+                break;
+            case LOG:
+                lines.add("Recent event log:");
+                lines.addAll(eventLog);
+                break;
+            case SAVELOAD:
+                lines.add("LOAD / SAVE PERSISTENCE");
+                lines.add("Manual saves: 4 slots. Autosaves: 5-column surface; first two are currently hourly and zone-transition autosaves.");
+                lines.add("Autosave cadence: every in-game hour (" + AUTOSAVE_INTERVAL_TURNS + " turns) and on completed zone transitions; death screen intentionally does not overwrite autosaves.");
+                lines.add("Run state: seed=" + seed + " turn=" + turn + " time=" + timeText() + " player=" + playerX + "," + playerY + " score=" + PlayerDefeatAndScoreAuthority.score(this));
+                lines.add("World location: " + worldLocationSummary());
+                lines.add("Character: " + (active == null ? "no active run" : active.name + " / " + active.job));
+                lines.add("Base: " + (baseClaimed ? baseX + "," + baseY + " room=" + claimedRoomId : "none"));
+                lines.add("Run counters: kills=" + runKills + " crafted=" + runCrafted + " talked=" + runNpcTalkedTo + " unconscious=" + runUnconsciousEvents + " knowledge=" + unlockedKnowledges.size() + " zones=" + visitedZoneInstances.size());
+                lines.add("");
+                lines.add("MANUAL SAVE SLOTS");
+                for (int i=1;i<=SAVE_SLOT_COUNT;i++) lines.add("  " + saveSlotSummary(i));
+                lines.add("");
+                lines.add("AUTOSAVE SLOTS");
+                lines.add("  AUTO 1: " + saveSlotSummary(AUTOSAVE_HOURLY_SLOT));
+                lines.add("  AUTO 2: " + saveSlotSummary(AUTOSAVE_ZONE_SLOT));
+                lines.add("  AUTO 3: empty");
+                lines.add("  AUTO 4: empty");
+                lines.add("  AUTO 5: empty");
+                lines.add("");
+                lines.add("Inventory=" + inventory.size() + " Storage=" + baseStorage.size() + " BaseObjects=" + baseObjects.size() + " NPCs=" + (world==null?0:world.npcs.size()) + " MapObjects=" + (world==null?0:world.mapObjects.size()));
+                lines.add("Tracked: player, atlas coordinates, visited zone records, faction standings, hostility timers, item-instance containers, base objects, current-zone NPCs, shops, persistent stock, machine locks, production queues, and survival/defeat counters.");
+                break;
+            case INFOPEDIA:
+                lines.add("Infopedia is rendered by the dedicated tabbed logic Engine panel.");
+                break;
+            default:
+                lines.add("No panel selected.");
+        }
+        return lines;
+    }
+
+// ... omitted 284 non-method/source lines between cataloged methods ...
+
+    int readableButtonHeight(int preferred) { return Math.max(28, Math.min(preferred, Math.max(24, getHeight() / 11))); }
+    int readableGap(int preferred) { return Math.max(8, Math.min(preferred, Math.max(6, getHeight() / 42))); }
+    String onOff(boolean b) { return b ? "ON" : "OFF"; }
+
+    void applyOptions() {
+        double f = DisplayDensityAuthority.clampScale(options.fontScale / 100.0f);
+        DisplayDensityAuthority.applyGlobalSwingTextScale(options);
+        titleFont = new Font("Monospaced", Font.BOLD, Math.max(20, (int)Math.round(36*f)));
+        uiFont = new Font("Monospaced", Font.BOLD, Math.max(10, (int)Math.round(16*f)));
+        smallFont = new Font("Monospaced", Font.BOLD, Math.max(8, (int)Math.round(12*f)));
+        asciiFont = new Font("Monospaced", Font.BOLD, Math.max(8, (int)Math.round(13*f)));
+        renderScaling.applyOptions(options);
+        if (timer != null) timer.setDelay(options.targetTimerDelayMs());
+        frameLimiter.configure(options);
+        DebugLog.audit("DISPLAY_DENSITY", DisplayDensityAuthority.auditSummary(options));
+        DebugLog.audit("DISPLAY_RESOLUTION", DisplayResolutionAuthority.auditSummary(options));
+        DebugLog.audit("OPTIONS", "Applied options fontScale=" + options.fontScale + " uiScale=" + options.uiScale + " sfx=" + options.sfxVolume + " music=" + options.musicVolume + " conversation=" + options.conversationVolume + " windowMode=" + options.windowMode + " resolution=" + options.resolutionLabel() + " downscale=" + options.downscaleLabel() + " targetFps=" + options.targetFpsLabel() + " frameLimited=" + options.frameLimitLabel() + " renderQuality=" + options.renderQualityLabel() + " reducedMotion=" + options.reducedMotion + " artQuality=" + options.artQualityLabel() + " generatedPayload=" + options.generatedAssetPayloadRootShortLabel() + " mapTileSize=" + options.mapTileSizeLabel() + " worldZoom=" + options.worldZoomLabel());
+    }

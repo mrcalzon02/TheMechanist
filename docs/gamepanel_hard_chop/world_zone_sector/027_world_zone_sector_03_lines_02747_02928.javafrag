@@ -1,0 +1,60 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_03_lines_02747_02928
+// Category: world_zone_sector
+// Source lines: 2747-2928
+// Method count: 4
+//
+// Methods in this fragment:
+// - bribeSectorGovernor :: lines 2747-2768 (22) :: void bribeSectorGovernor()
+// - worldTimeText :: lines 2908-2908 (1) :: String worldTimeText()
+// - worldLocationSummary :: lines 2910-2917 (8) :: String worldLocationSummary()
+// - advancePlayerAndWorldTime :: lines 2919-2928 (10) :: void advancePlayerAndWorldTime(int deltaTurns, String reason)
+
+    void bribeSectorGovernor() {
+        if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor bribe failed: no sector governor is selected."); return; }
+        int fee = governorAudienceFee();
+        if (!spendImperialScript(fee)) { logEvent("Governor bribe failed: the chamberlain requires " + fee + " Concord Script. You have " + countMoney() + "."); return; }
+        governorBribesPaid++;
+        suspicion = Math.max(0, suspicion - 3);
+        if (governorHasTicket()) {
+            addInventoryItem("Off-world ticket", ItemProvenanceRecord.of("Off-world ticket", Faction.NOBLE, "Sector Governor audience", world, turn, "seed-bound governor travel warrant", "bribed from sector governor"));
+            offworldTicketsFound++;
+            logEvent("VICTORY ROUTE: the sector governor produces a genuine off-world ticket. You can leave the sector, your debts, and probably several crimes behind.");
+            alertTitle = "OFF-WORLD TICKET ACQUIRED";
+            alertBody = "The Governor takes the lavish fee and, by some bureaucratic miracle, hands over a true off-world ticket. This is the win condition route: reach the rail or exit authority and depart.";
+            alertUntilMillis = System.currentTimeMillis() + 9000L;
+        } else {
+            logEvent("BETRAYAL: the Governor pockets " + fee + " script and has no ticket. Guards erupt from concealed doors. Find another sector governor, if you survive.");
+            spawnGovernorGuards(5 + rng.nextInt(4));
+            suspicion += 8; gangHeat += 5;
+        }
+        DebugLog.audit("GOVERNOR_BRIBE", "fee="+fee+" hasTicket="+governorHasTicket()+" bribes="+governorBribesPaid+" tickets="+offworldTicketsFound+" state="+stateSummary());
+        advanceTurn("bribes the sector governor.");
+        repaint();
+    }
+
+// ... omitted 139 non-method/source lines between cataloged methods ...
+
+    String worldTimeText() { return AgeAndWorldTimeAuthority.worldTimeText(worldTurn); }
+
+    String worldLocationSummary() {
+        if (atlas == null && world == null) return "No active world location.";
+        String sectorName = atlas == null || atlas.hiveWorld == null ? "unmapped" : atlas.hiveWorld.sectorName(atlas.sectorX, atlas.sectorY);
+        String sector = atlas == null ? "unknown sector" : "sector " + atlas.sectorX + "," + atlas.sectorY + " (" + sectorName + ")";
+        String zone = world == null ? "unknown zone" : world.zoneType.label + " " + world.zoneCoordText();
+        String layer = world == null ? "unknown layer" : world.layerText();
+        return sector + "; " + zone + "; " + layer + ".";
+    }
+
+    void advancePlayerAndWorldTime(int deltaTurns, String reason) {
+        if (deltaTurns <= 0) return;
+        long beforeWorld = worldTurn;
+        turn += deltaTurns;
+        worldTurn += deltaTurns;
+        if (beforeWorld / AgeAndWorldTimeAuthority.TURNS_PER_YEAR != worldTurn / AgeAndWorldTimeAuthority.TURNS_PER_YEAR) {
+            int aged = AgeAndWorldTimeAuthority.synchronizeLoadedActors(this, reason == null ? "world-time-advance" : reason);
+            DebugLog.audit("AGE_WORLD_TIME", "yearBoundary worldTurn=" + worldTurn + " playerTurn=" + turn + " actorsUpdated=" + aged + " reason=" + (reason == null ? "unknown" : reason));
+        }
+    }

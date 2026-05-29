@@ -1,0 +1,73 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: inventory_trade_items_01_lines_02470_03088
+// Category: inventory_trade_items
+// Source lines: 2470-3088
+// Method count: 8
+//
+// Methods in this fragment:
+// - vendingName :: lines 2470-2470 (1) :: String vendingName(char ch)
+// - vendingPreview :: lines 2472-2477 (6) :: String vendingPreview(char ch, int x, int y)
+// - vendingStockText :: lines 2479-2479 (1) :: String vendingStockText(char ch)
+// - removeInventoryOne :: lines 2645-2645 (1) :: boolean removeInventoryOne(String item)
+// - vendingCost :: lines 2701-2701 (1) :: int vendingCost(char ch)
+// - vendItem :: lines 2703-2711 (9) :: void vendItem(char ch, boolean hacked)
+// - maybeUnlockKnowledgeFromItem :: lines 3031-3038 (8) :: void maybeUnlockKnowledgeFromItem(String item)
+// - unconsciousItemLoss :: lines 3076-3088 (13) :: int unconsciousItemLoss()
+
+    String vendingName(char ch) { return PublicServiceMediaAuthority.vendingName(ch); }
+
+    String vendingPreview(char ch, int x, int y) {
+        String key = passiveKey(x,y);
+        int until = passiveCooldownUntilTurn.getOrDefault(key, 0);
+        int hacked = vendingHackVendCount.getOrDefault(key, 0);
+        return PublicServiceMediaAuthority.vendingPreview(ch, until, hacked);
+    }
+
+    String vendingStockText(char ch) { return PublicServiceMediaAuthority.vendingStockText(ch); }
+
+// ... omitted 165 non-method/source lines between cataloged methods ...
+
+    boolean removeInventoryOne(String item) { return removeInventoryItem(item); }
+
+// ... omitted 55 non-method/source lines between cataloged methods ...
+
+    int vendingCost(char ch) { return PublicServiceMediaAuthority.vendingCost(ch); }
+
+    void vendItem(char ch, boolean hacked) {
+        String item = PublicServiceMediaAuthority.chooseVendedItem(ch, rng);
+        String source = hacked ? "hacked " + PublicServiceMediaAuthority.vendingHandle(ch) : PublicServiceMediaAuthority.vendingHandle(ch);
+        if (inventoryWeight() + 1 <= carryCapacity()) {
+            addInventoryItem(item, ItemProvenanceRecord.trade(item, hacked?Faction.NONE:Faction.HIVER, source, world, turn, "machine dispensed from local stock"));
+            logEvent((hacked?"ITEM FOUND: Hacked vend dispensed ":"ITEM PURCHASED: ") + item + ".");
+        }
+        else { logEvent("ITEM BLOCKED: " + item + " could not enter inventory because carried bulk is full."); }
+    }
+
+// ... omitted 319 non-method/source lines between cataloged methods ...
+
+    void maybeUnlockKnowledgeFromItem(String item) {
+        if (item == null) return;
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("data slate") || low.contains("dataslate") || low.contains("technical manual")) {
+            if (!hasKnowledge("Scavenged Schematics")) { unlockKnowledge("Scavenged Schematics"); logEvent("KNOWLEDGE DISCOVERED: Scavenged Schematics from " + item + "."); }
+            gainXp("Knowledge", 2, "studying " + item);
+        }
+    }
+
+// ... omitted 37 non-method/source lines between cataloged methods ...
+
+    int unconsciousItemLoss() {
+        if (inventory.isEmpty()) return 0;
+        int target = Math.max(0, (int)Math.floor(inventory.size() * 0.10));
+        if (inventory.size() >= 5) target = Math.max(1, target);
+        target = Math.min(target, Math.max(0, inventory.size() / 3));
+        int lost = 0;
+        for (int i=0; i<target && !inventory.isEmpty(); i++) {
+            int idx = rng.nextInt(inventory.size());
+            String removed = removeInventoryAtWithTrace(idx);
+            if (removed != null) lost++;
+        }
+        return lost;
+    }

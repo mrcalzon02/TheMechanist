@@ -1,0 +1,83 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_12_lines_16109_16178
+// Category: input_mouse_keyboard
+// Source lines: 16109-16178
+// Method count: 3
+//
+// Methods in this fragment:
+// - contextInputPromptLines :: lines 16109-16167 (59) :: ArrayList<String> contextInputPromptLines(PanelMode mode)
+// - contextPromptLine :: lines 16169-16172 (4) :: String contextPromptLine(InputAction action, String use, boolean enabled, String disabledReason)
+// - promptLabel :: lines 16174-16178 (5) :: String promptLabel(InputAction action)
+
+    ArrayList<String> contextInputPromptLines(PanelMode mode) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (mode == null) return lines;
+        switch (mode) {
+            case LOOK:
+                lines.add(contextPromptLine(InputAction.EXAMINE, "examine selected tile", selectedLookNpc() != null || baseObjectAt(lookX, lookY) != null || world != null && world.inBounds(lookX, lookY), "select a visible tile first"));
+                lines.add(contextPromptLine(InputAction.INTERACT, "open interaction at selected tile", world != null && world.inBounds(lookX, lookY), "no selected tile"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close look", true, ""));
+                break;
+            case INTERACT:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "commit selected interaction", world != null && world.inBounds(lookX, lookY) && Math.abs(lookX - playerX) <= 1 && Math.abs(lookY - playerY) <= 1, "move adjacent first"));
+                lines.add(contextPromptLine(InputAction.PLAN_MOVE, "approach selected target", selectedInteractionApproachTile() != null, "already adjacent or no reachable approach tile"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "back out", true, ""));
+                break;
+            case INVENTORY:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "use or equip selected carried item", selectedInventoryItemName() != null, "no carried item selected"));
+                lines.add(contextPromptLine(InputAction.INTERACT, "take, drop, or context item action", selectedInventoryItemName() != null, "no carried item selected"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close inventory", true, ""));
+                break;
+            case BUILD:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "confirm selected build placement", buildPlacementActive && pendingBuildRecipe != null, "choose a build and valid tile first"));
+                lines.add(contextPromptLine(InputAction.BUILD, baseClaimed ? "open construction and base tools" : "claim a room or open build tools", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "cancel placement or close build", true, ""));
+                break;
+            case WORKBENCH:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "run selected workbench action", selectedWorkerMachine() != null || hasBaseObject('w'), "build or select a machine first"));
+                lines.add(contextPromptLine(InputAction.INVENTORY, "check inputs and outputs", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close workbench", true, ""));
+                break;
+            case BASES:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "use highlighted base action", baseClaimed, "claim a room first"));
+                lines.add(contextPromptLine(InputAction.BUILD, "return to construction tools", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close base management", true, ""));
+                break;
+            case TRADE:
+                lines.add(contextPromptLine(InputAction.CONFIRM, activeTrader != null ? "buy selected offer" : "choose conversation option", activeTrader != null && selectedTradeOffer() != null || activeConversationNpc != null, "no active trader or speaker"));
+                lines.add(contextPromptLine(InputAction.INVENTORY, "change selected sell item", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "leave trade or conversation", true, ""));
+                break;
+            case MAP:
+                lines.add(contextPromptLine(InputAction.MOVE_LEFT, "pan or change map focus", world != null, "no map loaded"));
+                lines.add(contextPromptLine(InputAction.ZOOM_IN, "zoom map/world view where supported", worldZoomControlActive(), "zoom unavailable here"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close map", true, ""));
+                break;
+            case SENSES:
+                lines.add(contextPromptLine(InputAction.LOOK, "inspect visible source", world != null, "no world loaded"));
+                lines.add(contextPromptLine(InputAction.PLAN_MOVE, "plan around hazards or darkness", world != null, "no world loaded"));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close senses", true, ""));
+                break;
+            case SAVELOAD:
+                lines.add(contextPromptLine(InputAction.CONFIRM, "activate selected save/load control", true, ""));
+                lines.add(contextPromptLine(InputAction.CANCEL, "close save/load", true, ""));
+                break;
+            default:
+                lines.add(contextPromptLine(InputAction.CANCEL, "back out", true, ""));
+                break;
+        }
+        return lines;
+    }
+
+    String contextPromptLine(InputAction action, String use, boolean enabled, String disabledReason) {
+        String state = enabled ? "ready" : "disabled: " + (disabledReason == null || disabledReason.isBlank() ? "not available in this context" : disabledReason);
+        return "Prompt: " + promptLabel(action) + " - " + use + " (" + state + ").";
+    }
+
+    String promptLabel(InputAction action) {
+        String prompt = keyboardPromptFor(action);
+        int idx = prompt.indexOf(':');
+        return idx >= 0 ? prompt.substring(idx + 1).trim() : prompt;
+    }

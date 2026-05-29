@@ -1,0 +1,316 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_06_lines_14489_15082
+// Category: render
+// Source lines: 14489-15082
+// Method count: 12
+//
+// Methods in this fragment:
+// - drawWrappedPanelLines :: lines 14489-14517 (29) :: void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h)
+// - drawPortrait :: lines 14519-14539 (21) :: void drawPortrait(Graphics2D g, int x, int y, Candidate c)
+// - mapCellW :: lines 14631-14635 (5) :: int mapCellW(Graphics2D g)
+// - mapCellH :: lines 14637-14641 (5) :: int mapCellH(Graphics2D g)
+// - drawLightDarknessOverlay :: lines 14807-14829 (23) :: void drawLightDarknessOverlay(Graphics2D g, int tx, int ty, int px, int py, int cellW, int cellH, boolean visible)
+// - drawTrapWarningOverlays :: lines 14855-14871 (17) :: void drawTrapWarningOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawEnvironmentalHazardOverlays :: lines 14879-14919 (41) :: void drawEnvironmentalHazardOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawPortableLightObjects :: lines 14921-14936 (16) :: void drawPortableLightObjects(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawZoneLightFixtureObjects :: lines 14938-14953 (16) :: void drawZoneLightFixtureObjects(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawCombatAnimations :: lines 14985-15018 (34) :: void drawCombatAnimations(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawExplosionAnimations :: lines 15021-15050 (30) :: void drawExplosionAnimations(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawCombatTargetOverlay :: lines 15052-15082 (31) :: void drawCombatTargetOverlay(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+
+void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h) {
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(20, fm.getHeight() + 4);
+        int maxChars = Math.max(24, w / Math.max(7, fm.charWidth('M')));
+        int yy = y;
+        Shape old = g.getClip();
+        g.setClip(x-4, y-lineH, w+20, h+lineH);
+        for (String raw : lines) {
+            Color c = new Color(220, 208, 145); // readable lighter yellow on green/black GUI
+            if (raw.contains("Warning") || raw.contains("invalid") || raw.contains("FAILED") || raw.contains("Starving")) c = new Color(245, 120, 90);
+            else if (raw.startsWith("  -") || raw.startsWith("  ")) c = new Color(205, 198, 155);
+            else if (raw.endsWith(":")) c = new Color(235, 220, 150);
+            g.setColor(c);
+            for (String line : TextSurfaceApi.wrap(raw, maxChars)) {
+                if (yy > y + h) break;
+                g.drawString(line, x, yy);
+                yy += lineH;
+            }
+            if (yy > y + h) break;
+        }
+        g.setClip(old);
+        int needed = Math.max(0, lines.size() * lineH - h);
+        if (needed > 0) {
+            g.setColor(new Color(55, 46, 30));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, h);
+            g.setColor(new Color(220, 190, 105));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, Math.max(24, h / 4));
+        }
+    }
+
+    void drawPortrait(Graphics2D g, int x, int y, Candidate c) {
+        g.setColor(new Color(22,22,24)); g.fillRect(x,y,140,150);
+        g.setColor(new Color(160,150,110)); g.drawRect(x,y,140,150);
+        NameLockedProfilePortraitAuthority.Entry locked = NameLockedProfilePortraitAuthority.unlockedEntry(cachedOperatorProfileName, c == null ? "" : c.name);
+        BufferedImage face = null;
+        String portraitLabel = "IMPORTED DOSSIER";
+        if (locked != null) {
+            face = images.getNameLockedProfilePortrait(locked.key);
+            portraitLabel = "PROFILE DOSSIER";
+            if (c != null) c.nameLockedProfileKey = locked.key;
+        }
+        if (face == null && c != null) face = images.getPortrait(c.portraitSheet, c.portraitIndex);
+        if (face != null) {
+            g.drawImage(face, x+6, y+6, 128, 128, null);
+            g.setFont(smallFont); g.setColor(new Color(190,180,130));
+            g.drawString(portraitLabel, x+10, y+145);
+        } else {
+            g.setFont(new Font("Monospaced", Font.BOLD, 18));
+            for (int i=0;i<c.portrait.length;i++) g.drawString(c.portrait[i], x+30, y+35+i*20);
+        }
+    }
+
+// ... omitted 91 non-method/source lines between cataloged methods ...
+
+    int mapCellW(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+    }
+
+    int mapCellH(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(10, scaled(zoomedMapPixels(Math.max(14, fm.getHeight()))));
+    }
+
+// ... omitted 165 non-method/source lines between cataloged methods ...
+
+    void drawLightDarknessOverlay(Graphics2D g, int tx, int ty, int px, int py, int cellW, int cellH, boolean visible) {
+        int l = lightLevelAt(tx, ty);
+        int alpha;
+        if (!visible) alpha = 120;
+        else if (l >= 72) alpha = 0;
+        else if (l >= 52) alpha = 22;
+        else if (l >= 34) alpha = 50;
+        else if (l >= 18) alpha = 84;
+        else if (l >= 8) alpha = 118;
+        else alpha = 150;
+        if (alpha <= 0) return;
+        int yy = tileIconMode() ? py : py - cellH + 3;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.85f, alpha / 255f)));
+        gg.setColor(Color.BLACK);
+        gg.fillRect(px, yy, Math.max(1, cellW), Math.max(1, cellH));
+        if (visible && l >= 55) {
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.18f, (l-50)/220f)));
+            gg.setColor(new Color(245, 220, 135));
+            gg.fillRect(px, yy, Math.max(1, cellW), Math.max(1, cellH));
+        }
+        gg.dispose();
+    }
+
+// ... omitted 25 non-method/source lines between cataloged methods ...
+
+    void drawTrapWarningOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (world == null || world.trapRecords == null || world.trapRecords.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(9, Math.min(14, cellH/2))));
+        for (TrapRecord t : world.trapRecords) {
+            if (t == null || t.x < camX || t.y < camY || t.x >= camX + cols || t.y >= camY + rows) continue;
+            boolean visibleTrap = !t.hidden || "revealed".equals(t.state) || "triggered".equals(t.state) || "disarmed".equals(t.state);
+            if (!visibleTrap && !(isVisible(t.x,t.y) && stat("Intellect",5)*5 >= t.detectionDifficulty)) continue;
+            int px = ox + (t.x - camX) * cellW, yy = (tileIconMode()? oy + (t.y-camY)*cellH : oy + (t.y-camY)*cellH - cellH + 3);
+            float alpha = "triggered".equals(t.state) ? 0.35f : ("disarmed".equals(t.state) ? 0.25f : 0.70f);
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            gg.setColor(new Color(245, 165, 35));
+            gg.drawRect(px+3, yy+3, Math.max(2,cellW-7), Math.max(2,cellH-7));
+            gg.drawString("T", px + Math.max(3,cellW/3), yy + Math.max(12,(cellH*2)/3));
+        }
+        gg.dispose();
+    }
+
+    EnvironmentalHazardRecord hazardAt(int x, int y) {
+        if (world == null || world.hazardWarnings == null) return null;
+        for (EnvironmentalHazardRecord h : world.hazardWarnings) if (h != null && h.x == x && h.y == y) return h;
+        return null;
+    }
+
+    void drawEnvironmentalHazardOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (world == null || world.hazardWarnings == null || world.hazardWarnings.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        int tri = Math.max(8, Math.min(16, Math.min(cellW, cellH) / 2));
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(9, Math.min(15, tri))));
+        for (EnvironmentalHazardRecord h : world.hazardWarnings) {
+            if (h == null || h.x < camX || h.y < camY || h.x >= camX + cols || h.y >= camY + rows) continue;
+            boolean vis = isVisible(h.x, h.y), rem = isRemembered(h.x, h.y);
+            if (!vis && !rem) continue;
+            int px = ox + (h.x - camX) * cellW, py = oy + (h.y - camY) * cellH;
+            float alpha = vis ? 0.82f : 0.34f;
+            int frame = Math.floorMod(turn + h.phase, 3);
+            int yy = tileIconMode() ? py : py - cellH + 3;
+            Color c = h.color();
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.42f, alpha * (0.24f + 0.08f * frame))));
+            gg.setColor(c);
+            if (h.family.contains("wire") || h.family.contains("electric")) {
+                int y0 = yy + Math.max(3, cellH/3);
+                gg.drawLine(px + 2, y0, px + cellW/3, yy + cellH - 3);
+                gg.drawLine(px + cellW/3, yy + cellH - 3, px + (cellW*2)/3, yy + 4);
+                gg.drawLine(px + (cellW*2)/3, yy + 4, px + cellW - 3, yy + Math.max(4, cellH/2));
+            } else if (h.family.contains("sludge") || h.family.contains("runoff")) {
+                gg.fillOval(px + Math.max(1, frame), yy + cellH/3, Math.max(6, cellW - 4), Math.max(4, cellH/3));
+                gg.drawArc(px + 2, yy + 2, Math.max(6, cellW - 5), Math.max(6, cellH - 5), frame * 40, 180);
+            } else {
+                gg.drawArc(px + 2 + frame, yy + 3, Math.max(6, cellW - 5), Math.max(6, cellH/2), 20, 220);
+                gg.drawArc(px + 4, yy + Math.max(4, cellH/3), Math.max(5, cellW - 8), Math.max(6, cellH/2), 210, 220);
+                gg.drawString("~", px + Math.max(2, cellW/3), yy + Math.max(12, (cellH*2)/3));
+            }
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            gg.setColor(new Color(220, 35, 28));
+            gg.setStroke(new BasicStroke(Math.max(1.0f, Math.min(2.0f, cellW / 18.0f))));
+            gg.drawRect(px + 1, yy + 1, Math.max(1, cellW - 3), Math.max(1, cellH - 3));
+            int[] xs = {px + cellW - tri - 1, px + cellW - 1, px + cellW - tri/2 - 1};
+            int[] ys = {yy + 1, yy + 1, yy + tri + 1};
+            gg.fillPolygon(xs, ys, 3);
+            gg.setColor(Color.BLACK);
+            gg.drawString("!", px + cellW - tri + Math.max(1, tri/4), yy + Math.max(10, tri));
+        }
+        gg.dispose();
+    }
+
+    void drawPortableLightObjects(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (portableLights.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(10, Math.min(18, cellH/2))));
+        for (PortableLightInstance l : portableLights) {
+            if (l == null || l.expiresTurn <= turn || !sameWorldLocation(l.worldKey)) continue;
+            if (l.x < camX || l.y < camY || l.x >= camX+cols || l.y >= camY+rows) continue;
+            if (!isVisible(l.x,l.y) && !isRemembered(l.x,l.y)) continue;
+            int px=ox+(l.x-camX)*cellW, py=oy+(l.y-camY)*cellH;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.62f));
+            gg.setColor(new Color(250, 230, 120));
+            gg.drawOval(px+Math.max(1,cellW/5), py+Math.max(1,cellH/5), Math.max(4,cellW*3/5), Math.max(4,cellH*3/5));
+            gg.drawString("*", px+Math.max(3,cellW/3), py+Math.max(12,(cellH*2)/3));
+        }
+        gg.dispose();
+    }
+
+    void drawZoneLightFixtureObjects(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (world == null || world.lightSources == null || world.lightSources.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(9, Math.min(16, cellH/2))));
+        for (ZoneLightSourceRecord l : world.lightSources) {
+            if (l == null || l.x < camX || l.y < camY || l.x >= camX+cols || l.y >= camY+rows) continue;
+            if (!isVisible(l.x,l.y) && !isRemembered(l.x,l.y)) continue;
+            int px=ox+(l.x-camX)*cellW, py=oy+(l.y-camY)*cellH;
+            float alpha = l.on && l.powered ? (l.flicker && Math.floorMod(turn + l.phase, Math.max(2,l.flickerPeriod)) == 0 ? 0.25f : 0.46f) : 0.16f;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            gg.setColor(l.color());
+            gg.drawOval(px+Math.max(1,cellW/4), py+Math.max(1,cellH/4), Math.max(4,cellW/2), Math.max(4,cellH/2));
+            gg.drawString(l.on && l.powered ? "¤" : "·", px+Math.max(2,cellW/3), py+Math.max(11,(cellH*2)/3));
+        }
+        gg.dispose();
+    }
+
+// ... omitted 31 non-method/source lines between cataloged methods ...
+
+    void drawCombatAnimations(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (combatAnimations.isEmpty()) return;
+        long now = System.currentTimeMillis();
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(10, Math.min(18, cellH/2))));
+        for (CombatAnimation a : combatAnimations) {
+            double t = Math.max(0.0, Math.min(1.0, (now - a.startMillis) / (double)Math.max(1, a.durationMillis)));
+            int frame = (int)Math.floor(t * 8.0);
+            if (weaponIsMeleeAnimation(a.weapon)) {
+                int sx = a.x0 - camX, sy = a.y0 - camY;
+                if (sx >= 0 && sy >= 0 && sx < cols && sy < rows) {
+                    gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float)(0.9 - t * 0.45)));
+                    gg.setColor(a.hit ? new Color(245, 230, 190) : new Color(210, 160, 120));
+                    gg.drawString(projectileGlyphForWeapon(a.weapon, a.hit, frame), ox + sx*cellW + Math.max(2, cellW/4), oy + sy*cellH + Math.max(12, (cellH*2)/3));
+                }
+                continue;
+            }
+            ArrayList<Point> pts = linePoints(a.x0, a.y0, a.x1, a.y1);
+            int max = Math.max(1, pts.size()-1);
+            int idx = Math.max(0, Math.min(max, (int)Math.round(t * max)));
+            for (int j=Math.max(0, idx-2); j<=Math.min(max, idx+1); j++) {
+                Point p = pts.get(j);
+                int sx = p.x - camX, sy = p.y - camY;
+                if (sx < 0 || sy < 0 || sx >= cols || sy >= rows) continue;
+                float alpha = (float)Math.max(0.12, 0.88 - Math.abs(idx-j)*0.22 - t*0.25);
+                gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                String glyph = projectileGlyphForWeapon(a.weapon, a.hit, frame + j);
+                if (!a.hit && j == idx && (frame % 2 == 0)) glyph = glyph.replace('~', '.');
+                gg.setColor(a.hit ? new Color(255, 205, 145) : new Color(240, 120, 80));
+                gg.drawString(glyph, ox + sx*cellW + Math.max(1, cellW/8), oy + sy*cellH + Math.max(12, (cellH*2)/3));
+            }
+        }
+        gg.dispose();
+    }
+
+
+    void drawExplosionAnimations(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (explosionAnimations.isEmpty()) return;
+        long now = System.currentTimeMillis();
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(10, Math.min(20, cellH/2))));
+        for (ExplosionAnimation a : explosionAnimations) {
+            double t = Math.max(0.0, Math.min(1.0, (now - a.startMillis) / (double)Math.max(1, a.durationMillis)));
+            if (a.grenadeArc) {
+                int x = (int)Math.round(a.x0 + (a.x1 - a.x0) * t);
+                int y = (int)Math.round(a.y0 + (a.y1 - a.y0) * t);
+                if (x >= camX && y >= camY && x < camX+cols && y < camY+rows) {
+                    int px=ox+(x-camX)*cellW, py=oy+(y-camY)*cellH;
+                    gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.85f));
+                    gg.setColor((System.currentTimeMillis()/120)%2==0 ? new Color(255,30,30) : new Color(255,190,70));
+                    gg.drawString("*", px + Math.max(3,cellW/3), py + Math.max(12,(cellH*2)/3));
+                }
+            } else {
+                int ring = Math.max(0, Math.min(a.radius, (int)Math.ceil(t * (a.radius+1))));
+                for (int x=a.x1-ring; x<=a.x1+ring; x++) for (int y=a.y1-ring; y<=a.y1+ring; y++) {
+                    int d = Math.max(Math.abs(x-a.x1), Math.abs(y-a.y1));
+                    if (d != ring || x < camX || y < camY || x >= camX+cols || y >= camY+rows) continue;
+                    int px=ox+(x-camX)*cellW, py=oy+(y-camY)*cellH;
+                    gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float)Math.max(0.15, 0.9 - t*0.55)));
+                    gg.setColor(new Color(255, 115, 40));
+                    gg.drawString("O", px + Math.max(3,cellW/3), py + Math.max(12,(cellH*2)/3));
+                }
+            }
+        }
+        gg.dispose();
+    }
+
+    void drawCombatTargetOverlay(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (world == null || !(screen == Screen.PANEL && panelMode == PanelMode.COMBAT) || !combatCursorActive) return;
+        if (combatX < 0 || combatY < 0 || combatX >= world.w || combatY >= world.h) return;
+        TargetingSolution ts = targetingSolutionAt(combatX, combatY);
+        Graphics2D gg = (Graphics2D) g.create();
+        Stroke old = gg.getStroke();
+        gg.setStroke(new BasicStroke(Math.max(1.0f, cellW/12.0f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f, new float[]{7.0f, 5.0f}, 0.0f));
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.82f));
+        gg.setColor(new Color(185, 25, 30));
+        int px = ox + (playerX - camX) * cellW + cellW/2;
+        int py = oy + (playerY - camY) * cellH + cellH/2;
+        int tx = ox + (combatX - camX) * cellW + cellW/2;
+        int ty = oy + (combatY - camY) * cellH + cellH/2;
+        gg.drawLine(px, py, tx, ty);
+        gg.setStroke(old);
+        if (combatX >= camX && combatY >= camY && combatX < camX + cols && combatY < camY + rows) {
+            int sx = combatX - camX, sy = combatY - camY;
+            int rx = ox + sx * cellW, ry = oy + sy * cellH;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.92f));
+            gg.setColor(new Color(255, 35, 40));
+            gg.drawRect(rx - 2, ry - 2, cellW + 4, cellH + 4);
+            gg.drawLine(rx + cellW/2, ry - 5, rx + cellW/2, ry + Math.max(2, cellH/4));
+            gg.drawLine(rx + cellW/2, ry + cellH + 5, rx + cellW/2, ry + cellH - Math.max(2, cellH/4));
+            gg.drawLine(rx - 5, ry + cellH/2, rx + Math.max(2, cellW/4), ry + cellH/2);
+            gg.drawLine(rx + cellW + 5, ry + cellH/2, rx + cellW - Math.max(2, cellW/4), ry + cellH/2);
+            gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(10, Math.min(16, cellH/2))));
+            gg.setColor(ts.hitPercent <= 0 ? new Color(230,90,80) : new Color(255,210,170));
+            gg.drawString(ts.hitPercent + "%", rx + Math.max(1, cellW/5), ry - 4);
+        }
+        gg.dispose();
+    }

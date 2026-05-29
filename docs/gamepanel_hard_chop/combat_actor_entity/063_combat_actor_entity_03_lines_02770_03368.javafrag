@@ -1,0 +1,135 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_03_lines_02770_03368
+// Category: combat_actor_entity
+// Source lines: 2770-3368
+// Method count: 7
+//
+// Methods in this fragment:
+// - attackSectorGovernor :: lines 2770-2797 (28) :: void attackSectorGovernor()
+// - totalBodyDamagePercent :: lines 2825-2830 (6) :: double totalBodyDamagePercent()
+// - applyStarvationDamageIfNeeded :: lines 2930-2938 (9) :: void applyStarvationDamageIfNeeded()
+// - handlePlayerUnconsciousness :: lines 3044-3068 (25) :: void handlePlayerUnconsciousness(String cause, String attacker, String weapon, boolean theftRisk)
+// - evaluatePlayerDefeatState :: lines 3131-3139 (9) :: void evaluatePlayerDefeatState(String cause, String attacker, String weapon, String location)
+// - triggerPlayerDeath :: lines 3141-3155 (15) :: void triggerPlayerDeath(String cause, String attacker, String weapon, String location)
+// - playerAttackMotionSkillModifier :: lines 3359-3368 (10) :: int playerAttackMotionSkillModifier()
+
+    void attackSectorGovernor() {
+        if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor attack failed: no sector governor is selected."); return; }
+        noteCombatMusicActivity(true, "attacks sector governor");
+        governorViolenceCount++;
+        int roll = rng.nextInt(20) + 1 + stat("Melee", 5) + stat("Nerve", 5) / 2;
+        int difficulty = 24 + Math.max(0, playerFactionPower() / 12);
+        boolean killed = roll >= difficulty;
+        suspicion += 12; gangHeat += 8;
+        if (killed) {
+            world.tiles[lookX][lookY] = 'n';
+            logEvent("GOVERNOR DOWN: roll " + roll + " vs " + difficulty + ". The governor dies in expensive upholstery and worse politics.");
+            if (governorHasTicket()) {
+                addInventoryItem("Off-world ticket", ItemProvenanceRecord.found("Off-world ticket", world, turn, "sector governor corpse")); offworldTicketsFound++;
+                logEvent("ITEM FOUND: Off-world ticket looted from the governor's body. The sector can be escaped if you can reach the departure route alive.");
+            } else {
+                logEvent("NO TICKET: the corpse has seals, jewelry, and lies, but no off-world passage. Find a new sector governor.");
+                addInventoryItem("Governor signet", ItemProvenanceRecord.found("Governor signet", world, turn, "sector governor corpse"));
+            }
+            spawnGovernorGuards(7 + rng.nextInt(5));
+        } else {
+            logEvent("GOVERNOR ATTACK FAILED: roll " + roll + " vs " + difficulty + ". The governor survives long enough to make guards a personal weather event.");
+            spawnGovernorGuards(8 + rng.nextInt(6));
+            wounds += 2; pain += 3;
+        }
+        DebugLog.audit("GOVERNOR_ATTACK", "roll="+roll+" difficulty="+difficulty+" killed="+killed+" hasTicket="+governorHasTicket()+" violence="+governorViolenceCount+" state="+stateSummary());
+        advanceTurn("attacks the sector governor.");
+        repaint();
+    }
+
+// ... omitted 27 non-method/source lines between cataloged methods ...
+
+    double totalBodyDamagePercent() {
+        if (active == null || active.body == null || active.body.isEmpty()) return wounds;
+        double lost = 0, max = 0;
+        for (BodyPart bp : active.body.values()) { lost += Math.max(0, bp.maxHealth() - bp.currentHealth()); max += Math.max(1, bp.maxHealth()); }
+        return max <= 0 ? 0 : (lost / max) * 100.0;
+    }
+
+// ... omitted 99 non-method/source lines between cataloged methods ...
+
+    void applyStarvationDamageIfNeeded() {
+        if (turn > 0 && turn % TURNS_PER_HOUR == 0 && (food <= 0 || water <= 0)) {
+            wounds++;
+            fatigue = Math.min(25, fatigue + 2);
+            String cause = food <= 0 && water <= 0 ? "starving and dehydrated" : (food <= 0 ? "starving" : "dehydrated");
+            DebugLog.audit("STARVATION", cause + " wounds=" + wounds + " fatigue=" + fatigue + " time=" + timeText() + " state=" + stateSummary());
+            logEvent("SURVIVAL WARNING: You are " + cause + ". One hour without reserves causes endurance damage. Eat or drink soon.");
+        }
+    }
+
+// ... omitted 105 non-method/source lines between cataloged methods ...
+
+    void handlePlayerUnconsciousness(String cause, String attacker, String weapon, boolean theftRisk) {
+        if (screen == Screen.LOST) return;
+        runUnconsciousEvents++;
+        int stolenItems = 0;
+        int stolenScript = 0;
+        if (theftRisk) {
+            stolenScript = unconsciousScriptLoss();
+            if (stolenScript > 0) carriedScript = Math.max(0, carriedScript - stolenScript);
+            stolenItems = unconsciousItemLoss();
+        }
+        Point wake = unconsciousWakePoint();
+        playerX = wake.x; playerY = wake.y; lookX = playerX; lookY = playerY;
+        fatigue = Math.max(0, Math.min(10, fatigue / 2));
+        sleepNeed = 0;
+        pain = Math.max(0, pain / 2);
+        bleeding = 0;
+        wounds = Math.max(0, wounds - 2);
+        if (active != null && active.body != null) healWorstBodyPart(25.0);
+        updateSensoryModel("unconscious relocation");
+        DebugLog.audit("PLAYER_UNCONSCIOUS", "cause=" + cause + " attacker=" + attacker + " weapon=" + weapon + " scriptLost=" + stolenScript + " inventoryLost=" + stolenItems + " wake=" + playerX + "," + playerY + " state=" + stateSummary());
+        logEvent("UNCONSCIOUS: " + cause + ". You are carried, dragged, ransomed, or simply found later and wake at " + wakePointLabel(wake) + ".");
+        if (stolenScript > 0) logEvent("SCRIPT STOLEN: " + stolenScript + " Concord Script was lifted from your pockets while you were out.");
+        if (stolenItems > 0) logEvent("ITEMS LOST: " + stolenItems + " carried item(s) were gone when you woke.");
+        maybeAutosave("unconscious recovery");
+    }
+
+// ... omitted 62 non-method/source lines between cataloged methods ...
+
+    void evaluatePlayerDefeatState(String cause, String attacker, String weapon, String location) {
+        if (screen == Screen.LOST || active == null) return;
+        if (shouldPlayerDieNow()) {
+            triggerPlayerDeath(cause, attacker, weapon, location);
+        } else if (shouldPlayerFallUnconsciousNow()) {
+            if (arbitesAuthorityText(attacker) || arbitesAuthorityText(weapon)) handleArbitesCapture("incapacitated by Civic Wardens authority", Math.max(2, suspicion / 4 + wounds / 6));
+            else handlePlayerUnconsciousness(cause, attacker, weapon, false);
+        }
+    }
+
+    void triggerPlayerDeath(String cause, String attacker, String weapon, String location) {
+        if (screen == Screen.LOST) return;
+        PlayerLifecycleService.DeathResolution deathResolution = playerLifecycleService.resolveDeath(this, cause, attacker, weapon, location);
+        DebugLog.audit("PLAYER_LIFECYCLE", playerLifecycleService.statusLine(this) + " deathOutcome=" + deathResolution.outcome());
+        lastDefeatCause = cause == null || cause.isBlank() ? "unknown fatality" : cause;
+        lastDefeatAttacker = attacker == null || attacker.isBlank() ? "unknown" : attacker;
+        lastDefeatWeapon = weapon == null || weapon.isBlank() ? "unknown" : weapon;
+        lastDefeatLocation = location == null || location.isBlank() ? "unknown" : location;
+        lastDefeatSummary = active.name + " was killed by " + lastDefeatAttacker + " using " + lastDefeatWeapon + " (" + lastDefeatCause + ").";
+        lastLossScoreLines = PlayerDefeatAndScoreAuthority.lossScoreLines(this);
+        DebugLog.audit("PLAYER_DEATH", "cause=" + lastDefeatCause + " attacker=" + lastDefeatAttacker + " weapon=" + lastDefeatWeapon + " location=" + lastDefeatLocation + " score=" + PlayerDefeatAndScoreAuthority.score(this) + " state=" + stateSummary());
+        logEvent("DEATH: " + lastDefeatSummary + " Survival time " + timeText() + ", turn " + turn + ".");
+        setScreen(Screen.LOST);
+        repaint();
+    }
+
+// ... omitted 203 non-method/source lines between cataloged methods ...
+
+    int playerAttackMotionSkillModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -3;
+            case MOTION_SPRINT: return -5;
+            case MOTION_SNEAK: return -2;
+            default: return 0;
+        }
+    }

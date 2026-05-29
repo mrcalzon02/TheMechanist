@@ -1,0 +1,89 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_13_lines_14782_15428
+// Category: combat_actor_entity
+// Source lines: 14782-15428
+// Method count: 6
+//
+// Methods in this fragment:
+// - isVisible :: lines 14782-14787 (6) :: rows && isVisible(npc.x, npc.y))
+// - pruneCombatAnimations :: lines 14955-14959 (5) :: void pruneCombatAnimations(long now)
+// - startCombatAnimation :: lines 14961-14965 (5) :: void startCombatAnimation(String weapon, int x0, int y0, int x1, int y1, boolean hit)
+// - selectedLookNpc :: lines 15379-15382 (4) :: NpcEntity selectedLookNpc()
+// - intentReadFor :: lines 15384-15416 (33) :: IntentReadResult intentReadFor(NpcEntity npc)
+// - factionIntentMasking :: lines 15418-15428 (11) :: int factionIntentMasking(Faction f)
+
+                    if (npc.x >= camX && npc.y >= camY && npc.x < camX + cols && npc.y < camY + rows && isVisible(npc.x, npc.y)) {
+                        g.setColor(npcColor(npc.faction));
+                        Point off = npcSlideOffsetPixels(npc, cellW, cellH);
+                        if (tileIconMode()) drawNpcMapIcon(g, npc, ox + (npc.x - camX) * cellW + off.x, oy + (npc.y - camY) * cellH + off.y, cellW, cellH);
+                        else g.drawString(String.valueOf(npc.symbol), ox + (npc.x - camX) * cellW + off.x, oy + (npc.y - camY) * cellH + off.y);
+                    }
+
+// ... omitted 167 non-method/source lines between cataloged methods ...
+
+    void pruneCombatAnimations(long now) {
+        if (!explosionAnimations.isEmpty()) explosionAnimations.removeIf(a -> now - a.startMillis > a.durationMillis);
+        if (combatAnimations.isEmpty()) return;
+        combatAnimations.removeIf(a -> now - a.startMillis > a.durationMillis);
+    }
+
+    void startCombatAnimation(String weapon, int x0, int y0, int x1, int y1, boolean hit) {
+        if (world == null) return;
+        combatAnimations.add(new CombatAnimation(weapon == null ? "bare hands" : weapon, x0, y0, x1, y1, hit, System.currentTimeMillis()));
+        while (combatAnimations.size() > 12) combatAnimations.remove(0);
+    }
+
+// ... omitted 413 non-method/source lines between cataloged methods ...
+
+    NpcEntity selectedLookNpc() {
+        if (world == null || !lookCursorActive || !world.inBounds(lookX, lookY) || !isVisible(lookX, lookY)) return null;
+        return world.npcAt(lookX, lookY);
+    }
+
+    IntentReadResult intentReadFor(NpcEntity npc) {
+        IntentReadResult r = new IntentReadResult();
+        if (npc == null || active == null) { r.available = false; r.summary = "No readable entity selected."; return r; }
+        r.available = true;
+        r.intent = npcIntentLabel(npc);
+        r.visionRange = npcVisionRange(npc);
+        r.hearingRange = npcHearingRange(npc);
+        int playerScore = stat("Intellect", 5) * 3 + stat("Vision", 5) * 2 + stat("Hearing", 5) + stat("Nerve", 5);
+        playerScore -= detectionLightPenalty(playerX, playerY, npc.x, npc.y) / 2;
+        if (activeMotionStateIndex == MOTION_STATIONARY) playerScore += 10;
+        else if (activeMotionStateIndex == MOTION_WALK) playerScore += 5;
+        else if (activeMotionStateIndex == MOTION_SNEAK) playerScore += 2;
+        else if (activeMotionStateIndex == MOTION_RUN) playerScore -= 8;
+        else if (activeMotionStateIndex == MOTION_SPRINT) playerScore -= 14;
+        int targetScore = 18 + Math.max(0, npc.idleBias) * 3 + factionIntentMasking(npc.faction);
+        if ("Hostile".equalsIgnoreCase(npc.state)) targetScore += 5;
+        int deterministic = Math.floorMod(Objects.hash(npc.id, turn / 2, playerX, playerY, active == null ? "" : active.name), 21) - 10;
+        r.margin = playerScore + deterministic - targetScore;
+        r.degree = r.margin >= 22 ? 4 : (r.margin >= 12 ? 3 : (r.margin >= 3 ? 2 : (r.margin >= -6 ? 1 : 0)));
+        Point step = npcProjectedStep(npc);
+        r.projectedX = step == null ? npc.x : step.x;
+        r.projectedY = step == null ? npc.y : step.y;
+        r.facingDx = npcFacingDx(npc);
+        r.facingDy = npcFacingDy(npc);
+        int dist = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+        r.attackLine = isHostileNpc(npc) && dist <= Math.max(1, r.visionRange) && hasLineOfSight(npc.x, npc.y, playerX, playerY);
+        if (r.degree <= 0) r.summary = "Intent read failed: you cannot get past posture, faction tells, and underhive noise.";
+        else if (r.degree == 1) r.summary = "Intent read partial: " + npc.name + " seems " + r.intent.toLowerCase(Locale.ROOT) + ".";
+        else if (r.degree == 2) r.summary = "Intent read: " + npc.name + " appears " + r.intent.toLowerCase(Locale.ROOT) + "; likely next step " + r.projectedX + "," + r.projectedY + ".";
+        else if (r.degree == 3) r.summary = "Intent read strong: " + r.intent + "; motion " + npc.activeMotionLabel() + "; vision/hearing estimates available; likely step " + r.projectedX + "," + r.projectedY + ".";
+        else r.summary = "Intent read exacting: " + r.intent + "; motion " + npc.activeMotionLabel() + "; vision cone, hearing radius, projected movement, obstruction, and attack line are revealed.";
+        return r;
+    }
+
+    int factionIntentMasking(Faction f) {
+        if (f == null) return 0;
+        switch(f) {
+            case CIVIC_WARDENS: case IMPERIAL_GUARD: case SORORITAS: return 8;
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 7;
+            case CULTIST: case HERETIC: return 10;
+            case ROGUE_MACHINE: return 12;
+            case MUTANT: return 3;
+            default: return 4;
+        }
+    }

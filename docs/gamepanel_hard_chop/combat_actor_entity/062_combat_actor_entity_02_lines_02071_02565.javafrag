@@ -1,0 +1,292 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_02_lines_02071_02565
+// Category: combat_actor_entity
+// Source lines: 2071-2565
+// Method count: 27
+//
+// Methods in this fragment:
+// - questEvidenceReadLine :: lines 2071-2082 (12) :: String questEvidenceReadLine(NpcEntity npc)
+// - contractForTargetEntity :: lines 2096-2100 (5) :: FactionContract contractForTargetEntity(String targetEntityId)
+// - npcConditionReadLine :: lines 2102-2108 (7) :: String npcConditionReadLine(NpcEntity npc)
+// - npcCombatReadinessLine :: lines 2110-2123 (14) :: String npcCombatReadinessLine(NpcEntity npc)
+// - humanoidBodyPlanLine :: lines 2125-2129 (5) :: String humanoidBodyPlanLine(NpcEntity npc)
+// - animalBodyPlanLine :: lines 2131-2140 (10) :: String animalBodyPlanLine(NpcEntity npc)
+// - petCareReadabilityLines :: lines 2142-2157 (16) :: ArrayList<String> petCareReadabilityLines(NpcEntity npc, int tx, int ty, boolean compact)
+// - animalNeedReadLine :: lines 2159-2172 (14) :: String animalNeedReadLine(NpcEntity npc)
+// - petTemperamentReadLine :: lines 2174-2182 (9) :: String petTemperamentReadLine(NpcEntity npc)
+// - petOwnershipReadLine :: lines 2184-2190 (7) :: String petOwnershipReadLine(NpcEntity npc, int tx, int ty)
+// - petAdoptionSaleReadLine :: lines 2192-2198 (7) :: String petAdoptionSaleReadLine(NpcEntity npc, int tx, int ty)
+// - petAccessibilityReadLine :: lines 2200-2205 (6) :: String petAccessibilityReadLine(NpcEntity npc, int tx, int ty)
+// - pettingPermissionReadLine :: lines 2207-2213 (7) :: String pettingPermissionReadLine(NpcEntity npc, int tx, int ty)
+// - npcInjuryEstimate :: lines 2224-2231 (8) :: String npcInjuryEstimate(NpcEntity npc)
+// - npcArmorEstimate :: lines 2233-2240 (8) :: String npcArmorEstimate(NpcEntity npc)
+// - npcThreatReadLine :: lines 2256-2263 (8) :: String npcThreatReadLine(NpcEntity npc, IntentReadResult intent)
+// - npcSensesReadLine :: lines 2265-2273 (9) :: String npcSensesReadLine(NpcEntity npc, IntentReadResult intent)
+// - visibleNpcEquipmentLine :: lines 2299-2307 (9) :: String visibleNpcEquipmentLine(NpcEntity npc)
+// - animalContactBlockedLine :: lines 2352-2359 (8) :: String animalContactBlockedLine(NpcEntity npc)
+// - petInteractionLine :: lines 2361-2369 (9) :: String petInteractionLine(NpcEntity npc)
+// - petGestureName :: lines 2371-2379 (9) :: String petGestureName(NpcEntity npc)
+// - owningFactionAt :: lines 2538-2543 (6) :: Faction owningFactionAt(int x, int y)
+// - factionLabel :: lines 2544-2544 (1) :: String factionLabel(Faction f)
+// - sameFactionFamily :: lines 2545-2545 (1) :: boolean sameFactionFamily(Faction a, Faction b)
+// - sameFactionFamilyStatic :: lines 2546-2555 (10) :: static boolean sameFactionFamilyStatic(Faction a, Faction b)
+// - playerIsFactionMember :: lines 2556-2561 (6) :: boolean playerIsFactionMember(Faction f)
+// - playerFaction :: lines 2562-2565 (4) :: Faction playerFaction()
+
+    String questEvidenceReadLine(NpcEntity npc) {
+        if (npc == null) return "";
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed) continue;
+            if ("BOUNTY".equals(c.type) && c.targetEntityId != null && c.targetEntityId.equals(npc.id)) {
+                String proof = c.publicRequiredItem();
+                String state = npc.hp <= 0 ? "proof should be recoverable from the body" : "proof is only recoverable after the target is dealt with";
+                return "Quest evidence: this appears to match an active " + c.faction.label + " bounty; " + proof + " is the turn-in proof, and " + state + ".";
+            }
+        }
+        return "";
+    }
+
+// ... omitted 13 non-method/source lines between cataloged methods ...
+
+    FactionContract contractForTargetEntity(String targetEntityId) {
+        if (targetEntityId == null || targetEntityId.isBlank()) return null;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && targetEntityId.equals(c.targetEntityId)) return c;
+        return null;
+    }
+
+    String npcConditionReadLine(NpcEntity npc) {
+        if (npc == null) return "Condition read: no body is readable.";
+        String body = npc.isAnimalActor() ? animalBodyPlanLine(npc) : humanoidBodyPlanLine(npc);
+        String injury = npcInjuryEstimate(npc);
+        String armor = npcArmorEstimate(npc);
+        return "Condition read: " + body + "; " + injury + "; " + armor + ".";
+    }
+
+    String npcCombatReadinessLine(NpcEntity npc) {
+        if (npc == null) return "Combat readiness: unknown.";
+        if (npc.hp >= 9000) return "Combat readiness: protected or story-critical; ordinary violence is unlikely to resolve this cleanly.";
+        if (npc.isAnimalActor()) {
+            if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) return "Combat readiness: animal is dangerous if approached or cornered.";
+            return "Combat readiness: animal is not presenting as an armed combatant.";
+        }
+        int danger = Math.max(0, npc.equipmentTier) + (ItemCatalog.isFirearmLike(npc.equippedRangedWeapon) ? 2 : 0) + (npc.equippedExplosive == null || npc.equippedExplosive.isBlank() ? 0 : 2);
+        if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) danger += 2;
+        if (danger >= 6) return "Combat readiness: severe threat; armor, ranged weapon, or explosive risk is visible.";
+        if (danger >= 3) return "Combat readiness: armed and risky; plan cover, distance, or escape.";
+        if (danger >= 1) return "Combat readiness: lightly armed or protected.";
+        return "Combat readiness: no obvious combat kit.";
+    }
+
+    String humanoidBodyPlanLine(NpcEntity npc) {
+        if (npc.isMinorActor()) return "smaller humanoid frame";
+        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("bound Labor Automaton")) return "augmented humanoid frame";
+        return "humanoid body plan";
+    }
+
+    String animalBodyPlanLine(NpcEntity npc) {
+        String key = ((npc.creatureKind == null ? "" : npc.creatureKind) + " " + (npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("hound") || key.contains("dog") || key.contains("mastiff")) return "quadruped predator/companion body";
+        if (key.contains("cat")) return "small agile quadruped body";
+        if (key.contains("rat") || key.contains("mouse")) return "small skittering animal body";
+        if (key.contains("lizard")) return "low reptilian body";
+        if (key.contains("glowfish")) return "contained aquatic body";
+        if ("farm-animal".equals(npc.creatureKind)) return "working animal body";
+        return "non-human animal body";
+    }
+
+    ArrayList<String> petCareReadabilityLines(NpcEntity npc, int tx, int ty, boolean compact) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null || !npc.isAnimalActor()) return lines;
+        String prefix = compact ? "" : "Pet care: ";
+        if (!npc.isPetActor()) {
+            lines.add(prefix + animalContactBlockedLine(npc));
+            lines.add("Animal care: " + animalNeedReadLine(npc) + "; " + animalShelterReadLine(tx, ty) + ".");
+            return lines;
+        }
+        lines.add(prefix + animalNeedReadLine(npc) + "; " + petTemperamentReadLine(npc) + ".");
+        lines.add("Ownership: " + petOwnershipReadLine(npc, tx, ty));
+        lines.add("Adoption/sale: " + petAdoptionSaleReadLine(npc, tx, ty));
+        lines.add("Access: " + petAccessibilityReadLine(npc, tx, ty) + " " + pettingPermissionReadLine(npc, tx, ty));
+        lines.add("Shelter: " + animalShelterReadLine(tx, ty) + ".");
+        return lines;
+    }
+
+    String animalNeedReadLine(NpcEntity npc) {
+        if (npc == null) return "basic needs are unreadable";
+        ArrayList<String> needs = new ArrayList<>();
+        if (npc.hunger >= 8) needs.add("very hungry");
+        else if (npc.hunger >= 5) needs.add("hungry");
+        else needs.add("fed enough for now");
+        if (npc.thirst >= 8) needs.add("very thirsty");
+        else if (npc.thirst >= 5) needs.add("thirsty");
+        else needs.add("watered enough for now");
+        if (npc.sleepDebt >= 10) needs.add("badly tired");
+        else if (npc.sleepDebt >= 6) needs.add("tired");
+        else needs.add("rested enough for now");
+        return String.join(", ", needs);
+    }
+
+    String petTemperamentReadLine(NpcEntity npc) {
+        if (npc == null) return "temperament unclear";
+        String state = npc.state == null ? "" : npc.state.toLowerCase(Locale.ROOT);
+        if ("hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "frightened or hostile enough that touching is unsafe";
+        if (state.contains("guard") || state.contains("duty") || state.contains("patrol")) return "trained and alert, but not openly hostile";
+        if (state.contains("fright") || state.contains("fear") || state.contains("tense")) return "nervous and needs space";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "friendly toward its handler";
+        return "calm enough to consider a gentle approach";
+    }
+
+    String petOwnershipReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no readable ownership.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "handled companion of " + npc.companionOf + "; taking or commanding it is not implied.";
+        String territory = ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+        if (territory.contains("faction") || territory.contains("owned") || territory.contains("restricted")) return "local territory claims custody; ask, buy, or be invited before treating it as yours.";
+        return "no visible personal handler; still not automatically yours.";
+    }
+
+    String petAdoptionSaleReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null || !npc.isPetActor()) return "not a companion adoption target.";
+        String context = (describeTile(world != null && world.inBounds(tx, ty) ? world.tiles[tx][ty] : ' ') + " " + roomContextReadLine(tx, ty) + " " + ownershipText(tx, ty)).toLowerCase(Locale.ROOT);
+        if (context.contains("market") || context.contains("shop") || context.contains("stall")) return "possible vendor or adoption context, but no purchase is confirmed until a trade/service option says so.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "already bonded to a handler; not for sale from this screen.";
+        return "no adoption or sale offer is visible from here.";
+    }
+
+    String petAccessibilityReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no animal is reachable.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return npc.name + " is too far away; move adjacent first.";
+        if (!isVisible(tx, ty)) return npc.name + " is not clearly visible enough for safe contact.";
+        return npc.name + " is close enough for gentle contact.";
+    }
+
+    String pettingPermissionReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "Petting is unavailable.";
+        if (!npc.isPetActor()) return animalContactBlockedLine(npc);
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "Petting is blocked because it is not safe to touch.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return "Petting is blocked by distance.";
+        return "Interact or PET can offer " + petGestureName(npc) + ".";
+    }
+
+    String animalShelterReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "shelter is unreadable";
+        String tile = describeTile(world.tiles[tx][ty]).toLowerCase(Locale.ROOT);
+        String room = roomContextReadLine(tx, ty).toLowerCase(Locale.ROOT);
+        if (room.contains("room") || tile.contains("floor") || tile.contains("hab") || tile.contains("market")) return "under cover or inside a usable space";
+        if (tile.contains("sewer") || tile.contains("hazard") || tile.contains("waste")) return "poor shelter with environmental stress";
+        return "shelter looks uncertain";
+    }
+
+    String npcInjuryEstimate(NpcEntity npc) {
+        if (npc.hp >= 9000) return "no readable injury under protected status";
+        if (npc.hp <= 0) return "down or dying";
+        if (npc.hp <= 3) return "badly hurt";
+        if (npc.hp <= 7) return "wounded";
+        if (npc.hp <= 11) return "scuffed or tired";
+        return "looks healthy";
+    }
+
+    String npcArmorEstimate(NpcEntity npc) {
+        String armor = npc.equippedArmor == null ? "" : npc.equippedArmor.trim();
+        if (armor.isBlank()) return "no obvious armor";
+        int value = ItemCatalog.priceFor(armor);
+        if (value >= 35 || armor.toLowerCase(Locale.ROOT).contains("carapace")) return "heavy visible protection: " + armor;
+        if (value >= 14 || armor.toLowerCase(Locale.ROOT).contains("flak") || armor.toLowerCase(Locale.ROOT).contains("vest")) return "moderate visible protection: " + armor;
+        return "light visible protection: " + armor;
+    }
+
+// ... omitted 15 non-method/source lines between cataloged methods ...
+
+    String npcThreatReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null) return "Threat read: no person is readable there.";
+        if (npc.isAnimalActor()) return "Threat read: posture matters more than equipment.";
+        String gear = visibleNpcEquipmentLine(npc);
+        String mood = isHostileNpc(npc) ? "dangerous now" : ("Hostile".equalsIgnoreCase(npc.state) ? "openly hostile" : "not openly hostile");
+        String intentText = intent == null || !intent.available || intent.intent == null || intent.intent.isBlank() ? "intent unclear" : intent.intent.toLowerCase(Locale.ROOT);
+        return "Threat read: " + mood + "; " + intentText + "; " + gear + ".";
+    }
+
+    String npcSensesReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null || npc.isAnimalActor()) return "Senses read: only broad posture is readable.";
+        int vision = intent != null && intent.available ? intent.visionRange : npcVisionRange(npc);
+        int hearing = intent != null && intent.available ? intent.hearingRange : npcHearingRange(npc);
+        String motion = npc.activeMotionLabel() == null || npc.activeMotionLabel().isBlank() ? "unclear motion" : npc.activeMotionLabel();
+        String line = "Senses read: vision about " + vision + ", hearing about " + hearing + ", motion " + motion.toLowerCase(Locale.ROOT);
+        if (intent != null && intent.available && intent.attackLine) line += "; has a clear attack line";
+        return line + ".";
+    }
+
+// ... omitted 25 non-method/source lines between cataloged methods ...
+
+    String visibleNpcEquipmentLine(NpcEntity npc) {
+        if (npc == null || npc.isAnimalActor()) return "no obvious carried gear";
+        ArrayList<String> gear = new ArrayList<>();
+        if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) gear.add(npc.equippedMeleeWeapon);
+        if (npc.equippedRangedWeapon != null && !npc.equippedRangedWeapon.isBlank()) gear.add(npc.equippedRangedWeapon);
+        if (npc.equippedArmor != null && !npc.equippedArmor.isBlank()) gear.add(npc.equippedArmor);
+        if (gear.isEmpty()) return "no obvious carried gear";
+        return String.join(", ", gear.subList(0, Math.min(3, gear.size())));
+    }
+
+// ... omitted 44 non-method/source lines between cataloged methods ...
+
+    String animalContactBlockedLine(NpcEntity npc) {
+        if (npc == null) return "There is no companion animal there.";
+        if (!npc.isAnimalActor()) return npc.name + " is a person, not a pet.";
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return npc.name + " is not safe to touch.";
+        if ("farm-animal".equals(npc.creatureKind)) return npc.name + " is working stock, not a companion animal; it keeps a cautious distance.";
+        if ("kennel-animal".equals(npc.creatureKind)) return npc.name + " is on duty and should not be distracted.";
+        return npc.name + " is not tame enough to pet.";
+    }
+
+    String petInteractionLine(NpcEntity npc) {
+        String key = ((npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return npc.name + " accepts careful ear scritches and pretends it was their idea.";
+        if (key.contains("rat") || key.contains("mouse")) return npc.name + " receives a tiny nose boop and chirrs at the attention.";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return npc.name + " leans into a head pat.";
+        if (key.contains("lizard")) return npc.name + " permits a cautious chin rub.";
+        if (key.contains("glowfish")) return npc.name + " watches your fingertip tap the bowl and glows a little brighter.";
+        return npc.name + " accepts a gentle petting gesture.";
+    }
+
+    String petGestureName(NpcEntity npc) {
+        String key = ((npc == null || npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc == null || npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return "ear scritches";
+        if (key.contains("rat") || key.contains("mouse")) return "a nose boop";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return "a head pat";
+        if (key.contains("lizard")) return "a chin rub";
+        if (key.contains("glowfish")) return "a bowl tap";
+        return "a gentle petting gesture";
+    }
+
+// ... omitted 158 non-method/source lines between cataloged methods ...
+
+    Faction owningFactionAt(int x, int y) {
+        if (world == null || x < 0 || y < 0 || x >= world.w || y >= world.h) return Faction.NONE;
+        int rid = world.roomIds[x][y];
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return Faction.NONE;
+    }
+    String factionLabel(Faction f) { return f == null ? "none" : f.label; }
+    boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }
+    static boolean sameFactionFamilyStatic(Faction a, Faction b) {
+        if (a == null || b == null) return false;
+        if (a == b) return true;
+        if ((a == Faction.MECHANIST_COLLEGIA || a.name().startsWith("MECHANIST COLLEGIA")) && (b == Faction.MECHANIST_COLLEGIA || b.name().startsWith("MECHANIST COLLEGIA"))) return true;
+        if ((a == Faction.MINISTORUM || a == Faction.SORORITAS) && (b == Faction.MINISTORUM || b == Faction.SORORITAS)) return true;
+        if ((a == Faction.BANDIT || a.name().startsWith("GANGER")) && (b == Faction.BANDIT || b.name().startsWith("GANGER"))) return true;
+        if ((a == Faction.HIVER || a.name().startsWith("HIVER")) && (b == Faction.HIVER || b.name().startsWith("HIVER"))) return true;
+        if ((a == Faction.NOBLE || a.name().startsWith("NOBLE")) && (b == Faction.NOBLE || b.name().startsWith("NOBLE"))) return true;
+        return false;
+    }
+    boolean playerIsFactionMember(Faction f) {
+        if (f == null || f == Faction.NONE) return true;
+        if (active == null) return false;
+        Faction pf = JobProfile.get(active.job).faction;
+        return pf == f || sameFactionFamily(pf, f);
+    }
+    Faction playerFaction() {
+        if (active == null) return Faction.NONE;
+        try { return JobProfile.get(active.job).faction; } catch (Throwable ignored) { return Faction.NONE; }
+    }

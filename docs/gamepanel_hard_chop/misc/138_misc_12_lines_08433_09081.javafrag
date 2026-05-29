@@ -1,0 +1,337 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_12_lines_08433_09081
+// Category: misc
+// Source lines: 8433-9081
+// Method count: 26
+//
+// Methods in this fragment:
+// - preflightLatestManualHaulContract :: lines 8433-8439 (7) :: void preflightLatestManualHaulContract()
+// - checkLatestLogisticsContractLifecycle :: lines 8441-8447 (7) :: void checkLatestLogisticsContractLifecycle()
+// - cancelLatestLogisticsHaulContract :: lines 8449-8455 (7) :: void cancelLatestLogisticsHaulContract()
+// - executeLatestManualHaulContract :: lines 8457-8463 (7) :: void executeLatestManualHaulContract()
+// - moveWorkerMachineSelection :: lines 8465-8472 (8) :: void moveWorkerMachineSelection(int delta)
+// - cycleGeneratedJobCategoryFilter :: lines 8510-8514 (5) :: void cycleGeneratedJobCategoryFilter()
+// - cycleGeneratedJobReadinessFilter :: lines 8516-8520 (5) :: void cycleGeneratedJobReadinessFilter()
+// - adjustSelectedMachineQueue :: lines 8539-8550 (12) :: void adjustSelectedMachineQueue(int delta)
+// - firstAvailableRecruitName :: lines 8571-8574 (4) :: String firstAvailableRecruitName()
+// - canUseWorkbench :: lines 8722-8726 (5) :: boolean canUseWorkbench()
+// - useWorkshopStructures :: lines 8728-8755 (28) :: void useWorkshopStructures()
+// - useSecurityStructures :: lines 8757-8772 (16) :: void useSecurityStructures()
+// - findOpenBaseSpot :: lines 8774-8786 (13) :: Point findOpenBaseSpot()
+// - interactBaseObject :: lines 8788-8805 (18) :: void interactBaseObject(BaseObject obj)
+// - talkToFactionRepresentative :: lines 8807-8829 (23) :: void talkToFactionRepresentative()
+// - acceptBountyContract :: lines 8849-8849 (1) :: void acceptBountyContract()
+// - acceptFetchContract :: lines 8850-8850 (1) :: void acceptFetchContract()
+// - acceptFactionContract :: lines 8852-8865 (14) :: void acceptFactionContract(String type)
+// - turnInFactionContract :: lines 8867-8885 (19) :: void turnInFactionContract()
+// - isFactionJournalObjectAt :: lines 9000-9000 (1) :: boolean isFactionJournalObjectAt(int tx, int ty)
+// - readFactionJournalAt :: lines 9015-9030 (16) :: void readFactionJournalAt(int tx, int ty)
+// - stealFactionJournalAt :: lines 9037-9051 (15) :: void stealFactionJournalAt(int tx, int ty)
+// - canSellLeaderJournalsToINNAt :: lines 9055-9060 (6) :: boolean canSellLeaderJournalsToINNAt(int tx, int ty)
+// - countStolenLeaderJournals :: lines 9062-9062 (1) :: int countStolenLeaderJournals()
+// - sellLeaderJournalsToINN :: lines 9064-9079 (16) :: void sellLeaderJournalsToINN()
+// - playerAtClaimedBase :: lines 9081-9081 (1) :: boolean playerAtClaimedBase()
+
+    void preflightLatestManualHaulContract() {
+        String result = LogisticsHaulFulfillmentPreflightAuthority.createPreflight(this);
+        lastLogisticsHaulPreflightReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_HAUL_FULFILLMENT_PREFLIGHT", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void checkLatestLogisticsContractLifecycle() {
+        String result = LogisticsContractLifecycleAuthority.checkLatestContract(this);
+        lastLogisticsContractLifecycleReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_CONTRACT_LIFECYCLE", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void cancelLatestLogisticsHaulContract() {
+        String result = LogisticsContractLifecycleAuthority.cancelLatestContract(this, "player cancellation from Workbench");
+        lastLogisticsContractLifecycleReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_CONTRACT_CANCEL", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void executeLatestManualHaulContract() {
+        String result = LogisticsManualHaulExecutionAuthority.executeLatestContract(this);
+        lastLogisticsHaulExecutionReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_MANUAL_HAUL_EXECUTION", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void moveWorkerMachineSelection(int delta) {
+        ArrayList<BaseObject> ms = recruitOperableMachines();
+        if (ms.isEmpty()) { logEvent("Machine selection failed: no recruit-operable base machines exist."); return; }
+        selectedWorkerMachineIndex = Math.max(0, Math.min(ms.size()-1, selectedWorkerMachineIndex + delta));
+        BaseObject m = ms.get(selectedWorkerMachineIndex);
+        logEvent("Selected production machine: " + m.name + " [" + m.qualityName + "] assigned recipe=" + (m.assignedRecipe == null || m.assignedRecipe.isBlank() ? "none" : m.assignedRecipe) + ".");
+        repaint();
+    }
+
+// ... omitted 37 non-method/source lines between cataloged methods ...
+
+    void cycleGeneratedJobCategoryFilter() {
+        generatedJobCategoryFilterIndex = (generatedJobCategoryFilterIndex + 1) % ControlledProductionJobAuthority.categoryFilters().length;
+        selectedGeneratedProductionJobIndex = 0;
+        refreshGeneratedProductionForecast("Generated job category filter -> " + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex));
+    }
+
+    void cycleGeneratedJobReadinessFilter() {
+        generatedJobReadinessFilterIndex = (generatedJobReadinessFilterIndex + 1) % ControlledProductionJobAuthority.readinessFilters().length;
+        selectedGeneratedProductionJobIndex = 0;
+        refreshGeneratedProductionForecast("Generated job status filter -> " + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex));
+    }
+
+// ... omitted 18 non-method/source lines between cataloged methods ...
+
+    void adjustSelectedMachineQueue(int delta) {
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Queue adjustment failed: no selected production machine or apparatus."); return; }
+        machine.productionQueueTarget = Math.max(1, Math.min(12, machine.productionQueueTarget + delta));
+        if (machine.assignedRecipe != null && !machine.assignedRecipe.isBlank()) machine.productionQueueRemaining = Math.max(1, Math.min(machine.productionQueueTarget, Math.max(machine.productionQueueRemaining, 1) + delta));
+        FactionRecipeVariant v = machine.assignedRecipe == null ? null : ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
+        String forecast = v == null ? "ordinary/empty queue target " + machine.productionQueueTarget : ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        lastGeneratedProductionQueueReport = forecast;
+        logEvent("Production queue for " + machine.name + " set to target " + machine.productionQueueTarget + " run(s). " + forecast);
+        DebugLog.audit("PRODUCTION_QUEUE_ADJUST", "machine=" + machine.name + " target=" + machine.productionQueueTarget + " remaining=" + machine.productionQueueRemaining + " forecast=" + forecast + " state=" + stateSummary());
+        repaint();
+    }
+
+// ... omitted 20 non-method/source lines between cataloged methods ...
+
+    String firstAvailableRecruitName() {
+        for (RecruitWorker r : factionRecruits) if (r != null && !"security".equalsIgnoreCase(r.duty)) return r.name;
+        return factionRecruits.isEmpty() ? "unmanned" : factionRecruits.get(0).name;
+    }
+
+// ... omitted 147 non-method/source lines between cataloged methods ...
+
+    boolean canUseWorkbench() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Workbench use requires standing inside your claimed room."); return false; }
+        if (firstBaseObject('w') == null) { logEvent("No Scrap Workbench built yet."); return false; }
+        return true;
+    }
+
+    void useWorkshopStructures() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Workshop use requires standing inside your claimed room."); return; }
+        BaseObject bench = firstBaseObject('w');
+        if (bench == null) { logEvent("No scrap workbench built yet."); return; }
+        int scrapIndex = inventory.lastIndexOf("Scrap bit");
+        if (scrapIndex >= 0) {
+            removeInventoryAtWithTrace(scrapIndex);
+            supplies += 2;
+            machineParts += 1;
+            fatigue = Math.min(20, fatigue + 1);
+            bench.charges++;
+            logEvent("You process scrap at the workbench: +2 supplies, +1 machine part, fatigue +1.");
+            ProductionQueueRecordBridge.recordWorkbenchAction(this, bench, "process scrap", 1, active == null ? "player manual operation" : active.name + " manual operation");
+            DebugLog.audit("BASE_WORKBENCH_SCRAP", "supplies=" + supplies + " parts=" + machineParts + " fatigue=" + fatigue + " benchUses=" + bench.charges + " state=" + stateSummary());
+            advanceTurn("works at the scrap bench.");
+            return;
+        }
+        if (equippedClothing != null && equippedClothing.damaged && supplies >= 2 && machineParts >= 1) {
+            supplies -= 2; machineParts -= 1; equippedClothing.damaged = false;
+            logEvent("You repair your damaged clothing at the workbench. It may once again pass as intentional poverty.");
+            ProductionQueueRecordBridge.recordWorkbenchAction(this, bench, "repair clothing", 1, active == null ? "player manual operation" : active.name + " manual operation");
+            DebugLog.audit("BASE_WORKBENCH_REPAIR_CLOTHING", "supplies=" + supplies + " parts=" + machineParts + " clothing=" + equippedClothing.name + " state=" + stateSummary());
+            advanceTurn("repairs clothing.");
+            return;
+        }
+        logEvent("Workbench idle: bring Scrap bit, damaged clothing, supplies, or machine parts for useful work.");
+        DebugLog.audit("BASE_WORKBENCH_IDLE", "inventory=" + inventory.size() + " supplies=" + supplies + " parts=" + machineParts + " clothingDamaged=" + (equippedClothing!=null && equippedClothing.damaged));
+    }
+
+    void useSecurityStructures() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Security structures require standing inside your claimed room."); return; }
+        int barricades = 0, cover = 0, armed = 0, posts = 0, barracks = 0, doors = 0, turrets = 0, shields = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj.symbol == 'd') { barricades++; cover += obj.cover; }
+            if (obj.symbol == 'a') { obj.armed = true; armed++; }
+            if (obj.symbol == 'p') { posts++; cover += obj.cover; }
+            if (obj.symbol == 'g') { barracks++; cover += obj.cover; }
+            if (obj.symbol == 'D') { doors++; cover += obj.cover; }
+            if (obj.symbol == 'T') { turrets++; cover += obj.cover; obj.armed = true; }
+            if (obj.symbol == 'H') { shields++; cover += obj.cover; obj.armed = true; }
+        }
+        int deterrence = baseSecurityRating();
+        logEvent("Security checked: barricades=" + barricades + ", watch posts=" + posts + ", guard barracks=" + barracks + ", reinforced doors=" + doors + ", powered turrets=" + turrets + ", shield relays=" + shields + ", armed alarms=" + armed + ", guards=" + securityStaffCount() + ", defense rating=" + deterrence + ".");
+        DebugLog.audit("BASE_SECURITY_CHECK", "barricades=" + barricades + " posts=" + posts + " barracks=" + barracks + " doors=" + doors + " armed=" + armed + " guards=" + securityStaffCount() + " rating=" + deterrence + " heat=" + gangHeat + " suspicion=" + suspicion + " state=" + stateSummary());
+    }
+
+    Point findOpenBaseSpot() {
+        if (world == null || claimedRoomId < 0) return null;
+        Rectangle rr = world.roomRect(claimedRoomId);
+        if (rr == null) return null;
+        for (int y=rr.y; y<rr.y+rr.height; y++) for (int x=rr.x; x<rr.x+rr.width; x++) {
+            if (!world.walkable(x,y)) continue;
+            if (x == playerX && y == playerY) continue;
+            if (baseObjectAt(x,y) != null) continue;
+            char t = world.tiles[x][y];
+            if (t == '.' || t == '+') return new Point(x,y);
+        }
+        return null;
+    }
+
+    void interactBaseObject(BaseObject obj) {
+        if (obj != null && obj.underConstruction) {
+            contributeToConstructionSite(obj);
+            return;
+        }
+        String passiveDefenseLine = PassiveDefenseEffectsAuthority.isPassiveDefense(obj.symbol) ? PassiveDefenseEffectsAuthority.inspectLine(obj) : null;
+        switch (obj.symbol) {
+            case 's': logEvent("Storage crate accessed. Capacity " + obj.capacity + ". Base storage currently " + baseStorage.size() + " item(s). Use STASH/TAKE."); break;
+            case 'w': logEvent("Scrap workbench accessed. Uses=" + obj.charges + ". Converts Scrap bit into supplies/parts and repairs damaged clothing."); break;
+            case 'd': logEvent("Barricade inspected. " + passiveDefenseLine); break;
+            case 'S': case 'R': case 'W': case 'D': case 'Y': case 'N': case 'P': case 'J': case 'U': case 'Z': case 'T': case 'H': logEvent("Defense inspected. " + passiveDefenseLine); break;
+            case 'c': logEvent("Sleeping cot inspected. Use DRINK/REST to reduce fatigue and later recover wounds/body damage."); break;
+            case 'u': logEvent("Water barrel inspected. Stored water charges " + obj.charges + "/" + obj.capacity + ". Global reserve " + water + "."); break;
+            case 'a': logEvent("Alarm trap inspected. Armed=" + obj.armed + ". Use SECURITY to arm it and audit base defenses."); break;
+            default: logEvent("Base object inspected: " + obj.name + ". " + obj.description + (passiveDefenseLine == null ? "" : " " + passiveDefenseLine));
+        }
+        DebugLog.audit("BASE_OBJECT_INSPECT", obj.name + " symbol=" + obj.symbol + " integrity=" + obj.integrity + " charges=" + obj.charges + " armed=" + obj.armed + " state=" + stateSummary());
+    }
+
+    void talkToFactionRepresentative() {
+        Faction f = nearestFactionForRepresentative();
+        lastContractFaction = f;
+        int standing = factionStanding.getOrDefault(f, 0);
+        int bribeCost = Math.max(2, 4 - standing) + Math.max(0, -standing * 2);
+        String board = contractBoardLine(f);
+        if (supplies >= bribeCost && standing < 2) {
+            supplies -= bribeCost;
+            factionStanding.put(f, standing + 2);
+            temporaryHostileTurns.put(f, 0);
+            lastConversation = f.label + " representative accepted a bribe of " + bribeCost + " supplies. Standing improves to " + factionStanding.get(f) + ". " + board;
+        } else if (standing >= 2) {
+            lastConversation = f.label + " representative says you are currently useful enough to remain breathing. " + board;
+        } else {
+            lastConversation = f.label + " representative quotes a bribe of " + bribeCost + " supplies. You have " + supplies + ". Poverty is not a legal defense. " + board;
+        }
+        conversationBranch = lastConversation;
+        activeTrader = null;
+        activeConversationNpc = NpcEntity.factionRepresentative(f, playerX, playerY, rng);
+        DebugLog.audit("FACTION_REP", lastConversation + " state=" + stateSummary());
+        logEvent(lastConversation);
+        openPanel(PanelMode.TRADE);
+    }
+
+// ... omitted 19 non-method/source lines between cataloged methods ...
+
+    void acceptBountyContract() { acceptFactionContract("BOUNTY"); }
+    void acceptFetchContract() { acceptFactionContract("FETCH"); }
+
+    void acceptFactionContract(String type) {
+        Faction f = activeRepFaction();
+        if (f == Faction.NONE) { logEvent("Contract failed: no faction representative is currently recognized."); return; }
+        FactionContract existing = activeContractFor(f, type);
+        if (existing != null) { logEvent("Contract blocked: " + f.label + " already has an active " + type.toLowerCase(Locale.ROOT) + " contract: " + existing.shortLine()); return; }
+        FactionContract c = FactionContract.create(type, f, atlas, world, rng, factionStanding.getOrDefault(f, 0));
+        factionContracts.add(c);
+        lastContractFaction = f;
+        conversationBranch = f.label + " issues a " + c.displayType() + ": " + c.displayDescription();
+        logEvent("CONTRACT ACCEPTED: " + c.longLine());
+        spawnContractTargetsForCurrentWorld();
+        gainXp("Contracts", 1, "accepted faction contract");
+        advanceTurn("accepts a faction contract.");
+    }
+
+    void turnInFactionContract() {
+        Faction f = activeRepFaction();
+        for (FactionContract c : factionContracts) {
+            if (c.completed || c.faction != f) continue;
+            if (inventory.contains(c.requiredTurnInItem)) {
+                removeInventoryItem(c.requiredTurnInItem);
+                c.completed = true;
+                addImperialScript(c.payout);
+                factionStanding.put(f, factionStanding.getOrDefault(f,0) + c.repReward);
+                knowledgeCredits += (c.type.equals("FETCH") ? 1 : 0);
+                xp += 4;
+                conversationBranch = f.label + " pays " + c.payout + " script for the " + c.displayType() + ". Standing +" + c.repReward + ".";
+                logEvent("CONTRACT PAID: " + conversationBranch);
+                advanceTurn("turns in " + c.requiredTurnInItem + ".");
+                return;
+            }
+        }
+        logEvent("Contract turn-in failed: you need the matching ident chip or sealed object for an active " + f.label + " contract.");
+    }
+
+// ... omitted 114 non-method/source lines between cataloged methods ...
+
+    boolean isFactionJournalObjectAt(int tx, int ty) { return factionJournalObjectAt(tx, ty) != null; }
+
+// ... omitted 14 non-method/source lines between cataloged methods ...
+
+    void readFactionJournalAt(int tx, int ty) {
+        MapObjectState m = factionJournalObjectAt(tx, ty);
+        if (m == null) { logEvent("FACTION JOURNAL: no readable journal here."); return; }
+        FactionStrategicPlan p = findFactionStrategicPlanById(m.stockState);
+        if (p == null) { logEvent("FACTION JOURNAL: " + m.label + " exists, but the indexed plan has been lost or moved."); return; }
+        logEvent("FACTION JOURNAL: " + p.journalHeader());
+        logEvent("  Immediate: " + p.immediateGoal + " / phase " + p.phase + " until turn " + p.phaseUntilTurn + ".");
+        logEvent("  Long term: " + p.longTermGoal + ". Personal goal: " + p.personalGoal + ".");
+        if (p.scheme != null && !p.scheme.isBlank()) logEvent("  Scheme: " + p.scheme + " involving " + p.schemeTargetFaction.label + ".");
+        if (p.lastOutcome != null && !p.lastOutcome.isBlank()) logEvent("  Last outcome: " + p.lastOutcome);
+        if (p.history != null && !p.history.isEmpty()) {
+            int start = Math.max(0, p.history.size() - 5);
+            for (int i=start; i<p.history.size(); i++) logEvent("  Journal entry: " + p.history.get(i));
+        }
+        DebugLog.audit("FACTION_JOURNAL_READ", "plan=" + p.id + " faction=" + p.faction + " at=" + tx + "," + ty + " turn=" + turn);
+    }
+
+    String stolenJournalItemName(FactionStrategicPlan p) {
+        if (p == null) return "Stolen faction leader journal";
+        return "Stolen " + p.faction.label + " leader journal (" + p.leaderName + ")";
+    }
+
+    void stealFactionJournalAt(int tx, int ty) {
+        MapObjectState m = factionJournalObjectAt(tx, ty);
+        if (m == null) { logEvent("STEAL JOURNAL: no faction journal is selected."); return; }
+        FactionStrategicPlan p = findFactionStrategicPlanById(m.stockState);
+        if (p == null) { logEvent("STEAL JOURNAL: journal exists, but the plan ledger reference is missing."); return; }
+        if (inventoryWeight() + 1 > carryCapacity()) { logEvent("STEAL JOURNAL blocked: carrying load is full."); return; }
+        String item = stolenJournalItemName(p);
+        addInventoryItem(item, ItemProvenanceRecord.of(item, p.faction, p.leaderName + " private room", world, turn, "leader journal: " + p.shortLine(), "stolen from faction leader journal object"));
+        world.mapObjects.remove(m);
+        if (world.inBounds(tx,ty)) world.tiles[tx][ty] = '.';
+        logEvent("STEAL JOURNAL: lifted " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, p) + " Concord Script if sold to the press.");
+        DebugLog.audit("FACTION_JOURNAL_STOLEN", "plan=" + p.id + " faction=" + p.faction + " item=" + item + " at=" + tx + "," + ty + " state=" + stateSummary());
+        advanceTurn("steals a faction leader journal.");
+        updatePendingInteractionSummary(); repaint();
+    }
+
+    boolean isStolenLeaderJournalItem(String item) { return item != null && item.toLowerCase(Locale.ROOT).contains("stolen") && item.toLowerCase(Locale.ROOT).contains("leader journal"); }
+
+    boolean canSellLeaderJournalsToINNAt(int tx, int ty) {
+        if (world == null) return false;
+        if (world.zoneType == ZoneType.IMPERIAL_NEWS_NETWORK) return true;
+        MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER);
+        return m != null;
+    }
+
+    int countStolenLeaderJournals() { int n=0; for (String item : inventory) if (isStolenLeaderJournalItem(item)) n++; return n; }
+
+    void sellLeaderJournalsToINN() {
+        if (!canSellLeaderJournalsToINNAt(lookX, lookY)) { logEvent("INN BOUNTY: sell stolen faction journals at an INN bureau or newspaper dispenser contact point."); return; }
+        int sold = 0, paid = 0;
+        for (int i=inventory.size()-1; i>=0; i--) {
+            String item = inventory.get(i);
+            if (!isStolenLeaderJournalItem(item)) continue;
+            int bounty = InnBountyApi.journalBounty(item, null);
+            removeInventoryAtWithTrace(i);
+            addImperialScript(bounty);
+            sold++; paid += bounty;
+        }
+        if (sold <= 0) { logEvent("INN BOUNTY: no stolen faction leader journals carried. Editors cannot pay for paranoia without paperwork."); return; }
+        logEvent("INN BOUNTY: sold " + sold + " stolen leader journal(s) for " + paid + " Concord Script. The editor smiles like a guillotine learning to read.");
+        DebugLog.audit("INN_JOURNAL_BOUNTY", "sold=" + sold + " paid=" + paid + " cash=" + countMoney() + " state=" + stateSummary());
+        advanceTurn("sells stolen leader journals to the INN."); repaint();
+    }
+
+    boolean playerAtClaimedBase() { return baseClaimed && world != null && claimedRoomId >= 0 && world.roomIdAt(playerX, playerY) == claimedRoomId; }

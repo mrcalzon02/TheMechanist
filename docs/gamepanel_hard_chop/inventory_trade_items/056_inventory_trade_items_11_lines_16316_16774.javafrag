@@ -1,0 +1,322 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: inventory_trade_items_11_lines_16316_16774
+// Category: inventory_trade_items
+// Source lines: 16316-16774
+// Method count: 22
+//
+// Methods in this fragment:
+// - displayedInventoryStacks :: lines 16316-16321 (6) :: LinkedHashMap<String,Integer> displayedInventoryStacks()
+// - currentTargetInventoryStacks :: lines 16323-16341 (19) :: LinkedHashMap<String,Integer> currentTargetInventoryStacks()
+// - selectedInventoryStackName :: lines 16356-16361 (6) :: String selectedInventoryStackName()
+// - selectedTargetInventoryName :: lines 16363-16368 (6) :: String selectedTargetInventoryName()
+// - moveTargetInventorySelection :: lines 16370-16376 (7) :: void moveTargetInventorySelection(int delta)
+// - drawItemQualityFrame :: lines 16394-16422 (29) :: void drawItemQualityFrame(Graphics2D g, String item, int x, int y, int w, int h, boolean overlay)
+// - inventoryItemDetailLines :: lines 16484-16502 (19) :: ArrayList<String> inventoryItemDetailLines(String item, boolean targetStack)
+// - inventoryStackContextLine :: lines 16504-16508 (5) :: String inventoryStackContextLine(String item, boolean targetStack)
+// - itemQualityValueLine :: lines 16510-16515 (6) :: String itemQualityValueLine(String item)
+// - itemCategoryLine :: lines 16517-16525 (9) :: String itemCategoryLine(String item, ItemDef def)
+// - itemLikelyActionLine :: lines 16527-16530 (4) :: String itemLikelyActionLine(String item, ItemDef def)
+// - itemLegalRiskLine :: lines 16532-16541 (10) :: String itemLegalRiskLine(String item, ItemDef def)
+// - itemPlayerFacingOriginLine :: lines 16543-16550 (8) :: String itemPlayerFacingOriginLine(String item)
+// - inventoryGridIndexAt :: lines 16592-16605 (14) :: int inventoryGridIndexAt(LinkedHashMap<String,Integer> stacks, int x, int y, int w, int h, int mx, int my)
+// - handleInventoryStackPanelClick :: lines 16607-16644 (38) :: boolean handleInventoryStackPanelClick(int mx, int my)
+// - emptySlotLabel :: lines 16648-16648 (1) :: String emptySlotLabel(String item)
+// - equipmentContainerIdForSlot :: lines 16650-16652 (3) :: String equipmentContainerIdForSlot(int idx)
+// - equippedItemForSlot :: lines 16670-16679 (10) :: String equippedItemForSlot(int idx)
+// - setEquippedItemForSlot :: lines 16681-16691 (11) :: void setEquippedItemForSlot(int idx, String item)
+// - inferredEquipmentSlotForItem :: lines 16729-16737 (9) :: int inferredEquipmentSlotForItem(String item)
+// - equipInventoryItemToPaperDoll :: lines 16739-16759 (21) :: boolean equipInventoryItemToPaperDoll(String item)
+// - transferFirstEquipmentItemBackToInventory :: lines 16761-16774 (14) :: ItemActionResult transferFirstEquipmentItemBackToInventory(int slot, String expectedItem, String route)
+
+    LinkedHashMap<String,Integer> displayedInventoryStacks() {
+        LinkedHashMap<String,Integer> stacks = stackInventory(inventory);
+        // Abstract pools are deliberately NOT injected here. The inventory panel is
+        // for carried item stacks; Script/supplies/food/water pools are summary state.
+        return stacks;
+    }
+
+    LinkedHashMap<String,Integer> currentTargetInventoryStacks() {
+        LinkedHashMap<String,Integer> out = new LinkedHashMap<>();
+        if (world == null || !world.inBounds(playerX, playerY)) return out;
+        BaseObject base = baseObjectAt(playerX, playerY);
+        if (base != null) out.put(base.name, 1);
+        if (world.mapObjects != null) {
+            for (MapObjectState m : world.mapObjects) {
+                if (m != null && m.x == playerX && m.y == playerY) {
+                    String label = m.label == null || m.label.isBlank() ? m.type : m.label;
+                    if (label == null || label.isBlank()) label = "floor feature";
+                    out.put(label, out.getOrDefault(label, 0) + 1);
+                }
+            }
+        }
+        char ch = world.tiles[playerX][playerY];
+        String tile = "Floor tile: " + describeTile(ch);
+        out.put(tile, 1);
+        return out;
+    }
+
+// ... omitted 14 non-method/source lines between cataloged methods ...
+
+    String selectedInventoryStackName() {
+        ArrayList<String> names = new ArrayList<>(displayedInventoryStacks().keySet());
+        if (names.isEmpty()) return null;
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, names.size()-1));
+        return names.get(selectedInventoryIndex);
+    }
+
+    String selectedTargetInventoryName() {
+        ArrayList<String> names = new ArrayList<>(currentTargetInventoryStacks().keySet());
+        if (names.isEmpty()) return null;
+        selectedTargetInventoryIndex = Math.max(0, Math.min(selectedTargetInventoryIndex, names.size()-1));
+        return names.get(selectedTargetInventoryIndex);
+    }
+
+    void moveTargetInventorySelection(int delta) {
+        int size = currentTargetInventoryStacks().size();
+        if (size <= 0) { selectedTargetInventoryIndex = 0; inventoryItemDescriptionScroll = 0; return; }
+        selectedTargetInventoryIndex = Math.max(0, Math.min(size-1, selectedTargetInventoryIndex + delta));
+        inventoryItemDescriptionScroll = 0;
+        repaint();
+    }
+
+// ... omitted 17 non-method/source lines between cataloged methods ...
+
+    void drawItemQualityFrame(Graphics2D g, String item, int x, int y, int w, int h, boolean overlay) {
+        int tier = ItemQuality.tierIndex(item);
+        Color c;
+        switch (Math.max(0, Math.min(7, tier))) {
+            case 0: c = new Color(70,70,70, overlay ? 190 : 80); break;
+            case 1: c = new Color(118,90,70, overlay ? 190 : 80); break;
+            case 3: c = new Color(120,170,110, overlay ? 210 : 90); break;
+            case 4: c = new Color(110,165,220, overlay ? 220 : 100); break;
+            case 5: c = new Color(205,170,65, overlay ? 230 : 110); break;
+            case 6: c = new Color(185,105,225, overlay ? 230 : 110); break;
+            case 7: c = new Color(240,230,160, overlay ? 240 : 120); break;
+            default: c = new Color(110,95,62, overlay ? 170 : 70);
+        }
+        Stroke old = g.getStroke();
+        g.setColor(c);
+        if (overlay && tier >= 4) {
+            g.setStroke(new BasicStroke(Math.max(2f, Math.min(4f, w/13f))));
+            g.drawRoundRect(x+1, y+1, Math.max(1,w-3), Math.max(1,h-3), 8, 8);
+            if (tier >= 6) {
+                g.drawLine(x+4, y+4, x+Math.max(4,w/3), y+4);
+                g.drawLine(x+4, y+4, x+4, y+Math.max(4,h/3));
+                g.drawLine(x+w-5, y+h-5, x+w-Math.max(5,w/3), y+h-5);
+                g.drawLine(x+w-5, y+h-5, x+w-5, y+h-Math.max(5,h/3));
+            }
+        } else {
+            g.drawRect(x, y, Math.max(1,w), Math.max(1,h));
+        }
+        g.setStroke(old);
+    }
+
+// ... omitted 61 non-method/source lines between cataloged methods ...
+
+    ArrayList<String> inventoryItemDetailLines(String item, boolean targetStack) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (item == null || item.isBlank()) {
+            lines.add(targetStack ? "No target stack selected." : "No carried stack selected.");
+            return lines;
+        }
+        ItemDef def = ItemCatalog.get(item);
+        String cleanName = ItemQuality.stripManufacturingIdentity(item);
+        lines.add((targetStack ? "TARGET: " : "SELECTED: ") + item);
+        lines.add("Stack: " + inventoryStackContextLine(item, targetStack));
+        lines.add("Quality and value: " + itemQualityValueLine(item));
+        lines.add("Category: " + itemCategoryLine(item, def));
+        lines.add("Likely action: " + itemLikelyActionLine(item, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(item, def));
+        lines.add("Origin: " + itemPlayerFacingOriginLine(item));
+        if (def != null && def.description != null && !def.description.isBlank()) lines.add("Read: " + def.description);
+        else lines.add("Read: " + cleanName + " has no reliable catalog description yet.");
+        return lines;
+    }
+
+    String inventoryStackContextLine(String item, boolean targetStack) {
+        int count = targetStack ? currentTargetInventoryStacks().getOrDefault(item, 1) : displayedInventoryStacks().getOrDefault(item, countInventory(item));
+        String place = targetStack ? "visible at the current floor or container target" : "carried in your inventory";
+        return Math.max(1, count) + " " + (count == 1 ? "copy" : "copies") + " " + place + ".";
+    }
+
+    String itemQualityValueLine(String item) {
+        int tier = Math.max(0, Math.min(ItemQuality.NAMES.length - 1, ItemQuality.tierIndex(item)));
+        String quality = ItemQuality.NAMES[tier];
+        int value = Math.max(1, ItemCatalog.priceFor(item));
+        return quality + " quality, about " + value + " script before local markup, barter pressure, or faction demand.";
+    }
+
+    String itemCategoryLine(String item, ItemDef def) {
+        if (def != null) return def.category + (def.weapon ? " / weapon" : "");
+        String low = item.toLowerCase(Locale.ROOT);
+        if (looksWearable(item)) return "clothing or disguise";
+        if (low.contains("ration") || low.contains("food") || low.contains("water") || low.contains("canteen")) return "survival supply";
+        if (low.contains("scrap") || low.contains("machine") || low.contains("supplies") || low.contains("tool")) return "tool or work material";
+        if (PortableLightProfile.isLightItem(item)) return "portable light";
+        return "uncataloged carried object";
+    }
+
+    String itemLikelyActionLine(String item, ItemDef def) {
+        if (def != null && def.use != null && !def.use.isBlank()) return def.use + " " + itemActionSummary(item);
+        return itemActionSummary(item);
+    }
+
+    String itemLegalRiskLine(String item, ItemDef def) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use)).toLowerCase(Locale.ROOT);
+        if (text.contains("contraband") || text.contains("illicit") || text.contains("black-market") || text.contains("black market") || text.contains("stolen") || text.contains("leader journal") || text.contains("profane") || text.contains("heretic")) return "restricted or suspicious if searched by law, guild, or faction authority.";
+        if (text.contains("permit") || text.contains("ticket") || text.contains("ration") || text.contains("water") || text.contains("food") || text.contains("medical") || text.contains("field dressing")) return "ordinary possession unless a local authority has posted tighter rules.";
+        if (def != null && def.weapon) return "weapon possession can draw attention in lawful, noble, or guarded spaces.";
+        if (ItemCatalog.isFirearmLike(item)) return "firearm-like gear can draw attention in lawful, noble, or guarded spaces.";
+        if (looksWearable(item) && factionForClothingItem(item) != Faction.NONE) return "faction clothing may help or endanger you depending on who sees it.";
+        if (text.contains("keycard") || text.contains("data spike") || text.contains("lockpick") || text.contains("hacking")) return "access tools may look suspicious near secure doors, vaults, or patrols.";
+        return "no obvious legal risk from the item name alone.";
+    }
+
+    String itemPlayerFacingOriginLine(String item) {
+        ItemProvenanceRecord pr = provenanceForItem(item);
+        if (pr == null) return "no reliable origin is recorded for this stack.";
+        String s = pr.summary();
+        if (s == null || s.isBlank()) return "no reliable origin is recorded for this stack.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
+    }
+
+// ... omitted 41 non-method/source lines between cataloged methods ...
+
+    int inventoryGridIndexAt(LinkedHashMap<String,Integer> stacks, int x, int y, int w, int h, int mx, int my) {
+        if (stacks == null || stacks.isEmpty()) return -1;
+        if (mx < x || my < y || mx >= x + w || my >= y + h) return -1;
+        int cell = Math.max(34, Math.min(48, Math.max(1, w) / Math.max(3, Math.min(5, stacks.size()))));
+        int gap = 6;
+        int cols = Math.max(1, (w + gap) / (cell + gap));
+        for (int i = 0; i < stacks.size(); i++) {
+            int cx = x + (i % cols) * (cell + gap);
+            int cy = y + (i / cols) * (cell + gap);
+            if (cy + cell > y + h) break;
+            if (mx >= cx && my >= cy && mx <= cx + cell && my <= cy + cell) return i;
+        }
+        return -1;
+    }
+
+    boolean handleInventoryStackPanelClick(int mx, int my) {
+        if (screen != Screen.PANEL || panelMode != PanelMode.INVENTORY) return false;
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(36, W/2 - Math.min(880, W-72)/2);
+        int y=Math.max(68, H/2 - Math.min(440, H-110)/2);
+        int w=Math.min(880, W - x*2);
+        int h=Math.min(440, H - y - 54);
+        int gap=Math.max(12, scaled(12));
+        int top=y+128;
+        int bottomBoxH=Math.max(78, Math.min(108, h/4));
+        int colH=Math.max(110, h - (top-y) - bottomBoxH - 26);
+        int actionW=Math.max(150, Math.min(210, w/4));
+        int invW=Math.max(180, (w - 52 - actionW - gap*2)/2);
+        int targetW=Math.max(180, w - 52 - actionW - gap*2 - invW);
+        int invX=x+24;
+        int targetX=invX+invW+gap;
+        LinkedHashMap<String,Integer> invStacks=displayedInventoryStacks();
+        LinkedHashMap<String,Integer> targetStacks=currentTargetInventoryStacks();
+        int hit = inventoryGridIndexAt(invStacks, invX+12, top+48, invW-24, colH-60, mx, my);
+        if (hit >= 0) {
+            selectedInventoryIndex = Math.max(0, Math.min(hit, Math.max(0, invStacks.size()-1)));
+            inventoryTargetColumnActive = false;
+            inventoryItemDescriptionScroll = 0;
+            logEvent("Inventory selection: highlighted carried stack " + selectedInventoryStackName() + ".");
+            repaint();
+            return true;
+        }
+        hit = inventoryGridIndexAt(targetStacks, targetX+12, top+48, targetW-24, colH-60, mx, my);
+        if (hit >= 0) {
+            selectedTargetInventoryIndex = Math.max(0, Math.min(hit, Math.max(0, targetStacks.size()-1)));
+            inventoryTargetColumnActive = true;
+            inventoryItemDescriptionScroll = 0;
+            logEvent("Inventory target: highlighted floor/container stack " + selectedTargetInventoryName() + ".");
+            repaint();
+            return true;
+        }
+        return false;
+    }
+
+    String[] equipmentSlotNames() { return new String[]{"Headgear", "Armor", "Clothing", "Left hand", "Right hand", "Backpack"}; }
+
+    String emptySlotLabel(String item) { return item == null || item.isBlank() ? "empty" : item; }
+
+    String equipmentContainerIdForSlot(int idx) {
+        return CONTAINER_PLAYER_EQUIPMENT_PREFIX + Math.max(0, Math.min(idx, equipmentSlotNames().length-1));
+    }
+
+// ... omitted 17 non-method/source lines between cataloged methods ...
+
+    String equippedItemForSlot(int idx) {
+        switch (Math.max(0, Math.min(idx, equipmentSlotNames().length-1))) {
+            case 0: return equippedHeadgearItem == null ? "" : equippedHeadgearItem;
+            case 1: return equippedArmorItem == null ? "" : equippedArmorItem;
+            case 2: return equippedClothing == null ? "" : equippedClothing.name;
+            case 3: return equippedLeftHandItem == null ? "" : equippedLeftHandItem;
+            case 4: return equippedRightHandItem == null ? "" : equippedRightHandItem;
+            default: return equippedBackpackItem == null ? "" : equippedBackpackItem;
+        }
+    }
+
+    void setEquippedItemForSlot(int idx, String item) {
+        String v = item == null ? "" : item;
+        switch (Math.max(0, Math.min(idx, equipmentSlotNames().length-1))) {
+            case 0: equippedHeadgearItem = v; break;
+            case 1: equippedArmorItem = v; break;
+            case 3: equippedLeftHandItem = v; break;
+            case 4: equippedRightHandItem = v; break;
+            case 5: equippedBackpackItem = v; break;
+            default: break; // clothing uses the Clothing object, not a raw string slot.
+        }
+    }
+
+// ... omitted 37 non-method/source lines between cataloged methods ...
+
+    int inferredEquipmentSlotForItem(String item) {
+        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        if (low.contains("helmet") || low.contains("hat") || low.contains("hood") || low.contains("cap") || low.contains("mask") || low.contains("helm")) return 0;
+        if (low.contains("backpack") || low.contains("pack") || low.contains("satchel") || low.contains("pouch")) return 5;
+        if (low.contains("armor") || low.contains("armour") || low.contains("flak") || low.contains("carapace") || low.contains("vest")) return 1;
+        if (looksWearable(item)) return 2;
+        if (ItemCatalog.isFirearmLike(item) || (ItemCatalog.get(item) != null && ItemCatalog.get(item).weapon)) return 4;
+        return -1;
+    }
+
+    boolean equipInventoryItemToPaperDoll(String item) {
+        if (item == null || item.isBlank()) return false;
+        int slot = inferredEquipmentSlotForItem(item);
+        if (slot < 0) return false;
+        if (slot == 2) { equipInventoryClothing(item); return true; }
+        int idx = inventory.indexOf(item);
+        if (idx < 0) return false;
+        String old = equippedItemForSlot(slot);
+        if (old != null && !old.isBlank()) {
+            ItemActionResult returned = transferFirstEquipmentItemBackToInventory(slot, old, "replaced equipped item from " + equipmentSlotNames()[slot]);
+            if (!returned.success) addInventoryItem(old, ItemProvenanceRecord.found(old, world, turn, "previously equipped paper-doll slot"));
+        }
+        ItemActionResult moved = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, equipmentContainerIdForSlot(slot), "Player equipment slot: " + equipmentSlotNames()[slot], null, "equipped by player into " + equipmentSlotNames()[slot]);
+        if (!moved.success) { logEvent("EQUIPMENT: could not equip " + item + ": " + moved.playerText); return false; }
+        setEquippedItemForSlot(slot, item);
+        selectedEquipmentSlotIndex = slot;
+        logEvent("EQUIPMENT: equipped " + item + " to " + equipmentSlotNames()[slot] + (old == null || old.isBlank() ? "." : "; previous item returned to inventory.") + " Defense bonus now +" + playerEquippedArmorBonus() + ".");
+        DebugLog.audit("EQUIPMENT_TRANSFER", moved.auditText + " old=" + old + " armorBonus=" + playerEquippedArmorBonus() + " state=" + stateSummary());
+        advanceTurn("equips " + item); repaint();
+        return true;
+    }
+
+    ItemActionResult transferFirstEquipmentItemBackToInventory(int slot, String expectedItem, String route) {
+        String cid = equipmentContainerIdForSlot(slot);
+        ContainerRecord c = itemContainers.get(cid);
+        if (c != null && !c.itemInstanceIds.isEmpty()) {
+            String chosen = null;
+            for (String id : new ArrayList<String>(c.itemInstanceIds)) {
+                ItemInstance inst = itemInstances.get(id);
+                if (inst != null && (expectedItem == null || expectedItem.isBlank() || ItemQuality.namesMatch(inst.displayName, expectedItem))) { chosen = id; break; }
+            }
+            if (chosen == null) chosen = c.itemInstanceIds.get(0);
+            return transferContainerItemResultByInstanceId(chosen, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, route);
+        }
+        return ItemActionResult.fail("No tracked item was present in equipment slot " + slot + ".", "equipment transfer back failed slot=" + slot + " item=" + expectedItem);
+    }

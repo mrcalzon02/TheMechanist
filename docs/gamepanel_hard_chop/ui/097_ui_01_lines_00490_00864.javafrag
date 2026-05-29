@@ -1,0 +1,201 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: ui_01_lines_00490_00864
+// Category: ui
+// Source lines: 490-864
+// Method count: 9
+//
+// Methods in this fragment:
+// - GamePanel :: lines 490-492 (3) :: GamePanel()
+// - GamePanel :: lines 494-496 (3) :: GamePanel(boolean startTimer)
+// - GamePanel :: lines 498-500 (3) :: GamePanel(RuntimeProfile runtimeProfile)
+// - GamePanel :: lines 502-568 (67) :: GamePanel(RuntimeProfile runtimeProfile, boolean startTimer)
+// - setScreen :: lines 765-786 (22) :: void setScreen(Screen next)
+// - clearExpiredPanelState :: lines 788-828 (41) :: void clearExpiredPanelState(PanelMode expired, String reason)
+// - clearExpiredOptionsState :: lines 830-835 (6) :: void clearExpiredOptionsState(String reason)
+// - openPanel :: lines 843-852 (10) :: void openPanel(PanelMode mode)
+// - closePanel :: lines 854-864 (11) :: void closePanel()
+
+    GamePanel() {
+        this(RuntimeProfile.defaultProfile(), true);
+    }
+
+    GamePanel(boolean startTimer) {
+        this(RuntimeProfile.defaultProfile(), startTimer);
+    }
+
+    GamePanel(RuntimeProfile runtimeProfile) {
+        this(runtimeProfile, true);
+    }
+
+    GamePanel(RuntimeProfile runtimeProfile, boolean startTimer) {
+        this.runtimeProfile = runtimeProfile == null ? RuntimeProfile.defaultProfile() : runtimeProfile;
+        this.userProfile = UserProfileAuthority.detect();
+        this.chatRuntime = new ChatRuntimeAuthority(this);
+        this.launcherRuntime = new LauncherClientServerRuntimeAuthority(this.runtimeProfile);
+        this.launcherShell = new LauncherShellStateAuthority(this.runtimeProfile);
+        this.performanceDiagnostics = new PerformanceDiagnosticsOverlayAuthority(options.diagnosticsOverlay);
+        this.launcherRuntime.startLocalAuthoritativeServer("desktop single-player default sector runtime");
+        this.singlePlayerSectorBridge.bindSession(this.userProfile);
+        this.cachedOperatorProfileName = resolveOperatorProfileName();
+        setFocusable(true);
+        AccessibilityCompatibilityAuthority.configurePanelAccessibleContext(this, lastAccessibleNarration);
+        addMouseListener(this);
+        addMouseMotionListener(this);
+        addMouseWheelListener(this);
+        addKeyListener(this);
+        initFactionState();
+        generateCandidates();
+        if (startTimer) timer.start();
+        if (startTimer) images.load(options);
+        if (startTimer) sounds.load();
+        applyOptions();
+        renderScaling.applyOptions(options);
+        DebugLog.settings("OPTIONS_SNAPSHOT", options.summary());
+        DebugLog.audit("MACHINE_OPERATION_QUEUE", machineOperationQueue.auditSummary());
+        DebugLog.audit("UNIVERSAL_WINDOW_AUTHORITY", universalWindowAuthority.auditSummary());
+        DebugLog.audit("CONSTRUCTION_GOVERNANCE", constructionGovernanceAuthority.auditSummary());
+            DebugLog.audit("CONSTRUCTION_VALIDATION_INSPECTION", ConstructionValidationInspectionAuthority.auditSummary());
+        DebugLog.audit("DEFENSE_SEMANTIC_INTEGRATION", DefenseSemanticIntegration.auditSummary());
+        DebugLog.audit("DEFENSE_BUILD_SELECTION", DefenseBuildSelectionAuthority.auditSummary());
+        DebugLog.audit("PASSIVE_DEFENSE_EFFECTS", PassiveDefenseEffectsAuthority.auditSummary());
+        DebugLog.audit("ECONOMIC_TOPOLOGY", EconomicTopologyFramework.auditSummary());
+        DebugLog.audit("ECONOMIC_GENERATION_BIAS", "authority=" + EconomicGenerationBiasAuthority.VERSION + " status=local-generation-consumer liveEconomy=false");
+        DebugLog.audit("LOCAL_TOPOLOGY_METADATA", "authority=" + EconomicLocalTopologyMetadataSurfaceAuthority.VERSION + " status=cached-local-surface liveEconomy=false");
+        DebugLog.audit("ECONOMIC_TOPOLOGY_PREVIEW_CONSUMERS", EconomicTopologyPreviewConsumerAuthority.auditSummary());
+        DebugLog.audit("ECONOMIC_TOPOLOGY_REPORTING_OVERLAY", EconomicTopologyReportingOverlayAuthority.auditSummary());
+        DebugLog.audit("ECONOMIC_TOPOLOGY_MAP_INTEL_BRIDGE", EconomicTopologyMapIntelBridgeAuthority.auditSummary());
+        DebugLog.audit("RETARGET_READINESS_AUDIT", RetargetReadinessAuditAuthority.auditSummary());
+        DebugLog.audit("AGE_WORLD_TIME", AgeAndWorldTimeAuthority.auditSummary());
+        DebugLog.audit("RUNTIME_SEPARATION", RuntimeSeparationAuthority.auditSummary(runtimeProfile));
+        DebugLog.audit("LAUNCHER_CLIENT_SERVER", launcherRuntime.statusLine());
+        DebugLog.audit("LAUNCHER_SHELL_STATE", LauncherShellStateAuthority.auditSummary());
+        DebugLog.audit("SINGLE_PLAYER_SECTOR_BRIDGE", SinglePlayerSectorRuntimeBridge.auditSummary());
+        DebugLog.audit("PLAYER_LIFECYCLE", PlayerLifecycleService.auditSummary());
+        DebugLog.audit("SAVE_EFFICIENCY", SaveEfficiencyAuthority.auditSummary());
+        DebugLog.audit("SECTOR_MANAGER", sectorManager.statusLine());
+        DebugLog.audit("USER_PROFILE", UserProfileAuthority.auditSummary(userProfile));
+        DebugLog.audit("RENDER_SCALING_CRT", renderScaling.auditSummary());
+        DebugLog.audit("JVM_RUNTIME_PROFILE", JvmRuntimeProfileAuthority.auditSummary(jvmRuntimeProfile));
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(userProfile));
+        DebugLog.audit("CHAT_RUNTIME", ChatRuntimeAuthority.auditSummary());
+        DebugLog.audit("MULTIPLAYER_MENU", MultiplayerMenuController.auditSummary());
+        DebugLog.audit("MULTIPLAYER_BINDING", MultiplayerHostBindingService.auditSummary());
+        DebugLog.audit("SIMULATION_EDITOR_SUITE", SimulationEditorSuite.auditSummary());
+        DebugLog.audit("EULA_CONSENT", EulaConsentAuthority.auditSummary());
+        DebugLog.audit("GAMEPLAY_CONSOLE_COMMANDS", GameplayConsoleCommandAuthority.auditSummary());
+        DebugLog.audit("NAME_LOCKED_PROFILE_PORTRAIT", NameLockedProfilePortraitAuthority.auditSummary() + " operatorProfile=" + cachedOperatorProfileName);
+        DebugLog.audit("PERFORMANCE_DIAGNOSTICS", performanceDiagnostics.auditSummary());
+        DebugLog.audit("MAP_VIEWPORT_TRANSFORM", MapViewportTransformAuthority.auditSummary());
+        DebugLog.audit("INPUT_REGISTRY", InputRegistry.auditSummary());
+        DebugLog.audit("KEYBOARD_INPUT_BRIDGE", KeyboardInputBridge.auditSummary());
+        DebugLog.audit("GENERIC_CONTROLLER_SCHEMA", GenericControllerSchema.auditSummary());
+        DebugLog.audit("GAMEPAD_INPUT_ENGINE", GamepadInputEngine.auditSummary());
+        DebugLog.audit("CONSTRUCTION_VALIDATION_INSPECTION", ConstructionValidationInspectionAuthority.auditSummary());
+        startGamepadInputEngine(startTimer);
+    }
+
+// ... omitted 196 non-method/source lines between cataloged methods ...
+
+    void setScreen(Screen next) {
+        Screen oldScreen = screen;
+        PanelMode oldPanel = panelMode;
+        if (screen != next) previousScreen = screen;
+        if (next == Screen.PANEL || next == Screen.OPTIONS || next == Screen.PAUSE) sounds.play("panelOpen", options);
+        if (oldScreen == Screen.PANEL && next != Screen.PANEL) clearExpiredPanelState(oldPanel, "screen change to " + next);
+        if (oldScreen == Screen.OPTIONS && next != Screen.OPTIONS) clearExpiredOptionsState("screen change to " + next);
+        if (oldScreen == Screen.PAUSE && next != Screen.PAUSE) clearExpiredPauseState("screen change to " + next);
+        if (oldScreen == Screen.INTRO_CRAWL && next != Screen.INTRO_CRAWL) sounds.stopIntroCrawlNarration("screen change to " + next);
+        if (next == Screen.INTRO_CRAWL) {
+            introCrawlStartMillis = System.currentTimeMillis();
+            if (introCrawlLines.isEmpty()) introCrawlLines = images.loadIntroCrawlLines();
+            sounds.playIntroCrawlNarration(options);
+            DebugLog.audit("INTRO_CRAWL_BEGIN", "lines=" + introCrawlLines.size() + " queuedZoneSplash=" + introCrawlQueuedZoneSplash + " textTargetMs=" + INTRO_CRAWL_TEXT_TARGET_MS + " audioExpectedMs=" + INTRO_CRAWL_AUDIO_EXPECTED_MS + " audioTailSafetyMs=" + INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS);
+        }
+        screen = next;
+        selectedButton = 0;
+        activeScrollTag = "";
+        requestFocusInWindow();
+        updateDynamicMusic("screen change to " + next);
+        repaint();
+    }
+
+    void clearExpiredPanelState(PanelMode expired, String reason) {
+        if (expired == PanelMode.NONE) return;
+        DebugLog.audit("UI_CLOSE", "Clearing expired panel " + expired + " due to " + reason + " | " + stateSummary());
+        activeScrollTag = "";
+        scrollbarDragActive = false;
+        if (expired == PanelMode.LOOK) {
+            lookCursorActive = false;
+            lookStackIndex = 0;
+            lookX = playerX;
+            lookY = playerY;
+        }
+        if (expired == PanelMode.COMBAT) {
+            combatCursorActive = false;
+            combatX = combatY = -1;
+            lastTargetingReport = "No target selected.";
+        }
+        if (expired == PanelMode.INTERACT) {
+            interactCursorActive = false;
+            pendingInteractionSummary = "No interaction selected.";
+        }
+        if (expired == PanelMode.BUILD || expired == PanelMode.WORKBENCH) {
+            buildPlacementActive = false;
+            pendingBuildRecipe = null;
+            pendingBuildSummary = "No build selected.";
+            buildX = -1;
+            buildY = -1;
+        }
+        if (expired == PanelMode.TRADE) {
+            activeTrader = null;
+            selectedTradeOffer = 0;
+            conversationBranch = "No active conversation.";
+        }
+        if (expired == PanelMode.INTERACT || expired == PanelMode.TRADE) {
+            activeConversationNpc = null;
+        }
+        if (expired == PanelMode.INFOPEDIA) {
+            infopediaScroll = 0;
+            infopediaDetailScroll = 0;
+        }
+        if (panelMode == expired) panelMode = PanelMode.NONE;
+    }
+
+    void clearExpiredOptionsState(String reason) {
+        if (graphicsDropdown != -1 || scrollbarDragActive) DebugLog.audit("UI_CLOSE", "Clearing expired options controls due to " + reason + " | dropdown=" + graphicsDropdown + " | " + stateSummary());
+        graphicsDropdown = -1;
+        scrollbarDragActive = false;
+        activeScrollTag = "";
+    }
+
+    void clearExpiredPauseState(String reason) {
+        if (scrollbarDragActive) DebugLog.audit("UI_CLOSE", "Clearing expired pause state due to " + reason + " | " + stateSummary());
+        scrollbarDragActive = false;
+        activeScrollTag = "";
+    }
+
+    void openPanel(PanelMode mode) {
+        panelMode = mode;
+        setScreen(Screen.PANEL);
+        if (mode == PanelMode.WORKBENCH && universalWindowAuthority != null) {
+            universalWindowAuthority.open("machine_operations", turn, "workbench machine-operation status bridge");
+            DebugLog.audit("MACHINE_OPERATION_STATUS_BRIDGE", MachineOperationStatusBridge.compactSummary(this));
+            DebugLog.audit("STAFFING_LABOR_BRIDGE", StaffingLaborBridgeAuthority.compactSummary(this));
+            }
+        logEvent("Opened panel: " + mode);
+    }
+
+    void closePanel() {
+        sounds.play("panelClose", options);
+        PanelMode closing = panelMode;
+        clearExpiredPanelState(panelMode, "explicit close");
+        if (!lookCursorActive) { lookX = playerX; lookY = playerY; }
+        if (previousScreen == Screen.LOST) setScreen(Screen.LOST);
+        else if (previousScreen == Screen.MENU || previousScreen == Screen.PAUSE || previousScreen == Screen.OPTIONS || previousScreen == Screen.WORLD_SELECT || previousScreen == Screen.WORLD_SETUP || previousScreen == Screen.CHARACTER) setScreen(previousScreen);
+        else if (previousScreen == Screen.MODS || previousScreen == Screen.SECTOR_AUDIT) setScreen(previousScreen);
+        else if (world == null && closing == PanelMode.SAVELOAD) setScreen(Screen.MENU);
+        else setScreen(Screen.GAME);
+    }

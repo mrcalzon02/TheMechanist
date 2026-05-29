@@ -1,0 +1,196 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: inventory_trade_items_04_lines_06133_06781
+// Category: inventory_trade_items
+// Source lines: 6133-6781
+// Method count: 16
+//
+// Methods in this fragment:
+// - arbitesEvidenceItemLoss :: lines 6133-6145 (13) :: int arbitesEvidenceItemLoss(int severity)
+// - roomCacheContainerId :: lines 6226-6228 (3) :: String roomCacheContainerId(int roomId)
+// - tradeBuySupply :: lines 6359-6365 (7) :: void tradeBuySupply()
+// - tradeSellScrap :: lines 6367-6375 (9) :: void tradeSellScrap()
+// - tradeAskRumors :: lines 6377-6381 (5) :: void tradeAskRumors()
+// - selectedTradeOffer :: lines 6632-6636 (5) :: TradeOffer selectedTradeOffer()
+// - tradeOfferMove :: lines 6638-6645 (8) :: void tradeOfferMove(int delta)
+// - tradeOfferDetailLines :: lines 6661-6676 (16) :: ArrayList<String> tradeOfferDetailLines(TradeOffer offer)
+// - tradeSellPreviewLines :: lines 6678-6698 (21) :: ArrayList<String> tradeSellPreviewLines(String item)
+// - tradeBuyTransferPreviewLine :: lines 6700-6708 (9) :: String tradeBuyTransferPreviewLine(TradeOffer offer, int price)
+// - tradeSellTransferPreviewLine :: lines 6710-6717 (8) :: String tradeSellTransferPreviewLine(String item, int price)
+// - inventoryTransferWorkflowPreviewLine :: lines 6719-6728 (10) :: String inventoryTransferWorkflowPreviewLine(String item)
+// - transferWorkflowPreviewLine :: lines 6748-6752 (5) :: String transferWorkflowPreviewLine(String action, String source, String target, String item, int quantity, String capacity, String permission, String quest, String risk, String reversal)
+// - tradeMarketStatusLine :: lines 6754-6765 (12) :: String tradeMarketStatusLine(String item, ItemDef def, boolean buying)
+// - tradePricePressureLine :: lines 6767-6774 (8) :: String tradePricePressureLine(int actual, int catalogValue)
+// - tradeStockContextLine :: lines 6776-6781 (6) :: String tradeStockContextLine(TradeOffer offer)
+
+    int arbitesEvidenceItemLoss(int severity) {
+        if (inventory.isEmpty()) return 0;
+        int target = Math.min(inventory.size(), Math.max(1, severity / 2));
+        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC_WARDENS.name();
+        ensureContainer(evidence, "Civic Wardens evidence lockup");
+        int moved = 0;
+        for (int i=0; i<target && !inventory.isEmpty(); i++) {
+            int idx = rng.nextInt(inventory.size());
+            ItemActionResult r = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, evidence, "Civic Wardens evidence lockup", null, "confiscated during Civic Wardens capture");
+            if (r.success) moved++;
+        }
+        return moved;
+    }
+
+// ... omitted 80 non-method/source lines between cataloged methods ...
+
+    String roomCacheContainerId(int roomId) {
+        return RoomContainerApi.containerId(world == null ? 0 : world.locationKey(), roomId);
+    }
+
+// ... omitted 130 non-method/source lines between cataloged methods ...
+
+    void tradeBuySupply() {
+        int idx = inventory.indexOf("Trade chit");
+        if (idx < 0) { lastTradeReport = "Depot clerk refuses credit. You need a Trade chit."; logEvent(lastTradeReport); return; }
+        removeInventoryItem("Trade chit"); supplies += 2;
+        lastTradeReport = "Bought two supplies for one Trade chit. The depot clerk stamps nothing and remembers everything.";
+        logEvent(lastTradeReport); advanceTurn("trades at the depot.");
+    }
+
+    void tradeSellScrap() {
+        int idx = -1;
+        for (int i=0;i<inventory.size();i++) if (inventory.get(i).toLowerCase(Locale.ROOT).contains("scrap") || inventory.get(i).toLowerCase(Locale.ROOT).contains("machine")) { idx=i; break; }
+        if (idx < 0 && machineParts <= 0) { lastTradeReport = "Nothing saleable: bring scrap, parts, or something with fewer teeth marks."; logEvent(lastTradeReport); return; }
+        if (idx >= 0) removeInventoryAtWithTrace(idx); else machineParts--;
+        addInventoryItem("Trade chit", ItemProvenanceRecord.trade("Trade chit", Faction.HIVER, "depot scrap buyer", world, turn, "sold scrap or machine part"));
+        lastTradeReport = "Sold scrap for one Trade chit.";
+        logEvent(lastTradeReport); advanceTurn("sells scrap at the depot.");
+    }
+
+    void tradeAskRumors() {
+        if (world == null) return;
+        lastTradeReport = "Rumor: this zone is " + world.zoneType.label + ". Room tables favor " + world.zoneType.descriptor + ". Sector map remains fogged until visited.";
+        logEvent(lastTradeReport); advanceTurn("asks depot rumors.");
+    }
+
+// ... omitted 250 non-method/source lines between cataloged methods ...
+
+    TradeOffer selectedTradeOffer() {
+        if (activeTrader == null || activeTrader.offers.isEmpty()) return null;
+        selectedTradeOffer = Math.max(0, Math.min(selectedTradeOffer, activeTrader.offers.size()-1));
+        return activeTrader.offers.get(selectedTradeOffer);
+    }
+
+    void tradeOfferMove(int delta) {
+        if (activeTrader == null || activeTrader.offers.isEmpty()) return;
+        selectedTradeOffer = Math.floorMod(selectedTradeOffer + delta, activeTrader.offers.size());
+        TradeOffer offer = selectedTradeOffer();
+        lastTradeReport = "Selected offer: " + offer.name + " for " + activeTrader.buyPrice(offer) + " concord script.";
+        DebugLog.audit("TRADE_SELECT", lastTradeReport + " state=" + stateSummary());
+        repaint();
+    }
+
+// ... omitted 15 non-method/source lines between cataloged methods ...
+
+    ArrayList<String> tradeOfferDetailLines(TradeOffer offer) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (offer == null || activeTrader == null) return lines;
+        ItemDef def = offer.catalogDef();
+        int buyPrice = activeTrader.buyPrice(offer);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(offer.name));
+        lines.add("Selected offer: " + offer.name + " for " + buyPrice + " script.");
+        lines.add("Price read: catalog value about " + catalogValue + "; " + tradePricePressureLine(buyPrice, catalogValue) + ".");
+        lines.add("Stock context: " + tradeStockContextLine(offer));
+        lines.add("Market status: " + tradeMarketStatusLine(offer.name, def, true));
+        lines.add("Transfer preview: " + tradeBuyTransferPreviewLine(offer, buyPrice));
+        lines.add("Likely use: " + itemLikelyActionLine(offer.name, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(offer.name, def));
+        lines.add("Origin: " + tradeOfferOriginLine(offer));
+        return lines;
+    }
+
+    ArrayList<String> tradeSellPreviewLines(String item) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) return lines;
+        if (item == null || item.equals("Concord Script")) {
+            lines.add("Sale preview: select a carried item in INVENTORY before selling.");
+            return lines;
+        }
+        int carried = countInventory(item);
+        if (carried <= 0) {
+            lines.add("Sale preview: " + item + " is a counter or resource stack, not a sellable carried copy yet.");
+            return lines;
+        }
+        int sellPrice = activeTrader.sellPrice(item);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(item));
+        lines.add("Sale preview: " + item + " x" + carried + " would sell for " + sellPrice + " script each.");
+        lines.add("Seller read: catalog value about " + catalogValue + "; " + tradePricePressureLine(sellPrice, catalogValue) + ".");
+        lines.add("Market status: " + tradeMarketStatusLine(item, ItemCatalog.get(item), false));
+        lines.add("Transfer preview: " + tradeSellTransferPreviewLine(item, sellPrice));
+        lines.add("Sale caution: " + itemLegalRiskLine(item, ItemCatalog.get(item)));
+        return lines;
+    }
+
+    String tradeBuyTransferPreviewLine(TradeOffer offer, int price) {
+        if (offer == null) return transferWorkflowPreviewLine("buy", "trader shelf", "carried inventory", "selected stock", 1, "blocked: no selected stock", "blocked: no offer", "not quest evidence", "unknown risk", "funds are unchanged if the item transfer fails");
+        boolean funds = countMoney() >= price;
+        boolean capacity = inventoryWeight() + 1 <= carryCapacity();
+        String capacityLine = capacity ? "capacity ok" : "blocked: carried load would exceed capacity";
+        String permission = funds ? "payment ready" : "blocked: need " + price + " script";
+        String risk = tradeMarketStatusLine(offer.name, offer.catalogDef(), true);
+        return transferWorkflowPreviewLine("buy", activeTrader == null ? "trader shelf" : activeTrader.name + " shelf", "carried inventory", offer.name, 1, capacityLine, permission, "not quest evidence", risk, "reversible only by selling later, usually at a different price");
+    }
+
+    String tradeSellTransferPreviewLine(String item, int price) {
+        boolean present = item != null && countInventory(item) > 0;
+        String capacity = present ? "source has a carried copy" : "blocked: no carried copy";
+        String permission = activeTrader == null ? "blocked: no active trader" : "counter can buy one carried copy for " + price + " script";
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: check turn-ins before selling" : "not marked as quest evidence";
+        String risk = itemLegalRiskLine(item, ItemCatalog.get(item));
+        return transferWorkflowPreviewLine("sell", "carried inventory", activeTrader == null ? "trader shelf" : activeTrader.name + " shelf", item == null ? "selected item" : item, 1, capacity, permission, quest, risk, "not guaranteed reversible after sale");
+    }
+
+    String inventoryTransferWorkflowPreviewLine(String item) {
+        if (item == null || item.isBlank()) return "select a carried item to see drop, equip, sell, stash, or use transfer rules.";
+        String source = "carried inventory";
+        String target = isInClaimedRoom(playerX, playerY) ? "base storage, equipment, trader, or discard target depending on action" : "equipment, trader, or discard target depending on action";
+        String capacity = "carry load " + inventoryWeight() + "/" + carryCapacity();
+        String permission = "actions still check access, ownership, target range, and container authority at confirmation";
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: protect until the right turn-in" : "not marked as quest evidence";
+        String risk = baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("selected item", source, target, item, countInventory(item), capacity, permission, quest, risk, "drop/sell/consume may not be reversible; stash/take and equip/unequip usually are");
+    }
+
+// ... omitted 19 non-method/source lines between cataloged methods ...
+
+    String transferWorkflowPreviewLine(String action, String source, String target, String item, int quantity, String capacity, String permission, String quest, String risk, String reversal) {
+        String safeItem = item == null || item.isBlank() ? "selected item" : item;
+        int qty = Math.max(1, quantity);
+        return action + " " + safeItem + " x" + qty + " from " + source + " to " + target + "; " + capacity + "; " + permission + "; " + quest + "; risk: " + risk + "; " + reversal + ".";
+    }
+
+    String tradeMarketStatusLine(String item, ItemDef def, boolean buying) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use) + " " + (activeTrader == null ? "" : activeTrader.archetype + " " + activeTrader.zoneLabel)).toLowerCase(Locale.ROOT);
+        if (text.contains("noble") || text.contains("permit") || text.contains("stock certificate") || text.contains("gold")) return "status-sensitive noble or paper asset; licenses, reputation, and witnesses may matter.";
+        if (text.contains("civic Wardens") || text.contains("guard") || text.contains("military") || text.contains("munitorum") || text.contains("mass-Reactive Carbine") || text.contains("carapace")) return "controlled faction or military good; carrying or reselling it can draw authority attention.";
+        if (text.contains("cult") || text.contains("heretic") || text.contains("profane") || text.contains("narcotic") || text.contains("black-market") || text.contains("black market")) return "illicit or black-market good; useful, valuable, and dangerous if searched.";
+        if (ItemCatalog.isFirearmLike(item) || ItemCatalog.isExplosiveLike(item)) return "weapon market good; legality depends on faction space, permits, and who sees the transfer.";
+        if (text.contains("data spike") || text.contains("lockpick") || text.contains("keycard") || text.contains("hacking")) return "access tool; ordinary traders may sell it, but secure areas treat it as suspicious.";
+        if (text.contains("medical") || text.contains("medicae") || text.contains("injector") || text.contains("stim")) return "medical or drug good; clinics value it, law may care if it looks counterfeit or combat-ready.";
+        if (activeTrader != null && activeTrader.supplyChainSummary != null && !activeTrader.supplyChainSummary.isBlank()) return "supply-chain stock; availability depends on this trader's current route and local pressure.";
+        if (buying) return "ordinary local stock while this trader has it.";
+        return "ordinary resale good unless local ownership or faction pressure says otherwise.";
+    }
+
+    String tradePricePressureLine(int actual, int catalogValue) {
+        int base = Math.max(1, catalogValue);
+        if (actual >= Math.ceil(base * 1.35)) return "the counter is charging a heavy premium";
+        if (actual > base) return "the counter is above ordinary catalog value";
+        if (actual == base) return "the counter matches ordinary catalog value";
+        if (actual <= Math.floor(base * 0.55)) return "the counter is paying hard-bargain resale rates";
+        return "the counter is below ordinary catalog value";
+    }
+
+    String tradeStockContextLine(TradeOffer offer) {
+        if (offer == null) return "no selected stock.";
+        String source = offer.catalogDef() == null ? "local trader stock" : offer.catalogDef().source;
+        String category = offer.catalogDef() == null ? offer.category : offer.catalogDef().category;
+        return category + " from " + source + "; trader markup " + activeTrader.markupPct + "% and haggle discount " + activeTrader.discountPct + "% are already included.";
+    }

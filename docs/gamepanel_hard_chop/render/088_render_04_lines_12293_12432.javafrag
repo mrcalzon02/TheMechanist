@@ -1,0 +1,158 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_04_lines_12293_12432
+// Category: render
+// Source lines: 12293-12432
+// Method count: 8
+//
+// Methods in this fragment:
+// - drawKnowledgeScreen :: lines 12293-12304 (12) :: void drawKnowledgeScreen(Graphics2D g)
+// - drawKnowledgeBranchTabs :: lines 12306-12324 (19) :: void drawKnowledgeBranchTabs(Graphics2D g)
+// - drawKnowledgeLeftPane :: lines 12326-12341 (16) :: void drawKnowledgeLeftPane(Graphics2D g)
+// - drawKnowledgeRightPane :: lines 12343-12364 (22) :: void drawKnowledgeRightPane(Graphics2D g)
+// - drawKnowledgeCanvas :: lines 12366-12388 (23) :: void drawKnowledgeCanvas(Graphics2D g)
+// - drawKnowledgeTreeGrid :: lines 12390-12395 (6) :: void drawKnowledgeTreeGrid(Graphics2D g, Rectangle canvas)
+// - drawKnowledgeTreeGraph :: lines 12397-12410 (14) :: void drawKnowledgeTreeGraph(Graphics2D g, KnowledgeTree tree)
+// - drawKnowledgeTreeNode :: lines 12412-12432 (21) :: void drawKnowledgeTreeNode(Graphics2D g, KnowledgeTree tree, KnowledgeNode node)
+
+    void drawKnowledgeScreen(Graphics2D g) {
+        drawBackground(g);
+        Rectangle modal = knowledgeModalRect();
+        drawPanelBox(g, modal.x, modal.y, modal.width, modal.height, "F9187 KNOWLEDGE TREE");
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        center(g, "CHARACTER KNOWLEDGE / PROGRESSION", modal.x + modal.width / 2, modal.y + 36);
+        drawKnowledgeBranchTabs(g);
+        drawKnowledgeLeftPane(g);
+        drawKnowledgeCanvas(g);
+        drawKnowledgeRightPane(g);
+    }
+
+    void drawKnowledgeBranchTabs(Graphics2D g) {
+        Rectangle bar = knowledgeBranchBarRect();
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        int count = Math.max(1, branches.size());
+        int gap = Math.max(6, Math.min(10, bar.width / 80));
+        int tabW = Math.max(82, (bar.width - gap * Math.max(0, count - 1)) / count);
+        int i = 0;
+        for (KnowledgeTree tree : branches.values()) {
+            int x = bar.x + i * (tabW + gap);
+            boolean active = tree.id().equals(activeKnowledgeBranchId);
+            g.setColor(active ? new Color(34, 46, 32, 232) : new Color(10, 13, 12, 220));
+            g.fillRoundRect(x, bar.y, tabW, bar.height, 10, 10);
+            g.setColor(active ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+            g.drawRoundRect(x, bar.y, tabW, bar.height, 10, 10);
+            g.setFont(smallFont);
+            center(g, GuiLayoutApi.fitLabel(tree.displayName(), g.getFontMetrics(), tabW - 8), x + tabW / 2, bar.y + 22);
+            i++;
+        }
+    }
+
+    void drawKnowledgeLeftPane(Graphics2D g) {
+        Rectangle r = knowledgeLeftPaneRect();
+        drawPanelBox(g, r.x, r.y, r.width, r.height, "F9188 POINTS");
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Credits: " + knowledgeCredits, r.x + 18, r.y + 58);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Active branch: " + (tree == null ? "None" : tree.displayName()) + ".");
+        lines.add(tree == null ? "No nodes loaded." : tree.unlockedCount() + " / " + tree.nodes().size() + " known. " + tree.availableCount() + " currently affordable and prerequisite-ready.");
+        lines.add("");
+        lines.add("How to earn more points: survive, work, fight, research, operate labs, complete contracts, study slates, and pass XP thresholds. This is character-owned progression inside the game, not an Infopedia purchase screen and not a separate external utility window.");
+        drawWrappedPanelLines(g, lines, r.x + 18, r.y + 86, r.width - 36, r.height - 145);
+    }
+
+    void drawKnowledgeRightPane(Graphics2D g) {
+        Rectangle r = knowledgeRightPaneRect();
+        drawPanelBox(g, r.x, r.y, r.width, r.height, "F9189 INSPECTOR");
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        KnowledgeNode node = selectedKnowledgeNode(tree);
+        ArrayList<String> lines = new ArrayList<>();
+        if (node == null) {
+            lines.add("Select a node in the center tree.");
+            lines.add("Green is known. Yellow is unlockable. Gray is still locked by prerequisites or credits.");
+        } else {
+            KnowledgeTree.NodeState state = tree.stateOf(node);
+            lines.add(node.name());
+            lines.add("Cost: " + node.costLabel());
+            lines.add("State: " + switch (state) { case UNLOCKED -> "Known / unlocked"; case AVAILABLE -> "Available to unlock"; case LOCKED -> "Locked"; });
+            lines.add("");
+            String detail = node.longDescription() == null || node.longDescription().isBlank() ? node.shortDescription() : node.longDescription();
+            for (String raw : detail.split("\\n")) lines.add(raw);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawWrappedPanelLines(g, lines, r.x + 18, r.y + 58, r.width - 36, r.height - 130);
+    }
+
+    void drawKnowledgeCanvas(Graphics2D g) {
+        Rectangle canvas = knowledgeCanvasRect();
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        g.setColor(new Color(4, 7, 6, 240));
+        g.fillRect(canvas.x, canvas.y, canvas.width, canvas.height);
+        drawSlicedFrame(g, canvas.x, canvas.y, canvas.width, canvas.height, "inner");
+        stampUiFrameId(g, "F", "knowledge-canvas", canvas.x, canvas.y, canvas.width, canvas.height);
+        Shape oldClip = g.getClip();
+        Graphics2D gg = (Graphics2D) g.create();
+        try {
+            gg.setClip(canvas.x + 8, canvas.y + 8, canvas.width - 16, canvas.height - 16);
+            gg.translate(canvas.x + knowledgeTreePanX, canvas.y + knowledgeTreePanY);
+            gg.scale(knowledgeTreeScale, knowledgeTreeScale);
+            drawKnowledgeTreeGrid(gg, canvas);
+            if (tree != null) drawKnowledgeTreeGraph(gg, tree);
+        } finally {
+            gg.dispose();
+            g.setClip(oldClip);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        g.drawString("Mouse wheel zooms. Drag pans. Click a node to inspect. Enter/Space unlocks selected.", canvas.x + 18, canvas.y + canvas.height - 18);
+    }
+
+    void drawKnowledgeTreeGrid(Graphics2D g, Rectangle canvas) {
+        g.setColor(new Color(18, 20, 18));
+        int step = 48;
+        for (int x = -500; x < 1800; x += step) g.drawLine(x, -500, x, 1600);
+        for (int y = -500; y < 1600; y += step) g.drawLine(-500, y, 1800, y);
+    }
+
+    void drawKnowledgeTreeGraph(Graphics2D g, KnowledgeTree tree) {
+        Map<String, KnowledgeNode> byId = tree.nodeMap();
+        g.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        for (KnowledgeNode node : tree.nodes()) {
+            for (String preId : node.prerequisiteNodeIds()) {
+                KnowledgeNode pre = byId.get(preId);
+                if (pre == null) continue;
+                KnowledgeTree.NodeState state = tree.stateOf(node);
+                g.setColor(pre.unlocked() && node.unlocked() ? new Color(40, 150, 70) : (state == KnowledgeTree.NodeState.AVAILABLE ? new Color(194, 166, 55) : new Color(83, 83, 78)));
+                g.drawLine((int)pre.x(), (int)pre.y(), (int)node.x(), (int)node.y());
+            }
+        }
+        for (KnowledgeNode node : tree.nodes()) drawKnowledgeTreeNode(g, tree, node);
+    }
+
+    void drawKnowledgeTreeNode(Graphics2D g, KnowledgeTree tree, KnowledgeNode node) {
+        KnowledgeTree.NodeState state = tree.stateOf(node);
+        boolean selected = node.id().equals(selectedKnowledgeNodeId);
+        int x = (int)Math.round(node.x() - 78.0);
+        int y = (int)Math.round(node.y() - 29.0);
+        Color fill = switch (state) { case UNLOCKED -> new Color(30, 112, 55); case AVAILABLE -> new Color(156, 130, 34); case LOCKED -> new Color(55, 56, 54); };
+        Color border = selected ? new Color(230, 220, 150) : switch (state) { case UNLOCKED -> new Color(88, 218, 105); case AVAILABLE -> new Color(245, 215, 78); case LOCKED -> new Color(116, 116, 110); };
+        g.setColor(fill);
+        g.fillRoundRect(x, y, 156, 58, 18, 18);
+        g.setStroke(new BasicStroke(selected ? 4.0f : 2.4f));
+        g.setColor(border);
+        g.drawRoundRect(x, y, 156, 58, 18, 18);
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        String title = fitText(node.name(), fm, 138);
+        String cost = state == KnowledgeTree.NodeState.UNLOCKED ? "KNOWN" : "Cost " + node.pointCost();
+        g.setColor(new Color(245, 242, 205));
+        g.drawString(title, x + 10, y + 25);
+        g.setColor(state == KnowledgeTree.NodeState.LOCKED ? new Color(190, 188, 170) : new Color(255, 242, 156));
+        g.drawString(cost, x + 10, y + 45);
+    }

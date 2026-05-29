@@ -1,0 +1,188 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_11_lines_10568_10831
+// Category: world_zone_sector
+// Source lines: 10568-10831
+// Method count: 13
+//
+// Methods in this fragment:
+// - auditSettings :: lines 10568-10578 (11) :: WorldSetupSettings auditSettings()
+// - regenerateSectorAuditWorld :: lines 10580-10612 (33) :: void regenerateSectorAuditWorld(String reason)
+// - refreshSectorAuditSnapshot :: lines 10614-10626 (13) :: void refreshSectorAuditSnapshot(WorldSetupSettings auditSettings, long previousSeed, String reason)
+// - currentAuditTraceStep :: lines 10628-10632 (5) :: SectorGenerationTraceAuthority.Step currentAuditTraceStep()
+// - cycleAuditZoneType :: lines 10671-10671 (1) :: void cycleAuditZoneType(int delta)
+// - cycleAuditZoneSize :: lines 10672-10672 (1) :: void cycleAuditZoneSize()
+// - cycleAuditZoneDensity :: lines 10673-10673 (1) :: void cycleAuditZoneDensity()
+// - rerollSectorAudit :: lines 10675-10675 (1) :: void rerollSectorAudit()
+// - multiplayerHostCurrentWorld :: lines 10731-10739 (9) :: void multiplayerHostCurrentWorld()
+// - openWorldSelection :: lines 10755-10768 (14) :: void openWorldSelection()
+// - useSelectedWorldForCharacterCreation :: lines 10770-10784 (15) :: void useSelectedWorldForCharacterCreation()
+// - deleteSelectedWorldDefinition :: lines 10786-10816 (31) :: void deleteSelectedWorldDefinition()
+// - generateConfiguredWorldForCharacterCreation :: lines 10818-10831 (14) :: void generateConfiguredWorldForCharacterCreation()
+
+    WorldSetupSettings auditSettings() {
+        WorldSetupSettings s = WorldSetupSettings.standard();
+        s.zoneSize = Math.max(0, Math.min(3, auditZoneSizeIndex));
+        s.zoneDensity = Math.max(0, Math.min(3, auditZoneDensityIndex));
+        // Zone Audit is a placement-density inspection surface; use a crowded
+        // civilian baseline instead of the former sparse testing override so NPC
+        // fields, bottlenecks, and doorway blocking are visible during audit.
+        s.npcDensity = 3;
+        s.simulationAge = 0;
+        return s;
+    }
+
+    void regenerateSectorAuditWorld(String reason) {
+        long previousSeed = auditSeed;
+        if (reason != null && reason.toLowerCase(Locale.ROOT).contains("reroll")) auditSeed = System.currentTimeMillis() ^ (auditSeed * 31L);
+        WorldSetupSettings previousSettings = WorldGenerationApi.settings().copy();
+        try {
+            WorldSetupSettings auditSettings = auditSettings();
+            WorldGenerationApi.setActiveSettings(auditSettings);
+            Dimension d = WorldGenerationApi.zoneSliceSize(auditSeed);
+            World w = new World(auditSeed, d.width, d.height);
+            w.zoneType = auditZoneType();
+            w.sewerLayer = auditSewerLayer;
+            w.hiveName = "Audit Arcology";
+            w.sectorName = "Zone Audit";
+            w.zoneName = "Zone Audit " + w.zoneType.label + (w.sewerLayer ? " Sewer" : " Floor");
+            w.zoneHistory = "Full-bright Zone Audit slice generated outside character play for placement and obstruction inspection.";
+            SectorGenerationTraceAuthority.begin();
+            try { w.generate(); }
+            finally { auditTraceSteps = SectorGenerationTraceAuthority.end(); }
+            if (auditTraceSteps == null) auditTraceSteps = new ArrayList<>();
+            if (auditTraceSteps.isEmpty()) auditTraceSteps.add(new SectorGenerationTraceAuthority.Step(0, "FINAL", "Final generated world captured without intermediate trace records.", Math.max(0, w.w/2), Math.max(0, w.h/2), false, SectorGenerationTraceAuthority.snapshot(w)));
+            auditTracePlaying = true;
+            auditTraceIndex = 0;
+            auditTraceLastAdvance = System.currentTimeMillis();
+            auditWorld = auditTraceSteps.get(0).world;
+            auditFindingIndex = 0;
+            refreshSectorAuditSnapshot(auditSettings, previousSeed, "trace start: " + reason);
+            DebugLog.audit("ZONE_AUDIT", auditReport);
+            logEvent("Zone audit trace generated: " + w.zoneType.label + " steps=" + auditTraceSteps.size() + " finalRooms=" + w.rooms.size() + ".");
+        } finally {
+            WorldGenerationApi.setActiveSettings(previousSettings);
+        }
+        repaint();
+    }
+
+    void refreshSectorAuditSnapshot(WorldSetupSettings auditSettings, long previousSeed, String reason) {
+        if (auditWorld == null) return;
+        auditSnapshot = SectorAuditRuntimeAuthority.analyze(auditWorld, auditSettings, previousSeed, auditSeed);
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        String traceLine = step == null ? "trace=none" : step.line(auditTraceSteps == null ? 0 : auditTraceSteps.size());
+        auditReport = traceLine + " | " + auditSnapshot.summary + " reason=" + reason;
+        if (step != null) { auditCursorX = step.x; auditCursorY = step.y; }
+        else {
+            SectorAuditRuntimeAuthority.AuditFinding firstFinding = auditSnapshot.selected(0);
+            if (firstFinding != null) { auditCursorX = firstFinding.x; auditCursorY = firstFinding.y; }
+            else { auditCursorX = Math.max(0, auditWorld.w / 2); auditCursorY = Math.max(0, auditWorld.h / 2); }
+        }
+    }
+
+    SectorGenerationTraceAuthority.Step currentAuditTraceStep() {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return null;
+        auditTraceIndex = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        return auditTraceSteps.get(auditTraceIndex);
+    }
+
+// ... omitted 38 non-method/source lines between cataloged methods ...
+
+    void cycleAuditZoneType(int delta) { auditZoneDropdownOpen = false; setAuditZoneTypeIndex(auditZoneTypeIndex + delta); }
+    void cycleAuditZoneSize() { auditZoneSizeIndex = (auditZoneSizeIndex + 1) % WorldSetupSettings.ZONE_SIZE.length; regenerateSectorAuditWorld("cycle zone size"); }
+    void cycleAuditZoneDensity() { auditZoneDensityIndex = (auditZoneDensityIndex + 1) % WorldSetupSettings.ZONE_DENSITY.length; regenerateSectorAuditWorld("cycle zone density"); }
+    void toggleAuditSewerLayer() { auditSewerLayer = !auditSewerLayer; regenerateSectorAuditWorld("toggle sewer layer"); }
+    void rerollSectorAudit() { regenerateSectorAuditWorld("reroll zone audit"); }
+
+// ... omitted 55 non-method/source lines between cataloged methods ...
+
+    void multiplayerHostCurrentWorld() {
+        WorldSetupSettings settings = (worldSetup == null ? WorldSetupSettings.standard() : worldSetup.copy());
+        long hostSeed = seed == 0L ? System.currentTimeMillis() : seed;
+        String hostWorldName = selectedWorldSummary == null || selectedWorldSummary.isBlank() ? "Mechanist Hosted Arcology" : selectedWorldSummary;
+        HostBindingResult result = multiplayerMenu.hostFromWorld(hostSeed, hostWorldName, "local-hosted-world", settings, ServerConfig.DEFAULT_MAX_PLAYERS);
+        logEvent("MULTIPLAYER HOST: " + result.compactLine());
+        showTimedAlert(result.success() ? "HOST BOUND" : "HOST FAILED", result.compactLine(), 5200);
+        repaint();
+    }
+
+// ... omitted 15 non-method/source lines between cataloged methods ...
+
+    void openWorldSelection() {
+        logEvent(launcherShell.activate(LauncherShellStateAuthority.Route.START, "main menu start"));
+        logEvent(launcherRuntime.prepareLocalServer("main menu start"));
+        availableWorlds = WorldSaveInfo.listExistingWorlds();
+        selectedWorldIndex = Math.max(0, Math.min(selectedWorldIndex, Math.max(0, availableWorlds.size()-1)));
+        if (availableWorlds.isEmpty()) {
+            pendingWorldSetup = WorldSetupSettings.standard();
+            lastWorldSetupReport = "No saved world definitions found. Configure and generate a new arcology world first.";
+            setScreen(Screen.WORLD_SETUP);
+        } else {
+            lastWorldSetupReport = "Found " + availableWorlds.size() + " saved world definition(s). Select one or generate a new world.";
+            setScreen(Screen.WORLD_SELECT);
+        }
+    }
+
+    void useSelectedWorldForCharacterCreation() {
+        if (availableWorlds.isEmpty()) { openWorldSelection(); return; }
+        WorldSaveInfo info = availableWorlds.get(Math.max(0, Math.min(selectedWorldIndex, availableWorlds.size()-1)));
+        seed = info.seed;
+        worldSetup = info.settings.copy();
+        WorldGenerationApi.setActiveSettings(worldSetup);
+        NameLockedProfilePortraitAuthority.setActiveOperatorProfileName(resolveOperatorProfileName());
+        atlas = new WorldAtlas(seed, worldSetup);
+        worldSelectedForCharacter = true;
+        selectedWorldSummary = info.summaryLine();
+        generateCandidates(); candidateIndex = 0; jobIndex = 0; jobDossierScroll = 0; jobDossierTab = 0;
+        logEvent("WORLD SELECTED: " + selectedWorldSummary);
+        DebugLog.audit("WORLD_SELECTED_FOR_CHARACTER", selectedWorldSummary);
+        setScreen(Screen.CHARACTER);
+    }
+
+    void deleteSelectedWorldDefinition() {
+        if (availableWorlds == null || availableWorlds.isEmpty()) {
+            lastWorldSetupReport = "No saved world definition is selected for deletion.";
+            repaint();
+            return;
+        }
+        int idx = Math.max(0, Math.min(selectedWorldIndex, availableWorlds.size() - 1));
+        WorldSaveInfo info = availableWorlds.get(idx);
+        String summary = info == null ? "unknown world" : info.summaryLine();
+        try {
+            Path worldDir = CampaignWorldApi.worldDir().toAbsolutePath().normalize();
+            Path target = info.path.toAbsolutePath().normalize();
+            String name = target.getFileName() == null ? "" : target.getFileName().toString();
+            if (!target.startsWith(worldDir) || !name.endsWith(".mechworld")) {
+                throw new IOException("Refusing to delete path outside generated-world directory: " + target);
+            }
+            Files.deleteIfExists(target);
+            DebugLog.audit("WORLD_DEFINITION_DELETED", "path=" + target + " summary=" + summary);
+            lastWorldSetupReport = "Deleted world definition: " + summary;
+        } catch (Exception ex) {
+            DebugLog.error("WORLD_DEFINITION_DELETE_FAILED", "Could not delete selected world definition: " + summary, ex);
+            lastWorldSetupReport = "Could not delete selected world definition: " + ex.getMessage();
+        }
+        availableWorlds = WorldSaveInfo.listExistingWorlds();
+        selectedWorldIndex = Math.max(0, Math.min(idx, Math.max(0, availableWorlds.size() - 1)));
+        if (availableWorlds.isEmpty()) {
+            pendingWorldSetup = WorldSetupSettings.standard();
+            lastWorldSetupReport += " No saved worlds remain; generate a new arcology world before character creation.";
+        }
+        repaint();
+    }
+
+    void generateConfiguredWorldForCharacterCreation() {
+        worldSetup = pendingWorldSetup == null ? WorldSetupSettings.standard() : pendingWorldSetup.copy();
+        WorldGenerationApi.setActiveSettings(worldSetup);
+        seed = System.currentTimeMillis() ^ Objects.hash(worldSetup.encode(), availableWorlds.size(), eventLog.size());
+        NameLockedProfilePortraitAuthority.setActiveOperatorProfileName(resolveOperatorProfileName());
+        atlas = new WorldAtlas(seed, worldSetup);
+        worldSelectedForCharacter = true;
+        selectedWorldSummary = atlas.hiveWorld.summary();
+        lastWorldSetupReport = "Generated " + selectedWorldSummary;
+        generateCandidates(); candidateIndex = 0; jobIndex = 0; jobDossierScroll = 0; jobDossierTab = 0;
+        logEvent("WORLD GENERATED: " + selectedWorldSummary);
+        DebugLog.audit("WORLD_GENERATED_FOR_CHARACTER", selectedWorldSummary + " setup=" + worldSetup.encode());
+        setScreen(Screen.CHARACTER);
+    }

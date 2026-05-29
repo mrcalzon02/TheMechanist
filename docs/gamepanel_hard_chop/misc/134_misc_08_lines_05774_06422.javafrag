@@ -1,0 +1,433 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_08_lines_05774_06422
+// Category: misc
+// Source lines: 5774-6422
+// Method count: 24
+//
+// Methods in this fragment:
+// - doorwayExposureBonus :: lines 5774-5784 (11) :: int doorwayExposureBonus(int x, int y)
+// - detectionObstructionPenalty :: lines 5786-5791 (6) :: int detectionObstructionPenalty(int x0, int y0, int x1, int y1, boolean includeEntities)
+// - directionAndDistanceLabel :: lines 5805-5813 (9) :: String directionAndDistanceLabel(int x, int y)
+// - noisePenaltyAt :: lines 5824-5829 (6) :: int noisePenaltyAt(int tx, int ty)
+// - localNoiseFieldAt :: lines 5831-5833 (3) :: int localNoiseFieldAt(int tx, int ty)
+// - hasLineOfSight :: lines 5843-5857 (15) :: boolean hasLineOfSight(int x0, int y0, int x1, int y1)
+// - blocksLineOfSight :: lines 5859-5862 (4) :: boolean blocksLineOfSight(char ch)
+// - isDoorTile :: lines 5864-5864 (1) :: boolean isDoorTile(char ch)
+// - evaluateFactionPressure :: lines 5866-5905 (40) :: void evaluateFactionPressure()
+// - applyArbitesPatrolSweep :: lines 6006-6021 (16) :: void applyArbitesPatrolSweep()
+// - arbitesAuthorityText :: lines 6023-6027 (5) :: boolean arbitesAuthorityText(String text)
+// - handleArbitesCapture :: lines 6029-6094 (66) :: void handleArbitesCapture(String reason, int severity)
+// - payArbitesFine :: lines 6096-6117 (22) :: int payArbitesFine(int amount)
+// - applyRandomArbitesStatLoss :: lines 6119-6131 (13) :: String applyRandomArbitesStatLoss()
+// - nearestArbitesReleasePoint :: lines 6147-6160 (14) :: Point nearestArbitesReleasePoint()
+// - currentRoomUnclaimed :: lines 6163-6167 (5) :: boolean currentRoomUnclaimed()
+// - scavengeCurrentRoom :: lines 6169-6169 (1) :: void scavengeCurrentRoom()
+// - scavengeFor :: lines 6171-6218 (48) :: void scavengeFor(String target)
+// - inspectCurrentRoomCache :: lines 6256-6282 (27) :: void inspectCurrentRoomCache()
+// - selectedTile :: lines 6383-6383 (1) :: char selectedTile()
+// - isRestProp :: lines 6385-6385 (1) :: boolean isRestProp(char c)
+// - restOneHourOnUnclaimedFurniture :: lines 6387-6402 (16) :: void restOneHourOnUnclaimedFurniture(int tx, int ty, char tile)
+// - selectedCoordText :: lines 6404-6404 (1) :: String selectedCoordText()
+// - openDepotTrader :: lines 6407-6422 (16) :: void openDepotTrader(int tx, int ty)
+
+    int doorwayExposureBonus(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return 0;
+        if (isDoorTile(world.tiles[x][y])) return 24;
+        int bonus = 0;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1}};
+        for (int[] d: dirs) {
+            int nx=x+d[0], ny=y+d[1];
+            if (world.inBounds(nx,ny) && isDoorTile(world.tiles[nx][ny])) bonus = Math.max(bonus, 10);
+        }
+        return bonus;
+    }
+
+    int detectionObstructionPenalty(int x0, int y0, int x1, int y1, boolean includeEntities) {
+        TargetingSolution scratch = new TargetingSolution();
+        int raw = rangedCoverPenalty(x0,y0,x1,y1,includeEntities,scratch);
+        if (scratch.coverHardBlocked) return 60;
+        return Math.max(0, Math.min(45, raw / 2));
+    }
+
+// ... omitted 13 non-method/source lines between cataloged methods ...
+
+    String directionAndDistanceLabel(int x, int y) {
+        int dx = x - playerX, dy = y - playerY;
+        String ns = dy < 0 ? "north" : (dy > 0 ? "south" : "");
+        String ew = dx < 0 ? "west" : (dx > 0 ? "east" : "");
+        String dir = ns.isEmpty() ? ew : (ew.isEmpty() ? ns : ns + "-" + ew);
+        if (dir.isEmpty()) dir = "nearby";
+        int dist = Math.abs(dx) + Math.abs(dy);
+        return dir + " ~" + dist + "t:";
+    }
+
+    void rebuildNoiseHearingFieldCache(String reason) {
+        if (world == null) return;
+        if (world.noiseFieldTurn == turn && world.noiseField != null && !localDirtyTracker.noiseDirty(world)) return;
+        NoiseHearingFieldApi.Result nr = NoiseHearingFieldApi.rebuild(world, turn);
+        profilingNoiseCacheRebuilds++;
+        localDirtyTracker.clearNoise(world);
+        if (nr != null && nr.changedSummary) DebugLog.audit("NOISE_HEARING_FIELD", "reason=" + reason + " " + nr.summary() + " rebuilds=" + profilingNoiseCacheRebuilds);
+    }
+
+    int noisePenaltyAt(int tx, int ty) {
+        if (world == null) return 0;
+        if (world.noiseField == null || world.noiseFieldTurn != turn || localDirtyTracker.noiseDirty(world)) rebuildNoiseHearingFieldCache("noise-query");
+        if (world.noiseField != null && world.inBounds(tx,ty)) return Math.max(0, Math.min(70, world.noiseField[tx][ty]));
+        return 0;
+    }
+
+    int localNoiseFieldAt(int tx, int ty) {
+        return noisePenaltyAt(tx, ty);
+    }
+
+    void addSoundPing(int x, int y, String label) {
+        for (SensePing p : sensePings) {
+            if (Math.abs(p.x-x) <= 1 && Math.abs(p.y-y) <= 1 && p.label.equals(label)) { p.x=x; p.y=y; p.ttl=4; return; }
+        }
+        sensePings.add(new SensePing(x,y,label,4));
+        while (sensePings.size() > 10) sensePings.remove(0);
+    }
+
+    boolean hasLineOfSight(int x0, int y0, int x1, int y1) {
+        int dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0, y = y0;
+        while (true) {
+            if (!(x == x0 && y == y0) && blocksLineOfSight(world.tiles[x][y])) return x == x1 && y == y1;
+            if (x == x1 && y == y1) return true;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
+            if (x < 0 || y < 0 || x >= world.w || y >= world.h) return false;
+        }
+    }
+
+    boolean blocksLineOfSight(char ch) {
+        // Walls and closed/secured doors block sight. Open archways/floor/corridors do not.
+        return ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE || ch == '|' || ch == 'L' || ch == 'X' || ch == 'V';
+    }
+
+    boolean isDoorTile(char ch) { return ch == '/' || ch == '|' || ch == 'L' || ch == 'X' || ch == 'V'; }
+
+    void evaluateFactionPressure() {
+        if (world == null || active == null) return;
+        LinkedHashSet<Faction> witnesses = nearbyDisguiseWitnessFactions(6);
+        if (witnesses.isEmpty()) return;
+        char here = world.tiles[playerX][playerY];
+        Faction roomFaction = factionForTile(here);
+        Faction profileFactionOnly = factionOnlyRoomFactionAt(playerX, playerY);
+        if (roomFaction == Faction.NONE && profileFactionOnly != Faction.NONE) roomFaction = profileFactionOnly;
+        if ((tileIsFactionOnly(here) || profileFactionOnly != Faction.NONE) && roomFaction != Faction.NONE
+                && witnesses.contains(roomFaction)
+                && activeFaction() != roomFaction && equippedClothing.alignedFaction != roomFaction) {
+            temporaryHostileTurns.put(roomFaction, 8);
+            lastDisguiseFailure = roomFaction;
+            lastInterrogation = "Trespass observed in " + roomFaction.label + " controlled ground at " + playerX + "," + playerY + ".";
+            DebugLog.audit("FACTION_ZONE", lastInterrogation + " clothing=" + equippedClothing.name + " witnesses=" + witnesses + " state=" + stateSummary());
+            logEvent("ALERT: " + roomFaction.label + " witness catches you in controlled ground. Hostility triggered.");
+            return;
+        }
+        for (Faction witness : witnesses) {
+            if (witness == activeFaction()) {
+                DebugLog.audit("FACTION_AFFILIATION_PASS", "witness=" + witness + " jobFaction=" + activeFaction() + " no disguise check required state=" + stateSummary());
+                continue;
+            }
+            if (witness == equippedClothing.alignedFaction) {
+                int roll = rng.nextInt(100) + 1;
+                int chance = disguiseChance(witness);
+                DebugLog.audit("DISGUISE_CHECK", "witness=" + witness + " roll=" + roll + " chance=" + chance + " clothing=" + equippedClothing.name + " state=" + stateSummary());
+                if (roll > chance) {
+                    handleDisguiseFailure(witness, "masquerade check failed");
+                    return;
+                }
+            } else if (factionImmediatelyObjects(witness)) {
+                if (factionOnlyRoomFactionAt(playerX, playerY) == witness || factionForTile(here) == witness) {
+                    handleInterrogation(witness, "suspicious outsider clothing " + equippedClothing.name);
+                    return;
+                }
+                DebugLog.audit("DISGUISE_NON_TERRITORY_PASS", "witness=" + witness + " clothing=" + equippedClothing.name + " no faction-only territory hostility state=" + stateSummary());
+            }
+        }
+    }
+
+// ... omitted 100 non-method/source lines between cataloged methods ...
+
+    void applyArbitesPatrolSweep() {
+        if (screen == Screen.LOST || screen == Screen.CAPTURE || active == null || world == null) return;
+        if (!arbitesNobleOrCivilZone()) return;
+        if (turn < arbitesInspectionCooldownUntilTurn) return;
+        int pressure = Math.max(0, suspicion) + Math.max(0, gangHeat / 2);
+        if (world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE) pressure += 5;
+        if (world.zoneType == ZoneType.SECTOR_GOVERNORS_MANSION || world.zoneType == ZoneType.NOBLE_SERVICE_SPINE) pressure += 3;
+        if (pressure < 6) return;
+        if (turn % 10 != 0) return;
+        int chance = Math.min(70, 10 + pressure * 5);
+        if (rng.nextInt(100) >= chance) return;
+        String reason = "civil/noble-sector patrol sweep in " + world.zoneType.label + " with heat " + gangHeat + " and suspicion " + suspicion;
+        lastArbitesPatrolReport = "Civic Wardens patrol initiates inspection: " + reason + ".";
+        logEvent("CIVIC WARDENS PATROL: " + lastArbitesPatrolReport);
+        handleInterrogation(Faction.CIVIC_WARDENS, reason);
+    }
+
+boolean arbitesAuthorityText(String text) {
+        if (text == null) return false;
+        String l = text.toLowerCase(Locale.ROOT);
+        return l.contains("civic Wardens") || l.contains("law enforcement") || l.contains("precinct") || l.contains("suppression") || l.contains("riot");
+    }
+
+    void handleArbitesCapture(String reason, int severity) {
+        if (screen == Screen.LOST || active == null) return;
+        severity = Math.max(1, Math.min(8, severity));
+        int startTurn = turn;
+        int startCarried = carriedScript;
+        int startBanked = totalBankedCash();
+        int startBaseStash = baseStashedScript;
+        int baseFine = 35 + suspicion * 18 + gangHeat * 7 + severity * 45 + rng.nextInt(90 + severity * 30);
+        int finePaid = payArbitesFine(baseFine);
+        int unpaidFine = Math.max(0, baseFine - finePaid);
+        int jailHours = Math.max(3, Math.min(72, 4 + severity * 3 + rng.nextInt(8 + severity * 4)));
+        int statLosses = 1 + (severity >= 4 && rng.nextBoolean() ? 1 : 0);
+        ArrayList<String> losses = new ArrayList<>();
+        boolean fatalCustodyStatLoss = false;
+        for (int i=0; i<statLosses; i++) {
+            String loss = applyRandomArbitesStatLoss();
+            losses.add(loss);
+            if (loss.contains("FATAL CUSTODY TRAUMA")) fatalCustodyStatLoss = true;
+        }
+        int itemLoss = arbitesEvidenceItemLoss(severity);
+        advancePlayerAndWorldTime(jailHours * TURNS_PER_HOUR, "Civic Wardens custody time");
+        int fatigueBefore = fatigue, sleepBefore = sleepNeed, painBefore = pain, woundsBefore = wounds;
+        fatigue = Math.min(30, fatigue + 4 + severity);
+        sleepNeed = Math.min(MAX_SLEEP_NEED, sleepNeed + jailHours * TURNS_PER_HOUR / 2);
+        pain = Math.min(24, pain + 2 + severity);
+        wounds = Math.min(19, wounds + Math.max(1, severity / 2));
+        suspicion = Math.max(0, suspicion - (4 + severity));
+        temporaryHostileTurns.remove(Faction.CIVIC_WARDENS);
+        arbitesCaptureCooldownUntilTurn = Math.max(arbitesCaptureCooldownUntilTurn, turn + ARBITES_CAPTURE_COOLDOWN_TURNS);
+        arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
+        int endBanked = totalBankedCash();
+        lastCrimePunishmentReport = "Captured by Civic Wardens for " + reason + ". Hard time " + jailHours + "h, fine assessed " + baseFine + ", collected " + finePaid + ", stat loss " + String.join(", ", losses) + ", evidence items lost " + itemLoss + ".";
+        ArrayList<String> detail = new ArrayList<>();
+        detail.add("ADEPTUS CIVIC WARDENS CUSTODY REPORT");
+        detail.add("Cause: " + reason + ".");
+        detail.add("Severity: " + severity + " / 8.");
+        detail.add("Time taken: " + jailHours + " local hour(s). Turn " + startTurn + " -> " + turn + ".");
+        detail.add("Fine assessed: " + baseFine + " Concord Script. Paid/seized: " + finePaid + ". Unpaid docket remainder: " + unpaidFine + ".");
+        detail.add("Carried script: " + startCarried + " -> " + carriedScript + ". Banked script: " + startBanked + " -> " + endBanked + ". Base stash: " + startBaseStash + " -> " + baseStashedScript + ".");
+        detail.add("Items confiscated into evidence: " + itemLoss + ".");
+        detail.add("Stat damage: " + (losses.isEmpty() ? "none" : String.join(", ", losses)) + ".");
+        detail.add("Trauma: fatigue " + fatigueBefore + " -> " + fatigue + ", sleep debt " + sleepBefore + " -> " + sleepNeed + ", pain " + painBefore + " -> " + pain + ", wounds " + woundsBefore + " -> " + wounds + ".");
+        detail.add("Street inspection cooldown until: " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".");
+        detail.add("Fresh jail-processing cooldown until: " + TimeSurfaceApi.timeTextAtTurn(arbitesCaptureCooldownUntilTurn) + ".");
+        if (fatalCustodyStatLoss) detail.add("Outcome: fatal custody trauma. A core stat reached zero.");
+        else detail.add("Outcome: released from holding near an Civic Wardens authority point. The paperwork is not apology; it is inventory.");
+        lastCustodyReportDetailed = String.join("\n", detail);
+        lastInterrogation = lastCrimePunishmentReport;
+        if (fatalCustodyStatLoss) {
+            lastCrimePunishmentReport += " The beating reduced a core stat to zero; death in police custody recorded.";
+            lastInterrogation = lastCrimePunishmentReport;
+            lastCustodyReportDetailed += "\nFinal status: death in police custody.";
+            logEvent("CIVIC WARDENS CUSTODY DEATH: " + lastCrimePunishmentReport);
+            DebugLog.audit("ARBITES_CUSTODY_DEATH", lastCustodyReportDetailed.replace('\n',' ') + " state=" + stateSummary());
+            triggerPlayerDeath("death in Civic Wardens police custody after repeated beatings", "Adeptus Civic Wardens custody", "institutional brutality", "precinct holding cell");
+            return;
+        }
+        Point release = nearestArbitesReleasePoint();
+        if (release != null) { playerX = release.x; playerY = release.y; lookX = playerX; lookY = playerY; }
+        updateSensoryModel("Civic Wardens release");
+        logEvent("CIVIC WARDENS CAPTURE: " + lastCrimePunishmentReport);
+        DebugLog.audit("ARBITES_CAPTURE", lastCustodyReportDetailed.replace('\n',' ') + " state=" + stateSummary());
+        maybeAutosave("Civic Wardens release");
+        setScreen(Screen.CAPTURE);
+        repaint();
+    }
+
+    int payArbitesFine(int amount) {
+        int remaining = Math.max(0, amount);
+        int paid = 0;
+        int fromPocket = Math.min(carriedScript, remaining);
+        carriedScript -= fromPocket; paid += fromPocket; remaining -= fromPocket;
+        if (remaining > 0) {
+            for (BankProfile b : BankProfile.ALL) {
+                if (remaining <= 0) break;
+                if (b.arbitesFineProtected) continue;
+                int bal = bankBalance(b.id);
+                if (bal <= 0) continue;
+                int take = Math.min(bal, remaining);
+                bankBalances.put(b.id, bal - take);
+                paid += take; remaining -= take;
+            }
+        }
+        if (remaining > 0 && baseStashedScript > 0 && rng.nextInt(100) < 20) {
+            int take = Math.min(baseStashedScript, Math.max(1, remaining / 2));
+            baseStashedScript -= take; paid += take; remaining -= take;
+        }
+        return paid;
+    }
+
+    String applyRandomArbitesStatLoss() {
+        String[] candidates = {"Strength","Agility","Endurance","Nerve","Charm","Vision","Hearing","Melee","Firearms"};
+        String statName = candidates[rng.nextInt(candidates.length)];
+        int old = active.stats.getOrDefault(statName, Candidate.statMin(statName));
+        if (old <= 0) {
+            active.stats.put(statName, 0);
+            return statName + " 0->0 FATAL CUSTODY TRAUMA";
+        }
+        int neu = Math.max(0, old - 1);
+        active.stats.put(statName, neu);
+        if (neu <= 0) return statName + " " + old + "->0 FATAL CUSTODY TRAUMA";
+        return statName + " " + old + "->" + neu;
+    }
+
+// ... omitted 15 non-method/source lines between cataloged methods ...
+
+    Point nearestArbitesReleasePoint() {
+        if (world == null) return new Point(playerX, playerY);
+        Point best = null; int bestD = Integer.MAX_VALUE;
+        for (int x=1; x<world.w-1; x++) for (int y=1; y<world.h-1; y++) {
+            char ch = world.tiles[x][y];
+            boolean precinct = ch == 'p' || ch == 'A' || (world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE && world.walkable(x,y));
+            if (!precinct || !world.walkable(x,y) || world.npcAt(x,y) != null) continue;
+            int d = Math.abs(x-playerX) + Math.abs(y-playerY);
+            if (d < bestD) { bestD = d; best = new Point(x,y); }
+        }
+        if (best != null) return best;
+        Point sp = world.startPoint();
+        return new Point(Math.max(1, Math.min(world.w-2, sp.x)), Math.max(1, Math.min(world.h-2, sp.y)));
+    }
+
+
+    boolean currentRoomUnclaimed() {
+        if (world == null) return false;
+        int id = world.roomIdAt(playerX, playerY);
+        return id >= 0 && id != claimedRoomId;
+    }
+
+    void scavengeCurrentRoom() { scavengeFor("General supplies"); }
+
+    void scavengeFor(String target) {
+        selectedScavengeTarget = target;
+        if (world == null) { logEvent("Cannot scavenge: no world loaded."); return; }
+        int roomId = world.roomIdAt(playerX, playerY);
+        if (roomId < 0) { logEvent("Scavenge failed: corridors and walls do not have a stable room loot table yet."); return; }
+        if (roomId == claimedRoomId) { logEvent("Scavenge blocked: this is your claimed base room. Use storage/workshop systems instead."); return; }
+        RoomProfile rp = world.roomProfile(roomId);
+        ZoneType zt = world.zoneType;
+        int key = world.locationKey() * 1000 + roomId;
+        int readyTurn = scavengeCooldownUntilTurn.getOrDefault(key, -1);
+        if (readyTurn > turn && !target.equals("Beg for money")) {
+            int remain = readyTurn - turn;
+            lastScavengeReport = "This room was already picked clean. It will need roughly " + remain + " turns (~" + Math.max(1, remain/6) + " hours) before meaningful scavenge returns.";
+            logEvent(lastScavengeReport);
+            showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
+            DebugLog.audit("SCAVENGE_COOLDOWN", "target="+target+" room=" + roomId + " readyTurn=" + readyTurn + " now=" + turn + " state=" + stateSummary());
+            return;
+        }
+        if (target.equals("Beg for money")) {
+            begForImperialScript(rp, zt);
+            return;
+        }
+        int targetBonus = target.equals("General supplies") ? 0 : 10;
+        int chance = rp.scavengeChance + zt.scavengeBonus + stat("Vision", 5) + stat("Mechanics", 5) / 2 + targetBonus;
+        chance = Math.max(5, Math.min(94, chance));
+        int roll = rng.nextInt(100) + 1;
+        int turns = Math.max(2, 8 - stat("Agility", 5) / 2);
+        DebugLog.audit("SCAVENGE_TARGET", "target="+target+" room=" + roomId + " type=" + rp.name + " zone=" + zt.label + " roll=" + roll + " chance=" + chance + " turns=" + turns + " state=" + stateSummary());
+        if (roll <= chance) {
+            ItemActionResult found = scavengeFromRoomCache(target, roomId, rp, zt);
+            String loot = found.success ? found.itemName : targetedLoot(target, rp, zt);
+            if (!found.success) addInventoryItem(loot, ItemProvenanceRecord.found(loot, world, turn, "scavenged fallback " + rp.name + " in " + zt.label));
+            if (loot.toLowerCase(Locale.ROOT).contains("scrap") || loot.toLowerCase(Locale.ROOT).contains("machine") || loot.toLowerCase(Locale.ROOT).contains("wire")) machineParts++;
+            if (loot.toLowerCase(Locale.ROOT).contains("ration") || loot.toLowerCase(Locale.ROOT).contains("food")) food = Math.min(MAX_FOOD_WATER, food + 1);
+            if (loot.toLowerCase(Locale.ROOT).contains("water") || loot.toLowerCase(Locale.ROOT).contains("canteen")) water = Math.min(MAX_FOOD_WATER, water + 1);
+            lastScavengeReport = "ITEM FOUND: Scavenged for " + target + " in " + rp.name + ": found " + loot + " (" + roll + " <= " + chance + ").";
+            gainXp("Scavenging", 2, "successful room scavenge");
+        } else {
+            lastScavengeReport = "Scavenged for " + target + " in " + rp.name + ": nothing useful (" + roll + " > " + chance + ").";
+            gainXp("Scavenging", 1, "failed room scavenge");
+        }
+        logEvent(lastScavengeReport);
+        showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
+        scavengeCooldownUntilTurn.put(key, turn + SCAVENGE_COOLDOWN_TURNS);
+        for (int i=0;i<turns;i++) advanceTurn("scavenges for " + target.toLowerCase(Locale.ROOT) + ".");
+        updatePendingInteractionSummary();
+        repaint();
+    }
+
+// ... omitted 37 non-method/source lines between cataloged methods ...
+
+    void inspectCurrentRoomCache() {
+        if (world == null) { logEvent("Room cache unavailable: no world loaded."); return; }
+        int roomId = world.roomIdAt(playerX, playerY);
+        if (roomId < 0) {
+            lastRoomCacheReport = "No persistent cache: corridors and walls are not room containers yet.";
+            logEvent(lastRoomCacheReport);
+            showTimedAlert("ROOM CACHE", lastRoomCacheReport, 3600);
+            return;
+        }
+        if (roomId == claimedRoomId) {
+            lastRoomCacheReport = "Claimed base room uses base storage/workshop systems, not ordinary room scavenging cache.";
+            logEvent(lastRoomCacheReport);
+            showTimedAlert("ROOM CACHE", lastRoomCacheReport, 3600);
+            return;
+        }
+        RoomProfile rp = world.roomProfile(roomId);
+        ZoneType zt = world.zoneType;
+        ensureRoomCacheSeeded(roomId, rp, zt);
+        String id = roomCacheContainerId(roomId);
+        ContainerRecord c = itemContainers.get(id);
+        ArrayList<String> lines = RoomContainerApi.cacheLedgerLines(id, c, itemInstances, 10);
+        lastRoomCacheReport = String.join(" | ", lines);
+        logEvent("ROOM CACHE: " + lastRoomCacheReport);
+        showTimedAlert("ROOM CACHE", lastRoomCacheReport, 6200);
+        DebugLog.audit("ROOM_CONTAINER_API", "inspect roomCache=" + id + " room=" + roomId + " items=" + (c==null?0:c.itemInstanceIds.size()) + " state=" + stateSummary());
+        repaint();
+    }
+
+// ... omitted 100 non-method/source lines between cataloged methods ...
+
+    char selectedTile() { return SelectedContextSurfaceApi.selectedTile(world, lookCursorActive, lookX, lookY, playerX, playerY); }
+
+    boolean isRestProp(char c) { return c=='b' || c=='h' || c=='n' || c=='q'; }
+
+    void restOneHourOnUnclaimedFurniture(int tx, int ty, char tile) {
+        int rid = world.roomIdAt(tx, ty);
+        if (rid < 0 || isInClaimedRoom(tx, ty)) { logEvent("This rest spot is not an unclaimed public room feature."); return; }
+        int chanceKick = 25 + Math.max(0, gangHeat/3) + (world.roomFaction(rid)==Faction.NONE ? 0 : 15);
+        int roll = rng.nextInt(100);
+        DebugLog.audit("PUBLIC_REST", "tile="+tile+" room="+rid+" kickChance="+chanceKick+" roll="+roll+" state="+stateSummary());
+        showTimedAlert("YOU FELL ASLEEP IN PUBLIC!", "You curl up on unclaimed furniture for a desperate hour. Anyone passing by may decide this is their problem, your problem, or an opportunity.", 4200);
+        for (int i=0;i<6;i++) advanceTurn("rests uneasily on unclaimed furniture.");
+        if (roll < chanceKick) {
+            fatigue = Math.min(25, fatigue + 1);
+            logEvent("You try to rest for an hour, but someone kicks you out before it does much good. Fatigue +1 from interrupted sleep.");
+        } else {
+            int old = fatigue; fatigue = Math.max(0, fatigue - 1);
+            logEvent("You steal one hour of rough rest on public furniture. Fatigue " + old + "->" + fatigue + ".");
+        }
+    }
+
+    String selectedCoordText() { return SelectedContextSurfaceApi.selectedCoordText(lookCursorActive, lookX, lookY, playerX, playerY); }
+
+
+    void openDepotTrader(int tx, int ty) {
+        NpcEntity clerk = NpcEntity.tradeClerkFor(world == null ? ZoneType.NEUTRAL_RAIL_DEPOT : world.zoneType, tx, ty, rng);
+        activeConversationNpc = clerk;
+        activeConversationNpc = clerk;
+        activeTrader = TraderSession.forNpc(clerk, world == null ? ZoneType.NEUTRAL_RAIL_DEPOT : world.zoneType, rng);
+        activeTrader.sourceSite = siteForFaction(clerk.faction, world == null ? ZoneType.NEUTRAL_RAIL_DEPOT : world.zoneType);
+        activeTrader.applyNpcSiteStock(activeTrader.sourceSite, rng, world, turn);
+        materializeFactionTraderStock(activeTrader);
+        activeTrader.applySupplyChainStock(world, turn, rng);
+        selectedTradeOffer = 0;
+        conversationBranch = clerk.name + ": Neutral counter acknowledged. Buy, sell, haggle, or ask after the pipes.";
+        lastConversation = "Trade depot clerk opened conversation: " + conversationBranch;
+        lastTradeReport = "Trade depot opened with " + clerk.name + ". Stock is zone appropriate; trader buys and sells.";
+        logConversation("OPEN_DEPOT", conversationBranch);
+        openPanel(PanelMode.TRADE);
+    }

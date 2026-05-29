@@ -1,0 +1,14 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_05_lines_05546_05547
+// Category: input_mouse_keyboard
+// Source lines: 5546-5547
+// Method count: 2
+//
+// Methods in this fragment:
+// - sameWorldLocation :: lines 5546-5546 (1) :: boolean sameWorldLocation(String key)
+// - portableLightWorldKey :: lines 5547-5547 (1) :: String portableLightWorldKey()
+
+    boolean sameWorldLocation(String key) { return world != null && key != null && key.equals(portableLightWorldKey()); }
+    String portableLightWorldKey() { return world == null ? "none" : (world.locationKey() + ":" + world.layerText()); }

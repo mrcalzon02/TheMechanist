@@ -1,0 +1,51 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: entities_02_lines_03855_03930
+// Category: entities
+// Source lines: 3855-3930
+// Method count: 2
+//
+// Methods in this fragment:
+// - canNpcOccupyForShove :: lines 3855-3857 (3) :: boolean canNpcOccupyForShove(int x, int y)
+// - tickNearbyNpcs :: lines 3898-3930 (33) :: void tickNearbyNpcs()
+
+    boolean canNpcOccupyForShove(int x, int y) {
+        return world != null && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY);
+    }
+
+// ... omitted 40 non-method/source lines between cataloged methods ...
+
+    void tickNearbyNpcs() {
+        long profileStartNanos = System.nanoTime();
+        if (world == null || world.npcs == null || world.npcs.isEmpty()) return;
+        long schedulerStartNanos = System.nanoTime();
+        boolean dangerClose = hostilePressureNearby();
+        NpcTurnBudgetScheduler.Selection selection = npcScheduler.select(world.npcs, playerX, playerY, turn, activeMotionIsSneak(), dangerClose);
+        profilingNpcSchedulerNanos += Math.max(0L, System.nanoTime() - schedulerStartNanos);
+        profilingNpcSchedulerSelections++;
+        profilingNpcSchedulerDeferred += Math.max(0, selection.farDeferred + selection.budgetLimited);
+        if (selection.debtSuggested > 0) deferredSimulationDebt = Math.min(20000, deferredSimulationDebt + selection.debtSuggested);
+        int activeTicks = 0;
+        for (NpcEntity npc : selection.selected) {
+            if (npc == null) continue;
+            activeTicks++;
+            int dist = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            int npcOldX = npc.x, npcOldY = npc.y;
+            ensureNpcCombatLoadout(npc);
+            boolean suppressHostilePursuit = isHostileNpc(npc) && activeMotionIsSneak() && !hostileAwareOfPlayer(npc, dist);
+            detectHostileIntent(npc, dist);
+            if (!suppressHostilePursuit && maybeNpcRangedAttack(npc, dist)) { /* spent turn firing or reloading */ }
+            else if (!suppressHostilePursuit) npc.tick(world, playerX, playerY, turn);
+            else if (turn % 3 == 0) npc.wander(world, turn, playerX, playerY);
+            if (npc.x != npcOldX || npc.y != npcOldY) beginNpcTileSlide(npc, npcOldX, npcOldY, npc.x, npc.y);
+            int postDist = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            if (isHostileNpc(npc) && postDist <= 1 && turn % 2 == 0) hostileAdjacentAttack(npc);
+            if (dist <= 7 && turn % 5 == 0) maybeNpcAmbient(npc, dist);
+        }
+        if (activeTicks > 0 && npcScheduler.shouldAudit(turn)) {
+            DebugLog.audit("NPC_SCHEDULER", selection.auditLine(turn, playerX, playerY, selection.selected.size()) + " dangerClose=" + dangerClose + " deferredDebt=" + deferredSimulationDebt);
+        }
+        profilingNpcTickNanos += Math.max(0L, System.nanoTime() - profileStartNanos);
+        profilingNpcTickSamples++;
+    }

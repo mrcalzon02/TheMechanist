@@ -1,0 +1,128 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_14_lines_14184_14732
+// Category: world_zone_sector
+// Source lines: 14184-14732
+// Method count: 11
+//
+// Methods in this fragment:
+// - worldSetupGenerateInnerSafeRect :: lines 14184-14194 (11) :: Rectangle worldSetupGenerateInnerSafeRect()
+// - worldSetupActionInnerSafeRect :: lines 14273-14286 (14) :: Rectangle worldSetupActionInnerSafeRect()
+// - computeSectorAudit :: lines 14587-14605 (19) :: static UiLayout computeSectorAudit(int w, int h, double scale)
+// - mapRect :: lines 14608-14608 (1) :: Rectangle mapRect()
+// - sectorAuditTileIconMode :: lines 14620-14625 (6) :: boolean sectorAuditTileIconMode()
+// - zoomedMapPixels :: lines 14627-14629 (3) :: int zoomedMapPixels(int basePixels)
+// - auditAsciiFont :: lines 14643-14645 (3) :: Font auditAsciiFont()
+// - auditTileIconPixels :: lines 14647-14650 (4) :: int auditTileIconPixels()
+// - auditMapCellW :: lines 14652-14657 (6) :: int auditMapCellW(Graphics2D g)
+// - auditMapCellH :: lines 14659-14664 (6) :: int auditMapCellH(Graphics2D g)
+// - isVisible :: lines 14728-14732 (5) :: null && isVisible(mo.x, mo.y) && mo.x >= camX && mo.y >= camY && mo.x < camX + cols && mo.y < camY + rows && world != null && world.inBounds(mo.x, mo.y) && !isDoorTile(world.tiles[mo.x][mo.y]) && world.tiles[mo.x][mo.y] != 'D')
+
+    Rectangle worldSetupGenerateInnerSafeRect() {
+        int w = getWidth(), h = getHeight();
+        int margin = Math.max(34, w / 22);
+        int top = Math.max(122, h / 5);
+        int gap = Math.max(14, w / 55);
+        int totalW = w - margin * 2;
+        int infoW = Math.max(360, (int)(totalW * 0.58));
+        int buttonX = margin + infoW + gap;
+        int buttonW = Math.max(190, w - buttonX - margin);
+        return new Rectangle(buttonX + 14, top + 40, Math.max(1, buttonW - 28), 34);
+    }
+
+// ... omitted 78 non-method/source lines between cataloged methods ...
+
+    Rectangle worldSetupActionInnerSafeRect() {
+        int w = getWidth(), h = getHeight();
+        int margin = Math.max(34, w / 22);
+        int top = Math.max(122, h / 5);
+        int gap = Math.max(14, w / 55);
+        int totalW = w - margin * 2;
+        int infoW = Math.max(360, (int)(totalW * 0.58));
+        int buttonX = margin + infoW + gap;
+        int buttonW = Math.max(190, w - buttonX - margin);
+        int panelH = Math.max(310, h - top - 92);
+        int y = top + 142;
+        int bottom = top + panelH - 14;
+        return new Rectangle(buttonX + 14, y, Math.max(1, buttonW - 28), Math.max(1, bottom - y));
+    }
+
+// ... omitted 300 non-method/source lines between cataloged methods ...
+
+        static UiLayout computeSectorAudit(int w, int h, double scale) {
+            int margin = Math.max(8, (int)Math.round(12*scale));
+            int gap = Math.max(5, (int)Math.round(6*scale));
+            int commandW = Math.max(118, Math.min(166, (int)Math.round(142*scale)));
+            int bottomH = Math.max(80, Math.min(112, (int)Math.round(94*scale)));
+            int y = margin + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(260, h - y - bottomH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin, Math.max(1,w-margin*2-24), Math.max(1, gap));
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }
+    }
+
+    Rectangle mapRect() { return uiLayout().map; }
+
+    Rectangle inputMapRect() { return virtualUiLayout().map; }
+
+    Rectangle tacticalSlateRect() { return uiLayout().tactical; }
+
+    Rectangle commandPanelRect() { return uiLayout().command; }
+
+    boolean tileIconMode() {
+        return options.tileIconRendering && images.hasTileArt();
+    }
+
+    boolean sectorAuditTileIconMode() {
+        // The Zone Audit surface is a visual-generation inspection tool. If packaged tile
+        // art exists, it should display that art even when the normal play map is set
+        // to ASCII/gradient fallback, otherwise road/floor art regressions are hidden.
+        return images != null && images.hasTileArt();
+    }
+
+    int zoomedMapPixels(int basePixels) {
+        return Math.max(6, (int)Math.round(basePixels * (options.worldZoomPercent() / 100.0)));
+    }
+
+// ... omitted 13 non-method/source lines between cataloged methods ...
+
+    Font auditAsciiFont() {
+        return asciiFont == null ? new Font("Monospaced", Font.PLAIN, 11) : asciiFont.deriveFont(Math.max(8f, asciiFont.getSize2D() - 3f));
+    }
+
+    int auditTileIconPixels() {
+        int base = options == null ? 32 : options.mapTilePixelSize();
+        return Math.max(16, Math.min(base, (int)Math.round(base * 0.78)));
+    }
+
+    int auditMapCellW(Graphics2D g) {
+        if (sectorAuditTileIconMode()) return scaled(zoomedMapPixels(auditTileIconPixels()));
+        Font use = auditAsciiFont();
+        FontMetrics fm = g == null ? getFontMetrics(use) : g.getFontMetrics(use);
+        return Math.max(7, scaled(zoomedMapPixels(Math.max(8, fm.charWidth('W')))));
+    }
+
+    int auditMapCellH(Graphics2D g) {
+        if (sectorAuditTileIconMode()) return scaled(zoomedMapPixels(auditTileIconPixels()));
+        Font use = auditAsciiFont();
+        FontMetrics fm = g == null ? getFontMetrics(use) : g.getFontMetrics(use);
+        return Math.max(9, scaled(zoomedMapPixels(Math.max(11, fm.getHeight()))));
+    }
+
+// ... omitted 63 non-method/source lines between cataloged methods ...
+
+                    if (mo != null && isVisible(mo.x, mo.y) && mo.x >= camX && mo.y >= camY && mo.x < camX + cols && mo.y < camY + rows && world != null && world.inBounds(mo.x, mo.y) && !isDoorTile(world.tiles[mo.x][mo.y]) && world.tiles[mo.x][mo.y] != 'D') {
+                        g.setColor(new Color(170, 215, 155));
+                        if (tileIconMode()) drawMapFeatureIcon(g, mo, ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH, cellW, cellH, new Color(100, 210, 160, 70));
+                        else g.drawString(String.valueOf(mo.glyph), ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH);
+                    }

@@ -1,0 +1,130 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_15_lines_15084_15713
+// Category: world_zone_sector
+// Source lines: 15084-15713
+// Method count: 8
+//
+// Methods in this fragment:
+// - screenPointToWorldTile :: lines 15084-15101 (18) :: Point screenPointToWorldTile(int sx, int sy)
+// - corridorArtRotatesEastWest :: lines 15568-15580 (13) :: boolean corridorArtRotatesEastWest(char ch, int worldX, int worldY)
+// - tileDescriptorForRenderedGlyph :: lines 15590-15592 (3) :: CompiledTileDescriptor tileDescriptorForRenderedGlyph(char ch, int worldX, int worldY)
+// - semanticTileImageForRenderedGlyph :: lines 15594-15627 (34) :: BufferedImage semanticTileImageForRenderedGlyph(char ch, int worldX, int worldY)
+// - roadRunsEastWest :: lines 15659-15670 (12) :: boolean roadRunsEastWest(int worldX, int worldY)
+// - sidewalkPromotesToRoadForArt :: lines 15672-15674 (3) :: boolean sidewalkPromotesToRoadForArt(int worldX, int worldY)
+// - inferredUnderlayGlyphForOverlay :: lines 15705-15707 (3) :: char inferredUnderlayGlyphForOverlay(char ch, int worldX, int worldY)
+// - underlayImageForOverlayGlyph :: lines 15709-15713 (5) :: BufferedImage underlayImageForOverlayGlyph(char ch, int worldX, int worldY)
+
+    Point screenPointToWorldTile(int sx, int sy) {
+        if (world == null) return null;
+        Rectangle map = inputMapRect();
+        FontMetrics fm = getFontMetrics(asciiFont);
+        int cellW = tileIconMode()
+                ? scaled(zoomedMapPixels(options.mapTilePixelSize()))
+                : Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+        int cellH = tileIconMode()
+                ? scaled(zoomedMapPixels(options.mapTilePixelSize()))
+                : Math.max(10, scaled(zoomedMapPixels(Math.max(14, fm.getHeight()))));
+        MapViewportTransformAuthority.Viewport viewport = MapViewportTransformAuthority.compute(
+                map, world.w, world.h, playerX, playerY, cellW, cellH,
+                10, tileIconMode() ? 10 : 10 + fm.getAscent());
+        Point out = viewport.pointToTile(sx, sy);
+        if (out == null) return null;
+        if (!world.inBounds(out.x, out.y)) return null;
+        return out;
+    }
+
+// ... omitted 466 non-method/source lines between cataloged methods ...
+
+    boolean corridorArtRotatesEastWest(char ch, int worldX, int worldY) {
+        // 0.9.10fn/ji: road art resolves through compiled road shape keys, while
+        // corridor art now follows the compiled same-family corridor orientation.
+        // Maintenance/exterior/sewer corridor runs therefore orient toward the next
+        // nearest tile of the same corridor type instead of borrowing unrelated halls.
+        if (ch == ';' || ch == '_') return false;
+        if (world == null || !images.corridorArtUsesNorthSouth(ch)) return false;
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d != null && "corridor".equals(d.baseLayer)) return "east_west".equals(d.shape);
+        boolean ew = corridorLikeForArt(worldX-1, worldY) || corridorLikeForArt(worldX+1, worldY);
+        boolean ns = corridorLikeForArt(worldX, worldY-1) || corridorLikeForArt(worldX, worldY+1);
+        return ew && !ns;
+    }
+
+    boolean corridorLikeForArt(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return false;
+        char t = world.tiles[x][y];
+        return world.roomIds[x][y] < 0 && (world.isCorridorGlyph(t) || t == 'D' || t == '/' || t == '|');
+    }
+
+    BufferedImage tileImageForRenderedGlyph(char ch) { return semanticTileImageForRenderedGlyph(ch, -1, -1); }
+
+    CompiledTileDescriptor tileDescriptorForRenderedGlyph(char ch, int worldX, int worldY) {
+        return TileDataCompilationAuthority.resolve(world, worldX, worldY, ch);
+    }
+
+    BufferedImage semanticTileImageForRenderedGlyph(char ch, int worldX, int worldY) {
+        // 0.9.10fn: the renderer no longer treats a raw ASCII glyph as the complete
+        // visual identity.  Stage 9 hardens this further: once a descriptor has a
+        // semantic asset ID, a missing registry image produces a typed missing tile
+        // instead of silently falling through to unrelated legacy art.
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d != null) {
+            if (d.hasOverlay()) {
+                BufferedImage overlay = images.getSemanticAssetImage(d.overlayAssetId);
+                if (overlay != null) return overlay;
+                if (d.overlayAssetId != null && !d.overlayAssetId.isBlank()) return AssetManager.missingAssetImage(assetTypeForDescriptor(d));
+                overlay = images.getTile(d.overlayArtKey, ch);
+                if (overlay != null) return overlay;
+            }
+            BufferedImage primary = images.getSemanticAssetImage(d.primaryAssetId);
+            if (primary != null) return primary;
+            if (d.primaryAssetId != null && !d.primaryAssetId.isBlank()) return AssetManager.missingAssetImage(assetTypeForDescriptor(d));
+            primary = images.getTile(d.primaryArtKey, ch);
+            if (primary != null) return primary;
+            if (d.primaryArtKey != null && d.primaryArtKey.matches("road_.*_v[1-5]")) {
+                String base = d.primaryArtKey.replaceAll("_v[1-5]$", "");
+                primary = images.getTile(base, ch);
+                if (primary != null) return primary;
+            }
+            if (d.underlayArtKey != null) {
+                BufferedImage under = images.getSemanticAssetImage(d.underlayAssetId);
+                if (under != null) return under;
+                if (d.underlayAssetId != null && !d.underlayAssetId.isBlank()) return AssetManager.missingAssetImage(assetTypeForDescriptor(d));
+                under = images.getTile(d.underlayArtKey, d.underlayGlyph == null ? '.' : d.underlayGlyph.charValue());
+                if (under != null) return under;
+            }
+        }
+        return images.getTile(ch);
+    }
+
+// ... omitted 31 non-method/source lines between cataloged methods ...
+
+    boolean roadRunsEastWest(int worldX, int worldY) {
+        if (world == null || !world.inBounds(worldX, worldY)) return false;
+        boolean west = roadLaneForArt(worldX-1, worldY);
+        boolean east = roadLaneForArt(worldX+1, worldY);
+        boolean north = roadLaneForArt(worldX, worldY-1);
+        boolean south = roadLaneForArt(worldX, worldY+1);
+        boolean ewOpposed = west && east;
+        boolean nsOpposed = north && south;
+        if (ewOpposed && !nsOpposed) return true;
+        if (nsOpposed) return false;
+        return (west || east) && !(north || south);
+    }
+
+    boolean sidewalkPromotesToRoadForArt(int worldX, int worldY) {
+        return TileDataCompilationAuthority.sidewalkPromotesToRoad(world, worldX, worldY);
+    }
+
+// ... omitted 30 non-method/source lines between cataloged methods ...
+
+    char inferredUnderlayGlyphForOverlay(char ch, int worldX, int worldY) {
+        return TileDataCompilationAuthority.inferredUnderlayGlyph(world, worldX, worldY, ch);
+    }
+
+    BufferedImage underlayImageForOverlayGlyph(char ch, int worldX, int worldY) {
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d == null || !d.hasOverlay()) return null;
+        return images.getTile(d.underlayArtKey, d.underlayGlyph == null ? '.' : d.underlayGlyph.charValue());
+    }

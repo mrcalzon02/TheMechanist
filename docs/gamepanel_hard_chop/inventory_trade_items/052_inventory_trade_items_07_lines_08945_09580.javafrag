@@ -1,0 +1,141 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: inventory_trade_items_07_lines_08945_09580
+// Category: inventory_trade_items
+// Source lines: 8945-9580
+// Method count: 15
+//
+// Methods in this fragment:
+// - lootContractChipIfNeeded :: lines 8945-8956 (12) :: void lootContractChipIfNeeded(NpcEntity target)
+// - contractObjectContainerId :: lines 8958-8958 (1) :: String contractObjectContainerId(String contractObjectId)
+// - corpseLootContainerId :: lines 8959-8959 (1) :: String corpseLootContainerId(String corpseObjectId)
+// - factionStockContainerId :: lines 8960-8963 (4) :: String factionStockContainerId(NpcFactionSite site)
+// - ensureContractObjectContainer :: lines 8965-8974 (10) :: void ensureContractObjectContainer(FactionContract c)
+// - containerItemCount :: lines 8976-8979 (4) :: int containerItemCount(String containerId)
+// - transferFirstContainerItemToInventory :: lines 8981-8989 (9) :: ItemActionResult transferFirstContainerItemToInventory(String containerId, String route)
+// - stolenJournalItemName :: lines 9032-9035 (4) :: String stolenJournalItemName(FactionStrategicPlan p)
+// - isStolenLeaderJournalItem :: lines 9053-9053 (1) :: boolean isStolenLeaderJournalItem(String item)
+// - bankVaultLooted :: lines 9182-9182 (1) :: boolean bankVaultLooted(MapObjectState m)
+// - persistentContainerIdForObject :: lines 9465-9471 (7) :: String persistentContainerIdForObject(MapObjectState m)
+// - containerNextItemSummary :: lines 9473-9481 (9) :: String containerNextItemSummary(String containerId)
+// - cleanupPersistentStockMarkerIfEmpty :: lines 9512-9518 (7) :: void cleanupPersistentStockMarkerIfEmpty(MapObjectState m, String containerId)
+// - takeSelectedTargetInventoryItem :: lines 9558-9570 (13) :: void takeSelectedTargetInventoryItem()
+// - takeAllTargetInventoryItems :: lines 9572-9580 (9) :: void takeAllTargetInventoryItems()
+
+    void lootContractChipIfNeeded(NpcEntity target) {
+        if (target == null) return;
+        for (FactionContract c : factionContracts) {
+            if (c.completed || !c.type.equals("BOUNTY")) continue;
+            if (c.targetEntityId.equals(target.id) && !inventory.contains(c.requiredTurnInItem)) {
+                addInventoryItem(c.requiredTurnInItem, ItemProvenanceRecord.found(c.requiredTurnInItem, world, turn, "body of " + target.name));
+                logEvent("CONTRACT LOOT: recovered " + c.publicRequiredItem() + " from " + target.name + ". Return to the " + c.faction.label + " representative for payment.");
+                c.spawned = false;
+                return;
+            }
+        }
+    }
+
+    String contractObjectContainerId(String contractObjectId) { return CONTAINER_CONTRACT_OBJECT_PREFIX + ContainerIdentityApi.safeToken(contractObjectId == null ? "unknown" : contractObjectId); }
+    String corpseLootContainerId(String corpseObjectId) { return CONTAINER_CORPSE_LOOT_PREFIX + ContainerIdentityApi.safeToken(corpseObjectId == null ? "unknown" : corpseObjectId); }
+    String factionStockContainerId(NpcFactionSite site) {
+        if (site == null) return CONTAINER_FACTION_STOCK_PREFIX + "unknown";
+        return CONTAINER_FACTION_STOCK_PREFIX + ContainerIdentityApi.safeToken(site.faction.name()) + "." + ContainerIdentityApi.safeToken(site.name) + "." + ContainerIdentityApi.safeToken(site.locationKey());
+    }
+
+    void ensureContractObjectContainer(FactionContract c) {
+        if (c == null || c.targetEntityId == null || c.targetEntityId.isBlank() || c.requiredTurnInItem == null || c.requiredTurnInItem.isBlank()) return;
+        String cid = contractObjectContainerId(c.targetEntityId);
+        ensureContainer(cid, "Contract sealed object " + c.id);
+        if (containerItemCount(cid) <= 0) {
+            addItemToContainerResult(cid, "Contract sealed object " + c.id, c.requiredTurnInItem,
+                    ItemProvenanceRecord.of(c.requiredTurnInItem, c.faction, "contract sealed container " + c.id, world, turn, "faction retrieval docket", "placed into persistent contract-object container"),
+                    null, "seed persistent contract object");
+        }
+    }
+
+    int containerItemCount(String containerId) {
+        ContainerRecord c = itemContainers.get(containerId);
+        return c == null ? 0 : c.itemInstanceIds.size();
+    }
+
+    ItemActionResult transferFirstContainerItemToInventory(String containerId, String route) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || c.itemInstanceIds.isEmpty()) return ItemActionResult.fail("That container is empty.", "persistent container empty " + containerId);
+        String id = c.itemInstanceIds.get(0);
+        ItemInstance inst = itemInstances.get(id);
+        String item = inst == null ? "Unknown item" : inst.displayName;
+        if (inventoryWeight() + 1 > carryCapacity()) return ItemActionResult.fail("You cannot carry " + item + " without dropping weight.", "persistent container transfer blocked capacity item=" + item + " container=" + containerId);
+        return transferContainerItemResultByInstanceId(id, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, route);
+    }
+
+// ... omitted 42 non-method/source lines between cataloged methods ...
+
+    String stolenJournalItemName(FactionStrategicPlan p) {
+        if (p == null) return "Stolen faction leader journal";
+        return "Stolen " + p.faction.label + " leader journal (" + p.leaderName + ")";
+    }
+
+// ... omitted 17 non-method/source lines between cataloged methods ...
+
+    boolean isStolenLeaderJournalItem(String item) { return item != null && item.toLowerCase(Locale.ROOT).contains("stolen") && item.toLowerCase(Locale.ROOT).contains("leader journal"); }
+
+// ... omitted 128 non-method/source lines between cataloged methods ...
+
+    boolean bankVaultLooted(MapObjectState m) { return m == null || m.vendCount > 0 || lootedBankVaultIds.contains(m.id) || (m.stockState != null && m.stockState.contains("looted=true")); }
+
+// ... omitted 282 non-method/source lines between cataloged methods ...
+
+    String persistentContainerIdForObject(MapObjectState m) {
+        if (m == null) return "";
+        if ("contract-object".equals(m.type)) return contractObjectContainerId(m.id);
+        if ("corpse-container".equals(m.type)) return (m.stockState == null || m.stockState.isBlank()) ? corpseLootContainerId(m.id) : m.stockState;
+        if ("ground-loot".equals(m.type)) return m.stockState == null ? "" : m.stockState;
+        return "";
+    }
+
+    String containerNextItemSummary(String containerId) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || c.itemInstanceIds.isEmpty()) return "no visible contents";
+        String id = c.itemInstanceIds.get(0);
+        ItemInstance inst = itemInstances.get(id);
+        if (inst == null) return "missing item record";
+        String trace = inst.provenance == null ? "untraced" : inst.provenance.summary();
+        return inst.displayName + " [" + id + "] — " + trace;
+    }
+
+// ... omitted 30 non-method/source lines between cataloged methods ...
+
+    void cleanupPersistentStockMarkerIfEmpty(MapObjectState m, String containerId) {
+        if (world == null || m == null) return;
+        if (containerItemCount(containerId) > 0) return;
+        world.mapObjects.remove(m);
+        if (world.inBounds(m.x, m.y) && "corpse-container".equals(m.type)) world.tiles[m.x][m.y] = '.';
+        DebugLog.audit("PERSISTENT_STOCK_MARKER_CLEARED", "object=" + m.id + " container=" + containerId + " state=" + stateSummary());
+    }
+
+// ... omitted 39 non-method/source lines between cataloged methods ...
+
+    void takeSelectedTargetInventoryItem() {
+        String target = selectedTargetInventoryName();
+        if (target == null) { logEvent("TAKE TARGET: no target item or floor object is selected."); return; }
+        if (target.startsWith("Floor tile:")) { logEvent("TAKE TARGET: floor surfaces cannot be carried."); return; }
+        MapObjectState m = persistentStockObjectAt(playerX, playerY);
+        String lowTarget = target.toLowerCase(Locale.ROOT);
+        if (m != null && (lowTarget.contains("corpse") || lowTarget.contains("contract") || lowTarget.contains("sealed") || lowTarget.contains("ground loot"))) {
+            lookX = playerX; lookY = playerY;
+            takeAllSelectedPersistentStockObject();
+            return;
+        }
+        logEvent("TAKE TARGET: " + target + " is visible here but has no transfer container yet.");
+    }
+
+    void takeAllTargetInventoryItems() {
+        MapObjectState m = persistentStockObjectAt(playerX, playerY);
+        if (m != null) {
+            lookX = playerX; lookY = playerY;
+            takeAllSelectedPersistentStockObject();
+            return;
+        }
+        logEvent("TAKE ALL: no transferable container is active underfoot yet.");
+    }

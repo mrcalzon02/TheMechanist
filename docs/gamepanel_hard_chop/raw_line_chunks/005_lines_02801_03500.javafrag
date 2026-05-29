@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 2801-3500
+
+        int spawned = 0;
+        int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1},{2,0},{-2,0},{0,2},{0,-2},{3,1},{-3,1},{1,3},{1,-3}};
+        for (int i=0; i<dirs.length && spawned<count; i++) {
+            int nx = lookX + dirs[i][0], ny = lookY + dirs[i][1];
+            if (world.walkable(nx, ny) && world.npcAt(nx, ny) == null) {
+                NpcEntity guard = NpcEntity.create(Faction.IMPERIAL_GUARD, world.zoneType, nx, ny, rng);
+                guard.name = "Governor's Guard " + (spawned + 1);
+                guard.role = "Governor Guard";
+                guard.state = "Hostile";
+                guard.hp = 18;
+                world.npcs.add(guard);
+                spawned++;
+            }
+        }
+        logEvent("HOSTILE INTENT: " + spawned + " governor guards surge into combat posture.");
+        noteCombatMusicActivity(true, "governor guards spawned");
+    }
+
+    int sleepTurnCost(int hours) { return Math.max(1, hours * TURNS_PER_HOUR); }
+    int sleepFoodWaterCost(int hours) {
+        boolean uninjured = wounds <= 0 && totalBodyDamagePercent() <= 0.1;
+        double rate = uninjured ? 5.0 / 32.0 : 5.0 / 8.0;
+        return Math.max(1, (int)Math.ceil(hours * rate));
+    }
+    double totalBodyDamagePercent() {
+        if (active == null || active.body == null || active.body.isEmpty()) return wounds;
+        double lost = 0, max = 0;
+        for (BodyPart bp : active.body.values()) { lost += Math.max(0, bp.maxHealth() - bp.currentHealth()); max += Math.max(1, bp.maxHealth()); }
+        return max <= 0 ? 0 : (lost / max) * 100.0;
+    }
+
+    void changePendingSleepHours(int delta) {
+        pendingSleepHours = Math.max(1, Math.min(8, pendingSleepHours + delta));
+        updatePendingInteractionSummary();
+        repaint();
+    }
+
+    void confirmInteraction() {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            String transition = world != null && world.inBounds(lookX, lookY) && isIntermapTransitTile(world.tiles[lookX][lookY]) ? transitionPreview(world.tiles[lookX][lookY], lookX, lookY) : "selected interaction";
+            WorldCommandRequest command = world != null && world.inBounds(lookX, lookY) && isIntermapTransitTile(world.tiles[lookX][lookY])
+                    ? new ChangeZoneCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, transition)
+                    : new ConfirmInteractionCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, lookX, lookY);
+            singlePlayerSectorBridge.submitCommand(this, command);
+            repaint();
+            return;
+        }
+        confirmInteractionBody();
+    }
+
+    void confirmInteractionBody() {
+        if (world == null) return;
+        updatePendingInteractionSummary();
+        DebugLog.audit("INTERACT_CONFIRM", pendingInteractionSummary + " state=" + stateSummary());
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        if (obj != null && obj.symbol == 'c') { sleepOnCot(pendingSleepHours); return; }
+        int turns = agilityActionCost(world.tiles[lookX][lookY], obj);
+        interactAt(lookX, lookY);
+        for (int i=1; i<turns; i++) advanceTurn("continues the interaction at " + lookX + "," + lookY + ".");
+    }
+
+    void sleepOnCot(int hours) {
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        if (obj == null || obj.symbol != 'c') { logEvent("Sleep failed: interact cursor is not on a cot."); return; }
+        int cost = sleepFoodWaterCost(hours);
+        if (food < cost || water < cost) { logEvent("Sleep blocked: needs " + cost + " food and " + cost + " water. Current food " + food + ", water " + water + "."); return; }
+        food -= cost; water -= cost;
+        int oldFatigue = fatigue;
+        int oldWounds = wounds;
+        int oldSleepNeed = sleepNeed;
+        fatigue = Math.max(0, fatigue - hours);
+        wounds = Math.max(0, wounds - Math.max(1, cost));
+        int turnsToSpend = sleepTurnCost(hours);
+        sleepNeed = Math.max(0, sleepNeed - turnsToSpend);
+        DebugLog.audit("SLEEP", "hours=" + hours + " turns=" + turnsToSpend + " foodCost=" + cost + " waterCost=" + cost + " fatigue " + oldFatigue + "->" + fatigue + " wounds " + oldWounds + "->" + wounds + " sleepNeed " + oldSleepNeed + "->" + sleepNeed + " state=" + stateSummary());
+        logEvent("You sleep " + hours + " hour(s). Food " + food + "/15 Water " + water + "/15. Sleep need " + oldSleepNeed + "->" + sleepNeed + "/" + MAX_SLEEP_NEED + ". Fatigue " + oldFatigue + "->" + fatigue + ", wounds " + oldWounds + "->" + wounds + ".");
+        for (int i=0; i<turnsToSpend; i++) advanceTurnSleeping("sleeps under bad pipes and worse dreams.");
+        updatePendingInteractionSummary();
+    }
+
+    void consumeEmergencyRation() {
+        int idx = -1;
+        for (int i=0; i<inventory.size(); i++) {
+            String item = inventory.get(i).toLowerCase(Locale.ROOT);
+            if (item.contains("ration") || item.contains("canteen") || item.contains("water")) { idx = i; break; }
+        }
+        if (idx < 0) { logEvent("No emergency rations, canteens, or water items found in inventory."); return; }
+        String item = inventory.get(idx);
+        ItemActionResult consumed = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, CONTAINER_VOID_CONSUMED, "consumed item ledger", null, "consumed by player as emergency ration");
+        if (!consumed.success) { logEvent("Cannot consume emergency ration: " + consumed.playerText); return; }
+        int oldFood = food, oldWater = water;
+        if (item.toLowerCase(Locale.ROOT).contains("water") || item.toLowerCase(Locale.ROOT).contains("canteen")) water = Math.min(MAX_FOOD_WATER, water + 4);
+        else { food = Math.min(MAX_FOOD_WATER, food + 4); water = Math.min(MAX_FOOD_WATER, water + 2); }
+        DebugLog.audit("CONSUME_ITEM", "item=" + item + " food " + oldFood + "->" + food + " water " + oldWater + "->" + water + " state=" + stateSummary());
+        logEvent("Consumed " + item + ". Food " + oldFood + "->" + food + ", water " + oldWater + "->" + water + ".");
+        advanceTurn("uses an inventory ration item.");
+    }
+
+    int localHour() { return Math.floorMod(turn / TURNS_PER_HOUR, HOURS_PER_DAY); }
+    int localDay() { return Math.floorMod((turn / TURNS_PER_HOUR) / HOURS_PER_DAY, DAYS_PER_MONTH) + 1; }
+    int localMonth() { return ((turn / TURNS_PER_HOUR) / (HOURS_PER_DAY * DAYS_PER_MONTH)) + 1; }
+    int turnWithinHour() { return Math.floorMod(turn, TURNS_PER_HOUR); }
+
+    String timeText() {
+        return "M" + localMonth() + " D" + localDay() + " H" + localHour() + " +" + turnWithinHour() + "/" + TURNS_PER_HOUR + "t";
+    }
+
+    String worldTimeText() { return AgeAndWorldTimeAuthority.worldTimeText(worldTurn); }
+
+    String worldLocationSummary() {
+        if (atlas == null && world == null) return "No active world location.";
+        String sectorName = atlas == null || atlas.hiveWorld == null ? "unmapped" : atlas.hiveWorld.sectorName(atlas.sectorX, atlas.sectorY);
+        String sector = atlas == null ? "unknown sector" : "sector " + atlas.sectorX + "," + atlas.sectorY + " (" + sectorName + ")";
+        String zone = world == null ? "unknown zone" : world.zoneType.label + " " + world.zoneCoordText();
+        String layer = world == null ? "unknown layer" : world.layerText();
+        return sector + "; " + zone + "; " + layer + ".";
+    }
+
+    void advancePlayerAndWorldTime(int deltaTurns, String reason) {
+        if (deltaTurns <= 0) return;
+        long beforeWorld = worldTurn;
+        turn += deltaTurns;
+        worldTurn += deltaTurns;
+        if (beforeWorld / AgeAndWorldTimeAuthority.TURNS_PER_YEAR != worldTurn / AgeAndWorldTimeAuthority.TURNS_PER_YEAR) {
+            int aged = AgeAndWorldTimeAuthority.synchronizeLoadedActors(this, reason == null ? "world-time-advance" : reason);
+            DebugLog.audit("AGE_WORLD_TIME", "yearBoundary worldTurn=" + worldTurn + " playerTurn=" + turn + " actorsUpdated=" + aged + " reason=" + (reason == null ? "unknown" : reason));
+        }
+    }
+
+    void applyStarvationDamageIfNeeded() {
+        if (turn > 0 && turn % TURNS_PER_HOUR == 0 && (food <= 0 || water <= 0)) {
+            wounds++;
+            fatigue = Math.min(25, fatigue + 2);
+            String cause = food <= 0 && water <= 0 ? "starving and dehydrated" : (food <= 0 ? "starving" : "dehydrated");
+            DebugLog.audit("STARVATION", cause + " wounds=" + wounds + " fatigue=" + fatigue + " time=" + timeText() + " state=" + stateSummary());
+            logEvent("SURVIVAL WARNING: You are " + cause + ". One hour without reserves causes endurance damage. Eat or drink soon.");
+        }
+    }
+
+    void applyAwakeSurvivalTick() {
+        if (turn > 0 && turn % TURNS_PER_HOUR == 0) {
+            sleepNeed = Math.min(MAX_SLEEP_NEED, sleepNeed + TURNS_PER_HOUR);
+            DebugLog.audit("SLEEP_PRESSURE", "sleepNeed=" + sleepNeed + "/" + MAX_SLEEP_NEED + " time=" + timeText() + " state=" + stateSummary());
+        }
+        if (turn > 0 && turn % (8 * TURNS_PER_HOUR) == 0) {
+            if (food > 0) food--;
+            if (water > 0) water--;
+            DebugLog.audit("AWAKE_METABOLISM", "food=" + food + " water=" + water + " sleepNeed=" + sleepNeed + " time=" + timeText() + " state=" + stateSummary());
+            logEvent("SURVIVAL CLOCK: eight hours pass. Food " + food + "/" + MAX_FOOD_WATER + ", water " + water + "/" + MAX_FOOD_WATER + ".");
+        }
+        if (sleepNeed >= MAX_SLEEP_NEED) passOutFromSleepNeed();
+    }
+
+
+    void applyHourlyProgressionTick(boolean sleeping) {
+        if (turn <= 0 || turn % TURNS_PER_HOUR != 0) return;
+        int oldHeat = gangHeat, oldSuspicion = suspicion;
+        int heatDecay = sleeping ? 2 : 1;
+        int suspicionDecay = sleeping ? 2 : 1;
+        if (!baseClaimed) suspicionDecay += 1;
+        gangHeat = Math.max(0, gangHeat - heatDecay);
+        suspicion = Math.max(0, suspicion - suspicionDecay);
+        if (oldHeat != gangHeat || oldSuspicion != suspicion) {
+            logEvent("PRESSURE DECAY: an hour passes. Heat " + oldHeat + "->" + gangHeat + ", suspicion " + oldSuspicion + "->" + suspicion + ".");
+            DebugLog.audit("PRESSURE_DECAY", "sleeping=" + sleeping + " heat=" + oldHeat + "->" + gangHeat + " suspicion=" + oldSuspicion + "->" + suspicion + " time=" + timeText() + " state=" + stateSummary());
+        }
+    }
+
+    void gainXp(String skill, int amount, String source) {
+        amount = Math.max(1, amount);
+        int oldXp = xp;
+        int oldCredits = knowledgeCredits;
+        xp += amount;
+        int oldBands = oldXp / 25;
+        int newBands = xp / 25;
+        if (newBands > oldBands) knowledgeCredits += (newBands - oldBands);
+        String msg = "XP GAINED: +" + amount + " " + skill + " XP from " + source + ". Total XP " + oldXp + "->" + xp + ".";
+        if (knowledgeCredits != oldCredits) msg += " Knowledge credits " + oldCredits + "->" + knowledgeCredits + ".";
+        logEvent(msg);
+        DebugLog.audit("XP_GAIN", "skill=" + skill + " amount=" + amount + " source=" + source + " xp=" + oldXp + "->" + xp + " knowledgeCredits=" + oldCredits + "->" + knowledgeCredits + " state=" + stateSummary());
+    }
+
+    boolean unlockKnowledge(String name) {
+        if (name == null || name.isBlank()) return false;
+        boolean added = unlockedKnowledges.add(name);
+        if (added) DebugLog.audit("KNOWLEDGE_UNLOCK", name + " state=" + stateSummary());
+        return added;
+    }
+
+    void purchaseKnowledge(String name, int cost) {
+        if (unlockKnowledge(name)) {
+            knowledgeCredits = Math.max(0, knowledgeCredits - Math.max(0, cost));
+            logEvent("KNOWLEDGE UNLOCKED: " + name + ". Remaining knowledge credits: " + knowledgeCredits + ".");
+        } else {
+            logEvent("Knowledge already known: " + name + ".");
+        }
+    }
+
+    java.util.List<String> knownKnowledgeLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (unlockedKnowledges.isEmpty()) lines.add("Known: none recorded yet.");
+        else for (String k : unlockedKnowledges) lines.add("Known: " + k);
+        return lines;
+    }
+
+    boolean hasKnowledge(String name) {
+        return name == null || name.isBlank() || unlockedKnowledges.contains(name);
+    }
+
+    void openKnowledgeMenu() {
+        knowledgeReturnScreen = screen == null ? Screen.CHARACTER : screen;
+        if (knowledgeReturnScreen != Screen.CHARACTER && knowledgeReturnScreen != Screen.GAME && knowledgeReturnScreen != Screen.PANEL && knowledgeReturnScreen != Screen.MENU) knowledgeReturnScreen = Screen.CHARACTER;
+        selectedKnowledgeNodeId = null;
+        resetKnowledgeTreeView();
+        setScreen(Screen.KNOWLEDGE);
+        logEvent("Knowledge tree opened inside the main game UI.");
+    }
+
+    void purchaseSelectedInfopediaKnowledge() {
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        if (!"KNOWLEDGE".equals(infopediaTabs()[Math.max(0, Math.min(infopediaTab, infopediaTabs().length-1))]) || entries.isEmpty()) { logEvent("Knowledge unlock failed: open the KNOWLEDGE Infopedia tab first."); return; }
+        String entry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        KnowledgeDef def = KnowledgeDef.get(entry);
+        if (def == null) { logEvent("Knowledge unlock failed: '" + entry + "' is a reference article, not a purchasable doctrine."); return; }
+        if (unlockedKnowledges.contains(def.name)) { logEvent("Knowledge already known: " + def.name + "."); return; }
+        if (knowledgeCredits < def.cost) { logEvent("Knowledge unlock blocked: " + def.name + " costs " + def.cost + " knowledge credit(s); you have " + knowledgeCredits + "."); return; }
+        purchaseKnowledge(def.name, def.cost);
+        repaint();
+    }
+
+    void maybeUnlockKnowledgeFromItem(String item) {
+        if (item == null) return;
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("data slate") || low.contains("dataslate") || low.contains("technical manual")) {
+            if (!hasKnowledge("Scavenged Schematics")) { unlockKnowledge("Scavenged Schematics"); logEvent("KNOWLEDGE DISCOVERED: Scavenged Schematics from " + item + "."); }
+            gainXp("Knowledge", 2, "studying " + item);
+        }
+    }
+
+    void passOutFromSleepNeed() {
+        handlePlayerUnconsciousness("exhaustion collapse", "sleep debt", "untreated exhaustion", true);
+    }
+
+    void handlePlayerUnconsciousness(String cause, String attacker, String weapon, boolean theftRisk) {
+        if (screen == Screen.LOST) return;
+        runUnconsciousEvents++;
+        int stolenItems = 0;
+        int stolenScript = 0;
+        if (theftRisk) {
+            stolenScript = unconsciousScriptLoss();
+            if (stolenScript > 0) carriedScript = Math.max(0, carriedScript - stolenScript);
+            stolenItems = unconsciousItemLoss();
+        }
+        Point wake = unconsciousWakePoint();
+        playerX = wake.x; playerY = wake.y; lookX = playerX; lookY = playerY;
+        fatigue = Math.max(0, Math.min(10, fatigue / 2));
+        sleepNeed = 0;
+        pain = Math.max(0, pain / 2);
+        bleeding = 0;
+        wounds = Math.max(0, wounds - 2);
+        if (active != null && active.body != null) healWorstBodyPart(25.0);
+        updateSensoryModel("unconscious relocation");
+        DebugLog.audit("PLAYER_UNCONSCIOUS", "cause=" + cause + " attacker=" + attacker + " weapon=" + weapon + " scriptLost=" + stolenScript + " inventoryLost=" + stolenItems + " wake=" + playerX + "," + playerY + " state=" + stateSummary());
+        logEvent("UNCONSCIOUS: " + cause + ". You are carried, dragged, ransomed, or simply found later and wake at " + wakePointLabel(wake) + ".");
+        if (stolenScript > 0) logEvent("SCRIPT STOLEN: " + stolenScript + " Concord Script was lifted from your pockets while you were out.");
+        if (stolenItems > 0) logEvent("ITEMS LOST: " + stolenItems + " carried item(s) were gone when you woke.");
+        maybeAutosave("unconscious recovery");
+    }
+
+    int unconsciousScriptLoss() {
+        if (carriedScript <= 0) return 0;
+        int pct = 10 + rng.nextInt(6); // usually around a tenth; enough to sting without total liquidation.
+        return Math.max(1, Math.min(carriedScript, (int)Math.ceil(carriedScript * pct / 100.0)));
+    }
+
+    int unconsciousItemLoss() {
+        if (inventory.isEmpty()) return 0;
+        int target = Math.max(0, (int)Math.floor(inventory.size() * 0.10));
+        if (inventory.size() >= 5) target = Math.max(1, target);
+        target = Math.min(target, Math.max(0, inventory.size() / 3));
+        int lost = 0;
+        for (int i=0; i<target && !inventory.isEmpty(); i++) {
+            int idx = rng.nextInt(inventory.size());
+            String removed = removeInventoryAtWithTrace(idx);
+            if (removed != null) lost++;
+        }
+        return lost;
+    }
+
+    Point unconsciousWakePoint() {
+        return playerLifecycleService.resolveUnconsciousWakePoint(this);
+    }
+
+    String wakePointLabel(Point p) {
+        if (baseClaimed && p != null && p.x == baseX && p.y == baseY) return "your claimed base";
+        if (world != null && p != null && world.inBounds(p.x, p.y) && world.tiles[p.x][p.y] == 'C') return "the nearest medicae clinic";
+        return "the nearest safe walkable point";
+    }
+
+    Point nearestMedicalFacilityPoint() {
+        if (world == null) return null;
+        Point best = null; int bestD = Integer.MAX_VALUE;
+        for (int x=1;x<world.w-1;x++) for (int y=1;y<world.h-1;y++) {
+            boolean clinicTile = world.tiles[x][y] == 'C';
+            boolean medRoom = false;
+            int rid = world.roomIdAt(x,y);
+            if (rid >= 0 && rid < world.roomProfiles.size() && world.roomProfiles.get(rid) != null) {
+                String n = world.roomProfiles.get(rid).name.toLowerCase(Locale.ROOT);
+                medRoom = n.contains("medicae") || n.contains("clinic") || n.contains("triage") || n.contains("infirmary") || n.contains("aid");
+            }
+            if ((clinicTile || medRoom) && world.walkable(x,y)) {
+                int d = Math.abs(x-playerX) + Math.abs(y-playerY);
+                if (d < bestD) { bestD = d; best = new Point(x,y); }
+            }
+        }
+        return best;
+    }
+
+    boolean shouldPlayerDieNow() {
+        if (active == null || active.body == null) return false;
+        BodyPart head = active.body.get("Head");
+        BodyPart torso = active.body.get("Torso");
+        boolean vitalDestroyed = (head != null && head.destroyed()) || (torso != null && torso.destroyed());
+        return vitalDestroyed || wounds >= 20 || (wounds >= 16 && bleeding > 0);
+    }
+
+    boolean shouldPlayerFallUnconsciousNow() {
+        return wounds >= 12 || fatigue >= 24 || pain >= 18;
+    }
+
+    void evaluatePlayerDefeatState(String cause, String attacker, String weapon, String location) {
+        if (screen == Screen.LOST || active == null) return;
+        if (shouldPlayerDieNow()) {
+            triggerPlayerDeath(cause, attacker, weapon, location);
+        } else if (shouldPlayerFallUnconsciousNow()) {
+            if (arbitesAuthorityText(attacker) || arbitesAuthorityText(weapon)) handleArbitesCapture("incapacitated by Civic Wardens authority", Math.max(2, suspicion / 4 + wounds / 6));
+            else handlePlayerUnconsciousness(cause, attacker, weapon, false);
+        }
+    }
+
+    void triggerPlayerDeath(String cause, String attacker, String weapon, String location) {
+        if (screen == Screen.LOST) return;
+        PlayerLifecycleService.DeathResolution deathResolution = playerLifecycleService.resolveDeath(this, cause, attacker, weapon, location);
+        DebugLog.audit("PLAYER_LIFECYCLE", playerLifecycleService.statusLine(this) + " deathOutcome=" + deathResolution.outcome());
+        lastDefeatCause = cause == null || cause.isBlank() ? "unknown fatality" : cause;
+        lastDefeatAttacker = attacker == null || attacker.isBlank() ? "unknown" : attacker;
+        lastDefeatWeapon = weapon == null || weapon.isBlank() ? "unknown" : weapon;
+        lastDefeatLocation = location == null || location.isBlank() ? "unknown" : location;
+        lastDefeatSummary = active.name + " was killed by " + lastDefeatAttacker + " using " + lastDefeatWeapon + " (" + lastDefeatCause + ").";
+        lastLossScoreLines = PlayerDefeatAndScoreAuthority.lossScoreLines(this);
+        DebugLog.audit("PLAYER_DEATH", "cause=" + lastDefeatCause + " attacker=" + lastDefeatAttacker + " weapon=" + lastDefeatWeapon + " location=" + lastDefeatLocation + " score=" + PlayerDefeatAndScoreAuthority.score(this) + " state=" + stateSummary());
+        logEvent("DEATH: " + lastDefeatSummary + " Survival time " + timeText() + ", turn " + turn + ".");
+        setScreen(Screen.LOST);
+        repaint();
+    }
+
+    void advanceTurnSleeping(String reason) {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.runAuthoritativeTurn(this, "sleep: " + reason, () -> advanceTurnSleepingBody(reason));
+            return;
+        }
+        advanceTurnSleepingBody(reason);
+    }
+
+    void advanceTurnSleepingBody(String reason) {
+        advancePlayerAndWorldTime(1, reason);
+        if (turn % (4 * TURNS_PER_HOUR) == 0) gangHeat++;
+        if (baseClaimed && turn % (5 * TURNS_PER_HOUR) == 0) suspicion++;
+        passiveBaseObjectTicks();
+        applyHourlyProgressionTick(true);
+        applyBusinessPressureTick(true);
+        applyFactionMarketPressureTick(true);
+        applyFactionStrategicSimulationTick(true);
+        processExplosiveAndCorpseEcologyTick();
+        processPortableLightTick();
+        applyStarvationDamageIfNeeded();
+        applyMedicalProgressionTick();
+        if (turn % TURNS_PER_HOUR == 0) passiveSleepBodyRecovery();
+        decayTemporaryHostilities();
+        processPersonnelReplacementQueue();
+        processMachineOperationQueueTick(true);
+        updateSensoryModel("turn " + turn);
+        evaluatePlayerDefeatState("sleeping medical deterioration", "the underhive", "untreated injuries", "whole body");
+        if (screen != Screen.LOST) maybeAutosave(reason);
+        repaint();
+    }
+
+    void passiveSleepBodyRecovery() {
+        if (active == null || active.body == null) return;
+        if (wounds > 0 && bleeding <= 0) wounds = Math.max(0, wounds - 1);
+        if (fatigue > 0) fatigue = Math.max(0, fatigue - 1);
+        if (pain > 0) pain = Math.max(0, pain - 2);
+        if (bleeding <= 0) healWorstBodyPart(20.0);
+        logEvent("REST RECOVERY: sleep reduces fatigue/pain and slowly restores the worst body part if bleeding is controlled.");
+    }
+
+    void advanceTurn(String reason) {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.runAuthoritativeTurn(this, reason, () -> advanceTurnBody(reason));
+            return;
+        }
+        advanceTurnBody(reason);
+    }
+
+    void advanceTurnBody(String reason) {
+        long profileStartNanos = System.nanoTime();
+        try {
+        advancePlayerAndWorldTime(1, reason);
+        if (turn % (4 * TURNS_PER_HOUR) == 0) gangHeat++;
+        if (turn % (6 * TURNS_PER_HOUR) == 0) fatigue = Math.min(20, fatigue + 1);
+        if (baseClaimed && turn % (5 * TURNS_PER_HOUR) == 0) suspicion++;
+        passiveBaseObjectTicks();
+        processProgressiveConstructionSites(false);
+        applyHourlyProgressionTick(false);
+        applyBusinessPressureTick(false);
+        applyFactionMarketPressureTick(false);
+        applyFactionStrategicSimulationTick(false);
+        processExplosiveAndCorpseEcologyTick();
+        processPortableLightTick();
+        applyAwakeSurvivalTick();
+        applyStarvationDamageIfNeeded();
+        applyMedicalProgressionTick();
+        decayTemporaryHostilities();
+        tickNearbyNpcs();
+        applyBankManagerSchedules();
+        applyBankAlarmPressureTick();
+        applyArbitesPatrolSweep();
+        applyAuthorityFacilityInspectionFromNews();
+        enforceEntityOccupancy("advance-turn");
+        processPersonnelReplacementQueue();
+        processMachineOperationQueueTick(false);
+        updateSensoryModel("turn " + turn);
+        evaluateFactionPressure();
+        evaluatePlayerDefeatState("survival attrition", "the underhive", "hunger, thirst, bleeding, infection, or exhaustion", "whole body");
+        if (screen != Screen.LOST) maybeAutosave(reason);
+        if (active != null) logEvent(active.name + " " + reason + " Time " + timeText() + " (turn " + turn + "). Heat " + gangHeat + ", suspicion " + suspicion + ".");
+        } finally {
+            profilingAdvanceTurnNanos += Math.max(0L, System.nanoTime() - profileStartNanos);
+            profilingAdvanceTurnSamples++;
+            deferredSimulationDebt = Math.min(100000, deferredSimulationDebt + 1);
+            if (turn > 0 && turn % 250 == 0) auditSimulationEfficiency("turn-sample");
+        }
+    }
+
+    void processMachineOperationQueueTick(boolean sleeping) {
+        if (machineOperationQueue == null) return;
+        int work = machineOperationQueue.tick(turn, 1, sleeping ? 3 : 2);
+        if (work > 0 && turn % 25 == 0) DebugLog.audit("MACHINE_OPERATION_QUEUE", machineOperationQueue.auditSummary());
+        if (turn == 1) {
+            DebugLog.audit("UNIVERSAL_WINDOW_AUTHORITY", universalWindowAuthority.auditSummary());
+            DebugLog.audit("CONSTRUCTION_GOVERNANCE", constructionGovernanceAuthority.auditSummary());
+            DebugLog.audit("MACHINE_OPERATION_STATUS_BRIDGE", MachineOperationStatusBridge.compactSummary(this));
+            }
+    }
+
+    String movementModeLabel() {
+        return MOVEMENT_MODE_LABELS[Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, movementModeIndex))];
+    }
+
+    int movementModeRange() {
+        return MOVEMENT_MODE_RANGES[Math.max(0, Math.min(MOVEMENT_MODE_RANGES.length-1, movementModeIndex))];
+    }
+
+    void cycleMovementMode() {
+        clearPendingMovementInput("movement-mode-change");
+        movementModeIndex = Math.floorMod(movementModeIndex + 1, MOVEMENT_MODE_LABELS.length);
+        resetPushPastIntent();
+        updateMoveGhostTarget(lastMoveDx, lastMoveDy);
+        sounds.play("tab", options);
+        logEvent("Movement mode now " + movementModeLabel() + ": range " + movementModeRange() + ", per-tile cost " + movementTurnCost() + " turn(s). SNEAK hides but ruins disguise credibility; WALK observes; RUN/SPRINT evade better but see, hear, and aim worse until a no-move turn settles you.");
+        DebugLog.audit("MOVEMENT_MODE", "selected=" + movementModeLabel() + " active=" + activeMotionStateLabel() + " range=" + movementModeRange() + " cost=" + movementTurnCost() + " turn=" + turn);
+        repaint();
+    }
+
+    int movementBaseTurnCost() {
+        int cost = 1 + Math.max(0, inventoryWeight() - carryCapacity());
+        int legPenalty = crippledLegCount();
+        if (legPenalty > 0) cost += legPenalty;
+        if (pain >= 6) cost += 1;
+        return Math.max(1, cost);
+    }
+
+    int movementTurnCost() {
+        int cost = movementBaseTurnCost();
+        if (movementModeIndex == MOTION_SNEAK) cost += 2;      // SNEAK: slow, crouched, concealment-first travel.
+        else if (movementModeIndex == MOTION_WALK) cost += 1; // WALK: deliberate and observant.
+        else if (movementModeIndex == MOTION_SPRINT) cost = Math.max(1, cost - 1); // SPRINT: fast, loud, sloppy.
+        return Math.max(1, cost);
+    }
+
+    int movementModeFatigueCost() {
+        if (movementModeIndex == MOTION_SPRINT) return 1;
+        if (movementModeIndex == MOTION_SNEAK) return 1;
+        return 0;
+    }
+
+    String movementModeNoiseWord() {
+        if (movementModeIndex == MOTION_SNEAK) return "careful crouched movement";
+        if (movementModeIndex == MOTION_WALK) return "quiet movement";
+        if (movementModeIndex == MOTION_SPRINT) return "sprinting boots";
+        return "movement";
+    }
+
+    String activeMotionStateLabel() {
+        if (activeMotionStateIndex == MOTION_STATIONARY) return "STATIONARY";
+        int idx = Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, activeMotionStateIndex));
+        return MOVEMENT_MODE_LABELS[idx];
+    }
+
+    void markPlayerMovedThisTurn() {
+        activeMotionStateIndex = Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, movementModeIndex));
+    }
+
+    void settlePlayerMotionAfterNoMoveTurn(String source) {
+        if (activeMotionStateIndex != MOTION_STATIONARY) {
+            String old = activeMotionStateLabel();
+            activeMotionStateIndex = MOTION_STATIONARY;
+            logEvent("MOTION SETTLED: after a no-move turn you are now stationary. Former motion state " + old + " no longer penalizes aim or senses.");
+            DebugLog.audit("MOTION_SETTLED", "source=" + source + " old=" + old + " turn=" + turn);
+            updateSensoryModel("motion settled");
+        }
+    }
+
+    boolean activeMotionIsSneak() { return activeMotionStateIndex == MOTION_SNEAK; }
+
+    int motionVisionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 3;
+            case MOTION_SNEAK: return 1;
+            case MOTION_WALK: return 2;
+            case MOTION_RUN: return -1;
+            case MOTION_SPRINT: return -3;
+            default: return 0;
+        }
+    }
+
+    int motionDetailVisionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_SNEAK: return 1;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -1;
+            case MOTION_SPRINT: return -2;
+            default: return 0;
+        }
+    }
+
+    int motionHearingModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 4;
+            case MOTION_SNEAK: return 2;
+            case MOTION_WALK: return 2;
+            case MOTION_RUN: return -2;
+            case MOTION_SPRINT: return -5;
+            default: return 0;
+        }
+    }
+
+    int playerAttackMotionSkillModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -3;
+            case MOTION_SPRINT: return -5;
+            case MOTION_SNEAK: return -2;
+            default: return 0;
+        }
+    }
+
+    int playerDefenseMotionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_SNEAK: return 6;
+            case MOTION_SPRINT: return 4;
+            case MOTION_RUN: return 3;
+            case MOTION_WALK: return 1;
+            case MOTION_STATIONARY: return 0;
+            default: return 0;
+        }
+    }
+
+    int crippledLegCount() {
+        if (active == null || active.body == null) return 0;
+        int n = 0;
+        for (BodyPart bp : active.body.values()) if (bp.name.toLowerCase(Locale.ROOT).contains("leg") && bp.currentHealth() <= bp.maxHealth()*0.25) n++;
+        return n;
+    }
+
+    int crippledArmCount() {
+        if (active == null || active.body == null) return 0;
+        int n = 0;
+        for (BodyPart bp : active.body.values()) {
+            String low = bp.name.toLowerCase(Locale.ROOT);
+            if ((low.contains("arm") || low.contains("hand") || low.contains("finger")) && bp.currentHealth() <= bp.maxHealth()*0.25) n++;
+        }
+        return n;
+    }
+
+    boolean hasUsableWeaponLimb() { return crippledArmCount() < 3; }
+
+
+    int movementSlideDurationMillis(int motionMode) {
+        if (motionMode == MOTION_SPRINT) return MOVE_SLIDE_SPRINT_MS;
+        if (motionMode == MOTION_SNEAK) return MOVE_SLIDE_SNEAK_MS;
+        if (motionMode == MOTION_WALK) return 120;
+        return MOVE_SLIDE_BASE_MS;
+    }
+
+    void beginPlayerTileSlide(int fromX, int fromY, int toX, int toY) {
+        // 0.9.10ff: live Linux testing showed unfinished tween frames could leave the
+        // player icon visually between tiles after control returned. Until movement
+        // interpolation has a dedicated state gate, player position renders snapped
+        // to the authoritative tile center every frame.
+        playerTileMotion = null;
+        if (fromX != toX || fromY != toY) DebugLog.audit("MOVE_SNAP", "actor=player from=" + fromX + "," + fromY + " to=" + toX + "," + toY + " mode=" + movementModeLabel() + " turn=" + turn);
+    }
+
+    void beginNpcTileSlide(NpcEntity npc, int fromX, int fromY, int toX, int toY) {
+        if (npc == null || (fromX == toX && fromY == toY)) return;
+        npcTileMotions.put(npc.id, new TileMotion(npc.id, fromX, fromY, toX, toY, System.currentTimeMillis(), MOVE_SLIDE_BASE_MS));
+        int dist = Math.abs(toX - playerX) + Math.abs(toY - playerY);
+        if (dist <= 10 && rng.nextDouble() < 0.18) sounds.playFootstep("metal", dist, options);
+    }
+
+    Point slidePixelOffset(TileMotion m, int cellW, int cellH) {
+        if (m == null || m.done(System.currentTimeMillis())) return new Point(0, 0);
+        double p = m.progress(System.currentTimeMillis());
+        int ox = (int)Math.round((m.fromX - m.toX) * cellW * (1.0 - p));
+        int oy = (int)Math.round((m.fromY - m.toY) * cellH * (1.0 - p));
+        return new Point(ox, oy);
+    }
+
+    Point playerSlideOffsetPixels(int cellW, int cellH) {
+        if (playerTileMotion == null) return new Point(0,0);
+        if (playerTileMotion.toX != playerX || playerTileMotion.toY != playerY || playerTileMotion.done(System.currentTimeMillis())) { playerTileMotion = null; return new Point(0,0); }
+        return slidePixelOffset(playerTileMotion, cellW, cellH);
+    }
+
+    Point npcSlideOffsetPixels(NpcEntity npc, int cellW, int cellH) {
+        if (npc == null) return new Point(0,0);
+        TileMotion m = npcTileMotions.get(npc.id);
+        if (m == null) return new Point(0,0);
+        if (m.toX != npc.x || m.toY != npc.y || m.done(System.currentTimeMillis())) { npcTileMotions.remove(npc.id); return new Point(0,0); }
+        return slidePixelOffset(m, cellW, cellH);
+    }
+
+    void pruneTileMotions() {
+        long now = System.currentTimeMillis();
+        if (playerTileMotion != null && playerTileMotion.done(now)) playerTileMotion = null;
+        if (!npcTileMotions.isEmpty()) npcTileMotions.entrySet().removeIf(e -> e.getValue() == null || e.getValue().done(now));
+    }
+
+    void maybePlayCoreAmbientCue(long now) {
+        if (screen != Screen.GAME || world == null || options == null || !options.soundEnabled) return;
+        int idleBonus = (now - lastInputMillis > 1800L) ? CORE_AMBIENT_IDLE_BONUS_MS : 0;
+        if (now - lastAmbientCueMillis < Math.max(900, CORE_AMBIENT_MIN_INTERVAL_MS - idleBonus)) return;
+        double chance = (now - lastInputMillis > 1800L) ? 0.24 : 0.13;
+        if (rng.nextDouble() > chance) return;
+        lastAmbientCueMillis = now;
+        String key = coreAmbientCueForZone();
+        int pseudoDistance = 4 + rng.nextInt(18);
+        sounds.playDistantCue(key, pseudoDistance, options);
+        DebugLog.audit("CORE_AMBIENT_CUE", "key=" + key + " distance=" + pseudoDistance + " zone=" + world.zoneType.label + " idleMs=" + (now-lastInputMillis) + " turn=" + turn);
+    }
+
+    String pickWeightedCue(String[] keys, int[] weights) {
+        if (keys == null || keys.length == 0) return "ambient_machine";
+        int total = 0;
+        for (int w : weights) total += Math.max(0, w);
+        if (total <= 0) return keys[0];
+        int roll = rng.nextInt(total);
+        for (int i=0; i<keys.length; i++) {
+            roll -= Math.max(0, weights[Math.min(i, weights.length-1)]);
+            if (roll < 0) return keys[i];
+        }
+        return keys[keys.length-1];
+    }
+
+    String coreAmbientCueForZone() {
+        if (world == null || world.zoneType == null) return "ambient_machine";
+        String z = world.zoneType.label.toLowerCase(Locale.ROOT);
+        if (z.contains("sewer") || z.contains("sump")) return pickWeightedCue(
+            new String[]{"ambient_pipe","ambient_vent","ambient_drip","ambient_sludge","ambient_alarm_far"},
+            new int[]{32,24,24,16,4});
+        if (z.contains("noble") || z.contains("governor")) return pickWeightedCue(
+            new String[]{"ambient_tv","ambient_radio","ambient_chime","ambient_servitor","ambient_door_servo"},
+            new int[]{30,26,16,16,12});
+        if (z.contains("industrial") || z.contains("mechanist Collegia") || z.contains("factory")) return pickWeightedCue(
+            new String[]{"ambient_machine","ambient_spark","ambient_press","ambient_servo","ambient_alarm_far","ambient_vent"},
+            new int[]{30,20,18,14,8,10});
+        if (z.contains("market") || z.contains("hab")) return pickWeightedCue(
+            new String[]{"ambient_radio","ambient_tv","ambient_machine","ambient_door_servo","ambient_pipe"},
+            new int[]{32,22,18,14,14});
+        return pickWeightedCue(new String[]{"ambient_machine","ambient_pipe","ambient_radio","ambient_spark","ambient_vent"}, new int[]{34,20,18,14,14});
+    }
+
+    String soundPingAudioKey(String label) {
+        String l = label == null ? "" : label.toLowerCase(Locale.ROOT);
+        if (l.contains("machinery")) return "ambient_machine";
+        if (l.contains("wet") || l.contains("sludge")) return "ambient_sludge";
+        if (l.contains("voice") || l.contains("mutter") || l.contains("prayer")) return "ambient_radio";

@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 9101-9800
+
+        DebugLog.audit("BASE_SCRIPT_WITHDRAW", "amount=" + n + " baseScript=" + baseStashedScript + " state=" + stateSummary());
+        advanceTurn("withdraws base cash."); repaint();
+    }
+
+    MapObjectState bankTerminalAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-terminal"); }
+    boolean isBankTerminalAt(int tx, int ty) { return bankTerminalAt(tx, ty) != null; }
+
+    BankProfile selectedBankProfile() {
+        MapObjectState m = bankTerminalAt(lookX, lookY);
+        return m == null ? null : BankProfile.byId(MapObjectState.itemNameFromStock(m.stockState));
+    }
+
+    String selectedBankTerminalKind() {
+        MapObjectState m = bankTerminalAt(lookX, lookY);
+        if (m == null || m.stockState == null) return "terminal";
+        return m.stockState.contains("kind=branch") ? "branch office" : "credit terminal kiosk";
+    }
+
+    int bankBalance(String bankId) { return bankBalances.getOrDefault(bankId, 0); }
+    int totalBankedCash() { int n=0; for (int v : bankBalances.values()) n += Math.max(0, v); return n; }
+
+    String bankTerminalPreview(int tx, int ty) {
+        MapObjectState m = bankTerminalAt(tx, ty);
+        if (m == null) return "No bank terminal selected.";
+        BankProfile b = BankProfile.byId(MapObjectState.itemNameFromStock(m.stockState));
+        boolean branch = m.stockState != null && m.stockState.contains("kind=branch");
+        boolean open = openBankAccounts.contains(b.id);
+        return b.label + " " + (branch?"branch office":"credit terminal kiosk") + " / aligned with " + b.noblePatron + ". Open fee " + b.openFee + " script. Balance " + bankBalance(b.id) + ". Carried cash " + countMoney() + ". " + b.reputation + (open?" Account open.":" Account not open.") + (b.arbitesFineProtected?" Civic Wardens fine seizure protection: strong.":" Civic Wardens fine seizure protection: ordinary.");
+    }
+
+    void openSelectedBankAccount() {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("BANK: no bank selected."); return; }
+        if (openBankAccounts.contains(b.id)) { logEvent("BANK: account already open at " + b.label + ". Balance " + bankBalance(b.id) + " script."); return; }
+        if (!spendImperialScript(b.openFee)) { logEvent("BANK: " + b.label + " requires " + b.openFee + " Concord Script to open an account. You carry " + countMoney() + "."); return; }
+        openBankAccounts.add(b.id); bankBalances.putIfAbsent(b.id, 0);
+        lastBankReport = "Opened account at " + b.label + ".";
+        logEvent("BANK: opened account at " + b.label + " for " + b.openFee + " script. " + b.reputation);
+        DebugLog.audit("BANK_OPEN", "bank=" + b.id + " fee=" + b.openFee + " cash=" + countMoney() + " state=" + stateSummary());
+        advanceTurn("opens a bank account."); repaint();
+    }
+
+    void depositAllToSelectedBank() { depositToSelectedBank(Integer.MAX_VALUE); }
+    void depositToSelectedBank(int amount) {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("BANK: no bank selected."); return; }
+        if (!openBankAccounts.contains(b.id)) { logEvent("BANK: open an account at " + b.label + " before depositing."); return; }
+        int cash = countMoney();
+        int n = Math.min(cash, amount == Integer.MAX_VALUE ? cash : Math.max(0, amount));
+        if (n <= 0) { logEvent("BANK: you have no carried Concord Script to deposit."); return; }
+        spendImperialScript(n);
+        bankBalances.put(b.id, bankBalance(b.id) + n);
+        lastBankReport = "Deposited " + n + " script into " + b.label + ".";
+        logEvent("BANK: deposited " + n + " Concord Script into " + b.label + ". Balance now " + bankBalance(b.id) + ".");
+        DebugLog.audit("BANK_DEPOSIT", "bank=" + b.id + " amount=" + n + " balance=" + bankBalance(b.id) + " cash=" + countMoney() + " state=" + stateSummary());
+        advanceTurn("deposits bank cash."); repaint();
+    }
+
+    void withdrawFromSelectedBank(int amount) {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("BANK: no bank selected."); return; }
+        if (!openBankAccounts.contains(b.id)) { logEvent("BANK: no open account at " + b.label + "."); return; }
+        int bal = bankBalance(b.id);
+        if (bal <= 0) { logEvent("BANK: account at " + b.label + " is empty."); return; }
+        int n = Math.min(bal, amount == Integer.MAX_VALUE ? bal : Math.max(0, amount));
+        if (n <= 0) { logEvent("BANK: withdrawal amount must be positive."); return; }
+        int fee = Math.min(n, selectedBankTerminalKind().contains("kiosk") ? b.kioskFee : b.branchFee);
+        int delivered = Math.max(0, n - fee);
+        bankBalances.put(b.id, bal - n);
+        addImperialScript(delivered);
+        lastBankReport = "Withdrew " + delivered + " script from " + b.label + " after fee " + fee + ".";
+        logEvent("BANK: withdrew " + delivered + " Concord Script from " + b.label + " (fee " + fee + "). Balance now " + bankBalance(b.id) + ".");
+        DebugLog.audit("BANK_WITHDRAW", "bank=" + b.id + " gross=" + n + " fee=" + fee + " delivered=" + delivered + " balance=" + bankBalance(b.id) + " state=" + stateSummary());
+        advanceTurn("withdraws bank cash."); repaint();
+    }
+
+
+
+    MapObjectState bankVaultAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-vault"); }
+    boolean isBankVaultAt(int tx, int ty) { return bankVaultAt(tx, ty) != null; }
+    BankProfile bankProfileFromStock(String stock) { return BankProfile.byId(MapObjectState.itemNameFromStock(stock)); }
+    boolean bankVaultLooted(MapObjectState m) { return m == null || m.vendCount > 0 || lootedBankVaultIds.contains(m.id) || (m.stockState != null && m.stockState.contains("looted=true")); }
+    String bankVaultPreview(int tx, int ty) {
+        MapObjectState m = bankVaultAt(tx, ty);
+        if (m == null) return "No bank vault selected.";
+        BankProfile b = bankProfileFromStock(m.stockState);
+        String state = bankVaultLooted(m) ? "looted/emptied" : "locked and valuable";
+        boolean alarmed = m.cooldownUntilTurn > turn || (m.stockState != null && m.stockState.contains("alarmed=true"));
+        return "Bank vault: " + b.label + " / patron " + b.noblePatron + " / " + state + (alarmed?" / alarmed":"") + ". Access: Bank manager keycard, Secure vault key, Data spike, Lockpicks, or hacking tools. Alarm cooldown until turn " + Math.max(0, bankHeistAlarmCooldownUntilTurn) + ". Last heist report: " + lastBankHeistReport + " Last alarm: " + lastBankAlarmReport;
+    }
+    NpcEntity bankManagerAt(int tx, int ty) { NpcEntity n = world == null ? null : world.npcAt(tx, ty); return isBankManager(n) ? n : null; }
+    boolean isBankManagerAt(int tx, int ty) { return bankManagerAt(tx, ty) != null; }
+    boolean isBankManager(NpcEntity n) { return n != null && n.role != null && n.role.toLowerCase(Locale.ROOT).contains("bank manager"); }
+    String bankManagerPreview(int tx, int ty) {
+        NpcEntity n = bankManagerAt(tx, ty);
+        if (n == null) return "No bank manager selected.";
+        return n.name + " / " + n.role + " / " + n.rankLine() + ". A manager keycard may open nearby bank vaults, assuming alarms, guards, witnesses, and law remain theoretical.";
+    }
+    void openSelectedBankVault() { openBankVaultAt(lookX, lookY); }
+    void openBankVaultAt(int tx, int ty) {
+        MapObjectState m = bankVaultAt(tx, ty);
+        if (m == null) { logEvent("BANK VAULT: no vault selected."); return; }
+        BankProfile b = bankProfileFromStock(m.stockState);
+        if (bankVaultLooted(m)) { logEvent("BANK VAULT: " + b.label + " vault has already been emptied. The remaining wealth is structural arrogance."); return; }
+        int access = bankVaultAccessScore();
+        int diff = bankVaultDifficulty(b);
+        boolean credential = countInventory("Bank manager keycard") > 0 || countInventory("Secure vault key") > 0;
+        boolean localAlarmDisabled = nearbyBankAlarmPanelDisabled(tx, ty, b);
+        int roll = rng.nextInt(100);
+        if (!credential && access + roll < diff) {
+            int sev = Math.max(3, diff/18);
+            if (localAlarmDisabled) sev = Math.max(1, sev - 2);
+            raiseBankHeistAlarmAt(b, "failed vault access roll " + (access + roll) + " vs " + diff, sev, tx, ty);
+            if (m.stockState != null && !m.stockState.contains("alarmed=true")) m.stockState += ";alarmed=true";
+            logEvent("BANK VAULT FAILED: access score " + access + "+roll " + roll + " < difficulty " + diff + ". Alarm pressure rises. " + lastBankHeistReport);
+            advanceTurn("fails a bank vault intrusion."); repaint(); return;
+        }
+        ArrayList<String> loot = BankHeistApi.vaultLootFor(b, rng);
+        int cash = BankHeistApi.vaultCashFor(b, rng);
+        for (String item : loot) addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.NOBLE, b.label + " vault", world, turn, "vault reserve / client sealed property", "stolen from bank vault by player"));
+        addImperialScript(cash);
+        m.vendCount = 1;
+        if (m.stockState == null) m.stockState = b.id;
+        if (!m.stockState.contains("locked=false")) m.stockState += ";locked=false";
+        if (!m.stockState.contains("open=true")) m.stockState += ";open=true";
+        if (!m.stockState.contains("looted=true")) m.stockState += ";looted=true";
+        lootedBankVaultIds.add(m.id);
+        suspicion += b.upperHive ? 8 : (b.midHive ? 5 : 3);
+        gangHeat += 1;
+        lastBankHeistReport = "Opened " + b.label + " vault at " + (world == null ? "unknown zone" : world.zoneName) + "; stole " + loot.size() + " item(s) and " + cash + " script; suspicion now " + suspicion + ".";
+        logEvent("BANK HEIST: " + lastBankHeistReport + " Loot: " + String.join(", ", loot) + ".");
+        recordPlayerNewsEvent("bank-heist", b.label + " vault breach", Faction.NOBLE, "unreported vault breach at " + b.label + "; authorities are comparing permits, keys, and shoeprints", Math.max(5, loot.size()+3));
+        int alarmSeverity = Math.max(5, loot.size()+2);
+        if (localAlarmDisabled) alarmSeverity = Math.max(2, alarmSeverity - 3);
+        raiseBankHeistAlarmAt(b, localAlarmDisabled ? "vault opened after alarm panel bypass" : "vault opened", alarmSeverity, tx, ty);
+        DebugLog.audit("BANK_VAULT_OPEN", "bank=" + b.id + " items=" + loot + " cash=" + cash + " score=" + access + " diff=" + diff + " state=" + stateSummary());
+        advanceTurn("loots a bank vault."); repaint();
+    }
+    int bankVaultAccessScore() {
+        int score = stat("Intellect", 6) * 5 + stat("Agility", 6) * 2;
+        if (countInventory("Bank manager keycard") > 0) score += 70;
+        if (countInventory("Secure vault key") > 0) score += 55;
+        if (countInventory("Data spike") > 0) score += 30;
+        if (countInventory("Lockpicks") > 0) score += 18;
+        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanist Collegia tool roll") > 0) score += 12;
+        if ("SNEAK".equals(movementModeLabel()) || "SNEAK".equals(activeMotionStateLabel())) score += 8;
+        return score;
+    }
+    int bankVaultDifficulty(BankProfile b) { return b == null ? 65 : (b.upperHive ? 105 : (b.midHive ? 82 : 58)); }
+    void stealSelectedBankManagerKeycard() { stealBankManagerKeycardAt(lookX, lookY); }
+    void stealBankManagerKeycardAt(int tx, int ty) {
+        NpcEntity n = bankManagerAt(tx, ty);
+        if (n == null) { logEvent("KEYCARD THEFT: no bank manager selected."); return; }
+        if (countInventory("Bank manager keycard") > 0) { logEvent("KEYCARD THEFT: you already carry a bank manager keycard. Multiple felonies do not make the first one tidier."); return; }
+        int score = stat("Agility", 6) * 6 + stat("Intellect", 6) * 3 + (("SNEAK".equals(movementModeLabel()) || "SNEAK".equals(activeMotionStateLabel())) ? 12 : 0);
+        int diff = 48 + Math.max(0, n.intellect * 4) + Math.max(0, n.factionRank <= 3 ? 12 : 0);
+        int roll = rng.nextInt(100);
+        if (score + roll >= diff) {
+            addInventoryItem("Bank manager keycard", ItemProvenanceRecord.of("Bank manager keycard", n.faction, n.name, world, turn, "bank branch credential", "stolen from bank manager by player"));
+            suspicion += 2;
+            lastBankHeistReport = "Stole a bank manager keycard from " + n.name + " without immediate alarm. Suspicion now " + suspicion + ".";
+            logEvent("KEYCARD THEFT: " + lastBankHeistReport);
+            gainXp("Stealth", 2, "stole a bank manager keycard");
+            DebugLog.audit("BANK_KEYCARD_STEAL_SUCCESS", "npc=" + n.id + " score=" + score + " roll=" + roll + " diff=" + diff + " state=" + stateSummary());
+        } else {
+            suspicion += 6; gangHeat += 1;
+            BankProfile b = nearestBankProfileForManager(n);
+            raiseBankHeistAlarmAt(b, "failed keycard theft from " + n.name, 4, n.x, n.y);
+            n.state = "Alarmed";
+            lastBankHeistReport = "Failed to steal a bank manager keycard from " + n.name + ". The manager noticed enough to make this a legal event.";
+            logEvent("KEYCARD THEFT FAILED: " + lastBankHeistReport + " Suspicion " + suspicion + ".");
+            DebugLog.audit("BANK_KEYCARD_STEAL_FAIL", "npc=" + n.id + " score=" + score + " roll=" + roll + " diff=" + diff + " state=" + stateSummary());
+        }
+        advanceTurn("attempts to steal a bank manager keycard."); repaint();
+    }
+    BankProfile nearestBankProfileForManager(NpcEntity n) {
+        if (world != null && n != null) {
+            MapObjectState best = null; int bd = 9999;
+            for (MapObjectState m : world.mapObjects) if (m != null && ("bank-terminal".equals(m.type) || "bank-vault".equals(m.type))) {
+                int d = Math.abs(m.x-n.x)+Math.abs(m.y-n.y); if (d < bd) { bd=d; best=m; }
+            }
+            if (best != null) return bankProfileFromStock(best.stockState);
+        }
+        return BankProfile.ALL[0];
+    }
+    boolean nearbyBankAlarmPanelDisabled(int tx, int ty, BankProfile b) {
+        if (world == null) return false;
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || !"bank-alarm-panel".equals(m.type)) continue;
+            BankProfile mb = bankProfileFromStock(m.stockState);
+            if (b != null && mb != null && !b.id.equals(mb.id)) continue;
+            if (Math.abs(m.x - tx) + Math.abs(m.y - ty) <= 10 && bankAlarmPanelDisabled(m)) return true;
+        }
+        return false;
+    }
+    void raiseBankHeistAlarm(BankProfile b, String reason, int severity) {
+        raiseBankHeistAlarmAt(b, reason, severity, playerX, playerY);
+    }
+    void raiseBankHeistAlarmAt(BankProfile b, String reason, int severity, int tx, int ty) {
+        int sev = Math.max(1, severity);
+        bankHeistAlarmCooldownUntilTurn = Math.max(bankHeistAlarmCooldownUntilTurn, turn + (2 + sev) * TURNS_PER_HOUR);
+        authorityFacilityInspectionCooldownUntilTurn = Math.max(authorityFacilityInspectionCooldownUntilTurn, turn + Math.max(2, sev) * TURNS_PER_HOUR);
+        suspicion += Math.max(1, sev);
+        if (b != null && b.upperHive) suspicion += 2;
+        lastBankHeistReport = "Bank alarm pressure: " + (b==null?"unknown bank":b.label) + " / " + reason + " / severity " + sev + "; alarm cooldown until turn " + bankHeistAlarmCooldownUntilTurn + ".";
+        lastBankAlarmReport = lastBankHeistReport;
+        if (world != null) {
+            for (MapObjectState m : world.mapObjects) {
+                if (m == null || !"bank-alarm-panel".equals(m.type)) continue;
+                if (Math.abs(m.x - tx) + Math.abs(m.y - ty) > 12 + sev) continue;
+                if (m.stockState != null && !m.stockState.contains("alarmed=true")) m.stockState += ";alarmed=true";
+                m.cooldownUntilTurn = Math.max(m.cooldownUntilTurn, bankHeistAlarmCooldownUntilTurn);
+            }
+        }
+        alertBankGuardsNear(tx, ty, b, sev);
+        DebugLog.audit("BANK_HEIST_ALARM", "bank=" + (b==null?"unknown":b.id) + " reason=" + reason + " severity=" + sev + " cooldown=" + bankHeistAlarmCooldownUntilTurn + " at=" + tx + "," + ty + " state=" + stateSummary());
+    }
+
+
+    MapObjectState bankAlarmPanelAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-alarm-panel"); }
+    boolean isBankAlarmPanelAt(int tx, int ty) { return bankAlarmPanelAt(tx, ty) != null; }
+    boolean bankAlarmPanelDisabled(MapObjectState m) {
+        return m == null || disabledBankAlarmPanelIds.contains(m.id) || (m.stockState != null && m.stockState.contains("disabled=true"));
+    }
+    BankProfile bankProfileFromNearbyBankObject(int tx, int ty) {
+        MapObjectState best = null; int bd = 9999;
+        if (world != null) for (MapObjectState m : world.mapObjects) if (m != null && ("bank-terminal".equals(m.type) || "bank-vault".equals(m.type) || "bank-alarm-panel".equals(m.type))) {
+            int d = Math.abs(m.x - tx) + Math.abs(m.y - ty);
+            if (d < bd) { bd = d; best = m; }
+        }
+        return best == null ? BankProfile.ALL[0] : bankProfileFromStock(best.stockState);
+    }
+    String bankAlarmPanelPreview(int tx, int ty) {
+        MapObjectState m = bankAlarmPanelAt(tx, ty);
+        if (m == null) return "No bank alarm panel selected.";
+        BankProfile b = bankProfileFromStock(m.stockState);
+        String state = bankAlarmPanelDisabled(m) ? "disabled/silenced" : (turn < m.cooldownUntilTurn ? "active alarm raised until turn " + m.cooldownUntilTurn : "armed/quiet");
+        return "Bank alarm panel: " + b.label + " / " + state + ". Tampering uses Intellect, Agility, tools, and stealth; failure alerts guards and raises authority pressure. Last alarm: " + lastBankAlarmReport;
+    }
+    void tamperSelectedBankAlarmPanel() { tamperBankAlarmPanelAt(lookX, lookY); }
+    void tamperBankAlarmPanelAt(int tx, int ty) {
+        MapObjectState m = bankAlarmPanelAt(tx, ty);
+        if (m == null) { logEvent("BANK ALARM: no alarm panel selected."); return; }
+        if (bankAlarmPanelDisabled(m)) { logEvent("BANK ALARM: this panel is already disabled or sufficiently pacified."); return; }
+        BankProfile b = bankProfileFromStock(m.stockState);
+        int score = stat("Intellect", 6) * 5 + stat("Agility", 6) * 3;
+        if (countInventory("Data spike") > 0) score += 22;
+        if (countInventory("Lockpicks") > 0) score += 8;
+        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanist Collegia tool roll") > 0) score += 16;
+        if ("SNEAK".equals(movementModeLabel()) || "SNEAK".equals(activeMotionStateLabel())) score += 10;
+        int diff = b == null ? 60 : (b.upperHive ? 105 : (b.midHive ? 82 : 58));
+        int roll = rng.nextInt(100);
+        if (score + roll >= diff) {
+            if (m.stockState == null) m.stockState = b.id;
+            if (!m.stockState.contains("disabled=true")) m.stockState += ";disabled=true";
+            disabledBankAlarmPanelIds.add(m.id);
+            bankHeistAlarmCooldownUntilTurn = Math.max(turn, Math.min(bankHeistAlarmCooldownUntilTurn, turn + TURNS_PER_HOUR));
+            lastBankAlarmReport = "Disabled " + b.label + " branch alarm panel at " + tx + "," + ty + "; vault alarm response is reduced until maintenance notices.";
+            logEvent("BANK ALARM TAMPER: " + lastBankAlarmReport);
+            gainXp("Stealth", 2, "silenced a bank alarm panel");
+            gainXp("Tech", 1, "bypassed bank alarm logic");
+            DebugLog.audit("BANK_ALARM_PANEL_DISABLED", "bank=" + b.id + " score=" + score + " roll=" + roll + " diff=" + diff + " state=" + stateSummary());
+        } else {
+            suspicion += 4; gangHeat += 1; m.cooldownUntilTurn = Math.max(m.cooldownUntilTurn, turn + 3 * TURNS_PER_HOUR);
+            raiseBankHeistAlarm(b, "failed alarm-panel tamper at " + tx + "," + ty, 5);
+            lastBankAlarmReport = "Failed to disable " + b.label + " branch alarm panel; the box screamed to every clerk, guard, and ledger within administrative distance.";
+            logEvent("BANK ALARM TAMPER FAILED: " + lastBankAlarmReport);
+            DebugLog.audit("BANK_ALARM_PANEL_FAIL", "bank=" + b.id + " score=" + score + " roll=" + roll + " diff=" + diff + " state=" + stateSummary());
+        }
+        advanceTurn("tampers with a bank alarm panel."); repaint();
+    }
+
+    void applyBankManagerSchedules() {
+        if (world == null || turn % Math.max(1, TURNS_PER_HOUR/2) != 0) return;
+        for (NpcEntity n : world.npcs) {
+            if (!isBankManager(n)) continue;
+            int phase = Math.floorMod(turn / Math.max(1, TURNS_PER_HOUR), 4);
+            if (phase == 0) n.state = "Vault Desk";
+            else if (phase == 1) n.state = "Counting Script";
+            else if (phase == 2) n.state = "Inspecting Vault";
+            else n.state = "Reviewing Lockboxes";
+        }
+    }
+
+    void applyBankAlarmPressureTick() {
+        if (world == null || turn >= bankHeistAlarmCooldownUntilTurn) return;
+        if (turn % Math.max(1, TURNS_PER_HOUR/2) != 0) return;
+        int alerted = 0;
+        for (NpcEntity n : world.npcs) {
+            if (n == null || n.role == null) continue;
+            String role = n.role.toLowerCase(Locale.ROOT);
+            if (role.contains("bank security") || role.contains("vault guard") || role.contains("branch guard")) {
+                if (!"Alarm Response".equals(n.state)) { n.state = "Alarm Response"; alerted++; }
+                n.activeMotionStateIndex = MOTION_RUN;
+            }
+        }
+        if (alerted > 0) {
+            lastBankAlarmReport = "Bank alarm is still active; " + alerted + " branch guard(s) have shifted into alarm response.";
+            logEvent("BANK SECURITY: " + lastBankAlarmReport);
+        }
+    }
+
+    void alertBankGuardsNear(int tx, int ty, BankProfile b, int severity) {
+        if (world == null) return;
+        int alerted = 0;
+        for (NpcEntity n : world.npcs) {
+            if (n == null || n.role == null) continue;
+            String role = n.role.toLowerCase(Locale.ROOT);
+            if (!(role.contains("bank security") || role.contains("vault guard") || role.contains("branch guard") || role.contains("bank manager"))) continue;
+            int d = Math.abs(n.x - tx) + Math.abs(n.y - ty);
+            if (d > 18 + severity * 2) continue;
+            n.state = role.contains("manager") ? "Alarmed" : "Alarm Response";
+            n.activeMotionStateIndex = MOTION_RUN;
+            if (role.contains("guard")) { n.faction = Faction.NOBLE; n.equippedRangedWeapon = n.equippedRangedWeapon == null || n.equippedRangedWeapon.isBlank() ? "Autopistol" : n.equippedRangedWeapon; n.loadedShots = Math.max(n.loadedShots, 6); n.ammoReloadsRemaining = Math.max(n.ammoReloadsRemaining, 2); }
+            alerted++;
+        }
+        if (alerted > 0) lastBankAlarmReport = "Alarm at " + (b==null?"unknown bank":b.label) + " alerted " + alerted + " local manager/guard actor(s).";
+    }
+
+    void acceptBankLockboxContract() {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("LOCKBOX CONTRACT: select a bank branch or credit terminal first."); return; }
+        FactionContract existing = activeContractFor(Faction.NOBLE, "LOCKBOX");
+        if (existing != null) { logEvent("LOCKBOX CONTRACT blocked: active noble-bank job already exists: " + existing.longLine()); return; }
+        FactionContract c = FactionContract.createBankLockboxContract(b, atlas, world, rng, factionStanding.getOrDefault(Faction.NOBLE, 0));
+        factionContracts.add(c);
+        lastContractFaction = Faction.NOBLE;
+        lastBankLockboxContractReport = "Accepted " + c.id + " from a " + b.label + " fixer: " + c.description;
+        logEvent("LOCKBOX CONTRACT ACCEPTED: " + c.longLine());
+        recordPlayerNewsEvent("bank-rumor", b.label + " private retrieval offer", Faction.NOBLE, "quiet rumors of a sealed bank-property retrieval docket moving through private hands", 2);
+        DebugLog.audit("BANK_LOCKBOX_CONTRACT_ACCEPT", c.longLine() + " state=" + stateSummary());
+        advanceTurn("accepts a noble-bank lockbox retrieval job."); repaint();
+    }
+
+    void turnInBankLockboxContract() {
+        FactionContract found = null;
+        for (FactionContract c : factionContracts) if (!c.completed && "LOCKBOX".equals(c.type)) { found = c; break; }
+        if (found == null) { logEvent("LOCKBOX CONTRACT: no active noble-bank retrieval job is open."); return; }
+        if (!inventory.contains(found.requiredTurnInItem)) { logEvent("LOCKBOX CONTRACT: you need " + found.publicRequiredItem() + " for the active noble retrieval job. Current report: " + lastBankLockboxContractReport); return; }
+        removeInventoryItem(found.requiredTurnInItem);
+        found.completed = true;
+        addImperialScript(found.payout);
+        factionStanding.put(Faction.NOBLE, factionStanding.getOrDefault(Faction.NOBLE, 0) + found.repReward);
+        suspicion += Math.max(1, found.payout / 800);
+        lastBankLockboxContractReport = "Completed the noble retrieval job by delivering " + found.publicRequiredItem() + "; paid " + found.payout + " script and gained noble standing +" + found.repReward + ".";
+        logEvent("LOCKBOX CONTRACT PAID: " + lastBankLockboxContractReport);
+        recordPlayerNewsEvent("bank-heist", "private lockbox changed hands", Faction.NOBLE, "rumor claims sealed bank property changed hands outside ordinary branch custody", 3);
+        DebugLog.audit("BANK_LOCKBOX_CONTRACT_TURNIN", found.longLine() + " state=" + stateSummary());
+        advanceTurn("turns in bank heist property."); repaint();
+    }
+
+
+    MapObjectState persistentStockObjectAt(int tx, int ty) {
+        if (world == null) return null;
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || m.x != tx || m.y != ty) continue;
+            if ("contract-object".equals(m.type) || "corpse-container".equals(m.type) || "ground-loot".equals(m.type)) return m;
+        }
+        return null;
+    }
+
+    boolean isPersistentStockObjectAt(int tx, int ty) { return persistentStockObjectAt(tx, ty) != null; }
+    boolean selectedInteractionIsPersistentStockObject() { return isPersistentStockObjectAt(lookX, lookY); }
+
+    String persistentContainerIdForObject(MapObjectState m) {
+        if (m == null) return "";
+        if ("contract-object".equals(m.type)) return contractObjectContainerId(m.id);
+        if ("corpse-container".equals(m.type)) return (m.stockState == null || m.stockState.isBlank()) ? corpseLootContainerId(m.id) : m.stockState;
+        if ("ground-loot".equals(m.type)) return m.stockState == null ? "" : m.stockState;
+        return "";
+    }
+
+    String containerNextItemSummary(String containerId) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || c.itemInstanceIds.isEmpty()) return "no visible contents";
+        String id = c.itemInstanceIds.get(0);
+        ItemInstance inst = itemInstances.get(id);
+        if (inst == null) return "missing item record";
+        String trace = inst.provenance == null ? "untraced" : inst.provenance.summary();
+        return inst.displayName + " [" + id + "] — " + trace;
+    }
+
+    String persistentStockInteractionSummary(int tx, int ty) {
+        MapObjectState m = persistentStockObjectAt(tx, ty);
+        if (m == null) return "No persistent stock container at cursor.";
+        String cid = persistentContainerIdForObject(m);
+        int count = containerItemCount(cid);
+        String kind = "contract-object".equals(m.type) ? "SEALED CONTRACT OBJECT" : ("ground-loot".equals(m.type) ? "GROUND LOOT" : "CORPSE LOOT CONTAINER");
+        String script = "corpse-container".equals(m.type) && m.vendCount > 0 ? " | unsearched script " + m.vendCount : "";
+        String action = count <= 0 && m.vendCount <= 0 ? "empty; confirm will clean up the marker" : "CONFIRM takes one, TAKE ALL transfers until full, INSPECT STOCK shows provenance";
+        return kind + " — " + m.label + " | container " + cid + " | items " + count + script + " | next: " + containerNextItemSummary(cid) + " | " + action + ".";
+    }
+
+    void inspectSelectedPersistentStockObject() {
+        MapObjectState m = persistentStockObjectAt(lookX, lookY);
+        if (m == null) { logEvent("PERSISTENT STOCK INSPECTION: no contract or corpse container selected."); return; }
+        String cid = persistentContainerIdForObject(m);
+        ContainerRecord c = itemContainers.get(cid);
+        logEvent("PERSISTENT STOCK: " + m.label + " / " + cid + " / items " + (c == null ? 0 : c.itemInstanceIds.size()) + ".");
+        if (m.vendCount > 0) logEvent("PERSISTENT STOCK: corpse still has " + m.vendCount + " concord script recoverable on search.");
+        if (c == null || c.itemInstanceIds.isEmpty()) { logEvent("PERSISTENT STOCK: container is empty; confirm/take-all will clear the abandoned marker."); return; }
+        int shown = 0;
+        for (String id : c.itemInstanceIds) {
+            ItemInstance inst = itemInstances.get(id);
+            if (inst == null) logEvent("  - " + id + " MISSING REGISTRY ENTRY");
+            else logEvent("  - " + inst.displayName + " [" + id + "] " + (inst.provenance == null ? "untraced" : inst.provenance.summary()));
+            if (++shown >= 5) { if (c.itemInstanceIds.size() > shown) logEvent("  ... " + (c.itemInstanceIds.size() - shown) + " more item(s)."); break; }
+        }
+        DebugLog.audit("PERSISTENT_STOCK_INSPECT", "object=" + m.id + " container=" + cid + " items=" + c.itemInstanceIds.size() + " state=" + stateSummary());
+    }
+
+    void cleanupPersistentStockMarkerIfEmpty(MapObjectState m, String containerId) {
+        if (world == null || m == null) return;
+        if (containerItemCount(containerId) > 0) return;
+        world.mapObjects.remove(m);
+        if (world.inBounds(m.x, m.y) && "corpse-container".equals(m.type)) world.tiles[m.x][m.y] = '.';
+        DebugLog.audit("PERSISTENT_STOCK_MARKER_CLEARED", "object=" + m.id + " container=" + containerId + " state=" + stateSummary());
+    }
+
+    void takeAllSelectedPersistentStockObject() {
+        MapObjectState m = persistentStockObjectAt(lookX, lookY);
+        if (m == null) { logEvent("TAKE ALL failed: no contract or corpse container selected."); return; }
+        String cid = persistentContainerIdForObject(m);
+        int before = containerItemCount(cid);
+        int scriptTaken = collectCorpseScriptIfPresent(m);
+        if (before <= 0) {
+            if (scriptTaken > 0) logEvent("TAKE ALL: recovered " + scriptTaken + " concord script from " + m.label + ".");
+            else logEvent("TAKE ALL: " + m.label + " is empty. Clearing marker.");
+            cleanupPersistentStockMarkerIfEmpty(m, cid); updatePendingInteractionSummary(); return;
+        }
+        LinkedHashMap<String,Integer> taken = new LinkedHashMap<>();
+        String block = "";
+        int moved = 0;
+        while (containerItemCount(cid) > 0) {
+            ItemActionResult r = transferFirstContainerItemToInventory(cid, "bulk transfer from persistent container " + m.id);
+            if (!r.success) { block = r.playerText; break; }
+            moved++;
+            taken.put(r.itemName, taken.getOrDefault(r.itemName, 0) + 1);
+            if (moved >= 25) { block = "bulk-transfer safety cap reached"; break; }
+        }
+        if (moved > 0) {
+            logEvent("TAKE ALL: recovered " + moved + " item(s)" + (scriptTaken > 0 ? " and " + scriptTaken + " concord script" : "") + " from " + m.label + ": " + compactStackSummary(taken) + ". Remaining " + containerItemCount(cid) + ".");
+            gainXp("Scavenge", Math.max(1, Math.min(3, moved)), "persistent stock bulk pickup");
+            advanceTurn("bulk-loots persistent stock container.");
+        }
+        if (block != null && !block.isBlank()) logEvent("TAKE ALL stopped: " + block + ".");
+        cleanupPersistentStockMarkerIfEmpty(m, cid);
+        updatePendingInteractionSummary();
+    }
+
+    String compactStackSummary(LinkedHashMap<String,Integer> stacks) {
+        if (stacks == null || stacks.isEmpty()) return "nothing";
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : stacks.entrySet()) parts.add(e.getKey() + (e.getValue() > 1 ? " x" + e.getValue() : ""));
+        return String.join(", ", parts);
+    }
+
+    void takeSelectedTargetInventoryItem() {
+        String target = selectedTargetInventoryName();
+        if (target == null) { logEvent("TAKE TARGET: no target item or floor object is selected."); return; }
+        if (target.startsWith("Floor tile:")) { logEvent("TAKE TARGET: floor surfaces cannot be carried."); return; }
+        MapObjectState m = persistentStockObjectAt(playerX, playerY);
+        String lowTarget = target.toLowerCase(Locale.ROOT);
+        if (m != null && (lowTarget.contains("corpse") || lowTarget.contains("contract") || lowTarget.contains("sealed") || lowTarget.contains("ground loot"))) {
+            lookX = playerX; lookY = playerY;
+            takeAllSelectedPersistentStockObject();
+            return;
+        }
+        logEvent("TAKE TARGET: " + target + " is visible here but has no transfer container yet.");
+    }
+
+    void takeAllTargetInventoryItems() {
+        MapObjectState m = persistentStockObjectAt(playerX, playerY);
+        if (m != null) {
+            lookX = playerX; lookY = playerY;
+            takeAllSelectedPersistentStockObject();
+            return;
+        }
+        logEvent("TAKE ALL: no transferable container is active underfoot yet.");
+    }
+
+    void interactContractObject(int tx, int ty) {
+        if (world == null) { logEvent("Contract object failed: no world loaded."); return; }
+        MapObjectState found = null;
+        for (MapObjectState m : world.mapObjects) if (m.x == tx && m.y == ty && "contract-object".equals(m.type)) { found = m; break; }
+        if (found == null) { logEvent("You find an empty sealed crate scar. Whatever mattered here is gone."); return; }
+        String cid = contractObjectContainerId(found.id);
+        if (containerItemCount(cid) <= 0) {
+            String legacyItem = found.stockState == null || found.stockState.isBlank() ? found.label : found.stockState;
+            addItemToContainerResult(cid, "Contract sealed object " + found.id, legacyItem,
+                    ItemProvenanceRecord.found(legacyItem, world, turn, "sealed contract container " + found.id + " migrated to persistent container"),
+                    null, "migrate legacy contract object stock");
+        }
+        ItemActionResult moved = transferFirstContainerItemToInventory(cid, "retrieved from persistent contract container " + found.id);
+        if (!moved.success) { logEvent("CONTRACT RETRIEVAL BLOCKED: " + moved.playerText); return; }
+        cleanupPersistentStockMarkerIfEmpty(found, cid);
+        logEvent("CONTRACT RETRIEVAL: recovered " + moved.itemName + " from " + cid + " [" + moved.itemInstanceId + "]. Return it to the issuing faction representative for payment.");
+        gainXp("Scavenge", 2, "contract retrieval");
+        advanceTurn("retrieves sealed contract object.");
+    }
+
+    ArrayList<String> corpseLootFor(NpcEntity target) {
+        ArrayList<String> loot = new ArrayList<>();
+        if (target == null) return loot;
+        switch(target.faction) {
+            case CIVIC_WARDENS: loot.add("Shock baton"); loot.add("Pale Compliance"); break;
+            case IMPERIAL_GUARD: loot.add("Las charge pack"); loot.add("Guard ration tin"); break;
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: loot.add("Circuit wafer"); loot.add("Mechanist Collegia nutrient ampoule"); break;
+            case MUTANT: loot.add("Hide strip bundle"); loot.add("Sumpkalm"); break;
+            case CULTIST: case HERETIC: loot.add("Choir Ash"); loot.add("Cult ritual blade"); break;
+            case ROGUE_MACHINE: loot.add("Servo actuator set"); loot.add("Circuit wafer"); break;
+            default: loot.add("Scrap bit"); if (rng.nextBoolean()) loot.add("Stub rounds"); break;
+        }
+        if (target.role != null && target.role.toLowerCase(Locale.ROOT).contains("trader")) loot.add("Trade chit");
+        return loot;
+    }
+
+    String createCorpseLootContainer(NpcEntity target, String cause) {
+        if (world == null || target == null) return "No corpse container created.";
+        String corpseId = "CORPSE-" + ContainerIdentityApi.safeToken(target.id == null ? target.name : target.id) + "-" + Math.abs(Objects.hash(turn, target.x, target.y));
+        String cid = corpseLootContainerId(corpseId);
+        ensureContainer(cid, "Corpse loot: " + target.name);
+
+        LootDropSystemAuthority.LootResolution resolved = LootDropSystemAuthority.resolveEntityDeathLoot(
+                LootDropSystemAuthority.npcInventory(target),
+                world.zoneType,
+                LootDropSystemAuthority.sectorZoneTier(world),
+                target.x, target.y, rng, cause);
+
+        ArrayList<String> corpseLoot = new ArrayList<>(resolved.corpseItemNames());
+        for (FactionContract c : factionContracts) {
+            if (!c.completed && c.type.equals("BOUNTY") && c.targetEntityId.equals(target.id)) {
+                corpseLoot.add(c.requiredTurnInItem);
+                c.spawned = false;
+            }
+        }
+        if (corpseLoot.isEmpty() && resolved.groundItemNames().isEmpty() && resolved.imperialScript() <= 0) {
+            ArrayList<String> legacyFallback = corpseLootFor(target);
+            if (!legacyFallback.isEmpty()) corpseLoot.add(legacyFallback.get(0));
+        }
+        addLootListToContainer(cid, "Corpse loot: " + target.name, corpseLoot, target.faction, "body of " + target.name, "corpse inventory after " + cause, "persistent corpse loot container");
+
+        MapObjectState m = MapObjectState.corpseObject(target.x, target.y, corpseId, "Corpse of " + target.name, cid, target.faction, world.zoneType);
+        m.vendCount = resolved.imperialScript();
+        m.stockState = MapObjectState.setStockFlag(m.stockState, "lootSummary", ContainerIdentityApi.safeToken(resolved.summary()));
+        world.mapObjects.add(m);
+        if (world.inBounds(target.x,target.y)) world.tiles[target.x][target.y] = 'r';
+
+        int groundCount = createGroundLootContainerNear(target, corpseId, resolved.groundItemNames(), cause);
+        DebugLog.audit("CORPSE_CONTAINER_CREATED", "target=" + target.name + " faction=" + target.faction + " container=" + cid + " corpseItems=" + corpseLoot.size() + " groundItems=" + groundCount + " script=" + resolved.imperialScript() + " cause=" + cause + " summary=" + resolved.summary() + " state=" + stateSummary());
+        return "Corpse container " + cid + " holds " + corpseLoot.size() + " item(s), nearby ground drops " + groundCount + ", script " + resolved.imperialScript() + ".";
+    }
+
+    void addLootListToContainer(String cid, String label, java.util.List<String> items, Faction faction, String maker, String inputs, String route) {
+        if (cid == null || cid.isBlank() || items == null) return;
+        for (String item : items) {
+            if (item == null || item.isBlank()) continue;
+            addItemToContainerResult(cid, label, item,
+                    ItemProvenanceRecord.of(item, faction, maker, world, turn, inputs, route),
+                    null, "seed persistent loot");
+        }
+    }
+
+    int createGroundLootContainerNear(NpcEntity target, String corpseId, java.util.List<String> groundItems, String cause) {
+        if (world == null || target == null || groundItems == null || groundItems.isEmpty()) return 0;
+        Point p = nearestLootGroundTile(target.x, target.y);
+        if (p == null) {
+            addLootListToContainer(corpseLootContainerId(corpseId), "Corpse loot: " + target.name, groundItems, target.faction, "ground near body of " + target.name, "ground drops after " + cause, "folded into corpse marker because no clear tile existed");
+            return 0;
+        }
+        String groundId = "GROUND-LOOT-" + ContainerIdentityApi.safeToken(corpseId) + "-" + Math.abs(Objects.hash(p.x, p.y, turn));
+        String gcid = "container.ground." + ContainerIdentityApi.safeToken(groundId);
+        ensureContainer(gcid, "Ground loot: " + target.name);
+        addLootListToContainer(gcid, "Ground loot: " + target.name, groundItems, target.faction, "ground near body of " + target.name, "ground drops after " + cause, "persistent ground loot container");
+        MapObjectState gm = new MapObjectState();
+        gm.x = p.x; gm.y = p.y; gm.glyph = 'o'; gm.type = "ground-loot"; gm.id = groundId;
+        gm.label = "Ground loot from " + target.name + " / " + (world.zoneType == null ? "Unknown zone" : world.zoneType.label);
+        gm.stockState = gcid;
+        world.mapObjects.add(gm);
+        return groundItems.size();
+    }
+
+    Point nearestLootGroundTile(int sx, int sy) {
+        if (world == null) return null;
+        if (world.inBounds(sx, sy) && world.walkable(sx, sy) && world.npcAt(sx, sy) == null && !(sx == playerX && sy == playerY)) return new Point(sx, sy);
+        for (int radius = 1; radius <= 3; radius++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int dyAbs = radius - Math.abs(dx);
+                for (int sign = -1; sign <= 1; sign += 2) {
+                    int x = sx + dx, y = sy + dyAbs * sign;
+                    if (world.inBounds(x, y) && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY)) return new Point(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    int collectCorpseScriptIfPresent(MapObjectState m) {
+        if (m == null || !"corpse-container".equals(m.type) || m.vendCount <= 0) return 0;
+        int amount = Math.max(0, m.vendCount);
+        m.vendCount = 0;
+        addImperialScript(amount);
+        DebugLog.audit("CORPSE_SCRIPT_COLLECTED", "object=" + m.id + " amount=" + amount + " state=" + stateSummary());
+        return amount;
+    }
+
+    void interactCorpseContainer(int tx, int ty) {
+        if (world == null) { logEvent("Corpse inspection failed: no world loaded."); return; }
+        MapObjectState found = null;
+        for (MapObjectState m : world.mapObjects) if (m.x == tx && m.y == ty && "corpse-container".equals(m.type)) { found = m; break; }
+        if (found == null) { logEvent("The corpse marker has no persistent body container left here."); return; }
+        String cid = found.stockState == null || found.stockState.isBlank() ? corpseLootContainerId(found.id) : found.stockState;
+        int scriptTaken = collectCorpseScriptIfPresent(found);
+        ItemActionResult moved = transferFirstContainerItemToInventory(cid, "looted from persistent corpse container " + found.id);
+        if (!moved.success) {
+            if (scriptTaken > 0) logEvent("CORPSE SCRIPT: recovered " + scriptTaken + " concord script from " + found.label + ".");
+            logEvent("CORPSE EMPTY: " + moved.playerText + " Clearing abandoned marker.");
+            cleanupPersistentStockMarkerIfEmpty(found, cid);
+            return;
+        }
+        int remain = containerItemCount(cid);
+        logEvent("CORPSE LOOT: recovered " + moved.itemName + " [" + moved.itemInstanceId + "]" + (scriptTaken > 0 ? " and " + scriptTaken + " concord script" : "") + " from " + found.label + ". Remaining items: " + remain + ".");
+        gainXp("Scavenge", 1, "corpse loot");
+        cleanupPersistentStockMarkerIfEmpty(found, cid);
+        advanceTurn("loots corpse container.");
+    }
+
+    void materializeFactionTraderStock(TraderSession trader) {
+        if (trader == null || trader.sourceSite == null) return;
+        String cid = factionStockContainerId(trader.sourceSite);
+        ensureContainer(cid, "Faction stock: " + trader.sourceSite.name);
+        for (TradeOffer o : trader.offers) {
+            if (o == null || o.name == null || o.name.isBlank()) continue;
+            boolean siteStock = o.description != null && o.description.toLowerCase(Locale.ROOT).contains("traceable stock from");
+            if (!siteStock) continue;
+            String existing = findContainerInstanceIdByName(cid, o.name);
+            if (existing == null || existing.isBlank()) {
+                ItemProvenanceRecord pr = o.provenance == null ? provenanceFromNpcSite(o.name, trader.sourceSite, "produced into persistent faction stock") : o.provenance;
+                ItemActionResult added = addItemToContainerResult(cid, "Faction stock: " + trader.sourceSite.name, o.name, pr, null, "materialize faction site stock");
+                existing = added.itemInstanceId;
+            }
+            o.itemInstanceId = existing;
+            ItemInstance inst = itemInstances.get(existing);
+            if (inst != null && inst.provenance != null) o.provenance = inst.provenance;
+        }
+    }
+
+    String findContainerInstanceIdByName(String containerId, String item) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || item == null) return "";
+        for (String id : c.itemInstanceIds) {
+            ItemInstance inst = itemInstances.get(id);
+            if (inst != null && ItemQuality.namesMatch(inst.displayName, item)) return id;
+        }
+        return "";
+    }
+
+    Faction nearestFactionForRepresentative() {
+        Faction best = Faction.BANDIT;
+        int bestD = 999;
+        for (int dx=-6; dx<=6; dx++) for (int dy=-6; dy<=6; dy++) {
+            int x = playerX+dx, y = playerY+dy;
+            if (world == null || x<0 || y<0 || x>=world.w || y>=world.h) continue;
+            Faction f = factionForTile(world.tiles[x][y]);
+            if (f != Faction.NONE && f != Faction.MUTANT && f != Faction.ROGUE_MACHINE) {
+                int d = Math.abs(dx)+Math.abs(dy);
+                if (d < bestD) { bestD=d; best=f; }
+            }
+        }
+        return best;
+    }
+
+    void stashOneItem() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Storage requires standing in your claimed room for now."); return; }
+        if (inventory.isEmpty()) { logEvent("Inventory is empty. Even poverty has inventory management."); return; }
+        if (baseStorage.size() >= baseStorageCapacity()) { logEvent("Stash blocked: base storage is full. " + baseStashTransferPreviewLine()); return; }
+        String sourceItem = inventory.get(inventory.size()-1);
+        ItemActionResult moved = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, inventory.size()-1, CONTAINER_BASE_STORAGE, "Claimed base storage", baseStorage, "stashed into player base storage");
+        String item = moved.success ? moved.itemName : sourceItem;
+        if (!moved.success) DebugLog.warn("CONTAINER_TRANSFER", moved.auditText + " state=" + stateSummary());
+        logEvent("Stashed " + item + " in base storage. Origin: " + itemPlayerFacingOriginLine(item));
+    }
+
+    void takeOneItem() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Base storage can only be accessed inside the claimed room for now."); return; }
+        if (baseStorage.isEmpty()) { logEvent("Base storage is empty."); return; }
+        if (inventoryWeight() + 1 > carryCapacity()) { logEvent("Cannot recover item: inventory would exceed Strength-derived carry capacity."); return; }
+        String sourceItem = baseStorage.get(baseStorage.size()-1);
+        ItemActionResult moved = transferContainerItemResultAt(CONTAINER_BASE_STORAGE, baseStorage, baseStorage.size()-1, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, "recovered from player base storage");
+        String item = moved.success ? moved.itemName : sourceItem;
+        if (!moved.success) DebugLog.warn("CONTAINER_TRANSFER", moved.auditText + " state=" + stateSummary());
+        logEvent("Recovered " + item + " from base storage. Origin: " + itemPlayerFacingOriginLine(item));
+    }
+
+    int carryCapacity() {
+        if (worldSetup != null && worldSetup.hoarderMode) return 999999;
+        if (active == null) return 12;
+        int strength = active.stats.getOrDefault("Strength", 5);
+        int endurance = active.stats.getOrDefault("Endurance", 5);
+        return 6 + strength * 2 + endurance / 2;

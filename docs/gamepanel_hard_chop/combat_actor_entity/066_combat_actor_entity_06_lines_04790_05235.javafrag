@@ -1,0 +1,408 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_06_lines_04790_05235
+// Category: combat_actor_entity
+// Source lines: 4790-5235
+// Method count: 16
+//
+// Methods in this fragment:
+// - factionControllingTile :: lines 4790-4795 (6) :: Faction factionControllingTile(int x, int y)
+// - applyStrayImpactDamage :: lines 4797-4832 (36) :: String applyStrayImpactDamage(int x, int y, int dmg, String source)
+// - tileCanBeDamagedIntoDebris :: lines 4838-4842 (5) :: boolean tileCanBeDamagedIntoDebris(char ch)
+// - performCombatAttackAt :: lines 4844-4898 (55) :: void performCombatAttackAt(TargetingSolution ts)
+// - performCombatAttack :: lines 4900-4950 (51) :: void performCombatAttack(boolean targeted)
+// - randomTargetedCombatReward :: lines 4957-4963 (7) :: String randomTargetedCombatReward(NpcEntity target)
+// - maybeNpcRangedAttack :: lines 4982-5035 (54) :: boolean maybeNpcRangedAttack(NpcEntity npc, int dist)
+// - hostileAdjacentAttack :: lines 5037-5056 (20) :: void hostileAdjacentAttack(NpcEntity npc)
+// - applyPlayerBodyDamage :: lines 5076-5104 (29) :: void applyPlayerBodyDamage(int dmg, String location, String source, String weapon)
+// - npcAttackWeapon :: lines 5106-5121 (16) :: String npcAttackWeapon(NpcEntity npc)
+// - factionForTile :: lines 5158-5172 (15) :: Faction factionForTile(char ch)
+// - factionOnlyRoomFactionAt :: lines 5178-5192 (15) :: Faction factionOnlyRoomFactionAt(int x, int y)
+// - activeFaction :: lines 5195-5198 (4) :: Faction activeFaction()
+// - factionImmediatelyObjects :: lines 5200-5209 (10) :: boolean factionImmediatelyObjects(Faction witness)
+// - disguiseChance :: lines 5211-5223 (13) :: int disguiseChance(Faction witness)
+// - interrogationChance :: lines 5225-5235 (11) :: int interrogationChance(Faction witness)
+
+    Faction factionControllingTile(int x, int y) {
+        if (world == null) return Faction.NONE;
+        int rid = world.roomIdAt(x,y);
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.CIVIC_WARDENS : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
+    }
+
+    String applyStrayImpactDamage(int x, int y, int dmg, String source) {
+        if (world == null || !world.inBounds(x,y)) return "The stray impact vanishes outside the tactical grid.";
+        NpcEntity n = world.npcAt(x,y);
+        if (n != null && !(x == playerX && y == playerY)) {
+            if (n.isUntargetableAnchor()) return "Stray impact is refused by protected civic continuity: " + n.name + " cannot be harmed or targeted.";
+            int armor = factionArmor(n);
+            int ndmg = Math.max(1, dmg - armor);
+            n.hp -= ndmg;
+            addSoundPing(x,y,"impact");
+            if (n.hp <= 0) {
+                String corpseLine = createCorpseLootContainer(n, "stray round from " + source);
+                world.npcs.remove(n);
+                return "Stray impact hits " + n.name + " for " + ndmg + " and drops them. " + corpseLine;
+            }
+            return "Stray impact clips " + n.name + " for " + ndmg + " damage.";
+        }
+        BaseObject obj = baseObjectAt(x,y);
+        if (obj != null) {
+            obj.integrity = Math.max(0, obj.integrity - Math.max(1,dmg));
+            addSoundPing(x,y,"impact");
+            return "Stray impact hits object " + obj.name + " at " + x + "," + y + "; integrity now " + obj.integrity + ".";
+        }
+        char ch = world.tiles[x][y];
+        if (isProtectedTransitionTile(ch)) return "Stray impact sparks off protected transit infrastructure; level-transition anchors are not destructible.";
+        if (ch == InterstitialInfrastructureApi.VOID_SPACE) return "The shot disappears into the intrahive abyss.";
+        String key = terrainKey(x,y);
+        int hp = terrainIntegrity.getOrDefault(key, defaultTerrainIntegrity(ch));
+        hp = Math.max(0, hp - Math.max(1,dmg));
+        terrainIntegrity.put(key, hp);
+        addSoundPing(x,y,"impact");
+        if (hp <= 0 && tileCanBeDamagedIntoDebris(ch)) {
+            world.tiles[x][y] = '*';
+            return "Stray impact destroys " + describeTile(ch) + " at " + x + "," + y + ", leaving debris.";
+        }
+        return "Stray impact scars " + describeTile(ch) + " at " + x + "," + y + "; integrity now " + hp + ".";
+    }
+
+    boolean isProtectedTransitionTile(char ch) {
+        return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E';
+    }
+
+    boolean tileCanBeDamagedIntoDebris(char ch) {
+        if (ch == '.' || ch == '+' || ch == ',' || ch == ';' || ch == ':' || ch == '~' || ch == '=' || ch == '-' || ch == '`') return false;
+        if (ch == InterstitialInfrastructureApi.VOID_SPACE) return false;
+        return !isProtectedTransitionTile(ch);
+    }
+
+    void performCombatAttackAt(TargetingSolution ts) {
+        if (ts == null || world == null || active == null) return;
+        noteCombatMusicActivity(ts.targetNpc != null && isGovernorCombatNpc(ts.targetNpc), "player targeted combat");
+        if (!consumeLoadedShotsForAttack(ts)) return;
+        sounds.playWeaponEffect(ts.weaponName, ts.ranged, options);
+        int time = fireModeTimeCost();
+        int roll = rng.nextInt(100) + 1;
+        String label = ts.targetNpc == null ? ("terrain " + describeTile(world.tiles[ts.targetX][ts.targetY])) : ts.targetNpc.name;
+        if (roll > ts.hitPercent) {
+            Point missPoint = ts.ranged ? strayImpactPoint(ts) : new Point(ts.targetX, ts.targetY);
+            startCombatAnimation(ts.weaponName, playerX, playerY, missPoint.x, missPoint.y, false);
+            int terrainDmg = Math.max(1, ItemCatalog.priceFor(ts.weaponName) / 10 + fireModeDamageModifier());
+            String impact = ts.ranged ? applyStrayImpactDamage(missPoint.x, missPoint.y, terrainDmg, "missed " + ts.weaponName) : "";
+            String miss = ts.coverPenalty > 0 ? " Shot defeated by obstruction/cover: " + ts.coverSummary + "." : "";
+            logEvent("ATTACK MISSED: " + active.name + " fires/strikes at " + label + " with " + ts.weaponName + " [" + ts.fireMode + "]. Chance " + ts.hitPercent + "%, roll " + roll + "." + miss + (impact.isBlank()?"":" " + impact));
+            gainXp(ts.ranged ? "Firearms" : "Melee", 1, "missed targeted attack");
+            for (int i=0;i<time;i++) advanceTurn("recovers from a targeted attack.");
+            return;
+        }
+        startCombatAnimation(ts.weaponName, playerX, playerY, ts.targetX, ts.targetY, true);
+        if (ts.targetNpc != null && ts.targetNpc.isUntargetableAnchor()) {
+            logEvent("ATTACK BLOCKED: " + ts.targetNpc.name + " is a protected continuity anchor and cannot be targeted.");
+            return;
+        }
+        if (ts.targetNpc == null) {
+            int terrainDmg = Math.max(1, ItemCatalog.priceFor(ts.weaponName) / 8 + fireModeDamageModifier() + 1);
+            String impact = applyStrayImpactDamage(ts.targetX, ts.targetY, terrainDmg, "direct " + ts.weaponName);
+            logEvent("ATTACK IMPACT: " + active.name + " hits " + label + " at " + ts.targetX + "," + ts.targetY + ". " + impact);
+            gainXp(ts.ranged ? "Firearms" : "Melee", 1, "terrain shot");
+            for (int i=0;i<time;i++) advanceTurn("fires at terrain/cover.");
+            return;
+        }
+        String weapon = ts.weaponName;
+        boolean armed = weapon != null;
+        int skill = Math.max(1, (ts.ranged ? stat("Firearms",5) : stat("Melee",5)) + playerAttackMotionSkillModifier());
+        int base = armed ? Math.max(2, ItemCatalog.priceFor(weapon) / 4) : 2;
+        int raw = base + Math.max(0, skill/2) + fireModeDamageModifier() + rng.nextInt(4);
+        int armor = factionArmor(ts.targetNpc);
+        int shieldCut = ts.shieldReduction <= 0 ? 0 : Math.max(1, (raw * ts.shieldReduction) / 100);
+        int dmg = Math.max(1, raw - armor - shieldCut);
+        ts.targetNpc.hp -= dmg;
+        String zone = ts.ranged ? randomBodyHitLocation() : randomTargetedCombatReward(ts.targetNpc);
+        logEvent("ATTACK HIT: " + ts.targetNpc.name + " struck in " + zone + " for " + dmg + " damage after armor " + armor + (shieldCut > 0 ? " and shield mitigation " + shieldCut : "") + ". HP now " + Math.max(0,ts.targetNpc.hp) + ". Chance " + ts.hitPercent + "%, roll " + roll + ", line " + ts.coverSummary + ".");
+        gainXp(ts.ranged ? "Firearms" : "Melee", ts.targetNpc.hp <= 0 ? 5 : 3, "targeted combat hit");
+        if (ts.targetNpc.hp <= 0) {
+            runKills++;
+            String corpseLine = createCorpseLootContainer(ts.targetNpc, "targeted combat");
+            PersonnelReplacementRequest req = PersonnelProvenanceApi.recordDeathAndScheduleReplacement(world, ts.targetNpc, turn, rng, "targeted combat");
+            recordProminentKillForNews(ts.targetNpc, "targeted combat");
+            world.npcs.remove(ts.targetNpc);
+            String repl = req == null ? "No replacement source was scheduled." : " Replacement due from " + req.source + " at turn " + req.dueTurn + ".";
+            logEvent("ENEMY DOWN: " + label + " is incapacitated. " + repl + " " + corpseLine);
+        }
+        for (int i=0;i<time;i++) advanceTurn(ts.ranged ? "uses ranged fire mode " + ts.fireMode.toLowerCase(Locale.ROOT) + "." : "makes a melee attack.");
+    }
+
+    void performCombatAttack(boolean targeted) {
+        if (world == null || active == null) { logEvent("Combat failed: no active world or character is loaded."); return; }
+        NpcEntity target = nearestAttackTarget();
+        if (target == null) { logEvent("Combat blocked: no adjacent hostile target. Move beside a hostile or wait for it to close."); return; }
+        if (target.isUntargetableAnchor()) { logEvent("Combat blocked: " + target.name + " is protected and non-targetable."); return; }
+        noteCombatMusicActivity(isGovernorCombatNpc(target), "player combat attack");
+        String weapon = bestWeaponName();
+        boolean adjacentRanged = weapon != null && ItemCatalog.isFirearmLike(weapon);
+        if (adjacentRanged) {
+            TargetingSolution ts = targetingSolutionAt(target.x, target.y);
+            if (!consumeLoadedShotsForAttack(ts)) return;
+        }
+        sounds.playWeaponEffect(weapon, adjacentRanged, options);
+        startCombatAnimation(weapon, playerX, playerY, target.x, target.y, true);
+        boolean armed = weapon != null;
+        if (armed && !hasUsableWeaponLimb()) { logEvent("Combat failed: your arms/hands are too damaged to keep a weapon working. Use medical care or fight bare-handed later."); return; }
+        int skill = Math.max(stat("Melee", 5), armed && ItemCatalog.isFirearmLike(weapon) ? stat("Firearms",5) : stat("Melee",5));
+        int armPenalty = crippledArmCount() * 2;
+        int painPenalty = pain >= 6 ? 2 : 0;
+        int motionPenalty = playerAttackMotionSkillModifier();
+        skill = Math.max(1, skill - armPenalty - painPenalty + motionPenalty);
+        int defense = 8 + Math.max(0, target.idleBias) + factionArmor(target);
+        int roll = rng.nextInt(20) + 1 + skill;
+        int hitTarget = defense + (targeted ? 5 : 0);
+        int time = targeted ? 2 : 1;
+        if (roll < hitTarget) {
+            if (adjacentRanged) { Point missPoint = new Point(Math.max(0, Math.min(world.w-1, target.x + rng.nextInt(3)-1)), Math.max(0, Math.min(world.h-1, target.y + rng.nextInt(3)-1))); startCombatAnimation(weapon, playerX, playerY, missPoint.x, missPoint.y, false); applyStrayImpactDamage(missPoint.x, missPoint.y, Math.max(1, ItemCatalog.priceFor(weapon)/10), "adjacent miss " + weapon); }
+            logEvent("ATTACK MISSED: " + active.name + " attacks " + target.name + (armed ? " with " + weapon : " bare-handed") + ". Roll " + roll + " < " + hitTarget + ". Active motion " + activeMotionStateLabel() + " modifies aim by " + playerAttackMotionSkillModifier() + ".");
+            gainXp(armed && ItemCatalog.isFirearmLike(weapon) ? "Firearms" : "Melee", 1, "missed combat attack");
+            for (int i=0;i<time;i++) advanceTurn("attacks and recovers balance.");
+            return;
+        }
+        int base = armed ? Math.max(2, ItemCatalog.priceFor(weapon) / 4) : 2;
+        int raw = base + Math.max(0, skill/2) + rng.nextInt(4);
+        int armor = factionArmor(target);
+        int dmg = Math.max(1, raw - armor);
+        target.hp -= dmg;
+        String zone = targeted ? randomTargetedCombatReward(target) : randomBodyHitLocation();
+        logEvent("ATTACK HIT: " + target.name + " struck in " + zone + " for " + dmg + " damage after armor " + armor + ". HP now " + Math.max(0,target.hp) + ". Active motion " + activeMotionStateLabel() + " modifies aim by " + playerAttackMotionSkillModifier() + ".");
+        gainXp(armed && ItemCatalog.isFirearmLike(weapon) ? "Firearms" : "Melee", target.hp <= 0 ? 5 : 3, "combat hit");
+        if (target.hp <= 0) {
+            runKills++;
+            String corpseLine = createCorpseLootContainer(target, "player combat");
+            PersonnelReplacementRequest req = PersonnelProvenanceApi.recordDeathAndScheduleReplacement(world, target, turn, rng, "player combat");
+            recordProminentKillForNews(target, "adjacent combat");
+            world.npcs.remove(target);
+            String repl = req == null ? "No replacement source was scheduled." : " Replacement due from " + req.source + " at turn " + req.dueTurn + ".";
+            logEvent("ENEMY DOWN: " + target.name + " is incapacitated. " + target.originSummary() + repl + " " + corpseLine);
+        }
+        for (int i=0;i<time;i++) advanceTurn(targeted ? "makes a careful targeted attack." : "makes a combat attack.");
+    }
+
+    String randomBodyHitLocation() {
+        String[] parts = {"head", "torso", "left arm", "right arm", "left leg", "right leg"};
+        return parts[rng.nextInt(parts.length)];
+    }
+
+    String randomTargetedCombatReward(NpcEntity target) {
+        String[] parts = {"weapon arm", "knee joint", "breathing line", "tool hand", "center mass"};
+        String p = parts[rng.nextInt(parts.length)];
+        if (p.contains("arm")) logEvent("TARGETING EFFECT: a clean arm hit stresses weapon handling and equipment control.");
+        if (p.contains("knee")) logEvent("TARGETING EFFECT: leg damage is flagged for speed and pursuit impairment.");
+        return p;
+    }
+
+// ... omitted 18 non-method/source lines between cataloged methods ...
+
+    boolean maybeNpcRangedAttack(NpcEntity npc, int dist) {
+        if (npc == null || world == null || active == null || !isHostileNpc(npc)) return false;
+        ensureNpcCombatLoadout(npc);
+        String weapon = npc.equippedRangedWeapon;
+        if (weapon == null || weapon.isBlank() || !ItemCatalog.isFirearmLike(weapon)) return false;
+        if (dist <= 1 || dist > weaponRange(weapon)) return false;
+        if (turn % 2 != Math.floorMod(npc.numericId, 2)) return false;
+        if (!hasLineOfSight(npc.x, npc.y, playerX, playerY)) return false;
+        int cap = magazineCapacityForWeapon(weapon);
+        if (cap <= 0) return false;
+        if (npc.loadedShots <= 0) {
+            if (npc.ammoReloadsRemaining > 0) {
+                npc.ammoReloadsRemaining--;
+                npc.loadedShots = cap;
+                npc.activeMotionStateIndex = MOTION_STATIONARY;
+                sounds.playReloadEffect(options);
+                if (isVisible(npc.x, npc.y) || dist <= hearingRange()) logEvent("ENEMY RELOAD: " + npc.name + " reloads " + weapon + " from faction-carried reserve. Loaded " + npc.loadedShots + "/" + cap + ", reserve reloads " + npc.ammoReloadsRemaining + ".");
+                addSoundPing(npc.x, npc.y, "reload");
+                DebugLog.audit("NPC_RELOAD", "npc=" + npc.id + " weapon=" + weapon + " loaded=" + npc.loadedShots + " reserve=" + npc.ammoReloadsRemaining + " dist=" + dist + " turn=" + turn);
+                return true;
+            }
+            if (isVisible(npc.x, npc.y) || dist <= hearingRange()) logEvent("ENEMY AMMO DRY: " + npc.name + " tries to bring " + weapon + " up, but the reserve is spent and they close with " + npc.equippedMeleeWeapon + ".");
+            return false;
+        }
+        npc.loadedShots--;
+        npc.activeMotionStateIndex = npc.selectedMovementModeIndex;
+        sounds.playWeaponEffect(weapon, true, options);
+        int coverPenalty = rangedCoverPenalty(npc.x, npc.y, playerX, playerY, true, null);
+        int darknessPenalty = rangedDarknessPenalty(npc.x, npc.y, playerX, playerY);
+        int skill = 35 + npc.intellect * 3 + npc.equipmentTier * 4;
+        if (npc.activeMotionStateIndex == MOTION_RUN) skill -= 8;
+        if (npc.activeMotionStateIndex == MOTION_SPRINT) skill -= 14;
+        if (npc.activeMotionStateIndex == MOTION_STATIONARY) skill += 8;
+        int evade = Math.max(0, playerDefenseMotionModifier() * 3);
+        int hit = Math.max(3, Math.min(92, skill - dist * 4 - coverPenalty - darknessPenalty - evade));
+        int roll = rng.nextInt(100) + 1;
+        if (roll > hit) {
+            Point miss = strayImpactPointFrom(npc.x, npc.y, playerX, playerY, dist);
+            startCombatAnimation(weapon, npc.x, npc.y, miss.x, miss.y, false);
+            String impact = applyStrayImpactDamage(miss.x, miss.y, Math.max(1, ItemCatalog.priceFor(weapon)/12), "enemy missed " + weapon);
+            logEvent("ENEMY RANGED MISSED: " + npc.name + " fires " + weapon + " at you. Hit " + hit + "%, roll " + roll + "; loaded " + npc.loadedShots + "/" + cap + ", reserve reloads " + npc.ammoReloadsRemaining + ". " + impact);
+            DebugLog.audit("NPC_RANGED_MISS", "npc=" + npc.id + " weapon=" + weapon + " hit=" + hit + " roll=" + roll + " cover=" + coverPenalty + " lightPenalty=" + darknessPenalty + " loaded=" + npc.loadedShots + " reserve=" + npc.ammoReloadsRemaining + " turn=" + turn);
+            return true;
+        }
+        startCombatAnimation(weapon, npc.x, npc.y, playerX, playerY, true);
+        int raw = Math.max(2, ItemCatalog.priceFor(weapon) / 8) + rng.nextInt(4) + Math.max(0, npc.equipmentTier);
+        int shield = shieldMitigationPercentAt(playerX, playerY, equippedClothing == null ? Faction.NONE : equippedClothing.alignedFaction);
+        int armor = (equippedClothing != null && equippedClothing.name.toLowerCase(Locale.ROOT).contains("armor") ? 2 : 0) + playerEquippedArmorBonus();
+        int dmg = Math.max(1, ((raw - armor) * Math.max(20, 100 - shield)) / 100);
+        logEvent("ENEMY RANGED HIT: " + npc.name + " fires " + weapon + " and hits. Hit " + hit + "%, roll " + roll + "; shield mitigation " + shield + "%; loaded " + npc.loadedShots + "/" + cap + ", reserve reloads " + npc.ammoReloadsRemaining + ".");
+        applyPlayerBodyDamage(dmg, randomBodyHitLocation(), npc.name, weapon);
+        DebugLog.audit("NPC_RANGED_HIT", "npc=" + npc.id + " weapon=" + weapon + " hit=" + hit + " roll=" + roll + " cover=" + coverPenalty + " lightPenalty=" + darknessPenalty + " shield=" + shield + " dmg=" + dmg + " loaded=" + npc.loadedShots + " reserve=" + npc.ammoReloadsRemaining + " turn=" + turn);
+        return true;
+    }
+
+    void hostileAdjacentAttack(NpcEntity npc) {
+        if (npc == null || active == null || Math.abs(npc.x-playerX)+Math.abs(npc.y-playerY) > 1) return;
+        noteCombatMusicActivity(isGovernorCombatNpc(npc), "hostile adjacent attack");
+        ensureNpcCombatLoadout(npc);
+        String npcWeapon = npcAttackWeapon(npc);
+        sounds.playWeaponEffect(npcWeapon, ItemCatalog.isFirearmLike(npcWeapon), options);
+        if (activeMotionIsSneak() && !npc.hostileBarked) {
+            logEvent("STEALTH HELD: " + npc.name + " is close enough to be dangerous, but has not fixed on you through the crouched movement and bad light.");
+            maybeGrantSneakXp("undetected adjacent threat");
+            return;
+        }
+        int motionDefense = playerDefenseMotionModifier();
+        int defense = 8 + stat("Agility",5) + stat("Nerve",5)/2 + motionDefense;
+        int roll = rng.nextInt(20) + 1 + Math.max(4, npc.idleBias + 5 + npc.equipmentTier);
+        if (roll < defense) { logEvent("ENEMY ATTACK MISSED: " + npc.name + " lunges but you avoid it. Roll " + roll + " < defense " + defense + " (motion " + activeMotionStateLabel() + " +" + motionDefense + ")."); return; }
+        int raw = 2 + rng.nextInt(5) + Math.max(0, ItemCatalog.priceFor(npcWeapon) / 18);
+        int armor = (equippedClothing != null && equippedClothing.name.toLowerCase(Locale.ROOT).contains("armor") ? 2 : 0) + playerEquippedArmorBonus();
+        int dmg = Math.max(1, raw - armor);
+        applyPlayerBodyDamage(dmg, randomBodyHitLocation(), npc.name, npcWeapon);
+    }
+
+// ... omitted 19 non-method/source lines between cataloged methods ...
+
+    void applyPlayerBodyDamage(int dmg, String location, String source, String weapon) {
+        int oldBleeding = bleeding;
+        wounds += Math.max(1, dmg / 3);
+        pain = Math.min(20, pain + Math.max(1, dmg));
+        if (dmg >= 3) bleeding = Math.min(12, bleeding + 1 + dmg/3);
+        if (dmg >= 4) infectionRisk = Math.min(12, infectionRisk + 1);
+        applyTraumaSleepPressure(dmg, weapon, oldBleeding);
+        BodyPart bp = bodyPartForLocation(location);
+        if (bp == null && active != null && active.body != null && !active.body.isEmpty()) {
+            ArrayList<BodyPart> parts = new ArrayList<>(active.body.values());
+            bp = parts.get(rng.nextInt(parts.size()));
+        }
+        double before = bp == null ? 0 : bp.currentHealth();
+        if (bp != null) bp.health = Math.max(0, bp.health - dmg * 35.0);
+        String part = bp == null ? location : bp.name;
+        logEvent("DAMAGE TAKEN: " + source + " hits your " + part + " for " + dmg + ". Wounds " + wounds + ", bleeding " + bleeding + ", pain " + pain + ".");
+        if (bp != null) {
+            DebugLog.audit("BODY_DAMAGE", "part=" + bp.name + " hp=" + String.format(Locale.US,"%.0f", before) + "->" + String.format(Locale.US,"%.0f", bp.currentHealth()) + " bleeding=" + bleeding + " pain=" + pain + " infectionRisk=" + infectionRisk + " state=" + stateSummary());
+            if (bp.currentHealth() <= bp.maxHealth()*0.25 && before > bp.maxHealth()*0.25) {
+                String low = bp.name.toLowerCase(Locale.ROOT);
+                if (low.contains("leg") || low.contains("foot")) logEvent("BODY DAMAGE: " + bp.name + " crippled. Movement now costs extra time until treated.");
+                else if (low.contains("arm") || low.contains("hand") || low.contains("finger")) logEvent("BODY DAMAGE: " + bp.name + " crippled. Weapon handling and tool work are penalized.");
+                else if (low.contains("head")) logEvent("BODY DAMAGE: head trauma. Pain and stun checks become dangerous.");
+                else logEvent("BODY DAMAGE: " + bp.name + " critically damaged. Medical treatment is advised, which is underhive for 'stop leaking'.");
+            }
+            if (bp.destroyed()) logEvent("BODY DAMAGE: " + bp.name + " disabled. Severe consequences are active in movement/combat penalties.");
+        }
+        evaluatePlayerDefeatState("combat trauma to " + part, source, weapon, part);
+    }
+
+    String npcAttackWeapon(NpcEntity npc) {
+        if (npc == null) return "unknown weapon";
+        ensureNpcCombatLoadout(npc);
+        if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) return npc.equippedMeleeWeapon;
+        switch (npc.faction) {
+            case SORORITAS: return "Chainsword";
+            case CIVIC_WARDENS: return "Civic Wardens shock maul";
+            case IMPERIAL_GUARD: return "Guard trench knife";
+            case MUTANT: return "Mutant scrap axe";
+            case ROGUE_MACHINE: return "machine talons";
+            case CULTIST: case HERETIC: return "Cult ritual blade";
+            case GANGER_RED_GRIN: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: case BANDIT: return "Ganger chain cleaver";
+            case NOBLE: return "Duelling Sword";
+            default: return "Knife";
+        }
+    }
+
+// ... omitted 36 non-method/source lines between cataloged methods ...
+
+    Faction factionForTile(char ch) {
+        switch (ch) {
+            case 'g': return Faction.BANDIT;
+            case 'm': return Faction.MUTANT;
+            case 'R': return Faction.ROGUE_MACHINE;
+            case 'A': return Faction.CIVIC_WARDENS;
+            case 'p': return Faction.CIVIC_WARDENS;
+            case 'b': return Faction.BANDIT;
+            case 'h': return Faction.HIVER;
+            case 'n': return Faction.NOBLE;
+            case 'M': return Faction.IMPERIAL_GUARD;
+            case 'H': return Faction.HERETIC;
+            default: return Faction.NONE;
+        }
+    }
+
+    boolean tileIsFactionOnly(char ch) {
+        return ch == 'p' || ch == 'b' || ch == 'h' || ch == 'n' || ch == 'M';
+    }
+
+    Faction factionOnlyRoomFactionAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return Faction.NONE;
+        int rid = world.roomIdAt(x, y);
+        if (rid < 0) return Faction.NONE;
+        RoomProfile rp = world.roomProfile(rid);
+        if (rp == null) return Faction.NONE;
+        String text = ((rp.name == null ? "" : rp.name) + " " + (rp.descriptor == null ? "" : rp.descriptor) + " " + (rp.featureText == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
+        if (!text.contains("faction-only") && !text.contains("gang colors") && !text.contains("marked patron")) return Faction.NONE;
+        if (text.contains("bandit") || text.contains("gang")) return Faction.BANDIT;
+        if (text.contains("civic Wardens") || text.contains("precinct")) return Faction.CIVIC_WARDENS;
+        if (text.contains("noble")) return Faction.NOBLE;
+        if (text.contains("guard") || text.contains("military") || text.contains("pdf")) return Faction.IMPERIAL_GUARD;
+        if (text.contains("hiver")) return Faction.HIVER;
+        return Faction.NONE;
+    }
+
+
+    Faction activeFaction() {
+        if (active == null || active.job == null) return Faction.NONE;
+        return JobProfile.get(active.job).faction;
+    }
+
+    boolean factionImmediatelyObjects(Faction witness) {
+        if (witness == Faction.NONE) return false;
+        if (activeFaction() == witness) return false;
+        if (witness == Faction.ROGUE_MACHINE || witness == Faction.MUTANT) return false;
+        if (equippedClothing.alignedFaction == witness) return false;
+        if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.CIVIC_WARDENS) return true;
+        if (equippedClothing.alignedFaction == Faction.SCAVENGER && witness == Faction.BANDIT) return true;
+        if (equippedClothing.alignedFaction == Faction.NONE && witness == Faction.BANDIT) return true;
+        return factionStanding.getOrDefault(witness, 0) < -3;
+    }
+
+    int disguiseChance(Faction witness) {
+        if (active == null || equippedClothing == null) return 0;
+        if (activeFaction() == witness) return 100;
+        if (equippedClothing.alignedFaction != witness) return 5;
+        int charm = active.stats.getOrDefault("Charm", 5);
+        int nerve = active.stats.getOrDefault("Nerve", 5);
+        int intellect = active.stats.getOrDefault("Intellect", 5);
+        int chance = equippedClothing.disguiseBase + charm * 3 + nerve * 2 + intellect;
+        if (equippedClothing.damaged) chance -= 22;
+        if (activeMotionIsSneak()) chance -= 45; // if you belong here, why are you hiding?
+        if (witness == Faction.CIVIC_WARDENS) chance -= 10;
+        return Math.max(5, Math.min(95, chance));
+    }
+
+    int interrogationChance(Faction witness) {
+        if (active == null) return 0;
+        int charm = active.stats.getOrDefault("Charm", 5);
+        int nerve = active.stats.getOrDefault("Nerve", 5);
+        int intellect = active.stats.getOrDefault("Intellect", 5);
+        int chance = 20 + charm * 4 + nerve * 3 + intellect * 2;
+        if (activeFaction() == witness) return 95;
+        if (equippedClothing != null && equippedClothing.alignedFaction == witness) chance += 10;
+        if (witness == Faction.CIVIC_WARDENS) chance -= 12;
+        return Math.max(5, Math.min(90, chance));
+    }

@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 2101-2800
+
+
+    String npcConditionReadLine(NpcEntity npc) {
+        if (npc == null) return "Condition read: no body is readable.";
+        String body = npc.isAnimalActor() ? animalBodyPlanLine(npc) : humanoidBodyPlanLine(npc);
+        String injury = npcInjuryEstimate(npc);
+        String armor = npcArmorEstimate(npc);
+        return "Condition read: " + body + "; " + injury + "; " + armor + ".";
+    }
+
+    String npcCombatReadinessLine(NpcEntity npc) {
+        if (npc == null) return "Combat readiness: unknown.";
+        if (npc.hp >= 9000) return "Combat readiness: protected or story-critical; ordinary violence is unlikely to resolve this cleanly.";
+        if (npc.isAnimalActor()) {
+            if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) return "Combat readiness: animal is dangerous if approached or cornered.";
+            return "Combat readiness: animal is not presenting as an armed combatant.";
+        }
+        int danger = Math.max(0, npc.equipmentTier) + (ItemCatalog.isFirearmLike(npc.equippedRangedWeapon) ? 2 : 0) + (npc.equippedExplosive == null || npc.equippedExplosive.isBlank() ? 0 : 2);
+        if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) danger += 2;
+        if (danger >= 6) return "Combat readiness: severe threat; armor, ranged weapon, or explosive risk is visible.";
+        if (danger >= 3) return "Combat readiness: armed and risky; plan cover, distance, or escape.";
+        if (danger >= 1) return "Combat readiness: lightly armed or protected.";
+        return "Combat readiness: no obvious combat kit.";
+    }
+
+    String humanoidBodyPlanLine(NpcEntity npc) {
+        if (npc.isMinorActor()) return "smaller humanoid frame";
+        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("bound Labor Automaton")) return "augmented humanoid frame";
+        return "humanoid body plan";
+    }
+
+    String animalBodyPlanLine(NpcEntity npc) {
+        String key = ((npc.creatureKind == null ? "" : npc.creatureKind) + " " + (npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("hound") || key.contains("dog") || key.contains("mastiff")) return "quadruped predator/companion body";
+        if (key.contains("cat")) return "small agile quadruped body";
+        if (key.contains("rat") || key.contains("mouse")) return "small skittering animal body";
+        if (key.contains("lizard")) return "low reptilian body";
+        if (key.contains("glowfish")) return "contained aquatic body";
+        if ("farm-animal".equals(npc.creatureKind)) return "working animal body";
+        return "non-human animal body";
+    }
+
+    ArrayList<String> petCareReadabilityLines(NpcEntity npc, int tx, int ty, boolean compact) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null || !npc.isAnimalActor()) return lines;
+        String prefix = compact ? "" : "Pet care: ";
+        if (!npc.isPetActor()) {
+            lines.add(prefix + animalContactBlockedLine(npc));
+            lines.add("Animal care: " + animalNeedReadLine(npc) + "; " + animalShelterReadLine(tx, ty) + ".");
+            return lines;
+        }
+        lines.add(prefix + animalNeedReadLine(npc) + "; " + petTemperamentReadLine(npc) + ".");
+        lines.add("Ownership: " + petOwnershipReadLine(npc, tx, ty));
+        lines.add("Adoption/sale: " + petAdoptionSaleReadLine(npc, tx, ty));
+        lines.add("Access: " + petAccessibilityReadLine(npc, tx, ty) + " " + pettingPermissionReadLine(npc, tx, ty));
+        lines.add("Shelter: " + animalShelterReadLine(tx, ty) + ".");
+        return lines;
+    }
+
+    String animalNeedReadLine(NpcEntity npc) {
+        if (npc == null) return "basic needs are unreadable";
+        ArrayList<String> needs = new ArrayList<>();
+        if (npc.hunger >= 8) needs.add("very hungry");
+        else if (npc.hunger >= 5) needs.add("hungry");
+        else needs.add("fed enough for now");
+        if (npc.thirst >= 8) needs.add("very thirsty");
+        else if (npc.thirst >= 5) needs.add("thirsty");
+        else needs.add("watered enough for now");
+        if (npc.sleepDebt >= 10) needs.add("badly tired");
+        else if (npc.sleepDebt >= 6) needs.add("tired");
+        else needs.add("rested enough for now");
+        return String.join(", ", needs);
+    }
+
+    String petTemperamentReadLine(NpcEntity npc) {
+        if (npc == null) return "temperament unclear";
+        String state = npc.state == null ? "" : npc.state.toLowerCase(Locale.ROOT);
+        if ("hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "frightened or hostile enough that touching is unsafe";
+        if (state.contains("guard") || state.contains("duty") || state.contains("patrol")) return "trained and alert, but not openly hostile";
+        if (state.contains("fright") || state.contains("fear") || state.contains("tense")) return "nervous and needs space";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "friendly toward its handler";
+        return "calm enough to consider a gentle approach";
+    }
+
+    String petOwnershipReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no readable ownership.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "handled companion of " + npc.companionOf + "; taking or commanding it is not implied.";
+        String territory = ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+        if (territory.contains("faction") || territory.contains("owned") || territory.contains("restricted")) return "local territory claims custody; ask, buy, or be invited before treating it as yours.";
+        return "no visible personal handler; still not automatically yours.";
+    }
+
+    String petAdoptionSaleReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null || !npc.isPetActor()) return "not a companion adoption target.";
+        String context = (describeTile(world != null && world.inBounds(tx, ty) ? world.tiles[tx][ty] : ' ') + " " + roomContextReadLine(tx, ty) + " " + ownershipText(tx, ty)).toLowerCase(Locale.ROOT);
+        if (context.contains("market") || context.contains("shop") || context.contains("stall")) return "possible vendor or adoption context, but no purchase is confirmed until a trade/service option says so.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "already bonded to a handler; not for sale from this screen.";
+        return "no adoption or sale offer is visible from here.";
+    }
+
+    String petAccessibilityReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no animal is reachable.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return npc.name + " is too far away; move adjacent first.";
+        if (!isVisible(tx, ty)) return npc.name + " is not clearly visible enough for safe contact.";
+        return npc.name + " is close enough for gentle contact.";
+    }
+
+    String pettingPermissionReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "Petting is unavailable.";
+        if (!npc.isPetActor()) return animalContactBlockedLine(npc);
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "Petting is blocked because it is not safe to touch.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return "Petting is blocked by distance.";
+        return "Interact or PET can offer " + petGestureName(npc) + ".";
+    }
+
+    String animalShelterReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "shelter is unreadable";
+        String tile = describeTile(world.tiles[tx][ty]).toLowerCase(Locale.ROOT);
+        String room = roomContextReadLine(tx, ty).toLowerCase(Locale.ROOT);
+        if (room.contains("room") || tile.contains("floor") || tile.contains("hab") || tile.contains("market")) return "under cover or inside a usable space";
+        if (tile.contains("sewer") || tile.contains("hazard") || tile.contains("waste")) return "poor shelter with environmental stress";
+        return "shelter looks uncertain";
+    }
+
+    String npcInjuryEstimate(NpcEntity npc) {
+        if (npc.hp >= 9000) return "no readable injury under protected status";
+        if (npc.hp <= 0) return "down or dying";
+        if (npc.hp <= 3) return "badly hurt";
+        if (npc.hp <= 7) return "wounded";
+        if (npc.hp <= 11) return "scuffed or tired";
+        return "looks healthy";
+    }
+
+    String npcArmorEstimate(NpcEntity npc) {
+        String armor = npc.equippedArmor == null ? "" : npc.equippedArmor.trim();
+        if (armor.isBlank()) return "no obvious armor";
+        int value = ItemCatalog.priceFor(armor);
+        if (value >= 35 || armor.toLowerCase(Locale.ROOT).contains("carapace")) return "heavy visible protection: " + armor;
+        if (value >= 14 || armor.toLowerCase(Locale.ROOT).contains("flak") || armor.toLowerCase(Locale.ROOT).contains("vest")) return "moderate visible protection: " + armor;
+        return "light visible protection: " + armor;
+    }
+
+    String baseObjectConditionReadLine(BaseObject obj) {
+        if (obj == null) return "Condition read: no constructed object is readable.";
+        String condition;
+        if (obj.integrity <= 0) condition = "broken";
+        else if (obj.underConstruction) condition = "under construction";
+        else if (obj.integrity <= 4) condition = "fragile";
+        else if (obj.integrity <= 10) condition = "worn but usable";
+        else if (obj.integrity <= 20) condition = "sturdy";
+        else condition = "heavily built";
+        String armor = obj.cover > 0 ? "cover value visible" : "no obvious cover";
+        String danger = obj.armed ? "armed or defensive fixture" : (obj.attention >= 3 ? "valuable enough to attract attention" : "low immediate danger");
+        return "Condition read: " + condition + "; " + armor + "; " + danger + ".";
+    }
+
+    String npcThreatReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null) return "Threat read: no person is readable there.";
+        if (npc.isAnimalActor()) return "Threat read: posture matters more than equipment.";
+        String gear = visibleNpcEquipmentLine(npc);
+        String mood = isHostileNpc(npc) ? "dangerous now" : ("Hostile".equalsIgnoreCase(npc.state) ? "openly hostile" : "not openly hostile");
+        String intentText = intent == null || !intent.available || intent.intent == null || intent.intent.isBlank() ? "intent unclear" : intent.intent.toLowerCase(Locale.ROOT);
+        return "Threat read: " + mood + "; " + intentText + "; " + gear + ".";
+    }
+
+    String npcSensesReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null || npc.isAnimalActor()) return "Senses read: only broad posture is readable.";
+        int vision = intent != null && intent.available ? intent.visionRange : npcVisionRange(npc);
+        int hearing = intent != null && intent.available ? intent.hearingRange : npcHearingRange(npc);
+        String motion = npc.activeMotionLabel() == null || npc.activeMotionLabel().isBlank() ? "unclear motion" : npc.activeMotionLabel();
+        String line = "Senses read: vision about " + vision + ", hearing about " + hearing + ", motion " + motion.toLowerCase(Locale.ROOT);
+        if (intent != null && intent.available && intent.attackLine) line += "; has a clear attack line";
+        return line + ".";
+    }
+
+    String baseObjectUseReadLine(BaseObject obj) {
+        if (obj == null) return "Use read: no object is readable there.";
+        if (obj.underConstruction) return "Use read: construction is incomplete and needs staged work.";
+        if (obj.isBusinessAsset()) return "Use read: service counter; " + obj.businessReturnLine(this);
+        if (obj.armed) return "Use read: armed fixture; approach and interaction may carry risk.";
+        if (obj.assignedRecipe != null && !obj.assignedRecipe.isBlank()) return "Use read: assigned to " + obj.assignedRecipe + ".";
+        return "Use read: stable built object; Interact or base management may expose its work path.";
+    }
+
+    String baseObjectWorkReadLine(BaseObject obj) {
+        if (obj == null) return "Work read: nothing usable is visible.";
+        String quality = obj.qualityName == null || obj.qualityName.isBlank() ? "common" : obj.qualityName.toLowerCase(Locale.ROOT);
+        String worker = obj.assignedWorker == null || obj.assignedWorker.isBlank() ? "no assigned worker" : "worker " + obj.assignedWorker;
+        String queue = obj.productionQueueRemaining > 0 ? "queued work " + obj.productionQueueRemaining + "/" + Math.max(1, obj.productionQueueTarget) : "no queued work";
+        return "Work read: " + quality + " quality, " + worker + ", " + queue + ".";
+    }
+
+    String roomContextReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "no reliable room context";
+        int roomId = world.roomIdAt(tx, ty);
+        if (roomId < 0) return "open passage or edge space";
+        return "room space with " + ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+    }
+
+    String visibleNpcEquipmentLine(NpcEntity npc) {
+        if (npc == null || npc.isAnimalActor()) return "no obvious carried gear";
+        ArrayList<String> gear = new ArrayList<>();
+        if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) gear.add(npc.equippedMeleeWeapon);
+        if (npc.equippedRangedWeapon != null && !npc.equippedRangedWeapon.isBlank()) gear.add(npc.equippedRangedWeapon);
+        if (npc.equippedArmor != null && !npc.equippedArmor.isBlank()) gear.add(npc.equippedArmor);
+        if (gear.isEmpty()) return "no obvious carried gear";
+        return String.join(", ", gear.subList(0, Math.min(3, gear.size())));
+    }
+
+    void petSelectedLookPet() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        petNpcAt(tx, ty, true);
+        repaint();
+    }
+
+    void petNpcAt(int tx, int ty, boolean alert) {
+        if (world == null || !world.inBounds(tx, ty)) {
+            showPetFeedback("PET", "There is no reachable companion animal there.", alert);
+            return;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc == null) {
+            showPetFeedback("PET", "There is no companion animal there.", alert);
+            return;
+        }
+        if (!npc.isPetActor()) {
+            showPetFeedback("PET", animalContactBlockedLine(npc), alert);
+            if (npc.isAnimalActor()) advanceTurn("checks an animal's mood.");
+            return;
+        }
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) {
+            showPetFeedback("PET", npc.name + " is too far away for a gentle greeting.", alert);
+            return;
+        }
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) {
+            showPetFeedback("PET", npc.name + " is too tense to touch safely.", alert);
+            advanceTurn("backs off from a tense companion animal.");
+            return;
+        }
+        String line = petInteractionLine(npc);
+        showPetFeedback("PET", line, alert);
+        logEvent("PET: " + line);
+        advanceTurn("pets " + npc.name + ".");
+    }
+
+    void showPetFeedback(String title, String body, boolean alert) {
+        if (alert) showTimedAlert(title, body, 4600);
+        else logEvent(title + ": " + body);
+    }
+
+    String animalContactBlockedLine(NpcEntity npc) {
+        if (npc == null) return "There is no companion animal there.";
+        if (!npc.isAnimalActor()) return npc.name + " is a person, not a pet.";
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return npc.name + " is not safe to touch.";
+        if ("farm-animal".equals(npc.creatureKind)) return npc.name + " is working stock, not a companion animal; it keeps a cautious distance.";
+        if ("kennel-animal".equals(npc.creatureKind)) return npc.name + " is on duty and should not be distracted.";
+        return npc.name + " is not tame enough to pet.";
+    }
+
+    String petInteractionLine(NpcEntity npc) {
+        String key = ((npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return npc.name + " accepts careful ear scritches and pretends it was their idea.";
+        if (key.contains("rat") || key.contains("mouse")) return npc.name + " receives a tiny nose boop and chirrs at the attention.";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return npc.name + " leans into a head pat.";
+        if (key.contains("lizard")) return npc.name + " permits a cautious chin rub.";
+        if (key.contains("glowfish")) return npc.name + " watches your fingertip tap the bowl and glows a little brighter.";
+        return npc.name + " accepts a gentle petting gesture.";
+    }
+
+    String petGestureName(NpcEntity npc) {
+        String key = ((npc == null || npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc == null || npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return "ear scritches";
+        if (key.contains("rat") || key.contains("mouse")) return "a nose boop";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return "a head pat";
+        if (key.contains("lizard")) return "a chin rub";
+        if (key.contains("glowfish")) return "a bowl tap";
+        return "a gentle petting gesture";
+    }
+
+    String describeDoor(char ch) {
+        if (ch == '/') return "open archway";
+        if (ch == '|') return "hinged scrap door";
+        if (ch == 'L') return "locked/chained door";
+        if (ch == 'V') return "ventilation panel";
+        if (ch == 'X') return "sealed security door";
+        return "unknown door";
+    }
+
+void updatePendingInteractionSummary() {
+        if (world == null) { pendingInteractionSummary = "No world loaded."; return; }
+        if (!world.inBounds(lookX, lookY)) { pendingInteractionSummary = "No reachable target selected."; return; }
+        if (Math.abs(lookX-playerX) > 1 || Math.abs(lookY-playerY) > 1) {
+            Point approach = selectedInteractionApproachTile();
+            pendingInteractionSummary = approach == null
+                    ? "Selected target is too far away to use. Move next to it first."
+                    : "Selected target is too far away to use. PLAN MOVE can approach " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ".";
+            return;
+        }
+        NpcEntity npc = world.npcAt(lookX, lookY);
+        if (npc != null) {
+            if (npc.isPetActor()) pendingInteractionSummary = "Pet interaction: " + npc.name + " is close enough for " + petGestureName(npc) + ".";
+            else if (npc.isAnimalActor()) pendingInteractionSummary = "Animal interaction blocked: " + animalContactBlockedLine(npc);
+            else pendingInteractionSummary = "Talk to " + npc.name + ", " + (npc.role == null || npc.role.isBlank() ? "local resident" : npc.role) + ".";
+            return;
+        }
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        char ch = world.tiles[lookX][lookY];
+        int turns = agilityActionCost(ch, obj);
+        String target = obj != null ? obj.name : describeTile(ch);
+        if (obj == null && isDoorTile(ch)) {
+            int diff = (ch=='/'?0:(ch=='|'?8:(ch=='L'?14:(ch=='V'?16:22))));
+            pendingInteractionSummary = "Door access: " + target + ". Time: " + turns + " turn(s). Difficulty estimate " + diff + ". " + doorPreflightHint(ch);
+        } else if (obj != null && obj.symbol == 'c') {
+            int cost = sleepFoodWaterCost(pendingSleepHours);
+            pendingInteractionSummary = "Sleep on cot for " + pendingSleepHours + "h? Time: " + sleepTurnCost(pendingSleepHours) + " turns. Cost: " + cost + " food + " + cost + " water. Reduces sleep need up to " + sleepTurnCost(pendingSleepHours) + "/" + MAX_SLEEP_NEED + ". Max 8h.";
+        } else if (obj == null && isFactionJournalObjectAt(lookX, lookY)) {
+            pendingInteractionSummary = factionJournalPreview(lookX, lookY);
+        } else if (obj == null && isBankTerminalAt(lookX, lookY)) {
+            pendingInteractionSummary = bankTerminalPreview(lookX, lookY);
+        } else if (obj == null && isBankVaultAt(lookX, lookY)) {
+            pendingInteractionSummary = bankVaultPreview(lookX, lookY);
+        } else if (obj == null && isBankAlarmPanelAt(lookX, lookY)) {
+            pendingInteractionSummary = bankAlarmPanelPreview(lookX, lookY);
+        } else if (obj == null && isBankManagerAt(lookX, lookY)) {
+            pendingInteractionSummary = bankManagerPreview(lookX, lookY);
+        } else if (obj == null && isPersistentStockObjectAt(lookX, lookY)) {
+            pendingInteractionSummary = persistentStockInteractionSummary(lookX, lookY);
+        } else if (obj == null && isVendingMachine(ch)) {
+            pendingInteractionSummary = vendingPreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter to vend.";
+        } else if (obj == null && isShrine(ch)) {
+            pendingInteractionSummary = shrinePreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter to pray/inspect.";
+        } else if (obj == null && isEmergencyMachine(ch)) {
+            pendingInteractionSummary = emergencyMachinePreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter for machine options.";
+        } else if (obj == null && (ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E')) {
+            pendingInteractionSummary = "INTERMAP TRANSIT — " + intermapTransitLabel(ch) + ": " + transitionPreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM or Enter to transition.";
+        } else if (obj == null && ch == 'Q') {
+            pendingInteractionSummary = governorPreview(lookX, lookY) + " Use BRIBE GOVERNOR or ATTACK GOVERNOR.";
+        } else {
+            pendingInteractionSummary = "Interact with " + target + "? Time: " + turns + " turn(s), modified by Agility.";
+        }
+    }
+
+    void addInfopediaRelatedEntryButtons(Rectangle modal, java.util.List<String> entries) {
+        if (entries == null || entries.isEmpty()) return;
+        String selectedEntry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        ArrayList<String> related = infopediaRelatedEntries(infopediaTab, selectedEntry);
+        int rx = modal.x + modal.width - 456;
+        int ry = modal.y + modal.height - 86;
+        for (int i=0; i<Math.min(3, related.size()); i++) {
+            String target = related.get(i);
+            final String jump = target;
+            buttons.add(new ButtonBox("LINK: " + TextSurfaceApi.ellipsize(target, 22), rx + i * 148, ry, 140, 30, "Open related Infopedia entry: " + target, () -> openInfopediaEntry(jump)));
+        }
+    }
+
+    String doorPreflightHint(char ch) {
+        if (ch == '/') return "Open passage; no door work needed.";
+        if (ch == '|') return "Closed door; opening may make sight lines and sound travel farther.";
+        if (ch == 'L') return "Locked or chained; keys, lockpicks, tools, Mechanics, or Intellect can help.";
+        if (ch == 'V') return "Vent panel; tools or a careful access check may be needed.";
+        if (ch == 'X') return "Electronic security; a keycard, hacking tools, data spike, or skill check may be needed.";
+        return "Sealed access; ordinary interaction may not be enough.";
+    }
+
+    boolean isVendingMachine(char ch) { return PublicServiceMediaAuthority.isVendingSymbol(ch); }
+    boolean isShrine(char ch) { return ch == 'I' || ch == 'H'; }
+    String passiveKey(int x, int y) { return (world == null ? 0 : world.locationKey()) + ":" + x + ":" + y; }
+
+    String vendingName(char ch) { return PublicServiceMediaAuthority.vendingName(ch); }
+
+    String vendingPreview(char ch, int x, int y) {
+        String key = passiveKey(x,y);
+        int until = passiveCooldownUntilTurn.getOrDefault(key, 0);
+        int hacked = vendingHackVendCount.getOrDefault(key, 0);
+        return PublicServiceMediaAuthority.vendingPreview(ch, until, hacked);
+    }
+
+    String vendingStockText(char ch) { return PublicServiceMediaAuthority.vendingStockText(ch); }
+
+    String shrinePreview(char ch, int x, int y) {
+        if (ch == 'I') return "Concord shrine: " + imperialShrineName(x,y) + ". A legal devotional fixture for brief prayer and composure.";
+        return "Heretical shrine: " + chaosShrineName(x,y) + ". Illegal, dangerous, and probably listening.";
+    }
+
+    String imperialShrineName(int x, int y) {
+        String[] names = {"Saint Drusus of the Worn Gate", "Saint Sabbat of the Red Road", "Saint Vidicus of the Iron Ledger", "Saint Lucia of the Last Lamp", "Saint Gelt of the Unpaid Tithe"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 31 + y * 17, names.length)];
+    }
+
+    String chaosShrineName(int x, int y) {
+        String[] names = {"the Blood God", "the Plague God", "the Changer of Ways", "the Prince of Excess"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 13 + y * 29, names.length)];
+    }
+
+    boolean isEmergencyMachine(char ch) { return "YJBKOZPFU".indexOf(ch) >= 0; }
+    String emergencyMachineName(char ch) {
+        switch(ch) {
+            case 'Y': return "Martian atmospheric water condenser";
+            case 'J': return "Martian emergency assembler";
+            case 'B': return "Martian emergency boiler";
+            case 'K': return "Martian micro laboratorium";
+            case 'O': return "Martian emergency miner";
+            case 'Z': return "Martian relay power grid";
+            case 'P': return "Martian emergency smelter";
+            case 'F': return "Martian emergency steam engine";
+            case 'U': return "disabled emergency steam engine";
+            default: return "Martian emergency machine";
+        }
+    }
+    String emergencyMachineImagePath(char ch) {
+        switch(ch) {
+            case 'Y': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-atmospheric-water-condenser.png";
+            case 'J': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-assembler.png";
+            case 'B': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-boiler.png";
+            case 'K': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-laboratorium.png";
+            case 'O': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-miner.png";
+            case 'Z': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-power-grid.png";
+            case 'P': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-smelter.png";
+            case 'F': case 'U': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-steam-engine.png";
+            default: return "assets/imported_tech_priests/thumbnail.png";
+        }
+    }
+    boolean emergencyMachineLocked(int x, int y, char ch) {
+        String key = passiveKey(x,y);
+        if (unlockedEmergencyMachines.contains(key)) return false;
+        // Stable seeded lock chance per fixture. Owned faction zones are more likely to lock their machines.
+        int hash = Math.abs(Objects.hash(world == null ? 0 : world.locationKey(), x, y, ch));
+        int chance = owningFactionAt(x,y) == Faction.NONE ? 28 : 62;
+        return (hash % 100) < chance;
+    }
+    String emergencyMachinePreview(char ch, int x, int y) {
+        String lock = emergencyMachineLocked(x,y,ch) ? "LOCKED: hack/pick/keycard required before use" : "usable";
+        Faction owner = owningFactionAt(x,y);
+        String power = machinePowered(ch) ? "powered" : "unpowered/current slice dark";
+        return emergencyMachineName(ch) + " [" + lock + ", " + power + ", owner=" + factionLabel(owner) + "]. Preview asset: " + emergencyMachineImagePath(ch);
+    }
+    Faction owningFactionAt(int x, int y) {
+        if (world == null || x < 0 || y < 0 || x >= world.w || y >= world.h) return Faction.NONE;
+        int rid = world.roomIds[x][y];
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return Faction.NONE;
+    }
+    String factionLabel(Faction f) { return f == null ? "none" : f.label; }
+    boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }
+    static boolean sameFactionFamilyStatic(Faction a, Faction b) {
+        if (a == null || b == null) return false;
+        if (a == b) return true;
+        if ((a == Faction.MECHANIST_COLLEGIA || a.name().startsWith("MECHANIST COLLEGIA")) && (b == Faction.MECHANIST_COLLEGIA || b.name().startsWith("MECHANIST COLLEGIA"))) return true;
+        if ((a == Faction.MINISTORUM || a == Faction.SORORITAS) && (b == Faction.MINISTORUM || b == Faction.SORORITAS)) return true;
+        if ((a == Faction.BANDIT || a.name().startsWith("GANGER")) && (b == Faction.BANDIT || b.name().startsWith("GANGER"))) return true;
+        if ((a == Faction.HIVER || a.name().startsWith("HIVER")) && (b == Faction.HIVER || b.name().startsWith("HIVER"))) return true;
+        if ((a == Faction.NOBLE || a.name().startsWith("NOBLE")) && (b == Faction.NOBLE || b.name().startsWith("NOBLE"))) return true;
+        return false;
+    }
+    boolean playerIsFactionMember(Faction f) {
+        if (f == null || f == Faction.NONE) return true;
+        if (active == null) return false;
+        Faction pf = JobProfile.get(active.job).faction;
+        return pf == f || sameFactionFamily(pf, f);
+    }
+    Faction playerFaction() {
+        if (active == null) return Faction.NONE;
+        try { return JobProfile.get(active.job).faction; } catch (Throwable ignored) { return Faction.NONE; }
+    }
+    boolean machinePowered(char ch) {
+        if (ch == 'F' || ch == 'U' || ch == 'Z') return true;
+        return world == null || !poweredDownSlices.contains(String.valueOf(world.locationKey()));
+    }
+    boolean ensureMachineAccess(int tx, int ty, char ch) {
+        Faction owner = owningFactionAt(tx,ty);
+        if (owner != Faction.NONE && !playerIsFactionMember(owner)) {
+            suspicion += 2;
+            factionStanding.put(owner, factionStanding.getOrDefault(owner, 0) - 3);
+            temporaryHostileTurns.put(owner, turn + 12);
+            logEvent("Unauthorized use of " + emergencyMachineName(ch) + " in " + factionLabel(owner) + " territory triggers hostility and standing loss.");
+            DebugLog.audit("EMM_FACTION_HOSTILITY", emergencyMachineName(ch)+" owner="+owner+" at="+tx+","+ty+" state="+stateSummary());
+        }
+        if (emergencyMachineLocked(tx,ty,ch)) {
+            int score = stat("Mechanics",3) + stat("Intellect",3) + rng.nextInt(12) + (countInventory("Keycard")>0 ? 6 : 0) + (countInventory("Hacking tools")>0 ? 5 : 0) + (countInventory("Lockpicks")>0 ? 3 : 0);
+            int diff = 12 + (owner == Faction.NONE ? 0 : 6);
+            if (score >= diff) {
+                unlockedEmergencyMachines.add(passiveKey(tx,ty));
+                logEvent("Access granted: you bypass the lock on the " + emergencyMachineName(ch) + ".");
+                DebugLog.audit("EMM_UNLOCK", emergencyMachineName(ch)+" score="+score+" diff="+diff+" at="+tx+","+ty);
+                return true;
+            }
+            logEvent("Access denied: " + emergencyMachineName(ch) + " remains locked. Need keycard, lockpicks, hacking tools, Intellect, or Mechanics. Roll " + score + " < " + diff + ".");
+            DebugLog.audit("EMM_UNLOCK_FAIL", emergencyMachineName(ch)+" score="+score+" diff="+diff+" at="+tx+","+ty);
+            advanceTurn("fails to access emergency machine.");
+            return false;
+        }
+        return true;
+    }
+    void interactEmergencyMachine(int tx, int ty, char ch) {
+        if (!ensureMachineAccess(tx,ty,ch)) return;
+        if (!machinePowered(ch)) {
+            logEvent(emergencyMachineName(ch) + " is unpowered. Powered doors are easier to force, security is down, visibility is reduced, and machinery is inaccessible until power is restored.");
+            advanceTurn("checks unpowered machinery.");
+            return;
+        }
+        switch(ch) {
+            case 'Y':
+                int waterGain = 2 + rng.nextInt(4);
+                for(int i=0;i<waterGain;i++) addInventoryItem("Water bottle", ItemProvenanceRecord.producedByFixture("Water bottle", Faction.HIVER, emergencyMachineName(ch), world, turn, "condensed atmospheric moisture", "dispensed to player by emergency condenser"));
+                logEvent("The condenser coughs out " + waterGain + " units of drinkable water.");
+                break;
+            case 'J':
+                if (countInventory("Machine part") >= 1 && countInventory("Construction supplies") >= 1) { removeInventoryOne("Machine part"); removeInventoryOne("Construction supplies"); addInventoryItem("Assembled component", ItemProvenanceRecord.producedByFixture("Assembled component", Faction.HIVER, emergencyMachineName(ch), world, turn, "Machine part + Construction supplies", "assembled by emergency micro-assembler")); logEvent("The assembler converts supplies and a machine part into an assembled component."); }
+                else logEvent("Assembler option: designate simple components. Requires Machine part + Construction supplies.");
+                break;
+            case 'B':
+                if (rng.nextBoolean()) { addInventoryItem("Clean water", ItemProvenanceRecord.producedByFixture("Clean water", Faction.HIVER, emergencyMachineName(ch), world, turn, "boiled reserve water", "distilled by emergency boiler")); logEvent("The boiler distills dirty reserve into valuable clean water."); }
+                else { addInventoryItem("Dirty water", ItemProvenanceRecord.found("Dirty water", world, turn, "emergency boiler sump")); addInventoryItem("Fuel scrap", ItemProvenanceRecord.found("Fuel scrap", world, turn, "emergency boiler firebox")); logEvent("You strip fuel and dirty water from the emergency boiler instead of running it clean."); }
+                break;
+            case 'K':
+                logEvent("The micro laboratorium accepts samples and records a research opportunity. The action consumes a turn.");
+                break;
+            case 'O':
+                int ore = 2 + rng.nextInt(5); for(int i=0;i<ore;i++) { String mined = rng.nextBoolean()?"Raw iron ore":"Raw copper ore"; addInventoryItem(mined, ItemProvenanceRecord.producedByFixture(mined, Faction.HIVER, emergencyMachineName(ch), world, turn, "local floor mineral seam", "mined by emergency miner")); }
+                logEvent("The emergency miner screams loud enough to draw interest and produces " + ore + " raw ore units.");
+                gangHeat += 1; suspicion += 1;
+                break;
+            case 'Z':
+                logEvent("Power grid relay inspected. Reserved routing: power/depower adjacent rooms or relay power to claimed base rooms without consuming a power slot.");
+                break;
+            case 'P':
+                if (countInventory("Raw iron ore") > 0) { removeInventoryOne("Raw iron ore"); addInventoryItem("Iron ingot", ItemProvenanceRecord.producedByFixture("Iron ingot", Faction.HIVER, emergencyMachineName(ch), world, turn, "Raw iron ore", "smelted by emergency smelter")); logEvent("The smelter turns raw iron ore into an iron ingot."); }
+                else if (countInventory("Raw copper ore") > 0) { removeInventoryOne("Raw copper ore"); addInventoryItem("Copper ingot", ItemProvenanceRecord.producedByFixture("Copper ingot", Faction.HIVER, emergencyMachineName(ch), world, turn, "Raw copper ore", "smelted by emergency smelter")); logEvent("The smelter turns raw copper ore into a copper ingot."); }
+                else logEvent("Smelter option: turn raw ores into usable metals/components. Requires raw ore.");
+                break;
+            case 'F':
+                world.tiles[tx][ty] = 'U';
+                poweredDownSlices.add(String.valueOf(world.locationKey()));
+                logEvent("You sabotage the emergency steam engine. The current map slice loses power: powered security drops, doors can be forced, visibility worsens, and other powered machinery shuts down.");
+                break;
+            case 'U':
+                if (countInventory("Fuel scrap") > 0) { removeInventoryOne("Fuel scrap"); world.tiles[tx][ty]='F'; poweredDownSlices.remove(String.valueOf(world.locationKey())); logEvent("You restart the emergency steam engine with fuel scrap. This engine can feed two powered machines through a relay grid."); }
+                else logEvent("Disabled steam engine. Restart requires Fuel scrap. Player-owned engines consume one stored fuel per 24h and power two machines.");
+                break;
+        }
+        DebugLog.audit("EMM_INTERACT", emergencyMachineName(ch)+" at="+tx+","+ty+" state="+stateSummary());
+        advanceTurn("uses " + emergencyMachineName(ch) + ".");
+    }
+    boolean removeInventoryOne(String item) { return removeInventoryItem(item); }
+
+    void interactVendingMachine(int tx, int ty, char ch) {
+        String key = passiveKey(tx, ty);
+        int until = passiveCooldownUntilTurn.getOrDefault(key, 0);
+        int hackedCount = vendingHackVendCount.getOrDefault(key, 0);
+        if (turn < until) {
+            int need = Math.max(0, until - turn);
+            if (hackedCount >= PublicServiceMediaAuthority.maxHackedCycles()) {
+                logEvent("The " + vendingName(ch) + " is hacked dry. Its machine-spirit sulks in empty spirals.");
+                advanceTurn("checks an empty vending machine.");
+                return;
+            }
+            if (countDataSpikes() <= 0) {
+                logEvent("The " + vendingName(ch) + " is cooling down for " + need + " more turns. Illegal override requires a Data spike.");
+                DebugLog.audit("VENDING_HACK_NO_SPIKE", vendingName(ch)+" key="+key+" remaining="+need+" state="+stateSummary());
+                advanceTurn("checks a vending machine access port.");
+                return;
+            }
+            int intellect = stat("Intellect", 3);
+            int hackDifficulty = PublicServiceMediaAuthority.hackDifficulty(hackedCount);
+            int check = intellect + stat("Mechanics", 3) / 2 + rng.nextInt(20) + 1;
+            consumeDataSpike();
+            if (check >= hackDifficulty) {
+                vendingHackVendCount.put(key, hackedCount + 1);
+                passiveCooldownUntilTurn.put(key, turn + PublicServiceMediaAuthority.hackedVendingCooldownTurns());
+                suspicion += 2;
+                logEvent("You burn a Data spike into the " + vendingName(ch) + " and illegally force a vend cycle. It will now vend on a 1-hour cycle until 8 hacked items are dispensed. Suspicion +2.");
+                vendItem(ch, true);
+                DebugLog.audit("VENDING_HACK", vendingName(ch)+" key="+key+" hackedCount="+(hackedCount+1)+" check="+check+" diff="+hackDifficulty+" intellect="+intellect+" dataSpikeConsumed=true state="+stateSummary());
+            } else {
+                suspicion += 1;
+                logEvent("Data spike burned. Hack failed: roll " + check + " < " + hackDifficulty + ". The " + vendingName(ch) + " remains on cooldown for " + need + " more turns. Suspicion +1.");
+                DebugLog.audit("VENDING_HACK_FAIL", vendingName(ch)+" key="+key+" remaining="+need+" check="+check+" diff="+hackDifficulty+" dataSpikeConsumed=true state="+stateSummary());
+            }
+            advanceTurn("tampered with " + vendingName(ch) + ".");
+            return;
+        }
+        if (hackedCount >= PublicServiceMediaAuthority.maxHackedCycles()) {
+            logEvent("The " + vendingName(ch) + " is hacked dry. Its machine-spirit sulks in empty spirals.");
+            advanceTurn("checks an empty vending machine.");
+            return;
+        }
+        int cost = vendingCost(ch);
+        if (!spendImperialScript(cost)) {
+            logEvent("The " + vendingName(ch) + " demands " + cost + " Concord Script. You have " + countMoney() + ".");
+            DebugLog.audit("VENDING_PURCHASE_FAIL", vendingName(ch)+" cost="+cost+" money="+countMoney()+" state="+stateSummary());
+            advanceTurn("fails to purchase from " + vendingName(ch) + ".");
+            return;
+        }
+        passiveCooldownUntilTurn.put(key, turn + PublicServiceMediaAuthority.legalVendingCooldownTurns());
+        vendItem(ch, false);
+        DebugLog.audit("VENDING_PURCHASE", vendingName(ch)+" key="+key+" cost="+cost+" cooldownUntil="+passiveCooldownUntilTurn.get(key)+" state="+stateSummary());
+        advanceTurn("purchases from " + vendingName(ch) + ".");
+    }
+
+    int vendingCost(char ch) { return PublicServiceMediaAuthority.vendingCost(ch); }
+
+    void vendItem(char ch, boolean hacked) {
+        String item = PublicServiceMediaAuthority.chooseVendedItem(ch, rng);
+        String source = hacked ? "hacked " + PublicServiceMediaAuthority.vendingHandle(ch) : PublicServiceMediaAuthority.vendingHandle(ch);
+        if (inventoryWeight() + 1 <= carryCapacity()) {
+            addInventoryItem(item, ItemProvenanceRecord.trade(item, hacked?Faction.NONE:Faction.HIVER, source, world, turn, "machine dispensed from local stock"));
+            logEvent((hacked?"ITEM FOUND: Hacked vend dispensed ":"ITEM PURCHASED: ") + item + ".");
+        }
+        else { logEvent("ITEM BLOCKED: " + item + " could not enter inventory because carried bulk is full."); }
+    }
+
+    void interactShrine(int tx, int ty, char ch) {
+        if (ch == 'I') {
+            int gain = Math.max(1, stat("Faith", 1) / 2);
+            sleepNeed = Math.max(0, sleepNeed - 1);
+            lastConversation = "You make the sign before " + imperialShrineName(tx,ty) + ". Faith steadies the hand. Sleep need -1.";
+            logEvent(lastConversation);
+            DebugLog.audit("SHRINE_IMPERIAL", lastConversation + " faithGain=" + gain + " state=" + stateSummary());
+        } else {
+            suspicion += 1;
+            stimulantStrain += 1;
+            lastConversation = "You inspect a forbidden shrine to " + chaosShrineName(tx,ty) + ". The air tastes like copper and litigation. Suspicion +1, strain +1.";
+            logEvent(lastConversation);
+            DebugLog.audit("SHRINE_HERETIC", lastConversation + " state=" + stateSummary());
+        }
+        advanceTurn("interacts with a shrine.");
+    }
+
+
+
+    boolean governorHasTicket() {
+        if (atlas == null || world == null) return false;
+        long key = seed ^ world.seed ^ (atlas.sectorX * 1000003L) ^ (atlas.sectorY * 9176L) ^ 0x51C70A7E5EEDL;
+        return Math.floorMod(key, 100) < 35;
+    }
+
+    int governorAudienceFee() {
+        int power = playerFactionPower();
+        return Math.max(250, 900 + power * 18 + (atlas == null ? 0 : (atlas.sectorX + atlas.sectorY) * 125));
+    }
+
+    String governorPreview(int x, int y) {
+        return "SECTOR GOVERNOR AUDIENCE: fee " + governorAudienceFee() + " Concord Script. Some governors have a seed-bound off-world ticket; some will take your money anyway.";
+    }
+
+    void bribeSectorGovernor() {
+        if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor bribe failed: no sector governor is selected."); return; }
+        int fee = governorAudienceFee();
+        if (!spendImperialScript(fee)) { logEvent("Governor bribe failed: the chamberlain requires " + fee + " Concord Script. You have " + countMoney() + "."); return; }
+        governorBribesPaid++;
+        suspicion = Math.max(0, suspicion - 3);
+        if (governorHasTicket()) {
+            addInventoryItem("Off-world ticket", ItemProvenanceRecord.of("Off-world ticket", Faction.NOBLE, "Sector Governor audience", world, turn, "seed-bound governor travel warrant", "bribed from sector governor"));
+            offworldTicketsFound++;
+            logEvent("VICTORY ROUTE: the sector governor produces a genuine off-world ticket. You can leave the sector, your debts, and probably several crimes behind.");
+            alertTitle = "OFF-WORLD TICKET ACQUIRED";
+            alertBody = "The Governor takes the lavish fee and, by some bureaucratic miracle, hands over a true off-world ticket. This is the win condition route: reach the rail or exit authority and depart.";
+            alertUntilMillis = System.currentTimeMillis() + 9000L;
+        } else {
+            logEvent("BETRAYAL: the Governor pockets " + fee + " script and has no ticket. Guards erupt from concealed doors. Find another sector governor, if you survive.");
+            spawnGovernorGuards(5 + rng.nextInt(4));
+            suspicion += 8; gangHeat += 5;
+        }
+        DebugLog.audit("GOVERNOR_BRIBE", "fee="+fee+" hasTicket="+governorHasTicket()+" bribes="+governorBribesPaid+" tickets="+offworldTicketsFound+" state="+stateSummary());
+        advanceTurn("bribes the sector governor.");
+        repaint();
+    }
+
+    void attackSectorGovernor() {
+        if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor attack failed: no sector governor is selected."); return; }
+        noteCombatMusicActivity(true, "attacks sector governor");
+        governorViolenceCount++;
+        int roll = rng.nextInt(20) + 1 + stat("Melee", 5) + stat("Nerve", 5) / 2;
+        int difficulty = 24 + Math.max(0, playerFactionPower() / 12);
+        boolean killed = roll >= difficulty;
+        suspicion += 12; gangHeat += 8;
+        if (killed) {
+            world.tiles[lookX][lookY] = 'n';
+            logEvent("GOVERNOR DOWN: roll " + roll + " vs " + difficulty + ". The governor dies in expensive upholstery and worse politics.");
+            if (governorHasTicket()) {
+                addInventoryItem("Off-world ticket", ItemProvenanceRecord.found("Off-world ticket", world, turn, "sector governor corpse")); offworldTicketsFound++;
+                logEvent("ITEM FOUND: Off-world ticket looted from the governor's body. The sector can be escaped if you can reach the departure route alive.");
+            } else {
+                logEvent("NO TICKET: the corpse has seals, jewelry, and lies, but no off-world passage. Find a new sector governor.");
+                addInventoryItem("Governor signet", ItemProvenanceRecord.found("Governor signet", world, turn, "sector governor corpse"));
+            }
+            spawnGovernorGuards(7 + rng.nextInt(5));
+        } else {
+            logEvent("GOVERNOR ATTACK FAILED: roll " + roll + " vs " + difficulty + ". The governor survives long enough to make guards a personal weather event.");
+            spawnGovernorGuards(8 + rng.nextInt(6));
+            wounds += 2; pain += 3;
+        }
+        DebugLog.audit("GOVERNOR_ATTACK", "roll="+roll+" difficulty="+difficulty+" killed="+killed+" hasTicket="+governorHasTicket()+" violence="+governorViolenceCount+" state="+stateSummary());
+        advanceTurn("attacks the sector governor.");
+        repaint();
+    }
+
+    void spawnGovernorGuards(int count) {
+        if (world == null) return;

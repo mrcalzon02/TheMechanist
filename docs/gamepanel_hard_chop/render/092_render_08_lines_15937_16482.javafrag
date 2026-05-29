@@ -1,0 +1,330 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_08_lines_15937_16482
+// Category: render
+// Source lines: 15937-16482
+// Method count: 11
+//
+// Methods in this fragment:
+// - drawRankBadge :: lines 15937-15975 (39) :: void drawRankBadge(Graphics2D g, int rank, int px, int py, int w, int h)
+// - overlayColor :: lines 15977-15983 (7) :: void overlayColor(Graphics2D g, int x, int y, int w, int h, Color c, float alpha)
+// - drawRecentActionFeed :: lines 15985-16033 (49) :: void drawRecentActionFeed(Graphics2D g)
+// - drawCommandTablet :: lines 16059-16092 (34) :: void drawCommandTablet(Graphics2D g, int camX, int camY)
+// - drawRightPanelFrame :: lines 16180-16188 (9) :: void drawRightPanelFrame(Graphics2D g)
+// - drawCaptureScreen :: lines 16195-16219 (25) :: void drawCaptureScreen(Graphics2D g)
+// - drawLostScreen :: lines 16221-16241 (21) :: void drawLostScreen(Graphics2D g)
+// - drawScavengeTargetPanel :: lines 16243-16261 (19) :: void drawScavengeTargetPanel(Graphics2D g)
+// - drawModalScrim :: lines 16307-16313 (7) :: void drawModalScrim(Graphics2D g)
+// - drawMiniStackIcon :: lines 16378-16392 (15) :: void drawMiniStackIcon(Graphics2D g, String name, int x, int y, int sz)
+// - drawInventoryStackPanel :: lines 16424-16482 (59) :: void drawInventoryStackPanel(Graphics2D g)
+
+    void drawRankBadge(Graphics2D g, int rank, int px, int py, int w, int h) {
+        int r = Math.max(1, Math.min(8, rank));
+        int size = Math.max(8, Math.min(16, Math.min(w, h) / 2));
+        int bx = px + w - size - Math.max(1, w / 18);
+        int by = py + Math.max(1, h / 18);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        gg.setColor(new Color(0,0,0,190));
+        gg.fillRoundRect(bx, by, size, size, Math.max(3,size/3), Math.max(3,size/3));
+        gg.setColor(rankColor(r));
+        int cx = bx + size/2, cy = by + size/2;
+        int pad = Math.max(2, size/6);
+        if (r == 1) {
+            Polygon star = new Polygon();
+            for(int i=0;i<10;i++){ double a=-Math.PI/2 + i*Math.PI/5; int rad=(i%2==0)?size/2-pad:size/4; star.addPoint(cx+(int)Math.round(Math.cos(a)*rad), cy+(int)Math.round(Math.sin(a)*rad)); }
+            gg.fillPolygon(star);
+        } else if (r == 2) {
+            Polygon diamond = new Polygon(new int[]{cx,bx+size-pad,cx,bx+pad}, new int[]{by+pad,cy,by+size-pad,cy}, 4);
+            gg.fillPolygon(diamond);
+        } else if (r == 3) {
+            Polygon tri = new Polygon(new int[]{cx,bx+size-pad,bx+pad}, new int[]{by+pad,by+size-pad,by+size-pad}, 3);
+            gg.fillPolygon(tri);
+        } else if (r == 4) {
+            gg.fillRect(bx+pad, by+pad, Math.max(2,size-pad*2), Math.max(2,size-pad*2));
+        } else if (r == 5) {
+            Polygon chev = new Polygon(new int[]{bx+pad,cx,bx+size-pad,bx+size-pad,cx,bx+pad}, new int[]{by+size/2,by+pad,by+size/2,by+size-pad,by+size/2+pad,by+size-pad}, 6);
+            gg.fillPolygon(chev);
+        } else if (r == 6) {
+            gg.fillRoundRect(bx+pad, by+size/3, size-pad*2, Math.max(2,size/3), 2, 2);
+        } else if (r == 7) {
+            gg.fillOval(bx+pad, by+pad, Math.max(2,size-pad*2), Math.max(2,size-pad*2));
+        } else {
+            gg.drawLine(bx+pad, by+pad, bx+size-pad, by+size-pad);
+            gg.drawLine(bx+size-pad, by+pad, bx+pad, by+size-pad);
+        }
+        gg.setColor(new Color(255,255,230,210));
+        gg.drawRoundRect(bx, by, size-1, size-1, Math.max(3,size/3), Math.max(3,size/3));
+        gg.dispose();
+    }
+
+    void overlayColor(Graphics2D g, int x, int y, int w, int h, Color c, float alpha) {
+        Composite old = g.getComposite();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.0f, Math.min(1.0f, alpha))));
+        g.setColor(c);
+        g.fillRect(x, y, w, h);
+        g.setComposite(old);
+    }
+
+    void drawRecentActionFeed(Graphics2D g) {
+        Rectangle map = mapRect();
+        Rectangle tactical = tacticalSlateRect();
+        int x = tactical.x;
+        int w = tactical.width;
+        int y;
+        int h;
+        if (tacticalSlateVisible) {
+            h = Math.max(64, Math.min(90, tactical.y - (map.y + map.height) - 6));
+            y = Math.max(map.y + map.height + 2, tactical.y - h - 4);
+            if (y + h > tactical.y - 2) h = Math.max(48, tactical.y - y - 3);
+        } else {
+            y = tactical.y;
+            h = tactical.height;
+        }
+        g.setColor(new Color(0, 0, 0, tacticalSlateVisible ? 222 : 236));
+        g.fillRoundRect(x, y, w, h, 12, 12);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "recent-actions-feed", x, y, w, h);
+        Font labelFont = smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-4f));
+        g.setFont(labelFont);
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString(tacticalSlateVisible ? "RECENT ACTIONS" : "RECENT EVENTS — EXTERNAL AWARENESS", x + 12, y + 16);
+        int bodyX = x + 12, bodyY = y + 22, bodyW = w - 24, bodyH = Math.max(14, h - 28);
+        Shape old = g.getClip();
+        g.setClip(bodyX, bodyY, bodyW, bodyH);
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        fm = g.getFontMetrics();
+        int lineH = Math.max(12, fm.getHeight());
+        int maxLines = Math.max(1, bodyH / lineH);
+        ArrayList<String> source = new ArrayList<>();
+        for (int i = Math.max(0, eventLog.size() - 80); i < eventLog.size(); i++) {
+            String line = eventLog.get(i);
+            if (recentFeedExternalAwarenessEligible(line)) source.add(line);
+        }
+        if (source.isEmpty()) source.add("No external events in immediate awareness.");
+        java.util.List<String> wrapped = TextLayoutAuthority.wrapAllPixels(g, g.getFont(), source, bodyW - 8);
+        int start = Math.max(0, wrapped.size() - maxLines);
+        int yy = bodyY + fm.getAscent();
+        for (int i = start; i < wrapped.size(); i++) {
+            String line = wrapped.get(i);
+            g.setColor(actionFeedColor(line));
+            g.drawString(line, bodyX, yy);
+            yy += lineH;
+            if (yy > bodyY + bodyH) break;
+        }
+        g.setClip(old);
+    }
+
+// ... omitted 25 non-method/source lines between cataloged methods ...
+
+void drawCommandTablet(Graphics2D g, int camX, int camY) {
+        Rectangle r = tacticalSlateRect();
+        g.setColor(new Color(0, 0, 0, 242));
+        g.fillRect(r.x, r.y, r.width, r.height);
+        drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
+        stampUiFrameId(g, "F", "tactical-slate", r.x, r.y, r.width, r.height);
+        Shape old = g.getClip();
+        g.setClip(r.x + 12, r.y + 8, Math.max(1, r.width - 24), Math.max(1, r.height - 16));
+        Font labelFont = smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-4f));
+        g.setFont(labelFont);
+        g.setColor(new Color(210, 190, 126));
+        g.drawString("TACTICAL SLATE", r.x + 14, r.y + 15);
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-2f)));
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        String nameLine = active == null ? "No active character" : active.name + " | " + active.job;
+        ArrayList<String> slate = new ArrayList<>();
+        slate.add(nameLine + " | Survival " + timeText() + " | World " + worldTimeText() + " | Food " + food + "/15 Water " + water + "/15 | Sleep " + (sleepNeed / TURNS_PER_HOUR) + "h/26h | Heat " + gangHeat + " Suspicion " + suspicion + " | XP " + xp + " KC " + knowledgeCredits + " | Camera " + camX + "," + camY + " | Zoom " + options.worldZoomLabel());
+        slate.add("Move " + movementModeLabel() + " range " + movementModeRange() + " cost " + movementTurnCost() + " | " + activeMotionStateLabel() + " facing " + facingLabel() + " | vision " + visionRange() + " hearing " + hearingRange());
+        slate.add(portableLightStatusLine());
+        WorldSnapshot serverSnapshot = singlePlayerSectorBridge == null ? null : singlePlayerSectorBridge.latestWorldSnapshot();
+        String serverAction = serverSnapshot == null || serverSnapshot.player() == null ? (singlePlayerSectorBridge == null ? "" : singlePlayerSectorBridge.activeActionDisplayLine()) : serverSnapshot.player().activeAction();
+        if (serverAction != null && !serverAction.isBlank() && !"none".equalsIgnoreCase(serverAction)) slate.add("Server action: " + serverAction);
+        if (serverSnapshot != null) slate.add("Server snapshot v" + serverSnapshot.version() + " | tiles " + serverSnapshot.visibleTiles().size() + " | NPCs " + serverSnapshot.visibleNpcs().size() + " | objects " + serverSnapshot.visibleObjects().size());
+        slate.add(tacticalPromptLine());
+        int yy = r.y + 32;
+        java.util.List<String> wrappedSlate = TextLayoutAuthority.wrapAllPixels(g, g.getFont(), slate, r.width - 36);
+        for (String wrapped : wrappedSlate) {
+            if (yy > r.y + r.height - 10) { g.setClip(old); return; }
+            g.drawString(wrapped, r.x + 14, yy);
+            yy += Math.max(12, fm.getHeight());
+        }
+        g.setClip(old);
+    }
+
+// ... omitted 87 non-method/source lines between cataloged methods ...
+
+    void drawRightPanelFrame(Graphics2D g) {
+        Rectangle cmd = commandPanelRect();
+        g.setColor(new Color(4, 4, 5, 232));
+        g.fillRect(cmd.x, cmd.y, cmd.width, cmd.height);
+        drawSlicedFrame(g, cmd.x, cmd.y, cmd.width, cmd.height, "inner");
+        g.setFont(uiFont);
+        g.setColor(new Color(200, 184, 132));
+        center(g, "COMMANDS", cmd.x + cmd.width / 2, cmd.y + 30);
+    }
+
+    void drawPause(Graphics2D g) {
+        g.setFont(titleFont); g.setColor(new Color(200,184,132)); center(g, "PAUSED", getWidth()/2, 135);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_MAIN)); center(g, "The sump holds its breath. Autosave watches from a cracked logic Engine.", getWidth()/2, 185);
+    }
+
+    void drawCaptureScreen(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(new Color(3, 8, 18, 238));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 42, 42, W-84, H-84, "inner");
+        g.setFont(titleFont);
+        g.setColor(new Color(105, 155, 230));
+        center(g, "CIVIC WARDENS CUSTODY REPORT", W/2, 105);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "Released from holding. Read what the law has done to you before limping onward.", W/2, 150);
+        ArrayList<String> lines = new ArrayList<>();
+        String report = (lastCustodyReportDetailed == null || lastCustodyReportDetailed.isBlank()) ? lastCrimePunishmentReport : lastCustodyReportDetailed;
+        for (String raw : report.split("\\n")) lines.add(raw);
+        lines.add("");
+        lines.add("Current carried Script: " + countMoney() + "   Banked Script: " + totalBankedCash() + "   Base stash: " + baseStashedScript + ".");
+        lines.add("Heat: " + gangHeat + "   Civic Wardens suspicion: " + suspicion + "   Next inspection: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesInspectionCooldownUntilTurn)) + ".");
+        lines.add("Next jail processing: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesCaptureCooldownUntilTurn)) + ".");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, lines, 86, 190, W-172, H-340, 0, "capturescreen");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "Press Enter/Space/Escape or click ACKNOWLEDGE to return to the arcology.", W/2, H-185);
+    }
+
+    void drawLostScreen(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(new Color(8, 0, 0, 235));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 42, 42, W-84, H-84, "inner");
+        g.setFont(titleFont);
+        g.setColor(new Color(230, 70, 55));
+        center(g, "YOU LOST", W/2, 105);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, lastDefeatSummary == null || lastDefeatSummary.isBlank() ? "The underhive has filed its final report." : lastDefeatSummary, W/2, 150);
+        ArrayList<String> lines = new ArrayList<>();
+        if (lastLossScoreLines == null || lastLossScoreLines.isEmpty()) lines.addAll(PlayerDefeatAndScoreAuthority.lossScoreLines(this));
+        else lines.addAll(lastLossScoreLines);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, lines, 86, 190, W-172, H-370, 0, "lostscreen");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "Open the save/load menu to choose a manual or autosave slot, or quit and let the clerks inventory your bones.", W/2, H-185);
+    }
+
+    void drawScavengeTargetPanel(Graphics2D g) {
+        UiLayout L = uiLayout();
+        Rectangle r = L.tactical;
+        drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
+        g.setColor(new Color(0,0,0,220));
+        g.fillRoundRect(r.x+10, r.y+10, r.width-20, r.height-20, 10, 10);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("TARGETED SCAVENGE", r.x+24, r.y+38);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Choose what you are trying to find. Targeted searching improves odds for that category but still uses room and zone tables.");
+        lines.add("Concord Script begging is zone-dependent: noble and civic Ledger Office districts pay best but draw Civic Wardens attention; mutant/cultist zones disable it outright.");
+        lines.add("Last result: " + lastScavengeReport);
+        lines.add("Room cache: " + lastRoomCacheReport);
+        int yy = r.y + 64;
+        for(String line: TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(80, r.width - 52))) { if(yy < r.y+r.height-12) g.drawString(line, r.x+24, yy); yy += 17; }
+    }
+
+// ... omitted 45 non-method/source lines between cataloged methods ...
+
+    void drawModalScrim(Graphics2D g) {
+        // Hard reset for modal space.  This prevents older free-drawn GUI layers from
+        // visually stacking behind the current modal while preserving the persistent
+        // outer game wrapper underneath.
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 0, getWidth(), getHeight());
+    }
+
+// ... omitted 64 non-method/source lines between cataloged methods ...
+
+    void drawMiniStackIcon(Graphics2D g, String name, int x, int y, int sz) {
+        char glyph = '?';
+        boolean floorTileStack = name != null && name.startsWith("Floor tile:") && world != null && world.inBounds(playerX, playerY);
+        if (floorTileStack) glyph = world.tiles[playerX][playerY];
+        else if (name != null && name.toLowerCase(Locale.ROOT).contains("door")) glyph = '|';
+        else if (name != null && name.toLowerCase(Locale.ROOT).contains("crate")) glyph = 's';
+        BufferedImage img = floorTileStack ? tileImageForRenderedGlyph(glyph) : images.getItemIcon(name);
+        if (img == null) img = images.getTile(glyph);
+        g.setColor(new Color(12,14,12,235));
+        g.fillRect(x, y, sz, sz);
+        drawItemQualityFrame(g, name, x, y, sz, sz, false);
+        if (img != null) g.drawImage(img, x+3, y+3, Math.max(1,sz-6), Math.max(1,sz-6), null);
+        else { g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); g.setFont(smallFont); center(g, String.valueOf(glyph), x+sz/2, y+sz/2+5); }
+        drawItemQualityFrame(g, name, x, y, sz, sz, true);
+    }
+
+// ... omitted 31 non-method/source lines between cataloged methods ...
+
+    void drawInventoryStackPanel(Graphics2D g) {
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(36, W/2 - Math.min(880, W-72)/2);
+        int y=Math.max(68, H/2 - Math.min(440, H-110)/2);
+        int w=Math.min(880, W - x*2);
+        int h=Math.min(440, H - y - 54);
+        g.setColor(new Color(4,5,5,245));
+        g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g,"INVENTORY",W/2,y+40);
+
+        ArrayList<String> summary = new ArrayList<>();
+        summary.add("Carry " + carryStatusText() + "   Move " + movementModeLabel() + " range " + movementModeRange() + " cost " + movementTurnCost() + "   Tile " + playerX + "," + playerY + " " + (world==null?"no world":describeTile(world.tiles[playerX][playerY])));
+        summary.add("Script " + countMoney() + " carried / " + totalBankedCash() + " banked / " + countBaseStoredScript() + " base stash   Food " + food + "/" + MAX_FOOD_WATER + "   Water " + water + "/" + MAX_FOOD_WATER + "   Supplies " + supplies + "   Parts " + machineParts);
+        drawTextPanel(g, x+24, y+56, w-48, 58, summary, false);
+
+        int gap=Math.max(12, scaled(12));
+        int top=y+128;
+        int bottomBoxH=Math.max(78, Math.min(108, h/4));
+        int colH=Math.max(110, h - (top-y) - bottomBoxH - 26);
+        int actionW=Math.max(150, Math.min(210, w/4));
+        int invW=Math.max(180, (w - 52 - actionW - gap*2)/2);
+        int targetW=Math.max(180, w - 52 - actionW - gap*2 - invW);
+        int invX=x+24;
+        int targetX=invX+invW+gap;
+        int actionX=targetX+targetW+gap;
+        drawPanelBox(g, invX, top, invW, colH, (inventoryTargetColumnActive ? "CURRENT INVENTORY" : "▶ CURRENT INVENTORY"));
+        drawPanelBox(g, targetX, top, targetW, colH, (inventoryTargetColumnActive ? "▶ TARGET / FLOOR TILE" : "TARGET / FLOOR TILE"));
+        if (!inventoryTargetColumnActive) { g.setColor(new Color(235,205,120,180)); g.drawRoundRect(invX+4, top+34, invW-8, colH-40, 8, 8); }
+        else { g.setColor(new Color(235,205,120,180)); g.drawRoundRect(targetX+4, top+34, targetW-8, colH-40, 8, 8); }
+        drawPanelBox(g, actionX, top, actionW, colH, "ACTIONS");
+
+        LinkedHashMap<String,Integer> invStacks=displayedInventoryStacks();
+        LinkedHashMap<String,Integer> targetStacks=currentTargetInventoryStacks();
+        selectedInventoryIndex=Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, invStacks.size()-1)));
+        selectedTargetInventoryIndex=Math.max(0, Math.min(selectedTargetInventoryIndex, Math.max(0, targetStacks.size()-1)));
+        g.setFont(smallFont);
+        drawInventoryIconGrid(g, invStacks, selectedInventoryIndex, invX+12, top+48, invW-24, colH-60, "carried");
+        drawInventoryIconGrid(g, targetStacks, selectedTargetInventoryIndex, targetX+12, top+48, targetW-24, colH-60, "target");
+
+        String sel = inventoryTargetColumnActive ? null : selectedInventoryStackName();
+        String target = inventoryTargetColumnActive ? selectedTargetInventoryName() : null;
+        int infoY=top+colH+12;
+        drawSlicedFrame(g, x+24, infoY, w-48, bottomBoxH, "inner");
+        g.setColor(new Color(0,0,0,220));
+        g.fillRoundRect(x+34, infoY+10, w-68, bottomBoxH-20, 10, 10);
+        drawMiniStackIcon(g, sel == null ? target : sel, x+44, infoY+20, Math.max(42, bottomBoxH-40));
+        ArrayList<String> info=new ArrayList<>();
+        if (sel != null) {
+            info.addAll(inventoryItemDetailLines(sel, false));
+        } else if (target != null) {
+            info.addAll(inventoryItemDetailLines(target, true));
+        } else info.add("No carried item or target item selected.");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, info, x+104, infoY+30, w-150, bottomBoxH-42, inventoryItemDescriptionScroll, "inventory-info");
+    }

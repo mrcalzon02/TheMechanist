@@ -1,0 +1,385 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_14_lines_20752_21164
+// Category: input_mouse_keyboard
+// Source lines: 20752-21164
+// Method count: 11
+//
+// Methods in this fragment:
+// - handleKeyPressed :: lines 20752-20991 (240) :: void handleKeyPressed(KeyEvent e)
+// - processUnifiedInputRegistry :: lines 20992-21044 (53) :: void processUnifiedInputRegistry(long now)
+// - mousePressed :: lines 21098-21105 (8) :: Override public void mousePressed(MouseEvent e)
+// - mouseReleased :: lines 21106-21106 (1) :: Override public void mouseReleased(MouseEvent e)
+// - mouseEntered :: lines 21107-21107 (1) :: Override public void mouseEntered(MouseEvent e)
+// - mouseExited :: lines 21108-21108 (1) :: Override public void mouseExited(MouseEvent e)
+// - mouseMoved :: lines 21109-21114 (6) :: Override public void mouseMoved(MouseEvent e)
+// - mouseDragged :: lines 21115-21120 (6) :: Override public void mouseDragged(MouseEvent e)
+// - mouseWheelMoved :: lines 21121-21137 (17) :: Override public void mouseWheelMoved(MouseWheelEvent e)
+// - keyTyped :: lines 21138-21154 (17) :: Override public void keyTyped(KeyEvent e)
+// - keyReleased :: lines 21154-21164 (11) :: Override public void keyReleased(KeyEvent e)
+
+    void handleKeyPressed(KeyEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        int code=e.getKeyCode();
+        if (eulaGateActive) {
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_A) { acceptEulaGate(); repaint(); return; }
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q || code == KeyEvent.VK_X) { requestApplicationExit("EULA declined by key"); return; }
+            if (code == KeyEvent.VK_PAGE_DOWN) { scrollEulaGate(1, true); return; }
+            if (code == KeyEvent.VK_PAGE_UP) { scrollEulaGate(-1, true); return; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { scrollEulaGate(1, false); return; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { scrollEulaGate(-1, false); return; }
+            if (code == KeyEvent.VK_HOME) { eulaScroll = 0; repaint(); return; }
+            if (code == KeyEvent.VK_END) { eulaScroll = Math.max(0, eulaMaxScroll); repaint(); return; }
+            return;
+        }
+        if (code == KeyEvent.VK_F3) { togglePerformanceDiagnostics(); return; }
+        if (code == KeyEvent.VK_F1 && (screen == Screen.GAME || screen == Screen.PANEL)) { toggleTacticalSlate(); return; }
+        if (code == KeyEvent.VK_Y && screen != Screen.EDITOR) { openChatWindow(); return; }
+        if (screen == Screen.GAME && firstPersonRenderViewport.handleKeyPressed(this, code)) { repaint(); return; }
+        if (worldZoomControlActive() && (code == KeyEvent.VK_HOME || code == KeyEvent.VK_END)) {
+            changeWorldZoom(code == KeyEvent.VK_HOME ? 1 : -1, code == KeyEvent.VK_HOME ? "HOME" : "END");
+            return;
+        }
+        if (screen==Screen.INTRO_CRAWL) {
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_ESCAPE) { continueFromIntroCrawl(); repaint(); }
+            return;
+        }
+        if (screen==Screen.ZONE_SPLASH) {
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_ESCAPE) { continueFromZoneSplash(); repaint(); }
+            return;
+        }
+        if (screen==Screen.CAPTURE) {
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_ESCAPE || code==KeyEvent.VK_E) { setScreen(Screen.GAME); repaint(); }
+            return;
+        }
+        if (screen==Screen.BOOT) {
+            if (code==KeyEvent.VK_ESCAPE || code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE) { sounds.play("button", options); finishBootSequence("key"); }
+            return;
+        }
+        if (screen == Screen.CHARACTER && characterNameEditActive) {
+            Candidate c = candidates.isEmpty() ? null : candidates.get(candidateIndex);
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER) {
+                if (c != null) { c.name = CharacterCreationAuthority.sanitizePlayerName(c.name, rng); refreshNameLockedCandidateState(c); }
+                characterNameEditActive = false;
+                repaint();
+                return;
+            }
+            if (code == KeyEvent.VK_BACK_SPACE) {
+                if (c != null && c.name != null && !c.name.isEmpty()) { c.name = c.name.substring(0, c.name.length()-1); refreshNameLockedCandidateState(c); }
+                repaint();
+                return;
+            }
+            if (code == KeyEvent.VK_DELETE) {
+                if (c != null) { c.name = ""; refreshNameLockedCandidateState(c); }
+                repaint();
+                return;
+            }
+            return;
+        }
+        if (code==KeyEvent.VK_ESCAPE) {
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("keyboard cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            else if (screen==Screen.PANEL) closePanel();
+            else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
+            else if (screen==Screen.SECTOR_AUDIT) setScreen(Screen.MODS);
+            else if (screen==Screen.KNOWLEDGE) closeKnowledgeScreen();
+            else if (screen==Screen.MULTIPLAYER) { multiplayerMenu.endDirectEdit(); setScreen(Screen.MENU); }
+            else if (screen==Screen.MODS) setScreen(Screen.MENU);
+            else setScreen(Screen.MENU);
+            return;
+        }
+        if (screen == Screen.KNOWLEDGE) { handleKnowledgeKeyPressed(code); return; }
+        if (screen == Screen.EDITOR) {
+            if (code == KeyEvent.VK_N) { createNewInGameEditorEntry(); return; }
+            if (code == KeyEvent.VK_Z && e.isControlDown()) { inGameEditorUndo(); return; }
+            if (code == KeyEvent.VK_Y && e.isControlDown()) { inGameEditorRedo(); return; }
+        }
+        if (screen == Screen.MULTIPLAYER && multiplayerMenu.handleKeyPressed(code)) { repaint(); return; }
+        if (screen == Screen.SECTOR_AUDIT) {
+            if (code == KeyEvent.VK_R) { rerollSectorAudit(); return; }
+            if (code == KeyEvent.VK_T) { cycleAuditZoneType(1); return; }
+            if (code == KeyEvent.VK_G) { cycleAuditZoneDensity(); return; }
+            if (code == KeyEvent.VK_O) { cycleAuditOverlay(); return; }
+            if (code == KeyEvent.VK_N) { jumpAuditFinding(1); return; }
+            if (code == KeyEvent.VK_B) { jumpAuditFinding(-1); return; }
+            int dx=0, dy=0;
+            switch(code) {
+                case KeyEvent.VK_LEFT: case KeyEvent.VK_A: dx=-1; break;
+                case KeyEvent.VK_RIGHT: case KeyEvent.VK_D: dx=1; break;
+                case KeyEvent.VK_UP: case KeyEvent.VK_W: dy=-1; break;
+                case KeyEvent.VK_DOWN: case KeyEvent.VK_S: dy=1; break;
+            }
+            if (dx != 0 || dy != 0) { moveAuditCursor(dx, dy); return; }
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { repaint(); return; }
+        }
+        // Infopedia has its own two-axis navigation. It must run before universal menu
+        // navigation, otherwise W/S and arrow keys only move the highlighted button chrome
+        // and never change the currently examined entry in the index.
+        if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA) {
+            if (isAssetInfopediaTab(infopediaTab)) {
+                if (code == KeyEvent.VK_SLASH) { activeScrollTag = "infopedia-asset-filter"; repaint(); return; }
+                if ("infopedia-asset-filter".equals(activeScrollTag)) {
+                    if (code == KeyEvent.VK_BACK_SPACE) { backspaceInfopediaAssetFilter(); return; }
+                    if (code == KeyEvent.VK_ENTER) { activeScrollTag = "infopedia-list"; repaint(); return; }
+                    if (code == KeyEvent.VK_ESCAPE) { activeScrollTag = "infopedia-list"; repaint(); return; }
+                    return;
+                }
+            }
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) { cycleInfopediaTab(-1); return; }
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) { cycleInfopediaTab(1); return; }
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) { moveInfopediaSelection(-1); return; }
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) { moveInfopediaSelection(1); return; }
+            if (code==KeyEvent.VK_PAGE_UP) { activeScrollTag="infopedia-detail"; scrollActivePanel(-1, true); return; }
+            if (code==KeyEvent.VK_PAGE_DOWN) { activeScrollTag="infopedia-detail"; scrollActivePanel(1, true); return; }
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_E) { activeScrollTag="infopedia-list"; repaint(); return; }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY) {
+            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { inventoryTargetColumnActive = false; inventoryItemDescriptionScroll = 0; repaint(); return; }
+            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { inventoryTargetColumnActive = true; inventoryItemDescriptionScroll = 0; repaint(); return; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { if (inventoryTargetColumnActive) moveTargetInventorySelection(-1); else moveInventorySelection(-1); repaint(); return; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { if (inventoryTargetColumnActive) moveTargetInventorySelection(1); else moveInventorySelection(1); repaint(); return; }
+            if (code == KeyEvent.VK_PAGE_UP || code == KeyEvent.VK_PAGE_DOWN) { inventoryItemDescriptionScroll = Math.max(0, inventoryItemDescriptionScroll + (code == KeyEvent.VK_PAGE_DOWN ? 3 : -3)); repaint(); return; }
+        }
+        // Universal menu control standard: every menu button must be reachable by keyboard.
+        // WASD/arrow navigation selects visible buttons; E/Enter confirms the highlighted button.
+        // Cursor-special modes keep their movement controls below.
+        if (screen != Screen.GAME && !(screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.INFOPEDIA || ((panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive)))) {
+            if (code==KeyEvent.VK_W || code==KeyEvent.VK_A || code==KeyEvent.VK_UP || code==KeyEvent.VK_LEFT) { moveSelectedButton(-1); return; }
+            if (code==KeyEvent.VK_S || code==KeyEvent.VK_D || code==KeyEvent.VK_DOWN || code==KeyEvent.VK_RIGHT) { moveSelectedButton(1); return; }
+            if (code==KeyEvent.VK_E || code==KeyEvent.VK_ENTER) { activateSelectedButtonUniversal(); return; }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && (code == KeyEvent.VK_PAGE_UP || code == KeyEvent.VK_PAGE_DOWN)) {
+            inventoryItemDescriptionScroll = Math.max(0, inventoryItemDescriptionScroll + (code == KeyEvent.VK_PAGE_DOWN ? 3 : -3));
+            repaint();
+            return;
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && code == KeyEvent.VK_T) { throwSelectedPortableLight(); return; }
+        if (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT)) {
+            if ((code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_E) && panelMode == PanelMode.INTERACT) { confirmInteraction(); repaint(); return; }
+            if (code==KeyEvent.VK_E && panelMode == PanelMode.LOOK) { examineSelectedLookTarget(); repaint(); return; }
+            if (code==KeyEvent.VK_ENTER && panelMode == PanelMode.COMBAT) { confirmCombatTarget(); repaint(); return; }
+            if (code==KeyEvent.VK_ENTER) { activateSelectedButtonUniversal(); return; }
+        }
+        if (code==KeyEvent.VK_TAB) { if(!buttons.isEmpty()) selectedButton=(selectedButton+1)%buttons.size(); sounds.play("tab", options); repaint(); return; }
+        if (screen == Screen.PANEL && panelMode == PanelMode.COMBAT && world != null) {
+            int dx=0, dy=0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) dx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) dx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) dy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) dy=1;
+            if (code == KeyEvent.VK_F) { cycleFireMode(); repaint(); return; }
+            if (code == KeyEvent.VK_G) { throwSelectedExplosiveAtCursor(); repaint(); return; }
+            if (code == KeyEvent.VK_X) { reloadCurrentRangedWeapon(); repaint(); return; }
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { confirmCombatTarget(); repaint(); return; }
+            if (dx != 0 || dy != 0) { moveCombatCursor(dx, dy); repaint(); return; }
+        }
+        if (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT) && world != null) {
+            int dx=0, dy=0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) dx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) dx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) dy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) dy=1;
+            if (dx!=0 || dy!=0) {
+                if (panelMode == PanelMode.INTERACT) moveInteractCursor(dx, dy);
+                else { lookCursorActive = true; lookX = Math.max(0, Math.min(world.w-1, lookX+dx)); lookY = Math.max(0, Math.min(world.h-1, lookY+dy)); lookStackIndex = 0; lookStackScroll = 0; }
+                repaint(); return;
+            }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.LOOK && (code==KeyEvent.VK_OPEN_BRACKET || code==KeyEvent.VK_CLOSE_BRACKET)) {
+            ArrayList<String> stack = tileStackAt(lookX, lookY);
+            if (!stack.isEmpty()) { lookStackIndex += (code==KeyEvent.VK_CLOSE_BRACKET ? 1 : -1); lookStackIndex = Math.max(0, Math.min(stack.size()-1, lookStackIndex)); lookStackScroll = 0; }
+            repaint(); return;
+        }
+        if (code==KeyEvent.VK_PAGE_UP) { if(scrollActivePanel(-1, true)) return; }
+        if (code==KeyEvent.VK_PAGE_DOWN) { if(scrollActivePanel(1, true)) return; }
+        if ((screen==Screen.PANEL || screen==Screen.CHARACTER) && (code==KeyEvent.VK_UP || code==KeyEvent.VK_W)) { if(scrollActivePanel(-1, false)) return; }
+        if ((screen==Screen.PANEL || screen==Screen.CHARACTER) && (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S)) { if(scrollActivePanel(1, false)) return; }
+        if (screen != Screen.GAME && screen != Screen.PANEL && code==KeyEvent.VK_DOWN) { if(!buttons.isEmpty()) selectedButton=(selectedButton+1)%buttons.size(); repaint(); return; }
+        if (screen != Screen.GAME && screen != Screen.PANEL && code==KeyEvent.VK_UP) { if(!buttons.isEmpty()) selectedButton=(selectedButton+buttons.size()-1)%buttons.size(); repaint(); return; }
+        // Look stack cycling is bound to [ and ]; PageUp/PageDown are reserved for slower text scrolling.
+        if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive && world != null) {
+            int dx=0, dy=0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) dx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) dx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) dy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) dy=1;
+            if (dx!=0 || dy!=0) { moveBuildCursor(dx, dy); repaint(); return; }
+        }
+        if (screen == Screen.PANEL && panelMode != PanelMode.LOOK && panelMode != PanelMode.COMBAT && code==KeyEvent.VK_DOWN) { if(!buttons.isEmpty()) selectedButton=(selectedButton+1)%buttons.size(); repaint(); return; }
+        if (screen == Screen.PANEL && panelMode != PanelMode.LOOK && panelMode != PanelMode.COMBAT && code==KeyEvent.VK_UP) { if(!buttons.isEmpty()) selectedButton=(selectedButton+buttons.size()-1)%buttons.size(); repaint(); return; }
+        if (code==KeyEvent.VK_E && screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive) {
+            confirmBuildPlacement();
+            repaint();
+            return;
+        }
+        if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE) { activateSelectedButton(); repaint(); return; }
+        if (screen == Screen.CHARACTER) {
+            if (code==KeyEvent.VK_PAGE_UP) { jobDossierScroll=Math.max(0, jobDossierScroll-3); repaint(); return; }
+            if (code==KeyEvent.VK_PAGE_DOWN) { jobDossierScroll+=3; repaint(); return; }
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) { characterNameEditActive=false; candidateIndex=(candidateIndex+candidates.size()-1)%candidates.size(); jobIndex=0; jobDossierScroll=0; jobDossierTab=0; logEvent("Selected candidate " + candidates.get(candidateIndex).name); repaint(); return; }
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) { characterNameEditActive=false; candidateIndex=(candidateIndex+1)%candidates.size(); jobIndex=0; jobDossierScroll=0; jobDossierTab=0; logEvent("Selected candidate " + candidates.get(candidateIndex).name); repaint(); return; }
+        }
+        if (screen != Screen.GAME || world == null) return;
+        if (manualMovementPlanActive) {
+            int mdx = 0, mdy = 0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) mdx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) mdx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) mdy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) mdy=1;
+            if (mdx != 0 || mdy != 0) { nudgeManualMovementPlan(mdx, mdy); return; }
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_E) { confirmManualMovementPlan(); return; }
+        }
+        if (code==KeyEvent.VK_R) { cycleMovementMode(); repaint(); return; }
+        if (code==KeyEvent.VK_P) { beginManualMovementPlan(); return; }
+        if (code==KeyEvent.VK_PERIOD || code==KeyEvent.VK_NUMPAD5) { waitOneTurn(); repaint(); return; }
+        if (code==KeyEvent.VK_L) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
+        if (code==KeyEvent.VK_E) {
+            if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive) { confirmBuildPlacement(); repaint(); return; }
+            beginInteractMode(); repaint(); return;
+        }
+        if (code==KeyEvent.VK_I) { openPanel(PanelMode.INVENTORY); return; }
+        if (code==KeyEvent.VK_F) { beginCombatTargeting(); repaint(); return; }
+        if (code==KeyEvent.VK_G) { beginExplosiveTargeting(); repaint(); return; }
+        if (code==KeyEvent.VK_X) { reloadCurrentRangedWeapon(); repaint(); return; }
+        if (code==KeyEvent.VK_C) { openPanel(PanelMode.CHARACTER); return; }
+        if (code==KeyEvent.VK_B) { openPanel(PanelMode.BUILD); return; }
+        if (code==KeyEvent.VK_G) { openPanel(PanelMode.SENSES); return; }
+        if (code==KeyEvent.VK_M) { openPanel(PanelMode.MAP); return; }
+        int dx=0,dy=0;
+        switch(code) {
+            case KeyEvent.VK_LEFT: case KeyEvent.VK_A: dx=-1; break;
+            case KeyEvent.VK_RIGHT: case KeyEvent.VK_D: dx=1; break;
+            case KeyEvent.VK_W: dy=-1; break;
+            case KeyEvent.VK_S: dy=1; break;
+        }
+        if (dx!=0 || dy!=0) {
+            queueOrExecuteMovementInput(dx, dy);
+        }
+        repaint();
+        sanityCheck("KEY_END");
+    }
+    void processUnifiedInputRegistry(long now) {
+        // Keyboard retains the existing direct KeyEvent path. This timer consumer only
+        // translates GAMEPAD source states so a controller release cannot erase a held key.
+        if (inputRegistry.consumePressed(InputAction.PAUSE, InputSource.GAMEPAD) || inputRegistry.consumePressed(InputAction.CANCEL, InputSource.GAMEPAD)) {
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("gamepad cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            else if (screen==Screen.PANEL) closePanel();
+            else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
+            else setScreen(Screen.MENU);
+            repaint();
+            return;
+        }
+        if (inputRegistry.consumePressed(InputAction.CONFIRM, InputSource.GAMEPAD)) {
+            if (screen == Screen.GAME && manualMovementPlanActive) confirmManualMovementPlan();
+            else if (screen == Screen.INTRO_CRAWL) continueFromIntroCrawl();
+            else if (screen == Screen.ZONE_SPLASH) continueFromZoneSplash();
+            else activateSelectedButtonUniversal();
+            repaint();
+        }
+        if (inputRegistry.consumePressed(InputAction.INVENTORY, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.INVENTORY); return; }
+        if (inputRegistry.consumePressed(InputAction.CHARACTER, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.CHARACTER); return; }
+        if (inputRegistry.consumePressed(InputAction.LOOK, InputSource.GAMEPAD) && screen == Screen.GAME) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
+        if (inputRegistry.consumePressed(InputAction.PLAN_MOVE, InputSource.GAMEPAD) && screen == Screen.GAME) { beginManualMovementPlan(); return; }
+        if (inputRegistry.consumePressed(InputAction.ZOOM_IN, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(1, "gamepad bumper");
+        if (inputRegistry.consumePressed(InputAction.ZOOM_OUT, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(-1, "gamepad bumper");
+        if (now < nextUnifiedInputRepeatMillis) return;
+        int dx = 0, dy = 0;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_LEFT, InputSource.GAMEPAD)) dx--;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_RIGHT, InputSource.GAMEPAD)) dx++;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_UP, InputSource.GAMEPAD)) dy--;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_DOWN, InputSource.GAMEPAD)) dy++;
+        if (dx == 0 && dy == 0) return;
+        nextUnifiedInputRepeatMillis = now + 125L;
+        if (screen == Screen.GAME && world != null && manualMovementPlanActive) {
+            nudgeManualMovementPlan(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.GAME && world != null) {
+            queueOrExecuteMovementInput(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.LOOK && world != null) {
+            lookCursorActive = true;
+            lookX = Math.max(0, Math.min(world.w-1, lookX+Integer.compare(dx, 0)));
+            lookY = Math.max(0, Math.min(world.h-1, lookY+Integer.compare(dy, 0)));
+            lookStackIndex = 0;
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.INTERACT && world != null) {
+            moveInteractCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.COMBAT && world != null) {
+            moveCombatCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive && world != null) {
+            moveBuildCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (!buttons.isEmpty()) {
+            moveSelectedButton(dy < 0 || dx < 0 ? -1 : 1);
+        }
+        repaint();
+    }
+
+// ... omitted 53 non-method/source lines between cataloged methods ...
+
+    @Override public void mousePressed(MouseEvent e) {
+        requestFocusInWindow();
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mp.x, mp.y, SwingUtilities.isRightMouseButton(e))) { return; }
+        if (screen == Screen.KNOWLEDGE && knowledgeCanvasRect().contains(mp)) { knowledgeTreeLastDrag = mp; knowledgeTreeDragging = true; return; }
+        if (findScrollRegion(mp.x, mp.y) != null) { handleScrollbarClick(mp.x, mp.y); repaint(); }
+    }
+    @Override public void mouseReleased(MouseEvent e) { scrollbarDragActive=false; knowledgeTreeDragging=false; knowledgeTreeLastDrag=null; }
+    @Override public void mouseEntered(MouseEvent e) {}
+    @Override public void mouseExited(MouseEvent e) { mouseX=-1; mouseY=-1; repaint(); }
+    @Override public void mouseMoved(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        Point mp = mapInputPoint(e);
+        if (mp == null) { mouseX=-1; mouseY=-1; repaint(); return; }
+        mouseX=mp.x; mouseY=mp.y; if (firstPersonRenderViewport.handleMouseMoved(this, mouseX, mouseY)) { repaint(); return; } if (mouseMovePreviewActive && screen == Screen.GAME && world != null) { Point t = screenPointToWorldTile(mouseX, mouseY); if (t != null) updateMouseMovementPreviewTo(t.x, t.y); } repaint();
+    }
+    @Override public void mouseDragged(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        mouseX=mp.x; mouseY=mp.y; if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mouseX, mouseY, SwingUtilities.isRightMouseButton(e))) { return; } if (screen == Screen.KNOWLEDGE && knowledgeTreeDragging && knowledgeTreeLastDrag != null) { panKnowledgeTree(mp.x - knowledgeTreeLastDrag.x, mp.y - knowledgeTreeLastDrag.y); knowledgeTreeLastDrag = mp; repaint(); return; } if (firstPersonRenderViewport.handleMouseDragged(this, mouseX, mouseY)) { repaint(); return; } handleScrollbarDrag(mouseX, mouseY); repaint();
+    }
+    @Override public void mouseWheelMoved(MouseWheelEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        if (eulaGateActive) { scrollEulaGate(e.getWheelRotation(), false); return; }
+        if (screen == Screen.KNOWLEDGE) { Point mp = mapInputPoint(e); if (mp != null) zoomKnowledgeTreeAt(mp.x, mp.y, e.getPreciseWheelRotation()); return; }
+        if (worldZoomControlActive() && !e.isShiftDown()) {
+            int rot = e.getWheelRotation();
+            if (rot != 0) changeWorldZoom(rot < 0 ? 1 : -1, "mouse wheel");
+            return;
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.MAP && e.isShiftDown()) {
+            mapLayerView = Math.max(0, Math.min(19, mapLayerView + e.getWheelRotation()));
+            DebugLog.audit("UI_SCROLL", "map layer=" + mapLayerView);
+            repaint();
+            return;
+        }
+        scrollActivePanel(e.getWheelRotation(), false);
+    }
+    @Override public void keyTyped(KeyEvent e) {
+        if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA && isAssetInfopediaTab(infopediaTab) && "infopedia-asset-filter".equals(activeScrollTag)) {
+            char ch = e.getKeyChar();
+            if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\b' && ch != '\n' && ch != '\r' && ch != '\u001b') { appendInfopediaAssetFilter(ch); }
+            return;
+        }
+        if (screen == Screen.MULTIPLAYER) { multiplayerMenu.keyTyped(e.getKeyChar()); repaint(); return; }
+        if (screen == Screen.CHARACTER && characterNameEditActive && !candidates.isEmpty()) {
+            char ch = e.getKeyChar();
+            Candidate c = candidates.get(candidateIndex);
+            if (CharacterCreationAuthority.acceptNameChar(ch) && c.name.length() < CharacterCreationAuthority.MAX_PLAYER_NAME_LENGTH) {
+                c.name = CharacterCreationAuthority.normalizeSpacing(c.name + ch);
+                refreshNameLockedCandidateState(c);
+                repaint();
+            }
+        }
+    } @Override public void keyReleased(KeyEvent e) {
+    } @Override public void keyReleased(KeyEvent e) {
+        keyboardInputBridge.keyReleased(e);
+        int code = e.getKeyCode();
+        if (firstPersonRenderViewport.handleKeyReleased(this, code)) { repaint(); return; }
+        if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_UP || code==KeyEvent.VK_DOWN || code==KeyEvent.VK_A || code==KeyEvent.VK_D || code==KeyEvent.VK_W || code==KeyEvent.VK_S) {
+            pendingMoveDx = 0;
+            pendingMoveDy = 0;
+            pendingHeldMove = false;
+            DebugLog.audit("INPUT_PACING_RELEASE", "release preserved movement ghost armed=" + movementGhostArmed + " armed=" + armedMoveDx + "," + armedMoveDy + " turn=" + turn);
+        }
+    }

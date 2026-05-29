@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 12601-13300
+
+            else if (jp.faction == Faction.SCAVENGER) dossier.add("Scavenger-aligned clothing is broadly tolerated, except by bandits, and often questioned by Civic Wardens patrols.");
+            else if (jp.faction == Faction.NONE) dossier.add("No faction backing. Better skills, fewer friends, and the full warmth of underhive hospitality.");
+            else dossier.add("Faction-aligned start. Your clothes open some doors and paint a target on your back for enemy factions.");
+            if (jp.faction != Faction.NONE) dossier.add("Affiliation rule: true members of this faction do not roll disguise checks against their own faction merely because of clothing.");
+        }
+        drawScrollableWrappedLines(g, dossier, dossierX+14, colTop+96, dossierW-36, colH-126, jobDossierScroll, jobDossierTab==0?"job-dossier":"job-list");
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel("Scroll with wheel/drag/arrows/PgUp/PgDn", g.getFontMetrics(), dossierW-28), dossierX+14, colTop+colH-12);
+        g.setFont(smallFont); g.setColor(new Color(150,145,118));
+        center(g, "Top row changes candidate/job; center sheet is primary; dossier and roll ranges remain bounded and scrollable.", W/2, H-24);
+    }
+
+
+    void addInfopediaButtons() {
+        Rectangle modal = uiLayout().modal;
+        int tabX = modal.x + 28, tabY = modal.y + 70;
+        String[] tabs = infopediaTabs();
+        int visibleTabs = Math.min(tabs.length, Math.max(1, (modal.width - 56) / 128));
+        int tabStart = Math.max(0, Math.min(infopediaTab - visibleTabs/2, tabs.length - visibleTabs));
+        for (int j=0;j<visibleTabs;j++) {
+            int i = tabStart + j;
+            final int idx=i;
+            String label = (idx == infopediaTab ? "[" + tabs[i] + "]" : tabs[i]);
+            buttons.add(new ButtonBox(label, tabX + j*128, tabY, 120, 32, "Infopedia tab: "+tabs[i], () -> { infopediaTab=idx; infopediaSelected=0; infopediaScroll=0; infopediaDetailScroll=0; repaint(); }));
+        }
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        int ex = modal.x + 36, ey = modal.y + 125;
+        int visible = Math.min(entries.size(), Math.max(1,(modal.height-175)/32));
+        for (int i=0; i<visible; i++) {
+            int idx = i + infopediaScroll;
+            if (idx >= entries.size()) break;
+            final int sel=idx;
+            String label = entries.get(idx);
+            buttons.add(new ButtonBox((idx==infopediaSelected?"> ":"") + label, ex, ey + i*34, 260, 29, "Open infopedia entry: "+label, () -> { infopediaSelected=sel; infopediaDetailScroll=0; repaint(); }));
+        }
+        buttons.add(new ButtonBox("◀ TYPE", modal.x+24, modal.y+22, 112, 30, "Previous Infopedia category/type.", () -> { cycleInfopediaTab(-1); }));
+        buttons.add(new ButtonBox("TYPE ▶", modal.x+modal.width-136, modal.y+22, 112, 30, "Next Infopedia category/type.", () -> { cycleInfopediaTab(1); }));
+        buttons.add(new ButtonBox("ENTRY ↑", ex, modal.y+modal.height-48, 120, 30, "Scroll/select previous infopedia entry.", () -> { moveInfopediaSelection(-1); }));
+        buttons.add(new ButtonBox("ENTRY ↓", ex+140, modal.y+modal.height-48, 120, 30, "Scroll/select next infopedia entry.", () -> { moveInfopediaSelection(1); }));
+        buttons.add(new ButtonBox("LIST", modal.x+modal.width-456, modal.y+modal.height-48, 78, 30, "Use wheel/drag/key scroll on the Infopedia entry list.", () -> { activeScrollTag = "infopedia-list"; repaint(); }));
+        buttons.add(new ButtonBox("DETAIL", modal.x+modal.width-370, modal.y+modal.height-48, 94, 30, "Use wheel/drag/key scroll on the Infopedia detail pane.", () -> { activeScrollTag = "infopedia-detail"; repaint(); }));
+        buttons.add(new ButtonBox("DETAIL ↑", modal.x+modal.width-268, modal.y+modal.height-48, 96, 30, "Scroll selected Infopedia detail upward.", () -> { scrollInfopediaDetail(-1, false); }));
+        buttons.add(new ButtonBox("DETAIL ↓", modal.x+modal.width-164, modal.y+modal.height-48, 96, 30, "Scroll selected Infopedia detail downward.", () -> { scrollInfopediaDetail(1, false); }));
+        if ("KNOWLEDGE".equals(tabs[Math.max(0, Math.min(infopediaTab, tabs.length-1))])) {
+            buttons.add(new ButtonBox("OPEN TREE", modal.x+modal.width-326, modal.y+modal.height-86, 220, 30, "Open the character-owned Knowledge Tree. Purchases no longer occur inside the Infopedia.", this::openKnowledgeMenu));
+        }
+        if (isAssetInfopediaTab(infopediaTab)) {
+            buttons.add(new ButtonBox("ASSET TYPE ◀", modal.x+154, modal.y+22, 130, 30, "Previous semantic asset purpose/type for the Infopedia asset index.", () -> { cycleInfopediaAssetType(-1); }));
+            buttons.add(new ButtonBox("ASSET TYPE ▶", modal.x+292, modal.y+22, 130, 30, "Next semantic asset purpose/type for the Infopedia asset index.", () -> { cycleInfopediaAssetType(1); }));
+            buttons.add(new ButtonBox("FILTER", modal.x+430, modal.y+22, 92, 30, "Focus the semantic asset text filter. Type to search IDs, names, paths, and descriptions.", () -> { activeScrollTag = "infopedia-asset-filter"; repaint(); }));
+            buttons.add(new ButtonBox("CLEAR", modal.x+530, modal.y+22, 82, 30, "Clear the semantic asset filter.", () -> { infopediaAssetFilter = ""; infopediaSelected = 0; infopediaScroll = 0; activeScrollTag = "infopedia-list"; repaint(); }));
+        }
+        addInfopediaRelatedEntryButtons(modal, entries);
+    }
+
+    void cycleInfopediaTab(int delta) {
+        String[] tabs = infopediaTabs();
+        infopediaTab = Math.max(0, Math.min(tabs.length-1, infopediaTab + delta));
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+
+    boolean isAssetInfopediaTab(int tab) {
+        String[] tabs = infopediaTabs();
+        return tab >= 0 && tab < tabs.length && "ASSETS".equals(tabs[tab]);
+    }
+
+    AssetType selectedInfopediaAssetType() {
+        AssetType[] types = SemanticAssetInfopediaAuthority.browseTypes();
+        if (infopediaAssetTypeIndex < 0 || infopediaAssetTypeIndex >= types.length) return null;
+        return types[infopediaAssetTypeIndex];
+    }
+
+    void cycleInfopediaAssetType(int delta) {
+        AssetType[] types = SemanticAssetInfopediaAuthority.browseTypes();
+        int slots = types.length + 1; // All + explicit types.
+        int raw = infopediaAssetTypeIndex + 1;
+        raw = Math.floorMod(raw + delta, slots);
+        infopediaAssetTypeIndex = raw - 1;
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+
+    void appendInfopediaAssetFilter(char ch) {
+        if (Character.isISOControl(ch)) return;
+        if (infopediaAssetFilter.length() >= 48) return;
+        infopediaAssetFilter = (infopediaAssetFilter + ch).trim().replaceAll("\\s+", " ");
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        repaint();
+    }
+
+    void backspaceInfopediaAssetFilter() {
+        if (!infopediaAssetFilter.isEmpty()) {
+            infopediaAssetFilter = infopediaAssetFilter.substring(0, infopediaAssetFilter.length() - 1);
+            infopediaSelected = 0;
+            infopediaScroll = 0;
+            infopediaDetailScroll = 0;
+            repaint();
+        }
+    }
+
+    void moveInfopediaSelection(int delta) {
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        if (entries.isEmpty()) { infopediaSelected = 0; return; }
+        infopediaSelected = Math.max(0, Math.min(entries.size()-1, infopediaSelected + delta));
+        int visible = Math.max(1, (uiLayout().modal.height-228)/32);
+        if (infopediaSelected < infopediaScroll) infopediaScroll = infopediaSelected;
+        if (infopediaSelected >= infopediaScroll + visible) infopediaScroll = infopediaSelected - visible + 1;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+
+    void scrollInfopediaDetail(int delta, boolean page) {
+        int step = page ? 8 : 3;
+        infopediaDetailScroll = Math.max(0, infopediaDetailScroll + Integer.compare(delta, 0) * step);
+        activeScrollTag = "infopedia-detail";
+        repaint();
+    }
+
+    void openInfopediaEntry(String target) {
+        if (target == null || target.isBlank()) return;
+        for (int t=0; t<infopediaTabs().length; t++) {
+            java.util.List<String> entries = infopediaEntries(t);
+            for (int i=0; i<entries.size(); i++) {
+                if (entries.get(i).equalsIgnoreCase(target) || ItemQuality.namesMatch(entries.get(i), target)) {
+                    infopediaTab = t;
+                    infopediaSelected = i;
+                    int visible = Math.max(1, (uiLayout().modal.height-228)/32);
+                    infopediaScroll = Math.max(0, i - visible / 2);
+                    infopediaDetailScroll = 0;
+                    activeScrollTag = "infopedia-detail";
+                    logEvent("INFOPEDIA LINK: opened " + entries.get(i) + ".");
+                    repaint();
+                    return;
+                }
+            }
+        }
+        logEvent("INFOPEDIA LINK: no entry found for " + target + ".");
+    }
+
+    ArrayList<String> infopediaRelatedEntries(int tab, String entry) {
+        ArrayList<String> raw = new ArrayList<>();
+        if (entry == null) return raw;
+        String low = entry.toLowerCase(Locale.ROOT);
+        if (tab == 0) Collections.addAll(raw, entry + " Rooms", "Heat and Suspicion Overview", "Vendor & Shop Stock Rules");
+        else if (tab == 1) Collections.addAll(raw, "Scavenge XP", "Vendor & Shop Stock Rules", "Actor Access / Permission Ledger");
+        else if (tab == 2 || tab == 3) Collections.addAll(raw, "Item Quality Ladder", "Vendor & Shop Stock Rules", "Contraband and Law Status Ledger");
+        else if (tab == 4) Collections.addAll(raw, "Look and Examine", "Movement Planning", "Inventory and Transfer", "Medical Overview", "Body Overview", "Food and Water", "Sleep and Exhaustion");
+        else if (tab == 5) Collections.addAll(raw, "Body Injuries and Incapacitation", "Damage and Armor", "Targeted Attacks", "Medical Overview");
+        else if (tab == 6) Collections.addAll(raw, "Medical Overview", "Bandages and Field Dressings", "Splints", "Incapacitation");
+        else if (tab == 7) Collections.addAll(raw, "Body Overview", "Bleeding", "Infection Risk", "Doctors and Clinics");
+        else if (tab == 8) Collections.addAll(raw, "Hourly Decay", "Heat Sources", "Suspicion Sources", "Avoiding Attention");
+        else if (tab == 9) Collections.addAll(raw, "Task XP", "Combat XP", "Trade XP", "Construction XP");
+        else if (tab == 10) Collections.addAll(raw, "Knowledge Tree Authority", "Purchasing Knowledge", "Training Sources", "Crafting Overview");
+        else if (tab == 11) Collections.addAll(raw, "Recipe Requirements", "Machine Quality Ceilings", "Production Ledger Overview", "Item Quality Ladder");
+        else if (tab == 12 || tab == 13) Collections.addAll(raw, "Audit Overview", "Examine and Infopedia Link Audit", "Menu Definition Audit", "Movement Planning Audit", "Production Ledger Overview", "Actor Access / Permission Ledger", "Unified Input Registry / Gamepad Bridge");
+        else if (tab == 14) Collections.addAll(raw, "Passive Defense Effects", "Defense Semantic Audit", "Heat and Suspicion Overview", "Construction XP");
+        else if (tab == 15) Collections.addAll(raw, "Faction Variant Production Rules", "Hostile Intent Barks", "Heat and Suspicion Overview", "Vendor & Shop Stock Rules");
+        else if (tab == 16) Collections.addAll(raw, "Faction Variant Production Rules", "Heat and Suspicion Overview", "Vendor & Shop Stock Rules");
+        else if (tab == 17) Collections.addAll(raw, "Actor Access / Permission Ledger", "Heat and Suspicion Overview", "Look and Examine", "Movement Planning");
+        else if (tab == 18) Collections.addAll(raw, "Construction Validation Inspection", "Audit Overview", "Tile Asset Mapping");
+        if (low.contains("medical") || low.contains("bleeding") || low.contains("infection") || low.contains("pain")) raw.add("Medical Overview");
+        if (low.contains("heat") || low.contains("suspicion") || low.contains("permit")) raw.add("Heat and Suspicion Overview");
+        if (low.contains("trade") || low.contains("vendor") || low.contains("market")) raw.add("Vendor & Shop Stock Rules");
+        if (low.contains("recipe") || low.contains("production") || low.contains("machine")) raw.add("Production Ledger Overview");
+        return existingInfopediaRelatedEntries(raw, entry);
+    }
+
+    ArrayList<String> existingInfopediaRelatedEntries(java.util.List<String> candidates, String currentEntry) {
+        ArrayList<String> out = new ArrayList<>();
+        if (candidates == null) return out;
+        HashSet<String> seen = new HashSet<>();
+        for (String candidate : candidates) {
+            String found = findInfopediaEntryLabel(candidate);
+            if (found == null || found.equalsIgnoreCase(currentEntry)) continue;
+            String key = found.toLowerCase(Locale.ROOT);
+            if (seen.add(key)) out.add(found);
+            if (out.size() >= 6) break;
+        }
+        return out;
+    }
+
+    String findInfopediaEntryLabel(String target) {
+        if (target == null || target.isBlank()) return null;
+        for (int t=0; t<infopediaTabs().length; t++) {
+            for (String entry : infopediaEntries(t)) {
+                if (entry.equalsIgnoreCase(target) || ItemQuality.namesMatch(entry, target)) return entry;
+            }
+        }
+        return null;
+    }
+
+    String[] infopediaTabs() { return new String[]{"ZONES", "ROOMS", "ITEMS", "WEAPONS", "SURVIVAL", "COMBAT", "BODY", "MEDICAL", "HEAT", "XP", "KNOWLEDGE", "CRAFTING", "PRODUCTION", "AUDITS", "DEFENSES", "NPCS", "FACTIONS", "TILES", "ASSETS"}; }
+
+    java.util.List<String> infopediaEntries(int tab) {
+        ArrayList<String> out = new ArrayList<>();
+        switch(tab) {
+            case 0:
+                for (ZoneType z : ZoneType.values()) out.add(z.label);
+                break;
+            case 1:
+                for (ZoneType z : ZoneType.values()) {
+                    out.add(z.label + " Rooms");
+                    out.add(z.label + " Generic: " + RoomProfile.forZone(z, new Random(77)).name);
+                    out.add(z.label + " Special: " + RoomProfile.forZone(z, new Random(88)).asSpecial(z, new Random(99)).name);
+                }
+                break;
+            case 2:
+                out.add("Item Quality Ladder");
+                out.add("Vendor & Shop Stock Rules");
+                out.add("Faction Variant Production Rules");
+                out.add("Production Quality Ceilings");
+                out.add("Quality Authority Layer");
+                out.add("Knowledge Tree Authority");
+                out.add("Machine Tier Authority");
+                out.addAll(ItemCatalog.names(false));
+                break;
+            case 3:
+                out.addAll(ItemCatalog.names(true));
+                break;
+            case 4:
+                Collections.addAll(out, "Calendar and Time", "Food and Water", "Sleep and Exhaustion", "Stimulants and Recovery", "Survival Failure States");
+                Collections.addAll(out, "Look and Examine", "Movement Planning", "Interaction Approach Planning", "Inventory and Transfer", "Base Storage", "Pet Care", "Context Prompts");
+                break;
+            case 5:
+                Collections.addAll(out, "Combat Command", "Hit Chance and Defense", "Damage and Armor", "Targeted Attacks", "Body Injuries and Incapacitation", "Hostile Intent Barks");
+                break;
+            case 6:
+                Collections.addAll(out, "Body Overview", "Crippled Legs", "Crippled Arms and Hands", "Bleeding", "Pain", "Infection Risk", "Incapacitation");
+                break;
+            case 7:
+                Collections.addAll(out, "Medical Overview", "Bandages and Field Dressings", "Medkits and Medicae Supplies", "Antiseptic", "Splints", "Injectors", "Doctors and Clinics", "Prosthetics Roadmap");
+                break;
+            case 8:
+                Collections.addAll(out, "Heat and Suspicion Overview", "Hourly Decay", "Heat Sources", "Suspicion Sources", "Avoiding Attention");
+                break;
+            case 9:
+                Collections.addAll(out, "XP Overview", "Task XP", "Combat XP", "Scavenge XP", "Trade XP", "Construction XP");
+                break;
+            case 10:
+                Collections.addAll(out, "Knowledge Overview", "Known Knowledge", "Purchasing Knowledge", "Training Sources", "Knowledge Roadmap", "Profile Special Unlocks");
+                for (String k : unlockedKnowledges) if (k != null && k.startsWith("Profile Dossier:")) out.add(k);
+                out.addAll(KnowledgeDef.names());
+                break;
+            case 11:
+                Collections.addAll(out, "Crafting Overview", "Recipe Requirements", "Machine Quality Ceilings", "Ingredient Consumption", "Faction Output Variants");
+                for (CraftingRecipe r : CraftingRecipe.all()) out.add(r.name);
+                break;
+            case 12:
+                Collections.addAll(out, "Production Ledger Overview", "Draft Recipe Graph", "Faction Variant Ledger", "Chemical Equipment Ledger", "Live Placement Ledger", "Facility Output Modifier Ledger", "Build Requirement Cost Ledger", "Production Container Ledger", "Persistent Stock Container Ledger", "Persistent Stock Pickup UX Ledger", "Actor Access / Permission Ledger", "Quality / Knowledge / Machine Authority Ledger", "Contraband and Law Status Ledger", "Recipe Ancestry Samples", "Laboratory Process Samples", "Base Production Ledger", "Economic Topology Framework", "Economic Generation Bias", "Local Topology Metadata Surface", "Economic Topology Preview Consumers", "Economic Topology Reporting Overlay", "Economic Topology Map Intel Bridge", "Retarget Readiness Endpoint", "Runtime Separation Plan", "Launcher / Client / Server Runtime", "Launcher Shell State", "User Profile Surface", "Render Scaling / CRT Surface", "Unified Input Registry / Gamepad Bridge", "Staffing Labor Bridge", "Manual Staffing Assignment Bridge", "Logistics Reservation Scaffold", "Logistics Delivery Intent Bridge", "Logistics Route Readiness Preview", "Logistics Manual Haul Contract", "Logistics Haul Fulfillment Preflight");
+                int shownRecipes = 0;
+                for (DraftIndustrialRecipe r : RecipeDecompositionApi.generatedDraftRecipes()) {
+                    out.add("Recipe: " + r.outputBaseItem);
+                    if (++shownRecipes >= 90) break;
+                }
+                int shownVariants = 0;
+                for (FactionRecipeVariant v : FactionRecipeVariantApi.generatedFactionVariants()) {
+                    out.add("Variant: " + v.outputName);
+                    if (++shownVariants >= 50) break;
+                }
+                break;
+            case 13:
+                Collections.addAll(out, "Audit Overview", "Examine and Infopedia Link Audit", "Menu Definition Audit", "Movement Planning Audit", "Industrial Itemization Audit", "Faction Variant Audit", "Chemical Equipment Audit", "Live Placement Audit", "Facility Output Modifier Audit", "Build Requirement Cost Audit", "Production Container Authority Audit", "Persistent Stock Container Audit", "Persistent Stock Pickup UX Audit", "Actor Access Permission Audit", "Authority Alignment Audit", "Production Ledger Display Audit", "Economic Topology Audit", "Economic Generation Bias Audit", "Local Topology Metadata Audit", "Economic Topology Preview Audit", "Economic Topology Reporting Overlay Audit", "Economic Topology Map Intel Bridge Audit", "Retarget Readiness Audit", "Runtime Separation Audit", "Launcher / Client / Server Runtime Audit", "Launcher Shell State Audit", "User Profile Audit", "Render Scaling / CRT Audit", "Unified Input Registry Audit", "Construction Validation Inspection", "Progressive Construction Audit", "Staffing Labor Bridge", "Manual Staffing Assignment Bridge", "Logistics Reservation Scaffold", "Logistics Delivery Intent Bridge", "Logistics Route Readiness Preview", "Logistics Manual Haul Contract", "Logistics Haul Fulfillment Preflight");
+                break;
+            case 14:
+                Collections.addAll(out, "Defense Build Surface", "Defense Semantic Audit", "Passive Defense Effects");
+                out.addAll(DefenseSemanticIntegration.labels());
+                break;
+            case 15:
+                Collections.addAll(out, "Civilian", "Trader", "Hiver", "Scavenger", "Ganger", "Civic Wardens", "Concord Guard", "Mechanist Collegia Adept", "Mutant", "Cultist", "Outcast", "Passive: Vending Machine", "Passive: Concord Shrine", "Passive: Heretical Shrine");
+                break;
+            case 16:
+                for (Faction f : Faction.visibleFactions()) out.add(f.label);
+                break;
+            case 17:
+                out.addAll(TileInfopediaAuthority.entryLabels());
+                break;
+            case 18:
+                out.addAll(SemanticAssetInfopediaAuthority.entries(AssetManager.registry(), selectedInfopediaAssetType(), infopediaAssetFilter));
+                break;
+            default:
+                for (Faction f : Faction.visibleFactions()) out.add(f.label);
+                break;
+        }
+        return out;
+    }
+
+    java.util.List<String> infopediaDetailLines(int tab, String entry) {
+        if (isAssetInfopediaTab(tab)) {
+            return SemanticAssetInfopediaAuthority.detailLines(AssetManager.registry(), entry, selectedInfopediaAssetType(), infopediaAssetFilter);
+        }
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(entry);
+        lines.add("Reference ID: " + tab + ":" + Math.abs(entry.hashCode()));
+        lines.add("");
+        if (tab == 0) {
+            ZoneType z = zoneByLabel(entry);
+            lines.add("Zone profile");
+            lines.add("Description: " + (z==null?"Unknown zone.":z.descriptor));
+            if (z != null) {
+                int[] minmax = z.roomSize(new Random(3));
+                lines.add("Generation role: " + zoneGenerationRole(z));
+                lines.add("Room pattern: 20-30 rooms per slice; larger centered zone footprint; biased room dimensions around " + minmax[0] + "x" + minmax[1] + "; specials selected from zone-specific pools.");
+                lines.add("Likely NPCs: " + likelyNpcText(z));
+                lines.add("Likely fixtures: " + new String(world==null?new char[]{'o','u','t'}:samplePropsForZone(z)) + " — " + zoneFixtureMeaning(z));
+                lines.add("Player warning: " + zonePlayerWarning(z));
+                lines.addAll(EconomicTopologyFramework.zonePurposeLines(z));
+            }
+        } else if (tab == 1) {
+            lines.addAll(roomInfopediaLines(entry));
+        } else if (tab == 2 || tab == 3) {
+            if (entry.equals("Item Quality Ladder")) {
+                lines.add("Quality and value reference");
+                lines.add("Every cataloged item can be described through the same eight-tier quality ladder. This entry is about tier meaning, not one specific object.");
+                lines.addAll(ItemQuality.detailLines());
+                lines.add("Gameplay use: quality modifies value, charges/usefulness, reliability, and social/economic weight. It also feeds production ceilings and provenance labels.");
+            } else if (entry.equals("Quality Authority Layer")) {
+                lines.addAll(QualityAuthorityApi.detailLines());
+            } else if (entry.equals("Knowledge Tree Authority")) {
+                lines.addAll(KnowledgeTreeApi.detailLines());
+            } else if (entry.equals("Machine Tier Authority")) {
+                lines.addAll(MachineTierAuthority.detailLines());
+            } else if (entry.equals("Vendor & Shop Stock Rules")) {
+                lines.add("Vendor and shop stock reference");
+                lines.add("Scope: explains how trade offers are assembled and priced, not what any one item does.");
+                lines.add("Traders draw visible stock from cataloged items and may bias stock by faction, zone, room, and trader role.");
+                lines.add("Offer labels may carry quality prefixes: Junk, Shoddy, Common, Serviceable, Fine, Masterwork, Noble, or Archeotech.");
+                lines.add("Buy prices derive from catalog base price, item quality, trader markup, and haggle discount. Sell prices use catalog value, then apply trader pressure.");
+                lines.add("Current operational rule: purchased offers are materialized on a trader shelf container, then transferred into player inventory with provenance preserved.");
+            } else if (entry.equals("Faction Variant Production Rules")) {
+                lines.add("Faction manufacturing identity reference");
+                lines.add("Scope: explains why two goods with the same base item may differ by maker, doctrine, quality, social meaning, lawful status, and production inputs.");
+                lines.add("Formula: base draft recipe + faction manufacturing identity + quality authority + knowledge category + machine tier = generated faction recipe variant.");
+                lines.add("Generated faction variants remain draft/provenance-facing for now; they are not wholesale-injected into the player workbench list.");
+                lines.add("Civilian goods favor availability; military goods favor rugged durability; noble goods favor comfort/status; Mechanist Collegia goods favor throughput/efficiency with higher power and maintenance demands; scavver goods favor repairability with serious defect risk.");
+                lines.add("Recipe knowledge is quality-bound. Machines cannot exceed their own quality ceiling even when the actor knows a better pattern.");
+                lines.addAll(FactionManufacturingProfile.summaryLines());
+                lines.add("Example generated faction variants:");
+                lines.addAll(FactionRecipeVariantApi.sampleLines(8));
+            } else if (entry.equals("Production Quality Ceilings")) {
+                lines.add("Production ceiling reference");
+                lines.add("Scope: explains the cap that keeps production honest instead of letting every recipe produce top-tier goods.");
+                lines.add("Output quality is capped by the lowest relevant authority: recipe knowledge tier, machine tier, input material tier, facility tier, and worker/recruit competence.");
+                lines.add("Example: a Junk Micro Assembler can only make Junk outputs even if the player owns better knowledge. The pamphlet may be holy; the machine remains a coughing brick.");
+                lines.add("Example generated recipe previews:");
+                lines.addAll(ProductionRecipe.sampleLines());
+                lines.add("Current status: faction variants use these quality, knowledge, and machine authorities; input-material, facility, and worker ceilings remain explicit hooks that stay permissive until those ledgers carry quality tiers.");
+            } else {
+                ItemDef def = ItemCatalog.get(entry);
+                if (def == null) {
+                    lines.add(tab==2?"Item catalog gap":"Weapon catalog gap");
+                    lines.add("This entry exists in the menu but is not cataloged. It needs a proper entry before expansion continues.");
+                } else {
+                    lines.addAll(def.detailLines());
+                }
+            }
+        } else if (tab == 4) {
+            lines.addAll(survivalInfopediaLines(entry));
+        } else if (tab == 5) {
+            lines.addAll(combatInfopediaLines(entry));
+        } else if (tab == 6) {
+            lines.addAll(bodyInfopediaLines(entry));
+        } else if (tab == 7) {
+            lines.addAll(medicalInfopediaLines(entry));
+        } else if (tab == 8) {
+            lines.addAll(heatInfopediaLines(entry));
+        } else if (tab == 9) {
+            lines.addAll(xpInfopediaLines(entry));
+        } else if (tab == 10) {
+            if ("Profile Special Unlocks".equals(entry)) {
+                lines.add("Name-locked profile unlocks");
+                lines.add("These entries are separate from random character generation. They require both the active operator profile and the finalized character name to resolve to the same registered profile.");
+                lines.add("Unlocks grant profile dossier items, a knowledge entry, and a portrait source that is kept out of the ordinary portrait pool.");
+                lines.add("Rare world seeding: inactive registered profiles may appear as visiting nobles in noble districts. The active profile key is excluded so the player does not meet a duplicate of themselves.");
+                lines.add("");
+                lines.add("Registered profiles: " + NameLockedProfilePortraitAuthority.entries().size());
+                for (NameLockedProfilePortraitAuthority.Entry e : NameLockedProfilePortraitAuthority.entries()) lines.add("- " + e.displayName + " // " + e.title + " // " + (hasKnowledge("Profile Dossier: " + e.displayName) ? "known" : "locked"));
+            } else if (entry != null && entry.startsWith("Profile Dossier:")) {
+                String name = entry.substring("Profile Dossier:".length()).trim();
+                NameLockedProfilePortraitAuthority.Entry e = NameLockedProfilePortraitAuthority.match(name).orElse(null);
+                lines.addAll(NameLockedProfilePortraitAuthority.infopediaLines(e, e != null && hasKnowledge("Profile Dossier: " + e.displayName)));
+            } else {
+            KnowledgeDef def = KnowledgeDef.get(entry);
+            if (def != null) {
+                lines.addAll(def.detailLines());
+                lines.add("Status: " + (hasKnowledge(def.name) ? "KNOWN" : "LOCKED") + ". Spendable knowledge credits: " + knowledgeCredits + ".");
+                lines.add("Unlock UI: open the Character Dossier Knowledge Tree. The Infopedia is now reference/audit only for doctrine entries.");
+            } else {
+                lines.addAll(knowledgeReferenceLines(entry));
+            }
+            }
+        } else if (tab == 11) {
+            CraftingRecipe cr = CraftingRecipe.byName(entry);
+            if (cr != null) {
+                lines.addAll(cr.detailLines());
+                lines.add("Current status: " + cr.shortStatus(this));
+            } else {
+                lines.addAll(craftingReferenceLines(entry));
+            }
+        } else if (tab == 12) {
+            lines.addAll(productionInfopediaLines(entry));
+        } else if (tab == 13) {
+            lines.addAll(auditInfopediaLines(entry));
+        } else if (tab == 14) {
+            if ("Defense Build Surface".equals(entry)) lines.addAll(DefenseBuildSelectionAuthority.buildSurfaceLines());
+            else if ("Defense Semantic Audit".equals(entry)) lines.addAll(DefenseSemanticIntegration.infopediaLines());
+            else if ("Passive Defense Effects".equals(entry)) lines.addAll(PassiveDefenseEffectsAuthority.infopediaLines());
+            else lines.addAll(DefenseSemanticIntegration.detailLines(entry));
+        } else if (tab == 15) {
+            lines.addAll(npcInfopediaLines(entry));
+        } else if (tab == 16) {
+            Faction f = factionByLabel(entry);
+            lines.addAll(factionInfopediaLines(f, entry));
+        } else if (tab == 17) {
+            if (TileInfopediaAuthority.isHeader(entry)) {
+                lines.add("Tile category");
+                lines.add(entry.replace("--", "").trim());
+                lines.add("Select a tile entry below this header to audit its glyph, descriptor, icon source, and allowed variants.");
+            } else {
+                lines.addAll(TileInfopediaAuthority.detailLines(entry, images == null ? null : images.tileArt));
+            }
+        } else {
+            Faction f = factionByLabel(entry);
+            lines.addAll(factionInfopediaLines(f, entry));
+        }
+        return lines;
+    }
+
+    java.util.List<String> productionInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (entry == null) entry = "";
+        if (entry.equals("Staffing Labor Bridge")) {
+            lines.addAll(StaffingLaborBridgeAuthority.infopediaLines());
+            lines.addAll(StaffingLaborBridgeAuthority.statusLines(this));
+        } else if (entry.equals("Manual Staffing Assignment Bridge")) {
+            lines.addAll(ManualStaffingAssignmentAuthority.infopediaLines());
+            lines.addAll(ManualStaffingAssignmentAuthority.statusLines(this));
+            lines.addAll(StaffingRoleSkillValidationAuthority.infopediaLines());
+            lines.addAll(StaffingRoleSkillValidationAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Delivery Intent Bridge")) {
+            lines.addAll(LogisticsDeliveryIntentAuthority.infopediaLines());
+            lines.addAll(LogisticsDeliveryIntentAuthority.statusLines(this));
+            lines.add("");
+            lines.addAll(LogisticsStorageCandidateAuthority.infopediaLines());
+            lines.addAll(LogisticsStorageCandidateAuthority.statusLines(this));
+            lines.add("");
+            lines.addAll(LogisticsSourceReservationAuthority.infopediaLines());
+            lines.addAll(LogisticsSourceReservationAuthority.statusLines(this));
+            lines.addAll(LogisticsRouteIntentAuthority.infopediaLines());
+            lines.addAll(LogisticsRouteIntentAuthority.statusLines(this));
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.infopediaLines());
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.statusLines(this));
+            lines.addAll(LogisticsManualHaulContractAuthority.infopediaLines());
+            lines.addAll(LogisticsManualHaulContractAuthority.statusLines(this));
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.infopediaLines());
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.statusLines(this));
+            lines.addAll(LogisticsContractLifecycleAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Route Readiness Preview")) {
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.infopediaLines());
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Manual Haul Contract")) {
+            lines.addAll(LogisticsManualHaulContractAuthority.infopediaLines());
+            lines.addAll(LogisticsManualHaulContractAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Haul Fulfillment Preflight")) {
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.infopediaLines());
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Framework")) {
+            lines.addAll(EconomicTopologyFramework.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicGenerationBiasAuthority.infopediaLines());
+        } else if (entry.equals("Economic Generation Bias")) {
+            lines.addAll(EconomicGenerationBiasAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicGenerationBiasAuthority.worldSummaryLines(world));
+        } else if (entry.equals("Local Topology Metadata Surface")) {
+            lines.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.statusLines(world));
+        } else if (entry.equals("Economic Topology Preview Consumers")) {
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Reporting Overlay")) {
+            lines.addAll(EconomicTopologyReportingOverlayAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicTopologyReportingOverlayAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Map Intel Bridge")) {
+            lines.addAll(EconomicTopologyMapIntelBridgeAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicTopologyMapIntelBridgeAuthority.statusLines(this));
+        } else if (entry.equals("Retarget Readiness Endpoint")) {
+            lines.addAll(RetargetReadinessAuditAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(RetargetReadinessAuditAuthority.statusLines(this));
+        } else if (entry.equals("Runtime Separation Plan")) {
+            lines.addAll(RuntimeSeparationAuthority.infopediaLines(runtimeProfile));
+        } else if (entry.equals("Launcher / Client / Server Runtime")) {
+            lines.addAll(launcherRuntime.infopediaLines());
+        } else if (entry.equals("Launcher Shell State")) {
+            lines.addAll(launcherShell.infopediaLines(launcherRuntime, userProfile));
+        } else if (entry.equals("User Profile Surface")) {
+            lines.addAll(userProfile.lines());
+        } else if (entry.equals("Render Scaling / CRT Surface")) {
+            lines.addAll(renderScaling.infopediaLines());
+        } else if (entry.equals("Unified Input Registry / Gamepad Bridge")) {
+            lines.add("Unified input and gamepad bridge " + InputRegistry.VERSION + ".");
+            lines.add("Keyboard input is handled by the desktop key path while also updating the shared input state.");
+            lines.add("Gamepad polling runs on a background thread and posts updates safely to the interface.");
+            lines.add("The generic fallback schema maps standard SDL/Jamepad face buttons, D-pad, left stick, bumpers, start, and back/select into abstract actions.");
+            lines.add("Coexistence rule: keyboard and gamepad own separate source states; releasing one source cannot turn off an action held by the other source.");
+            lines.add("Runtime gamepad status: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
+            lines.add("Active abstract input: " + inputRegistry.compactStatus());
+        } else if (entry.equals("Production Ledger Overview")) {
+            lines.addAll(ProductionLedgerDisplayApi.overviewLines());
+            lines.add("");
+            lines.add("Display rule: this panel exposes the generated production truth without injecting the full draft graph into the ordinary workbench crafting list.");
+        } else if (entry.equals("Draft Recipe Graph")) {
+            lines.addAll(ProductionLedgerDisplayApi.draftRecipeGraphLines(32));
+        } else if (entry.equals("Faction Variant Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.factionVariantLedgerLines(32));
+        } else if (entry.equals("Chemical Equipment Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.chemicalEquipmentLedgerLines(40));
+        } else if (entry.equals("Live Placement Ledger")) {
+            lines.add("Live production placement ledger");
+            lines.add("Scope: installed apparatus, room validation, machine-tier checks, and live-readiness bridge for generated chemical recipes.");
+            lines.addAll(LiveProductionPlacementAuthority.baseReadinessLines(this, 16));
+            lines.addAll(ProductionLedgerDisplayApi.controlledProductionJobLedgerLines(12));
+            lines.add("");
+            lines.addAll(LiveProductionPlacementAuditApi.audit().lines());
+        } else if (entry.equals("Facility Output Modifier Ledger")) {
+            lines.addAll(FacilityOutputModifierAuthority.ledgerLines(36));
+        } else if (entry.equals("Build Requirement Cost Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.buildRequirementCostLedgerLines(50));
+        } else if (entry.equals("Production Container Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.productionContainerLedgerLines(this, 48));
+        } else if (entry.equals("Persistent Stock Container Ledger")) {
+            lines.addAll(PersistentStockContainerAuthority.ledgerLines(this, 64));
+        } else if (entry.equals("Persistent Stock Pickup UX Ledger")) {
+            lines.addAll(PersistentStockPickupUxAuthority.ledgerLines(this, 64));
+        } else if (entry.equals("Actor Access / Permission Ledger")) {
+            lines.addAll(ActorAccessAuthority.ledgerLines(this, 64));
+        } else if (entry.equals("Quality / Knowledge / Machine Authority Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.authorityLedgerLines());
+        } else if (entry.equals("Contraband and Law Status Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.lawStatusLedgerLines());
+        } else if (entry.equals("Recipe Ancestry Samples")) {
+            lines.addAll(ProductionLedgerDisplayApi.recipeAncestrySampleLines(36));
+        } else if (entry.equals("Laboratory Process Samples")) {
+            lines.addAll(ProductionLedgerDisplayApi.laboratoryProcessSampleLines(36));
+        } else if (entry.equals("Base Production Ledger")) {
+            lines.add("Base production ledger display");
+            lines.add("Scope: current claimed-base machine state plus the industrial authority summary used by deeper production ledgers.");
+            lines.add("Claimed base: " + (baseClaimed ? baseDisplayName() : "none claimed") + ".");
+            lines.addAll(baseProductionLedgerLines());
+            lines.add("");
+            lines.add("Generated production authorities currently available to the ledger:");
+            lines.addAll(ProductionLedgerDisplayApi.compactCountsLines());
+        } else if (entry.startsWith("Recipe: ")) {
+            String name = entry.substring("Recipe: ".length()).trim();
+            lines.addAll(ProductionLedgerDisplayApi.draftRecipeDetailLines(name));
+        } else if (entry.startsWith("Variant: ")) {
+            String name = entry.substring("Variant: ".length()).trim();
+            lines.addAll(ProductionLedgerDisplayApi.factionVariantDetailLines(name));
+        } else {
+            lines.add("Production ledger entry");
+            lines.add("No detailed renderer matched this production entry. This is an audit-visible gap, not a silent failure.");
+        }
+        return lines;
+    }
+
+    java.util.List<String> infopediaDetailLinesWithRelated(int tab, String entry) {
+        ArrayList<String> lines = new ArrayList<>(infopediaDetailLines(tab, entry));
+        ArrayList<String> related = infopediaRelatedEntries(tab, entry);
+        if (!related.isEmpty()) {
+            lines.add("");
+            lines.add("Related entries:");
+            for (String r : related) lines.add("  LINK: " + r);
+            lines.add("Use the LINK buttons below the detail pane to jump directly to the first related entries.");
+        }
+        return lines;
+    }
+
+    java.util.List<String> auditInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (entry == null) entry = "";
+        if (entry.equals("Audit Overview")) {
+            lines.add("Audit overview");
+            lines.add("Scope: summarizes the major production authority audits currently exposed through Infopedia.");
+            lines.addAll(ProductionLedgerDisplayApi.auditSummaryLines());
+        } else if (entry.equals("Examine and Infopedia Link Audit")) {
+            lines.add("Examine and Infopedia link audit");
+            lines.add("Scope: checks whether the player-facing examination and reference layers expose useful categories without leaking hidden implementation state.");
+            lines.add("Examine sections currently covered: visible identity, animal/pet read, intent read, visible equipment, quest/evidence read, condition read, combat readiness, threat read, senses read, fixture/object use read, and approach read.");
+            lines.add("Refresh cadence: repeating Examine on the same target within six world turns increases detail depth up to three steps.");
+            lines.add("Confidence boundary: unknown, hidden, private, or off-screen state should be described as unreadable or estimated rather than exposed through raw records.");
+            lines.add("Infopedia categories currently indexed: " + String.join(", ", infopediaTabs()) + ".");
+            lines.add("Related-link surface: valid related entries are filtered against the live Infopedia index before LINK buttons appear.");
+            lines.add("Current selected entry: " + (infopediaEntries(infopediaTab).isEmpty() ? "none" : infopediaEntries(infopediaTab).get(Math.max(0, Math.min(infopediaSelected, infopediaEntries(infopediaTab).size()-1)))) + ".");
+            lines.add("Audit expectation: new Look, Examine, interaction, transfer, construction, prompt, and mechanic entries should add related references instead of becoming isolated glossary stubs.");
+        } else if (entry.equals("Menu Definition Audit")) {
+            lines.add("Menu definition audit");
+            lines.add("Scope: player-facing ledger for major panel purpose, close behavior, core action, disabled-state rule, and special transfer/permission concerns.");
+            lines.add("LOOK: inspect selected tile; closes with cancel; core actions Examine and Interact; disabled when tile is not visible or selected.");
+            lines.add("INTERACT: commits adjacent target action; closes with cancel; core action Confirm; disabled when target is out of range, with PLAN MOVE approach guidance where possible.");
+            lines.add("INVENTORY: reviews carried goods, equipment, load, and selected item transfer preview; core actions use/equip/drop/context; disabled when no carried item is selected.");
+            lines.add("BUILD: claims rooms, selects construction, and confirms placement; core action Confirm; disabled by missing claim, invalid tile, missing materials, knowledge, faction, or component rules.");
+            lines.add("WORKBENCH: runs production and logistics previews; core action Confirm; disabled by missing machine, recipe, input, knowledge, worker, or queue readiness.");
+            lines.add("BASES: manages claimed-base storage, roster, business, heat, security, and production; transfer actions use shared source/target/capacity/protection wording.");
+            lines.add("TRADE: handles conversation, buy/sell, prices, stock, market legality, contracts, and evidence turn-in; buy/sell block on funds, capacity, source item, trader state, and quest protection.");
+            lines.add("MAP, SENSES, SAVE/LOAD, NEWS, and INFOPEDIA: reference or navigation surfaces; they should use stable close/back behavior, scroll containment, and prompt lines rather than hidden key assumptions.");
+            lines.add("Audit expectation: new menus should define title, purpose, prompt line, primary data source, disabled reasons, transfer behavior, permission checks, and raw-ID leakage boundary before release claims.");
+        } else if (entry.equals("Movement Planning Audit")) {
+            lines.add("Movement planning audit");
+            lines.add("Scope: manual movement ghost placement, route preview, valid-target rules, invalid feedback, and interaction-driven approach behavior.");
+            lines.add("Current mode: " + movementModeLabel() + " | range " + movementModeRange() + " | per-tile cost " + movementTurnCost() + " | active state " + activeMotionStateLabel() + ".");
+            lines.add("Input methods: PLAN MOVE opens manual targeting; arrows/WASD or controller movement nudge the target; confirm executes the preview; cancel clears it.");
+            lines.add("Valid target rule: target must be in bounds, walkable, not the player's current tile, and not occupied by an NPC.");
+            lines.add("Invalid feedback strings: outside known map, current position, destination occupied, door closed, path blocked, or cannot reach from here.");
+            lines.add("Path preview: route uses a bounded walkable-path search from the player to the selected target and divides movement into current-mode action chunks.");
+            lines.add("Hazard warning: preview reports a hazard ahead when any preview path tile contains a visible environmental hazard record.");
+            lines.add("Interaction helper: if Look/Interact selects a distant usable target, PLAN MOVE prefers a reachable adjacent approach tile and labels it as an approach path.");
+            lines.add("Overlay priority: movement preview draws as route rings and target rectangle, separate from Look selection, build placement, ownership tint, and directional movement ghost.");
+            lines.add("Focus reset: executing, cancelling, timing out, changing movement mode, or leaving gameplay clears stale preview state.");
+        } else if (entry.equals("Industrial Itemization Audit")) {
+            lines.addAll(RecipeGraphAuditApi.audit().lines());
+        } else if (entry.equals("Faction Variant Audit")) {
+            lines.addAll(FactionRecipeVariantAuditApi.audit().lines());
+        } else if (entry.equals("Chemical Equipment Audit")) {
+            lines.addAll(ChemicalEquipmentAuditApi.audit().lines());
+        } else if (entry.equals("Live Placement Audit")) {
+            lines.addAll(LiveProductionPlacementAuditApi.audit().lines());
+        } else if (entry.equals("Facility Output Modifier Audit")) {
+            lines.addAll(FacilityOutputModifierAuditApi.audit().lines());
+        } else if (entry.equals("Build Requirement Cost Audit")) {
+            lines.addAll(BuildRequirementCostAuditApi.audit().lines());
+        } else if (entry.equals("Production Container Authority Audit")) {
+            lines.addAll(ProductionContainerAuthorityAuditApi.audit(this).lines());
+        } else if (entry.equals("Persistent Stock Container Audit")) {
+            lines.addAll(PersistentStockContainerAuditApi.audit(this).lines());
+        } else if (entry.equals("Persistent Stock Pickup UX Audit")) {
+            lines.addAll(PersistentStockPickupUxAuditApi.audit(this).lines());
+        } else if (entry.equals("Actor Access Permission Audit")) {
+            lines.addAll(ActorAccessAuditApi.audit(this).lines());
+        } else if (entry.equals("Authority Alignment Audit")) {
+            lines.addAll(AuthorityAlignmentAuditApi.audit().lines());
+        } else if (entry.equals("Production Ledger Display Audit")) {
+            lines.addAll(ProductionLedgerDisplayAuditApi.audit().lines());
+            lines.addAll(ControlledProductionJobAuditApi.audit().lines());
+        } else if (entry.equals("Economic Topology Audit")) {
+            lines.addAll(EconomicTopologyFramework.auditLines());
+            lines.add("");
+            lines.addAll(EconomicGenerationBiasAuthority.auditLines(world));
+        } else if (entry.equals("Economic Generation Bias Audit")) {
+            lines.addAll(EconomicGenerationBiasAuthority.auditLines(world));
+        } else if (entry.equals("Local Topology Metadata Audit")) {
+            lines.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.auditLines(world));
+        } else if (entry.equals("Economic Topology Preview Audit")) {
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.infopediaLines());
+            lines.add("");
+            lines.add("Preview role: construction, route intent, and haul-readiness hints share one advisory language.");
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Reporting Overlay Audit")) {
+            lines.addAll(EconomicTopologyReportingOverlayAuthority.auditLines(this));
+        } else if (entry.equals("Economic Topology Map Intel Bridge Audit")) {
+            lines.addAll(EconomicTopologyMapIntelBridgeAuthority.auditLines(this));
+        } else if (entry.equals("Retarget Readiness Audit")) {
+            lines.addAll(RetargetReadinessAuditAuthority.auditLines(this));
+        } else if (entry.equals("Runtime Separation Audit")) {
+            lines.addAll(RuntimeSeparationAuthority.auditLines(runtimeProfile));
+        } else if (entry.equals("Launcher / Client / Server Runtime Audit")) {
+            lines.add(launcherRuntime.statusLine());
+            lines.addAll(launcherRuntime.infopediaLines());
+        } else if (entry.equals("Launcher Shell State Audit")) {
+            lines.addAll(launcherShell.displayLines(launcherRuntime, userProfile));
+            lines.add("Menu role: start, load, options, editor/mods, multiplayer, infopedia, and profile routes are coordinated through the launcher shell.");
+            lines.addAll(launcherShell.infopediaLines(launcherRuntime, userProfile));
+        } else if (entry.equals("User Profile Audit")) {
+            lines.add("Profile role: " + (userProfile == null ? "local operator profile pending." : userProfile.provider + " profile for " + userProfile.displayName + "."));
+            if (userProfile == null) {
+                lines.add("Profile details: local operator profile is not available yet.");
+            } else {
+                lines.add("Profile provider: " + userProfile.provider + ".");
+                lines.add("Display name: " + userProfile.displayName + ".");
+                lines.add("Profile link: " + (userProfile.externalUri.isEmpty() ? "internal profile only." : "available through the platform wrapper."));
+            }
+        } else if (entry.equals("Render Scaling / CRT Audit")) {
+            lines.add("Active rendering: " + renderScaling.profileLabel() + ", downscale " + renderScaling.downscaleLabel() + ", internal buffer " + renderScaling.internalWidth() + "x" + renderScaling.internalHeight() + ".");
+            lines.addAll(renderScaling.infopediaLines());
+        } else if (entry.equals("Unified Input Registry Audit")) {
+            lines.add("Input model: keyboard and gamepad can drive the same action list without replacing each other.");
+            lines.add("Keyboard: movement, confirmation, menus, look, map, zoom, attack, and reload feed the shared action list.");

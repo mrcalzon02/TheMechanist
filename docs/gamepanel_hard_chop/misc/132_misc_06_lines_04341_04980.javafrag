@@ -1,0 +1,418 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_06_lines_04341_04980
+// Category: misc
+// Source lines: 4341-4980
+// Method count: 23
+//
+// Methods in this fragment:
+// - disarmExplosiveAt :: lines 4341-4359 (19) :: void disarmExplosiveAt(int tx, int ty)
+// - detonateExplosiveObject :: lines 4378-4385 (8) :: void detonateExplosiveObject(MapObjectState m, String cause)
+// - detonateExplosiveAt :: lines 4387-4420 (34) :: void detonateExplosiveAt(int cx, int cy, ExplosiveProfile ep, String cause)
+// - seedSmokeCloud :: lines 4422-4427 (6) :: void seedSmokeCloud(int cx, int cy, int radius)
+// - beginExplosiveTargeting :: lines 4474-4488 (15) :: void beginExplosiveTargeting()
+// - weaponRange :: lines 4490-4500 (11) :: int weaponRange(String weapon)
+// - fireModeAccuracyModifier :: lines 4502-4507 (6) :: int fireModeAccuracyModifier()
+// - fireModeTimeCost :: lines 4516-4521 (6) :: int fireModeTimeCost()
+// - targetingSolutionAt :: lines 4523-4567 (45) :: TargetingSolution targetingSolutionAt(int tx, int ty)
+// - rangedCoverPenalty :: lines 4594-4625 (32) :: int rangedCoverPenalty(int x0, int y0, int x1, int y1, boolean includeEntities, TargetingSolution ts)
+// - tileProvidesSoftCover :: lines 4627-4629 (3) :: boolean tileProvidesSoftCover(char ch)
+// - linePoints :: lines 4639-4655 (17) :: ArrayList<Point> linePoints(int x0, int y0, int x1, int y1)
+// - strayImpactPoint :: lines 4659-4674 (16) :: Point strayImpactPoint(TargetingSolution ts)
+// - defaultTerrainIntegrity :: lines 4678-4685 (8) :: int defaultTerrainIntegrity(char ch)
+// - isPublicCorpseLocation :: lines 4688-4694 (7) :: boolean isPublicCorpseLocation(MapObjectState m)
+// - tickCorpseEcology :: lines 4696-4706 (11) :: void tickCorpseEcology()
+// - nearbyWitnessCount :: lines 4708-4713 (6) :: int nearbyWitnessCount(int x, int y, int range)
+// - authorityCollectCorpse :: lines 4715-4728 (14) :: void authorityCollectCorpse(MapObjectState m, int witnesses)
+// - decayHiddenCorpse :: lines 4752-4767 (16) :: void decayHiddenCorpse(MapObjectState m)
+// - tickFactionWallRepairAndHiveQuake :: lines 4769-4788 (20) :: void tickFactionWallRepairAndHiveQuake()
+// - isProtectedTransitionTile :: lines 4834-4836 (3) :: boolean isProtectedTransitionTile(char ch)
+// - randomBodyHitLocation :: lines 4952-4955 (4) :: String randomBodyHitLocation()
+// - strayImpactPointFrom :: lines 4965-4980 (16) :: Point strayImpactPointFrom(int sx, int sy, int tx, int ty, int distance)
+
+    void disarmExplosiveAt(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, "planted-explosive");
+        if (m == null) { logEvent("DISARM: no planted explosive selected."); return; }
+        ExplosiveProfile ep = ExplosiveProfile.forItem(m.stockState);
+        int turns = Math.max(1, ep.disarmTurns);
+        int score = stat("Intellect",5) + stat("Mechanics",5) + stat("Vision",5) / 2;
+        int difficulty = 12 + ep.complexity * 4;
+        int roll = rng.nextInt(20) + score;
+        for (int i=0;i<turns;i++) advanceTurn(i==0 ? "attempts to disarm " + ep.name + "." : "continues the disarm work.");
+        if (roll >= difficulty) {
+            restoreMapObjectUnderlyingTile(m);
+            world.mapObjects.remove(m);
+            addInventoryItem(ep.name, ItemProvenanceRecord.found(ep.name, world, turn, "disarmed and recovered planted explosive"));
+            logEvent("DISARM SUCCESS: recovered " + ep.name + ". Roll " + roll + " vs " + difficulty + ".");
+        } else {
+            logEvent("DISARM FAILED: " + ep.name + " bites back. Roll " + roll + " vs " + difficulty + ".");
+            detonateExplosiveObject(m, "failed disarm");
+        }
+    }
+
+// ... omitted 18 non-method/source lines between cataloged methods ...
+
+    void detonateExplosiveObject(MapObjectState m, String cause) {
+        if (world == null || m == null) return;
+        ExplosiveProfile ep = ExplosiveProfile.forItem(m.stockState);
+        int cx = m.x, cy = m.y;
+        restoreMapObjectUnderlyingTile(m);
+        world.mapObjects.remove(m);
+        detonateExplosiveAt(cx, cy, ep, cause);
+    }
+
+    void detonateExplosiveAt(int cx, int cy, ExplosiveProfile ep, String cause) {
+        if (world == null || ep == null) return;
+        sounds.playWeaponEffect(ep.name, true, options);
+        explosionAnimations.add(ExplosionAnimation.blast(cx, cy, ep.radius, ep.name, System.currentTimeMillis()));
+        while (explosionAnimations.size() > 10) explosionAnimations.remove(0);
+        logEvent("EXPLOSION: " + ep.name + " detonates at " + cx + "," + cy + " from " + cause + ". Radius " + ep.radius + ", damage " + ep.damage + ".");
+        ArrayList<NpcEntity> killed = new ArrayList<>();
+        for (NpcEntity n : new ArrayList<>(world.npcs)) {
+            int d = Math.max(Math.abs(n.x-cx), Math.abs(n.y-cy));
+            if (d <= ep.radius) {
+                if (n.isUntargetableAnchor()) {
+                    if (isVisible(n.x,n.y)) logEvent("BLAST REFUSED: " + n.name + " is a protected continuity anchor and remains unharmed.");
+                    continue;
+                }
+                int dmg = Math.max(1, ep.damage - d * Math.max(2, ep.damage / Math.max(2, ep.radius + 2)) - factionArmor(n));
+                n.hp -= dmg;
+                if (isVisible(n.x,n.y)) logEvent("BLAST HIT: " + n.name + " takes " + dmg + " from " + ep.name + ". HP " + Math.max(0,n.hp) + ".");
+                if (n.hp <= 0) killed.add(n);
+            }
+        }
+        for (NpcEntity n : killed) { String corpseLine = createCorpseLootContainer(n, ep.name + " explosion"); world.npcs.remove(n); logEvent("BLAST KILL: " + n.name + " is dropped by the explosion. " + corpseLine); }
+        int pd = Math.max(Math.abs(playerX-cx), Math.abs(playerY-cy));
+        if (pd <= ep.radius) {
+            int shield = shieldMitigationPercentAt(playerX, playerY, equippedClothing == null ? Faction.NONE : equippedClothing.alignedFaction);
+            int dmg = Math.max(1, ((ep.damage - pd * 3) * Math.max(20, 100 - shield)) / 100);
+            applyPlayerBodyDamage(dmg, randomBodyHitLocation(), ep.name + " blast", ep.name);
+        }
+        for (int x=Math.max(0,cx-ep.radius); x<=Math.min(world.w-1,cx+ep.radius); x++) for (int y=Math.max(0,cy-ep.radius); y<=Math.min(world.h-1,cy+ep.radius); y++) {
+            int d = Math.max(Math.abs(x-cx), Math.abs(y-cy));
+            if (d <= ep.radius && rng.nextInt(100) < 70 - d*10) applyStrayImpactDamage(x, y, Math.max(1, ep.damage/3 - d*2), ep.name + " blast");
+        }
+        if (ep.smoke) seedSmokeCloud(cx, cy, ep.radius);
+        DebugLog.audit("EXPLOSIVE_DETONATE", "name=" + ep.name + " at=" + cx + "," + cy + " radius=" + ep.radius + " cause=" + cause + " turn=" + turn);
+    }
+
+    void seedSmokeCloud(int cx, int cy, int radius) {
+        for (int x=Math.max(0,cx-radius); x<=Math.min(world.w-1,cx+radius); x++) for (int y=Math.max(0,cy-radius); y<=Math.min(world.h-1,cy+radius); y++) {
+            if (Math.abs(x-cx)+Math.abs(y-cy) <= radius && rng.nextBoolean()) addSoundPing(x, y, "smoke");
+        }
+        logEvent("SMOKE: a dirty occluding cloud boils out. Full smoke vision math is queued for the lighting/occlusion pass.");
+    }
+
+// ... omitted 46 non-method/source lines between cataloged methods ...
+
+    void beginExplosiveTargeting() {
+        if (world == null || active == null) { logEvent("EXPLOSIVE TARGETING failed: no active world or character."); return; }
+        String item = firstCarriedExplosiveItem();
+        if (item.isBlank()) { logEvent("EXPLOSIVE TARGETING: no carried grenade, mine, satchel, claymore, plasma bomb, or melta grenade."); return; }
+        combatCursorActive = true;
+        explosiveTargetingMode = true;
+        selectedExplosiveItem = item;
+        combatX = Math.max(0, Math.min(world.w-1, playerX + Math.max(-1, Math.min(1, lastMoveDx)) * Math.max(2, Math.min(6, explosiveThrowRange(item)))));
+        combatY = Math.max(0, Math.min(world.h-1, playerY + Math.max(-1, Math.min(1, lastMoveDy)) * Math.max(2, Math.min(6, explosiveThrowRange(item)))));
+        if (combatX == playerX && combatY == playerY) combatX = Math.min(world.w-1, playerX + 3);
+        lookCursorActive = false;
+        interactCursorActive = false;
+        lastTargetingReport = "Explosive reticle armed for " + item + ". Move reticle; G/Enter throws or plants depending on explosive type.";
+        openPanel(PanelMode.COMBAT);
+    }
+
+    int weaponRange(String weapon) {
+        if (weapon == null || !ItemCatalog.isFirearmLike(weapon)) return 1;
+        String low = ItemQuality.stripManufacturingIdentity(weapon).toLowerCase(Locale.ROOT);
+        if (low.contains("shotgun")) return 5;
+        if (low.contains("flamer") || low.contains("melta")) return 4;
+        if (low.contains("pistol") || low.contains("revolver")) return 7;
+        if (low.contains("stubber") || low.contains("carbine") || low.contains("webber")) return 9;
+        if (low.contains("rifle") || low.contains("las") || low.contains("mass-Reactive Carbine")) return 12;
+        if (low.contains("autocannon") || low.contains("long")) return 14;
+        return 8;
+    }
+
+    int fireModeAccuracyModifier() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 12;
+        if ("BURST".equals(fm)) return -8;
+        return 0;
+    }
+
+    int fireModeDamageModifier() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 1;
+        if ("BURST".equals(fm)) return 2;
+        return 0;
+    }
+
+    int fireModeTimeCost() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 2;
+        if ("BURST".equals(fm)) return 2;
+        return 1;
+    }
+
+    TargetingSolution targetingSolutionAt(int tx, int ty) {
+        TargetingSolution ts = new TargetingSolution();
+        ts.targetX = tx; ts.targetY = ty;
+        if (world == null || active == null) { ts.canFire=false; ts.summary="No active tactical world."; return ts; }
+        if (!world.inBounds(tx, ty)) { ts.canFire=false; ts.summary="Target outside world bounds."; return ts; }
+        ts.weaponName = bestWeaponName();
+        ts.ranged = ts.weaponName != null && ItemCatalog.isFirearmLike(ts.weaponName);
+        if (ts.weaponName == null) ts.weaponName = "Bare hands";
+        ts.range = weaponRange(ts.weaponName);
+        ts.distance = Math.abs(tx-playerX) + Math.abs(ty-playerY);
+        ts.targetNpc = world.npcAt(tx, ty);
+        ts.fireMode = fireModeLabel();
+        ts.loadedShots = loadedShotsForWeapon(ts.weaponName);
+        ts.magazineCapacity = magazineCapacityForWeapon(ts.weaponName);
+        ts.ammoCost = fireModeAmmoCost(ts.weaponName);
+        ts.ammoItem = ammoItemForWeapon(ts.weaponName);
+        ts.needsReload = ts.ranged && ts.loadedShots < Math.max(1, ts.ammoCost);
+        ts.shieldReduction = shieldMitigationPercentAt(tx, ty, ts.targetNpc == null ? Faction.NONE : ts.targetNpc.faction);
+        ts.coverPenalty = rangedCoverPenalty(playerX, playerY, tx, ty, true, ts);
+        ts.darknessPenalty = ts.ranged ? rangedDarknessPenalty(playerX, playerY, tx, ty) : 0;
+        int skill = ts.ranged ? stat("Firearms", 5) : stat("Melee", 5);
+        if (ts.ranged && !hasUsableWeaponLimb()) { ts.canFire=false; ts.summary="Arms/hands too damaged to aim a ranged weapon."; ts.hitPercent=0; return ts; }
+        if (ts.ranged && ts.needsReload) { ts.canFire=false; ts.summary="Reload required: " + ts.weaponName + " has " + ts.loadedShots + "/" + ts.magazineCapacity + " loaded; needs " + Math.max(1,ts.ammoCost) + " for " + ts.fireMode + ". Press X to reload using " + ts.ammoItem + "."; ts.hitPercent=0; return ts; }
+        if (!ts.ranged && ts.distance > 1) { ts.canFire=false; ts.summary="Melee attacks require an adjacent tile."; ts.hitPercent=0; return ts; }
+        if (ts.ranged && ts.distance > ts.range) { ts.canFire=false; ts.summary="Out of range: " + ts.distance + "/" + ts.range + "."; ts.hitPercent=0; return ts; }
+        if (ts.targetNpc == null && !ts.ranged) { ts.canFire=false; ts.summary="No adjacent entity to strike."; ts.hitPercent=0; return ts; }
+        int distancePenalty = ts.ranged ? Math.max(0, ts.distance - 2) * 4 : 0;
+        int targetMotionDefense = ts.targetNpc == null ? 0 : npcEvasionModifier(ts.targetNpc);
+        int targetArmor = ts.targetNpc == null ? 0 : factionArmor(ts.targetNpc);
+        int base = ts.ranged ? 52 : 65;
+        int hit = base + skill * 5 + playerAttackMotionSkillModifier() + fireModeAccuracyModifier() - distancePenalty - ts.coverPenalty - ts.darknessPenalty - targetMotionDefense - targetArmor * 2;
+        if (ts.targetNpc == null && ts.ranged && !ts.coverHardBlocked) {
+            // Directly attacking empty floor, wall, or an object is not a contest
+            // against a dodging actor. If the line is clear and the target is in
+            // range, the shot should be highly reliable so terrain/object attacks
+            // are usable instead of displaying a miserable 0% on nothing.
+            hit = Math.max(hit, 92 + Math.max(0, fireModeAccuracyModifier() / 3));
+        } else if (ts.targetNpc == null) hit -= ts.ranged ? 8 : 30;
+        if (ts.coverHardBlocked) hit = 0;
+        ts.hitPercent = Math.max(0, Math.min(95, hit));
+        ts.canFire = ts.hitPercent > 0 && (ts.ranged || ts.targetNpc != null);
+        String targetLabel = ts.targetNpc == null ? ("direct terrain/object " + describeTile(world.tiles[tx][ty])) : ts.targetNpc.name;
+        ts.summary = (ts.ranged ? "Ranged" : "Melee") + " target " + tx + "," + ty + " | " + targetLabel + " | hit " + ts.hitPercent + "% | " + (ts.ranged ? ("ammo " + ts.loadedShots + "/" + ts.magazineCapacity + " cost " + ts.ammoCost + " | light -" + ts.darknessPenalty + " | ") : "") + ts.coverSummary;
+        return ts;
+    }
+
+// ... omitted 26 non-method/source lines between cataloged methods ...
+
+    int rangedCoverPenalty(int x0, int y0, int x1, int y1, boolean includeEntities, TargetingSolution ts) {
+        int penalty = 0;
+        ArrayList<Point> pts = linePoints(x0, y0, x1, y1);
+        int total = Math.max(1, pts.size() - 1);
+        ArrayList<String> blockers = new ArrayList<>();
+        for (int i=1; i<pts.size(); i++) {
+            Point p = pts.get(i);
+            boolean targetTile = (p.x == x1 && p.y == y1);
+            if (world == null || !world.inBounds(p.x,p.y)) continue;
+            int base = 0;
+            char ch = world.tiles[p.x][p.y];
+            BaseObject obj = baseObjectAt(p.x,p.y);
+            NpcEntity n = world.npcAt(p.x,p.y);
+            if (!targetTile && blocksLineOfSight(ch)) base = (ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE) ? 100 : 45;
+            else if (!targetTile && isDoorTile(ch)) base = 32;
+            if (!targetTile && obj != null) base = Math.max(base, 16 + PassiveDefenseEffectsAuthority.coverPenalty(obj));
+            else if (!targetTile && tileProvidesSoftCover(ch)) base = Math.max(base, 12);
+            if (includeEntities && !targetTile && n != null) base = Math.max(base, isHostileNpc(n) ? 22 : 28);
+            if (base > 0) {
+                double progress = i / (double) total;
+                int scaled = (int)Math.round(base * (0.35 + 0.65 * progress));
+                penalty += scaled;
+                if (blockers.size() < 4) blockers.add(blockerLabel(ch, obj, n) + "@" + p.x + "," + p.y + " -" + scaled);
+                if (base >= 100) {
+                    penalty = Math.max(penalty, 100);
+                    if (ts != null) ts.coverHardBlocked = true;
+                }
+            }
+        }
+        if (ts != null) ts.coverSummary = blockers.isEmpty() ? "clear firing lane" : String.join("; ", blockers);
+        return Math.max(0, Math.min(140, penalty));
+    }
+
+    boolean tileProvidesSoftCover(char ch) {
+        return ch == 's' || ch == 'c' || ch == 'u' || ch == 'w' || ch == 'N' || ch == 'B' || ch == 'T' || ch == 'H' || ch == 'M' || ch == 'G' || ch == 'k' || ch == 'q' || ch == 'd' || ch == 'S' || ch == 'R' || ch == 'W' || ch == 'D' || ch == 'Y' || ch == 'J' || ch == 'U' || ch == 'Z' || ch == 'P' || ch == 'a' || ch == 'p' || ch == 'g' || ch == 'x' || ch == '1' || ch == '2' || ch == '3' || ch == '4' || ch == '5';
+    }
+
+    String blockerLabel(char ch, BaseObject obj, NpcEntity n) {
+        if (n != null) return "entity " + n.name;
+        if (obj != null) return "object " + obj.name;
+        if (isDoorTile(ch)) return "door " + ch;
+        if (blocksLineOfSight(ch)) return "hard cover " + ch;
+        return "feature " + describeTile(ch);
+    }
+
+    ArrayList<Point> linePoints(int x0, int y0, int x1, int y1) {
+        ArrayList<Point> pts = new ArrayList<>();
+        int dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0, y = y0;
+        while (true) {
+            pts.add(new Point(x,y));
+            if (x == x1 && y == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
+            if (pts.size() > 256) break;
+        }
+        return pts;
+    }
+
+
+
+    Point strayImpactPoint(TargetingSolution ts) {
+        if (ts == null || world == null) return new Point(playerX, playerY);
+        int dx = Integer.compare(ts.targetX - playerX, 0);
+        int dy = Integer.compare(ts.targetY - playerY, 0);
+        int sideX = dy;
+        int sideY = -dx;
+        int range = Math.max(1, ts.distance);
+        int scatter = 1 + rng.nextInt(Math.max(1, Math.min(3, 1 + range / 4)));
+        if (rng.nextBoolean()) scatter = -scatter;
+        int forward = rng.nextInt(3) - 1;
+        int ix = ts.targetX + sideX * scatter + dx * forward;
+        int iy = ts.targetY + sideY * scatter + dy * forward;
+        ix = Math.max(0, Math.min(world.w-1, ix));
+        iy = Math.max(0, Math.min(world.h-1, iy));
+        return new Point(ix, iy);
+    }
+
+    String terrainKey(int x, int y) { return x + "," + y; }
+
+    int defaultTerrainIntegrity(char ch) {
+        if (ch == '#' || ch == '%' || InterstitialInfrastructureApi.isInterstitialSolid(ch)) return 40;
+        if (isDoorTile(ch)) return 18;
+        if (tileProvidesSoftCover(ch)) return 10;
+        if (ch == '*' || ch == 'R' || ch == 'N' || ch == '1' || ch == '2' || ch == '3' || ch == '4' || ch == '5') return 12;
+        if (ch == '.' || ch == '+' || ch == ',' || ch == ';' || ch == ':' || ch == '~' || ch == '=') return 6;
+        return 8;
+    }
+
+
+    boolean isPublicCorpseLocation(MapObjectState m) {
+        if (world == null || m == null) return false;
+        int rid = world.roomIdAt(m.x,m.y);
+        if (rid < 0) return true;
+        Faction f = rid < world.roomFactions.size() ? world.roomFactions.get(rid) : Faction.NONE;
+        return f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f == Faction.MINISTORUM || f == Faction.CIVIC_LEDGER_OFFICE || f == Faction.HIVER || f == Faction.NONE;
+    }
+
+    void tickCorpseEcology() {
+        if (world == null || world.mapObjects == null || world.mapObjects.isEmpty()) return;
+        ArrayList<MapObjectState> copy = new ArrayList<>(world.mapObjects);
+        for (MapObjectState m : copy) {
+            if (m == null || !"corpse-container".equals(m.type)) continue;
+            if (m.cooldownUntilTurn <= 0) m.cooldownUntilTurn = turn + (isPublicCorpseLocation(m) ? 280 : 900);
+            int witnesses = nearbyWitnessCount(m.x, m.y, 8);
+            if (isPublicCorpseLocation(m) && witnesses >= 3 && turn >= m.cooldownUntilTurn - 180) { authorityCollectCorpse(m, witnesses); continue; }
+            if (turn >= m.cooldownUntilTurn) decayHiddenCorpse(m);
+        }
+    }
+
+    int nearbyWitnessCount(int x, int y, int range) {
+        if (world == null) return 0;
+        int c = 0;
+        for (NpcEntity n : world.npcs) if (n != null && Math.abs(n.x-x)+Math.abs(n.y-y) <= range && !isHostileNpc(n)) c++;
+        return c;
+    }
+
+    void authorityCollectCorpse(MapObjectState m, int witnesses) {
+        if (world == null || m == null) return;
+        String cid = m.stockState == null || m.stockState.isBlank() ? corpseLootContainerId(m.id) : m.stockState;
+        java.util.List<String> items = drainContainerItemNames(cid, 999);
+        String evidence = CONTAINER_FACTION_STOCK_PREFIX + Faction.CIVIC_WARDENS.name();
+        ensureContainer(evidence, "Civic Wardens evidence lockup");
+        for (String item : items) addItemToContainerResult(evidence, "Civic Wardens evidence lockup", item, ItemProvenanceRecord.of(item, Faction.CIVIC_WARDENS, "corpse evidence pickup", world, turn, "stripped from corpse", "evidence lockup for later resale"), null, "corpse evidence transfer");
+        addItemToContainerResult(CONTAINER_FACTION_STOCK_PREFIX + Faction.HIVER.name(), "Public nutrient reclamation stock", "Corpse-starch ration slab", ItemProvenanceRecord.of("Corpse-starch ration slab", Faction.CIVIC_WARDENS, "morgue to waste reclamation", world, turn, "body processed after public corpse pickup", "nutrient bricks sold onward"), null, "corpse reclamation");
+        restoreMapObjectUnderlyingTile(m);
+        world.mapObjects.remove(m);
+        suspicion = Math.max(0, suspicion - 1);
+        logEvent("CORPSE CLEANUP: " + witnesses + " witnesses report a public body. Civic Wardens collect it, strip inventory to evidence lockup, and route the remains to nutrient reclamation. Because of course they do.");
+        DebugLog.audit("CORPSE_AUTHORITY_PICKUP", "id=" + m.id + " witnesses=" + witnesses + " items=" + items.size() + " turn=" + turn);
+    }
+
+// ... omitted 23 non-method/source lines between cataloged methods ...
+
+    void decayHiddenCorpse(MapObjectState m) {
+        if (world == null || m == null) return;
+        String cid = m.stockState == null || m.stockState.isBlank() ? corpseLootContainerId(m.id) : m.stockState;
+        java.util.List<String> decayed = drainContainerItemNames(cid, 999);
+        String pileId = CONTAINER_CORPSE_LOOT_PREFIX + "decayed." + ContainerIdentityApi.safeToken(m.id);
+        ensureContainer(pileId, "Decayed belongings and skeleton pile");
+        for (String item : decayed) if (!item.equals("Scrap bit") || rng.nextBoolean()) addItemToContainerResult(pileId, "Decayed belongings", item, ItemProvenanceRecord.found(item, world, turn, "decayed corpse belongings"), null, "hidden corpse decay");
+        m.type = "skeleton-pile";
+        m.label = "Skeleton and decayed belongings / " + (world.zoneType == null ? "unknown" : world.zoneType.label);
+        m.stockState = pileId;
+        m.glyph = 'r';
+        m.cooldownUntilTurn = turn + 999999;
+        if (world.inBounds(m.x,m.y)) world.tiles[m.x][m.y] = 'r';
+        logEvent("CORPSE DECAY: an unnoticed body has become a skeleton and a pile of degraded belongings. Quality is not improved by rot. Stunning revelation.");
+        DebugLog.audit("CORPSE_DECAY", "id=" + m.id + " decayedItems=" + decayed.size() + " turn=" + turn);
+    }
+
+    void tickFactionWallRepairAndHiveQuake() {
+        if (world == null || terrainIntegrity.isEmpty()) return;
+        if (turn % 37 != 0) return;
+        for (String key : new ArrayList<>(terrainIntegrity.keySet())) {
+            int hp = terrainIntegrity.getOrDefault(key, 1);
+            if (hp > 0) continue;
+            String[] a = key.split(",");
+            if (a.length != 2) continue;
+            int x, y;
+            try { x = Integer.parseInt(a[0]); y = Integer.parseInt(a[1]); } catch(Exception ex) { continue; }
+            if (!world.inBounds(x,y)) continue;
+            char ch = world.tiles[x][y];
+            if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == '%' || ch == '&' || ch == '^' || ch == '8' || ch == '0') {
+                if (rng.nextInt(100) < 35) { world.tiles[x][y] = '*'; terrainIntegrity.remove(key); logEvent("ARCOLOGY-QUAKE FILL: overhead debris slumps into an intra-wall breach at " + x + "," + y + ". The arcology repairs itself by dropping masonry on the problem."); }
+            } else if (ch == '*' || ch == '#' || isDoorTile(ch)) {
+                Faction f = factionControllingTile(x,y);
+                if (f != Faction.NONE && rng.nextInt(100) < 45) { world.tiles[x][y] = '#'; terrainIntegrity.put(key, defaultTerrainIntegrity('#')); logEvent("FACTION REPAIR: " + f.label + " workers draw supplies from nearby stock and patch damaged wall/door structure at " + x + "," + y + "."); }
+            }
+        }
+    }
+
+// ... omitted 45 non-method/source lines between cataloged methods ...
+
+    boolean isProtectedTransitionTile(char ch) {
+        return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E';
+    }
+
+// ... omitted 115 non-method/source lines between cataloged methods ...
+
+    String randomBodyHitLocation() {
+        String[] parts = {"head", "torso", "left arm", "right arm", "left leg", "right leg"};
+        return parts[rng.nextInt(parts.length)];
+    }
+
+    String randomTargetedCombatReward(NpcEntity target) {
+        String[] parts = {"weapon arm", "knee joint", "breathing line", "tool hand", "center mass"};
+        String p = parts[rng.nextInt(parts.length)];
+        if (p.contains("arm")) logEvent("TARGETING EFFECT: a clean arm hit stresses weapon handling and equipment control.");
+        if (p.contains("knee")) logEvent("TARGETING EFFECT: leg damage is flagged for speed and pursuit impairment.");
+        return p;
+    }
+
+    Point strayImpactPointFrom(int sx, int sy, int tx, int ty, int distance) {
+        if (world == null) return new Point(tx, ty);
+        int dx = Integer.compare(tx - sx, 0);
+        int dy = Integer.compare(ty - sy, 0);
+        int sideX = dy;
+        int sideY = -dx;
+        int range = Math.max(1, distance);
+        int scatter = 1 + rng.nextInt(Math.max(1, Math.min(3, 1 + range / 4)));
+        if (rng.nextBoolean()) scatter = -scatter;
+        int forward = rng.nextInt(3) - 1;
+        int ix = tx + sideX * scatter + dx * forward;
+        int iy = ty + sideY * scatter + dy * forward;
+        ix = Math.max(0, Math.min(world.w-1, ix));
+        iy = Math.max(0, Math.min(world.h-1, iy));
+        return new Point(ix, iy);
+    }

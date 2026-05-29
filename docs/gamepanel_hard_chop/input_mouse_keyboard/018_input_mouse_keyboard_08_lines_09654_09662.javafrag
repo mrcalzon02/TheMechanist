@@ -1,0 +1,20 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_08_lines_09654_09662
+// Category: input_mouse_keyboard
+// Source lines: 9654-9662
+// Method count: 1
+//
+// Methods in this fragment:
+// - addLootListToContainer :: lines 9654-9662 (9) :: void addLootListToContainer(String cid, String label, java.util.List<String> items, Faction faction, String maker, String inputs, String route)
+
+    void addLootListToContainer(String cid, String label, java.util.List<String> items, Faction faction, String maker, String inputs, String route) {
+        if (cid == null || cid.isBlank() || items == null) return;
+        for (String item : items) {
+            if (item == null || item.isBlank()) continue;
+            addItemToContainerResult(cid, label, item,
+                    ItemProvenanceRecord.of(item, faction, maker, world, turn, inputs, route),
+                    null, "seed persistent loot");
+        }
+    }

@@ -1,0 +1,84 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_17_lines_18885_19025
+// Category: combat_actor_entity
+// Source lines: 18885-19025
+// Method count: 4
+//
+// Methods in this fragment:
+// - factionStrategyLines :: lines 18885-18904 (20) :: ArrayList<String> factionStrategyLines()
+// - npcProductionLines :: lines 18945-18950 (6) :: ArrayList<String> npcProductionLines()
+// - ambientRivalFaction :: lines 18988-19006 (19) :: Faction ambientRivalFaction()
+// - highestFactionMarketPressureFaction :: lines 19018-19025 (8) :: Faction highestFactionMarketPressureFaction()
+
+    ArrayList<String> factionStrategyLines() {
+        FactionStrategySimulationApi.ensurePlans(this);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Strategic simulation: " + lastFactionSimulationReport);
+        lines.add("Public news seed: " + lastPublicNewsBulletin);
+        lines.add("Latest INN issue: " + lastInnNewsIssue);
+        lines.add("Latest INN broadcast: " + lastBroadcastReport);
+        lines.add("Latest player-news filing: " + lastPlayerNewsReport);
+        lines.add("Latest authority facility inspection: " + lastAuthorityFacilityInspectionReport);
+        int shown = 0;
+        for (FactionStrategicPlan plan : factionStrategicPlans) {
+            if (plan == null) continue;
+            lines.add("  " + plan.shortLine());
+            if (++shown >= 12) {
+                if (factionStrategicPlans.size() > shown) lines.add("  ... " + (factionStrategicPlans.size() - shown) + " additional faction plans hidden by panel limit.");
+                break;
+            }
+        }
+        return lines;
+    }
+
+// ... omitted 40 non-method/source lines between cataloged methods ...
+
+    ArrayList<String> npcProductionLines() {
+        seedNpcFactionProductionSites();
+        ArrayList<String> lines = new ArrayList<>();
+        for (NpcFactionSite site : npcFactionSites) lines.add("  " + site.summaryLine());
+        return lines;
+    }
+
+// ... omitted 37 non-method/source lines between cataloged methods ...
+
+    Faction ambientRivalFaction() {
+        if (world == null || world.zoneType == null) return Faction.BANDIT;
+        switch (world.zoneType) {
+            case ARBITES_PRECINCT_EDGE:
+            case ADMINISTRATUM_ARCHIVE:
+            case NEUTRAL_CIVILIAN_FLOOR:
+            case NOBLE_SERVICE_SPINE:
+            case NEUTRAL_RAIL_DEPOT: return Faction.CIVIC_WARDENS;
+            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST_COLLEGIA;
+            case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
+            case GANGER_TURF:
+            case SUMP_MARKET:
+            case TRASH_WARREN: return Faction.BANDIT;
+            case MUTANT_WARRENS:
+            case MUTANT_SEWER_CAMP: return Faction.MUTANT;
+            case CULTIST_SEWER_CAMP: return Faction.CULTIST;
+            default: return Faction.BANDIT;
+        }
+    }
+
+    void decayFactionMarketPressure() {
+        int security = baseSecurityRating();
+        for (Faction f : Faction.values()) {
+            int v = factionMarketPressure.getOrDefault(f, 0);
+            if (v <= 0) continue;
+            int decay = security >= 18 ? 2 : (security >= 8 ? 1 : 0);
+            if (decay > 0) factionMarketPressure.put(f, Math.max(0, v - decay));
+        }
+    }
+
+    Faction highestFactionMarketPressureFaction() {
+        Faction best = Faction.NONE;
+        int bv = 0;
+        for (Map.Entry<Faction,Integer> e : factionMarketPressure.entrySet()) {
+            if (e.getKey() != null && e.getKey() != Faction.NONE && e.getValue() != null && e.getValue() > bv) { best = e.getKey(); bv = e.getValue(); }
+        }
+        return best;
+    }

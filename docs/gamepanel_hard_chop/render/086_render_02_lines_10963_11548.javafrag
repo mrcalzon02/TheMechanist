@@ -1,0 +1,361 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_02_lines_10963_11548
+// Category: render
+// Source lines: 10963-11548
+// Method count: 8
+//
+// Methods in this fragment:
+// - drawModsSurface :: lines 10963-11000 (38) :: void drawModsSurface(Graphics2D g)
+// - drawInGameEditorSurface :: lines 11131-11178 (48) :: void drawInGameEditorSurface(Graphics2D g)
+// - drawInGameGenericEditor :: lines 11180-11194 (15) :: void drawInGameGenericEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center)
+// - drawInGameRoomEditor :: lines 11196-11241 (46) :: void drawInGameRoomEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center)
+// - drawInGameEditorInspector :: lines 11243-11275 (33) :: void drawInGameEditorInspector(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle right)
+// - drawSectorAuditSurface :: lines 11372-11447 (76) :: void drawSectorAuditSurface(Graphics2D g)
+// - drawSectorAuditTraceMarker :: lines 11474-11512 (39) :: void drawSectorAuditTraceMarker(Graphics2D g, int camX, int camY, int ox, int oy, int cellW, int cellH)
+// - drawZoneAuditGenerationLogOverlay :: lines 11514-11548 (35) :: void drawZoneAuditGenerationLogOverlay(Graphics2D g, Rectangle map, int camX, int camY, int ox, int oy, int cellW, int cellH)
+
+    void drawModsSurface(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        Rectangle modal = uiLayout().modal;
+        g.setColor(new Color(3,4,4,246));
+        g.fillRect(modal.x, modal.y, modal.width, modal.height);
+        drawSlicedFrame(g, modal.x, modal.y, modal.width, modal.height, "inner");
+        stampUiFrameId(g, "F", "mods-tools-route", modal.x, modal.y, modal.width, modal.height);
+        g.setFont(titleFont.deriveFont(Math.max(30f, Math.min(42f, H/18f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "EDITOR / MOD PACKAGING", W/2, modal.y + 52);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        java.util.List<String> lines = new ArrayList<>();
+        lines.add("The editor suite now opens inside the main game surface. It owns records, room-grid painting, palette selection, new-entry creation, undo/redo state, and mod-packaging status without launching a detached desktop window.");
+        lines.add("Room Editor: choose a palette item, left-click the room grid to place it, right-click to erase it. All editor tabs use a standard NEW entry flow so fresh records are created consistently.");
+        lines.add("The older external editor launcher path is closed for player-facing use. Any remaining desktop editor classes are development-only legacy code until they are removed or converted into game-owned surfaces.");
+        lines.add("Mod packaging remains data-backed by the editor repository and deployment manager; player-facing access must stay inside this in-game menu before future Workshop/export polish.");
+        int actionW = Math.max(250, Math.min(330, modal.width / 4));
+        int textW = Math.max(420, modal.width - actionW - 108);
+        int y = modal.y + 84;
+        FontMetrics fm = g.getFontMetrics();
+        for (String paragraph : lines) {
+            for (String line : GuiLayoutApi.wrapText(paragraph, fm, textW)) {
+                drawUiTextLine(g, line, modal.x + 42, y);
+                y += 20;
+                if (y > modal.y + modal.height - 160) break;
+            }
+            y += 6;
+            if (y > modal.y + modal.height - 160) break;
+        }
+        int actionX = modal.x + modal.width - actionW - 36;
+        int actionY = modal.y + modal.height - 150;
+        g.setColor(new Color(0,0,0,132));
+        g.fillRoundRect(actionX, actionY, actionW, 118, 12, 12);
+        g.setColor(new Color(120,105,70,150));
+        g.drawRoundRect(actionX, actionY, actionW, 118, 12, 12);
+        g.drawLine(modal.x + 36, modal.y + 112, modal.x + modal.width - 36, modal.y + 112);
+    }
+
+// ... omitted 130 non-method/source lines between cataloged methods ...
+
+    void drawInGameEditorSurface(Graphics2D g) {
+        Rectangle outer = inGameEditorOuterRect();
+        Rectangle tabs = inGameEditorTabRect();
+        Rectangle left = inGameEditorLeftRect();
+        Rectangle center = inGameEditorCenterRect();
+        Rectangle right = inGameEditorRightRect();
+        Rectangle status = inGameEditorStatusRect();
+        g.setColor(new Color(3,4,4,248));
+        g.fillRect(outer.x, outer.y, outer.width, outer.height);
+        drawSlicedFrame(g, outer.x, outer.y, outer.width, outer.height, "inner");
+        stampUiFrameId(g, "F", "in-game-editor-suite", outer.x, outer.y, outer.width, outer.height);
+        g.setFont(titleFont.deriveFont(Math.max(26f, Math.min(38f, getHeight()/20f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "IN-GAME EDITORS", outer.x + outer.width/2, outer.y + 38);
+        if (inGameEditorHelpVisible) {
+            g.setFont(smallFont);
+            g.setColor(new Color(10,10,8,220));
+            g.fillRoundRect(outer.x + 150, outer.y + 10, outer.width - 300, 30, 10, 10);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            center(g, GuiLayoutApi.fitLabel("Editors are owned by the main game surface. Room grid: left-click paints selected palette item, right-click erases. New creates a blank entry in the active editor.", g.getFontMetrics(), outer.width - 330), outer.x + outer.width/2, outer.y + 30);
+        }
+        drawSlicedFrame(g, left.x, left.y, left.width, left.height, "inner");
+        drawSlicedFrame(g, center.x, center.y, center.width, center.height, "inner");
+        drawSlicedFrame(g, right.x, right.y, right.width, right.height, "inner");
+        g.setFont(uiFont.deriveFont(Font.BOLD, Math.max(14f, uiFont.getSize2D()-2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "RECORDS", left.x + 14, left.y + 24);
+        drawUiTextLine(g, inGameEditorName().toUpperCase(Locale.ROOT), center.x + 14, center.y + 24);
+        drawUiTextLine(g, "COMMANDS / INSPECTOR", right.x + 14, right.y + 24);
+        SimulationEditorRepository.EditableEntity entity = inGameEditorEntity();
+        if (entity == null) {
+            g.setFont(smallFont);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, "No entry exists. Use NEW.", center.x + 18, center.y + 60);
+        } else if ("Room Editor".equals(inGameEditorName())) {
+            drawInGameRoomEditor(g, entity, center);
+        } else {
+            drawInGameGenericEditor(g, entity, center);
+        }
+        drawInGameEditorInspector(g, entity, right);
+        g.setColor(new Color(0,0,0,170));
+        g.fillRoundRect(status.x, status.y, status.width, status.height, 8, 8);
+        g.setColor(new Color(130,112,70,150));
+        g.drawRoundRect(status.x, status.y, status.width, status.height, 8, 8);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(inGameEditorStatus + " | " + inGameEditorRepository.auditLine() + " | " + inGameEditorUndoRedo.compactState(), g.getFontMetrics(), status.width - 16), status.x + 8, status.y + 18);
+    }
+
+    void drawInGameGenericEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center) {
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, entity.name() + "  [" + entity.id() + "]", center.x + 18, center.y + 58);
+        g.setFont(smallFont);
+        int y = center.y + 90;
+        for (Map.Entry<String,Object> e : entity.properties().entrySet()) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(e.getKey() + ":", g.getFontMetrics(), 160), center.x + 24, y);
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(String.valueOf(e.getValue()), g.getFontMetrics(), center.width - 210), center.x + 178, y);
+            y += 24;
+            if (y > center.y + center.height - 24) break;
+        }
+    }
+
+    void drawInGameRoomEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center) {
+        Map<String,Object> props = entity.properties();
+        int roomW = editorInt(props.get("width"), 1, 32, 8);
+        int roomH = editorInt(props.get("height"), 1, 32, 6);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, entity.name() + "  [" + roomW + "x" + roomH + "]", center.x + 18, center.y + 58);
+        Rectangle grid = inGameRoomGridRect();
+        g.setColor(new Color(10, 10, 10, 235));
+        g.fillRect(grid.x, grid.y, grid.width, grid.height);
+        g.setColor(new Color(130,112,70,150));
+        g.drawRect(grid.x, grid.y, grid.width, grid.height);
+        int cell = Math.max(10, Math.min(42, Math.min((grid.width - 12) / Math.max(1, roomW), (grid.height - 12) / Math.max(1, roomH))));
+        int gridW = cell * roomW;
+        int gridH = cell * roomH;
+        int ox = grid.x + (grid.width - gridW) / 2;
+        int oy = grid.y + (grid.height - gridH) / 2;
+        Map<String,String> cells = decodeEditorGrid(String.valueOf(props.getOrDefault("layoutCells", "")));
+        String floor = String.valueOf(props.getOrDefault("floorMaterial", "worn-plasteel"));
+        for (int y=0; y<roomH; y++) for (int x=0; x<roomW; x++) {
+            boolean wall = x == 0 || y == 0 || x == roomW-1 || y == roomH-1;
+            int px = ox + x*cell, py = oy + y*cell;
+            g.setColor(wall ? new Color(88,72,48) : editorFloorColor(floor));
+            g.fillRect(px, py, cell, cell);
+            String placed = cells.get(x + "," + y);
+            if (placed != null && !placed.isBlank()) {
+                BufferedImage placedImg = ObjectSemanticAssetAuthority.imageForAssetId(ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), placed));
+                if (placedImg != null) {
+                    g.drawImage(placedImg, px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), null);
+                    g.setColor(new Color(12, 12, 8, 130));
+                    g.drawRoundRect(px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), 6, 6);
+                } else {
+                    g.setColor(new Color(42, 86, 74, 215));
+                    g.fillRoundRect(px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), 6, 6);
+                    g.setColor(new Color(235, 212, 128));
+                    String mark = placed.length() <= 2 ? placed : placed.substring(0, 1).toUpperCase(Locale.ROOT);
+                    center(g, mark, px + cell/2, py + cell/2 + 5);
+                }
+            }
+            g.setColor(new Color(0,0,0,140));
+            g.drawRect(px, py, cell, cell);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, "Palette: " + inGameEditorPaletteCategory() + " / " + inGameEditorSelectedPaletteItem() + " | assetId=" + ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), inGameEditorSelectedPaletteItem()), center.x + 18, center.y + center.height - 28);
+    }
+
+    void drawInGameEditorInspector(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle right) {
+        g.setFont(smallFont);
+        if (entity == null) return;
+        if ("Room Editor".equals(inGameEditorName())) {
+            String assetId = ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), inGameEditorSelectedPaletteItem());
+            BufferedImage icon = ObjectSemanticAssetAuthority.imageForAssetId(assetId);
+            int box = Math.max(64, Math.min(96, right.width / 3));
+            int ix = right.x + right.width - box - 16;
+            int iy = right.y + 42;
+            g.setColor(new Color(8, 10, 9, 235));
+            g.fillRect(ix, iy, box, box);
+            g.setColor(new Color(130,112,70,180));
+            g.drawRect(ix, iy, box, box);
+            if (icon != null) g.drawImage(icon, ix + 4, iy + 4, box - 8, box - 8, null);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, "Palette assetId=" + assetId, right.x + 14, iy + box + 18);
+        }
+        int y = right.y + ("Room Editor".equals(inGameEditorName()) ? 322 : 44);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "SELECTED", right.x + 14, y); y += 22;
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(entity.name(), g.getFontMetrics(), right.width - 28), right.x + 14, y); y += 22;
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(entity.id(), g.getFontMetrics(), right.width - 28), right.x + 14, y); y += 24;
+        int maxY = right.y + right.height - 126;
+        for (Map.Entry<String,Object> e : entity.properties().entrySet()) {
+            if (y > maxY) break;
+            String value = String.valueOf(e.getValue());
+            if ("layoutCells".equals(e.getKey())) value = decodeEditorGrid(value).size() + " painted cells";
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(e.getKey() + ": " + value, g.getFontMetrics(), right.width - 28), right.x + 14, y);
+            y += 20;
+        }
+    }
+
+// ... omitted 96 non-method/source lines between cataloged methods ...
+
+    void drawSectorAuditSurface(Graphics2D g) {
+        advanceAuditTracePlaybackIfNeeded();
+        if (auditWorld == null) regenerateSectorAuditWorld("draw missing audit world");
+        UiLayout L = uiLayout();
+        Rectangle map = L.map;
+        g.setFont(auditAsciiFont());
+        int cellW = auditMapCellW(g);
+        int cellH = auditMapCellH(g);
+        int cols = Math.max(1, (map.width - 18) / Math.max(1, cellW));
+        int rows = Math.max(1, (map.height - 18) / Math.max(1, cellH));
+        int camX = auditWorld == null ? 0 : Math.max(0, Math.min(auditWorld.w - cols, auditCursorX - cols / 2));
+        int camY = auditWorld == null ? 0 : Math.max(0, Math.min(auditWorld.h - rows, auditCursorY - rows / 2));
+        g.setColor(Color.BLACK);
+        g.fillRect(map.x, map.y, map.width, map.height);
+        drawSlicedFrame(g, map.x, map.y, map.width, map.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-map", map.x, map.y, map.width, map.height);
+        Shape oldClip = g.getClip();
+        g.setClip(map.x + 7, map.y + 7, map.width - 14, map.height - 14);
+        int ox = map.x + 10;
+        int oy = sectorAuditTileIconMode() ? map.y + 10 : map.y + 10 + g.getFontMetrics(auditAsciiFont()).getAscent();
+        if (auditWorld != null) {
+            World oldWorld = world;
+            boolean[][] oldVisibleTiles = visibleTiles;
+            boolean[][] oldRememberedTiles = rememberedTiles;
+            world = auditWorld;
+            visibleTiles = SectorAuditRuntimeAuthority.fullBrightMask(auditWorld);
+            rememberedTiles = visibleTiles;
+            try {
+                for (int sy = 0; sy < rows; sy++) {
+                    int y = camY + sy;
+                    if (y < 0 || y >= auditWorld.h) continue;
+                    for (int sx = 0; sx < cols; sx++) {
+                        int x = camX + sx;
+                        if (x < 0 || x >= auditWorld.w) continue;
+                        char ch = auditWorld.tiles[x][y];
+                        if (sectorAuditTileIconMode()) drawMapTileIcon(g, ch, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 1.0f, true);
+                        else { g.setColor(colorForTile(x, y, ch)); g.drawString(String.valueOf(ch), ox + sx * cellW, oy + sy * cellH); }
+                    }
+                }
+                if (auditWorld.mapObjects != null) {
+                    for (MapObjectState mo : auditWorld.mapObjects) {
+                        if (mo == null || mo.x < camX || mo.y < camY || mo.x >= camX + cols || mo.y >= camY + rows) continue;
+                        if (sectorAuditTileIconMode()) drawMapFeatureIcon(g, mo, ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH, cellW, cellH, new Color(100, 210, 160, 70));
+                        else { g.setColor(new Color(170, 215, 155)); g.drawString(String.valueOf(mo.glyph), ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH); }
+                    }
+                }
+                if (auditWorld.lightSources != null) drawZoneLightFixtureObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.hazardWarnings != null) drawEnvironmentalHazardOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.trapRecords != null) drawTrapWarningOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.npcs != null) {
+                    for (NpcEntity npc : auditWorld.npcs) {
+                        if (npc == null || npc.x < camX || npc.y < camY || npc.x >= camX + cols || npc.y >= camY + rows) continue;
+                        if (sectorAuditTileIconMode()) drawNpcMapIcon(g, npc, ox + (npc.x - camX) * cellW, oy + (npc.y - camY) * cellH, cellW, cellH);
+                        else { g.setColor(npcColor(npc.faction)); g.drawString(String.valueOf(npc.symbol), ox + (npc.x - camX) * cellW, oy + (npc.y - camY) * cellH); }
+                    }
+                }
+                drawSectorAuditDiagnosticOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                drawSectorAuditTraceMarker(g, camX, camY, ox, oy, cellW, cellH);
+                drawZoneAuditGenerationLogOverlay(g, map, camX, camY, ox, oy, cellW, cellH);
+            } finally { world = oldWorld; visibleTiles = oldVisibleTiles; rememberedTiles = oldRememberedTiles; }
+            int sx = auditCursorX - camX, sy = auditCursorY - camY;
+            if (sx >= 0 && sy >= 0 && sx < cols && sy < rows) {
+                int rx = ox + sx * cellW, ry = oy + sy * cellH;
+                g.setColor(new Color(245, 210, 95));
+                g.drawRect(rx - 2, ry - 2, cellW + 4, cellH + 4);
+                g.drawLine(rx + cellW/2, ry - 5, rx + cellW/2, ry + Math.max(2, cellH/4));
+                g.drawLine(rx + cellW/2, ry + cellH + 5, rx + cellW/2, ry + cellH - Math.max(2, cellH/4));
+                g.drawLine(rx - 5, ry + cellH/2, rx + Math.max(2, cellW/4), ry + cellH/2);
+                g.drawLine(rx + cellW + 5, ry + cellH/2, rx + cellW - Math.max(2, cellW/4), ry + cellH/2);
+            }
+        }
+        g.setClip(oldClip);
+        drawSectorAuditCommandPanel(g, L);
+        drawSectorAuditInfoPanel(g, L);
+        drawSectorAuditZoneDropdown(g, L);
+    }
+
+// ... omitted 26 non-method/source lines between cataloged methods ...
+
+    void drawSectorAuditTraceMarker(Graphics2D g, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        if (step == null || auditWorld == null || !auditWorld.inBounds(step.x, step.y)) return;
+        int sx = ox + (step.x - camX) * cellW;
+        int sy = oy + (step.y - camY) * cellH;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setStroke(new BasicStroke(Math.max(2f, cellW / 9f)));
+        if (step.ghostRect != null) {
+            Rectangle gr = step.ghostRect;
+            int gx1 = Math.max(gr.x, camX), gy1 = Math.max(gr.y, camY);
+            int gx2 = Math.min(gr.x + gr.width, camX + Math.max(1, (mapRect().width - 18) / Math.max(1, cellW)));
+            int gy2 = Math.min(gr.y + gr.height, camY + Math.max(1, (mapRect().height - 18) / Math.max(1, cellH)));
+            if (gx1 < gx2 && gy1 < gy2) {
+                int rx = ox + (gx1 - camX) * cellW;
+                int ry = oy + (gy1 - camY) * cellH;
+                int rw = Math.max(1, (gx2 - gx1) * cellW);
+                int rh = Math.max(1, (gy2 - gy1) * cellH);
+                gg.setComposite(AlphaComposite.SrcOver.derive(step.rejected ? 0.18f : 0.16f));
+                gg.setColor(step.rejected ? new Color(255, 70, 45) : new Color(245, 225, 95));
+                gg.fillRect(rx, ry, rw, rh);
+                gg.setComposite(AlphaComposite.SrcOver.derive(0.82f));
+                gg.drawRect(rx, ry, Math.max(1, rw - 1), Math.max(1, rh - 1));
+            }
+        }
+        if (sx + cellW >= ox && sy + cellH >= oy && sx <= ox + Math.max(1, auditWorld.w) * cellW && sy <= oy + Math.max(1, auditWorld.h) * cellH) {
+            gg.setComposite(AlphaComposite.SrcOver);
+            if (step.rejected) {
+                gg.setColor(new Color(255, 70, 45, 230));
+                gg.drawLine(sx + 3, sy + 3, sx + cellW - 4, sy + cellH - 4);
+                gg.drawLine(sx + cellW - 4, sy + 3, sx + 3, sy + cellH - 4);
+            } else {
+                gg.setColor(new Color(245, 225, 95, 235));
+                gg.drawRect(sx + 2, sy + 2, Math.max(3, cellW - 5), Math.max(3, cellH - 5));
+                gg.drawLine(sx + cellW / 2, sy - Math.max(2, cellH / 3), sx + cellW / 2, sy + cellH + Math.max(2, cellH / 3));
+                gg.drawLine(sx - Math.max(2, cellW / 3), sy + cellH / 2, sx + cellW + Math.max(2, cellW / 3), sy + cellH / 2);
+            }
+        }
+        gg.dispose();
+    }
+
+    void drawZoneAuditGenerationLogOverlay(Graphics2D g, Rectangle map, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return;
+        int current = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        int lines = Math.max(6, Math.min(12, map.height / 42));
+        int start = Math.max(0, current - lines + 2);
+        int end = Math.min(auditTraceSteps.size(), start + lines);
+        int panelW = Math.max(330, Math.min(560, map.width / 2));
+        int lineH = Math.max(15, g.getFontMetrics(smallFont).getHeight() + 2);
+        int panelH = 14 + (end - start) * lineH;
+        int px = map.x + 18;
+        int py = map.y + 18;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setColor(new Color(0, 0, 0, 178));
+        gg.fillRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setColor(new Color(145, 118, 64, 155));
+        gg.drawRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D() - 3f)));
+        FontMetrics fm = gg.getFontMetrics();
+        int y = py + 12 + fm.getAscent();
+        for (int i = start; i < end; i++) {
+            SectorGenerationTraceAuthority.Step st = auditTraceSteps.get(i);
+            boolean selected = i == current;
+            if (selected) {
+                gg.setColor(new Color(145, 118, 64, 210));
+                gg.fillRect(px + 6, y - fm.getAscent() - 2, panelW - 12, lineH);
+            }
+            gg.setColor(st.rejected ? new Color(255, 145, 115) : (selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN)));
+            String line = st.line(auditTraceSteps.size());
+            int maxChars = Math.max(24, (panelW - 18) / Math.max(5, fm.charWidth('W')));
+            if (line.length() > maxChars) line = line.substring(0, Math.max(0, maxChars - 1)) + "…";
+            drawUiTextLine(gg, line, px + 10, y);
+            y += lineH;
+        }
+        gg.dispose();
+    }

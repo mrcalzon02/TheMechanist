@@ -1,0 +1,211 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_21_lines_14873_15291
+// Category: misc
+// Source lines: 14873-15291
+// Method count: 14
+//
+// Methods in this fragment:
+// - hazardAt :: lines 14873-14877 (5) :: EnvironmentalHazardRecord hazardAt(int x, int y)
+// - projectileGlyphForWeapon :: lines 14967-14978 (12) :: String projectileGlyphForWeapon(String weapon, boolean hit, int frame)
+// - weaponIsMeleeAnimation :: lines 14980-14983 (4) :: boolean weaponIsMeleeAnimation(String weapon)
+// - beginManualMovementPlan :: lines 15109-15141 (33) :: void beginManualMovementPlan()
+// - nudgeManualMovementPlan :: lines 15143-15153 (11) :: void nudgeManualMovementPlan(int dx, int dy)
+// - confirmManualMovementPlan :: lines 15155-15158 (4) :: void confirmManualMovementPlan()
+// - cancelManualMovementPlan :: lines 15160-15164 (5) :: void cancelManualMovementPlan(String reason)
+// - selectedInteractionApproachTile :: lines 15192-15214 (23) :: Point selectedInteractionApproachTile()
+// - hasSelectedInteractionTarget :: lines 15216-15223 (8) :: boolean hasSelectedInteractionTarget(int tx, int ty)
+// - interactionTargetLabel :: lines 15225-15234 (10) :: String interactionTargetLabel(int tx, int ty)
+// - interactionApproachStatusFor :: lines 15236-15241 (6) :: String interactionApproachStatusFor(int tx, int ty)
+// - directMovementTargetBlockReason :: lines 15243-15254 (12) :: String directMovementTargetBlockReason(int tx, int ty)
+// - movementPathHazardWarning :: lines 15256-15263 (8) :: String movementPathHazardWarning(java.util.List<Point> path)
+// - findPreviewPath :: lines 15265-15291 (27) :: ArrayList<Point> findPreviewPath(int sx, int sy, int tx, int ty, int maxNodes)
+
+    EnvironmentalHazardRecord hazardAt(int x, int y) {
+        if (world == null || world.hazardWarnings == null) return null;
+        for (EnvironmentalHazardRecord h : world.hazardWarnings) if (h != null && h.x == x && h.y == y) return h;
+        return null;
+    }
+
+// ... omitted 89 non-method/source lines between cataloged methods ...
+
+    String projectileGlyphForWeapon(String weapon, boolean hit, int frame) {
+        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("melta") || w.contains("inferno")) return (frame % 3 == 0) ? "=0)" : (frame % 3 == 1 ? "=o)" : "==)" );
+        if (w.contains("las") || w.contains("laser")) return "~~~~";
+        if (w.contains("plasma")) return "~~O~";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "~Z~";
+        if (w.contains("chain") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw")) {
+            String[] spin = {"//", "--", "\\\\", "||"};
+            return spin[Math.floorMod(frame, spin.length)];
+        }
+        return hit ? "--~" : "-~.";
+    }
+
+    boolean weaponIsMeleeAnimation(String weapon) {
+        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
+        return !ItemCatalog.isFirearmLike(weapon) || w.contains("chain") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw") || w.contains("maul") || w.contains("hammer") || w.contains("club");
+    }
+
+// ... omitted 125 non-method/source lines between cataloged methods ...
+
+    void beginManualMovementPlan() {
+        if (world == null || screen != Screen.GAME) return;
+        manualMovementPlanActive = true;
+        Point approach = selectedInteractionApproachTile();
+        if (approach != null) {
+            updateMouseMovementPreviewTo(approach.x, approach.y);
+            manualMovementPlanActive = true;
+            logEvent("Movement target planning: approaching " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ". Confirm with Enter/E/Space, cancel with Escape.");
+            repaint();
+            return;
+        }
+        int tx = playerX;
+        int ty = playerY;
+        int dx = lastMoveDx == 0 && lastMoveDy == 0 ? 1 : lastMoveDx;
+        int dy = lastMoveDx == 0 && lastMoveDy == 0 ? 0 : lastMoveDy;
+        for (int i = 0; i < Math.max(1, movementModeRange()); i++) {
+            int nx = playerX + dx * (i + 1);
+            int ny = playerY + dy * (i + 1);
+            if (world.inBounds(nx, ny) && world.walkable(nx, ny)) { tx = nx; ty = ny; }
+            else break;
+        }
+        if (tx == playerX && ty == playerY) {
+            int[][] dirs = {{1,0},{0,1},{-1,0},{0,-1}};
+            for (int[] d : dirs) {
+                int nx = playerX + d[0], ny = playerY + d[1];
+                if (world.inBounds(nx, ny) && world.walkable(nx, ny)) { tx = nx; ty = ny; break; }
+            }
+        }
+        updateMouseMovementPreviewTo(tx, ty);
+        manualMovementPlanActive = true;
+        logEvent("Movement target planning: nudge with arrows or WASD, confirm with Enter/E/Space, cancel with Escape.");
+        repaint();
+    }
+
+    void nudgeManualMovementPlan(int dx, int dy) {
+        if (world == null || dx == 0 && dy == 0) return;
+        if (!manualMovementPlanActive) beginManualMovementPlan();
+        int baseX = mouseMoveTargetX >= 0 ? mouseMoveTargetX : playerX;
+        int baseY = mouseMoveTargetY >= 0 ? mouseMoveTargetY : playerY;
+        int tx = Math.max(0, Math.min(world.w - 1, baseX + dx));
+        int ty = Math.max(0, Math.min(world.h - 1, baseY + dy));
+        updateMouseMovementPreviewTo(tx, ty);
+        manualMovementPlanActive = true;
+        repaint();
+    }
+
+    void confirmManualMovementPlan() {
+        if (!manualMovementPlanActive) return;
+        executeMouseMovementPreview();
+    }
+
+    void cancelManualMovementPlan(String reason) {
+        clearMouseMovementPreview(reason);
+        logEvent("Movement target planning cancelled.");
+        repaint();
+    }
+
+// ... omitted 27 non-method/source lines between cataloged methods ...
+
+    Point selectedInteractionApproachTile() {
+        if (world == null || !world.inBounds(lookX, lookY)) return null;
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return null;
+        if (Math.abs(lookX - playerX) <= 1 && Math.abs(lookY - playerY) <= 1) return null;
+        ArrayList<Point> candidates = new ArrayList<>();
+        for (int dy=-1; dy<=1; dy++) for (int dx=-1; dx<=1; dx++) {
+            if (dx == 0 && dy == 0) continue;
+            int x = lookX + dx, y = lookY + dy;
+            if (!world.inBounds(x, y) || !world.walkable(x, y)) continue;
+            if (world.npcAt(x, y) != null) continue;
+            if (x == playerX && y == playerY) continue;
+            candidates.add(new Point(x, y));
+        }
+        Point best = null;
+        int bestScore = Integer.MAX_VALUE;
+        for (Point p : candidates) {
+            ArrayList<Point> path = findPreviewPath(playerX, playerY, p.x, p.y, 80);
+            if (path.isEmpty()) continue;
+            int score = path.size() * 10 + Math.abs(p.x - playerX) + Math.abs(p.y - playerY);
+            if (best == null || score < bestScore) { best = p; bestScore = score; }
+        }
+        return best;
+    }
+
+    boolean hasSelectedInteractionTarget(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return false;
+        if (world.npcAt(tx, ty) != null) return true;
+        if (baseObjectAt(tx, ty) != null) return true;
+        if (world.mapObjectAt(tx, ty) != null) return true;
+        char ch = world.tiles[tx][ty];
+        return isDoorTile(ch) || isIntermapTransitTile(ch) || isVendingMachine(ch) || isShrine(ch) || isEmergencyMachine(ch) || ch == 'Q' || ch == 'T';
+    }
+
+    String interactionTargetLabel(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "the selected target";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return npc.name;
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) return obj.name;
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) return mos.label == null || mos.label.isBlank() ? "fixture" : mos.label;
+        return describeTile(world.tiles[tx][ty]);
+    }
+
+    String interactionApproachStatusFor(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty) || !world.inBounds(lookX, lookY)) return "";
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return "";
+        if (Math.abs(tx - lookX) <= 1 && Math.abs(ty - lookY) <= 1 && !(tx == lookX && ty == lookY)) return "approach tile for " + interactionTargetLabel(lookX, lookY);
+        return "";
+    }
+
+    String directMovementTargetBlockReason(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "Movement target is outside the known map.";
+        if (tx == playerX && ty == playerY) return "Movement target is your current position.";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return "Destination occupied.";
+        if (!world.walkable(tx, ty)) {
+            char ch = world.tiles[tx][ty];
+            if (isDoorTile(ch) || ch == 'D') return "Door is closed.";
+            return "Path blocked.";
+        }
+        return null;
+    }
+
+    String movementPathHazardWarning(java.util.List<Point> path) {
+        if (path == null || path.isEmpty()) return "";
+        for (Point p : path) {
+            EnvironmentalHazardRecord h = hazardAt(p.x, p.y);
+            if (h != null) return "hazard ahead";
+        }
+        return "";
+    }
+
+    ArrayList<Point> findPreviewPath(int sx, int sy, int tx, int ty, int maxNodes) {
+        ArrayList<Point> empty = new ArrayList<>();
+        if (world == null || !world.inBounds(sx, sy) || !world.inBounds(tx, ty) || !world.walkable(tx, ty)) return empty;
+        int max = Math.max(4, maxNodes);
+        ArrayDeque<Point> q = new ArrayDeque<>();
+        HashMap<String, Point> prev = new HashMap<>();
+        Point start = new Point(sx, sy); q.add(start); prev.put(sx+","+sy, null);
+        int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1}}; int seen = 0;
+        while(!q.isEmpty() && seen++ < max*max) {
+            Point p = q.removeFirst();
+            if (p.x == tx && p.y == ty) break;
+            Arrays.sort(dirs, Comparator.comparingInt(d -> Math.abs((p.x + d[0]) - tx) + Math.abs((p.y + d[1]) - ty)));
+            for (int[] d: dirs) {
+                int nx = p.x + d[0], ny = p.y + d[1]; String key = nx + "," + ny;
+                if (!world.inBounds(nx, ny) || prev.containsKey(key) || !world.walkable(nx, ny)) continue;
+                if (world.npcAt(nx, ny) != null && !(nx == tx && ny == ty)) continue;
+                prev.put(key, p); q.addLast(new Point(nx, ny));
+            }
+        }
+        String target = tx + "," + ty;
+        if (!prev.containsKey(target)) return empty;
+        ArrayList<Point> rev = new ArrayList<>();
+        Point cur = new Point(tx, ty);
+        while(cur != null && !(cur.x == sx && cur.y == sy)) { rev.add(cur); cur = prev.get(cur.x + "," + cur.y); }
+        Collections.reverse(rev);
+        return rev;
+    }

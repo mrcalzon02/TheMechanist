@@ -1,0 +1,14 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_02_lines_01865_01867
+// Category: world_zone_sector
+// Source lines: 1865-1867
+// Method count: 1
+//
+// Methods in this fragment:
+// - selectedInteractionIsSectorRail :: lines 1865-1867 (3) :: boolean selectedInteractionIsSectorRail()
+
+    boolean selectedInteractionIsSectorRail() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'T' && world.zoneType == ZoneType.NEUTRAL_RAIL_DEPOT;
+    }

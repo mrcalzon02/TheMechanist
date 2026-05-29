@@ -1,0 +1,19 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: ui_04_lines_03010_03017
+// Category: ui
+// Source lines: 3010-3017
+// Method count: 1
+//
+// Methods in this fragment:
+// - openKnowledgeMenu :: lines 3010-3017 (8) :: void openKnowledgeMenu()
+
+    void openKnowledgeMenu() {
+        knowledgeReturnScreen = screen == null ? Screen.CHARACTER : screen;
+        if (knowledgeReturnScreen != Screen.CHARACTER && knowledgeReturnScreen != Screen.GAME && knowledgeReturnScreen != Screen.PANEL && knowledgeReturnScreen != Screen.MENU) knowledgeReturnScreen = Screen.CHARACTER;
+        selectedKnowledgeNodeId = null;
+        resetKnowledgeTreeView();
+        setScreen(Screen.KNOWLEDGE);
+        logEvent("Knowledge tree opened inside the main game UI.");
+    }

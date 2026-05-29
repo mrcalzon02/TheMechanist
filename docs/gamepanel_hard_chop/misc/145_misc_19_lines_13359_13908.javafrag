@@ -1,0 +1,294 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_19_lines_13359_13908
+// Category: misc
+// Source lines: 13359-13908
+// Method count: 8
+//
+// Methods in this fragment:
+// - survivalInfopediaLines :: lines 13359-13435 (77) :: java.util.List<String> survivalInfopediaLines(String entry)
+// - bodyInfopediaLines :: lines 13474-13514 (41) :: java.util.List<String> bodyInfopediaLines(String entry)
+// - medicalInfopediaLines :: lines 13516-13554 (39) :: java.util.List<String> medicalInfopediaLines(String entry)
+// - heatInfopediaLines :: lines 13556-13583 (28) :: java.util.List<String> heatInfopediaLines(String entry)
+// - xpInfopediaLines :: lines 13585-13615 (31) :: java.util.List<String> xpInfopediaLines(String entry)
+// - knowledgeReferenceLines :: lines 13617-13650 (34) :: java.util.List<String> knowledgeReferenceLines(String entry)
+// - showTimedAlert :: lines 13842-13847 (6) :: void showTimedAlert(String title, String body, int millis)
+// - scrollEulaGate :: lines 13902-13908 (7) :: void scrollEulaGate(int direction, boolean page)
+
+    java.util.List<String> survivalInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Calendar and Time":
+                lines.add("Calendar and action-time reference");
+                lines.add("Rule: 100 action turns equal one local hour; 26 hours make one day; 28 days make one month.");
+                lines.add("Current time: " + timeText() + ". The absolute turn counter remains the save/log authority while the visible clock translates it into survival time.");
+                break;
+            case "Food and Water":
+                lines.add("Food and water pressure reference");
+                lines.add("Current reserves: food " + food + "/15, water " + water + "/15.");
+                lines.add("One reserve is consumed every eight awake hours. Starvation/dehydration damage checks happen hourly only after a reserve reaches zero.");
+                lines.add("Food and water items restore reserves through inventory use and are now intended to preserve item provenance until consumption.");
+                break;
+            case "Sleep and Exhaustion":
+                lines.add("Sleep debt reference");
+                lines.add("Current sleep debt: " + (sleepNeed / TURNS_PER_HOUR) + " hour(s) of 26 before collapse risk.");
+                lines.add("Sleep debt grows by one hour per awake hour. Reaching 26 hours can cause exhaustion collapse and carried item loss.");
+                lines.add("Cots allow 1-8 hour sleep chunks; sleeping costs food/water by the sleep-cost rule and may reduce fatigue or wounds.");
+                break;
+            case "Stimulants and Recovery":
+                lines.add("Stimulant and short recovery reference");
+                lines.add("Coffee and stim items reduce immediate sleep debt or fatigue pressure, but repeated abuse creates stimulant strain and later backlash.");
+                lines.add("Current fatigue: " + fatigue + "; stimulant strain: " + stimulantStrain + ".");
+                lines.add("Design rule: stimulants buy time; they do not replace food, water, sleep, or actual medical work.");
+                break;
+            case "Look and Examine":
+                lines.add("Look and Examine reference");
+                lines.add("Look gives immediate visible context for the selected tile: tile identity, ownership, light/noise, stacked contents, obvious NPC or object detail, and whether deeper examination is useful.");
+                lines.add("Examine spends time to read the selected visible target more carefully. Repeating Examine on the same target within a few turns can reveal deeper threat, senses, condition, evidence, and interaction context.");
+                lines.add("Boundary: Examine reports known or observable reads. It should not reveal hidden identities, private contract state, or internal records unless the world has exposed them.");
+                break;
+            case "Movement Planning":
+                lines.add("Movement planning reference");
+                lines.add("PLAN MOVE lets the player choose a movement endpoint, preview the route, see hazards, and confirm instead of relying only on directional movement.");
+                lines.add("Movement mode changes range, time cost, noise, fatigue, and observation. The preview divides long routes into action chunks based on the current movement mode.");
+                lines.add("Current movement: " + movementModeLabel() + ", range " + movementModeRange() + ", cost " + movementTurnCost() + " turn(s) per tile.");
+                break;
+            case "Interaction Approach Planning":
+                lines.add("Interaction approach planning reference");
+                lines.add("When a selected interaction target is too far away, the interaction preflight can nominate a reachable adjacent approach tile.");
+                lines.add("Starting PLAN MOVE from that context prefers the approach tile and labels the preview as an approach path, helping with doors, NPCs, pets, containers, machines, vendors, and other exact-range targets.");
+                lines.add("If no approach tile is shown, the target may already be adjacent, blocked, unreachable, or not an interaction target.");
+                break;
+            case "Inventory and Transfer":
+                lines.add("Inventory and transfer reference");
+                lines.add("Item movement uses a shared preflight grammar: source, target, quantity, capacity, permission/access, quest/evidence protection, risk, and whether the move is reversible.");
+                lines.add("Carried load currently reads " + carryStatusText() + ". Overflow blocks purchase and recovery actions before the item moves.");
+                lines.add("Quest and evidence items are protected from ordinary sale so proof, delivery goods, journals, and active turn-in objects do not vanish through routine commerce.");
+                break;
+            case "Base Storage":
+                lines.add("Base storage reference");
+                lines.add("Claimed-base storage lets the player STASH the newest carried item and TAKE the newest stored item while standing inside the claimed room.");
+                lines.add("Storage reports access, capacity, quest protection, and risk categories such as weapons, suspicious tools, commerce goods, survival reserves, and medical reserves.");
+                lines.add("Current storage: " + baseStorage.size() + "/" + baseStorageCapacity() + " item(s). " + baseStorageRiskSummaryLine());
+                break;
+            case "Pet Care":
+                lines.add("Pet care reference");
+                lines.add("Companion animals expose ownership, adoption/sale context, hunger, thirst, rest, shelter, temperament, accessibility, and petting permission through Look and Examine.");
+                lines.add("Petting requires a companion animal, safe temperament, visibility, and adjacency. Non-pet animals explain why contact is blocked instead of pretending to be inert scenery.");
+                lines.add("Pet systems should feel like visible living systems, not hidden timers.");
+                break;
+            case "Context Prompts":
+                lines.add("Context prompt reference");
+                lines.add("Major panels show prompt lines using the current input binding label and the current context: ready actions are named, and blocked actions explain what is missing.");
+                lines.add("Examples include moving adjacent before confirming Interact, selecting an item before inventory actions, choosing a build tile before construction confirmation, and needing an active trader before trade confirmation.");
+                lines.add("Keyboard and controller prompts share abstract action names so rebinding and profile work can update prompts without rewriting every panel.");
+                break;
+            default:
+                lines.add("Survival failure-state reference");
+                lines.add("Failure comes from accumulated pressure: no food, no water, exhaustion, untreated wounds, bleeding, infection, or reckless stimulant use.");
+                lines.add("Current pressure summary: wounds " + wounds + ", fatigue " + fatigue + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", pain " + pain + ".");
+                lines.add("Design intent: survival should pressure long routes and bad decisions, not interrupt every few steps with petty meter chores.");
+                break;
+        }
+        return lines;
+    }
+
+// ... omitted 38 non-method/source lines between cataloged methods ...
+
+    java.util.List<String> bodyInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Body Overview":
+                lines.add("Body-state overview");
+                lines.add("Tracked parts include head, torso, hips, upper/lower arms, hands, fingers, upper/lower legs, and feet. Each part has local health derived from endurance.");
+                lines.add("Current body pressure: wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", pain " + pain + ".");
+                break;
+            case "Crippled Legs":
+                lines.add("Mobility injury reference");
+                lines.add("Crippled legs and feet increase movement time cost, turning injury into lost time and therefore into survival pressure.");
+                lines.add("Current crippled leg/foot count: " + crippledLegCount() + ".");
+                break;
+            case "Crippled Arms and Hands":
+                lines.add("Tool and weapon injury reference");
+                lines.add("Crippled arms, hands, and fingers penalize weapon and tool use. Severe arm damage can prevent carried weapon attacks.");
+                lines.add("Current crippled arm/hand count: " + crippledArmCount() + ".");
+                break;
+            case "Bleeding":
+                lines.add("Bleeding reference");
+                lines.add("Bleeding creates hourly wound/fatigue pressure until bandaged or treated.");
+                lines.add("Current bleeding: " + bleeding + ". Bandages and medicae supplies are the intended first answers.");
+                break;
+            case "Pain":
+                lines.add("Pain reference");
+                lines.add("Pain imposes action friction and decays slowly. Stimulants may keep the character upright but are not wound treatment.");
+                lines.add("Current pain: " + pain + ".");
+                break;
+            case "Infection Risk":
+                lines.add("Infection-risk reference");
+                lines.add("Infection risk can worsen if injuries are not treated with antiseptic or better medicae supplies.");
+                lines.add("Current infection risk: " + infectionRisk + ".");
+                break;
+            default:
+                lines.add("Incapacitation reference");
+                lines.add("Severe accumulated damage, body/head trauma, and exhaustion can push the character out of useful action.");
+                lines.add("Purpose: body systems make injury a continuing operational problem, not a single red number.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> medicalInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Medical Overview":
+                lines.add("Medical treatment overview");
+                lines.add("Medical play is divided between carried supplies, field stabilization, paid doctors/clinics, and later prosthetic or augmentic repair.");
+                lines.add("Current state: wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", fatigue " + fatigue + ", pain " + pain + ".");
+                break;
+            case "Bandages and Field Dressings":
+                lines.add("Bleeding-control reference");
+                lines.add("Bandages and field dressings reduce bleeding and one wound. They are the best first response after knives, claws, bullets, and poor decisions.");
+                break;
+            case "Medkits and Medicae Supplies":
+                lines.add("General medicae item reference");
+                lines.add("Medkits and medicae supplies provide stronger treatment: bleeding, wounds, infection risk, fatigue, pain, and the worst body part can all improve slightly.");
+                break;
+            case "Antiseptic":
+                lines.add("Infection-control reference");
+                lines.add("Antiseptic reduces infection risk without pretending to fix structural damage. Use it after dirty wounds, sewer work, or mutant unpleasantness.");
+                break;
+            case "Splints":
+                lines.add("Limb-stabilization reference");
+                lines.add("Splints stabilize the worst limb enough to reduce mobility/tool collapse, especially after leg or arm trauma.");
+                break;
+            case "Injectors":
+                lines.add("Injector reference");
+                lines.add("Injectors reduce fatigue and pain with minor wound relief. Useful, portable, and absolutely not a license to sprint through a gunfight twice.");
+                break;
+            case "Doctors and Clinics":
+                lines.add("Paid treatment reference");
+                lines.add("Doctors and clinics are the intended vendor/service path for deeper repair, prosthetics, augmentics, and high-quality medical work.");
+                break;
+            default:
+                lines.add("Prosthetics system reference");
+                lines.add("Reserved prosthetics should replace or augment damaged limbs through clinics, Mechanist Collegia service, rare parts, faction access, and cost.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> heatInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Heat and Suspicion Overview":
+                lines.add("Attention pressure overview");
+                lines.add("Current pressure: gang heat " + gangHeat + ", Civic Wardens suspicion " + suspicion + ". Heat is criminal/local danger; suspicion is procedural/legal attention.");
+                break;
+            case "Hourly Decay":
+                lines.add("Attention decay reference");
+                lines.add("Once each 100-turn hour, heat and suspicion decay by 1 while awake. Sleeping counts as laying low and decays each by 2 per hour.");
+                lines.add("If no base is claimed, suspicion receives one extra hourly decay point because the character is not leaving a stable property trail yet.");
+                break;
+            case "Heat Sources":
+                lines.add("Gang heat source reference");
+                lines.add("Heat rises from criminal violence, gang spaces, failed illegal work, noisy construction, obvious theft, hostile attention, and reckless underhive behavior.");
+                break;
+            case "Suspicion Sources":
+                lines.add("Civic Wardens suspicion source reference");
+                lines.add("Suspicion rises from law attention, illegal shrine/vending/security interactions, visible contraband work, official failures, and poor disguise outcomes.");
+                break;
+            default:
+                lines.add("Attention avoidance reference");
+                lines.add("Laying low, sleeping, lawful permits, better disguise behavior, and avoiding noisy crimes reduce pressure or prevent new pressure.");
+                lines.add("Security and barricades improve raid defense but may also make a base more visible as an organized operation.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> xpInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "XP Overview":
+                lines.add("Experience and knowledge-credit overview");
+                lines.add("Current XP: " + xp + ". Knowledge credits: " + knowledgeCredits + ". One knowledge credit is awarded for each 25 XP band crossed.");
+                lines.add("XP measures practice; knowledge credits buy or unlock doctrine entries where the design needs explicit permissions.");
+                break;
+            case "Task XP":
+                lines.add("General task XP reference");
+                lines.add("Actions award small visible amounts through RECENT ACTIONS. Failed attempts still teach something; success teaches more.");
+                break;
+            case "Combat XP":
+                lines.add("Combat XP reference");
+                lines.add("Misses award 1 XP; hits award about 3 XP; incapacitating a hostile rewards more once the strike lands.");
+                break;
+            case "Scavenge XP":
+                lines.add("Scavenge XP reference");
+                lines.add("Failed scrounging grants 1 XP; finding useful loot grants 2 XP. Targeted searches use the same feedback path.");
+                break;
+            case "Trade XP":
+                lines.add("Commerce XP reference");
+                lines.add("Buying, selling, and especially successful haggle attempts award Commerce XP. Trade XP supports the business/faction economy path.");
+                break;
+            default:
+                lines.add("Construction XP reference");
+                lines.add("Successful base construction awards Mechanics XP. Later fabrication, maintenance, and machine repair should use this same path.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> knowledgeReferenceLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Knowledge Overview":
+                lines.add("Knowledge system overview");
+                lines.add("Knowledge is the permission layer for recipes, machines, services, business paths, faction work, and conversation options.");
+                lines.add("Current XP: " + xp + ". Spendable knowledge credits: " + knowledgeCredits + ". Credits come from XP bands and some research/contract paths.");
+                lines.add("Design split: stats are aptitude, XP is practice, and knowledge is explicit doctrine or access.");
+                break;
+            case "Known Knowledge":
+                lines.add("Known doctrine ledger");
+                lines.add("Scope: lists what this save already knows; it is not the purchase rules and not the system overview.");
+                lines.addAll(knownKnowledgeLines());
+                lines.add("Known entries should gate visible recipes, machine actions, services, conversations, and actor permissions.");
+                break;
+            case "Purchasing Knowledge":
+                lines.add("Knowledge purchase reference");
+                lines.add("Scope: explains spending knowledge credits from this tab. It deliberately does not list every known doctrine.");
+                lines.add("Spendable knowledge credits: " + knowledgeCredits + ". Knowledge purchases now belong to the Character Dossier Knowledge Tree, not this reference tab.");
+                lines.add("Later purchases may also require faction standing, tutors, books, data slates, rare items, or legal access.");
+                break;
+            case "Training Sources":
+                lines.add("Training and discovery source reference");
+                lines.add("Knowledge may come from XP bands, trainers, traders, data slates, shrines, libraries, Micro Labs, faction services, contracts, and item study.");
+                lines.add("Current discovered doctrine count: " + unlockedKnowledges.size() + ".");
+                break;
+            default:
+                lines.add("Knowledge system reference");
+                lines.add("Current integrations already gate EMM builds, production recipes, recruit berthing, labor discipline, commerce, and quality/faction production paths.");
+                lines.add("Next integrations should move actor permissions, business management, recruit-operated machines, contracts, and faction production through the same knowledge authority.");
+                break;
+        }
+        return lines;
+    }
+
+// ... omitted 191 non-method/source lines between cataloged methods ...
+
+    void showTimedAlert(String title, String body, int millis) {
+        alertTitle = title == null ? "" : title;
+        alertBody = body == null ? "" : body;
+        alertUntilMillis = System.currentTimeMillis() + Math.max(750, millis);
+        DebugLog.audit("UI_ALERT", alertTitle + " :: " + alertBody);
+    }
+
+// ... omitted 54 non-method/source lines between cataloged methods ...
+
+    void scrollEulaGate(int direction, boolean page) {
+        int d = Integer.compare(direction, 0);
+        if (d == 0) return;
+        int step = page ? 8 : 3;
+        eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + d * step));
+        repaint();
+    }

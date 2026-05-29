@@ -1,0 +1,59 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: ui_12_lines_20145_20625
+// Category: ui
+// Source lines: 20145-20625
+// Method count: 5
+//
+// Methods in this fragment:
+// - adjustScreenShake :: lines 20145-20150 (6) :: void adjustScreenShake(int delta)
+// - pushCurrentScreenNarration :: lines 20152-20158 (7) :: void pushCurrentScreenNarration()
+// - buttonIsModalInteractive :: lines 20599-20604 (6) :: boolean buttonIsModalInteractive(ButtonBox b)
+// - activeHoverButtonIndex :: lines 20606-20616 (11) :: int activeHoverButtonIndex()
+// - activateSelectedButton :: lines 20618-20625 (8) :: void activateSelectedButton()
+
+    void adjustScreenShake(int delta) {
+        options.screenShakePercent = Math.max(0, Math.min(100, options.screenShakePercent + delta));
+        options.save();
+        logEvent("Screen shake intensity now " + options.screenShakePercent + "%.");
+        repaint();
+    }
+
+    void pushCurrentScreenNarration() {
+        String next = "The Mechanist screen: " + screen + (panelMode == PanelMode.NONE ? "" : ", panel " + panelMode) + (world == null ? "" : ", zone " + world.zoneType.label + ", turn " + turn) + ".";
+        AccessibilityCompatibilityAuthority.pushNarration(this, lastAccessibleNarration, next);
+        lastAccessibleNarration = next;
+        logEvent("Accessibility narration updated for current screen.");
+        repaint();
+    }
+
+// ... omitted 440 non-method/source lines between cataloged methods ...
+
+    boolean buttonIsModalInteractive(ButtonBox b) {
+        if (b == null) return false;
+        if (screen == Screen.OPTIONS && graphicsDropdown >= 0) return isGraphicsDropdownButton(b);
+        if (screen == Screen.SECTOR_AUDIT && auditZoneDropdownOpen) return isZoneAuditDropdownButton(b) || (b.label != null && b.label.startsWith("ZONE:"));
+        return true;
+    }
+
+    int activeHoverButtonIndex() {
+        if (mouseX < 0 || mouseY < 0) return -1;
+        // Topmost buttons win. When a dropdown is open it is modal for hover and
+        // help text as well as clicks, so obscured controls underneath cannot glow.
+        for (int i=buttons.size()-1; i>=0; i--) {
+            ButtonBox b = buttons.get(i);
+            if (!buttonIsModalInteractive(b)) continue;
+            if (b.contains(mouseX, mouseY)) return i;
+        }
+        return -1;
+    }
+
+    void activateSelectedButton() {
+        if (!buttons.isEmpty() && selectedButton >=0 && selectedButton < buttons.size()) {
+            ButtonBox b = buttons.get(selectedButton);
+            if (!buttonIsModalInteractive(b)) { sounds.play("panelClose", options); return; }
+            sounds.play("button", options);
+            runGuarded("BUTTON", "activate selected button " + b.label, b.action);
+        }
+    }

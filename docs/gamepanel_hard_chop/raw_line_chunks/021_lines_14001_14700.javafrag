@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 14001-14700
+
+            return;
+        }
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); g.setFont(titleFont.deriveFont(34f));
+        String glyph = "?";
+        if(tab==0) glyph="Z"; else if(tab==1) glyph="R"; else if(tab==2) glyph="I"; else if(tab==3) glyph="W"; else if(tab==4) glyph="S"; else if(tab==5) glyph="C"; else if(tab==6) glyph="B"; else if(tab==7) glyph="M"; else if(tab==8) glyph="N"; else glyph="F";
+        center(g,glyph,x+w/2,y+h/2+10);
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM)); center(g,"reference icon",x+w/2,y+h-18);
+    }
+
+    void drawSemanticAssetInfopediaIcon(Graphics2D g, int x, int y, int w, int h, String entry) {
+        java.util.Optional<AssetMetadata> meta = SemanticAssetInfopediaAuthority.metadataForEntry(AssetManager.registry(), entry);
+        if (meta.isEmpty()) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            g.setFont(smallFont);
+            center(g, "asset index", x + w/2, y + h/2 - 8);
+            center(g, "select an asset ID", x + w/2, y + h/2 + 12);
+            return;
+        }
+        ImageIcon icon = AssetManager.getAsset(meta.get().id());
+        Image image = icon == null ? null : icon.getImage();
+        int ix = x + 14, iy = y + 14, iw = w - 28, ih = h - 44;
+        g.setColor(new Color(4,5,5,245));
+        g.fillRect(ix, iy, iw, ih);
+        g.setColor(new Color(115,96,58));
+        g.drawRect(ix, iy, iw, ih);
+        if (image != null) {
+            int srcW = Math.max(1, icon.getIconWidth());
+            int srcH = Math.max(1, icon.getIconHeight());
+            double scale = Math.min((double)(iw - 8) / srcW, (double)(ih - 8) / srcH);
+            int dw = Math.max(1, (int)Math.round(srcW * scale));
+            int dh = Math.max(1, (int)Math.round(srcH * scale));
+            int dx = ix + (iw - dw) / 2;
+            int dy = iy + (ih - dh) / 2;
+            g.drawImage(image, dx, dy, dw, dh, null);
+        } else {
+            g.setFont(titleFont.deriveFont(28f));
+            g.setColor(new Color(205,80,70));
+            center(g, "?", x + w/2, y + h/2);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, meta.get().id(), x + w/2, y + h - 18);
+    }
+
+    void drawTileInfopediaIcon(Graphics2D g, int x, int y, int w, int h, String entry) {
+        TileInfopediaAuthority.Entry e = TileInfopediaAuthority.find(entry);
+        if (e == null || TileInfopediaAuthority.isHeader(entry)) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            g.setFont(smallFont);
+            center(g, "tile family", x + w/2, y + h/2);
+            return;
+        }
+        int cells = Math.max(1, Math.min(5, e.aliases.length));
+        int pad = 14;
+        int cell = Math.max(22, Math.min((w - pad*2 - (cells-1)*5) / cells, h - 48));
+        int totalW = cells * cell + (cells-1)*5;
+        int xx = x + (w - totalW) / 2;
+        int yy = y + 22;
+        for (int i=0; i<cells; i++) {
+            BufferedImage img = images == null ? null : images.getTile(e.aliases[i], e.glyph == null ? '?' : e.glyph.charValue());
+            g.setColor(new Color(4,5,5,240));
+            g.fillRect(xx + i*(cell+5), yy, cell, cell);
+            g.setColor(new Color(115,96,58));
+            g.drawRect(xx + i*(cell+5), yy, cell, cell);
+            if (img != null) {
+                g.drawImage(img, xx + i*(cell+5)+2, yy+2, cell-4, cell-4, null);
+            } else {
+                g.setFont(smallFont);
+                g.setColor(new Color(205,80,70));
+                center(g, "?", xx + i*(cell+5)+cell/2, yy + cell/2 + 5);
+            }
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String label = e.primaryAlias() == null ? e.label : e.primaryAlias();
+        center(g, GuiLayoutApi.fitLabel(label, g.getFontMetrics(), w-20), x + w/2, y + h - 18);
+    }
+
+
+    void clampButtonsToVisibleMenuBounds() {
+        int W = getWidth(), H = getHeight();
+        Rectangle screenSafe = new Rectangle(12, 12, Math.max(1, W - 24), Math.max(1, H - 24));
+        Rectangle optionPanelSafe = optionPanelInnerSafeRect();
+        Rectangle commandSafe = commandPanelInnerSafeRect();
+        Rectangle inventoryActionSafe = inventoryActionInnerSafeRect();
+        Rectangle worldSetupActionSafe = worldSetupActionInnerSafeRect();
+        Rectangle saveLoadSafe = saveLoadButtonSafeRect();
+
+        for (ButtonBox b : buttons) {
+            Rectangle safe = screenSafe;
+            if (screen == Screen.OPTIONS && b.label != null && !b.label.equals("BACK")) safe = isGraphicsDropdownButton(b) ? graphicsDropdownInnerRect() : optionPanelSafe;
+            else if (screen == Screen.WORLD_SETUP && b.label != null && !b.label.equals("BACK")) safe = b.label.equals("GENERATE WORLD") ? worldSetupGenerateInnerSafeRect() : worldSetupActionSafe;
+            else if (isCommandSurfaceButton(b)) safe = commandSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && isInventoryActionButton(b)) safe = inventoryActionSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.SAVELOAD && b.label != null && !b.label.equals("BACK")) safe = saveLoadSafe;
+            fitButtonInto(b, safe);
+        }
+
+        if (screen == Screen.GAME) {
+            java.util.List<ButtonBox> group = commandSurfaceButtons();
+            flowButtonGroup(group, commandSafe, 1);
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY) {
+            java.util.List<ButtonBox> group = inventoryActionButtons();
+            flowButtonGroup(group, inventoryActionSafe, 1);
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.SAVELOAD) {
+            flowSaveLoadButtons();
+        } else if (screen == Screen.PANEL && panelUsesCommandSurface()) {
+            java.util.List<ButtonBox> group = commandSurfaceButtons();
+            int cols = group.size() > 14 || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH ? 2 : 1;
+            flowButtonGroup(group, commandSafe, cols);
+        } else if (screen == Screen.OPTIONS) {
+            flowOptionsButtons(optionPanelSafe);
+        } else if (screen == Screen.WORLD_SETUP) {
+            java.util.List<ButtonBox> actionGroup = new ArrayList<>();
+            for (ButtonBox b : buttons) if (b.label != null && !b.label.equals("BACK") && !b.label.equals("GENERATE WORLD")) actionGroup.add(b);
+            flowButtonGroup(actionGroup, worldSetupActionSafe, 2);
+            Rectangle genSafe = worldSetupGenerateInnerSafeRect();
+            for (ButtonBox b : buttons) if (b.label != null && b.label.equals("GENERATE WORLD")) { b.r = new Rectangle(genSafe.x, genSafe.y, genSafe.width, Math.max(22, Math.min(30, genSafe.height))); }
+        }
+
+        for (ButtonBox b : buttons) {
+            Rectangle safe = screenSafe;
+            if (screen == Screen.OPTIONS && b.label != null && !b.label.equals("BACK")) safe = isGraphicsDropdownButton(b) ? graphicsDropdownInnerRect() : optionPanelSafe;
+            else if (screen == Screen.WORLD_SETUP && b.label != null && !b.label.equals("BACK")) safe = b.label.equals("GENERATE WORLD") ? worldSetupGenerateInnerSafeRect() : worldSetupActionSafe;
+            else if (isCommandSurfaceButton(b)) safe = commandSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && isInventoryActionButton(b)) safe = inventoryActionSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.SAVELOAD && b.label != null && !b.label.equals("BACK")) safe = saveLoadSafe;
+            fitButtonInto(b, safe);
+        }
+    }
+
+
+    void applySemanticButtonIcons() {
+        if (buttons == null || buttons.isEmpty()) return;
+        if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH)) {
+            for (ButtonBox b : buttons) {
+                if (b == null || b.label == null || "BACK".equals(b.label)) continue;
+                if (b.label.startsWith("DEF INFO") || b.label.startsWith("VALIDATE") || b.label.startsWith("CLAIM") || b.label.startsWith("STASH") || b.label.startsWith("TAKE") || b.label.startsWith("DRINK") || b.label.startsWith("SECURITY")) continue;
+                BufferedImage icon = ObjectSemanticAssetAuthority.imageForAssetId(ObjectSemanticAssetAuthority.assetIdForName(b.label));
+                if (icon != null) b.icon = icon;
+                if (b.tip != null && !b.tip.contains("Semantic object asset:")) b.tip = b.tip + " " + ObjectSemanticAssetAuthority.semanticSummaryForName(b.label);
+            }
+        } else if (screen == Screen.EDITOR) {
+            String category = inGameEditorPaletteCategory();
+            for (ButtonBox b : buttons) {
+                if (b == null || b.label == null) continue;
+                String clean = b.label.replace("▶", "").trim();
+                if (clean.isBlank() || clean.equals("BACK") || clean.startsWith("NEW") || clean.equals("UNDO") || clean.equals("REDO") || clean.startsWith("HELP")) continue;
+                String id = ObjectSemanticAssetAuthority.assetIdForEditorPalette(category, clean);
+                BufferedImage icon = ObjectSemanticAssetAuthority.imageForAssetId(id);
+                if (icon != null) b.icon = icon;
+                if (b.tip != null && !b.tip.contains("assetId=")) b.tip = b.tip + " assetId=" + id + ".";
+            }
+        }
+    }
+
+    void assignButtonDebugIds() {
+        for (int i=0; i<buttons.size(); i++) {
+            ButtonBox b = buttons.get(i);
+            if (b != null) b.uiDebugId = i + 1;
+        }
+    }
+
+    void stampUiFrameId(Graphics2D g, String prefix, String label, int x, int y, int w, int h) {
+        if (g == null || w < 28 || h < 18) return;
+        String safePrefix = prefix == null ? "F" : prefix;
+        int hash = Math.abs(Objects.hash(safePrefix, label, x/3, y/3, w/3, h/3, screen, panelMode)) % 10000;
+        String id = safePrefix + String.format(Locale.US, "%04d", hash);
+        Font oldFont = g.getFont();
+        Color oldColor = g.getColor();
+        g.setFont(new Font("Monospaced", Font.BOLD, 9));
+        FontMetrics fm = g.getFontMetrics();
+        int tw = fm.stringWidth(id);
+        int bx = Math.max(x + 2, x + w - tw - 6);
+        int by = y + 3;
+        g.setColor(new Color(0,0,0,188));
+        g.fillRect(bx - 2, by, tw + 4, fm.getHeight() + 1);
+        g.setColor(new Color(245,220,130));
+        g.drawString(id, bx, by + fm.getAscent());
+        g.setFont(oldFont);
+        g.setColor(oldColor);
+    }
+
+    Rectangle worldSetupGenerateInnerSafeRect() {
+        int w = getWidth(), h = getHeight();
+        int margin = Math.max(34, w / 22);
+        int top = Math.max(122, h / 5);
+        int gap = Math.max(14, w / 55);
+        int totalW = w - margin * 2;
+        int infoW = Math.max(360, (int)(totalW * 0.58));
+        int buttonX = margin + infoW + gap;
+        int buttonW = Math.max(190, w - buttonX - margin);
+        return new Rectangle(buttonX + 14, top + 40, Math.max(1, buttonW - 28), 34);
+    }
+
+    Rectangle optionPanelInnerSafeRect() {
+        int W = getWidth(), H = getHeight();
+        int panelX = Math.max(34, W/2 - Math.min(620, W/2 - 34));
+        int panelY = Math.max(34, H / 22);
+        int panelW = Math.min(W - panelX * 2, Math.max(980, W - 90));
+        int panelH = Math.max(430, H - panelY - 64);
+        return new Rectangle(panelX + 36, panelY + 36, Math.max(1, panelW - 72), Math.max(1, panelH - 84));
+    }
+
+    Rectangle optionTabSafeRect() {
+        int W = getWidth(), H = getHeight();
+        int panelX = Math.max(34, W/2 - Math.min(620, W/2 - 34));
+        int panelY = Math.max(34, H / 22);
+        int panelW = Math.min(W - panelX * 2, Math.max(980, W - 90));
+        return new Rectangle(panelX + 44, panelY + 38, Math.max(1, panelW - 88), Math.max(22, Math.min(30, scaled(30))));
+    }
+
+    Rectangle optionControlInnerSafeRect() {
+        int W = getWidth(), H = getHeight();
+        int panelX = Math.max(34, W/2 - Math.min(620, W/2 - 34));
+        int panelY = Math.max(34, H / 22);
+        int panelW = Math.min(W - panelX * 2, Math.max(980, W - 90));
+        int panelH = Math.max(430, H - panelY - 64);
+        int controlsBoxX = panelX + 44;
+        int controlsBoxY = panelY + 108;
+        int controlsBoxW = panelW - 88;
+        int controlsBoxH = Math.max(116, Math.min(188, panelH / 4));
+        return new Rectangle(controlsBoxX + 12, controlsBoxY + 12, Math.max(1, controlsBoxW - 24), Math.max(1, controlsBoxH - 24));
+    }
+
+    Rectangle graphicsDropdownOuterRect() {
+        if (screen != Screen.OPTIONS || graphicsDropdown < 0 || (optionsTab != 0 && optionsTab != 1 && optionsTab != 4)) return new Rectangle(0,0,0,0);
+        int w = getWidth(), h = getHeight();
+        Rectangle optionSafe = optionControlInnerSafeRect();
+        int requestedCols = optionsTab == 7 ? 4 : 3;
+        int colGap = Math.max(6, GuiLayoutApi.columnGap(uiScaleFactor()) - 4);
+        int bw = Math.max(104, (optionSafe.width - colGap * (requestedCols - 1)) / requestedCols);
+        int gap = bw + colGap;
+        int y = optionSafe.y;
+        int itemCount;
+        int x;
+        int ddY;
+        int ddW;
+        if (graphicsDropdown == 0) {
+            itemCount = 3; x = optionSafe.x; ddY = y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 1) {
+            itemCount = Math.min(DisplayResolutionAuthority.choiceCount(), Math.max(8, Math.min(14, optionSafe.height / Math.max(22, scaled(26))))); x = optionSafe.x + gap; ddY = y + Math.max(24, Math.min(34, optionSafe.height / 6)); ddW = bw * 2 + colGap;
+        } else if (graphicsDropdown == 2) {
+            itemCount = GameOptions.PALETTE_NAMES.length; x = optionSafe.x + gap; ddY = optionsTab == 4 ? y + scaled(198) : y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 3) {
+            itemCount = GameOptions.DOWNSCALE_LABELS.length; x = optionSafe.x; ddY = y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 4) {
+            itemCount = GameOptions.TARGET_FPS_LABELS.length; x = optionSafe.x + gap; ddY = y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 5) {
+            itemCount = GameOptions.RENDER_QUALITY_LABELS.length; x = optionSafe.x + gap*2; ddY = y + scaled(42); ddW = bw;
+        } else return new Rectangle(0,0,0,0);
+        int rowH = Math.max(26, scaled(30));
+        int ddH = Math.max(rowH + 18, 18 + itemCount * rowH + Math.max(0, itemCount - 1) * scaled(4));
+        Rectangle controls = optionControlInnerSafeRect();
+        int maxBottom = Math.max(controls.y + controls.height + 24, getHeight() - 76);
+        if (ddY + ddH > maxBottom) ddY = Math.max(controls.y, maxBottom - ddH);
+        int minX = Math.max(24, optionPanelInnerSafeRect().x);
+        int maxX = Math.max(minX, optionPanelInnerSafeRect().x + optionPanelInnerSafeRect().width - ddW);
+        x = Math.max(minX, Math.min(x, maxX));
+        return new Rectangle(x, ddY, Math.max(120, ddW), ddH);
+    }
+
+    Rectangle graphicsDropdownInnerRect() {
+        Rectangle r = graphicsDropdownOuterRect();
+        return new Rectangle(r.x + 9, r.y + 9, Math.max(1, r.width - 18), Math.max(1, r.height - 18));
+    }
+
+    Rectangle commandPanelInnerSafeRect() {
+        Rectangle cmd = commandPanelRect();
+        return new Rectangle(cmd.x + 14, cmd.y + 52, Math.max(1, cmd.width - 28), Math.max(1, cmd.height - 66));
+    }
+
+    Rectangle worldSetupActionInnerSafeRect() {
+        int w = getWidth(), h = getHeight();
+        int margin = Math.max(34, w / 22);
+        int top = Math.max(122, h / 5);
+        int gap = Math.max(14, w / 55);
+        int totalW = w - margin * 2;
+        int infoW = Math.max(360, (int)(totalW * 0.58));
+        int buttonX = margin + infoW + gap;
+        int buttonW = Math.max(190, w - buttonX - margin);
+        int panelH = Math.max(310, h - top - 92);
+        int y = top + 142;
+        int bottom = top + panelH - 14;
+        return new Rectangle(buttonX + 14, y, Math.max(1, buttonW - 28), Math.max(1, bottom - y));
+    }
+
+    Rectangle inventoryActionInnerSafeRect() {
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(36, W/2 - Math.min(880, W-72)/2);
+        int y=Math.max(68, H/2 - Math.min(440, H-110)/2);
+        int w=Math.min(880, W - x*2);
+        int h=Math.min(440, H - y - 54);
+        int gap=Math.max(12, scaled(12));
+        int top=y+128;
+        int bottomBoxH=Math.max(78, Math.min(108, h/4));
+        int colH=Math.max(110, h - (top-y) - bottomBoxH - 26);
+        int actionW=Math.max(150, Math.min(210, w/4));
+        int invW=Math.max(180, (w - 52 - actionW - gap*2)/2);
+        int targetW=Math.max(180, w - 52 - actionW - gap*2 - invW);
+        int actionX=x+24+invW+gap+targetW+gap;
+        return new Rectangle(actionX + 12, top + 50, Math.max(1, actionW - 24), Math.max(1, colH - 62));
+    }
+
+    boolean panelUsesCommandSurface() {
+        return panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT || panelMode == PanelMode.SCAVENGE || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH || panelMode == PanelMode.BASES || panelMode == PanelMode.TRADE;
+    }
+
+    boolean isCommandSurfaceButton(ButtonBox b) {
+        if (b == null || b.label == null || b.label.equals("BACK")) return false;
+        // Phase 4 containment rule: command-surface membership is semantic, not
+        // geometric. Several older panels originally placed their buttons beside or
+        // below the command tablet and then expected later code to corral them. If
+        // we decide membership by rectangle intersection, those off-frame buttons
+        // are never reclaimed and can spill down the screen.
+        return screen == Screen.GAME || (screen == Screen.PANEL && panelUsesCommandSurface());
+    }
+
+    java.util.List<ButtonBox> commandSurfaceButtons() {
+        ArrayList<ButtonBox> out = new ArrayList<>();
+        for (ButtonBox b : buttons) if (isCommandSurfaceButton(b)) out.add(b);
+        out.sort(Comparator.comparingInt((ButtonBox b) -> b.r.y).thenComparingInt(b -> b.r.x));
+        return out;
+    }
+
+    boolean isInventoryActionButton(ButtonBox b) {
+        if (b == null || b.label == null) return false;
+        String l = b.label;
+        return l.equals("USE / EQUIP") || l.equals("TAKE TARGET") || l.equals("TAKE ALL") || l.equals("DROP ONE") || l.equals("INSPECT") || l.equals("THROW LIGHT");
+    }
+
+    java.util.List<ButtonBox> inventoryActionButtons() {
+        ArrayList<ButtonBox> out = new ArrayList<>();
+        for (ButtonBox b : buttons) if (isInventoryActionButton(b)) out.add(b);
+        return out;
+    }
+
+    java.util.List<ButtonBox> buttonsInside(Rectangle safe, boolean excludeBack) {
+        ArrayList<ButtonBox> out = new ArrayList<>();
+        for (ButtonBox b : buttons) if (b != null && b.r.intersects(safe) && (!excludeBack || (b.label != null && !b.label.equals("BACK")))) out.add(b);
+        out.sort(Comparator.comparingInt((ButtonBox b) -> b.r.y).thenComparingInt(b -> b.r.x));
+        return out;
+    }
+
+    void fitButtonInto(ButtonBox b, Rectangle safe) {
+        if (b == null || safe == null) return;
+        b.r.width = Math.max(26, Math.min(b.r.width, safe.width));
+        b.r.height = Math.max(16, Math.min(b.r.height, safe.height));
+        if (b.r.x < safe.x) b.r.x = safe.x;
+        if (b.r.y < safe.y) b.r.y = safe.y;
+        if (b.r.x + b.r.width > safe.x + safe.width) b.r.x = safe.x + safe.width - b.r.width;
+        if (b.r.y + b.r.height > safe.y + safe.height) b.r.y = safe.y + safe.height - b.r.height;
+    }
+
+    void flowButtonGroup(java.util.List<ButtonBox> group, Rectangle safe, int requestedCols) {
+        if (group == null || group.isEmpty() || safe == null) return;
+        int cols = Math.max(1, Math.min(Math.max(1, requestedCols), Math.max(1, group.size())));
+        int rows = (int)Math.ceil(group.size() / (double)cols);
+        int gap = Math.max(3, Math.min(6, scaled(5)));
+        int colW = Math.max(34, (safe.width - gap * (cols - 1)) / cols);
+        int bh = Math.max(16, Math.min(28, (safe.height - gap * Math.max(0, rows - 1)) / Math.max(1, rows)));
+        for (int i=0; i<group.size(); i++) {
+            ButtonBox b = group.get(i);
+            int col = i % cols;
+            int row = i / cols;
+            b.r.x = safe.x + col * (colW + gap);
+            b.r.y = safe.y + row * (bh + gap);
+            b.r.width = colW;
+            b.r.height = bh;
+            fitButtonInto(b, safe);
+        }
+    }
+
+    void flowOptionsButtons(Rectangle safe) {
+        if (safe == null) return;
+        ArrayList<ButtonBox> tabs = new ArrayList<>();
+        ArrayList<ButtonBox> content = new ArrayList<>();
+        for (ButtonBox b : buttons) {
+            if (b.label == null || b.label.equals("BACK")) continue;
+            if (b.label.equals("DISPLAY") || b.label.equals("TEXT") || b.label.equals("SOUND") || b.label.equals("CONTROLS") || b.label.equals("GRAPHICS") || b.label.equals("JVM") || b.label.equals("ACCESS") || b.label.equals("QOL")) tabs.add(b);
+            else if (!isGraphicsDropdownButton(b)) content.add(b);
+        }
+        Rectangle tabSafe = optionTabSafeRect();
+        if (!tabs.isEmpty()) flowButtonGroup(tabs, tabSafe, Math.min(8, tabs.size()));
+        Rectangle contentSafe = optionControlInnerSafeRect();
+        int cols = optionsTab == 7 ? 4 : (content.size() > 8 ? 3 : (content.size() > 4 ? 2 : 1));
+        flowButtonGroup(content, contentSafe, cols);
+        if (graphicsDropdown >= 0) {
+            Rectangle ddSafe = graphicsDropdownInnerRect();
+            ArrayList<ButtonBox> dd = new ArrayList<>();
+            for (ButtonBox b : buttons) if (isGraphicsDropdownButton(b)) dd.add(b);
+            flowButtonGroup(dd, ddSafe, 1);
+        }
+    }
+
+
+    static final class SaveLoadUiRects {
+        final Rectangle outer, info, manual, auto;
+        SaveLoadUiRects(Rectangle outer, Rectangle info, Rectangle manual, Rectangle auto) { this.outer=outer; this.info=info; this.manual=manual; this.auto=auto; }
+    }
+
+    SaveLoadUiRects saveLoadUiRects() {
+        Rectangle modal = uiLayout().modal;
+        int x = Math.max(36, modal.x), y = Math.max(56, modal.y - 8);
+        int w = Math.min(getWidth() - x*2, modal.width), h = Math.min(getHeight() - y - 40, modal.height + 30);
+        int infoH = Math.max(72, h/4);
+        Rectangle info = new Rectangle(x+28, y+58, Math.max(1, w-56), infoH);
+        int listsY = y + 58 + infoH + 14;
+        int listsH = Math.max(100, h - (listsY - y) - 44);
+        int gap = 24;
+        int colW = Math.max(120, (w - 72 - gap) / 2);
+        int mx = x + 28, ax = mx + colW + gap;
+        return new SaveLoadUiRects(new Rectangle(x,y,w,h), info, new Rectangle(mx, listsY, colW, listsH), new Rectangle(ax, listsY, colW, listsH));
+    }
+
+    Rectangle saveLoadButtonSafeRect() {
+        SaveLoadUiRects sl = saveLoadUiRects();
+        return sl.outer == null ? new Rectangle(0,0,1,1) : new Rectangle(sl.outer.x + 18, sl.outer.y + 18, Math.max(1, sl.outer.width - 36), Math.max(1, sl.outer.height - 36));
+    }
+
+    void flowSaveLoadButtons() {
+        SaveLoadUiRects sl = saveLoadUiRects();
+        if (sl == null) return;
+        int rowGap = Math.max(4, scaled(4));
+        int topButtonH = Math.max(18, Math.min(24, sl.manual.height / 10));
+        int topButtonW = Math.max(104, Math.min(184, sl.manual.width / 4));
+        int topY = sl.manual.y + 44;
+        int rowStart = sl.manual.y + 84;
+        int manualAvailable = Math.max(72, sl.manual.y + sl.manual.height - 18 - rowStart);
+        int rowH = Math.max(18, Math.min(26, (manualAvailable - rowGap * Math.max(0, SAVE_SLOT_COUNT - 1)) / Math.max(1, SAVE_SLOT_COUNT)));
+        int loadW = Math.max(92, Math.min(160, sl.manual.width / 5));
+        int saveW = Math.max(76, Math.min(130, sl.manual.width / 6));
+        int saveX = sl.manual.x + sl.manual.width - 14 - saveW;
+        int loadX = Math.max(sl.manual.x + 14, saveX - 8 - loadW);
+        int autoAvailable = Math.max(90, sl.auto.y + sl.auto.height - 18 - rowStart);
+        int autoRowH = Math.max(18, Math.min(26, (autoAvailable - rowGap * 4) / 5));
+        int autoButtonW = Math.max(112, Math.min(190, sl.auto.width / 3));
+        int autoButtonX = sl.auto.x + sl.auto.width - 14 - autoButtonW;
+        for (ButtonBox b : buttons) {
+            if (b == null || b.label == null) continue;
+            String l = b.label;
+            if (l.equals("SAVE DIAGNOSTIC")) b.r = new Rectangle(sl.manual.x + sl.manual.width - 14 - topButtonW, topY, topButtonW, topButtonH);
+            else if (l.equals("LOAD MENU")) b.r = new Rectangle(sl.auto.x + sl.auto.width - 14 - topButtonW, topY, topButtonW, topButtonH);
+            else if (l.startsWith("MANUAL ") && l.endsWith(" LOAD")) {
+                int n = Character.isDigit(l.charAt(7)) ? Character.digit(l.charAt(7), 10) : 1;
+                b.r = new Rectangle(loadX, rowStart + (Math.max(1,n)-1)*(rowH+rowGap), loadW, rowH);
+            } else if (l.startsWith("SAVE ")) {
+                int n = Character.isDigit(l.charAt(5)) ? Character.digit(l.charAt(5), 10) : 1;
+                b.r = new Rectangle(saveX, rowStart + (Math.max(1,n)-1)*(rowH+rowGap), saveW, rowH);
+            } else if (l.startsWith("AUTO ")) {
+                int n = Character.isDigit(l.charAt(5)) ? Character.digit(l.charAt(5), 10) : 1;
+                b.r = new Rectangle(autoButtonX, rowStart + (Math.max(1,n)-1)*(autoRowH+rowGap), autoButtonW, autoRowH);
+            }
+            fitButtonInto(b, saveLoadButtonSafeRect());
+        }
+    }
+
+    void moveSelectedButton(int delta) {
+        if (buttons.isEmpty()) return;
+        selectedButton = Math.floorMod(selectedButton + delta, buttons.size());
+        sounds.play("tab", options);
+        DebugLog.audit("UI_BUTTON_SELECT", "selected=" + selectedButton + " label=" + buttons.get(selectedButton).label + " via keyboard | " + stateSummary());
+        repaint();
+    }
+
+    void activateSelectedButtonUniversal() {
+        if (buttons.isEmpty()) return;
+        selectedButton = Math.max(0, Math.min(selectedButton, buttons.size()-1));
+        ButtonBox b = buttons.get(selectedButton);
+        if (!buttonIsModalInteractive(b)) { sounds.play("panelClose", options); return; }
+        sounds.play("button", options);
+        DebugLog.audit("UI_BUTTON_CONFIRM", "label=" + b.label + " via E/Enter | " + stateSummary());
+        runGuarded("BUTTON", "universal confirm " + b.label, b.action);
+        repaint();
+    }
+
+    void drawPanelBox(Graphics2D g, int x, int y, int w, int h, String title) {
+        g.setColor(new Color(4, 7, 6, 232));
+        g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", title, x, y, w, h);
+        if (title != null && !title.isBlank()) {
+            g.setFont(uiFont);
+            g.setColor(optionColor(GameOptions.TEXT_TITLE));
+            g.drawString(title, x+18, y+32);
+        }
+    }
+
+void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h) {
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(20, fm.getHeight() + 4);
+        int maxChars = Math.max(24, w / Math.max(7, fm.charWidth('M')));
+        int yy = y;
+        Shape old = g.getClip();
+        g.setClip(x-4, y-lineH, w+20, h+lineH);
+        for (String raw : lines) {
+            Color c = new Color(220, 208, 145); // readable lighter yellow on green/black GUI
+            if (raw.contains("Warning") || raw.contains("invalid") || raw.contains("FAILED") || raw.contains("Starving")) c = new Color(245, 120, 90);
+            else if (raw.startsWith("  -") || raw.startsWith("  ")) c = new Color(205, 198, 155);
+            else if (raw.endsWith(":")) c = new Color(235, 220, 150);
+            g.setColor(c);
+            for (String line : TextSurfaceApi.wrap(raw, maxChars)) {
+                if (yy > y + h) break;
+                g.drawString(line, x, yy);
+                yy += lineH;
+            }
+            if (yy > y + h) break;
+        }
+        g.setClip(old);
+        int needed = Math.max(0, lines.size() * lineH - h);
+        if (needed > 0) {
+            g.setColor(new Color(55, 46, 30));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, h);
+            g.setColor(new Color(220, 190, 105));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, Math.max(24, h / 4));
+        }
+    }
+
+    void drawPortrait(Graphics2D g, int x, int y, Candidate c) {
+        g.setColor(new Color(22,22,24)); g.fillRect(x,y,140,150);
+        g.setColor(new Color(160,150,110)); g.drawRect(x,y,140,150);
+        NameLockedProfilePortraitAuthority.Entry locked = NameLockedProfilePortraitAuthority.unlockedEntry(cachedOperatorProfileName, c == null ? "" : c.name);
+        BufferedImage face = null;
+        String portraitLabel = "IMPORTED DOSSIER";
+        if (locked != null) {
+            face = images.getNameLockedProfilePortrait(locked.key);
+            portraitLabel = "PROFILE DOSSIER";
+            if (c != null) c.nameLockedProfileKey = locked.key;
+        }
+        if (face == null && c != null) face = images.getPortrait(c.portraitSheet, c.portraitIndex);
+        if (face != null) {
+            g.drawImage(face, x+6, y+6, 128, 128, null);
+            g.setFont(smallFont); g.setColor(new Color(190,180,130));
+            g.drawString(portraitLabel, x+10, y+145);
+        } else {
+            g.setFont(new Font("Monospaced", Font.BOLD, 18));
+            for (int i=0;i<c.portrait.length;i++) g.drawString(c.portrait[i], x+30, y+35+i*20);
+        }
+    }
+
+    boolean isGameOverlayPanel() {
+        return screen == Screen.GAME || (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH));
+    }
+
+    UiLayout uiLayout() {
+        if (screen == Screen.SECTOR_AUDIT) return UiLayout.computeSectorAudit(getWidth(), getHeight(), uiScaleFactor());
+        return UiLayout.compute(getWidth(), getHeight(), uiScaleFactor());
+    }
+
+    UiLayout virtualUiLayout() {
+        // Input events are mapped from physical Swing pixels into the fixed virtual
+        // render canvas before they reach gameplay code. Mouse-to-tile conversion
+        // must therefore use the same virtual layout that drawGame used, not the
+        // live Swing panel bounds; otherwise zoom/letterbox scaling pulls targeting
+        // toward the upper-left corner.
+        if (screen == Screen.SECTOR_AUDIT) return UiLayout.computeSectorAudit(renderScaling.virtualWidth(), renderScaling.virtualHeight(), uiScaleFactor());
+        return UiLayout.compute(renderScaling.virtualWidth(), renderScaling.virtualHeight(), uiScaleFactor());
+    }
+
+    static class UiLayout {
+        final Rectangle root, topBar, map, command, tactical, modal, leftInfo;
+        UiLayout(Rectangle root, Rectangle topBar, Rectangle map, Rectangle command, Rectangle tactical, Rectangle modal, Rectangle leftInfo) {
+            this.root=root; this.topBar=topBar; this.map=map; this.command=command; this.tactical=tactical; this.modal=modal; this.leftInfo=leftInfo;
+        }
+        static UiLayout compute(int w, int h, double scale) {
+            int margin = Math.max(12, (int)Math.round(16*scale));
+            int topH = Math.max(24, (int)Math.round(30*scale));
+            int bottomH = Math.max(92, Math.min(128, (int)Math.round(110*scale)));
+            int actionFeedH = Math.max(66, Math.min(88, (int)Math.round(76*scale)));
+            int gap = Math.max(6, (int)Math.round(8*scale));
+            int commandW = Math.max(132, Math.min(184, (int)Math.round(152*scale)));
+            int y = margin + topH + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(230, h - y - bottomH - actionFeedH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin+4, Math.max(1,w-margin*2-24), topH);
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + actionFeedH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }
+
+        static UiLayout computeSectorAudit(int w, int h, double scale) {
+            int margin = Math.max(8, (int)Math.round(12*scale));
+            int gap = Math.max(5, (int)Math.round(6*scale));
+            int commandW = Math.max(118, Math.min(166, (int)Math.round(142*scale)));
+            int bottomH = Math.max(80, Math.min(112, (int)Math.round(94*scale)));
+            int y = margin + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(260, h - y - bottomH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin, Math.max(1,w-margin*2-24), Math.max(1, gap));
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }
+    }
+
+    Rectangle mapRect() { return uiLayout().map; }
+
+    Rectangle inputMapRect() { return virtualUiLayout().map; }
+
+    Rectangle tacticalSlateRect() { return uiLayout().tactical; }
+
+    Rectangle commandPanelRect() { return uiLayout().command; }
+
+    boolean tileIconMode() {
+        return options.tileIconRendering && images.hasTileArt();
+    }
+
+    boolean sectorAuditTileIconMode() {
+        // The Zone Audit surface is a visual-generation inspection tool. If packaged tile
+        // art exists, it should display that art even when the normal play map is set
+        // to ASCII/gradient fallback, otherwise road/floor art regressions are hidden.
+        return images != null && images.hasTileArt();
+    }
+
+    int zoomedMapPixels(int basePixels) {
+        return Math.max(6, (int)Math.round(basePixels * (options.worldZoomPercent() / 100.0)));
+    }
+
+    int mapCellW(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+    }
+
+    int mapCellH(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(10, scaled(zoomedMapPixels(Math.max(14, fm.getHeight()))));
+    }
+
+    Font auditAsciiFont() {
+        return asciiFont == null ? new Font("Monospaced", Font.PLAIN, 11) : asciiFont.deriveFont(Math.max(8f, asciiFont.getSize2D() - 3f));
+    }
+
+    int auditTileIconPixels() {
+        int base = options == null ? 32 : options.mapTilePixelSize();
+        return Math.max(16, Math.min(base, (int)Math.round(base * 0.78)));
+    }
+
+    int auditMapCellW(Graphics2D g) {
+        if (sectorAuditTileIconMode()) return scaled(zoomedMapPixels(auditTileIconPixels()));
+        Font use = auditAsciiFont();
+        FontMetrics fm = g == null ? getFontMetrics(use) : g.getFontMetrics(use);
+        return Math.max(7, scaled(zoomedMapPixels(Math.max(8, fm.charWidth('W')))));
+    }
+
+    int auditMapCellH(Graphics2D g) {
+        if (sectorAuditTileIconMode()) return scaled(zoomedMapPixels(auditTileIconPixels()));
+        Font use = auditAsciiFont();
+        FontMetrics fm = g == null ? getFontMetrics(use) : g.getFontMetrics(use);
+        return Math.max(9, scaled(zoomedMapPixels(Math.max(11, fm.getHeight()))));
+    }
+
+    void drawGame(Graphics2D g) {
+        g.setFont(asciiFont);
+        Rectangle map = mapRect();
+        int cellW = mapCellW(g);
+        int cellH = mapCellH(g);
+        int worldW = world == null ? 0 : world.w;
+        int worldH = world == null ? 0 : world.h;
+        MapViewportTransformAuthority.Viewport viewport = MapViewportTransformAuthority.compute(
+                map, worldW, worldH, playerX, playerY, cellW, cellH,
+                10, tileIconMode() ? 10 : 10 + g.getFontMetrics(asciiFont).getAscent());
+        int cols = viewport.cols;
+        int rows = viewport.rows;
+        int camX = viewport.camX;
+        int camY = viewport.camY;
+        updateSensoryModel("paint");
+
+        // The active map is now a deliberately blank black CRT pane.  The clip prevents
+        // ASCII and fog highlights from bleeding into the surrounding chrome or command panel.
+        g.setColor(Color.BLACK);
+        g.fillRect(map.x, map.y, map.width, map.height);
+        g.setColor(new Color(92, 76, 48));
+        g.drawRect(map.x, map.y, map.width, map.height);
+        Shape oldClip = g.getClip();
+        g.setClip(map.x + 7, map.y + 7, map.width - 14, map.height - 14);
+        int ox = viewport.ox;
+        int oy = viewport.oy;
+
+        if (world != null) {
+            for (int sy = 0; sy < rows; sy++) {
+                int y = camY + sy;
+                if (y < 0 || y >= world.h) continue;
+                for (int sx = 0; sx < cols; sx++) {
+                    int x = camX + sx;
+                    if (x < 0 || x >= world.w) continue;
+                    boolean vis = isVisible(x, y);

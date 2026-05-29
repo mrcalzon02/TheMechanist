@@ -1,0 +1,95 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: inventory_trade_items_02_lines_04130_04750
+// Category: inventory_trade_items
+// Source lines: 4130-4750
+// Method count: 8
+//
+// Methods in this fragment:
+// - ammoItemForWeapon :: lines 4130-4147 (18) :: String ammoItemForWeapon(String weapon)
+// - firstCarriedExplosiveItem :: lines 4236-4239 (4) :: String firstCarriedExplosiveItem()
+// - isPlantableExplosive :: lines 4241-4241 (1) :: boolean isPlantableExplosive(String item)
+// - explosiveThrowRange :: lines 4242-4242 (1) :: int explosiveThrowRange(String item)
+// - explosiveLandingPoint :: lines 4282-4291 (10) :: Point explosiveLandingPoint(String item, int tx, int ty, int dist)
+// - plantExplosiveAt :: lines 4293-4303 (11) :: void plantExplosiveAt(int x, int y, String item, boolean playerPlaced)
+// - drainContainerItemNames :: lines 4730-4741 (12) :: java.util.List<String> drainContainerItemNames(String cid, int max)
+// - decayCorpseItemName :: lines 4743-4750 (8) :: String decayCorpseItemName(String item)
+
+    String ammoItemForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return "";
+        if (w.contains("las")) return "Las charge pack";
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("chem sprayer") || w.contains("acid spitter")) return "Industrial Fuelgel canister";
+        if (w.contains("melta") || w.contains("inferno")) return "Melta charge cell";
+        if (w.contains("plasma")) return "Plasma flask";
+        if (w.contains("bolt") || w.contains("mass-Reactive Carbine")) return "Bolt round magazine";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "Arc capacitor pack";
+        if (w.contains("webber") || w.contains("web ")) return "Web cartridge";
+        if (w.contains("needle") || w.contains("toxin")) return "Needle toxin vial";
+        if (w.contains("shotgun") || w.contains("pipe shotgun")) return "Shot shell handful";
+        if (w.contains("autogun") || w.contains("autopistol") || w.contains("scrap autogun") || w.contains("auto")) return w.contains("autocannon") ? "Autocannon shell belt" : "Autogun magazine";
+        if (w.contains("heavy stubber")) return "Heavy stubber belt";
+        if (w.contains("stub") || w.contains("revolver") || w.contains("dueling") || w.contains("hunting") || w.contains("marksman") || w.contains("sniper") || w.contains("zip pistol") || w.contains("cult martyr pistol")) return "Stub cartridge box";
+        if (w.contains("nail")) return "Stub cartridge box";
+        return "Autogun magazine";
+    }
+
+// ... omitted 88 non-method/source lines between cataloged methods ...
+
+    String firstCarriedExplosiveItem() {
+        for (String item : inventory) if (ExplosiveProfile.isExplosive(item)) return item;
+        return "";
+    }
+
+    boolean isPlantableExplosive(String item) { return ExplosiveProfile.forItem(item).plantable; }
+    int explosiveThrowRange(String item) { return ExplosiveProfile.forItem(item).throwRange; }
+
+// ... omitted 39 non-method/source lines between cataloged methods ...
+
+    Point explosiveLandingPoint(String item, int tx, int ty, int dist) {
+        ExplosiveProfile ep = ExplosiveProfile.forItem(item);
+        int chance = Math.max(15, Math.min(90, stat("Agility",5) * 5 + stat("Firearms",5) * 3 + (activeMotionStateIndex == MOTION_STATIONARY ? 14 : activeMotionStateIndex == MOTION_WALK ? 7 : -6) - dist * 4));
+        if (rng.nextInt(100) < chance) return new Point(tx, ty);
+        int dx = Integer.compare(tx-playerX, 0), dy = Integer.compare(ty-playerY, 0);
+        int sideX = dy, sideY = -dx;
+        int scatter = 1 + rng.nextInt(Math.max(1, Math.min(3, ep.radius)));
+        if (rng.nextBoolean()) scatter = -scatter;
+        return new Point(Math.max(0, Math.min(world.w-1, tx + sideX * scatter)), Math.max(0, Math.min(world.h-1, ty + sideY * scatter)));
+    }
+
+    void plantExplosiveAt(int x, int y, String item, boolean playerPlaced) {
+        if (world == null || !world.inBounds(x,y)) return;
+        if (world.npcAt(x,y) != null || (x == playerX && y == playerY)) { logEvent("EXPLOSIVE PLANTING blocked: occupied tile."); addInventoryItem(item, ItemProvenanceRecord.found(item, world, turn, "unplanted explosive returned to hand")); return; }
+        ExplosiveProfile ep = ExplosiveProfile.forItem(item);
+        MapObjectState m = MapObjectState.plantedExplosive(x, y, item, world.zoneType, turn, world.tiles[x][y], playerPlaced ? "player" : "faction");
+        m.vendCount = ep.complexity;
+        world.mapObjects.add(m);
+        world.tiles[x][y] = '!';
+        logEvent("EXPLOSIVE PLANTED: " + item + " armed at " + x + "," + y + ". Good sensory stats may spot it; INTERACT can attempt disarm and recovery.");
+        DebugLog.audit("EXPLOSIVE_PLANTED", "item=" + item + " at=" + x + "," + y + " player=" + playerPlaced + " turn=" + turn);
+    }
+
+// ... omitted 426 non-method/source lines between cataloged methods ...
+
+    java.util.List<String> drainContainerItemNames(String cid, int max) {
+        ArrayList<String> out = new ArrayList<>();
+        ContainerRecord c = itemContainers.get(cid);
+        if (c == null) return out;
+        int limit = Math.max(0, max);
+        while (!c.itemInstanceIds.isEmpty() && out.size() < limit) {
+            String iid = c.itemInstanceIds.remove(0);
+            ItemInstance inst = itemInstances.remove(iid);
+            if (inst != null && inst.displayName != null && !inst.displayName.isBlank()) out.add(decayCorpseItemName(inst.displayName));
+        }
+        return out;
+    }
+
+    String decayCorpseItemName(String item) {
+        if (item == null || item.isBlank()) return "Scrap bit";
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("scrap") || low.contains("junk") || low.contains("detritus")) return "Scrap bit";
+        int tier = Math.max(0, ItemQuality.tierIndex(item) - 1);
+        String base = ItemQuality.stripQuality(item);
+        return ItemQuality.NAMES[Math.max(0, Math.min(ItemQuality.NAMES.length-1, tier))] + " " + base;
+    }

@@ -1,0 +1,254 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_10_lines_17242_17479
+// Category: render
+// Source lines: 17242-17479
+// Method count: 6
+//
+// Methods in this fragment:
+// - drawBuildDetailPanel :: lines 17242-17292 (51) :: void drawBuildDetailPanel(Graphics2D g)
+// - drawCombatTargetDetailPanel :: lines 17296-17332 (37) :: void drawCombatTargetDetailPanel(Graphics2D g)
+// - drawLookDetailPanel :: lines 17334-17410 (77) :: void drawLookDetailPanel(Graphics2D g)
+// - drawLookStackIconForIndex :: lines 17412-17431 (20) :: void drawLookStackIconForIndex(Graphics2D g, int tx, int ty, int index, int x, int y, int size)
+// - drawLookStackIconStrip :: lines 17433-17449 (17) :: void drawLookStackIconStrip(Graphics2D g, int tx, int ty, int x, int y, int maxIcons, int size)
+// - drawInteractDetailPanel :: lines 17451-17479 (29) :: void drawInteractDetailPanel(Graphics2D g)
+
+    void drawBuildDetailPanel(Graphics2D g) {
+        UiLayout L = uiLayout();
+        int x = Math.max(18, L.map.x);
+        int w = Math.max(360, Math.min(L.map.width, L.command.x - x - 18));
+        int h = panelMode == PanelMode.WORKBENCH ? Math.max(190, Math.min(230, getHeight() / 3)) : Math.max(210, Math.min(250, getHeight() / 3));
+        int y = Math.max(10, Math.min(18, L.map.y - h - 6));
+        if (y < 10) y = 10;
+        updatePendingBuildSummary();
+        g.setColor(new Color(8, 8, 10, 238));
+        g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", panelMode == PanelMode.WORKBENCH ? "workbench-detail" : "build-detail", x, y, w, h);
+        g.setFont(uiFont);
+        g.setColor(new Color(185, 225, 150));
+        drawUiTextLine(g, panelMode == PanelMode.WORKBENCH ? "SCRAP WORKBENCH / WORK MENU" : "BASE CONSTRUCTION", x + 14, y + 27);
+        if (pendingBuildRecipe != null) {
+            BufferedImage buildIcon = ObjectSemanticAssetAuthority.imageForAssetId(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(pendingBuildRecipe));
+            if (buildIcon != null) {
+                int sz = Math.max(38, Math.min(54, h - 18));
+                g.setColor(new Color(8,10,9,235));
+                g.fillRect(x + w - sz - 14, y + 14, sz, sz);
+                g.setColor(new Color(130,112,70,180));
+                g.drawRect(x + w - sz - 14, y + 14, sz, sz);
+                g.drawImage(buildIcon, x + w - sz - 10, y + 18, sz - 8, sz - 8, null);
+            }
+        }
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Cursor is room-bound. Select a construction from the right-side build menu, move with WASD/arrows, then press E to confirm.");
+        lines.add("Pending: " + pendingBuildSummary);
+        if (panelMode == PanelMode.BUILD) lines.addAll(constructionMenuGuidanceLines(pendingBuildRecipe));
+        if (pendingBuildRecipe != null) lines.add(ObjectSemanticAssetAuthority.semanticSummaryForName(pendingBuildRecipe.name));
+        lines.add("Requirements use Mechanics + Intellect. Build time uses Strength + Agility. Failure risk is reduced by Intellect + Faith.");
+        if (panelMode == PanelMode.BUILD) {
+            lines.add(ConstructionValidationInspectionAuthority.compactLine(this));
+        } else {
+            FactionRecipeVariant v = selectedGeneratedProductionJob();
+            lines.add(v == null ? "No controlled generated job selected." : ("Generated job: " + v.outputName + " | filters " + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex) + "/" + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex) + " | " + ControlledProductionJobAuthority.shortStatus(this, selectedWorkerMachine(), v)));
+            lines.add(MachineOperationStatusBridge.compactSummary(this));
+            lines.add(StaffingLaborBridgeAuthority.compactSummary(this));
+            lines.add(LogisticsReservationForecastAuthority.compactSummary(this));
+            lines.add(LogisticsDeliveryIntentAuthority.compactSummary(this));
+            lines.add(LogisticsStorageCandidateAuthority.compactSummary(this));
+            lines.add(LogisticsSourceReservationAuthority.compactSummary(this));
+            lines.add(LogisticsRouteIntentAuthority.compactSummary(this));
+            lines.add(LogisticsRouteReadinessPreviewAuthority.compactSummary(this));
+            lines.add(LogisticsManualHaulContractAuthority.compactSummary(this));
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawClippedWrappedLines(g, lines, x + 14, y + 44, w - 28, h - 54, smallFont, false);
+    }
+
+
+
+    void drawCombatTargetDetailPanel(Graphics2D g) {
+        int x = 145, y = 12, w = getWidth() - 380, h = 170;
+        int tx = combatCursorActive ? combatX : playerX;
+        int ty = combatCursorActive ? combatY : playerY;
+        TargetingSolution ts = targetingSolutionAt(tx, ty);
+        g.setColor(new Color(14, 4, 6, 240)); g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "combat-target-detail", x, y, w, h);
+        g.setFont(uiFont); g.setColor(new Color(245, 90, 80));
+        g.drawString("TARGETING / ATTACK — RED RETICLE", x + 14, y + 27);
+        g.setFont(smallFont); g.setColor(new Color(225, 195, 170));
+        String combatHeader = "Cursor " + tx + "," + ty + " | Weapon " + ts.weaponName + " | Mode " + fireModeLabel() + " | Range " + ts.distance + "/" + ts.range + " | Hit " + ts.hitPercent + "%";
+        java.util.List<String> combatHeaderLines = TextLayoutAuthority.wrapPixels(g, g.getFont(), combatHeader, Math.max(80, w - 32));
+        int combatHeaderY = y + 52;
+        for (int i = 0; i < Math.min(2, combatHeaderLines.size()); i++) {
+            g.drawString(combatHeaderLines.get(i), x + 14, combatHeaderY + i * Math.max(14, g.getFontMetrics().getHeight()));
+        }
+        int bodyTop = y + 66 + (combatHeaderLines.size() > 1 ? Math.max(14, g.getFontMetrics().getHeight()) : 0);
+        g.setColor(new Color(0,0,0,180)); g.fillRect(x + 14, bodyTop, w - 28, Math.max(24, y + h - bodyTop - 16));
+        g.setColor(new Color(115, 45, 42)); g.drawRect(x + 14, bodyTop, w - 28, Math.max(24, y + h - bodyTop - 16));
+        int yy = bodyTop + 20;
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(ts.summaryLine());
+        lines.add("Line: " + ts.coverSummary);
+        lines.add("Ammo/load: " + (ts.ranged ? (ts.loadedShots + "/" + ts.magazineCapacity + " loaded; " + ts.ammoItem + " x" + countInventory(ts.ammoItem) + "; attack cost " + ts.ammoCost) : "melee/no magazine") + ".");
+        lines.add("Cover penalty -" + ts.coverPenalty + "; darkness/light penalty -" + ts.darknessPenalty + "; shield mitigation estimate " + ts.shieldReduction + "%; movement/aim state " + activeMotionStateLabel() + " mod " + playerAttackMotionSkillModifier() + ".");
+        lines.add("Move reticle with WASD/arrows. F cycles fire mode. X reloads. Enter/Space confirms. ESC cancels.");
+        for (String line : lines) {
+            g.setColor(line.startsWith("Line:") ? new Color(215, 170, 130) : new Color(235, 215, 185));
+            for (String wrapped : TextLayoutAuthority.wrapPixels(g, g.getFont(), line, Math.max(80, w - 52))) {
+                if (yy > y + h - 10) break;
+                g.drawString(wrapped, x + 22, yy);
+                yy += 16;
+            }
+            if (yy > y + h - 10) break;
+        }
+    }
+
+    void drawLookDetailPanel(Graphics2D g) {
+        UiLayout L = uiLayout();
+        int x = Math.max(18, L.map.x);
+        int h = Math.max(190, Math.min(320, Math.max(getHeight() / 3, L.tactical.height + 54)));
+        int preferredY = L.map.y + L.map.height + 4;
+        int y = Math.min(Math.max(12, preferredY), Math.max(12, getHeight() - h - 24));
+        if (preferredY + h > getHeight() - 24) y = Math.max(L.map.y + 8, getHeight() - h - 24);
+        int w = Math.max(360, Math.min(L.map.width, getWidth() - x - 30));
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        boolean vis = isVisible(tx, ty);
+        boolean rem = isRemembered(tx, ty);
+        ArrayList<String> stack = tileStackAt(tx, ty);
+        if (!stack.isEmpty()) lookStackIndex = Math.max(0, Math.min(lookStackIndex, stack.size()-1));
+        g.setColor(new Color(8, 8, 10, 235)); g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "look-detail", x, y, w, h);
+        Shape oldClip = g.getClip();
+        g.setClip(x + 8, y + 8, Math.max(1, w - 16), Math.max(1, h - 16));
+        g.setFont(uiFont); g.setColor(new Color(220, 200, 140));
+        g.drawString("AUSPEX / LOOK — TILE STACK", x + 14, y + 27);
+        g.setFont(smallFont); g.setColor(new Color(205, 198, 165));
+        String seen = vis ? "VISIBLE" : (rem ? "REMEMBERED" : "UNKNOWN FOG");
+        int lookHeaderY = y + 50;
+        int lookHeaderLines = 0;
+        for (String wrapped : TextLayoutAuthority.wrapPixels(g, g.getFont(), "Cursor " + tx + "," + ty + " | " + seen + " | Arrows move selector | Wheel/Page scroll details | [/] cycles stacked contents", Math.max(80, w - 40))) {
+            if (lookHeaderLines >= 2) break;
+            g.drawString(wrapped, x + 14, lookHeaderY + lookHeaderLines * Math.max(12, g.getFontMetrics().getHeight()));
+            lookHeaderLines++;
+        }
+        int listX = x + 14, listY = y + 58 + Math.max(1, lookHeaderLines) * Math.max(12, g.getFontMetrics().getHeight()), listW = w - 28, listH = y + h - 14 - listY;
+        int iconColW = Math.max(58, Math.min(84, listH - 8));
+        int iconPaneX = listX + 10;
+        int iconPaneY = listY + 10;
+        int textX = iconPaneX + iconColW + 16;
+        int textW = Math.max(180, listX + listW - textX - 14);
+        g.setColor(new Color(0,0,0,180)); g.fillRect(listX, listY, listW, listH);
+        g.setColor(new Color(105, 92, 58)); g.drawRect(listX, listY, listW, listH);
+        g.setColor(new Color(22, 20, 15, 225)); g.fillRoundRect(iconPaneX - 2, iconPaneY - 2, iconColW + 4, Math.min(iconColW + 4, listH - 20), 8, 8);
+        g.setColor(new Color(105, 92, 58)); g.drawRoundRect(iconPaneX - 2, iconPaneY - 2, iconColW + 4, Math.min(iconColW + 4, listH - 20), 8, 8);
+        NpcEntity lookedNpc = (world != null && vis) ? world.npcAt(tx, ty) : null;
+        IntentReadResult intent = lookedNpc == null ? null : intentReadFor(lookedNpc);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("TILE: " + describeTile(world != null && world.inBounds(tx, ty) ? world.tiles[tx][ty] : ' '));
+        lines.add("OWNERSHIP: " + ownershipText(tx, ty));
+        if (world != null && world.inBounds(tx, ty)) {
+            lines.add("LIGHT/NOISE: light " + lightLevelAt(tx, ty) + " | noise cover " + localNoiseFieldAt(tx, ty) + " | room " + world.roomIdAt(tx, ty));
+            MapObjectState mo = world.mapObjectAt(tx, ty);
+            if (mo != null) lines.add("FIXTURE: " + (mo.label == null || mo.label.isBlank() ? mo.type : mo.label));
+            BaseObject bo = baseObjectAt(tx, ty);
+            if (bo != null) lines.add("BASE OBJECT: " + bo.name + " | attention " + bo.attention + " | cost " + bo.cost);
+        }
+        if (lookedNpc != null) {
+            if (lookedNpc.isAnimalActor()) {
+                lines.add("ANIMAL: " + lookedNpc.animalLine());
+                for (String petLine : petCareReadabilityLines(lookedNpc, tx, ty, true)) lines.add("PET: " + petLine);
+            }
+            else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(lookedNpc, worldTurn);
+                lines.add("AGE: " + lookedNpc.ageYears + " years / " + lookedNpc.ageBand);
+                lines.add("RANK: " + (lookedNpc.isMinorActor() ? "member only — no formal rank before 16" : ("Rank " + lookedNpc.factionRank + " — " + lookedNpc.factionRankTitle)) + " [Infopedia: " + lookedNpc.faction.label + " ranks]");
+            }
+        }
+        if (intent != null && intent.available) lines.add("INTENT: " + intent.summary);
+        if (!stack.isEmpty()) lines.add((lookStackIndex + 1) + "/" + stack.size() + "  " + stack.get(lookStackIndex));
+        if (stack.size() > 1) {
+            for (int si = 0; si < stack.size(); si++) if (si != lookStackIndex) lines.add("STACK " + (si + 1) + ": " + TextSurfaceApi.ellipsize(stack.get(si), 120));
+            int prev = Math.max(0, lookStackIndex - 1);
+            int next = Math.min(stack.size() - 1, lookStackIndex + 1);
+            if (prev != lookStackIndex) lines.add("Prev: " + TextSurfaceApi.ellipsize(stack.get(prev), 80));
+            if (next != lookStackIndex) lines.add("Next: " + TextSurfaceApi.ellipsize(stack.get(next), 80));
+        }
+        g.setFont(smallFont);
+        drawLookStackIconForIndex(g, tx, ty, lookStackIndex, iconPaneX, iconPaneY, Math.min(iconColW, listH - 22));
+        drawScrollableWrappedLines(g, lines, textX, listY + 10, textW, listH - 20, lookStackScroll, "look-stack");
+        g.setClip(oldClip);
+    }
+
+    void drawLookStackIconForIndex(Graphics2D g, int tx, int ty, int index, int x, int y, int size) {
+        if (world == null || !world.inBounds(tx, ty) || size <= 0) return;
+        ArrayList<String> stack = tileStackAt(tx, ty);
+        String line = (index >= 0 && index < stack.size()) ? stack.get(index) : "";
+        BufferedImage img = null;
+        char glyph = world.tiles[tx][ty];
+        NpcEntity npc = world.npcAt(tx, ty);
+        BaseObject obj = baseObjectAt(tx, ty);
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (line.startsWith("ENTITY:") && npc != null) img = images.getNpcPortraitFor(npc);
+        else if (line.startsWith("BASE OBJECT:") && obj != null) { img = ObjectSemanticAssetAuthority.imageForBaseObject(obj); }
+        else if (line.startsWith("FIXTURE:") && mos != null) { img = ObjectSemanticAssetAuthority.imageForMapObject(mos); }
+        else img = tileImageForRenderedGlyph(glyph);
+        g.setColor(new Color(8, 10, 9, 235));
+        g.fillRect(x, y, size, size);
+        g.setColor(new Color(230,205,120));
+        g.drawRect(x, y, size, size);
+        if (img != null) g.drawImage(img, x + 3, y + 3, Math.max(1, size - 6), Math.max(1, size - 6), null);
+        else { g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, String.valueOf(glyph), x + size/2, y + size/2 + 6); }
+    }
+
+    void drawLookStackIconStrip(Graphics2D g, int tx, int ty, int x, int y, int maxIcons, int size) {
+        if (world == null || !world.inBounds(tx, ty) || maxIcons <= 0) return;
+        int drawn = 0;
+        char ch = world.tiles[tx][ty];
+        BufferedImage tile = images.getTile(ch);
+        if (tile != null && drawn < maxIcons) { g.drawImage(tile, x + drawn*(size+5), y, size, size, null); drawn++; }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null && drawn < maxIcons) { BufferedImage img = ObjectSemanticAssetAuthority.imageForMapObject(mos); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null && drawn < maxIcons) { BufferedImage img = ObjectSemanticAssetAuthority.imageForBaseObject(obj); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null && drawn < maxIcons) { BufferedImage img = images.getNpcPortraitFor(npc); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        for (int i=0; i<drawn; i++) {
+            g.setColor(new Color(230,205,120));
+            g.drawRect(x + i*(size+5), y, size, size);
+        }
+    }
+
+    void drawInteractDetailPanel(Graphics2D g) {
+        UiLayout L = uiLayout();
+        int x = Math.max(18, L.map.x);
+        int y = 12;
+        int w = Math.max(360, L.command.x - x - 18);
+        int h = Math.max(132, Math.min(168, L.map.y - 18));
+        int tx = lookX, ty = lookY;
+        BaseObject obj = baseObjectAt(tx, ty);
+        char ch = (world != null && tx >= 0 && ty >= 0 && tx < world.w && ty < world.h) ? world.tiles[tx][ty] : ' ';
+        updatePendingInteractionSummary();
+        g.setColor(new Color(8, 8, 10, 238));
+        g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "interact-detail", x, y, w, h);
+        g.setFont(uiFont);
+        g.setColor(new Color(140, 230, 180));
+        drawUiTextLine(g, "MECHANDRITE / INTERACT", x + 14, y + 28);
+        String target = (obj != null ? obj.name + ": " + obj.description : describeTile(ch));
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Selected target | Adjacent use required | " + target);
+        String summary = hoveredButtonDescription();
+        if (summary == null || summary.isEmpty()) summary = pendingInteractionSummary;
+        lines.add("Preflight: " + pendingInteractionSummary);
+        if (!summary.equals(pendingInteractionSummary)) lines.add("Context: " + summary);
+        lines.add("Move cursor: WASD/Arrows | Confirm: far-right command button/Enter | Leave: ESC");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawClippedWrappedLines(g, lines, x + 14, y + 46, w - 28, h - 58, smallFont, false);
+    }

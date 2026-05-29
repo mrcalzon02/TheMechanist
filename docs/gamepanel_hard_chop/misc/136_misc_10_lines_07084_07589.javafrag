@@ -1,0 +1,320 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_10_lines_07084_07589
+// Category: misc
+// Source lines: 7084-7589
+// Method count: 15
+//
+// Methods in this fragment:
+// - interactAt :: lines 7084-7172 (89) :: void interactAt(int tx, int ty)
+// - interactDoorAt :: lines 7174-7240 (67) :: void interactDoorAt(int tx, int ty, char door)
+// - edgeDirection :: lines 7350-7366 (17) :: String edgeDirection(int tx, int ty)
+// - oppositeEdgeSpawn :: lines 7384-7392 (9) :: Point oppositeEdgeSpawn(String dir, int tx, int ty)
+// - oppositeEdge :: lines 7394-7400 (7) :: String oppositeEdge(String dir)
+// - interactSewerHatch :: lines 7402-7407 (6) :: void interactSewerHatch(int tx, int ty)
+// - interactSewerLadder :: lines 7409-7414 (6) :: void interactSewerLadder(int tx, int ty)
+// - interactElevator :: lines 7416-7422 (7) :: void interactElevator(int tx, int ty)
+// - adjacentOpenNearPlayer :: lines 7517-7522 (6) :: Point adjacentOpenNearPlayer()
+// - spawnPointForTransition :: lines 7524-7539 (16) :: Point spawnPointForTransition(Point edgeHint)
+// - claimBaseHere :: lines 7541-7551 (11) :: void claimBaseHere()
+// - isInClaimedRoom :: lines 7553-7555 (3) :: boolean isInClaimedRoom(int x, int y)
+// - baseObjectAt :: lines 7557-7560 (4) :: BaseObject baseObjectAt(int x, int y)
+// - openDefenseInfopedia :: lines 7571-7578 (8) :: void openDefenseInfopedia()
+// - openConstructionValidationInfopedia :: lines 7580-7589 (10) :: void openConstructionValidationInfopedia()
+
+    void interactAt(int tx, int ty) {
+        if (world == null) { DebugLog.warn("INTERACT", "interactAt called without world. " + stateSummary()); logEvent("Cannot interact: no active world."); return; }
+        if (tx < 0 || ty < 0 || tx >= world.w || ty >= world.h) { DebugLog.warn("INTERACT", "target out of bounds. " + stateSummary()); logEvent("Cannot interact: target out of bounds."); return; }
+        if (Math.abs(tx-playerX) > 1 || Math.abs(ty-playerY) > 1) { logEvent("Cannot interact: target must be adjacent to your character."); return; }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            if (npc.isPetActor()) { petNpcAt(tx, ty, false); updatePendingInteractionSummary(); return; }
+            if (npc.isAnimalActor()) { logEvent("PET: " + animalContactBlockedLine(npc)); advanceTurn("checks an animal's mood."); updatePendingInteractionSummary(); return; }
+            talkToNpc(npc); advanceTurn("speaks with " + npc.name + "."); return;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) { interactBaseObject(obj); advanceTurn("interacts with " + obj.name + "."); return; }
+        if (mapObjectAt(tx, ty, "planted-explosive") != null) { disarmExplosiveAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "bank-vault") != null) { openBankVaultAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "bank-alarm-panel") != null) { tamperBankAlarmPanelAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "bank-terminal") != null) { logEvent("BANK: " + bankTerminalPreview(tx, ty)); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER) != null) { interactNewsVendingMachine(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.DISCARDED_NEWSPRINT_SOURCE) != null) { recoverOldNewspaperAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "broadcast-device") != null) { interactBroadcastDevice(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "light-switch") != null) { interactLightSwitchAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (RoomFixtureInteractionAuthority.tryInteract(this, tx, ty)) { updatePendingInteractionSummary(); return; }
+        if (FrontageFixtureInteractionAuthority.tryInteract(this, tx, ty)) { updatePendingInteractionSummary(); return; }
+        if (RoadTransitFixtureInteractionAuthority.tryInteract(this, tx, ty)) { updatePendingInteractionSummary(); return; }
+        char here = world.tiles[tx][ty];
+        DebugLog.audit("INTERACT", "tile=" + here + " at " + tx + "," + ty + " desc=" + describeTile(here));
+        if (isFactionJournalObjectAt(tx, ty)) { readFactionJournalAt(tx, ty); advanceTurn("reads a faction journal ledger."); updatePendingInteractionSummary(); return; }
+        if (isDoorTile(here)) { interactDoorAt(tx, ty, here); updatePendingInteractionSummary(); return; }
+        switch (here) {
+            case 'g':
+                gangHeat += 2;
+                logEvent("You parley with gangers. They smell weakness, profit, and possibly soup.");
+                break;
+            case 'm':
+                logEvent("The mutant watches you. Not hostile yet. Not safe either.");
+                break;
+            case 'R':
+                logEvent("The rogue machine twitches. Reserved interaction: repair, hack, flee, or dismantle.");
+                break;
+            case 'A':
+                suspicion = Math.max(0, suspicion - 1);
+                logEvent("You present yourself to Civic Wardens authority. Paperwork becomes a weapon pointed both ways.");
+                break;
+            case '1': case '2': case '3': case '4': case '5':
+                interactVendingMachine(tx, ty, here);
+                return;
+            case 'Y': case 'J': case 'B': case 'K': case 'O': case 'Z': case 'P': case 'F': case 'U':
+                interactEmergencyMachine(tx, ty, here);
+                return;
+            case 'I': case 'H':
+                interactShrine(tx, ty, here);
+                return;
+            case 'T':
+                openDepotTrader(tx, ty);
+                break;
+            case 'Q':
+                logEvent(governorPreview(tx, ty));
+                logEvent("Choose BRIBE GOVERNOR or ATTACK GOVERNOR from the interaction command list.");
+                break;
+            case 'D': case 'S': case 'v': case 'E':
+                interactIntermapTransit(tx, ty, here);
+                return;
+            case 'C':
+                logEvent("Clinic found. Present services: inspection, triage signposting, antiseptic smells, and malpractice with incense.");
+                break;
+            case 'q':
+                talkToFactionRepresentative();
+                break;
+            case 'o':
+                if (isFactionJournalObjectAt(tx, ty)) { readFactionJournalAt(tx, ty); return; }
+                interactContractObject(tx, ty);
+                return;
+            case 'r':
+                interactCorpseContainer(tx, ty);
+                return;
+            case 'b': case 'h': case 'n':
+                restOneHourOnUnclaimedFurniture(tx, ty, here);
+                return;
+            default:
+                if (isInClaimedRoom(tx, ty)) {
+                    logEvent("You inspect your claimed room. Built objects=" + baseObjects.size() + ", stored items=" + baseStorage.size() + ".");
+                } else {
+                    logEvent("You search the adjacent room tile. Dust, rivets, old blood, and maybe one useful screw.");
+                    if (inventoryWeight() + 1 <= carryCapacity()) addInventoryItem("Scrap bit", ItemProvenanceRecord.found("Scrap bit", world, turn, "adjacent room search"));
+                    else logEvent("You find scrap but cannot carry more bulk.");
+                }
+        }
+        advanceTurn("interacts with the surroundings.");
+        updatePendingInteractionSummary();
+    }
+
+    void interactDoorAt(int tx, int ty, char door) {
+        int intellect = stat("Intellect", 5), mechanics = stat("Mechanics", 5), strength = stat("Strength", 5);
+        String label = door=='/'?"open archway":(door=='|'?"hinged scrap door":(door=='L'?"locked or chained door":(door=='V'?"ventilation panel":(door=='X'?"electronic security door":"sealed vault door"))));
+        if (door == '/') { logEvent("The open archway offers no barrier. You pass through if you dare."); return; }
+
+        boolean mechanicalTools = countInventory("Lockpicks")>0 || countInventory("Tool bundle")>0 || countInventory("Mechanist Collegia tool roll")>0;
+        boolean electronicTools = countInventory("Hacking tools")>0 || countInventory("Mechanist Collegia tool roll")>0 || countDataSpikes()>0 || countInventory("Keycard")>0;
+        boolean secureVaultKey = countInventory("Secure vault key")>0 || countInventory("Vault key")>0;
+
+        if (door == 'Z') {
+            if (!secureVaultKey) {
+                logEvent("The sealed vault door refuses ordinary tampering. It requires a Secure vault key likely held by a high-ranking individual in this zone.");
+                DebugLog.audit("VAULT_KEY_REQUIRED", "door="+label+" at="+tx+","+ty+" keys="+countInventory("Secure vault key")+" state="+stateSummary());
+                advanceTurn("studies a sealed vault door.");
+                return;
+            }
+            world.tiles[tx][ty] = '/';
+            logEvent("Secure vault key accepted. The sealed vault door opens with the weary contempt of expensive machinery.");
+            DebugLog.audit("VAULT_UNLOCK", "door="+label+" at="+tx+","+ty+" usedSecureVaultKey=true state="+stateSummary());
+            advanceTurn("unlocks a vault door.");
+            return;
+        }
+
+        if (door == 'X') {
+            if (countInventory("Keycard") > 0) {
+                world.tiles[tx][ty] = '/';
+                logEvent("Keycard accepted. The electronic security door opens.");
+                DebugLog.audit("ELECTRONIC_DOOR_KEYCARD", "door="+label+" at="+tx+","+ty+" state="+stateSummary());
+                advanceTurn("uses a keycard.");
+                return;
+            }
+            if (countDataSpikes() <= 0 && countInventory("Hacking tools") <= 0) {
+                logEvent("Electronic security door. Requires a Keycard, Hacking tools, or a Data spike. Data spikes are consumed on hack attempts.");
+                DebugLog.audit("ELECTRONIC_DOOR_NEEDS_ACCESS", "door="+label+" at="+tx+","+ty+" dataSpikes="+countDataSpikes()+" state="+stateSummary());
+                advanceTurn("checks an electronic lock.");
+                return;
+            }
+            boolean usedSpike = false;
+            if (countDataSpikes() > 0) { consumeDataSpike(); usedSpike = true; }
+            int difficulty = 18;
+            int roll = intellect + mechanics/2 + rng.nextInt(20) + 1 + (countInventory("Hacking tools")>0 ? 4 : 0) + (usedSpike ? 6 : 0);
+            if (roll >= difficulty) {
+                world.tiles[tx][ty] = '/';
+                logEvent((usedSpike?"Data spike burned. ":"") + "Electronic lock bypassed with Intellect-assisted hacking. Roll " + roll + " >= " + difficulty + ".");
+                DebugLog.audit("ELECTRONIC_DOOR_HACK", "door="+label+" at="+tx+","+ty+" roll="+roll+" diff="+difficulty+" dataSpikeConsumed="+usedSpike+" state="+stateSummary());
+            } else {
+                suspicion += 1;
+                logEvent((usedSpike?"Data spike burned. ":"") + "Electronic bypass failed. Roll " + roll + " < " + difficulty + ". Suspicion +1.");
+                DebugLog.audit("ELECTRONIC_DOOR_HACK_FAIL", "door="+label+" at="+tx+","+ty+" roll="+roll+" diff="+difficulty+" dataSpikeConsumed="+usedSpike+" state="+stateSummary());
+            }
+            advanceTurn("attempts electronic door access.");
+            return;
+        }
+
+        int difficulty = (door=='|'?8:(door=='L'?14:(door=='V'?16:22)));
+        int score = intellect + mechanics + strength/2;
+        int roll = rng.nextInt(12) + 1 + score + (mechanicalTools ? 5 : 0) + (electronicTools && door=='V' ? 3 : 0);
+        DebugLog.audit("DOOR_INTERACT", "door=" + label + " at=" + tx + "," + ty + " roll=" + roll + " difficulty=" + difficulty + " mechanicalTools=" + mechanicalTools + " electronicTools=" + electronicTools + " state=" + stateSummary());
+        if (roll >= difficulty) {
+            world.tiles[tx][ty] = '/';
+            logEvent("Door opened: " + label + ". It no longer blocks line of sight.");
+        } else {
+            logEvent("Door access failed: " + label + ". Need tools, key, lockpicks, hacking tools, Data spike for electronic locks, or better checks. Roll " + roll + " < " + difficulty + ".");
+            if (door == 'V') fatigue = Math.min(25, fatigue + 1);
+        }
+        advanceTurn("works the door access mechanism.");
+    }
+
+// ... omitted 109 non-method/source lines between cataloged methods ...
+
+    String edgeDirection(int tx, int ty) {
+        // 0.9.10ji: transition double doors now sit on the inner maintenance
+        // bulkhead rather than the literal map-edge tile. Resolve destination
+        // by the closest zone boundary so door placement can follow the new
+        // road -> maintenance-wall design without breaking transition logic.
+        if (world == null) return "?";
+        int n = Math.max(0, ty);
+        int s = Math.max(0, world.h - 1 - ty);
+        int wdist = Math.max(0, tx);
+        int e = Math.max(0, world.w - 1 - tx);
+        int best = Math.min(Math.min(n, s), Math.min(wdist, e));
+        if(best == n) return "N";
+        if(best == s) return "S";
+        if(best == wdist) return "W";
+        if(best == e) return "E";
+        return "?";
+    }
+
+// ... omitted 17 non-method/source lines between cataloged methods ...
+
+    Point oppositeEdgeSpawn(String dir, int tx, int ty) {
+        if (world == null) return null;
+        pendingTransitionReturnEdge = oppositeEdge(dir);
+        // Carry the source door's axis coordinate across the boundary so the
+        // destination can place the player beside the matching return doors,
+        // not in an arbitrary edge-nearest room. Sewer travel intentionally
+        // does not use this path; sewer exits remain the chaotic exception.
+        return new Point(tx, ty);
+    }
+
+    String oppositeEdge(String dir) {
+        if ("N".equals(dir)) return "S";
+        if ("S".equals(dir)) return "N";
+        if ("W".equals(dir)) return "E";
+        if ("E".equals(dir)) return "W";
+        return "";
+    }
+
+    void interactSewerHatch(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer hatch."); return; }
+        if (atlas.sewer) { logEvent("This hatch logic is already on a sewer layer; use a ladder/drain marker instead."); return; }
+        atlas.sewer = true;
+        loadAtlasWorld("sewer hatch down to Floor " + atlas.floor + "B", null);
+    }
+
+    void interactSewerLadder(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer ladder."); return; }
+        if (!atlas.sewer) { logEvent("This ladder/drain is not connected to a sewer layer from here."); return; }
+        atlas.sewer = false;
+        loadAtlasWorld("sewer ladder back to Floor " + atlas.floor, null);
+    }
+
+    void interactElevator(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for elevator."); return; }
+        if (atlas.floor >= 10) { logEvent("The elevator coughs against the upper limit of this sector stack. No higher route is mapped yet."); advanceTurn("tests a capped elevator."); return; }
+        atlas.floor = Math.min(10, atlas.floor + 1);
+        atlas.sewer = false;
+        loadAtlasWorld("elevator ascent to Floor " + atlas.floor, null);
+    }
+
+// ... omitted 94 non-method/source lines between cataloged methods ...
+
+    Point adjacentOpenNearPlayer() {
+        if (world == null) return null;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+        for(int[] d:dirs){ int x=playerX+d[0], y=playerY+d[1]; if(world.walkable(x,y) && world.npcAt(x,y)==null) return new Point(x,y); }
+        return null;
+    }
+
+    Point spawnPointForTransition(Point edgeHint) {
+        if (world == null) return new Point(2,2);
+        if (edgeHint == null) return world.startPoint();
+        if (pendingTransitionReturnEdge != null && !pendingTransitionReturnEdge.isEmpty()) {
+            char edge = pendingTransitionReturnEdge.charAt(0);
+            Point p = world.returnEdgeSpawn(edge, edgeHint);
+            DebugLog.audit("EDGE_RETURN_SPAWN", "returnEdge=" + edge + " sourceHint=" + edgeHint.x + "," + edgeHint.y + " spawn=" + p.x + "," + p.y + " zone=" + world.zoneCoordText() + " layer=" + world.layerText());
+            return p;
+        }
+        // Legacy sentinel hints from older saves/builds: still resolve to an edge-biased spawn.
+        if (edgeHint.x == -1 && edgeHint.y == -2) return world.edgeSpawn('S');
+        if (edgeHint.x == -1 && edgeHint.y == -3) return world.edgeSpawn('N');
+        if (edgeHint.x == -2 && edgeHint.y == -1) return world.edgeSpawn('E');
+        if (edgeHint.x == -3 && edgeHint.y == -1) return world.edgeSpawn('W');
+        return world.nearestWalkableTo(edgeHint.x, edgeHint.y);
+    }
+
+    void claimBaseHere() {
+        if (world == null) return;
+        int rid = world.roomIdAt(playerX, playerY);
+        if (rid < 0) { logEvent("You can only claim an actual room, not a corridor or wall seam."); return; }
+        baseClaimed = true;
+        baseX = playerX; baseY = playerY; claimedRoomId = rid;
+        suspicion += 2; gangHeat += 1;
+        DebugLog.audit("BASE_CLAIM", "claimedRoom=" + claimedRoomId + " at=" + baseX + "," + baseY + " state=" + stateSummary());
+        logEvent("Room claimed at " + baseX + "," + baseY + " as friendly territory. The law will want paperwork. The gangs will want contents.");
+        recordPlayerNewsEvent("room-claim", "claimed room " + claimedRoomId, Faction.NONE, "new private foothold reported in " + (world == null ? "unknown zone" : world.zoneType.label), 3);
+    }
+
+    boolean isInClaimedRoom(int x, int y) {
+        return baseClaimed && world != null && claimedRoomId >= 0 && world.roomIdAt(x, y) == claimedRoomId;
+    }
+
+    BaseObject baseObjectAt(int x, int y) {
+        for (BaseObject obj : baseObjects) if (obj.x == x && obj.y == y) return obj;
+        return null;
+    }
+
+
+    void beginDefenseBuildPlacement(BuildRecipe recipe) {
+        if (recipe == null) { logEvent("Defense build selection failed: no recipe."); return; }
+        String advisory = DefenseBuildSelectionAuthority.advisoryFor(recipe);
+        if (universalWindowAuthority != null) universalWindowAuthority.open("construction", turn, advisory);
+        logEvent(advisory);
+        beginBuildPlacement(recipe);
+    }
+
+    void openDefenseInfopedia() {
+        String[] tabs = infopediaTabs();
+        for (int i=0; i<tabs.length; i++) if ("DEFENSES".equals(tabs[i])) { infopediaTab = i; break; }
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        openPanel(PanelMode.INFOPEDIA);
+    }
+
+    void openConstructionValidationInfopedia() {
+        String[] tabs = infopediaTabs();
+        for (int i=0; i<tabs.length; i++) if ("AUDITS".equals(tabs[i])) { infopediaTab = i; break; }
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        int idx = entries.indexOf("Construction Validation Inspection");
+        infopediaSelected = Math.max(0, idx);
+        infopediaScroll = Math.max(0, infopediaSelected - 2);
+        infopediaDetailScroll = 0;
+        openPanel(PanelMode.INFOPEDIA);
+    }

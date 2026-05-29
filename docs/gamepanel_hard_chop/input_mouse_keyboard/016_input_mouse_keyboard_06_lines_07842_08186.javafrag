@@ -1,0 +1,25 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_06_lines_07842_08186
+// Category: input_mouse_keyboard
+// Source lines: 7842-8186
+// Method count: 2
+//
+// Methods in this fragment:
+// - productionInputReadLine :: lines 7842-7846 (5) :: String productionInputReadLine(CraftingRecipe recipe, BaseObject machine)
+// - countCraftInput :: lines 8182-8186 (5) :: int countCraftInput(String item)
+
+    String productionInputReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null || recipe.disabled) return "no recipe inputs available.";
+        String problem = recipe.blockingProblemForMachine(this, machine);
+        return recipe.inputSummary() + (problem == null ? "; inputs are ready." : "; blocked: " + problem);
+    }
+
+// ... omitted 335 non-method/source lines between cataloged methods ...
+
+    int countCraftInput(String item) {
+        int c = 0;
+        for (String carried : inventory) if (carried.equals(item) || ItemQuality.stripManufacturingIdentity(carried).equalsIgnoreCase(item)) c++;
+        return c;
+    }

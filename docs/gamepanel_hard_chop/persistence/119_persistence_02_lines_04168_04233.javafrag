@@ -1,0 +1,51 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: persistence_02_lines_04168_04233
+// Category: persistence
+// Source lines: 4168-4233
+// Method count: 4
+//
+// Methods in this fragment:
+// - loadedShotsForWeapon :: lines 4168-4168 (1) :: int loadedShotsForWeapon(String weapon)
+// - setLoadedShotsForWeapon :: lines 4169-4174 (6) :: void setLoadedShotsForWeapon(String weapon, int shots)
+// - consumeLoadedShotsForAttack :: lines 4207-4218 (12) :: boolean consumeLoadedShotsForAttack(TargetingSolution ts)
+// - reloadCurrentRangedWeapon :: lines 4220-4233 (14) :: void reloadCurrentRangedWeapon()
+
+    int loadedShotsForWeapon(String weapon) { return loadedWeaponShots.getOrDefault(weaponLoadKey(weapon), 0); }
+    void setLoadedShotsForWeapon(String weapon, int shots) {
+        String key = weaponLoadKey(weapon);
+        int cap = magazineCapacityForWeapon(weapon);
+        if (cap <= 0 || shots <= 0) loadedWeaponShots.remove(key);
+        else loadedWeaponShots.put(key, Math.min(cap, shots));
+    }
+
+// ... omitted 32 non-method/source lines between cataloged methods ...
+
+    boolean consumeLoadedShotsForAttack(TargetingSolution ts) {
+        if (ts == null || !ts.ranged) return true;
+        int need = Math.max(1, ts.ammoCost);
+        int have = loadedShotsForWeapon(ts.weaponName);
+        if (have < need) {
+            logEvent("RELOAD REQUIRED: " + ts.weaponName + " has " + have + "/" + magazineCapacityForWeapon(ts.weaponName) + " shots loaded. Press X to reload using " + ammoItemForWeapon(ts.weaponName) + ".");
+            sounds.playReloadEffect(options);
+            return false;
+        }
+        setLoadedShotsForWeapon(ts.weaponName, have - need);
+        return true;
+    }
+
+    void reloadCurrentRangedWeapon() {
+        String weapon = bestWeaponName();
+        if (weapon == null || !ItemCatalog.isFirearmLike(weapon)) { logEvent("RELOAD: no carried ranged weapon is selected as the best weapon."); return; }
+        String ammo = ammoItemForWeapon(weapon);
+        int cap = magazineCapacityForWeapon(weapon);
+        int loaded = loadedShotsForWeapon(weapon);
+        if (cap <= 0 || ammo.isBlank()) { logEvent("RELOAD: " + weapon + " has no known reload profile yet."); return; }
+        if (loaded >= cap) { logEvent("RELOAD: " + weapon + " is already loaded (" + loaded + "/" + cap + ")."); return; }
+        if (!removeInventoryOne(ammo)) { logEvent("RELOAD FAILED: need " + ammo + " to load " + weapon + ". Current load " + loaded + "/" + cap + "."); return; }
+        setLoadedShotsForWeapon(weapon, cap);
+        sounds.playReloadEffect(options);
+        logEvent("RELOAD: " + active.name + " loads " + weapon + " with " + ammo + ". Loaded " + cap + "/" + cap + " shots.");
+        advanceTurn("reloads " + weapon + ".");
+    }

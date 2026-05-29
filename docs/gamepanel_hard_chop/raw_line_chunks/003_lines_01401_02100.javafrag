@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 1401-2100
+
+                buttons.add(new ButtonBox("PAYLOAD: " + options.generatedAssetPayloadRootShortLabel(), x, y+rowStep*4, bw, bhOpt, "Select an external generated-art payload folder. Supports Phase B2/B3 exports or canonical assets/graphics/generated roots.", this::chooseGeneratedAssetPayloadRoot));
+                buttons.add(new ButtonBox("F3 PERF " + onOff(options.diagnosticsOverlay), x+gap, y+rowStep*4, bw, bhOpt, "Toggle the F3 performance overlay: FPS, paint time, JVM memory, GC, render state, and lighting status.", this::togglePerformanceDiagnostics));
+                buttons.add(new ButtonBox("CLEAR PAYLOAD", x+gap*2, y+rowStep*5, bw, bhOpt, "Clear the external generated-art payload root and fall back to bundled low_32 art.", this::clearGeneratedAssetPayloadRoot));
+                addGraphicsDropdownButtons(x, y, bw, gap);
+            } else if (optionsTab == 5) {
+                buttons.add(new ButtonBox("PROFILE: " + jvmRuntimeProfile.targetLabel(), x, y, bw, bhOpt, "Cycle Launcher, Client Graphics, Thin Client, and Headless Server JVM profiles.", this::cycleJvmRuntimeProfile));
+                buttons.add(new ButtonBox("GC: " + jvmRuntimeProfile.gc.label, x+gap, y, bw, bhOpt, "Cycle the saved garbage collector profile. Requires restart to apply.", this::cycleJvmGarbageCollector));
+                buttons.add(new ButtonBox("PIPELINE: " + jvmRuntimeProfile.pipelineLabel(), x+gap*2, y, bw, bhOpt, "Cycle Java2D pipeline preference. Requires restart to fully apply.", this::cycleJvmPipelineProfile));
+                buttons.add(new ButtonBox("RAM -", x, y+rowStep, bw, bhOpt, "Reduce max heap profile by 512 MB. Requires restart to apply.", () -> changeJvmMemory(-512)));
+                buttons.add(new ButtonBox("RAM +", x+gap, y+rowStep, bw, bhOpt, "Increase max heap profile by 512 MB. Requires restart to apply.", () -> changeJvmMemory(512)));
+                buttons.add(new ButtonBox("STRING DEDUPE " + onOff(jvmRuntimeProfile.stringDeduplication), x+gap*2, y+rowStep, bw, bhOpt, "Toggle string deduplication when supported by the selected collector. Requires restart.", this::toggleJvmStringDeduplication));
+                buttons.add(new ButtonBox("TRANS BLIT " + onOff(jvmRuntimeProfile.transparentAcceleration), x, y+rowStep*2, bw, bhOpt, "Toggle transparent Java2D blit acceleration flag for graphical profiles. Requires restart.", this::toggleJvmTransparentAcceleration));
+                buttons.add(new ButtonBox("NOAA " + onOff(jvmRuntimeProfile.disableVectorAntialiasing), x+gap, y+rowStep*2, bw, bhOpt, "Toggle Java2D vector antialias suppression for sharper/cheaper primitive graphics. Text hints remain separate.", this::toggleJvmNoAa));
+                buttons.add(new ButtonBox("ACCEPT + RESTART", x+gap*2, y+rowStep*2, bw, bhOpt, "Save JVM profile and restart the current launcher/client process with the compiled flags.", this::acceptJvmSettingsAndRestart));
+            } else if (optionsTab == 6) {
+                buttons.add(new ButtonBox("CVD: " + AccessibilityCompatibilityAuthority.cvdLabel(options.cvdModeIndex), x, y, bw, bhOpt, "Cycle render-side color vision correction. Applies to the composited Java2D backbuffer only.", this::cycleCvdMode));
+                buttons.add(new ButtonBox("HIGH CONTRAST " + onOff(options.highContrastText), x+gap, y, bw, bhOpt, "Toggle stronger text contrast containers for dense custom-canvas UI.", this::toggleHighContrastText));
+                buttons.add(new ButtonBox("INSTANT TEXT " + onOff(options.instantDialogueText), x+gap*2, y, bw, bhOpt, "Disable typewriter/scrolled conversation text where that text path supports it.", this::toggleInstantDialogueText));
+                buttons.add(new ButtonBox("SHAKE -", x, y+rowStep, bw, bhOpt, "Reduce screen-shake intensity by 10 percent.", () -> adjustScreenShake(-10)));
+                buttons.add(new ButtonBox("SHAKE +", x+gap, y+rowStep, bw, bhOpt, "Increase screen-shake intensity by 10 percent.", () -> adjustScreenShake(10)));
+                buttons.add(new ButtonBox("NARRATE", x+gap*2, y+rowStep, bw, bhOpt, "Push the current screen summary through the Swing AccessibleContext channel.", this::pushCurrentScreenNarration));
+            } else if (optionsTab == 7) {
+                buttons.add(new ButtonBox("SUBTITLES " + onOff(options.subtitlesEnabled), x, y, bw, bhOpt, "Toggle subtitles. Defaults on so dialogue text is available immediately.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleSubtitles(options))));
+                buttons.add(new ButtonBox("SKIP SPLASH " + onOff(options.skipRepeatLogoSplashes), x+gap, y, bw, bhOpt, "Skip repeat logo/splash waits after first launch where the boot flow supports it.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleSkipSplashes(options))));
+                buttons.add(new ButtonBox("AUTO LOOT " + onOff(options.autoLootEnabled), x+gap*2, y, bw, bhOpt, "Toggle automatic pickup preference for eligible safe drops.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleAutoLoot(options))));
+                buttons.add(new ButtonBox("GHOST BUILD " + onOff(options.omniDirectionalGhostBuild), x, y+rowStep, bw, bhOpt, "Allow reasonable-distance blueprint placement without pixel-perfect corner standing.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleOmniGhostBuild(options))));
+                buttons.add(new ButtonBox("HOLD BUILD " + onOff(options.holdToRepeatConstruction), x+gap, y+rowStep, bw, bhOpt, "Use hold-to-repeat construction where the build tool path supports repeated placement.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleHoldRepeatBuild(options))));
+                buttons.add(new ButtonBox("SMART STORAGE " + onOff(options.smartStorageFilters), x+gap*2, y+rowStep, bw, bhOpt, "Enable smart storage/filter defaults for dump-all and routed logistics surfaces.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleSmartStorage(options))));
+                buttons.add(new ButtonBox("PROXY CRAFT " + onOff(options.proxyCraftingFromLinkedStorage), x, y+rowStep*2, bw, bhOpt, "Prefer linked-base and nearby storage resources when recipe UIs support proxy counting.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleProxyCrafting(options))));
+                buttons.add(new ButtonBox("WARN BLOCKS " + onOff(options.productionBlockerWarnings), x+gap, y+rowStep*2, bw, bhOpt, "Show clear reasons for blocked machines, scarce resources, and stalled recipes where known.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleProductionWarnings(options))));
+                buttons.add(new ButtonBox("MARKET ALERT " + onOff(options.economicDisruptionAlerts), x+gap*2, y+rowStep*2, bw, bhOpt, "Enable macro-economic and supply-chain disruption alert preferences.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleMarketAlerts(options))));
+                buttons.add(new ButtonBox("FAVOR LOCK " + onOff(options.favoredItemProtection), x, y+rowStep*3, bw, bhOpt, "Protect favored/marked gear from accidental scrap, sell, drop, or route decisions.", () -> applyQoL(GameplayQualityOfLifeAuthority.toggleFavoredProtection(options))));
+                buttons.add(new ButtonBox("ITEM SAFETY: " + GameplayQualityOfLifeAuthority.protectionLabel(options.itemSafetyProfileIndex), x+gap, y+rowStep*3, bw, bhOpt, "Cycle item-safety strictness for low-durability, low-quality, mixed-stack, and worse-pickup warnings.", () -> applyQoL(GameplayQualityOfLifeAuthority.cycleItemSafetyProfile(options))));
+                buttons.add(new ButtonBox("doom MODE " + onOff(options.doomModeEnabled), x+gap*2, y+rowStep*3, bw, bhOpt, "Highly experimental first-person 3D wrapper. Confirmation required before enabling.", this::requestDoomModeToggle));
+                buttons.add(new ButtonBox("doom FOV -", x, y+rowStep*4, bw, bhOpt, "Narrow the first-person horizontal field of view.", () -> changeDoomFov(-5)));
+                buttons.add(new ButtonBox("doom FOV " + Math.max(60, Math.min(110, options.doomModeFovDegrees)) + "°", x+gap, y+rowStep*4, bw, bhOpt, "Current doom mode horizontal field of view. Use the -/+ controls or brackets in-game.", () -> logEvent(firstPersonRenderViewport.statusLine(options))));
+                buttons.add(new ButtonBox("doom FOV +", x+gap*2, y+rowStep*4, bw, bhOpt, "Widen the first-person horizontal field of view.", () -> changeDoomFov(5)));
+                buttons.add(new ButtonBox("doom FOG: " + options.doomFogModeLabel(), x, y+rowStep*5, bw, bhOpt, "Switch first-person depth fog between perpendicular linear Z-depth and radial Euclidean distance.", this::cycleDoomFogMode));
+                buttons.add(new ButtonBox("RENDER STRESS " + onOff(renderStressTest.active()), x+gap, y+rowStep*5, bw, bhOpt, "Flood the render path with synthetic particles, collisions, lightmaps, and ray intersections for profiling.", this::toggleRenderStressTest));
+            }
+            buttons.add(new ButtonBox("BACK", Math.max(24, w - 142), Math.max(24, h - 58), 118, 34, "Return to the prior menu.", () -> setScreen(previousScreen == Screen.PAUSE ? Screen.PAUSE : Screen.MENU)));
+        } else if (screen == Screen.PAUSE) {
+            int x=w/2-135, y=Math.min(h-312, Math.max(210, h/2-82));
+            buttons.add(new ButtonBox("RESUME", x, y, 270, 44, "Return to the underhive.", () -> setScreen(Screen.GAME)));
+            buttons.add(new ButtonBox("SAVE/LOAD", x, y+55, 270, 44, "Open expanded save/load slots and autosave state.", () -> openPanel(PanelMode.SAVELOAD)));
+            buttons.add(new ButtonBox("LOAD", x, y+110, 270, 44, "Open manual and autosave load slots.", () -> loadGameSlot(AUTOSAVE_HOURLY_SLOT)));
+            buttons.add(new ButtonBox("OPTIONS", x, y+165, 270, 44, "Open options.", () -> setScreen(Screen.OPTIONS)));
+            buttons.add(new ButtonBox("MAIN MENU", x, y+220, 270, 44, "Abandon the current test run and return to main menu.", () -> setScreen(Screen.MENU)));
+        } else if (screen == Screen.CAPTURE) {
+            int x=w/2-165, y=h-128;
+            buttons.add(new ButtonBox("ACKNOWLEDGE", x, y, 330, 44, "Close the custody report and return to the underhive after release.", () -> setScreen(Screen.GAME)));
+        } else if (screen == Screen.LOST) {
+            int x=w/2-165, y=h-128;
+            buttons.add(new ButtonBox("LOAD", x, y, 155, 44, "Open the save/load menu. Manual and autosave slots are listed there.", () -> openPanel(PanelMode.SAVELOAD)));
+            buttons.add(new ButtonBox("QUIT", x+175, y, 155, 44, "Return to the main menu.", () -> setScreen(Screen.MENU)));
+        } else if (screen == Screen.PANEL) {
+            if (panelUsesCommandSurface()) {
+                Rectangle cmd = commandPanelRect();
+                int bwBack = Math.max(110, Math.min(150, cmd.width - 28));
+                buttons.add(new ButtonBox("BACK", cmd.x + 14, cmd.y + cmd.height - 48, bwBack, 34, "Return to active game screen.", this::closePanel));
+            } else {
+                buttons.add(new ButtonBox("BACK", 20, 20, 110, 38, "Return to active game screen.", this::closePanel));
+            }
+            if (panelMode == PanelMode.INFOPEDIA) {
+                addInfopediaButtons();
+            } else if (panelMode == PanelMode.LOOK) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14;
+                int by = cmd.y + 64;
+                int bw = Math.max(120, cmd.width - 28);
+                buttons.add(new ButtonBox("EXAMINE", bx, by, bw, 36, "Open a focused reading of the selected visible person, fixture, object, or tile.", this::examineSelectedLookTarget));
+                NpcEntity pet = selectedLookNpc();
+                if (pet != null && pet.isPetActor()) {
+                    buttons.add(new ButtonBox("PET", bx, by + 44, bw, 36, "Offer a gentle pet interaction if the companion animal is close enough and calm.", this::petSelectedLookPet));
+                }
+            } else if (panelMode == PanelMode.INTERACT) {
+                UiLayout L = uiLayout();
+                int bx = L.command.x + 14;
+                int by = L.command.y + 64;
+                int bw = Math.max(120, L.command.width - 28);
+                buttons.add(new ButtonBox("CONFIRM", bx, by, bw, 36, "Confirm the selected adjacent interaction and spend the listed time.", this::confirmInteraction));
+                by += 44;
+                if (canScavengeFromCurrentRoom()) {
+                    buttons.add(new ButtonBox("SCAVENGE ROOM", bx, by, bw, 36, "Open targeted scavenging choices for this unclaimed room.", () -> openPanel(PanelMode.SCAVENGE)));
+                    by += 44;
+                }
+                if (selectedInteractionIsCot()) {
+                    buttons.add(new ButtonBox("SLEEP -", bx, by, bw, 36, "Reduce requested cot sleep duration by one hour.", () -> changePendingSleepHours(-1)));
+                    by += 44;
+                    buttons.add(new ButtonBox("SLEEP +", bx, by, bw, 36, "Increase requested cot sleep duration up to eight hours.", () -> changePendingSleepHours(1)));
+                    by += 44;
+                }
+                if (selectedInteractionIsGovernor()) {
+                    buttons.add(new ButtonBox("BRIBE GOVERNOR", bx, by, bw, 36, "Pay the sector governor's lavish audience fee and hope this seed's governor actually holds an off-world ticket.", this::bribeSectorGovernor));
+                    by += 44;
+                    buttons.add(new ButtonBox("ATTACK GOVERNOR", bx, by, bw, 36, "Attempt to kill the sector governor and loot the ticket if this governor has one. Guards will respond.", this::attackSectorGovernor));
+                    by += 44;
+                }
+                if (selectedInteractionIsFactionJournal()) {
+                    buttons.add(new ButtonBox("STEAL JOURNAL", bx, by, bw, 36, "Steal this faction leader journal as physical evidence. INN pays large bounties for these.", () -> stealFactionJournalAt(lookX, lookY)));
+                    by += 44;
+                }
+                if (selectedInteractionCanSellJournalsToINN()) {
+                    buttons.add(new ButtonBox("SELL JOURNALS", bx, by, bw, 36, "Sell stolen faction leader journals to the Concord News Network. Rank-one leader journals pay 5000 script.", this::sellLeaderJournalsToINN));
+                    by += 44;
+                }
+                if (selectedInteractionIsBankTerminal()) {
+                    buttons.add(new ButtonBox("OPEN ACCOUNT", bx, by, bw, 36, "Open an account at the selected bank if you can pay its fee.", this::openSelectedBankAccount));
+                    by += 44;
+                    buttons.add(new ButtonBox("DEPOSIT ALL", bx, by, bw, 36, "Deposit all carried Concord Script into the selected account.", this::depositAllToSelectedBank));
+                    by += 44;
+                    buttons.add(new ButtonBox("WITHDRAW 100", bx, by, bw, 36, "Withdraw up to 100 Concord Script from this account.", () -> withdrawFromSelectedBank(100)));
+                    by += 44;
+                    buttons.add(new ButtonBox("WITHDRAW ALL", bx, by, bw, 36, "Withdraw as much of this account balance as carry capacity permits.", () -> withdrawFromSelectedBank(Integer.MAX_VALUE)));
+                    by += 44;
+                    buttons.add(new ButtonBox("LOCKBOX JOB", bx, by, bw, 36, "Accept a noble-bank retrieval job for lockboxes, gold, or stock certificates stolen from a vault.", this::acceptBankLockboxContract));
+                    by += 44;
+                    buttons.add(new ButtonBox("TURN LOCKBOX", bx, by, bw, 36, "Turn in a matching lockbox, gold ingot, permit, or stock certificate for a noble-bank retrieval contract.", this::turnInBankLockboxContract));
+                    by += 44;
+                }
+                if (selectedInteractionIsBankVault()) {
+                    buttons.add(new ButtonBox("OPEN VAULT", bx, by, bw, 36, "Attempt to open/loot this bank vault using a manager keycard, vault key, or security tools. This can trigger alarms.", this::openSelectedBankVault));
+                    by += 44;
+                }
+                if (selectedInteractionIsBankAlarmPanel()) {
+                    buttons.add(new ButtonBox("TAMPER ALARM", bx, by, bw, 36, "Attempt to silence or disable this bank alarm panel before or during a vault intrusion.", this::tamperSelectedBankAlarmPanel));
+                    by += 44;
+                }
+                if (selectedInteractionIsBankManager()) {
+                    buttons.add(new ButtonBox("STEAL KEYCARD", bx, by, bw, 36, "Attempt to lift a bank manager keycard. Failure raises suspicion and may trigger bank security.", this::stealSelectedBankManagerKeycard));
+                    by += 44;
+                }
+                if (selectedInteractionIsExplosiveObject()) {
+                    buttons.add(new ButtonBox("DISARM EXPLOSIVE", bx, by, bw, 36, "Attempt to disarm and recover the selected planted explosive. Minimum one time unit.", () -> disarmExplosiveAt(lookX, lookY)));
+                    by += 44;
+                }
+                if (selectedInteractionIsPersistentStockObject()) {
+                    buttons.add(new ButtonBox("INSPECT STOCK", bx, by, bw, 36, "Inspect this contract/corpse/faction-stock container without transferring items.", this::inspectSelectedPersistentStockObject));
+                    by += 44;
+                    buttons.add(new ButtonBox("TAKE ALL", bx, by, bw, 36, "Transfer as many visible persistent container items as carry capacity allows.", this::takeAllSelectedPersistentStockObject));
+                    by += 44;
+                }
+                if (selectedInteractionIsSectorRail()) {
+                    buttons.add(new ButtonBox("USE OFF-WORLD TICKET", bx, by, bw, 36, "If you carry a genuine off-world ticket, present it at the rail authority and end the escape route successfully.", this::useOffworldTicketAtRail));
+                    by += 44;
+                    buttons.add(new ButtonBox("TAKE SECTOR RAIL", bx, by, bw, 36, "Abandon this sector and ride to a new generated sector. Bases, recruits, storage, businesses, and local heat are left behind.", this::takeSectorRailToNewSector));
+                    by += 44;
+                }
+
+            } else if (panelMode == PanelMode.COMBAT) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14, by = cmd.y + 64, bw = Math.max(120, cmd.width - 28);
+                buttons.add(new ButtonBox("CONFIRM ATTACK", bx, by, bw, 36, "Fire/strike at the red targeting reticle.", this::confirmCombatTarget));
+                buttons.add(new ButtonBox("FIRE MODE", bx, by+44, bw, 36, "Cycle SNAP/AIMED/BURST for ranged weapons.", this::cycleFireMode));
+                buttons.add(new ButtonBox("RELOAD", bx, by+88, bw, 36, "Reload the best carried ranged weapon from generic ammunition.", this::reloadCurrentRangedWeapon));
+                buttons.add(new ButtonBox("THROW EXPLOSIVE", bx, by+132, bw, 36, "Throw the first carried grenade/explosive at the reticle. G is the keyboard shortcut.", this::throwSelectedExplosiveAtCursor));
+            } else if (panelMode == PanelMode.SCAVENGE) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14;
+                int by = cmd.y + 64;
+                int bw = Math.max(120, cmd.width - 28);
+                buttons.add(new ButtonBox("GENERAL", bx, by, bw, 36, "Search generally through this room's ordinary loot profile.", () -> scavengeFor("General supplies")));
+                buttons.add(new ButtonBox("FOOD", bx, by+44, bw, 36, "Search specifically for edible rations or food-adjacent misery.", () -> scavengeFor("Food")));
+                buttons.add(new ButtonBox("WATER", bx, by+88, bw, 36, "Search specifically for sealed water, filters, canteens, or fluid containers.", () -> scavengeFor("Water")));
+                buttons.add(new ButtonBox("PARTS", bx, by+132, bw, 36, "Search specifically for mechanical scrap, machine parts, wire, and salvage.", () -> scavengeFor("Machine parts")));
+                buttons.add(new ButtonBox("BEG SCRIPT", bx, by+176, bw, 36, "Panhandle, plead, threaten, or perform the local poverty ritual for Concord Script. Zone risk applies.", () -> scavengeFor("Beg for money")));
+                buttons.add(new ButtonBox("CACHE LEDGER", bx, by+220, bw, 36, "Inspect this room's persistent cache inventory without transferring items.", this::inspectCurrentRoomCache));
+                buttons.add(new ButtonBox("BACK", bx, by+264, bw, 36, "Return to adjacent interaction mode.", () -> openPanel(PanelMode.INTERACT)));
+            } else if (panelMode == PanelMode.INVENTORY) {
+                int panelX = Math.max(36, w/2 - Math.min(880, w-72)/2);
+                int panelY = Math.max(68, h/2 - Math.min(440, h-110)/2);
+                int panelW = Math.min(880, w - panelX*2);
+                int panelH = Math.min(440, h - panelY - 54);
+                int gap = Math.max(10, scaled(10));
+                int actionW = Math.max(150, Math.min(220, panelW/4));
+                int actionX = panelX + panelW - actionW - 22;
+                int actionY = panelY + 106;
+                int bw = actionW;
+                int bh = Math.max(28, Math.min(34, (panelH - 176) / 7));
+                int step = bh + Math.max(6, scaled(6));
+                String invSel = selectedInventoryStackName();
+                String targetSel = selectedTargetInventoryName();
+                int n = 0;
+                if (!inventoryTargetColumnActive && invSel != null) {
+                    buttons.add(new ButtonBox("USE / EQUIP", actionX, actionY + step*(n++), bw, bh, "Use the selected carried item or equip it if it belongs on the paper doll.", this::useSelectedInventoryItem));
+                    buttons.add(new ButtonBox("DROP ONE", actionX, actionY + step*(n++), bw, bh, "Drop one unit of the selected stack.", this::dropSelectedInventoryItem));
+                    buttons.add(new ButtonBox("INSPECT", actionX, actionY + step*(n++), bw, bh, "Inspect the selected carried item in the bottom information pane.", this::inspectSelectedInventoryItem));
+                    if (PortableLightProfile.isLightItem(invSel)) buttons.add(new ButtonBox("THROW LIGHT", actionX, actionY + step*(n++), bw, bh, "Throw the selected portable light in your facing direction if it can illuminate a landing tile.", this::throwSelectedPortableLight));
+                } else if (inventoryTargetColumnActive && targetSel != null) {
+                    buttons.add(new ButtonBox("TAKE TARGET", actionX, actionY + step*(n++), bw, bh, "Take the selected target/floor item when the target inventory supports transfer.", this::takeSelectedTargetInventoryItem));
+                    buttons.add(new ButtonBox("TAKE ALL", actionX, actionY + step*(n++), bw, bh, "Take all transferable items from the selected target/container.", this::takeAllTargetInventoryItems));
+                    buttons.add(new ButtonBox("INSPECT", actionX, actionY + step*(n++), bw, bh, "Inspect the selected target item or floor feature.", this::inspectSelectedInventoryItem));
+                } else {
+                    buttons.add(new ButtonBox("INSPECT", actionX, actionY, bw, bh, "Inspect the current inventory or floor tile state.", this::inspectSelectedInventoryItem));
+                }
+            } else if (panelMode == PanelMode.CHARACTER) {
+                int cx = w/2 - 210;
+                int cy = h - 118;
+                buttons.add(new ButtonBox("FACTIONS", cx, cy, 190, 34, "Open faction standing and local political hostility from the character dossier.", () -> openPanel(PanelMode.FACTIONS)));
+                int dossierFrameX = Math.max(24, w/45);
+                int dossierFrameY = Math.max(44, h/18);
+                int dossierFrameH = h - dossierFrameY - 46;
+                int knowledgeButtonX = dossierFrameX + 28;
+                int knowledgeButtonY = Math.max(dossierFrameY + 96, dossierFrameY + dossierFrameH - 64);
+                buttons.add(new ButtonBox("KNOWLEDGE", knowledgeButtonX, knowledgeButtonY, 190, 34, "Open the character-owned knowledge and progression tree.", this::openKnowledgeMenu));
+                int slotX = Math.max(40, w - 386);
+                int slotY = Math.max(150, h - 158);
+                int slotButtonY = slotY + 68;
+                buttons.add(new ButtonBox("DISGUISE", slotX, slotButtonY, 217, 28, "Open clothing, cover identity, and masquerade odds from the equipment slot panel.", () -> openPanel(PanelMode.DISGUISE)));
+                if (equippedItemForSlot(selectedEquipmentSlotIndex) != null && !equippedItemForSlot(selectedEquipmentSlotIndex).isBlank()) {
+                    buttons.add(new ButtonBox("INSPECT SLOT", slotX, slotButtonY + 34, 217, 28, "Inspect the selected equipped item.", () -> logEvent("EQUIPMENT SLOT: " + equipmentSlotNames()[selectedEquipmentSlotIndex] + " contains " + equippedItemForSlot(selectedEquipmentSlotIndex) + ".")));
+                    buttons.add(new ButtonBox("UNEQUIP", slotX, slotButtonY + 68, 217, 28, "Move the selected equipped item back to carried inventory if possible.", this::unequipSelectedEquipmentSlot));
+                }
+            } else if (panelMode == PanelMode.SAVELOAD) {
+                SaveLoadUiRects sl = saveLoadUiRects();
+                int topButtonH = Math.max(20, Math.min(28, sl.manual.height / 8));
+                buttons.add(new ButtonBox("SAVE DIAGNOSTIC", sl.manual.x + 14, sl.manual.y + 54, Math.max(80, sl.manual.width - 28), topButtonH,
+                        "Record a compact save-health report for troubleshooting.", this::logPersistenceDiagnostic));
+                buttons.add(new ButtonBox("LOAD MENU", sl.auto.x + 14, sl.auto.y + 54, Math.max(80, sl.auto.width - 28), topButtonH,
+                        "Manual saves and autosaves are listed in separate columns.", () -> logEvent("The load menu is already open.")));
+                int rowGap = Math.max(4, scaled(4));
+                int rowStart = sl.manual.y + 90;
+                int available = Math.max(72, sl.manual.y + sl.manual.height - 18 - rowStart);
+                int rowH = Math.max(18, Math.min(28, (available - rowGap * Math.max(0, SAVE_SLOT_COUNT - 1)) / Math.max(1, SAVE_SLOT_COUNT)));
+                int half = Math.max(60, (sl.manual.width - 36) / 2);
+                for (int i=1;i<=SAVE_SLOT_COUNT;i++) {
+                    final int slot=i;
+                    int sy=rowStart+(i-1)*(rowH+rowGap);
+                    buttons.add(new ButtonBox("MANUAL " + i + " LOAD", sl.manual.x + 14, sy, half, rowH, "Load manual save slot " + i + ".", () -> loadGameSlot(slot)));
+                    buttons.add(new ButtonBox("SAVE " + i, sl.manual.x + 22 + half, sy, Math.max(60, sl.manual.width - 36 - half), rowH, "Write the active run into manual save slot " + i + ".", () -> saveGameSlot(slot)));
+                }
+                int[] autos = { AUTOSAVE_HOURLY_SLOT, AUTOSAVE_ZONE_SLOT, -1001, -1002, -1003 };
+                String[] labels = { "AUTO 1 HOUR", "AUTO 2 ZONE", "AUTO 3 EMPTY", "AUTO 4 EMPTY", "AUTO 5 EMPTY" };
+                int autoRows = labels.length;
+                int autoAvailable = Math.max(90, sl.auto.y + sl.auto.height - 18 - rowStart);
+                int autoRowH = Math.max(18, Math.min(28, (autoAvailable - rowGap * Math.max(0, autoRows - 1)) / Math.max(1, autoRows)));
+                for (int i=0;i<labels.length;i++) {
+                    final int slot = autos[i];
+                    final int ordinal = i + 1;
+                    int sy=rowStart+i*(autoRowH+rowGap);
+                    if (slot == -1001 || slot == -1002 || slot == -1003) {
+                        buttons.add(new ButtonBox(labels[i], sl.auto.x + 14, sy, Math.max(80, sl.auto.width - 28), autoRowH, "Empty autosave column slot.", () -> logEvent("Autosave slot " + ordinal + " is empty.")));
+                    } else {
+                        buttons.add(new ButtonBox(labels[i], sl.auto.x + 14, sy, Math.max(80, sl.auto.width - 28), autoRowH, "Load autosave slot " + ordinal + ".", () -> loadGameSlot(slot)));
+                    }
+                }
+            } else if (panelMode == PanelMode.BUILD) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14;
+                int by = cmd.y + 50;
+                int bw = Math.max(110, cmd.width - 28);
+                int total = 30;
+                int bh = Math.max(16, Math.min(26, (cmd.height - 62) / total - 2));
+                int step = bh + 2;
+                int n = 0;
+                buttons.add(new ButtonBox("CLAIM ROOM", bx, by + step*(n++), bw, bh, "Claim the current room as your illegal foothold. Claimed rooms tint light green.", this::claimBaseHere));
+                buttons.add(new ButtonBox("STORAGE", bx, by + step*(n++), bw, bh, BuildRecipe.storage().shortTip(), () -> beginBuildPlacement(BuildRecipe.storage())));
+                buttons.add(new ButtonBox("WORKBENCH", bx, by + step*(n++), bw, bh, BuildRecipe.workbench().shortTip(), () -> beginBuildPlacement(BuildRecipe.workbench())));
+                buttons.add(new ButtonBox("BARRICADE", bx, by + step*(n++), bw, bh, BuildRecipe.barricade().shortTip(), () -> beginBuildPlacement(BuildRecipe.barricade())));
+                buttons.add(new ButtonBox("COT", bx, by + step*(n++), bw, bh, BuildRecipe.cot().shortTip(), () -> beginBuildPlacement(BuildRecipe.cot())));
+                buttons.add(new ButtonBox("WATER BARREL", bx, by + step*(n++), bw, bh, BuildRecipe.water().shortTip(), () -> beginBuildPlacement(BuildRecipe.water())));
+                buttons.add(new ButtonBox("ALARM", bx, by + step*(n++), bw, bh, BuildRecipe.alarm().shortTip(), () -> beginBuildPlacement(BuildRecipe.alarm())));
+                buttons.add(new ButtonBox("SHOP COUNTER", bx, by + step*(n++), bw, bh, BuildRecipe.shopCounter().shortTip(), () -> beginBuildPlacement(BuildRecipe.shopCounter())));
+                buttons.add(new ButtonBox("CLINIC STALL", bx, by + step*(n++), bw, bh, BuildRecipe.clinicStall().shortTip(), () -> beginBuildPlacement(BuildRecipe.clinicStall())));
+                buttons.add(new ButtonBox("STASH ITEM", bx, by + step*(n++), bw, bh, "Move one carried item into base storage.", this::stashOneItem));
+                buttons.add(new ButtonBox("TAKE ITEM", bx, by + step*(n++), bw, bh, "Move one stored item back into inventory.", this::takeOneItem));
+                buttons.add(new ButtonBox("DRINK/REST", bx, by + step*(n++), bw, bh, "Use water barrel/cot mechanics in your claimed room.", this::useComfortStructures));
+                buttons.add(new ButtonBox("SECURITY", bx, by + step*(n++), bw, bh, "Inspect barricades and arm alarm traps.", this::useSecurityStructures));
+                buttons.add(new ButtonBox("WATCH POST", bx, by + step*(n++), bw, bh, BuildRecipe.watchPost().shortTip(), () -> beginBuildPlacement(BuildRecipe.watchPost())));
+                buttons.add(new ButtonBox("GUARD BARRACKS", bx, by + step*(n++), bw, bh, BuildRecipe.guardBarracks().shortTip(), () -> beginBuildPlacement(BuildRecipe.guardBarracks())));
+                buttons.add(new ButtonBox("POWER TURRET", bx, by + step*(n++), bw, bh, BuildRecipe.powerTurret().shortTip(), () -> beginBuildPlacement(BuildRecipe.powerTurret())));
+                buttons.add(new ButtonBox("SHIELD RELAY", bx, by + step*(n++), bw, bh, BuildRecipe.shieldRelay().shortTip(), () -> beginBuildPlacement(BuildRecipe.shieldRelay())));
+                buttons.add(new ButtonBox("DECOR", bx, by + step*(n++), bw, bh, BuildRecipe.decor().shortTip(), () -> beginBuildPlacement(BuildRecipe.decor())));
+                buttons.add(new ButtonBox("BUSINESS ADDON", bx, by + step*(n++), bw, bh, BuildRecipe.businessAddon().shortTip(), () -> beginBuildPlacement(BuildRecipe.businessAddon())));
+                buttons.add(new ButtonBox("CARRY STATION", bx, by + step*(n++), bw, bh, BuildRecipe.carryingStation().shortTip(), () -> beginBuildPlacement(BuildRecipe.carryingStation())));
+                buttons.add(new ButtonBox("SUPPLY POST", bx, by + step*(n++), bw, bh, BuildRecipe.supplyPost().shortTip(), () -> beginBuildPlacement(BuildRecipe.supplyPost())));
+                buttons.add(new ButtonBox("LOGISTICS", bx, by + step*(n++), bw, bh, BuildRecipe.logisticsCenter().shortTip(), () -> beginBuildPlacement(BuildRecipe.logisticsCenter())));
+                buttons.add(new ButtonBox("SANDBAGS", bx, by + step*(n++), bw, bh, BuildRecipe.sandbagLine().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.sandbagLine())));
+                buttons.add(new ButtonBox("WIRE", bx, by + step*(n++), bw, bh, BuildRecipe.razorWireCoil().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.razorWireCoil())));
+                buttons.add(new ButtonBox("DEF WALL", bx, by + step*(n++), bw, bh, BuildRecipe.reinforcedWallPanel().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.reinforcedWallPanel())));
+                buttons.add(new ButtonBox("ARB DOOR", bx, by + step*(n++), bw, bh, BuildRecipe.arbitesReinforcedDoor().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.arbitesReinforcedDoor())));
+                buttons.add(new ButtonBox("SENSOR", bx, by + step*(n++), bw, bh, BuildRecipe.securitySensorMast().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.securitySensorMast())));
+                buttons.add(new ButtonBox("L TURRET", bx, by + step*(n++), bw, bh, BuildRecipe.lightStubTurret().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.lightStubTurret())));
+                buttons.add(new ButtonBox("DEF INFO", bx, by + step*(n++), bw, bh, "Open the Infopedia defense index and inspect the semantic/stat profiles for buildable defenses.", this::openDefenseInfopedia));
+                buttons.add(new ButtonBox("VALIDATE", bx, by + step*(n++), bw, bh, "Open the construction placement report for the selected tile; runs on demand only.", this::openConstructionValidationInfopedia));
+            } else if (panelMode == PanelMode.BASES) {
+                int bx = w - 360;
+                int by = Math.max(170, h/2 - 140);
+                buttons.add(new ButtonBox("BUY PERMIT", bx, by, 300, 34, "Buy a noble commerce permit for one owned business foundation. Permits reduce legal heat.", this::buyBusinessPermit));
+                buttons.add(new ButtonBox("OPEN BUSINESS", bx, by+42, 300, 34, "Open the first unlicensed business foundation as an illegal business if no permit is available.", this::openOrLicenseBusiness));
+                buttons.add(new ButtonBox("COLLECT INCOME", bx, by+84, 300, 34, "Run owned shops and services for one business tick. Illegal work raises heat.", this::collectBusinessIncome));
+                buttons.add(new ButtonBox("SECURITY AUDIT", bx, by+126, 300, 34, "Inspect base security, heat mitigation, and raid defense strength.", this::useSecurityStructures));
+                buttons.add(new ButtonBox("GUARD DUTY", bx, by+168, 300, 34, "Assign the next available recruit to security duty, or rotate guards back into general labor.", this::toggleRecruitGuardDuty));
+                buttons.add(new ButtonBox("RAID DRILL", bx, by+210, 300, 34, "Run a defensive drill and show the current raid risk math without forcing an attack.", this::runBaseRaidDrill));
+                buttons.add(new ButtonBox("CARGO AUDIT", bx, by+252, 300, 34, "Review cargo transfer range, logistics capacity, and transfer readiness between owned bases.", this::runCargoNetworkAudit));
+                buttons.add(new ButtonBox("STASH CASH", bx, by+294, 145, 34, "Move all carried Concord Script into your claimed-base cash stash.", this::stashAllScriptAtBase));
+                buttons.add(new ButtonBox("TAKE CASH", bx+155, by+294, 145, 34, "Withdraw up to 100 Concord Script from your claimed-base cash stash.", () -> takeScriptFromBase(100)));
+            } else if (panelMode == PanelMode.TRADE) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14; int by = cmd.y + 64; int bw = Math.max(120, cmd.width - 28);
+                if (activeTrader != null) {
+                    buttons.add(new ButtonBox("OFFER -", bx, by, bw, 36, "Move to previous trader offer.", () -> tradeOfferMove(-1)));
+                    buttons.add(new ButtonBox("OFFER +", bx, by+44, bw, 36, "Move to next trader offer.", () -> tradeOfferMove(1)));
+                    buttons.add(new ButtonBox("BUY", bx, by+88, bw, 36, "Buy the selected trader offer using concord script.", this::tradeBuySelected));
+                    buttons.add(new ButtonBox("SELL", bx, by+132, bw, 36, "Sell the currently selected inventory item to this trader.", this::tradeSellSelected));
+                    buttons.add(new ButtonBox("HAGGLE", bx, by+176, bw, 36, "Attempt a Charm-based haggle. Repeated attempts may anger the trader and raise prices.", this::tradeHaggle));
+                    buttons.add(new ButtonBox("RUMOR", bx, by+220, bw, 36, "Ask this trader for zone-appropriate rumors.", this::tradeAskTraderRumors));
+                } else {
+                    buttons.add(new ButtonBox("GREET", bx, by, bw, 36, "Offer a neutral greeting and test the current conversation branch.", this::npcGreet));
+                    buttons.add(new ButtonBox("ASK WORK", bx, by+44, bw, 36, "Ask what this person does in the zone.", this::npcAskWork));
+                    buttons.add(new ButtonBox("ASK FACTION", bx, by+88, bw, 36, "Ask about their faction and local mood.", this::npcAskFaction));
+                    buttons.add(new ButtonBox("ASK NEEDS", bx, by+132, bw, 36, "Ask about hunger, thirst, sleep, and immediate trouble. Logged for NPC simulation tests.", this::npcAskNeeds));
+                    buttons.add(new ButtonBox("RECRUIT", bx, by+176, bw, 36, "Attempt to recruit this person into your faction base. Requires cots, doctrine, supplies, and tolerable standing.", this::recruitActiveNpc));
+                    buttons.add(new ButtonBox("TAKE BOUNTY", bx, by+220, bw, 36, "Accept this faction's single active bounty contract. Target spawns in an adjacent zone and carries the required ident chip.", this::acceptBountyContract));
+                    buttons.add(new ButtonBox("TAKE FETCH", bx, by+264, bw, 36, "Accept this faction's single active retrieval contract. Sealed cargo spawns in an adjacent zone container.", this::acceptFetchContract));
+                    buttons.add(new ButtonBox("TURN IN", bx, by+308, bw, 36, "Turn in a matching ident chip or sealed object for script and faction standing.", this::turnInFactionContract));
+                    if (activeConversationNpc != null && activeConversationNpc.isProtectedCleric()) {
+                        buttons.add(new ButtonBox("PRAY 24H", bx, by+352, bw, 36, "Undertake a 24-hour rite of Concord forgiveness. Costs food, water, fatigue, and sleep debt; restores some civil Concord standing.", this::prayImperialForgivenessService));
+                        buttons.add(new ButtonBox("LEAVE", bx, by+396, bw, 36, "End the conversation and return to the game.", this::npcLeaveConversation));
+                    } else {
+                        buttons.add(new ButtonBox("LEAVE", bx, by+352, bw, 36, "End the conversation and return to the game.", this::npcLeaveConversation));
+                    }
+                }
+            } else if (panelMode == PanelMode.MAP) {
+                int bx = w/2-330; int by = h-118;
+                buttons.add(new ButtonBox("SLICE MAP", bx, by, 150, 38, "Show the diegetic map of the current sector slice/floor.", () -> { mapTab = 0; repaint(); }));
+                buttons.add(new ButtonBox("ROOM INTEL", bx+170, by, 170, 38, "Show room-type and scavenge intel separately from the map.", () -> { mapTab = 1; repaint(); }));
+                buttons.add(new ButtonBox("LAYER -", bx+360, by, 130, 38, "Scroll the sector map down through lower floor/sewer slices.", () -> { mapLayerView = Math.max(0, mapLayerView - 1); repaint(); }));
+                buttons.add(new ButtonBox("LAYER +", bx+510, by, 130, 38, "Scroll the sector map up through higher floor slices.", () -> { mapLayerView = Math.min(19, mapLayerView + 1); repaint(); }));
+            } else if (panelMode == PanelMode.WORKBENCH) {
+                int bx = w - 360;
+                int by = Math.max(165, h/2 - 215);
+                buttons.add(new ButtonBox("PROCESS SCRAP", bx, by, 300, 34, "Convert one Scrap bit into supplies and machine parts.", this::workProcessScrap));
+                buttons.add(new ButtonBox("REPAIR CLOTHING", bx, by+42, 300, 34, "Repair damaged equipped clothing using supplies and machine parts.", this::workRepairClothing));
+                buttons.add(new ButtonBox("ASSEMBLE PARTS", bx, by+84, 300, 34, "Use mechanical detritus and supplies to assemble machine parts.", this::workAssembleParts));
+                buttons.add(new ButtonBox("RECIPE -", bx, by+126, 145, 34, "Move to previous known crafting recipe.", () -> moveCraftRecipeSelection(-1)));
+                buttons.add(new ButtonBox("RECIPE +", bx+155, by+126, 145, 34, "Move to next known crafting recipe.", () -> moveCraftRecipeSelection(1)));
+                buttons.add(new ButtonBox("CRAFT SELECTED", bx, by+168, 300, 34, "Craft the selected known recipe if requirements and ingredients are available.", this::craftSelectedRecipe));
+                buttons.add(new ButtonBox("MACHINE -", bx, by+210, 145, 34, "Select previous recruit-operable production machine in the base.", () -> moveWorkerMachineSelection(-1)));
+                buttons.add(new ButtonBox("MACHINE +", bx+155, by+210, 145, 34, "Select next recruit-operable production machine in the base.", () -> moveWorkerMachineSelection(1)));
+                buttons.add(new ButtonBox("STAFF -", bx, by+252, 145, 34, "Select previous staffable machine or defensive station for manual assignment.", () -> moveStaffingStationSelection(-1)));
+                buttons.add(new ButtonBox("STAFF +", bx+155, by+252, 145, 34, "Select next staffable machine or defensive station for manual assignment.", () -> moveStaffingStationSelection(1)));
+                buttons.add(new ButtonBox("WORKER -", bx, by+294, 145, 34, "Select previous recruited worker for manual station assignment.", () -> moveStaffingWorkerSelection(-1)));
+                buttons.add(new ButtonBox("WORKER +", bx+155, by+294, 145, 34, "Select next recruited worker for manual station assignment.", () -> moveStaffingWorkerSelection(1)));
+                buttons.add(new ButtonBox("ASSIGN STAFF", bx, by+336, 145, 34, "Assign selected worker to selected staffable station. Does not automate production yet.", this::assignSelectedWorkerToStaffingStation));
+                buttons.add(new ButtonBox("CLEAR STAFF", bx+155, by+336, 145, 34, "Clear manual staffing from selected staffable station.", this::clearSelectedStaffingStationWorker));
+                buttons.add(new ButtonBox("ASSIGN RECIPE", bx, by+378, 300, 34, "Assign the selected visible recipe to the selected machine for faction recruit labor.", this::assignSelectedRecipeToMachine));
+                buttons.add(new ButtonBox("RUN CREW SHIFT", bx, by+420, 300, 34, "Spend time and let recruited workers run their assigned machines once.", this::runRecruitProductionShift));
+                buttons.add(new ButtonBox("GEN JOB -", bx, by+462, 145, 34, "Move to previous controlled generated/factional production job within the active filters.", () -> moveGeneratedProductionJobSelection(-1)));
+                buttons.add(new ButtonBox("GEN JOB +", bx+155, by+462, 145, 34, "Move to next controlled generated/factional production job within the active filters.", () -> moveGeneratedProductionJobSelection(1)));
+                buttons.add(new ButtonBox("JOB CATEGORY", bx, by+504, 145, 34, "Cycle generated-job category filter: all, weapons, chems, survival, textile, salvage/maintenance.", this::cycleGeneratedJobCategoryFilter));
+                buttons.add(new ButtonBox("JOB STATUS", bx+155, by+504, 145, 34, "Cycle generated-job readiness filter: all, ready, missing-input, apparatus, contraband, manual.", this::cycleGeneratedJobReadinessFilter));
+                buttons.add(new ButtonBox("ASSIGN GEN JOB", bx, by+546, 300, 34, "Assign the selected generated/factional job to the selected valid machine or apparatus and seed its queue.", this::assignSelectedGeneratedProductionJob));
+                buttons.add(new ButtonBox("QUEUE -", bx, by+588, 145, 34, "Reduce queued runs for the selected assigned machine.", () -> adjustSelectedMachineQueue(-1)));
+                buttons.add(new ButtonBox("QUEUE +", bx+155, by+588, 145, 34, "Increase queued runs for the selected assigned machine.", () -> adjustSelectedMachineQueue(1)));
+                buttons.add(new ButtonBox("LOGISTICS", bx, by+630, 145, 34, "Forecast selected machine input reservation intent. Does not move goods yet.", this::forecastSelectedLogisticsReservation));
+                buttons.add(new ButtonBox("PLAN DELIVERY", bx+155, by+630, 145, 34, "Record a bounded delivery plan from the selected machine forecast. No goods move yet.", this::recordSelectedLogisticsDeliveryIntent));
+                buttons.add(new ButtonBox("CHOOSE SOURCE", bx, by+798, 300, 34, "Record where the latest logistics plan should draw its inputs from. No item lock or transfer yet.", this::recordLatestLogisticsSourceReservation));
+                buttons.add(new ButtonBox("PLAN ROUTE", bx, by+840, 300, 34, "Estimate a manual haul route from the latest logistics source. No pathfinding or hauling yet.", this::displayLatestLogisticsRouteIntent));
+                buttons.add(new ButtonBox("HAUL PREVIEW", bx, by+882, 300, 34, "Preview readiness and warnings for a manual haul order before execution.", this::previewLatestManualHaulOrder));
+                buttons.add(new ButtonBox("HAUL CONTRACT", bx, by+924, 300, 34, "Record a bounded manual haul contract from the current logistics chain. No movement or transfer yet.", this::recordLatestManualHaulContract));
+                buttons.add(new ButtonBox("PREFLIGHT", bx, by+966, 145, 34, "Check whether the latest manual haul contract is plausibly fulfillable before manual execution.", this::preflightLatestManualHaulContract));
+                buttons.add(new ButtonBox("LIFECYCLE", bx+155, by+966, 145, 34, "Check haul contract expiry, staleness, and cancellation lifecycle.", this::checkLatestLogisticsContractLifecycle));
+                buttons.add(new ButtonBox("EXEC HAUL", bx, by+1008, 145, 34, "Execute the latest preflighted manual haul contract by carrying visible inputs into the selected station buffer.", this::executeLatestManualHaulContract));
+                buttons.add(new ButtonBox("CANCEL HAUL", bx+155, by+1008, 145, 34, "Cancel the latest manual haul contract record before execution.", this::cancelLatestLogisticsHaulContract));
+                buttons.add(new ButtonBox("MANUAL RUN", bx, by+630, 300, 34, "Operate the selected assigned machine yourself when no worker is available, paying the manual time and fatigue cost.", this::runManualSelectedProductionJob));
+                buttons.add(new ButtonBox("CONDENSE WATER", bx, by+672, 300, 34, "Run a built condenser to produce water if its doctrine is known.", this::operateAtmosCondenser));
+                buttons.add(new ButtonBox("FORGE SUPPLIES", bx, by+714, 300, 34, "Run a built micro forge to turn parts into supplies if its doctrine is known.", this::operateMicroForge));
+                buttons.add(new ButtonBox("LAB RESEARCH", bx, by+756, 300, 34, "Run a built micro lab to convert time and parts into XP/knowledge progress.", this::operateMicroLab));
+                buttons.add(new ButtonBox("ATMOS", bx, by+672, 145, 34, BuildRecipe.atmosCondenser().shortTip(), () -> beginBuildPlacement(BuildRecipe.atmosCondenser())));
+                buttons.add(new ButtonBox("FORGE", bx+155, by+672, 145, 34, BuildRecipe.microForge().shortTip(), () -> beginBuildPlacement(BuildRecipe.microForge())));
+                buttons.add(new ButtonBox("MICRO LAB", bx, by+714, 145, 34, BuildRecipe.microLab().shortTip(), () -> beginBuildPlacement(BuildRecipe.microLab())));
+                buttons.add(new ButtonBox("CHEM BENCH", bx+155, by+714, 145, 34, BuildRecipe.crudeChemBench().shortTip(), () -> beginBuildPlacement(BuildRecipe.crudeChemBench())));
+                buttons.add(new ButtonBox("DISTILL", bx, by+672, 145, 34, BuildRecipe.distillationColumn().shortTip(), () -> beginBuildPlacement(BuildRecipe.distillationColumn())));
+                buttons.add(new ButtonBox("STERILE", bx+155, by+672, 145, 34, BuildRecipe.sterileBench().shortTip(), () -> beginBuildPlacement(BuildRecipe.sterileBench())));
+                buttons.add(new ButtonBox("FUME HOOD", bx, by+714, 145, 34, BuildRecipe.fumeHood().shortTip(), () -> beginBuildPlacement(BuildRecipe.fumeHood())));
+                buttons.add(new ButtonBox("INJECTOR", bx+155, by+714, 145, 34, BuildRecipe.injectorStation().shortTip(), () -> beginBuildPlacement(BuildRecipe.injectorStation())));
+            }
+        }
+        if (selectedButton >= buttons.size()) selectedButton = Math.max(0, buttons.size()-1);
+    }
+
+    void activateCommand(String label) {
+        sounds.play("button", options);
+        switch(label) {
+            case "WAIT": waitOneTurn(); break;
+            case "MOVE MODE": cycleMovementMode(); break;
+            case "PLAN MOVE": beginManualMovementPlan(); break;
+            case "LOOK": interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); break;
+            case "INTERACT": beginInteractMode(); break;
+            case "COMBAT": beginCombatTargeting(); break;
+            case "INVENTORY": openPanel(PanelMode.INVENTORY); break;
+            case "CHARACTER": openPanel(PanelMode.CHARACTER); break;
+            case "BUILD": openPanel(PanelMode.BUILD); break;
+            case "BASES": openPanel(PanelMode.BASES); break;
+            case "WORK": if (hasBaseObject('w')) openPanel(PanelMode.WORKBENCH); else logEvent("No Scrap Workbench built yet. Build one before using WORK."); break;
+            case "SENSES": openPanel(PanelMode.SENSES); break;
+            case "MAP": openPanel(PanelMode.MAP); break;
+            case "NEWS": openPanel(PanelMode.NEWS); break;
+            case "LOG": openPanel(PanelMode.LOG); break;
+            case "CHAT": openChatWindow(); break;
+            case "SAVE/LOAD": openPanel(PanelMode.SAVELOAD); break;
+            case "MENU": setScreen(Screen.PAUSE); break;
+        }
+    }
+
+
+
+    void beginInteractMode() {
+        if (world == null) return;
+        interactCursorActive = true;
+        // Default to the tile underfoot if it has an object, otherwise the eastern adjacent tile.
+        if (baseObjectAt(playerX, playerY) != null || world.tiles[playerX][playerY] != '.') { lookX = playerX; lookY = playerY; }
+        else { lookX = Math.min(world.w - 1, playerX + 1); lookY = playerY; }
+        clampInteractCursorToAdjacent();
+        updatePendingInteractionSummary();
+        openPanel(PanelMode.INTERACT);
+    }
+
+    void moveInteractCursor(int dx, int dy) {
+        if (world == null) return;
+        int nx = lookX + dx;
+        int ny = lookY + dy;
+        // Interaction cursor is deliberately bound to the eight tiles around the player plus the standing tile.
+        if (Math.abs(nx - playerX) <= 1 && Math.abs(ny - playerY) <= 1 && nx >= 0 && ny >= 0 && nx < world.w && ny < world.h) {
+            lookX = nx; lookY = ny; lookStackIndex = 0;
+        }
+        clampInteractCursorToAdjacent();
+        updatePendingInteractionSummary();
+    }
+
+    void clampInteractCursorToAdjacent() {
+        lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX));
+        lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY));
+        if (world != null) { lookX = Math.max(0, Math.min(world.w - 1, lookX)); lookY = Math.max(0, Math.min(world.h - 1, lookY)); }
+    }
+
+    int agilityActionCost(char ch, BaseObject obj) {
+        int agility = stat("Agility", 6);
+        int base = 2;
+        if (obj != null) {
+            if (obj.symbol == 'c') base = 4;
+            else if (obj.symbol == 'u') base = 2;
+            else if (obj.symbol == 'w') base = 6;
+            else if (obj.symbol == 's') base = 3;
+            else if (obj.symbol == 'a' || obj.symbol == 'd') base = 4;
+        } else if (ch == 'T' || ch == 'q' || ch == 'A') base = 3;
+        else if (isVendingMachine(ch)) base = 3;
+        else if (isShrine(ch)) base = 4;
+        else if (isEmergencyMachine(ch)) base = 6;
+        else if (ch == 'C' || ch == 'H' || ch == 'R') base = 5;
+        return Math.max(1, base + 3 - agility / 3);
+    }
+
+    
+    boolean selectedInteractionIsCot() {
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        return obj != null && obj.symbol == 'c';
+    }
+
+    boolean selectedInteractionIsGovernor() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'Q';
+    }
+
+    boolean selectedInteractionIsSectorRail() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'T' && world.zoneType == ZoneType.NEUTRAL_RAIL_DEPOT;
+    }
+
+    boolean selectedInteractionIsFactionJournal() { return isFactionJournalObjectAt(lookX, lookY); }
+    boolean selectedInteractionIsBankTerminal() { return isBankTerminalAt(lookX, lookY); }
+    boolean selectedInteractionIsBankVault() { return isBankVaultAt(lookX, lookY); }
+    boolean selectedInteractionIsBankAlarmPanel() { return isBankAlarmPanelAt(lookX, lookY); }
+    boolean selectedInteractionIsBankManager() { return isBankManagerAt(lookX, lookY); }
+    boolean selectedInteractionCanSellJournalsToINN() { return canSellLeaderJournalsToINNAt(lookX, lookY); }
+
+    PortableLightInstance portableLightAt(int x, int y) {
+        for (PortableLightInstance l : portableLights) if (l != null && l.x == x && l.y == y && l.expiresTurn > turn && sameWorldLocation(l.worldKey)) return l;
+        return null;
+    }
+
+    boolean canScavengeFromCurrentRoom() {
+        if (world == null) return false;
+        int rid = world.roomIdAt(playerX, playerY);
+        return rid >= 0 && rid != claimedRoomId;
+    }
+
+    ArrayList<String> tileStackAt(int tx, int ty) {
+        ArrayList<String> stack = new ArrayList<>();
+        if (world == null || tx < 0 || ty < 0 || tx >= world.w || ty >= world.h) {
+            stack.add("Unknown void beyond the active auspex map.");
+            return stack;
+        }
+        boolean vis = isVisible(tx, ty);
+        boolean rem = isRemembered(tx, ty);
+        char ch = world.tiles[tx][ty];
+        if (!vis && !rem) {
+            stack.add("Unseen fog: no reliable reading.");
+            return stack;
+        }
+        stack.add("TILE: '" + ch + "' — " + describeTile(ch));
+        CompiledTileDescriptor td = TileDataCompilationAuthority.resolve(world, tx, ty, ch);
+        if (td != null) stack.add(td.inspectLine());
+        if (isDoorTile(ch)) stack.add("DOOR SURFACE: " + describeDoor(ch));
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null && vis) stack.add("ENTITY: " + npc.name + " / " + npc.faction.label + " / " + npc.state);
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null && vis) stack.add("BASE OBJECT: " + obj.name + " — " + obj.description);
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null && vis) stack.add("FIXTURE: " + fixtureInspectionLine(mos));
+        PortableLightInstance light = portableLightAt(tx, ty);
+        if (light != null && vis) stack.add("PORTABLE LIGHT: " + light.itemName + " / radius " + light.radius + " / expires in ~" + Math.max(1,(light.expiresTurn-turn)/Math.max(1,TURNS_PER_HOUR)) + "h / " + light.placement + ".");
+        if (vis || rem) stack.add("LIGHT: " + lightDescriptionAt(tx, ty) + " — level " + lightLevelAt(tx, ty) + "/100.");
+        EnvironmentalHazardRecord hz = hazardAt(tx, ty);
+        if (hz != null && (vis || rem)) stack.add("HAZARD: " + hz.label + " / " + hz.family + " / " + hz.severityText() + " — " + hz.warningText());
+        if (isDoorTile(ch)) stack.add("DOOR: " + describeDoor(ch) + " — closed doors block line of sight unless opened.");
+        if ("YJBKOZPFU".indexOf(ch) >= 0) stack.add("MARTIAN MACHINE: " + emergencyMachineName(ch) + " — inspect or operate if powered/unlocked.");
+        if (ch == 'T') stack.add("RAIL / TRADE DEPOT: local trade and route authority point. In a Neutral Rail Depot this can move you to a new sector or validate an Off-world ticket.");
+        if (ch == 'Q') stack.add("SECTOR GOVERNOR: a lavishly protected exit-gate to off-world victory, bribery, betrayal, or knife work.");
+        int rid = world.roomIdAt(tx, ty);
+        if (rid >= 0) {
+            RoomProfile rp = world.roomProfile(rid);
+            stack.add("ROOM: " + rp.name + " — " + rp.descriptor);
+            stack.add("FEATURES: " + rp.featureText);
+            stack.add("OWNERSHIP: " + ownershipText(tx, ty));
+        } else if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE) {
+            stack.add("INTERSTITIAL ARCOLOGY MASS: " + describeTile(ch));
+        } else {
+            stack.add("CORRIDOR/OPENWORK: " + describeTile(ch));
+        }
+        if (isIntermapTransitTile(ch)) {
+            stack.add("INTERMAP TRANSIT: " + intermapTransitLabel(ch));
+            stack.add("DESTINATION: " + transitionPreview(ch, tx, ty));
+        }
+        return stack;
+    }
+
+    String fixtureInspectionLine(MapObjectState mos) {
+        if (mos == null) return "unknown fixture.";
+        String label = mos.label == null || mos.label.isBlank()
+                ? (mos.type == null || mos.type.isBlank() ? "Fixture" : mos.type.replace('-', ' '))
+                : mos.label;
+        String status = fixtureStatusText(mos);
+        return status.isBlank() ? label + "." : label + " - " + status;
+    }
+
+    String fixtureStatusText(MapObjectState mos) {
+        if (mos == null) return "";
+        String type = mos.type == null ? "" : mos.type;
+        String stock = mos.stockState == null ? "" : mos.stockState;
+        if (type.contains("vending")) return mos.cooldownUntilTurn > turn ? "restocking; check back later." : "ready to use.";
+        if (type.contains("shrine")) return "available for prayer or inspection.";
+        if (type.equals("shop")) return "trade stock point.";
+        if (type.equals("sector-governor")) return stock.contains("present") ? "the exit papers may be here." : "no exit papers are visible.";
+        if (type.equals("martian-emergency-machine")) return "machine controls are present; inspect or operate if you have access.";
+        if (type.equals("contract-object")) return "sealed objective item.";
+        if (type.equals("corpse-container")) return "searchable remains.";
+        if (type.contains("explosive")) return "dangerous device; keep distance unless prepared.";
+        if (type.contains("newspaper")) return "readable public news source.";
+        if (type.equals("broadcast-device")) return "public broadcast receiver.";
+        if (type.equals("bank-terminal")) return "account access terminal.";
+        if (type.equals("bank-vault")) return stock.contains("open=true") ? "vault is open." : "vault is sealed.";
+        if (type.equals("bank-alarm-panel")) return stock.contains("disabled=true") ? "alarm panel is disabled." : "alarm panel is armed.";
+        if (type.equals("light-fixture")) return "fixed local light source.";
+        if (type.equals("light-switch")) return stock.contains("on=false") ? "local lights are off." : "local lights are on.";
+        if (type.equals("faction-journal")) return "private faction notes.";
+        return "inspectable fixture.";
+    }
+
+    void examineSelectedLookTarget() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        if (!world.inBounds(tx, ty) || !isVisible(tx, ty)) {
+            showTimedAlert("EXAMINE", "Too little is visible from here. Move closer, improve the light, or use Look on a visible tile first.", 4200);
+            return;
+        }
+        updateExamineFocus(tx, ty);
+        ArrayList<String> lines = examineLinesAt(tx, ty);
+        String title = lines.isEmpty() ? "EXAMINE" : lines.remove(0);
+        String body = lines.isEmpty() ? "No further readable detail is available." : String.join(" ", lines);
+        showTimedAlert(title, body, 7600);
+        logEvent(title + ": " + body);
+        advanceTurn("examines the selected target.");
+    }
+
+    void updateExamineFocus(int tx, int ty) {
+        boolean sameTarget = tx == lastExamineX && ty == lastExamineY && lastExamineWorldTurn >= 0L
+                && worldTurn - lastExamineWorldTurn <= 6L;
+        repeatedExamineCount = sameTarget ? Math.min(3, repeatedExamineCount + 1) : 1;
+        lastExamineX = tx;
+        lastExamineY = ty;
+        lastExamineWorldTurn = worldTurn;
+    }
+
+    int examineDepth() {
+        return Math.max(1, Math.min(3, repeatedExamineCount));
+    }
+
+    ArrayList<String> examineLinesAt(int tx, int ty) {
+        ArrayList<String> lines = new ArrayList<>();
+        int depth = examineDepth();
+        if (world == null || !world.inBounds(tx, ty)) {
+            lines.add("EXAMINE");
+            lines.add("There is nothing reliable to examine there.");
+            return lines;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            lines.add("EXAMINE: " + npc.name);
+            if (npc.isAnimalActor()) {
+                lines.add(npc.animalLine() + ".");
+                lines.addAll(petCareReadabilityLines(npc, tx, ty, false));
+            } else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(npc, worldTurn);
+                lines.add((npc.role == null || npc.role.isBlank() ? "Underhive resident" : npc.role)
+                        + " aligned with " + (npc.faction == null ? "no known faction" : npc.faction.label) + ".");
+                lines.add("Age read: " + npc.ageLine() + ".");
+                lines.add(npc.isMinorActor() ? "Rank read: member only; no formal rank before adulthood." : "Rank read: " + npc.factionRankTitle + ".");
+            }
+            IntentReadResult intent = intentReadFor(npc);
+            if (intent != null && intent.available) lines.add(intent.summary);
+            lines.add("Visible equipment: " + visibleNpcEquipmentLine(npc) + ".");
+            String evidence = questEvidenceReadLine(npc);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add(npcConditionReadLine(npc));
+            lines.add(npcCombatReadinessLine(npc));
+            if (depth >= 2) lines.add(npcThreatReadLine(npc, intent));
+            if (depth >= 3) lines.add(npcSensesReadLine(npc, intent));
+            return lines;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) {
+            lines.add("EXAMINE: " + obj.name);
+            lines.add(obj.description == null || obj.description.isBlank() ? "A constructed object in this room." : obj.description);
+            lines.add(baseObjectConditionReadLine(obj));
+            if (depth >= 2) lines.add(baseObjectUseReadLine(obj));
+            if (depth >= 3) lines.add(baseObjectWorkReadLine(obj));
+            return lines;
+        }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) {
+            String label = mos.label == null || mos.label.isBlank() ? "Fixture" : mos.label;
+            lines.add("EXAMINE: " + label);
+            lines.add(fixtureInspectionLine(mos));
+            String evidence = questEvidenceReadLine(mos);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add("Use Interact for available actions.");
+            if (depth >= 2) lines.add("Closer read: " + fixtureStatusText(mos));
+            if (depth >= 3) lines.add("Territory read: " + ownershipText(tx, ty) + ".");
+            return lines;
+        }
+        EnvironmentalHazardRecord hazard = hazardAt(tx, ty);
+        if (hazard != null) {
+            lines.add("EXAMINE: " + hazard.label);
+            lines.add(hazard.warningText());
+            lines.add("Severity: " + hazard.severityText() + ".");
+            if (depth >= 2) lines.add("Avoidance read: plan around it before committing movement.");
+            if (depth >= 3) lines.add("Context read: light " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+            return lines;
+        }
+        char ch = world.tiles[tx][ty];
+        lines.add("EXAMINE: " + describeTile(ch));
+        lines.add("Ownership: " + ownershipText(tx, ty) + ".");
+        lines.add("Light: " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+        if (isDoorTile(ch)) lines.add("Door read: " + describeDoor(ch) + ". Interact can test access.");
+        if (depth >= 2) lines.add("Floor read: " + roomContextReadLine(tx, ty) + ".");
+        if (depth >= 3) lines.add("Approach read: movement here is " + (world.walkable(tx, ty) ? "possible if the route stays clear" : "blocked until the obstacle changes") + ".");
+        return lines;
+    }
+
+    String questEvidenceReadLine(NpcEntity npc) {
+        if (npc == null) return "";
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed) continue;
+            if ("BOUNTY".equals(c.type) && c.targetEntityId != null && c.targetEntityId.equals(npc.id)) {
+                String proof = c.publicRequiredItem();
+                String state = npc.hp <= 0 ? "proof should be recoverable from the body" : "proof is only recoverable after the target is dealt with";
+                return "Quest evidence: this appears to match an active " + c.faction.label + " bounty; " + proof + " is the turn-in proof, and " + state + ".";
+            }
+        }
+        return "";
+    }
+
+    String questEvidenceReadLine(MapObjectState m) {
+        if (m == null) return "";
+        if ("contract-object".equals(m.type)) {
+            FactionContract c = contractForTargetEntity(m.id);
+            if (c != null) return "Quest evidence: sealed retrieval objective for " + c.faction.label + "; take the sealed object and return it unopened.";
+            return "Quest evidence: sealed retrieval objective; take it only if you intend to carry contract evidence.";
+        }
+        if ("faction-journal".equals(m.type)) return "Quest evidence: faction leader journal; stealing it creates physical intelligence that the INN may buy.";
+        if ("corpse-container".equals(m.type)) return "Quest evidence: remains may contain proof items, stolen goods, or recoverable equipment; inspect before taking all.";
+        return "";
+    }
+
+    FactionContract contractForTargetEntity(String targetEntityId) {
+        if (targetEntityId == null || targetEntityId.isBlank()) return null;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && targetEntityId.equals(c.targetEntityId)) return c;
+        return null;
+    }

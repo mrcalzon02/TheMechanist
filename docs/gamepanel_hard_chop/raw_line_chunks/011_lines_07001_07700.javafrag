@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 7001-7700
+
+        world.mapObjects.remove(m);
+        if (world.inBounds(tx, ty)) { char old = MapObjectState.underlyingTileFromStock(m.stockState); if (old == 0 || old == 'o' || old == '1') old = '.'; world.tiles[tx][ty] = old; }
+        logEvent("Recovered " + item + ". Yesterday's public truth is now trash, which is still more useful than most official signage.");
+        DebugLog.audit("INN_OLD_PAPER_RECOVER", "at=" + tx + "," + ty + " age=" + age + " item=" + item + " state=" + stateSummary());
+        advanceTurn("recovers discarded newsprint.");
+        repaint();
+    }
+
+    int safeParseInt(String text, int d) { try { return Integer.parseInt(text == null ? "" : text.trim()); } catch(Exception e) { return d; } }
+
+    void readInventoryNewspaper(String item) {
+        int day = currentInnDay();
+        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        int issueDay = day;
+        if (low.contains("yesterday")) issueDay = Math.max(0, day - 1);
+        else if (low.contains("old")) issueDay = Math.max(0, day - 2 - Math.abs(Objects.hash(item, seed)) % 5);
+        else if (low.contains("mush")) { logEvent("The paper mush has surrendered all information to damp, boot grease, and time."); advanceTurn("tries to read paper mush."); return; }
+        String issue = ImperialNewsNetworkApi.ensureDailyIssue(this, issueDay, rng);
+        logEvent("NEWSPAPER day " + issueDay + ": " + issue);
+        lastInnNewsIssue = issue;
+        gainXp("Investigation", 1, "read public faction news");
+        DebugLog.audit("INN_READ_PAPER", "item=" + item + " issueDay=" + issueDay + " issue=" + issue + " state=" + stateSummary());
+        advanceTurn("reads a newspaper.");
+        repaint();
+    }
+
+    void interactBroadcastDevice(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, "broadcast-device");
+        if (m == null) return;
+        String kind = MapObjectState.itemNameFromStock(m.stockState);
+        String report = ImperialNewsNetworkApi.broadcastBulletin(this, kind, rng);
+        lastBroadcastReport = report;
+        lastInnNewsIssue = report;
+        m.vendCount++;
+        m.cooldownUntilTurn = turn + Math.max(12, TURNS_PER_HOUR / 2);
+        logEvent("INN BROADCAST DEVICE: " + report);
+        gainXp("Investigation", 1, "listened to INN broadcast device");
+        DebugLog.audit("INN_BROADCAST_DEVICE", "kind=" + kind + " at=" + tx + "," + ty + " report=" + report + " state=" + stateSummary());
+        advanceTurn("listens to a sanctioned broadcast receiver.");
+        repaint();
+    }
+
+    void interactLightSwitchAt(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, "light-switch");
+        if (world == null || m == null) return;
+        String group = ZoneLightSourceRecord.groupFromStock(m.stockState);
+        if (group == null || group.isBlank()) { logEvent("The light switch has no readable circuit tag. The fixture obeys no obvious authority."); return; }
+        boolean anyOn = false;
+        int changed = 0;
+        for (ZoneLightSourceRecord l : world.lightSources) if (l != null && group.equals(l.groupId) && l.on) anyOn = true;
+        boolean newState = !anyOn;
+        for (ZoneLightSourceRecord l : world.lightSources) if (l != null && group.equals(l.groupId)) { l.on = newState; changed++; }
+        if (changed > 0) {
+            m.stockState = MapObjectState.setStockFlag(m.stockState, "on", String.valueOf(newState));
+            lightingCacheTurn = -999999;
+            sensoryCacheWorld = null;
+            lastZoneLightingReport = "LIGHT SWITCH: " + changed + " fixture(s) on circuit " + group + " turned " + (newState ? "on" : "off") + ".";
+            logEvent(lastZoneLightingReport);
+            DebugLog.audit("LIGHT_SWITCH", "group=" + group + " on=" + newState + " changed=" + changed + " at=" + tx + "," + ty + " state=" + stateSummary());
+            advanceTurn("toggles a local light switch.");
+        } else {
+            logEvent("The switch clicks, but no surviving light answers the insult.");
+        }
+        repaint();
+    }
+
+    void listenToPortableBroadcastReceiver(String item) {
+        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        String kind = low.contains("pict") || low.contains("screen") || low.contains("television") ? "pict-screen" : "radio";
+        String report = ImperialNewsNetworkApi.broadcastBulletin(this, kind + "/portable", rng);
+        lastBroadcastReport = report;
+        lastInnNewsIssue = report;
+        logEvent("PORTABLE INN " + kind.toUpperCase(Locale.ROOT) + ": " + report);
+        gainXp("Investigation", 1, "monitored portable INN broadcast");
+        DebugLog.audit("INN_PORTABLE_BROADCAST", "item=" + item + " kind=" + kind + " report=" + report + " state=" + stateSummary());
+        advanceTurn("listens to a carried broadcast receiver.");
+        repaint();
+    }
+
+    void interactHere() {
+        beginInteractMode();
+    }
+
+    void interactAt(int tx, int ty) {
+        if (world == null) { DebugLog.warn("INTERACT", "interactAt called without world. " + stateSummary()); logEvent("Cannot interact: no active world."); return; }
+        if (tx < 0 || ty < 0 || tx >= world.w || ty >= world.h) { DebugLog.warn("INTERACT", "target out of bounds. " + stateSummary()); logEvent("Cannot interact: target out of bounds."); return; }
+        if (Math.abs(tx-playerX) > 1 || Math.abs(ty-playerY) > 1) { logEvent("Cannot interact: target must be adjacent to your character."); return; }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            if (npc.isPetActor()) { petNpcAt(tx, ty, false); updatePendingInteractionSummary(); return; }
+            if (npc.isAnimalActor()) { logEvent("PET: " + animalContactBlockedLine(npc)); advanceTurn("checks an animal's mood."); updatePendingInteractionSummary(); return; }
+            talkToNpc(npc); advanceTurn("speaks with " + npc.name + "."); return;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) { interactBaseObject(obj); advanceTurn("interacts with " + obj.name + "."); return; }
+        if (mapObjectAt(tx, ty, "planted-explosive") != null) { disarmExplosiveAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "bank-vault") != null) { openBankVaultAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "bank-alarm-panel") != null) { tamperBankAlarmPanelAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "bank-terminal") != null) { logEvent("BANK: " + bankTerminalPreview(tx, ty)); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER) != null) { interactNewsVendingMachine(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.DISCARDED_NEWSPRINT_SOURCE) != null) { recoverOldNewspaperAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "broadcast-device") != null) { interactBroadcastDevice(tx, ty); updatePendingInteractionSummary(); return; }
+        if (mapObjectAt(tx, ty, "light-switch") != null) { interactLightSwitchAt(tx, ty); updatePendingInteractionSummary(); return; }
+        if (RoomFixtureInteractionAuthority.tryInteract(this, tx, ty)) { updatePendingInteractionSummary(); return; }
+        if (FrontageFixtureInteractionAuthority.tryInteract(this, tx, ty)) { updatePendingInteractionSummary(); return; }
+        if (RoadTransitFixtureInteractionAuthority.tryInteract(this, tx, ty)) { updatePendingInteractionSummary(); return; }
+        char here = world.tiles[tx][ty];
+        DebugLog.audit("INTERACT", "tile=" + here + " at " + tx + "," + ty + " desc=" + describeTile(here));
+        if (isFactionJournalObjectAt(tx, ty)) { readFactionJournalAt(tx, ty); advanceTurn("reads a faction journal ledger."); updatePendingInteractionSummary(); return; }
+        if (isDoorTile(here)) { interactDoorAt(tx, ty, here); updatePendingInteractionSummary(); return; }
+        switch (here) {
+            case 'g':
+                gangHeat += 2;
+                logEvent("You parley with gangers. They smell weakness, profit, and possibly soup.");
+                break;
+            case 'm':
+                logEvent("The mutant watches you. Not hostile yet. Not safe either.");
+                break;
+            case 'R':
+                logEvent("The rogue machine twitches. Reserved interaction: repair, hack, flee, or dismantle.");
+                break;
+            case 'A':
+                suspicion = Math.max(0, suspicion - 1);
+                logEvent("You present yourself to Civic Wardens authority. Paperwork becomes a weapon pointed both ways.");
+                break;
+            case '1': case '2': case '3': case '4': case '5':
+                interactVendingMachine(tx, ty, here);
+                return;
+            case 'Y': case 'J': case 'B': case 'K': case 'O': case 'Z': case 'P': case 'F': case 'U':
+                interactEmergencyMachine(tx, ty, here);
+                return;
+            case 'I': case 'H':
+                interactShrine(tx, ty, here);
+                return;
+            case 'T':
+                openDepotTrader(tx, ty);
+                break;
+            case 'Q':
+                logEvent(governorPreview(tx, ty));
+                logEvent("Choose BRIBE GOVERNOR or ATTACK GOVERNOR from the interaction command list.");
+                break;
+            case 'D': case 'S': case 'v': case 'E':
+                interactIntermapTransit(tx, ty, here);
+                return;
+            case 'C':
+                logEvent("Clinic found. Present services: inspection, triage signposting, antiseptic smells, and malpractice with incense.");
+                break;
+            case 'q':
+                talkToFactionRepresentative();
+                break;
+            case 'o':
+                if (isFactionJournalObjectAt(tx, ty)) { readFactionJournalAt(tx, ty); return; }
+                interactContractObject(tx, ty);
+                return;
+            case 'r':
+                interactCorpseContainer(tx, ty);
+                return;
+            case 'b': case 'h': case 'n':
+                restOneHourOnUnclaimedFurniture(tx, ty, here);
+                return;
+            default:
+                if (isInClaimedRoom(tx, ty)) {
+                    logEvent("You inspect your claimed room. Built objects=" + baseObjects.size() + ", stored items=" + baseStorage.size() + ".");
+                } else {
+                    logEvent("You search the adjacent room tile. Dust, rivets, old blood, and maybe one useful screw.");
+                    if (inventoryWeight() + 1 <= carryCapacity()) addInventoryItem("Scrap bit", ItemProvenanceRecord.found("Scrap bit", world, turn, "adjacent room search"));
+                    else logEvent("You find scrap but cannot carry more bulk.");
+                }
+        }
+        advanceTurn("interacts with the surroundings.");
+        updatePendingInteractionSummary();
+    }
+
+    void interactDoorAt(int tx, int ty, char door) {
+        int intellect = stat("Intellect", 5), mechanics = stat("Mechanics", 5), strength = stat("Strength", 5);
+        String label = door=='/'?"open archway":(door=='|'?"hinged scrap door":(door=='L'?"locked or chained door":(door=='V'?"ventilation panel":(door=='X'?"electronic security door":"sealed vault door"))));
+        if (door == '/') { logEvent("The open archway offers no barrier. You pass through if you dare."); return; }
+
+        boolean mechanicalTools = countInventory("Lockpicks")>0 || countInventory("Tool bundle")>0 || countInventory("Mechanist Collegia tool roll")>0;
+        boolean electronicTools = countInventory("Hacking tools")>0 || countInventory("Mechanist Collegia tool roll")>0 || countDataSpikes()>0 || countInventory("Keycard")>0;
+        boolean secureVaultKey = countInventory("Secure vault key")>0 || countInventory("Vault key")>0;
+
+        if (door == 'Z') {
+            if (!secureVaultKey) {
+                logEvent("The sealed vault door refuses ordinary tampering. It requires a Secure vault key likely held by a high-ranking individual in this zone.");
+                DebugLog.audit("VAULT_KEY_REQUIRED", "door="+label+" at="+tx+","+ty+" keys="+countInventory("Secure vault key")+" state="+stateSummary());
+                advanceTurn("studies a sealed vault door.");
+                return;
+            }
+            world.tiles[tx][ty] = '/';
+            logEvent("Secure vault key accepted. The sealed vault door opens with the weary contempt of expensive machinery.");
+            DebugLog.audit("VAULT_UNLOCK", "door="+label+" at="+tx+","+ty+" usedSecureVaultKey=true state="+stateSummary());
+            advanceTurn("unlocks a vault door.");
+            return;
+        }
+
+        if (door == 'X') {
+            if (countInventory("Keycard") > 0) {
+                world.tiles[tx][ty] = '/';
+                logEvent("Keycard accepted. The electronic security door opens.");
+                DebugLog.audit("ELECTRONIC_DOOR_KEYCARD", "door="+label+" at="+tx+","+ty+" state="+stateSummary());
+                advanceTurn("uses a keycard.");
+                return;
+            }
+            if (countDataSpikes() <= 0 && countInventory("Hacking tools") <= 0) {
+                logEvent("Electronic security door. Requires a Keycard, Hacking tools, or a Data spike. Data spikes are consumed on hack attempts.");
+                DebugLog.audit("ELECTRONIC_DOOR_NEEDS_ACCESS", "door="+label+" at="+tx+","+ty+" dataSpikes="+countDataSpikes()+" state="+stateSummary());
+                advanceTurn("checks an electronic lock.");
+                return;
+            }
+            boolean usedSpike = false;
+            if (countDataSpikes() > 0) { consumeDataSpike(); usedSpike = true; }
+            int difficulty = 18;
+            int roll = intellect + mechanics/2 + rng.nextInt(20) + 1 + (countInventory("Hacking tools")>0 ? 4 : 0) + (usedSpike ? 6 : 0);
+            if (roll >= difficulty) {
+                world.tiles[tx][ty] = '/';
+                logEvent((usedSpike?"Data spike burned. ":"") + "Electronic lock bypassed with Intellect-assisted hacking. Roll " + roll + " >= " + difficulty + ".");
+                DebugLog.audit("ELECTRONIC_DOOR_HACK", "door="+label+" at="+tx+","+ty+" roll="+roll+" diff="+difficulty+" dataSpikeConsumed="+usedSpike+" state="+stateSummary());
+            } else {
+                suspicion += 1;
+                logEvent((usedSpike?"Data spike burned. ":"") + "Electronic bypass failed. Roll " + roll + " < " + difficulty + ". Suspicion +1.");
+                DebugLog.audit("ELECTRONIC_DOOR_HACK_FAIL", "door="+label+" at="+tx+","+ty+" roll="+roll+" diff="+difficulty+" dataSpikeConsumed="+usedSpike+" state="+stateSummary());
+            }
+            advanceTurn("attempts electronic door access.");
+            return;
+        }
+
+        int difficulty = (door=='|'?8:(door=='L'?14:(door=='V'?16:22)));
+        int score = intellect + mechanics + strength/2;
+        int roll = rng.nextInt(12) + 1 + score + (mechanicalTools ? 5 : 0) + (electronicTools && door=='V' ? 3 : 0);
+        DebugLog.audit("DOOR_INTERACT", "door=" + label + " at=" + tx + "," + ty + " roll=" + roll + " difficulty=" + difficulty + " mechanicalTools=" + mechanicalTools + " electronicTools=" + electronicTools + " state=" + stateSummary());
+        if (roll >= difficulty) {
+            world.tiles[tx][ty] = '/';
+            logEvent("Door opened: " + label + ". It no longer blocks line of sight.");
+        } else {
+            logEvent("Door access failed: " + label + ". Need tools, key, lockpicks, hacking tools, Data spike for electronic locks, or better checks. Roll " + roll + " < " + difficulty + ".");
+            if (door == 'V') fatigue = Math.min(25, fatigue + 1);
+        }
+        advanceTurn("works the door access mechanism.");
+    }
+
+
+
+    boolean isIntermapTransitTile(char ch) { return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E'; }
+
+    String intermapTransitLabel(char ch) {
+        switch (ch) {
+            case 'D': return "Maintenance-bulkhead double doors";
+            case 'S': return "Sewer access hatch";
+            case 'v': return "Sewer ladder / drain ascent";
+            case 'E': return "Elevator cage";
+            default: return "Intermap transit";
+        }
+    }
+
+
+    boolean hasOffworldTicket() {
+        for (String item : inventory) if (item != null && item.equalsIgnoreCase("Off-world ticket")) return true;
+        return false;
+    }
+
+    void useOffworldTicketAtRail() {
+        if (!selectedInteractionIsSectorRail()) { logEvent("Off-world departure failed: select a rail authority counter or platform marker in a Neutral Rail Depot."); return; }
+        if (!hasOffworldTicket()) { logEvent("Off-world departure blocked: no genuine Off-world ticket is carried. Find a governor who has one, bribe them, or take it from their body."); return; }
+        offworldTicketsFound = Math.max(offworldTicketsFound, 1);
+        alertTitle = "OFF-WORLD PASSAGE SECURED";
+        alertBody = "The rail authority validates the impossible ticket. The sector, your warrants, your abandoned enemies, and every hungry room behind you become someone else's accounting problem. Victory route complete.";
+        logEvent("VICTORY: Off-world ticket accepted at the rail authority. You escape the sector stack.");
+        DebugLog.audit("OFFWORLD_VICTORY", "ticket=true state=" + stateSummary());
+        setScreen(Screen.ZONE_SPLASH);
+    }
+
+    void takeSectorRailToNewSector() {
+        if (!selectedInteractionIsSectorRail()) { logEvent("Sector rail failed: select a rail platform or depot counter inside a Neutral Rail Depot."); return; }
+        int fare = sectorRailFare();
+        if (!spendImperialScript(fare)) {
+            logEvent("Sector rail blocked: passage to another sector costs " + fare + " Concord Script. You have " + countMoney() + ".");
+            return;
+        }
+        int abandonedObjects = baseObjects.size();
+        int abandonedRecruits = factionRecruits.size();
+        int abandonedStorage = baseStorage.size();
+        long oldSeed = seed;
+        seed = mixNewSectorSeed(seed, turn, countMoney(), xp, knowledgeCredits);
+        atlas = new WorldAtlas(seed);
+        atlas.generateScaffold();
+        atlas.sectorX = 1; atlas.sectorY = 1; atlas.zoneX = 2; atlas.zoneY = 2; atlas.floor = 5; atlas.sewer = false;
+        baseClaimed = false; baseX = -1; baseY = -1; claimedRoomId = -1;
+        baseObjects.clear(); baseStorage.clear(); factionRecruits.clear();
+        gangHeat = Math.max(0, gangHeat / 4);
+        suspicion = Math.max(0, suspicion / 4);
+        factionMarketPressure.clear(); initFactionState();
+        visitedZoneInstances.clear(); visitedZoneTypes.clear();
+        scavengeCooldownUntilTurn.clear();
+        loadingForNewGame = false;
+        loadingForTransition = true;
+        loadingProgress = 0; loadingStep = 0; loadingStartMillis = System.currentTimeMillis();
+        lastLoadingPulseMillis = loadingStartMillis; loadingWatchdogReported = false; loadingWatchdogRepeats = 0;
+        loadingStatus = "Taking sector rail to a new jurisdiction.";
+        loadingDetail = "Abandoning local bases/recruits/storage; preserving carried inventory, body state, XP, and unlocked knowledge.";
+        pendingTransitionReason = "sector rail relocation";
+        pendingTransitionEdgeHint = null;
+        pendingTransitionReturnEdge = "";
+        logEvent("SECTOR RAIL: fare " + fare + " paid. Abandoned " + abandonedObjects + " base objects, " + abandonedRecruits + " recruits, and " + abandonedStorage + " stored goods. Carried items and knowledge remain.");
+        DebugLog.audit("SECTOR_RAIL_DEPART", "oldSeed=" + oldSeed + " newSeed=" + seed + " fare=" + fare + " abandonedObjects=" + abandonedObjects + " abandonedRecruits=" + abandonedRecruits + " abandonedStorage=" + abandonedStorage + " state=" + stateSummary());
+        setScreen(Screen.LOADING);
+    }
+
+    int sectorRailFare() {
+        int carried = Math.max(0, inventory.size());
+        int notoriety = Math.max(0, gangHeat + suspicion) / 10;
+        return Math.max(12, 25 + carried / 4 + notoriety);
+    }
+
+    long mixNewSectorSeed(long oldSeed, int turnCount, int money, int xpValue, int knowledgeValue) {
+        long x = oldSeed ^ 0x5EC70A7E47A11L;
+        x ^= ((long)turnCount << 21) ^ ((long)money << 9) ^ ((long)xpValue << 3) ^ knowledgeValue;
+        x ^= (x << 13); x ^= (x >>> 7); x ^= (x << 17);
+        return x == 0 ? System.currentTimeMillis() : x;
+    }
+
+    void interactIntermapTransit(int tx, int ty, char ch) {
+        String preview = transitionPreview(ch, tx, ty);
+        DebugLog.audit("INTERMAP_TRANSIT_SELECT", intermapTransitLabel(ch)+" at="+tx+","+ty+" preview="+preview+" state="+stateSummary());
+        logEvent("Transit selected: " + preview);
+        switch (ch) {
+            case 'D': interactZoneEdgeDoor(tx, ty); break;
+            case 'S': interactSewerHatch(tx, ty); break;
+            case 'v': interactSewerLadder(tx, ty); break;
+            case 'E': interactElevator(tx, ty); break;
+            default: logEvent("This transit marker has no mapped destination yet.");
+        }
+    }
+
+    String transitionPreview(char ch, int tx, int ty) {
+        if (atlas == null || world == null) return "No atlas loaded.";
+        if (ch == 'D') {
+            String dir = edgeDirection(tx, ty);
+            int nzx = atlas.zoneX, nzy = atlas.zoneY, nsx = atlas.sectorX, nsy = atlas.sectorY;
+            if ("N".equals(dir)) nzy--; else if ("S".equals(dir)) nzy++; else if ("W".equals(dir)) nzx--; else if ("E".equals(dir)) nzx++;
+            if (nzx < 1 || nzx > 3 || nzy < 1 || nzy > 3) return "The double doors open toward interwall voids and crawlways. No sane human goes there.";
+            return "Travel through double doors " + dir + " to sector " + nsx + "," + nsy + " zone " + nzx + "," + nzy + " floor " + atlas.floor + (atlas.sewer ? "B" : "") + ".";
+        }
+        if (ch == 'S') return "Open sewer hatch and descend to Floor " + atlas.floor + "B beneath this zone.";
+        if (ch == 'v') return "Climb the sewer ladder back to Floor " + atlas.floor + " above this sewer layer.";
+        if (ch == 'E') return "Operate elevator to Floor " + Math.min(10, atlas.floor + 1) + " in this zone, skipping the sewer interlayer.";
+        return "Unknown transition.";
+    }
+
+    String edgeDirection(int tx, int ty) {
+        // 0.9.10ji: transition double doors now sit on the inner maintenance
+        // bulkhead rather than the literal map-edge tile. Resolve destination
+        // by the closest zone boundary so door placement can follow the new
+        // road -> maintenance-wall design without breaking transition logic.
+        if (world == null) return "?";
+        int n = Math.max(0, ty);
+        int s = Math.max(0, world.h - 1 - ty);
+        int wdist = Math.max(0, tx);
+        int e = Math.max(0, world.w - 1 - tx);
+        int best = Math.min(Math.min(n, s), Math.min(wdist, e));
+        if(best == n) return "N";
+        if(best == s) return "S";
+        if(best == wdist) return "W";
+        if(best == e) return "E";
+        return "?";
+    }
+
+    void interactZoneEdgeDoor(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for zone transition."); return; }
+        String dir = edgeDirection(tx, ty);
+        int oldZx = atlas.zoneX, oldZy = atlas.zoneY;
+        int nzx = oldZx, nzy = oldZy;
+        if ("N".equals(dir)) nzy--; else if ("S".equals(dir)) nzy++; else if ("W".equals(dir)) nzx--; else if ("E".equals(dir)) nzx++;
+        if (nzx < 1 || nzx > 3 || nzy < 1 || nzy > 3) {
+            logEvent("The double doors grind open on the void between walls: bottomless gangways, dead maintenance crawls, and spaces not meant for human lungs. You do not go there.");
+            DebugLog.audit("ZONE_TRANSITION_BLOCKED", "dir="+dir+" fromZone="+oldZx+","+oldZy+" sector="+atlas.sectorX+","+atlas.sectorY+" state="+stateSummary());
+            advanceTurn("checks a dead-end maintenance-bulkhead double door.");
+            return;
+        }
+        atlas.zoneX = nzx; atlas.zoneY = nzy;
+        loadAtlasWorld("zone edge door " + dir + " from " + oldZx + "," + oldZy + " to " + nzx + "," + nzy, oppositeEdgeSpawn(dir, tx, ty));
+    }
+
+    Point oppositeEdgeSpawn(String dir, int tx, int ty) {
+        if (world == null) return null;
+        pendingTransitionReturnEdge = oppositeEdge(dir);
+        // Carry the source door's axis coordinate across the boundary so the
+        // destination can place the player beside the matching return doors,
+        // not in an arbitrary edge-nearest room. Sewer travel intentionally
+        // does not use this path; sewer exits remain the chaotic exception.
+        return new Point(tx, ty);
+    }
+
+    String oppositeEdge(String dir) {
+        if ("N".equals(dir)) return "S";
+        if ("S".equals(dir)) return "N";
+        if ("W".equals(dir)) return "E";
+        if ("E".equals(dir)) return "W";
+        return "";
+    }
+
+    void interactSewerHatch(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer hatch."); return; }
+        if (atlas.sewer) { logEvent("This hatch logic is already on a sewer layer; use a ladder/drain marker instead."); return; }
+        atlas.sewer = true;
+        loadAtlasWorld("sewer hatch down to Floor " + atlas.floor + "B", null);
+    }
+
+    void interactSewerLadder(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer ladder."); return; }
+        if (!atlas.sewer) { logEvent("This ladder/drain is not connected to a sewer layer from here."); return; }
+        atlas.sewer = false;
+        loadAtlasWorld("sewer ladder back to Floor " + atlas.floor, null);
+    }
+
+    void interactElevator(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for elevator."); return; }
+        if (atlas.floor >= 10) { logEvent("The elevator coughs against the upper limit of this sector stack. No higher route is mapped yet."); advanceTurn("tests a capped elevator."); return; }
+        atlas.floor = Math.min(10, atlas.floor + 1);
+        atlas.sewer = false;
+        loadAtlasWorld("elevator ascent to Floor " + atlas.floor, null);
+    }
+
+    void loadAtlasWorld(String reason, Point edgeHint) {
+        pendingTransitionReason = reason;
+        pendingTransitionEdgeHint = edgeHint;
+        if (edgeHint == null) pendingTransitionReturnEdge = "";
+        loadingForNewGame = false;
+        loadingForTransition = true;
+        loadingProgress = 0;
+        loadingStep = 0;
+        loadingStartMillis = System.currentTimeMillis();
+        loadingStatus = "Loading adjacent slice: " + reason;
+        loadingDetail = "Queued transition: atlas.currentWorld(), visibility buffers, edge spawn repair, sensory model update.";
+        setScreen(Screen.LOADING);
+        ensureRuntimeTimerRunning("map transition loading");
+        DebugLog.audit("TRANSITION_LOADING_BEGIN", "reason=" + reason + " atlas=" + (atlas!=null?atlas.summary():"none") + " timerRunning=" + timer.isRunning());
+    }
+
+    void completeAtlasWorldLoad(String reason, Point edgeHint) {
+        try {
+            World oldWorld = world;
+            world = atlas.currentWorld();
+            sanitizeCurrentWorldFeaturePlacement("transition currentWorld");
+            spawnContractTargetsForCurrentWorld();
+            boolean firstType = markZoneVisitedAndCheckFirstType();
+            visibleTiles = new boolean[world.w][world.h];
+            rememberedTiles = new boolean[world.w][world.h];
+            localDirtyTracker.reset(world, "world-load");
+            lastVisibilityDirtyRect = null;
+            Point p = spawnPointForTransition(edgeHint);
+            playerX = Math.max(1, Math.min(world.w - 2, p.x));
+            playerY = Math.max(1, Math.min(world.h - 2, p.y));
+            lookX = playerX; lookY = playerY; lookCursorActive = false; interactCursorActive = false;
+            singlePlayerSectorBridge.bindCurrentWorld(this, "transition " + reason);
+            openPanel(PanelMode.NONE);
+            updateSensoryModel("transition " + reason);
+            advanceTurn("travels by " + reason + ".");
+            String event = maybeRollZoneTransitionEvent(reason);
+            logEvent("Transition complete: " + reason + ". Now in sector " + atlas.sectorX + "," + atlas.sectorY + " zone " + atlas.zoneX + "," + atlas.zoneY + " floor " + atlas.floor + (atlas.sewer?"B sewer":"") + ".");
+            if (event != null && !event.isEmpty()) logEvent(event);
+            autosaveZoneTransition(reason);
+            if (firstType) { prepareZoneSplash("new zone type discovered during transition"); setScreen(Screen.ZONE_SPLASH); }
+            else setScreen(Screen.GAME);
+            DebugLog.audit("ATLAS_TRANSITION", "reason="+reason+" old="+(oldWorld!=null?oldWorld.layerText():"none")+" new="+world.layerText()+" zone="+atlas.zoneX+","+atlas.zoneY+" firstType="+firstType+" event="+lastTransitionEvent+" player="+playerX+","+playerY+" state="+stateSummary());
+        } catch (Throwable t) {
+            DebugLog.error("ATLAS_TRANSITION_FAILED", "Failed to transition: " + reason, t);
+            logEvent("ERROR: transition failed. Diagnostic details were recorded.");
+            setScreen(Screen.GAME);
+        }
+    }
+
+    String maybeRollZoneTransitionEvent(String reason) {
+        if (world == null || active == null) return "";
+        int visits = active.zoneVisitCounts.getOrDefault(world.zoneType.label, 0) + 1;
+        active.zoneVisitCounts.put(world.zoneType.label, visits);
+        int baseChance = 18 + Math.min(20, visits * 2);
+        if (atlas != null && atlas.floor <= 2) baseChance += 8;
+        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.CIVIC_WARDENS && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
+        int roll = rng.nextInt(100);
+        if (roll >= baseChance) { lastTransitionEvent = "No event. roll=" + roll + " chance=" + baseChance; return ""; }
+        String[] benign = {
+            "A maintenance procession passes in the distance, lamps bobbing like tired insects.",
+            "A child watches you from a vent grille, then vanishes before the question can form.",
+            "A vox-speaker coughs three words of a sermon before dying into static.",
+            "A freight chain rattles somewhere behind the wall, dragging unseen tonnage through the arcology bones.",
+            "Someone has chalked a warning on the doorframe. The spelling is poor. The fear is not."
+        };
+        int rarity = rng.nextInt(100);
+        String result;
+        if (rarity < 70) {
+            result = "Zone event: " + benign[rng.nextInt(benign.length)];
+        } else if (rarity < 86) {
+            String item = (world.zoneType == ZoneType.SEWER_CONDUIT || world.zoneType == ZoneType.MUTANT_SEWER_CAMP) ? "Sealed water ration" : "Emergency ration";
+            addInventoryItem(item, ItemProvenanceRecord.found(item, world, turn, "threshold cache"));
+            result = "Uncommon zone event: you find " + item + " wedged near the threshold.";
+        } else if (rarity < 95) {
+            Faction f = world.npcFactionForRoom(0);
+            factionStanding.put(f, factionStanding.getOrDefault(f,0)+1);
+            result = "Rare zone event: a fleeting contact gives you a nod. " + f.label + " standing +1.";
+        } else {
+            Point adj = adjacentOpenNearPlayer();
+            if (adj != null) {
+                NpcEntity hostile = NpcEntity.create(world.npcFactionForRoom(0), world.zoneType, adj.x, adj.y, rng);
+                hostile.state = "HOSTILE";
+                world.npcs.add(hostile);
+                result = "Hostile zone event: something was waiting by the threshold. " + hostile.name + " appears nearby.";
+            } else {
+                result = "Rare zone event: hostile movement echoes nearby, but no creature finds a clean approach.";
+            }
+        }
+        lastTransitionEvent = result + " roll=" + roll + " chance=" + baseChance + " rarity=" + rarity;
+        DebugLog.audit("ZONE_TRANSITION_EVENT", lastTransitionEvent);
+        return result;
+    }
+
+    Point adjacentOpenNearPlayer() {
+        if (world == null) return null;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+        for(int[] d:dirs){ int x=playerX+d[0], y=playerY+d[1]; if(world.walkable(x,y) && world.npcAt(x,y)==null) return new Point(x,y); }
+        return null;
+    }
+
+    Point spawnPointForTransition(Point edgeHint) {
+        if (world == null) return new Point(2,2);
+        if (edgeHint == null) return world.startPoint();
+        if (pendingTransitionReturnEdge != null && !pendingTransitionReturnEdge.isEmpty()) {
+            char edge = pendingTransitionReturnEdge.charAt(0);
+            Point p = world.returnEdgeSpawn(edge, edgeHint);
+            DebugLog.audit("EDGE_RETURN_SPAWN", "returnEdge=" + edge + " sourceHint=" + edgeHint.x + "," + edgeHint.y + " spawn=" + p.x + "," + p.y + " zone=" + world.zoneCoordText() + " layer=" + world.layerText());
+            return p;
+        }
+        // Legacy sentinel hints from older saves/builds: still resolve to an edge-biased spawn.
+        if (edgeHint.x == -1 && edgeHint.y == -2) return world.edgeSpawn('S');
+        if (edgeHint.x == -1 && edgeHint.y == -3) return world.edgeSpawn('N');
+        if (edgeHint.x == -2 && edgeHint.y == -1) return world.edgeSpawn('E');
+        if (edgeHint.x == -3 && edgeHint.y == -1) return world.edgeSpawn('W');
+        return world.nearestWalkableTo(edgeHint.x, edgeHint.y);
+    }
+
+    void claimBaseHere() {
+        if (world == null) return;
+        int rid = world.roomIdAt(playerX, playerY);
+        if (rid < 0) { logEvent("You can only claim an actual room, not a corridor or wall seam."); return; }
+        baseClaimed = true;
+        baseX = playerX; baseY = playerY; claimedRoomId = rid;
+        suspicion += 2; gangHeat += 1;
+        DebugLog.audit("BASE_CLAIM", "claimedRoom=" + claimedRoomId + " at=" + baseX + "," + baseY + " state=" + stateSummary());
+        logEvent("Room claimed at " + baseX + "," + baseY + " as friendly territory. The law will want paperwork. The gangs will want contents.");
+        recordPlayerNewsEvent("room-claim", "claimed room " + claimedRoomId, Faction.NONE, "new private foothold reported in " + (world == null ? "unknown zone" : world.zoneType.label), 3);
+    }
+
+    boolean isInClaimedRoom(int x, int y) {
+        return baseClaimed && world != null && claimedRoomId >= 0 && world.roomIdAt(x, y) == claimedRoomId;
+    }
+
+    BaseObject baseObjectAt(int x, int y) {
+        for (BaseObject obj : baseObjects) if (obj.x == x && obj.y == y) return obj;
+        return null;
+    }
+
+
+    void beginDefenseBuildPlacement(BuildRecipe recipe) {
+        if (recipe == null) { logEvent("Defense build selection failed: no recipe."); return; }
+        String advisory = DefenseBuildSelectionAuthority.advisoryFor(recipe);
+        if (universalWindowAuthority != null) universalWindowAuthority.open("construction", turn, advisory);
+        logEvent(advisory);
+        beginBuildPlacement(recipe);
+    }
+
+    void openDefenseInfopedia() {
+        String[] tabs = infopediaTabs();
+        for (int i=0; i<tabs.length; i++) if ("DEFENSES".equals(tabs[i])) { infopediaTab = i; break; }
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        openPanel(PanelMode.INFOPEDIA);
+    }
+
+    void openConstructionValidationInfopedia() {
+        String[] tabs = infopediaTabs();
+        for (int i=0; i<tabs.length; i++) if ("AUDITS".equals(tabs[i])) { infopediaTab = i; break; }
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        int idx = entries.indexOf("Construction Validation Inspection");
+        infopediaSelected = Math.max(0, idx);
+        infopediaScroll = Math.max(0, infopediaSelected - 2);
+        infopediaDetailScroll = 0;
+        openPanel(PanelMode.INFOPEDIA);
+    }
+
+    void beginBuildPlacement(BuildRecipe recipe) {
+        if (recipe == null) return;
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Build planning failed: stand inside your claimed room first."); return; }
+        String req = buildStructuralRequirementProblem(recipe);
+        if (!req.equals("OK")) { logEvent("Build unavailable: " + recipe.name + " — " + req); return; }
+        pendingBuildRecipe = recipe;
+        buildPlacementActive = true;
+        ConstructionPlacementFeedbackAuthority.invalidate();
+        Point spot = findOpenBaseSpot();
+        buildX = (spot == null ? playerX : spot.x);
+        buildY = (spot == null ? playerY : spot.y);
+        clampBuildCursorToClaimedRoom();
+        updatePendingBuildSummary();
+        if (universalWindowAuthority != null) universalWindowAuthority.open("construction", turn, "planning " + recipe.name);
+        String governanceLine = constructionGovernanceAuthority.advisoryForBuild(constructionBlueprintFor(recipe), recipe.name, "begin build placement");
+        DebugLog.audit("BUILD_PLAN", "recipe=" + recipe.name + " cursor=" + buildX + "," + buildY + " governance=" + governanceLine + " " + stateSummary());
+        logEvent("Select a tile inside this claimed room for " + recipe.name + ". Use WASD/arrows, then press E to CONFIRM BUILD.");
+        logEvent(governanceLine);
+        repaint();
+    }
+
+    void moveBuildCursor(int dx, int dy) {
+        if (!buildPlacementActive || world == null) return;
+        int nx = buildX + dx, ny = buildY + dy;
+        if (nx >= 0 && ny >= 0 && nx < world.w && ny < world.h && isInClaimedRoom(nx, ny)) {
+            buildX = nx; buildY = ny;
+        }
+        clampBuildCursorToClaimedRoom();
+        updatePendingBuildSummary();
+    }
+
+    void clampBuildCursorToClaimedRoom() {
+        if (world == null || !baseClaimed) return;
+        if (buildX < 0 || buildY < 0 || buildX >= world.w || buildY >= world.h || !isInClaimedRoom(buildX, buildY)) {
+            Point spot = findOpenBaseSpot();
+            if (spot != null) { buildX = spot.x; buildY = spot.y; }
+            else { buildX = playerX; buildY = playerY; }
+        }
+    }
+
+    String rawCanPlacePendingBuildAtUncached(int x, int y) {
+        if (pendingBuildRecipe == null) return "No build recipe selected.";
+        if (world == null || x < 0 || y < 0 || x >= world.w || y >= world.h) return "Outside world bounds.";
+        if (!isInClaimedRoom(x, y)) return "Tile is outside the claimed room.";
+        if (world.tiles[x][y] == '#') return "Cannot build inside a wall.";
+        if (!world.walkable(x, y)) return "Tile is not walkable.";
+        if (baseObjectAt(x, y) != null) return "Tile already contains a base object.";
+        if (x == playerX && y == playerY) return "Move off the target tile before placing the object.";
+        String live = LiveProductionPlacementAuthority.validateBuildPlacement(this, pendingBuildRecipe, x, y);
+        if (!"OK".equals(live)) return live;
+        String access = SelfEntombmentConstructionAuthority.validate(this, pendingBuildRecipe, x, y);
+        if (!"OK".equals(access)) return access;
+        return "OK";
+    }
+
+    String rawCanPlacePendingBuildAt(int x, int y) {
+        return ConstructionPlacementFeedbackAuthority.cachedRawPlacement(this, pendingBuildRecipe, x, y);
+    }
+
+    String canPlacePendingBuildAt(int x, int y) {
+        return constructionPlacementResult(pendingBuildRecipe, x, y, rawCanPlacePendingBuildAt(x, y));
+    }
+
+    String constructionPlacementResult(BuildRecipe recipe, int x, int y, String rawReason) {
+        String blueprint = constructionBlueprintFor(recipe);
+        String context = (recipe == null ? "no recipe" : recipe.name) + " at " + x + "," + y;
+        return constructionGovernanceAuthority.explainPlacementResult(blueprint, "OK".equals(rawReason), rawReason, context);
+    }
+
+    String constructionBlueprintFor(BuildRecipe recipe) {
+        if (recipe == null) return "basic_room_stamp";
+        char symbol = recipe.symbol;
+        String name = recipe.name == null ? "" : recipe.name.toLowerCase(Locale.ROOT);
+        if (symbol == 'L' || symbol == 'e' || symbol == 'f' || symbol == 'l' || symbol == 'M' || name.contains("forge") || name.contains("lab") || name.contains("condenser") || name.contains("medicae")) return "machine_placement";
+        String defenseBlueprint = DefenseSemanticIntegration.blueprintForRecipe(recipe.name);
+        if (defenseBlueprint != null) return defenseBlueprint;
+        if (name.contains("turret")) return "defense_turret";
+        if (name.contains("barricade") || name.contains("sandbag")) return "defense_obstruction";
+        if (name.contains("wall")) return "defense_wall";
+        if (name.contains("wire")) return "defense_area_denial";
+        if (name.contains("sensor")) return "defense_sensor";
+        if (name.contains("door")) return "defense_access_control";
+        if (name.contains("trap") || name.contains("alarm")) return "hazard_feature";
+        return "basic_room_stamp";
+    }
+
+    void updatePendingBuildSummary() {
+        if (pendingBuildRecipe == null) { pendingBuildSummary = "No build selected."; return; }
+        String place = canPlacePendingBuildAt(buildX, buildY);
+        int turns = buildTurns(pendingBuildRecipe);
+        int fail = buildFailureChance(pendingBuildRecipe);
+        String comps = pendingBuildRecipe.componentCosts.isEmpty() ? "components none" : "components " + pendingBuildRecipe.componentCostSummary(4);
+        pendingBuildSummary = ConstructionPlacementFeedbackAuthority.formatSummary(pendingBuildRecipe, buildX, buildY, place, comps, turns, fail);
+    }
+
+    int buildTurns(BuildRecipe r) {
+        int body = stat("Strength", 6) + stat("Agility", 6);
+        return Math.max(1, r.baseTurns - body / 5);
+    }
+
+    int buildFailureChance(BuildRecipe r) {
+        int mind = stat("Intellect", 6) + stat("Faith", 6);
+        return Math.max(2, Math.min(80, r.baseFail - mind * 3));
+    }
+
+    String buildRequirementProblem(BuildRecipe r) {
+        String structural = buildStructuralRequirementProblem(r);
+        if (!"OK".equals(structural)) return structural;
+        String compProblem = buildComponentRequirementProblem(r);
+        if (!"OK".equals(compProblem)) return compProblem;

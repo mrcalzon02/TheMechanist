@@ -1,0 +1,50 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_11_lines_15293_15657
+// Category: input_mouse_keyboard
+// Source lines: 15293-15657
+// Method count: 3
+//
+// Methods in this fragment:
+// - executeMouseMovementPreview :: lines 15293-15310 (18) :: void executeMouseMovementPreview()
+// - roadSemanticKeyForArt :: lines 15642-15648 (7) :: String roadSemanticKeyForArt(int worldX, int worldY, char fallbackGlyph)
+// - roadVariantKeyForArt :: lines 15650-15657 (8) :: String roadVariantKeyForArt(String semantic, int worldX, int worldY)
+
+    void executeMouseMovementPreview() {
+        if (!mouseMovePreviewActive || !mouseMovePreviewValid || mouseMovePreviewPath.isEmpty()) { clearMouseMovementPreview("execute-invalid"); repaint(); return; }
+        int range = Math.max(1, movementModeRange());
+        int steps = Math.min(range, mouseMovePreviewPath.size());
+        Point dest = mouseMovePreviewPath.get(steps - 1);
+        int dx = Integer.compare(dest.x, playerX);
+        int dy = Integer.compare(dest.y, playerY);
+        int fromX = playerX, fromY = playerY;
+        playerX = dest.x; playerY = dest.y;
+        beginPlayerTileSlide(fromX, fromY, playerX, playerY);
+        lastMoveDx = dx; lastMoveDy = dy;
+        activeMotionStateIndex = movementModeIndex;
+        updateSensoryModel("mouse movement preview execution");
+        checkTrapAfterPlayerMove(playerX, playerY);
+        advanceTurn("moves by mouse path preview.");
+        clearMouseMovementPreview("executed");
+        repaint();
+    }
+
+// ... omitted 331 non-method/source lines between cataloged methods ...
+
+    String roadSemanticKeyForArt(int worldX, int worldY, char fallbackGlyph) {
+        if (world == null || !world.inBounds(worldX, worldY)) return fallbackGlyph == '_' ? "road_sidewalk" : "road_north_south";
+        if (fallbackGlyph == '_' && !sidewalkPromotesToRoadForArt(worldX, worldY)) return "road_sidewalk";
+        String shape = TileDataCompilationAuthority.roadShape(world, worldX, worldY);
+        if (shape == null || shape.isBlank()) return fallbackGlyph == '_' ? "road_sidewalk" : "road_north_south";
+        return "road_" + shape;
+    }
+
+    String roadVariantKeyForArt(String semantic, int worldX, int worldY) {
+        if (semantic == null || worldX < 0 || worldY < 0) return semantic;
+        if (semantic.startsWith("road_corner_") || semantic.startsWith("road_end_") || semantic.startsWith("tile_road_corner_") || semantic.startsWith("tile_road_end_")) return semantic;
+        if (!(semantic.equals("road_north_south") || semantic.equals("road_east_west") || semantic.equals("road_intersection") || semantic.equals("road_sidewalk") ||
+              semantic.equals("tile_road_north_south") || semantic.equals("tile_road_east_west") || semantic.equals("tile_road_intersection") || semantic.equals("tile_road_sidewalk"))) return semantic;
+        int variant = 1 + Math.abs(Objects.hash(worldX / 3, worldY / 3, semantic)) % 5;
+        return semantic + "_v" + variant;
+    }

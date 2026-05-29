@@ -1,0 +1,42 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_15_lines_16891_17115
+// Category: combat_actor_entity
+// Source lines: 16891-17115
+// Method count: 4
+//
+// Methods in this fragment:
+// - factionGroup :: lines 16891-16891 (1) :: String[] factionGroup(Faction... fs)
+// - activeVisibleContracts :: lines 17001-17005 (5) :: ArrayList<FactionContract> activeVisibleContracts()
+// - activeVisibleContracts :: lines 17038-17041 (4) :: FactionContract c : activeVisibleContracts())
+// - factionUiColor :: lines 17107-17115 (9) :: Color factionUiColor(int xx,int yy)
+
+    String[] factionGroup(Faction... fs){ String[] out=new String[fs.length]; for(int i=0;i<fs.length;i++) out[i]=fs[i].label+" "+factionStanding.getOrDefault(fs[i],0); return out; }
+
+// ... omitted 109 non-method/source lines between cataloged methods ...
+
+    ArrayList<FactionContract> activeVisibleContracts() {
+        ArrayList<FactionContract> out = new ArrayList<>();
+        for (FactionContract c : factionContracts) if (c != null && !c.completed) out.add(c);
+        return out;
+    }
+
+// ... omitted 32 non-method/source lines between cataloged methods ...
+
+        for (FactionContract c : activeVisibleContracts()) {
+            ContractZoneTarget target = contractZoneTarget(c);
+            if (target != null && contractTargetOnCurrentMapLayer(target) && target.zoneX == zx && target.zoneY == zy) matches.add(c);
+        }
+
+// ... omitted 65 non-method/source lines between cataloged methods ...
+
+    Color factionUiColor(int xx,int yy){
+        if(xx==2&&yy==1) return new Color(70,130,220); // Civic Wardens blue
+        if(xx==1&&yy==0) return new Color(190,55,45); // gangs red
+        if(xx==1&&yy==1) return new Color(210,190,110); // trade neutral
+        if(xx==2&&yy==2) return new Color(150,80,190); // forge/mechanist Collegia
+        if(xx==1&&yy==2) return new Color(160,130,70); // noble
+        if(xx==0&&yy==0) return new Color(160,210,150); // civil
+        return new Color(120,150,120);
+    }

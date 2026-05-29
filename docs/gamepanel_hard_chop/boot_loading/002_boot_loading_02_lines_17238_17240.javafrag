@@ -1,0 +1,14 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: boot_loading_02_lines_17238_17240
+// Category: boot_loading
+// Source lines: 17238-17240
+// Method count: 1
+//
+// Methods in this fragment:
+// - drawLoading :: lines 17238-17240 (3) :: void drawLoading(Graphics2D g)
+
+                                                                                                                                                                                                                                    void drawLoading(Graphics2D g) {
+        loadingSurfacePainter.paint(g, this);
+    }

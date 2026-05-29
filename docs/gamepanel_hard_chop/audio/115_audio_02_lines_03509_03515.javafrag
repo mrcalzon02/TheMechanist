@@ -1,0 +1,18 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: audio_02_lines_03509_03515
+// Category: audio
+// Source lines: 3509-3515
+// Method count: 1
+//
+// Methods in this fragment:
+// - maybePlayHeardSoundCue :: lines 3509-3515 (7) :: void maybePlayHeardSoundCue(String label, int distance)
+
+    void maybePlayHeardSoundCue(String label, int distance) {
+        long now = System.currentTimeMillis();
+        if (options == null || !options.soundEnabled) return;
+        if (now - lastHearingCueAudioMillis < CORE_AMBIENT_SOUND_PING_AUDIO_COOLDOWN_MS) return;
+        lastHearingCueAudioMillis = now;
+        sounds.playDistantCue(soundPingAudioKey(label), Math.max(2, distance), options);
+    }

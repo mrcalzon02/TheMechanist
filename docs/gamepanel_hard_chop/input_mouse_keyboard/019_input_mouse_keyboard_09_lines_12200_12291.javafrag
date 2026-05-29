@@ -1,0 +1,40 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_09_lines_12200_12291
+// Category: input_mouse_keyboard
+// Source lines: 12200-12291
+// Method count: 2
+//
+// Methods in this fragment:
+// - zoomKnowledgeTreeAt :: lines 12200-12212 (13) :: void zoomKnowledgeTreeAt(int sx, int sy, double wheelRotation)
+// - handleKnowledgeKeyPressed :: lines 12280-12291 (12) :: void handleKnowledgeKeyPressed(int code)
+
+    void zoomKnowledgeTreeAt(int sx, int sy, double wheelRotation) {
+        Rectangle canvas = knowledgeCanvasRect();
+        if (!canvas.contains(sx, sy)) { scrollActivePanel((int)Math.signum(wheelRotation), false); return; }
+        double old = knowledgeTreeScale;
+        double next = Math.max(0.35, Math.min(2.75, old * Math.pow(1.10, -wheelRotation)));
+        if (Math.abs(next - old) < 0.0001) return;
+        double wx = (sx - canvas.x - knowledgeTreePanX) / old;
+        double wy = (sy - canvas.y - knowledgeTreePanY) / old;
+        knowledgeTreeScale = next;
+        knowledgeTreePanX = sx - canvas.x - wx * next;
+        knowledgeTreePanY = sy - canvas.y - wy * next;
+        repaint();
+    }
+
+// ... omitted 67 non-method/source lines between cataloged methods ...
+
+    void handleKnowledgeKeyPressed(int code) {
+        if (code == KeyEvent.VK_ESCAPE) { closeKnowledgeScreen(); return; }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E) { attemptKnowledgeUnlock(); return; }
+        if (code == KeyEvent.VK_HOME) { resetKnowledgeTreeView(); repaint(); return; }
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        ArrayList<String> ids = new ArrayList<>(branches.keySet());
+        int idx = Math.max(0, ids.indexOf(activeKnowledgeBranchId));
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { activeKnowledgeBranchId = ids.get(Math.max(0, idx - 1)); selectedKnowledgeNodeId = null; resetKnowledgeTreeView(); repaint(); return; }
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { activeKnowledgeBranchId = ids.get(Math.min(ids.size() - 1, idx + 1)); selectedKnowledgeNodeId = null; resetKnowledgeTreeView(); repaint(); return; }
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { knowledgeTreePanY += 24; repaint(); return; }
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { knowledgeTreePanY -= 24; repaint(); return; }
+    }

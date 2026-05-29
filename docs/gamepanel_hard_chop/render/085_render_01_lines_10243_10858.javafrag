@@ -1,0 +1,250 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_01_lines_10243_10858
+// Category: render
+// Source lines: 10243-10858
+// Method count: 9
+//
+// Methods in this fragment:
+// - paintComponent :: lines 10243-10311 (69) :: Override protected void paintComponent(Graphics g0)
+// - renderGameSurface :: lines 10313-10350 (38) :: void renderGameSurface(Graphics2D g)
+// - renderNormalModeVisualJuice :: lines 10353-10362 (10) :: void renderNormalModeVisualJuice(Graphics2D g)
+// - drawBackground :: lines 10364-10372 (9) :: void drawBackground(Graphics2D g)
+// - drawGuiChrome :: lines 10374-10381 (8) :: void drawGuiChrome(Graphics2D g)
+// - drawSlicedFrame :: lines 10383-10409 (27) :: void drawSlicedFrame(Graphics2D g, int x, int y, int w, int h, String kind)
+// - tileImage :: lines 10411-10421 (11) :: void tileImage(Graphics2D g, BufferedImage img, int x, int y, int w, int h)
+// - drawRotatingGear :: lines 10447-10466 (20) :: void drawRotatingGear(Graphics2D g, int cx, int cy, int r, double angle)
+// - drawWorldSelect :: lines 10833-10858 (26) :: void drawWorldSelect(Graphics2D g)
+
+    @Override protected void paintComponent(Graphics g0) {
+        long start = System.nanoTime();
+        try {
+            int physicalW = Math.max(1, super.getWidth());
+            int physicalH = Math.max(1, super.getHeight());
+            boolean readableUiPass = screen != Screen.GAME;
+            BufferedImage buffer = renderScaling.ensureInternalBuffer(readableUiPass);
+            Graphics2D g = buffer.createGraphics();
+            try {
+                g.setComposite(AlphaComposite.Src);
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, buffer.getWidth(), buffer.getHeight());
+                g.setComposite(AlphaComposite.SrcOver);
+                DisplayDensityAuthority.applyTextRenderingHints(g, options);
+                VisualJuiceFramework.applyHighQualityHints(g);
+                DisplayDensityAuthority.applyTextRenderingHints(g, options);
+                g.scale(renderScaling.bufferScaleX(readableUiPass), renderScaling.bufferScaleY(readableUiPass));
+                virtualRenderContext = true;
+                renderGameSurface(g);
+                AccessibilityCompatibilityAuthority.processCompositedBackbuffer(buffer, options);
+                if (singlePlayerSectorBridge != null) singlePlayerSectorBridge.noteSnapshotRendered("paintComponent");
+            } finally {
+                virtualRenderContext = false;
+                g.dispose();
+            }
+
+            Graphics2D screen = (Graphics2D)g0.create();
+            try {
+                screen.setColor(Color.BLACK);
+                screen.fillRect(0, 0, physicalW, physicalH);
+                RenderScalingCrtAuthority.Layout layout = renderScaling.layoutFor(physicalW, physicalH);
+                DisplayDensityAuthority.applyTextRenderingHints(screen, options);
+                VisualJuiceFramework.applyGpuFriendlyHints(screen);
+                DisplayDensityAuthority.applyTextRenderingHints(screen, options);
+                screen.setRenderingHint(RenderingHints.KEY_INTERPOLATION, readableUiPass ? RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR : RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                screen.drawImage(buffer, layout.x, layout.y, layout.width, layout.height, null);
+                if (renderScaling.profile().crtEnabled) {
+                    screen.drawImage(renderScaling.ensureCrtOverlay(layout.width, layout.height), layout.x, layout.y, null);
+                }
+                long overlayElapsed = System.nanoTime() - start;
+                performanceDiagnostics.recordFrame(overlayElapsed);
+                frameLimiter.recordFrame(overlayElapsed, renderStressTest.activeElements());
+                performanceDiagnostics.draw(screen, this, physicalW, physicalH);
+                if (options.diagnosticsOverlay || renderStressTest.active()) frameLimiter.drawOverlay(screen, physicalW, physicalH, renderStressTest.active());
+            } finally {
+                screen.dispose();
+            }
+
+            long elapsed = System.nanoTime() - start;
+            frameCount++;
+            if (elapsed > worstFrameNanos) worstFrameNanos = elapsed;
+            if (frameCount % 300 == 0) {
+                String metric = "Benchmark frame=" + frameCount + " worstPaintMs=" + String.format(Locale.US, "%.3f", worstFrameNanos/1_000_000.0)
+                        + " renderProfile=" + renderScaling.profileLabel() + " internal=" + renderScaling.internalWidth() + "x" + renderScaling.internalHeight()
+                        + " scaledImageCache=" + RenderImageScaleCacheAuthority.cacheSize()
+                        + " textWrapCache=" + TextLayoutAuthority.cacheSize();
+                logEvent(metric);
+                DebugLog.metric("paint", metric + " | " + stateSummary());
+            }
+        } catch (Throwable t) {
+            virtualRenderContext = false;
+            DebugLog.error("PAINT", "paintComponent failed | state=" + stateSummary(), t);
+            try {
+                g0.setColor(Color.BLACK); g0.fillRect(0,0,Math.max(1, super.getWidth()),Math.max(1, super.getHeight()));
+                g0.setColor(Color.RED); DisplayDensityAuthority.applyTinyTextRenderingHints((Graphics2D)g0); g0.setFont(new Font("Monospaced", Font.BOLD, 16));
+                g0.drawString("RENDER ERROR - diagnostic details recorded", 32, 64);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    void renderGameSurface(Graphics2D g) {
+        drawBackground(g);
+        scrollRegions.clear();
+        rebuildButtons();
+        clampButtonsToVisibleMenuBounds();
+        applySemanticButtonIcons();
+        assignButtonDebugIds();
+        if (screen == Screen.BOOT) drawBoot(g);
+        else if (screen == Screen.LOADING) drawLoading(g);
+        else if (screen == Screen.MENU) drawMenu(g);
+        else if (screen == Screen.MODS) drawModsSurface(g);
+            else if (screen == Screen.EDITOR) drawInGameEditorSurface(g);
+        else if (screen == Screen.MULTIPLAYER) drawMultiplayerSurface(g);
+        else if (screen == Screen.SECTOR_AUDIT) drawSectorAuditSurface(g);
+        else if (screen == Screen.WORLD_SELECT) drawWorldSelect(g);
+        else if (screen == Screen.WORLD_SETUP) drawWorldSetup(g);
+        else if (screen == Screen.CHARACTER) drawCharacter(g);
+        else if (screen == Screen.KNOWLEDGE) drawKnowledgeScreen(g);
+        else if (screen == Screen.INTRO_CRAWL) drawIntroCrawl(g);
+        else if (screen == Screen.GAME) {
+            drawGame(g);
+            renderNormalModeVisualJuice(g);
+            firstPersonRenderViewport.render(g, this);
+        }
+        else if (screen == Screen.PAUSE) drawPause(g);
+        else if (screen == Screen.PANEL) drawPanel(g);
+        else if (screen == Screen.ZONE_SPLASH) drawZoneSplash(g);
+        else if (screen == Screen.CAPTURE) drawCaptureScreen(g);
+        else if (screen == Screen.LOST) drawLostScreen(g);
+        else drawOptions(g);
+        if (options.screenSaver && screen != Screen.BOOT && screen != Screen.LOADING && System.currentTimeMillis() - lastInputMillis > 15L*60L*1000L) drawIdleScreensaver(g);
+        if (eulaGateActive) drawEulaOverlay(g);
+        int hoverButtonIndex = activeHoverButtonIndex();
+        for (int i=0;i<buttons.size();i++) buttons.get(i).draw(g, uiFont, i==selectedButton || i==hoverButtonIndex, images, options);
+        drawHoverHelp(g, hoverButtonIndex);
+        // Modal/profile/info alerts must sit above menu buttons, not beneath them.
+        drawTimedAlert(g);
+    }
+
+
+    void renderNormalModeVisualJuice(Graphics2D g) {
+        if (g == null) return;
+        int w = Math.max(1, getWidth());
+        int h = Math.max(1, getHeight());
+        normalParticleEmitter.update(1.0f / 30.0f);
+        normalParticleEmitter.render(g);
+        normalLightmapRenderer.renderSingleWarmLight(g, w, h, Math.max(24, w / 2f), Math.max(24, h - 58f), 130f, 0.75f);
+        renderStressTest.updateAndRender(g, this, w, h);
+        if (options != null && options.doomModeEnabled) sharedHudOverlay.renderHUD(g, PlayerState.fromPanel(this), w, h);
+    }
+
+    void drawBackground(Graphics2D g) {
+        int w=getWidth(), h=getHeight();
+        g.setColor(new Color(7,7,9)); g.fillRect(0,0,w,h);
+        g.setColor(new Color(20,20,18));
+        for (int y=0;y<h;y+=32) g.drawLine(0,y,w,y);
+        g.setColor(new Color(38,31,23));
+        for (int x=0;x<w;x+=84) g.drawLine(x,0,x-30,h);
+        drawGuiChrome(g);
+    }
+
+    void drawGuiChrome(Graphics2D g) {
+        int w = getWidth(), h = getHeight();
+        // GUI AUTHORITY PASS 0.8.7:
+        // Only the root game window owns the cogitator_frame_0536 outer frame.
+        // Sub-panels must draw their own inner bezel only when they actually exist,
+        // preventing persistent stacked chrome from accumulating behind menus.
+        drawSlicedFrame(g, 14, 14, w-28, h-28, "outer");
+    }
+
+    void drawSlicedFrame(Graphics2D g, int x, int y, int w, int h, String kind) {
+        if (images.hasFrameSlices()) {
+            BufferedImage tl = images.get("corner_top_left"), tr = images.get("corner_top_right"), bl = images.get("corner_bottom_left"), br = images.get("corner_bottom_right");
+            BufferedImage t = images.get(kind.equals("inner") ? "inner_bezel_t" : "top_rail_left_mid");
+            BufferedImage b = images.get(kind.equals("inner") ? "inner_bezel_b" : "bottom_rail_left_mid");
+            BufferedImage l = images.get(kind.equals("inner") ? "inner_bezel_l" : "left_column_mid");
+            BufferedImage r = images.get(kind.equals("inner") ? "inner_bezel_r" : "right_column_mid");
+            BufferedImage c = images.get("inner_display_center");
+            int cs = kind.equals("inner") ? 18 : 32;
+            g.setColor(new Color(4,5,5, kind.equals("inner") ? 150 : 210));
+            g.fillRect(x+cs, y+cs, Math.max(1,w-cs*2), Math.max(1,h-cs*2));
+            if (c != null) RenderImageScaleCacheAuthority.draw(g, c, x+cs, y+cs, w-cs*2, h-cs*2);
+            tileImage(g, t, x+cs, y, w-cs*2, cs);
+            tileImage(g, b, x+cs, y+h-cs, w-cs*2, cs);
+            tileImage(g, l, x, y+cs, cs, h-cs*2);
+            tileImage(g, r, x+w-cs, y+cs, cs, h-cs*2);
+            if (tl != null) RenderImageScaleCacheAuthority.draw(g, tl, x, y, cs, cs);
+            if (tr != null) RenderImageScaleCacheAuthority.draw(g, tr, x+w-cs, y, cs, cs);
+            if (bl != null) RenderImageScaleCacheAuthority.draw(g, bl, x, y+h-cs, cs, cs);
+            if (br != null) RenderImageScaleCacheAuthority.draw(g, br, x+w-cs, y+h-cs, cs, cs);
+        } else {
+            g.setColor(new Color(30,25,18,210)); g.fillRect(x,y,w,h);
+            g.setColor(new Color(120,92,52)); g.drawRect(x,y,w,h);
+            g.setColor(new Color(62,50,32)); g.drawRect(x+3,y+3,w-6,h-6);
+        }
+        stampUiFrameId(g, "F", kind, x, y, w, h);
+    }
+
+    void tileImage(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {
+        if (img == null || w <= 0 || h <= 0) return;
+        int stepW = Math.max(1, Math.min(w, img.getWidth()));
+        int stepH = Math.max(1, Math.min(h, img.getHeight()));
+        for (int yy=y; yy<y+h; yy+=stepH) {
+            for (int xx=x; xx<x+w; xx+=stepW) {
+                int dw = Math.min(stepW, x+w-xx), dh = Math.min(stepH, y+h-yy);
+                RenderImageScaleCacheAuthority.draw(g, img, xx, yy, dw, dh);
+            }
+        }
+    }
+
+// ... omitted 25 non-method/source lines between cataloged methods ...
+
+    void drawRotatingGear(Graphics2D g, int cx, int cy, int r, double angle) {
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.translate(cx, cy);
+        gg.rotate(angle);
+        gg.setStroke(new BasicStroke(3));
+        gg.setColor(new Color(45, 39, 31));
+        gg.fillOval(-r, -r, r*2, r*2);
+        gg.setColor(new Color(184, 150, 82));
+        gg.drawOval(-r, -r, r*2, r*2);
+        for (int i=0;i<16;i++) {
+            double a = Math.PI * 2 * i / 16.0;
+            int x1=(int)(Math.cos(a)*(r-8)), y1=(int)(Math.sin(a)*(r-8));
+            int x2=(int)(Math.cos(a)*(r+14)), y2=(int)(Math.sin(a)*(r+14));
+            gg.drawLine(x1,y1,x2,y2);
+        }
+        gg.setColor(new Color(8,8,9)); gg.fillOval(-24,-24,48,48);
+        gg.setColor(new Color(184, 150, 82)); gg.drawOval(-24,-24,48,48);
+        gg.drawLine(-r+15,0,r-15,0); gg.drawLine(0,-r+15,0,r-15);
+        gg.dispose();
+    }
+
+// ... omitted 366 non-method/source lines between cataloged methods ...
+
+    void drawWorldSelect(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(optionColor(GameOptions.BACKGROUND)); g.fillRect(0,0,W,H);
+        drawSlicedFrame(g, 20, 20, W-40, H-40, "outer");
+        g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, H / 15f))));
+        g.setColor(optionColor(GameOptions.TEXT_TITLE)); center(g, "SELECT ARCOLOGY WORLD", W/2, Math.max(62, H/8));
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        center(g, "World files are listed above; action buttons are deliberately kept below the list.", W/2, Math.max(92, H/8 + 28));
+        int margin = Math.max(34, W / 22);
+        int panelY = Math.max(126, H / 4);
+        int panelH = Math.max(165, Math.min(H - panelY - 124, 290));
+        int panelW = Math.min(760, W - margin * 2);
+        int x = (W - panelW) / 2;
+        drawPanelBox(g, x, panelY, panelW, panelH, "WORLD FILES");
+        g.setFont(smallFont);
+        ArrayList<String> lines = new ArrayList<>();
+        if (availableWorlds.isEmpty()) lines.add("No generated world files found. Choose GENERATE NEW.");
+        else {
+            for (int i=0; i<availableWorlds.size(); i++) lines.add((i==selectedWorldIndex?"> ":"  ") + availableWorlds.get(i).summaryLine());
+        }
+        lines.add("");
+        lines.add("Selected world settings persist into the run: NPC density, zone size, room density, prices, crafting difficulty, Hoarder mode, and simulation age.");
+        drawScrollableWrappedLines(g, lines, x+18, panelY+42, panelW-36, panelH-62, 0, "world-select");
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, lastWorldSetupReport, W/2, H-42);
+    }

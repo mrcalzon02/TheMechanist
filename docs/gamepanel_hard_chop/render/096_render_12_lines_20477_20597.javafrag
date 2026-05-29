@@ -1,0 +1,139 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_12_lines_20477_20597
+// Category: render
+// Source lines: 20477-20597
+// Method count: 8
+//
+// Methods in this fragment:
+// - drawGraphicsDropdownPopupFrame :: lines 20477-20485 (9) :: void drawGraphicsDropdownPopupFrame(Graphics2D g)
+// - drawClippedWrappedLines :: lines 20487-20504 (18) :: void drawClippedWrappedLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h, Font font, boolean centered)
+// - drawFrameWrappedCenteredText :: lines 20506-20522 (17) :: void drawFrameWrappedCenteredText(Graphics2D g, String text, int x, int y, int w, int h, Font font)
+// - drawTextPanel :: lines 20524-20542 (19) :: void drawTextPanel(Graphics2D g, int x, int y, int w, int h, java.util.List<String> lines, boolean centered)
+// - drawIdleScreensaver :: lines 20544-20551 (8) :: void drawIdleScreensaver(Graphics2D g)
+// - drawHoverHelp :: lines 20553-20578 (26) :: void drawHoverHelp(Graphics2D g, int hoverButtonIndex)
+// - drawUiTextLine :: lines 20580-20592 (13) :: void drawUiTextLine(Graphics2D g, String s, int x, int y)
+// - center :: lines 20594-20597 (4) :: void center(Graphics2D g, String s, int x, int y)
+
+    void drawGraphicsDropdownPopupFrame(Graphics2D g) {
+        if (screen != Screen.OPTIONS || graphicsDropdown < 0 || (optionsTab != 0 && optionsTab != 1 && optionsTab != 4)) return;
+        Rectangle r = graphicsDropdownOuterRect();
+        if (r.width <= 0 || r.height <= 0) return;
+        g.setColor(new Color(0, 0, 0, 218));
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
+        drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
+        stampUiFrameId(g, "F", "graphics-dropdown-popup", r.x, r.y, r.width, r.height);
+    }
+
+    void drawClippedWrappedLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h, Font font, boolean centered) {
+        if (lines == null || w <= 4 || h <= 4) return;
+        Font oldFont = g.getFont();
+        Shape oldClip = g.getClip();
+        g.setFont(font == null ? smallFont : font);
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(12, fm.getHeight() + 1);
+        g.setClip(x, y, Math.max(1, w), Math.max(1, h));
+        int yy = y + fm.getAscent();
+        for (String line : TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(8, w - 4))) {
+            if (yy > y + h) { g.setClip(oldClip); g.setFont(oldFont); return; }
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy); else g.drawString(line, x, yy);
+            yy += lineH;
+        }
+        g.setClip(oldClip);
+        g.setFont(oldFont);
+    }
+
+    void drawFrameWrappedCenteredText(Graphics2D g, String text, int x, int y, int w, int h, Font font) {
+        if (text == null) text = "";
+        Font oldFont = g.getFont();
+        g.setFont(font == null ? uiFont : font);
+        FontMetrics fm = g.getFontMetrics();
+        java.util.List<String> lines = TextLayoutAuthority.wrapPixels(g, g.getFont(), text, Math.max(8, w - 8));
+        int lineH = Math.max(fm.getHeight() + 6, 22);
+        int totalH = lines.size() * lineH;
+        int yy = y + Math.max(fm.getAscent(), (h - totalH) / 2 + fm.getAscent());
+        for (String line : lines) {
+            if (yy > y + h) break;
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            center(g, line, x + w / 2, yy);
+            yy += lineH;
+        }
+        g.setFont(oldFont);
+    }
+
+    void drawTextPanel(Graphics2D g, int x, int y, int w, int h, java.util.List<String> lines, boolean centered) {
+        if (w <= 4 || h <= 4) return;
+        g.setColor(new Color(0, 0, 0, 224));
+        g.fillRoundRect(x, y, w, h, 12, 12);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "T", lines == null || lines.isEmpty() ? "text-panel" : lines.get(0), x, y, w, h);
+        Shape oldClip = g.getClip();
+        g.setClip(x + 8, y + 8, Math.max(1, w - 16), Math.max(1, h - 16));
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        int yy = y + 22;
+        for (String line : TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(8, w - 32))) {
+            if (yy > y + h - 8) { g.setClip(oldClip); return; }
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy); else g.drawString(line, x + 14, yy);
+            yy += fm.getHeight();
+        }
+        g.setClip(oldClip);
+    }
+
+    void drawIdleScreensaver(Graphics2D g) {
+        Graphics2D gg=(Graphics2D)g.create();
+        gg.setColor(Color.BLACK); gg.fillRect(0,0,getWidth(),getHeight());
+        drawLoading(gg);
+        gg.setFont(uiFont); gg.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(gg, "IDLE UNDERHIVE SKYLINE — move mouse or press any key to return", getWidth()/2, getHeight()-42);
+        gg.dispose();
+    }
+
+    void drawHoverHelp(Graphics2D g, int hoverButtonIndex) {
+        if (!options.hoverHelp) return;
+        String help = null;
+        if (hoverButtonIndex >= 0 && hoverButtonIndex < buttons.size()) help = buttons.get(hoverButtonIndex).tip;
+        else if (mouseX < 0 && selectedButton >= 0 && selectedButton < buttons.size() && buttonIsModalInteractive(buttons.get(selectedButton))) help = buttons.get(selectedButton).tip;
+        if (help == null || mouseX < 0 || mouseY < 0) return;
+        g.setFont(smallFont);
+        int maxChars = 34;
+        java.util.List<String> lines = TextSurfaceApi.wrap(help, maxChars);
+        FontMetrics fm = g.getFontMetrics();
+        int tw = 0;
+        for (String line : lines) tw = Math.max(tw, fm.stringWidth(line));
+        int boxW = Math.min(340, Math.max(190, tw + 22));
+        int lineH = fm.getHeight();
+        int boxH = Math.max(34, lines.size()*lineH + 14);
+        int x = mouseX + 18;
+        int y = mouseY + 18;
+        if (x + boxW > getWidth() - 12) x = mouseX - boxW - 18;
+        if (y + boxH > getHeight() - 12) y = mouseY - boxH - 18;
+        x = Math.max(8, x); y = Math.max(8, y);
+        g.setColor(new Color(8,8,9,238)); g.fillRect(x, y, boxW, boxH);
+        g.setColor(new Color(165,138,82)); g.drawRect(x, y, boxW, boxH);
+        g.setColor(new Color(220,205,160));
+        int ty = y + 18;
+        for (String line : lines) { drawUiTextLine(g, line, x+11, ty); ty += lineH; }
+    }
+
+    void drawUiTextLine(Graphics2D g, String s, int x, int y) {
+        if (s == null) return;
+        FontMetrics fm = g.getFontMetrics();
+        int tw = fm.stringWidth(s);
+        int th = fm.getHeight();
+        Color old = g.getColor();
+        g.setColor(new Color(0, 0, 0, 196));
+        g.fillRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
+        g.setColor(new Color(128, 105, 58, 135));
+        g.drawRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
+        g.setColor(old);
+        g.drawString(s, x, y);
+    }
+
+    void center(Graphics2D g, String s, int x, int y) {
+        FontMetrics fm = g.getFontMetrics();
+        drawUiTextLine(g, s, x - fm.stringWidth(s)/2, y);
+    }

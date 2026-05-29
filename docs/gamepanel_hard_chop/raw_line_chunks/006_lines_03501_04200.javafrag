@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 3501-4200
+
+        if (l.contains("servo")) return "ambient_servo";
+        if (l.contains("boot") || l.contains("movement") || l.contains("patrol")) return "footstep_metal";
+        if (l.contains("impact")) return "ambient_press";
+        if (l.contains("reload")) return "weapon_reload";
+        if (l.contains("smoke") || l.contains("vent")) return "ambient_vent";
+        return "ambient_pipe";
+    }
+
+    void maybePlayHeardSoundCue(String label, int distance) {
+        long now = System.currentTimeMillis();
+        if (options == null || !options.soundEnabled) return;
+        if (now - lastHearingCueAudioMillis < CORE_AMBIENT_SOUND_PING_AUDIO_COOLDOWN_MS) return;
+        lastHearingCueAudioMillis = now;
+        sounds.playDistantCue(soundPingAudioKey(label), Math.max(2, distance), options);
+    }
+
+    String movementSurfaceKeyAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return "metal";
+        EnvironmentalHazardRecord h = hazardAt(x, y);
+        if (h != null) {
+            String f = h.family == null ? "" : h.family.toLowerCase(Locale.ROOT);
+            if (f.contains("sludge") || f.contains("runoff") || f.contains("sewer")) return "sludge";
+            if (f.contains("wire") || f.contains("electric")) return "grate";
+        }
+        char t = world.tiles[x][y];
+        if (t == '~' || t == ',' || t == ';') return "sludge";
+        if (t == ':' || t == '=') return "grate";
+        if (t == '*' || t == '`') return "debris";
+        return "metal";
+    }
+
+    void updateMoveGhostTarget(int dx, int dy) {
+        if (world == null) { moveGhostX = moveGhostY = -1; moveGhostRange = 1; return; }
+        if (dx == 0 && dy == 0) { dx = lastMoveDx; dy = lastMoveDy; }
+        if (dx == 0 && dy == 0) { moveGhostX = playerX; moveGhostY = playerY; moveGhostRange = 0; return; }
+        lastMoveDx = dx; lastMoveDy = dy;
+        int tx = playerX, ty = playerY;
+        int range = movementModeRange();
+        for (int i=0; i<range; i++) {
+            int nx = tx + dx, ny = ty + dy;
+            if (world == null || !world.walkable(nx, ny)) break;
+            tx = nx; ty = ny;
+            if (world.npcAt(nx, ny) != null) break;
+        }
+        moveGhostX = tx; moveGhostY = ty; moveGhostRange = Math.max(1, range);
+    }
+
+    int inputPacingIntervalMillis() {
+        switch (movementModeIndex) {
+            case MOTION_SNEAK: return INPUT_PACING_SNEAK_INTERVAL_MS;
+            case MOTION_WALK: return INPUT_PACING_WALK_INTERVAL_MS;
+            case MOTION_SPRINT: return INPUT_PACING_SPRINT_INTERVAL_MS;
+            case MOTION_RUN:
+            default: return INPUT_PACING_RUN_INTERVAL_MS;
+        }
+    }
+
+    void clearPendingMovementInput(String reason) {
+        if (pendingHeldMove || movementGhostArmed) DebugLog.audit("INPUT_PACING_CLEAR", "reason=" + reason + " pending=" + pendingMoveDx + "," + pendingMoveDy + " armed=" + armedMoveDx + "," + armedMoveDy + " turn=" + turn);
+        movementGhostArmed = false;
+        armedMoveDx = 0;
+        armedMoveDy = 0;
+        pendingMoveDx = 0;
+        pendingMoveDy = 0;
+        pendingHeldMove = false;
+    }
+
+    boolean movementInputWouldAdvanceWorld() {
+        return screen == Screen.GAME && world != null && active != null && screen != Screen.LOST;
+    }
+
+    void queueOrExecuteMovementInput(int dx, int dy) {
+        if (dx == 0 && dy == 0) return;
+        clearMouseMovementPreview("keyboard movement");
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        if (now >= nextWorldActionAllowedMillis && !pendingHeldMove) {
+            executePacedMovement(dx, dy, "direct");
+            return;
+        }
+        // Strict buffer: one active move may have one pending held-key move behind it. Nothing deeper.
+        pendingMoveDx = dx;
+        pendingMoveDy = dy;
+        pendingHeldMove = true;
+        DebugLog.audit("INPUT_PACING_QUEUE", "pending=" + dx + "," + dy + " cap=" + STRICT_INPUT_MOVEMENT_BUFFER_CAP + " nextAllowedInMs=" + Math.max(0L, nextWorldActionAllowedMillis - now) + " mode=" + movementModeLabel() + " turn=" + turn);
+    }
+
+    void executePacedMovement(int dx, int dy, String source) {
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("execute-not-gameplay"); return; }
+        if (movementModeRange() > 1 && !(movementGhostArmed && armedMoveDx == dx && armedMoveDy == dy)) {
+            updateMoveGhostTarget(dx, dy);
+            movementGhostArmed = true;
+            armedMoveDx = dx;
+            armedMoveDy = dy;
+            logEvent("MOVE PREVIEW: " + movementModeLabel() + " projects to " + moveGhostX + "," + moveGhostY + ". Press the same direction again to confirm.");
+            DebugLog.audit("MOVE_GHOST_ARMED", "dx=" + dx + " dy=" + dy + " target=" + moveGhostX + "," + moveGhostY + " range=" + movementModeRange() + " source=" + source + " turn=" + turn);
+            return;
+        }
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new MovePlayerCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, dx, dy, source));
+            return;
+        }
+        executePacedMovementBody(dx, dy, source);
+    }
+
+    void executePacedMovementBody(int dx, int dy, String source) {
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("execute-not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        lastWorldActionMillis = now;
+        nextWorldActionAllowedMillis = now + inputPacingIntervalMillis();
+        movementGhostArmed = false;
+        boolean moved = movementModeRange() > 1 ? attemptPlayerMove(dx, dy) : attemptPlayerMoveOneTile(dx, dy);
+        if (!moved) clearPendingMovementInput("blocked-or-failed-" + source);
+        else DebugLog.audit("INPUT_PACING_EXECUTE", "source=" + source + " moved=" + dx + "," + dy + " intervalMs=" + inputPacingIntervalMillis() + " mode=" + movementModeLabel() + " range=" + movementModeRange() + " turn=" + turn);
+    }
+
+    void processPendingMovementInput() {
+        if (!pendingHeldMove) return;
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("timer-not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        if (now < nextWorldActionAllowedMillis) return;
+        int dx = pendingMoveDx, dy = pendingMoveDy;
+        pendingMoveDx = 0;
+        pendingMoveDy = 0;
+        pendingHeldMove = false;
+        executePacedMovement(dx, dy, "held-buffer");
+        repaint();
+    }
+
+    void spendDeferredSimulationBudget(String reason, int budgetMillis) {
+        if (budgetMillis <= 0 || deferredSimulationDebt <= 0) return;
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.mutate(this, "deferred simulation budget: " + reason, () -> spendDeferredSimulationBudgetBody(reason, budgetMillis));
+            return;
+        }
+        spendDeferredSimulationBudgetBody(reason, budgetMillis);
+    }
+
+    void spendDeferredSimulationBudgetBody(String reason, int budgetMillis) {
+        if (budgetMillis <= 0 || deferredSimulationDebt <= 0) return;
+        long start = System.nanoTime();
+        long deadline = start + budgetMillis * 1_000_000L;
+        int paid = 0;
+        while (deferredSimulationDebt > 0 && System.nanoTime() < deadline) {
+            int chunk = Math.min(deferredSimulationDebt, 8);
+            AbstractDistantZoneSimulation.TickResult ar = abstractDistantZoneSimulation.spend(world, playerX, playerY, turn, chunk);
+            int spent = Math.max(1, ar.deferredPaid);
+            deferredSimulationDebt = Math.max(0, deferredSimulationDebt - spent);
+            paid += spent;
+            profilingAbstractZoneTicks += ar.ledgersTouched;
+            profilingAbstractZoneWork += ar.spentWork;
+            if (abstractDistantZoneSimulation.shouldAudit(turn)) DebugLog.audit("ABSTRACT_DISTANT_ZONE", "reason=" + reason + " " + ar.summary + " global=" + abstractDistantZoneSimulation.globalSummary() + " debt=" + deferredSimulationDebt);
+            if (ar.spentWork <= 0 && chunk <= 1) break;
+        }
+        if (paid > 0) {
+            profilingDeferredBudgetRuns++;
+            profilingIdleBudgetNanos += Math.max(0L, System.nanoTime() - start);
+            if (profilingDeferredBudgetRuns % 100 == 0) DebugLog.audit("SIM_BUDGET", "reason=" + reason + " paid=" + paid + " remainingDebt=" + deferredSimulationDebt + " budgetMs=" + budgetMillis + " turn=" + turn);
+        }
+    }
+
+    void auditSimulationEfficiency(String reason) {
+        long avgTurn = profilingAdvanceTurnSamples <= 0 ? 0L : profilingAdvanceTurnNanos / profilingAdvanceTurnSamples;
+        long avgNpc = profilingNpcTickSamples <= 0 ? 0L : profilingNpcTickNanos / profilingNpcTickSamples;
+        long avgIdle = profilingDeferredBudgetRuns <= 0 ? 0L : profilingIdleBudgetNanos / profilingDeferredBudgetRuns;
+        DebugLog.audit("SIM_EFFICIENCY", "reason=" + reason + " avgAdvanceTurnNs=" + avgTurn + " samples=" + profilingAdvanceTurnSamples + " avgNpcTickNs=" + avgNpc + " npcSamples=" + profilingNpcTickSamples + " npcSchedulerSelections=" + profilingNpcSchedulerSelections + " npcSchedulerDeferred=" + profilingNpcSchedulerDeferred + " deferredDebt=" + deferredSimulationDebt + " avgBudgetNs=" + avgIdle + " budgetRuns=" + profilingDeferredBudgetRuns + " inputPending=" + pendingHeldMove + " nextActionMs=" + Math.max(0L, nextWorldActionAllowedMillis - System.currentTimeMillis()) + " lightRebuilds=" + profilingLightCacheRebuilds + " noiseRebuilds=" + profilingNoiseCacheRebuilds + " visLocalClears=" + profilingVisibilityLocalClears + " visFullClears=" + profilingVisibilityFullClears + " dirty=" + lastDirtyRegionReport + " abstractTicks=" + profilingAbstractZoneTicks + " abstractWork=" + profilingAbstractZoneWork + " abstract=" + abstractDistantZoneSimulation.globalSummary());
+    }
+
+    boolean attemptPlayerMove(int dx, int dy) {
+        if (world == null) return false;
+        updateMoveGhostTarget(dx, dy);
+        int steps = movementModeRange();
+        boolean movedAny = false;
+        for (int i=0; i<steps; i++) {
+            int nx = playerX + dx, ny = playerY + dy;
+            boolean directClear = stepIsClearForPath(nx, ny);
+            boolean moved = directClear ? attemptPlayerMoveOneTile(dx, dy) : attemptPlayerPathSeekingStep(dx, dy);
+            if (!moved) break;
+            movedAny = true;
+            if (screen == Screen.LOST || world == null) break;
+            // Multi-tile movement remains conservative around entity contact.  If the next
+            // target is occupied, stop here so shove/push-past is deliberate, not automated.
+            nx = playerX + dx; ny = playerY + dy;
+            if (world.inBounds(nx, ny) && world.npcAt(nx, ny) != null) break;
+        }
+        updateMoveGhostTarget(dx, dy);
+        return movedAny;
+    }
+
+
+    boolean stepIsClearForPath(int x, int y) {
+        return world != null && world.inBounds(x, y) && world.walkable(x, y) && world.npcAt(x, y) == null;
+    }
+
+    int[][] pathSeekingAlternates(int dx, int dy) {
+        if (dx == 0 && dy < 0) return new int[][]{{1,0},{-1,0},{0,-1}};   // north: try right first, then left, then straight if it opens.
+        if (dx == 0 && dy > 0) return new int[][]{{-1,0},{1,0},{0,1}};    // south: mirror the preference so corridors do not jitter.
+        if (dx > 0 && dy == 0) return new int[][]{{0,1},{0,-1},{1,0}};    // east: try down/up around corners.
+        if (dx < 0 && dy == 0) return new int[][]{{0,-1},{0,1},{-1,0}};   // west: try up/down around corners.
+        return new int[][]{{dx,dy}};
+    }
+
+    boolean attemptPlayerPathSeekingStep(int dx, int dy) {
+        if (world == null) return false;
+        for (int[] alt : pathSeekingAlternates(dx, dy)) {
+            int ax = alt[0], ay = alt[1];
+            if (ax == 0 && ay == 0) continue;
+            int nx = playerX + ax, ny = playerY + ay;
+            if (!stepIsClearForPath(nx, ny)) continue;
+            DebugLog.audit("MOVE_PATH_SEEK", "requested=" + dx + "," + dy + " detour=" + ax + "," + ay + " from=" + playerX + "," + playerY + " to=" + nx + "," + ny + " mode=" + movementModeLabel() + " turn=" + turn);
+            movePlayerInto(nx, ny, movementModeLabel().toLowerCase(Locale.ROOT) + " detours to " + nx + "," + ny + " around a blocked direct path.");
+            checkTrapAfterPlayerMove(nx, ny);
+            return true;
+        }
+        resetPushPastIntent();
+        logEvent("Movement blocked: no clear detour found for " + movementModeLabel() + ".");
+        return false;
+    }
+
+    boolean attemptPlayerMoveOneTile(int dx, int dy) {
+        if (world == null) return false;
+        int nx = playerX + dx, ny = playerY + dy;
+        if (!world.walkable(nx, ny)) {
+            resetPushPastIntent();
+            logEvent("Movement blocked at " + nx + "," + ny + ".");
+            return false;
+        }
+        NpcEntity blocker = world.npcAt(nx, ny);
+        if (blocker != null) {
+            return handleOccupiedMovementTarget(blocker, dx, dy, nx, ny);
+        }
+        resetPushPastIntent();
+        movePlayerInto(nx, ny, movementModeLabel().toLowerCase(Locale.ROOT) + "s to " + nx + "," + ny + " over " + describeTile(world.tiles[nx][ny]) + ".");
+        checkTrapAfterPlayerMove(nx, ny);
+        return true;
+    }
+
+    void movePlayerInto(int nx, int ny, String reason) {
+        int oldX = playerX, oldY = playerY;
+        beginPlayerTileSlide(oldX, oldY, nx, ny);
+        sounds.playFootstep(movementSurfaceKeyAt(nx, ny), 0, options);
+        playerX = nx;
+        playerY = ny;
+        lookX = playerX;
+        lookY = playerY;
+        lookCursorActive = false;
+        interactCursorActive = false;
+        advanceMovementTurn(reason);
+        enforceEntityOccupancy("player-move");
+    }
+
+    boolean handleOccupiedMovementTarget(NpcEntity blocker, int dx, int dy, int nx, int ny) {
+        if (blocker == null) return false;
+        if (blocker.isProtectedCleric()) {
+            resetPushPastIntent();
+            logEvent("Movement blocked: " + blocker.name + " holds the sanctuary space and cannot be shoved aside.");
+            advanceTurn("stops short before " + blocker.name + ".");
+            return false;
+        }
+        if (isHostileNpc(blocker)) {
+            resetPushPastIntent();
+            blocker.state = "Hostile";
+            detectHostileIntent(blocker, 1);
+            logEvent("BODY CHECK: " + blocker.name + " occupies the space and refuses your advance.");
+            hostileAdjacentAttack(blocker);
+            advanceTurn("is checked by " + blocker.name + " instead of entering the occupied tile.");
+            enforceEntityOccupancy("hostile-body-check");
+            return false;
+        }
+        Point shove = shoveDestinationFor(blocker, dx, dy);
+        if (shove != null) {
+            String old = blocker.x + "," + blocker.y;
+            blocker.x = shove.x;
+            blocker.y = shove.y;
+            blocker.state = "Jostled";
+            DebugLog.audit("ENTITY_SHOVE", "player=" + playerX + "," + playerY + " blocker=" + blocker.id + " from=" + old + " to=" + shove.x + "," + shove.y + " dir=" + dx + "," + dy);
+            resetPushPastIntent();
+            logEvent("SHOVE: " + blocker.name + " is pushed from " + old + " to " + shove.x + "," + shove.y + ". Two bodies do not get to occupy the same scrap of floor.");
+            movePlayerInto(nx, ny, "shoves past " + blocker.name + " into " + nx + "," + ny + ".");
+            return true;
+        }
+        if (tryPlayerPushPast(blocker, dx, dy, nx, ny)) return false;
+        logEvent("Movement blocked: " + blocker.name + " is wedged in the way and there is nowhere legal to shove them.");
+        advanceTurn("jostles against " + blocker.name + " in the crowded underhive.");
+        enforceEntityOccupancy("failed-shove");
+        return false;
+    }
+
+    boolean tryPlayerPushPast(NpcEntity blocker, int dx, int dy, int nx, int ny) {
+        if (world == null || blocker == null) return false;
+        if (blocker.isProtectedCleric() || isHostileNpc(blocker)) return false;
+        if (blocker.x != nx || blocker.y != ny) return false;
+        if (!world.walkable(playerX, playerY)) return false;
+        String id = blocker.id == null ? blocker.name : blocker.id;
+        boolean sameIntent = id.equals(pushPastIntentNpcId) && pushPastIntentX == nx && pushPastIntentY == ny && pushPastIntentDx == dx && pushPastIntentDy == dy;
+        if (!sameIntent) {
+            pushPastIntentNpcId = id;
+            pushPastIntentX = nx;
+            pushPastIntentY = ny;
+            pushPastIntentDx = dx;
+            pushPastIntentDy = dy;
+            pushPastIntentCount = 1;
+        } else pushPastIntentCount++;
+
+        if (pushPastIntentCount < PUSH_PAST_REPEAT_THRESHOLD) {
+            logEvent("Crowded passage: " + blocker.name + " cannot be shoved aside here. Press the same direction again to push past slowly instead of escalating to violence.");
+            DebugLog.audit("ENTITY_PUSH_PAST_ARMED", "blocker=" + id + " at=" + nx + "," + ny + " dir=" + dx + "," + dy + " count=" + pushPastIntentCount);
+            advanceTurn("leans into the crowding around " + blocker.name + " but does not force the passage yet.");
+            enforceEntityOccupancy("push-past-armed");
+            return true;
+        }
+
+        int oldPlayerX = playerX, oldPlayerY = playerY;
+        blocker.x = oldPlayerX;
+        blocker.y = oldPlayerY;
+        blocker.state = "Jostled";
+        playerX = nx;
+        playerY = ny;
+        lookX = playerX;
+        lookY = playerY;
+        lookCursorActive = false;
+        interactCursorActive = false;
+        int cost = Math.max(1, movementTurnCost()) + PUSH_PAST_EXTRA_TURNS;
+        DebugLog.audit("ENTITY_PUSH_PAST", "playerFrom=" + oldPlayerX + "," + oldPlayerY + " playerTo=" + playerX + "," + playerY + " blocker=" + id + " blockerTo=" + blocker.x + "," + blocker.y + " cost=" + cost + " mode=" + movementModeLabel());
+        logEvent("PUSH PAST: you spend extra time squeezing past " + blocker.name + " through the one-wide choke instead of starting a gunfight in a civilian corridor.");
+        resetPushPastIntent();
+        for (int i=0; i<cost; i++) {
+            advanceTurn(i == 0 ? "pushes past " + blocker.name + " through a crowded one-wide passage. Push-past time cost " + cost + " turns." : "is still untangling from the corridor shuffle.");
+        }
+        enforceEntityOccupancy("push-past-complete");
+        return true;
+    }
+
+    void resetPushPastIntent() {
+        pushPastIntentNpcId = "";
+        pushPastIntentX = Integer.MIN_VALUE;
+        pushPastIntentY = Integer.MIN_VALUE;
+        pushPastIntentDx = 0;
+        pushPastIntentDy = 0;
+        pushPastIntentCount = 0;
+    }
+
+    Point shoveDestinationFor(NpcEntity blocker, int dx, int dy) {
+        if (world == null || blocker == null) return null;
+        int[][] candidates;
+        if (dx != 0) candidates = new int[][]{{dx,0},{0,-1},{0,1},{-dx,0}};
+        else candidates = new int[][]{{0,dy},{-1,0},{1,0},{0,-dy}};
+        for (int[] d : candidates) {
+            int sx = blocker.x + d[0], sy = blocker.y + d[1];
+            if (canNpcOccupyForShove(sx, sy)) return new Point(sx, sy);
+        }
+        return null;
+    }
+
+    boolean canNpcOccupyForShove(int x, int y) {
+        return world != null && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY);
+    }
+
+    void enforceEntityOccupancy(String phase) {
+        if (world == null || world.npcs == null) return;
+        int repaired = world.repairNpcOccupancy(playerX, playerY, rng);
+        if (repaired > 0) DebugLog.audit("ENTITY_OCCUPANCY_REPAIR", "phase=" + phase + " repaired=" + repaired + " player=" + playerX + "," + playerY + " zone=" + world.zoneType.label + " turn=" + turn);
+    }
+
+    void advanceMovementTurn(String reason) {
+        int cost = movementTurnCost();
+        markPlayerMovedThisTurn();
+        DebugLog.audit("MOVEMENT_COST", "selected=" + movementModeLabel() + " active=" + activeMotionStateLabel() + " range=" + movementModeRange() + " cost=" + cost + " load=" + inventoryWeight() + " capacity=" + carryCapacity() + " reason=" + reason);
+        for (int i=0; i<cost; i++) {
+            advanceTurn(i == 0 ? reason + " [" + movementModeLabel() + "/active " + activeMotionStateLabel() + "]" + (cost > 1 ? " Movement cost " + cost + " turns." : "") : "continues moving under current pace and load.");
+        }
+        if (movementModeIndex == MOTION_SPRINT || movementModeIndex == MOTION_SNEAK) {
+            fatigue = Math.min(20, fatigue + movementModeFatigueCost());
+            if (movementModeIndex == MOTION_SPRINT) addSoundPing(playerX, playerY, movementModeNoiseWord());
+            DebugLog.audit("MOVEMENT_STRAIN", "mode=" + movementModeLabel() + " fatigue=" + fatigue + " player=" + playerX + "," + playerY + " turn=" + turn);
+        } else if (movementModeIndex == MOTION_RUN) addSoundPing(playerX, playerY, movementModeNoiseWord());
+        maybeGrantSneakXp("movement");
+    }
+
+    void waitOneTurn() {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new WaitCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID));
+            repaint();
+            return;
+        }
+        clearPendingMovementInput("wait");
+        advanceTurn("waits. The underhive does not become kinder.");
+        settlePlayerMotionAfterNoMoveTurn("wait");
+    }
+
+    void decayTemporaryHostilities() {
+        for (Faction f : Faction.values()) {
+            int v = temporaryHostileTurns.getOrDefault(f, 0);
+            if (v > 0) temporaryHostileTurns.put(f, v - 1);
+        }
+    }
+
+    void tickNearbyNpcs() {
+        long profileStartNanos = System.nanoTime();
+        if (world == null || world.npcs == null || world.npcs.isEmpty()) return;
+        long schedulerStartNanos = System.nanoTime();
+        boolean dangerClose = hostilePressureNearby();
+        NpcTurnBudgetScheduler.Selection selection = npcScheduler.select(world.npcs, playerX, playerY, turn, activeMotionIsSneak(), dangerClose);
+        profilingNpcSchedulerNanos += Math.max(0L, System.nanoTime() - schedulerStartNanos);
+        profilingNpcSchedulerSelections++;
+        profilingNpcSchedulerDeferred += Math.max(0, selection.farDeferred + selection.budgetLimited);
+        if (selection.debtSuggested > 0) deferredSimulationDebt = Math.min(20000, deferredSimulationDebt + selection.debtSuggested);
+        int activeTicks = 0;
+        for (NpcEntity npc : selection.selected) {
+            if (npc == null) continue;
+            activeTicks++;
+            int dist = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            int npcOldX = npc.x, npcOldY = npc.y;
+            ensureNpcCombatLoadout(npc);
+            boolean suppressHostilePursuit = isHostileNpc(npc) && activeMotionIsSneak() && !hostileAwareOfPlayer(npc, dist);
+            detectHostileIntent(npc, dist);
+            if (!suppressHostilePursuit && maybeNpcRangedAttack(npc, dist)) { /* spent turn firing or reloading */ }
+            else if (!suppressHostilePursuit) npc.tick(world, playerX, playerY, turn);
+            else if (turn % 3 == 0) npc.wander(world, turn, playerX, playerY);
+            if (npc.x != npcOldX || npc.y != npcOldY) beginNpcTileSlide(npc, npcOldX, npcOldY, npc.x, npc.y);
+            int postDist = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            if (isHostileNpc(npc) && postDist <= 1 && turn % 2 == 0) hostileAdjacentAttack(npc);
+            if (dist <= 7 && turn % 5 == 0) maybeNpcAmbient(npc, dist);
+        }
+        if (activeTicks > 0 && npcScheduler.shouldAudit(turn)) {
+            DebugLog.audit("NPC_SCHEDULER", selection.auditLine(turn, playerX, playerY, selection.selected.size()) + " dangerClose=" + dangerClose + " deferredDebt=" + deferredSimulationDebt);
+        }
+        profilingNpcTickNanos += Math.max(0L, System.nanoTime() - profileStartNanos);
+        profilingNpcTickSamples++;
+    }
+
+    void processPersonnelReplacementQueue() {
+        if (world == null || world.replacementQueue == null || world.replacementQueue.isEmpty()) return;
+        int pruned = PersonnelPopulationApi.pruneReplacementQueueToCapacity(world);
+        if (pruned > 0) DebugLog.audit("PERSONNEL_REPLACEMENT_PRUNE", "removed=" + pruned + " remaining=" + world.replacementQueue.size() + " zone=" + world.zoneType.label + " turn=" + turn);
+        ArrayList<PersonnelReplacementRequest> matured = new ArrayList<>();
+        for (PersonnelReplacementRequest req : world.replacementQueue) if (req.dueTurn <= turn) matured.add(req);
+        if (matured.isEmpty()) return;
+        for (PersonnelReplacementRequest req : matured) {
+            Point p = PersonnelPopulationApi.spawnPointForReplacement(world, req, rng);
+            if (p == null) continue;
+            NpcEntity n = NpcEntity.create(req.faction, world.zoneType, p.x, p.y, rng);
+            PersonnelPopulationApi.consumeReplacementSlot(world, req, rng);
+            PersonnelProvenanceApi.assignReplacementProvenance(n, world, req, rng);
+            world.npcs.add(n);
+            logEvent("PERSONNEL REPLACEMENT: " + n.name + " arrives from " + req.source + " to refill " + req.faction.label + " losses. " + n.originSummary());
+            DebugLog.audit("PERSONNEL_REPLACEMENT_ARRIVE", "dead=" + req.deadNpcId + " replacement=" + n.id + " faction=" + req.faction.label + " source=" + req.source + " due=" + req.dueTurn + " turn=" + turn + " zone=" + world.zoneType.label);
+        }
+        world.replacementQueue.removeAll(matured);
+    }
+
+    void maybeNpcAmbient(NpcEntity npc, int dist) {
+        if (npc == null || rng.nextDouble() > 0.22) return;
+        String line;
+        if (npc.isAnimalActor()) {
+            line = npc.name + (npc.isPetActor() ? " pads after its keeper, claws faint on the deck." : " scrapes, sniffs, or chitters somewhere in the local gloom.");
+            logEvent(line);
+            addSoundPing(npc.x, npc.y, "animal");
+            return;
+        }
+        switch(npc.faction) {
+            case MINISTORUM: line = npc.name + " murmurs a lawful prayer beside candle smoke and hungry pilgrims."; break;
+            case SORORITAS: line = npc.name + " watches the nave in absolute silence, which is worse than a threat."; break;
+            case CIVIC_WARDENS: line = npc.name + " snaps: Move along. Papers ready if asked."; break;
+            case IMPERIAL_GUARD: line = npc.name + " checks a las-pack and watches the corridor."; break;
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: line = npc.name + " murmurs a binharic maintenance cant."; break;
+            case MUTANT: line = npc.name + " scrapes along the wall, wet breathing behind broken teeth."; break;
+            case CULTIST: case HERETIC: line = npc.name + " whispers to something that is not visibly present."; break;
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: line = npc.name + " eyes your kit and weighs the odds."; break;
+            default: line = npc.name + " keeps moving, trying not to be noticed."; break;
+        }
+        logEvent(line);
+        addSoundPing(npc.x, npc.y, "voice");
+    }
+
+    Color npcColor(Faction f) {
+        switch(f) {
+            case MINISTORUM: return new Color(235,210,120);
+            case SORORITAS: return new Color(230,230,235);
+            case CIVIC_WARDENS: return new Color(90,150,255);
+            case IMPERIAL_GUARD: return new Color(120,190,115);
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(210,80,70);
+            case MUTANT: return new Color(115,210,100);
+            case CULTIST: case HERETIC: return new Color(190,80,210);
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(230,70,55);
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return new Color(210,180,80);
+            default: return new Color(210,190,126);
+        }
+    }
+
+
+    boolean isHostileNpc(NpcEntity npc) {
+        if (npc == null) return false;
+        if (npc.isUntargetableAnchor()) return false;
+        if ("Hostile".equalsIgnoreCase(npc.state)) return true;
+        if (npc.faction == Faction.MUTANT || npc.faction == Faction.CULTIST || npc.faction == Faction.HERETIC || npc.faction == Faction.ROGUE_MACHINE) return true;
+        if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return true;
+        return temporaryHostileTurns.getOrDefault(npc.faction, 0) > 0;
+    }
+
+    String hostileIntentBark(NpcEntity npc, int dist) {
+        if (npc == null) return "Something notices you.";
+        if (npc.isAnimalActor()) return npc.name + " notices you and breaks into animal violence.";
+        switch(npc.faction) {
+            case MUTANT: return npc.name + " sees you and surges forward, wet claws scraping for purchase.";
+            case CULTIST: case HERETIC: return npc.name + " points and howls a broken litany. Hostile intent confirmed.";
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH:
+                return npc.name + " clocks your movement, reaches for a weapon, and commits to violence.";
+            case ROGUE_MACHINE: return npc.name + " acquires target lock. The machine has made a decision.";
+            default: return npc.name + " turns hostile and closes distance.";
+        }
+    }
+
+    boolean hostileAwareOfPlayer(NpcEntity npc, int dist) {
+        if (npc == null || !isHostileNpc(npc)) return false;
+        int detectPenalty = detectionObstructionPenalty(npc.x, npc.y, playerX, playerY, true) + detectionLightPenalty(npc.x, npc.y, playerX, playerY);
+        boolean normalAwareness = dist <= 2 || ((dist <= visionRange() && isVisible(npc.x, npc.y)) || dist <= Math.max(4, hearingRange()/2)) && detectPenalty < 38;
+        if (!activeMotionIsSneak()) return normalAwareness;
+        if (dist <= 1) return rng.nextInt(100) < 70;
+        int chance = 0;
+        if (isVisible(npc.x, npc.y)) chance += 12 + Math.max(0, detailVisionRange() - dist) * 3;
+        if (dist <= Math.max(2, hearingRange()/3)) chance += 10;
+        if (fatigue > 12) chance += 6;
+        chance += doorwayExposureBonus(playerX, playerY);
+        chance += doorwayExposureBonus(npc.x, npc.y) / 2;
+        chance -= detectPenalty;
+        chance = Math.max(3, Math.min(75, chance));
+        int roll = rng.nextInt(100);
+        DebugLog.audit("STEALTH_DETECTION", "npc=" + npc.id + " dist=" + dist + " roll=" + roll + " chance=" + chance + " active=" + activeMotionStateLabel() + " vision=" + visionRange() + " hearing=" + hearingRange() + " turn=" + turn);
+        return roll < chance;
+    }
+
+    void suspiciousStealthBark(NpcEntity npc, int dist) {
+        if (npc == null || !activeMotionIsSneak() || dist > 8) return;
+        if (npc.suspiciousBarkCooldown > 0) { npc.suspiciousBarkCooldown--; return; }
+        String[] barks = {"must have been the wind", "that was strange", "what was that?", "Hold. Did you hear something?", "No. Nothing. Keep walking."};
+        String bark = barks[Math.abs(Objects.hash(npc.id, turn, dist)) % barks.length];
+        npc.suspiciousBarkCooldown = 6 + Math.max(0, dist);
+        logEvent("SUSPICION: " + npc.name + " mutters, \"" + bark + "\" but has not fixed on you.");
+        maybeGrantSneakXp("evaded detection by " + npc.name);
+    }
+
+    void maybeGrantSneakXp(String source) {
+        if (!activeMotionIsSneak() || world == null || world.npcs == null || turn == lastSneakXpTurn) return;
+        for (NpcEntity npc : world.npcs) {
+            if (npc == null || !isHostileNpc(npc)) continue;
+            int dist = Math.abs(npc.x-playerX)+Math.abs(npc.y-playerY);
+            if (dist <= 8 && !npc.hostileBarked) {
+                lastSneakXpTurn = turn;
+                gainXp("Stealth", 1, "successful sneaking action — " + source);
+                return;
+            }
+        }
+    }
+
+    void detectHostileIntent(NpcEntity npc, int dist) {
+        if (npc == null || !isHostileNpc(npc)) return;
+        boolean aware = hostileAwareOfPlayer(npc, dist);
+        if (!aware) { suspiciousStealthBark(npc, dist); return; }
+        if (!"Hostile".equalsIgnoreCase(npc.state)) {
+            npc.state = "Hostile";
+            npc.hostileBarked = true;
+            logEvent("HOSTILE INTENT: " + hostileIntentBark(npc, dist));
+            addSoundPing(npc.x, npc.y, "threat");
+            noteCombatMusicActivity(isGovernorCombatNpc(npc), "hostile intent acquired");
+        } else if (!npc.hostileBarked) {
+            npc.hostileBarked = true;
+            logEvent("HOSTILE INTENT: " + hostileIntentBark(npc, dist));
+            noteCombatMusicActivity(isGovernorCombatNpc(npc), "hostile intent bark");
+        }
+    }
+
+    NpcEntity nearestAttackTarget() {
+        if (world == null || world.npcs == null) return null;
+        NpcEntity best = null; int bestDist = 999;
+        for (NpcEntity npc : world.npcs) {
+            if (!isHostileNpc(npc) || npc.isUntargetableAnchor()) continue;
+            int d = Math.abs(npc.x-playerX) + Math.abs(npc.y-playerY);
+            if (d <= 1 && d < bestDist) { best = npc; bestDist = d; }
+        }
+        return best;
+    }
+
+    String bestWeaponName() {
+        if (equippedRightHandItem != null && !equippedRightHandItem.isBlank()) return equippedRightHandItem;
+        if (equippedLeftHandItem != null && !equippedLeftHandItem.isBlank()) return equippedLeftHandItem;
+        String best = null; int bestPrice = -1;
+        for (String item : inventory) {
+            ItemDef d = ItemCatalog.get(item);
+            if (d != null && d.weapon) {
+                int price = ItemCatalog.priceFor(item);
+                if (price > bestPrice) { best = item; bestPrice = price; }
+            }
+        }
+        return best;
+    }
+
+    int factionArmor(NpcEntity npc) {
+        if (npc == null) return 0;
+        switch(npc.faction) {
+            case SORORITAS: return 5;
+            case CIVIC_WARDENS: case IMPERIAL_GUARD: return 3;
+            case MINISTORUM: return 1;
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return 2;
+            case MUTANT: case ROGUE_MACHINE: return 2;
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 2;
+            default: return 1;
+        }
+    }
+
+
+    String fireModeLabel() {
+        if (combatFireModeIndex < 0 || combatFireModeIndex >= FIRE_MODE_LABELS.length) combatFireModeIndex = 0;
+        return FIRE_MODE_LABELS[combatFireModeIndex];
+    }
+
+    void cycleFireMode() {
+        combatFireModeIndex = Math.floorMod(combatFireModeIndex + 1, FIRE_MODE_LABELS.length);
+        lastTargetingReport = "Fire mode now " + fireModeLabel() + ".";
+        sounds.play("tab", options);
+    }
+
+
+
+    String weaponLoadKey(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "Bare hands" : weapon).toLowerCase(Locale.ROOT).trim();
+        return w.isBlank() ? "bare hands" : w;
+    }
+
+    String ammoItemForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return "";
+        if (w.contains("las")) return "Las charge pack";
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("chem sprayer") || w.contains("acid spitter")) return "Industrial Fuelgel canister";
+        if (w.contains("melta") || w.contains("inferno")) return "Melta charge cell";
+        if (w.contains("plasma")) return "Plasma flask";
+        if (w.contains("bolt") || w.contains("mass-Reactive Carbine")) return "Bolt round magazine";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "Arc capacitor pack";
+        if (w.contains("webber") || w.contains("web ")) return "Web cartridge";
+        if (w.contains("needle") || w.contains("toxin")) return "Needle toxin vial";
+        if (w.contains("shotgun") || w.contains("pipe shotgun")) return "Shot shell handful";
+        if (w.contains("autogun") || w.contains("autopistol") || w.contains("scrap autogun") || w.contains("auto")) return w.contains("autocannon") ? "Autocannon shell belt" : "Autogun magazine";
+        if (w.contains("heavy stubber")) return "Heavy stubber belt";
+        if (w.contains("stub") || w.contains("revolver") || w.contains("dueling") || w.contains("hunting") || w.contains("marksman") || w.contains("sniper") || w.contains("zip pistol") || w.contains("cult martyr pistol")) return "Stub cartridge box";
+        if (w.contains("nail")) return "Stub cartridge box";
+        return "Autogun magazine";
+    }
+
+    int magazineCapacityForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return 0;
+        if (w.contains("zip pistol") || w.contains("laslock") || w.contains("martyr pistol")) return 1;
+        if (w.contains("melta") || w.contains("inferno")) return 2;
+        if (w.contains("flamer") || w.contains("chem sprayer") || w.contains("acid spitter")) return 4;
+        if (w.contains("plasma")) return w.contains("heavy") ? 6 : 4;
+        if (w.contains("shotgun")) return 5;
+        if (w.contains("revolver") || w.contains("dueling")) return 6;
+        if (w.contains("pistol")) return 8;
+        if (w.contains("bolt")) return w.contains("heavy") || w.contains("storm") ? 16 : 8;
+        if (w.contains("autocannon")) return 6;
+        if (w.contains("heavy stubber")) return 20;
+        if (w.contains("autogun") || w.contains("auto")) return 20;
+        if (w.contains("las")) return 12;
+        if (w.contains("rifle") || w.contains("carbine") || w.contains("stubber")) return 10;
+        return 8;
+    }
+
+    int loadedShotsForWeapon(String weapon) { return loadedWeaponShots.getOrDefault(weaponLoadKey(weapon), 0); }
+    void setLoadedShotsForWeapon(String weapon, int shots) {
+        String key = weaponLoadKey(weapon);
+        int cap = magazineCapacityForWeapon(weapon);
+        if (cap <= 0 || shots <= 0) loadedWeaponShots.remove(key);
+        else loadedWeaponShots.put(key, Math.min(cap, shots));
+    }
+
+    void ensureNpcCombatLoadout(NpcEntity npc) {
+        if (npc != null) npc.ensureCombatLoadout(rng == null ? new Random(npc.numericId) : rng);
+    }
+
+    int npcLoadedShotsForWeapon(NpcEntity npc) {
+        ensureNpcCombatLoadout(npc);
+        return npc == null ? 0 : Math.max(0, npc.loadedShots);
+    }
+
+    int npcReserveReloadsForWeapon(NpcEntity npc) {
+        ensureNpcCombatLoadout(npc);
+        return npc == null ? 0 : Math.max(0, npc.ammoReloadsRemaining);
+    }
+
+    int npcWeaponCapacity(NpcEntity npc) {
+        ensureNpcCombatLoadout(npc);
+        return npc == null ? 0 : magazineCapacityForWeapon(npc.equippedRangedWeapon);
+    }
+
+    int fireModeAmmoCost(String weapon) {
+        if (!ItemCatalog.isFirearmLike(weapon)) return 0;
+        String fm = fireModeLabel();
+        if ("BURST".equals(fm)) return Math.min(3, Math.max(1, magazineCapacityForWeapon(weapon)));
+        return 1;
+    }

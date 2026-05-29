@@ -1,0 +1,125 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_03_lines_03465_03628
+// Category: input_mouse_keyboard
+// Source lines: 3465-3628
+// Method count: 8
+//
+// Methods in this fragment:
+// - pickWeightedCue :: lines 3465-3476 (12) :: String pickWeightedCue(String[] keys, int[] weights)
+// - soundPingAudioKey :: lines 3496-3507 (12) :: String soundPingAudioKey(String label)
+// - movementSurfaceKeyAt :: lines 3517-3530 (14) :: String movementSurfaceKeyAt(int x, int y)
+// - inputPacingIntervalMillis :: lines 3548-3556 (9) :: int inputPacingIntervalMillis()
+// - clearPendingMovementInput :: lines 3558-3566 (9) :: void clearPendingMovementInput(String reason)
+// - movementInputWouldAdvanceWorld :: lines 3568-3570 (3) :: boolean movementInputWouldAdvanceWorld()
+// - queueOrExecuteMovementInput :: lines 3572-3586 (15) :: void queueOrExecuteMovementInput(int dx, int dy)
+// - processPendingMovementInput :: lines 3617-3628 (12) :: void processPendingMovementInput()
+
+    String pickWeightedCue(String[] keys, int[] weights) {
+        if (keys == null || keys.length == 0) return "ambient_machine";
+        int total = 0;
+        for (int w : weights) total += Math.max(0, w);
+        if (total <= 0) return keys[0];
+        int roll = rng.nextInt(total);
+        for (int i=0; i<keys.length; i++) {
+            roll -= Math.max(0, weights[Math.min(i, weights.length-1)]);
+            if (roll < 0) return keys[i];
+        }
+        return keys[keys.length-1];
+    }
+
+// ... omitted 19 non-method/source lines between cataloged methods ...
+
+    String soundPingAudioKey(String label) {
+        String l = label == null ? "" : label.toLowerCase(Locale.ROOT);
+        if (l.contains("machinery")) return "ambient_machine";
+        if (l.contains("wet") || l.contains("sludge")) return "ambient_sludge";
+        if (l.contains("voice") || l.contains("mutter") || l.contains("prayer")) return "ambient_radio";
+        if (l.contains("servo")) return "ambient_servo";
+        if (l.contains("boot") || l.contains("movement") || l.contains("patrol")) return "footstep_metal";
+        if (l.contains("impact")) return "ambient_press";
+        if (l.contains("reload")) return "weapon_reload";
+        if (l.contains("smoke") || l.contains("vent")) return "ambient_vent";
+        return "ambient_pipe";
+    }
+
+    void maybePlayHeardSoundCue(String label, int distance) {
+        long now = System.currentTimeMillis();
+        if (options == null || !options.soundEnabled) return;
+        if (now - lastHearingCueAudioMillis < CORE_AMBIENT_SOUND_PING_AUDIO_COOLDOWN_MS) return;
+        lastHearingCueAudioMillis = now;
+        sounds.playDistantCue(soundPingAudioKey(label), Math.max(2, distance), options);
+    }
+
+    String movementSurfaceKeyAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return "metal";
+        EnvironmentalHazardRecord h = hazardAt(x, y);
+        if (h != null) {
+            String f = h.family == null ? "" : h.family.toLowerCase(Locale.ROOT);
+            if (f.contains("sludge") || f.contains("runoff") || f.contains("sewer")) return "sludge";
+            if (f.contains("wire") || f.contains("electric")) return "grate";
+        }
+        char t = world.tiles[x][y];
+        if (t == '~' || t == ',' || t == ';') return "sludge";
+        if (t == ':' || t == '=') return "grate";
+        if (t == '*' || t == '`') return "debris";
+        return "metal";
+    }
+
+// ... omitted 17 non-method/source lines between cataloged methods ...
+
+    int inputPacingIntervalMillis() {
+        switch (movementModeIndex) {
+            case MOTION_SNEAK: return INPUT_PACING_SNEAK_INTERVAL_MS;
+            case MOTION_WALK: return INPUT_PACING_WALK_INTERVAL_MS;
+            case MOTION_SPRINT: return INPUT_PACING_SPRINT_INTERVAL_MS;
+            case MOTION_RUN:
+            default: return INPUT_PACING_RUN_INTERVAL_MS;
+        }
+    }
+
+    void clearPendingMovementInput(String reason) {
+        if (pendingHeldMove || movementGhostArmed) DebugLog.audit("INPUT_PACING_CLEAR", "reason=" + reason + " pending=" + pendingMoveDx + "," + pendingMoveDy + " armed=" + armedMoveDx + "," + armedMoveDy + " turn=" + turn);
+        movementGhostArmed = false;
+        armedMoveDx = 0;
+        armedMoveDy = 0;
+        pendingMoveDx = 0;
+        pendingMoveDy = 0;
+        pendingHeldMove = false;
+    }
+
+    boolean movementInputWouldAdvanceWorld() {
+        return screen == Screen.GAME && world != null && active != null && screen != Screen.LOST;
+    }
+
+    void queueOrExecuteMovementInput(int dx, int dy) {
+        if (dx == 0 && dy == 0) return;
+        clearMouseMovementPreview("keyboard movement");
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        if (now >= nextWorldActionAllowedMillis && !pendingHeldMove) {
+            executePacedMovement(dx, dy, "direct");
+            return;
+        }
+        // Strict buffer: one active move may have one pending held-key move behind it. Nothing deeper.
+        pendingMoveDx = dx;
+        pendingMoveDy = dy;
+        pendingHeldMove = true;
+        DebugLog.audit("INPUT_PACING_QUEUE", "pending=" + dx + "," + dy + " cap=" + STRICT_INPUT_MOVEMENT_BUFFER_CAP + " nextAllowedInMs=" + Math.max(0L, nextWorldActionAllowedMillis - now) + " mode=" + movementModeLabel() + " turn=" + turn);
+    }
+
+// ... omitted 30 non-method/source lines between cataloged methods ...
+
+    void processPendingMovementInput() {
+        if (!pendingHeldMove) return;
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("timer-not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        if (now < nextWorldActionAllowedMillis) return;
+        int dx = pendingMoveDx, dy = pendingMoveDy;
+        pendingMoveDx = 0;
+        pendingMoveDy = 0;
+        pendingHeldMove = false;
+        executePacedMovement(dx, dy, "held-buffer");
+        repaint();
+    }

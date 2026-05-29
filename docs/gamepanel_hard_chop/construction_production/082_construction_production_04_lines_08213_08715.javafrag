@@ -1,0 +1,218 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: construction_production_04_lines_08213_08715
+// Category: construction_production
+// Source lines: 8213-8720
+// Method count: 8
+//
+// Methods in this fragment:
+// - reportProductionCeiling :: lines 8213-8219 (7) :: void reportProductionCeiling(BaseObject obj, ProductionRecipe r)
+// - assignSelectedRecipeToMachine :: lines 8474-8489 (16) :: void assignSelectedRecipeToMachine()
+// - moveGeneratedProductionJobSelection :: lines 8503-8508 (6) :: void moveGeneratedProductionJobSelection(int delta)
+// - refreshGeneratedProductionForecast :: lines 8522-8537 (16) :: void refreshGeneratedProductionForecast(String prefix)
+// - assignSelectedGeneratedProductionJob :: lines 8552-8569 (18) :: void assignSelectedGeneratedProductionJob()
+// - runManualSelectedProductionJob :: lines 8576-8611 (36) :: void runManualSelectedProductionJob()
+// - runRecruitProductionShift :: lines 8675-8720 (46) :: void runRecruitProductionShift()
+// - recruitOperableMachines :: lines 8682-8715 (34) :: BaseObject machine : recruitOperableMachines())
+
+    void reportProductionCeiling(BaseObject obj, ProductionRecipe r) {
+        int k = bestKnownProductionTier();
+        int m = machineQualityTier(obj);
+        if (m < k) logEvent("Production ceiling: " + obj.name + " is " + obj.qualityName + ", so output is capped at " + r.qualityName + ".");
+        MachineTierProfile mp = MachineTierAuthority.forMachine(obj);
+        DebugLog.audit("PRODUCTION_CEILING", "machine=" + (obj==null?"none":obj.name) + " machineQuality=" + (obj==null?"none":obj.qualityName) + " machineTier=" + m + " knowledgeTier=" + k + " outputQuality=" + r.qualityName + " machineProfile=" + mp.auditLine());
+    }
+
+// ... omitted 254 non-method/source lines between cataloged methods ...
+
+    void assignSelectedRecipeToMachine() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Assignment failed: stand inside your claimed base room."); return; }
+        if (!hasKnowledge("Workshop Labor Discipline")) { logEvent("Assignment failed: Workshop Labor Discipline is required before recruits can be assigned to machines."); return; }
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Assignment failed: no recruit-operable machine selected."); return; }
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        CraftingRecipe r = recipes.get(Math.max(0, Math.min(selectedCraftRecipeIndex, recipes.size()-1)));
+        if (r.disabled) { logEvent("Assignment failed: no unlocked recipe selected."); return; }
+        if (r.machineSymbol != ' ' && r.machineSymbol != machine.symbol) { logEvent("Assignment failed: " + r.name + " requires " + r.machineLabel() + ", not " + machine.name + "."); return; }
+        String problem = r.assignmentProblem(this, machine);
+        if (problem != null) { logEvent("Assignment failed: " + problem); return; }
+        machine.assignedRecipe = r.name;
+        machine.assignedWorker = factionRecruits.isEmpty() ? "unmanned" : factionRecruits.get(0).name;
+        logEvent("ASSIGNED: " + machine.name + " will run " + r.name + " when recruits perform a production shift.");
+        DebugLog.audit("RECIPE_ASSIGNED", "machine=" + machine.name + " recipe=" + r.name + " worker=" + machine.assignedWorker + " state=" + stateSummary());
+    }
+
+// ... omitted 13 non-method/source lines between cataloged methods ...
+
+    void moveGeneratedProductionJobSelection(int delta) {
+        ArrayList<FactionRecipeVariant> jobs = visibleGeneratedProductionJobs();
+        if (jobs.isEmpty()) { logEvent("Generated production selection failed: no filtered generated jobs are available in this base context."); return; }
+        selectedGeneratedProductionJobIndex = Math.max(0, Math.min(jobs.size()-1, selectedGeneratedProductionJobIndex + delta));
+        refreshGeneratedProductionForecast("Selected generated production job");
+    }
+
+// ... omitted 13 non-method/source lines between cataloged methods ...
+
+    void refreshGeneratedProductionForecast(String prefix) {
+        ArrayList<FactionRecipeVariant> jobs = visibleGeneratedProductionJobs();
+        BaseObject machine = selectedWorkerMachine();
+        if (jobs.isEmpty()) {
+            lastGeneratedProductionReport = "No generated jobs match filters category=" + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex) + " status=" + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex) + ".";
+            lastGeneratedProductionQueueReport = "Queue forecast unavailable: no filtered job.";
+            logEvent(prefix + ": " + lastGeneratedProductionReport);
+            repaint();
+            return;
+        }
+        FactionRecipeVariant v = jobs.get(Math.max(0, Math.min(selectedGeneratedProductionJobIndex, jobs.size()-1)));
+        lastGeneratedProductionReport = v.outputName + " | " + ControlledProductionJobAuthority.shortStatus(this, machine, v);
+        lastGeneratedProductionQueueReport = ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        logEvent(prefix + ": " + lastGeneratedProductionReport);
+        repaint();
+    }
+
+// ... omitted 14 non-method/source lines between cataloged methods ...
+
+    void assignSelectedGeneratedProductionJob() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Generated assignment failed: stand inside your claimed base room."); return; }
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Generated assignment failed: no recruit-operable machine or apparatus selected."); return; }
+        FactionRecipeVariant v = selectedGeneratedProductionJob();
+        if (v == null) { logEvent("Generated assignment failed: no generated production job is available under current filters."); return; }
+        String problem = ControlledProductionJobAuthority.assignmentProblem(this, machine, v);
+        if (problem != null) { logEvent("Generated assignment failed: " + problem); DebugLog.audit("GENERATED_ASSIGN_BLOCKED", "machine=" + machine.name + " job=" + v.outputName + " reason=" + problem + " state=" + stateSummary()); return; }
+        machine.assignedRecipe = ControlledProductionJobAuthority.assignmentKey(v);
+        machine.assignedWorker = availableRecruitLabor() > 0 ? firstAvailableRecruitName() : ControlledProductionJobAuthority.MANUAL_WORKER_LABEL;
+        machine.productionQueueTarget = Math.max(1, machine.productionQueueTarget);
+        machine.productionQueueRemaining = Math.max(1, machine.productionQueueTarget);
+        lastGeneratedProductionReport = "Assigned " + v.outputName + " to " + machine.name + ". " + ControlledProductionJobAuthority.manualFallbackLine(this, machine, v);
+        lastGeneratedProductionQueueReport = ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        logEvent("ASSIGNED GENERATED JOB: " + lastGeneratedProductionReport + " " + lastGeneratedProductionQueueReport);
+        recordPlayerNewsEvent("production-started", v.outputName, v.faction, "production assigned to " + machine.name + " with queue " + machine.productionQueueRemaining + "/" + machine.productionQueueTarget, 3);
+        DebugLog.audit("GENERATED_RECIPE_ASSIGNED", "machine=" + machine.name + " key=" + machine.assignedRecipe + " worker=" + machine.assignedWorker + " queueTarget=" + machine.productionQueueTarget + " queueRemaining=" + machine.productionQueueRemaining + " manualTurns=" + ControlledProductionJobAuthority.manualTurnCost(this, machine, v) + " state=" + stateSummary());
+    }
+
+    String firstAvailableRecruitName() {
+        for (RecruitWorker r : factionRecruits) if (r != null && !"security".equalsIgnoreCase(r.duty)) return r.name;
+        return factionRecruits.isEmpty() ? "unmanned" : factionRecruits.get(0).name;
+    }
+
+    void runManualSelectedProductionJob() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Manual operation failed: stand inside the claimed base room."); return; }
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Manual operation failed: no machine or apparatus selected."); return; }
+        if (machine.assignedRecipe == null || machine.assignedRecipe.isBlank()) { logEvent("Manual operation failed: selected machine has no assigned recipe/job."); return; }
+        if (ControlledProductionJobAuthority.isGeneratedAssignment(machine.assignedRecipe)) {
+            FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
+            if (v == null) { logEvent("Manual operation failed: assigned generated job is no longer available."); return; }
+            if (machine.productionQueueRemaining <= 0) { logEvent("Manual operation blocked: assigned generated job queue is complete. Use QUEUE + or reassign the job to schedule more runs."); return; }
+            String problem = ControlledProductionJobAuthority.operationProblem(this, machine, v, true);
+            if (problem != null) { logEvent("Manual operation blocked: " + problem); DebugLog.audit("MANUAL_GENERATED_BLOCKED", "machine=" + machine.name + " job=" + v.outputName + " reason=" + problem + " state=" + stateSummary()); return; }
+            runGeneratedProductionJob(machine, v, true);
+            return;
+        }
+        CraftingRecipe r = CraftingRecipe.byName(machine.assignedRecipe);
+        if (r == null) { logEvent("Manual operation failed: assigned recipe is no longer registered."); return; }
+        String problem = r.blockingProblemForMachine(this, machine);
+        if (problem != null) { logEvent("Manual operation blocked: " + problem); return; }
+        String q = cappedProductionQuality(machine, r.requiredKnowledge);
+        Faction pf = productionFactionFor(machine, r.faction);
+        ProductionRecipe pr = ProductionRecipe.create(r.outputBaseItem, pf, q, r.requiredKnowledge, machine.name);
+        r.consumeInputs(this);
+        int count = Math.max(1, r.outputCount + Math.max(0, pr.outputCharges()/5));
+        for (int i=0;i<count;i++) addBaseStorageItem(pr.outputItemName(), ItemProvenanceRecord.produced(pr, machine, world, turn, active == null ? "player manual operation" : active.name + " manual operation"));
+        machine.charges = Math.min(Math.max(1, machine.capacity), machine.charges + 1);
+        machine.integrity = Math.max(1, machine.integrity - Math.max(0, r.machineWear));
+        int turnsNeeded = ControlledProductionJobAuthority.manualTurnCost(this, machine, r);
+        fatigue = Math.min(20, fatigue + ControlledProductionJobAuthority.manualFatigueCost(this, machine, r));
+        runCrafted += count;
+        gainXp(r.xpSkill, Math.max(1, r.xpGain), "manual machine operation");
+        reportProductionCeiling(machine, pr);
+        ProductionQueueRecordBridge.recordManualRecipeCompletion(this, machine, r, turnsNeeded, count);
+        logEvent("MANUAL PRODUCTION: " + count + "x " + pr.outputItemName() + " produced into base storage by operating " + machine.name + " for " + turnsNeeded + " turns.");
+        DebugLog.audit("MANUAL_RECIPE_PRODUCTION", "machine=" + machine.name + " recipe=" + r.name + " output=" + pr.outputItemName() + " count=" + count + " turns=" + turnsNeeded + " state=" + stateSummary());
+        for (int i=0;i<turnsNeeded;i++) advanceTurn("operates " + machine.name + " manually.");
+    }
+
+// ... omitted 63 non-method/source lines between cataloged methods ...
+
+    void runRecruitProductionShift() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Crew shift failed: stand inside the claimed base room."); return; }
+        if (!hasKnowledge("Workshop Labor Discipline")) { logEvent("Crew shift failed: Workshop Labor Discipline is required for recruit-operated production."); return; }
+        if (factionRecruits.isEmpty()) { logEvent("Crew shift has no recruited workers. Select an assigned machine and use MANUAL RUN to operate it yourself with a time cost."); return; }
+        int labor = availableRecruitLabor();
+        int done = 0;
+        ArrayList<String> outputs = new ArrayList<>();
+        for (BaseObject machine : recruitOperableMachines()) {
+            if (labor <= 0) break;
+            if (machine.assignedRecipe == null || machine.assignedRecipe.isBlank()) continue;
+            if (ControlledProductionJobAuthority.isGeneratedAssignment(machine.assignedRecipe)) {
+                FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
+                if (v == null) { logEvent("Crew shift skipped " + machine.name + ": assigned generated job is no longer registered."); continue; }
+                if (machine.productionQueueRemaining <= 0) { logEvent("Crew shift skipped " + v.outputName + ": queue complete on " + machine.name + ". Use QUEUE + or reassign to schedule more runs."); continue; }
+                String problem = ControlledProductionJobAuthority.operationProblem(this, machine, v, false);
+                if (problem != null) { logEvent("Crew shift skipped " + v.outputName + ": " + problem + ". Manual fallback remains available when the player operates the selected machine."); continue; }
+                runGeneratedProductionJob(machine, v, false);
+                outputs.add(v.outputName);
+                done++; labor--;
+                continue;
+            }
+            CraftingRecipe r = CraftingRecipe.byName(machine.assignedRecipe);
+            if (r == null) { logEvent("Crew shift skipped " + machine.name + ": assigned recipe is no longer registered."); continue; }
+            String problem = r.blockingProblemForMachine(this, machine);
+            if (problem != null) { logEvent("Crew shift skipped " + r.name + ": " + problem); continue; }
+            String q = cappedProductionQuality(machine, r.requiredKnowledge);
+            Faction pf = productionFactionFor(machine, r.faction);
+            ProductionRecipe pr = ProductionRecipe.create(r.outputBaseItem, pf, q, r.requiredKnowledge, machine.name);
+            r.consumeInputs(this);
+            int count = Math.max(1, r.outputCount + Math.max(0, pr.outputCharges()/5));
+            for (int i=0;i<count;i++) addBaseStorageItem(pr.outputItemName(), ItemProvenanceRecord.produced(pr, machine, world, turn, machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "assigned recruit crew" : machine.assignedWorker));
+            machine.charges = Math.min(Math.max(1, machine.capacity), machine.charges + 1);
+            machine.integrity = Math.max(1, machine.integrity - Math.max(0, r.machineWear));
+            applyFactionMarketPressureFromProduction(r, pr, count);
+            outputs.add(count + "x " + pr.outputItemName());
+            done++; labor--;
+            gainXp(r.xpSkill, Math.max(1, r.xpGain/2), "supervising recruit production");
+            reportProductionCeiling(machine, pr);
+            ProductionQueueRecordBridge.recordRecruitRecipeCompletion(this, machine, r, 1, count, machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "assigned recruit crew" : machine.assignedWorker);
+            DebugLog.audit("RECRUIT_PRODUCTION", "machine=" + machine.name + " recipe=" + r.name + " output=" + pr.outputItemName() + " count=" + count + " state=" + stateSummary());
+        }
+        if (done == 0) { logEvent("Crew shift produced nothing: assign recipes to machines and ensure inputs are available."); return; }
+        fatigue = Math.min(20, fatigue + 1);
+        logEvent("CREW SHIFT: " + done + " machine(s) produced into base storage: " + String.join("; ", outputs) + ".");
+        advanceTurn("supervises a recruit production shift.");
+    }
+        for (BaseObject machine : recruitOperableMachines()) {
+            if (labor <= 0) break;
+            if (machine.assignedRecipe == null || machine.assignedRecipe.isBlank()) continue;
+            if (ControlledProductionJobAuthority.isGeneratedAssignment(machine.assignedRecipe)) {
+                FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
+                if (v == null) { logEvent("Crew shift skipped " + machine.name + ": assigned generated job is no longer registered."); continue; }
+                if (machine.productionQueueRemaining <= 0) { logEvent("Crew shift skipped " + v.outputName + ": queue complete on " + machine.name + ". Use QUEUE + or reassign to schedule more runs."); continue; }
+                String problem = ControlledProductionJobAuthority.operationProblem(this, machine, v, false);
+                if (problem != null) { logEvent("Crew shift skipped " + v.outputName + ": " + problem + ". Manual fallback remains available when the player operates the selected machine."); continue; }
+                runGeneratedProductionJob(machine, v, false);
+                outputs.add(v.outputName);
+                done++; labor--;
+                continue;
+            }
+            CraftingRecipe r = CraftingRecipe.byName(machine.assignedRecipe);
+            if (r == null) { logEvent("Crew shift skipped " + machine.name + ": assigned recipe is no longer registered."); continue; }
+            String problem = r.blockingProblemForMachine(this, machine);
+            if (problem != null) { logEvent("Crew shift skipped " + r.name + ": " + problem); continue; }
+            String q = cappedProductionQuality(machine, r.requiredKnowledge);
+            Faction pf = productionFactionFor(machine, r.faction);
+            ProductionRecipe pr = ProductionRecipe.create(r.outputBaseItem, pf, q, r.requiredKnowledge, machine.name);
+            r.consumeInputs(this);
+            int count = Math.max(1, r.outputCount + Math.max(0, pr.outputCharges()/5));
+            for (int i=0;i<count;i++) addBaseStorageItem(pr.outputItemName(), ItemProvenanceRecord.produced(pr, machine, world, turn, machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "assigned recruit crew" : machine.assignedWorker));
+            machine.charges = Math.min(Math.max(1, machine.capacity), machine.charges + 1);
+            machine.integrity = Math.max(1, machine.integrity - Math.max(0, r.machineWear));
+            applyFactionMarketPressureFromProduction(r, pr, count);
+            outputs.add(count + "x " + pr.outputItemName());
+            done++; labor--;
+            gainXp(r.xpSkill, Math.max(1, r.xpGain/2), "supervising recruit production");
+            reportProductionCeiling(machine, pr);
+            ProductionQueueRecordBridge.recordRecruitRecipeCompletion(this, machine, r, 1, count, machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "assigned recruit crew" : machine.assignedWorker);
+            DebugLog.audit("RECRUIT_PRODUCTION", "machine=" + machine.name + " recipe=" + r.name + " output=" + pr.outputItemName() + " count=" + count + " state=" + stateSummary());
+        }

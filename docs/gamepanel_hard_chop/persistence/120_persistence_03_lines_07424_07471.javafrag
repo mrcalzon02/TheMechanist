@@ -1,0 +1,60 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: persistence_03_lines_07424_07471
+// Category: persistence
+// Source lines: 7424-7471
+// Method count: 2
+//
+// Methods in this fragment:
+// - loadAtlasWorld :: lines 7424-7438 (15) :: void loadAtlasWorld(String reason, Point edgeHint)
+// - completeAtlasWorldLoad :: lines 7440-7471 (32) :: void completeAtlasWorldLoad(String reason, Point edgeHint)
+
+    void loadAtlasWorld(String reason, Point edgeHint) {
+        pendingTransitionReason = reason;
+        pendingTransitionEdgeHint = edgeHint;
+        if (edgeHint == null) pendingTransitionReturnEdge = "";
+        loadingForNewGame = false;
+        loadingForTransition = true;
+        loadingProgress = 0;
+        loadingStep = 0;
+        loadingStartMillis = System.currentTimeMillis();
+        loadingStatus = "Loading adjacent slice: " + reason;
+        loadingDetail = "Queued transition: atlas.currentWorld(), visibility buffers, edge spawn repair, sensory model update.";
+        setScreen(Screen.LOADING);
+        ensureRuntimeTimerRunning("map transition loading");
+        DebugLog.audit("TRANSITION_LOADING_BEGIN", "reason=" + reason + " atlas=" + (atlas!=null?atlas.summary():"none") + " timerRunning=" + timer.isRunning());
+    }
+
+    void completeAtlasWorldLoad(String reason, Point edgeHint) {
+        try {
+            World oldWorld = world;
+            world = atlas.currentWorld();
+            sanitizeCurrentWorldFeaturePlacement("transition currentWorld");
+            spawnContractTargetsForCurrentWorld();
+            boolean firstType = markZoneVisitedAndCheckFirstType();
+            visibleTiles = new boolean[world.w][world.h];
+            rememberedTiles = new boolean[world.w][world.h];
+            localDirtyTracker.reset(world, "world-load");
+            lastVisibilityDirtyRect = null;
+            Point p = spawnPointForTransition(edgeHint);
+            playerX = Math.max(1, Math.min(world.w - 2, p.x));
+            playerY = Math.max(1, Math.min(world.h - 2, p.y));
+            lookX = playerX; lookY = playerY; lookCursorActive = false; interactCursorActive = false;
+            singlePlayerSectorBridge.bindCurrentWorld(this, "transition " + reason);
+            openPanel(PanelMode.NONE);
+            updateSensoryModel("transition " + reason);
+            advanceTurn("travels by " + reason + ".");
+            String event = maybeRollZoneTransitionEvent(reason);
+            logEvent("Transition complete: " + reason + ". Now in sector " + atlas.sectorX + "," + atlas.sectorY + " zone " + atlas.zoneX + "," + atlas.zoneY + " floor " + atlas.floor + (atlas.sewer?"B sewer":"") + ".");
+            if (event != null && !event.isEmpty()) logEvent(event);
+            autosaveZoneTransition(reason);
+            if (firstType) { prepareZoneSplash("new zone type discovered during transition"); setScreen(Screen.ZONE_SPLASH); }
+            else setScreen(Screen.GAME);
+            DebugLog.audit("ATLAS_TRANSITION", "reason="+reason+" old="+(oldWorld!=null?oldWorld.layerText():"none")+" new="+world.layerText()+" zone="+atlas.zoneX+","+atlas.zoneY+" firstType="+firstType+" event="+lastTransitionEvent+" player="+playerX+","+playerY+" state="+stateSummary());
+        } catch (Throwable t) {
+            DebugLog.error("ATLAS_TRANSITION_FAILED", "Failed to transition: " + reason, t);
+            logEvent("ERROR: transition failed. Diagnostic details were recorded.");
+            setScreen(Screen.GAME);
+        }
+    }

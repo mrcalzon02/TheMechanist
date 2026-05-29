@@ -1,0 +1,12 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_02_lines_02468_02468
+// Category: input_mouse_keyboard
+// Source lines: 2468-2468
+// Method count: 1
+//
+// Methods in this fragment:
+// - passiveKey :: lines 2468-2468 (1) :: String passiveKey(int x, int y)
+
+    String passiveKey(int x, int y) { return (world == null ? 0 : world.locationKey()) + ":" + x + ":" + y; }

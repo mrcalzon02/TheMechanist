@@ -1,0 +1,185 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: construction_production_05_lines_13038_13680
+// Category: construction_production
+// Source lines: 13038-13680
+// Method count: 2
+//
+// Methods in this fragment:
+// - productionInfopediaLines :: lines 13038-13178 (141) :: java.util.List<String> productionInfopediaLines(String entry)
+// - craftingReferenceLines :: lines 13652-13680 (29) :: java.util.List<String> craftingReferenceLines(String entry)
+
+    java.util.List<String> productionInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (entry == null) entry = "";
+        if (entry.equals("Staffing Labor Bridge")) {
+            lines.addAll(StaffingLaborBridgeAuthority.infopediaLines());
+            lines.addAll(StaffingLaborBridgeAuthority.statusLines(this));
+        } else if (entry.equals("Manual Staffing Assignment Bridge")) {
+            lines.addAll(ManualStaffingAssignmentAuthority.infopediaLines());
+            lines.addAll(ManualStaffingAssignmentAuthority.statusLines(this));
+            lines.addAll(StaffingRoleSkillValidationAuthority.infopediaLines());
+            lines.addAll(StaffingRoleSkillValidationAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Delivery Intent Bridge")) {
+            lines.addAll(LogisticsDeliveryIntentAuthority.infopediaLines());
+            lines.addAll(LogisticsDeliveryIntentAuthority.statusLines(this));
+            lines.add("");
+            lines.addAll(LogisticsStorageCandidateAuthority.infopediaLines());
+            lines.addAll(LogisticsStorageCandidateAuthority.statusLines(this));
+            lines.add("");
+            lines.addAll(LogisticsSourceReservationAuthority.infopediaLines());
+            lines.addAll(LogisticsSourceReservationAuthority.statusLines(this));
+            lines.addAll(LogisticsRouteIntentAuthority.infopediaLines());
+            lines.addAll(LogisticsRouteIntentAuthority.statusLines(this));
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.infopediaLines());
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.statusLines(this));
+            lines.addAll(LogisticsManualHaulContractAuthority.infopediaLines());
+            lines.addAll(LogisticsManualHaulContractAuthority.statusLines(this));
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.infopediaLines());
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.statusLines(this));
+            lines.addAll(LogisticsContractLifecycleAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Route Readiness Preview")) {
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.infopediaLines());
+            lines.addAll(LogisticsRouteReadinessPreviewAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Manual Haul Contract")) {
+            lines.addAll(LogisticsManualHaulContractAuthority.infopediaLines());
+            lines.addAll(LogisticsManualHaulContractAuthority.statusLines(this));
+        } else if (entry.equals("Logistics Haul Fulfillment Preflight")) {
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.infopediaLines());
+            lines.addAll(LogisticsHaulFulfillmentPreflightAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Framework")) {
+            lines.addAll(EconomicTopologyFramework.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicGenerationBiasAuthority.infopediaLines());
+        } else if (entry.equals("Economic Generation Bias")) {
+            lines.addAll(EconomicGenerationBiasAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicGenerationBiasAuthority.worldSummaryLines(world));
+        } else if (entry.equals("Local Topology Metadata Surface")) {
+            lines.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.statusLines(world));
+        } else if (entry.equals("Economic Topology Preview Consumers")) {
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Reporting Overlay")) {
+            lines.addAll(EconomicTopologyReportingOverlayAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicTopologyReportingOverlayAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Map Intel Bridge")) {
+            lines.addAll(EconomicTopologyMapIntelBridgeAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(EconomicTopologyMapIntelBridgeAuthority.statusLines(this));
+        } else if (entry.equals("Retarget Readiness Endpoint")) {
+            lines.addAll(RetargetReadinessAuditAuthority.infopediaLines());
+            lines.add("");
+            lines.addAll(RetargetReadinessAuditAuthority.statusLines(this));
+        } else if (entry.equals("Runtime Separation Plan")) {
+            lines.addAll(RuntimeSeparationAuthority.infopediaLines(runtimeProfile));
+        } else if (entry.equals("Launcher / Client / Server Runtime")) {
+            lines.addAll(launcherRuntime.infopediaLines());
+        } else if (entry.equals("Launcher Shell State")) {
+            lines.addAll(launcherShell.infopediaLines(launcherRuntime, userProfile));
+        } else if (entry.equals("User Profile Surface")) {
+            lines.addAll(userProfile.lines());
+        } else if (entry.equals("Render Scaling / CRT Surface")) {
+            lines.addAll(renderScaling.infopediaLines());
+        } else if (entry.equals("Unified Input Registry / Gamepad Bridge")) {
+            lines.add("Unified input and gamepad bridge " + InputRegistry.VERSION + ".");
+            lines.add("Keyboard input is handled by the desktop key path while also updating the shared input state.");
+            lines.add("Gamepad polling runs on a background thread and posts updates safely to the interface.");
+            lines.add("The generic fallback schema maps standard SDL/Jamepad face buttons, D-pad, left stick, bumpers, start, and back/select into abstract actions.");
+            lines.add("Coexistence rule: keyboard and gamepad own separate source states; releasing one source cannot turn off an action held by the other source.");
+            lines.add("Runtime gamepad status: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
+            lines.add("Active abstract input: " + inputRegistry.compactStatus());
+        } else if (entry.equals("Production Ledger Overview")) {
+            lines.addAll(ProductionLedgerDisplayApi.overviewLines());
+            lines.add("");
+            lines.add("Display rule: this panel exposes the generated production truth without injecting the full draft graph into the ordinary workbench crafting list.");
+        } else if (entry.equals("Draft Recipe Graph")) {
+            lines.addAll(ProductionLedgerDisplayApi.draftRecipeGraphLines(32));
+        } else if (entry.equals("Faction Variant Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.factionVariantLedgerLines(32));
+        } else if (entry.equals("Chemical Equipment Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.chemicalEquipmentLedgerLines(40));
+        } else if (entry.equals("Live Placement Ledger")) {
+            lines.add("Live production placement ledger");
+            lines.add("Scope: installed apparatus, room validation, machine-tier checks, and live-readiness bridge for generated chemical recipes.");
+            lines.addAll(LiveProductionPlacementAuthority.baseReadinessLines(this, 16));
+            lines.addAll(ProductionLedgerDisplayApi.controlledProductionJobLedgerLines(12));
+            lines.add("");
+            lines.addAll(LiveProductionPlacementAuditApi.audit().lines());
+        } else if (entry.equals("Facility Output Modifier Ledger")) {
+            lines.addAll(FacilityOutputModifierAuthority.ledgerLines(36));
+        } else if (entry.equals("Build Requirement Cost Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.buildRequirementCostLedgerLines(50));
+        } else if (entry.equals("Production Container Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.productionContainerLedgerLines(this, 48));
+        } else if (entry.equals("Persistent Stock Container Ledger")) {
+            lines.addAll(PersistentStockContainerAuthority.ledgerLines(this, 64));
+        } else if (entry.equals("Persistent Stock Pickup UX Ledger")) {
+            lines.addAll(PersistentStockPickupUxAuthority.ledgerLines(this, 64));
+        } else if (entry.equals("Actor Access / Permission Ledger")) {
+            lines.addAll(ActorAccessAuthority.ledgerLines(this, 64));
+        } else if (entry.equals("Quality / Knowledge / Machine Authority Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.authorityLedgerLines());
+        } else if (entry.equals("Contraband and Law Status Ledger")) {
+            lines.addAll(ProductionLedgerDisplayApi.lawStatusLedgerLines());
+        } else if (entry.equals("Recipe Ancestry Samples")) {
+            lines.addAll(ProductionLedgerDisplayApi.recipeAncestrySampleLines(36));
+        } else if (entry.equals("Laboratory Process Samples")) {
+            lines.addAll(ProductionLedgerDisplayApi.laboratoryProcessSampleLines(36));
+        } else if (entry.equals("Base Production Ledger")) {
+            lines.add("Base production ledger display");
+            lines.add("Scope: current claimed-base machine state plus the industrial authority summary used by deeper production ledgers.");
+            lines.add("Claimed base: " + (baseClaimed ? baseDisplayName() : "none claimed") + ".");
+            lines.addAll(baseProductionLedgerLines());
+            lines.add("");
+            lines.add("Generated production authorities currently available to the ledger:");
+            lines.addAll(ProductionLedgerDisplayApi.compactCountsLines());
+        } else if (entry.startsWith("Recipe: ")) {
+            String name = entry.substring("Recipe: ".length()).trim();
+            lines.addAll(ProductionLedgerDisplayApi.draftRecipeDetailLines(name));
+        } else if (entry.startsWith("Variant: ")) {
+            String name = entry.substring("Variant: ".length()).trim();
+            lines.addAll(ProductionLedgerDisplayApi.factionVariantDetailLines(name));
+        } else {
+            lines.add("Production ledger entry");
+            lines.add("No detailed renderer matched this production entry. This is an audit-visible gap, not a silent failure.");
+        }
+        return lines;
+    }
+
+// ... omitted 473 non-method/source lines between cataloged methods ...
+
+    java.util.List<String> craftingReferenceLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Crafting Overview":
+                lines.add("Crafting system overview");
+                lines.add("Recipes are first-class data entries instead of hidden button-only actions. The WORK panel uses the same recipe list shown here.");
+                lines.add("Crafting checks knowledge, required machine, machine ceiling, pooled supplies, machine parts, carried ingredients, fatigue, and turn cost.");
+                break;
+            case "Recipe Requirements":
+                lines.add("Recipe requirement reference");
+                lines.add("Each recipe may require a machine symbol, supplies, machine parts, output count, fatigue cost, turn cost, XP gain, machine wear, faction style, and knowledge.");
+                break;
+            case "Machine Quality Ceilings":
+                lines.add("Crafting machine ceiling reference");
+                lines.add("Machines cap better knowledge: a Junk machine cannot manufacture Archeotech-grade goods just because the character read the right heretical pamphlet.");
+                lines.addAll(MachineTierAuthority.detailLines());
+                break;
+            case "Ingredient Consumption":
+                lines.add("Ingredient consumption reference");
+                lines.add("Inputs should be consumed through item/container APIs as migration continues, preserving provenance where an ingredient identity matters.");
+                break;
+            default:
+                lines.add("Faction output variant reference");
+                lines.add("Outputs use faction + quality identity: base item + faction style + capped quality + recipe knowledge + machine identity.");
+                lines.add("Purpose: production should tell who made the thing, under what doctrine, with what tool, and why the result differs from another faction's version.");
+                break;
+        }
+        return lines;
+    }

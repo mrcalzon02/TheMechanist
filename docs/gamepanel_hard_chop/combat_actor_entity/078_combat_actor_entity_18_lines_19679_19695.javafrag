@@ -1,0 +1,28 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_18_lines_19679_19695
+// Category: combat_actor_entity
+// Source lines: 19679-19695
+// Method count: 1
+//
+// Methods in this fragment:
+// - colorForFaction :: lines 19679-19695 (17) :: Color colorForFaction(Faction f)
+
+    Color colorForFaction(Faction f) {
+        switch (f) {
+            case CIVIC_WARDENS: return new Color(70, 115, 210);
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(150, 55, 45);
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
+            case CIVIC_LEDGER_OFFICE: return new Color(145, 125, 95);
+            case MINISTORUM: return new Color(180, 150, 70);
+            case SORORITAS: return new Color(210, 210, 210);
+            case IMPERIAL_GUARD: return new Color(85, 135, 85);
+            case HIVER: case HIVER_BLOCK_AUREL: case HIVER_BLOCK_MARROW: case HIVER_BLOCK_SUMPLEDGER: return new Color(115, 105, 82);
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return new Color(190, 170, 95);
+            case MUTANT: return new Color(75, 145, 80);
+            case CULTIST: case HERETIC: return new Color(150, 55, 155);
+            case ROGUE_MACHINE: return new Color(120, 145, 160);
+            default: return new Color(85,82,75);
+        }
+    }

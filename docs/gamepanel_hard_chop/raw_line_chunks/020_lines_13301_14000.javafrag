@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 13301-14000
+
+            lines.add("Controller: generic face buttons, d-pad, sticks, bumpers, start, and back are mapped with a small deadzone.");
+            String gamepadStatus = gamepadInputEngine == null ? "not started" : gamepadInputEngine.status();
+            String lowGamepadStatus = gamepadStatus.toLowerCase(Locale.ROOT);
+            if (lowGamepadStatus.contains("jamepad") || lowGamepadStatus.contains("maven") || lowGamepadStatus.contains("jitpack")) {
+                gamepadStatus = "No hardware controller poller is active; keyboard input remains active.";
+            }
+            lines.add("Gamepad status: " + gamepadStatus);
+            lines.add("Active input: " + inputRegistry.compactStatus() + ".");
+        } else if (entry.equals("Construction Validation Inspection")) {
+            lines.addAll(ConstructionValidationInspectionAuthority.buildInspectionLines(this));
+        } else if (entry.equals("Progressive Construction Audit")) {
+            lines.add("Progressive construction: staged sites accept materials and labor over time, show tile progress, and finish into the planned structure.");
+            for (BaseObject obj : baseObjects) if (obj != null && obj.underConstruction) lines.add(ProgressiveConstructionAuthority.progressLine(obj));
+            lines.add("Visual rule: staged construction fades from pale blue ghost coloration toward final built status color as per-tile progress approaches completion.");
+            lines.add("Work rule: interacting with an under-construction tile contributes available components and tool-adjusted labor; walls, doors, and terrain clearance resolve through tool-modified deconstruction time.");
+        } else {
+            lines.add("Audit entry gap");
+            lines.add("This audit name is listed but has no renderer. Add it to auditInfopediaLines before release.");
+        }
+        return lines;
+    }
+
+    java.util.List<String> roomInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (entry.endsWith(" Rooms")) {
+            String zoneName = entry.substring(0, entry.length() - " Rooms".length());
+            ZoneType z = zoneByLabel(zoneName);
+            lines.add("Zone room set");
+            lines.add("Scope: describes the room pool for " + zoneName + ", not the whole zone and not a specific room instance.");
+            lines.add("Layout rule: rooms are enclosed first, doors are placed on valid room walls, and corridors attach outward from door points.");
+            lines.add("Room bias: " + (z==null?"generic underhive rooms":zoneGenerationRole(z)));
+            lines.add("Inspectable texture: " + (z==null?InspectableFeatureTable.sampleLine():InspectableFeatureTable.combinedFor(z, new Random(31), "sample").replace("sample; inspectable features: ", "")) + ".");
+            lines.add("Special hooks: traders, locked caches, faction access, machinery, shrines, vending machines, or encounter logic are selected from this zone's room pool.");
+        } else if (entry.contains(" Generic: ")) {
+            String zoneName = entry.substring(0, entry.indexOf(" Generic: ")).trim();
+            String name = entry.substring(entry.indexOf(" Generic: ") + " Generic: ".length()).trim();
+            ZoneType z = zoneByLabel(zoneName);
+            lines.add("Generic room sample");
+            lines.add("Zone context: " + zoneName + " — " + (z==null?"generic room pool":zoneGenerationRole(z)) + ".");
+            lines.add("Sample name: " + name + ".");
+            lines.add("Generation rule: common rooms use this zone's size bias, faction bias, loot list, content symbols, and inspectable feature table.");
+            lines.add("Purpose: fills " + zoneName + " with believable functional clutter while keeping special rooms rarer and more meaningful.");
+        } else if (entry.contains(" Special: ")) {
+            String zoneName = entry.substring(0, entry.indexOf(" Special: ")).trim();
+            String name = entry.substring(entry.indexOf(" Special: ") + " Special: ".length()).trim();
+            ZoneType z = zoneByLabel(zoneName);
+            lines.add("Special room sample");
+            lines.add("Zone context: " + zoneName + " — " + (z==null?"generic special-room pool":zoneGenerationRole(z)) + ".");
+            lines.add("Sample name: " + name + ".");
+            lines.add("Generation rule: special rooms are inserted after ordinary room selection and can override contents with themed fixtures or actors.");
+            lines.add("Player use: inspect before interacting; " + zoneName + " specials are where services, story hooks, danger, and operational surfaces appear.");
+        } else {
+            lines.add("Room reference");
+            lines.add("This entry identifies a generated room concept. The current generator gives each room walls, doors, floor area, inspectable texture, and a zone/faction context.");
+        }
+        return lines;
+    }
+
+    java.util.List<String> survivalInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Calendar and Time":
+                lines.add("Calendar and action-time reference");
+                lines.add("Rule: 100 action turns equal one local hour; 26 hours make one day; 28 days make one month.");
+                lines.add("Current time: " + timeText() + ". The absolute turn counter remains the save/log authority while the visible clock translates it into survival time.");
+                break;
+            case "Food and Water":
+                lines.add("Food and water pressure reference");
+                lines.add("Current reserves: food " + food + "/15, water " + water + "/15.");
+                lines.add("One reserve is consumed every eight awake hours. Starvation/dehydration damage checks happen hourly only after a reserve reaches zero.");
+                lines.add("Food and water items restore reserves through inventory use and are now intended to preserve item provenance until consumption.");
+                break;
+            case "Sleep and Exhaustion":
+                lines.add("Sleep debt reference");
+                lines.add("Current sleep debt: " + (sleepNeed / TURNS_PER_HOUR) + " hour(s) of 26 before collapse risk.");
+                lines.add("Sleep debt grows by one hour per awake hour. Reaching 26 hours can cause exhaustion collapse and carried item loss.");
+                lines.add("Cots allow 1-8 hour sleep chunks; sleeping costs food/water by the sleep-cost rule and may reduce fatigue or wounds.");
+                break;
+            case "Stimulants and Recovery":
+                lines.add("Stimulant and short recovery reference");
+                lines.add("Coffee and stim items reduce immediate sleep debt or fatigue pressure, but repeated abuse creates stimulant strain and later backlash.");
+                lines.add("Current fatigue: " + fatigue + "; stimulant strain: " + stimulantStrain + ".");
+                lines.add("Design rule: stimulants buy time; they do not replace food, water, sleep, or actual medical work.");
+                break;
+            case "Look and Examine":
+                lines.add("Look and Examine reference");
+                lines.add("Look gives immediate visible context for the selected tile: tile identity, ownership, light/noise, stacked contents, obvious NPC or object detail, and whether deeper examination is useful.");
+                lines.add("Examine spends time to read the selected visible target more carefully. Repeating Examine on the same target within a few turns can reveal deeper threat, senses, condition, evidence, and interaction context.");
+                lines.add("Boundary: Examine reports known or observable reads. It should not reveal hidden identities, private contract state, or internal records unless the world has exposed them.");
+                break;
+            case "Movement Planning":
+                lines.add("Movement planning reference");
+                lines.add("PLAN MOVE lets the player choose a movement endpoint, preview the route, see hazards, and confirm instead of relying only on directional movement.");
+                lines.add("Movement mode changes range, time cost, noise, fatigue, and observation. The preview divides long routes into action chunks based on the current movement mode.");
+                lines.add("Current movement: " + movementModeLabel() + ", range " + movementModeRange() + ", cost " + movementTurnCost() + " turn(s) per tile.");
+                break;
+            case "Interaction Approach Planning":
+                lines.add("Interaction approach planning reference");
+                lines.add("When a selected interaction target is too far away, the interaction preflight can nominate a reachable adjacent approach tile.");
+                lines.add("Starting PLAN MOVE from that context prefers the approach tile and labels the preview as an approach path, helping with doors, NPCs, pets, containers, machines, vendors, and other exact-range targets.");
+                lines.add("If no approach tile is shown, the target may already be adjacent, blocked, unreachable, or not an interaction target.");
+                break;
+            case "Inventory and Transfer":
+                lines.add("Inventory and transfer reference");
+                lines.add("Item movement uses a shared preflight grammar: source, target, quantity, capacity, permission/access, quest/evidence protection, risk, and whether the move is reversible.");
+                lines.add("Carried load currently reads " + carryStatusText() + ". Overflow blocks purchase and recovery actions before the item moves.");
+                lines.add("Quest and evidence items are protected from ordinary sale so proof, delivery goods, journals, and active turn-in objects do not vanish through routine commerce.");
+                break;
+            case "Base Storage":
+                lines.add("Base storage reference");
+                lines.add("Claimed-base storage lets the player STASH the newest carried item and TAKE the newest stored item while standing inside the claimed room.");
+                lines.add("Storage reports access, capacity, quest protection, and risk categories such as weapons, suspicious tools, commerce goods, survival reserves, and medical reserves.");
+                lines.add("Current storage: " + baseStorage.size() + "/" + baseStorageCapacity() + " item(s). " + baseStorageRiskSummaryLine());
+                break;
+            case "Pet Care":
+                lines.add("Pet care reference");
+                lines.add("Companion animals expose ownership, adoption/sale context, hunger, thirst, rest, shelter, temperament, accessibility, and petting permission through Look and Examine.");
+                lines.add("Petting requires a companion animal, safe temperament, visibility, and adjacency. Non-pet animals explain why contact is blocked instead of pretending to be inert scenery.");
+                lines.add("Pet systems should feel like visible living systems, not hidden timers.");
+                break;
+            case "Context Prompts":
+                lines.add("Context prompt reference");
+                lines.add("Major panels show prompt lines using the current input binding label and the current context: ready actions are named, and blocked actions explain what is missing.");
+                lines.add("Examples include moving adjacent before confirming Interact, selecting an item before inventory actions, choosing a build tile before construction confirmation, and needing an active trader before trade confirmation.");
+                lines.add("Keyboard and controller prompts share abstract action names so rebinding and profile work can update prompts without rewriting every panel.");
+                break;
+            default:
+                lines.add("Survival failure-state reference");
+                lines.add("Failure comes from accumulated pressure: no food, no water, exhaustion, untreated wounds, bleeding, infection, or reckless stimulant use.");
+                lines.add("Current pressure summary: wounds " + wounds + ", fatigue " + fatigue + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", pain " + pain + ".");
+                lines.add("Design intent: survival should pressure long routes and bad decisions, not interrupt every few steps with petty meter chores.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> combatInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Combat Command":
+                lines.add("Attack command reference");
+                lines.add("Use the COMBAT button or F hotkey to attack an adjacent hostile using carried/equipped weapon logic or bare hands.");
+                lines.add("Each attack spends action time and reports hit, miss, armor soak, wounds, and incapacitation through RECENT ACTIONS.");
+                break;
+            case "Hit Chance and Defense":
+                lines.add("Accuracy and defense reference");
+                lines.add("Hit chance compares attack skill, weapon suitability, target defense/agility, and situational cover logic.");
+                lines.add("Failed attacks still produce explicit feedback so the player knows whether the problem was range, target state, weapon, or chance.");
+                break;
+            case "Damage and Armor":
+                lines.add("Damage resolution reference");
+                lines.add("Weapon or base attack damage is reduced by armor before body damage is applied to a rolled location.");
+                lines.add("Armor therefore changes expected injury, not just whether an enemy is allowed to exist after being clicked.");
+                break;
+            case "Targeted Attacks":
+                lines.add("Targeting system reference");
+                lines.add("Reserved targeting should trade hit chance for tactical reward: disarming arms, slowing legs, stunning heads, or damaging torso stability.");
+                lines.add("This entry is intentionally distinct from default attacks, which currently roll a random body location for speed and danger.");
+                break;
+            case "Body Injuries and Incapacitation":
+                lines.add("Combat injury reference");
+                lines.add("Damaged legs slow movement, damaged arms and hands penalize weapon/tool use, and severe body or head damage risks incapacitation.");
+                lines.add("Current body pressure: crippled legs " + crippledLegCount() + ", crippled arms/hands " + crippledArmCount() + ", wounds " + wounds + ".");
+                break;
+            default:
+                lines.add("Hostile intent bark reference");
+                lines.add("Enemies that see or hear the player can announce intent in the action feed before or as combat begins.");
+                lines.add("Purpose: make danger readable without granting perfect tactical information through the map display.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> bodyInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Body Overview":
+                lines.add("Body-state overview");
+                lines.add("Tracked parts include head, torso, hips, upper/lower arms, hands, fingers, upper/lower legs, and feet. Each part has local health derived from endurance.");
+                lines.add("Current body pressure: wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", pain " + pain + ".");
+                break;
+            case "Crippled Legs":
+                lines.add("Mobility injury reference");
+                lines.add("Crippled legs and feet increase movement time cost, turning injury into lost time and therefore into survival pressure.");
+                lines.add("Current crippled leg/foot count: " + crippledLegCount() + ".");
+                break;
+            case "Crippled Arms and Hands":
+                lines.add("Tool and weapon injury reference");
+                lines.add("Crippled arms, hands, and fingers penalize weapon and tool use. Severe arm damage can prevent carried weapon attacks.");
+                lines.add("Current crippled arm/hand count: " + crippledArmCount() + ".");
+                break;
+            case "Bleeding":
+                lines.add("Bleeding reference");
+                lines.add("Bleeding creates hourly wound/fatigue pressure until bandaged or treated.");
+                lines.add("Current bleeding: " + bleeding + ". Bandages and medicae supplies are the intended first answers.");
+                break;
+            case "Pain":
+                lines.add("Pain reference");
+                lines.add("Pain imposes action friction and decays slowly. Stimulants may keep the character upright but are not wound treatment.");
+                lines.add("Current pain: " + pain + ".");
+                break;
+            case "Infection Risk":
+                lines.add("Infection-risk reference");
+                lines.add("Infection risk can worsen if injuries are not treated with antiseptic or better medicae supplies.");
+                lines.add("Current infection risk: " + infectionRisk + ".");
+                break;
+            default:
+                lines.add("Incapacitation reference");
+                lines.add("Severe accumulated damage, body/head trauma, and exhaustion can push the character out of useful action.");
+                lines.add("Purpose: body systems make injury a continuing operational problem, not a single red number.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> medicalInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Medical Overview":
+                lines.add("Medical treatment overview");
+                lines.add("Medical play is divided between carried supplies, field stabilization, paid doctors/clinics, and later prosthetic or augmentic repair.");
+                lines.add("Current state: wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", fatigue " + fatigue + ", pain " + pain + ".");
+                break;
+            case "Bandages and Field Dressings":
+                lines.add("Bleeding-control reference");
+                lines.add("Bandages and field dressings reduce bleeding and one wound. They are the best first response after knives, claws, bullets, and poor decisions.");
+                break;
+            case "Medkits and Medicae Supplies":
+                lines.add("General medicae item reference");
+                lines.add("Medkits and medicae supplies provide stronger treatment: bleeding, wounds, infection risk, fatigue, pain, and the worst body part can all improve slightly.");
+                break;
+            case "Antiseptic":
+                lines.add("Infection-control reference");
+                lines.add("Antiseptic reduces infection risk without pretending to fix structural damage. Use it after dirty wounds, sewer work, or mutant unpleasantness.");
+                break;
+            case "Splints":
+                lines.add("Limb-stabilization reference");
+                lines.add("Splints stabilize the worst limb enough to reduce mobility/tool collapse, especially after leg or arm trauma.");
+                break;
+            case "Injectors":
+                lines.add("Injector reference");
+                lines.add("Injectors reduce fatigue and pain with minor wound relief. Useful, portable, and absolutely not a license to sprint through a gunfight twice.");
+                break;
+            case "Doctors and Clinics":
+                lines.add("Paid treatment reference");
+                lines.add("Doctors and clinics are the intended vendor/service path for deeper repair, prosthetics, augmentics, and high-quality medical work.");
+                break;
+            default:
+                lines.add("Prosthetics system reference");
+                lines.add("Reserved prosthetics should replace or augment damaged limbs through clinics, Mechanist Collegia service, rare parts, faction access, and cost.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> heatInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Heat and Suspicion Overview":
+                lines.add("Attention pressure overview");
+                lines.add("Current pressure: gang heat " + gangHeat + ", Civic Wardens suspicion " + suspicion + ". Heat is criminal/local danger; suspicion is procedural/legal attention.");
+                break;
+            case "Hourly Decay":
+                lines.add("Attention decay reference");
+                lines.add("Once each 100-turn hour, heat and suspicion decay by 1 while awake. Sleeping counts as laying low and decays each by 2 per hour.");
+                lines.add("If no base is claimed, suspicion receives one extra hourly decay point because the character is not leaving a stable property trail yet.");
+                break;
+            case "Heat Sources":
+                lines.add("Gang heat source reference");
+                lines.add("Heat rises from criminal violence, gang spaces, failed illegal work, noisy construction, obvious theft, hostile attention, and reckless underhive behavior.");
+                break;
+            case "Suspicion Sources":
+                lines.add("Civic Wardens suspicion source reference");
+                lines.add("Suspicion rises from law attention, illegal shrine/vending/security interactions, visible contraband work, official failures, and poor disguise outcomes.");
+                break;
+            default:
+                lines.add("Attention avoidance reference");
+                lines.add("Laying low, sleeping, lawful permits, better disguise behavior, and avoiding noisy crimes reduce pressure or prevent new pressure.");
+                lines.add("Security and barricades improve raid defense but may also make a base more visible as an organized operation.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> xpInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "XP Overview":
+                lines.add("Experience and knowledge-credit overview");
+                lines.add("Current XP: " + xp + ". Knowledge credits: " + knowledgeCredits + ". One knowledge credit is awarded for each 25 XP band crossed.");
+                lines.add("XP measures practice; knowledge credits buy or unlock doctrine entries where the design needs explicit permissions.");
+                break;
+            case "Task XP":
+                lines.add("General task XP reference");
+                lines.add("Actions award small visible amounts through RECENT ACTIONS. Failed attempts still teach something; success teaches more.");
+                break;
+            case "Combat XP":
+                lines.add("Combat XP reference");
+                lines.add("Misses award 1 XP; hits award about 3 XP; incapacitating a hostile rewards more once the strike lands.");
+                break;
+            case "Scavenge XP":
+                lines.add("Scavenge XP reference");
+                lines.add("Failed scrounging grants 1 XP; finding useful loot grants 2 XP. Targeted searches use the same feedback path.");
+                break;
+            case "Trade XP":
+                lines.add("Commerce XP reference");
+                lines.add("Buying, selling, and especially successful haggle attempts award Commerce XP. Trade XP supports the business/faction economy path.");
+                break;
+            default:
+                lines.add("Construction XP reference");
+                lines.add("Successful base construction awards Mechanics XP. Later fabrication, maintenance, and machine repair should use this same path.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> knowledgeReferenceLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Knowledge Overview":
+                lines.add("Knowledge system overview");
+                lines.add("Knowledge is the permission layer for recipes, machines, services, business paths, faction work, and conversation options.");
+                lines.add("Current XP: " + xp + ". Spendable knowledge credits: " + knowledgeCredits + ". Credits come from XP bands and some research/contract paths.");
+                lines.add("Design split: stats are aptitude, XP is practice, and knowledge is explicit doctrine or access.");
+                break;
+            case "Known Knowledge":
+                lines.add("Known doctrine ledger");
+                lines.add("Scope: lists what this save already knows; it is not the purchase rules and not the system overview.");
+                lines.addAll(knownKnowledgeLines());
+                lines.add("Known entries should gate visible recipes, machine actions, services, conversations, and actor permissions.");
+                break;
+            case "Purchasing Knowledge":
+                lines.add("Knowledge purchase reference");
+                lines.add("Scope: explains spending knowledge credits from this tab. It deliberately does not list every known doctrine.");
+                lines.add("Spendable knowledge credits: " + knowledgeCredits + ". Knowledge purchases now belong to the Character Dossier Knowledge Tree, not this reference tab.");
+                lines.add("Later purchases may also require faction standing, tutors, books, data slates, rare items, or legal access.");
+                break;
+            case "Training Sources":
+                lines.add("Training and discovery source reference");
+                lines.add("Knowledge may come from XP bands, trainers, traders, data slates, shrines, libraries, Micro Labs, faction services, contracts, and item study.");
+                lines.add("Current discovered doctrine count: " + unlockedKnowledges.size() + ".");
+                break;
+            default:
+                lines.add("Knowledge system reference");
+                lines.add("Current integrations already gate EMM builds, production recipes, recruit berthing, labor discipline, commerce, and quality/faction production paths.");
+                lines.add("Next integrations should move actor permissions, business management, recruit-operated machines, contracts, and faction production through the same knowledge authority.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> craftingReferenceLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Crafting Overview":
+                lines.add("Crafting system overview");
+                lines.add("Recipes are first-class data entries instead of hidden button-only actions. The WORK panel uses the same recipe list shown here.");
+                lines.add("Crafting checks knowledge, required machine, machine ceiling, pooled supplies, machine parts, carried ingredients, fatigue, and turn cost.");
+                break;
+            case "Recipe Requirements":
+                lines.add("Recipe requirement reference");
+                lines.add("Each recipe may require a machine symbol, supplies, machine parts, output count, fatigue cost, turn cost, XP gain, machine wear, faction style, and knowledge.");
+                break;
+            case "Machine Quality Ceilings":
+                lines.add("Crafting machine ceiling reference");
+                lines.add("Machines cap better knowledge: a Junk machine cannot manufacture Archeotech-grade goods just because the character read the right heretical pamphlet.");
+                lines.addAll(MachineTierAuthority.detailLines());
+                break;
+            case "Ingredient Consumption":
+                lines.add("Ingredient consumption reference");
+                lines.add("Inputs should be consumed through item/container APIs as migration continues, preserving provenance where an ingredient identity matters.");
+                break;
+            default:
+                lines.add("Faction output variant reference");
+                lines.add("Outputs use faction + quality identity: base item + faction style + capped quality + recipe knowledge + machine identity.");
+                lines.add("Purpose: production should tell who made the thing, under what doctrine, with what tool, and why the result differs from another faction's version.");
+                break;
+        }
+        return lines;
+    }
+
+    java.util.List<String> npcInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("NPC/actor reference");
+        switch(entry) {
+            case "Civilian": lines.add("Role: noncombat local population, service customers, witnesses, and ambient underhive pressure."); lines.add("Behavior: usually wanders, idles, flees danger, or seeks needs providers rather than picking fights."); break;
+            case "Trader": lines.add("Role: opens trade sessions and supplies catalog-backed stock with prices, markups, haggle, and provenance handoff."); lines.add("Operational note: trader shelves now have generated containers for bought/sold item movement."); break;
+            case "Hiver": lines.add("Role: ordinary arcology resident; baseline faction texture for habs, markets, work floors, and neutral civilian spaces."); lines.add("Gameplay use: social camouflage and crowd density rather than specialized services."); break;
+            case "Scavenger": lines.add("Role: marginal salvage actor tied to trash warrens, sewer edges, and low-trust trading."); lines.add("Expected goods: cheap tools, bad food, improvised water, lock tools, and scrap."); break;
+            case "Ganger": lines.add("Role: hostile or coercive local criminal power; raises heat and controls gang rooms."); lines.add("Behavior: can threaten, patrol, attack, or trade through fences depending on context."); break;
+            case "Civic Wardens": lines.add("Role: law enforcement pressure and procedural brutality rather than civic comfort."); lines.add("Behavior: interrogations, checkpoints, suspicion reactions, restricted stock, and faction-only spaces."); break;
+            case "Concord Guard": lines.add("Role: military presence around billets, depots, and field logistics."); lines.add("Expected goods: rations, water, armor, weapons, and rugged tools."); break;
+            case "Mechanist Collegia Adept": lines.add("Role: machine-cult worker, trader, tutor, or gatekeeper around forge cloisters and relic ducts."); lines.add("Expected goods: machine parts, sacred wire, tool rolls, data spikes, and machine doctrine."); break;
+            case "Mutant": lines.add("Role: hostile or semi-feral sewer/warren threat with its own camps and warning signs."); lines.add("Behavior: generally attacks on sight in mutant layers."); break;
+            case "Cultist": lines.add("Role: heretical sewer-camp threat tied to illegal shrines, ritual objects, and hidden danger."); lines.add("Behavior: generally hostile when discovered in cult spaces."); break;
+            case "Outcast": lines.add("Role: disconnected survivor used for marginal spaces, barter, rumor, or faction ambiguity."); lines.add("Behavior: should not automatically share civilian trust or ganger hostility."); break;
+            case "Passive: Vending Machine": lines.add("Role: passive service object pretending to be an NPC entry for inspection/trade convenience."); lines.add("Use: sells ration/water/supply goods from map-object state and logs stock/cooldown changes."); break;
+            case "Passive: Concord Shrine": lines.add("Role: passive loyal shrine fixture for interaction, attention, and faith/social consequences."); lines.add("Use: should support lawful/Concord flavor without duplicating heretical shrine risk."); break;
+            default: lines.add("Role: passive illegal shrine fixture with cult risk, suspicion/heat consequences, and forbidden-service hooks."); lines.add("Use: distinct from Concord shrines because interacting with it should be socially and legally dangerous."); break;
+        }
+        lines.add("Actor standard: every active NPC now has a stable numeric identifier and string ID for logging/save tracking.");
+        return lines;
+    }
+
+    java.util.List<String> factionInfopediaLines(Faction f, String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Faction reference");
+        lines.add("Standing: " + (f==null?0:factionStanding.getOrDefault(f,0)) + "   Hostility timer: " + (f==null?0:temporaryHostileTurns.getOrDefault(f,0)));
+        lines.add("Specific designation: " + entry + ".");
+        lines.add("Role: " + factionRoleText(f));
+        lines.add("Typical presence: " + factionPresenceText(f));
+        lines.add("Trade/production bias: " + factionTradeBiasText(f));
+        lines.add("Local distinction: " + factionSpecificNote(f, entry));
+        lines.addAll(EconomicTopologyFramework.factionDoctrineLines(f));
+        lines.add("Disguise note: true affiliation bypasses checks against that same faction; clothing still matters with outsiders.");
+        return lines;
+    }
+
+    String zoneGenerationRole(ZoneType z) {
+        if (z==ZoneType.SEWER_CONDUIT) return "utility corridors, water machinery, pipe access, and low-visibility traversal";
+        if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.CULTIST_SEWER_CAMP) return "dangerous sewer camp insertion with hostile inhabitants and ritual/survival clutter";
+        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER || z==ZoneType.MECHANICUS_RELIC_DUCT) return "machine rooms, forge service paths, relic hardware, and technical loot";
+        if (z==ZoneType.ADMINISTRATUM_ARCHIVE) return "records, permits, queues, filing cages, and bureaucratic choke points";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "law checkpoints, evidence spaces, holding edges, and suspicion pressure";
+        if (z==ZoneType.IMPERIAL_GUARD_BILLET) return "bunks, ration lockers, field stores, and military logistics";
+        if (z==ZoneType.GANGER_TURF) return "territorial rooms, fences, stash points, ambush spaces, and heat pressure";
+        if (z==ZoneType.SUMP_MARKET || z==ZoneType.NEUTRAL_RAIL_DEPOT) return "trade counters, public services, barter space, and mixed civilian traffic";
+        if (z==ZoneType.NOBLE_SERVICE_SPINE) return "cleaner service corridors, servant infrastructure, restricted access, and high-value scraps";
+        if (z==ZoneType.TRAIN_SERVICE_YARD) return "freight handling, tickets, cargo chains, and transit machinery";
+        if (z==ZoneType.TRASH_WARREN || z==ZoneType.MUTANT_WARRENS) return "dense salvage, cramped danger, low-trust loot, and organic filth";
+        return "habitation, basic services, local clutter, and civilian movement";
+    }
+
+    String zoneFixtureMeaning(ZoneType z) {
+        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER || z==ZoneType.MECHANICUS_RELIC_DUCT) return "machinery and technical inspection targets are more common here";
+        if (z==ZoneType.SUMP_MARKET || z==ZoneType.NEUTRAL_RAIL_DEPOT) return "trade and service fixtures are more common here";
+        if (z==ZoneType.GANGER_TURF) return "stash, threat, and gang-sign fixtures are more common here";
+        if (z==ZoneType.SEWER_CONDUIT || z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.CULTIST_SEWER_CAMP) return "pipes, water hazards, camps, and survival fixtures dominate";
+        return "ordinary local fixtures, beds, lockers, refuse, benches, and room-specific objects";
+    }
+
+    String zonePlayerWarning(ZoneType z) {
+        if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.MUTANT_WARRENS) return "expect hostile mutants and poor escape conditions";
+        if (z==ZoneType.CULTIST_SEWER_CAMP) return "expect illegal ritual danger and hostile cultists";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "misbehavior raises suspicion faster here";
+        if (z==ZoneType.GANGER_TURF) return "violence and theft raise gang heat quickly here";
+        if (z==ZoneType.MECHANICUS_RELIC_DUCT) return "rare machine objects may be valuable, restricted, or dangerous";
+        if (z==ZoneType.NOBLE_SERVICE_SPINE) return "high-value scraps come with access and attention risks";
+        return "inspect rooms before assuming public access or safe loot";
+    }
+
+
+    String factionSpecificNote(Faction f, String entry) {
+        if (f==null) return "entry exists in the menu without a current faction enum binding";
+        String n=f.name();
+        if (f==Faction.NONE) return "used when ownership should be deliberately absent, not merely unknown";
+        if (n.contains("CLOISTER_RED")) return "red-robed forge alignment; favor orthodox machine service and visible Mechanist Collegia authority";
+        if (n.contains("CLOISTER_RUST")) return "rust-cloister alignment; favor maintenance, salvage, and worn machine infrastructure";
+        if (n.contains("CLOISTER_VOID")) return "void-cloister alignment; favor sealed systems, space-adjacent hardware, and stranger machine rites";
+        if (n.contains("BLOCK_AUREL")) return "hiver block identity for local civilian loyalty, grudges, and housing politics";
+        if (n.contains("BLOCK_MARROW")) return "hiver block identity with poorer marrow-hab survival texture and local obligations";
+        if (n.contains("BLOCK_SUMPLEDGER")) return "hiver block identity tied to accounting, debts, sump trade, and civic ledgers";
+        if (n.contains("IRON_RATS")) return "gang variant leaning toward scrap, tunnels, ambush, and cheap intimidation";
+        if (n.contains("BLACK_SUMP")) return "gang variant leaning toward knives, sewer routes, and black-water extortion";
+        if (n.contains("CANDLE_JACKS")) return "gang variant leaning toward shrine-like menace, candles, and debt violence";
+        if (n.contains("RED_GRIN")) return "gang variant leaning toward open brutality, intimidation theater, and visible heat";
+        if (n.contains("CHAIN_SAINTS")) return "gang variant leaning toward chain weapons, false piety, and ritualized street control";
+        if (n.contains("ASH_MARKET")) return "gang variant leaning toward market rackets, teeth-debt markers, and trade coercion";
+        if (n.contains("WIRE_WOLVES")) return "gang variant leaning toward electrical theft, sabotage, and wire-running turf";
+        if (n.contains("DROWNED_9TH")) return "gang variant leaning toward sewer survivorship, drowned routes, and hidden water access";
+        if (n.contains("HOUSE_VARN")) return "noble house variant for contracts, permits, status games, and clean-paper cruelty";
+        if (n.contains("HOUSE_KASTOR")) return "noble house variant for guarded logistics, household service, and controlled access";
+        if (n.contains("HOUSE_MORVAIN")) return "noble house variant for old money, quiet hostility, and polished neglect";
+        if (n.contains("HOUSE_CYRA")) return "noble house variant for commerce, favor trading, and cosmetic legality";
+        if (n.contains("HOUSE_DRAKE")) return "noble house variant for militarized wealth, security contracts, and hard retaliation";
+        if (n.contains("HOUSE_TOLL")) return "noble house variant for fees, transit gates, licenses, and extraction by paperwork";
+        if (n.contains("HOUSE_OSSUARY")) return "noble house variant for funereal status, relic claims, and tasteful horror";
+        if (f==Faction.MUTANT) return "hostile biological underclass pressure; not the same as cult or machine danger";
+        if (f==Faction.CULTIST) return "illegal ritual cell pressure; socially and legally distinct from ordinary crime";
+        if (f==Faction.ROGUE_MACHINE) return "machine threat category; should key off failed automation and hostile mechanisms";
+        if (f==Faction.HERETIC) return "broad treasonous alignment for forbidden services, contraband doctrine, and high-risk contacts";
+        return "base faction entry; subfactions inherit this role but add local grudges, stock bias, and encounter flavor";
+    }
+
+    String factionRoleText(Faction f) {
+        if (f==null) return "unresolved faction label";
+        String n=f.name();
+        if (f==Faction.NONE) return "neutral/no-faction marker for generic objects and unowned systems";
+        if (n.contains("MECHANIST COLLEGIA")) return "machine authority, technical services, machine goods, and doctrine gates";
+        if (n.contains("GANGER") || f==Faction.BANDIT) return "local criminal power, heat pressure, fences, and violent control of turf";
+        if (n.contains("HIVER") || f==Faction.HIVER) return "civilian labor/population bloc for habs, markets, and ordinary survival";
+        if (n.contains("NOBLE") || f==Faction.NOBLE) return "upper-spire property, permits, luxury goods, servants, and status pressure";
+        if (f==Faction.CIVIC_WARDENS) return "law enforcement, suspicion pressure, paperwork, and coercive order";
+        if (f==Faction.IMPERIAL_GUARD) return "military logistics, rations, armor, weapons, and depot discipline";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "records, permits, forms, and bureaucratic access";
+        if (f==Faction.SCAVENGER) return "salvage economy, low-trust goods, trash routes, and survival barter";
+        return "specialized local faction with its own standing, hostility, and production bias";
+    }
+
+    String factionPresenceText(Faction f) {
+        if (f==null) return "unknown";
+        String n=f.name();
+        if (n.contains("MECHANIST COLLEGIA")) return "forge cloisters, relic ducts, machine rooms, technical traders";
+        if (n.contains("GANGER") || f==Faction.BANDIT) return "ganger turf, fences, stash rooms, intimidation routes";
+        if (n.contains("HIVER") || f==Faction.HIVER) return "hab stacks, civilian floors, markets, work spaces";
+        if (n.contains("NOBLE") || f==Faction.NOBLE) return "noble service spines, permit channels, high-status trade";
+        if (f==Faction.CIVIC_WARDENS) return "precinct edges, checkpoints, holding rooms, evidence counters";
+        if (f==Faction.IMPERIAL_GUARD) return "billets, depots, ration stores, munition rooms";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "archives, permit counters, clerk routes";
+        if (f==Faction.SCAVENGER) return "trash warrens, sewer edges, marginal markets";
+        return "zone-appropriate rooms, representatives, patrols, traders, or locked areas";
+    }
+
+    String factionTradeBiasText(Faction f) {
+        if (f==null) return "unknown";
+        String n=f.name();
+        if (n.contains("MECHANIST COLLEGIA")) return "machine parts, sacred wire, data spikes, tool rolls, relays, and fabrication doctrine";
+        if (n.contains("GANGER") || f==Faction.BANDIT) return "weapons, lock tools, stimulants, stolen goods, and cheap armor";
+        if (n.contains("HIVER") || f==Faction.HIVER) return "rations, water, cots, basic tools, permits, and ordinary supplies";
+        if (n.contains("NOBLE") || f==Faction.NOBLE) return "permits, fine rations, clean water, luxury scraps, legal shields, and high value services";
+        if (f==Faction.CIVIC_WARDENS) return "paperwork, restraints, armor, rations, water, and restricted services";
+        if (f==Faction.IMPERIAL_GUARD) return "military ration packs, field water, rugged tools, armor, and weapons";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "forms, permits, records, stamps, and legal access";
+        if (f==Faction.SCAVENGER) return "junk tools, improvised water, dirty food, salvage, and cheap components";
+        return "locally biased catalog stock and faction-site production profile";
+    }
+
+    ZoneType zoneByLabel(String label) { for (ZoneType z: ZoneType.values()) if (z.label.equals(label)) return z; return null; }
+    Faction factionByLabel(String label) { for (Faction f: Faction.values()) if (f.label.equals(label)) return f; return null; }
+    char[] samplePropsForZone(ZoneType z) { World tmp = world; if(tmp != null && tmp.zoneType==z) return tmp.propPaletteForZone(); return new char[]{'o','u','t','N'}; }
+    String likelyNpcText(ZoneType z) {
+        if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.MUTANT_WARRENS) return "mutants only, generally hostile";
+        if (z==ZoneType.CULTIST_SEWER_CAMP) return "cultists only, generally hostile";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens and police clerks";
+        if (z==ZoneType.IMPERIAL_GUARD_BILLET) return "Concord Guard personnel";
+        if (z==ZoneType.GANGER_TURF) return "gangers, fences, intimidated locals";
+        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER) return "Mechanist Collegia adepts, workers, bound Labor Automaton-adjacent personnel";
+        if (z==ZoneType.NEUTRAL_CIVILIAN_FLOOR || z==ZoneType.SUMP_MARKET || z==ZoneType.NEUTRAL_RAIL_DEPOT) return "civilians, traders, police presence";
+        return "zone-appropriate civilians, outcasts, or local owners";
+    }
+
+    void showTimedAlert(String title, String body, int millis) {
+        alertTitle = title == null ? "" : title;
+        alertBody = body == null ? "" : body;
+        alertUntilMillis = System.currentTimeMillis() + Math.max(750, millis);
+        DebugLog.audit("UI_ALERT", alertTitle + " :: " + alertBody);
+    }
+
+    void drawEulaOverlay(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        int panelW = Math.min(980, Math.max(560, W - 80));
+        int panelH = Math.min(720, Math.max(420, H - 80));
+        int x = (W - panelW) / 2;
+        int y = (H - panelH) / 2;
+        g.setColor(new Color(0,0,0,220));
+        g.fillRect(0, 0, W, H);
+        g.setColor(new Color(5,6,6,248));
+        g.fillRoundRect(x, y, panelW, panelH, 18, 18);
+        drawSlicedFrame(g, x, y, panelW, panelH, "outer");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "MANDATORY EULA NOTICE", x + panelW / 2, y + 36);
+        g.setFont(smallFont);
+        int contentX = x + 38;
+        int contentY = y + 70;
+        int contentW = panelW - 76;
+        int contentH = panelH - 154;
+        g.setFont(smallFont);
+        FontMetrics eulaFm = g.getFontMetrics();
+        java.util.List<String> lines = new ArrayList<>();
+        for (String paragraph : EulaConsentAuthority.eulaText()) {
+            java.util.List<String> wrapped = GuiLayoutApi.wrapText(paragraph, eulaFm, contentW - 10);
+            if (wrapped.isEmpty()) lines.add(""); else lines.addAll(wrapped);
+            lines.add("");
+        }
+        int lineH = Math.max(16, eulaFm.getHeight() + 2);
+        int visibleLines = Math.max(1, contentH / lineH);
+        eulaMaxScroll = Math.max(0, lines.size() - visibleLines);
+        eulaScroll = Math.max(0, Math.min(eulaScroll, eulaMaxScroll));
+        Shape oldClip = g.getClip();
+        g.setClip(contentX - 4, contentY - 4, contentW + 8, contentH + 8);
+        int yy = contentY;
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        for (int i = eulaScroll; i < lines.size() && yy <= contentY + contentH; i++) {
+            String line = lines.get(i);
+            if (line == null || line.isEmpty()) {
+                yy += Math.max(6, lineH / 2);
+                continue;
+            }
+            boolean header = line.equals("THE MECHANIST END USER LICENSE AND CONSENT NOTICE") || line.equals("INTELLECTUAL PROPERTY DISCLAIMER & FAN PROJECT ACKNOWLEDGMENT") || line.equals("IMPORTANT NOTICE: UNOFFICIAL FAN-MADE CONTENT");
+            g.setColor(header ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString(line, contentX, yy);
+            yy += lineH;
+        }
+        g.setClip(oldClip);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String scrollText = "Scroll wheel / Up / Down / PgUp / PgDn to read. Lines " + Math.min(lines.size(), eulaScroll + 1) + "-" + Math.min(lines.size(), eulaScroll + visibleLines) + " of " + lines.size() + ".";
+        g.drawString(GuiLayoutApi.fitLabel(scrollText, g.getFontMetrics(), contentW), contentX, y + panelH - 84);
+        g.drawString("Keyboard: Enter/A accepts. Escape/Q/X exits.", contentX, y + panelH - 30);
+    }
+
+    void scrollEulaGate(int direction, boolean page) {
+        int d = Integer.compare(direction, 0);
+        if (d == 0) return;
+        int step = page ? 8 : 3;
+        eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + d * step));
+        repaint();
+    }
+
+    void drawTimedAlert(Graphics2D g) {
+        if (alertUntilMillis <= System.currentTimeMillis() || alertTitle == null || alertTitle.isEmpty()) return;
+        int W = getWidth(), H = getHeight();
+        int w = Math.min(620, Math.max(360, W - 160));
+        int h = 150;
+        int x = (W - w) / 2;
+        int y = Math.max(90, H / 2 - h / 2);
+        g.setColor(new Color(0,0,0,168));
+        g.fillRect(0,0,W,H);
+        g.setColor(new Color(4,5,4,244));
+        g.fillRoundRect(x,y,w,h,16,16);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, alertTitle, x + w/2, y + 38);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        int yy = y + 70;
+        for(String line: TextSurfaceApi.wrap(alertBody, Math.max(34,(w-56)/8))) {
+            center(g, line, x + w/2, yy);
+            yy += 18;
+            if (yy > y + h - 18) break;
+        }
+    }
+
+    void drawInfopediaPanel(Graphics2D g) {
+        Rectangle modal = uiLayout().modal;
+        g.setColor(new Color(3,4,4,248)); g.fillRect(modal.x, modal.y, modal.width, modal.height);
+        drawSlicedFrame(g, modal.x, modal.y, modal.width, modal.height, "inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"INFOPEDIA // UNDERHIVE LOGIC ENGINE", modal.x+modal.width/2, modal.y+45);
+        String[] tabs = infopediaTabs();
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String subtitle = isAssetInfopediaTab(infopediaTab)
+                ? "Semantic Asset Index: image previews, asset codes, type/purpose, and in-universe descriptions. Type filter: " + SemanticAssetInfopediaAuthority.typeLabel(selectedInfopediaAssetType()) + " | Search: " + (infopediaAssetFilter.isBlank() ? "<none>" : infopediaAssetFilter) + ("infopedia-asset-filter".equals(activeScrollTag) ? " _" : "")
+                : "Zones, rooms, items, weapons, NPC types, and factions. Entries summarize implemented reference rules and intended doctrine.";
+        center(g, GuiLayoutApi.fitLabel(subtitle, g.getFontMetrics(), modal.width-70), modal.x+modal.width/2, modal.y+102);
+        int listX=modal.x+28, listY=modal.y+120, listW=285, listH=modal.height-180;
+        drawSlicedFrame(g,listX,listY,listW,listH,"inner");
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,tabs[infopediaTab]+" INDEX",listX+listW/2,listY+32);
+        drawInfopediaEntryList(g, entries, listX+14, listY+62, listW-34, listH-108);
+        int detailX=listX+listW+24, detailY=listY, detailW=modal.x+modal.width-detailX-30, detailH=listH;
+        drawSlicedFrame(g,detailX,detailY,detailW,detailH,"inner");
+        String entry = entries.isEmpty()?"No entry":entries.get(Math.max(0,Math.min(infopediaSelected,entries.size()-1)));
+        drawInfopediaIcon(g, detailX+24, detailY+52, 128, 128, infopediaTab, entry);
+        java.util.List<String> details = infopediaDetailLinesWithRelated(infopediaTab, entry);
+        drawScrollableWrappedLines(g, details, detailX+178, detailY+58, detailW-210, detailH-96, infopediaDetailScroll, "infopedia-detail");
+    }
+
+    void drawInfopediaEntryList(Graphics2D g, java.util.List<String> entries, int x, int y, int w, int h) {
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(20, fm.getHeight()+4);
+        int visible = Math.max(1, h / lineH);
+        int maxScroll = Math.max(0, entries.size() - visible);
+        infopediaScroll = Math.max(0, Math.min(infopediaScroll, maxScroll));
+        Shape old = g.getClip();
+        g.setClip(x-4,y-4,w+8,h+8);
+        int yy = y + lineH;
+        for(int row=0; row<visible; row++) {
+            int idx = infopediaScroll + row;
+            if (idx >= entries.size()) break;
+            boolean sel = idx == infopediaSelected;
+            if (sel) {
+                g.setColor(new Color(80,65,30,220));
+                g.fillRoundRect(x-6, yy-lineH+3, w+4, lineH, 8, 8);
+            }
+            g.setColor(sel ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            String label = (sel ? "> " : "  ") + entries.get(idx);
+            g.drawString(label, x, yy);
+            yy += lineH;
+        }
+        g.setClip(old);
+        int sbX=x+w+10, sbY=y, sbW=14, sbH=h;
+        g.setColor(new Color(20,18,14,235)); g.fillRect(sbX,sbY,sbW,sbH);
+        g.setColor(new Color(108,92,58)); g.drawRect(sbX,sbY,sbW,sbH);
+        int th=maxScroll<=0?h:Math.max(28,h*visible/Math.max(visible,entries.size())); int ty=maxScroll<=0?y:y+(h-th)*infopediaScroll/maxScroll;
+        g.setColor("infopedia-list".equals(activeScrollTag)?optionColor(GameOptions.TEXT_HIGHLIGHT):new Color(220,190,105));
+        g.fillRect(sbX+2,ty+2,sbW-3,Math.max(6,th-3));
+        scrollRegions.add(new ScrollRegion("infopedia-list", new Rectangle(sbX, sbY, sbW, sbH), new Rectangle(sbX+2,ty+2,sbW-3,Math.max(6,th-3)), maxScroll, visible, infopediaScroll));
+    }
+
+    void drawInfopediaIcon(Graphics2D g, int x, int y, int w, int h, int tab, String entry) {
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setColor(new Color(12,16,14)); g.fillRect(x+10,y+10,w-20,h-20);
+        if (isAssetInfopediaTab(tab)) {
+            drawSemanticAssetInfopediaIcon(g, x, y, w, h, entry);
+            return;
+        }
+        if (tab == 17) {
+            drawTileInfopediaIcon(g, x, y, w, h, entry);

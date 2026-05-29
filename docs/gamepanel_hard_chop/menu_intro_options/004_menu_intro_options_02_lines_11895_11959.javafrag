@@ -1,0 +1,21 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: menu_intro_options_02_lines_11895_11959
+// Category: menu_intro_options
+// Source lines: 11895-11959
+// Method count: 2
+//
+// Methods in this fragment:
+// - drawMenu :: lines 11895-11897 (3) :: void drawMenu(Graphics2D g)
+// - drawIntroCrawl :: lines 11957-11959 (3) :: void drawIntroCrawl(Graphics2D g)
+
+    void drawMenu(Graphics2D g) {
+        mainMenuPainter.paint(g, this);
+    }
+
+// ... omitted 59 non-method/source lines between cataloged methods ...
+
+    void drawIntroCrawl(Graphics2D g) {
+        introCrawlPainter.paint(g, this);
+    }

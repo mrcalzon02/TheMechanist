@@ -1,0 +1,28 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_05_lines_04361_04376
+// Category: world_zone_sector
+// Source lines: 4361-4376
+// Method count: 2
+//
+// Methods in this fragment:
+// - mapObjectAt :: lines 4361-4369 (9) :: MapObjectState mapObjectAt(int x, int y, String type)
+// - restoreMapObjectUnderlyingTile :: lines 4371-4376 (6) :: void restoreMapObjectUnderlyingTile(MapObjectState m)
+
+    MapObjectState mapObjectAt(int x, int y, String type) {
+        if (world == null || world.mapObjects == null) return null;
+        String wanted = AssetIntegrationDisciplineAuthority.canonicalType(type);
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || m.x != x || m.y != y) continue;
+            if (type == null || Objects.equals(wanted, AssetIntegrationDisciplineAuthority.canonicalType(m.type))) return m;
+        }
+        return null;
+    }
+
+    void restoreMapObjectUnderlyingTile(MapObjectState m) {
+        if (world == null || m == null || !world.inBounds(m.x,m.y)) return;
+        char old = MapObjectState.underlyingTileFromStock(m.stockState);
+        if (old == 0 || old == '*' || old == '!' || old == 'r') old = '.';
+        world.tiles[m.x][m.y] = old;
+    }

@@ -1,0 +1,463 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_26_lines_18636_19204
+// Category: misc
+// Source lines: 18636-19204
+// Method count: 31
+//
+// Methods in this fragment:
+// - openOrLicenseBusiness :: lines 18636-18656 (21) :: void openOrLicenseBusiness()
+// - baseSecurityRating :: lines 18658-18677 (20) :: int baseSecurityRating()
+// - illegalBusinessCount :: lines 18679-18683 (5) :: int illegalBusinessCount()
+// - openBusinessCount :: lines 18685-18689 (5) :: int openBusinessCount()
+// - baseRaidPressure :: lines 18691-18693 (3) :: int baseRaidPressure(int security)
+// - baseRaidChance :: lines 18695-18699 (5) :: int baseRaidChance(int security)
+// - baseRaidWarningLine :: lines 18701-18709 (9) :: String baseRaidWarningLine()
+// - toggleRecruitGuardDuty :: lines 18711-18729 (19) :: void toggleRecruitGuardDuty()
+// - runBaseRaidDrill :: lines 18731-18736 (6) :: void runBaseRaidDrill()
+// - applyBusinessPressureTick :: lines 18761-18782 (22) :: void applyBusinessPressureTick(boolean sleeping)
+// - maybeTriggerBaseRaid :: lines 18784-18817 (34) :: void maybeTriggerBaseRaid(int security)
+// - playerFactionPower :: lines 18820-18836 (17) :: int playerFactionPower()
+// - seedFactionStrategicSimulation :: lines 18877-18879 (3) :: void seedFactionStrategicSimulation()
+// - applyFactionStrategicSimulationTick :: lines 18881-18883 (3) :: void applyFactionStrategicSimulationTick(boolean sleeping)
+// - applyFactionMarketPressureFromBusiness :: lines 18958-18964 (7) :: void applyFactionMarketPressureFromBusiness(BaseObject obj, int income)
+// - applyFactionMarketPressureTick :: lines 18972-18986 (15) :: void applyFactionMarketPressureTick(boolean sleeping)
+// - decayFactionMarketPressure :: lines 19008-19016 (9) :: void decayFactionMarketPressure()
+// - highestFactionMarketPressureLine :: lines 19027-19033 (7) :: String highestFactionMarketPressureLine()
+// - strategicRaidChance :: lines 19035-19042 (8) :: int strategicRaidChance()
+// - contestedMarketSummaryLine :: lines 19044-19053 (10) :: String contestedMarketSummaryLine()
+// - parseTrailingInt :: lines 19055-19057 (3) :: int parseTrailingInt(String text)
+// - maybeTriggerFactionStrategicRaid :: lines 19059-19097 (39) :: void maybeTriggerFactionStrategicRaid()
+// - collectBusinessIncome :: lines 19099-19124 (26) :: void collectBusinessIncome()
+// - medicalStockCount :: lines 19126-19133 (8) :: int medicalStockCount()
+// - playerMedicalGuidanceLines :: lines 19135-19142 (8) :: ArrayList<String> playerMedicalGuidanceLines()
+// - playerMedicalStatusLine :: lines 19144-19157 (14) :: String playerMedicalStatusLine()
+// - playerTreatmentPriorityLine :: lines 19159-19168 (10) :: String playerTreatmentPriorityLine()
+// - stimulantRiskLine :: lines 19170-19175 (6) :: String stimulantRiskLine()
+// - carriedMedicalAidCount :: lines 19177-19184 (8) :: int carriedMedicalAidCount()
+// - clinicSupportLine :: lines 19186-19189 (4) :: String clinicSupportLine()
+// - ownedBusinessLines :: lines 19191-19204 (14) :: ArrayList<String> ownedBusinessLines()
+
+    void openOrLicenseBusiness() {
+        if (!baseClaimed) { logEvent("Business opening blocked: no claimed base exists."); return; }
+        BaseObject obj = firstClosedBusiness();
+        if (obj == null) { logEvent("Business opening blocked: no closed business-capable asset exists. Build a shop counter, medicae stall, storage crate, workbench, barrel, condenser, forge, or lab."); return; }
+        if (consumeBusinessPermit()) {
+            obj.businessOpen = true;
+            obj.permittedBusiness = true;
+            obj.businessHeat = Math.max(0, obj.businessHeat - 2);
+            logEvent("BUSINESS LICENSED: " + obj.businessName() + " opens under a noble permit. Heat gain reduced; paperwork becomes its own small monster.");
+        } else {
+            obj.businessOpen = true;
+            obj.permittedBusiness = false;
+            obj.businessHeat += 4;
+            gangHeat += 2;
+            suspicion += 2;
+            logEvent("ILLEGAL BUSINESS OPENED: " + obj.businessName() + " begins trading without a noble permit. Heat +2, suspicion +2. The ledger is a weapon pointed at you.");
+        }
+        recordPlayerNewsEvent(obj.permittedBusiness ? "licensed-service-opened" : "illegal-service-opened", obj.businessName(), Faction.NONE, (obj.permittedBusiness ? "licensed" : "unlicensed") + " service opened in claimed space", obj.permittedBusiness ? 2 : 6);
+        DebugLog.audit("BUSINESS_OPEN", obj.businessName()+" permitted="+obj.permittedBusiness+" heat="+obj.businessHeat+" state="+stateSummary());
+        repaint();
+    }
+
+    int baseSecurityRating() {
+        int rating = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj.symbol == 'd') rating += 2 + Math.max(0, obj.cover);
+            if (obj.symbol == 'a' && obj.armed) rating += 3;
+            if (obj.symbol == 'x') rating += 4 + ItemQuality.tierIndex((obj.qualityName==null?"Common":obj.qualityName)+" node")/2;
+            if (obj.symbol == 'p') rating += 3 + Math.max(0, obj.cover);
+            if (obj.symbol == 'g') rating += 4 + Math.max(0, obj.capacity/2);
+            if (obj.symbol == 'D') rating += 4 + Math.max(0, obj.cover);
+            if (obj.symbol == 'T') rating += 8 + Math.max(0, obj.cover) + Math.max(0, obj.charges);
+            if (obj.symbol == 'H') rating += 6 + Math.max(0, obj.cover) + Math.max(0, obj.charges);
+            if (obj.symbol == 'v') rating += 1;
+            if (obj.symbol == 'A') rating += 1;
+            if (obj.symbol == 'B' || obj.symbol == 'M') rating += obj.permittedBusiness ? 1 : 0;
+            if (PassiveDefenseEffectsAuthority.isPassiveDefense(obj.symbol)) rating += PassiveDefenseEffectsAuthority.raidResistance(obj);
+        }
+        rating += Math.max(0, availableRecruitLabor()/2);
+        rating += securityStaffCount() * 3;
+        return rating;
+    }
+
+    int illegalBusinessCount() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && obj.businessOpen && !obj.permittedBusiness) n++;
+        return n;
+    }
+
+    int openBusinessCount() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && obj.businessOpen) n++;
+        return n;
+    }
+
+    int baseRaidPressure(int security) {
+        return Math.max(0, gangHeat + suspicion + illegalBusinessCount() * 4 + openBusinessCount() - security * 2);
+    }
+
+    int baseRaidChance(int security) {
+        int pressure = baseRaidPressure(security);
+        if (pressure < 12) return 0;
+        return Math.max(2, Math.min(45, pressure));
+    }
+
+    String baseRaidWarningLine() {
+        int security = baseSecurityRating();
+        int pressure = baseRaidPressure(security);
+        if (pressure < 8) return "quiet but not safe";
+        if (pressure < 12) return "watchful pressure building";
+        if (pressure < 24) return "raid possible";
+        if (pressure < 40) return "raid likely";
+        return "base is loudly inviting punishment";
+    }
+
+    void toggleRecruitGuardDuty() {
+        if (!baseClaimed) { logEvent("Guard duty failed: claim a base before assigning security staff."); return; }
+        if (factionRecruits.isEmpty()) { logEvent("Guard duty failed: no recruits available. Build cots and recruit workers first."); return; }
+        RecruitWorker firstGuard = null, firstLabor = null;
+        for (RecruitWorker r : factionRecruits) {
+            if (r == null) continue;
+            if ("security".equalsIgnoreCase(r.duty) && firstGuard == null) firstGuard = r;
+            if (!"security".equalsIgnoreCase(r.duty) && firstLabor == null) firstLabor = r;
+        }
+        if (firstLabor != null) {
+            firstLabor.duty = "security";
+            logEvent("GUARD ASSIGNED: " + firstLabor.name + " moves to security duty. Defense rating now " + baseSecurityRating() + ".");
+        } else if (firstGuard != null) {
+            firstGuard.duty = "labor";
+            logEvent("GUARD RELEASED: " + firstGuard.name + " returns to labor duty. Defense rating now " + baseSecurityRating() + ".");
+        }
+        DebugLog.audit("GUARD_DUTY_TOGGLE", "guards=" + securityStaffCount() + " labor=" + availableRecruitLabor() + " rating=" + baseSecurityRating() + " state=" + stateSummary());
+        repaint();
+    }
+
+    void runBaseRaidDrill() {
+        if (!baseClaimed) { logEvent("Raid drill failed: no claimed base exists."); return; }
+        int security = baseSecurityRating();
+        logEvent("RAID DRILL: threat=" + zoneRaidThreatName() + ", defense=" + security + ", pressure=" + baseRaidPressure(security) + ", hourly chance=" + baseRaidChance(security) + "%, guards=" + securityStaffCount() + ", status=" + baseRaidWarningLine() + ".");
+        DebugLog.audit("BASE_RAID_DRILL", "threat=" + zoneRaidThreatName() + " security=" + security + " pressure=" + baseRaidPressure(security) + " chance=" + baseRaidChance(security) + " guards=" + securityStaffCount() + " state=" + stateSummary());
+    }
+
+// ... omitted 24 non-method/source lines between cataloged methods ...
+
+    void applyBusinessPressureTick(boolean sleeping) {
+        if (turn <= 0 || turn % TURNS_PER_HOUR != 0 || !baseClaimed) return;
+        int legal = 0, illegal = 0, security = baseSecurityRating();
+        for (BaseObject obj : baseObjects) {
+            if (!obj.isBusinessAsset() || !obj.businessOpen) continue;
+            if (obj.permittedBusiness) legal++; else illegal++;
+        }
+        if (legal == 0 && illegal == 0) return;
+        int heatGain = Math.max(0, illegal * 2 + legal - security / 4);
+        if (heatGain > 0) {
+            int oldH = gangHeat, oldS = suspicion;
+            gangHeat += heatGain;
+            suspicion += Math.max(0, illegal - security / 8);
+            logEvent("BUSINESS HEAT: open commerce draws attention. Heat " + oldH + "->" + gangHeat + ", suspicion " + oldS + "->" + suspicion + ". Security rating " + security + ".");
+        } else if (security > 0 && (gangHeat > 0 || suspicion > 0)) {
+            int oldH = gangHeat, oldS = suspicion;
+            gangHeat = Math.max(0, gangHeat - 1);
+            if (security >= 6) suspicion = Math.max(0, suspicion - 1);
+            if (oldH != gangHeat || oldS != suspicion) logEvent("BASE SECURITY: patrols, locks, and alarms bleed off attention. Heat " + oldH + "->" + gangHeat + ", suspicion " + oldS + "->" + suspicion + ".");
+        }
+        maybeTriggerBaseRaid(security);
+    }
+
+    void maybeTriggerBaseRaid(int security) {
+        int pressure = baseRaidPressure(security);
+        if (pressure < 12) return;
+        int chance = baseRaidChance(security);
+        if (rng.nextInt(100) >= chance) return;
+        String attacker = zoneRaidThreatName();
+        int shield = 0;
+        for (BaseObject obj : baseObjects) if ((obj.symbol == 'H' || obj.symbol == 'T') && obj.armed && obj.charges > 0) { shield += obj.cover; obj.charges = Math.max(0, obj.charges - 1); }
+        int damage = Math.max(1, 2 + rng.nextInt(4) - Math.max(0, security/5) - Math.max(0, shield/4));
+        ArrayList<BaseObject> vulnerable = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (obj.integrity > 0) vulnerable.add(obj);
+        if (!vulnerable.isEmpty()) {
+            BaseObject hit = vulnerable.get(rng.nextInt(vulnerable.size()));
+            int old = hit.integrity;
+            hit.integrity = Math.max(0, hit.integrity - damage);
+            logEvent("BASE RAID: " + attacker + " hits " + hit.name + ". Integrity " + old + "->" + hit.integrity + ". Defense rating " + security + ", powered shield " + shield + ".");
+        } else {
+            logEvent("BASE RAID: " + attacker + " sweeps the claimed room, but no intact assets remain to smash. A grim efficiency.");
+        }
+        if (security >= 8) {
+            gangHeat = Math.max(0, gangHeat - 3);
+            suspicion = Math.max(0, suspicion - 2);
+            logEvent("DEFENSE HOLDS: alarms, barricades, and crew response blunt the raid. Heat and suspicion drop as the attackers reassess.");
+        } else {
+            if (!baseStorage.isEmpty()) {
+                String stolen = removeBaseStorageAtWithTrace(rng.nextInt(baseStorage.size()));
+                logEvent("ITEM LOST: raiders seize " + stolen + " from base storage.");
+            }
+            fatigue = Math.min(25, fatigue + 2);
+            wounds += 1;
+            logEvent("DEFENSE FAILED: the raid leaves you battered. Wounds +1, fatigue +2. Build defenses or buy lawful cover.");
+        }
+        DebugLog.audit("BASE_RAID", "attacker="+attacker+" pressure="+pressure+" chance="+chance+" security="+security+" heat="+gangHeat+" suspicion="+suspicion+" state="+stateSummary());
+    }
+
+
+    int playerFactionPower() {
+        int power = 0;
+        power += Math.max(0, factionRecruits.size() * 2);
+        power += Math.max(0, openBusinessCount() * 4);
+        power += Math.max(0, baseStorage.size() / 3);
+        power += Math.max(0, baseObjects.size() * 2);
+        power += Math.max(0, businessSellPowerBonus() * 2);
+        power += Math.max(0, cargoNetworkCapacity() / 4);
+        power += Math.max(0, xp / 20);
+        for (BaseObject obj : baseObjects) {
+            if (obj == null) continue;
+            if (obj.symbol == 'T' || obj.symbol == 'H') power += 8;
+            if (obj.symbol == 'g' || obj.symbol == 'p') power += 4;
+            power += Math.max(0, ItemQuality.tierIndex((obj.qualityName == null ? "Common" : obj.qualityName) + " base asset") / 2);
+        }
+        return power;
+    }
+
+// ... omitted 40 non-method/source lines between cataloged methods ...
+
+    void seedFactionStrategicSimulation() {
+        FactionStrategySimulationApi.ensurePlans(this);
+    }
+
+    void applyFactionStrategicSimulationTick(boolean sleeping) {
+        FactionStrategySimulationApi.tick(this, sleeping);
+    }
+
+// ... omitted 74 non-method/source lines between cataloged methods ...
+
+    void applyFactionMarketPressureFromBusiness(BaseObject obj, int income) {
+        if (obj == null || !obj.businessOpen) return;
+        int pressure = Math.max(1, income / 4);
+        if (!obj.permittedBusiness) pressure += 2;
+        pressure += Math.max(0, businessSellPowerBonus() / 2);
+        addFactionMarketPressure(rivalFactionForBusiness(obj), pressure, obj.businessName() + " taking market share");
+    }
+
+    void applyFactionMarketPressureFromProduction(CraftingRecipe r, ProductionRecipe pr, int count) {
+        int q = pr == null ? 0 : ItemQuality.tierIndex(pr.qualityName + " produced good");
+        int pressure = Math.max(1, count + q / 2);
+        addFactionMarketPressure(rivalFactionForRecipe(r, pr), pressure, (pr == null ? "production" : pr.outputItemName()) + " production");
+    }
+
+    void applyFactionMarketPressureTick(boolean sleeping) {
+        if (turn <= 0 || turn % TURNS_PER_HOUR != 0 || !baseClaimed) return;
+        int power = playerFactionPower();
+        if (power <= 0) return;
+        int open = openBusinessCount();
+        int production = 0;
+        for (BaseObject obj : baseObjects) if (obj != null && obj.assignedRecipe != null && !obj.assignedRecipe.isBlank()) production++;
+        int slowPressure = Math.max(0, (power / 25) + Math.max(0, open - 1) + Math.max(0, production - 1));
+        if (slowPressure > 0) {
+            Faction ambient = ambientRivalFaction();
+            addFactionMarketPressure(ambient, Math.max(1, slowPressure - (sleeping ? 1 : 0)), "growing base power");
+        }
+        decayFactionMarketPressure();
+        maybeTriggerFactionStrategicRaid();
+    }
+
+// ... omitted 21 non-method/source lines between cataloged methods ...
+
+    void decayFactionMarketPressure() {
+        int security = baseSecurityRating();
+        for (Faction f : Faction.values()) {
+            int v = factionMarketPressure.getOrDefault(f, 0);
+            if (v <= 0) continue;
+            int decay = security >= 18 ? 2 : (security >= 8 ? 1 : 0);
+            if (decay > 0) factionMarketPressure.put(f, Math.max(0, v - decay));
+        }
+    }
+
+    Faction highestFactionMarketPressureFaction() {
+        Faction best = Faction.NONE;
+        int bv = 0;
+        for (Map.Entry<Faction,Integer> e : factionMarketPressure.entrySet()) {
+            if (e.getKey() != null && e.getKey() != Faction.NONE && e.getValue() != null && e.getValue() > bv) { best = e.getKey(); bv = e.getValue(); }
+        }
+        return best;
+    }
+
+    String highestFactionMarketPressureLine() {
+        Faction f = highestFactionMarketPressureFaction();
+        int v = f == Faction.NONE ? 0 : factionMarketPressure.getOrDefault(f, 0);
+        if (v <= 0) return "no focused faction resentment yet";
+        String stage = v < 20 ? "watching" : (v < 40 ? "irritated" : (v < 70 ? "hostile planning" : "openly preparing violence"));
+        return f.label + " " + stage + " (" + v + ")";
+    }
+
+    int strategicRaidChance() {
+        Faction f = highestFactionMarketPressureFaction();
+        int pressure = f == Faction.NONE ? 0 : factionMarketPressure.getOrDefault(f, 0);
+        if (pressure < 25) return 0;
+        int power = playerFactionPower();
+        int security = baseSecurityRating();
+        return Math.max(1, Math.min(55, pressure / 3 + power / 8 - security / 3));
+    }
+
+    String contestedMarketSummaryLine() {
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<Faction,Integer> e : factionMarketPressure.entrySet()) {
+            if (e.getKey() == null || e.getKey() == Faction.NONE || e.getValue() == null || e.getValue() <= 0) continue;
+            parts.add(e.getKey().label + " " + e.getValue());
+        }
+        if (parts.isEmpty()) return "no rival ledger entries yet";
+        parts.sort((a,b) -> Integer.compare(parseTrailingInt(b), parseTrailingInt(a)));
+        return String.join("; ", parts.subList(0, Math.min(4, parts.size())));
+    }
+
+    int parseTrailingInt(String text) {
+        try { return Integer.parseInt(text.replaceAll("^.* ", "")); } catch(Exception e) { return 0; }
+    }
+
+    void maybeTriggerFactionStrategicRaid() {
+        Faction faction = highestFactionMarketPressureFaction();
+        if (faction == Faction.NONE) return;
+        int chance = strategicRaidChance();
+        if (chance <= 0 || rng.nextInt(100) >= chance) return;
+        int pressure = factionMarketPressure.getOrDefault(faction, 0);
+        int security = baseSecurityRating();
+        int power = playerFactionPower();
+        String attacker = faction.label + " reprisal crew";
+        int shield = 0;
+        for (BaseObject obj : baseObjects) if ((obj.symbol == 'H' || obj.symbol == 'T') && obj.armed && obj.charges > 0) { shield += obj.cover; obj.charges = Math.max(0, obj.charges - 1); }
+        int severity = Math.max(1, pressure / 18 + power / 18 - security / 10 - shield / 5);
+        ArrayList<BaseObject> targets = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (obj.integrity > 0 && (obj.isBusinessAsset() || obj.assignedRecipe != null && !obj.assignedRecipe.isBlank() || obj.symbol == 'k' || obj.symbol == 'q' || obj.symbol == 'G')) targets.add(obj);
+        if (targets.isEmpty()) for (BaseObject obj : baseObjects) if (obj.integrity > 0) targets.add(obj);
+        if (!targets.isEmpty()) {
+            BaseObject hit = targets.get(rng.nextInt(targets.size()));
+            int old = hit.integrity;
+            hit.integrity = Math.max(0, hit.integrity - severity);
+            logEvent("FACTION RAID: " + attacker + " attacks your market footprint and damages " + hit.name + " " + old + "->" + hit.integrity + ".");
+        } else {
+            logEvent("FACTION RAID: " + attacker + " searches the base, finds little to break, and leaves threats written in someone else's blood.");
+        }
+        if (!baseStorage.isEmpty() && severity > 1 && security < pressure / 6) {
+            String stolen = removeBaseStorageAtWithTrace(rng.nextInt(baseStorage.size()));
+            logEvent("ITEM LOST: " + faction.label + " raiders seize " + stolen + " to remind you who owns the market.");
+        }
+        int oldPressure = pressure;
+        factionMarketPressure.put(faction, Math.max(0, pressure - Math.max(8, security / 2 + severity * 2)));
+        if (security >= pressure / 6) {
+            factionStanding.put(faction, factionStanding.getOrDefault(faction, 0) - 1);
+            logEvent("DEFENSE HOLDS: your base survives the " + faction.label + " reprisal. Their pressure drops " + oldPressure + "->" + factionMarketPressure.getOrDefault(faction,0) + ", but relations sour.");
+        } else {
+            wounds += 1;
+            fatigue = Math.min(25, fatigue + severity);
+            logEvent("DEFENSE STAGGERS: the reprisal hurts. Wounds +1, fatigue +" + severity + ". More guards and powered defenses are advised.");
+        }
+        DebugLog.audit("FACTION_STRATEGIC_RAID", "faction=" + faction + " chance=" + chance + " pressure=" + oldPressure + "->" + factionMarketPressure.getOrDefault(faction,0) + " power=" + power + " security=" + security + " severity=" + severity + " state=" + stateSummary());
+    }
+
+    void collectBusinessIncome() {
+        if (!baseClaimed) { logEvent("Business income blocked: no claimed base exists."); return; }
+        int total = 0, open = 0;
+        ArrayList<String> reports = new ArrayList<>();
+        for (BaseObject obj : baseObjects) {
+            if (!obj.isBusinessAsset() || !obj.businessOpen) continue;
+            open++;
+            int q = ItemQuality.tierIndex((obj.qualityName==null?"Common":obj.qualityName)+" business");
+            int income = Math.max(1, 2 + q + obj.charges/3);
+            if (obj.symbol == 's') income += Math.min(5, baseStorage.size()/3);
+            if (obj.symbol == 'u' || obj.symbol == 'e') income += Math.max(0, Math.min(4, water/3));
+            if (obj.symbol == 'M') income += Math.max(1, medicalStockCount());
+            income += businessSellPowerBonus();
+            if (!obj.permittedBusiness) { income = Math.max(1, income + 2); obj.businessHeat += 2; gangHeat += 1; suspicion += 1; }
+            else suspicion = Math.max(0, suspicion - 1);
+            total += income;
+            applyFactionMarketPressureFromBusiness(obj, income);
+            reports.add(obj.businessName() + " +" + income + (obj.permittedBusiness?" lawful":" illegal"));
+        }
+        if (open == 0) { logEvent("No open businesses to collect from. Use BASES > BUY PERMIT or OPEN BUSINESS first."); return; }
+        addImperialScript(total);
+        gainXp("Commerce", Math.max(1, open), "collecting base business income");
+        logEvent("BUSINESS INCOME: +" + total + " script from " + String.join("; ", reports) + ".");
+        maybeTriggerBaseRaid(baseSecurityRating());
+        advanceTurn("runs base commerce.");
+    }
+
+    int medicalStockCount() {
+        int n = 0;
+        for (String item : baseStorage) {
+            String low = item.toLowerCase(Locale.ROOT);
+            if (low.contains("bandage") || low.contains("medkit") || low.contains("antiseptic") || low.contains("splint") || low.contains("injector")) n++;
+        }
+        return n;
+    }
+
+    ArrayList<String> playerMedicalGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Medical read: " + playerMedicalStatusLine());
+        lines.add("Treatment priority: " + playerTreatmentPriorityLine());
+        lines.add("Drug risk: " + stimulantRiskLine());
+        lines.add("Available aid: carried " + carriedMedicalAidCount() + ", base medical reserve " + medicalStockCount() + ", clinic support " + clinicSupportLine() + ".");
+        return lines;
+    }
+
+    String playerMedicalStatusLine() {
+        ArrayList<String> bits = new ArrayList<>();
+        if (bleeding > 0) bits.add(bleeding >= 3 ? "serious bleeding" : "minor bleeding");
+        if (infectionRisk > 0) bits.add(infectionRisk >= 5 ? "high infection risk" : "infection risk");
+        if (pain > 0) bits.add(pain >= 12 ? "severe pain" : (pain >= 6 ? "pain affecting focus" : "manageable pain"));
+        if (fatigue >= 20) bits.add("near collapse from fatigue");
+        else if (fatigue >= 10) bits.add("tired");
+        if (sleepNeed >= MAX_SLEEP_NEED) bits.add("dangerous sleep debt");
+        else if (sleepNeed >= MAX_SLEEP_NEED / 2) bits.add("mounting sleep debt");
+        if (wounds >= 12) bits.add("heavy wounds");
+        else if (wounds > 0) bits.add("wounded");
+        if (bits.isEmpty()) return "stable enough for ordinary action.";
+        return String.join(", ", bits) + ".";
+    }
+
+    String playerTreatmentPriorityLine() {
+        if (bleeding > 0) return "stop bleeding first with bandages, field dressings, sleep recovery, or clinic support.";
+        if (infectionRisk >= 5) return "find antiseptic, medicae care, or a clinic before infection pressure worsens.";
+        if (crippledLegCount() > 0) return "avoid long movement and seek recovery; damaged legs raise travel risk.";
+        if (crippledArmCount() > 0) return "avoid precision work and fighting until arms or hands recover.";
+        if (pain >= 12) return "rest or medical help before combat; pain can make good choices expensive.";
+        if (fatigue >= 20 || sleepNeed >= MAX_SLEEP_NEED / 2) return "sleep in a cot if food and water allow it.";
+        if (wounds > 0) return "rest, use medical supplies, or visit a clinic before the next fight.";
+        return "keep food, water, and medical supplies ready before taking risks.";
+    }
+
+    String stimulantRiskLine() {
+        if (stimulantStrain <= 0) return "no current stimulant strain is apparent.";
+        if (stimulantStrain >= 8) return "heavy stimulant strain; more wakefulness drugs may trade sleep debt for dangerous crash pressure.";
+        if (stimulantStrain >= 4) return "moderate stimulant strain; use more only if escape matters more than recovery.";
+        return "light stimulant strain; still plan real sleep soon.";
+    }
+
+    int carriedMedicalAidCount() {
+        int n = 0;
+        for (String item : inventory) {
+            String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+            if (low.contains("bandage") || low.contains("medkit") || low.contains("antiseptic") || low.contains("field dressing") || low.contains("injector") || low.contains("medicae")) n++;
+        }
+        return n;
+    }
+
+    String clinicSupportLine() {
+        for (BaseObject obj : baseObjects) if (obj != null && obj.integrity > 0 && (obj.symbol == 'M' || obj.name.toLowerCase(Locale.ROOT).contains("medicae") || obj.name.toLowerCase(Locale.ROOT).contains("clinic"))) return "available at base";
+        return "not built here";
+    }
+
+    ArrayList<String> ownedBusinessLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        int businessCount = 0;
+        for (BaseObject obj : baseObjects) {
+            if (!obj.isBusinessAsset()) continue;
+            businessCount++;
+            lines.add("  " + obj.businessName() + " — " + (obj.businessOpen ? (obj.permittedBusiness ? "LICENSED" : "ILLEGAL") : "closed") + " — " + obj.businessReturnLine(this));
+        }
+        if (businessCount == 0) {
+            lines.add("  No owned public business is open yet.");
+            lines.add("  Build a shop counter, medicae stall, storage crate, workbench, water barrel, condenser, forge, or lab; then improve selling power with decor and business add-ons before buying a permit or opening illegally.");
+        }
+        return lines;
+    }

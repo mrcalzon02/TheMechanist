@@ -1,0 +1,50 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: input_mouse_keyboard_10_lines_14610_15190
+// Category: input_mouse_keyboard
+// Source lines: 14610-15190
+// Method count: 3
+//
+// Methods in this fragment:
+// - inputMapRect :: lines 14610-14610 (1) :: Rectangle inputMapRect()
+// - clearMouseMovementPreview :: lines 15103-15107 (5) :: void clearMouseMovementPreview(String reason)
+// - updateMouseMovementPreviewTo :: lines 15166-15190 (25) :: void updateMouseMovementPreviewTo(int tx, int ty)
+
+    Rectangle inputMapRect() { return virtualUiLayout().map; }
+
+// ... omitted 492 non-method/source lines between cataloged methods ...
+
+    void clearMouseMovementPreview(String reason) {
+        if (mouseMovePreviewActive) DebugLog.audit("MOUSE_MOVE_PREVIEW_CLEAR", reason + " target=" + mouseMoveTargetX + "," + mouseMoveTargetY);
+        manualMovementPlanActive = false;
+        mouseMovePreviewActive = false; mouseMovePreviewValid = false; mouseMoveTargetX = mouseMoveTargetY = -1; mouseMovePreviewPath.clear(); mouseMovePreviewStatus = "No mouse movement preview.";
+    }
+
+// ... omitted 58 non-method/source lines between cataloged methods ...
+
+    void updateMouseMovementPreviewTo(int tx, int ty) {
+        mouseMovePreviewActive = true; mouseMoveTargetX = tx; mouseMoveTargetY = ty; mouseMovePreviewLastMillis = System.currentTimeMillis(); mouseMovePreviewPath.clear();
+        String directBlock = directMovementTargetBlockReason(tx, ty);
+        if (directBlock != null) {
+            mouseMovePreviewValid = false;
+            mouseMovePreviewStatus = directBlock;
+            return;
+        }
+        ArrayList<Point> path = findPreviewPath(playerX, playerY, tx, ty, 80);
+        mouseMovePreviewPath.addAll(path);
+        mouseMovePreviewValid = !path.isEmpty();
+        int steps = Math.max(0, path.size());
+        int range = Math.max(1, movementModeRange());
+        int chunks = steps == 0 ? 0 : (int)Math.ceil(steps / (double)range);
+        if (!mouseMovePreviewValid) {
+            mouseMovePreviewStatus = "Cannot reach from here.";
+            return;
+        }
+        String hazard = movementPathHazardWarning(path);
+        String approach = interactionApproachStatusFor(tx, ty);
+        mouseMovePreviewStatus = "Movement target ready"
+                + (hazard.isEmpty() ? "" : "; " + hazard)
+                + (approach.isEmpty() ? "" : "; " + approach)
+                + " | steps " + steps + " | " + chunks + " action(s) at " + movementModeLabel();
+    }

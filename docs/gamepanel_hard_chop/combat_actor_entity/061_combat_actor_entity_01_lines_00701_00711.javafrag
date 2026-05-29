@@ -1,0 +1,23 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: combat_actor_entity_01_lines_00701_00711
+// Category: combat_actor_entity
+// Source lines: 701-711
+// Method count: 2
+//
+// Methods in this fragment:
+// - isGovernorCombatNpc :: lines 701-705 (5) :: boolean isGovernorCombatNpc(NpcEntity npc)
+// - noteCombatMusicActivity :: lines 707-711 (5) :: void noteCombatMusicActivity(boolean governor, String reason)
+
+    boolean isGovernorCombatNpc(NpcEntity npc) {
+        if (npc == null) return false;
+        String hay = ((npc.name == null ? "" : npc.name) + " " + (npc.role == null ? "" : npc.role)).toLowerCase(Locale.ROOT);
+        return hay.contains("governor") || (world != null && world.zoneType == ZoneType.SECTOR_GOVERNORS_MANSION && isHostileNpc(npc));
+    }
+
+    void noteCombatMusicActivity(boolean governor, String reason) {
+        combatMusicUntilTurn = Math.max(combatMusicUntilTurn, turn + COMBAT_MUSIC_TIMEOUT_TURNS);
+        if (governor) governorBattleMusicUntilTurn = Math.max(governorBattleMusicUntilTurn, turn + COMBAT_MUSIC_TIMEOUT_TURNS * 2);
+        updateDynamicMusic(reason);
+    }

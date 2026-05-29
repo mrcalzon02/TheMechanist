@@ -1,0 +1,39 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_20_lines_19811_19836
+// Category: world_zone_sector
+// Source lines: 19811-19836
+// Method count: 3
+//
+// Methods in this fragment:
+// - cycleMapTileSize :: lines 19811-19817 (7) :: void cycleMapTileSize()
+// - worldZoomControlActive :: lines 19819-19822 (4) :: boolean worldZoomControlActive()
+// - changeWorldZoom :: lines 19824-19836 (13) :: void changeWorldZoom(int delta, String source)
+
+    void cycleMapTileSize() {
+        options.mapTileSizeIndex = Math.floorMod(options.mapTileSizeIndex + 1, GameOptions.MAP_TILE_SIZE_LABELS.length);
+        options.save();
+        sounds.play("tab", options);
+        logEvent("Map tile size now " + options.mapTileSizeLabel() + " (" + options.mapTilePixelSize() + "px before GUI scale).");
+        repaint();
+    }
+
+    boolean worldZoomControlActive() {
+        if (screen == Screen.SECTOR_AUDIT) return auditWorld != null;
+        return world != null && (screen == Screen.GAME || (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.SCAVENGE || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH)));
+    }
+
+    void changeWorldZoom(int delta, String source) {
+        int before = options.worldZoomIndex;
+        options.worldZoomIndex = Math.max(0, Math.min(GameOptions.WORLD_ZOOM_LABELS.length - 1, options.worldZoomIndex + delta));
+        if (options.worldZoomIndex != before) {
+            options.save();
+            sounds.play("tab", options);
+            logEvent("Viewport zoom " + options.worldZoomLabel() + " via " + source + ".");
+            DebugLog.audit("VIEWPORT_ZOOM", "source=" + source + " index=" + options.worldZoomIndex + " label=" + options.worldZoomLabel() + " mode=" + screen + "/" + panelMode + " state=" + stateSummary());
+        } else {
+            logEvent("Viewport zoom already at " + options.worldZoomLabel() + ".");
+        }
+        repaint();
+    }

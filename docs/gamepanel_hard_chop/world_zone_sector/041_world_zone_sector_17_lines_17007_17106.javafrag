@@ -1,0 +1,66 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_17_lines_17007_17106
+// Category: world_zone_sector
+// Source lines: 17007-17106
+// Method count: 5
+//
+// Methods in this fragment:
+// - contractZoneTarget :: lines 17007-17016 (10) :: ContractZoneTarget contractZoneTarget(FactionContract c)
+// - contractTargetOnCurrentMapLayer :: lines 17018-17022 (5) :: boolean contractTargetOnCurrentMapLayer(ContractZoneTarget target)
+// - ContractZoneTarget :: lines 17059-17066 (8) :: ContractZoneTarget(int sectorX, int sectorY, int zoneX, int zoneY, int floor, boolean sewer)
+// - zoneTypeForMapCell :: lines 17069-17074 (6) :: ZoneType zoneTypeForMapCell(int zx, int zy, int layerIndex)
+// - factionUiColorForZone :: lines 17094-17106 (13) :: Color factionUiColorForZone(ZoneType z)
+
+    ContractZoneTarget contractZoneTarget(FactionContract c) {
+        if (c == null || c.targetZoneKey == null || c.targetZoneKey.isBlank()) return null;
+        String[] a = c.targetZoneKey.split(",");
+        if (a.length < 6) return null;
+        try {
+            return new ContractZoneTarget(Integer.parseInt(a[0]), Integer.parseInt(a[1]), Integer.parseInt(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4]), Boolean.parseBoolean(a[5]));
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    boolean contractTargetOnCurrentMapLayer(ContractZoneTarget target) {
+        if (atlas == null || target == null) return false;
+        return target.sectorX == atlas.sectorX && target.sectorY == atlas.sectorY
+                && MapLayerSurfaceAuthority.displayLayerIndex(target.floor, target.sewer) == mapLayerView;
+    }
+
+// ... omitted 36 non-method/source lines between cataloged methods ...
+
+        ContractZoneTarget(int sectorX, int sectorY, int zoneX, int zoneY, int floor, boolean sewer) {
+            this.sectorX = sectorX;
+            this.sectorY = sectorY;
+            this.zoneX = zoneX;
+            this.zoneY = zoneY;
+            this.floor = floor;
+            this.sewer = sewer;
+        }
+    }
+
+    ZoneType zoneTypeForMapCell(int zx, int zy, int layerIndex) {
+        int floorNum = MapLayerSurfaceAuthority.floor(layerIndex);
+        boolean sewerSlice = MapLayerSurfaceAuthority.isSewer(layerIndex);
+        if (atlas != null && atlas.slices[atlas.sectorX-1][atlas.sectorY-1][zx-1][zy-1][layerIndex] != null) return atlas.slices[atlas.sectorX-1][atlas.sectorY-1][zx-1][zy-1][layerIndex].zoneType;
+        return WorldAtlas.zoneTypeForSlice(zx, zy, floorNum, sewerSlice);
+    }
+
+// ... omitted 19 non-method/source lines between cataloged methods ...
+
+    Color factionUiColorForZone(ZoneType z){
+        if(z==ZoneType.ARBITES_PRECINCT_EDGE) return new Color(70,130,220);
+        if(z==ZoneType.GANGER_TURF) return new Color(190,55,45);
+        if(z==ZoneType.NEUTRAL_RAIL_DEPOT || z==ZoneType.NEUTRAL_CIVILIAN_FLOOR || z==ZoneType.SUMP_MARKET) return new Color(160,210,150);
+        if(z==ZoneType.MECHANICUS_FORGE_CLOISTER || z==ZoneType.MECHANICUS_RELIC_DUCT) return new Color(150,80,190);
+        if(z==ZoneType.SECTOR_GOVERNORS_MANSION) return new Color(205,165,70);
+        if(z==ZoneType.NOBLE_SERVICE_SPINE) return new Color(160,130,70);
+        if(z==ZoneType.MUTANT_WARRENS || z==ZoneType.MUTANT_SEWER_CAMP) return new Color(110,190,80);
+        if(z==ZoneType.CULTIST_SEWER_CAMP) return new Color(170,70,160);
+        if(z==ZoneType.SEWER_CONDUIT) return new Color(90,120,105);
+        if(z==ZoneType.IMPERIAL_GUARD_BILLET) return new Color(90,150,90);
+        return new Color(120,150,120);
+    }

@@ -1,0 +1,606 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: inventory_trade_items_12_lines_17487_18057
+// Category: inventory_trade_items
+// Source lines: 17487-18057
+// Method count: 45
+//
+// Methods in this fragment:
+// - countInventory :: lines 17487-17487 (1) :: int countInventory(String item)
+// - countContainerItems :: lines 17489-17501 (13) :: int countContainerItems(String containerId, ArrayList<String> legacyList, String item)
+// - ensureContainer :: lines 17503-17511 (9) :: ContainerRecord ensureContainer(String id, String label)
+// - traderShelfContainerId :: lines 17513-17517 (5) :: String traderShelfContainerId(TraderSession trader)
+// - buyTraderOfferIntoInventory :: lines 17519-17531 (13) :: ItemActionResult buyTraderOfferIntoInventory(TraderSession trader, TradeOffer offer)
+// - ensureTraderOfferShelfInstance :: lines 17533-17553 (21) :: ItemInstance ensureTraderOfferShelfInstance(TraderSession trader, TradeOffer offer)
+// - nextItemInstanceId :: lines 17555-17558 (4) :: String nextItemInstanceId()
+// - addItemToContainerResult :: lines 17560-17571 (12) :: ItemActionResult addItemToContainerResult(String containerId, String label, String item, ItemProvenanceRecord provenance, ArrayList<String> legacyList, String route)
+// - addItemToContainer :: lines 17573-17575 (3) :: void addItemToContainer(String containerId, String label, String item, ItemProvenanceRecord provenance, ArrayList<String> legacyList)
+// - addInventoryItem :: lines 17577-17580 (4) :: void addInventoryItem(String item, ItemProvenanceRecord provenance)
+// - addBaseStorageItem :: lines 17582-17585 (4) :: void addBaseStorageItem(String item, ItemProvenanceRecord provenance)
+// - transferContainerItemResultAt :: lines 17587-17595 (9) :: ItemActionResult transferContainerItemResultAt(String fromContainerId, ArrayList<String> fromLegacy, int idx, String toContainerId, String toLabel, ArrayList<String> toLegacy, String route)
+// - transferContainerItemResultByInstanceId :: lines 17597-17621 (25) :: ItemActionResult transferContainerItemResultByInstanceId(String instanceId, String toContainerId, String toLabel, ArrayList<String> toLegacy, String route)
+// - transferContainerItemAt :: lines 17623-17654 (32) :: ItemInstance transferContainerItemAt(String fromContainerId, ArrayList<String> fromLegacy, int idx, String toContainerId, String toLabel, ArrayList<String> toLegacy, String route)
+// - transferContainerItemByName :: lines 17656-17662 (7) :: ItemInstance transferContainerItemByName(String fromContainerId, ArrayList<String> fromLegacy, String item, String toContainerId, String toLabel, ArrayList<String> toLegacy, String route)
+// - verifyItemOperationalParity :: lines 17664-17672 (9) :: boolean verifyItemOperationalParity(String context)
+// - rememberItemProvenance :: lines 17679-17684 (6) :: void rememberItemProvenance(String item, ItemProvenanceRecord provenance)
+// - provenanceForContainerIndex :: lines 17686-17693 (8) :: ItemProvenanceRecord provenanceForContainerIndex(String containerId, int idx, String fallbackItem)
+// - provenanceForItem :: lines 17695-17710 (16) :: ItemProvenanceRecord provenanceForItem(String item)
+// - provenanceSummaryForItem :: lines 17712-17715 (4) :: String provenanceSummaryForItem(String item)
+// - takeProvenanceForItem :: lines 17717-17723 (7) :: ItemProvenanceRecord takeProvenanceForItem(String item)
+// - removeContainerInstanceByName :: lines 17725-17738 (14) :: ItemInstance removeContainerInstanceByName(String containerId, String item)
+// - removeContainerInstanceAt :: lines 17740-17748 (9) :: ItemInstance removeContainerInstanceAt(String containerId, int idx, String item)
+// - removeInventoryItemResult :: lines 17750-17759 (10) :: ItemActionResult removeInventoryItemResult(String item, String route)
+// - removeInventoryItem :: lines 17761-17763 (3) :: boolean removeInventoryItem(String item)
+// - removeInventoryAtResult :: lines 17765-17773 (9) :: ItemActionResult removeInventoryAtResult(int idx, String route)
+// - removeInventoryAtWithTrace :: lines 17775-17778 (4) :: String removeInventoryAtWithTrace(int idx)
+// - rebuildItemContainersFromLegacyLists :: lines 17789-17805 (17) :: void rebuildItemContainersFromLegacyLists()
+// - repairLegacyListsFromContainersIfNeeded :: lines 17807-17813 (7) :: void repairLegacyListsFromContainersIfNeeded()
+// - stackInventory :: lines 17815-17823 (9) :: LinkedHashMap<String,Integer> stackInventory(List<String> items)
+// - stackedInventoryNames :: lines 17825-17831 (7) :: ArrayList<String> stackedInventoryNames()
+// - selectedInventoryItemName :: lines 17833-17838 (6) :: String selectedInventoryItemName()
+// - moveInventorySelection :: lines 17840-17847 (8) :: void moveInventorySelection(int delta)
+// - selectedCarriedInventoryActionItem :: lines 17849-17852 (4) :: String selectedCarriedInventoryActionItem()
+// - inspectSelectedInventoryItem :: lines 17854-17860 (7) :: void inspectSelectedInventoryItem()
+// - itemActionSummary :: lines 17862-17878 (17) :: String itemActionSummary(String item)
+// - factionForClothingItem :: lines 17880-17889 (10) :: Faction factionForClothingItem(String item)
+// - looksWearable :: lines 17891-17894 (4) :: boolean looksWearable(String item)
+// - equipInventoryClothing :: lines 17896-17918 (23) :: void equipInventoryClothing(String item)
+// - useUtilityInventoryItem :: lines 17920-17958 (39) :: void useUtilityInventoryItem(String item)
+// - isMedicalUseItem :: lines 17960-17962 (3) :: boolean isMedicalUseItem(String low)
+// - applyMedicalItemEffect :: lines 17964-17988 (25) :: void applyMedicalItemEffect(String item, String low, int oldWounds, int oldFatigue)
+// - dropSelectedInventoryItem :: lines 18012-18031 (20) :: void dropSelectedInventoryItem()
+// - useSelectedInventoryItem :: lines 18033-18041 (9) :: void useSelectedInventoryItem()
+// - useSelectedInventoryItemBody :: lines 18043-18057 (15) :: void useSelectedInventoryItemBody()
+
+    int countInventory(String item) { return countContainerItems(CONTAINER_PLAYER_INVENTORY, inventory, item); }
+
+int countContainerItems(String containerId, ArrayList<String> legacyList, String item) {
+        if (item == null) return 0;
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c != null && !c.itemInstanceIds.isEmpty()) {
+            int n = 0;
+            for (String id : c.itemInstanceIds) {
+                ItemInstance inst = itemInstances.get(id);
+                if (inst != null && ItemQuality.namesMatch(inst.displayName, item)) n++;
+            }
+            return n;
+        }
+        int n=0; for (String s: legacyList) if (ItemQuality.namesMatch(s, item)) n++; return n;
+    }
+
+    ContainerRecord ensureContainer(String id, String label) {
+        String safeId = (id == null || id.isBlank()) ? "unknown.container" : id;
+        ContainerRecord c = itemContainers.get(safeId);
+        if (c == null) {
+            c = new ContainerRecord(safeId, label == null || label.isBlank() ? safeId : label);
+            itemContainers.put(safeId, c);
+        }
+        return c;
+    }
+
+String traderShelfContainerId(TraderSession trader) {
+        if (trader == null) return CONTAINER_TRADER_SHELF_PREFIX + "unknown";
+        String site = trader.sourceSite == null ? "nosite" : trader.sourceSite.name + "." + trader.sourceSite.locationKey();
+        return CONTAINER_TRADER_SHELF_PREFIX + ContainerIdentityApi.safeToken(trader.name) + "." + ContainerIdentityApi.safeToken(site);
+    }
+
+    ItemActionResult buyTraderOfferIntoInventory(TraderSession trader, TradeOffer offer) {
+        if (trader == null || offer == null) return ItemActionResult.fail("No trader offer was available.", "buy trader offer failed: missing trader/offer");
+        ItemInstance shelfItem = ensureTraderOfferShelfInstance(trader, offer);
+        if (shelfItem == null) return ItemActionResult.fail("Trader shelf stock could not be itemized.", "buy trader offer failed: no shelf instance item=" + (offer==null?"null":offer.name));
+        ItemActionResult moved = transferContainerItemResultByInstanceId(shelfItem.id, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, "sold by " + trader.name + " to player");
+        if (moved.success) {
+            offer.provenance = ItemProvenanceRecord.transferred(offer.provenance == null ? moved.provenance : offer.provenance, offer.name, world, turn, "remaining trader shelf stock after one unit sold by " + trader.name);
+            offer.itemInstanceId = "";
+            rememberItemProvenance(offer.name, moved.provenance);
+            verifyItemOperationalParity("after trader purchase");
+        }
+        return moved;
+    }
+
+    ItemInstance ensureTraderOfferShelfInstance(TraderSession trader, TradeOffer offer) {
+        if (trader == null || offer == null || offer.name == null || offer.name.isBlank()) return null;
+        String shelfId = traderShelfContainerId(trader);
+        ensureContainer(shelfId, trader.name + " trader shelf");
+        if (offer.itemInstanceId != null && !offer.itemInstanceId.isBlank()) {
+            ItemInstance existing = itemInstances.get(offer.itemInstanceId);
+            if (existing != null && ItemQuality.namesMatch(existing.displayName, offer.name)) {
+                if (shelfId.equals(existing.containerId)) return existing;
+                ItemActionResult moved = transferContainerItemResultByInstanceId(existing.id, shelfId, trader.name + " trader shelf", null, "loaded persistent faction stock onto trader shelf");
+                if (moved.success) return itemInstances.get(existing.id);
+            }
+        }
+        ItemProvenanceRecord shelfTrace = offer.provenance;
+        if (shelfTrace == null) {
+            shelfTrace = provenanceFromNpcSite(offer.name, trader.sourceSite, "stocked on trader shelf for " + trader.name);
+        }
+        ItemActionResult added = addItemToContainerResult(shelfId, trader.name + " trader shelf", offer.name, shelfTrace, null, "itemized trader shelf offer");
+        offer.itemInstanceId = added.itemInstanceId;
+        offer.provenance = added.provenance;
+        return itemInstances.get(added.itemInstanceId);
+    }
+
+    String nextItemInstanceId() {
+        while (itemInstances.containsKey("I" + nextItemInstanceSeq)) nextItemInstanceSeq++;
+        return "I" + (nextItemInstanceSeq++);
+    }
+
+    ItemActionResult addItemToContainerResult(String containerId, String label, String item, ItemProvenanceRecord provenance, ArrayList<String> legacyList, String route) {
+        if (item == null || item.isBlank()) return ItemActionResult.fail("No item name was supplied.", "add item failed: blank item container=" + containerId);
+        ContainerRecord c = ensureContainer(containerId, label);
+        ItemProvenanceRecord pr = provenance == null ? ItemProvenanceRecord.unknown(item, this) : provenance;
+        String id = nextItemInstanceId();
+        ItemInstance inst = new ItemInstance(id, item, c.id, pr == null ? "" : pr.unitId, pr);
+        itemInstances.put(id, inst);
+        c.itemInstanceIds.add(id);
+        if (legacyList != null) legacyList.add(item);
+        rememberItemProvenance(item, pr);
+        return ItemActionResult.ok(item, id, c.id, pr, item + " added to " + c.label + ".", "add item=" + item + " instance=" + id + " container=" + c.id + " route=" + route);
+    }
+
+    void addItemToContainer(String containerId, String label, String item, ItemProvenanceRecord provenance, ArrayList<String> legacyList) {
+        addItemToContainerResult(containerId, label, item, provenance, legacyList, "legacy-compatible add");
+    }
+
+    void addInventoryItem(String item, ItemProvenanceRecord provenance) {
+        if ("Concord Script".equalsIgnoreCase(String.valueOf(item))) { addImperialScript(1); return; }
+        addItemToContainer(CONTAINER_PLAYER_INVENTORY, "Player carried inventory", item, provenance, inventory);
+    }
+
+    void addBaseStorageItem(String item, ItemProvenanceRecord provenance) {
+        if ("Concord Script".equalsIgnoreCase(String.valueOf(item))) { baseStashedScript++; return; }
+        addItemToContainer(CONTAINER_BASE_STORAGE, "Claimed base storage", item, provenance, baseStorage);
+    }
+
+    ItemActionResult transferContainerItemResultAt(String fromContainerId, ArrayList<String> fromLegacy, int idx,
+                                                    String toContainerId, String toLabel, ArrayList<String> toLegacy,
+                                                    String route) {
+        ItemInstance inst = transferContainerItemAt(fromContainerId, fromLegacy, idx, toContainerId, toLabel, toLegacy, route);
+        if (inst == null) return ItemActionResult.fail("No item instance was available for transfer.", "container transfer failed from=" + fromContainerId + " to=" + toContainerId + " idx=" + idx);
+        return ItemActionResult.ok(inst.displayName, inst.id, toContainerId, inst.provenance,
+                inst.displayName + " moved to " + toLabel + ".",
+                "container transfer item=" + inst.displayName + " instance=" + inst.id + " from=" + fromContainerId + " to=" + toContainerId + " route=" + route);
+    }
+
+    ItemActionResult transferContainerItemResultByInstanceId(String instanceId, String toContainerId, String toLabel, ArrayList<String> toLegacy, String route) {
+        if (instanceId == null || instanceId.isBlank()) return ItemActionResult.fail("No item instance ID was supplied.", "container transfer by instance failed: blank id to=" + toContainerId);
+        ItemInstance inst = itemInstances.get(instanceId);
+        if (inst == null) return ItemActionResult.fail("That item record is no longer available.", "container transfer by instance failed: missing id=" + instanceId + " to=" + toContainerId);
+        String fromContainerId = inst.containerId;
+        String accessProblem = ActorAccessAuthority.containerTransferProblem(this, fromContainerId, toContainerId, route);
+        if (accessProblem != null) {
+            DebugLog.audit("ACTOR_ACCESS_BLOCK", "container transfer blocked from=" + fromContainerId + " to=" + toContainerId + " route=" + route + " reason=" + accessProblem + " state=" + stateSummary());
+            return ItemActionResult.fail("Access denied: " + accessProblem, "actor access blocked from=" + fromContainerId + " to=" + toContainerId + " route=" + route);
+        }
+        ContainerRecord from = itemContainers.get(fromContainerId);
+        if (from != null) from.itemInstanceIds.remove(instanceId);
+        ItemProvenanceRecord prior = inst.provenance == null ? takeProvenanceForItem(inst.displayName) : inst.provenance;
+        ItemProvenanceRecord moved = ItemProvenanceRecord.transferred(prior, inst.displayName, world, turn, route == null ? "moved between containers" : route);
+        ContainerRecord dest = ensureContainer(toContainerId, toLabel);
+        inst.containerId = dest.id;
+        inst.provenance = moved;
+        inst.provenanceUnitId = moved == null ? inst.provenanceUnitId : moved.unitId;
+        itemInstances.put(inst.id, inst);
+        if (!dest.itemInstanceIds.contains(inst.id)) dest.itemInstanceIds.add(inst.id);
+        if (toLegacy != null) toLegacy.add(inst.displayName);
+        rememberItemProvenance(inst.displayName, moved);
+        DebugLog.audit("CONTAINER_TRANSFER", "item=" + inst.displayName + " from=" + fromContainerId + " to=" + toContainerId + " route=" + route + " instance=" + inst.id + " state=" + stateSummary());
+        return ItemActionResult.ok(inst.displayName, inst.id, toContainerId, moved, inst.displayName + " moved to " + toLabel + ".", "container transfer by instance item=" + inst.displayName + " instance=" + inst.id + " from=" + fromContainerId + " to=" + toContainerId + " route=" + route);
+    }
+
+    ItemInstance transferContainerItemAt(String fromContainerId, ArrayList<String> fromLegacy, int idx,
+                                         String toContainerId, String toLabel, ArrayList<String> toLegacy,
+                                         String route) {
+        if (idx < 0 || idx >= fromLegacy.size()) return null;
+        String accessProblem = ActorAccessAuthority.containerTransferProblem(this, fromContainerId, toContainerId, route);
+        if (accessProblem != null) {
+            DebugLog.audit("ACTOR_ACCESS_BLOCK", "legacy container transfer blocked from=" + fromContainerId + " to=" + toContainerId + " route=" + route + " reason=" + accessProblem + " state=" + stateSummary());
+            return null;
+        }
+        String item = fromLegacy.remove(idx);
+        ItemInstance inst = removeContainerInstanceAt(fromContainerId, idx, item);
+        ItemProvenanceRecord prior = inst != null && inst.provenance != null ? inst.provenance : takeProvenanceForItem(item);
+        ItemProvenanceRecord moved = ItemProvenanceRecord.transferred(prior, item, world, turn, route == null ? "moved between containers" : route);
+        ContainerRecord dest = ensureContainer(toContainerId, toLabel);
+        if (inst == null) {
+            String id = nextItemInstanceId();
+            inst = new ItemInstance(id, item, dest.id, moved == null ? "" : moved.unitId, moved);
+            itemInstances.put(id, inst);
+            dest.itemInstanceIds.add(id);
+        } else {
+            inst.displayName = item;
+            inst.containerId = dest.id;
+            inst.provenance = moved;
+            inst.provenanceUnitId = moved == null ? inst.provenanceUnitId : moved.unitId;
+            itemInstances.put(inst.id, inst);
+            dest.itemInstanceIds.add(inst.id);
+        }
+        if (toLegacy != null) toLegacy.add(item);
+        rememberItemProvenance(item, moved);
+        DebugLog.audit("CONTAINER_TRANSFER", "item=" + item + " from=" + fromContainerId + " to=" + toContainerId + " route=" + route + " instance=" + (inst==null?"none":inst.id) + " state=" + stateSummary());
+        return inst;
+    }
+
+    ItemInstance transferContainerItemByName(String fromContainerId, ArrayList<String> fromLegacy, String item,
+                                             String toContainerId, String toLabel, ArrayList<String> toLegacy,
+                                             String route) {
+        if (item == null) return null;
+        for (int i=0; i<fromLegacy.size(); i++) if (ItemQuality.namesMatch(fromLegacy.get(i), item)) return transferContainerItemAt(fromContainerId, fromLegacy, i, toContainerId, toLabel, toLegacy, route);
+        return null;
+    }
+
+    boolean verifyItemOperationalParity(String context) {
+        ContainerRecord inv = itemContainers.get(CONTAINER_PLAYER_INVENTORY);
+        ContainerRecord base = itemContainers.get(CONTAINER_BASE_STORAGE);
+        int invCount = inv == null ? 0 : inv.itemInstanceIds.size();
+        int baseCount = base == null ? 0 : base.itemInstanceIds.size();
+        boolean ok = invCount == inventory.size() && baseCount == baseStorage.size();
+        if (!ok) DebugLog.warn("ITEM_PARITY", context + " legacy inventory=" + inventory.size() + "/" + invCount + " legacy base=" + baseStorage.size() + "/" + baseCount + " state=" + stateSummary());
+        return ok;
+    }
+
+    void auditItemLedgers(String context) {
+        lastItemLedgerAuditReport = ItemLedgerAuthority.audit(this, context);
+        DebugLog.audit("ITEM_LEDGER_AUTHORITY", lastItemLedgerAuditReport + " state=" + stateSummary());
+    }
+
+    void rememberItemProvenance(String item, ItemProvenanceRecord provenance) {
+        if (item == null || provenance == null) return;
+        ArrayDeque<ItemProvenanceRecord> q = itemProvenance.computeIfAbsent(item, k -> new ArrayDeque<>());
+        q.addLast(provenance);
+        while (q.size() > 24) q.removeFirst();
+    }
+
+    ItemProvenanceRecord provenanceForContainerIndex(String containerId, int idx, String fallbackItem) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c != null && idx >= 0 && idx < c.itemInstanceIds.size()) {
+            ItemInstance inst = itemInstances.get(c.itemInstanceIds.get(idx));
+            if (inst != null && inst.provenance != null) return inst.provenance;
+        }
+        return provenanceForItem(fallbackItem);
+    }
+
+    ItemProvenanceRecord provenanceForItem(String item) {
+        if (item == null) return null;
+        for (String containerId : new String[]{CONTAINER_PLAYER_INVENTORY, CONTAINER_BASE_STORAGE}) {
+            ContainerRecord c = itemContainers.get(containerId);
+            if (c == null) continue;
+            for (int i=c.itemInstanceIds.size()-1; i>=0; i--) {
+                ItemInstance inst = itemInstances.get(c.itemInstanceIds.get(i));
+                if (inst != null && inst.displayName != null && (inst.displayName.equals(item) || ItemQuality.stripManufacturingIdentity(inst.displayName).equalsIgnoreCase(ItemQuality.stripManufacturingIdentity(item)))) {
+                    if (inst.provenance != null) return inst.provenance;
+                }
+            }
+        }
+        ArrayDeque<ItemProvenanceRecord> q = itemProvenance.get(item);
+        if (q == null || q.isEmpty()) q = itemProvenance.get(ItemQuality.stripManufacturingIdentity(item));
+        return q == null || q.isEmpty() ? null : q.peekLast();
+    }
+
+    String provenanceSummaryForItem(String item) {
+        ItemProvenanceRecord pr = provenanceForItem(item);
+        return pr == null ? "Origin: untraced legacy item. Reserved full-world generation will assign a factory, worker, input ledger, and trade path." : pr.summary();
+    }
+
+    ItemProvenanceRecord takeProvenanceForItem(String item) {
+        if (item == null) return null;
+        ArrayDeque<ItemProvenanceRecord> q = itemProvenance.get(item);
+        if (q == null || q.isEmpty()) q = itemProvenance.get(ItemQuality.stripManufacturingIdentity(item));
+        if (q == null || q.isEmpty()) q = itemProvenance.get(ItemQuality.stripQuality(item));
+        return q == null || q.isEmpty() ? null : q.removeLast();
+    }
+
+    ItemInstance removeContainerInstanceByName(String containerId, String item) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || item == null) return null;
+        for (int i=0; i<c.itemInstanceIds.size(); i++) {
+            String id = c.itemInstanceIds.get(i);
+            ItemInstance inst = itemInstances.get(id);
+            if (inst != null && item.equals(inst.displayName)) {
+                c.itemInstanceIds.remove(i);
+                itemInstances.remove(id);
+                return inst;
+            }
+        }
+        return null;
+    }
+
+    ItemInstance removeContainerInstanceAt(String containerId, int idx, String item) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c != null && idx >= 0 && idx < c.itemInstanceIds.size()) {
+            String id = c.itemInstanceIds.remove(idx);
+            ItemInstance inst = itemInstances.remove(id);
+            if (inst != null) return inst;
+        }
+        return removeContainerInstanceByName(containerId, item);
+    }
+
+    ItemActionResult removeInventoryItemResult(String item, String route) {
+        int idx = inventory.indexOf(item);
+        if (idx < 0) return ItemActionResult.fail("No carried " + item + " was available.", "remove inventory failed item=" + item + " route=" + route);
+        String removed = inventory.remove(idx);
+        ItemInstance inst = removeContainerInstanceAt(CONTAINER_PLAYER_INVENTORY, idx, removed);
+        ItemProvenanceRecord pr = inst == null ? takeProvenanceForItem(removed) : inst.provenance;
+        if (inst != null) inst.provenance = pr;
+        if (pr != null) takeProvenanceForItem(removed);
+        return ItemActionResult.ok(removed, inst == null ? "" : inst.id, CONTAINER_PLAYER_INVENTORY, pr, removed + " removed from carried inventory.", "remove inventory item=" + removed + " instance=" + (inst==null?"none":inst.id) + " route=" + route);
+    }
+
+    boolean removeInventoryItem(String item) {
+        return removeInventoryItemResult(item, "legacy remove").success;
+    }
+
+    ItemActionResult removeInventoryAtResult(int idx, String route) {
+        if (idx < 0 || idx >= inventory.size()) return ItemActionResult.fail("No carried item exists at that index.", "remove inventory idx failed idx=" + idx + " route=" + route);
+        String item = inventory.remove(idx);
+        ItemInstance inst = removeContainerInstanceAt(CONTAINER_PLAYER_INVENTORY, idx, item);
+        ItemProvenanceRecord pr = inst == null ? takeProvenanceForItem(item) : inst.provenance;
+        if (inst != null) inst.provenance = pr;
+        if (pr != null) takeProvenanceForItem(item);
+        return ItemActionResult.ok(item, inst == null ? "" : inst.id, CONTAINER_PLAYER_INVENTORY, pr, item + " removed from carried inventory.", "remove inventory idx=" + idx + " item=" + item + " instance=" + (inst==null?"none":inst.id) + " route=" + route);
+    }
+
+    String removeInventoryAtWithTrace(int idx) {
+        ItemActionResult r = removeInventoryAtResult(idx, "legacy indexed remove");
+        return r.success ? r.itemName : null;
+    }
+
+    String removeBaseStorageAtWithTrace(int idx) {
+        if (idx < 0 || idx >= baseStorage.size()) return null;
+        String item = baseStorage.remove(idx);
+        ItemInstance inst = removeContainerInstanceAt(CONTAINER_BASE_STORAGE, idx, item);
+        if (inst == null || inst.provenance == null) takeProvenanceForItem(item);
+        else takeProvenanceForItem(item);
+        return item;
+    }
+
+    void rebuildItemContainersFromLegacyLists() {
+        itemInstances.clear();
+        itemContainers.clear();
+        ensureContainer(CONTAINER_PLAYER_INVENTORY, "Player carried inventory");
+        ensureContainer(CONTAINER_BASE_STORAGE, "Claimed base storage");
+        int oldNext = nextItemInstanceSeq;
+        nextItemInstanceSeq = 1;
+        for (String item : new ArrayList<String>(inventory)) {
+            ItemProvenanceRecord pr = provenanceForItem(item);
+            addItemToContainer(CONTAINER_PLAYER_INVENTORY, "Player carried inventory", item, pr == null ? ItemProvenanceRecord.unknown(item, this) : pr, new ArrayList<String>());
+        }
+        for (String item : new ArrayList<String>(baseStorage)) {
+            ItemProvenanceRecord pr = provenanceForItem(item);
+            addItemToContainer(CONTAINER_BASE_STORAGE, "Claimed base storage", item, pr == null ? ItemProvenanceRecord.unknown(item, this) : pr, new ArrayList<String>());
+        }
+        nextItemInstanceSeq = Math.max(nextItemInstanceSeq, oldNext);
+    }
+
+    void repairLegacyListsFromContainersIfNeeded() {
+        if (!inventory.isEmpty() || !baseStorage.isEmpty() || itemContainers.isEmpty()) return;
+        ContainerRecord inv = itemContainers.get(CONTAINER_PLAYER_INVENTORY);
+        if (inv != null) for (String id : inv.itemInstanceIds) { ItemInstance inst = itemInstances.get(id); if (inst != null) inventory.add(inst.displayName); }
+        ContainerRecord base = itemContainers.get(CONTAINER_BASE_STORAGE);
+        if (base != null) for (String id : base.itemInstanceIds) { ItemInstance inst = itemInstances.get(id); if (inst != null) baseStorage.add(inst.displayName); }
+    }
+
+    LinkedHashMap<String,Integer> stackInventory(List<String> items) {
+        LinkedHashMap<String,Integer> stacks = new LinkedHashMap<>();
+        for (String raw : items) {
+            String key = raw == null ? "Unknown item" : raw.trim();
+            if (key.isEmpty()) key = "Unknown item";
+            stacks.put(key, stacks.getOrDefault(key, 0) + 1);
+        }
+        return stacks;
+    }
+
+    ArrayList<String> stackedInventoryNames() {
+        LinkedHashMap<String,Integer> stacks = stackInventory(inventory);
+        if (supplies>0) stacks.put("Construction supplies", stacks.getOrDefault("Construction supplies",0)+supplies);
+        if (food>0) stacks.put("Food reserve", stacks.getOrDefault("Food reserve",0)+food);
+        if (water>0) stacks.put("Water reserve", stacks.getOrDefault("Water reserve",0)+water);
+        return new ArrayList<>(stacks.keySet());
+    }
+
+    String selectedInventoryItemName() {
+        ArrayList<String> names = stackedInventoryNames();
+        if (names.isEmpty()) return null;
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, names.size()-1));
+        return names.get(selectedInventoryIndex);
+    }
+
+    void moveInventorySelection(int delta) {
+        int size = stackedInventoryNames().size();
+        if (size <= 0) { selectedInventoryIndex = 0; inventoryItemDescriptionScroll = 0; logEvent("Inventory selection: no carried item stacks."); return; }
+        selectedInventoryIndex = Math.max(0, Math.min(size-1, selectedInventoryIndex + delta));
+        inventoryItemDescriptionScroll = 0;
+        logEvent("Selected inventory stack: " + selectedInventoryItemName());
+        repaint();
+    }
+
+    String selectedCarriedInventoryActionItem() {
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && !inventoryTargetColumnActive) return selectedInventoryStackName();
+        return selectedInventoryItemName();
+    }
+
+    void inspectSelectedInventoryItem() {
+        String item = selectedCarriedInventoryActionItem();
+        if (item == null) { logEvent("Inventory empty. Nothing to inspect."); return; }
+        inventoryItemDescriptionScroll = 0;
+        logEvent("Inventory item selected: " + item + ". Details shown in the inventory information pane.");
+        repaint();
+    }
+
+    String itemActionSummary(String item) {
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("coffee") || low.contains("stim") || low.contains("narcotic")) return "Wakefulness drug: reduces sleep need but adds cumulative endurance strain. Drop is always available.";
+        if (low.contains("ration") || low.contains("food")) return "Can be consumed to restore food. Drop is always available.";
+        if (low.contains("water") || low.contains("canteen")) return "Can be consumed to restore water. Drop is always available.";
+        if (looksWearable(item)) return "Equip/disguise item: USE changes worn identity and defense, returning the previous outfit to inventory. Drop is available.";
+        if (low.contains("scrap") || low.contains("detritus") || low.contains("machine") || low.contains("supplies")) return "Workbench/build material. USE converts carried construction supplies into internal supplies where applicable; workbench actions consume the rest.";
+        if (low.contains("field dressing") || low.contains("injector") || low.contains("medicae")) return "Medical utility: USE reduces wounds/fatigue if available.";
+        if (low.contains("data spike") || low.contains("keycard") || low.contains("lockpick") || low.contains("hacking tools") || low.contains("tool")) return "Tool item: automatically applies to doors, vaults, vending, and context checks while carried.";
+        if (low.contains("leader journal")) return "Stolen intelligence: INN buys faction leader journals for major bounties; USE reviews the sell note.";
+        if (low.contains("newspaper") || low.contains("paper mush")) return "News item: USE reads the INN issue or discovers that damp paper has won.";
+        if (low.contains("radio") || low.contains("pict-screen") || low.contains("pict screen") || low.contains("television")) return "Broadcast receiver: USE monitors current INN radio/pict bulletins without needing a vending machine.";
+        if (PortableLightProfile.isLightItem(item)) return "Portable light: USE activates/carries/wears it, DROP leaves an active light on the floor, THROW LIGHT tosses it ahead. Radius and burn time depend on the item.";
+        if (low.contains("used food tin") || low.contains("ration wrapper")) return "Common arcology trash. Reserved recycling hooks may recover scrap or contamination value.";
+        if (low.contains("map") || low.contains("survey")) return "Navigation utility: USE studies it and reduces local risk pressure.";
+        return "No direct use action wired yet. Drop is available.";
+    }
+
+    Faction factionForClothingItem(String item) {
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("civic Wardens") || low.contains("patrol coat")) return Faction.CIVIC_WARDENS;
+        if (low.contains("bandit") || low.contains("gang colors")) return Faction.BANDIT;
+        if (low.contains("hiver") || low.contains("workwear")) return Faction.HIVER;
+        if (low.contains("scavenger") || low.contains("rags")) return Faction.SCAVENGER;
+        if (low.contains("mechanist Collegia") || low.contains("robe") || low.contains("tech-priest")) return Faction.MECHANICUS_CLOISTER_RED;
+        if (low.contains("guard") || low.contains("uniform")) return Faction.IMPERIAL_GUARD;
+        return Faction.NONE;
+    }
+
+    boolean looksWearable(String item) {
+        String low = item.toLowerCase(Locale.ROOT);
+        return low.contains("clothing") || low.contains("coat") || low.contains("rags") || low.contains("uniform") || low.contains("workwear") || low.contains("colors") || low.contains("robe");
+    }
+
+    void equipInventoryClothing(String item) {
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { logEvent("Cannot equip " + item + ": no carried copy found."); return; }
+        Clothing old = equippedClothing;
+        String oldItem = old == null || old.name == null ? "" : old.name + (old.damaged && !old.name.toLowerCase(Locale.ROOT).contains("damaged") ? " (damaged)" : "");
+        if (oldItem != null && !oldItem.isBlank()) {
+            ItemActionResult returned = transferFirstEquipmentItemBackToInventory(2, oldItem, "replaced equipped clothing");
+            if (!returned.success && old != null && old.name != null && !old.name.isEmpty()) addInventoryItem(oldItem, ItemProvenanceRecord.of(old.name, old.alignedFaction, "previously equipped clothing", world, turn, "existing equipped garment", "returned to carried inventory after clothing change"));
+        }
+        boolean damaged = item.toLowerCase(Locale.ROOT).contains("damaged");
+        Faction f = factionForClothingItem(item);
+        int base = damaged ? 26 : 46;
+        int defense = damaged ? 1 : 2;
+        if (f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD) { defense += damaged ? 1 : 2; base -= 4; }
+        if (f == Faction.MECHANICUS_CLOISTER_RED) { defense += 1; base += 2; }
+        ItemActionResult moved = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, equipmentContainerIdForSlot(2), "Player equipment slot: Clothing", null, "equipped by player as clothing");
+        if (!moved.success) { logEvent("Cannot equip " + item + ": " + moved.playerText); return; }
+        equippedClothing = new Clothing(item, f, Math.max(8, Math.min(70, base)), defense, damaged);
+        selectedEquipmentSlotIndex = 2;
+        logEvent("Equipped " + item + ". Identity=" + equippedClothing.alignedFaction.label + ", cover=" + equippedClothing.disguiseBase + "%, defense=" + equippedClothing.defense + ". Previous clothing returned to inventory.");
+        DebugLog.audit("INVENTORY_EQUIP_CLOTHING", moved.auditText + " faction=" + f + " old=" + (old!=null?old.name:"none") + " state=" + stateSummary());
+        advanceTurn("changes clothing"); repaint();
+    }
+
+    void useUtilityInventoryItem(String item) {
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { logEvent("Cannot use " + item + ": no carried copy found."); return; }
+        String low = item.toLowerCase(Locale.ROOT);
+        int oldWounds=wounds, oldFatigue=fatigue, oldSuspicion=suspicion, oldHeat=gangHeat;
+        if (isMedicalUseItem(low)) {
+            removeInventoryAtWithTrace(idx);
+            applyMedicalItemEffect(item, low, oldWounds, oldFatigue);
+        } else if (low.contains("leader journal")) {
+            logEvent("STOLEN JOURNAL: " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, null) + " Concord Script. Sell at an INN bureau or newspaper dispenser contact point.");
+            return;
+        } else if (low.contains("sealed bank lockbox") || low.contains("stock certificate") || low.contains("house gold")) {
+            logEvent("BANK HEIST LOOT: " + item + " is valuable, incriminating, and best sold through a trader, faction contact, or noble heist quest profile. Merely staring at it does not launder it.");
+            return;
+        } else if (low.contains("newspaper") || low.contains("paper mush")) {
+            readInventoryNewspaper(item);
+            return;
+        } else if (low.contains("radio") || low.contains("pict-screen") || low.contains("pict screen") || low.contains("television")) {
+            listenToPortableBroadcastReceiver(item);
+            return;
+        } else if (PortableLightProfile.isLightItem(item)) {
+            usePortableLightItem(item);
+            return;
+        } else if (low.contains("data spike") || low.contains("keycard") || low.contains("lockpick") || low.contains("hacking tools") || low.contains("tool roll") || low.contains("tool bundle")) {
+            logEvent(item + " is now active as a carried tool. Door, vault, vending, and interaction checks automatically read it from inventory; it is not consumed by manual USE.");
+            return;
+        } else if (low.contains("trade chit") || low.contains("concord script")) {
+            logEvent(item + " is currency. Use TRADE/VEND/SERVICE menus to spend it; direct USE would merely annoy the coin.");
+            return;
+        } else if (low.contains("map") || low.contains("survey")) {
+            removeInventoryAtWithTrace(idx); suspicion = Math.max(0, suspicion - 1); gangHeat = Math.max(0, gangHeat - 1);
+            logEvent("Studied " + item + ". Suspicion " + oldSuspicion + "->" + suspicion + ", gang heat " + oldHeat + "->" + gangHeat + ". The route ledger grows less stupid.");
+        } else {
+            logEvent("No direct use action wired for " + item + ". Try DROP, WORKBENCH, TRADE, or context interaction.");
+            return;
+        }
+        DebugLog.audit("INVENTORY_USE_UTILITY", "item=" + item + " wounds=" + oldWounds + "->" + wounds + " fatigue=" + oldFatigue + "->" + fatigue + " suspicion=" + oldSuspicion + "->" + suspicion + " heat=" + oldHeat + "->" + gangHeat + " state=" + stateSummary());
+        advanceTurn("uses a utility item"); repaint();
+    }
+
+    boolean isMedicalUseItem(String low) {
+        return low.contains("field dressing") || low.contains("bandage") || low.contains("medkit") || low.contains("medicae") || low.contains("injector") || low.contains("antiseptic") || low.contains("splint");
+    }
+
+    void applyMedicalItemEffect(String item, String low, int oldWounds, int oldFatigue) {
+        int oldBleed = bleeding, oldInfection = infectionRisk, oldPain = pain;
+        if (low.contains("bandage") || low.contains("field dressing")) {
+            bleeding = Math.max(0, bleeding - 4);
+            wounds = Math.max(0, wounds - 1);
+        } else if (low.contains("antiseptic")) {
+            infectionRisk = Math.max(0, infectionRisk - 6);
+        } else if (low.contains("splint")) {
+            pain = Math.max(0, pain - 2);
+            stabilizeWorstLimb(35.0);
+        } else if (low.contains("medkit") || low.contains("medicae")) {
+            bleeding = Math.max(0, bleeding - 6);
+            infectionRisk = Math.max(0, infectionRisk - 4);
+            wounds = Math.max(0, wounds - 2);
+            fatigue = Math.max(0, fatigue - 2);
+            pain = Math.max(0, pain - 4);
+            healWorstBodyPart(55.0);
+        } else if (low.contains("injector")) {
+            wounds = Math.max(0, wounds - 1);
+            fatigue = Math.max(0, fatigue - 2);
+            pain = Math.max(0, pain - 3);
+        }
+        logEvent("MEDICAL USE: " + item + " applied. Wounds " + oldWounds + "->" + wounds + ", bleeding " + oldBleed + "->" + bleeding + ", infection risk " + oldInfection + "->" + infectionRisk + ", pain " + oldPain + "->" + pain + ".");
+        DebugLog.audit("MEDICAL_ITEM", "item=" + item + " wounds=" + oldWounds + "->" + wounds + " bleeding=" + oldBleed + "->" + bleeding + " infection=" + oldInfection + "->" + infectionRisk + " pain=" + oldPain + "->" + pain + " state=" + stateSummary());
+    }
+
+// ... omitted 23 non-method/source lines between cataloged methods ...
+
+    void dropSelectedInventoryItem() {
+        String item = selectedCarriedInventoryActionItem();
+        if (item == null) { logEvent("Inventory empty. Nothing to drop."); return; }
+        if (item.equals("Construction supplies") && supplies > 0) { supplies--; logEvent("Dropped one Construction supply onto the floor. It may or may not still be there later."); }
+        else if (item.equals("Food reserve") && food > 0) { food--; addInventoryItem("Dropped food ration", ItemProvenanceRecord.found("Dropped food ration", world, turn, "converted from abstract food reserve")); logEvent("Converted one abstract food reserve into a carried dropped food ration item."); }
+        else if (item.equals("Water reserve") && water > 0) { water--; addInventoryItem("Dropped water ration", ItemProvenanceRecord.found("Dropped water ration", world, turn, "converted from abstract water reserve")); logEvent("Converted one abstract water reserve into a carried dropped water ration item."); }
+        else if (PortableLightProfile.isLightItem(item)) {
+            dropPortableLightItem(item);
+        }
+        else {
+            int idx = inventory.indexOf(item);
+            if (idx >= 0) {
+                ItemActionResult dropped = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, CONTAINER_VOID_DISCARDED, "discarded item ledger", null, "dropped by player in active sector");
+                logEvent("ITEM DROPPED: Dropped one " + item + ". The item leaves your active carried stack. " + (dropped.provenance == null ? "Origin: untraced legacy item." : dropped.provenance.summary()));
+                DebugLog.audit("INVENTORY_DROP", dropped.auditText + " state=" + stateSummary());
+            } else logEvent("Drop failed: selected stack is not currently removable.");
+        }
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, stackedInventoryNames().size()-1)));
+        advanceTurn("drops an inventory item."); repaint();
+    }
+
+    void useSelectedInventoryItem() {
+        String item = selectedCarriedInventoryActionItem();
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new UseInventoryCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, item));
+            repaint();
+            return;
+        }
+        useSelectedInventoryItemBody();
+    }
+
+    void useSelectedInventoryItemBody() {
+        String item = selectedCarriedInventoryActionItem();
+        if (item == null) { logEvent("Inventory empty. Nothing to use."); return; }
+        String low = item.toLowerCase(Locale.ROOT);
+        if (item.equals("Food reserve") && food > 0) { logEvent("Food reserve already internalized. Use carried ration items to restore reserves later."); return; }
+        if (item.equals("Water reserve") && water > 0) { logEvent("Water reserve already internalized. Use canteens/water ration items to restore reserves later."); return; }
+        if (low.contains("coffee") || low.contains("stim") || low.contains("narcotic")) { consumeWakefulnessItem(item); return; }
+        if (isMedicalUseItem(low)) { useUtilityInventoryItem(item); return; }
+        if (PortableLightProfile.isLightItem(item)) { usePortableLightItem(item); return; }
+        if (low.contains("ration") || low.contains("canteen") || low.contains("water") || low.contains("food")) { consumeSpecificInventoryItem(item); return; }
+        if (equipInventoryItemToPaperDoll(item)) return;
+        if (item.equals("Construction supplies") && supplies > 0) { logEvent("Construction supplies are already pooled for BUILD/WORKBENCH actions. Current supplies=" + supplies + "."); return; }
+        if (low.contains("construction supplies")) { int idx = inventory.indexOf(item); if (idx >= 0) { removeInventoryItem(item); supplies++; logEvent("Packed " + item + " into construction supplies pool. Supplies now " + supplies + "."); advanceTurn("sorts construction supplies"); repaint(); return; } }
+        useUtilityInventoryItem(item);
+    }

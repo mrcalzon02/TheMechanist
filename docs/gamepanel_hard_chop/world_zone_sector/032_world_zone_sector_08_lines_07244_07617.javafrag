@@ -1,0 +1,197 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: world_zone_sector_08_lines_07244_07617
+// Category: world_zone_sector
+// Source lines: 7244-7617
+// Method count: 12
+//
+// Methods in this fragment:
+// - isIntermapTransitTile :: lines 7244-7244 (1) :: boolean isIntermapTransitTile(char ch)
+// - intermapTransitLabel :: lines 7246-7254 (9) :: String intermapTransitLabel(char ch)
+// - hasOffworldTicket :: lines 7257-7260 (4) :: boolean hasOffworldTicket()
+// - useOffworldTicketAtRail :: lines 7262-7271 (10) :: void useOffworldTicketAtRail()
+// - takeSectorRailToNewSector :: lines 7273-7307 (35) :: void takeSectorRailToNewSector()
+// - sectorRailFare :: lines 7309-7313 (5) :: int sectorRailFare()
+// - mixNewSectorSeed :: lines 7315-7320 (6) :: long mixNewSectorSeed(long oldSeed, int turnCount, int money, int xpValue, int knowledgeValue)
+// - interactIntermapTransit :: lines 7322-7333 (12) :: void interactIntermapTransit(int tx, int ty, char ch)
+// - transitionPreview :: lines 7335-7348 (14) :: String transitionPreview(char ch, int tx, int ty)
+// - interactZoneEdgeDoor :: lines 7368-7382 (15) :: void interactZoneEdgeDoor(int tx, int ty)
+// - maybeRollZoneTransitionEvent :: lines 7473-7515 (43) :: String maybeRollZoneTransitionEvent(String reason)
+// - isInClaimedRoom :: lines 7615-7617 (3) :: nx < world.w && ny < world.h && isInClaimedRoom(nx, ny))
+
+    boolean isIntermapTransitTile(char ch) { return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E'; }
+
+    String intermapTransitLabel(char ch) {
+        switch (ch) {
+            case 'D': return "Maintenance-bulkhead double doors";
+            case 'S': return "Sewer access hatch";
+            case 'v': return "Sewer ladder / drain ascent";
+            case 'E': return "Elevator cage";
+            default: return "Intermap transit";
+        }
+    }
+
+
+    boolean hasOffworldTicket() {
+        for (String item : inventory) if (item != null && item.equalsIgnoreCase("Off-world ticket")) return true;
+        return false;
+    }
+
+    void useOffworldTicketAtRail() {
+        if (!selectedInteractionIsSectorRail()) { logEvent("Off-world departure failed: select a rail authority counter or platform marker in a Neutral Rail Depot."); return; }
+        if (!hasOffworldTicket()) { logEvent("Off-world departure blocked: no genuine Off-world ticket is carried. Find a governor who has one, bribe them, or take it from their body."); return; }
+        offworldTicketsFound = Math.max(offworldTicketsFound, 1);
+        alertTitle = "OFF-WORLD PASSAGE SECURED";
+        alertBody = "The rail authority validates the impossible ticket. The sector, your warrants, your abandoned enemies, and every hungry room behind you become someone else's accounting problem. Victory route complete.";
+        logEvent("VICTORY: Off-world ticket accepted at the rail authority. You escape the sector stack.");
+        DebugLog.audit("OFFWORLD_VICTORY", "ticket=true state=" + stateSummary());
+        setScreen(Screen.ZONE_SPLASH);
+    }
+
+    void takeSectorRailToNewSector() {
+        if (!selectedInteractionIsSectorRail()) { logEvent("Sector rail failed: select a rail platform or depot counter inside a Neutral Rail Depot."); return; }
+        int fare = sectorRailFare();
+        if (!spendImperialScript(fare)) {
+            logEvent("Sector rail blocked: passage to another sector costs " + fare + " Concord Script. You have " + countMoney() + ".");
+            return;
+        }
+        int abandonedObjects = baseObjects.size();
+        int abandonedRecruits = factionRecruits.size();
+        int abandonedStorage = baseStorage.size();
+        long oldSeed = seed;
+        seed = mixNewSectorSeed(seed, turn, countMoney(), xp, knowledgeCredits);
+        atlas = new WorldAtlas(seed);
+        atlas.generateScaffold();
+        atlas.sectorX = 1; atlas.sectorY = 1; atlas.zoneX = 2; atlas.zoneY = 2; atlas.floor = 5; atlas.sewer = false;
+        baseClaimed = false; baseX = -1; baseY = -1; claimedRoomId = -1;
+        baseObjects.clear(); baseStorage.clear(); factionRecruits.clear();
+        gangHeat = Math.max(0, gangHeat / 4);
+        suspicion = Math.max(0, suspicion / 4);
+        factionMarketPressure.clear(); initFactionState();
+        visitedZoneInstances.clear(); visitedZoneTypes.clear();
+        scavengeCooldownUntilTurn.clear();
+        loadingForNewGame = false;
+        loadingForTransition = true;
+        loadingProgress = 0; loadingStep = 0; loadingStartMillis = System.currentTimeMillis();
+        lastLoadingPulseMillis = loadingStartMillis; loadingWatchdogReported = false; loadingWatchdogRepeats = 0;
+        loadingStatus = "Taking sector rail to a new jurisdiction.";
+        loadingDetail = "Abandoning local bases/recruits/storage; preserving carried inventory, body state, XP, and unlocked knowledge.";
+        pendingTransitionReason = "sector rail relocation";
+        pendingTransitionEdgeHint = null;
+        pendingTransitionReturnEdge = "";
+        logEvent("SECTOR RAIL: fare " + fare + " paid. Abandoned " + abandonedObjects + " base objects, " + abandonedRecruits + " recruits, and " + abandonedStorage + " stored goods. Carried items and knowledge remain.");
+        DebugLog.audit("SECTOR_RAIL_DEPART", "oldSeed=" + oldSeed + " newSeed=" + seed + " fare=" + fare + " abandonedObjects=" + abandonedObjects + " abandonedRecruits=" + abandonedRecruits + " abandonedStorage=" + abandonedStorage + " state=" + stateSummary());
+        setScreen(Screen.LOADING);
+    }
+
+    int sectorRailFare() {
+        int carried = Math.max(0, inventory.size());
+        int notoriety = Math.max(0, gangHeat + suspicion) / 10;
+        return Math.max(12, 25 + carried / 4 + notoriety);
+    }
+
+    long mixNewSectorSeed(long oldSeed, int turnCount, int money, int xpValue, int knowledgeValue) {
+        long x = oldSeed ^ 0x5EC70A7E47A11L;
+        x ^= ((long)turnCount << 21) ^ ((long)money << 9) ^ ((long)xpValue << 3) ^ knowledgeValue;
+        x ^= (x << 13); x ^= (x >>> 7); x ^= (x << 17);
+        return x == 0 ? System.currentTimeMillis() : x;
+    }
+
+    void interactIntermapTransit(int tx, int ty, char ch) {
+        String preview = transitionPreview(ch, tx, ty);
+        DebugLog.audit("INTERMAP_TRANSIT_SELECT", intermapTransitLabel(ch)+" at="+tx+","+ty+" preview="+preview+" state="+stateSummary());
+        logEvent("Transit selected: " + preview);
+        switch (ch) {
+            case 'D': interactZoneEdgeDoor(tx, ty); break;
+            case 'S': interactSewerHatch(tx, ty); break;
+            case 'v': interactSewerLadder(tx, ty); break;
+            case 'E': interactElevator(tx, ty); break;
+            default: logEvent("This transit marker has no mapped destination yet.");
+        }
+    }
+
+    String transitionPreview(char ch, int tx, int ty) {
+        if (atlas == null || world == null) return "No atlas loaded.";
+        if (ch == 'D') {
+            String dir = edgeDirection(tx, ty);
+            int nzx = atlas.zoneX, nzy = atlas.zoneY, nsx = atlas.sectorX, nsy = atlas.sectorY;
+            if ("N".equals(dir)) nzy--; else if ("S".equals(dir)) nzy++; else if ("W".equals(dir)) nzx--; else if ("E".equals(dir)) nzx++;
+            if (nzx < 1 || nzx > 3 || nzy < 1 || nzy > 3) return "The double doors open toward interwall voids and crawlways. No sane human goes there.";
+            return "Travel through double doors " + dir + " to sector " + nsx + "," + nsy + " zone " + nzx + "," + nzy + " floor " + atlas.floor + (atlas.sewer ? "B" : "") + ".";
+        }
+        if (ch == 'S') return "Open sewer hatch and descend to Floor " + atlas.floor + "B beneath this zone.";
+        if (ch == 'v') return "Climb the sewer ladder back to Floor " + atlas.floor + " above this sewer layer.";
+        if (ch == 'E') return "Operate elevator to Floor " + Math.min(10, atlas.floor + 1) + " in this zone, skipping the sewer interlayer.";
+        return "Unknown transition.";
+    }
+
+// ... omitted 19 non-method/source lines between cataloged methods ...
+
+    void interactZoneEdgeDoor(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for zone transition."); return; }
+        String dir = edgeDirection(tx, ty);
+        int oldZx = atlas.zoneX, oldZy = atlas.zoneY;
+        int nzx = oldZx, nzy = oldZy;
+        if ("N".equals(dir)) nzy--; else if ("S".equals(dir)) nzy++; else if ("W".equals(dir)) nzx--; else if ("E".equals(dir)) nzx++;
+        if (nzx < 1 || nzx > 3 || nzy < 1 || nzy > 3) {
+            logEvent("The double doors grind open on the void between walls: bottomless gangways, dead maintenance crawls, and spaces not meant for human lungs. You do not go there.");
+            DebugLog.audit("ZONE_TRANSITION_BLOCKED", "dir="+dir+" fromZone="+oldZx+","+oldZy+" sector="+atlas.sectorX+","+atlas.sectorY+" state="+stateSummary());
+            advanceTurn("checks a dead-end maintenance-bulkhead double door.");
+            return;
+        }
+        atlas.zoneX = nzx; atlas.zoneY = nzy;
+        loadAtlasWorld("zone edge door " + dir + " from " + oldZx + "," + oldZy + " to " + nzx + "," + nzy, oppositeEdgeSpawn(dir, tx, ty));
+    }
+
+// ... omitted 90 non-method/source lines between cataloged methods ...
+
+    String maybeRollZoneTransitionEvent(String reason) {
+        if (world == null || active == null) return "";
+        int visits = active.zoneVisitCounts.getOrDefault(world.zoneType.label, 0) + 1;
+        active.zoneVisitCounts.put(world.zoneType.label, visits);
+        int baseChance = 18 + Math.min(20, visits * 2);
+        if (atlas != null && atlas.floor <= 2) baseChance += 8;
+        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.CIVIC_WARDENS && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
+        int roll = rng.nextInt(100);
+        if (roll >= baseChance) { lastTransitionEvent = "No event. roll=" + roll + " chance=" + baseChance; return ""; }
+        String[] benign = {
+            "A maintenance procession passes in the distance, lamps bobbing like tired insects.",
+            "A child watches you from a vent grille, then vanishes before the question can form.",
+            "A vox-speaker coughs three words of a sermon before dying into static.",
+            "A freight chain rattles somewhere behind the wall, dragging unseen tonnage through the arcology bones.",
+            "Someone has chalked a warning on the doorframe. The spelling is poor. The fear is not."
+        };
+        int rarity = rng.nextInt(100);
+        String result;
+        if (rarity < 70) {
+            result = "Zone event: " + benign[rng.nextInt(benign.length)];
+        } else if (rarity < 86) {
+            String item = (world.zoneType == ZoneType.SEWER_CONDUIT || world.zoneType == ZoneType.MUTANT_SEWER_CAMP) ? "Sealed water ration" : "Emergency ration";
+            addInventoryItem(item, ItemProvenanceRecord.found(item, world, turn, "threshold cache"));
+            result = "Uncommon zone event: you find " + item + " wedged near the threshold.";
+        } else if (rarity < 95) {
+            Faction f = world.npcFactionForRoom(0);
+            factionStanding.put(f, factionStanding.getOrDefault(f,0)+1);
+            result = "Rare zone event: a fleeting contact gives you a nod. " + f.label + " standing +1.";
+        } else {
+            Point adj = adjacentOpenNearPlayer();
+            if (adj != null) {
+                NpcEntity hostile = NpcEntity.create(world.npcFactionForRoom(0), world.zoneType, adj.x, adj.y, rng);
+                hostile.state = "HOSTILE";
+                world.npcs.add(hostile);
+                result = "Hostile zone event: something was waiting by the threshold. " + hostile.name + " appears nearby.";
+            } else {
+                result = "Rare zone event: hostile movement echoes nearby, but no creature finds a clean approach.";
+            }
+        }
+        lastTransitionEvent = result + " roll=" + roll + " chance=" + baseChance + " rarity=" + rarity;
+        DebugLog.audit("ZONE_TRANSITION_EVENT", lastTransitionEvent);
+        return result;
+    }
+
+// ... omitted 99 non-method/source lines between cataloged methods ...
+
+        if (nx >= 0 && ny >= 0 && nx < world.w && ny < world.h && isInClaimedRoom(nx, ny)) {
+            buildX = nx; buildY = ny;
+        }

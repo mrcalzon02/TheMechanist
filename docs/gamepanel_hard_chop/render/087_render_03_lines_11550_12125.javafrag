@@ -1,0 +1,482 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: render_03_lines_11550_12125
+// Category: render
+// Source lines: 11550-12125
+// Method count: 9
+//
+// Methods in this fragment:
+// - drawSectorAuditDiagnosticOverlays :: lines 11550-11629 (80) :: void drawSectorAuditDiagnosticOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH)
+// - drawSectorAuditZoneDropdown :: lines 11707-11740 (34) :: void drawSectorAuditZoneDropdown(Graphics2D g, UiLayout L)
+// - drawSectorAuditCommandPanel :: lines 11742-11747 (6) :: void drawSectorAuditCommandPanel(Graphics2D g, UiLayout L)
+// - drawSectorAuditInfoPanel :: lines 11749-11784 (36) :: void drawSectorAuditInfoPanel(Graphics2D g, UiLayout L)
+// - drawMultiplayerSurface :: lines 11810-11812 (3) :: void drawMultiplayerSurface(Graphics2D g)
+// - REPLACED_OLD_MULTIPLAYER :: lines 11815-11893 (79) :: void REPLACED_OLD_MULTIPLAYER(Graphics2D g)
+// - REPLACED_OLD_DRAWMENU :: lines 11900-11955 (56) :: void REPLACED_OLD_DRAWMENU(Graphics2D g)
+// - REPLACED_OLD_INTRO_CRAWL :: lines 11962-12093 (132) :: void REPLACED_OLD_INTRO_CRAWL(Graphics2D g)
+// - drawIntroCloudLayer :: lines 12114-12125 (12) :: void drawIntroCloudLayer(Graphics2D g, BufferedImage cloud, long elapsed, double pxPerMs, int yOffset, float alpha)
+
+    void drawSectorAuditDiagnosticOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (auditWorld == null || auditOverlayMode == 0) return;
+        int mode = Math.floorMod(auditOverlayMode, SectorAuditRuntimeAuthority.OVERLAY_LABELS.length);
+        Composite oldComposite = g.getComposite();
+        Stroke oldStroke = g.getStroke();
+        if (mode == 2) { // rooms
+            for (int i = 0; i < auditWorld.rooms.size(); i++) {
+                Rectangle rr = auditWorld.rooms.get(i);
+                int x1 = Math.max(rr.x, camX), y1 = Math.max(rr.y, camY);
+                int x2 = Math.min(rr.x + rr.width, camX + cols), y2 = Math.min(rr.y + rr.height, camY + rows);
+                if (x1 >= x2 || y1 >= y2) continue;
+                boolean flagged = false;
+                if (auditSnapshot != null) for (SectorAuditRuntimeAuthority.AuditFinding f : auditSnapshot.findings) if (f.category.equals("ROOM") && f.label.contains(" " + i)) { flagged = true; break; }
+                g.setComposite(AlphaComposite.SrcOver.derive(flagged ? 0.28f : 0.15f));
+                g.setColor(flagged ? new Color(230, 80, 70) : new Color(90, 150, 230));
+                g.fillRect(ox + (x1 - camX) * cellW, oy + (y1 - camY) * cellH, Math.max(1, (x2 - x1) * cellW), Math.max(1, (y2 - y1) * cellH));
+                g.setComposite(AlphaComposite.SrcOver.derive(0.72f));
+                g.drawRect(ox + (x1 - camX) * cellW, oy + (y1 - camY) * cellH, Math.max(1, (x2 - x1) * cellW - 1), Math.max(1, (y2 - y1) * cellH - 1));
+            }
+        } else if (mode == 3 || mode == 4 || mode == 5 || mode >= 6) {
+            for (int sy=0; sy<rows; sy++) {
+                int y = camY + sy;
+                if (y < 0 || y >= auditWorld.h) continue;
+                for (int sx=0; sx<cols; sx++) {
+                    int x = camX + sx;
+                    if (x < 0 || x >= auditWorld.w) continue;
+                    char ch = auditWorld.tiles[x][y];
+                    CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(auditWorld, x, y, ch);
+                    Color color = null;
+                    float alpha = 0.0f;
+                    if (mode == 3) { // roads
+                        if (ch == RoadGridIntegrationAuthority.ROAD_LANE) { color = "intersection".equals(d == null ? null : d.shape) ? new Color(245, 210, 80) : new Color(80, 165, 245); alpha = 0.28f; }
+                        else if (ch == RoadGridIntegrationAuthority.SIDEWALK) { color = new Color(120, 220, 130); alpha = 0.20f; }
+                    } else if (mode == 4) { // boundary
+                        if (ch == InterstitialInfrastructureApi.VOID_SPACE) { color = new Color(120, 90, 200); alpha = 0.28f; }
+                        else if (d != null && "exterior_maintenance_bulkhead".equals(d.family)) { color = new Color(240, 180, 75); alpha = 0.30f; }
+                        else if (ch == '-') { color = new Color(85, 210, 190); alpha = 0.18f; }
+                    } else if (mode == 5) { // descriptors
+                        if (d != null && "fallback".equals(d.baseLayer)) { color = new Color(245, 70, 95); alpha = 0.36f; }
+                        else if (d != null && d.hasOverlay()) { color = new Color(210, 100, 245); alpha = 0.22f; }
+                    } else if (mode == 6) { // interactables
+                        if (auditTileHasInteractable(x, y)) { color = new Color(90, 240, 170); alpha = 0.30f; }
+                    } else if (mode == 7) { // containers
+                        if (auditTileHasContainer(x, y)) { color = new Color(225, 185, 90); alpha = 0.32f; }
+                    } else if (mode == 8) { // lights
+                        if (auditTileHasLight(x, y)) { color = new Color(255, 238, 130); alpha = 0.36f; }
+                    } else if (mode == 9) { // traps
+                        if (auditTileHasTrap(x, y)) { color = new Color(245, 80, 80); alpha = 0.36f; }
+                    } else if (mode == 10) { // entities
+                        if (auditTileHasEntity(x, y)) { color = new Color(125, 180, 255); alpha = 0.34f; }
+                    } else if (mode == 11) { // transitions
+                        if (auditTileHasTransition(x, y, ch)) { color = new Color(255, 150, 75); alpha = 0.36f; }
+                    }
+                    if (color != null) {
+                        g.setComposite(AlphaComposite.SrcOver.derive(alpha));
+                        g.setColor(color);
+                        g.fillRect(ox + sx * cellW, oy + sy * cellH, cellW, cellH);
+                    }
+                }
+            }
+        }
+        if (mode == 1 && auditSnapshot != null) {
+            for (int i=0; i<auditSnapshot.findings.size(); i++) {
+                SectorAuditRuntimeAuthority.AuditFinding f = auditSnapshot.findings.get(i);
+                if (f.x < camX || f.y < camY || f.x >= camX + cols || f.y >= camY + rows) continue;
+                int rx = ox + (f.x - camX) * cellW, ry = oy + (f.y - camY) * cellH;
+                boolean selected = i == Math.floorMod(auditFindingIndex, Math.max(1, auditSnapshot.findings.size()));
+                g.setComposite(AlphaComposite.SrcOver.derive(selected ? 0.82f : 0.48f));
+                g.setColor(f.severity.equals("ERROR") ? new Color(245, 75, 65) : new Color(245, 210, 75));
+                g.setStroke(new BasicStroke(selected ? 3f : 1.5f));
+                g.drawRect(rx + 1, ry + 1, Math.max(3, cellW - 2), Math.max(3, cellH - 2));
+                if (selected) {
+                    g.drawLine(rx, ry, rx + cellW, ry + cellH);
+                    g.drawLine(rx + cellW, ry, rx, ry + cellH);
+                }
+            }
+        }
+        g.setStroke(oldStroke);
+        g.setComposite(oldComposite);
+    }
+
+// ... omitted 77 non-method/source lines between cataloged methods ...
+
+    void drawSectorAuditZoneDropdown(Graphics2D g, UiLayout L) {
+        if (!auditZoneDropdownOpen || L == null) return;
+        ZoneType[] zones = ZoneType.values();
+        if (zones.length == 0) return;
+        Rectangle outer = zoneAuditDropdownOuterRect(L);
+        Rectangle inner = zoneAuditDropdownInnerRect(L);
+        g.setColor(new Color(0,0,0,232));
+        g.fillRoundRect(outer.x, outer.y, outer.width, outer.height, 10, 10);
+        drawSlicedFrame(g, outer.x, outer.y, outer.width, outer.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-zone-selector", outer.x, outer.y, outer.width, outer.height);
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(8f, smallFont.getSize2D()-3f)));
+        FontMetrics fm = g.getFontMetrics();
+        int colGap = Math.max(6, Math.min(10, inner.width / 38));
+        int rowGap = Math.max(3, Math.min(5, inner.height / 80));
+        int cols = Math.max(1, Math.min(3, (inner.width + colGap) / 170));
+        int rows = Math.max(1, (int)Math.ceil(zones.length / (double)cols));
+        int cellW = Math.max(120, (inner.width - colGap * Math.max(0, cols - 1)) / cols);
+        int cellH = Math.max(18, Math.min(25, (inner.height - rowGap * Math.max(0, rows - 1)) / rows));
+        Shape oldClip = g.getClip();
+        g.setClip(outer.x + 6, outer.y + 6, outer.width - 12, outer.height - 12);
+        for (int i = 0; i < zones.length; i++) {
+            int col = i % cols;
+            int row = i / cols;
+            int x = inner.x + col * (cellW + colGap);
+            int y = inner.y + row * (cellH + rowGap);
+            ZoneType z = zones[i];
+            boolean selected = i == auditZoneTypeIndex;
+            g.setColor(selected ? new Color(60,48,24,235) : new Color(10,10,10,188));
+            g.fillRoundRect(x, y, cellW, cellH, 6, 6);
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel((selected ? "▶ " : "") + z.label, fm, cellW - 10), x + 6, y + Math.max(13, fm.getAscent() + 2));
+        }
+        g.setClip(oldClip);
+    }
+
+    void drawSectorAuditCommandPanel(Graphics2D g, UiLayout L) {
+        // 0.9.10iq: the sector-audit command frame is now button-only. The former
+        // explanatory body copy lived under the buttons and made the right rail read
+        // like a collision bug at Windows test density.
+        drawRightPanelFrame(g);
+    }
+
+    void drawSectorAuditInfoPanel(Graphics2D g, UiLayout L) {
+        Rectangle t = L.tactical;
+        g.setColor(new Color(6,7,7,238));
+        g.fillRect(t.x, t.y, t.width, t.height);
+        drawSlicedFrame(g, t.x, t.y, t.width, t.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-report", t.x, t.y, t.width, t.height);
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(9f, smallFont.getSize2D()-2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "ZONE AUDIT REPORT", t.x + 12, t.y + 20);
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        ArrayList<String> lines = new ArrayList<>();
+        if (auditWorld == null) lines.add("No audit world generated.");
+        else {
+            char ch = auditWorld.inBounds(auditCursorX, auditCursorY) ? auditWorld.tiles[auditCursorX][auditCursorY] : '?';
+            CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(auditWorld, auditCursorX, auditCursorY, ch);
+            lines.add("Zone: " + auditWorld.zoneType.label + " | " + auditWorld.w + "x" + auditWorld.h + " | weight " + WorldGenerationApi.worldgenWeightBandLabel(auditZoneSizeIndex) + " | density " + WorldSetupSettings.ZONE_DENSITY[Math.max(0, Math.min(3, auditZoneDensityIndex))] + " | overlay " + SectorAuditRuntimeAuthority.overlayLabel(auditOverlayMode) + ".");
+            SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+            if (step != null) lines.add(step.line(auditTraceSteps == null ? 0 : auditTraceSteps.size()) + (auditTracePlaying ? " | playing." : " | paused."));
+            lines.add("Cursor: " + auditCursorX + "," + auditCursorY + " glyph '" + ch + "' room " + auditWorld.roomIdAt(auditCursorX, auditCursorY) + " faction " + auditWorld.roomFaction(auditWorld.roomIdAt(auditCursorX, auditCursorY)).label + ".");
+            if (d != null) lines.add("Tile descriptor: " + d.inspectLine() + ".");
+            lines.addAll(auditTileInspectionLines(auditCursorX, auditCursorY));
+            lines.addAll(SectorAuditRuntimeAuthority.compactPanelLines(auditSnapshot, auditFindingIndex));
+            lines.add(auditReport);
+        }
+        int y = t.y + 42;
+        Shape old = g.getClip();
+        g.setClip(t.x + 8, t.y + 28, t.width - 16, t.height - 36);
+        FontMetrics reportMetrics = g.getFontMetrics();
+        for (String line : TextSurfaceApi.wrap(String.join(" ", lines), Math.max(54, (t.width - 24) / Math.max(6, reportMetrics.charWidth('W'))))) {
+            if (y > t.y + t.height - 8) break;
+            drawUiTextLine(g, line, t.x + 12, y);
+            y += Math.max(12, reportMetrics.getHeight() + 1);
+        }
+        g.setClip(old);
+    }
+
+// ... omitted 25 non-method/source lines between cataloged methods ...
+
+    void drawMultiplayerSurface(Graphics2D g) {
+        multiplayerPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_MULTIPLAYER(Graphics2D g) {
+        int W = getWidth();
+        Rectangle panel = multiplayerMenuPanelRect();
+        Rectangle content = multiplayerContentRect(panel);
+        Rectangle action = multiplayerActionRect(panel);
+        g.setColor(new Color(0, 0, 0, 196));
+        g.fillRoundRect(panel.x, panel.y, panel.width, panel.height, 16, 16);
+        drawSlicedFrame(g, panel.x, panel.y, panel.width, panel.height, "inner");
+        stampUiFrameId(g, "F", "multiplayer-menu", panel.x, panel.y, panel.width, panel.height);
+        g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, panel.height / 12f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "MULTIPLAYER CONNECTION", W / 2, panel.y + 42);
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+
+        g.setColor(new Color(12, 14, 13, 226));
+        g.fillRoundRect(content.x, content.y, content.width, content.height, 12, 12);
+        g.setColor(new Color(145, 118, 64, 135));
+        g.drawRoundRect(content.x, content.y, content.width, content.height, 12, 12);
+        g.setColor(new Color(12, 14, 13, 220));
+        g.fillRoundRect(action.x, action.y, action.width, action.height, 12, 12);
+        g.setColor(new Color(145, 118, 64, 125));
+        g.drawRoundRect(action.x, action.y, action.width, action.height, 12, 12);
+
+        int leftX = content.x + 14;
+        int textW = Math.max(240, content.width - 28);
+        int y = content.y + 26;
+        Shape oldClip = g.getClip();
+        g.setClip(content.x + 8, content.y + 8, content.width - 16, content.height - 16);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Direct address:", leftX, y); y += fm.getHeight() + 4;
+        String direct = (multiplayerMenu.inputActive() ? "> " : "  ") + multiplayerMenu.directInput() + (multiplayerMenu.inputActive() && (System.currentTimeMillis() / 450) % 2 == 0 ? "_" : "");
+        g.setColor(new Color(18, 22, 20, 230));
+        g.fillRoundRect(leftX, y - fm.getAscent() - 5, textW, fm.getHeight() + 12, 8, 8);
+        g.setColor(multiplayerMenu.inputActive() ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+        g.drawString(GuiLayoutApi.fitLabel(direct, fm, Math.max(220, textW - 12)), leftX + 8, y);
+        y += fm.getHeight() + 24;
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        g.drawString("IPv4 example: 192.168.1.10:25565", leftX, y); y += fm.getHeight();
+        g.drawString("IPv6 example: [2001:db8::1]:25565", leftX, y); y += fm.getHeight() + 18;
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Recent servers:", leftX, y); y += fm.getHeight() + 4;
+        java.util.List<MultiplayerMenuController.ConnectionHistoryItem> history = multiplayerMenu.history();
+        for (int i = 0; i < Math.min(5, history.size()); i++) {
+            boolean selected = i == multiplayerMenu.historyIndex();
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString((selected ? "> " : "  ") + GuiLayoutApi.fitLabel(history.get(i).shortLine(), fm, Math.max(220, textW - 8)), leftX, y);
+            y += fm.getHeight() + 2;
+        }
+        if (history.isEmpty()) { g.setColor(optionColor(GameOptions.TEXT_DIM)); g.drawString("  No connection history yet.", leftX, y); y += fm.getHeight() + 2; }
+        y += 14;
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Favorites:", leftX, y); y += fm.getHeight() + 4;
+        java.util.List<MultiplayerMenuController.FavoriteServer> favs = multiplayerMenu.favorites();
+        for (int i = 0; i < Math.min(5, favs.size()); i++) {
+            boolean selected = i == multiplayerMenu.favoriteIndex();
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString((selected ? "> " : "  ") + GuiLayoutApi.fitLabel(favs.get(i).shortLine(), fm, Math.max(220, textW - 8)), leftX, y);
+            y += fm.getHeight() + 2;
+        }
+        if (favs.isEmpty()) { g.setColor(optionColor(GameOptions.TEXT_DIM)); g.drawString("  No favorite servers saved.", leftX, y); y += fm.getHeight() + 2; }
+
+        int statusY = Math.max(y + 14, content.y + content.height - 74);
+        g.setColor(new Color(18, 22, 20, 225));
+        g.fillRoundRect(leftX, statusY, textW, 60, 10, 10);
+        g.setColor(new Color(145, 118, 64, 120));
+        g.drawRoundRect(leftX, statusY, textW, 60, 10, 10);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        java.util.List<String> wrapped = GuiLayoutApi.wrapText(multiplayerMenu.status(), fm, Math.max(220, textW - 18));
+        int yy = statusY + 20;
+        for (int i = 0; i < Math.min(2, wrapped.size()); i++) { g.drawString(wrapped.get(i), leftX + 9, yy); yy += fm.getHeight(); }
+        g.setColor(multiplayerMenu.hasActiveHost() ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+        g.drawString(GuiLayoutApi.fitLabel(multiplayerMenu.activeHostLine(), fm, Math.max(220, textW - 18)), leftX + 9, statusY + 50);
+        g.setClip(oldClip);
+
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(9f, smallFont.getSize2D() - 2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "CONNECTION COMMANDS", action.x + action.width / 2, action.y + 22);
+    }
+
+    void drawMenu(Graphics2D g) {
+        mainMenuPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_DRAWMENU(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        BufferedImage title = images.get("title_mechanist_rebase");
+        if (title == null) title = images.get("title_mechanist");
+        int cx = W/2;
+        int titleTop = mainMenuTitleTop(H);
+        int drawnTitleBottom = titleTop + 112;
+        if (title != null) {
+            Dimension titleSize = mainMenuTitleDrawSize(title, W, H);
+            int tw = titleSize.width;
+            int th = titleSize.height;
+            g.drawImage(title, cx-tw/2, titleTop, tw, th, null);
+            stampUiFrameId(g, "I", "title-mechanist", cx-tw/2, titleTop, tw, th);
+            drawnTitleBottom = titleTop + th;
+        } else {
+            g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(34f, Math.min(56f, H / 9f)))); g.setColor(new Color(200,184,132));
+            center(g, "THE MECHANIST", cx, titleTop + 68);
+        }
+        BufferedImage subtitle = images.get("subtitle_rebase");
+        int subtitleBottom = drawnTitleBottom + 6;
+        if (subtitle != null) {
+            Dimension subSize = mainMenuSubtitleDrawSize(subtitle, W, H);
+            int sw = subSize.width;
+            int sh = subSize.height;
+            int sy = drawnTitleBottom + 3;
+            g.drawImage(subtitle, cx-sw/2, sy, sw, sh, null);
+            stampUiFrameId(g, "I", "subtitle", cx-sw/2, sy, sw, sh);
+            subtitleBottom = sy + sh;
+        }
+        // No flavor blurb between title art and launcher buttons; title/splash art owns this space.
+        Rectangle buttonFrame = mainMenuButtonFrameRect();
+        g.setColor(new Color(0, 0, 0, 172));
+        g.fillRoundRect(buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, 14, 14);
+        drawSlicedFrame(g, buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, "inner");
+        stampUiFrameId(g, "F", "main-menu-route-frame", buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height);
+        java.util.List<String> shellLines = launcherShell.displayLines(launcherRuntime, userProfile);
+        int panelW = Math.min(W - 220, 245);
+        int panelH = Math.max(22, Math.min(26, H / 24));
+        int panelX = (W - panelW) / 2;
+        int panelY = H - panelH - 38;
+        g.setColor(new Color(0,0,0,150));
+        g.fillRoundRect(panelX, panelY, panelW, panelH, 9, 9);
+        g.setColor(new Color(130,105,55,150));
+        g.drawRoundRect(panelX, panelY, panelW, panelH, 9, 9);
+        stampUiFrameId(g, "F", "launcher-runtime-compact", panelX, panelY, panelW, panelH);
+        g.setFont(smallFont.deriveFont(Math.max(7f, Math.min(8.5f, smallFont.getSize2D()-4f))));
+        FontMetrics fm = g.getFontMetrics();
+        int lineY = panelY + 14;
+        int maxLines = Math.max(1, (panelH - 8) / Math.max(10, fm.getHeight()));
+        for (int i=0; i<shellLines.size() && i<maxLines; i++) {
+            g.setColor(i == 0 ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+            center(g, GuiLayoutApi.fitLabel(shellLines.get(i), fm, panelW - 20), cx, lineY);
+            lineY += Math.max(10, fm.getHeight());
+        }
+        g.setFont(smallFont);
+    }
+
+    void drawIntroCrawl(Graphics2D g) {
+        introCrawlPainter.paint(g, this);
+    }
+
+    // Old manual rendering loop removed algorithmically
+    void REPLACED_OLD_INTRO_CRAWL(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        long elapsed = Math.max(0L, System.currentTimeMillis() - introCrawlStartMillis);
+        BufferedImage backdrop = images.get("new_world_backdrop_rebase");
+        if (backdrop != null) {
+            double scale = Math.max(W / (double)Math.max(1, backdrop.getWidth()), H / (double)Math.max(1, backdrop.getHeight()));
+            int bw = Math.max(W, (int)Math.round(backdrop.getWidth() * scale));
+            int bh = Math.max(H, (int)Math.round(backdrop.getHeight() * scale));
+            g.drawImage(backdrop, (W-bw)/2, (H-bh)/2, bw, bh, null);
+        } else {
+            g.setColor(new Color(5, 6, 8)); g.fillRect(0,0,W,H);
+        }
+        drawIntroCloudLayer(g, images.get("clouds_slow_rebase"), elapsed, 0.012, 34, 0.48f);
+        drawIntroCloudLayer(g, images.get("clouds_fast_rebase"), elapsed, 0.026, 0, 0.38f);
+        g.setColor(new Color(0,0,0,126)); g.fillRect(0,0,W,H);
+        drawSlicedFrame(g, 26, 26, W-52, H-52, "outer");
+
+        int panelW = Math.min(Math.max(520, W - 240), W - 130);
+        int panelX = (W - panelW) / 2;
+        int panelY = Math.max(96, H / 5);
+        int panelH = Math.max(280, H - panelY - 86);
+        g.setColor(new Color(5,7,7,186)); g.fillRoundRect(panelX, panelY, panelW, panelH, 18, 18);
+        g.setColor(new Color(156,132,78,190)); g.drawRoundRect(panelX, panelY, panelW, panelH, 18, 18);
+
+        g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(26f, Math.min(42f, H / 14f))));
+        g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        center(g, "NEW WORLD INSERTION", W/2, Math.max(60, panelY - 44));
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(11f, Math.min(15f, H / 48f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, active == null ? "Unnamed operator" : active.name + " // " + active.job, W/2, Math.max(82, panelY - 18));
+
+        if (introCrawlLines.isEmpty()) introCrawlLines = images.loadIntroCrawlLines();
+        Font crawlFont = smallFont.deriveFont(Font.PLAIN, Math.max(13f, Math.min(17f, H / 42f)));
+        FontMetrics fm = g.getFontMetrics(crawlFont);
+        ArrayList<String> wrapped = new ArrayList<>();
+        int wrapChars = Math.max(38, (panelW - 84) / Math.max(7, fm.charWidth('M')));
+        for (String line : introCrawlLines) {
+            String cleaned = line == null ? "" : line.trim();
+            if (cleaned.isEmpty()) { wrapped.add(""); continue; }
+            wrapped.addAll(TextSurfaceApi.wrap(cleaned, wrapChars));
+            wrapped.add("");
+        }
+        while (!wrapped.isEmpty() && wrapped.get(wrapped.size()-1).isEmpty()) wrapped.remove(wrapped.size()-1);
+        if (wrapped.isEmpty()) wrapped.add("The arcology opens beneath you.");
+
+        final long leadInMs = 900L;
+        final long blankMs = 760L;
+        final long linePauseMs = 460L;
+        final long charMs = introCrawlCharMillisForTarget(wrapped, leadInMs, blankMs, linePauseMs, INTRO_CRAWL_TEXT_TARGET_MS);
+        int lineH = Math.max(24, fm.getHeight() + 8);
+        long t = Math.max(0L, elapsed - leadInMs);
+        long cursor = 0L;
+        int currentLine = 0;
+        int visibleChars = 0;
+        float liftFraction = 0f;
+        boolean finished = false;
+        for (int i = 0; i < wrapped.size(); i++) {
+            String line = wrapped.get(i);
+            long typeMs = line.isEmpty() ? blankMs : Math.max(780L, line.length() * charMs);
+            if (t < cursor) {
+                currentLine = Math.max(0, i - 1);
+                visibleChars = wrapped.get(currentLine).length();
+                liftFraction = 0f;
+                break;
+            }
+            if (t < cursor + typeMs) {
+                currentLine = i;
+                if (line.isEmpty()) visibleChars = 0;
+                else if (options.instantDialogueText) visibleChars = line.length();
+                else visibleChars = Math.max(0, Math.min(line.length(), (int)((t - cursor) / Math.max(1L, charMs))));
+                liftFraction = 0f;
+                break;
+            }
+            if (t < cursor + typeMs + linePauseMs) {
+                currentLine = i;
+                visibleChars = line.length();
+                liftFraction = (float)((t - cursor - typeMs) / (double)Math.max(1L, linePauseMs));
+                break;
+            }
+            cursor += typeMs + linePauseMs;
+            if (i == wrapped.size() - 1) {
+                currentLine = i;
+                visibleChars = line.length();
+                liftFraction = 1f;
+                finished = true;
+            }
+        }
+
+        Graphics2D clip = (Graphics2D)g.create();
+        clip.setClip(panelX + 28, panelY + 22, panelW - 56, panelH - 44);
+        clip.setFont(crawlFont);
+        int baseY = panelY + panelH - 44;
+        int lift = Math.round(liftFraction * lineH);
+        for (int i = Math.max(0, currentLine - 22); i <= currentLine && i < wrapped.size(); i++) {
+            String line = wrapped.get(i);
+            String shown = line;
+            if (i == currentLine && visibleChars < line.length()) shown = line.substring(0, Math.max(0, Math.min(visibleChars, line.length())));
+            int yy = baseY - (currentLine - i) * lineH - lift;
+            if (yy < panelY + 18 || yy > panelY + panelH - 8) continue;
+            if (shown.isEmpty()) continue;
+            int distanceFromCenter = Math.abs((panelY + panelH / 2) - yy);
+            int alpha = Math.max(72, Math.min(238, 238 - distanceFromCenter / 3));
+            clip.setColor(options.highContrastText ? Color.WHITE : new Color(224, 213, 166, alpha));
+            center(clip, shown, panelX + panelW/2, yy);
+        }
+        // Subtle typewriter cursor on the actively printing line. It is centered
+        // with the line so the crawl remains cinematic instead of becoming a
+        // left-aligned terminal dump.
+        if (currentLine < wrapped.size()) {
+            String line = wrapped.get(currentLine);
+            if (!line.isEmpty() && visibleChars < line.length() && ((elapsed / 360L) % 2L == 0L)) {
+                String shown = line.substring(0, Math.max(0, Math.min(visibleChars, line.length())));
+                int yy = baseY - lift;
+                int sw = clip.getFontMetrics().stringWidth(shown);
+                int cx = panelX + panelW / 2;
+                int cursorX = cx - sw / 2 + sw + 4;
+                if (yy >= panelY + 18 && yy <= panelY + panelH - 8) {
+                    clip.setColor(new Color(224, 213, 166, 185));
+                    clip.drawLine(cursorX, yy - fm.getAscent() + 2, cursorX, yy + 3);
+                }
+            }
+        }
+        clip.dispose();
+
+        g.setFont(smallFont.deriveFont(Font.PLAIN, Math.max(10f, Math.min(12f, H / 62f))));
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "SKIP remains available in the lower right.", W/2, H-54);
+
+        long textTotalMs = introCrawlTextDurationMillis(wrapped, leadInMs, charMs, blankMs, linePauseMs);
+        long fullCrawlMs = Math.max(textTotalMs + INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS, INTRO_CRAWL_AUDIO_EXPECTED_MS + INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS);
+        if (elapsed > fullCrawlMs) continueFromIntroCrawl();
+    }
+
+// ... omitted 20 non-method/source lines between cataloged methods ...
+
+    void drawIntroCloudLayer(Graphics2D g, BufferedImage cloud, long elapsed, double pxPerMs, int yOffset, float alpha) {
+        if (cloud == null) return;
+        Graphics2D gg = (Graphics2D)g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.05f, Math.min(1f, alpha))));
+        int W = getWidth();
+        int targetH = Math.max(120, getHeight() / 3);
+        int targetW = Math.max(1, cloud.getWidth() * targetH / Math.max(1, cloud.getHeight()));
+        int y = 28 + yOffset;
+        int offset = (int)Math.floor((elapsed * pxPerMs) % Math.max(1, targetW));
+        for (int x = -offset - targetW; x < W + targetW; x += targetW) gg.drawImage(cloud, x, y, targetW, targetH, null);
+        gg.dispose();
+    }

@@ -1,0 +1,72 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: persistence_06_lines_14399_14456
+// Category: persistence
+// Source lines: 14399-14456
+// Method count: 4
+//
+// Methods in this fragment:
+// - SaveLoadUiRects :: lines 14399-14399 (1) :: SaveLoadUiRects(Rectangle outer, Rectangle info, Rectangle manual, Rectangle auto)
+// - saveLoadUiRects :: lines 14402-14414 (13) :: SaveLoadUiRects saveLoadUiRects()
+// - saveLoadButtonSafeRect :: lines 14416-14419 (4) :: Rectangle saveLoadButtonSafeRect()
+// - flowSaveLoadButtons :: lines 14421-14456 (36) :: void flowSaveLoadButtons()
+
+        SaveLoadUiRects(Rectangle outer, Rectangle info, Rectangle manual, Rectangle auto) { this.outer=outer; this.info=info; this.manual=manual; this.auto=auto; }
+    }
+
+    SaveLoadUiRects saveLoadUiRects() {
+        Rectangle modal = uiLayout().modal;
+        int x = Math.max(36, modal.x), y = Math.max(56, modal.y - 8);
+        int w = Math.min(getWidth() - x*2, modal.width), h = Math.min(getHeight() - y - 40, modal.height + 30);
+        int infoH = Math.max(72, h/4);
+        Rectangle info = new Rectangle(x+28, y+58, Math.max(1, w-56), infoH);
+        int listsY = y + 58 + infoH + 14;
+        int listsH = Math.max(100, h - (listsY - y) - 44);
+        int gap = 24;
+        int colW = Math.max(120, (w - 72 - gap) / 2);
+        int mx = x + 28, ax = mx + colW + gap;
+        return new SaveLoadUiRects(new Rectangle(x,y,w,h), info, new Rectangle(mx, listsY, colW, listsH), new Rectangle(ax, listsY, colW, listsH));
+    }
+
+    Rectangle saveLoadButtonSafeRect() {
+        SaveLoadUiRects sl = saveLoadUiRects();
+        return sl.outer == null ? new Rectangle(0,0,1,1) : new Rectangle(sl.outer.x + 18, sl.outer.y + 18, Math.max(1, sl.outer.width - 36), Math.max(1, sl.outer.height - 36));
+    }
+
+    void flowSaveLoadButtons() {
+        SaveLoadUiRects sl = saveLoadUiRects();
+        if (sl == null) return;
+        int rowGap = Math.max(4, scaled(4));
+        int topButtonH = Math.max(18, Math.min(24, sl.manual.height / 10));
+        int topButtonW = Math.max(104, Math.min(184, sl.manual.width / 4));
+        int topY = sl.manual.y + 44;
+        int rowStart = sl.manual.y + 84;
+        int manualAvailable = Math.max(72, sl.manual.y + sl.manual.height - 18 - rowStart);
+        int rowH = Math.max(18, Math.min(26, (manualAvailable - rowGap * Math.max(0, SAVE_SLOT_COUNT - 1)) / Math.max(1, SAVE_SLOT_COUNT)));
+        int loadW = Math.max(92, Math.min(160, sl.manual.width / 5));
+        int saveW = Math.max(76, Math.min(130, sl.manual.width / 6));
+        int saveX = sl.manual.x + sl.manual.width - 14 - saveW;
+        int loadX = Math.max(sl.manual.x + 14, saveX - 8 - loadW);
+        int autoAvailable = Math.max(90, sl.auto.y + sl.auto.height - 18 - rowStart);
+        int autoRowH = Math.max(18, Math.min(26, (autoAvailable - rowGap * 4) / 5));
+        int autoButtonW = Math.max(112, Math.min(190, sl.auto.width / 3));
+        int autoButtonX = sl.auto.x + sl.auto.width - 14 - autoButtonW;
+        for (ButtonBox b : buttons) {
+            if (b == null || b.label == null) continue;
+            String l = b.label;
+            if (l.equals("SAVE DIAGNOSTIC")) b.r = new Rectangle(sl.manual.x + sl.manual.width - 14 - topButtonW, topY, topButtonW, topButtonH);
+            else if (l.equals("LOAD MENU")) b.r = new Rectangle(sl.auto.x + sl.auto.width - 14 - topButtonW, topY, topButtonW, topButtonH);
+            else if (l.startsWith("MANUAL ") && l.endsWith(" LOAD")) {
+                int n = Character.isDigit(l.charAt(7)) ? Character.digit(l.charAt(7), 10) : 1;
+                b.r = new Rectangle(loadX, rowStart + (Math.max(1,n)-1)*(rowH+rowGap), loadW, rowH);
+            } else if (l.startsWith("SAVE ")) {
+                int n = Character.isDigit(l.charAt(5)) ? Character.digit(l.charAt(5), 10) : 1;
+                b.r = new Rectangle(saveX, rowStart + (Math.max(1,n)-1)*(rowH+rowGap), saveW, rowH);
+            } else if (l.startsWith("AUTO ")) {
+                int n = Character.isDigit(l.charAt(5)) ? Character.digit(l.charAt(5), 10) : 1;
+                b.r = new Rectangle(autoButtonX, rowStart + (Math.max(1,n)-1)*(autoRowH+rowGap), autoButtonW, autoRowH);
+            }
+            fitButtonInto(b, saveLoadButtonSafeRect());
+        }
+    }

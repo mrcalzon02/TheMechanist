@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 19601-20300
+
+            case '0': return "cable conduit column; sealed support/infrastructure blocker.";
+            case '*': return "collapsed arcology debris; rubble from an older internal failure.";
+            case '?': return "buried cache signature; something was sealed or lost inside the wall mass.";
+            case '!': return "dangerous buried reserve marker; forgotten supplies or hazard locked inside the interstitial mass.";
+            case ' ': return "void space; empty intrahive abyss beyond the bounded wall envelope.";
+            case '.': return "bare underhive floor.";
+            case ';': return "road lane; two central vehicle-width lanes in a four-wide underhive street corridor.";
+            case '_': return "raised sidewalk/service verge beside an underhive road spine.";
+            case '+': return "industrial corridor between room-edge doors.";
+            case '=': return "two-wide maintenance access corridor.";
+            case ',': return "alleyway dust and cracked floor.";
+            case '~': return "sewer pipe corridor slick with runoff.";
+            case ':': return "padded access corridor / service way.";
+            case '/': return "open archway; quick passage, almost no security.";
+            case '|': return "standard hinged door; basic obstruction and line-of-sight break.";
+            case 'L': return "locked door; needs key, lockpicks, tools, or a successful check later.";
+            case 'V': return "ventilation panel; crawlspace access, tools usually required.";
+            case 'X': return "sealed security door or vault barrier; serious access check required.";
+            case 'g': return "ganger presence; predatory local power.";
+            case 'm': return "mutant presence; desperate and dangerous.";
+            case 'R': return "rogue machine; autonomous industrial hazard.";
+            case 'A': return "Civic Wardens patrol point; law arrives with boots and paperwork.";
+            case '1': return "food vending machine; legal 12-hour cooldown or illegal hacked 1-hour cycle.";
+            case '2': return "armor vending cabinet; crude protective stock dispensed for concord script.";
+            case '3': return "weapons vending cage; dangerous stock, dangerous paperwork.";
+            case '4': return "construction material vending locker; scrap, fasteners, and machine parts.";
+            case '5': return "survival supplies vending stack; rations, canteens, and field goods.";
+            case 'I': return "Concord shrine; dedicated to a local saint, legal to pray at and harder to explain ignoring.";
+            case '$': return "donation box or trade lockbox; someone will notice if it goes light.";
+            case 'W': return "saint alcove or relic niche; devotional architecture with a witness problem.";
+            case 'T': return "trade depot; recruitment and supplies will live here.";
+            case 'Q': return "sector governor dais; bribe for a possible off-world ticket or attack and loot the body.";
+            case 'C': return "clinic; cybernetics, chemical therapies, and ugly bills.";
+            case 'H': return "heretical shrine; dedicated to a ruinous power, illegal and spiritually corrosive.";
+            case 'N': return "noisy machinery; masks distant movement and fouls hearing checks nearby.";
+            case 'q': return "faction representative; neutral contact for talk, trade, bribes, and standing repair.";
+            case 'r': return "corpse loot container; persistent body inventory with provenance-bearing recoverables.";
+            case 'D': return "double zone door at map edge; adjacent-zone transition.";
+            case 'S': return "sewer hatch down to the B-layer beneath this floor.";
+            case 'v': return "sewer ladder/drain transition between sewer layers and floor access.";
+            case 'E': return "elevator shaft; vertical floor transition skipping sewer interlayers.";
+            case 's': return "storage crate; claimed-base object.";
+            case 'w': return "scrap workbench; claimed-base object.";
+            case 'd': return "barricade; claimed-base defense object.";
+            case 'c': return "sleeping cot; claimed-base object.";
+            case 'u': return "water barrel; claimed-base object.";
+            case 'a': return "alarm trap; claimed-base defense object.";
+            case 'Y': return "Martian atmospheric water condenser room machine; inspectable imported EMM preview, usable for water extraction when unlocked/powered.";
+            case 'J': return "Martian emergency assembler room machine; assembles designated components when unlocked/powered.";
+            case 'B': return "Martian emergency boiler room machine; can produce clean water or be stripped for dirty water and fuel.";
+            case 'K': return "Martian micro laboratorium room machine; research and sample analysis fixture.";
+            case 'O': return "Martian emergency miner room machine; loud ore production with heat/suspicion risk.";
+            case 'Z': return "Martian relay power grid room machine; routes power to nearby rooms and base systems.";
+            case 'P': return "Martian emergency smelter room machine; converts raw ores into usable metal.";
+            case 'F': return "Martian emergency steam engine; powers two machines through grids and can be sabotaged.";
+            case 'U': return "disabled emergency steam engine; current zone power is down until restarted with fuel.";
+            case 'e': return "atmospheric condenser EMM; workbench-built emergency machine.";
+            case 'f': return "micro forge EMM; workbench-built fabrication machine.";
+            case 'l': return "micro lab EMM; crude base research station.";
+            case 'x': return "security logic Engine node; faction-gated base management machine.";
+            case 'p': return "Civic Wardens faction-only precinct interior; wrong cover means immediate trouble.";
+            case 'b': return "bandit faction-only den; a marked patron or gang colors are expected.";
+            case 'h': return "hiver-only block; locals know who belongs.";
+            case 'n': return "noble-aligned secure room; poverty itself is probable cause.";
+            case 'M': return "military-restricted checkpoint; uniforms and papers matter.";
+            default: return "unknown darkness.";
+        }
+    }
+
+    Color colorForTile(int x, int y, char ch) {
+        if (isInClaimedRoom(x, y) && (ch == '.' || ch == '+')) return new Color(105, 175, 105);
+        if (world != null && (ch == '.' || ch == '+')) {
+            Faction owner = world.roomFaction(world.roomIdAt(x, y));
+            if (owner != Faction.NONE) return colorForFaction(owner);
+        }
+        return colorFor(ch);
+    }
+
+    Color colorForFaction(Faction f) {
+        switch (f) {
+            case CIVIC_WARDENS: return new Color(70, 115, 210);
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(150, 55, 45);
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
+            case CIVIC_LEDGER_OFFICE: return new Color(145, 125, 95);
+            case MINISTORUM: return new Color(180, 150, 70);
+            case SORORITAS: return new Color(210, 210, 210);
+            case IMPERIAL_GUARD: return new Color(85, 135, 85);
+            case HIVER: case HIVER_BLOCK_AUREL: case HIVER_BLOCK_MARROW: case HIVER_BLOCK_SUMPLEDGER: return new Color(115, 105, 82);
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return new Color(190, 170, 95);
+            case MUTANT: return new Color(75, 145, 80);
+            case CULTIST: case HERETIC: return new Color(150, 55, 155);
+            case ROGUE_MACHINE: return new Color(120, 145, 160);
+            default: return new Color(85,82,75);
+        }
+    }
+
+    Color colorFor(char ch) {
+        switch(ch) {
+            case '-': return new Color(105,96,84);
+            case '#': return new Color(95,90,82);
+            case '%': return new Color(82,80,74);
+            case '&': return new Color(76,78,82);
+            case '^': return new Color(86,72,58);
+            case '8': return new Color(64,78,84);
+            case '0': return new Color(68,68,78);
+            case '*': return new Color(88,72,58);
+            case '?': return new Color(120,100,62);
+            case '!': return new Color(130,76,52);
+            case ' ': return new Color(2,2,4);
+            case '.': return new Color(85,82,75);
+            case ';': return new Color(55,55,50);
+            case '_': return new Color(96,90,80);
+            case '+': return new Color(160,120,70);
+            case 'g': return new Color(180,75,65);
+            case 'm': return new Color(110,180,95);
+            case 'R': return new Color(140,160,180);
+            case 'W': return new Color(205,185,115);
+            case 'A': return new Color(90,140,220);
+            case 'T': return new Color(210,180,90);
+            case 'Q': return new Color(235,205,100);
+            case 'C': return new Color(180,150,210);
+            case 'H': return new Color(190,70,190);
+            case 'N': return new Color(125,115,90);
+            case 'q': return new Color(220,170,90);
+            case 'r': return new Color(120,70,55);
+            case 'e': return new Color(115,190,205);
+            case 'f': return new Color(195,135,95);
+            case 'l': return new Color(165,135,220);
+            case 'x': return new Color(140,220,140);
+            case 'p': return new Color(70,115,210);
+            case 'b': return new Color(155,55,45);
+            case 'h': return new Color(145,135,105);
+            case 'n': return new Color(205,185,120);
+            case 'M': return new Color(100,145,100);
+            default: return new Color(45,45,45);
+        }
+    }
+
+    double uiScaleFactor() { return DisplayDensityAuthority.clampScale(options.uiScale / 100.0f); }
+    int scaled(int v) { return Math.max(1, (int)Math.round(v * uiScaleFactor())); }
+    int readableButtonHeight(int preferred) { return Math.max(28, Math.min(preferred, Math.max(24, getHeight() / 11))); }
+    int readableGap(int preferred) { return Math.max(8, Math.min(preferred, Math.max(6, getHeight() / 42))); }
+    String onOff(boolean b) { return b ? "ON" : "OFF"; }
+
+    void applyOptions() {
+        double f = DisplayDensityAuthority.clampScale(options.fontScale / 100.0f);
+        DisplayDensityAuthority.applyGlobalSwingTextScale(options);
+        titleFont = new Font("Monospaced", Font.BOLD, Math.max(20, (int)Math.round(36*f)));
+        uiFont = new Font("Monospaced", Font.BOLD, Math.max(10, (int)Math.round(16*f)));
+        smallFont = new Font("Monospaced", Font.BOLD, Math.max(8, (int)Math.round(12*f)));
+        asciiFont = new Font("Monospaced", Font.BOLD, Math.max(8, (int)Math.round(13*f)));
+        renderScaling.applyOptions(options);
+        if (timer != null) timer.setDelay(options.targetTimerDelayMs());
+        frameLimiter.configure(options);
+        DebugLog.audit("DISPLAY_DENSITY", DisplayDensityAuthority.auditSummary(options));
+        DebugLog.audit("DISPLAY_RESOLUTION", DisplayResolutionAuthority.auditSummary(options));
+        DebugLog.audit("OPTIONS", "Applied options fontScale=" + options.fontScale + " uiScale=" + options.uiScale + " sfx=" + options.sfxVolume + " music=" + options.musicVolume + " conversation=" + options.conversationVolume + " windowMode=" + options.windowMode + " resolution=" + options.resolutionLabel() + " downscale=" + options.downscaleLabel() + " targetFps=" + options.targetFpsLabel() + " frameLimited=" + options.frameLimitLabel() + " renderQuality=" + options.renderQualityLabel() + " reducedMotion=" + options.reducedMotion + " artQuality=" + options.artQualityLabel() + " generatedPayload=" + options.generatedAssetPayloadRootShortLabel() + " mapTileSize=" + options.mapTileSizeLabel() + " worldZoom=" + options.worldZoomLabel());
+    }
+
+    void changeFontScale(int delta) {
+        options.fontScale = Math.max(50, Math.min(200, options.fontScale + delta*5));
+        applyOptions(); options.save(); sounds.play("tab", options); logEvent("Text scale now " + options.fontScale + "%. Compact default is " + GameOptions.COMPACT_DEFAULT_FONT_SCALE + "%; larger text remains available as opt-in."); repaint();
+    }
+    void changeUiScale(int delta) {
+        options.uiScale = Math.max(50, Math.min(200, options.uiScale + delta*5));
+        applyOptions(); options.save(); sounds.play("tab", options); logEvent("GUI scale now " + options.uiScale + "%. Compact default is " + GameOptions.COMPACT_DEFAULT_UI_SCALE + "%; larger chrome remains available as opt-in."); repaint();
+    }
+    void cycleArtQuality() {
+        options.artQualityIndex = Math.floorMod(options.artQualityIndex + 1, GameOptions.ART_QUALITY_LABELS.length);
+        options.applyGeneratedAssetRuntimeProperties();
+        options.save();
+        AssetManager.reloadGeneratedAssetRuntime();
+        images.reloadArtQuality(options);
+        sounds.play("tab", options);
+        logEvent("Art quality cache now " + options.artQualityLabel() + ". Generated semantic assets request tier " + options.artQualityFolder() + "; external payload " + options.generatedAssetPayloadRootShortLabel() + ".");
+        repaint();
+    }
+    void chooseGeneratedAssetPayloadRoot() {
+        try {
+            JFileChooser chooser = new JFileChooser(options.hasGeneratedAssetPayloadRoot() ? new File(options.generatedAssetPayloadRoot()) : new File("."));
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setDialogTitle("Select The Mechanist generated-art payload root");
+            int result = chooser.showOpenDialog(this);
+            if (result != JFileChooser.APPROVE_OPTION || chooser.getSelectedFile() == null) {
+                logEvent("Generated-art payload root unchanged.");
+                return;
+            }
+            File selected = chooser.getSelectedFile();
+            options.generatedAssetPayloadRoot = selected.getAbsolutePath();
+            options.applyGeneratedAssetRuntimeProperties();
+            options.save();
+            AssetManager.reloadGeneratedAssetRuntime();
+            images.reloadArtQuality(options);
+            sounds.play("tab", options);
+            logEvent("Generated-art payload root set to " + options.generatedAssetPayloadRootLabel() + ". Requested tier: " + options.artQualityFolder() + ".");
+            repaint();
+        } catch (Throwable t) {
+            logEvent("Could not select generated-art payload root: " + t.getMessage());
+        }
+    }
+    void clearGeneratedAssetPayloadRoot() {
+        options.generatedAssetPayloadRoot = "";
+        options.applyGeneratedAssetRuntimeProperties();
+        options.save();
+        AssetManager.reloadGeneratedAssetRuntime();
+        images.reloadArtQuality(options);
+        sounds.play("tab", options);
+        logEvent("External generated-art payload root cleared. Runtime will use bundled generated low_32 fallback unless a JVM flag supplies another root.");
+        repaint();
+    }
+    void cycleMapTileSize() {
+        options.mapTileSizeIndex = Math.floorMod(options.mapTileSizeIndex + 1, GameOptions.MAP_TILE_SIZE_LABELS.length);
+        options.save();
+        sounds.play("tab", options);
+        logEvent("Map tile size now " + options.mapTileSizeLabel() + " (" + options.mapTilePixelSize() + "px before GUI scale).");
+        repaint();
+    }
+
+    boolean worldZoomControlActive() {
+        if (screen == Screen.SECTOR_AUDIT) return auditWorld != null;
+        return world != null && (screen == Screen.GAME || (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.SCAVENGE || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH)));
+    }
+
+    void changeWorldZoom(int delta, String source) {
+        int before = options.worldZoomIndex;
+        options.worldZoomIndex = Math.max(0, Math.min(GameOptions.WORLD_ZOOM_LABELS.length - 1, options.worldZoomIndex + delta));
+        if (options.worldZoomIndex != before) {
+            options.save();
+            sounds.play("tab", options);
+            logEvent("Viewport zoom " + options.worldZoomLabel() + " via " + source + ".");
+            DebugLog.audit("VIEWPORT_ZOOM", "source=" + source + " index=" + options.worldZoomIndex + " label=" + options.worldZoomLabel() + " mode=" + screen + "/" + panelMode + " state=" + stateSummary());
+        } else {
+            logEvent("Viewport zoom already at " + options.worldZoomLabel() + ".");
+        }
+        repaint();
+    }
+    void changeSfxVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeSfxVolume(options, delta));
+        sounds.play("button", options);
+        repaint();
+    }
+    void changeMusicVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeMusicVolume(options, delta));
+        sounds.setMusicVolume(options);
+        repaint();
+    }
+    void changeConversationVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeConversationVolume(options, delta));
+        sounds.play("type", options);
+        repaint();
+    }
+
+    void cycleWindowMode() {
+        logEvent(OptionsBoundaryAuthority.cycleWindowMode(options));
+        repaint();
+    }
+    void changeResolution(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeResolution(options, delta));
+        repaint();
+    }
+
+    void toggleGraphicsDropdown(int which) {
+        graphicsDropdown = (graphicsDropdown == which) ? -1 : which;
+        logEvent("Graphics dropdown " + (graphicsDropdown < 0 ? "closed" : "opened") + ".");
+        repaint();
+    }
+
+    void setWindowMode(int mode) {
+        logEvent(OptionsBoundaryAuthority.setWindowMode(options, mode));
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void setResolutionIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setResolutionIndex(options, idx));
+        graphicsDropdown = -1;
+        applyWindowMode();
+        repaint();
+    }
+
+    void setDownscaleIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setDownscaleIndex(options, idx));
+        renderScaling.applyOptions(options);
+        graphicsDropdown = -1;
+        DebugLog.audit("RENDER_DOWNSCALE", renderScaling.auditSummary());
+        repaint();
+    }
+
+    void setColorPreset(int idx) {
+        logEvent(OptionsBoundaryAuthority.setColorPreset(options, idx));
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void setTargetFpsIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setTargetFpsIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void toggleFrameLimiter() {
+        logEvent(OptionsBoundaryAuthority.toggleFrameLimiter(options));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void toggleRenderStressTest() {
+        logEvent(renderStressTest.toggle(frameLimiter));
+        options.diagnosticsOverlay = true;
+        performanceDiagnostics.setVisible(true);
+        options.save();
+        repaint();
+    }
+
+    void setRenderQualityIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setRenderQualityIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void cycleLightingFx() {
+        int next = (options.lightingFxIndex + 1) % GameOptions.LIGHTING_FX_LABELS.length;
+        logEvent(OptionsBoundaryAuthority.setLightingFxIndex(options, next));
+        repaint();
+    }
+
+    void toggleReducedMotion() {
+        logEvent(OptionsBoundaryAuthority.toggleReducedMotion(options));
+        applyOptions();
+        repaint();
+    }
+
+    void applyQoL(String message) {
+        logEvent(message);
+        DebugLog.audit("GAMEPLAY_QOL_OPTIONS", GameplayQualityOfLifeAuthority.auditSummary(options));
+        repaint();
+    }
+
+    void requestDoomModeToggle() {
+        if (options == null) { logEvent("doom mode unchanged: options unavailable."); return; }
+        if (options.doomModeEnabled) {
+            applyQoL(GameplayQualityOfLifeAuthority.setDoomMode(options, false));
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "doom mode is highly experimental and may cause instability.\n\nEnable the first-person 3D viewport wrapper for this profile?",
+                "Enable experimental doom mode?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.YES_OPTION) {
+            applyQoL(GameplayQualityOfLifeAuthority.setDoomMode(options, true));
+            logEvent("doom mode assets/renderer unlocked. LWJGL dependency status: " + LwjglRenderBackendProbe.statusLine() + ".");
+        } else {
+            options.doomModeEnabled = false;
+            options.save();
+            applyQoL("doom mode remains OFF.");
+        }
+    }
+
+    void changeDoomFov(int delta) {
+        if (options == null) { logEvent("doom mode FOV unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.setDoomFov(options, options.doomModeFovDegrees + delta));
+    }
+
+    void cycleDoomFogMode() {
+        if (options == null) { logEvent("doom mode fog unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.cycleDoomFogMode(options));
+    }
+
+
+    boolean isGraphicsDropdownButton(ButtonBox b) {
+        if (b == null || b.label == null) return false;
+        String label = b.label.trim();
+        if (label.startsWith("> ")) label = label.substring(2).trim();
+        if (graphicsDropdown == 0) {
+            return label.equals("Windowed") || label.equals("Borderless Windowed") || label.equals("Exclusive Fullscreen");
+        }
+        if (graphicsDropdown == 1) {
+            for (int i=0;i<DisplayResolutionAuthority.choiceCount();i++) if (label.equals(DisplayResolutionAuthority.modeLabel(i))) return true;
+            return false;
+        }
+        if (graphicsDropdown == 2) {
+            for (String name : GameOptions.PALETTE_NAMES) if (label.equals(name)) return true;
+            return false;
+        }
+        if (graphicsDropdown == 3) {
+            for (String name : GameOptions.DOWNSCALE_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        if (graphicsDropdown == 4) {
+            for (String name : GameOptions.TARGET_FPS_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        if (graphicsDropdown == 5) {
+            for (String name : GameOptions.RENDER_QUALITY_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        return false;
+    }
+
+    void addGraphicsDropdownButtons(int x, int y, int bw, int gap) {
+        if (graphicsDropdown < 0) return;
+        Rectangle inner = graphicsDropdownInnerRect();
+        if (inner.width <= 0 || inner.height <= 0) return;
+        int rowH = Math.max(20, Math.min(30, scaled(27)));
+        int yy = inner.y;
+        if (graphicsDropdown == 0) {
+            String[] modes = {"Windowed", "Borderless Windowed", "Exclusive Fullscreen"};
+            for (int i=0;i<modes.length;i++) { final int idx=i; buttons.add(new ButtonBox(modes[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Select " + modes[i] + " window mode.", () -> setWindowMode(idx))); }
+        } else if (graphicsDropdown == 1) {
+            int available = DisplayResolutionAuthority.choiceCount();
+            int visible = Math.max(1, Math.min(available, inner.height / Math.max(1, rowH)));
+            int start = Math.max(0, Math.min(Math.max(0, available - visible), options.resolutionIndex - visible/2));
+            for (int row=0; row<visible; row++) {
+                final int idx=start+row;
+                String prefix = idx==options.resolutionIndex ? "> " : "";
+                buttons.add(new ButtonBox(prefix + DisplayResolutionAuthority.modeLabel(idx), inner.x, yy+row*rowH, inner.width, rowH-2, "Select detected/safe resolution " + DisplayResolutionAuthority.modeLabel(idx) + ".", () -> setResolutionIndex(idx)));
+            }
+        } else if (graphicsDropdown == 2) {
+            for (int i=0;i<GameOptions.PALETTE_NAMES.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.PALETTE_NAMES[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Apply palette globally: " + GameOptions.PALETTE_NAMES[i] + ".", () -> setColorPreset(idx))); }
+        } else if (graphicsDropdown == 3) {
+            for (int i=0;i<GameOptions.DOWNSCALE_LABELS.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.DOWNSCALE_LABELS[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Use internal render scale " + GameOptions.DOWNSCALE_LABELS[i] + ".", () -> setDownscaleIndex(idx))); }
+        } else if (graphicsDropdown == 4) {
+            for (int i=0;i<GameOptions.TARGET_FPS_LABELS.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.TARGET_FPS_LABELS[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Use target frame pacing " + GameOptions.TARGET_FPS_LABELS[i] + ".", () -> setTargetFpsIndex(idx))); }
+        } else if (graphicsDropdown == 5) {
+            for (int i=0;i<GameOptions.RENDER_QUALITY_LABELS.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.RENDER_QUALITY_LABELS[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Use render quality profile " + GameOptions.RENDER_QUALITY_LABELS[i] + ".", () -> setRenderQualityIndex(idx))); }
+        }
+    }
+
+    void applyWindowMode() {
+        renderScaling.applyOptions(options);
+        logEvent(WindowModeSurfaceAuthority.apply(this, options));
+        DebugLog.audit("GRAPHICS_APPLY", renderScaling.auditSummary());
+        repaint();
+    }
+    void markJvmProfileChanged(String message) {
+        JvmRuntimeProfileAuthority.save(jvmRuntimeProfile);
+        jvmRuntimeRestartPending = true;
+        jvmRuntimeNotice = message + " Saved to settings/jvm_runtime.properties. Restart required for full effect.";
+        logEvent(jvmRuntimeNotice);
+        DebugLog.audit("JVM_RUNTIME_PROFILE", JvmRuntimeProfileAuthority.auditSummary(jvmRuntimeProfile));
+        repaint();
+    }
+
+    void cycleJvmRuntimeProfile() {
+        JvmRuntimeProfileAuthority.cycleTarget(jvmRuntimeProfile);
+        markJvmProfileChanged("JVM runtime profile now " + jvmRuntimeProfile.targetLabel() + ".");
+    }
+
+    void cycleJvmGarbageCollector() {
+        JvmRuntimeProfileAuthority.cycleGc(jvmRuntimeProfile);
+        markJvmProfileChanged("JVM garbage collector profile now " + jvmRuntimeProfile.gc.label + ".");
+    }
+
+    void cycleJvmPipelineProfile() {
+        JvmRuntimeProfileAuthority.cyclePipeline(jvmRuntimeProfile);
+        markJvmProfileChanged("Java2D pipeline profile now " + jvmRuntimeProfile.pipelineLabel() + ".");
+    }
+
+    void changeJvmMemory(int deltaMb) {
+        JvmRuntimeProfileAuthority.changeMemory(jvmRuntimeProfile, deltaMb);
+        markJvmProfileChanged("JVM max heap profile now " + jvmRuntimeProfile.maxRamMb + " MB.");
+    }
+
+    void toggleJvmStringDeduplication() {
+        jvmRuntimeProfile.stringDeduplication = !jvmRuntimeProfile.stringDeduplication;
+        markJvmProfileChanged("JVM string deduplication " + (jvmRuntimeProfile.stringDeduplication ? "enabled" : "disabled") + ".");
+    }
+
+    void toggleJvmTransparentAcceleration() {
+        jvmRuntimeProfile.transparentAcceleration = !jvmRuntimeProfile.transparentAcceleration;
+        markJvmProfileChanged("Java2D transparent blit acceleration " + (jvmRuntimeProfile.transparentAcceleration ? "enabled" : "disabled") + ".");
+    }
+
+    void toggleJvmNoAa() {
+        jvmRuntimeProfile.disableVectorAntialiasing = !jvmRuntimeProfile.disableVectorAntialiasing;
+        markJvmProfileChanged("Java2D vector antialias suppression " + (jvmRuntimeProfile.disableVectorAntialiasing ? "enabled" : "disabled") + ".");
+    }
+
+    void acceptJvmSettingsAndRestart() {
+        JvmRuntimeProfileAuthority.save(jvmRuntimeProfile);
+        java.util.List<String> command = new ArrayList<>();
+        String javaExe = Paths.get(System.getProperty("java.home", ""), "bin", isWindowsHost() ? "java.exe" : "java").toString();
+        command.add(javaExe);
+        command.addAll(jvmRuntimeProfile.buildJvmArgs());
+        command.add("-cp");
+        command.add(System.getProperty("java.class.path"));
+        command.add(TheMechanist.class.getName());
+        DebugLog.audit("JVM_RESTART", "Restarting with command=" + command);
+        logEvent("Restarting with accepted JVM profile: " + jvmRuntimeProfile.targetLabel() + ".");
+        try {
+            new ProcessBuilder(command).inheritIO().start();
+            shutdownRuntime();
+            Window win = SwingUtilities.getWindowAncestor(this);
+            if (win != null) win.dispose();
+            System.exit(0);
+        } catch (Throwable t) {
+            DebugLog.error("JVM_RESTART", "Failed to restart with selected JVM profile.", t);
+            jvmRuntimeNotice = "Restart failed: " + t.getMessage();
+            logEvent(jvmRuntimeNotice);
+            repaint();
+        }
+    }
+
+    boolean isWindowsHost() { return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win"); }
+
+    void togglePerformanceDiagnostics() {
+        String line = performanceDiagnostics.toggle();
+        options.diagnosticsOverlay = performanceDiagnostics.visible();
+        options.save();
+        logEvent(line);
+        DebugLog.audit("PERFORMANCE_DIAGNOSTICS", performanceDiagnostics.auditSummary());
+        repaint();
+    }
+
+    void cycleCvdMode() {
+        options.cvdModeIndex = (options.cvdModeIndex + 1) % AccessibilityCompatibilityAuthority.CvdMode.values().length;
+        options.save();
+        logEvent("Color vision correction: " + AccessibilityCompatibilityAuthority.cvdLabel(options.cvdModeIndex) + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(userProfile));
+        repaint();
+    }
+
+    void toggleHighContrastText() {
+        options.highContrastText = !options.highContrastText;
+        options.save();
+        logEvent("High contrast text containers " + (options.highContrastText ? "enabled" : "disabled") + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(userProfile));
+        repaint();
+    }
+
+    void toggleInstantDialogueText() {
+        options.instantDialogueText = !options.instantDialogueText;
+        options.save();
+        logEvent("Instant conversation text " + (options.instantDialogueText ? "enabled" : "disabled") + ".");
+        repaint();
+    }
+
+    void adjustScreenShake(int delta) {
+        options.screenShakePercent = Math.max(0, Math.min(100, options.screenShakePercent + delta));
+        options.save();
+        logEvent("Screen shake intensity now " + options.screenShakePercent + "%.");
+        repaint();
+    }
+
+    void pushCurrentScreenNarration() {
+        String next = "The Mechanist screen: " + screen + (panelMode == PanelMode.NONE ? "" : ", panel " + panelMode) + (world == null ? "" : ", zone " + world.zoneType.label + ", turn " + turn) + ".";
+        AccessibilityCompatibilityAuthority.pushNarration(this, lastAccessibleNarration, next);
+        lastAccessibleNarration = next;
+        logEvent("Accessibility narration updated for current screen.");
+        repaint();
+    }
+
+    void cycleColorTarget() { logEvent(OptionsBoundaryAuthority.cycleColorTarget(options)); repaint(); }
+    void cycleColorPreset() { logEvent(OptionsBoundaryAuthority.cycleColorPreset(options)); repaint(); }
+    void adjustSelectedColor(int delta) { logEvent(OptionsBoundaryAuthority.adjustSelectedColor(options, delta)); repaint(); }
+    Color optionColor(int key) { return OptionsBoundaryAuthority.optionColor(options, key); }
+
+    ArrayList<String> controlsReferenceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(controlProfileTitle());
+        lines.add("Action names are shared across keyboard and controller paths; context decides whether a prompt moves, examines, interacts, confirms, or backs out.");
+        lines.add("Required recovery actions: Move, Confirm, Cancel/Back, Pause/Menu, and a keyboard/mouse fallback.");
+        for (InputAction action : InputAction.values()) {
+            lines.add(inputActionLabel(action) + " | " + inputActionContext(action) + " | "
+                    + keyboardPromptFor(action) + " | " + controllerPromptFor(action)
+                    + (requiredInputAction(action) ? " | required" : ""));
+        }
+        lines.add("Context overlap: E examines while the Look panel is open and interacts from the game surface; A/Cross confirms in menus and examines/interacts only where that panel owns the prompt.");
+        lines.add("Safe fallback: Escape/B/Circle backs out, and keyboard movement remains available if a controller is missing or reconnecting.");
+        if (rebindingTarget != null && !rebindingTarget.isEmpty()) lines.add(rebindingTarget);
+        return lines;
+    }
+
+    String controlProfileTitle() {
+        switch (controlsTab) {
+            case 1: return "XBOX CONTROL REFERENCE";
+            case 2: return "PLAYSTATION CONTROL REFERENCE";
+            case 3: return "STEAM DECK CONTROL REFERENCE";
+            case 4: return "GENERIC CONTROLLER REFERENCE";
+            default: return "KEYBOARD AND MOUSE CONTROL REFERENCE";
+        }
+    }
+
+    boolean requiredInputAction(InputAction action) {
+        return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT
+                || action == InputAction.MOVE_RIGHT || action == InputAction.CONFIRM || action == InputAction.CANCEL
+                || action == InputAction.PAUSE;
+    }
+
+    String inputActionLabel(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Move / nudge up";
+            case MOVE_DOWN: return "Move / nudge down";
+            case MOVE_LEFT: return "Move / nudge left";
+            case MOVE_RIGHT: return "Move / nudge right";
+            case CONFIRM: return "Confirm / choose";
+            case CANCEL: return "Cancel / back";
+            case WAIT: return "Wait one turn";
+            case INTERACT: return "Interact";
+            case EXAMINE: return "Examine visible target";
+            case INVENTORY: return "Inventory";
+            case CHARACTER: return "Character dossier";
+            case BUILD: return "Build and base tools";
+            case SENSES: return "Senses";
+            case PLAN_MOVE: return "Plan exact movement";
+            case PAUSE: return "Pause / menu";
+            case LOOK: return "Look";
+            case MAP: return "Map";
+            case ZOOM_IN: return "Zoom in";
+            case ZOOM_OUT: return "Zoom out";
+            case ATTACK: return "Combat targeting";
+            case RELOAD: return "Reload";
+            default: return action.name();
+        }
+    }
+
+    String inputActionContext(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "movement, targeting, lists";
+            case CONFIRM: return "menus, targeting, planning";
+            case CANCEL: return "global recovery";
+            case WAIT: return "game surface";
+            case INTERACT: return "game surface and interact panel";
+            case EXAMINE: return "Look panel";
+            case INVENTORY: case CHARACTER: case BUILD: case SENSES: case LOOK: case MAP: return "game surface";
+            case PLAN_MOVE: return "game surface movement planning";
+            case PAUSE: return "global menu";
+            case ZOOM_IN: case ZOOM_OUT: return "map and viewport";
+            case ATTACK: case RELOAD: return "combat";
+            default: return "general";
+        }
+    }
+
+    String keyboardPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Keyboard: W / Up";
+            case MOVE_DOWN: return "Keyboard: S / Down";
+            case MOVE_LEFT: return "Keyboard: A / Left";
+            case MOVE_RIGHT: return "Keyboard: D / Right";
+            case CONFIRM: return "Keyboard: Enter / Space";
+            case CANCEL: return "Keyboard: Escape";
+            case WAIT: return "Keyboard: . / Numpad 5";
+            case INTERACT: return "Keyboard: E";
+            case EXAMINE: return "Keyboard: E while looking";
+            case INVENTORY: return "Keyboard: I";
+            case CHARACTER: return "Keyboard: C";
+            case BUILD: return "Keyboard: B";
+            case SENSES: return "Keyboard: G";
+            case PLAN_MOVE: return "Keyboard: P";
+            case PAUSE: return "Keyboard: Escape";
+            case LOOK: return "Keyboard: L";
+            case MAP: return "Keyboard: M";
+            case ZOOM_IN: return "Keyboard: Home / wheel up";
+            case ZOOM_OUT: return "Keyboard: End / wheel down";
+            case ATTACK: return "Keyboard: F";
+            case RELOAD: return "Keyboard: X";
+            default: return "Keyboard: unassigned";
+        }
+    }
+
+    String controllerPromptFor(InputAction action) {
+        switch (controlsTab) {
+            case 1: return xboxPromptFor(action);
+            case 2: return playstationPromptFor(action);
+            case 3: return steamPromptFor(action);
+            case 4: return genericPromptFor(action);
+            default: return "Controller: see controller tabs";
+        }
+    }
+
+    String xboxPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Xbox: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Xbox: A";
+            case CANCEL: return "Xbox: B";
+            case INVENTORY: return "Xbox: X";
+            case CHARACTER: return "Xbox: Y";
+            case PAUSE: return "Xbox: Menu";
+            case LOOK: return "Xbox: View";
+            case ZOOM_IN: return "Xbox: RB";
+            case ZOOM_OUT: return "Xbox: LB";
+            case ATTACK: return "Xbox: right stick up";
+            case PLAN_MOVE: return "Xbox: right stick down";
+            default: return "Xbox: keyboard fallback";
+        }
+    }
+
+    String playstationPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "PlayStation: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "PlayStation: Cross";
+            case CANCEL: return "PlayStation: Circle";
+            case INVENTORY: return "PlayStation: Square";

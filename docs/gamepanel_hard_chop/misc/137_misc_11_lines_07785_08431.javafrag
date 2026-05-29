@@ -1,0 +1,403 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: misc_11_lines_07785_08431
+// Category: misc
+// Source lines: 7785-8431
+// Method count: 32
+//
+// Methods in this fragment:
+// - suggestedConstructionChoiceLine :: lines 7785-7792 (8) :: String suggestedConstructionChoiceLine()
+// - processProgressiveConstructionSites :: lines 7950-7961 (12) :: void processProgressiveConstructionSites(boolean sleeping)
+// - contributeToConstructionSite :: lines 7963-7968 (6) :: void contributeToConstructionSite(BaseObject obj)
+// - configureBaseObject :: lines 7987-8027 (41) :: void configureBaseObject(BaseObject obj)
+// - passiveBaseObjectTicks :: lines 8029-8047 (19) :: void passiveBaseObjectTicks()
+// - hasBaseObject :: lines 8049-8052 (4) :: boolean hasBaseObject(char symbol)
+// - firstBaseObject :: lines 8054-8057 (4) :: BaseObject firstBaseObject(char symbol)
+// - useComfortStructures :: lines 8059-8081 (23) :: void useComfortStructures()
+// - workProcessScrap :: lines 8083-8096 (14) :: void workProcessScrap()
+// - workRepairClothing :: lines 8098-8107 (10) :: void workRepairClothing()
+// - workAssembleParts :: lines 8109-8118 (10) :: void workAssembleParts()
+// - operateAtmosCondenser :: lines 8221-8237 (17) :: void operateAtmosCondenser()
+// - operateMicroForge :: lines 8239-8258 (20) :: void operateMicroForge()
+// - operateMicroLab :: lines 8260-8271 (12) :: void operateMicroLab()
+// - recruitCapacity :: lines 8274-8278 (5) :: int recruitCapacity()
+// - availableRecruitLabor :: lines 8280-8284 (5) :: int availableRecruitLabor()
+// - securityStaffCount :: lines 8286-8290 (5) :: int securityStaffCount()
+// - recruitOperableMachines :: lines 8312-8317 (6) :: ArrayList<BaseObject> recruitOperableMachines()
+// - selectedWorkerMachine :: lines 8319-8323 (5) :: BaseObject selectedWorkerMachine()
+// - staffableStations :: lines 8326-8331 (6) :: ArrayList<BaseObject> staffableStations()
+// - selectedStaffingStation :: lines 8333-8337 (5) :: BaseObject selectedStaffingStation()
+// - selectedStaffingWorker :: lines 8339-8343 (5) :: RecruitWorker selectedStaffingWorker()
+// - moveStaffingStationSelection :: lines 8345-8353 (9) :: void moveStaffingStationSelection(int delta)
+// - moveStaffingWorkerSelection :: lines 8355-8362 (8) :: void moveStaffingWorkerSelection(int delta)
+// - assignSelectedWorkerToStaffingStation :: lines 8364-8372 (9) :: void assignSelectedWorkerToStaffingStation()
+// - clearSelectedStaffingStationWorker :: lines 8374-8381 (8) :: void clearSelectedStaffingStationWorker()
+// - forecastSelectedLogisticsReservation :: lines 8383-8390 (8) :: void forecastSelectedLogisticsReservation()
+// - recordSelectedLogisticsDeliveryIntent :: lines 8392-8399 (8) :: void recordSelectedLogisticsDeliveryIntent()
+// - recordLatestLogisticsSourceReservation :: lines 8401-8407 (7) :: void recordLatestLogisticsSourceReservation()
+// - displayLatestLogisticsRouteIntent :: lines 8409-8415 (7) :: void displayLatestLogisticsRouteIntent()
+// - previewLatestManualHaulOrder :: lines 8417-8423 (7) :: void previewLatestManualHaulOrder()
+// - recordLatestManualHaulContract :: lines 8425-8431 (7) :: void recordLatestManualHaulContract()
+
+    String suggestedConstructionChoiceLine() {
+        if (!hasBaseObject('s')) return "Storage Crate for safe capacity";
+        if (!hasBaseObject('c')) return "Sleeping Cot for recovery";
+        if (!hasBaseObject('u')) return "Water Barrel for reserve water";
+        if (!hasBaseObject('w')) return "Scrap Workbench to unlock repair and fabrication paths";
+        if (!hasKnowledge("Commerce Permits")) return "Watch Post or Barricade before risky commerce";
+        return "choose production, commerce, logistics, or defense based on your next goal";
+    }
+
+// ... omitted 157 non-method/source lines between cataloged methods ...
+
+    void processProgressiveConstructionSites(boolean sleeping) {
+        if (baseObjects == null || baseObjects.isEmpty()) return;
+        int touched = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj != null && obj.underConstruction) {
+                int before = obj.constructionVisualProgress;
+                ProgressiveConstructionAuthority.contribute(this, obj, sleeping ? 2 : 0, true);
+                if (obj.constructionVisualProgress != before) touched++;
+            }
+        }
+        if (touched > 0 && turn % 10 == 0) DebugLog.audit("PROGRESSIVE_CONSTRUCTION_TICK", ProgressiveConstructionAuthority.auditSummary(this));
+    }
+
+    void contributeToConstructionSite(BaseObject obj) {
+        if (obj == null || !obj.underConstruction) return;
+        int inserted = ProgressiveConstructionAuthority.contribute(this, obj, 1, true);
+        logEvent("CONSTRUCTION: contributed to " + obj.name + ". Inserted " + inserted + " component(s). " + ProgressiveConstructionAuthority.progressLine(obj));
+        DebugLog.audit("PROGRESSIVE_CONSTRUCTION_CONTRIBUTE", ProgressiveConstructionAuthority.progressLine(obj) + " state=" + stateSummary());
+    }
+
+// ... omitted 18 non-method/source lines between cataloged methods ...
+
+    void configureBaseObject(BaseObject obj) {
+        if (obj.qualityName == null || obj.qualityName.isBlank()) obj.qualityName = ItemQuality.NAMES[Math.max(0, Math.min(ItemQuality.NAMES.length-1, ItemQuality.tierIndex(obj.name + " machine")))];
+        if (obj.faction == null) obj.faction = Faction.NONE;
+        switch (obj.symbol) {
+            case 's': obj.capacity = 30; obj.integrity = 12; obj.description = "A lockable crate. Extends base storage and makes hoarding slightly less insane."; break;
+            case 'w': obj.capacity = 8; obj.integrity = 10; obj.charges = 0; obj.description = "A scrap workbench. Converts junk into supplies, assembles crude parts, and repairs clothing at a cost."; break;
+            case 'd': obj.integrity = 18; obj.cover = 2; obj.description = "A barricade. Slows raids and grants cover, while loudly advertising that something inside is worth taking."; break;
+            case 'c': obj.integrity = 8; obj.charges = 0; obj.description = "A sleeping cot. Reduces fatigue and allows slow wound/body-part recovery when the room is safe enough."; break;
+            case 'u': obj.integrity = 10; obj.capacity = 12; obj.charges = 2; obj.description = "A sealed water barrel. Stores drinkable water and slowly condenses/traps usable moisture when left alone."; break;
+            case 'a': obj.integrity = 6; obj.armed = false; obj.description = "A crude alarm trap. Can be armed to warn you of trouble, but it is noisy and not exactly elegant."; break;
+            case 'p': obj.integrity = 11; obj.cover = 1; obj.armed = true; obj.description = "A raised watch post. Recruits assigned to guard duty use it to spot trouble before it becomes inventory loss."; break;
+            case 'g': obj.integrity = 16; obj.capacity = 4; obj.cover = 1; obj.description = "A guard barracks. Houses security shifts, improves raid response, and makes the base look deliberately defended."; break;
+            case 'D': obj.integrity = 22; obj.cover = 3; obj.description = "A reinforced internal door. It slows raids, protects storage, and creates useful choke points."; break;
+            case 'S': obj.integrity = 28; obj.cover = 4; obj.description = "A sandbag line. Passive ballistic cover and physical roadblock semantics; no invisible defense math."; break;
+            case 'R': obj.integrity = 18; obj.cover = 1; obj.armed = true; obj.description = "A razor wire coil. Inspectable area-denial hardware; movement injury hooks wait for hazard authority."; break;
+            case 'W': obj.integrity = 70; obj.cover = 5; obj.description = "A reinforced defensive wall panel. Physical hard cover and perimeter structure for gate/sector defense."; break;
+            case 'N': obj.integrity = 24; obj.capacity = 3; obj.charges = 1; obj.description = "A security sensor mast. Visible detection hardware for alarm, LOS, and ownership-safe routing."; break;
+            case 'Y': obj.integrity = 65; obj.cover = 3; obj.description = "An Civic Wardens reinforced door. Precinct-grade choke point with access-control binding."; break;
+            case 'J': obj.integrity = 78; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "An Civic Wardens suppression turret profile. Built and inspectable with passive security coverage."; break;
+            case 'U': obj.integrity = 70; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "A heavy stub turret profile. Physical weapon mount only until ammo, power, staffing, and hostility rules exist."; break;
+            case 'Z': obj.integrity = 62; obj.cover = 2; obj.armed = false; obj.capacity = 5; obj.description = "A gilded noble sentry turret profile. Expensive visible deterrent; autonomous targeting intentionally dormant."; break;
+            case 'P': obj.integrity = 30; obj.cover = 1; obj.capacity = 2; obj.description = "A precinct defensive fixture set. Civic Wardens room props, checkpoint furnishings, and service/security anchors."; break;
+            case 'e': obj.integrity = 9; obj.capacity = 16; obj.charges = 1; obj.description = "An emergency atmospheric condenser. Slowly turns poisoned damp into drinkable reserve."; break;
+            case 'f': obj.integrity = 12; obj.capacity = 10; obj.description = "A micro forge. Converts scrap and parts into sturdier construction supplies."; break;
+            case 'l': obj.integrity = 8; obj.description = "A micro lab. Early research foundation for base doctrine and ugly learning."; break;
+            case 'x': obj.integrity = 10; obj.armed = true; obj.description = "A security logic Engine node. Improves base management and makes raids feel personally insulted."; break;
+            case 'L': obj.integrity = 10; obj.capacity = 6; obj.charges = 0; obj.description = "Specialized laboratory or chemical apparatus. It satisfies non-consumed equipment requirements for generated chem/medicae recipes when placed in a valid room."; break;
+            case 'B': obj.integrity = 9; obj.capacity = 18; obj.description = "A shop counter. Permitted counters produce lawful income; unpermitted counters sell anyway and raise heat."; break;
+            case 'M': obj.integrity = 8; obj.capacity = 10; obj.description = "A medicae stall. Consumes medical goods for service income and can support recovery-oriented business later."; break;
+            case 'T': obj.integrity = 18; obj.cover = 4; obj.armed = true; obj.charges = 3; obj.description = "A powered defense turret. Consumes power attention, but heavily improves raid defense when supplied."; break;
+            case 'H': obj.integrity = 16; obj.cover = 5; obj.armed = true; obj.charges = 2; obj.description = "A shield relay. Projects hardened choke protection over valuable base assets and softens raid damage."; break;
+            case 'v': obj.integrity = 6; obj.capacity = 1; obj.description = "A decor object. Improves shop presentation, recruit morale, and customer willingness to pay."; break;
+            case 'A': obj.integrity = 8; obj.capacity = 2; obj.description = "A business add-on fixture. Shelving, signage, lockbox, display space, or service counter upgrades selling power."; break;
+            case 'k': obj.integrity = 8; obj.capacity = 8; obj.description = "A carrying station. First-tier cargo staging for manual movement between nearby owned bases."; break;
+            case 'q': obj.integrity = 12; obj.capacity = 20; obj.description = "A supply post. Second-tier cargo hub with organized bins, route slips, and faction labor staging."; break;
+            case 'G': obj.integrity = 18; obj.capacity = 50; obj.description = "A logistics center. High-tier cargo authority for inter-base transfer, trade stock routing, and caravan dispatch."; break;
+            default: obj.integrity = 5; obj.description = "A built object awaiting more specific rites.";
+        }
+        PassiveDefenseEffectsAuthority.annotate(obj);
+        MachineTierAuthority.applyToConfiguredObject(obj);
+    }
+
+    void passiveBaseObjectTicks() {
+        hourlyNpcFactionProductionTick();
+        if (!baseClaimed || baseObjects.isEmpty()) return;
+        for (BaseObject obj : baseObjects) {
+            if ((obj.symbol == 'u' || obj.symbol == 'e') && turn % (obj.symbol == 'e' ? 6 : 8) == 0 && obj.charges < obj.capacity) {
+                obj.charges++;
+                water = Math.min(MAX_FOOD_WATER, water + 1);
+                DebugLog.audit("BASE_WATER_PASSIVE", obj.name + " gathered 1 water. water=" + water + " objectCharges=" + obj.charges + " state=" + stateSummary());
+                logEvent("The water barrel knocks softly as condensation collects. Water reserve +1.");
+            }
+            if (obj.symbol == 'a' && obj.armed && turn % 10 == 0) {
+                DebugLog.audit("BASE_ALARM_LISTEN", "Alarm trap remains armed at " + obj.x + "," + obj.y + " heat=" + gangHeat + " suspicion=" + suspicion);
+            }
+            if ((obj.symbol == 'T' || obj.symbol == 'H') && obj.armed && turn % TURNS_PER_HOUR == 0 && obj.charges < obj.capacity) {
+                obj.charges++;
+                DebugLog.audit("BASE_POWER_DEFENSE_CHARGE", obj.name + " charge=" + obj.charges + "/" + obj.capacity + " state=" + stateSummary());
+            }
+        }
+    }
+
+    boolean hasBaseObject(char symbol) {
+        for (BaseObject obj : baseObjects) if (obj.symbol == symbol) return true;
+        return false;
+    }
+
+    BaseObject firstBaseObject(char symbol) {
+        for (BaseObject obj : baseObjects) if (obj.symbol == symbol) return obj;
+        return null;
+    }
+
+    void useComfortStructures() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Comfort structures require standing inside your claimed room."); return; }
+        boolean did = false;
+        BaseObject barrel = firstBaseObject('u');
+        if (barrel != null && water > 0) {
+            water--; barrel.charges = Math.max(0, barrel.charges - 1);
+            fatigue = Math.max(0, fatigue - 2);
+            did = true;
+            logEvent("You drink from the water barrel. Fatigue -2. Water reserve " + water + ".");
+            DebugLog.audit("BASE_USE_WATER", "water=" + water + " fatigue=" + fatigue + " state=" + stateSummary());
+        }
+        BaseObject cot = firstBaseObject('c');
+        if (cot != null) {
+            int oldFatigue = fatigue;
+            fatigue = Math.max(0, fatigue - 4);
+            if (wounds > 0 && water > 0) { wounds--; water--; logEvent("You rest on the cot and clean a wound. Wounds -1, water -1."); }
+            else logEvent("You rest on the cot. Fatigue " + oldFatigue + " -> " + fatigue + ".");
+            did = true;
+            DebugLog.audit("BASE_USE_COT", "fatigue=" + fatigue + " wounds=" + wounds + " water=" + water + " state=" + stateSummary());
+            advanceTurn("rests in a claimed room.");
+        }
+        if (!did) logEvent("No usable cot or filled water barrel is available yet.");
+    }
+
+    void workProcessScrap() {
+        if (!canUseWorkbench()) return;
+        int scrapIndex = inventory.lastIndexOf("Scrap bit");
+        if (scrapIndex < 0) { logEvent("Workbench: no Scrap bit available to process."); return; }
+        removeInventoryAtWithTrace(scrapIndex);
+        supplies += 2;
+        machineParts += 1;
+        fatigue = Math.min(20, fatigue + 1);
+        BaseObject bench = firstBaseObject('w'); if (bench != null) bench.charges++;
+        logEvent("Workbench processed scrap: +2 supplies, +1 machine part, fatigue +1.");
+        ProductionQueueRecordBridge.recordWorkbenchAction(this, firstBaseObject('w'), "process scrap", 1, active == null ? "player manual operation" : active.name + " manual operation");
+        DebugLog.audit("WORKBENCH_PROCESS_SCRAP", "supplies=" + supplies + " parts=" + machineParts + " fatigue=" + fatigue + " state=" + stateSummary());
+        advanceTurn("processes scrap at the workbench.");
+    }
+
+    void workRepairClothing() {
+        if (!canUseWorkbench()) return;
+        if (equippedClothing == null || !equippedClothing.damaged) { logEvent("Workbench: equipped clothing is not damaged."); return; }
+        if (supplies < 2 || machineParts < 1) { logEvent("Workbench: repairing clothing needs 2 supplies and 1 machine part."); return; }
+        supplies -= 2; machineParts -= 1; equippedClothing.damaged = false;
+        logEvent("Workbench repaired your damaged clothing. It may once again pass as deliberate misery.");
+        ProductionQueueRecordBridge.recordWorkbenchAction(this, firstBaseObject('w'), "repair clothing", 1, active == null ? "player manual operation" : active.name + " manual operation");
+        DebugLog.audit("WORKBENCH_REPAIR_CLOTHING", "supplies=" + supplies + " parts=" + machineParts + " clothing=" + equippedClothing.name + " state=" + stateSummary());
+        advanceTurn("repairs clothing at the workbench.");
+    }
+
+    void workAssembleParts() {
+        if (!canUseWorkbench()) return;
+        int detritus = inventory.lastIndexOf("Mechanical detritus");
+        if (detritus < 0 || supplies < 1) { logEvent("Workbench: assembling parts needs Mechanical detritus and 1 supply."); return; }
+        removeInventoryAtWithTrace(detritus); supplies -= 1; machineParts += 2; fatigue = Math.min(20, fatigue + 1);
+        logEvent("Workbench assembled machine parts from detritus: +2 machine parts, -1 supply.");
+        ProductionQueueRecordBridge.recordWorkbenchAction(this, firstBaseObject('w'), "assemble machine parts", 1, active == null ? "player manual operation" : active.name + " manual operation");
+        DebugLog.audit("WORKBENCH_ASSEMBLE_PARTS", "supplies=" + supplies + " parts=" + machineParts + " fatigue=" + fatigue + " state=" + stateSummary());
+        advanceTurn("assembles machine parts at the workbench.");
+    }
+
+// ... omitted 102 non-method/source lines between cataloged methods ...
+
+    void operateAtmosCondenser() {
+        if (!canUseWorkbench()) return;
+        BaseObject condenser = firstBaseObject('e');
+        if (condenser == null) { logEvent("Production blocked: no Atmospheric Condenser has been built in this base."); return; }
+        if (!hasKnowledge("Condensation Handling")) { logEvent("Production blocked: Condensation Handling knowledge is required to run this recipe safely."); return; }
+        String q = cappedProductionQuality(condenser, "Condensation Handling");
+        Faction pf = productionFactionFor(condenser, Faction.HIVER);
+        ProductionRecipe r = ProductionRecipe.create("Water ration", pf, q, "Condensation Handling", condenser.name);
+        water = Math.min(MAX_FOOD_WATER, water + r.outputCharges());
+        addInventoryItem(r.outputItemName(), ItemProvenanceRecord.produced(r, condenser, world, turn, active == null ? "player" : active.name));
+        condenser.charges = Math.min(condenser.capacity, condenser.charges + 1);
+        gainXp("Survival", 2, "operating condenser recipe");
+        reportProductionCeiling(condenser, r);
+        logEvent("PRODUCTION: " + r.summary() + ". Water reserve +" + r.outputCharges() + ".");
+        DebugLog.audit("PRODUCTION_CONDENSER", r.auditLine() + " water=" + water + " state=" + stateSummary());
+        advanceTurn("runs a condensation recipe.");
+    }
+
+    void operateMicroForge() {
+        if (!canUseWorkbench()) return;
+        BaseObject forge = firstBaseObject('f');
+        if (forge == null) { logEvent("Production blocked: no Micro Forge has been built in this base."); return; }
+        if (!hasKnowledge("Scrap-Forging Doctrine")) { logEvent("Production blocked: Scrap-Forging Doctrine knowledge is required for this machine recipe."); return; }
+        if (machineParts < 1) { logEvent("Production blocked: forging supplies needs 1 machine part."); return; }
+        machineParts -= 1;
+        String q = cappedProductionQuality(forge, "Scrap-Forging Doctrine");
+        Faction pf = productionFactionFor(forge, Faction.MECHANIST_COLLEGIA);
+        ProductionRecipe r = ProductionRecipe.create("Construction supplies", pf, q, "Scrap-Forging Doctrine", forge.name);
+        supplies += r.outputCharges();
+        addInventoryItem(r.outputItemName(), ItemProvenanceRecord.produced(r, forge, world, turn, active == null ? "player" : active.name));
+        forge.charges++;
+        fatigue = Math.min(20, fatigue + 1);
+        gainXp("Mechanics", 3, "micro forge production");
+        reportProductionCeiling(forge, r);
+        logEvent("PRODUCTION: " + r.summary() + ". Build supplies +" + r.outputCharges() + ". Fatigue +1.");
+        DebugLog.audit("PRODUCTION_FORGE", r.auditLine() + " supplies=" + supplies + " parts=" + machineParts + " state=" + stateSummary());
+        advanceTurn("runs a micro forge recipe.");
+    }
+
+    void operateMicroLab() {
+        if (!canUseWorkbench()) return;
+        if (firstBaseObject('l') == null) { logEvent("Research blocked: no Micro Lab has been built in this base."); return; }
+        if (!hasKnowledge("Underhive Basics")) { logEvent("Research blocked: Underhive Basics is required to organize even crude research."); return; }
+        if (machineParts < 1) { logEvent("Research blocked: Micro Lab work needs 1 machine part as consumed apparatus and salvage medium."); return; }
+        machineParts -= 1;
+        gainXp("Knowledge", 6, "micro lab research");
+        if (!hasKnowledge("Underhive Research Methods")) { unlockKnowledge("Underhive Research Methods"); logEvent("KNOWLEDGE DISCOVERED: Underhive Research Methods from Micro Lab work."); }
+        logEvent("RESEARCH: Micro Lab consumes 1 machine part and produces knowledge progress.");
+        DebugLog.audit("PRODUCTION_LAB", "parts=" + machineParts + " kc=" + knowledgeCredits + " state=" + stateSummary());
+        advanceTurn("runs a micro lab research cycle.");
+    }
+
+
+    int recruitCapacity() {
+        int cap = 0;
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'c') cap += Math.max(1, 1 + ItemQuality.tierIndex((obj.qualityName == null ? "Common" : obj.qualityName) + " cot") / 3);
+        return cap;
+    }
+
+    int availableRecruitLabor() {
+        int labor = 0;
+        for (RecruitWorker r : factionRecruits) if (r == null || !"security".equalsIgnoreCase(r.duty)) labor++;
+        return Math.max(0, labor);
+    }
+
+    int securityStaffCount() {
+        int n = 0;
+        for (RecruitWorker r : factionRecruits) if (r != null && "security".equalsIgnoreCase(r.duty)) n++;
+        return n;
+    }
+
+// ... omitted 21 non-method/source lines between cataloged methods ...
+
+    ArrayList<BaseObject> recruitOperableMachines() {
+        ArrayList<BaseObject> out = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'w' || obj.symbol == 'e' || obj.symbol == 'f' || obj.symbol == 'l' || obj.symbol == 'x' || obj.symbol == 'L') out.add(obj);
+        selectedWorkerMachineIndex = Math.max(0, Math.min(selectedWorkerMachineIndex, Math.max(0, out.size()-1)));
+        return out;
+    }
+
+    BaseObject selectedWorkerMachine() {
+        ArrayList<BaseObject> ms = recruitOperableMachines();
+        if (ms.isEmpty()) return null;
+        return ms.get(Math.max(0, Math.min(selectedWorkerMachineIndex, ms.size()-1)));
+    }
+
+
+    ArrayList<BaseObject> staffableStations() {
+        ArrayList<BaseObject> out = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (StaffingLaborBridgeAuthority.isMachineStation(obj) || StaffingLaborBridgeAuthority.isDefenseStation(obj)) out.add(obj);
+        selectedStaffingStationIndex = Math.max(0, Math.min(selectedStaffingStationIndex, Math.max(0, out.size()-1)));
+        return out;
+    }
+
+    BaseObject selectedStaffingStation() {
+        ArrayList<BaseObject> stations = staffableStations();
+        if (stations.isEmpty()) return null;
+        return stations.get(Math.max(0, Math.min(selectedStaffingStationIndex, stations.size()-1)));
+    }
+
+    RecruitWorker selectedStaffingWorker() {
+        if (factionRecruits.isEmpty()) return null;
+        selectedStaffingWorkerIndex = Math.max(0, Math.min(selectedStaffingWorkerIndex, factionRecruits.size()-1));
+        return factionRecruits.get(selectedStaffingWorkerIndex);
+    }
+
+    void moveStaffingStationSelection(int delta) {
+        ArrayList<BaseObject> stations = staffableStations();
+        if (stations.isEmpty()) { logEvent("Staffing station selection failed: no machine or defense station exists."); return; }
+        selectedStaffingStationIndex = Math.max(0, Math.min(stations.size()-1, selectedStaffingStationIndex + delta));
+        BaseObject station = stations.get(selectedStaffingStationIndex);
+        lastStaffingAssignmentReport = ManualStaffingAssignmentAuthority.selectionLine(this, station, selectedStaffingWorker());
+        logEvent("Selected staffing station: " + station.name + " at " + station.x + "," + station.y + ".");
+        repaint();
+    }
+
+    void moveStaffingWorkerSelection(int delta) {
+        if (factionRecruits.isEmpty()) { logEvent("Staffing worker selection failed: no recruited workers available."); return; }
+        selectedStaffingWorkerIndex = Math.max(0, Math.min(factionRecruits.size()-1, selectedStaffingWorkerIndex + delta));
+        RecruitWorker worker = selectedStaffingWorker();
+        lastStaffingAssignmentReport = ManualStaffingAssignmentAuthority.selectionLine(this, selectedStaffingStation(), worker);
+        logEvent("Selected staffing worker: " + (worker == null ? "none" : worker.name + " (" + worker.duty + ")") + ".");
+        repaint();
+    }
+
+    void assignSelectedWorkerToStaffingStation() {
+        BaseObject station = selectedStaffingStation();
+        RecruitWorker worker = selectedStaffingWorker();
+        String result = ManualStaffingAssignmentAuthority.assign(this, station, worker);
+        lastStaffingAssignmentReport = result;
+        logEvent(result);
+        DebugLog.audit("MANUAL_STAFF_ASSIGN", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void clearSelectedStaffingStationWorker() {
+        BaseObject station = selectedStaffingStation();
+        String result = ManualStaffingAssignmentAuthority.unassign(this, station);
+        lastStaffingAssignmentReport = result;
+        logEvent(result);
+        DebugLog.audit("MANUAL_STAFF_CLEAR", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void forecastSelectedLogisticsReservation() {
+        BaseObject station = selectedWorkerMachine();
+        String result = LogisticsReservationForecastAuthority.reserveIntent(this, station);
+        lastLogisticsReservationReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_RESERVATION_FORECAST", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void recordSelectedLogisticsDeliveryIntent() {
+        BaseObject station = selectedWorkerMachine();
+        String result = LogisticsDeliveryIntentAuthority.createIntent(this, station);
+        lastLogisticsDeliveryIntentReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_DELIVERY_INTENT", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void recordLatestLogisticsSourceReservation() {
+        String result = LogisticsSourceReservationAuthority.createSourceReservation(this);
+        lastLogisticsSourceReservationReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_SOURCE_RESERVATION", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void displayLatestLogisticsRouteIntent() {
+        String result = LogisticsRouteIntentAuthority.createRouteIntent(this);
+        lastLogisticsRouteIntentReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_ROUTE_INTENT", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void previewLatestManualHaulOrder() {
+        String result = LogisticsRouteReadinessPreviewAuthority.createManualHaulPreview(this);
+        lastLogisticsRoutePreviewReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_ROUTE_READINESS_PREVIEW", result + " state=" + stateSummary());
+        repaint();
+    }
+
+    void recordLatestManualHaulContract() {
+        String result = LogisticsManualHaulContractAuthority.createManualHaulContract(this);
+        lastLogisticsHaulContractReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_MANUAL_HAUL_CONTRACT", result + " state=" + stateSummary());
+        repaint();
+    }

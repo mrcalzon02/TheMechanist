@@ -1,0 +1,28 @@
+// GamePanel hard-chop workbench fragment.
+// This is NOT compiled source. It is an extraction planning and connector-readable slice.
+// Source: src/mechanist/GamePanel.java
+// Section: ui_03_lines_01872_02455
+// Category: ui
+// Source lines: 1872-2455
+// Method count: 2
+//
+// Methods in this fragment:
+// - selectedInteractionIsBankAlarmPanel :: lines 1872-1872 (1) :: boolean selectedInteractionIsBankAlarmPanel()
+// - addInfopediaRelatedEntryButtons :: lines 2444-2455 (12) :: void addInfopediaRelatedEntryButtons(Rectangle modal, java.util.List<String> entries)
+
+    boolean selectedInteractionIsBankAlarmPanel() { return isBankAlarmPanelAt(lookX, lookY); }
+
+// ... omitted 571 non-method/source lines between cataloged methods ...
+
+    void addInfopediaRelatedEntryButtons(Rectangle modal, java.util.List<String> entries) {
+        if (entries == null || entries.isEmpty()) return;
+        String selectedEntry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        ArrayList<String> related = infopediaRelatedEntries(infopediaTab, selectedEntry);
+        int rx = modal.x + modal.width - 456;
+        int ry = modal.y + modal.height - 86;
+        for (int i=0; i<Math.min(3, related.size()); i++) {
+            String target = related.get(i);
+            final String jump = target;
+            buttons.add(new ButtonBox("LINK: " + TextSurfaceApi.ellipsize(target, 22), rx + i * 148, ry, 140, 30, "Open related Infopedia entry: " + target, () -> openInfopediaEntry(jump)));
+        }
+    }

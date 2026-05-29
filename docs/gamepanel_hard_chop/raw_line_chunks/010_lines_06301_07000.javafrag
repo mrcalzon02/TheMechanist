@@ -1,0 +1,704 @@
+// GamePanel raw line chunk. NOT compiled source.
+// Source: src/mechanist/GamePanel.java
+// Source lines: 6301-7000
+
+        if (rn.contains("machine") || rn.contains("logic Engine") || rn.contains("vault") || rn.contains("archive") || rn.contains("security")) base += 0.010;
+        return Math.min(0.035, base);
+    }
+
+    void begForImperialScript(RoomProfile rp, ZoneType zt) {
+        if (zt == ZoneType.MUTANT_WARRENS || zt == ZoneType.MUTANT_SEWER_CAMP || zt == ZoneType.CULTIST_SEWER_CAMP) {
+            lastScavengeReport = "That's a bad idea. What, do you want to get shanked? Begging is disabled in mutant and cultist zones.";
+            logEvent(lastScavengeReport);
+            showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
+            DebugLog.audit("BEG_DISABLED", "zone="+zt.label+" room="+rp.name+" state="+stateSummary());
+            return;
+        }
+        int payoutBase = beggingPayoutBase(zt);
+        int risk = beggingArbitesRisk(zt);
+        int chance = Math.max(8, Math.min(85, payoutBase + stat("Charm",5)*3 + (rp.name.toLowerCase(Locale.ROOT).contains("queue")?8:0)));
+        int roll = rng.nextInt(100)+1;
+        int riskRoll = rng.nextInt(100)+1;
+        DebugLog.audit("BEG_SCRIPT", "zone="+zt.label+" room="+rp.name+" roll="+roll+" chance="+chance+" riskRoll="+riskRoll+" risk="+risk+" state="+stateSummary());
+        if (riskRoll <= risk) {
+            int fine = Math.min(countMoney(), Math.max(1, risk/12));
+            if (fine > 0) spendImperialScript(fine);
+            suspicion += Math.max(1, risk/20);
+            lastScavengeReport = "Civic Wardens attention catches your begging. Fine: " + fine + " script. Suspicion rises to " + suspicion + ".";
+            logEvent(lastScavengeReport);
+        } else if (roll <= chance) {
+            int amount = Math.max(1, 1 + rng.nextInt(Math.max(2, payoutBase/12 + 1)));
+            addImperialScript(amount);
+            purgePhysicalScriptInstances("begging payout must remain tracked cash");
+            lastScavengeReport = "Begged for Concord Script in " + zt.label + ": gained " + amount + " tracked cash, not an inventory item.";
+            logEvent(lastScavengeReport);
+        } else {
+            lastScavengeReport = "Begged for Concord Script in " + zt.label + ": nothing but contempt.";
+            logEvent(lastScavengeReport);
+        }
+        showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
+        for (int i=0;i<Math.max(2, 6 - stat("Agility",5)/3);i++) advanceTurn("begs for Concord Script.");
+        repaint();
+    }
+
+    int beggingPayoutBase(ZoneType zt) {
+        if (zt == ZoneType.NOBLE_SERVICE_SPINE) return 64;
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) return 50;
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return 40;
+        if (zt == ZoneType.NEUTRAL_CIVILIAN_FLOOR || zt == ZoneType.SUMP_MARKET || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return 32;
+        if (zt == ZoneType.HAB_STACK || zt == ZoneType.TRASH_WARREN || zt == ZoneType.TRAIN_SERVICE_YARD) return 22;
+        if (zt == ZoneType.GANGER_TURF) return 14;
+        return 18;
+    }
+    int beggingArbitesRisk(ZoneType zt) {
+        if (zt == ZoneType.NOBLE_SERVICE_SPINE) return 48;
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) return 38;
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return 26;
+        if (zt == ZoneType.NEUTRAL_CIVILIAN_FLOOR || zt == ZoneType.SUMP_MARKET || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return 20;
+        if (zt == ZoneType.HAB_STACK || zt == ZoneType.TRASH_WARREN || zt == ZoneType.TRAIN_SERVICE_YARD) return 12;
+        if (zt == ZoneType.GANGER_TURF) return 6;
+        return 10;
+    }
+
+    void tradeBuySupply() {
+        int idx = inventory.indexOf("Trade chit");
+        if (idx < 0) { lastTradeReport = "Depot clerk refuses credit. You need a Trade chit."; logEvent(lastTradeReport); return; }
+        removeInventoryItem("Trade chit"); supplies += 2;
+        lastTradeReport = "Bought two supplies for one Trade chit. The depot clerk stamps nothing and remembers everything.";
+        logEvent(lastTradeReport); advanceTurn("trades at the depot.");
+    }
+
+    void tradeSellScrap() {
+        int idx = -1;
+        for (int i=0;i<inventory.size();i++) if (inventory.get(i).toLowerCase(Locale.ROOT).contains("scrap") || inventory.get(i).toLowerCase(Locale.ROOT).contains("machine")) { idx=i; break; }
+        if (idx < 0 && machineParts <= 0) { lastTradeReport = "Nothing saleable: bring scrap, parts, or something with fewer teeth marks."; logEvent(lastTradeReport); return; }
+        if (idx >= 0) removeInventoryAtWithTrace(idx); else machineParts--;
+        addInventoryItem("Trade chit", ItemProvenanceRecord.trade("Trade chit", Faction.HIVER, "depot scrap buyer", world, turn, "sold scrap or machine part"));
+        lastTradeReport = "Sold scrap for one Trade chit.";
+        logEvent(lastTradeReport); advanceTurn("sells scrap at the depot.");
+    }
+
+    void tradeAskRumors() {
+        if (world == null) return;
+        lastTradeReport = "Rumor: this zone is " + world.zoneType.label + ". Room tables favor " + world.zoneType.descriptor + ". Sector map remains fogged until visited.";
+        logEvent(lastTradeReport); advanceTurn("asks depot rumors.");
+    }
+
+    char selectedTile() { return SelectedContextSurfaceApi.selectedTile(world, lookCursorActive, lookX, lookY, playerX, playerY); }
+
+    boolean isRestProp(char c) { return c=='b' || c=='h' || c=='n' || c=='q'; }
+
+    void restOneHourOnUnclaimedFurniture(int tx, int ty, char tile) {
+        int rid = world.roomIdAt(tx, ty);
+        if (rid < 0 || isInClaimedRoom(tx, ty)) { logEvent("This rest spot is not an unclaimed public room feature."); return; }
+        int chanceKick = 25 + Math.max(0, gangHeat/3) + (world.roomFaction(rid)==Faction.NONE ? 0 : 15);
+        int roll = rng.nextInt(100);
+        DebugLog.audit("PUBLIC_REST", "tile="+tile+" room="+rid+" kickChance="+chanceKick+" roll="+roll+" state="+stateSummary());
+        showTimedAlert("YOU FELL ASLEEP IN PUBLIC!", "You curl up on unclaimed furniture for a desperate hour. Anyone passing by may decide this is their problem, your problem, or an opportunity.", 4200);
+        for (int i=0;i<6;i++) advanceTurn("rests uneasily on unclaimed furniture.");
+        if (roll < chanceKick) {
+            fatigue = Math.min(25, fatigue + 1);
+            logEvent("You try to rest for an hour, but someone kicks you out before it does much good. Fatigue +1 from interrupted sleep.");
+        } else {
+            int old = fatigue; fatigue = Math.max(0, fatigue - 1);
+            logEvent("You steal one hour of rough rest on public furniture. Fatigue " + old + "->" + fatigue + ".");
+        }
+    }
+
+    String selectedCoordText() { return SelectedContextSurfaceApi.selectedCoordText(lookCursorActive, lookX, lookY, playerX, playerY); }
+
+
+    void openDepotTrader(int tx, int ty) {
+        NpcEntity clerk = NpcEntity.tradeClerkFor(world == null ? ZoneType.NEUTRAL_RAIL_DEPOT : world.zoneType, tx, ty, rng);
+        activeConversationNpc = clerk;
+        activeConversationNpc = clerk;
+        activeTrader = TraderSession.forNpc(clerk, world == null ? ZoneType.NEUTRAL_RAIL_DEPOT : world.zoneType, rng);
+        activeTrader.sourceSite = siteForFaction(clerk.faction, world == null ? ZoneType.NEUTRAL_RAIL_DEPOT : world.zoneType);
+        activeTrader.applyNpcSiteStock(activeTrader.sourceSite, rng, world, turn);
+        materializeFactionTraderStock(activeTrader);
+        activeTrader.applySupplyChainStock(world, turn, rng);
+        selectedTradeOffer = 0;
+        conversationBranch = clerk.name + ": Neutral counter acknowledged. Buy, sell, haggle, or ask after the pipes.";
+        lastConversation = "Trade depot clerk opened conversation: " + conversationBranch;
+        lastTradeReport = "Trade depot opened with " + clerk.name + ". Stock is zone appropriate; trader buys and sells.";
+        logConversation("OPEN_DEPOT", conversationBranch);
+        openPanel(PanelMode.TRADE);
+    }
+
+    void talkToNpc(NpcEntity npc) {
+        if (npc != null) runNpcTalkedTo++;
+        activeConversationNpc = npc;
+        selectedTradeOffer = 0;
+        if (npc.isTrader()) {
+            activeTrader = TraderSession.forNpc(npc, world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType, rng);
+            activeTrader.sourceSite = siteForFaction(npc.faction, world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType);
+            activeTrader.applyNpcSiteStock(activeTrader.sourceSite, rng, world, turn);
+            activeTrader.applySupplyChainStock(world, turn, rng);
+            conversationBranch = npc.name + ": I buy, I sell, and I remember faces. Try not to make yours expensive.";
+            lastTradeReport = "Trader contacted: " + npc.name + " inventory=" + activeTrader.offers.size() + " zone=" + activeTrader.zoneLabel + ".";
+            logConversation("OPEN_TRADER", conversationBranch);
+            openPanel(PanelMode.TRADE);
+            return;
+        }
+        activeTrader = null;
+        if (npc.isProtectedCleric()) {
+            conversationBranch = npc.name + ": The temple stands even when its congregation does not. Confess, pray, or leave your sins where the floor can count them.";
+            lastConversation = conversationBranch;
+            logConversation("MINISTORUM_HEAD_CLERIC", conversationBranch);
+            openPanel(PanelMode.TRADE);
+            return;
+        }
+        conversationBranch = npcGreeting(npc);
+        lastConversation = npc.name + " says: " + conversationBranch;
+        logConversation("NPC_TALK", npc.name + " faction=" + npc.faction.label + " state=" + npc.state + " role=" + npc.role + " line=" + conversationBranch);
+        openPanel(PanelMode.TRADE);
+    }
+
+    String npcGreeting(NpcEntity npc) {
+        if (npc == null) return "There is no one there but condensation.";
+        switch (npc.faction) {
+            case MINISTORUM: return "Kneel if you require mercy. Stand if you require paperwork. The Emperor receives both.";
+            case SORORITAS: return "The temple is under watch. Be grateful the warning is verbal.";
+            case CIVIC_WARDENS: return "Papers. Now. Or explain why your boots are nervous.";
+            case IMPERIAL_GUARD: return "Keep moving, civilian. This corridor is not a democracy.";
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return "State your malfunction, flesh-unit.";
+            case MUTANT: return "The shape in the dark makes no civilized offer.";
+            case CULTIST: case HERETIC: return "It smiles with too many certainties.";
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return "Talk quick. Pay quicker.";
+            default: return "You need something, or are you just collecting bad decisions?";
+        }
+    }
+
+    void logConversation(String branch, String detail) {
+        lastConversation = detail;
+        logEvent("Conversation: " + detail);
+        DebugLog.audit("CONVERSATION", "branch=" + branch + " detail=" + detail + " state=" + stateSummary());
+    }
+
+    void npcGreet() {
+        if (activeConversationNpc == null) { logEvent("No one is close enough to answer."); return; }
+        conversationBranch = activeConversationNpc.name + ": " + npcGreeting(activeConversationNpc);
+        lastConversation = conversationBranch;
+        logConversation("NPC_GREET", activeConversationNpc.name + " role=" + activeConversationNpc.role + " faction=" + activeConversationNpc.faction.label + " line=" + conversationBranch);
+        advanceTurn("speaks cautiously with " + activeConversationNpc.name + ".");
+    }
+
+    void npcAskWork() {
+        if (activeConversationNpc == null) { logEvent("No active conversation."); return; }
+        String line = activeConversationNpc.name + ": " + npcWorkLine(activeConversationNpc);
+        conversationBranch = line;
+        lastConversation = line;
+        logConversation("NPC_ASK_WORK", activeConversationNpc.name + " role=" + activeConversationNpc.role + " state=" + activeConversationNpc.state + " line=" + line);
+        advanceTurn("asks about work.");
+    }
+
+    void npcAskFaction() {
+        if (activeConversationNpc == null) { logEvent("No active conversation."); return; }
+        String line = activeConversationNpc.name + ": " + npcFactionLine(activeConversationNpc);
+        conversationBranch = line;
+        lastConversation = line;
+        logConversation("NPC_ASK_FACTION", activeConversationNpc.name + " faction=" + activeConversationNpc.faction.label + " line=" + line);
+        advanceTurn("asks about local allegiance.");
+    }
+
+    void npcAskNeeds() {
+        if (activeConversationNpc == null) { logEvent("No active conversation."); return; }
+        String line = activeConversationNpc.name + ": " + activeConversationNpc.needLine();
+        conversationBranch = line;
+        lastConversation = line;
+        logConversation("NPC_ASK_NEEDS", activeConversationNpc.name + " state=" + activeConversationNpc.state + " hunger=" + activeConversationNpc.hunger + " thirst=" + activeConversationNpc.thirst + " sleepDebt=" + activeConversationNpc.sleepDebt + " line=" + line);
+        advanceTurn("asks after immediate needs.");
+    }
+
+    void prayImperialForgivenessService() {
+        if (activeConversationNpc == null || !activeConversationNpc.isProtectedCleric()) { logEvent("Prayer blocked: no head cleric is hearing confession."); return; }
+        final int hours = 24;
+        final int turnsSpent = hours * TURNS_PER_HOUR;
+        int oldFood = food, oldWater = water, oldSleep = sleepNeed, oldFatigue = fatigue, oldSuspicion = suspicion, oldHeat = gangHeat;
+        food = Math.max(0, food - 3);
+        water = Math.max(0, water - 3);
+        fatigue = Math.min(25, fatigue + 6);
+        sleepNeed = Math.min(MAX_SLEEP_NEED, sleepNeed + turnsSpent);
+        advancePlayerAndWorldTime(turnsSpent, "Concord forgiveness prayer service");
+        suspicion = Math.max(0, suspicion - 8);
+        gangHeat = Math.max(0, gangHeat - 3);
+        int restored = 0;
+        Faction[] civil = {Faction.CIVIC_LEDGER_OFFICE, Faction.CIVIC_WARDENS, Faction.IMPERIAL_GUARD, Faction.MINISTORUM, Faction.SORORITAS, Faction.MECHANIST_COLLEGIA, Faction.MECHANICUS_CLOISTER_RED, Faction.MECHANICUS_CLOISTER_RUST, Faction.MECHANICUS_CLOISTER_VOID, Faction.HIVER, Faction.HIVER_BLOCK_AUREL, Faction.HIVER_BLOCK_MARROW, Faction.HIVER_BLOCK_SUMPLEDGER, Faction.NOBLE, Faction.NOBLE_HOUSE_VARN, Faction.NOBLE_HOUSE_KASTOR, Faction.NOBLE_HOUSE_MORVAIN, Faction.NOBLE_HOUSE_CYRA, Faction.NOBLE_HOUSE_DRAKE, Faction.NOBLE_HOUSE_TOLL, Faction.NOBLE_HOUSE_OSSUARY};
+        for (Faction f : civil) {
+            int old = factionStanding.getOrDefault(f, 0);
+            int neu = old < 0 ? Math.min(0, old + 12) : Math.min(35, old + 3);
+            factionStanding.put(f, neu);
+            restored += Math.max(0, neu - old);
+            temporaryHostileTurns.put(f, Math.max(0, temporaryHostileTurns.getOrDefault(f,0) - turnsSpent));
+        }
+        if (food <= 0 || water <= 0) { wounds++; pain = Math.min(10, pain + 1); }
+        conversationBranch = activeConversationNpc.name + ": Twenty-four hours. Knees, hunger, thirst, and sleep offered up. Forgiveness is not innocence, but it is a receipt.";
+        lastConversation = conversationBranch;
+        logConversation("MINISTORUM_FORGIVENESS", conversationBranch);
+        logEvent("CONCORD FORGIVENESS RITE: 24h prayer completed. Food " + oldFood + "->" + food + ", water " + oldWater + "->" + water + ", sleep " + oldSleep + "->" + sleepNeed + ", fatigue " + oldFatigue + "->" + fatigue + ", suspicion " + oldSuspicion + "->" + suspicion + ", heat " + oldHeat + "->" + gangHeat + ", civil standing restored +" + restored + ".");
+        DebugLog.audit("MINISTORUM_FORGIVENESS", "cleric=" + activeConversationNpc.name + " hours=" + hours + " restored=" + restored + " food=" + oldFood + "->" + food + " water=" + oldWater + "->" + water + " sleep=" + oldSleep + "->" + sleepNeed + " fatigue=" + oldFatigue + "->" + fatigue + " suspicion=" + oldSuspicion + "->" + suspicion + " heat=" + oldHeat + "->" + gangHeat + " state=" + stateSummary());
+        updateSensoryModel("after Ministorum forgiveness prayer");
+        repaint();
+    }
+
+    void npcLeaveConversation() {
+        if (activeConversationNpc != null) logConversation("NPC_LEAVE", "Ended conversation with " + activeConversationNpc.name + ".");
+        activeConversationNpc = null;
+        activeTrader = null;
+        closePanel();
+    }
+
+    String npcWorkLine(NpcEntity npc) {
+        if (npc == null) return "Work? The arcology eats work and calls the crumbs wages.";
+        if (npc.role != null && npc.role.contains("Trader")) return "I move goods from desperate hands to doomed hands. Coin makes it respectable.";
+        if (npc.isProtectedCleric()) return "I keep the Cult Imperialis open, hear confession, ration mercy, and record which souls still pretend to be redeemable.";
+        if (npc.faction == Faction.MINISTORUM) return "Candles, sermons, kitchens, pilgrim lines, and the quiet arithmetic of guilt.";
+        if (npc.faction == Faction.SORORITAS) return "I guard the sanctuary. There are no softer words for it.";
+        if (npc.faction == Faction.CIVIC_WARDENS) return "I preserve order. You may experience that as pain.";
+        if (npc.faction == Faction.MECHANIST_COLLEGIA || npc.faction.name().startsWith("MECHANIST COLLEGIA")) return "Maintenance is worship. Failure is merely heresy wearing dust.";
+        if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return "I collect what weaker people foolishly describe as theirs.";
+        if (npc.faction == Faction.MUTANT) return "Work is where the ceiling drips and the knives sleep badly.";
+        if (npc.faction == Faction.CULTIST || npc.faction == Faction.HERETIC) return "The work is listening. The reward is being heard.";
+        if (npc.faction == Faction.HIVER || npc.faction.name().startsWith("HIVER")) return "Shift work, salvage, duct tolls, little errands for larger bastards.";
+        return "I keep breathing. That is a profession down here.";
+    }
+
+    String npcFactionLine(NpcEntity npc) {
+        if (npc == null) return "No answer.";
+        int standing = factionStanding.getOrDefault(npc.faction, 0);
+        String mood = standing > 20 ? "favorable" : standing < -20 ? "hostile" : "watchful";
+        if (npc.isProtectedCleric()) return "You are speaking to the head cleric of the local Cult Imperialis temple. The office is neutral, protected, and annoyingly permanent. Local standing reads " + standing + " — " + mood + ". " + npc.originSummary();
+        return "You are speaking to " + npc.faction.label + ". Local standing reads " + standing + " — " + mood + ". " + npc.originSummary();
+    }
+
+    String conversationStandingLine(NpcEntity npc) {
+        if (npc == null) return "unknown.";
+        int standing = factionStanding.getOrDefault(npc.faction, 0);
+        String mood = standing > 35 ? "welcoming" : standing > 10 ? "open" : standing < -35 ? "dangerous" : standing < -10 ? "cold" : "watchful";
+        String special = npc.isProtectedCleric() ? " This office is protected neutral ground." : "";
+        return npc.faction.label + " standing " + standing + ", " + mood + "." + special;
+    }
+
+    String conversationSpeakerReadLine(NpcEntity npc) {
+        if (npc == null) return "No speaker is selected.";
+        String role = npc.role == null || npc.role.isBlank() ? "local contact" : npc.role;
+        String state = npc.state == null || npc.state.isBlank() ? "available" : npc.state.toLowerCase(Locale.ROOT);
+        if (npc.isTrader()) return role + " with trade access; buy, sell, haggle, or ask for rumor if the counter is open.";
+        if (npc.isProtectedCleric()) return role + " offering temple conversation, faction context, and protected exit.";
+        if (npc.faction == Faction.CIVIC_WARDENS) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
+        if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return role + " from a coercive local power; jobs and threats may blur together.";
+        return role + " currently " + state + "; conversation can reveal work, faction context, or turn-in options.";
+    }
+
+    ArrayList<String> conversationChoiceGuidanceLines(NpcEntity npc) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null) return lines;
+        lines.add("Choices:");
+        lines.add("  GREET: refresh the current topic without committing to work or trade.");
+        lines.add("  ASK WORK: hear what this contact considers useful work.");
+        lines.add("  ASK FACTION: show standing, faction identity, and broad relationship context.");
+        if (npc.isTrader()) lines.add("  TRADE: open stock, sale preview, price reads, and rumor options.");
+        if (hasOpenContractForFaction(npc.faction)) lines.add("  TAKE BOUNTY / TAKE FETCH: accept available faction work if you want the obligation.");
+        else lines.add("  TAKE BOUNTY / TAKE FETCH: no obvious open work from this faction right now.");
+        lines.addAll(contractEvidenceGuidanceLines(npc.faction));
+        if (hasCompletableContractForFaction(npc.faction)) lines.add("  TURN IN: a carried objective appears eligible for reward or completion.");
+        else lines.add("  TURN IN: no matching carried proof or delivery is apparent.");
+        lines.add("  LEAVE: close the conversation safely.");
+        return lines;
+    }
+
+    ArrayList<String> contractEvidenceGuidanceLines(Faction f) {
+        ArrayList<String> lines = new ArrayList<>();
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed || c.faction != f) continue;
+            String carrying = contractTurnInReady(c) ? "carried and ready for turn-in" : "not carried yet";
+            lines.add("  Evidence for " + c.displayType() + ": " + c.publicRequiredItem() + " is " + carrying + ".");
+        }
+        return lines;
+    }
+
+    boolean hasOpenContractForFaction(Faction f) {
+        return activeContractFor(f, "BOUNTY") == null || activeContractFor(f, "FETCH") == null;
+    }
+
+    boolean hasCompletableContractForFaction(Faction f) {
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed || c.faction != f) continue;
+            if (contractTurnInReady(c)) return true;
+        }
+        return false;
+    }
+
+    boolean contractTurnInReady(FactionContract c) {
+        return c != null && c.requiredTurnInItem != null && inventory.contains(c.requiredTurnInItem);
+    }
+
+    TradeOffer selectedTradeOffer() {
+        if (activeTrader == null || activeTrader.offers.isEmpty()) return null;
+        selectedTradeOffer = Math.max(0, Math.min(selectedTradeOffer, activeTrader.offers.size()-1));
+        return activeTrader.offers.get(selectedTradeOffer);
+    }
+
+    void tradeOfferMove(int delta) {
+        if (activeTrader == null || activeTrader.offers.isEmpty()) return;
+        selectedTradeOffer = Math.floorMod(selectedTradeOffer + delta, activeTrader.offers.size());
+        TradeOffer offer = selectedTradeOffer();
+        lastTradeReport = "Selected offer: " + offer.name + " for " + activeTrader.buyPrice(offer) + " concord script.";
+        DebugLog.audit("TRADE_SELECT", lastTradeReport + " state=" + stateSummary());
+        repaint();
+    }
+
+    ArrayList<String> selectedTradeReadabilityLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) {
+            lines.add("Selected offer: no active trader.");
+            return lines;
+        }
+        TradeOffer offer = selectedTradeOffer();
+        if (offer == null) lines.add("Selected offer: this trader has no visible stock right now.");
+        else lines.addAll(tradeOfferDetailLines(offer));
+        String sellItem = selectedInventoryItemName();
+        lines.addAll(tradeSellPreviewLines(sellItem));
+        return lines;
+    }
+
+    ArrayList<String> tradeOfferDetailLines(TradeOffer offer) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (offer == null || activeTrader == null) return lines;
+        ItemDef def = offer.catalogDef();
+        int buyPrice = activeTrader.buyPrice(offer);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(offer.name));
+        lines.add("Selected offer: " + offer.name + " for " + buyPrice + " script.");
+        lines.add("Price read: catalog value about " + catalogValue + "; " + tradePricePressureLine(buyPrice, catalogValue) + ".");
+        lines.add("Stock context: " + tradeStockContextLine(offer));
+        lines.add("Market status: " + tradeMarketStatusLine(offer.name, def, true));
+        lines.add("Transfer preview: " + tradeBuyTransferPreviewLine(offer, buyPrice));
+        lines.add("Likely use: " + itemLikelyActionLine(offer.name, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(offer.name, def));
+        lines.add("Origin: " + tradeOfferOriginLine(offer));
+        return lines;
+    }
+
+    ArrayList<String> tradeSellPreviewLines(String item) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) return lines;
+        if (item == null || item.equals("Concord Script")) {
+            lines.add("Sale preview: select a carried item in INVENTORY before selling.");
+            return lines;
+        }
+        int carried = countInventory(item);
+        if (carried <= 0) {
+            lines.add("Sale preview: " + item + " is a counter or resource stack, not a sellable carried copy yet.");
+            return lines;
+        }
+        int sellPrice = activeTrader.sellPrice(item);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(item));
+        lines.add("Sale preview: " + item + " x" + carried + " would sell for " + sellPrice + " script each.");
+        lines.add("Seller read: catalog value about " + catalogValue + "; " + tradePricePressureLine(sellPrice, catalogValue) + ".");
+        lines.add("Market status: " + tradeMarketStatusLine(item, ItemCatalog.get(item), false));
+        lines.add("Transfer preview: " + tradeSellTransferPreviewLine(item, sellPrice));
+        lines.add("Sale caution: " + itemLegalRiskLine(item, ItemCatalog.get(item)));
+        return lines;
+    }
+
+    String tradeBuyTransferPreviewLine(TradeOffer offer, int price) {
+        if (offer == null) return transferWorkflowPreviewLine("buy", "trader shelf", "carried inventory", "selected stock", 1, "blocked: no selected stock", "blocked: no offer", "not quest evidence", "unknown risk", "funds are unchanged if the item transfer fails");
+        boolean funds = countMoney() >= price;
+        boolean capacity = inventoryWeight() + 1 <= carryCapacity();
+        String capacityLine = capacity ? "capacity ok" : "blocked: carried load would exceed capacity";
+        String permission = funds ? "payment ready" : "blocked: need " + price + " script";
+        String risk = tradeMarketStatusLine(offer.name, offer.catalogDef(), true);
+        return transferWorkflowPreviewLine("buy", activeTrader == null ? "trader shelf" : activeTrader.name + " shelf", "carried inventory", offer.name, 1, capacityLine, permission, "not quest evidence", risk, "reversible only by selling later, usually at a different price");
+    }
+
+    String tradeSellTransferPreviewLine(String item, int price) {
+        boolean present = item != null && countInventory(item) > 0;
+        String capacity = present ? "source has a carried copy" : "blocked: no carried copy";
+        String permission = activeTrader == null ? "blocked: no active trader" : "counter can buy one carried copy for " + price + " script";
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: check turn-ins before selling" : "not marked as quest evidence";
+        String risk = itemLegalRiskLine(item, ItemCatalog.get(item));
+        return transferWorkflowPreviewLine("sell", "carried inventory", activeTrader == null ? "trader shelf" : activeTrader.name + " shelf", item == null ? "selected item" : item, 1, capacity, permission, quest, risk, "not guaranteed reversible after sale");
+    }
+
+    String inventoryTransferWorkflowPreviewLine(String item) {
+        if (item == null || item.isBlank()) return "select a carried item to see drop, equip, sell, stash, or use transfer rules.";
+        String source = "carried inventory";
+        String target = isInClaimedRoom(playerX, playerY) ? "base storage, equipment, trader, or discard target depending on action" : "equipment, trader, or discard target depending on action";
+        String capacity = "carry load " + inventoryWeight() + "/" + carryCapacity();
+        String permission = "actions still check access, ownership, target range, and container authority at confirmation";
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: protect until the right turn-in" : "not marked as quest evidence";
+        String risk = baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("selected item", source, target, item, countInventory(item), capacity, permission, quest, risk, "drop/sell/consume may not be reversible; stash/take and equip/unequip usually are");
+    }
+
+    String baseStashTransferPreviewLine() {
+        String item = inventory.isEmpty() ? null : inventory.get(inventory.size() - 1);
+        String capacity = baseStorage.size() < baseStorageCapacity() ? "base storage has room" : "blocked: base storage is full";
+        String permission = baseStorageAccessLine();
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: stored safely, but do not sell or route casually" : "not marked as quest evidence";
+        String risk = item == null ? "no selected carried item" : baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("stash", "carried inventory", "claimed base storage", item == null ? "last carried item" : item, 1, capacity, permission, quest, risk, "reversible with TAKE while capacity allows");
+    }
+
+    String baseTakeTransferPreviewLine() {
+        String item = baseStorage.isEmpty() ? null : baseStorage.get(baseStorage.size() - 1);
+        String capacity = inventoryWeight() + 1 <= carryCapacity() ? "carry capacity ok" : "blocked: carried load would exceed capacity";
+        String permission = baseStorageAccessLine();
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: carrying it may expose it to sale/drop mistakes" : "not marked as quest evidence";
+        String risk = item == null ? "no stored item selected" : baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("take", "claimed base storage", "carried inventory", item == null ? "newest stored item" : item, 1, capacity, permission, quest, risk, "reversible with STASH while storage has room");
+    }
+
+    String transferWorkflowPreviewLine(String action, String source, String target, String item, int quantity, String capacity, String permission, String quest, String risk, String reversal) {
+        String safeItem = item == null || item.isBlank() ? "selected item" : item;
+        int qty = Math.max(1, quantity);
+        return action + " " + safeItem + " x" + qty + " from " + source + " to " + target + "; " + capacity + "; " + permission + "; " + quest + "; risk: " + risk + "; " + reversal + ".";
+    }
+
+    String tradeMarketStatusLine(String item, ItemDef def, boolean buying) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use) + " " + (activeTrader == null ? "" : activeTrader.archetype + " " + activeTrader.zoneLabel)).toLowerCase(Locale.ROOT);
+        if (text.contains("noble") || text.contains("permit") || text.contains("stock certificate") || text.contains("gold")) return "status-sensitive noble or paper asset; licenses, reputation, and witnesses may matter.";
+        if (text.contains("civic Wardens") || text.contains("guard") || text.contains("military") || text.contains("munitorum") || text.contains("mass-Reactive Carbine") || text.contains("carapace")) return "controlled faction or military good; carrying or reselling it can draw authority attention.";
+        if (text.contains("cult") || text.contains("heretic") || text.contains("profane") || text.contains("narcotic") || text.contains("black-market") || text.contains("black market")) return "illicit or black-market good; useful, valuable, and dangerous if searched.";
+        if (ItemCatalog.isFirearmLike(item) || ItemCatalog.isExplosiveLike(item)) return "weapon market good; legality depends on faction space, permits, and who sees the transfer.";
+        if (text.contains("data spike") || text.contains("lockpick") || text.contains("keycard") || text.contains("hacking")) return "access tool; ordinary traders may sell it, but secure areas treat it as suspicious.";
+        if (text.contains("medical") || text.contains("medicae") || text.contains("injector") || text.contains("stim")) return "medical or drug good; clinics value it, law may care if it looks counterfeit or combat-ready.";
+        if (activeTrader != null && activeTrader.supplyChainSummary != null && !activeTrader.supplyChainSummary.isBlank()) return "supply-chain stock; availability depends on this trader's current route and local pressure.";
+        if (buying) return "ordinary local stock while this trader has it.";
+        return "ordinary resale good unless local ownership or faction pressure says otherwise.";
+    }
+
+    String tradePricePressureLine(int actual, int catalogValue) {
+        int base = Math.max(1, catalogValue);
+        if (actual >= Math.ceil(base * 1.35)) return "the counter is charging a heavy premium";
+        if (actual > base) return "the counter is above ordinary catalog value";
+        if (actual == base) return "the counter matches ordinary catalog value";
+        if (actual <= Math.floor(base * 0.55)) return "the counter is paying hard-bargain resale rates";
+        return "the counter is below ordinary catalog value";
+    }
+
+    String tradeStockContextLine(TradeOffer offer) {
+        if (offer == null) return "no selected stock.";
+        String source = offer.catalogDef() == null ? "local trader stock" : offer.catalogDef().source;
+        String category = offer.catalogDef() == null ? offer.category : offer.catalogDef().category;
+        return category + " from " + source + "; trader markup " + activeTrader.markupPct + "% and haggle discount " + activeTrader.discountPct + "% are already included.";
+    }
+
+    String tradeOfferOriginLine(TradeOffer offer) {
+        if (offer == null || offer.provenance == null) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        String s = offer.provenance.summary();
+        if (s == null || s.isBlank()) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
+    }
+
+    void tradeBuySelected() {
+        if (activeTrader == null) { tradeBuySupply(); return; }
+        TradeOffer offer = selectedTradeOffer();
+        if (offer == null) { lastTradeReport = "No selected trade offer."; logEvent(lastTradeReport); return; }
+        int price = activeTrader.buyPrice(offer);
+        if (inventoryWeight() + 1 > carryCapacity()) {
+            lastTradeReport = "Purchase blocked: carried inventory would exceed Strength-derived carry capacity. " + tradeBuyTransferPreviewLine(offer, price);
+            logEvent(lastTradeReport);
+            return;
+        }
+        if (!spendImperialScript(price)) {
+            lastTradeReport = activeTrader.name + " taps the price slate. Need " + price + " concord script.";
+            logEvent(lastTradeReport); DebugLog.audit("TRADE_BUY_FAIL", lastTradeReport + " state=" + stateSummary()); return;
+        }
+        ItemActionResult bought = buyTraderOfferIntoInventory(activeTrader, offer);
+        if (!bought.success) {
+            addImperialScript(price);
+            lastTradeReport = "Purchase failed after payment authorization; funds returned. " + bought.playerText;
+            logEvent(lastTradeReport);
+            DebugLog.warn("TRADE_BUY_FAIL", bought.auditText + " state=" + stateSummary());
+            return;
+        }
+        lastTradeReport = "ITEM PURCHASED: Bought " + offer.name + " for " + price + " concord script from " + activeTrader.name + ". " + (bought.provenance == null ? "Origin transferred without detailed ledger." : bought.provenance.summary());
+        logEvent(lastTradeReport); logConversation("TRADE_BUY", lastTradeReport); gainXp("Commerce", 1, "purchase");
+        DebugLog.audit("TRADE_OPTION", "BUY item=" + offer.name + " price=" + price + " trader=" + activeTrader.name + " instance=" + bought.itemInstanceId + " state=" + stateSummary());
+        advanceTurn("buys " + offer.name + ".");
+    }
+
+    void tradeSellSelected() {
+        if (activeTrader == null) { tradeSellScrap(); return; }
+        String item = selectedInventoryItemName();
+        if (item == null || item.equals("Concord Script")) { lastTradeReport = "Select a carried item that is not money before selling."; logEvent(lastTradeReport); return; }
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { lastTradeReport = "That item is not in your carried goods list yet. Itemized counters will be sellable after the next economy pass."; logEvent(lastTradeReport); return; }
+        if (isQuestOrEvidenceItem(item)) {
+            lastTradeReport = "Sale blocked: " + item + " looks like quest evidence or delivery proof. Turn it in, stash it, or inspect contracts before selling.";
+            logEvent(lastTradeReport);
+            return;
+        }
+        int value = activeTrader.sellPrice(item);
+        ItemActionResult sold = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, traderShelfContainerId(activeTrader), activeTrader.name + " trader shelf", null, "sold by player to " + activeTrader.name);
+        if (!sold.success) { lastTradeReport = "Sale failed: " + sold.playerText; logEvent(lastTradeReport); DebugLog.warn("TRADE_SELL_FAIL", sold.auditText + " state=" + stateSummary()); return; }
+        addImperialScript(value);
+        lastTradeReport = "ITEM SOLD: Sold " + item + " to " + activeTrader.name + " for " + value + " concord script. " + (sold.provenance == null ? "Origin transferred without detailed ledger." : sold.provenance.summary());
+        logEvent(lastTradeReport); logConversation("TRADE_SELL", lastTradeReport); gainXp("Commerce", 1, "sale");
+        DebugLog.audit("TRADE_OPTION", "SELL item=" + item + " value=" + value + " trader=" + activeTrader.name + " instance=" + sold.itemInstanceId + " state=" + stateSummary());
+        advanceTurn("sells " + item + ".");
+    }
+
+    void tradeHaggle() {
+        if (activeTrader == null) { lastTradeReport = "No trader is currently engaged for haggling."; logEvent(lastTradeReport); return; }
+        activeTrader.haggleAttempts++;
+        int charm = stat("Charm", 5);
+        int chance = Math.max(5, Math.min(92, 30 + charm * 5 - activeTrader.haggleAttempts * 10));
+        int roll = rng.nextInt(100) + 1;
+        if (roll <= chance) {
+            int gain = 5 + rng.nextInt(11);
+            activeTrader.discountPct = Math.min(45, activeTrader.discountPct + gain);
+            conversationBranch = activeTrader.name + ": Fine. I shave " + gain + "% from the slate. Do not smile like you earned it.";
+            lastTradeReport = "Haggle succeeded: roll " + roll + " <= " + chance + ". Discount now " + activeTrader.discountPct + "%.";
+        } else if (roll > chance + 30 || activeTrader.haggleAttempts >= 3) {
+            int penalty = 5 + rng.nextInt(11);
+            activeTrader.discountPct = 0;
+            activeTrader.markupPct = Math.min(50, activeTrader.markupPct + penalty);
+            conversationBranch = activeTrader.name + ": That tone just cost you. Prices rise " + penalty + "%.";
+            lastTradeReport = "Haggle angered trader: roll " + roll + " > " + chance + ". Discounts cleared; markup now " + activeTrader.markupPct + "%.";
+        } else {
+            conversationBranch = activeTrader.name + ": No. Ask again and I may remember my larger prices.";
+            lastTradeReport = "Haggle failed safely: roll " + roll + " > " + chance + ". Further attempts are risky.";
+        }
+        logEvent(lastTradeReport); logConversation("TRADE_HAGGLE", conversationBranch);
+        DebugLog.audit("TRADE_OPTION", "HAGGLE roll=" + roll + " chance=" + chance + " attempts=" + activeTrader.haggleAttempts + " discount=" + activeTrader.discountPct + " markup=" + activeTrader.markupPct + " trader=" + activeTrader.name + " state=" + stateSummary());
+        advanceTurn("haggles with " + activeTrader.name + ".");
+    }
+
+    void tradeAskTraderRumors() {
+        if (activeTrader == null) { tradeAskRumors(); return; }
+        String line = activeTrader.name + ": " + activeTrader.rumor(world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType, rng);
+        lastTradeReport = line;
+        logConversation("TRADE_RUMOR", line);
+        advanceTurn("asks trader rumors.");
+    }
+
+    int countMoney() { return Math.max(0, carriedScript); }
+    int countBaseStoredScript() { return Math.max(0, baseStashedScript); }
+    int countDataSpikes() { return countInventory("Data spike"); }
+    boolean consumeDataSpike() { return removeInventoryOne("Data spike"); }
+    void addImperialScript(int amount) { if (amount > 0) carriedScript = Math.min(Integer.MAX_VALUE - amount, Math.max(0, carriedScript)) + amount; }
+    boolean spendImperialScript(int amount) {
+        if (amount <= 0) return true;
+        if (countMoney() < amount) return false;
+        carriedScript = Math.max(0, carriedScript - amount);
+        return true;
+    }
+
+    int migratePhysicalScriptFromList(ArrayList<String> list) {
+        if (list == null || list.isEmpty()) return 0;
+        int n = 0;
+        for (int i=list.size()-1; i>=0; i--) {
+            if ("Concord Script".equalsIgnoreCase(String.valueOf(list.get(i)))) { list.remove(i); n++; }
+        }
+        return n;
+    }
+
+    void purgePhysicalScriptInstances(String reason) {
+        ArrayList<String> removeIds = new ArrayList<>();
+        for (ItemInstance inst : itemInstances.values()) {
+            if (inst != null && "Concord Script".equalsIgnoreCase(inst.displayName)) removeIds.add(inst.id);
+        }
+        if (!removeIds.isEmpty()) {
+            for (String id : removeIds) itemInstances.remove(id);
+            for (ContainerRecord c : itemContainers.values()) if (c != null) c.itemInstanceIds.removeAll(removeIds);
+            DebugLog.audit("SCRIPT_INSTANCE_PURGE", "removed=" + removeIds.size() + " reason=" + reason + " state=" + stateSummary());
+        }
+    }
+
+    void migrateLegacyPhysicalScript(String reason) {
+        int inv = migratePhysicalScriptFromList(inventory);
+        int base = migratePhysicalScriptFromList(baseStorage);
+        if (inv > 0) carriedScript += inv;
+        if (base > 0) baseStashedScript += base;
+        if (inv + base > 0) DebugLog.audit("SCRIPT_MIGRATION", "inventory=" + inv + " base=" + base + " reason=" + reason + " state=" + stateSummary());
+        purgePhysicalScriptInstances("legacy physical script migration: " + reason);
+    }
+
+    int currentInnDay() { return Math.max(0, turn / Math.max(1, TURNS_PER_HOUR * HOURS_PER_DAY)); }
+
+    void recordPlayerNewsEvent(String category, String subject, Faction faction, String detail, int severity) {
+        PlayerNewsEvent ev = PlayerNewsEvent.create(turn, currentInnDay(), category, subject, faction, world == null ? "unknown zone" : world.zoneType.label, detail, severity, seed);
+        playerNewsEvents.add(ev);
+        while (playerNewsEvents.size() > 40) playerNewsEvents.remove(0);
+        lastPlayerNewsReport = ev.shortLine();
+        DebugLog.audit("PLAYER_NEWS_EVENT", ev.saveLine() + " state=" + stateSummary());
+    }
+
+    void recordProminentKillForNews(NpcEntity target, String context) {
+        if (target == null) return;
+        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.CIVIC_WARDENS || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
+        if (!prominent) return;
+        String rank = (target.factionRankTitle == null || target.factionRankTitle.isBlank()) ? ("rank " + target.factionRank) : target.factionRankTitle;
+        recordPlayerNewsEvent("prominent-kill", rank + " " + target.name, target.faction, "killed or incapacitated during " + context + " near " + (world == null ? "unknown" : world.zoneCoordText()), Math.max(4, 10 - Math.max(1, target.factionRank)));
+    }
+
+    void applyAuthorityFacilityInspectionFromNews() {
+        if (world == null || !baseClaimed || turn < authorityFacilityInspectionCooldownUntilTurn) return;
+        if (turn % (3 * TURNS_PER_HOUR) != 0) return;
+        boolean civilOrNoble = world.zoneType == ZoneType.NEUTRAL_CIVILIAN_FLOOR || world.zoneType == ZoneType.HAB_STACK || world.zoneType == ZoneType.NOBLE_SERVICE_SPINE || world.zoneType == ZoneType.SECTOR_GOVERNORS_MANSION || world.zoneType == ZoneType.ADMINISTRATUM_ARCHIVE || world.zoneType == ZoneType.IMPERIAL_NEWS_NETWORK || world.floor >= 5;
+        if (!civilOrNoble) return;
+        int day = currentInnDay();
+        int publicHeat = 0;
+        for (PlayerNewsEvent ev : playerNewsEvents) if (ev != null && ev.shouldBePublicBy(day) && ev.ageDays(day) <= 2) publicHeat += Math.max(1, ev.severity);
+        int openIllegal = illegalBusinessCount();
+        int unlicensedFacilities = 0;
+        for (BaseObject obj : baseObjects) if (obj != null && obj.isBusinessAsset() && obj.businessOpen && !obj.permittedBusiness) unlicensedFacilities++;
+        int pressure = suspicion + gangHeat/2 + publicHeat + openIllegal * 5 + unlicensedFacilities * 4;
+        if (pressure < 18) return;
+        int chance = Math.max(8, Math.min(70, pressure - baseSecurityRating() * 2));
+        if (rng.nextInt(100) >= chance) {
+            authorityFacilityInspectionCooldownUntilTurn = turn + 4 * TURNS_PER_HOUR;
+            lastAuthorityFacilityInspectionReport = "Authority review noted public reporting but delayed inspection. Pressure " + pressure + ", chance " + chance + "%.";
+            DebugLog.audit("AUTHORITY_FACILITY_INSPECTION_DELAY", lastAuthorityFacilityInspectionReport + " state=" + stateSummary());
+            return;
+        }
+        int fine = Math.max(10, 20 + openIllegal * 35 + unlicensedFacilities * 25 + publicHeat * 3 + rng.nextInt(60));
+        int paid = Math.min(carriedScript, fine);
+        carriedScript -= paid;
+        int unpaid = fine - paid;
+        suspicion += 2 + openIllegal;
+        gangHeat += Math.max(0, openIllegal - 1);
+        authorityFacilityInspectionCooldownUntilTurn = turn + (18 + rng.nextInt(18)) * TURNS_PER_HOUR;
+        lastAuthorityFacilityInspectionReport = "Authority facility inspection follows recent INN attention. Fine " + fine + " script, paid " + paid + (unpaid > 0 ? ", unpaid docket " + unpaid : "") + ". Illegal/open facilities " + openIllegal + ", public heat " + publicHeat + ".";
+        logEvent("AUTHORITY INSPECTION: " + lastAuthorityFacilityInspectionReport);
+        DebugLog.audit("AUTHORITY_FACILITY_INSPECTION", lastAuthorityFacilityInspectionReport + " state=" + stateSummary());
+    }
+
+
+    void readLatestInnNews() {
+        String issue = ImperialNewsNetworkApi.ensureDailyIssue(this, currentInnDay(), rng);
+        logEvent("INN BROADCAST: " + issue);
+        lastInnNewsIssue = issue;
+        DebugLog.audit("INN_READ_LATEST", "day=" + currentInnDay() + " issue=" + issue + " state=" + stateSummary());
+        advanceTurn("reads or listens to the Concord News Network.");
+        repaint();
+    }
+
+    void interactNewsVendingMachine(int tx, int ty) {
+        int day = currentInnDay();
+        String issue = ImperialNewsNetworkApi.ensureDailyIssue(this, day, rng);
+        if (!spendImperialScript(1)) {
+            logEvent("INN VENDING: the newspaper machine demands 1 Concord Script for today's sanctioned truth. You lack even that much optimism.");
+            return;
+        }
+        String item = "Fresh INN newspaper";
+        addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.INN, "Concord News Network dispenser", world, turn, "daily newspaper issue day " + day, "sold to player from newspaper vending machine"));
+        logEvent("INN VENDING: bought today's newspaper. " + issue);
+        lastInnNewsIssue = issue;
+        MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER);
+        if (m != null) { m.vendCount++; m.cooldownUntilTurn = turn + TURNS_PER_HOUR; }
+        DebugLog.audit("INN_VEND", "at=" + tx + "," + ty + " day=" + day + " issue=" + issue + " state=" + stateSummary());
+        advanceTurn("buys and scans a fresh INN newspaper.");
+        repaint();
+    }
+
+    void recoverOldNewspaperAt(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.DISCARDED_NEWSPRINT_SOURCE);
+        if (m == null) return;
+        int age = Math.max(1, currentInnDay() - safeParseInt(MapObjectState.itemNameFromStock(m.stockState), currentInnDay()-1));
+        String item = age <= 1 ? "Yesterday's INN newspaper" : (age <= 6 ? "Old INN newspaper" : "Useless paper mush");
+        if (inventoryWeight() + 1 > carryCapacity()) { logEvent("Cannot recover " + item + ": carrying load is full."); return; }
+        addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.INN, "discarded public newsprint source", world, turn, "old newspaper day " + MapObjectState.itemNameFromStock(m.stockState), "recovered from trash or floor litter"));
