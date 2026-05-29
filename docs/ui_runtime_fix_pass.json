@@ -1,6 +1,6 @@
 {
   "schema": "mechanist.ui_runtime_fix_pass.v1",
-  "time": "2026-05-29T01:00:05.163601+00:00",
+  "time": "2026-05-29T01:07:55.794351+00:00",
   "steps": [
     {
       "name": "repair_runtime_graphics",
@@ -10,7 +10,7 @@
     {
       "name": "patch_gamepanel",
       "ok": true,
-      "detail": "updated C:\\GITS\\The Mechanist\\TheMechanist\\src\\mechanist\\GamePanel.java"
+      "detail": "no textual changes required"
     },
     {
       "name": "refresh_gamepanel_method_index",
@@ -87,7 +87,7 @@
       "category": "worldgen_text",
       "old": "Simulation age runs additional history batches before world save/start. Higher values improve provenance ledgers but cost generation time. Hoarder mode decouples personal inventory from Strength and Endurance.",
       "new": "Simulation age adds history batches before start. Higher values improve provenance but costs time.",
-      "count": 1
+      "count": 0
     },
     {
       "category": "worldgen_text",
@@ -153,25 +153,25 @@
       "category": "runtime_graphic_paths",
       "old": "new_world_backdrop_rebase",
       "new": "source/Background/Backdrop.png",
-      "count": 1
+      "count": 0
     },
     {
       "category": "runtime_graphic_paths",
       "old": "clouds_slow_rebase",
       "new": "source/Background/CLOUDS1slow.png",
-      "count": 1
+      "count": 0
     },
     {
       "category": "runtime_graphic_paths",
       "old": "clouds_fast_rebase",
       "new": "source/Background/Clouds2fast.png",
-      "count": 1
+      "count": 0
     },
     {
       "category": "compact_text",
       "old": "Simulation information stays left; controls stay right so low-resolution layouts do not trample themselves.",
       "new": "Info left. Controls right. Compact layout enforced.",
-      "count": 1
+      "count": 0
     },
     {
       "category": "compact_text",
@@ -189,7 +189,7 @@
       "category": "compact_text",
       "old": "Strength/Endurance",
       "new": "STR/END",
-      "count": 1
+      "count": 0
     },
     {
       "category": "intro_timing",
@@ -204,5 +204,5 @@
       "count": 0
     }
   ],
-  "total_replacements": 14
+  "total_replacements": 8
 }
