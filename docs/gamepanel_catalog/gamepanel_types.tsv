@@ -1,7 +1,7 @@
 kind	name	start_line	end_line	line_count	depth
-class	GamePanel	16	21275	21260	0
+class	GamePanel	16	21165	21150	0
 enum	Screen	17	17	1	1
 enum	PanelMode	18	18	1	1
-class	SaveLoadUiRects	14452	14455	4	1
-class	UiLayout	14615	14661	47	1
-class	ContractZoneTarget	17111	17122	12	1
+class	SaveLoadUiRects	14397	14400	4	1
+class	UiLayout	14560	14606	47	1
+class	ContractZoneTarget	17056	17067	12	1
