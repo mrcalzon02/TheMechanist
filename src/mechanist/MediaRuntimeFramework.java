@@ -7,6 +7,7 @@ import javax.swing.ImageIcon;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.Locale;
 import mechanist.assets.AssetManager;
 import mechanist.assets.AssetType;
 
@@ -51,10 +52,16 @@ class TileArtSystem {
         byGlyph.clear();
         byAlias.clear();
         bySemantic.clear();
-        File root = new File(rootPath);
-        if (!root.exists()) return;
+        String resolvedRootPath = ArtPackManager.resolveInstalledArtRoot(rootPath);
+        File root = new File(resolvedRootPath);
+        if (!root.exists()) {
+            DebugLog.warn("TILE_ART", "Tile art root does not exist. requestedRoot=" + rootPath + " resolvedRoot=" + resolvedRootPath + " runtime=" + RuntimePathResolver.workingDirectorySummary());
+            return;
+        }
         loadedQualityFolder = qualityFolderFor(qualityIndex);
-        String cellRoot = qualityCellRoot(rootPath, loadedQualityFolder);
+        String cellRoot = qualityCellRoot(resolvedRootPath, loadedQualityFolder);
+        int cellPngCount = ArtPackManager.countPngFiles(Paths.get(cellRoot));
+        DebugLog.audit("TILE_ART", "tile root requested=" + rootPath + " resolved=" + resolvedRootPath + " quality=" + loadedQualityFolder + " cellRoot=" + cellRoot + " cellRootExists=" + Files.isDirectory(Paths.get(cellRoot)) + " pngCount=" + cellPngCount);
         try {
             bindFloorVariantAliases(cellRoot);
             bindSpecializedTerrainAliases(cellRoot);
@@ -146,7 +153,7 @@ class TileArtSystem {
             putAlias("vehicle_bike", cellRoot + "/GraphicalUpgradeBase3/vehicles/vehicles_r3c1.png");
             putAlias("vehicle_armored_car", cellRoot + "/GraphicalUpgradeBase3/vehicles/vehicles_r4c3.png");
             putAlias("vehicle_tank", cellRoot + "/GraphicalUpgradeBase3/vehicles/vehicles_r5c5.png");
-            loadSemanticIcons(rootPath, loadedQualityFolder);
+            loadSemanticIcons(resolvedRootPath, loadedQualityFolder);
             bindGlyphs();
             DebugLog.audit("TILE_ART", "loaded quality=" + loadedQualityFolder + " aliases=" + byAlias.size() + " glyphs=" + byGlyph.size() + " semantic=" + bySemantic.size());
         } catch (Throwable t) {
@@ -199,6 +206,8 @@ class TileArtSystem {
     File resolveRuntimeCellFile(String path) {
         if (path == null || path.isBlank()) return null;
         String p = path.replace('\\', '/');
+        File resolved = RuntimePathResolver.resolveAssetFile(p);
+        if (resolved.exists()) return resolved;
         if (p.startsWith("assets/")) {
             File packagedClientOwned = new File("packages/client", p);
             if (packagedClientOwned.exists()) return packagedClientOwned;
@@ -463,6 +472,39 @@ class TileArtSystem {
 
 
 class ArtPackManager {
+    static String resolveInstalledArtRoot(String requestedRoot) {
+        ArrayList<Path> candidates = new ArrayList<>();
+        if (requestedRoot != null && !requestedRoot.isBlank()) {
+            candidates.add(Paths.get(requestedRoot));
+            File runtimeResolved = RuntimePathResolver.resolveAssetFile(requestedRoot);
+            if (runtimeResolved != null) candidates.add(runtimeResolved.toPath());
+        }
+        candidates.add(RuntimePathResolver.resolveAssetFile("assets/a/r").toPath());
+        candidates.add(RuntimePathResolver.resolveAssetFile("PACKAGE_client/assets/a/r").toPath());
+        candidates.add(RuntimePathResolver.resolveAssetFile("client/assets/a/r").toPath());
+        candidates.add(Paths.get("assets/a/r"));
+
+        for (Path candidate : candidates) {
+            if (candidate == null) continue;
+            Path normalized = candidate.toAbsolutePath().normalize();
+            if (Files.isDirectory(normalized.resolve("tiles").resolve("quality").resolve("low_32").resolve("cells"))) {
+                return normalized.toString();
+            }
+        }
+        return requestedRoot;
+    }
+
+    static int countPngFiles(Path root) {
+        if (root == null || !Files.isDirectory(root)) return 0;
+        try (java.util.stream.Stream<Path> stream = Files.walk(root)) {
+            return (int) stream
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName() != null && p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".png"))
+                    .count();
+        } catch (Throwable ignored) {
+            return 0;
+        }
+    }
     static String prepareAndResolveRoot(String packDirName, String cacheDirName, String bundledFallbackRoot) {
         try {
             Path packDir = Paths.get(packDirName);
@@ -480,7 +522,7 @@ class ArtPackManager {
         } catch (Throwable t) {
             DebugLog.error("ART_PACK", "Art-pack prepare failed; falling back to bundled art if present.", t);
         }
-        String fallbackRoot = resolveBundledFallbackRoot(bundledFallbackRoot);
+        String fallbackRoot = resolveInstalledArtRoot(resolveBundledFallbackRoot(bundledFallbackRoot));
         if (Files.isDirectory(Paths.get(fallbackRoot))) {
             DebugLog.audit("ART_PACK", "Using bundled art root=" + fallbackRoot);
             return fallbackRoot;
@@ -505,11 +547,12 @@ class ArtPackManager {
 
     static Path resolveQualityRoot(String bundledRoot, String folder) {
         String wanted = (folder == null || folder.isBlank()) ? "low_32" : folder;
-        Path local = Paths.get(bundledRoot, "tiles", "quality", wanted);
+        String resolvedBundledRoot = resolveInstalledArtRoot(bundledRoot);
+        Path local = Paths.get(resolvedBundledRoot, "tiles", "quality", wanted);
         if (Files.isDirectory(local.resolve("cells"))) return local;
         Path external = findQualityRoot(Paths.get("cache", "artpacks"), wanted);
         if (external != null) return external;
-        Path bundledLow = Paths.get(bundledRoot, "tiles", "quality", "low_32");
+        Path bundledLow = Paths.get(resolvedBundledRoot, "tiles", "quality", "low_32");
         if (Files.isDirectory(bundledLow.resolve("cells"))) {
             DebugLog.warn("ART_PACK", "Requested art tier '" + wanted + "' is not installed; falling back to bundled low_32.");
             return bundledLow;
@@ -521,7 +564,8 @@ class ArtPackManager {
         Path q = resolveQualityRoot(bundledRoot, folder);
         Path cells = q.resolve("cells");
         if (Files.isDirectory(cells)) return cells.toString();
-        return Paths.get(bundledRoot, "tiles", "cells").toString();
+        String resolvedBundledRoot = resolveInstalledArtRoot(bundledRoot);
+        return Paths.get(resolvedBundledRoot, "tiles", "cells").toString();
     }
 
     static Path findQualityRoot(Path cacheDir, String folder) {
