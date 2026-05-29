@@ -21,4 +21,11 @@ public class LayerC {
         panel.graphicsDropdown = -1;
         panel.repaint();
     }
+
+    static void setRenderQualityIndex(GamePanel panel, int idx) {
+        panel.logEvent(OptionsBoundaryAuthority.setRenderQualityIndex(panel.options, idx));
+        DisplayScaleOptionsSubsystem.applyOptions(panel);
+        panel.graphicsDropdown = -1;
+        panel.repaint();
+    }
 }
