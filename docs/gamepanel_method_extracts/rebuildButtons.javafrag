@@ -181,7 +181,7 @@
                 "Cycle room/zone density and room-count pressure.",
                 "Cycle world price difficulty for trading.",
                 "Cycle crafting resource difficulty.",
-                "Toggle unlimited personal inventory independent of Strength/Endurance.",
+                "Toggle unlimited personal inventory independent of STR/END.",
                 "Cycle how many history-generation batches run before start."
             };
             int cols = 2;

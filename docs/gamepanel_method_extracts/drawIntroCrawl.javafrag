@@ -4,7 +4,7 @@
     void drawIntroCrawl(Graphics2D g) {
         int W = getWidth(), H = getHeight();
         long elapsed = Math.max(0L, System.currentTimeMillis() - introCrawlStartMillis);
-        BufferedImage backdrop = images.get("new_world_backdrop_rebase");
+        BufferedImage backdrop = images.get("source/Background/Backdrop.png");
         if (backdrop != null) {
             double scale = Math.max(W / (double)Math.max(1, backdrop.getWidth()), H / (double)Math.max(1, backdrop.getHeight()));
             int bw = Math.max(W, (int)Math.round(backdrop.getWidth() * scale));
@@ -13,8 +13,8 @@
         } else {
             g.setColor(new Color(5, 6, 8)); g.fillRect(0,0,W,H);
         }
-        drawIntroCloudLayer(g, images.get("clouds_slow_rebase"), elapsed, 0.012, 34, 0.48f);
-        drawIntroCloudLayer(g, images.get("clouds_fast_rebase"), elapsed, 0.026, 0, 0.38f);
+        drawIntroCloudLayer(g, images.get("source/Background/CLOUDS1slow.png"), elapsed, 0.012, 34, 0.48f);
+        drawIntroCloudLayer(g, images.get("source/Background/Clouds2fast.png"), elapsed, 0.026, 0, 0.38f);
         g.setColor(new Color(0,0,0,126)); g.fillRect(0,0,W,H);
         drawSlicedFrame(g, 26, 26, W-52, H-52, "outer");
 
