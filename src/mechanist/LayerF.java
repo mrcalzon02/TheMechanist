@@ -11,4 +11,13 @@ public class LayerF {
         DebugLog.audit("PERFORMANCE_DIAGNOSTICS", panel.performanceDiagnostics.auditSummary());
         panel.repaint();
     }
+
+    static void cycleCvdMode(GamePanel panel) {
+        panel.options.cvdModeIndex = (panel.options.cvdModeIndex + 1) % AccessibilityCompatibilityAuthority.CvdMode.values().length;
+        panel.options.save();
+        panel.logEvent("Color vision correction: " + AccessibilityCompatibilityAuthority.cvdLabel(panel.options.cvdModeIndex) + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(panel.options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(panel.userProfile));
+        panel.repaint();
+    }
 }
