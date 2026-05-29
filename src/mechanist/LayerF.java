@@ -36,4 +36,11 @@ public class LayerF {
         panel.logEvent("Instant conversation text " + (panel.options.instantDialogueText ? "enabled" : "disabled") + ".");
         panel.repaint();
     }
+
+    static void adjustScreenShake(GamePanel panel, int delta) {
+        panel.options.screenShakePercent = Math.max(0, Math.min(100, panel.options.screenShakePercent + delta));
+        panel.options.save();
+        panel.logEvent("Screen shake intensity now " + panel.options.screenShakePercent + "%.");
+        panel.repaint();
+    }
 }
