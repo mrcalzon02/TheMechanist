@@ -14,4 +14,11 @@ public class LayerC {
         DisplayScaleOptionsSubsystem.applyOptions(panel);
         panel.repaint();
     }
+
+    static void toggleFrameLimiter(GamePanel panel) {
+        panel.logEvent(OptionsBoundaryAuthority.toggleFrameLimiter(panel.options));
+        DisplayScaleOptionsSubsystem.applyOptions(panel);
+        panel.graphicsDropdown = -1;
+        panel.repaint();
+    }
 }
