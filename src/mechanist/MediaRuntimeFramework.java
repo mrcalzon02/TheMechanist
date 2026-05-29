@@ -41,17 +41,13 @@ class PortraitSheetProfile {
 }
 
 class TileArtSystem {
-    final Map<Character, BufferedImage> byGlyph = new HashMap<>();
-    final Map<String, BufferedImage> byAlias = new HashMap<>();
-    final Map<String, BufferedImage> bySemantic = new HashMap<>();
+    private final TileImageRegistry imageRegistry = new TileImageRegistry();
     String loadedQualityFolder = "low_32";
 
     void load(String rootPath) { load(rootPath, 0); }
 
     void load(String rootPath, int qualityIndex) {
-        byGlyph.clear();
-        byAlias.clear();
-        bySemantic.clear();
+        imageRegistry.clear();
         String resolvedRootPath = ArtPackManager.resolveInstalledArtRoot(rootPath);
         File root = new File(resolvedRootPath);
         if (!root.exists()) {
@@ -155,7 +151,7 @@ class TileArtSystem {
             putAlias("vehicle_tank", cellRoot + "/GraphicalUpgradeBase3/vehicles/vehicles_r5c5.png");
             loadSemanticIcons(resolvedRootPath, loadedQualityFolder);
             bindGlyphs();
-            DebugLog.audit("TILE_ART", "loaded quality=" + loadedQualityFolder + " aliases=" + byAlias.size() + " glyphs=" + byGlyph.size() + " semantic=" + bySemantic.size());
+            DebugLog.audit("TILE_ART", "loaded quality=" + loadedQualityFolder + " aliases=" + imageRegistry.aliasCount() + " glyphs=" + imageRegistry.glyphCount() + " semantic=" + imageRegistry.semanticCount());
         } catch (Throwable t) {
             DebugLog.error("TILE_ART", "Tile art loading failed; ASCII fallback remains active.", t);
         }
@@ -178,7 +174,7 @@ class TileArtSystem {
         File f = resolveRuntimeCellFile(path);
         if (f == null || !f.exists()) { DebugLog.warn("TILE_ART", "Missing tile alias " + key + " path=" + path); return; }
         BufferedImage img = ImageIO.read(f);
-        if (img != null) byAlias.put(key, img);
+        imageRegistry.putAlias(key, img);
     }
 
     void putAliasRotated(String key, String path, int quarterTurns) throws IOException {
@@ -186,7 +182,7 @@ class TileArtSystem {
         if (f == null || !f.exists()) { DebugLog.warn("TILE_ART", "Missing rotated tile alias " + key + " path=" + path); return; }
         BufferedImage img = ImageIO.read(f);
         if (img == null) return;
-        byAlias.put(key, rotateQuarterTurns(img, quarterTurns));
+        imageRegistry.putAlias(key, rotateQuarterTurns(img, quarterTurns));
     }
 
     static BufferedImage rotateQuarterTurns(BufferedImage img, int quarterTurns) {
@@ -248,8 +244,8 @@ class TileArtSystem {
         for (int col = 1; col <= 5; col++) putAlias("floor_sewer_room_v" + col, floorStem + "r3c" + col + ".png");
         for (int col = 1; col <= 5; col++) putAlias("floor_trash_mutant_rough_v" + col, floorStem + "r4c" + col + ".png");
         for (int col = 1; col <= 5; col++) putAlias("floor_alleyway_cracked_v" + col, floorStem + "r5c" + col + ".png");
-        BufferedImage bare = byAlias.get("floor_bare_underhive_v1");
-        if (bare != null) byAlias.put("floor_bare_underhive", bare);
+        BufferedImage bare = imageRegistry.getAlias("floor_bare_underhive_v1");
+        if (bare != null) imageRegistry.putAlias("floor_bare_underhive", bare);
     }
 
     void bindSpecializedTerrainAliases(String cellRoot) throws IOException {
@@ -331,8 +327,8 @@ class TileArtSystem {
         for (int col = 1; col <= 5; col++) {
             putAlias(baseKey + "_v" + col, stem + "r" + row + "c" + col + ".png");
         }
-        BufferedImage first = byAlias.get(baseKey + "_v1");
-        if (first != null) byAlias.put(baseKey, first);
+        BufferedImage first = imageRegistry.getAlias(baseKey + "_v1");
+        if (first != null) imageRegistry.putAlias(baseKey, first);
     }
 
 
@@ -419,7 +415,7 @@ class TileArtSystem {
                 String name = f.getName();
                 String key = name.substring(0, name.length()-4);
                 BufferedImage img = ImageIO.read(f);
-                if (img != null) bySemantic.put(key, img);
+                imageRegistry.putSemantic(key, img);
             } catch (Throwable t) {
                 DebugLog.warn("TILE_ART", "Could not load semantic icon " + f.getPath());
             }
@@ -438,7 +434,7 @@ class TileArtSystem {
         return AssetIntegrationDisciplineAuthority.semanticKeyForMapObject(obj);
     }
 
-    void bind(char glyph, String alias) { BufferedImage img = byAlias.get(alias); if (img != null) byGlyph.put(glyph, img); }
+    void bind(char glyph, String alias) { BufferedImage img = imageRegistry.getAlias(alias); if (img != null) imageRegistry.putGlyph(glyph, img); }
 
     void bindGlyphs() {
         bind('.', "floor_bare_underhive"); bind('`', "floor_trash_mutant_rough"); bind(';', "road_north_south"); bind('_', "road_sidewalk"); bind('+', "floor_industrial_corridor"); bind('=', "floor_maintenance_corridor"); bind(',', "floor_alleyway_cracked"); bind('~', "floor_sewer_pipe_corridor"); bind(':', "floor_padded_service_way"); bind('-', "floor_exterior_hivewall_maintenance"); bind(' ', "void_space");
@@ -456,18 +452,12 @@ class TileArtSystem {
         return glyph == '+' || glyph == '=' || glyph == '~' || glyph == ':' || glyph == '-' || glyph == ';' || glyph == '_';
     }
 
-    BufferedImage get(char glyph) { return byGlyph.get(glyph); }
-    BufferedImage get(String semanticKey, char fallback) {
-        if (semanticKey != null) {
-            BufferedImage img = bySemantic.get(semanticKey);
-            if (img != null) return img;
-            img = byAlias.get(semanticKey);
-            if (img != null) return img;
-        }
-        return get(fallback);
-    }
-    int loadedCount() { return byGlyph.size(); }
-    int semanticCount() { return bySemantic.size(); }
+    BufferedImage getTile(char glyph) { return imageRegistry.getTile(glyph); }
+    BufferedImage getTile(String semanticKey, char fallback) { return imageRegistry.getTile(semanticKey, fallback); }
+    BufferedImage get(char glyph) { return getTile(glyph); }
+    BufferedImage get(String semanticKey, char fallback) { return getTile(semanticKey, fallback); }
+    int loadedCount() { return imageRegistry.loadedCount(); }
+    int semanticCount() { return imageRegistry.semanticCount(); }
 }
 
 
@@ -1075,8 +1065,8 @@ class ImageCache {
     BufferedImage get(String key) { return cache.get(key); }
     boolean hasFrameSlices() { return cache.get("corner_top_left") != null && cache.get("inner_display_center") != null; }
     boolean hasTileArt() { return tileArt.loadedCount() > 0; }
-    BufferedImage getTile(char ch) { return tileArt.get(ch); }
-    BufferedImage getTile(String semanticKey, char fallback) { return tileArt.get(semanticKey, fallback); }
+    BufferedImage getTile(char ch) { return tileArt.getTile(ch); }
+    BufferedImage getTile(String semanticKey, char fallback) { return tileArt.getTile(semanticKey, fallback); }
 
     BufferedImage getSemanticAssetImage(String assetId) {
         if (assetId == null || assetId.isBlank()) return null;
@@ -1113,6 +1103,4 @@ class ImageCache {
         return cache.get("mechanical_skull_gear_emblem");
     }
 }
-
-
 
