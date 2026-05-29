@@ -1,0 +1,32 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: updateMouseMovementPreviewTo
+// Lines: 15221-15245
+// Category: input
+// This is an examination slice, not compiled source.
+
+    void updateMouseMovementPreviewTo(int tx, int ty) {
+        mouseMovePreviewActive = true; mouseMoveTargetX = tx; mouseMoveTargetY = ty; mouseMovePreviewLastMillis = System.currentTimeMillis(); mouseMovePreviewPath.clear();
+        String directBlock = directMovementTargetBlockReason(tx, ty);
+        if (directBlock != null) {
+            mouseMovePreviewValid = false;
+            mouseMovePreviewStatus = directBlock;
+            return;
+        }
+        ArrayList<Point> path = findPreviewPath(playerX, playerY, tx, ty, 80);
+        mouseMovePreviewPath.addAll(path);
+        mouseMovePreviewValid = !path.isEmpty();
+        int steps = Math.max(0, path.size());
+        int range = Math.max(1, movementModeRange());
+        int chunks = steps == 0 ? 0 : (int)Math.ceil(steps / (double)range);
+        if (!mouseMovePreviewValid) {
+            mouseMovePreviewStatus = "Cannot reach from here.";
+            return;
+        }
+        String hazard = movementPathHazardWarning(path);
+        String approach = interactionApproachStatusFor(tx, ty);
+        mouseMovePreviewStatus = "Movement target ready"
+                + (hazard.isEmpty() ? "" : "; " + hazard)
+                + (approach.isEmpty() ? "" : "; " + approach)
+                + " | steps " + steps + " | " + chunks + " action(s) at " + movementModeLabel();
+    }

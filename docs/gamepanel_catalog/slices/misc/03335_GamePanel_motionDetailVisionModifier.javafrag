@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: motionDetailVisionModifier
+// Lines: 3335-3344
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int motionDetailVisionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_SNEAK: return 1;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -1;
+            case MOTION_SPRINT: return -2;
+            default: return 0;
+        }
+    }

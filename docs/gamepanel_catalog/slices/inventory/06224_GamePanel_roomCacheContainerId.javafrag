@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: roomCacheContainerId
+// Lines: 6224-6226
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String roomCacheContainerId(int roomId) {
+        return RoomContainerApi.containerId(world == null ? 0 : world.locationKey(), roomId);
+    }

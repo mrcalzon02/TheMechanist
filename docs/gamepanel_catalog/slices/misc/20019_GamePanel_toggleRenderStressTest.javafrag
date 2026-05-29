@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleRenderStressTest
+// Lines: 20019-20025
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleRenderStressTest() {
+        logEvent(renderStressTest.toggle(frameLimiter));
+        options.diagnosticsOverlay = true;
+        performanceDiagnostics.setVisible(true);
+        options.save();
+        repaint();
+    }

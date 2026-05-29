@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: firstExistingPart
+// Lines: 5136-5140
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BodyPart firstExistingPart(String... names) {
+        if (active == null || active.body == null) return null;
+        for (String n : names) { BodyPart bp = active.body.get(n); if (bp != null) return bp; }
+        return null;
+    }

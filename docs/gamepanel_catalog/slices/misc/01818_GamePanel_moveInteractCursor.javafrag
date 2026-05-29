@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: moveInteractCursor
+// Lines: 1818-1828
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void moveInteractCursor(int dx, int dy) {
+        if (world == null) return;
+        int nx = lookX + dx;
+        int ny = lookY + dy;
+        // Interaction cursor is deliberately bound to the eight tiles around the player plus the standing tile.
+        if (Math.abs(nx - playerX) <= 1 && Math.abs(ny - playerY) <= 1 && nx >= 0 && ny >= 0 && nx < world.w && ny < world.h) {
+            lookX = nx; lookY = ny; lookStackIndex = 0;
+        }
+        clampInteractCursorToAdjacent();
+        updatePendingInteractionSummary();
+    }

@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: assignSelectedGeneratedProductionJob
+// Lines: 8550-8567
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void assignSelectedGeneratedProductionJob() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Generated assignment failed: stand inside your claimed base room."); return; }
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Generated assignment failed: no recruit-operable machine or apparatus selected."); return; }
+        FactionRecipeVariant v = selectedGeneratedProductionJob();
+        if (v == null) { logEvent("Generated assignment failed: no generated production job is available under current filters."); return; }
+        String problem = ControlledProductionJobAuthority.assignmentProblem(this, machine, v);
+        if (problem != null) { logEvent("Generated assignment failed: " + problem); DebugLog.audit("GENERATED_ASSIGN_BLOCKED", "machine=" + machine.name + " job=" + v.outputName + " reason=" + problem + " state=" + stateSummary()); return; }
+        machine.assignedRecipe = ControlledProductionJobAuthority.assignmentKey(v);
+        machine.assignedWorker = availableRecruitLabor() > 0 ? firstAvailableRecruitName() : ControlledProductionJobAuthority.MANUAL_WORKER_LABEL;
+        machine.productionQueueTarget = Math.max(1, machine.productionQueueTarget);
+        machine.productionQueueRemaining = Math.max(1, machine.productionQueueTarget);
+        lastGeneratedProductionReport = "Assigned " + v.outputName + " to " + machine.name + ". " + ControlledProductionJobAuthority.manualFallbackLine(this, machine, v);
+        lastGeneratedProductionQueueReport = ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        logEvent("ASSIGNED GENERATED JOB: " + lastGeneratedProductionReport + " " + lastGeneratedProductionQueueReport);
+        recordPlayerNewsEvent("production-started", v.outputName, v.faction, "production assigned to " + machine.name + " with queue " + machine.productionQueueRemaining + "/" + machine.productionQueueTarget, 3);
+        DebugLog.audit("GENERATED_RECIPE_ASSIGNED", "machine=" + machine.name + " key=" + machine.assignedRecipe + " worker=" + machine.assignedWorker + " queueTarget=" + machine.productionQueueTarget + " queueRemaining=" + machine.productionQueueRemaining + " manualTurns=" + ControlledProductionJobAuthority.manualTurnCost(this, machine, v) + " state=" + stateSummary());
+    }

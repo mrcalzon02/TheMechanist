@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: continueFromIntroCrawl
+// Lines: 12182-12186
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void continueFromIntroCrawl() {
+        logEvent("New World insertion crawl acknowledged.");
+        if (introCrawlQueuedZoneSplash) setScreen(Screen.ZONE_SPLASH);
+        else setScreen(Screen.GAME);
+    }

@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: equipmentContainerIdForSlot
+// Lines: 16705-16707
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String equipmentContainerIdForSlot(int idx) {
+        return CONTAINER_PLAYER_EQUIPMENT_PREFIX + Math.max(0, Math.min(idx, equipmentSlotNames().length-1));
+    }

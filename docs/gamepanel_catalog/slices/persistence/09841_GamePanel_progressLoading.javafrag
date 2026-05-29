@@ -1,0 +1,47 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: progressLoading
+// Lines: 9841-9880
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void progressLoading() {
+        if (screen != Screen.LOADING) return;
+        lastLoadingPulseMillis = System.currentTimeMillis();
+        if (loadingFinalizationStarted) {
+            loadingProgress = Math.max(96, Math.min(99, loadingProgress + (loadingFinalizationRunning ? 0 : 1)));
+            return;
+        }
+        loadingStep++;
+        String[] statuses = {
+            "Reading project files and runtime settings.",
+            "Generating current sector atlas.",
+            "Creating active zone room/corridor graph.",
+            "Validating doors, sewers, elevators, and edge transitions.",
+            "Assigning faction claims and room service roles.",
+            "Indexing scavenge ledgers, infopedia labels, and map descriptors.",
+            "Allocating fog-of-war, sensory, and player state buffers.",
+            "Finalizing player insertion room pointer."
+        };
+        String[] details = {
+            "Files: settings/options.properties; assets/generated/the_mechanist_title.png; imported GUI/button sprites; docs generation references.",
+            "Process: WorldAtlas.generateScaffold() builds active slice now; provenance-aware full-sector pregen remains lazy/runtime bounded.",
+            "Process: atlas.currentWorld() resolves the active zone and confirms structured hab/sewer room templates.",
+            "Process: edge doors, hatch/ladder links, elevator caps, and transition spawn hints are being checked.",
+            "Process: zone type doctrine assigns gangs, Civic Wardens, Mechanist Collegia, civilians, sewer camps, or service-spine control.",
+            "Process: room descriptors, scavenge tables, shop/vending hooks, and Infopedia zone names are being indexed.",
+            "Process: visibleTiles, rememberedTiles, sense pings, event log state, and panel caches are being prepared.",
+            "Process: world.startPoint()/ensurePlayerSpawnPoint() must return a walkable tile with a valid room id."
+        };
+        int beforeProgress = loadingProgress;
+        loadingProgress = Math.min(96, loadingProgress + 7 + (loadingStep % 4));
+        int statusIndex = Math.min(statuses.length-1, loadingStep / 3);
+        loadingStatus = statuses[statusIndex];
+        loadingDetail = details[statusIndex];
+        if (loadingStep == 1 || loadingProgress / 20 != beforeProgress / 20 || loadingProgress >= 96) {
+            DebugLog.audit("LOADING_PROGRESS", "step=" + loadingStep + " progress=" + loadingProgress + " status=" + loadingStatus + " detail=" + loadingDetail);
+        }
+        if ((loadingProgress >= 96 || loadingStep > 24) && System.currentTimeMillis() - loadingStartMillis >= 1400) {
+            startLoadingFinalizationWorker(loadingForTransition ? "transition" : "new-game");
+        }
+    }

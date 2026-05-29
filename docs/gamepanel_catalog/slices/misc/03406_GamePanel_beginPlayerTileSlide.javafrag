@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: beginPlayerTileSlide
+// Lines: 3406-3413
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void beginPlayerTileSlide(int fromX, int fromY, int toX, int toY) {
+        // 0.9.10ff: live Linux testing showed unfinished tween frames could leave the
+        // player icon visually between tiles after control returned. Until movement
+        // interpolation has a dedicated state gate, player position renders snapped
+        // to the authoritative tile center every frame.
+        playerTileMotion = null;
+        if (fromX != toX || fromY != toY) DebugLog.audit("MOVE_SNAP", "actor=player from=" + fromX + "," + fromY + " to=" + toX + "," + toY + " mode=" + movementModeLabel() + " turn=" + turn);
+    }

@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedBankProfile
+// Lines: 9106-9109
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BankProfile selectedBankProfile() {
+        MapObjectState m = bankTerminalAt(lookX, lookY);
+        return m == null ? null : BankProfile.byId(MapObjectState.itemNameFromStock(m.stockState));
+    }

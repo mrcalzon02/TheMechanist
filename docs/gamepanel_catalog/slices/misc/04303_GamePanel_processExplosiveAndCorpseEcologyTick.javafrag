@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: processExplosiveAndCorpseEcologyTick
+// Lines: 4303-4307
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void processExplosiveAndCorpseEcologyTick() {
+        tickThrownAndPlantedExplosives();
+        tickCorpseEcology();
+        tickFactionWallRepairAndHiveQuake();
+    }

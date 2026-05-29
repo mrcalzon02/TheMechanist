@@ -1,0 +1,42 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawZoneAuditGenerationLogOverlay
+// Lines: 11569-11603
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawZoneAuditGenerationLogOverlay(Graphics2D g, Rectangle map, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return;
+        int current = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        int lines = Math.max(6, Math.min(12, map.height / 42));
+        int start = Math.max(0, current - lines + 2);
+        int end = Math.min(auditTraceSteps.size(), start + lines);
+        int panelW = Math.max(330, Math.min(560, map.width / 2));
+        int lineH = Math.max(15, g.getFontMetrics(smallFont).getHeight() + 2);
+        int panelH = 14 + (end - start) * lineH;
+        int px = map.x + 18;
+        int py = map.y + 18;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setColor(new Color(0, 0, 0, 178));
+        gg.fillRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setColor(new Color(145, 118, 64, 155));
+        gg.drawRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D() - 3f)));
+        FontMetrics fm = gg.getFontMetrics();
+        int y = py + 12 + fm.getAscent();
+        for (int i = start; i < end; i++) {
+            SectorGenerationTraceAuthority.Step st = auditTraceSteps.get(i);
+            boolean selected = i == current;
+            if (selected) {
+                gg.setColor(new Color(145, 118, 64, 210));
+                gg.fillRect(px + 6, y - fm.getAscent() - 2, panelW - 12, lineH);
+            }
+            gg.setColor(st.rejected ? new Color(255, 145, 115) : (selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN)));
+            String line = st.line(auditTraceSteps.size());
+            int maxChars = Math.max(24, (panelW - 18) / Math.max(5, fm.charWidth('W')));
+            if (line.length() > maxChars) line = line.substring(0, Math.max(0, maxChars - 1)) + "…";
+            drawUiTextLine(gg, line, px + 10, y);
+            y += lineH;
+        }
+        gg.dispose();
+    }

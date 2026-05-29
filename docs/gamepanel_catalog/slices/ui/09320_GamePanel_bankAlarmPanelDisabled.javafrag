@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bankAlarmPanelDisabled
+// Lines: 9320-9322
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    boolean bankAlarmPanelDisabled(MapObjectState m) {
+        return m == null || disabledBankAlarmPanelIds.contains(m.id) || (m.stockState != null && m.stockState.contains("disabled=true"));
+    }

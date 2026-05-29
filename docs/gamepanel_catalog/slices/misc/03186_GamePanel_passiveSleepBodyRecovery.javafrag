@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: passiveSleepBodyRecovery
+// Lines: 3186-3193
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void passiveSleepBodyRecovery() {
+        if (active == null || active.body == null) return;
+        if (wounds > 0 && bleeding <= 0) wounds = Math.max(0, wounds - 1);
+        if (fatigue > 0) fatigue = Math.max(0, fatigue - 1);
+        if (pain > 0) pain = Math.max(0, pain - 2);
+        if (bleeding <= 0) healWorstBodyPart(20.0);
+        logEvent("REST RECOVERY: sleep reduces fatigue/pain and slowly restores the worst body part if bleeding is controlled.");
+    }

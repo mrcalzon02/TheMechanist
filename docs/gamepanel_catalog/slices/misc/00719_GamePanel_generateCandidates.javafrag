@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: generateCandidates
+// Lines: 719-737
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void generateCandidates() {
+        candidates.clear();
+        characterNameEditActive = false;
+        cachedOperatorProfileName = resolveOperatorProfileName();
+        NameLockedProfilePortraitAuthority.setActiveOperatorProfileName(cachedOperatorProfileName);
+        Optional<NameLockedProfilePortraitAuthority.Entry> preferred = NameLockedProfilePortraitAuthority.match(cachedOperatorProfileName);
+        for (int i = 0; i < 12; i++) {
+            Candidate c = Candidate.random(rng);
+            if (i == 0 && preferred.isPresent()) applyNameLockedProfileCandidate(c, preferred.get());
+            refreshNameLockedCandidateState(c);
+            AgeAndWorldTimeAuthority.initializeCandidateAge(c, new Random(Objects.hash(c.name, c.portraitIndex, i, seed)));
+            candidates.add(c);
+        }
+        CharacterCreationAudit audit = CharacterCreationAuditApi.audit(candidates);
+        logEvent("Generated " + candidates.size() + " candidate characters with bounded stat spreads: " + audit.summaryLine());
+        if (preferred.isPresent()) logEvent("Profile-linked portrait available for matching character name: " + preferred.get().displayName + ".");
+        DebugLog.audit("CHARACTER_CREATION", audit.toLogBlock());
+        DebugLog.audit("NAME_LOCKED_PROFILE_PORTRAIT", "candidateSeed profile=" + cachedOperatorProfileName + " preferred=" + (preferred.isPresent() ? preferred.get().key : "none"));
+    }

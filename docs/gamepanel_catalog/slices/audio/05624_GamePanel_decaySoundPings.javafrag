@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: decaySoundPings
+// Lines: 5624-5630
+// Category: audio
+// This is an examination slice, not compiled source.
+
+    void decaySoundPings() {
+        for (int i=sensePings.size()-1; i>=0; i--) {
+            SensePing p = sensePings.get(i);
+            p.ttl--;
+            if (p.ttl <= 0) sensePings.remove(i);
+        }
+    }

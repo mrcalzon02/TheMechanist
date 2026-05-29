@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: contractZoneTarget
+// Lines: 17062-17071
+// Category: world
+// This is an examination slice, not compiled source.
+
+    ContractZoneTarget contractZoneTarget(FactionContract c) {
+        if (c == null || c.targetZoneKey == null || c.targetZoneKey.isBlank()) return null;
+        String[] a = c.targetZoneKey.split(",");
+        if (a.length < 6) return null;
+        try {
+            return new ContractZoneTarget(Integer.parseInt(a[0]), Integer.parseInt(a[1]), Integer.parseInt(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4]), Boolean.parseBoolean(a[5]));
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }

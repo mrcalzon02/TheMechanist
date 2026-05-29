@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcLeaveConversation
+// Lines: 6538-6543
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void npcLeaveConversation() {
+        if (activeConversationNpc != null) logConversation("NPC_LEAVE", "Ended conversation with " + activeConversationNpc.name + ".");
+        activeConversationNpc = null;
+        activeTrader = null;
+        closePanel();
+    }

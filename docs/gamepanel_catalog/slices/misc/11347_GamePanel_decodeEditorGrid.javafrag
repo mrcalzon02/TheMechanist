@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: decodeEditorGrid
+// Lines: 11347-11358
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Map<String,String> decodeEditorGrid(String raw) {
+        LinkedHashMap<String,String> out = new LinkedHashMap<>();
+        if (raw == null || raw.isBlank()) return out;
+        for (String part : raw.split(";")) {
+            int eq = part.indexOf('=');
+            if (eq <= 0) continue;
+            String key = part.substring(0, eq).trim();
+            String val = part.substring(eq+1).trim();
+            if (key.matches("\\d+,\\d+") && !val.isBlank()) out.put(key, val);
+        }
+        return out;
+    }

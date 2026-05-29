@@ -1,0 +1,66 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: finishLoadingNewGame
+// Lines: 10136-10194
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void finishLoadingNewGame() {
+        try {
+            updateLoadingPhase("Finalizer 1/8: binding selected character.", "Copying candidate, job, and selected world setup into the new runtime envelope.", 96);
+            Candidate sourceCandidate = pendingStartCandidate;
+            JobProfile chosenJob = pendingStartJob;
+            active = sourceCandidate.copy();
+            AgeAndWorldTimeAuthority.synchronizeCandidate(active, worldTurn);
+            active.job = chosenJob.name;
+            seed = loadingSeed;
+            updateLoadingPhase("Finalizer 2/8: preparing sector atlas.", "Resolving seed, world profile, and atlas scaffold before selecting the current zone.", 96);
+            NameLockedProfilePortraitAuthority.setActiveOperatorProfileName(resolveOperatorProfileName());
+            if (atlas == null || atlas.seed != seed) atlas = new WorldAtlas(seed, worldSetup);
+            WorldGenerationApi.setActiveSettings(worldSetup);
+            atlas.generateScaffold();
+            updateLoadingPhase("Finalizer 3/8: loading current zone.", "Fetching the current world slice, repairing feature placement, and spawning contracts.", 97);
+            world = atlas.currentWorld();
+            sanitizeCurrentWorldFeaturePlacement("new game currentWorld");
+            spawnContractTargetsForCurrentWorld();
+            boolean firstType = markZoneVisitedAndCheckFirstType();
+            updateLoadingPhase("Finalizer 4/8: allocating visibility buffers.", "Allocating visible and remembered tile grids for the first playable zone.", 97);
+            visibleTiles = new boolean[world.w][world.h];
+            rememberedTiles = new boolean[world.w][world.h];
+            Point p = world.startPoint();
+            playerX = p.x; playerY = p.y;
+            if (world.roomIdAt(playerX, playerY) < 0 || !world.walkable(playerX, playerY)) {
+                Point safe = world.ensurePlayerSpawnPoint();
+                playerX = safe.x; playerY = safe.y;
+                DebugLog.audit("PLAYER_SPAWN_REPAIRED", "startPoint lacked room pointer; repaired to " + playerX + "," + playerY + " room=" + world.roomIdAt(playerX, playerY));
+            }
+            lookX = playerX; lookY = playerY; lookCursorActive = false;
+            singlePlayerSectorBridge.bindCurrentWorld(this, "new game insertion");
+            updateLoadingPhase("Finalizer 5/8: resetting run ledgers.", "Clearing heat, suspicion, XP, contracts, inventory, base state, body state, and news ledgers.", 98);
+            baseClaimed = false; baseX = -1; baseY = -1; claimedRoomId = -1; turn = 0; worldTurn = 0L; suspicion = 0; gangHeat = 0; xp = 0; knowledgeCredits = 0; unlockedKnowledges.clear(); unlockKnowledge("Underhive Basics"); supplies = 5; food = MAX_FOOD_WATER; water = MAX_FOOD_WATER; fatigue = 0; wounds = 0; bleeding = 0; infectionRisk = 0; pain = 0; sleepNeed = 0; lastAutosaveTurn = -1; runKills = 0; runCrafted = 0; runNpcTalkedTo = 0; runUnconsciousEvents = 0; lastDefeatSummary = "No loss screen has been generated."; lastLossScoreLines.clear();
+            scavengeCooldownUntilTurn.clear();
+            factionContracts.clear(); lastContractFaction = Faction.NONE;
+            inventory.clear(); baseStorage.clear(); baseObjects.clear(); npcFactionSites.clear(); playerNewsEvents.clear(); lastPlayerNewsReport = "No player-linked public news item has been filed yet."; authorityFacilityInspectionCooldownUntilTurn = 0; lastAuthorityFacilityInspectionReport = "No authority facility inspection has been triggered by public reporting yet."; seedNpcFactionProductionSites(); initFactionState(); lastDisguiseFailure = Faction.NONE; lastInterrogation = "No interrogation yet."; lastConversation = "No conversations yet.";
+            updateLoadingPhase("Finalizer 6/8: applying job kit.", "Applying job modifiers, clothing, starting inventory, rations, and water.", 98);
+            applyJobProfile(chosenJob);
+            equippedClothing = chosenJob.clothing();
+            for (String startItem : chosenJob.startingItems()) addInventoryItem(startItem, ItemProvenanceRecord.startingKit(startItem, chosenJob, world, turn));
+            addInventoryItem("Emergency rations", ItemProvenanceRecord.startingKit("Emergency rations", chosenJob, world, turn));
+            addInventoryItem("Sealed water ration", ItemProvenanceRecord.startingKit("Sealed water ration", chosenJob, world, turn));
+            materializeEquippedClothingItem(chosenJob);
+            applyNameLockedProfileUnlocks(chosenJob);
+            updateLoadingPhase("Finalizer 7/8: updating senses.", "Computing first visibility/hearing state and checking immediate insertion safety.", 99);
+            updateSensoryModel("initial spawn");
+            updateLoadingPhase("Finalizer 8/8: queuing insertion text.", "Preparing the new-world crawl and first-impression handoff.", 99);
+            introCrawlQueuedZoneSplash = firstType;
+            introCrawlReturnReason = "first entry after character insertion";
+            if (firstType) prepareZoneSplash(introCrawlReturnReason);
+            setScreen(Screen.INTRO_CRAWL);
+            logEvent("Finalized character: " + active.name + " / " + active.job + " seed=" + seed + ". Sector atlas prepared with lazy slice generation. Intro crawl queued.");
+            DebugLog.audit("LOADING_COMPLETE", "progress=" + loadingProgress + " atlas=" + (atlas!=null?atlas.summary():"none") + " state=" + stateSummary());
+        } catch (Throwable t) {
+            DebugLog.error("LOADING_COMPLETE_FAILED", "Could not finish new-game loading.", t);
+            logEvent("ERROR: underhive generation failed. Diagnostic details were recorded.");
+            setScreen(Screen.MENU);
+        }
+    }

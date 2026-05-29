@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: attemptPlayerMove
+// Lines: 3667-3686
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean attemptPlayerMove(int dx, int dy) {
+        if (world == null) return false;
+        updateMoveGhostTarget(dx, dy);
+        int steps = movementModeRange();
+        boolean movedAny = false;
+        for (int i=0; i<steps; i++) {
+            int nx = playerX + dx, ny = playerY + dy;
+            boolean directClear = stepIsClearForPath(nx, ny);
+            boolean moved = directClear ? attemptPlayerMoveOneTile(dx, dy) : attemptPlayerPathSeekingStep(dx, dy);
+            if (!moved) break;
+            movedAny = true;
+            if (screen == Screen.LOST || world == null) break;
+            // Multi-tile movement remains conservative around entity contact.  If the next
+            // target is occupied, stop here so shove/push-past is deliberate, not automated.
+            nx = playerX + dx; ny = playerY + dy;
+            if (world.inBounds(nx, ny) && world.npcAt(nx, ny) != null) break;
+        }
+        updateMoveGhostTarget(dx, dy);
+        return movedAny;
+    }

@@ -1,0 +1,51 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tryPlayerPushPast
+// Lines: 3787-3830
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean tryPlayerPushPast(NpcEntity blocker, int dx, int dy, int nx, int ny) {
+        if (world == null || blocker == null) return false;
+        if (blocker.isProtectedCleric() || isHostileNpc(blocker)) return false;
+        if (blocker.x != nx || blocker.y != ny) return false;
+        if (!world.walkable(playerX, playerY)) return false;
+        String id = blocker.id == null ? blocker.name : blocker.id;
+        boolean sameIntent = id.equals(pushPastIntentNpcId) && pushPastIntentX == nx && pushPastIntentY == ny && pushPastIntentDx == dx && pushPastIntentDy == dy;
+        if (!sameIntent) {
+            pushPastIntentNpcId = id;
+            pushPastIntentX = nx;
+            pushPastIntentY = ny;
+            pushPastIntentDx = dx;
+            pushPastIntentDy = dy;
+            pushPastIntentCount = 1;
+        } else pushPastIntentCount++;
+
+        if (pushPastIntentCount < PUSH_PAST_REPEAT_THRESHOLD) {
+            logEvent("Crowded passage: " + blocker.name + " cannot be shoved aside here. Press the same direction again to push past slowly instead of escalating to violence.");
+            DebugLog.audit("ENTITY_PUSH_PAST_ARMED", "blocker=" + id + " at=" + nx + "," + ny + " dir=" + dx + "," + dy + " count=" + pushPastIntentCount);
+            advanceTurn("leans into the crowding around " + blocker.name + " but does not force the passage yet.");
+            enforceEntityOccupancy("push-past-armed");
+            return true;
+        }
+
+        int oldPlayerX = playerX, oldPlayerY = playerY;
+        blocker.x = oldPlayerX;
+        blocker.y = oldPlayerY;
+        blocker.state = "Jostled";
+        playerX = nx;
+        playerY = ny;
+        lookX = playerX;
+        lookY = playerY;
+        lookCursorActive = false;
+        interactCursorActive = false;
+        int cost = Math.max(1, movementTurnCost()) + PUSH_PAST_EXTRA_TURNS;
+        DebugLog.audit("ENTITY_PUSH_PAST", "playerFrom=" + oldPlayerX + "," + oldPlayerY + " playerTo=" + playerX + "," + playerY + " blocker=" + id + " blockerTo=" + blocker.x + "," + blocker.y + " cost=" + cost + " mode=" + movementModeLabel());
+        logEvent("PUSH PAST: you spend extra time squeezing past " + blocker.name + " through the one-wide choke instead of starting a gunfight in a civilian corridor.");
+        resetPushPastIntent();
+        for (int i=0; i<cost; i++) {
+            advanceTurn(i == 0 ? "pushes past " + blocker.name + " through a crowded one-wide passage. Push-past time cost " + cost + " turns." : "is still untangling from the corridor shuffle.");
+        }
+        enforceEntityOccupancy("push-past-complete");
+        return true;
+    }

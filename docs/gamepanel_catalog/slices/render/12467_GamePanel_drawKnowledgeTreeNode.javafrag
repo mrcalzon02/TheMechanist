@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawKnowledgeTreeNode
+// Lines: 12467-12487
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawKnowledgeTreeNode(Graphics2D g, KnowledgeTree tree, KnowledgeNode node) {
+        KnowledgeTree.NodeState state = tree.stateOf(node);
+        boolean selected = node.id().equals(selectedKnowledgeNodeId);
+        int x = (int)Math.round(node.x() - 78.0);
+        int y = (int)Math.round(node.y() - 29.0);
+        Color fill = switch (state) { case UNLOCKED -> new Color(30, 112, 55); case AVAILABLE -> new Color(156, 130, 34); case LOCKED -> new Color(55, 56, 54); };
+        Color border = selected ? new Color(230, 220, 150) : switch (state) { case UNLOCKED -> new Color(88, 218, 105); case AVAILABLE -> new Color(245, 215, 78); case LOCKED -> new Color(116, 116, 110); };
+        g.setColor(fill);
+        g.fillRoundRect(x, y, 156, 58, 18, 18);
+        g.setStroke(new BasicStroke(selected ? 4.0f : 2.4f));
+        g.setColor(border);
+        g.drawRoundRect(x, y, 156, 58, 18, 18);
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        String title = fitText(node.name(), fm, 138);
+        String cost = state == KnowledgeTree.NodeState.UNLOCKED ? "KNOWN" : "Cost " + node.pointCost();
+        g.setColor(new Color(245, 242, 205));
+        g.drawString(title, x + 10, y + 25);
+        g.setColor(state == KnowledgeTree.NodeState.LOCKED ? new Color(190, 188, 170) : new Color(255, 242, 156));
+        g.drawString(cost, x + 10, y + 45);
+    }

@@ -1,0 +1,57 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactEmergencyMachine
+// Lines: 2593-2642
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void interactEmergencyMachine(int tx, int ty, char ch) {
+        if (!ensureMachineAccess(tx,ty,ch)) return;
+        if (!machinePowered(ch)) {
+            logEvent(emergencyMachineName(ch) + " is unpowered. Powered doors are easier to force, security is down, visibility is reduced, and machinery is inaccessible until power is restored.");
+            advanceTurn("checks unpowered machinery.");
+            return;
+        }
+        switch(ch) {
+            case 'Y':
+                int waterGain = 2 + rng.nextInt(4);
+                for(int i=0;i<waterGain;i++) addInventoryItem("Water bottle", ItemProvenanceRecord.producedByFixture("Water bottle", Faction.HIVER, emergencyMachineName(ch), world, turn, "condensed atmospheric moisture", "dispensed to player by emergency condenser"));
+                logEvent("The condenser coughs out " + waterGain + " units of drinkable water.");
+                break;
+            case 'J':
+                if (countInventory("Machine part") >= 1 && countInventory("Construction supplies") >= 1) { removeInventoryOne("Machine part"); removeInventoryOne("Construction supplies"); addInventoryItem("Assembled component", ItemProvenanceRecord.producedByFixture("Assembled component", Faction.HIVER, emergencyMachineName(ch), world, turn, "Machine part + Construction supplies", "assembled by emergency micro-assembler")); logEvent("The assembler converts supplies and a machine part into an assembled component."); }
+                else logEvent("Assembler option: designate simple components. Requires Machine part + Construction supplies.");
+                break;
+            case 'B':
+                if (rng.nextBoolean()) { addInventoryItem("Clean water", ItemProvenanceRecord.producedByFixture("Clean water", Faction.HIVER, emergencyMachineName(ch), world, turn, "boiled reserve water", "distilled by emergency boiler")); logEvent("The boiler distills dirty reserve into valuable clean water."); }
+                else { addInventoryItem("Dirty water", ItemProvenanceRecord.found("Dirty water", world, turn, "emergency boiler sump")); addInventoryItem("Fuel scrap", ItemProvenanceRecord.found("Fuel scrap", world, turn, "emergency boiler firebox")); logEvent("You strip fuel and dirty water from the emergency boiler instead of running it clean."); }
+                break;
+            case 'K':
+                logEvent("The micro laboratorium accepts samples and records a research opportunity. The action consumes a turn.");
+                break;
+            case 'O':
+                int ore = 2 + rng.nextInt(5); for(int i=0;i<ore;i++) { String mined = rng.nextBoolean()?"Raw iron ore":"Raw copper ore"; addInventoryItem(mined, ItemProvenanceRecord.producedByFixture(mined, Faction.HIVER, emergencyMachineName(ch), world, turn, "local floor mineral seam", "mined by emergency miner")); }
+                logEvent("The emergency miner screams loud enough to draw interest and produces " + ore + " raw ore units.");
+                gangHeat += 1; suspicion += 1;
+                break;
+            case 'Z':
+                logEvent("Power grid relay inspected. Reserved routing: power/depower adjacent rooms or relay power to claimed base rooms without consuming a power slot.");
+                break;
+            case 'P':
+                if (countInventory("Raw iron ore") > 0) { removeInventoryOne("Raw iron ore"); addInventoryItem("Iron ingot", ItemProvenanceRecord.producedByFixture("Iron ingot", Faction.HIVER, emergencyMachineName(ch), world, turn, "Raw iron ore", "smelted by emergency smelter")); logEvent("The smelter turns raw iron ore into an iron ingot."); }
+                else if (countInventory("Raw copper ore") > 0) { removeInventoryOne("Raw copper ore"); addInventoryItem("Copper ingot", ItemProvenanceRecord.producedByFixture("Copper ingot", Faction.HIVER, emergencyMachineName(ch), world, turn, "Raw copper ore", "smelted by emergency smelter")); logEvent("The smelter turns raw copper ore into a copper ingot."); }
+                else logEvent("Smelter option: turn raw ores into usable metals/components. Requires raw ore.");
+                break;
+            case 'F':
+                world.tiles[tx][ty] = 'U';
+                poweredDownSlices.add(String.valueOf(world.locationKey()));
+                logEvent("You sabotage the emergency steam engine. The current map slice loses power: powered security drops, doors can be forced, visibility worsens, and other powered machinery shuts down.");
+                break;
+            case 'U':
+                if (countInventory("Fuel scrap") > 0) { removeInventoryOne("Fuel scrap"); world.tiles[tx][ty]='F'; poweredDownSlices.remove(String.valueOf(world.locationKey())); logEvent("You restart the emergency steam engine with fuel scrap. This engine can feed two powered machines through a relay grid."); }
+                else logEvent("Disabled steam engine. Restart requires Fuel scrap. Player-owned engines consume one stored fuel per 24h and power two machines.");
+                break;
+        }
+        DebugLog.audit("EMM_INTERACT", emergencyMachineName(ch)+" at="+tx+","+ty+" state="+stateSummary());
+        advanceTurn("uses " + emergencyMachineName(ch) + ".");
+    }

@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseExpansionHeatDriverLine
+// Lines: 18453-18468
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseExpansionHeatDriverLine() {
+        LinkedHashMap<String,Integer> drivers = new LinkedHashMap<>();
+        if (illegalBusinessCount() > 0) drivers.put("illegal open business", illegalBusinessCount());
+        if (openBusinessCount() > 0) drivers.put("public shop/service traffic", openBusinessCount());
+        for (BaseObject obj : baseObjects) {
+            String tag = baseObjectExpansionHeatTag(obj);
+            if (tag == null) continue;
+            drivers.put(tag, drivers.getOrDefault(tag, 0) + 1);
+        }
+        int restricted = restrictedStoredGoodsCount();
+        if (restricted > 0) drivers.put("restricted stored goods", restricted);
+        if (drivers.isEmpty()) return "no major expansion drivers beyond ordinary survival presence.";
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : drivers.entrySet()) parts.add(e.getKey() + " x" + e.getValue());
+        return String.join(", ", parts) + ".";
+    }

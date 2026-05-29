@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: weaponAddsSleepPressure
+// Lines: 5056-5060
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean weaponAddsSleepPressure(String weapon) {
+        if (weapon == null) return false;
+        String l = weapon.toLowerCase(Locale.ROOT);
+        return l.contains("shock") || l.contains("taser") || l.contains("stun") || l.contains("webber") || l.contains("sleep gas") || l.contains("gas") || l.contains("tranq") || l.contains("compliance") || l.contains("arc");
+    }

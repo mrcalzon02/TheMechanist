@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawKnowledgeScreen
+// Lines: 12348-12359
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawKnowledgeScreen(Graphics2D g) {
+        drawBackground(g);
+        Rectangle modal = knowledgeModalRect();
+        drawPanelBox(g, modal.x, modal.y, modal.width, modal.height, "F9187 KNOWLEDGE TREE");
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        center(g, "CHARACTER KNOWLEDGE / PROGRESSION", modal.x + modal.width / 2, modal.y + 36);
+        drawKnowledgeBranchTabs(g);
+        drawKnowledgeLeftPane(g);
+        drawKnowledgeCanvas(g);
+        drawKnowledgeRightPane(g);
+    }

@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: infopediaEntries
+// Lines: 12850-12852
+// Category: misc
+// This is an examination slice, not compiled source.
+
+            for (String entry : infopediaEntries(t)) {
+                if (entry.equalsIgnoreCase(target) || ItemQuality.namesMatch(entry, target)) return entry;
+            }

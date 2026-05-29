@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: reportProductionCeiling
+// Lines: 8211-8217
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void reportProductionCeiling(BaseObject obj, ProductionRecipe r) {
+        int k = bestKnownProductionTier();
+        int m = machineQualityTier(obj);
+        if (m < k) logEvent("Production ceiling: " + obj.name + " is " + obj.qualityName + ", so output is capped at " + r.qualityName + ".");
+        MachineTierProfile mp = MachineTierAuthority.forMachine(obj);
+        DebugLog.audit("PRODUCTION_CEILING", "machine=" + (obj==null?"none":obj.name) + " machineQuality=" + (obj==null?"none":obj.qualityName) + " machineTier=" + m + " knowledgeTier=" + k + " outputQuality=" + r.qualityName + " machineProfile=" + mp.auditLine());
+    }

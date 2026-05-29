@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedInventoryItemName
+// Lines: 17943-17948
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String selectedInventoryItemName() {
+        ArrayList<String> names = stackedInventoryNames();
+        if (names.isEmpty()) return null;
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, names.size()-1));
+        return names.get(selectedInventoryIndex);
+    }

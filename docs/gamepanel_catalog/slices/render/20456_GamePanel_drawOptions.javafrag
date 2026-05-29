@@ -1,0 +1,137 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawOptions
+// Lines: 20456-20585
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawOptions(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(optionColor(GameOptions.BACKGROUND));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 20, 20, W-40, H-40, "outer");
+
+        int panelX = Math.max(34, W/2 - Math.min(620, W/2 - 34));
+        int panelY = Math.max(34, H / 22);
+        int panelW = Math.min(W - panelX * 2, Math.max(980, W - 90));
+        int panelH = Math.max(430, H - panelY - 64);
+        drawPanelBox(g, panelX, panelY, panelW, panelH, "OPTIONS");
+
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(10f, Math.min(14f, H / 64f)))); g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        g.drawString("OPTIONS", panelX + 18, panelY + 26);
+        String sub;
+        if (optionsTab == 0) sub = "Display mode, detected resolution, text density, and interface scale";
+        else if (optionsTab == 1) sub = "Text size, text crispness, interface scale, and hover-help density";
+        else if (optionsTab == 2) sub = "Sound channels and volumes";
+        else if (optionsTab == 3) sub = "Controls and command bindings";
+        else if (optionsTab == 4) sub = "Graphics rendering, frame pacing, art quality, motion, and color treatment";
+        else if (optionsTab == 5) sub = "RESTART REQUIRED: JVM heap, GC, Java2D pipeline, client/server/thin-client/single-player profiles";
+        else if (optionsTab == 6) sub = "Accessibility compatibility, color vision correction, readable text, narration hooks, and reduced motion";
+        else sub = "Quality-of-life defaults for storage, construction, logistics, item safety, production, market, and notification friction";
+
+        int subPanelY = panelY + 74;
+        drawTextPanel(g, panelX + 44, subPanelY, panelW - 88, 28, Collections.singletonList(sub), true);
+
+        int controlsBoxX = panelX + 44;
+        int controlsBoxY = panelY + 108;
+        int controlsBoxW = panelW - 88;
+        int controlsBoxH = Math.max(116, Math.min(188, panelH / 4));
+        g.setColor(new Color(0, 0, 0, 202));
+        g.fillRoundRect(controlsBoxX, controlsBoxY, controlsBoxW, controlsBoxH, 12, 12);
+        drawSlicedFrame(g, controlsBoxX, controlsBoxY, controlsBoxW, controlsBoxH, "inner");
+        stampUiFrameId(g, "T", "options-controls", controlsBoxX, controlsBoxY, controlsBoxW, controlsBoxH);
+
+        int infoX = panelX + 44;
+        int infoY = controlsBoxY + controlsBoxH + 12;
+        int infoW = panelW - 88;
+        int infoH = Math.max(96, panelY + panelH - infoY - 50);
+        g.setFont(smallFont);
+
+        if (optionsTab == 0) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("Window Mode: " + options.windowModeLabel());
+            lines.add("Resolution: " + options.resolutionLabel());
+            lines.add("Detected/Safe Display Modes: " + DisplayResolutionAuthority.choiceCount());
+            lines.add("Screensaver: " + (options.screenSaver ? "ON" : "OFF"));
+            lines.add("Display owns windowed, borderless windowed, exclusive fullscreen, resolution selection, and applying those monitor/window settings.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 1) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("Font/Text Scale: " + options.fontScale + "%");
+            lines.add("GUI/Chrome Scale: " + options.uiScale + "%");
+            lines.add("Text Crispness: " + options.renderQualityLabel());
+            lines.add("Floating Hover Help: " + (options.hoverHelp ? "ON" : "OFF"));
+            lines.add("Compact text is the default; larger text is an opt-in accessibility setting. Crispness changes Java2D text-rendering hints without pretending to be text size.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 2) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("SFX: " + (options.soundEnabled ? "ON" : "OFF") + " / " + options.sfxVolume + "%");
+            lines.add("MUSIC: " + (options.musicEnabled ? "ON" : "OFF") + " / " + options.musicVolume + "%");
+            lines.add("VOICE / CONVERSATION: " + (options.conversationSound ? "ON" : "OFF") + " / " + options.conversationVolume + "%");
+            lines.add("BOOT SOUND: " + (options.bootSound ? "ON" : "OFF"));
+            lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming logic Engine." );
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 3) {
+            ArrayList<String> lines = controlsReferenceLines();
+            if (controlsTab == 4) lines.add("Runtime controller status: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 4) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("Render Downscale: " + options.downscaleLabel() + " / internal " + renderScaling.internalWidth() + "x" + renderScaling.internalHeight());
+            lines.add("Target FPS: " + options.targetFpsLabel() + " / Frame limiter " + options.frameLimitLabel() + " / timer delay " + options.targetTimerDelayMs() + "ms");
+            lines.add("Render Quality: " + options.renderQualityLabel());
+            lines.add("Visual Lighting FX: " + options.lightingFxLabel() + " / render-only deterministic lightmap");
+            lines.add("Runtime Profile: " + jvmRuntimeProfile.targetLabel() + " / memory " + jvmRuntimeProfile.initialRamMb + "-" + jvmRuntimeProfile.maxRamMb + " MB / " + jvmRuntimeProfile.gc.label + ".");
+            lines.add("Reduced Motion: " + (options.reducedMotion ? "ON" : "OFF"));
+            lines.add("F3 Performance Overlay: " + (options.diagnosticsOverlay ? "ON" : "OFF") + ".");
+            lines.add("Frame pacing: " + frameLimiter.snapshot(renderStressTest.active()).compactLine());
+            lines.add("Imported Portrait Sheets: " + (options.importedPortraits ? "ON" : "OFF"));
+            lines.add("Tile Icon Rendering: " + (options.tileIconRendering ? "ON" : "OFF"));
+            lines.add("Art Quality Cache: " + options.artQualityLabel() + " / folder " + options.artQualityFolder());
+            lines.add("Generated Art Payload: " + options.generatedAssetPayloadRootLabel());
+            try {
+                var runtime = AssetManager.generatedAssetRuntime();
+                lines.add("Generated Runtime: " + (runtime.runtimeManifestPresent() && runtime.tierManifestPresent() ? "ready" : "partial") + " / payload roots " + runtime.generatedPayloadRoots().size());
+            } catch (Throwable ignored) {
+                lines.add("Generated Runtime: unavailable");
+            }
+            lines.add("Map Tile Size: " + options.mapTileSizeLabel() + " / " + options.mapTilePixelSize() + "px before GUI scale");
+            lines.add("Render Scaling Profile: " + renderScaling.profileLabel() + " / option downscale " + renderScaling.downscaleLabel() + " / F10 cycles profiles.");
+            lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[options.colorPreset] + " / Editing " + options.colorTargetLabel());
+            drawTextPanel(g, infoX, infoY, infoW, Math.max(96, infoH-72), lines, false);
+            int swatchY = infoY + Math.max(96, infoH-66);
+            int sx = infoX + 18;
+            for (int i=0; i<GameOptions.COLOR_KEYS.length; i++) {
+                int px = sx + i * Math.max(128, (infoW-36)/GameOptions.COLOR_KEYS.length);
+                g.setColor(new Color(options.colorValue(i)));
+                g.fillRect(px, swatchY, 28, 18);
+                g.setColor(i == options.colorTarget ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+                g.drawRect(px, swatchY, 28, 18);
+                g.setFont(smallFont);
+                for(String line: TextSurfaceApi.wrap(GameOptions.COLOR_KEYS[i], 11)) { drawUiTextLine(g, line, px+34, swatchY+13); break; }
+            }
+        } else if (optionsTab == 5) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add(jvmRuntimeRestartPending ? "RESTART PENDING: selected JVM profile has been saved; use ACCEPT + RESTART to relaunch now." : "RESTART REQUIRED: selected JVM options do not fully affect the active process until restart.");
+            lines.add("Current profile: " + jvmRuntimeProfile.targetLabel() + " / " + jvmRuntimeProfile.mode);
+            lines.add("Memory profile: -Xms" + jvmRuntimeProfile.initialRamMb + "M / -Xmx" + jvmRuntimeProfile.maxRamMb + "M.");
+            lines.add("Garbage collector: " + jvmRuntimeProfile.gc.label + "; string dedupe: " + (jvmRuntimeProfile.stringDeduplication ? "ON" : "OFF") + ".");
+            lines.add("Java2D pipeline: " + jvmRuntimeProfile.pipelineLabel() + "; transparent blit: " + (jvmRuntimeProfile.transparentAcceleration ? "ON" : "OFF") + "; noaa: " + (jvmRuntimeProfile.disableVectorAntialiasing ? "ON" : "OFF") + ".");
+            lines.add("Compiled restart flags: " + String.join(" ", jvmRuntimeProfile.buildJvmArgs()));
+            lines.add("Launcher/main menu, graphical client, thin network client, single-player combined, and headless server are separate profiles of the same program.");
+            lines.add("Single-player combined profiles assume local client, local host, and authoritative server lane share one JVM process.");
+            lines.add("The multiplayer server remains headless/status-initializer only until the server/network layer is fully examined and opened.");
+            lines.add(jvmRuntimeNotice);
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 6) {
+            ArrayList<String> lines = new ArrayList<>(AccessibilityCompatibilityAuthority.optionLines(options));
+            lines.add("Additional diegetic palettes now include Protan Ember, Deutan Steel, Tritan Brass, and Legibility Slate.");
+            lines.add("Visual-check path: enable the performance overlay, activate a color-vision correction, and watch frame pacing for the extra backbuffer pass.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else {
+            ArrayList<String> lines = new ArrayList<>(GameplayQualityOfLifeAuthority.optionLines(options));
+            lines.add("These switches are preferences and integration contracts: supported systems should consume them instead of reintroducing hard-coded hostile defaults.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        }
+        drawGraphicsDropdownPopupFrame(g);
+    }

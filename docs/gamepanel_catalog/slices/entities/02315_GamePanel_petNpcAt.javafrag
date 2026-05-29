@@ -1,0 +1,36 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: petNpcAt
+// Lines: 2315-2343
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void petNpcAt(int tx, int ty, boolean alert) {
+        if (world == null || !world.inBounds(tx, ty)) {
+            showPetFeedback("PET", "There is no reachable companion animal there.", alert);
+            return;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc == null) {
+            showPetFeedback("PET", "There is no companion animal there.", alert);
+            return;
+        }
+        if (!npc.isPetActor()) {
+            showPetFeedback("PET", animalContactBlockedLine(npc), alert);
+            if (npc.isAnimalActor()) advanceTurn("checks an animal's mood.");
+            return;
+        }
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) {
+            showPetFeedback("PET", npc.name + " is too far away for a gentle greeting.", alert);
+            return;
+        }
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) {
+            showPetFeedback("PET", npc.name + " is too tense to touch safely.", alert);
+            advanceTurn("backs off from a tense companion animal.");
+            return;
+        }
+        String line = petInteractionLine(npc);
+        showPetFeedback("PET", line, alert);
+        logEvent("PET: " + line);
+        advanceTurn("pets " + npc.name + ".");
+    }

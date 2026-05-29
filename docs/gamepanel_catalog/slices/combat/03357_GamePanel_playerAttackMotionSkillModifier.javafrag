@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerAttackMotionSkillModifier
+// Lines: 3357-3366
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    int playerAttackMotionSkillModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -3;
+            case MOTION_SPRINT: return -5;
+            case MOTION_SNEAK: return -2;
+            default: return 0;
+        }
+    }

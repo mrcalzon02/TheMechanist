@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: launcherMenuAction
+// Lines: 10546-10559
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    Runnable launcherMenuAction(LauncherShellStateAuthority.Route route) {
+        LauncherShellStateAuthority.Route safeRoute = route == null ? LauncherShellStateAuthority.Route.START : route;
+        switch (safeRoute) {
+            case START: return this::openWorldSelection;
+            case LOAD_AUTO: return () -> { launcherShell.activate(LauncherShellStateAuthority.Route.LOAD_AUTO, "main menu load/save"); openPanel(PanelMode.SAVELOAD); };
+            case OPTIONS: return () -> { launcherShell.activate(LauncherShellStateAuthority.Route.OPTIONS, "main menu options"); setScreen(Screen.OPTIONS); };
+            case EXIT: return () -> { launcherShell.activate(LauncherShellStateAuthority.Route.EXIT, "main menu exit"); System.exit(0); };
+            case MODS: return this::openModsLauncherSurface;
+            case MULTIPLAYER: return this::openMultiplayerLauncherSurface;
+            case INFOPEDIA: return () -> { launcherShell.activate(LauncherShellStateAuthority.Route.INFOPEDIA, "main menu infopedia"); openPanel(PanelMode.INFOPEDIA); };
+            case PROFILE: return this::openUserProfileSurface;
+            default: return this::openWorldSelection;
+        }
+    }

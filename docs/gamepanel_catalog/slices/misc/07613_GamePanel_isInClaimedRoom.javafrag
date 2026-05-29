@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isInClaimedRoom
+// Lines: 7613-7615
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        if (nx >= 0 && ny >= 0 && nx < world.w && ny < world.h && isInClaimedRoom(nx, ny)) {
+            buildX = nx; buildY = ny;
+        }

@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: processPendingMovementInput
+// Lines: 3615-3626
+// Category: input
+// This is an examination slice, not compiled source.
+
+    void processPendingMovementInput() {
+        if (!pendingHeldMove) return;
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("timer-not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        if (now < nextWorldActionAllowedMillis) return;
+        int dx = pendingMoveDx, dy = pendingMoveDy;
+        pendingMoveDx = 0;
+        pendingMoveDy = 0;
+        pendingHeldMove = false;
+        executePacedMovement(dx, dy, "held-buffer");
+        repaint();
+    }

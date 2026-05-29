@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: GamePanel
+// Lines: 488-490
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    GamePanel() {
+        this(RuntimeProfile.defaultProfile(), true);
+    }

@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: backspaceInfopediaAssetFilter
+// Lines: 12755-12763
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void backspaceInfopediaAssetFilter() {
+        if (!infopediaAssetFilter.isEmpty()) {
+            infopediaAssetFilter = infopediaAssetFilter.substring(0, infopediaAssetFilter.length() - 1);
+            infopediaSelected = 0;
+            infopediaScroll = 0;
+            infopediaDetailScroll = 0;
+            repaint();
+        }
+    }

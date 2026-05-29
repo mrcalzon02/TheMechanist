@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: infopediaTabs
+// Lines: 3019-3019
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        if (!"KNOWLEDGE".equals(infopediaTabs()[Math.max(0, Math.min(infopediaTab, infopediaTabs().length-1))]) || entries.isEmpty()) { logEvent("Knowledge unlock failed: open the KNOWLEDGE Infopedia tab first."); return; }

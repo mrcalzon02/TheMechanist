@@ -1,0 +1,48 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bodyInfopediaLines
+// Lines: 13529-13569
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> bodyInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Body Overview":
+                lines.add("Body-state overview");
+                lines.add("Tracked parts include head, torso, hips, upper/lower arms, hands, fingers, upper/lower legs, and feet. Each part has local health derived from endurance.");
+                lines.add("Current body pressure: wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", pain " + pain + ".");
+                break;
+            case "Crippled Legs":
+                lines.add("Mobility injury reference");
+                lines.add("Crippled legs and feet increase movement time cost, turning injury into lost time and therefore into survival pressure.");
+                lines.add("Current crippled leg/foot count: " + crippledLegCount() + ".");
+                break;
+            case "Crippled Arms and Hands":
+                lines.add("Tool and weapon injury reference");
+                lines.add("Crippled arms, hands, and fingers penalize weapon and tool use. Severe arm damage can prevent carried weapon attacks.");
+                lines.add("Current crippled arm/hand count: " + crippledArmCount() + ".");
+                break;
+            case "Bleeding":
+                lines.add("Bleeding reference");
+                lines.add("Bleeding creates hourly wound/fatigue pressure until bandaged or treated.");
+                lines.add("Current bleeding: " + bleeding + ". Bandages and medicae supplies are the intended first answers.");
+                break;
+            case "Pain":
+                lines.add("Pain reference");
+                lines.add("Pain imposes action friction and decays slowly. Stimulants may keep the character upright but are not wound treatment.");
+                lines.add("Current pain: " + pain + ".");
+                break;
+            case "Infection Risk":
+                lines.add("Infection-risk reference");
+                lines.add("Infection risk can worsen if injuries are not treated with antiseptic or better medicae supplies.");
+                lines.add("Current infection risk: " + infectionRisk + ".");
+                break;
+            default:
+                lines.add("Incapacitation reference");
+                lines.add("Severe accumulated damage, body/head trauma, and exhaustion can push the character out of useful action.");
+                lines.add("Purpose: body systems make injury a continuing operational problem, not a single red number.");
+                break;
+        }
+        return lines;
+    }

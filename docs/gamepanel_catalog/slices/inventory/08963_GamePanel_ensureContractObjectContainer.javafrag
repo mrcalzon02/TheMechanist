@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: ensureContractObjectContainer
+// Lines: 8963-8972
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void ensureContractObjectContainer(FactionContract c) {
+        if (c == null || c.targetEntityId == null || c.targetEntityId.isBlank() || c.requiredTurnInItem == null || c.requiredTurnInItem.isBlank()) return;
+        String cid = contractObjectContainerId(c.targetEntityId);
+        ensureContainer(cid, "Contract sealed object " + c.id);
+        if (containerItemCount(cid) <= 0) {
+            addItemToContainerResult(cid, "Contract sealed object " + c.id, c.requiredTurnInItem,
+                    ItemProvenanceRecord.of(c.requiredTurnInItem, c.faction, "contract sealed container " + c.id, world, turn, "faction retrieval docket", "placed into persistent contract-object container"),
+                    null, "seed persistent contract object");
+        }
+    }

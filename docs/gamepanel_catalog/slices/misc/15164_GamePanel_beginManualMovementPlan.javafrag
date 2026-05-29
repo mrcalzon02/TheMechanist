@@ -1,0 +1,40 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: beginManualMovementPlan
+// Lines: 15164-15196
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void beginManualMovementPlan() {
+        if (world == null || screen != Screen.GAME) return;
+        manualMovementPlanActive = true;
+        Point approach = selectedInteractionApproachTile();
+        if (approach != null) {
+            updateMouseMovementPreviewTo(approach.x, approach.y);
+            manualMovementPlanActive = true;
+            logEvent("Movement target planning: approaching " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ". Confirm with Enter/E/Space, cancel with Escape.");
+            repaint();
+            return;
+        }
+        int tx = playerX;
+        int ty = playerY;
+        int dx = lastMoveDx == 0 && lastMoveDy == 0 ? 1 : lastMoveDx;
+        int dy = lastMoveDx == 0 && lastMoveDy == 0 ? 0 : lastMoveDy;
+        for (int i = 0; i < Math.max(1, movementModeRange()); i++) {
+            int nx = playerX + dx * (i + 1);
+            int ny = playerY + dy * (i + 1);
+            if (world.inBounds(nx, ny) && world.walkable(nx, ny)) { tx = nx; ty = ny; }
+            else break;
+        }
+        if (tx == playerX && ty == playerY) {
+            int[][] dirs = {{1,0},{0,1},{-1,0},{0,-1}};
+            for (int[] d : dirs) {
+                int nx = playerX + d[0], ny = playerY + d[1];
+                if (world.inBounds(nx, ny) && world.walkable(nx, ny)) { tx = nx; ty = ny; break; }
+            }
+        }
+        updateMouseMovementPreviewTo(tx, ty);
+        manualMovementPlanActive = true;
+        logEvent("Movement target planning: nudge with arrows or WASD, confirm with Enter/E/Space, cancel with Escape.");
+        repaint();
+    }

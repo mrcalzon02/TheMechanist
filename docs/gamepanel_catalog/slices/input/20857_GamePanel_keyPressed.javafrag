@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: keyPressed
+// Lines: 20857-20860
+// Category: input
+// This is an examination slice, not compiled source.
+
+    @Override public void keyPressed(KeyEvent e) {
+        keyboardInputBridge.keyPressed(e);
+        runGuarded("INPUT", "keyPressed code=" + e.getKeyCode(), () -> handleKeyPressed(e));
+    }

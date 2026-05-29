@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: soundLabel
+// Lines: 5704-5713
+// Category: audio
+// This is an examination slice, not compiled source.
+
+    String soundLabel(char ch) {
+        switch(ch) {
+            case 'g': case 'b': return "voices/boots";
+            case 'm': return "wet movement";
+            case 'R': case 'N': return "machinery";
+            case 'A': case 'p': return "law boots";
+            case 'M': return "drilled movement";
+            default: return "unknown noise";
+        }
+    }

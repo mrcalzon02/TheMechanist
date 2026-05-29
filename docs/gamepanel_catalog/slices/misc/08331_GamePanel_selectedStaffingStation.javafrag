@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedStaffingStation
+// Lines: 8331-8335
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BaseObject selectedStaffingStation() {
+        ArrayList<BaseObject> stations = staffableStations();
+        if (stations.isEmpty()) return null;
+        return stations.get(Math.max(0, Math.min(selectedStaffingStationIndex, stations.size()-1)));
+    }

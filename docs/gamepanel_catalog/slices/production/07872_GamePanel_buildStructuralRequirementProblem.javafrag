@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: buildStructuralRequirementProblem
+// Lines: 7872-7880
+// Category: production
+// This is an examination slice, not compiled source.
+
+    String buildStructuralRequirementProblem(BuildRecipe r) {
+        if (r == null) return "No build recipe selected.";
+        if (stat("Mechanics", 0) < r.reqMechanics) return "requires Mechanics " + r.reqMechanics + ".";
+        if (stat("Intellect", 0) < r.reqIntellect) return "requires Intellect " + r.reqIntellect + ".";
+        if (r.requiresWorkbench && !hasBaseObject('w')) return "requires a Scrap Workbench.";
+        if (!hasKnowledge(r.requiredKnowledge)) return "requires knowledge: " + r.requiredKnowledge + ". Unlock it through XP credits, research, trainers, or data slates.";
+        if (r.requiredFaction != Faction.NONE && (active == null || JobProfile.get(active.job).faction != r.requiredFaction)) return "requires " + r.requiredFaction.label + " faction affiliation.";
+        return "OK";
+    }

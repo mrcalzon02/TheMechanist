@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bankVaultPreview
+// Lines: 9181-9188
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String bankVaultPreview(int tx, int ty) {
+        MapObjectState m = bankVaultAt(tx, ty);
+        if (m == null) return "No bank vault selected.";
+        BankProfile b = bankProfileFromStock(m.stockState);
+        String state = bankVaultLooted(m) ? "looted/emptied" : "locked and valuable";
+        boolean alarmed = m.cooldownUntilTurn > turn || (m.stockState != null && m.stockState.contains("alarmed=true"));
+        return "Bank vault: " + b.label + " / patron " + b.noblePatron + " / " + state + (alarmed?" / alarmed":"") + ". Access: Bank manager keycard, Secure vault key, Data spike, Lockpicks, or hacking tools. Alarm cooldown until turn " + Math.max(0, bankHeistAlarmCooldownUntilTurn) + ". Last heist report: " + lastBankHeistReport + " Last alarm: " + lastBankAlarmReport;
+    }

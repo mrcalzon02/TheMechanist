@@ -1,0 +1,55 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawInGameEditorSurface
+// Lines: 11186-11233
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawInGameEditorSurface(Graphics2D g) {
+        Rectangle outer = inGameEditorOuterRect();
+        Rectangle tabs = inGameEditorTabRect();
+        Rectangle left = inGameEditorLeftRect();
+        Rectangle center = inGameEditorCenterRect();
+        Rectangle right = inGameEditorRightRect();
+        Rectangle status = inGameEditorStatusRect();
+        g.setColor(new Color(3,4,4,248));
+        g.fillRect(outer.x, outer.y, outer.width, outer.height);
+        drawSlicedFrame(g, outer.x, outer.y, outer.width, outer.height, "inner");
+        stampUiFrameId(g, "F", "in-game-editor-suite", outer.x, outer.y, outer.width, outer.height);
+        g.setFont(titleFont.deriveFont(Math.max(26f, Math.min(38f, getHeight()/20f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "IN-GAME EDITORS", outer.x + outer.width/2, outer.y + 38);
+        if (inGameEditorHelpVisible) {
+            g.setFont(smallFont);
+            g.setColor(new Color(10,10,8,220));
+            g.fillRoundRect(outer.x + 150, outer.y + 10, outer.width - 300, 30, 10, 10);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            center(g, GuiLayoutApi.fitLabel("Editors are owned by the main game surface. Room grid: left-click paints selected palette item, right-click erases. New creates a blank entry in the active editor.", g.getFontMetrics(), outer.width - 330), outer.x + outer.width/2, outer.y + 30);
+        }
+        drawSlicedFrame(g, left.x, left.y, left.width, left.height, "inner");
+        drawSlicedFrame(g, center.x, center.y, center.width, center.height, "inner");
+        drawSlicedFrame(g, right.x, right.y, right.width, right.height, "inner");
+        g.setFont(uiFont.deriveFont(Font.BOLD, Math.max(14f, uiFont.getSize2D()-2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "RECORDS", left.x + 14, left.y + 24);
+        drawUiTextLine(g, inGameEditorName().toUpperCase(Locale.ROOT), center.x + 14, center.y + 24);
+        drawUiTextLine(g, "COMMANDS / INSPECTOR", right.x + 14, right.y + 24);
+        SimulationEditorRepository.EditableEntity entity = inGameEditorEntity();
+        if (entity == null) {
+            g.setFont(smallFont);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, "No entry exists. Use NEW.", center.x + 18, center.y + 60);
+        } else if ("Room Editor".equals(inGameEditorName())) {
+            drawInGameRoomEditor(g, entity, center);
+        } else {
+            drawInGameGenericEditor(g, entity, center);
+        }
+        drawInGameEditorInspector(g, entity, right);
+        g.setColor(new Color(0,0,0,170));
+        g.fillRoundRect(status.x, status.y, status.width, status.height, 8, 8);
+        g.setColor(new Color(130,112,70,150));
+        g.drawRoundRect(status.x, status.y, status.width, status.height, 8, 8);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(inGameEditorStatus + " | " + inGameEditorRepository.auditLine() + " | " + inGameEditorUndoRedo.compactState(), g.getFontMetrics(), status.width - 16), status.x + 8, status.y + 18);
+    }

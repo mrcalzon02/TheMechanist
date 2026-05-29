@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: emergencyMachineLocked
+// Lines: 2522-2529
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean emergencyMachineLocked(int x, int y, char ch) {
+        String key = passiveKey(x,y);
+        if (unlockedEmergencyMachines.contains(key)) return false;
+        // Stable seeded lock chance per fixture. Owned faction zones are more likely to lock their machines.
+        int hash = Math.abs(Objects.hash(world == null ? 0 : world.locationKey(), x, y, ch));
+        int chance = owningFactionAt(x,y) == Faction.NONE ? 28 : 62;
+        return (hash % 100) < chance;
+    }

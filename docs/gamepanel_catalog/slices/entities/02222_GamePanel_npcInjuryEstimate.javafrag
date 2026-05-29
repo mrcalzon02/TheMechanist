@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcInjuryEstimate
+// Lines: 2222-2229
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    String npcInjuryEstimate(NpcEntity npc) {
+        if (npc.hp >= 9000) return "no readable injury under protected status";
+        if (npc.hp <= 0) return "down or dying";
+        if (npc.hp <= 3) return "badly hurt";
+        if (npc.hp <= 7) return "wounded";
+        if (npc.hp <= 11) return "scuffed or tired";
+        return "looks healthy";
+    }

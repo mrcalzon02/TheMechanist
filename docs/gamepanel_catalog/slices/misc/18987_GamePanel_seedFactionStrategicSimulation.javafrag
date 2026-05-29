@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: seedFactionStrategicSimulation
+// Lines: 18987-18989
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void seedFactionStrategicSimulation() {
+        FactionStrategySimulationApi.ensurePlans(this);
+    }

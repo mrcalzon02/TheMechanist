@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: governorPreview
+// Lines: 2741-2743
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String governorPreview(int x, int y) {
+        return "SECTOR GOVERNOR AUDIENCE: fee " + governorAudienceFee() + " Concord Script. Some governors have a seed-bound off-world ticket; some will take your money anyway.";
+    }

@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: ammoItemForWeapon
+// Lines: 4128-4145
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String ammoItemForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return "";
+        if (w.contains("las")) return "Las charge pack";
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("chem sprayer") || w.contains("acid spitter")) return "Industrial Fuelgel canister";
+        if (w.contains("melta") || w.contains("inferno")) return "Melta charge cell";
+        if (w.contains("plasma")) return "Plasma flask";
+        if (w.contains("bolt") || w.contains("mass-Reactive Carbine")) return "Bolt round magazine";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "Arc capacitor pack";
+        if (w.contains("webber") || w.contains("web ")) return "Web cartridge";
+        if (w.contains("needle") || w.contains("toxin")) return "Needle toxin vial";
+        if (w.contains("shotgun") || w.contains("pipe shotgun")) return "Shot shell handful";
+        if (w.contains("autogun") || w.contains("autopistol") || w.contains("scrap autogun") || w.contains("auto")) return w.contains("autocannon") ? "Autocannon shell belt" : "Autogun magazine";
+        if (w.contains("heavy stubber")) return "Heavy stubber belt";
+        if (w.contains("stub") || w.contains("revolver") || w.contains("dueling") || w.contains("hunting") || w.contains("marksman") || w.contains("sniper") || w.contains("zip pistol") || w.contains("cult martyr pistol")) return "Stub cartridge box";
+        if (w.contains("nail")) return "Stub cartridge box";
+        return "Autogun magazine";
+    }

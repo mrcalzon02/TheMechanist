@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: talkToFactionRepresentative
+// Lines: 8805-8827
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void talkToFactionRepresentative() {
+        Faction f = nearestFactionForRepresentative();
+        lastContractFaction = f;
+        int standing = factionStanding.getOrDefault(f, 0);
+        int bribeCost = Math.max(2, 4 - standing) + Math.max(0, -standing * 2);
+        String board = contractBoardLine(f);
+        if (supplies >= bribeCost && standing < 2) {
+            supplies -= bribeCost;
+            factionStanding.put(f, standing + 2);
+            temporaryHostileTurns.put(f, 0);
+            lastConversation = f.label + " representative accepted a bribe of " + bribeCost + " supplies. Standing improves to " + factionStanding.get(f) + ". " + board;
+        } else if (standing >= 2) {
+            lastConversation = f.label + " representative says you are currently useful enough to remain breathing. " + board;
+        } else {
+            lastConversation = f.label + " representative quotes a bribe of " + bribeCost + " supplies. You have " + supplies + ". Poverty is not a legal defense. " + board;
+        }
+        conversationBranch = lastConversation;
+        activeTrader = null;
+        activeConversationNpc = NpcEntity.factionRepresentative(f, playerX, playerY, rng);
+        DebugLog.audit("FACTION_REP", lastConversation + " state=" + stateSummary());
+        logEvent(lastConversation);
+        openPanel(PanelMode.TRADE);
+    }

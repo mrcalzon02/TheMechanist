@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handleScrollbarDrag
+// Lines: 17262-17270
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void handleScrollbarDrag(int mx,int my){
+        if(!scrollbarDragActive || activeScrollTag==null || activeScrollTag.isEmpty()) return;
+        ScrollRegion target=null; for(ScrollRegion r:scrollRegions) if(r.tag.equals(activeScrollTag)){ target=r; break; }
+        if(target==null || target.maxScroll<=0) return;
+        int usable=Math.max(1,target.track.height-target.thumb.height);
+        int rel=Math.max(0, Math.min(usable, my - scrollbarDragOffsetY - target.track.y));
+        int value=(int)Math.round((rel/(double)usable)*target.maxScroll);
+        applyScrollValue(target.tag, value, true); repaint();
+    }

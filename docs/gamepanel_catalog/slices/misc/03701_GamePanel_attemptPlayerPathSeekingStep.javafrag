@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: attemptPlayerPathSeekingStep
+// Lines: 3701-3716
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean attemptPlayerPathSeekingStep(int dx, int dy) {
+        if (world == null) return false;
+        for (int[] alt : pathSeekingAlternates(dx, dy)) {
+            int ax = alt[0], ay = alt[1];
+            if (ax == 0 && ay == 0) continue;
+            int nx = playerX + ax, ny = playerY + ay;
+            if (!stepIsClearForPath(nx, ny)) continue;
+            DebugLog.audit("MOVE_PATH_SEEK", "requested=" + dx + "," + dy + " detour=" + ax + "," + ay + " from=" + playerX + "," + playerY + " to=" + nx + "," + ny + " mode=" + movementModeLabel() + " turn=" + turn);
+            movePlayerInto(nx, ny, movementModeLabel().toLowerCase(Locale.ROOT) + " detours to " + nx + "," + ny + " around a blocked direct path.");
+            checkTrapAfterPlayerMove(nx, ny);
+            return true;
+        }
+        resetPushPastIntent();
+        logEvent("Movement blocked: no clear detour found for " + movementModeLabel() + ".");
+        return false;
+    }

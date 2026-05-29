@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openSectorAuditSurface
+// Lines: 10579-10584
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void openSectorAuditSurface() {
+        logEvent(launcherShell.activate(LauncherShellStateAuthority.Route.MODS, "zone audit tool"));
+        regenerateSectorAuditWorld("open zone audit");
+        setScreen(Screen.SECTOR_AUDIT);
+        repaint();
+    }

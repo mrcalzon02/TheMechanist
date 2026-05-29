@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isBankTerminalAt
+// Lines: 9104-9104
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isBankTerminalAt(int tx, int ty) { return bankTerminalAt(tx, ty) != null; }

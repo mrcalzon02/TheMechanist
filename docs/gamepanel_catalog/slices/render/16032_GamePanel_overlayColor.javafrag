@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: overlayColor
+// Lines: 16032-16038
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void overlayColor(Graphics2D g, int x, int y, int w, int h, Color c, float alpha) {
+        Composite old = g.getComposite();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.0f, Math.min(1.0f, alpha))));
+        g.setColor(c);
+        g.fillRect(x, y, w, h);
+        g.setComposite(old);
+    }

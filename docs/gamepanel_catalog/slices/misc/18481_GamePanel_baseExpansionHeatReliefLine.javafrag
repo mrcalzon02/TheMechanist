@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseExpansionHeatReliefLine
+// Lines: 18481-18489
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseExpansionHeatReliefLine(int security) {
+        ArrayList<String> relief = new ArrayList<>();
+        if (businessPermitCount() > 0) relief.add("permits cover " + businessPermitCount() + " business asset(s)");
+        if (security > 0) relief.add("security rating " + security + " deters raids");
+        if (illegalBusinessCount() > 0) relief.add("buy permits or close illegal counters");
+        if (restrictedStoredGoodsCount() > 0) relief.add("move restricted goods into safer handoff or contract paths");
+        if (relief.isEmpty()) relief.add("keep expansion quiet, permitted, and lightly defended until income supports guards");
+        return String.join("; ", relief) + ".";
+    }

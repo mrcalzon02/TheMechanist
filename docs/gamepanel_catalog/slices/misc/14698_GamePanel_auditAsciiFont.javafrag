@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditAsciiFont
+// Lines: 14698-14700
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Font auditAsciiFont() {
+        return asciiFont == null ? new Font("Monospaced", Font.PLAIN, 11) : asciiFont.deriveFont(Math.max(8f, asciiFont.getSize2D() - 3f));
+    }

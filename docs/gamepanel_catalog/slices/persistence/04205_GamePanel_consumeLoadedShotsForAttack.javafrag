@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: consumeLoadedShotsForAttack
+// Lines: 4205-4216
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    boolean consumeLoadedShotsForAttack(TargetingSolution ts) {
+        if (ts == null || !ts.ranged) return true;
+        int need = Math.max(1, ts.ammoCost);
+        int have = loadedShotsForWeapon(ts.weaponName);
+        if (have < need) {
+            logEvent("RELOAD REQUIRED: " + ts.weaponName + " has " + have + "/" + magazineCapacityForWeapon(ts.weaponName) + " shots loaded. Press X to reload using " + ammoItemForWeapon(ts.weaponName) + ".");
+            sounds.playReloadEffect(options);
+            return false;
+        }
+        setLoadedShotsForWeapon(ts.weaponName, have - need);
+        return true;
+    }

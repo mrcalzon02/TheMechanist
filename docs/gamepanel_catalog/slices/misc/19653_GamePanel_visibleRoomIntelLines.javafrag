@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: visibleRoomIntelLines
+// Lines: 19653-19674
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> visibleRoomIntelLines() {
+        ArrayList<String> out = new ArrayList<>();
+        if (world == null) { out.add("No zone loaded."); return out; }
+        out.add("Current zone type: " + world.zoneType.label + " — " + world.zoneType.descriptor);
+        out.addAll(EconomicGenerationBiasAuthority.worldSummaryLines(world));
+        out.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.worldSummaryLines(world));
+        out.addAll(EconomicTopologyReportingOverlayAuthority.worldSummaryLines(world));
+        out.addAll(EconomicTopologyMapIntelBridgeAuthority.roomIntelHeaderLines(world));
+        out.add("Room intel is only listed after at least one tile of that room has been seen or remembered by this character.");
+        int shown = 0, hidden = 0;
+        for(int i=0;i<world.roomProfiles.size();i++){
+            if(!roomSeenByPlayer(i)) { hidden++; continue; }
+            RoomProfile rp=world.roomProfiles.get(i); Faction owner=world.roomFaction(i);
+            String topologyRole = EconomicLocalTopologyMetadataSurfaceAuthority.roomInspectionLine(world, i);
+            String mapIntelRole = EconomicTopologyMapIntelBridgeAuthority.roomIntelLine(world, i);
+            out.add("room " + i + ": " + (world.roomSpecials.size()>i && world.roomSpecials.get(i)?"SPECIAL ":"") + rp.name + " | owner " + owner.label + " | loot " + rp.scavengeChance + "% | " + rp.descriptor + " | features: " + rp.featureText + (topologyRole == null ? "" : " | " + topologyRole) + (mapIntelRole == null ? "" : " | " + mapIntelRole));
+            shown++;
+        }
+        if(shown == 0) out.add("No room intel recorded yet. Explore rooms with sight or remembered fog before the atlas will describe them.");
+        if(hidden > 0) out.add("Unseen rooms withheld: " + hidden + ".");
+        return out;
+    }

@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: likelyNpcText
+// Lines: 13886-13895
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    String likelyNpcText(ZoneType z) {
+        if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.MUTANT_WARRENS) return "mutants only, generally hostile";
+        if (z==ZoneType.CULTIST_SEWER_CAMP) return "cultists only, generally hostile";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens and police clerks";
+        if (z==ZoneType.IMPERIAL_GUARD_BILLET) return "Concord Guard personnel";
+        if (z==ZoneType.GANGER_TURF) return "gangers, fences, intimidated locals";
+        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER) return "Mechanist Collegia adepts, workers, bound Labor Automaton-adjacent personnel";
+        if (z==ZoneType.NEUTRAL_CIVILIAN_FLOOR || z==ZoneType.SUMP_MARKET || z==ZoneType.NEUTRAL_RAIL_DEPOT) return "civilians, traders, police presence";
+        return "zone-appropriate civilians, outcasts, or local owners";
+    }

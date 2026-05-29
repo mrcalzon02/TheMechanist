@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: getScrollValue
+// Lines: 17194-17208
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int getScrollValue(String tag){
+        switch(tag){
+            case "job-dossier": case "job-list": return jobDossierScroll;
+            case "inventory": return inventoryScroll;
+            case "inventory-info": return inventoryItemDescriptionScroll;
+            case "look-stack": return lookStackScroll;
+            case "character": return characterScroll;
+            case "factions": return factionScroll;
+            case "bases": return baseManagementScroll;
+            case "map-info": return mapInfoScroll;
+            case "infopedia-list": return infopediaScroll;
+            case "infopedia-detail": return infopediaDetailScroll;
+            default: return 0;
+        }
+    }

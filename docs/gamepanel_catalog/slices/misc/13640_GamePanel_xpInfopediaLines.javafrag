@@ -1,0 +1,38 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: xpInfopediaLines
+// Lines: 13640-13670
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> xpInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "XP Overview":
+                lines.add("Experience and knowledge-credit overview");
+                lines.add("Current XP: " + xp + ". Knowledge credits: " + knowledgeCredits + ". One knowledge credit is awarded for each 25 XP band crossed.");
+                lines.add("XP measures practice; knowledge credits buy or unlock doctrine entries where the design needs explicit permissions.");
+                break;
+            case "Task XP":
+                lines.add("General task XP reference");
+                lines.add("Actions award small visible amounts through RECENT ACTIONS. Failed attempts still teach something; success teaches more.");
+                break;
+            case "Combat XP":
+                lines.add("Combat XP reference");
+                lines.add("Misses award 1 XP; hits award about 3 XP; incapacitating a hostile rewards more once the strike lands.");
+                break;
+            case "Scavenge XP":
+                lines.add("Scavenge XP reference");
+                lines.add("Failed scrounging grants 1 XP; finding useful loot grants 2 XP. Targeted searches use the same feedback path.");
+                break;
+            case "Trade XP":
+                lines.add("Commerce XP reference");
+                lines.add("Buying, selling, and especially successful haggle attempts award Commerce XP. Trade XP supports the business/faction economy path.");
+                break;
+            default:
+                lines.add("Construction XP reference");
+                lines.add("Successful base construction awards Mechanics XP. Later fabrication, maintenance, and machine repair should use this same path.");
+                break;
+        }
+        return lines;
+    }

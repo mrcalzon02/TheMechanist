@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: preflightLatestManualHaulContract
+// Lines: 8431-8437
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void preflightLatestManualHaulContract() {
+        String result = LogisticsHaulFulfillmentPreflightAuthority.createPreflight(this);
+        lastLogisticsHaulPreflightReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_HAUL_FULFILLMENT_PREFLIGHT", result + " state=" + stateSummary());
+        repaint();
+    }

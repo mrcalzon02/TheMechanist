@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyNameLockedProfileCandidate
+// Lines: 750-755
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void applyNameLockedProfileCandidate(Candidate c, NameLockedProfilePortraitAuthority.Entry e) {
+        if (c == null || e == null) return;
+        c.name = e.displayName;
+        c.nameLockedProfileKey = e.key;
+        c.portraitIndex = Math.abs(Objects.hash(e.key, seed));
+    }

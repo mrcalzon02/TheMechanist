@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeStockContextLine
+// Lines: 6774-6779
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String tradeStockContextLine(TradeOffer offer) {
+        if (offer == null) return "no selected stock.";
+        String source = offer.catalogDef() == null ? "local trader stock" : offer.catalogDef().source;
+        String category = offer.catalogDef() == null ? offer.category : offer.catalogDef().category;
+        return category + " from " + source + "; trader markup " + activeTrader.markupPct + "% and haggle discount " + activeTrader.discountPct + "% are already included.";
+    }

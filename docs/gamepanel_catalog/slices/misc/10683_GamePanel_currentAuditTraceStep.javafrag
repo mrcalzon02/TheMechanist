@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: currentAuditTraceStep
+// Lines: 10683-10687
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    SectorGenerationTraceAuthority.Step currentAuditTraceStep() {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return null;
+        auditTraceIndex = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        return auditTraceSteps.get(auditTraceIndex);
+    }

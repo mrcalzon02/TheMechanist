@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: forecastSelectedLogisticsReservation
+// Lines: 8381-8388
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void forecastSelectedLogisticsReservation() {
+        BaseObject station = selectedWorkerMachine();
+        String result = LogisticsReservationForecastAuthority.reserveIntent(this, station);
+        lastLogisticsReservationReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_RESERVATION_FORECAST", result + " state=" + stateSummary());
+        repaint();
+    }

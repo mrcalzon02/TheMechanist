@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: keyTyped
+// Lines: 21248-21264
+// Category: input
+// This is an examination slice, not compiled source.
+
+    @Override public void keyTyped(KeyEvent e) {
+        if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA && isAssetInfopediaTab(infopediaTab) && "infopedia-asset-filter".equals(activeScrollTag)) {
+            char ch = e.getKeyChar();
+            if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\b' && ch != '\n' && ch != '\r' && ch != '\u001b') { appendInfopediaAssetFilter(ch); }
+            return;
+        }
+        if (screen == Screen.MULTIPLAYER) { multiplayerMenu.keyTyped(e.getKeyChar()); repaint(); return; }
+        if (screen == Screen.CHARACTER && characterNameEditActive && !candidates.isEmpty()) {
+            char ch = e.getKeyChar();
+            Candidate c = candidates.get(candidateIndex);
+            if (CharacterCreationAuthority.acceptNameChar(ch) && c.name.length() < CharacterCreationAuthority.MAX_PLAYER_NAME_LENGTH) {
+                c.name = CharacterCreationAuthority.normalizeSpacing(c.name + ch);
+                refreshNameLockedCandidateState(c);
+                repaint();
+            }
+        }
+    } @Override public void keyReleased(KeyEvent e) {

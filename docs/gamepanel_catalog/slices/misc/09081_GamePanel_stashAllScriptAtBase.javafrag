@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: stashAllScriptAtBase
+// Lines: 9081-9090
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void stashAllScriptAtBase() {
+        if (!playerAtClaimedBase()) { logEvent("BASE CASH: stash access requires standing inside your claimed base room."); return; }
+        int n = countMoney();
+        if (n <= 0) { logEvent("BASE CASH: you have no carried script to stash."); return; }
+        spendImperialScript(n);
+        baseStashedScript += n;
+        logEvent("BASE CASH: stashed " + n + " Concord Script in your claimed-room cash box. Base stash now " + baseStashedScript + ".");
+        DebugLog.audit("BASE_SCRIPT_STASH", "amount=" + n + " baseScript=" + baseStashedScript + " state=" + stateSummary());
+        advanceTurn("stashes base cash."); repaint();
+    }

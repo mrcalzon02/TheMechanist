@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tacticalSlateRect
+// Lines: 14667-14667
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle tacticalSlateRect() { return uiLayout().tactical; }

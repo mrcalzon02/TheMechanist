@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: passOutFromSleepNeed
+// Lines: 3038-3040
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void passOutFromSleepNeed() {
+        handlePlayerUnconsciousness("exhaustion collapse", "sleep debt", "untreated exhaustion", true);
+    }

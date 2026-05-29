@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcReserveReloadsForWeapon
+// Lines: 4183-4186
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    int npcReserveReloadsForWeapon(NpcEntity npc) {
+        ensureNpcCombatLoadout(npc);
+        return npc == null ? 0 : Math.max(0, npc.ammoReloadsRemaining);
+    }

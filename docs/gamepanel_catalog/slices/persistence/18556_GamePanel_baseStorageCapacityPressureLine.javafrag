@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseStorageCapacityPressureLine
+// Lines: 18556-18561
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    String baseStorageCapacityPressureLine(int used, int cap) {
+        if (cap <= 0) return "no storage capacity is available yet.";
+        if (used >= cap) return "storage is full until you build crates/logistics or remove goods.";
+        if (used >= Math.max(1, cap * 3 / 4)) return "storage is getting crowded.";
+        return "storage has usable room.";
+    }

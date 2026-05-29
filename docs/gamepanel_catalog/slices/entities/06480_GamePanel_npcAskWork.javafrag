@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcAskWork
+// Lines: 6480-6487
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void npcAskWork() {
+        if (activeConversationNpc == null) { logEvent("No active conversation."); return; }
+        String line = activeConversationNpc.name + ": " + npcWorkLine(activeConversationNpc);
+        conversationBranch = line;
+        lastConversation = line;
+        logConversation("NPC_ASK_WORK", activeConversationNpc.name + " role=" + activeConversationNpc.role + " state=" + activeConversationNpc.state + " line=" + line);
+        advanceTurn("asks about work.");
+    }

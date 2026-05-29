@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcSlideOffsetPixels
+// Lines: 3436-3442
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    Point npcSlideOffsetPixels(NpcEntity npc, int cellW, int cellH) {
+        if (npc == null) return new Point(0,0);
+        TileMotion m = npcTileMotions.get(npc.id);
+        if (m == null) return new Point(0,0);
+        if (m.toX != npc.x || m.toY != npc.y || m.done(System.currentTimeMillis())) { npcTileMotions.remove(npc.id); return new Point(0,0); }
+        return slidePixelOffset(m, cellW, cellH);
+    }

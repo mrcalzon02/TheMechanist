@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactNewsVendingMachine
+// Lines: 6974-6990
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void interactNewsVendingMachine(int tx, int ty) {
+        int day = currentInnDay();
+        String issue = ImperialNewsNetworkApi.ensureDailyIssue(this, day, rng);
+        if (!spendImperialScript(1)) {
+            logEvent("INN VENDING: the newspaper machine demands 1 Concord Script for today's sanctioned truth. You lack even that much optimism.");
+            return;
+        }
+        String item = "Fresh INN newspaper";
+        addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.INN, "Concord News Network dispenser", world, turn, "daily newspaper issue day " + day, "sold to player from newspaper vending machine"));
+        logEvent("INN VENDING: bought today's newspaper. " + issue);
+        lastInnNewsIssue = issue;
+        MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER);
+        if (m != null) { m.vendCount++; m.cooldownUntilTurn = turn + TURNS_PER_HOUR; }
+        DebugLog.audit("INN_VEND", "at=" + tx + "," + ty + " day=" + day + " issue=" + issue + " state=" + stateSummary());
+        advanceTurn("buys and scans a fresh INN newspaper.");
+        repaint();
+    }

@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcAskFaction
+// Lines: 6489-6496
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void npcAskFaction() {
+        if (activeConversationNpc == null) { logEvent("No active conversation."); return; }
+        String line = activeConversationNpc.name + ": " + npcFactionLine(activeConversationNpc);
+        conversationBranch = line;
+        lastConversation = line;
+        logConversation("NPC_ASK_FACTION", activeConversationNpc.name + " faction=" + activeConversationNpc.faction.label + " line=" + line);
+        advanceTurn("asks about local allegiance.");
+    }

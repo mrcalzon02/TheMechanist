@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawIntroCrawl
+// Lines: 12012-12014
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawIntroCrawl(Graphics2D g) {
+        introCrawlPainter.paint(g, this);
+    }

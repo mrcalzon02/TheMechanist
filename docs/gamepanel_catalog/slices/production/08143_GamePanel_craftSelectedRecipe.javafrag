@@ -1,0 +1,32 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: craftSelectedRecipe
+// Lines: 8143-8167
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void craftSelectedRecipe() {
+        if (!canUseWorkbench()) return;
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        if (recipes.isEmpty()) { logEvent("Crafting blocked: no known recipes are available."); return; }
+        CraftingRecipe r = recipes.get(Math.max(0, Math.min(selectedCraftRecipeIndex, recipes.size()-1)));
+        if (r.disabled) { logEvent("Crafting blocked: no unlocked recipe is selected."); return; }
+        String problem = r.blockingProblem(this);
+        if (problem != null) { logEvent("Crafting blocked: " + problem); DebugLog.audit("CRAFT_BLOCKED", "recipe=" + r.name + " reason=" + problem + " state=" + stateSummary()); return; }
+        BaseObject machine = requiredMachineFor(r);
+        String q = cappedProductionQuality(machine, r.requiredKnowledge);
+        Faction pf = productionFactionFor(machine, r.faction);
+        ProductionRecipe pr = ProductionRecipe.create(r.outputBaseItem, pf, q, r.requiredKnowledge, machine == null ? "workbench" : machine.name);
+        r.consumeInputs(this);
+        int count = Math.max(1, r.outputCount + Math.max(0, pr.outputCharges()/4));
+        for (int i=0;i<count;i++) addInventoryItem(pr.outputItemName(), ItemProvenanceRecord.produced(pr, machine, world, turn, active == null ? "player" : active.name));
+        if (machine != null) { machine.charges = Math.min(machine.capacity, machine.charges + 1); machine.integrity = Math.max(1, machine.integrity - Math.max(0, r.machineWear)); }
+        fatigue = Math.min(20, fatigue + r.fatigueCost);
+        runCrafted += count;
+        gainXp(r.xpSkill, r.xpGain, "crafting " + r.name);
+        reportProductionCeiling(machine, pr);
+        ProductionQueueRecordBridge.recordManualRecipeCompletion(this, machine, r, Math.max(1, r.turnCost), count);
+        logEvent("CRAFTED: " + count + "x " + pr.outputItemName() + " via " + r.name + ". Fatigue +" + r.fatigueCost + ".");
+        DebugLog.audit("CRAFT_SUCCESS", r.auditLine() + " output=" + pr.outputItemName() + " count=" + count + " q=" + q + " machine=" + (machine==null?"none":machine.name) + " state=" + stateSummary());
+        advanceTurn("crafts " + r.name + "."); repaint();
+    }

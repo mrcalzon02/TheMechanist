@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: blocksLineOfSight
+// Lines: 5857-5860
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean blocksLineOfSight(char ch) {
+        // Walls and closed/secured doors block sight. Open archways/floor/corridors do not.
+        return ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE || ch == '|' || ch == 'L' || ch == 'X' || ch == 'V';
+    }

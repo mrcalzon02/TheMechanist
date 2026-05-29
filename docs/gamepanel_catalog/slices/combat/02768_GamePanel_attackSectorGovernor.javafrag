@@ -1,0 +1,35 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: attackSectorGovernor
+// Lines: 2768-2795
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    void attackSectorGovernor() {
+        if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor attack failed: no sector governor is selected."); return; }
+        noteCombatMusicActivity(true, "attacks sector governor");
+        governorViolenceCount++;
+        int roll = rng.nextInt(20) + 1 + stat("Melee", 5) + stat("Nerve", 5) / 2;
+        int difficulty = 24 + Math.max(0, playerFactionPower() / 12);
+        boolean killed = roll >= difficulty;
+        suspicion += 12; gangHeat += 8;
+        if (killed) {
+            world.tiles[lookX][lookY] = 'n';
+            logEvent("GOVERNOR DOWN: roll " + roll + " vs " + difficulty + ". The governor dies in expensive upholstery and worse politics.");
+            if (governorHasTicket()) {
+                addInventoryItem("Off-world ticket", ItemProvenanceRecord.found("Off-world ticket", world, turn, "sector governor corpse")); offworldTicketsFound++;
+                logEvent("ITEM FOUND: Off-world ticket looted from the governor's body. The sector can be escaped if you can reach the departure route alive.");
+            } else {
+                logEvent("NO TICKET: the corpse has seals, jewelry, and lies, but no off-world passage. Find a new sector governor.");
+                addInventoryItem("Governor signet", ItemProvenanceRecord.found("Governor signet", world, turn, "sector governor corpse"));
+            }
+            spawnGovernorGuards(7 + rng.nextInt(5));
+        } else {
+            logEvent("GOVERNOR ATTACK FAILED: roll " + roll + " vs " + difficulty + ". The governor survives long enough to make guards a personal weather event.");
+            spawnGovernorGuards(8 + rng.nextInt(6));
+            wounds += 2; pain += 3;
+        }
+        DebugLog.audit("GOVERNOR_ATTACK", "roll="+roll+" difficulty="+difficulty+" killed="+killed+" hasTicket="+governorHasTicket()+" violence="+governorViolenceCount+" state="+stateSummary());
+        advanceTurn("attacks the sector governor.");
+        repaint();
+    }

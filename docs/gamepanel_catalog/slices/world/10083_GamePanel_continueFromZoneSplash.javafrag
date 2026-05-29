@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: continueFromZoneSplash
+// Lines: 10083-10086
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void continueFromZoneSplash() {
+        logEvent("Zone impression acknowledged: " + zoneSplashTitle);
+        setScreen(Screen.GAME);
+    }

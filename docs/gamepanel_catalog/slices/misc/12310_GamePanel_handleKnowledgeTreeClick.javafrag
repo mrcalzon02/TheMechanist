@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handleKnowledgeTreeClick
+// Lines: 12310-12322
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean handleKnowledgeTreeClick(int mx, int my) {
+        Rectangle canvas = knowledgeCanvasRect();
+        if (!canvas.contains(mx, my)) return false;
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        KnowledgeNode hit = knowledgeNodeAt(tree, mx, my);
+        if (hit != null) {
+            selectedKnowledgeNodeId = hit.id();
+            sounds.play("tab", options);
+            repaint();
+            return true;
+        }
+        return false;
+    }

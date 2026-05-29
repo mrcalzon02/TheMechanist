@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openSelectedBankAccount
+// Lines: 9129-9139
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openSelectedBankAccount() {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("BANK: no bank selected."); return; }
+        if (openBankAccounts.contains(b.id)) { logEvent("BANK: account already open at " + b.label + ". Balance " + bankBalance(b.id) + " script."); return; }
+        if (!spendImperialScript(b.openFee)) { logEvent("BANK: " + b.label + " requires " + b.openFee + " Concord Script to open an account. You carry " + countMoney() + "."); return; }
+        openBankAccounts.add(b.id); bankBalances.putIfAbsent(b.id, 0);
+        lastBankReport = "Opened account at " + b.label + ".";
+        logEvent("BANK: opened account at " + b.label + " for " + b.openFee + " script. " + b.reputation);
+        DebugLog.audit("BANK_OPEN", "bank=" + b.id + " fee=" + b.openFee + " cash=" + countMoney() + " state=" + stateSummary());
+        advanceTurn("opens a bank account."); repaint();
+    }

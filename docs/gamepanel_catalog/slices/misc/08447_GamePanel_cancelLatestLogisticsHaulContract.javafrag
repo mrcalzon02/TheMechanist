@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cancelLatestLogisticsHaulContract
+// Lines: 8447-8453
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cancelLatestLogisticsHaulContract() {
+        String result = LogisticsContractLifecycleAuthority.cancelLatestContract(this, "player cancellation from Workbench");
+        lastLogisticsContractLifecycleReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_CONTRACT_CANCEL", result + " state=" + stateSummary());
+        repaint();
+    }

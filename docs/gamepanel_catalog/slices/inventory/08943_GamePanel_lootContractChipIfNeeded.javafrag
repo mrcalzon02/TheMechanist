@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: lootContractChipIfNeeded
+// Lines: 8943-8954
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void lootContractChipIfNeeded(NpcEntity target) {
+        if (target == null) return;
+        for (FactionContract c : factionContracts) {
+            if (c.completed || !c.type.equals("BOUNTY")) continue;
+            if (c.targetEntityId.equals(target.id) && !inventory.contains(c.requiredTurnInItem)) {
+                addInventoryItem(c.requiredTurnInItem, ItemProvenanceRecord.found(c.requiredTurnInItem, world, turn, "body of " + target.name));
+                logEvent("CONTRACT LOOT: recovered " + c.publicRequiredItem() + " from " + target.name + ". Return to the " + c.faction.label + " representative for payment.");
+                c.spawned = false;
+                return;
+            }
+        }
+    }

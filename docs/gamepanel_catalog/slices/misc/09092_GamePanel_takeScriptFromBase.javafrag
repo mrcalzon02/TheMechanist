@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: takeScriptFromBase
+// Lines: 9092-9101
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void takeScriptFromBase(int amount) {
+        if (!playerAtClaimedBase()) { logEvent("BASE CASH: withdraw access requires standing inside your claimed base room."); return; }
+        int n = Math.min(Math.max(0, amount), baseStashedScript);
+        if (n <= 0) { logEvent("BASE CASH: no base-stashed script is available."); return; }
+        baseStashedScript -= n;
+        addImperialScript(n);
+        logEvent("BASE CASH: withdrew " + n + " Concord Script from your claimed-room stash. Base stash now " + baseStashedScript + ".");
+        DebugLog.audit("BASE_SCRIPT_WITHDRAW", "amount=" + n + " baseScript=" + baseStashedScript + " state=" + stateSummary());
+        advanceTurn("withdraws base cash."); repaint();
+    }

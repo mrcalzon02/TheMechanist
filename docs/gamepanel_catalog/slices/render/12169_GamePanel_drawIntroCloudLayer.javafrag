@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawIntroCloudLayer
+// Lines: 12169-12180
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawIntroCloudLayer(Graphics2D g, BufferedImage cloud, long elapsed, double pxPerMs, int yOffset, float alpha) {
+        if (cloud == null) return;
+        Graphics2D gg = (Graphics2D)g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.05f, Math.min(1f, alpha))));
+        int W = getWidth();
+        int targetH = Math.max(120, getHeight() / 3);
+        int targetW = Math.max(1, cloud.getWidth() * targetH / Math.max(1, cloud.getHeight()));
+        int y = 28 + yOffset;
+        int offset = (int)Math.floor((elapsed * pxPerMs) % Math.max(1, targetW));
+        for (int x = -offset - targetW; x < W + targetW; x += targetW) gg.drawImage(cloud, x, y, targetW, targetH, null);
+        gg.dispose();
+    }

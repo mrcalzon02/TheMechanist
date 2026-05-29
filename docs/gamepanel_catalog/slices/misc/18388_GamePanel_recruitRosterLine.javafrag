@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recruitRosterLine
+// Lines: 18388-18392
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String recruitRosterLine(RecruitWorker r) {
+        if (r == null) return "Unknown worker - unavailable record.";
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty;
+        return r.name + " - " + safeRecruitRole(r) + " | " + factionLabel(r.faction) + " | skill " + r.skill + " | loyalty " + r.loyalty + " | duty " + duty + " | " + recruitAvailabilityLine(r) + " | best next: " + recruitBestAssignmentLine(r) + " | gear: " + recruitGearAdviceLine(r);
+    }

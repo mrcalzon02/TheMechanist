@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: persistentStockObjectAt
+// Lines: 9451-9458
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    MapObjectState persistentStockObjectAt(int tx, int ty) {
+        if (world == null) return null;
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || m.x != tx || m.y != ty) continue;
+            if ("contract-object".equals(m.type) || "corpse-container".equals(m.type) || "ground-loot".equals(m.type)) return m;
+        }
+        return null;
+    }

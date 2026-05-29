@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionControllingTile
+// Lines: 4788-4793
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Faction factionControllingTile(int x, int y) {
+        if (world == null) return Faction.NONE;
+        int rid = world.roomIdAt(x,y);
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.CIVIC WARDENS : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
+    }

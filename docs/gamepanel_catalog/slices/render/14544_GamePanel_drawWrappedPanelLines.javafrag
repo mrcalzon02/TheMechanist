@@ -1,0 +1,36 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawWrappedPanelLines
+// Lines: 14544-14572
+// Category: render
+// This is an examination slice, not compiled source.
+
+void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h) {
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(20, fm.getHeight() + 4);
+        int maxChars = Math.max(24, w / Math.max(7, fm.charWidth('M')));
+        int yy = y;
+        Shape old = g.getClip();
+        g.setClip(x-4, y-lineH, w+20, h+lineH);
+        for (String raw : lines) {
+            Color c = new Color(220, 208, 145); // readable lighter yellow on green/black GUI
+            if (raw.contains("Warning") || raw.contains("invalid") || raw.contains("FAILED") || raw.contains("Starving")) c = new Color(245, 120, 90);
+            else if (raw.startsWith("  -") || raw.startsWith("  ")) c = new Color(205, 198, 155);
+            else if (raw.endsWith(":")) c = new Color(235, 220, 150);
+            g.setColor(c);
+            for (String line : TextSurfaceApi.wrap(raw, maxChars)) {
+                if (yy > y + h) break;
+                g.drawString(line, x, yy);
+                yy += lineH;
+            }
+            if (yy > y + h) break;
+        }
+        g.setClip(old);
+        int needed = Math.max(0, lines.size() * lineH - h);
+        if (needed > 0) {
+            g.setColor(new Color(55, 46, 30));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, h);
+            g.setColor(new Color(220, 190, 105));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, Math.max(24, h / 4));
+        }
+    }

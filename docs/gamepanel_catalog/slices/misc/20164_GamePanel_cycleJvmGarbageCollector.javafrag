@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleJvmGarbageCollector
+// Lines: 20164-20167
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleJvmGarbageCollector() {
+        JvmRuntimeProfileAuthority.cycleGc(jvmRuntimeProfile);
+        markJvmProfileChanged("JVM garbage collector profile now " + jvmRuntimeProfile.gc.label + ".");
+    }

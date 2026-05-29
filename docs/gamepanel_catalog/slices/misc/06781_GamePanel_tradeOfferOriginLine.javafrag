@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeOfferOriginLine
+// Lines: 6781-6787
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String tradeOfferOriginLine(TradeOffer offer) {
+        if (offer == null || offer.provenance == null) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        String s = offer.provenance.summary();
+        if (s == null || s.isBlank()) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
+    }

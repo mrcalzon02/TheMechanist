@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: zoneAuditDropdownOuterRect
+// Lines: 11733-11747
+// Category: world
+// This is an examination slice, not compiled source.
+
+    Rectangle zoneAuditDropdownOuterRect(UiLayout L) {
+        if (L == null) L = uiLayout();
+        ZoneType[] zones = ZoneType.values();
+        int screenPad = Math.max(8, scaled(8));
+        int cols = zones.length > 14 ? 2 : 1;
+        int rowH = Math.max(22, Math.min(28, L.command.height / 24));
+        int rows = Math.max(1, (int)Math.ceil(zones.length / (double)Math.max(1, cols)));
+        int w = Math.min(Math.max(360, getWidth() - screenPad * 2), Math.max(300, cols * 190 + 36));
+        int h = Math.min(Math.max(160, L.command.height - 18), Math.max(110, 20 + rows * rowH + Math.max(0, rows - 1) * 4));
+        int x = Math.max(screenPad, L.command.x - w - 10);
+        if (x + w > getWidth() - screenPad) x = Math.max(screenPad, getWidth() - screenPad - w);
+        int y = Math.max(screenPad, L.command.y + 10);
+        if (y + h > getHeight() - screenPad) y = Math.max(screenPad, getHeight() - screenPad - h);
+        return new Rectangle(x, y, w, h);
+    }

@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: moveCraftRecipeSelection
+// Lines: 8128-8135
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void moveCraftRecipeSelection(int delta) {
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        if (recipes.isEmpty()) { selectedCraftRecipeIndex = 0; logEvent("Crafting: no recipe list available."); return; }
+        selectedCraftRecipeIndex = Math.max(0, Math.min(recipes.size()-1, selectedCraftRecipeIndex + delta));
+        CraftingRecipe r = recipes.get(selectedCraftRecipeIndex);
+        logEvent("Selected recipe: " + r.name + " — " + r.shortStatus(this));
+        repaint();
+    }

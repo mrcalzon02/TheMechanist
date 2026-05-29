@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedInteractionIsSectorRail
+// Lines: 1863-1865
+// Category: world
+// This is an examination slice, not compiled source.
+
+    boolean selectedInteractionIsSectorRail() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'T' && world.zoneType == ZoneType.NEUTRAL_RAIL_DEPOT;
+    }

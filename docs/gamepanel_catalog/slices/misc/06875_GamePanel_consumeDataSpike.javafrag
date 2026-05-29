@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: consumeDataSpike
+// Lines: 6875-6875
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean consumeDataSpike() { return removeInventoryOne("Data spike"); }

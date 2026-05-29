@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recordProminentKillForNews
+// Lines: 6924-6930
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void recordProminentKillForNews(NpcEntity target, String context) {
+        if (target == null) return;
+        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.CIVIC WARDENS || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
+        if (!prominent) return;
+        String rank = (target.factionRankTitle == null || target.factionRankTitle.isBlank()) ? ("rank " + target.factionRank) : target.factionRankTitle;
+        recordPlayerNewsEvent("prominent-kill", rank + " " + target.name, target.faction, "killed or incapacitated during " + context + " near " + (world == null ? "unknown" : world.zoneCoordText()), Math.max(4, 10 - Math.max(1, target.factionRank)));
+    }

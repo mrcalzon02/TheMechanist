@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: movementSlideDurationMillis
+// Lines: 3399-3404
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int movementSlideDurationMillis(int motionMode) {
+        if (motionMode == MOTION_SPRINT) return MOVE_SLIDE_SPRINT_MS;
+        if (motionMode == MOTION_SNEAK) return MOVE_SLIDE_SNEAK_MS;
+        if (motionMode == MOTION_WALK) return 120;
+        return MOVE_SLIDE_BASE_MS;
+    }

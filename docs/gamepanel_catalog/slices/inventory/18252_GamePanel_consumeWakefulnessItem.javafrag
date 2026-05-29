@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: consumeWakefulnessItem
+// Lines: 18252-18267
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void consumeWakefulnessItem(String item) {
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { logEvent("Cannot use " + item + ": no removable carried item found."); return; }
+        ItemActionResult consumed = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, CONTAINER_VOID_CONSUMED, "consumed item ledger", null, "consumed by player for wakefulness");
+        if (!consumed.success) { logEvent("Cannot use " + item + ": " + consumed.playerText); return; }
+        String low = item.toLowerCase(Locale.ROOT);
+        int reduce = low.contains("narcotic") ? 12 : (low.contains("stim") ? 9 : 6);
+        int strain = low.contains("narcotic") ? 3 : (low.contains("stim") ? 2 : 1);
+        int oldSleep = sleepNeed, oldWounds = wounds, oldStrain = stimulantStrain;
+        sleepNeed = Math.max(0, sleepNeed - reduce);
+        stimulantStrain += strain;
+        if (stimulantStrain >= 6) { wounds++; stimulantStrain -= 6; }
+        DebugLog.audit("WAKEFULNESS_ITEM", "item=" + item + " sleepNeed " + oldSleep + "->" + sleepNeed + " strain " + oldStrain + "->" + stimulantStrain + " wounds " + oldWounds + "->" + wounds + " state=" + stateSummary());
+        logEvent("Used " + item + ". Sleep need " + oldSleep + "->" + sleepNeed + "/" + MAX_SLEEP_NEED + ". Stimulant strain rises; cumulative abuse damages endurance.");
+        advanceTurn("uses a wakefulness drug."); repaint();
+    }

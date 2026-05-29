@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyBusinessPressureTick
+// Lines: 18871-18892
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void applyBusinessPressureTick(boolean sleeping) {
+        if (turn <= 0 || turn % TURNS_PER_HOUR != 0 || !baseClaimed) return;
+        int legal = 0, illegal = 0, security = baseSecurityRating();
+        for (BaseObject obj : baseObjects) {
+            if (!obj.isBusinessAsset() || !obj.businessOpen) continue;
+            if (obj.permittedBusiness) legal++; else illegal++;
+        }
+        if (legal == 0 && illegal == 0) return;
+        int heatGain = Math.max(0, illegal * 2 + legal - security / 4);
+        if (heatGain > 0) {
+            int oldH = gangHeat, oldS = suspicion;
+            gangHeat += heatGain;
+            suspicion += Math.max(0, illegal - security / 8);
+            logEvent("BUSINESS HEAT: open commerce draws attention. Heat " + oldH + "->" + gangHeat + ", suspicion " + oldS + "->" + suspicion + ". Security rating " + security + ".");
+        } else if (security > 0 && (gangHeat > 0 || suspicion > 0)) {
+            int oldH = gangHeat, oldS = suspicion;
+            gangHeat = Math.max(0, gangHeat - 1);
+            if (security >= 6) suspicion = Math.max(0, suspicion - 1);
+            if (oldH != gangHeat || oldS != suspicion) logEvent("BASE SECURITY: patrols, locks, and alarms bleed off attention. Heat " + oldH + "->" + gangHeat + ", suspicion " + oldS + "->" + suspicion + ".");
+        }
+        maybeTriggerBaseRaid(security);
+    }

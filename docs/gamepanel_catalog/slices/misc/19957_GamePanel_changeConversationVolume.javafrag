@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeConversationVolume
+// Lines: 19957-19961
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void changeConversationVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeConversationVolume(options, delta));
+        sounds.play("type", options);
+        repaint();
+    }

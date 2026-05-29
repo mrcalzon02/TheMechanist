@@ -1,0 +1,33 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: collectBusinessIncome
+// Lines: 19209-19234
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void collectBusinessIncome() {
+        if (!baseClaimed) { logEvent("Business income blocked: no claimed base exists."); return; }
+        int total = 0, open = 0;
+        ArrayList<String> reports = new ArrayList<>();
+        for (BaseObject obj : baseObjects) {
+            if (!obj.isBusinessAsset() || !obj.businessOpen) continue;
+            open++;
+            int q = ItemQuality.tierIndex((obj.qualityName==null?"Common":obj.qualityName)+" business");
+            int income = Math.max(1, 2 + q + obj.charges/3);
+            if (obj.symbol == 's') income += Math.min(5, baseStorage.size()/3);
+            if (obj.symbol == 'u' || obj.symbol == 'e') income += Math.max(0, Math.min(4, water/3));
+            if (obj.symbol == 'M') income += Math.max(1, medicalStockCount());
+            income += businessSellPowerBonus();
+            if (!obj.permittedBusiness) { income = Math.max(1, income + 2); obj.businessHeat += 2; gangHeat += 1; suspicion += 1; }
+            else suspicion = Math.max(0, suspicion - 1);
+            total += income;
+            applyFactionMarketPressureFromBusiness(obj, income);
+            reports.add(obj.businessName() + " +" + income + (obj.permittedBusiness?" lawful":" illegal"));
+        }
+        if (open == 0) { logEvent("No open businesses to collect from. Use BASES > BUY PERMIT or OPEN BUSINESS first."); return; }
+        addImperialScript(total);
+        gainXp("Commerce", Math.max(1, open), "collecting base business income");
+        logEvent("BUSINESS INCOME: +" + total + " script from " + String.join("; ", reports) + ".");
+        maybeTriggerBaseRaid(baseSecurityRating());
+        advanceTurn("runs base commerce.");
+    }

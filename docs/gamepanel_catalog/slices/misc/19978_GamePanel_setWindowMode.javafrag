@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setWindowMode
+// Lines: 19978-19982
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void setWindowMode(int mode) {
+        logEvent(OptionsBoundaryAuthority.setWindowMode(options, mode));
+        graphicsDropdown = -1;
+        repaint();
+    }

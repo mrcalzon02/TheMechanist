@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: genericPromptFor
+// Lines: 20439-20454
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String genericPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Generic: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Generic: south face";
+            case CANCEL: return "Generic: east face";
+            case INVENTORY: return "Generic: west face";
+            case CHARACTER: return "Generic: north face";
+            case PAUSE: return "Generic: Start";
+            case LOOK: return "Generic: Back/Select";
+            case ZOOM_IN: return "Generic: right bumper";
+            case ZOOM_OUT: return "Generic: left bumper";
+            case ATTACK: return "Generic: right stick up";
+            case PLAN_MOVE: return "Generic: right stick down";
+            default: return "Generic: keyboard fallback";
+        }
+    }

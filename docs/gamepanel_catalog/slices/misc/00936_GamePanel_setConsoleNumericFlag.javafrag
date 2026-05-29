@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setConsoleNumericFlag
+// Lines: 936-940
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void setConsoleNumericFlag(String key, float value) {
+        String safe = ChatRuntimeAuthority.ChatSecurity.sanitizeIdentifier(key == null ? "value" : key);
+        consoleNumericFlags.put(safe, value);
+        logEvent("CONSOLE VALUE: " + safe + "=" + value + ".");
+    }

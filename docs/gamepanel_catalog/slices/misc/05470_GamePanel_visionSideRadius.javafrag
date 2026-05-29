@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: visionSideRadius
+// Lines: 5470-5480
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    double visionSideRadius() {
+        int vr = visionRange();
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return Math.max(3, vr * 0.92);
+            case MOTION_SNEAK: return Math.max(2.5, vr * 0.62);
+            case MOTION_WALK: return Math.max(3, vr * 0.75);
+            case MOTION_RUN: return Math.max(2, vr * 0.45);
+            case MOTION_SPRINT: return Math.max(1.5, vr * 0.32);
+            default: return Math.max(2, vr * 0.7);
+        }
+    }

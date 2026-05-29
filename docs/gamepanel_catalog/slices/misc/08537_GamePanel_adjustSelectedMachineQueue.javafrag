@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: adjustSelectedMachineQueue
+// Lines: 8537-8548
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void adjustSelectedMachineQueue(int delta) {
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Queue adjustment failed: no selected production machine or apparatus."); return; }
+        machine.productionQueueTarget = Math.max(1, Math.min(12, machine.productionQueueTarget + delta));
+        if (machine.assignedRecipe != null && !machine.assignedRecipe.isBlank()) machine.productionQueueRemaining = Math.max(1, Math.min(machine.productionQueueTarget, Math.max(machine.productionQueueRemaining, 1) + delta));
+        FactionRecipeVariant v = machine.assignedRecipe == null ? null : ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
+        String forecast = v == null ? "ordinary/empty queue target " + machine.productionQueueTarget : ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        lastGeneratedProductionQueueReport = forecast;
+        logEvent("Production queue for " + machine.name + " set to target " + machine.productionQueueTarget + " run(s). " + forecast);
+        DebugLog.audit("PRODUCTION_QUEUE_ADJUST", "machine=" + machine.name + " target=" + machine.productionQueueTarget + " remaining=" + machine.productionQueueRemaining + " forecast=" + forecast + " state=" + stateSummary());
+        repaint();
+    }

@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mousePressed
+// Lines: 21208-21215
+// Category: input
+// This is an examination slice, not compiled source.
+
+    @Override public void mousePressed(MouseEvent e) {
+        requestFocusInWindow();
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mp.x, mp.y, SwingUtilities.isRightMouseButton(e))) { return; }
+        if (screen == Screen.KNOWLEDGE && knowledgeCanvasRect().contains(mp)) { knowledgeTreeLastDrag = mp; knowledgeTreeDragging = true; return; }
+        if (findScrollRegion(mp.x, mp.y) != null) { handleScrollbarClick(mp.x, mp.y); repaint(); }
+    }

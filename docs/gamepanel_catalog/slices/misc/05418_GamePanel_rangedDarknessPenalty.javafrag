@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: rangedDarknessPenalty
+// Lines: 5418-5428
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int rangedDarknessPenalty(int x0, int y0, int x1, int y1) {
+        int target = lightLevelAt(x1, y1);
+        int origin = lightLevelAt(x0, y0);
+        int p = 0;
+        if (target < 12) p += 18;
+        else if (target < 24) p += 10;
+        else if (target < 40) p += 5;
+        if (origin < 10) p += 4;
+        if (origin >= 60 && target >= 40) p = Math.max(0, p - 4);
+        return Math.max(0, Math.min(35, p));
+    }

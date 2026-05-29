@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setTargetFpsIndex
+// Lines: 20005-20010
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void setTargetFpsIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setTargetFpsIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }

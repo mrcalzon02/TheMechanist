@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: nameLockedProfileStartingItems
+// Lines: 10124-10134
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    List<String> nameLockedProfileStartingItems(NameLockedProfilePortraitAuthority.Entry e) {
+        ArrayList<String> out = new ArrayList<>();
+        if (e == null) return out;
+        out.add(e.displayName + " profile sigil");
+        out.add(e.title + " dossier token");
+        for (String flag : e.unlockFlags) {
+            String clean = flag == null ? "" : flag.replace("PROFILE_PORTRAIT_", "").replace('_', ' ').toLowerCase(Locale.ROOT).trim();
+            if (!clean.isEmpty() && out.size() < 4) out.add("Profile unlock: " + clean);
+        }
+        return out;
+    }

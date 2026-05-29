@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: countBaseStoredScript
+// Lines: 6873-6873
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int countBaseStoredScript() { return Math.max(0, baseStashedScript); }

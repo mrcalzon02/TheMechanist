@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: unconsciousItemLoss
+// Lines: 3074-3086
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    int unconsciousItemLoss() {
+        if (inventory.isEmpty()) return 0;
+        int target = Math.max(0, (int)Math.floor(inventory.size() * 0.10));
+        if (inventory.size() >= 5) target = Math.max(1, target);
+        target = Math.min(target, Math.max(0, inventory.size() / 3));
+        int lost = 0;
+        for (int i=0; i<target && !inventory.isEmpty(); i++) {
+            int idx = rng.nextInt(inventory.size());
+            String removed = removeInventoryAtWithTrace(idx);
+            if (removed != null) lost++;
+        }
+        return lost;
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: adjacentOpenNearPlayer
+// Lines: 7515-7520
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Point adjacentOpenNearPlayer() {
+        if (world == null) return null;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+        for(int[] d:dirs){ int x=playerX+d[0], y=playerY+d[1]; if(world.walkable(x,y) && world.npcAt(x,y)==null) return new Point(x,y); }
+        return null;
+    }

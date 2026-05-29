@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: roadLikeForArt
+// Lines: 15741-15745
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean roadLikeForArt(int x, int y) {
+        // 0.9.10fs: sidewalks are street-family tiles, not road-connectivity tiles.
+        // Counting them as roads made lane tiles see four neighbors and render as intersections.
+        return roadLaneForArt(x,y);
+    }

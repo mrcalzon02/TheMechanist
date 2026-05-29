@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: worldSetupActionInnerSafeRect
+// Lines: 14328-14341
+// Category: world
+// This is an examination slice, not compiled source.
+
+    Rectangle worldSetupActionInnerSafeRect() {
+        int w = getWidth(), h = getHeight();
+        int margin = Math.max(34, w / 22);
+        int top = Math.max(122, h / 5);
+        int gap = Math.max(14, w / 55);
+        int totalW = w - margin * 2;
+        int infoW = Math.max(360, (int)(totalW * 0.58));
+        int buttonX = margin + infoW + gap;
+        int buttonW = Math.max(190, w - buttonX - margin);
+        int panelH = Math.max(310, h - top - 92);
+        int y = top + 142;
+        int bottom = top + panelH - 14;
+        return new Rectangle(buttonX + 14, y, Math.max(1, buttonW - 28), Math.max(1, bottom - y));
+    }

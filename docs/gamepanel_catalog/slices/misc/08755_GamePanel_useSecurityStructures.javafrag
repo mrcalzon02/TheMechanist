@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: useSecurityStructures
+// Lines: 8755-8770
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void useSecurityStructures() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Security structures require standing inside your claimed room."); return; }
+        int barricades = 0, cover = 0, armed = 0, posts = 0, barracks = 0, doors = 0, turrets = 0, shields = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj.symbol == 'd') { barricades++; cover += obj.cover; }
+            if (obj.symbol == 'a') { obj.armed = true; armed++; }
+            if (obj.symbol == 'p') { posts++; cover += obj.cover; }
+            if (obj.symbol == 'g') { barracks++; cover += obj.cover; }
+            if (obj.symbol == 'D') { doors++; cover += obj.cover; }
+            if (obj.symbol == 'T') { turrets++; cover += obj.cover; obj.armed = true; }
+            if (obj.symbol == 'H') { shields++; cover += obj.cover; obj.armed = true; }
+        }
+        int deterrence = baseSecurityRating();
+        logEvent("Security checked: barricades=" + barricades + ", watch posts=" + posts + ", guard barracks=" + barracks + ", reinforced doors=" + doors + ", powered turrets=" + turrets + ", shield relays=" + shields + ", armed alarms=" + armed + ", guards=" + securityStaffCount() + ", defense rating=" + deterrence + ".");
+        DebugLog.audit("BASE_SECURITY_CHECK", "barricades=" + barricades + " posts=" + posts + " barracks=" + barracks + " doors=" + doors + " armed=" + armed + " guards=" + securityStaffCount() + " rating=" + deterrence + " heat=" + gangHeat + " suspicion=" + suspicion + " state=" + stateSummary());
+    }

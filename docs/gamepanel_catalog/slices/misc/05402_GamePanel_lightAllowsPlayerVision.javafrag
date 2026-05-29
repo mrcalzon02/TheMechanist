@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: lightAllowsPlayerVision
+// Lines: 5402-5416
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean lightAllowsPlayerVision(int x, int y, int distance) {
+        if (x == playerX && y == playerY) return true;
+        int l = lightLevelAt(x, y);
+        if (distance <= 1) return true;
+        int threshold;
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: threshold = 7; break;
+            case MOTION_SNEAK: threshold = 10; break;
+            case MOTION_WALK: threshold = 12; break;
+            case MOTION_RUN: threshold = 18; break;
+            case MOTION_SPRINT: threshold = 24; break;
+            default: threshold = 12;
+        }
+        return l >= threshold;
+    }

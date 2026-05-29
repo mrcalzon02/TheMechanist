@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedInteractionIsBankAlarmPanel
+// Lines: 1870-1870
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    boolean selectedInteractionIsBankAlarmPanel() { return isBankAlarmPanelAt(lookX, lookY); }

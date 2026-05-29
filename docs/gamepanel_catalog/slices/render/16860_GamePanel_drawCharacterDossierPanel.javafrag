@@ -1,0 +1,65 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawCharacterDossierPanel
+// Lines: 16860-16917
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawCharacterDossierPanel(Graphics2D g) {
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(24, W/45), y=Math.max(44, H/18), w=W-x*2, h=H-y-46;
+        g.setColor(new Color(5,6,6,248));
+        g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        stampUiFrameId(g, "F", "character-dossier", x, y, w, h);
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g,"CHARACTER DOSSIER",W/2,y+40);
+
+        int gutter = Math.max(14, scaled(14));
+        int contentTop = y + 68;
+        int contentH = h - 96;
+        int leftW = Math.max(190, Math.min(240, w / 5));
+        int rightW = Math.max(390, Math.min(500, w / 3));
+        int textX = x + gutter + leftW + gutter;
+        int paperX = x + w - gutter - rightW;
+        int textW = Math.max(260, paperX - textX - gutter);
+
+        int portraitSize = Math.min(170, Math.max(128, leftW - 24));
+        int portraitX = x + gutter + (leftW - portraitSize) / 2;
+        int portraitY = contentTop;
+        drawSlicedFrame(g, portraitX, portraitY, portraitSize, portraitSize, "inner");
+        if (active != null) {
+            Graphics2D pg = (Graphics2D) g.create();
+            double scale = (portraitSize - 20) / 150.0;
+            pg.translate(portraitX + 10, portraitY + 8);
+            pg.scale(scale, scale);
+            drawPortrait(pg, 0, 0, active);
+            pg.dispose();
+        }
+        int survivalY = portraitY + portraitSize + gutter;
+        drawSurvivalStateTab(g, x + gutter, survivalY, leftW, Math.max(128, contentTop + contentH - survivalY));
+
+        drawSlicedFrame(g, textX, contentTop, textW, contentH, "inner");
+        stampUiFrameId(g, "F", "character-dossier-text", textX, contentTop, textW, contentH);
+        ArrayList<String> lines=new ArrayList<>();
+        if(active!=null){
+            lines.add(active.name+" — "+active.job);
+            lines.add("Carry load: "+carryStatusText());
+            lines.add("Faction identity: "+equippedClothing.alignedFaction.label+" via "+equippedClothing.name+".");
+            lines.add("Equipment: head " + emptySlotLabel(equippedHeadgearItem) + "; armor " + emptySlotLabel(equippedArmorItem) + "; left " + emptySlotLabel(equippedLeftHandItem) + "; right " + emptySlotLabel(equippedRightHandItem) + "; pack " + emptySlotLabel(equippedBackpackItem) + ".");
+            lines.add("Defense estimate: clothing " + (equippedClothing == null ? 0 : equippedClothing.defense) + ", armor/headgear " + playerEquippedArmorBonus() + ".");
+            lines.add("Stats");
+            for(Map.Entry<String,Integer> e:active.stats.entrySet()) lines.add(String.format("  %-12s %2d", e.getKey()+":", e.getValue()));
+            lines.add("Body endurance / agility / equipment");
+            for(BodyPart bp: active.body.values()) lines.add("  "+bp.displayLine());
+            lines.add("Vital body locations use endurance as their current structural life pool. Reserved augments and armor will attach to these slots.");
+            lines.add("Attribute links: Head controls Intellect, Nerve, Vision, Hearing, Firearms. Hands and head govern Mechanics. Arms and hands govern Melee. Torso governs Faith. Limbs and torso govern Strength.");
+        } else lines.add("No active character.");
+        drawScrollableWrappedLines(g, lines, textX + 18, contentTop + 18, textW - 48, contentH - 36, characterScroll, "character");
+
+        drawSlicedFrame(g,paperX,contentTop,rightW,contentH,"inner");
+        int dollW = Math.max(170, Math.min(220, rightW / 2));
+        drawPaperDoll(g,paperX+12,contentTop+18,dollW,contentH-36);
+        drawEquipmentSlots(g, paperX+dollW+20, contentTop+18, Math.max(150, rightW-dollW-32), contentH-36);
+    }

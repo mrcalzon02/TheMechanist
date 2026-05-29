@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isBankAlarmPanelAt
+// Lines: 9319-9319
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    boolean isBankAlarmPanelAt(int tx, int ty) { return bankAlarmPanelAt(tx, ty) != null; }

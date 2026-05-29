@@ -1,0 +1,40 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: regenerateSectorAuditWorld
+// Lines: 10635-10667
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void regenerateSectorAuditWorld(String reason) {
+        long previousSeed = auditSeed;
+        if (reason != null && reason.toLowerCase(Locale.ROOT).contains("reroll")) auditSeed = System.currentTimeMillis() ^ (auditSeed * 31L);
+        WorldSetupSettings previousSettings = WorldGenerationApi.settings().copy();
+        try {
+            WorldSetupSettings auditSettings = auditSettings();
+            WorldGenerationApi.setActiveSettings(auditSettings);
+            Dimension d = WorldGenerationApi.zoneSliceSize(auditSeed);
+            World w = new World(auditSeed, d.width, d.height);
+            w.zoneType = auditZoneType();
+            w.sewerLayer = auditSewerLayer;
+            w.hiveName = "Audit Arcology";
+            w.sectorName = "Zone Audit";
+            w.zoneName = "Zone Audit " + w.zoneType.label + (w.sewerLayer ? " Sewer" : " Floor");
+            w.zoneHistory = "Full-bright Zone Audit slice generated outside character play for placement and obstruction inspection.";
+            SectorGenerationTraceAuthority.begin();
+            try { w.generate(); }
+            finally { auditTraceSteps = SectorGenerationTraceAuthority.end(); }
+            if (auditTraceSteps == null) auditTraceSteps = new ArrayList<>();
+            if (auditTraceSteps.isEmpty()) auditTraceSteps.add(new SectorGenerationTraceAuthority.Step(0, "FINAL", "Final generated world captured without intermediate trace records.", Math.max(0, w.w/2), Math.max(0, w.h/2), false, SectorGenerationTraceAuthority.snapshot(w)));
+            auditTracePlaying = true;
+            auditTraceIndex = 0;
+            auditTraceLastAdvance = System.currentTimeMillis();
+            auditWorld = auditTraceSteps.get(0).world;
+            auditFindingIndex = 0;
+            refreshSectorAuditSnapshot(auditSettings, previousSeed, "trace start: " + reason);
+            DebugLog.audit("ZONE_AUDIT", auditReport);
+            logEvent("Zone audit trace generated: " + w.zoneType.label + " steps=" + auditTraceSteps.size() + " finalRooms=" + w.rooms.size() + ".");
+        } finally {
+            WorldGenerationApi.setActiveSettings(previousSettings);
+        }
+        repaint();
+    }

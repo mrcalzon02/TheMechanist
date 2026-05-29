@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionForClothingItem
+// Lines: 17990-17999
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    Faction factionForClothingItem(String item) {
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("civic Wardens") || low.contains("patrol coat")) return Faction.CIVIC WARDENS;
+        if (low.contains("bandit") || low.contains("gang colors")) return Faction.BANDIT;
+        if (low.contains("hiver") || low.contains("workwear")) return Faction.HIVER;
+        if (low.contains("scavenger") || low.contains("rags")) return Faction.SCAVENGER;
+        if (low.contains("mechanist Collegia") || low.contains("robe") || low.contains("tech-priest")) return Faction.MECHANICUS_CLOISTER_RED;
+        if (low.contains("guard") || low.contains("uniform")) return Faction.IMPERIAL_GUARD;
+        return Faction.NONE;
+    }

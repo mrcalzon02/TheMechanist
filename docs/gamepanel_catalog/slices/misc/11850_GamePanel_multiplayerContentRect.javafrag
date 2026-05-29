@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: multiplayerContentRect
+// Lines: 11850-11856
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle multiplayerContentRect(Rectangle panel) {
+        int pad = Math.max(24, Math.min(36, panel.width / 32));
+        int gap = Math.max(16, Math.min(24, panel.width / 52));
+        int actionW = Math.max(270, Math.min(390, (panel.width - pad * 2 - gap) / 3));
+        int contentW = Math.max(360, panel.width - pad * 2 - gap - actionW);
+        return new Rectangle(panel.x + pad, panel.y + 66, contentW, Math.max(180, panel.height - 132));
+    }

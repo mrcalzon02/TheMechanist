@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseObjectConditionReadLine
+// Lines: 2240-2252
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseObjectConditionReadLine(BaseObject obj) {
+        if (obj == null) return "Condition read: no constructed object is readable.";
+        String condition;
+        if (obj.integrity <= 0) condition = "broken";
+        else if (obj.underConstruction) condition = "under construction";
+        else if (obj.integrity <= 4) condition = "fragile";
+        else if (obj.integrity <= 10) condition = "worn but usable";
+        else if (obj.integrity <= 20) condition = "sturdy";
+        else condition = "heavily built";
+        String armor = obj.cover > 0 ? "cover value visible" : "no obvious cover";
+        String danger = obj.armed ? "armed or defensive fixture" : (obj.attention >= 3 ? "valuable enough to attract attention" : "low immediate danger");
+        return "Condition read: " + condition + "; " + armor + "; " + danger + ".";
+    }

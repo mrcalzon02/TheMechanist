@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: findFactionStrategicPlanById
+// Lines: 9007-9011
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    FactionStrategicPlan findFactionStrategicPlanById(String id) {
+        if (id == null) return null;
+        for (FactionStrategicPlan p : factionStrategicPlans) if (p != null && id.equals(p.id)) return p;
+        return null;
+    }

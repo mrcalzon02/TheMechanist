@@ -1,0 +1,38 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionSpecificNote
+// Lines: 13808-13838
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String factionSpecificNote(Faction f, String entry) {
+        if (f==null) return "entry exists in the menu without a current faction enum binding";
+        String n=f.name();
+        if (f==Faction.NONE) return "used when ownership should be deliberately absent, not merely unknown";
+        if (n.contains("CLOISTER_RED")) return "red-robed forge alignment; favor orthodox machine service and visible Mechanist Collegia authority";
+        if (n.contains("CLOISTER_RUST")) return "rust-cloister alignment; favor maintenance, salvage, and worn machine infrastructure";
+        if (n.contains("CLOISTER_VOID")) return "void-cloister alignment; favor sealed systems, space-adjacent hardware, and stranger machine rites";
+        if (n.contains("BLOCK_AUREL")) return "hiver block identity for local civilian loyalty, grudges, and housing politics";
+        if (n.contains("BLOCK_MARROW")) return "hiver block identity with poorer marrow-hab survival texture and local obligations";
+        if (n.contains("BLOCK_SUMPLEDGER")) return "hiver block identity tied to accounting, debts, sump trade, and civic ledgers";
+        if (n.contains("IRON_RATS")) return "gang variant leaning toward scrap, tunnels, ambush, and cheap intimidation";
+        if (n.contains("BLACK_SUMP")) return "gang variant leaning toward knives, sewer routes, and black-water extortion";
+        if (n.contains("CANDLE_JACKS")) return "gang variant leaning toward shrine-like menace, candles, and debt violence";
+        if (n.contains("RED_GRIN")) return "gang variant leaning toward open brutality, intimidation theater, and visible heat";
+        if (n.contains("CHAIN_SAINTS")) return "gang variant leaning toward chain weapons, false piety, and ritualized street control";
+        if (n.contains("ASH_MARKET")) return "gang variant leaning toward market rackets, teeth-debt markers, and trade coercion";
+        if (n.contains("WIRE_WOLVES")) return "gang variant leaning toward electrical theft, sabotage, and wire-running turf";
+        if (n.contains("DROWNED_9TH")) return "gang variant leaning toward sewer survivorship, drowned routes, and hidden water access";
+        if (n.contains("HOUSE_VARN")) return "noble house variant for contracts, permits, status games, and clean-paper cruelty";
+        if (n.contains("HOUSE_KASTOR")) return "noble house variant for guarded logistics, household service, and controlled access";
+        if (n.contains("HOUSE_MORVAIN")) return "noble house variant for old money, quiet hostility, and polished neglect";
+        if (n.contains("HOUSE_CYRA")) return "noble house variant for commerce, favor trading, and cosmetic legality";
+        if (n.contains("HOUSE_DRAKE")) return "noble house variant for militarized wealth, security contracts, and hard retaliation";
+        if (n.contains("HOUSE_TOLL")) return "noble house variant for fees, transit gates, licenses, and extraction by paperwork";
+        if (n.contains("HOUSE_OSSUARY")) return "noble house variant for funereal status, relic claims, and tasteful horror";
+        if (f==Faction.MUTANT) return "hostile biological underclass pressure; not the same as cult or machine danger";
+        if (f==Faction.CULTIST) return "illegal ritual cell pressure; socially and legally distinct from ordinary crime";
+        if (f==Faction.ROGUE_MACHINE) return "machine threat category; should key off failed automation and hostile mechanisms";
+        if (f==Faction.HERETIC) return "broad treasonous alignment for forbidden services, contraband doctrine, and high-risk contacts";
+        return "base faction entry; subfactions inherit this role but add local grudges, stock bias, and encounter flavor";
+    }

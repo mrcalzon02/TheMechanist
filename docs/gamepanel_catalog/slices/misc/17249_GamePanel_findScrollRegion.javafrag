@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: findScrollRegion
+// Lines: 17249-17252
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ScrollRegion findScrollRegion(int mx,int my){
+        for(int i=scrollRegions.size()-1;i>=0;i--){ ScrollRegion r=scrollRegions.get(i); if(r.track.contains(mx,my) || r.thumb.contains(mx,my)) return r; }
+        return null;
+    }

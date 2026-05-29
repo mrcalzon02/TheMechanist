@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: readFactionJournalAt
+// Lines: 9013-9028
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void readFactionJournalAt(int tx, int ty) {
+        MapObjectState m = factionJournalObjectAt(tx, ty);
+        if (m == null) { logEvent("FACTION JOURNAL: no readable journal here."); return; }
+        FactionStrategicPlan p = findFactionStrategicPlanById(m.stockState);
+        if (p == null) { logEvent("FACTION JOURNAL: " + m.label + " exists, but the indexed plan has been lost or moved."); return; }
+        logEvent("FACTION JOURNAL: " + p.journalHeader());
+        logEvent("  Immediate: " + p.immediateGoal + " / phase " + p.phase + " until turn " + p.phaseUntilTurn + ".");
+        logEvent("  Long term: " + p.longTermGoal + ". Personal goal: " + p.personalGoal + ".");
+        if (p.scheme != null && !p.scheme.isBlank()) logEvent("  Scheme: " + p.scheme + " involving " + p.schemeTargetFaction.label + ".");
+        if (p.lastOutcome != null && !p.lastOutcome.isBlank()) logEvent("  Last outcome: " + p.lastOutcome);
+        if (p.history != null && !p.history.isEmpty()) {
+            int start = Math.max(0, p.history.size() - 5);
+            for (int i=start; i<p.history.size(); i++) logEvent("  Journal entry: " + p.history.get(i));
+        }
+        DebugLog.audit("FACTION_JOURNAL_READ", "plan=" + p.id + " faction=" + p.faction + " at=" + tx + "," + ty + " turn=" + turn);
+    }

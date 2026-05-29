@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleAuditZoneDensity
+// Lines: 10728-10728
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void cycleAuditZoneDensity() { auditZoneDensityIndex = (auditZoneDensityIndex + 1) % WorldSetupSettings.ZONE_DENSITY.length; regenerateSectorAuditWorld("cycle zone density"); }

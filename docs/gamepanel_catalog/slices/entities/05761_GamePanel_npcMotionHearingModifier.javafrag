@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcMotionHearingModifier
+// Lines: 5761-5770
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    int npcMotionHearingModifier(NpcEntity npc) {
+        if (npc == null) return 0;
+        switch(npc.activeMotionStateIndex) {
+            case MOTION_SNEAK: return 1;
+            case MOTION_RUN: return -2;
+            case MOTION_SPRINT: return -4;
+            case MOTION_WALK: return 1;
+            default: return 2;
+        }
+    }

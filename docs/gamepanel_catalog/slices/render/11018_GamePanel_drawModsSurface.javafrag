@@ -1,0 +1,45 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawModsSurface
+// Lines: 11018-11055
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawModsSurface(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        Rectangle modal = uiLayout().modal;
+        g.setColor(new Color(3,4,4,246));
+        g.fillRect(modal.x, modal.y, modal.width, modal.height);
+        drawSlicedFrame(g, modal.x, modal.y, modal.width, modal.height, "inner");
+        stampUiFrameId(g, "F", "mods-tools-route", modal.x, modal.y, modal.width, modal.height);
+        g.setFont(titleFont.deriveFont(Math.max(30f, Math.min(42f, H/18f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "EDITOR / MOD PACKAGING", W/2, modal.y + 52);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        java.util.List<String> lines = new ArrayList<>();
+        lines.add("The editor suite now opens inside the main game surface. It owns records, room-grid painting, palette selection, new-entry creation, undo/redo state, and mod-packaging status without launching a detached desktop window.");
+        lines.add("Room Editor: choose a palette item, left-click the room grid to place it, right-click to erase it. All editor tabs use a standard NEW entry flow so fresh records are created consistently.");
+        lines.add("The older external editor launcher path is closed for player-facing use. Any remaining desktop editor classes are development-only legacy code until they are removed or converted into game-owned surfaces.");
+        lines.add("Mod packaging remains data-backed by the editor repository and deployment manager; player-facing access must stay inside this in-game menu before future Workshop/export polish.");
+        int actionW = Math.max(250, Math.min(330, modal.width / 4));
+        int textW = Math.max(420, modal.width - actionW - 108);
+        int y = modal.y + 84;
+        FontMetrics fm = g.getFontMetrics();
+        for (String paragraph : lines) {
+            for (String line : GuiLayoutApi.wrapText(paragraph, fm, textW)) {
+                drawUiTextLine(g, line, modal.x + 42, y);
+                y += 20;
+                if (y > modal.y + modal.height - 160) break;
+            }
+            y += 6;
+            if (y > modal.y + modal.height - 160) break;
+        }
+        int actionX = modal.x + modal.width - actionW - 36;
+        int actionY = modal.y + modal.height - 150;
+        g.setColor(new Color(0,0,0,132));
+        g.fillRoundRect(actionX, actionY, actionW, 118, 12, 12);
+        g.setColor(new Color(120,105,70,150));
+        g.drawRoundRect(actionX, actionY, actionW, 118, 12, 12);
+        g.drawLine(modal.x + 36, modal.y + 112, modal.x + modal.width - 36, modal.y + 112);
+    }

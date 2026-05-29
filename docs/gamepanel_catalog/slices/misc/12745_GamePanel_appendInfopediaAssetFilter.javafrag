@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: appendInfopediaAssetFilter
+// Lines: 12745-12753
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void appendInfopediaAssetFilter(char ch) {
+        if (Character.isISOControl(ch)) return;
+        if (infopediaAssetFilter.length() >= 48) return;
+        infopediaAssetFilter = (infopediaAssetFilter + ch).trim().replaceAll("\\s+", " ");
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        repaint();
+    }

@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: randomTargetedCombatReward
+// Lines: 4955-4961
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    String randomTargetedCombatReward(NpcEntity target) {
+        String[] parts = {"weapon arm", "knee joint", "breathing line", "tool hand", "center mass"};
+        String p = parts[rng.nextInt(parts.length)];
+        if (p.contains("arm")) logEvent("TARGETING EFFECT: a clean arm hit stresses weapon handling and equipment control.");
+        if (p.contains("knee")) logEvent("TARGETING EFFECT: leg damage is flagged for speed and pursuit impairment.");
+        return p;
+    }

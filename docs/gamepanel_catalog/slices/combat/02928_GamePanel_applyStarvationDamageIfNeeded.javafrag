@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyStarvationDamageIfNeeded
+// Lines: 2928-2936
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    void applyStarvationDamageIfNeeded() {
+        if (turn > 0 && turn % TURNS_PER_HOUR == 0 && (food <= 0 || water <= 0)) {
+            wounds++;
+            fatigue = Math.min(25, fatigue + 2);
+            String cause = food <= 0 && water <= 0 ? "starving and dehydrated" : (food <= 0 ? "starving" : "dehydrated");
+            DebugLog.audit("STARVATION", cause + " wounds=" + wounds + " fatigue=" + fatigue + " time=" + timeText() + " state=" + stateSummary());
+            logEvent("SURVIVAL WARNING: You are " + cause + ". One hour without reserves causes endurance damage. Eat or drink soon.");
+        }
+    }

@@ -1,0 +1,33 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawHoverHelp
+// Lines: 20663-20688
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawHoverHelp(Graphics2D g, int hoverButtonIndex) {
+        if (!options.hoverHelp) return;
+        String help = null;
+        if (hoverButtonIndex >= 0 && hoverButtonIndex < buttons.size()) help = buttons.get(hoverButtonIndex).tip;
+        else if (mouseX < 0 && selectedButton >= 0 && selectedButton < buttons.size() && buttonIsModalInteractive(buttons.get(selectedButton))) help = buttons.get(selectedButton).tip;
+        if (help == null || mouseX < 0 || mouseY < 0) return;
+        g.setFont(smallFont);
+        int maxChars = 34;
+        java.util.List<String> lines = TextSurfaceApi.wrap(help, maxChars);
+        FontMetrics fm = g.getFontMetrics();
+        int tw = 0;
+        for (String line : lines) tw = Math.max(tw, fm.stringWidth(line));
+        int boxW = Math.min(340, Math.max(190, tw + 22));
+        int lineH = fm.getHeight();
+        int boxH = Math.max(34, lines.size()*lineH + 14);
+        int x = mouseX + 18;
+        int y = mouseY + 18;
+        if (x + boxW > getWidth() - 12) x = mouseX - boxW - 18;
+        if (y + boxH > getHeight() - 12) y = mouseY - boxH - 18;
+        x = Math.max(8, x); y = Math.max(8, y);
+        g.setColor(new Color(8,8,9,238)); g.fillRect(x, y, boxW, boxH);
+        g.setColor(new Color(165,138,82)); g.drawRect(x, y, boxW, boxH);
+        g.setColor(new Color(220,205,160));
+        int ty = y + 18;
+        for (String line : lines) { drawUiTextLine(g, line, x+11, ty); ty += lineH; }
+    }

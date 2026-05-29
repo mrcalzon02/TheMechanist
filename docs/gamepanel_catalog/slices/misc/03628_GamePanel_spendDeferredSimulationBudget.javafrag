@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: spendDeferredSimulationBudget
+// Lines: 3628-3635
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void spendDeferredSimulationBudget(String reason, int budgetMillis) {
+        if (budgetMillis <= 0 || deferredSimulationDebt <= 0) return;
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.mutate(this, "deferred simulation budget: " + reason, () -> spendDeferredSimulationBudgetBody(reason, budgetMillis));
+            return;
+        }
+        spendDeferredSimulationBudgetBody(reason, budgetMillis);
+    }

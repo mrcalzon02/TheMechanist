@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: findOpenBaseSpot
+// Lines: 8772-8784
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Point findOpenBaseSpot() {
+        if (world == null || claimedRoomId < 0) return null;
+        Rectangle rr = world.roomRect(claimedRoomId);
+        if (rr == null) return null;
+        for (int y=rr.y; y<rr.y+rr.height; y++) for (int x=rr.x; x<rr.x+rr.width; x++) {
+            if (!world.walkable(x,y)) continue;
+            if (x == playerX && y == playerY) continue;
+            if (baseObjectAt(x,y) != null) continue;
+            char t = world.tiles[x][y];
+            if (t == '.' || t == '+') return new Point(x,y);
+        }
+        return null;
+    }

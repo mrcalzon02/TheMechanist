@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawIdleScreensaver
+// Lines: 20654-20661
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawIdleScreensaver(Graphics2D g) {
+        Graphics2D gg=(Graphics2D)g.create();
+        gg.setColor(Color.BLACK); gg.fillRect(0,0,getWidth(),getHeight());
+        drawLoading(gg);
+        gg.setFont(uiFont); gg.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(gg, "IDLE UNDERHIVE SKYLINE — move mouse or press any key to return", getWidth()/2, getHeight()-42);
+        gg.dispose();
+    }

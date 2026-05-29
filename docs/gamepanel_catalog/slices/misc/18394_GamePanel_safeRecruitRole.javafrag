@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: safeRecruitRole
+// Lines: 18394-18396
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String safeRecruitRole(RecruitWorker r) {
+        return r == null || r.role == null || r.role.isBlank() ? "base worker" : r.role;
+    }

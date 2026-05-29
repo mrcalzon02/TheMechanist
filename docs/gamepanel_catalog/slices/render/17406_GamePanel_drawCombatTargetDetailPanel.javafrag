@@ -1,0 +1,44 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawCombatTargetDetailPanel
+// Lines: 17406-17442
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawCombatTargetDetailPanel(Graphics2D g) {
+        int x = 145, y = 12, w = getWidth() - 380, h = 170;
+        int tx = combatCursorActive ? combatX : playerX;
+        int ty = combatCursorActive ? combatY : playerY;
+        TargetingSolution ts = targetingSolutionAt(tx, ty);
+        g.setColor(new Color(14, 4, 6, 240)); g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "combat-target-detail", x, y, w, h);
+        g.setFont(uiFont); g.setColor(new Color(245, 90, 80));
+        g.drawString("TARGETING / ATTACK — RED RETICLE", x + 14, y + 27);
+        g.setFont(smallFont); g.setColor(new Color(225, 195, 170));
+        String combatHeader = "Cursor " + tx + "," + ty + " | Weapon " + ts.weaponName + " | Mode " + fireModeLabel() + " | Range " + ts.distance + "/" + ts.range + " | Hit " + ts.hitPercent + "%";
+        java.util.List<String> combatHeaderLines = TextLayoutAuthority.wrapPixels(g, g.getFont(), combatHeader, Math.max(80, w - 32));
+        int combatHeaderY = y + 52;
+        for (int i = 0; i < Math.min(2, combatHeaderLines.size()); i++) {
+            g.drawString(combatHeaderLines.get(i), x + 14, combatHeaderY + i * Math.max(14, g.getFontMetrics().getHeight()));
+        }
+        int bodyTop = y + 66 + (combatHeaderLines.size() > 1 ? Math.max(14, g.getFontMetrics().getHeight()) : 0);
+        g.setColor(new Color(0,0,0,180)); g.fillRect(x + 14, bodyTop, w - 28, Math.max(24, y + h - bodyTop - 16));
+        g.setColor(new Color(115, 45, 42)); g.drawRect(x + 14, bodyTop, w - 28, Math.max(24, y + h - bodyTop - 16));
+        int yy = bodyTop + 20;
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(ts.summaryLine());
+        lines.add("Line: " + ts.coverSummary);
+        lines.add("Ammo/load: " + (ts.ranged ? (ts.loadedShots + "/" + ts.magazineCapacity + " loaded; " + ts.ammoItem + " x" + countInventory(ts.ammoItem) + "; attack cost " + ts.ammoCost) : "melee/no magazine") + ".");
+        lines.add("Cover penalty -" + ts.coverPenalty + "; darkness/light penalty -" + ts.darknessPenalty + "; shield mitigation estimate " + ts.shieldReduction + "%; movement/aim state " + activeMotionStateLabel() + " mod " + playerAttackMotionSkillModifier() + ".");
+        lines.add("Move reticle with WASD/arrows. F cycles fire mode. X reloads. Enter/Space confirms. ESC cancels.");
+        for (String line : lines) {
+            g.setColor(line.startsWith("Line:") ? new Color(215, 170, 130) : new Color(235, 215, 185));
+            for (String wrapped : TextLayoutAuthority.wrapPixels(g, g.getFont(), line, Math.max(80, w - 52))) {
+                if (yy > y + h - 10) break;
+                g.drawString(wrapped, x + 22, yy);
+                yy += 16;
+            }
+            if (yy > y + h - 10) break;
+        }
+    }

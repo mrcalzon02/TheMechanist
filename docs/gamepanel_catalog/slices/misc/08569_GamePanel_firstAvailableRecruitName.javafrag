@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: firstAvailableRecruitName
+// Lines: 8569-8572
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String firstAvailableRecruitName() {
+        for (RecruitWorker r : factionRecruits) if (r != null && !"security".equalsIgnoreCase(r.duty)) return r.name;
+        return factionRecruits.isEmpty() ? "unmanned" : factionRecruits.get(0).name;
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: businessPermitCount
+// Lines: 18708-18713
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int businessPermitCount() {
+        int count = 0;
+        for (String item : inventory) if (item != null && item.equalsIgnoreCase("Noble Commerce Permit")) count++;
+        for (String item : baseStorage) if (item != null && item.equalsIgnoreCase("Noble Commerce Permit")) count++;
+        return count;
+    }

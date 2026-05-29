@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: ContractZoneTarget
+// Method: ContractZoneTarget
+// Lines: 17114-17121
+// Category: world
+// This is an examination slice, not compiled source.
+
+        ContractZoneTarget(int sectorX, int sectorY, int zoneX, int zoneY, int floor, boolean sewer) {
+            this.sectorX = sectorX;
+            this.sectorY = sectorY;
+            this.zoneX = zoneX;
+            this.zoneY = zoneY;
+            this.floor = floor;
+            this.sewer = sewer;
+        }

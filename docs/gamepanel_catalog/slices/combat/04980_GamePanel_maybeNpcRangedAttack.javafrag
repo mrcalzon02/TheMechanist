@@ -1,0 +1,61 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: maybeNpcRangedAttack
+// Lines: 4980-5033
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    boolean maybeNpcRangedAttack(NpcEntity npc, int dist) {
+        if (npc == null || world == null || active == null || !isHostileNpc(npc)) return false;
+        ensureNpcCombatLoadout(npc);
+        String weapon = npc.equippedRangedWeapon;
+        if (weapon == null || weapon.isBlank() || !ItemCatalog.isFirearmLike(weapon)) return false;
+        if (dist <= 1 || dist > weaponRange(weapon)) return false;
+        if (turn % 2 != Math.floorMod(npc.numericId, 2)) return false;
+        if (!hasLineOfSight(npc.x, npc.y, playerX, playerY)) return false;
+        int cap = magazineCapacityForWeapon(weapon);
+        if (cap <= 0) return false;
+        if (npc.loadedShots <= 0) {
+            if (npc.ammoReloadsRemaining > 0) {
+                npc.ammoReloadsRemaining--;
+                npc.loadedShots = cap;
+                npc.activeMotionStateIndex = MOTION_STATIONARY;
+                sounds.playReloadEffect(options);
+                if (isVisible(npc.x, npc.y) || dist <= hearingRange()) logEvent("ENEMY RELOAD: " + npc.name + " reloads " + weapon + " from faction-carried reserve. Loaded " + npc.loadedShots + "/" + cap + ", reserve reloads " + npc.ammoReloadsRemaining + ".");
+                addSoundPing(npc.x, npc.y, "reload");
+                DebugLog.audit("NPC_RELOAD", "npc=" + npc.id + " weapon=" + weapon + " loaded=" + npc.loadedShots + " reserve=" + npc.ammoReloadsRemaining + " dist=" + dist + " turn=" + turn);
+                return true;
+            }
+            if (isVisible(npc.x, npc.y) || dist <= hearingRange()) logEvent("ENEMY AMMO DRY: " + npc.name + " tries to bring " + weapon + " up, but the reserve is spent and they close with " + npc.equippedMeleeWeapon + ".");
+            return false;
+        }
+        npc.loadedShots--;
+        npc.activeMotionStateIndex = npc.selectedMovementModeIndex;
+        sounds.playWeaponEffect(weapon, true, options);
+        int coverPenalty = rangedCoverPenalty(npc.x, npc.y, playerX, playerY, true, null);
+        int darknessPenalty = rangedDarknessPenalty(npc.x, npc.y, playerX, playerY);
+        int skill = 35 + npc.intellect * 3 + npc.equipmentTier * 4;
+        if (npc.activeMotionStateIndex == MOTION_RUN) skill -= 8;
+        if (npc.activeMotionStateIndex == MOTION_SPRINT) skill -= 14;
+        if (npc.activeMotionStateIndex == MOTION_STATIONARY) skill += 8;
+        int evade = Math.max(0, playerDefenseMotionModifier() * 3);
+        int hit = Math.max(3, Math.min(92, skill - dist * 4 - coverPenalty - darknessPenalty - evade));
+        int roll = rng.nextInt(100) + 1;
+        if (roll > hit) {
+            Point miss = strayImpactPointFrom(npc.x, npc.y, playerX, playerY, dist);
+            startCombatAnimation(weapon, npc.x, npc.y, miss.x, miss.y, false);
+            String impact = applyStrayImpactDamage(miss.x, miss.y, Math.max(1, ItemCatalog.priceFor(weapon)/12), "enemy missed " + weapon);
+            logEvent("ENEMY RANGED MISSED: " + npc.name + " fires " + weapon + " at you. Hit " + hit + "%, roll " + roll + "; loaded " + npc.loadedShots + "/" + cap + ", reserve reloads " + npc.ammoReloadsRemaining + ". " + impact);
+            DebugLog.audit("NPC_RANGED_MISS", "npc=" + npc.id + " weapon=" + weapon + " hit=" + hit + " roll=" + roll + " cover=" + coverPenalty + " lightPenalty=" + darknessPenalty + " loaded=" + npc.loadedShots + " reserve=" + npc.ammoReloadsRemaining + " turn=" + turn);
+            return true;
+        }
+        startCombatAnimation(weapon, npc.x, npc.y, playerX, playerY, true);
+        int raw = Math.max(2, ItemCatalog.priceFor(weapon) / 8) + rng.nextInt(4) + Math.max(0, npc.equipmentTier);
+        int shield = shieldMitigationPercentAt(playerX, playerY, equippedClothing == null ? Faction.NONE : equippedClothing.alignedFaction);
+        int armor = (equippedClothing != null && equippedClothing.name.toLowerCase(Locale.ROOT).contains("armor") ? 2 : 0) + playerEquippedArmorBonus();
+        int dmg = Math.max(1, ((raw - armor) * Math.max(20, 100 - shield)) / 100);
+        logEvent("ENEMY RANGED HIT: " + npc.name + " fires " + weapon + " and hits. Hit " + hit + "%, roll " + roll + "; shield mitigation " + shield + "%; loaded " + npc.loadedShots + "/" + cap + ", reserve reloads " + npc.ammoReloadsRemaining + ".");
+        applyPlayerBodyDamage(dmg, randomBodyHitLocation(), npc.name, weapon);
+        DebugLog.audit("NPC_RANGED_HIT", "npc=" + npc.id + " weapon=" + weapon + " hit=" + hit + " roll=" + roll + " cover=" + coverPenalty + " lightPenalty=" + darknessPenalty + " shield=" + shield + " dmg=" + dmg + " loaded=" + npc.loadedShots + " reserve=" + npc.ammoReloadsRemaining + " turn=" + turn);
+        return true;
+    }

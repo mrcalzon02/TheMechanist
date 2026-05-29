@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseExpansionSuspicionDriverLine
+// Lines: 18470-18479
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseExpansionSuspicionDriverLine() {
+        ArrayList<String> drivers = new ArrayList<>();
+        if (illegalBusinessCount() > 0) drivers.add("unpermitted commerce");
+        if (restrictedStoredGoodsCount() > 0) drivers.add("search-sensitive storage");
+        if (baseDefenseAttentionCount() > 0) drivers.add("visible defenses");
+        if (baseLabOrChemCount() > 0) drivers.add("lab or chemical work");
+        if (suspicion >= 12) drivers.add("existing Civic Wardens record");
+        if (drivers.isEmpty()) return "no obvious legal driver beyond normal property traces.";
+        return String.join(", ", drivers) + ".";
+    }

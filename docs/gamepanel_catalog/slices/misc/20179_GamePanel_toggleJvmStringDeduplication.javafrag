@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleJvmStringDeduplication
+// Lines: 20179-20182
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleJvmStringDeduplication() {
+        jvmRuntimeProfile.stringDeduplication = !jvmRuntimeProfile.stringDeduplication;
+        markJvmProfileChanged("JVM string deduplication " + (jvmRuntimeProfile.stringDeduplication ? "enabled" : "disabled") + ".");
+    }

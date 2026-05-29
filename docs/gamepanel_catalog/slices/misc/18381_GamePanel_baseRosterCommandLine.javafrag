@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseRosterCommandLine
+// Lines: 18381-18386
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseRosterCommandLine() {
+        if (!hasKnowledge("Recruit Berthing Doctrine")) return "recruiting is limited until Recruit Berthing Doctrine is known.";
+        if (!hasKnowledge("Workshop Labor Discipline")) return "recruits can join, but machine assignment needs Workshop Labor Discipline.";
+        if (factionRecruits.size() >= recruitCapacity()) return "berths are full; build more cots or release pressure before recruiting.";
+        return "recruitment and assignment are available within cot capacity and station access.";
+    }

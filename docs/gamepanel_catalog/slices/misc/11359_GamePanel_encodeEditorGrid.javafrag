@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: encodeEditorGrid
+// Lines: 11359-11374
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String encodeEditorGrid(Map<String,String> cells) {
+        if (cells == null || cells.isEmpty()) return "";
+        ArrayList<String> keys = new ArrayList<>(cells.keySet());
+        keys.sort((a,b) -> {
+            String[] aa=a.split(","); String[] bb=b.split(",");
+            int ay=Integer.parseInt(aa[1]), by=Integer.parseInt(bb[1]);
+            if (ay != by) return Integer.compare(ay, by);
+            return Integer.compare(Integer.parseInt(aa[0]), Integer.parseInt(bb[0]));
+        });
+        StringBuilder sb = new StringBuilder();
+        for (String k : keys) {
+            if (sb.length() > 0) sb.append(';');
+            sb.append(k).append('=').append(cells.get(k).replace(';', ',').replace('=', ':'));
+        }
+        return sb.toString();
+    }

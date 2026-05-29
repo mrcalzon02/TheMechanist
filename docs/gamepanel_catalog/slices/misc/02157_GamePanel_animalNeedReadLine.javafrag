@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: animalNeedReadLine
+// Lines: 2157-2170
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String animalNeedReadLine(NpcEntity npc) {
+        if (npc == null) return "basic needs are unreadable";
+        ArrayList<String> needs = new ArrayList<>();
+        if (npc.hunger >= 8) needs.add("very hungry");
+        else if (npc.hunger >= 5) needs.add("hungry");
+        else needs.add("fed enough for now");
+        if (npc.thirst >= 8) needs.add("very thirsty");
+        else if (npc.thirst >= 5) needs.add("thirsty");
+        else needs.add("watered enough for now");
+        if (npc.sleepDebt >= 10) needs.add("badly tired");
+        else if (npc.sleepDebt >= 6) needs.add("tired");
+        else needs.add("rested enough for now");
+        return String.join(", ", needs);
+    }

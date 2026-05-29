@@ -1,0 +1,46 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: advanceTurnBody
+// Lines: 3203-3241
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void advanceTurnBody(String reason) {
+        long profileStartNanos = System.nanoTime();
+        try {
+        advancePlayerAndWorldTime(1, reason);
+        if (turn % (4 * TURNS_PER_HOUR) == 0) gangHeat++;
+        if (turn % (6 * TURNS_PER_HOUR) == 0) fatigue = Math.min(20, fatigue + 1);
+        if (baseClaimed && turn % (5 * TURNS_PER_HOUR) == 0) suspicion++;
+        passiveBaseObjectTicks();
+        processProgressiveConstructionSites(false);
+        applyHourlyProgressionTick(false);
+        applyBusinessPressureTick(false);
+        applyFactionMarketPressureTick(false);
+        applyFactionStrategicSimulationTick(false);
+        processExplosiveAndCorpseEcologyTick();
+        processPortableLightTick();
+        applyAwakeSurvivalTick();
+        applyStarvationDamageIfNeeded();
+        applyMedicalProgressionTick();
+        decayTemporaryHostilities();
+        tickNearbyNpcs();
+        applyBankManagerSchedules();
+        applyBankAlarmPressureTick();
+        applyArbitesPatrolSweep();
+        applyAuthorityFacilityInspectionFromNews();
+        enforceEntityOccupancy("advance-turn");
+        processPersonnelReplacementQueue();
+        processMachineOperationQueueTick(false);
+        updateSensoryModel("turn " + turn);
+        evaluateFactionPressure();
+        evaluatePlayerDefeatState("survival attrition", "the underhive", "hunger, thirst, bleeding, infection, or exhaustion", "whole body");
+        if (screen != Screen.LOST) maybeAutosave(reason);
+        if (active != null) logEvent(active.name + " " + reason + " Time " + timeText() + " (turn " + turn + "). Heat " + gangHeat + ", suspicion " + suspicion + ".");
+        } finally {
+            profilingAdvanceTurnNanos += Math.max(0L, System.nanoTime() - profileStartNanos);
+            profilingAdvanceTurnSamples++;
+            deferredSimulationDebt = Math.min(100000, deferredSimulationDebt + 1);
+            if (turn > 0 && turn % 250 == 0) auditSimulationEfficiency("turn-sample");
+        }
+    }

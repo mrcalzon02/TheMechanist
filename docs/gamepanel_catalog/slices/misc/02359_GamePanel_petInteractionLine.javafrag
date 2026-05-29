@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: petInteractionLine
+// Lines: 2359-2367
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String petInteractionLine(NpcEntity npc) {
+        String key = ((npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return npc.name + " accepts careful ear scritches and pretends it was their idea.";
+        if (key.contains("rat") || key.contains("mouse")) return npc.name + " receives a tiny nose boop and chirrs at the attention.";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return npc.name + " leans into a head pat.";
+        if (key.contains("lizard")) return npc.name + " permits a cautious chin rub.";
+        if (key.contains("glowfish")) return npc.name + " watches your fingertip tap the bowl and glows a little brighter.";
+        return npc.name + " accepts a gentle petting gesture.";
+    }

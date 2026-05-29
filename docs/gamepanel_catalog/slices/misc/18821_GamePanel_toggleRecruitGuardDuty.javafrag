@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleRecruitGuardDuty
+// Lines: 18821-18839
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleRecruitGuardDuty() {
+        if (!baseClaimed) { logEvent("Guard duty failed: claim a base before assigning security staff."); return; }
+        if (factionRecruits.isEmpty()) { logEvent("Guard duty failed: no recruits available. Build cots and recruit workers first."); return; }
+        RecruitWorker firstGuard = null, firstLabor = null;
+        for (RecruitWorker r : factionRecruits) {
+            if (r == null) continue;
+            if ("security".equalsIgnoreCase(r.duty) && firstGuard == null) firstGuard = r;
+            if (!"security".equalsIgnoreCase(r.duty) && firstLabor == null) firstLabor = r;
+        }
+        if (firstLabor != null) {
+            firstLabor.duty = "security";
+            logEvent("GUARD ASSIGNED: " + firstLabor.name + " moves to security duty. Defense rating now " + baseSecurityRating() + ".");
+        } else if (firstGuard != null) {
+            firstGuard.duty = "labor";
+            logEvent("GUARD RELEASED: " + firstGuard.name + " returns to labor duty. Defense rating now " + baseSecurityRating() + ".");
+        }
+        DebugLog.audit("GUARD_DUTY_TOGGLE", "guards=" + securityStaffCount() + " labor=" + availableRecruitLabor() + " rating=" + baseSecurityRating() + " state=" + stateSummary());
+        repaint();
+    }

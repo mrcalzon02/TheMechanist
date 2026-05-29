@@ -1,0 +1,55 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawDiegeticMapPanel
+// Lines: 16968-17015
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawDiegeticMapPanel(Graphics2D g){
+        int W=getWidth(),H=getHeight(); int x=62,y=82,w=W-124,h=H-155;
+        g.setColor(new Color(5,6,6,246)); g.fillRect(x,y,w,h); drawSlicedFrame(g,x,y,w,h,"inner");
+        int leftW=Math.max(300, w/3); int rx=x+leftW+24; int rw=w-leftW-48;
+        drawSlicedFrame(g,x+18,y+72,leftW,h-105,"inner");
+        drawSlicedFrame(g,rx,y+72,rw,h-105,"inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,mapTab==0?"SECTOR MAP":"ROOM INTEL",W/2,y+44);
+        ArrayList<String> info=new ArrayList<>();
+        if(mapTab==0){
+            info.add("Current slice: "+MapLayerSurfaceAuthority.label(mapLayerView));
+            if(atlas != null){
+                info.add("Arcology world: " + atlas.hiveWorld.hiveName + " [" + atlas.hiveWorld.worldId + "]");
+                info.add("Worldgen progress: " + atlas.hiveWorld.progressSummary());
+                info.addAll(WorldGenerationProgressApi.progressLines(atlas.hiveWorld));
+            }
+            if(world != null){
+                info.add("Current named sector: " + world.sectorName);
+                info.add("Current named zone: " + world.zoneName);
+                info.addAll(contractObjectiveGuidanceLines());
+                info.add("Compact zone history: " + world.zoneHistory);
+                String zkey = atlas.hiveWorld.zoneKey(world.sectorX, world.sectorY, world.zoneX, world.zoneY, world.floor, world.sewerLayer);
+                info.add("Faction-control epochs:");
+                for(String line : WorldHistoryApi.epochLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Facility establishment ledger:");
+                for(String line : ZoneFacilityHistoryApi.facilityLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Production output ledger:");
+                for(String line : ProductionFacilityOutputSimulationApi.productionLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Stock movement ledger:");
+                for(String line : ProductionDistributionApi.stockMovementLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Conflict/loss/abandonment ledger:");
+                for(String line : HistoricalConflictLossApi.conflictLossLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Concrete historical item materialization ledger:");
+                for(String line : HistoricalItemMaterializationApi.materializedItemLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Population work assignment / facility labor ledger:");
+                for(String line : PopulationWorkAssignmentApi.laborAssignmentLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Active-zone topology map/intel bridge:");
+                for(String line : EconomicTopologyMapIntelBridgeAuthority.mapPanelLines(this)) info.add("- " + line);
+            }
+            info.add("Map is diegetic: it shows what the character knows about the sector slice, with fog-of-war hiding unvisited certainty.");
+            info.add("Zone icons show rough types. Arrows show known adjacency. Doors that would lead outside the sector terminate in interwall voids: bottomless pits, crawl ways, and gangways no sane human enters.");
+            info.add("Message for invalid outside-sector exits: The crawl ways and interwall spaces are no place for humans.");
+        } else {
+            info.add("Room and scavenge descriptors live here, not over the sector map.");
+            if(world!=null) info.addAll(visibleRoomIntelLines());
+        }
+        drawScrollableWrappedLines(g,info,x+38,y+118,leftW-40,h-165,mapInfoScroll,"map-info");
+        drawSectorGrid(g,rx+32,y+118,rw-64,h-165);
+    }

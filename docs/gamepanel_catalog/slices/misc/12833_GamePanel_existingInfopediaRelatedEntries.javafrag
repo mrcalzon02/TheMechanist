@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: existingInfopediaRelatedEntries
+// Lines: 12833-12845
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> existingInfopediaRelatedEntries(java.util.List<String> candidates, String currentEntry) {
+        ArrayList<String> out = new ArrayList<>();
+        if (candidates == null) return out;
+        HashSet<String> seen = new HashSet<>();
+        for (String candidate : candidates) {
+            String found = findInfopediaEntryLabel(candidate);
+            if (found == null || found.equalsIgnoreCase(currentEntry)) continue;
+            String key = found.toLowerCase(Locale.ROOT);
+            if (seen.add(key)) out.add(found);
+            if (out.size() >= 6) break;
+        }
+        return out;
+    }

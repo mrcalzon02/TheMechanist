@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleLightingFx
+// Lines: 20034-20038
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleLightingFx() {
+        int next = (options.lightingFxIndex + 1) % GameOptions.LIGHTING_FX_LABELS.length;
+        logEvent(OptionsBoundaryAuthority.setLightingFxIndex(options, next));
+        repaint();
+    }

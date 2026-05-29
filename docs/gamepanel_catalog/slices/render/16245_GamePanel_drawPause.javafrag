@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawPause
+// Lines: 16245-16248
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawPause(Graphics2D g) {
+        g.setFont(titleFont); g.setColor(new Color(200,184,132)); center(g, "PAUSED", getWidth()/2, 135);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_MAIN)); center(g, "The sump holds its breath. Autosave watches from a cracked logic Engine.", getWidth()/2, 185);
+    }

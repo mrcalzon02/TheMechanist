@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: useSelectedInventoryItem
+// Lines: 18143-18151
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void useSelectedInventoryItem() {
+        String item = selectedCarriedInventoryActionItem();
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new UseInventoryCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, item));
+            repaint();
+            return;
+        }
+        useSelectedInventoryItemBody();
+    }

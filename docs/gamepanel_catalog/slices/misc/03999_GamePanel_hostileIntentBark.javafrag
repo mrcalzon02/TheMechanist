@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: hostileIntentBark
+// Lines: 3999-4010
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String hostileIntentBark(NpcEntity npc, int dist) {
+        if (npc == null) return "Something notices you.";
+        if (npc.isAnimalActor()) return npc.name + " notices you and breaks into animal violence.";
+        switch(npc.faction) {
+            case MUTANT: return npc.name + " sees you and surges forward, wet claws scraping for purchase.";
+            case CULTIST: case HERETIC: return npc.name + " points and howls a broken litany. Hostile intent confirmed.";
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH:
+                return npc.name + " clocks your movement, reaches for a weapon, and commits to violence.";
+            case ROGUE_MACHINE: return npc.name + " acquires target lock. The machine has made a decision.";
+            default: return npc.name + " turns hostile and closes distance.";
+        }
+    }

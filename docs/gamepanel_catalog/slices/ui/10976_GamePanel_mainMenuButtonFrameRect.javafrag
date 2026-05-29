@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mainMenuButtonFrameRect
+// Lines: 10976-10994
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    Rectangle mainMenuButtonFrameRect() {
+        int W = getWidth(), H = getHeight();
+        Rectangle subtitle = mainMenuSubtitleRect();
+        int frameW = Math.max(520, Math.min(subtitle.width, W - 120));
+        int minY = subtitle.y + subtitle.height + 8;
+        int runtimeReserveTop = H - Math.max(70, Math.min(96, H / 10));
+        int availableH = runtimeReserveTop - minY;
+        // 0.9.10ip: prefer a taller launcher bay so six route buttons plus EXIT get
+        // discrete rows. If the splash stack consumes too much space, reclaim from the bottom
+        // first before allowing the route frame to collapse.
+        int desiredH = Math.max(142, Math.min(196, H / 5));
+        int frameH = Math.max(128, Math.min(desiredH, availableH - 4));
+        int y = minY;
+        if (availableH < 136) {
+            frameH = Math.max(118, Math.min(154, runtimeReserveTop - subtitle.y - subtitle.height - 4));
+            y = Math.max(subtitle.y + subtitle.height + 4, runtimeReserveTop - frameH);
+        }
+        return new Rectangle((W - frameW) / 2, y, frameW, frameH);
+    }

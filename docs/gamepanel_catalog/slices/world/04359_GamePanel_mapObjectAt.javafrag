@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mapObjectAt
+// Lines: 4359-4367
+// Category: world
+// This is an examination slice, not compiled source.
+
+    MapObjectState mapObjectAt(int x, int y, String type) {
+        if (world == null || world.mapObjects == null) return null;
+        String wanted = AssetIntegrationDisciplineAuthority.canonicalType(type);
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || m.x != x || m.y != y) continue;
+            if (type == null || Objects.equals(wanted, AssetIntegrationDisciplineAuthority.canonicalType(m.type))) return m;
+        }
+        return null;
+    }

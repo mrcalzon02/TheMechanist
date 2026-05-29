@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleGraphicsDropdown
+// Lines: 19972-19976
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void toggleGraphicsDropdown(int which) {
+        graphicsDropdown = (graphicsDropdown == which) ? -1 : which;
+        logEvent("Graphics dropdown " + (graphicsDropdown < 0 ? "closed" : "opened") + ".");
+        repaint();
+    }

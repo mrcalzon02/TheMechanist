@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: equipmentSlotNames
+// Lines: 16701-16701
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String[] equipmentSlotNames() { return new String[]{"Headgear", "Armor", "Clothing", "Left hand", "Right hand", "Backpack"}; }

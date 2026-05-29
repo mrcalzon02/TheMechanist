@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: dataSpikeScavengeChance
+// Lines: 6294-6301
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    double dataSpikeScavengeChance(RoomProfile rp, ZoneType zt) {
+        String rn = rp == null || rp.name == null ? "" : rp.name.toLowerCase(Locale.ROOT);
+        double base = 0.003; // very rare baseline
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) base += 0.012;
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) base += 0.008;
+        if (rn.contains("machine") || rn.contains("logic Engine") || rn.contains("vault") || rn.contains("archive") || rn.contains("security")) base += 0.010;
+        return Math.min(0.035, base);
+    }

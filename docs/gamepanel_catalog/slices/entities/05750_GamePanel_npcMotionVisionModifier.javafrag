@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcMotionVisionModifier
+// Lines: 5750-5759
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    int npcMotionVisionModifier(NpcEntity npc) {
+        if (npc == null) return 0;
+        switch(npc.activeMotionStateIndex) {
+            case MOTION_SNEAK: return -1;
+            case MOTION_RUN: return -1;
+            case MOTION_SPRINT: return -2;
+            case MOTION_WALK: return 1;
+            default: return 0;
+        }
+    }

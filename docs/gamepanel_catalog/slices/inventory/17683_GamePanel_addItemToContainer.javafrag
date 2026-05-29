@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: addItemToContainer
+// Lines: 17683-17685
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void addItemToContainer(String containerId, String label, String item, ItemProvenanceRecord provenance, ArrayList<String> legacyList) {
+        addItemToContainerResult(containerId, label, item, provenance, legacyList, "legacy-compatible add");
+    }

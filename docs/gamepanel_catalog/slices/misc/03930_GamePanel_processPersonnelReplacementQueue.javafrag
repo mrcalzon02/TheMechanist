@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: processPersonnelReplacementQueue
+// Lines: 3930-3948
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void processPersonnelReplacementQueue() {
+        if (world == null || world.replacementQueue == null || world.replacementQueue.isEmpty()) return;
+        int pruned = PersonnelPopulationApi.pruneReplacementQueueToCapacity(world);
+        if (pruned > 0) DebugLog.audit("PERSONNEL_REPLACEMENT_PRUNE", "removed=" + pruned + " remaining=" + world.replacementQueue.size() + " zone=" + world.zoneType.label + " turn=" + turn);
+        ArrayList<PersonnelReplacementRequest> matured = new ArrayList<>();
+        for (PersonnelReplacementRequest req : world.replacementQueue) if (req.dueTurn <= turn) matured.add(req);
+        if (matured.isEmpty()) return;
+        for (PersonnelReplacementRequest req : matured) {
+            Point p = PersonnelPopulationApi.spawnPointForReplacement(world, req, rng);
+            if (p == null) continue;
+            NpcEntity n = NpcEntity.create(req.faction, world.zoneType, p.x, p.y, rng);
+            PersonnelPopulationApi.consumeReplacementSlot(world, req, rng);
+            PersonnelProvenanceApi.assignReplacementProvenance(n, world, req, rng);
+            world.npcs.add(n);
+            logEvent("PERSONNEL REPLACEMENT: " + n.name + " arrives from " + req.source + " to refill " + req.faction.label + " losses. " + n.originSummary());
+            DebugLog.audit("PERSONNEL_REPLACEMENT_ARRIVE", "dead=" + req.deadNpcId + " replacement=" + n.id + " faction=" + req.faction.label + " source=" + req.source + " due=" + req.dueTurn + " turn=" + turn + " zone=" + world.zoneType.label);
+        }
+        world.replacementQueue.removeAll(matured);
+    }

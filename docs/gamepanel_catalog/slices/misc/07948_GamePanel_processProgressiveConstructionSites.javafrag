@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: processProgressiveConstructionSites
+// Lines: 7948-7959
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void processProgressiveConstructionSites(boolean sleeping) {
+        if (baseObjects == null || baseObjects.isEmpty()) return;
+        int touched = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj != null && obj.underConstruction) {
+                int before = obj.constructionVisualProgress;
+                ProgressiveConstructionAuthority.contribute(this, obj, sleeping ? 2 : 0, true);
+                if (obj.constructionVisualProgress != before) touched++;
+            }
+        }
+        if (touched > 0 && turn % 10 == 0) DebugLog.audit("PROGRESSIVE_CONSTRUCTION_TICK", ProgressiveConstructionAuthority.auditSummary(this));
+    }

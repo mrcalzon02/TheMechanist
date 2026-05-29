@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: hasSelectedInteractionTarget
+// Lines: 15271-15278
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean hasSelectedInteractionTarget(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return false;
+        if (world.npcAt(tx, ty) != null) return true;
+        if (baseObjectAt(tx, ty) != null) return true;
+        if (world.mapObjectAt(tx, ty) != null) return true;
+        char ch = world.tiles[tx][ty];
+        return isDoorTile(ch) || isIntermapTransitTile(ch) || isVendingMachine(ch) || isShrine(ch) || isEmergencyMachine(ch) || ch == 'Q' || ch == 'T';
+    }

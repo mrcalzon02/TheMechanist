@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: magazineCapacityForWeapon
+// Lines: 4147-4164
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int magazineCapacityForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return 0;
+        if (w.contains("zip pistol") || w.contains("laslock") || w.contains("martyr pistol")) return 1;
+        if (w.contains("melta") || w.contains("inferno")) return 2;
+        if (w.contains("flamer") || w.contains("chem sprayer") || w.contains("acid spitter")) return 4;
+        if (w.contains("plasma")) return w.contains("heavy") ? 6 : 4;
+        if (w.contains("shotgun")) return 5;
+        if (w.contains("revolver") || w.contains("dueling")) return 6;
+        if (w.contains("pistol")) return 8;
+        if (w.contains("bolt")) return w.contains("heavy") || w.contains("storm") ? 16 : 8;
+        if (w.contains("autocannon")) return 6;
+        if (w.contains("heavy stubber")) return 20;
+        if (w.contains("autogun") || w.contains("auto")) return 20;
+        if (w.contains("las")) return 12;
+        if (w.contains("rifle") || w.contains("carbine") || w.contains("stubber")) return 10;
+        return 8;
+    }

@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isTerrainGlyphForArt
+// Lines: 15751-15754
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isTerrainGlyphForArt(char ch) {
+        return ch == ' ' || ch == '.' || ch == ',' || ch == '`' || ch == '+' || ch == '=' || ch == ':' || ch == '-' || ch == '~' || ch == ';' || ch == '_' ||
+               isWallGlyphForArt(ch) || ch == '/' || ch == '|' || ch == 'L' || ch == 'V' || ch == 'X' || ch == 'D';
+    }

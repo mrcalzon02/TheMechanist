@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: clampInteractCursorToAdjacent
+// Lines: 1830-1834
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void clampInteractCursorToAdjacent() {
+        lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX));
+        lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY));
+        if (world != null) { lookX = Math.max(0, Math.min(world.w - 1, lookX)); lookY = Math.max(0, Math.min(world.h - 1, lookY)); }
+    }

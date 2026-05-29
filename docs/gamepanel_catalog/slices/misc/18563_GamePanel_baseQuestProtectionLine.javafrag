@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseQuestProtectionLine
+// Lines: 18563-18568
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseQuestProtectionLine() {
+        int protectedCount = 0;
+        for (String item : baseStorage) if (isQuestOrEvidenceItem(item)) protectedCount++;
+        if (protectedCount <= 0) return "no obvious quest evidence or delivery item is stored here.";
+        return protectedCount + " stored item(s) look like quest evidence or delivery goods; check contracts before selling, dropping, or routing them.";
+    }

@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawLookStackIconForIndex
+// Lines: 17522-17541
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawLookStackIconForIndex(Graphics2D g, int tx, int ty, int index, int x, int y, int size) {
+        if (world == null || !world.inBounds(tx, ty) || size <= 0) return;
+        ArrayList<String> stack = tileStackAt(tx, ty);
+        String line = (index >= 0 && index < stack.size()) ? stack.get(index) : "";
+        BufferedImage img = null;
+        char glyph = world.tiles[tx][ty];
+        NpcEntity npc = world.npcAt(tx, ty);
+        BaseObject obj = baseObjectAt(tx, ty);
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (line.startsWith("ENTITY:") && npc != null) img = images.getNpcPortraitFor(npc);
+        else if (line.startsWith("BASE OBJECT:") && obj != null) { img = ObjectSemanticAssetAuthority.imageForBaseObject(obj); }
+        else if (line.startsWith("FIXTURE:") && mos != null) { img = ObjectSemanticAssetAuthority.imageForMapObject(mos); }
+        else img = tileImageForRenderedGlyph(glyph);
+        g.setColor(new Color(8, 10, 9, 235));
+        g.fillRect(x, y, size, size);
+        g.setColor(new Color(230,205,120));
+        g.drawRect(x, y, size, size);
+        if (img != null) g.drawImage(img, x + 3, y + 3, Math.max(1, size - 6), Math.max(1, size - 6), null);
+        else { g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, String.valueOf(glyph), x + size/2, y + size/2 + 6); }
+    }

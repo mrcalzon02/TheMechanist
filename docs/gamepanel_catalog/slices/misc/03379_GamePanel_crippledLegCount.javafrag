@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: crippledLegCount
+// Lines: 3379-3384
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int crippledLegCount() {
+        if (active == null || active.body == null) return 0;
+        int n = 0;
+        for (BodyPart bp : active.body.values()) if (bp.name.toLowerCase(Locale.ROOT).contains("leg") && bp.currentHealth() <= bp.maxHealth()*0.25) n++;
+        return n;
+    }

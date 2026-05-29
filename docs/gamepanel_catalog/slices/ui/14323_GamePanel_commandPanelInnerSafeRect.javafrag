@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: commandPanelInnerSafeRect
+// Lines: 14323-14326
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    Rectangle commandPanelInnerSafeRect() {
+        Rectangle cmd = commandPanelRect();
+        return new Rectangle(cmd.x + 14, cmd.y + 52, Math.max(1, cmd.width - 28), Math.max(1, cmd.height - 66));
+    }

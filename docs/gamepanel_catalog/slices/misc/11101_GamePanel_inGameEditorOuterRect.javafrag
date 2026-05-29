@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inGameEditorOuterRect
+// Lines: 11101-11104
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle inGameEditorOuterRect() {
+        Rectangle m = uiLayout().modal;
+        return new Rectangle(Math.max(18, m.x - 18), Math.max(18, m.y - 10), Math.min(getWidth()-36, m.width + 36), Math.min(getHeight()-36, m.height + 18));
+    }

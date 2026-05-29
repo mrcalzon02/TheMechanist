@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: buildTurns
+// Lines: 7684-7687
+// Category: production
+// This is an examination slice, not compiled source.
+
+    int buildTurns(BuildRecipe r) {
+        int body = stat("Strength", 6) + stat("Agility", 6);
+        return Math.max(1, r.baseTurns - body / 5);
+    }

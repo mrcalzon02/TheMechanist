@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: compactStackSummary
+// Lines: 9549-9554
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String compactStackSummary(LinkedHashMap<String,Integer> stacks) {
+        if (stacks == null || stacks.isEmpty()) return "nothing";
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : stacks.entrySet()) parts.add(e.getKey() + (e.getValue() > 1 ? " x" + e.getValue() : ""));
+        return String.join(", ", parts);
+    }

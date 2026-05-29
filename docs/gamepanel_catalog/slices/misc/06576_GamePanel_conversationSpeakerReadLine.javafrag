@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: conversationSpeakerReadLine
+// Lines: 6576-6585
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String conversationSpeakerReadLine(NpcEntity npc) {
+        if (npc == null) return "No speaker is selected.";
+        String role = npc.role == null || npc.role.isBlank() ? "local contact" : npc.role;
+        String state = npc.state == null || npc.state.isBlank() ? "available" : npc.state.toLowerCase(Locale.ROOT);
+        if (npc.isTrader()) return role + " with trade access; buy, sell, haggle, or ask for rumor if the counter is open.";
+        if (npc.isProtectedCleric()) return role + " offering temple conversation, faction context, and protected exit.";
+        if (npc.faction == Faction.CIVIC WARDENS) return role + " under lawful authority; hostile or illicit choices may carry extra risk.";
+        if (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")) return role + " from a coercive local power; jobs and threats may blur together.";
+        return role + " currently " + state + "; conversation can reveal work, faction context, or turn-in options.";
+    }

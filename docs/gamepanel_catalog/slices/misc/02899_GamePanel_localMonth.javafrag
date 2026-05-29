@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: localMonth
+// Lines: 2899-2899
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int localMonth() { return ((turn / TURNS_PER_HOUR) / (HOURS_PER_DAY * DAYS_PER_MONTH)) + 1; }

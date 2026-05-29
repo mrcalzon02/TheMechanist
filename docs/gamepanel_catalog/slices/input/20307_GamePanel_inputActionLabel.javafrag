@@ -1,0 +1,33 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inputActionLabel
+// Lines: 20307-20332
+// Category: input
+// This is an examination slice, not compiled source.
+
+    String inputActionLabel(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Move / nudge up";
+            case MOVE_DOWN: return "Move / nudge down";
+            case MOVE_LEFT: return "Move / nudge left";
+            case MOVE_RIGHT: return "Move / nudge right";
+            case CONFIRM: return "Confirm / choose";
+            case CANCEL: return "Cancel / back";
+            case WAIT: return "Wait one turn";
+            case INTERACT: return "Interact";
+            case EXAMINE: return "Examine visible target";
+            case INVENTORY: return "Inventory";
+            case CHARACTER: return "Character dossier";
+            case BUILD: return "Build and base tools";
+            case SENSES: return "Senses";
+            case PLAN_MOVE: return "Plan exact movement";
+            case PAUSE: return "Pause / menu";
+            case LOOK: return "Look";
+            case MAP: return "Map";
+            case ZOOM_IN: return "Zoom in";
+            case ZOOM_OUT: return "Zoom out";
+            case ATTACK: return "Combat targeting";
+            case RELOAD: return "Reload";
+            default: return action.name();
+        }
+    }

@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: unequipSelectedEquipmentSlotBody
+// Lines: 16763-16782
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void unequipSelectedEquipmentSlotBody() {
+        selectedEquipmentSlotIndex = Math.max(0, Math.min(selectedEquipmentSlotIndex, equipmentSlotNames().length-1));
+        String slot = equipmentSlotNames()[selectedEquipmentSlotIndex];
+        if (selectedEquipmentSlotIndex == 2) {
+            if (equippedClothing == null || equippedClothing.name == null || equippedClothing.name.isBlank()) { logEvent("EQUIPMENT: clothing slot is empty."); return; }
+            String item = equippedClothing.name + (equippedClothing.damaged && !equippedClothing.name.toLowerCase(Locale.ROOT).contains("damaged") ? " (damaged)" : "");
+            ItemActionResult moved = transferFirstEquipmentItemBackToInventory(2, item, "unequipped clothing from paper doll");
+            if (!moved.success) addInventoryItem(item, ItemProvenanceRecord.of(equippedClothing.name, equippedClothing.alignedFaction, "paper-doll clothing slot", world, turn, "equipped clothing", "unequipped back into carried inventory"));
+            equippedClothing = Clothing.scavengerRags();
+            logEvent("EQUIPMENT: unequipped " + item + " from Clothing. Default rags remain worn for decency and misery compliance.");
+            advanceTurn("unequips clothing"); repaint(); return;
+        }
+        String item = equippedItemForSlot(selectedEquipmentSlotIndex);
+        if (item == null || item.isBlank()) { logEvent("EQUIPMENT: " + slot + " slot is empty."); return; }
+        ItemActionResult moved = transferFirstEquipmentItemBackToInventory(selectedEquipmentSlotIndex, item, "unequipped paper-doll equipment");
+        if (!moved.success) addInventoryItem(item, ItemProvenanceRecord.found(item, world, turn, "paper-doll equipment slot"));
+        setEquippedItemForSlot(selectedEquipmentSlotIndex, "");
+        logEvent("EQUIPMENT: unequipped " + item + " from " + slot + " and returned it to inventory.");
+        advanceTurn("unequips equipment"); repaint();
+    }

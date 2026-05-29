@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: contractObjectContainerId
+// Lines: 8956-8956
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String contractObjectContainerId(String contractObjectId) { return CONTAINER_CONTRACT_OBJECT_PREFIX + ContainerIdentityApi.safeToken(contractObjectId == null ? "unknown" : contractObjectId); }

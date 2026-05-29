@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: moveTargetInventorySelection
+// Lines: 16425-16431
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void moveTargetInventorySelection(int delta) {
+        int size = currentTargetInventoryStacks().size();
+        if (size <= 0) { selectedTargetInventoryIndex = 0; inventoryItemDescriptionScroll = 0; return; }
+        selectedTargetInventoryIndex = Math.max(0, Math.min(size-1, selectedTargetInventoryIndex + delta));
+        inventoryItemDescriptionScroll = 0;
+        repaint();
+    }

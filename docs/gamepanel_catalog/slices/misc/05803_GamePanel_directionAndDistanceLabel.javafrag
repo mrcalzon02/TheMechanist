@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: directionAndDistanceLabel
+// Lines: 5803-5811
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String directionAndDistanceLabel(int x, int y) {
+        int dx = x - playerX, dy = y - playerY;
+        String ns = dy < 0 ? "north" : (dy > 0 ? "south" : "");
+        String ew = dx < 0 ? "west" : (dx > 0 ? "east" : "");
+        String dir = ns.isEmpty() ? ew : (ew.isEmpty() ? ns : ns + "-" + ew);
+        if (dir.isEmpty()) dir = "nearby";
+        int dist = Math.abs(dx) + Math.abs(dy);
+        return dir + " ~" + dist + "t:";
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: emergencyMachinePreview
+// Lines: 2530-2535
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String emergencyMachinePreview(char ch, int x, int y) {
+        String lock = emergencyMachineLocked(x,y,ch) ? "LOCKED: hack/pick/keycard required before use" : "usable";
+        Faction owner = owningFactionAt(x,y);
+        String power = machinePowered(ch) ? "powered" : "unpowered/current slice dark";
+        return emergencyMachineName(ch) + " [" + lock + ", " + power + ", owner=" + factionLabel(owner) + "]. Preview asset: " + emergencyMachineImagePath(ch);
+    }

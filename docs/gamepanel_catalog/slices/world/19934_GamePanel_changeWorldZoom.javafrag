@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeWorldZoom
+// Lines: 19934-19946
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void changeWorldZoom(int delta, String source) {
+        int before = options.worldZoomIndex;
+        options.worldZoomIndex = Math.max(0, Math.min(GameOptions.WORLD_ZOOM_LABELS.length - 1, options.worldZoomIndex + delta));
+        if (options.worldZoomIndex != before) {
+            options.save();
+            sounds.play("tab", options);
+            logEvent("Viewport zoom " + options.worldZoomLabel() + " via " + source + ".");
+            DebugLog.audit("VIEWPORT_ZOOM", "source=" + source + " index=" + options.worldZoomIndex + " label=" + options.worldZoomLabel() + " mode=" + screen + "/" + panelMode + " state=" + stateSummary());
+        } else {
+            logEvent("Viewport zoom already at " + options.worldZoomLabel() + ".");
+        }
+        repaint();
+    }

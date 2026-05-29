@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: knowledgeCanvasRect
+// Lines: 12232-12240
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle knowledgeCanvasRect() {
+        Rectangle left = knowledgeLeftPaneRect();
+        Rectangle right = knowledgeRightPaneRect();
+        Rectangle modal = knowledgeModalRect();
+        int gap = 14;
+        int x = left.x + left.width + gap;
+        int w = Math.max(180, right.x - gap - x);
+        return new Rectangle(x, left.y, w, left.height);
+    }

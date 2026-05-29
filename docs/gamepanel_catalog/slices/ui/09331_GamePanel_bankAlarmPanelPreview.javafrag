@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bankAlarmPanelPreview
+// Lines: 9331-9337
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    String bankAlarmPanelPreview(int tx, int ty) {
+        MapObjectState m = bankAlarmPanelAt(tx, ty);
+        if (m == null) return "No bank alarm panel selected.";
+        BankProfile b = bankProfileFromStock(m.stockState);
+        String state = bankAlarmPanelDisabled(m) ? "disabled/silenced" : (turn < m.cooldownUntilTurn ? "active alarm raised until turn " + m.cooldownUntilTurn : "armed/quiet");
+        return "Bank alarm panel: " + b.label + " / " + state + ". Tampering uses Intellect, Agility, tools, and stealth; failure alerts guards and raises authority pressure. Last alarm: " + lastBankAlarmReport;
+    }

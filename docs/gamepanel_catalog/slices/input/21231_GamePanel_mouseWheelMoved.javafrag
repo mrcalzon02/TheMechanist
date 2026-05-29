@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mouseWheelMoved
+// Lines: 21231-21247
+// Category: input
+// This is an examination slice, not compiled source.
+
+    @Override public void mouseWheelMoved(MouseWheelEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        if (eulaGateActive) { scrollEulaGate(e.getWheelRotation(), false); return; }
+        if (screen == Screen.KNOWLEDGE) { Point mp = mapInputPoint(e); if (mp != null) zoomKnowledgeTreeAt(mp.x, mp.y, e.getPreciseWheelRotation()); return; }
+        if (worldZoomControlActive() && !e.isShiftDown()) {
+            int rot = e.getWheelRotation();
+            if (rot != 0) changeWorldZoom(rot < 0 ? 1 : -1, "mouse wheel");
+            return;
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.MAP && e.isShiftDown()) {
+            mapLayerView = Math.max(0, Math.min(19, mapLayerView + e.getWheelRotation()));
+            DebugLog.audit("UI_SCROLL", "map layer=" + mapLayerView);
+            repaint();
+            return;
+        }
+        scrollActivePanel(e.getWheelRotation(), false);
+    }

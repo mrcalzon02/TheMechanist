@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: beginBuildPlacement
+// Lines: 7589-7608
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void beginBuildPlacement(BuildRecipe recipe) {
+        if (recipe == null) return;
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Build planning failed: stand inside your claimed room first."); return; }
+        String req = buildStructuralRequirementProblem(recipe);
+        if (!req.equals("OK")) { logEvent("Build unavailable: " + recipe.name + " — " + req); return; }
+        pendingBuildRecipe = recipe;
+        buildPlacementActive = true;
+        ConstructionPlacementFeedbackAuthority.invalidate();
+        Point spot = findOpenBaseSpot();
+        buildX = (spot == null ? playerX : spot.x);
+        buildY = (spot == null ? playerY : spot.y);
+        clampBuildCursorToClaimedRoom();
+        updatePendingBuildSummary();
+        if (universalWindowAuthority != null) universalWindowAuthority.open("construction", turn, "planning " + recipe.name);
+        String governanceLine = constructionGovernanceAuthority.advisoryForBuild(constructionBlueprintFor(recipe), recipe.name, "begin build placement");
+        DebugLog.audit("BUILD_PLAN", "recipe=" + recipe.name + " cursor=" + buildX + "," + buildY + " governance=" + governanceLine + " " + stateSummary());
+        logEvent("Select a tile inside this claimed room for " + recipe.name + ". Use WASD/arrows, then press E to CONFIRM BUILD.");
+        logEvent(governanceLine);
+        repaint();
+    }

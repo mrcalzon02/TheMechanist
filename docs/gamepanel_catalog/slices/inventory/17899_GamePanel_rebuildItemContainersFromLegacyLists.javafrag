@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: rebuildItemContainersFromLegacyLists
+// Lines: 17899-17915
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void rebuildItemContainersFromLegacyLists() {
+        itemInstances.clear();
+        itemContainers.clear();
+        ensureContainer(CONTAINER_PLAYER_INVENTORY, "Player carried inventory");
+        ensureContainer(CONTAINER_BASE_STORAGE, "Claimed base storage");
+        int oldNext = nextItemInstanceSeq;
+        nextItemInstanceSeq = 1;
+        for (String item : new ArrayList<String>(inventory)) {
+            ItemProvenanceRecord pr = provenanceForItem(item);
+            addItemToContainer(CONTAINER_PLAYER_INVENTORY, "Player carried inventory", item, pr == null ? ItemProvenanceRecord.unknown(item, this) : pr, new ArrayList<String>());
+        }
+        for (String item : new ArrayList<String>(baseStorage)) {
+            ItemProvenanceRecord pr = provenanceForItem(item);
+            addItemToContainer(CONTAINER_BASE_STORAGE, "Claimed base storage", item, pr == null ? ItemProvenanceRecord.unknown(item, this) : pr, new ArrayList<String>());
+        }
+        nextItemInstanceSeq = Math.max(nextItemInstanceSeq, oldNext);
+    }

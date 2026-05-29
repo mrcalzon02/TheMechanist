@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleMapTileSize
+// Lines: 19921-19927
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void cycleMapTileSize() {
+        options.mapTileSizeIndex = Math.floorMod(options.mapTileSizeIndex + 1, GameOptions.MAP_TILE_SIZE_LABELS.length);
+        options.save();
+        sounds.play("tab", options);
+        logEvent("Map tile size now " + options.mapTileSizeLabel() + " (" + options.mapTilePixelSize() + "px before GUI scale).");
+        repaint();
+    }

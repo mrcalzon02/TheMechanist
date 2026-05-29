@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: zoneFirstImpression
+// Lines: 10065-10081
+// Category: world
+// This is an examination slice, not compiled source.
+
+    String zoneFirstImpression(ZoneType z) {
+        switch(z) {
+            case NEUTRAL_CIVILIAN_FLOOR: return "The air here is stale but organized. Queue rails, hab doors, ration counters, and tired civilians form the soft machinery of sanctioned poverty. Civic Wardens eyes linger at checkpoints, not hostile, but always counting permits, packages, and faces.";
+            case GANGER_TURF: return "Painted warnings crawl across the walls. The corridors smell of cheap propellant, spoiled protein, and recently decided violence. Every door feels claimed, every shadow priced, and every stranger judged by whether they can bleed.";
+            case MUTANT_SEWER_CAMP: return "The sewer is no longer merely infrastructure. It has become habitation: hide tents, bone heaps, fungal mats, and territorial claw marks. Things shift in the wet dark with the confidence of locals who have forgotten human law.";
+            case CULTIST_SEWER_CAMP: return "The drains here have been painted with devotional filth. Candles gutter in sump niches where no sane worker would kneel. The hymns are quiet, broken, and too close to the rhythm of dripping water.";
+            case SEWER_CONDUIT: return "This is the honest underbelly of the arcology: pipe thunder, rusted ladders, black water, and maintenance labels nobody living still respects. Sound carries strangely here, then vanishes into machinery.";
+            case ARBITES_PRECINCT_EDGE: return "Authority has mass here. Blue steel doors, public counters, holding cells, and weapon ports make the architecture itself feel like a threat. Even silence sounds like paperwork being prepared against you.";
+            case MECHANICUS_FORGE_CLOISTER: return "Red utility lamps pulse over conduit shrines and machine cells. The air tastes of hot metal and old incense. Every wall implies that a machine is listening, or worse, waiting for proper authorization.";
+            case IMPERIAL_GUARD_BILLET: return "Bunks, ration crates, armory cages, and bored soldiers occupy the space with military exhaustion. Discipline is present, but so is hunger, boredom, and the hard practicality of people trained to shoot first when confused.";
+            case SECTOR_GOVERNORS_MANSION: return "The sector governor's mansion squats at the top of the stack: gold leaf, gun slots, private clerks, hidden guards, and one possible off-world ticket determined by the world seed. Pay, kill, or leave.";
+            case NOBLE_SERVICE_SPINE: return "The walls are cleaner here in the way servant corridors are clean: polished where watched, rotten where ignored. Locked pantries, service bells, and hidden security slits remind you that nobility begins above and leaks downward as danger.";
+            case ADMINISTRATUM_ARCHIVE: return "Paper, dust, stamps, counters, and cages. The room is not designed to kill you quickly, only to bury you beneath procedure until hunger performs the execution.";
+            case NEUTRAL_RAIL_DEPOT: return "The sector breathes through this place. Rail locks, cargo cages, depot clerks, and quiet guards make an uneasy peace around trade. Everyone is neutral because everyone is being watched.";
+            default: return "The zone resolves out of smoke and geometry: walls, doors, stale air, and the private misery of whatever faction has made this slice of the arcology its own.";
+        }
+    }

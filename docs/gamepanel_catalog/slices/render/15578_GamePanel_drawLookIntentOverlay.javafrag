@@ -1,0 +1,51 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawLookIntentOverlay
+// Lines: 15578-15621
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawLookIntentOverlay(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        NpcEntity npc = selectedLookNpc();
+        if (npc == null) return;
+        IntentReadResult read = intentReadFor(npc);
+        if (!read.available || read.degree < 2) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        int cx = ox + (npc.x - camX) * cellW + cellW/2;
+        int cy = oy + (npc.y - camY) * cellH + cellH/2;
+        if (read.degree >= 3) {
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.16f));
+            gg.setColor(new Color(245, 205, 90));
+            int span = Math.max(read.visionRange, read.hearingRange) + 1;
+            for (int x=Math.max(0, npc.x-span); x<=Math.min(world.w-1, npc.x+span); x++) for (int y=Math.max(0, npc.y-span); y<=Math.min(world.h-1, npc.y+span); y++) {
+                if (x < camX || y < camY || x >= camX + cols || y >= camY + rows) continue;
+                if (npcVisionContains(npc, x, y, read) && hasLineOfSight(npc.x, npc.y, x, y)) {
+                    gg.fillRect(ox + (x-camX)*cellW + 2, oy + (y-camY)*cellH + 2, Math.max(2, cellW-4), Math.max(2, cellH-4));
+                }
+            }
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.55f));
+            gg.setColor(new Color(115, 190, 230));
+            int rx = read.hearingRange * cellW;
+            int ry = read.hearingRange * cellH;
+            gg.drawOval(cx-rx, cy-ry, rx*2, ry*2);
+        }
+        if (read.degree >= 2 && (read.projectedX != npc.x || read.projectedY != npc.y)) {
+            int tx = ox + (read.projectedX - camX) * cellW + cellW/2;
+            int ty = oy + (read.projectedY - camY) * cellH + cellH/2;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
+            gg.setColor(new Color(200, 230, 180));
+            gg.drawLine(cx, cy, tx, ty);
+            gg.drawRect(tx-cellW/4, ty-cellH/4, Math.max(3, cellW/2), Math.max(3, cellH/2));
+        }
+        if (read.attackLine) {
+            Stroke old = gg.getStroke();
+            gg.setStroke(new BasicStroke(Math.max(1.0f, cellW/14.0f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f, new float[]{6.0f, 5.0f}, 0.0f));
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.82f));
+            gg.setColor(new Color(245, 85, 70));
+            int px = ox + (playerX - camX) * cellW + cellW/2;
+            int py = oy + (playerY - camY) * cellH + cellH/2;
+            gg.drawLine(cx, cy, px, py);
+            gg.setStroke(old);
+        }
+        gg.dispose();
+    }

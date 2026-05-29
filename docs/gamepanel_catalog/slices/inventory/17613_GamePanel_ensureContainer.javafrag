@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: ensureContainer
+// Lines: 17613-17621
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ContainerRecord ensureContainer(String id, String label) {
+        String safeId = (id == null || id.isBlank()) ? "unknown.container" : id;
+        ContainerRecord c = itemContainers.get(safeId);
+        if (c == null) {
+            c = new ContainerRecord(safeId, label == null || label.isBlank() ? safeId : label);
+            itemContainers.put(safeId, c);
+        }
+        return c;
+    }

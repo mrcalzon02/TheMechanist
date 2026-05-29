@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionInfopediaLines
+// Lines: 13760-13772
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> factionInfopediaLines(Faction f, String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Faction reference");
+        lines.add("Standing: " + (f==null?0:factionStanding.getOrDefault(f,0)) + "   Hostility timer: " + (f==null?0:temporaryHostileTurns.getOrDefault(f,0)));
+        lines.add("Specific designation: " + entry + ".");
+        lines.add("Role: " + factionRoleText(f));
+        lines.add("Typical presence: " + factionPresenceText(f));
+        lines.add("Trade/production bias: " + factionTradeBiasText(f));
+        lines.add("Local distinction: " + factionSpecificNote(f, entry));
+        lines.addAll(EconomicTopologyFramework.factionDoctrineLines(f));
+        lines.add("Disguise note: true affiliation bypasses checks against that same faction; clothing still matters with outsiders.");
+        return lines;
+    }

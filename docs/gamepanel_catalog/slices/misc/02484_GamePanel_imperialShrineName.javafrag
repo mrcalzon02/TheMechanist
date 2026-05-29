@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: imperialShrineName
+// Lines: 2484-2487
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String imperialShrineName(int x, int y) {
+        String[] names = {"Saint Drusus of the Worn Gate", "Saint Sabbat of the Red Road", "Saint Vidicus of the Iron Ledger", "Saint Lucia of the Last Lamp", "Saint Gelt of the Unpaid Tithe"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 31 + y * 17, names.length)];
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openSimulationEditorSuite
+// Lines: 10570-10575
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openSimulationEditorSuite() {
+        inGameEditorStatus = "Editor opened inside the main game surface; no external JFrame/Dialog was launched.";
+        DebugLog.audit("INGAME_SIMULATION_EDITOR", "opened " + inGameEditorRepository.auditLine());
+        setScreen(Screen.EDITOR);
+        repaint();
+    }

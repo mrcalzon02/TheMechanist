@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerMedicalStatusLine
+// Lines: 19254-19267
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String playerMedicalStatusLine() {
+        ArrayList<String> bits = new ArrayList<>();
+        if (bleeding > 0) bits.add(bleeding >= 3 ? "serious bleeding" : "minor bleeding");
+        if (infectionRisk > 0) bits.add(infectionRisk >= 5 ? "high infection risk" : "infection risk");
+        if (pain > 0) bits.add(pain >= 12 ? "severe pain" : (pain >= 6 ? "pain affecting focus" : "manageable pain"));
+        if (fatigue >= 20) bits.add("near collapse from fatigue");
+        else if (fatigue >= 10) bits.add("tired");
+        if (sleepNeed >= MAX_SLEEP_NEED) bits.add("dangerous sleep debt");
+        else if (sleepNeed >= MAX_SLEEP_NEED / 2) bits.add("mounting sleep debt");
+        if (wounds >= 12) bits.add("heavy wounds");
+        else if (wounds > 0) bits.add("wounded");
+        if (bits.isEmpty()) return "stable enough for ordinary action.";
+        return String.join(", ", bits) + ".";
+    }

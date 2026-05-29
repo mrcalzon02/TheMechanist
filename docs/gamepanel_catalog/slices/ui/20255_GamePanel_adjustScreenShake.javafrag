@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: adjustScreenShake
+// Lines: 20255-20260
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void adjustScreenShake(int delta) {
+        options.screenShakePercent = Math.max(0, Math.min(100, options.screenShakePercent + delta));
+        options.save();
+        logEvent("Screen shake intensity now " + options.screenShakePercent + "%.");
+        repaint();
+    }

@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openConstructionValidationInfopedia
+// Lines: 7578-7587
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openConstructionValidationInfopedia() {
+        String[] tabs = infopediaTabs();
+        for (int i=0; i<tabs.length; i++) if ("AUDITS".equals(tabs[i])) { infopediaTab = i; break; }
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        int idx = entries.indexOf("Construction Validation Inspection");
+        infopediaSelected = Math.max(0, idx);
+        infopediaScroll = Math.max(0, infopediaSelected - 2);
+        infopediaDetailScroll = 0;
+        openPanel(PanelMode.INFOPEDIA);
+    }

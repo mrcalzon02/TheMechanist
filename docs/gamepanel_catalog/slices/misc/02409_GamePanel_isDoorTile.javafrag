@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isDoorTile
+// Lines: 2409-2412
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        if (obj == null && isDoorTile(ch)) {
+            int diff = (ch=='/'?0:(ch=='|'?8:(ch=='L'?14:(ch=='V'?16:22))));
+            pendingInteractionSummary = "Door access: " + target + ". Time: " + turns + " turn(s). Difficulty estimate " + diff + ". " + doorPreflightHint(ch);
+        } else if (obj != null && obj.symbol == 'c') {

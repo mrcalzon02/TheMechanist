@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bankProfileFromNearbyBankObject
+// Lines: 9323-9330
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BankProfile bankProfileFromNearbyBankObject(int tx, int ty) {
+        MapObjectState best = null; int bd = 9999;
+        if (world != null) for (MapObjectState m : world.mapObjects) if (m != null && ("bank-terminal".equals(m.type) || "bank-vault".equals(m.type) || "bank-alarm-panel".equals(m.type))) {
+            int d = Math.abs(m.x - tx) + Math.abs(m.y - ty);
+            if (d < bd) { bd = d; best = m; }
+        }
+        return best == null ? BankProfile.ALL[0] : bankProfileFromStock(best.stockState);
+    }

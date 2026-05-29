@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cargoNetworkCapacity
+// Lines: 18685-18689
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int cargoNetworkCapacity() {
+        int cap = 0;
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'k' || obj.symbol == 'q' || obj.symbol == 'G') cap += Math.max(0, obj.capacity);
+        return cap;
+    }

@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditLoadingWatchdog
+// Lines: 21156-21178
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void auditLoadingWatchdog() {
+        long now = System.currentTimeMillis();
+        long sinceStart = now - loadingStartMillis;
+        long sincePulse = now - lastLoadingPulseMillis;
+        if (loadingStep == 0 && sinceStart > 1200L && !loadingWatchdogReported) {
+            loadingWatchdogReported = true;
+            loadingWatchdogRepeats++;
+            DebugLog.warn("LOADING_WATCHDOG_ZERO", "Loader remained at step zero for " + sinceStart + "ms. Forcing an audited progress tick. status=" + loadingStatus + " detail=" + loadingDetail);
+            loadingStatus = "Watchdog forced loader heartbeat.";
+            loadingDetail = "The loader had not advanced from step zero; an audited progress tick was forced so the UI cannot silently stall.";
+            try { progressLoading(); } catch (Throwable t) { DebugLog.error("LOADING_WATCHDOG_FORCE_FAILED", "Forced loading heartbeat failed.", t); }
+        } else if (loadingFinalizationRunning && now - loadingFinalizationStartMillis > 3000L && sincePulse > 2200L) {
+            loadingWatchdogRepeats++;
+            DebugLog.warn("LOADING_FINALIZER_WATCHDOG", "Background finalizer still running kind=" + loadingFinalizationKind + " elapsedMs=" + (now - loadingFinalizationStartMillis) + " step=" + loadingStep + " progress=" + loadingProgress + " repeat=" + loadingWatchdogRepeats);
+            loadingStatus = "Still finalizing " + loadingFinalizationKind + "...";
+            loadingDetail = "The background finalizer is alive. If this repeats for too long, diagnostic details will show the stuck phase rather than silently freezing.";
+            lastLoadingPulseMillis = now;
+        } else if (sincePulse > 2200L && sinceStart > 2200L && loadingProgress < 100) {
+            loadingWatchdogRepeats++;
+            DebugLog.warn("LOADING_WATCHDOG_STALL", "Loader pulse stale for " + sincePulse + "ms at step=" + loadingStep + " progress=" + loadingProgress + ". repeat=" + loadingWatchdogRepeats);
+            lastLoadingPulseMillis = now;
+        }
+    }

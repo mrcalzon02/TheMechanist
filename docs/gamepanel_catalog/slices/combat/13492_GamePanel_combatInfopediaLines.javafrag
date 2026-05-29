@@ -1,0 +1,43 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: combatInfopediaLines
+// Lines: 13492-13527
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> combatInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Combat Command":
+                lines.add("Attack command reference");
+                lines.add("Use the COMBAT button or F hotkey to attack an adjacent hostile using carried/equipped weapon logic or bare hands.");
+                lines.add("Each attack spends action time and reports hit, miss, armor soak, wounds, and incapacitation through RECENT ACTIONS.");
+                break;
+            case "Hit Chance and Defense":
+                lines.add("Accuracy and defense reference");
+                lines.add("Hit chance compares attack skill, weapon suitability, target defense/agility, and situational cover logic.");
+                lines.add("Failed attacks still produce explicit feedback so the player knows whether the problem was range, target state, weapon, or chance.");
+                break;
+            case "Damage and Armor":
+                lines.add("Damage resolution reference");
+                lines.add("Weapon or base attack damage is reduced by armor before body damage is applied to a rolled location.");
+                lines.add("Armor therefore changes expected injury, not just whether an enemy is allowed to exist after being clicked.");
+                break;
+            case "Targeted Attacks":
+                lines.add("Targeting system reference");
+                lines.add("Reserved targeting should trade hit chance for tactical reward: disarming arms, slowing legs, stunning heads, or damaging torso stability.");
+                lines.add("This entry is intentionally distinct from default attacks, which currently roll a random body location for speed and danger.");
+                break;
+            case "Body Injuries and Incapacitation":
+                lines.add("Combat injury reference");
+                lines.add("Damaged legs slow movement, damaged arms and hands penalize weapon/tool use, and severe body or head damage risks incapacitation.");
+                lines.add("Current body pressure: crippled legs " + crippledLegCount() + ", crippled arms/hands " + crippledArmCount() + ", wounds " + wounds + ".");
+                break;
+            default:
+                lines.add("Hostile intent bark reference");
+                lines.add("Enemies that see or hear the player can announce intent in the action feed before or as combat begins.");
+                lines.add("Purpose: make danger readable without granting perfect tactical information through the map display.");
+                break;
+        }
+        return lines;
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: fireModeAmmoCost
+// Lines: 4193-4198
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int fireModeAmmoCost(String weapon) {
+        if (!ItemCatalog.isFirearmLike(weapon)) return 0;
+        String fm = fireModeLabel();
+        if ("BURST".equals(fm)) return Math.min(3, Math.max(1, magazineCapacityForWeapon(weapon)));
+        return 1;
+    }

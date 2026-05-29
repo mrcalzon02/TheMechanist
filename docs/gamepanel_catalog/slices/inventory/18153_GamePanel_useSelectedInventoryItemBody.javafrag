@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: useSelectedInventoryItemBody
+// Lines: 18153-18167
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void useSelectedInventoryItemBody() {
+        String item = selectedCarriedInventoryActionItem();
+        if (item == null) { logEvent("Inventory empty. Nothing to use."); return; }
+        String low = item.toLowerCase(Locale.ROOT);
+        if (item.equals("Food reserve") && food > 0) { logEvent("Food reserve already internalized. Use carried ration items to restore reserves later."); return; }
+        if (item.equals("Water reserve") && water > 0) { logEvent("Water reserve already internalized. Use canteens/water ration items to restore reserves later."); return; }
+        if (low.contains("coffee") || low.contains("stim") || low.contains("narcotic")) { consumeWakefulnessItem(item); return; }
+        if (isMedicalUseItem(low)) { useUtilityInventoryItem(item); return; }
+        if (PortableLightProfile.isLightItem(item)) { usePortableLightItem(item); return; }
+        if (low.contains("ration") || low.contains("canteen") || low.contains("water") || low.contains("food")) { consumeSpecificInventoryItem(item); return; }
+        if (equipInventoryItemToPaperDoll(item)) return;
+        if (item.equals("Construction supplies") && supplies > 0) { logEvent("Construction supplies are already pooled for BUILD/WORKBENCH actions. Current supplies=" + supplies + "."); return; }
+        if (low.contains("construction supplies")) { int idx = inventory.indexOf(item); if (idx >= 0) { removeInventoryItem(item); supplies++; logEvent("Packed " + item + " into construction supplies pool. Supplies now " + supplies + "."); advanceTurn("sorts construction supplies"); repaint(); return; } }
+        useUtilityInventoryItem(item);
+    }

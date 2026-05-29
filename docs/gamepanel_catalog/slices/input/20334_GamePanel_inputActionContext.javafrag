@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inputActionContext
+// Lines: 20334-20349
+// Category: input
+// This is an examination slice, not compiled source.
+
+    String inputActionContext(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "movement, targeting, lists";
+            case CONFIRM: return "menus, targeting, planning";
+            case CANCEL: return "global recovery";
+            case WAIT: return "game surface";
+            case INTERACT: return "game surface and interact panel";
+            case EXAMINE: return "Look panel";
+            case INVENTORY: case CHARACTER: case BUILD: case SENSES: case LOOK: case MAP: return "game surface";
+            case PLAN_MOVE: return "game surface movement planning";
+            case PAUSE: return "global menu";
+            case ZOOM_IN: case ZOOM_OUT: return "map and viewport";
+            case ATTACK: case RELOAD: return "combat";
+            default: return "general";
+        }
+    }

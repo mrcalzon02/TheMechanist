@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cancelManualMovementPlan
+// Lines: 15215-15219
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cancelManualMovementPlan(String reason) {
+        clearMouseMovementPreview(reason);
+        logEvent("Movement target planning cancelled.");
+        repaint();
+    }

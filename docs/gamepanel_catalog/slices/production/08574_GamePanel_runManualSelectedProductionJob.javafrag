@@ -1,0 +1,43 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: runManualSelectedProductionJob
+// Lines: 8574-8609
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void runManualSelectedProductionJob() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Manual operation failed: stand inside the claimed base room."); return; }
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Manual operation failed: no machine or apparatus selected."); return; }
+        if (machine.assignedRecipe == null || machine.assignedRecipe.isBlank()) { logEvent("Manual operation failed: selected machine has no assigned recipe/job."); return; }
+        if (ControlledProductionJobAuthority.isGeneratedAssignment(machine.assignedRecipe)) {
+            FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(machine.assignedRecipe);
+            if (v == null) { logEvent("Manual operation failed: assigned generated job is no longer available."); return; }
+            if (machine.productionQueueRemaining <= 0) { logEvent("Manual operation blocked: assigned generated job queue is complete. Use QUEUE + or reassign the job to schedule more runs."); return; }
+            String problem = ControlledProductionJobAuthority.operationProblem(this, machine, v, true);
+            if (problem != null) { logEvent("Manual operation blocked: " + problem); DebugLog.audit("MANUAL_GENERATED_BLOCKED", "machine=" + machine.name + " job=" + v.outputName + " reason=" + problem + " state=" + stateSummary()); return; }
+            runGeneratedProductionJob(machine, v, true);
+            return;
+        }
+        CraftingRecipe r = CraftingRecipe.byName(machine.assignedRecipe);
+        if (r == null) { logEvent("Manual operation failed: assigned recipe is no longer registered."); return; }
+        String problem = r.blockingProblemForMachine(this, machine);
+        if (problem != null) { logEvent("Manual operation blocked: " + problem); return; }
+        String q = cappedProductionQuality(machine, r.requiredKnowledge);
+        Faction pf = productionFactionFor(machine, r.faction);
+        ProductionRecipe pr = ProductionRecipe.create(r.outputBaseItem, pf, q, r.requiredKnowledge, machine.name);
+        r.consumeInputs(this);
+        int count = Math.max(1, r.outputCount + Math.max(0, pr.outputCharges()/5));
+        for (int i=0;i<count;i++) addBaseStorageItem(pr.outputItemName(), ItemProvenanceRecord.produced(pr, machine, world, turn, active == null ? "player manual operation" : active.name + " manual operation"));
+        machine.charges = Math.min(Math.max(1, machine.capacity), machine.charges + 1);
+        machine.integrity = Math.max(1, machine.integrity - Math.max(0, r.machineWear));
+        int turnsNeeded = ControlledProductionJobAuthority.manualTurnCost(this, machine, r);
+        fatigue = Math.min(20, fatigue + ControlledProductionJobAuthority.manualFatigueCost(this, machine, r));
+        runCrafted += count;
+        gainXp(r.xpSkill, Math.max(1, r.xpGain), "manual machine operation");
+        reportProductionCeiling(machine, pr);
+        ProductionQueueRecordBridge.recordManualRecipeCompletion(this, machine, r, turnsNeeded, count);
+        logEvent("MANUAL PRODUCTION: " + count + "x " + pr.outputItemName() + " produced into base storage by operating " + machine.name + " for " + turnsNeeded + " turns.");
+        DebugLog.audit("MANUAL_RECIPE_PRODUCTION", "machine=" + machine.name + " recipe=" + r.name + " output=" + pr.outputItemName() + " count=" + count + " turns=" + turnsNeeded + " state=" + stateSummary());
+        for (int i=0;i<turnsNeeded;i++) advanceTurn("operates " + machine.name + " manually.");
+    }

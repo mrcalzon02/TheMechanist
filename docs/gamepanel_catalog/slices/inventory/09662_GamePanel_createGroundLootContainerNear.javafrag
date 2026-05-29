@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: createGroundLootContainerNear
+// Lines: 9662-9679
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    int createGroundLootContainerNear(NpcEntity target, String corpseId, java.util.List<String> groundItems, String cause) {
+        if (world == null || target == null || groundItems == null || groundItems.isEmpty()) return 0;
+        Point p = nearestLootGroundTile(target.x, target.y);
+        if (p == null) {
+            addLootListToContainer(corpseLootContainerId(corpseId), "Corpse loot: " + target.name, groundItems, target.faction, "ground near body of " + target.name, "ground drops after " + cause, "folded into corpse marker because no clear tile existed");
+            return 0;
+        }
+        String groundId = "GROUND-LOOT-" + ContainerIdentityApi.safeToken(corpseId) + "-" + Math.abs(Objects.hash(p.x, p.y, turn));
+        String gcid = "container.ground." + ContainerIdentityApi.safeToken(groundId);
+        ensureContainer(gcid, "Ground loot: " + target.name);
+        addLootListToContainer(gcid, "Ground loot: " + target.name, groundItems, target.faction, "ground near body of " + target.name, "ground drops after " + cause, "persistent ground loot container");
+        MapObjectState gm = new MapObjectState();
+        gm.x = p.x; gm.y = p.y; gm.glyph = 'o'; gm.type = "ground-loot"; gm.id = groundId;
+        gm.label = "Ground loot from " + target.name + " / " + (world.zoneType == null ? "Unknown zone" : world.zoneType.label);
+        gm.stockState = gcid;
+        world.mapObjects.add(gm);
+        return groundItems.size();
+    }

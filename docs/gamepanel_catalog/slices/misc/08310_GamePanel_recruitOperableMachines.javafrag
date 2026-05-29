@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recruitOperableMachines
+// Lines: 8310-8315
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<BaseObject> recruitOperableMachines() {
+        ArrayList<BaseObject> out = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'w' || obj.symbol == 'e' || obj.symbol == 'f' || obj.symbol == 'l' || obj.symbol == 'x' || obj.symbol == 'L') out.add(obj);
+        selectedWorkerMachineIndex = Math.max(0, Math.min(selectedWorkerMachineIndex, Math.max(0, out.size()-1)));
+        return out;
+    }

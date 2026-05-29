@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recordPlayerNewsEvent
+// Lines: 6916-6922
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void recordPlayerNewsEvent(String category, String subject, Faction faction, String detail, int severity) {
+        PlayerNewsEvent ev = PlayerNewsEvent.create(turn, currentInnDay(), category, subject, faction, world == null ? "unknown zone" : world.zoneType.label, detail, severity, seed);
+        playerNewsEvents.add(ev);
+        while (playerNewsEvents.size() > 40) playerNewsEvents.remove(0);
+        lastPlayerNewsReport = ev.shortLine();
+        DebugLog.audit("PLAYER_NEWS_EVENT", ev.saveLine() + " state=" + stateSummary());
+    }

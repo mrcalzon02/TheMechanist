@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: carryCapacity
+// Lines: 9793-9799
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int carryCapacity() {
+        if (worldSetup != null && worldSetup.hoarderMode) return 999999;
+        if (active == null) return 12;
+        int strength = active.stats.getOrDefault("Strength", 5);
+        int endurance = active.stats.getOrDefault("Endurance", 5);
+        return 6 + strength * 2 + endurance / 2;
+    }

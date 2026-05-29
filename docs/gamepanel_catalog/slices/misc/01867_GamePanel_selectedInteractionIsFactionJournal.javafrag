@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedInteractionIsFactionJournal
+// Lines: 1867-1867
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean selectedInteractionIsFactionJournal() { return isFactionJournalObjectAt(lookX, lookY); }

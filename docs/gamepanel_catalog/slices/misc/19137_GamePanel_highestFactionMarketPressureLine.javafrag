@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: highestFactionMarketPressureLine
+// Lines: 19137-19143
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String highestFactionMarketPressureLine() {
+        Faction f = highestFactionMarketPressureFaction();
+        int v = f == Faction.NONE ? 0 : factionMarketPressure.getOrDefault(f, 0);
+        if (v <= 0) return "no focused faction resentment yet";
+        String stage = v < 20 ? "watching" : (v < 40 ? "irritated" : (v < 70 ? "hostile planning" : "openly preparing violence"));
+        return f.label + " " + stage + " (" + v + ")";
+    }

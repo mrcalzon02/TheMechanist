@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: introCrawlCharMillisForTarget
+// Lines: 12156-12167
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    long introCrawlCharMillisForTarget(ArrayList<String> wrapped, long leadInMs, long blankMs, long linePauseMs, long targetMs) {
+        long fixedMs = leadInMs;
+        long characterCount = 0L;
+        for (String line : wrapped) {
+            fixedMs += linePauseMs;
+            if (line.isEmpty()) fixedMs += blankMs;
+            else characterCount += Math.max(1, line.length());
+        }
+        if (characterCount <= 0L) return 55L;
+        long budget = Math.max(characterCount, targetMs - fixedMs);
+        return Math.max(34L, Math.min(96L, Math.round(budget / (double)characterCount)));
+    }

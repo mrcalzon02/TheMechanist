@@ -1,0 +1,56 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: rebuildInGameEditorButtons
+// Lines: 11136-11184
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void rebuildInGameEditorButtons() {
+        Rectangle outer = inGameEditorOuterRect();
+        Rectangle tabs = inGameEditorTabRect();
+        Rectangle left = inGameEditorLeftRect();
+        Rectangle right = inGameEditorRightRect();
+        int gap = Math.max(5, scaled(5));
+        java.util.List<String> names = inGameEditorNames();
+        int tabW = Math.max(84, (tabs.width - gap * Math.max(0, names.size()-1)) / Math.max(1, names.size()));
+        for (int i=0;i<names.size();i++) {
+            final int idx = i;
+            String label = (i == inGameEditorTabIndex ? "▶ " : "") + names.get(i).replace(" Editor", "").toUpperCase(Locale.ROOT);
+            buttons.add(new ButtonBox(label, tabs.x + i*(tabW+gap), tabs.y, tabW, tabs.height, "Switch to " + names.get(i) + ".", () -> selectInGameEditorTab(idx)));
+        }
+        buttons.add(new ButtonBox("BACK", outer.x + 18, outer.y + 14, 110, 30, "Return to Mods / Tools.", () -> setScreen(Screen.MODS)));
+        buttons.add(new ButtonBox("NEW " + inGameEditorName().replace(" Editor", "").toUpperCase(Locale.ROOT), left.x + 12, left.y + 36, left.width - 24, 28, "Create a fresh blank entry for the active editor.", this::createNewInGameEditorEntry));
+        java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorEntities();
+        int rowH = Math.max(24, Math.min(30, (left.height - 92) / Math.max(4, Math.min(10, Math.max(1, entities.size())))));
+        int listY = left.y + 76;
+        int visible = Math.max(1, Math.min(10, (left.y + left.height - listY - 12) / Math.max(1, rowH)));
+        for (int i=0;i<Math.min(visible, entities.size());i++) {
+            final int idx = i;
+            String label = (i == inGameEditorEntityIndex ? "▶ " : "") + entities.get(i).name();
+            buttons.add(new ButtonBox(label, left.x + 12, listY + i*rowH, left.width - 24, rowH - 3, "Select editor record " + entities.get(i).id() + ".", () -> selectInGameEditorEntity(idx)));
+        }
+        int cmdX = right.x + 12;
+        int cmdW = right.width - 24;
+        int y = right.y + right.height - 112;
+        int bw = Math.max(86, (cmdW - gap) / 2);
+        buttons.add(new ButtonBox("UNDO", cmdX, y, bw, 26, "Undo the last editor command.", this::inGameEditorUndo));
+        buttons.add(new ButtonBox("REDO", cmdX + bw + gap, y, bw, 26, "Redo the last editor command.", this::inGameEditorRedo));
+        y += 32;
+        buttons.add(new ButtonBox("HELP " + (inGameEditorHelpVisible ? "ON" : "OFF"), cmdX, y, cmdW, 26, "Show or hide the editor explanation banner.", () -> { inGameEditorHelpVisible = !inGameEditorHelpVisible; repaint(); }));
+        if ("Room Editor".equals(inGameEditorName())) {
+            String[][] p = inGameEditorPalettes();
+            int py = right.y + 38;
+            int catH = 24;
+            for (int i=0;i<p.length;i++) {
+                final int idx = i;
+                buttons.add(new ButtonBox((i == inGameEditorPaletteTab ? "▶ " : "") + p[i][0], cmdX, py + i*(catH+3), cmdW, catH, "Choose room-editor palette category " + p[i][0] + ".", () -> selectInGameEditorPaletteTab(idx)));
+            }
+            int itemY = py + p.length*(catH+3) + 10;
+            int itemH = 23;
+            String[] active = p[Math.max(0, Math.min(p.length-1, inGameEditorPaletteTab))];
+            for (int i=1; i<active.length && i<=8; i++) {
+                final int idx = i - 1;
+                buttons.add(new ButtonBox((idx == inGameEditorPaletteIndex ? "▶ " : "") + active[i], cmdX, itemY + idx*(itemH+3), cmdW, itemH, "Select palette item; left-click grid to place, right-click to erase.", () -> selectInGameEditorPaletteItem(idx)));
+            }
+        }
+    }

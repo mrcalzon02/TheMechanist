@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: settlePlayerMotionAfterNoMoveTurn
+// Lines: 3312-3320
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void settlePlayerMotionAfterNoMoveTurn(String source) {
+        if (activeMotionStateIndex != MOTION_STATIONARY) {
+            String old = activeMotionStateLabel();
+            activeMotionStateIndex = MOTION_STATIONARY;
+            logEvent("MOTION SETTLED: after a no-move turn you are now stationary. Former motion state " + old + " no longer penalizes aim or senses.");
+            DebugLog.audit("MOTION_SETTLED", "source=" + source + " old=" + old + " turn=" + turn);
+            updateSensoryModel("motion settled");
+        }
+    }

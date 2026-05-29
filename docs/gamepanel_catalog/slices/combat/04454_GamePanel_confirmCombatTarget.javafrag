@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: confirmCombatTarget
+// Lines: 4454-4461
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    void confirmCombatTarget() {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new ConfirmCombatCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, combatX, combatY));
+            repaint();
+            return;
+        }
+        confirmCombatTargetBody();
+    }

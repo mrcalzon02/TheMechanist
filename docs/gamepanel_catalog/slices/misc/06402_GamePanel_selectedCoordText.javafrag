@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedCoordText
+// Lines: 6402-6402
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String selectedCoordText() { return SelectedContextSurfaceApi.selectedCoordText(lookCursorActive, lookX, lookY, playerX, playerY); }

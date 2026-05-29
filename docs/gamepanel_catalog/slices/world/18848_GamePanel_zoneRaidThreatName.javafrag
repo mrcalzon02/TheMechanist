@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: zoneRaidThreatName
+// Lines: 18848-18869
+// Category: world
+// This is an examination slice, not compiled source.
+
+    String zoneRaidThreatName() {
+        if (world == null || world.zoneType == null) return "local opportunists";
+        switch (world.zoneType) {
+            case ARBITES_PRECINCT_EDGE:
+            case ADMINISTRATUM_ARCHIVE:
+            case NEUTRAL_CIVILIAN_FLOOR:
+            case NOBLE_SERVICE_SPINE:
+            case NEUTRAL_RAIL_DEPOT:
+                return "Adeptus Civic Wardens enforcement team";
+            case GANGER_TURF:
+            case SUMP_MARKET:
+            case TRASH_WARREN:
+                return "local ganger crew";
+            case MUTANT_WARRENS:
+            case MUTANT_SEWER_CAMP:
+                return "mutant raiding pack";
+            case CULTIST_SEWER_CAMP:
+                return "cultist assault cell";
+            default:
+                return gangHeat > suspicion ? "local ganger crew" : "Adeptus Civic Wardens inspection team";
+        }
+    }

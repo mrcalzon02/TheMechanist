@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawGuiChrome
+// Lines: 10372-10379
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawGuiChrome(Graphics2D g) {
+        int w = getWidth(), h = getHeight();
+        // GUI AUTHORITY PASS 0.8.7:
+        // Only the root game window owns the cogitator_frame_0536 outer frame.
+        // Sub-panels must draw their own inner bezel only when they actually exist,
+        // preventing persistent stacked chrome from accumulating behind menus.
+        drawSlicedFrame(g, 14, 14, w-28, h-28, "outer");
+    }

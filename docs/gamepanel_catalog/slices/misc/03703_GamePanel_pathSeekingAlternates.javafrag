@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: pathSeekingAlternates
+// Lines: 3703-3712
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        for (int[] alt : pathSeekingAlternates(dx, dy)) {
+            int ax = alt[0], ay = alt[1];
+            if (ax == 0 && ay == 0) continue;
+            int nx = playerX + ax, ny = playerY + ay;
+            if (!stepIsClearForPath(nx, ny)) continue;
+            DebugLog.audit("MOVE_PATH_SEEK", "requested=" + dx + "," + dy + " detour=" + ax + "," + ay + " from=" + playerX + "," + playerY + " to=" + nx + "," + ny + " mode=" + movementModeLabel() + " turn=" + turn);
+            movePlayerInto(nx, ny, movementModeLabel().toLowerCase(Locale.ROOT) + " detours to " + nx + "," + ny + " around a blocked direct path.");
+            checkTrapAfterPlayerMove(nx, ny);
+            return true;
+        }

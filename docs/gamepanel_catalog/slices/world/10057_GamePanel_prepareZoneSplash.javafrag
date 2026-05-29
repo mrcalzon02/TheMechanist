@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: prepareZoneSplash
+// Lines: 10057-10063
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void prepareZoneSplash(String reason) {
+        if (world == null) return;
+        zoneSplashTitle = "FIRST IMPRESSION: " + world.zoneType.label.toUpperCase(Locale.ROOT);
+        zoneSplashMeta = "Sector " + atlas.sectorX + "," + atlas.sectorY + " // Zone " + atlas.zoneX + "," + atlas.zoneY + " // Floor " + atlas.floor + (atlas.sewer ? "B Sewer Layer" : "") + " // " + reason;
+        zoneSplashBody = zoneFirstImpression(world.zoneType);
+        DebugLog.audit("ZONE_SPLASH", zoneSplashTitle + " meta=" + zoneSplashMeta);
+    }

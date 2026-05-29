@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: firstCarriedExplosiveItem
+// Lines: 4234-4237
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String firstCarriedExplosiveItem() {
+        for (String item : inventory) if (ExplosiveProfile.isExplosive(item)) return item;
+        return "";
+    }

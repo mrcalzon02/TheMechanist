@@ -1,0 +1,35 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawPlayerActionCountdownOverlay
+// Lines: 15929-15956
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawPlayerActionCountdownOverlay(Graphics2D g, int px, int py, int w, int h) {
+        if (singlePlayerSectorBridge == null || !singlePlayerSectorBridge.localPlayerActionGated()) return;
+        String overlay = singlePlayerSectorBridge.activeActionCountdownOverlay();
+        if (overlay == null || overlay.isBlank()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        try {
+            int bubbleH = Math.max(16, Math.min(28, h / 2 + 8));
+            int bubbleW = Math.max(w, Math.min(w + 34, overlay.length() * Math.max(7, bubbleH / 2)));
+            int bx = px + w / 2 - bubbleW / 2;
+            int by = py - Math.max(10, bubbleH / 2);
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.88f));
+            gg.setColor(new Color(8, 12, 10, 224));
+            gg.fillRoundRect(bx, by, bubbleW, bubbleH, 10, 10);
+            gg.setComposite(AlphaComposite.SrcOver);
+            gg.setColor(new Color(255, 235, 160));
+            gg.drawRoundRect(bx, by, bubbleW, bubbleH, 10, 10);
+            Font oldFont = gg.getFont();
+            int size = Math.max(12, Math.min(20, bubbleH - 5));
+            gg.setFont(new Font("SansSerif", Font.BOLD, size));
+            FontMetrics fm = gg.getFontMetrics();
+            int tx = bx + Math.max(3, (bubbleW - fm.stringWidth(overlay)) / 2);
+            int ty = by + ((bubbleH - fm.getHeight()) / 2) + fm.getAscent();
+            gg.drawString(overlay, tx, ty);
+            gg.setFont(oldFont);
+        } finally {
+            gg.dispose();
+        }
+    }

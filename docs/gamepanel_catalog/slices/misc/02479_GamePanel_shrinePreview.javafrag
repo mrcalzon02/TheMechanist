@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: shrinePreview
+// Lines: 2479-2482
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String shrinePreview(char ch, int x, int y) {
+        if (ch == 'I') return "Concord shrine: " + imperialShrineName(x,y) + ". A legal devotional fixture for brief prayer and composure.";
+        return "Heretical shrine: " + chaosShrineName(x,y) + ". Illegal, dangerous, and probably listening.";
+    }

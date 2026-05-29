@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: totalBodyDamagePercent
+// Lines: 2823-2828
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    double totalBodyDamagePercent() {
+        if (active == null || active.body == null || active.body.isEmpty()) return wounds;
+        double lost = 0, max = 0;
+        for (BodyPart bp : active.body.values()) { lost += Math.max(0, bp.maxHealth() - bp.currentHealth()); max += Math.max(1, bp.maxHealth()); }
+        return max <= 0 ? 0 : (lost / max) * 100.0;
+    }

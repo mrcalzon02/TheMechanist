@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditItemLedgers
+// Lines: 17784-17787
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void auditItemLedgers(String context) {
+        lastItemLedgerAuditReport = ItemLedgerAuthority.audit(this, context);
+        DebugLog.audit("ITEM_LEDGER_AUTHORITY", lastItemLedgerAuditReport + " state=" + stateSummary());
+    }

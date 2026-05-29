@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bodyPartForLocation
+// Lines: 5121-5134
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BodyPart bodyPartForLocation(String location) {
+        if (active == null || active.body == null || active.body.isEmpty() || location == null) return null;
+        String loc = location.toLowerCase(Locale.ROOT);
+        if (loc.contains("head")) return active.body.get("Head");
+        if (loc.contains("torso") || loc.contains("mass") || loc.contains("breath")) return active.body.get("Torso");
+        if (loc.contains("hip")) return active.body.get("Hips");
+        if (loc.contains("left arm")) return firstExistingPart("L Upper Arm", "L Lower Arm", "L Hand");
+        if (loc.contains("right arm")) return firstExistingPart("R Upper Arm", "R Lower Arm", "R Hand");
+        if (loc.contains("arm") || loc.contains("hand")) return rng.nextBoolean() ? firstExistingPart("L Upper Arm", "L Lower Arm", "L Hand") : firstExistingPart("R Upper Arm", "R Lower Arm", "R Hand");
+        if (loc.contains("left leg")) return firstExistingPart("L Upper Leg", "L Lower Leg", "L Foot");
+        if (loc.contains("right leg")) return firstExistingPart("R Upper Leg", "R Lower Leg", "R Foot");
+        if (loc.contains("leg") || loc.contains("knee")) return rng.nextBoolean() ? firstExistingPart("L Upper Leg", "L Lower Leg", "L Foot") : firstExistingPart("R Upper Leg", "R Lower Leg", "R Foot");
+        return null;
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: knowledgeModalRect
+// Lines: 12208-12213
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle knowledgeModalRect() {
+        int W = getWidth(), H = getHeight();
+        int mx = Math.max(34, W / 28);
+        int my = Math.max(38, H / 22);
+        return new Rectangle(mx, my, Math.max(420, W - mx * 2), Math.max(320, H - my * 2));
+    }

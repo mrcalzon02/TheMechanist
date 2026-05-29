@@ -1,0 +1,48 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: configureBaseObject
+// Lines: 7985-8025
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void configureBaseObject(BaseObject obj) {
+        if (obj.qualityName == null || obj.qualityName.isBlank()) obj.qualityName = ItemQuality.NAMES[Math.max(0, Math.min(ItemQuality.NAMES.length-1, ItemQuality.tierIndex(obj.name + " machine")))];
+        if (obj.faction == null) obj.faction = Faction.NONE;
+        switch (obj.symbol) {
+            case 's': obj.capacity = 30; obj.integrity = 12; obj.description = "A lockable crate. Extends base storage and makes hoarding slightly less insane."; break;
+            case 'w': obj.capacity = 8; obj.integrity = 10; obj.charges = 0; obj.description = "A scrap workbench. Converts junk into supplies, assembles crude parts, and repairs clothing at a cost."; break;
+            case 'd': obj.integrity = 18; obj.cover = 2; obj.description = "A barricade. Slows raids and grants cover, while loudly advertising that something inside is worth taking."; break;
+            case 'c': obj.integrity = 8; obj.charges = 0; obj.description = "A sleeping cot. Reduces fatigue and allows slow wound/body-part recovery when the room is safe enough."; break;
+            case 'u': obj.integrity = 10; obj.capacity = 12; obj.charges = 2; obj.description = "A sealed water barrel. Stores drinkable water and slowly condenses/traps usable moisture when left alone."; break;
+            case 'a': obj.integrity = 6; obj.armed = false; obj.description = "A crude alarm trap. Can be armed to warn you of trouble, but it is noisy and not exactly elegant."; break;
+            case 'p': obj.integrity = 11; obj.cover = 1; obj.armed = true; obj.description = "A raised watch post. Recruits assigned to guard duty use it to spot trouble before it becomes inventory loss."; break;
+            case 'g': obj.integrity = 16; obj.capacity = 4; obj.cover = 1; obj.description = "A guard barracks. Houses security shifts, improves raid response, and makes the base look deliberately defended."; break;
+            case 'D': obj.integrity = 22; obj.cover = 3; obj.description = "A reinforced internal door. It slows raids, protects storage, and creates useful choke points."; break;
+            case 'S': obj.integrity = 28; obj.cover = 4; obj.description = "A sandbag line. Passive ballistic cover and physical roadblock semantics; no invisible defense math."; break;
+            case 'R': obj.integrity = 18; obj.cover = 1; obj.armed = true; obj.description = "A razor wire coil. Inspectable area-denial hardware; movement injury hooks wait for hazard authority."; break;
+            case 'W': obj.integrity = 70; obj.cover = 5; obj.description = "A reinforced defensive wall panel. Physical hard cover and perimeter structure for gate/sector defense."; break;
+            case 'N': obj.integrity = 24; obj.capacity = 3; obj.charges = 1; obj.description = "A security sensor mast. Visible detection hardware for alarm, LOS, and ownership-safe routing."; break;
+            case 'Y': obj.integrity = 65; obj.cover = 3; obj.description = "An Civic Wardens reinforced door. Precinct-grade choke point with access-control binding."; break;
+            case 'J': obj.integrity = 78; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "An Civic Wardens suppression turret profile. Built and inspectable with passive security coverage."; break;
+            case 'U': obj.integrity = 70; obj.cover = 3; obj.armed = false; obj.capacity = 6; obj.description = "A heavy stub turret profile. Physical weapon mount only until ammo, power, staffing, and hostility rules exist."; break;
+            case 'Z': obj.integrity = 62; obj.cover = 2; obj.armed = false; obj.capacity = 5; obj.description = "A gilded noble sentry turret profile. Expensive visible deterrent; autonomous targeting intentionally dormant."; break;
+            case 'P': obj.integrity = 30; obj.cover = 1; obj.capacity = 2; obj.description = "A precinct defensive fixture set. Civic Wardens room props, checkpoint furnishings, and service/security anchors."; break;
+            case 'e': obj.integrity = 9; obj.capacity = 16; obj.charges = 1; obj.description = "An emergency atmospheric condenser. Slowly turns poisoned damp into drinkable reserve."; break;
+            case 'f': obj.integrity = 12; obj.capacity = 10; obj.description = "A micro forge. Converts scrap and parts into sturdier construction supplies."; break;
+            case 'l': obj.integrity = 8; obj.description = "A micro lab. Early research foundation for base doctrine and ugly learning."; break;
+            case 'x': obj.integrity = 10; obj.armed = true; obj.description = "A security logic Engine node. Improves base management and makes raids feel personally insulted."; break;
+            case 'L': obj.integrity = 10; obj.capacity = 6; obj.charges = 0; obj.description = "Specialized laboratory or chemical apparatus. It satisfies non-consumed equipment requirements for generated chem/medicae recipes when placed in a valid room."; break;
+            case 'B': obj.integrity = 9; obj.capacity = 18; obj.description = "A shop counter. Permitted counters produce lawful income; unpermitted counters sell anyway and raise heat."; break;
+            case 'M': obj.integrity = 8; obj.capacity = 10; obj.description = "A medicae stall. Consumes medical goods for service income and can support recovery-oriented business later."; break;
+            case 'T': obj.integrity = 18; obj.cover = 4; obj.armed = true; obj.charges = 3; obj.description = "A powered defense turret. Consumes power attention, but heavily improves raid defense when supplied."; break;
+            case 'H': obj.integrity = 16; obj.cover = 5; obj.armed = true; obj.charges = 2; obj.description = "A shield relay. Projects hardened choke protection over valuable base assets and softens raid damage."; break;
+            case 'v': obj.integrity = 6; obj.capacity = 1; obj.description = "A decor object. Improves shop presentation, recruit morale, and customer willingness to pay."; break;
+            case 'A': obj.integrity = 8; obj.capacity = 2; obj.description = "A business add-on fixture. Shelving, signage, lockbox, display space, or service counter upgrades selling power."; break;
+            case 'k': obj.integrity = 8; obj.capacity = 8; obj.description = "A carrying station. First-tier cargo staging for manual movement between nearby owned bases."; break;
+            case 'q': obj.integrity = 12; obj.capacity = 20; obj.description = "A supply post. Second-tier cargo hub with organized bins, route slips, and faction labor staging."; break;
+            case 'G': obj.integrity = 18; obj.capacity = 50; obj.description = "A logistics center. High-tier cargo authority for inter-base transfer, trade stock routing, and caravan dispatch."; break;
+            default: obj.integrity = 5; obj.description = "A built object awaiting more specific rites.";
+        }
+        PassiveDefenseEffectsAuthority.annotate(obj);
+        MachineTierAuthority.applyToConfiguredObject(obj);
+    }

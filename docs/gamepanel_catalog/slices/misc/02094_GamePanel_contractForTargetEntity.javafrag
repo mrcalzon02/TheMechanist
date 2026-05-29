@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: contractForTargetEntity
+// Lines: 2094-2098
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    FactionContract contractForTargetEntity(String targetEntityId) {
+        if (targetEntityId == null || targetEntityId.isBlank()) return null;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && targetEntityId.equals(c.targetEntityId)) return c;
+        return null;
+    }

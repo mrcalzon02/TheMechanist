@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: requiredInputAction
+// Lines: 20301-20305
+// Category: input
+// This is an examination slice, not compiled source.
+
+    boolean requiredInputAction(InputAction action) {
+        return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT
+                || action == InputAction.MOVE_RIGHT || action == InputAction.CONFIRM || action == InputAction.CANCEL
+                || action == InputAction.PAUSE;
+    }

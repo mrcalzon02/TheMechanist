@@ -1,0 +1,137 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditInfopediaLines
+// Lines: 13247-13376
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> auditInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (entry == null) entry = "";
+        if (entry.equals("Audit Overview")) {
+            lines.add("Audit overview");
+            lines.add("Scope: summarizes the major production authority audits currently exposed through Infopedia.");
+            lines.addAll(ProductionLedgerDisplayApi.auditSummaryLines());
+        } else if (entry.equals("Examine and Infopedia Link Audit")) {
+            lines.add("Examine and Infopedia link audit");
+            lines.add("Scope: checks whether the player-facing examination and reference layers expose useful categories without leaking hidden implementation state.");
+            lines.add("Examine sections currently covered: visible identity, animal/pet read, intent read, visible equipment, quest/evidence read, condition read, combat readiness, threat read, senses read, fixture/object use read, and approach read.");
+            lines.add("Refresh cadence: repeating Examine on the same target within six world turns increases detail depth up to three steps.");
+            lines.add("Confidence boundary: unknown, hidden, private, or off-screen state should be described as unreadable or estimated rather than exposed through raw records.");
+            lines.add("Infopedia categories currently indexed: " + String.join(", ", infopediaTabs()) + ".");
+            lines.add("Related-link surface: valid related entries are filtered against the live Infopedia index before LINK buttons appear.");
+            lines.add("Current selected entry: " + (infopediaEntries(infopediaTab).isEmpty() ? "none" : infopediaEntries(infopediaTab).get(Math.max(0, Math.min(infopediaSelected, infopediaEntries(infopediaTab).size()-1)))) + ".");
+            lines.add("Audit expectation: new Look, Examine, interaction, transfer, construction, prompt, and mechanic entries should add related references instead of becoming isolated glossary stubs.");
+        } else if (entry.equals("Menu Definition Audit")) {
+            lines.add("Menu definition audit");
+            lines.add("Scope: player-facing ledger for major panel purpose, close behavior, core action, disabled-state rule, and special transfer/permission concerns.");
+            lines.add("LOOK: inspect selected tile; closes with cancel; core actions Examine and Interact; disabled when tile is not visible or selected.");
+            lines.add("INTERACT: commits adjacent target action; closes with cancel; core action Confirm; disabled when target is out of range, with PLAN MOVE approach guidance where possible.");
+            lines.add("INVENTORY: reviews carried goods, equipment, load, and selected item transfer preview; core actions use/equip/drop/context; disabled when no carried item is selected.");
+            lines.add("BUILD: claims rooms, selects construction, and confirms placement; core action Confirm; disabled by missing claim, invalid tile, missing materials, knowledge, faction, or component rules.");
+            lines.add("WORKBENCH: runs production and logistics previews; core action Confirm; disabled by missing machine, recipe, input, knowledge, worker, or queue readiness.");
+            lines.add("BASES: manages claimed-base storage, roster, business, heat, security, and production; transfer actions use shared source/target/capacity/protection wording.");
+            lines.add("TRADE: handles conversation, buy/sell, prices, stock, market legality, contracts, and evidence turn-in; buy/sell block on funds, capacity, source item, trader state, and quest protection.");
+            lines.add("MAP, SENSES, SAVE/LOAD, NEWS, and INFOPEDIA: reference or navigation surfaces; they should use stable close/back behavior, scroll containment, and prompt lines rather than hidden key assumptions.");
+            lines.add("Audit expectation: new menus should define title, purpose, prompt line, primary data source, disabled reasons, transfer behavior, permission checks, and raw-ID leakage boundary before release claims.");
+        } else if (entry.equals("Movement Planning Audit")) {
+            lines.add("Movement planning audit");
+            lines.add("Scope: manual movement ghost placement, route preview, valid-target rules, invalid feedback, and interaction-driven approach behavior.");
+            lines.add("Current mode: " + movementModeLabel() + " | range " + movementModeRange() + " | per-tile cost " + movementTurnCost() + " | active state " + activeMotionStateLabel() + ".");
+            lines.add("Input methods: PLAN MOVE opens manual targeting; arrows/WASD or controller movement nudge the target; confirm executes the preview; cancel clears it.");
+            lines.add("Valid target rule: target must be in bounds, walkable, not the player's current tile, and not occupied by an NPC.");
+            lines.add("Invalid feedback strings: outside known map, current position, destination occupied, door closed, path blocked, or cannot reach from here.");
+            lines.add("Path preview: route uses a bounded walkable-path search from the player to the selected target and divides movement into current-mode action chunks.");
+            lines.add("Hazard warning: preview reports a hazard ahead when any preview path tile contains a visible environmental hazard record.");
+            lines.add("Interaction helper: if Look/Interact selects a distant usable target, PLAN MOVE prefers a reachable adjacent approach tile and labels it as an approach path.");
+            lines.add("Overlay priority: movement preview draws as route rings and target rectangle, separate from Look selection, build placement, ownership tint, and directional movement ghost.");
+            lines.add("Focus reset: executing, cancelling, timing out, changing movement mode, or leaving gameplay clears stale preview state.");
+        } else if (entry.equals("Industrial Itemization Audit")) {
+            lines.addAll(RecipeGraphAuditApi.audit().lines());
+        } else if (entry.equals("Faction Variant Audit")) {
+            lines.addAll(FactionRecipeVariantAuditApi.audit().lines());
+        } else if (entry.equals("Chemical Equipment Audit")) {
+            lines.addAll(ChemicalEquipmentAuditApi.audit().lines());
+        } else if (entry.equals("Live Placement Audit")) {
+            lines.addAll(LiveProductionPlacementAuditApi.audit().lines());
+        } else if (entry.equals("Facility Output Modifier Audit")) {
+            lines.addAll(FacilityOutputModifierAuditApi.audit().lines());
+        } else if (entry.equals("Build Requirement Cost Audit")) {
+            lines.addAll(BuildRequirementCostAuditApi.audit().lines());
+        } else if (entry.equals("Production Container Authority Audit")) {
+            lines.addAll(ProductionContainerAuthorityAuditApi.audit(this).lines());
+        } else if (entry.equals("Persistent Stock Container Audit")) {
+            lines.addAll(PersistentStockContainerAuditApi.audit(this).lines());
+        } else if (entry.equals("Persistent Stock Pickup UX Audit")) {
+            lines.addAll(PersistentStockPickupUxAuditApi.audit(this).lines());
+        } else if (entry.equals("Actor Access Permission Audit")) {
+            lines.addAll(ActorAccessAuditApi.audit(this).lines());
+        } else if (entry.equals("Authority Alignment Audit")) {
+            lines.addAll(AuthorityAlignmentAuditApi.audit().lines());
+        } else if (entry.equals("Production Ledger Display Audit")) {
+            lines.addAll(ProductionLedgerDisplayAuditApi.audit().lines());
+            lines.addAll(ControlledProductionJobAuditApi.audit().lines());
+        } else if (entry.equals("Economic Topology Audit")) {
+            lines.addAll(EconomicTopologyFramework.auditLines());
+            lines.add("");
+            lines.addAll(EconomicGenerationBiasAuthority.auditLines(world));
+        } else if (entry.equals("Economic Generation Bias Audit")) {
+            lines.addAll(EconomicGenerationBiasAuthority.auditLines(world));
+        } else if (entry.equals("Local Topology Metadata Audit")) {
+            lines.addAll(EconomicLocalTopologyMetadataSurfaceAuthority.auditLines(world));
+        } else if (entry.equals("Economic Topology Preview Audit")) {
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.infopediaLines());
+            lines.add("");
+            lines.add("Preview role: construction, route intent, and haul-readiness hints share one advisory language.");
+            lines.addAll(EconomicTopologyPreviewConsumerAuthority.statusLines(this));
+        } else if (entry.equals("Economic Topology Reporting Overlay Audit")) {
+            lines.addAll(EconomicTopologyReportingOverlayAuthority.auditLines(this));
+        } else if (entry.equals("Economic Topology Map Intel Bridge Audit")) {
+            lines.addAll(EconomicTopologyMapIntelBridgeAuthority.auditLines(this));
+        } else if (entry.equals("Retarget Readiness Audit")) {
+            lines.addAll(RetargetReadinessAuditAuthority.auditLines(this));
+        } else if (entry.equals("Runtime Separation Audit")) {
+            lines.addAll(RuntimeSeparationAuthority.auditLines(runtimeProfile));
+        } else if (entry.equals("Launcher / Client / Server Runtime Audit")) {
+            lines.add(launcherRuntime.statusLine());
+            lines.addAll(launcherRuntime.infopediaLines());
+        } else if (entry.equals("Launcher Shell State Audit")) {
+            lines.addAll(launcherShell.displayLines(launcherRuntime, userProfile));
+            lines.add("Menu role: start, load, options, editor/mods, multiplayer, infopedia, and profile routes are coordinated through the launcher shell.");
+            lines.addAll(launcherShell.infopediaLines(launcherRuntime, userProfile));
+        } else if (entry.equals("User Profile Audit")) {
+            lines.add("Profile role: " + (userProfile == null ? "local operator profile pending." : userProfile.provider + " profile for " + userProfile.displayName + "."));
+            if (userProfile == null) {
+                lines.add("Profile details: local operator profile is not available yet.");
+            } else {
+                lines.add("Profile provider: " + userProfile.provider + ".");
+                lines.add("Display name: " + userProfile.displayName + ".");
+                lines.add("Profile link: " + (userProfile.externalUri.isEmpty() ? "internal profile only." : "available through the platform wrapper."));
+            }
+        } else if (entry.equals("Render Scaling / CRT Audit")) {
+            lines.add("Active rendering: " + renderScaling.profileLabel() + ", downscale " + renderScaling.downscaleLabel() + ", internal buffer " + renderScaling.internalWidth() + "x" + renderScaling.internalHeight() + ".");
+            lines.addAll(renderScaling.infopediaLines());
+        } else if (entry.equals("Unified Input Registry Audit")) {
+            lines.add("Input model: keyboard and gamepad can drive the same action list without replacing each other.");
+            lines.add("Keyboard: movement, confirmation, menus, look, map, zoom, attack, and reload feed the shared action list.");
+            lines.add("Controller: generic face buttons, d-pad, sticks, bumpers, start, and back are mapped with a small deadzone.");
+            String gamepadStatus = gamepadInputEngine == null ? "not started" : gamepadInputEngine.status();
+            String lowGamepadStatus = gamepadStatus.toLowerCase(Locale.ROOT);
+            if (lowGamepadStatus.contains("jamepad") || lowGamepadStatus.contains("maven") || lowGamepadStatus.contains("jitpack")) {
+                gamepadStatus = "No hardware controller poller is active; keyboard input remains active.";
+            }
+            lines.add("Gamepad status: " + gamepadStatus);
+            lines.add("Active input: " + inputRegistry.compactStatus() + ".");
+        } else if (entry.equals("Construction Validation Inspection")) {
+            lines.addAll(ConstructionValidationInspectionAuthority.buildInspectionLines(this));
+        } else if (entry.equals("Progressive Construction Audit")) {
+            lines.add("Progressive construction: staged sites accept materials and labor over time, show tile progress, and finish into the planned structure.");
+            for (BaseObject obj : baseObjects) if (obj != null && obj.underConstruction) lines.add(ProgressiveConstructionAuthority.progressLine(obj));
+            lines.add("Visual rule: staged construction fades from pale blue ghost coloration toward final built status color as per-tile progress approaches completion.");
+            lines.add("Work rule: interacting with an under-construction tile contributes available components and tool-adjusted labor; walls, doors, and terrain clearance resolve through tool-modified deconstruction time.");
+        } else {
+            lines.add("Audit entry gap");
+            lines.add("This audit name is listed but has no renderer. Add it to auditInfopediaLines before release.");
+        }
+        return lines;
+    }

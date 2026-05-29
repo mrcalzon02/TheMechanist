@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: maybeUnlockKnowledgeFromItem
+// Lines: 3029-3036
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void maybeUnlockKnowledgeFromItem(String item) {
+        if (item == null) return;
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("data slate") || low.contains("dataslate") || low.contains("technical manual")) {
+            if (!hasKnowledge("Scavenged Schematics")) { unlockKnowledge("Scavenged Schematics"); logEvent("KNOWLEDGE DISCOVERED: Scavenged Schematics from " + item + "."); }
+            gainXp("Knowledge", 2, "studying " + item);
+        }
+    }

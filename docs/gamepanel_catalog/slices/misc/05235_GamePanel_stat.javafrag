@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: stat
+// Lines: 5235-5238
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int stat(String name, int fallback) {
+        if (active == null) return fallback;
+        return active.stats.getOrDefault(name, fallback);
+    }

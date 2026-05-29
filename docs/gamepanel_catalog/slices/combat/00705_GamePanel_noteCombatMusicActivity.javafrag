@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: noteCombatMusicActivity
+// Lines: 705-709
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    void noteCombatMusicActivity(boolean governor, String reason) {
+        combatMusicUntilTurn = Math.max(combatMusicUntilTurn, turn + COMBAT_MUSIC_TIMEOUT_TURNS);
+        if (governor) governorBattleMusicUntilTurn = Math.max(governorBattleMusicUntilTurn, turn + COMBAT_MUSIC_TIMEOUT_TURNS * 2);
+        updateDynamicMusic(reason);
+    }

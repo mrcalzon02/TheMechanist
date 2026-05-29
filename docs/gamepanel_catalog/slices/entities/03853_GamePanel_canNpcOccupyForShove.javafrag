@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: canNpcOccupyForShove
+// Lines: 3853-3855
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    boolean canNpcOccupyForShove(int x, int y) {
+        return world != null && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY);
+    }

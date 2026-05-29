@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: projectileGlyphForWeapon
+// Lines: 15022-15033
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String projectileGlyphForWeapon(String weapon, boolean hit, int frame) {
+        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("melta") || w.contains("inferno")) return (frame % 3 == 0) ? "=0)" : (frame % 3 == 1 ? "=o)" : "==)" );
+        if (w.contains("las") || w.contains("laser")) return "~~~~";
+        if (w.contains("plasma")) return "~~O~";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "~Z~";
+        if (w.contains("chain") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw")) {
+            String[] spin = {"//", "--", "\\\\", "||"};
+            return spin[Math.floorMod(frame, spin.length)];
+        }
+        return hit ? "--~" : "-~.";
+    }

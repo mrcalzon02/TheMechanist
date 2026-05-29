@@ -1,0 +1,39 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawInfopediaEntryList
+// Lines: 14014-14045
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawInfopediaEntryList(Graphics2D g, java.util.List<String> entries, int x, int y, int w, int h) {
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(20, fm.getHeight()+4);
+        int visible = Math.max(1, h / lineH);
+        int maxScroll = Math.max(0, entries.size() - visible);
+        infopediaScroll = Math.max(0, Math.min(infopediaScroll, maxScroll));
+        Shape old = g.getClip();
+        g.setClip(x-4,y-4,w+8,h+8);
+        int yy = y + lineH;
+        for(int row=0; row<visible; row++) {
+            int idx = infopediaScroll + row;
+            if (idx >= entries.size()) break;
+            boolean sel = idx == infopediaSelected;
+            if (sel) {
+                g.setColor(new Color(80,65,30,220));
+                g.fillRoundRect(x-6, yy-lineH+3, w+4, lineH, 8, 8);
+            }
+            g.setColor(sel ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            String label = (sel ? "> " : "  ") + entries.get(idx);
+            g.drawString(label, x, yy);
+            yy += lineH;
+        }
+        g.setClip(old);
+        int sbX=x+w+10, sbY=y, sbW=14, sbH=h;
+        g.setColor(new Color(20,18,14,235)); g.fillRect(sbX,sbY,sbW,sbH);
+        g.setColor(new Color(108,92,58)); g.drawRect(sbX,sbY,sbW,sbH);
+        int th=maxScroll<=0?h:Math.max(28,h*visible/Math.max(visible,entries.size())); int ty=maxScroll<=0?y:y+(h-th)*infopediaScroll/maxScroll;
+        g.setColor("infopedia-list".equals(activeScrollTag)?optionColor(GameOptions.TEXT_HIGHLIGHT):new Color(220,190,105));
+        g.fillRect(sbX+2,ty+2,sbW-3,Math.max(6,th-3));
+        scrollRegions.add(new ScrollRegion("infopedia-list", new Rectangle(sbX, sbY, sbW, sbH), new Rectangle(sbX+2,ty+2,sbW-3,Math.max(6,th-3)), maxScroll, visible, infopediaScroll));
+    }

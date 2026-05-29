@@ -1,0 +1,66 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawInventoryStackPanel
+// Lines: 16479-16537
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawInventoryStackPanel(Graphics2D g) {
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(36, W/2 - Math.min(880, W-72)/2);
+        int y=Math.max(68, H/2 - Math.min(440, H-110)/2);
+        int w=Math.min(880, W - x*2);
+        int h=Math.min(440, H - y - 54);
+        g.setColor(new Color(4,5,5,245));
+        g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g,"INVENTORY",W/2,y+40);
+
+        ArrayList<String> summary = new ArrayList<>();
+        summary.add("Carry " + carryStatusText() + "   Move " + movementModeLabel() + " range " + movementModeRange() + " cost " + movementTurnCost() + "   Tile " + playerX + "," + playerY + " " + (world==null?"no world":describeTile(world.tiles[playerX][playerY])));
+        summary.add("Script " + countMoney() + " carried / " + totalBankedCash() + " banked / " + countBaseStoredScript() + " base stash   Food " + food + "/" + MAX_FOOD_WATER + "   Water " + water + "/" + MAX_FOOD_WATER + "   Supplies " + supplies + "   Parts " + machineParts);
+        drawTextPanel(g, x+24, y+56, w-48, 58, summary, false);
+
+        int gap=Math.max(12, scaled(12));
+        int top=y+128;
+        int bottomBoxH=Math.max(78, Math.min(108, h/4));
+        int colH=Math.max(110, h - (top-y) - bottomBoxH - 26);
+        int actionW=Math.max(150, Math.min(210, w/4));
+        int invW=Math.max(180, (w - 52 - actionW - gap*2)/2);
+        int targetW=Math.max(180, w - 52 - actionW - gap*2 - invW);
+        int invX=x+24;
+        int targetX=invX+invW+gap;
+        int actionX=targetX+targetW+gap;
+        drawPanelBox(g, invX, top, invW, colH, (inventoryTargetColumnActive ? "CURRENT INVENTORY" : "▶ CURRENT INVENTORY"));
+        drawPanelBox(g, targetX, top, targetW, colH, (inventoryTargetColumnActive ? "▶ TARGET / FLOOR TILE" : "TARGET / FLOOR TILE"));
+        if (!inventoryTargetColumnActive) { g.setColor(new Color(235,205,120,180)); g.drawRoundRect(invX+4, top+34, invW-8, colH-40, 8, 8); }
+        else { g.setColor(new Color(235,205,120,180)); g.drawRoundRect(targetX+4, top+34, targetW-8, colH-40, 8, 8); }
+        drawPanelBox(g, actionX, top, actionW, colH, "ACTIONS");
+
+        LinkedHashMap<String,Integer> invStacks=displayedInventoryStacks();
+        LinkedHashMap<String,Integer> targetStacks=currentTargetInventoryStacks();
+        selectedInventoryIndex=Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, invStacks.size()-1)));
+        selectedTargetInventoryIndex=Math.max(0, Math.min(selectedTargetInventoryIndex, Math.max(0, targetStacks.size()-1)));
+        g.setFont(smallFont);
+        drawInventoryIconGrid(g, invStacks, selectedInventoryIndex, invX+12, top+48, invW-24, colH-60, "carried");
+        drawInventoryIconGrid(g, targetStacks, selectedTargetInventoryIndex, targetX+12, top+48, targetW-24, colH-60, "target");
+
+        String sel = inventoryTargetColumnActive ? null : selectedInventoryStackName();
+        String target = inventoryTargetColumnActive ? selectedTargetInventoryName() : null;
+        int infoY=top+colH+12;
+        drawSlicedFrame(g, x+24, infoY, w-48, bottomBoxH, "inner");
+        g.setColor(new Color(0,0,0,220));
+        g.fillRoundRect(x+34, infoY+10, w-68, bottomBoxH-20, 10, 10);
+        drawMiniStackIcon(g, sel == null ? target : sel, x+44, infoY+20, Math.max(42, bottomBoxH-40));
+        ArrayList<String> info=new ArrayList<>();
+        if (sel != null) {
+            info.addAll(inventoryItemDetailLines(sel, false));
+        } else if (target != null) {
+            info.addAll(inventoryItemDetailLines(target, true));
+        } else info.add("No carried item or target item selected.");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, info, x+104, infoY+30, w-150, bottomBoxH-42, inventoryItemDescriptionScroll, "inventory-info");
+    }

@@ -1,0 +1,46 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: runGeneratedProductionJob
+// Lines: 8611-8649
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void runGeneratedProductionJob(BaseObject machine, FactionRecipeVariant v, boolean manual) {
+        if (machine == null || v == null) return;
+        ProductionInputConsumptionRecord inputTrace = ControlledProductionJobAuthority.consumeInputsWithTrace(this, v, (manual ? "manual" : "crew") + " generated production for " + v.outputName);
+        if (!inputTrace.success) {
+            logEvent("Generated production aborted: " + inputTrace.failureReason);
+            DebugLog.warn("GENERATED_INPUT_CONSUME_ABORT", "machine=" + machine.name + " variant=" + v.outputName + " reason=" + inputTrace.failureReason + " state=" + stateSummary());
+            return;
+        }
+        FacilityOutputRunEstimate est = FacilityOutputModifierAuthority.estimate(this, machine, v, manual);
+        String q = QualityAuthorityApi.cappedQualityName(v.requiredKnowledge, bestKnownProductionTier(), machineQualityTier(machine), QualityAuthorityApi.UNLIMITED_TIER, QualityAuthorityApi.UNLIMITED_TIER, QualityAuthorityApi.UNLIMITED_TIER);
+        ProductionRecipe pr = ProductionRecipe.create(v.base.outputBaseItem, v.faction, q, v.requiredKnowledge, machine.name);
+        int count = Math.max(1, est.outputCount);
+        String operator = manual ? (active == null ? "player manual operation" : active.name + " manual operation") : (machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "assigned recruit crew" : machine.assignedWorker);
+        for (int i=0;i<count;i++) addBaseStorageItem(v.outputName, ItemProvenanceRecord.produced(pr, machine, world, turn, operator + " | " + est.shortLine() + " | inputs " + inputTrace.summaryLine()));
+        machine.charges = Math.min(Math.max(1, machine.capacity), machine.charges + Math.max(1, est.queueThroughput));
+        machine.integrity = Math.max(1, machine.integrity - Math.max(0, est.wear));
+        if (est.breakdownRollPercent > 0 && rng.nextInt(100) < est.breakdownRollPercent) {
+            int extraWear = Math.max(1, 1 + est.breakdownRollPercent / 18);
+            machine.integrity = Math.max(1, machine.integrity - extraWear);
+            logEvent("FACILITY STRAIN: " + machine.name + " suffers breakdown wear (" + extraWear + ") from " + v.outputName + ".");
+            DebugLog.audit("FACILITY_BREAKDOWN_STRAIN", "machine=" + machine.name + " variant=" + v.outputName + " chance=" + est.breakdownRollPercent + " extraWear=" + extraWear + " integrity=" + machine.integrity + " state=" + stateSummary());
+        }
+        runCrafted += count;
+        applyFactionMarketPressureFromGeneratedProduction(v, count);
+        int xpGain = Math.max(1, manual ? 3 : Math.max(1, est.workerCapacityUsed));
+        gainXp(ControlledProductionJobAuthority.skillFor(v), xpGain, manual ? "manual generated production" : "recruit generated production");
+        reportProductionCeiling(machine, pr);
+        int turnsNeeded = Math.max(1, est.turns);
+        if (manual) fatigue = Math.min(20, fatigue + ControlledProductionJobAuthority.manualFatigueCost(this, machine, v));
+        if (machine.productionQueueRemaining > 0) machine.productionQueueRemaining = Math.max(0, machine.productionQueueRemaining - Math.max(1, est.queueThroughput));
+        String queueTail = " Queue remaining " + machine.productionQueueRemaining + "/" + Math.max(1, machine.productionQueueTarget) + ".";
+        String modTail = " Facility modifiers: " + est.shortLine() + ".";
+        ProductionQueueRecordBridge.recordGeneratedCompletion(this, machine, v, manual, turnsNeeded, count, operator);
+        if (manual) logEvent("MANUAL GENERATED PRODUCTION: " + count + "x " + v.outputName + " produced into base storage. Time " + turnsNeeded + " turns; fatigue +" + ControlledProductionJobAuthority.manualFatigueCost(this, machine, v) + "." + queueTail + modTail);
+        else logEvent("CREW GENERATED PRODUCTION: " + count + "x " + v.outputName + " produced into base storage by " + operator + "." + queueTail + modTail);
+        if (machine.productionQueueRemaining <= 0) DebugLog.audit("PRODUCTION_QUEUE_COMPLETE", "machine=" + machine.name + " variant=" + v.outputName + " target=" + machine.productionQueueTarget + " state=" + stateSummary());
+        DebugLog.audit(manual ? "MANUAL_GENERATED_PRODUCTION" : "RECRUIT_GENERATED_PRODUCTION", "machine=" + machine.name + " variant=" + v.outputName + " count=" + count + " turns=" + turnsNeeded + " wear=" + est.wear + " breakdownChance=" + est.breakdownRollPercent + " operator=" + operator + " queueRemaining=" + machine.productionQueueRemaining + " modifiers=" + est.shortLine() + " inputs=" + inputTrace.summaryLine() + " law=" + v.lawStatus + " state=" + stateSummary());
+        for (int i=0;i<turnsNeeded;i++) advanceTurn((manual ? "manually operates " : "supervises ") + machine.name + ".");
+    }

@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: multiplayerSaveFavorite
+// Lines: 10773-10777
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void multiplayerSaveFavorite() {
+        multiplayerMenu.addFavoriteFromDirect("Favorite " + (multiplayerMenu.favorites().size() + 1));
+        logEvent("MULTIPLAYER FAVORITE SAVED: " + multiplayerMenu.directInput());
+        repaint();
+    }

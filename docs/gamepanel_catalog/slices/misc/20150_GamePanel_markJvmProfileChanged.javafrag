@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: markJvmProfileChanged
+// Lines: 20150-20157
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void markJvmProfileChanged(String message) {
+        JvmRuntimeProfileAuthority.save(jvmRuntimeProfile);
+        jvmRuntimeRestartPending = true;
+        jvmRuntimeNotice = message + " Saved to settings/jvm_runtime.properties. Restart required for full effect.";
+        logEvent(jvmRuntimeNotice);
+        DebugLog.audit("JVM_RUNTIME_PROFILE", JvmRuntimeProfileAuthority.auditSummary(jvmRuntimeProfile));
+        repaint();
+    }

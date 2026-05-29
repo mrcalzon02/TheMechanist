@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: provenanceForItem
+// Lines: 17805-17820
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemProvenanceRecord provenanceForItem(String item) {
+        if (item == null) return null;
+        for (String containerId : new String[]{CONTAINER_PLAYER_INVENTORY, CONTAINER_BASE_STORAGE}) {
+            ContainerRecord c = itemContainers.get(containerId);
+            if (c == null) continue;
+            for (int i=c.itemInstanceIds.size()-1; i>=0; i--) {
+                ItemInstance inst = itemInstances.get(c.itemInstanceIds.get(i));
+                if (inst != null && inst.displayName != null && (inst.displayName.equals(item) || ItemQuality.stripManufacturingIdentity(inst.displayName).equalsIgnoreCase(ItemQuality.stripManufacturingIdentity(item)))) {
+                    if (inst.provenance != null) return inst.provenance;
+                }
+            }
+        }
+        ArrayDeque<ItemProvenanceRecord> q = itemProvenance.get(item);
+        if (q == null || q.isEmpty()) q = itemProvenance.get(ItemQuality.stripManufacturingIdentity(item));
+        return q == null || q.isEmpty() ? null : q.peekLast();
+    }

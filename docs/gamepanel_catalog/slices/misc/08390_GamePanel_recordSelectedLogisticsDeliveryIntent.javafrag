@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recordSelectedLogisticsDeliveryIntent
+// Lines: 8390-8397
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void recordSelectedLogisticsDeliveryIntent() {
+        BaseObject station = selectedWorkerMachine();
+        String result = LogisticsDeliveryIntentAuthority.createIntent(this, station);
+        lastLogisticsDeliveryIntentReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_DELIVERY_INTENT", result + " state=" + stateSummary());
+        repaint();
+    }

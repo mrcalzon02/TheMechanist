@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: worldZoomControlActive
+// Lines: 19929-19932
+// Category: world
+// This is an examination slice, not compiled source.
+
+    boolean worldZoomControlActive() {
+        if (screen == Screen.SECTOR_AUDIT) return auditWorld != null;
+        return world != null && (screen == Screen.GAME || (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.SCAVENGE || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH)));
+    }

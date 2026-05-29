@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedLookNpc
+// Lines: 15434-15437
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    NpcEntity selectedLookNpc() {
+        if (world == null || !lookCursorActive || !world.inBounds(lookX, lookY) || !isVisible(lookX, lookY)) return null;
+        return world.npcAt(lookX, lookY);
+    }

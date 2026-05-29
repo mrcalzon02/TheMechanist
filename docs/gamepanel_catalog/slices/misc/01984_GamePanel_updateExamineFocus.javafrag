@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: updateExamineFocus
+// Lines: 1984-1991
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void updateExamineFocus(int tx, int ty) {
+        boolean sameTarget = tx == lastExamineX && ty == lastExamineY && lastExamineWorldTurn >= 0L
+                && worldTurn - lastExamineWorldTurn <= 6L;
+        repeatedExamineCount = sameTarget ? Math.min(3, repeatedExamineCount + 1) : 1;
+        lastExamineX = tx;
+        lastExamineY = ty;
+        lastExamineWorldTurn = worldTurn;
+    }

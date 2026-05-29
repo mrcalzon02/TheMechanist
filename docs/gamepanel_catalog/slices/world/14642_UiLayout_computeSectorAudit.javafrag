@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: UiLayout
+// Method: computeSectorAudit
+// Lines: 14642-14660
+// Category: world
+// This is an examination slice, not compiled source.
+
+        static UiLayout computeSectorAudit(int w, int h, double scale) {
+            int margin = Math.max(8, (int)Math.round(12*scale));
+            int gap = Math.max(5, (int)Math.round(6*scale));
+            int commandW = Math.max(118, Math.min(166, (int)Math.round(142*scale)));
+            int bottomH = Math.max(80, Math.min(112, (int)Math.round(94*scale)));
+            int y = margin + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(260, h - y - bottomH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin, Math.max(1,w-margin*2-24), Math.max(1, gap));
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }

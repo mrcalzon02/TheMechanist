@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: controllerPromptFor
+// Lines: 20378-20386
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String controllerPromptFor(InputAction action) {
+        switch (controlsTab) {
+            case 1: return xboxPromptFor(action);
+            case 2: return playstationPromptFor(action);
+            case 3: return steamPromptFor(action);
+            case 4: return genericPromptFor(action);
+            default: return "Controller: see controller tabs";
+        }
+    }

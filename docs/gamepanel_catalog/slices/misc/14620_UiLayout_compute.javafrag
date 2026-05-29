@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: UiLayout
+// Method: compute
+// Lines: 14620-14640
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        static UiLayout compute(int w, int h, double scale) {
+            int margin = Math.max(12, (int)Math.round(16*scale));
+            int topH = Math.max(24, (int)Math.round(30*scale));
+            int bottomH = Math.max(92, Math.min(128, (int)Math.round(110*scale)));
+            int actionFeedH = Math.max(66, Math.min(88, (int)Math.round(76*scale)));
+            int gap = Math.max(6, (int)Math.round(8*scale));
+            int commandW = Math.max(132, Math.min(184, (int)Math.round(152*scale)));
+            int y = margin + topH + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(230, h - y - bottomH - actionFeedH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin+4, Math.max(1,w-margin*2-24), topH);
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + actionFeedH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }

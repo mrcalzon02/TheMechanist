@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: depositToSelectedBank
+// Lines: 9142-9155
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void depositToSelectedBank(int amount) {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("BANK: no bank selected."); return; }
+        if (!openBankAccounts.contains(b.id)) { logEvent("BANK: open an account at " + b.label + " before depositing."); return; }
+        int cash = countMoney();
+        int n = Math.min(cash, amount == Integer.MAX_VALUE ? cash : Math.max(0, amount));
+        if (n <= 0) { logEvent("BANK: you have no carried Concord Script to deposit."); return; }
+        spendImperialScript(n);
+        bankBalances.put(b.id, bankBalance(b.id) + n);
+        lastBankReport = "Deposited " + n + " script into " + b.label + ".";
+        logEvent("BANK: deposited " + n + " Concord Script into " + b.label + ". Balance now " + bankBalance(b.id) + ".");
+        DebugLog.audit("BANK_DEPOSIT", "bank=" + b.id + " amount=" + n + " balance=" + bankBalance(b.id) + " cash=" + countMoney() + " state=" + stateSummary());
+        advanceTurn("deposits bank cash."); repaint();
+    }

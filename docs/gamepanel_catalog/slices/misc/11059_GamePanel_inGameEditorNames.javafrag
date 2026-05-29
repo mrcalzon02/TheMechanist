@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inGameEditorNames
+// Lines: 11059-11059
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> inGameEditorNames() { return SimulationEditorRepository.EDITORS; }

@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: sanityCheck
+// Lines: 1044-1059
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void sanityCheck(String system) {
+        if (selectedButton < 0) {
+            DebugLog.warn(system, "selectedButton below zero; correcting. " + stateSummary());
+            selectedButton = 0;
+        }
+        if (buttons.size() > 0 && selectedButton >= buttons.size()) {
+            DebugLog.warn(system, "selectedButton outside button list; correcting. buttons=" + buttons.size() + " " + stateSummary());
+            selectedButton = buttons.size() - 1;
+        }
+        if ((screen == Screen.GAME || screen == Screen.PANEL) && world == null) {
+            DebugLog.warn(system, "Game/panel screen active without world. " + stateSummary());
+        }
+        if (world != null && (playerX < 0 || playerY < 0 || playerX >= world.w || playerY >= world.h)) {
+            DebugLog.warn(system, "Player outside world bounds. " + stateSummary());
+        }
+    }

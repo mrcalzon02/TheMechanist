@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleJvmTransparentAcceleration
+// Lines: 20184-20187
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleJvmTransparentAcceleration() {
+        jvmRuntimeProfile.transparentAcceleration = !jvmRuntimeProfile.transparentAcceleration;
+        markJvmProfileChanged("Java2D transparent blit acceleration " + (jvmRuntimeProfile.transparentAcceleration ? "enabled" : "disabled") + ".");
+    }

@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: contractEvidenceGuidanceLines
+// Lines: 6604-6612
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> contractEvidenceGuidanceLines(Faction f) {
+        ArrayList<String> lines = new ArrayList<>();
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed || c.faction != f) continue;
+            String carrying = contractTurnInReady(c) ? "carried and ready for turn-in" : "not carried yet";
+            lines.add("  Evidence for " + c.displayType() + ": " + c.publicRequiredItem() + " is " + carrying + ".");
+        }
+        return lines;
+    }

@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawLightDarknessOverlay
+// Lines: 14862-14884
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawLightDarknessOverlay(Graphics2D g, int tx, int ty, int px, int py, int cellW, int cellH, boolean visible) {
+        int l = lightLevelAt(tx, ty);
+        int alpha;
+        if (!visible) alpha = 120;
+        else if (l >= 72) alpha = 0;
+        else if (l >= 52) alpha = 22;
+        else if (l >= 34) alpha = 50;
+        else if (l >= 18) alpha = 84;
+        else if (l >= 8) alpha = 118;
+        else alpha = 150;
+        if (alpha <= 0) return;
+        int yy = tileIconMode() ? py : py - cellH + 3;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.85f, alpha / 255f)));
+        gg.setColor(Color.BLACK);
+        gg.fillRect(px, yy, Math.max(1, cellW), Math.max(1, cellH));
+        if (visible && l >= 55) {
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.18f, (l-50)/220f)));
+            gg.setColor(new Color(245, 220, 135));
+            gg.fillRect(px, yy, Math.max(1, cellW), Math.max(1, cellH));
+        }
+        gg.dispose();
+    }

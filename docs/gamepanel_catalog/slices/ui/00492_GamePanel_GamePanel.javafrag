@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: GamePanel
+// Lines: 492-494
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    GamePanel(boolean startTimer) {
+        this(RuntimeProfile.defaultProfile(), startTimer);
+    }

@@ -1,0 +1,34 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: sanitizeCurrentWorldFeaturePlacement
+// Lines: 9926-9952
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void sanitizeCurrentWorldFeaturePlacement(String reason) {
+        if (world == null) return;
+        int repaired = 0;
+        if (world.mapObjects != null) {
+            ArrayList<MapObjectState> copy = new ArrayList<>(world.mapObjects);
+            for (MapObjectState m : copy) {
+                if (m == null || !world.inBounds(m.x, m.y)) { world.mapObjects.remove(m); repaired++; continue; }
+                char ch = world.tiles[m.x][m.y];
+                if (isDoorTile(ch) || ch == 'D' || !world.walkable(m.x, m.y)) {
+                    Point p = nearestOpenFeatureTile(m.x, m.y);
+                    if (p != null) { m.x = p.x; m.y = p.y; repaired++; }
+                    else { world.mapObjects.remove(m); repaired++; }
+                }
+            }
+        }
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || world == null || !world.inBounds(obj.x, obj.y)) continue;
+            char ch = world.tiles[obj.x][obj.y];
+            if (isDoorTile(ch) || ch == 'D' || !world.walkable(obj.x, obj.y)) {
+                Point p = nearestOpenFeatureTile(obj.x, obj.y);
+                if (p != null) { obj.x = p.x; obj.y = p.y; repaired++; }
+            }
+        }
+        repaired += enforceCorridorBlockingClearance();
+        repaired += trimRoadsAtBoundaryAndHivewallCrossings();
+        if (repaired > 0) DebugLog.warn("FEATURE_PLACEMENT_REPAIR", "reason=" + reason + " repaired=" + repaired + " zone=" + (world.zoneType==null?"unknown":world.zoneType.label));
+    }

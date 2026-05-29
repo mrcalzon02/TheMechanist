@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: provenanceForContainerIndex
+// Lines: 17796-17803
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemProvenanceRecord provenanceForContainerIndex(String containerId, int idx, String fallbackItem) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c != null && idx >= 0 && idx < c.itemInstanceIds.size()) {
+            ItemInstance inst = itemInstances.get(c.itemInstanceIds.get(idx));
+            if (inst != null && inst.provenance != null) return inst.provenance;
+        }
+        return provenanceForItem(fallbackItem);
+    }

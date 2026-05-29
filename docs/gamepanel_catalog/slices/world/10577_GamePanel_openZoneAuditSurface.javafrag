@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openZoneAuditSurface
+// Lines: 10577-10577
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void openZoneAuditSurface() { openSectorAuditSurface(); }

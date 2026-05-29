@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: countCraftInput
+// Lines: 8180-8184
+// Category: input
+// This is an examination slice, not compiled source.
+
+    int countCraftInput(String item) {
+        int c = 0;
+        for (String carried : inventory) if (carried.equals(item) || ItemQuality.stripManufacturingIdentity(carried).equalsIgnoreCase(item)) c++;
+        return c;
+    }

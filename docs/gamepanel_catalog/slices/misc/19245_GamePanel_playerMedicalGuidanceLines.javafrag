@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerMedicalGuidanceLines
+// Lines: 19245-19252
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> playerMedicalGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Medical read: " + playerMedicalStatusLine());
+        lines.add("Treatment priority: " + playerTreatmentPriorityLine());
+        lines.add("Drug risk: " + stimulantRiskLine());
+        lines.add("Available aid: carried " + carriedMedicalAidCount() + ", base medical reserve " + medicalStockCount() + ", clinic support " + clinicSupportLine() + ".");
+        return lines;
+    }

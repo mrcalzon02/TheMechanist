@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactIntermapTransit
+// Lines: 7320-7331
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void interactIntermapTransit(int tx, int ty, char ch) {
+        String preview = transitionPreview(ch, tx, ty);
+        DebugLog.audit("INTERMAP_TRANSIT_SELECT", intermapTransitLabel(ch)+" at="+tx+","+ty+" preview="+preview+" state="+stateSummary());
+        logEvent("Transit selected: " + preview);
+        switch (ch) {
+            case 'D': interactZoneEdgeDoor(tx, ty); break;
+            case 'S': interactSewerHatch(tx, ty); break;
+            case 'v': interactSewerLadder(tx, ty); break;
+            case 'E': interactElevator(tx, ty); break;
+            default: logEvent("This transit marker has no mapped destination yet.");
+        }
+    }

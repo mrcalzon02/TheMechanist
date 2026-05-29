@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyFactionMarketPressureFromGeneratedProduction
+// Lines: 8663-8671
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void applyFactionMarketPressureFromGeneratedProduction(FactionRecipeVariant v, int count) {
+        if (v == null) return;
+        int pressure = Math.max(0, count);
+        if (v.lawStatus != null && (v.lawStatus.toLowerCase(Locale.ROOT).contains("illegal") || v.lawStatus.toLowerCase(Locale.ROOT).contains("contraband") || v.lawStatus.toLowerCase(Locale.ROOT).contains("seizure"))) {
+            gangHeat += Math.max(1, pressure);
+            suspicion += Math.max(1, pressure/2);
+        }
+        factionMarketPressure.put(v.faction, factionMarketPressure.getOrDefault(v.faction,0) + pressure);
+    }

@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activateCommand
+// Lines: 1781-1803
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void activateCommand(String label) {
+        sounds.play("button", options);
+        switch(label) {
+            case "WAIT": waitOneTurn(); break;
+            case "MOVE MODE": cycleMovementMode(); break;
+            case "PLAN MOVE": beginManualMovementPlan(); break;
+            case "LOOK": interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); break;
+            case "INTERACT": beginInteractMode(); break;
+            case "COMBAT": beginCombatTargeting(); break;
+            case "INVENTORY": openPanel(PanelMode.INVENTORY); break;
+            case "CHARACTER": openPanel(PanelMode.CHARACTER); break;
+            case "BUILD": openPanel(PanelMode.BUILD); break;
+            case "BASES": openPanel(PanelMode.BASES); break;
+            case "WORK": if (hasBaseObject('w')) openPanel(PanelMode.WORKBENCH); else logEvent("No Scrap Workbench built yet. Build one before using WORK."); break;
+            case "SENSES": openPanel(PanelMode.SENSES); break;
+            case "MAP": openPanel(PanelMode.MAP); break;
+            case "NEWS": openPanel(PanelMode.NEWS); break;
+            case "LOG": openPanel(PanelMode.LOG); break;
+            case "CHAT": openChatWindow(); break;
+            case "SAVE/LOAD": openPanel(PanelMode.SAVELOAD); break;
+            case "MENU": setScreen(Screen.PAUSE); break;
+        }
+    }

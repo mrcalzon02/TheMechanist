@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: plantExplosiveAt
+// Lines: 4291-4301
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void plantExplosiveAt(int x, int y, String item, boolean playerPlaced) {
+        if (world == null || !world.inBounds(x,y)) return;
+        if (world.npcAt(x,y) != null || (x == playerX && y == playerY)) { logEvent("EXPLOSIVE PLANTING blocked: occupied tile."); addInventoryItem(item, ItemProvenanceRecord.found(item, world, turn, "unplanted explosive returned to hand")); return; }
+        ExplosiveProfile ep = ExplosiveProfile.forItem(item);
+        MapObjectState m = MapObjectState.plantedExplosive(x, y, item, world.zoneType, turn, world.tiles[x][y], playerPlaced ? "player" : "faction");
+        m.vendCount = ep.complexity;
+        world.mapObjects.add(m);
+        world.tiles[x][y] = '!';
+        logEvent("EXPLOSIVE PLANTED: " + item + " armed at " + x + "," + y + ". Good sensory stats may spot it; INTERACT can attempt disarm and recovery.");
+        DebugLog.audit("EXPLOSIVE_PLANTED", "item=" + item + " at=" + x + "," + y + " player=" + playerPlaced + " turn=" + turn);
+    }

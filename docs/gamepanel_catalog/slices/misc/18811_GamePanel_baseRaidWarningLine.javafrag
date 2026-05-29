@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseRaidWarningLine
+// Lines: 18811-18819
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseRaidWarningLine() {
+        int security = baseSecurityRating();
+        int pressure = baseRaidPressure(security);
+        if (pressure < 8) return "quiet but not safe";
+        if (pressure < 12) return "watchful pressure building";
+        if (pressure < 24) return "raid possible";
+        if (pressure < 40) return "raid likely";
+        return "base is loudly inviting punishment";
+    }

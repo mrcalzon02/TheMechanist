@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setEquippedItemForSlot
+// Lines: 16736-16746
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void setEquippedItemForSlot(int idx, String item) {
+        String v = item == null ? "" : item;
+        switch (Math.max(0, Math.min(idx, equipmentSlotNames().length-1))) {
+            case 0: equippedHeadgearItem = v; break;
+            case 1: equippedArmorItem = v; break;
+            case 3: equippedLeftHandItem = v; break;
+            case 4: equippedRightHandItem = v; break;
+            case 5: equippedBackpackItem = v; break;
+            default: break; // clothing uses the Clothing object, not a raw string slot.
+        }
+    }

@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: soundPingAudioKey
+// Lines: 3494-3505
+// Category: input
+// This is an examination slice, not compiled source.
+
+    String soundPingAudioKey(String label) {
+        String l = label == null ? "" : label.toLowerCase(Locale.ROOT);
+        if (l.contains("machinery")) return "ambient_machine";
+        if (l.contains("wet") || l.contains("sludge")) return "ambient_sludge";
+        if (l.contains("voice") || l.contains("mutter") || l.contains("prayer")) return "ambient_radio";
+        if (l.contains("servo")) return "ambient_servo";
+        if (l.contains("boot") || l.contains("movement") || l.contains("patrol")) return "footstep_metal";
+        if (l.contains("impact")) return "ambient_press";
+        if (l.contains("reload")) return "weapon_reload";
+        if (l.contains("smoke") || l.contains("vent")) return "ambient_vent";
+        return "ambient_pipe";
+    }

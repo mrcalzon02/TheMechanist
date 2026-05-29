@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: gainXp
+// Lines: 2967-2979
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void gainXp(String skill, int amount, String source) {
+        amount = Math.max(1, amount);
+        int oldXp = xp;
+        int oldCredits = knowledgeCredits;
+        xp += amount;
+        int oldBands = oldXp / 25;
+        int newBands = xp / 25;
+        if (newBands > oldBands) knowledgeCredits += (newBands - oldBands);
+        String msg = "XP GAINED: +" + amount + " " + skill + " XP from " + source + ". Total XP " + oldXp + "->" + xp + ".";
+        if (knowledgeCredits != oldCredits) msg += " Knowledge credits " + oldCredits + "->" + knowledgeCredits + ".";
+        logEvent(msg);
+        DebugLog.audit("XP_GAIN", "skill=" + skill + " amount=" + amount + " source=" + source + " xp=" + oldXp + "->" + xp + " knowledgeCredits=" + oldCredits + "->" + knowledgeCredits + " state=" + stateSummary());
+    }

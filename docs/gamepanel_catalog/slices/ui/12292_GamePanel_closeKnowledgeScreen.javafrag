@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: closeKnowledgeScreen
+// Lines: 12292-12296
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void closeKnowledgeScreen() {
+        Screen target = knowledgeReturnScreen == null ? Screen.CHARACTER : knowledgeReturnScreen;
+        if (target == Screen.KNOWLEDGE || target == Screen.BOOT || target == Screen.LOADING) target = world == null ? Screen.CHARACTER : Screen.GAME;
+        setScreen(target);
+    }

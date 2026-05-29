@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionArmor
+// Lines: 4096-4107
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int factionArmor(NpcEntity npc) {
+        if (npc == null) return 0;
+        switch(npc.faction) {
+            case SORORITAS: return 5;
+            case CIVIC WARDENS: case IMPERIAL_GUARD: return 3;
+            case MINISTORUM: return 1;
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return 2;
+            case MUTANT: case ROGUE_MACHINE: return 2;
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return 2;
+            default: return 1;
+        }
+    }

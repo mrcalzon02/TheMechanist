@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: displayLatestLogisticsRouteIntent
+// Lines: 8407-8413
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void displayLatestLogisticsRouteIntent() {
+        String result = LogisticsRouteIntentAuthority.createRouteIntent(this);
+        lastLogisticsRouteIntentReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_ROUTE_INTENT", result + " state=" + stateSummary());
+        repaint();
+    }

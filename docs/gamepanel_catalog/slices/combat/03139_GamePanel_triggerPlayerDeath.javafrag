@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: triggerPlayerDeath
+// Lines: 3139-3153
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    void triggerPlayerDeath(String cause, String attacker, String weapon, String location) {
+        if (screen == Screen.LOST) return;
+        PlayerLifecycleService.DeathResolution deathResolution = playerLifecycleService.resolveDeath(this, cause, attacker, weapon, location);
+        DebugLog.audit("PLAYER_LIFECYCLE", playerLifecycleService.statusLine(this) + " deathOutcome=" + deathResolution.outcome());
+        lastDefeatCause = cause == null || cause.isBlank() ? "unknown fatality" : cause;
+        lastDefeatAttacker = attacker == null || attacker.isBlank() ? "unknown" : attacker;
+        lastDefeatWeapon = weapon == null || weapon.isBlank() ? "unknown" : weapon;
+        lastDefeatLocation = location == null || location.isBlank() ? "unknown" : location;
+        lastDefeatSummary = active.name + " was killed by " + lastDefeatAttacker + " using " + lastDefeatWeapon + " (" + lastDefeatCause + ").";
+        lastLossScoreLines = PlayerDefeatAndScoreAuthority.lossScoreLines(this);
+        DebugLog.audit("PLAYER_DEATH", "cause=" + lastDefeatCause + " attacker=" + lastDefeatAttacker + " weapon=" + lastDefeatWeapon + " location=" + lastDefeatLocation + " score=" + PlayerDefeatAndScoreAuthority.score(this) + " state=" + stateSummary());
+        logEvent("DEATH: " + lastDefeatSummary + " Survival time " + timeText() + ", turn " + turn + ".");
+        setScreen(Screen.LOST);
+        repaint();
+    }

@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: newsArchiveLines
+// Lines: 19581-19601
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> newsArchiveLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Character-visible news ledger: papers read, radios heard, pict screens watched, and public events filed.");
+        lines.add("World time: " + worldTimeText() + " | Survival: " + timeText() + " | Zone: " + (world == null ? "none" : world.zoneType.label + " " + world.zoneCoordText()));
+        lines.add("");
+        lines.add("Latest INN issue: " + lastInnNewsIssue);
+        lines.add("Latest broadcast: " + lastBroadcastReport);
+        lines.add("Latest player-linked filing: " + lastPlayerNewsReport);
+        lines.add("");
+        if (playerNewsEvents.isEmpty()) {
+            lines.add("No tracked character-news events yet. Reading papers, hearing radios, watching pict screens, or creating public incidents will populate this archive.");
+        } else {
+            lines.add("TRACKED NEWS EVENTS");
+            for (PlayerNewsEvent ev : playerNewsEvents) {
+                if (ev == null) continue;
+                lines.add("- " + ev.shortLine() + " | seen/heard day " + ev.day + " at " + ev.zone + " | faction " + factionLabel(ev.faction()) + " | severity " + ev.severity);
+                if (ev.detail != null && !ev.detail.isBlank()) lines.add("  " + ev.detail);
+            }
+        }
+        return lines;
+    }

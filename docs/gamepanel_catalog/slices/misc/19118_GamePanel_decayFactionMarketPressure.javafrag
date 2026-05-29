@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: decayFactionMarketPressure
+// Lines: 19118-19126
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void decayFactionMarketPressure() {
+        int security = baseSecurityRating();
+        for (Faction f : Faction.values()) {
+            int v = factionMarketPressure.getOrDefault(f, 0);
+            if (v <= 0) continue;
+            int decay = security >= 18 ? 2 : (security >= 8 ? 1 : 0);
+            if (decay > 0) factionMarketPressure.put(f, Math.max(0, v - decay));
+        }
+    }

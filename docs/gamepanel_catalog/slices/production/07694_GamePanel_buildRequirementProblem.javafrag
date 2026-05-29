@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: buildRequirementProblem
+// Lines: 7694-7700
+// Category: production
+// This is an examination slice, not compiled source.
+
+    String buildRequirementProblem(BuildRecipe r) {
+        String structural = buildStructuralRequirementProblem(r);
+        if (!"OK".equals(structural)) return structural;
+        String compProblem = buildComponentRequirementProblem(r);
+        if (!"OK".equals(compProblem)) return compProblem;
+        return "OK";
+    }

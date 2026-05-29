@@ -1,0 +1,43 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handleOccupiedMovementTarget
+// Lines: 3750-3785
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean handleOccupiedMovementTarget(NpcEntity blocker, int dx, int dy, int nx, int ny) {
+        if (blocker == null) return false;
+        if (blocker.isProtectedCleric()) {
+            resetPushPastIntent();
+            logEvent("Movement blocked: " + blocker.name + " holds the sanctuary space and cannot be shoved aside.");
+            advanceTurn("stops short before " + blocker.name + ".");
+            return false;
+        }
+        if (isHostileNpc(blocker)) {
+            resetPushPastIntent();
+            blocker.state = "Hostile";
+            detectHostileIntent(blocker, 1);
+            logEvent("BODY CHECK: " + blocker.name + " occupies the space and refuses your advance.");
+            hostileAdjacentAttack(blocker);
+            advanceTurn("is checked by " + blocker.name + " instead of entering the occupied tile.");
+            enforceEntityOccupancy("hostile-body-check");
+            return false;
+        }
+        Point shove = shoveDestinationFor(blocker, dx, dy);
+        if (shove != null) {
+            String old = blocker.x + "," + blocker.y;
+            blocker.x = shove.x;
+            blocker.y = shove.y;
+            blocker.state = "Jostled";
+            DebugLog.audit("ENTITY_SHOVE", "player=" + playerX + "," + playerY + " blocker=" + blocker.id + " from=" + old + " to=" + shove.x + "," + shove.y + " dir=" + dx + "," + dy);
+            resetPushPastIntent();
+            logEvent("SHOVE: " + blocker.name + " is pushed from " + old + " to " + shove.x + "," + shove.y + ". Two bodies do not get to occupy the same scrap of floor.");
+            movePlayerInto(nx, ny, "shoves past " + blocker.name + " into " + nx + "," + ny + ".");
+            return true;
+        }
+        if (tryPlayerPushPast(blocker, dx, dy, nx, ny)) return false;
+        logEvent("Movement blocked: " + blocker.name + " is wedged in the way and there is nowhere legal to shove them.");
+        advanceTurn("jostles against " + blocker.name + " in the crowded underhive.");
+        enforceEntityOccupancy("failed-shove");
+        return false;
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectInGameEditorEntity
+// Lines: 11084-11089
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void selectInGameEditorEntity(int idx) {
+        inGameEditorEntityIndex = Math.max(0, Math.min(Math.max(0, inGameEditorEntities().size()-1), idx));
+        SimulationEditorRepository.EditableEntity e = inGameEditorEntity();
+        inGameEditorStatus = e == null ? "No entry selected." : "Selected " + e.name() + ".";
+        repaint();
+    }

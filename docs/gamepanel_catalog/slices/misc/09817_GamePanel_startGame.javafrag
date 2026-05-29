@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: startGame
+// Lines: 9817-9839
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void startGame() {
+        DebugLog.audit("START_GAME", "candidateIndex=" + candidateIndex + " jobIndex=" + jobIndex + " candidates=" + candidates.size());
+        Candidate sourceCandidate = candidates.get(candidateIndex);
+        sourceCandidate.name = CharacterCreationAuthority.sanitizePlayerName(sourceCandidate.name, rng);
+        refreshNameLockedCandidateState(sourceCandidate);
+        characterNameEditActive = false;
+        JobProfile chosenJob = JobProfile.get(sourceCandidate.jobs.get(jobIndex));
+        if (!chosenJob.meets(sourceCandidate)) {
+            logEvent("Invalid job: " + chosenJob.name + " requires " + chosenJob.requirementText() + ". Roll another character or choose another occupation.");
+            DebugLog.audit("START_BLOCKED_INVALID_JOB", "candidate=" + sourceCandidate.name + " job=" + chosenJob.name + " missing=" + chosenJob.missingText(sourceCandidate));
+            return;
+        }
+        pendingStartCandidate = sourceCandidate.copy();
+        pendingStartJob = chosenJob;
+        loadingSeed = worldSelectedForCharacter ? seed : (System.currentTimeMillis() ^ pendingStartCandidate.name.hashCode() ^ chosenJob.name.hashCode());
+        loadingProgress = 0; loadingStep = 0; loadingForNewGame = true; loadingStartMillis = System.currentTimeMillis();
+        lastLoadingPulseMillis = loadingStartMillis; loadingWatchdogReported = false; loadingWatchdogRepeats = 0; loadingFinalizationStarted = false; loadingFinalizationRunning = false; loadingFinalizationKind = "new-game";
+        loadingStatus = "Igniting sector cartograph engine.";
+        loadingDetail = "Queued: world seed, runtime settings, sector atlas, faction ledgers, and player insertion state.";
+        setScreen(Screen.LOADING);
+        ensureRuntimeTimerRunning("new-game loading");
+        DebugLog.audit("LOADING_BEGIN", "newGame=true seed=" + loadingSeed + " job=" + chosenJob.name + " timerRunning=" + timer.isRunning());
+    }

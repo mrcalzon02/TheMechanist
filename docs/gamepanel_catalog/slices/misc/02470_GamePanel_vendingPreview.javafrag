@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: vendingPreview
+// Lines: 2470-2475
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String vendingPreview(char ch, int x, int y) {
+        String key = passiveKey(x,y);
+        int until = passiveCooldownUntilTurn.getOrDefault(key, 0);
+        int hacked = vendingHackVendCount.getOrDefault(key, 0);
+        return PublicServiceMediaAuthority.vendingPreview(ch, until, hacked);
+    }

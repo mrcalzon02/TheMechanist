@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: governorAudienceFee
+// Lines: 2736-2739
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int governorAudienceFee() {
+        int power = playerFactionPower();
+        return Math.max(250, 900 + power * 18 + (atlas == null ? 0 : (atlas.sectorX + atlas.sectorY) * 125));
+    }

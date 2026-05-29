@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleAuditSewerLayer
+// Lines: 10729-10729
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleAuditSewerLayer() { auditSewerLayer = !auditSewerLayer; regenerateSectorAuditWorld("toggle sewer layer"); }

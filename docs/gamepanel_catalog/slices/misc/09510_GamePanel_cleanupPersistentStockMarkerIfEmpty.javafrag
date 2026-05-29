@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cleanupPersistentStockMarkerIfEmpty
+// Lines: 9510-9516
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cleanupPersistentStockMarkerIfEmpty(MapObjectState m, String containerId) {
+        if (world == null || m == null) return;
+        if (containerItemCount(containerId) > 0) return;
+        world.mapObjects.remove(m);
+        if (world.inBounds(m.x, m.y) && "corpse-container".equals(m.type)) world.tiles[m.x][m.y] = '.';
+        DebugLog.audit("PERSISTENT_STOCK_MARKER_CLEARED", "object=" + m.id + " container=" + containerId + " state=" + stateSummary());
+    }

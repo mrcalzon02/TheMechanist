@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: clinicSupportLine
+// Lines: 19296-19299
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String clinicSupportLine() {
+        for (BaseObject obj : baseObjects) if (obj != null && obj.integrity > 0 && (obj.symbol == 'M' || obj.name.toLowerCase(Locale.ROOT).contains("medicae") || obj.name.toLowerCase(Locale.ROOT).contains("clinic"))) return "available at base";
+        return "not built here";
+    }

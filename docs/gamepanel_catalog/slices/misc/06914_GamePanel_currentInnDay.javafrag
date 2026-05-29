@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: currentInnDay
+// Lines: 6914-6914
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int currentInnDay() { return Math.max(0, turn / Math.max(1, TURNS_PER_HOUR * HOURS_PER_DAY)); }

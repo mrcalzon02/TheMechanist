@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcInfopediaLines
+// Lines: 13737-13758
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> npcInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("NPC/actor reference");
+        switch(entry) {
+            case "Civilian": lines.add("Role: noncombat local population, service customers, witnesses, and ambient underhive pressure."); lines.add("Behavior: usually wanders, idles, flees danger, or seeks needs providers rather than picking fights."); break;
+            case "Trader": lines.add("Role: opens trade sessions and supplies catalog-backed stock with prices, markups, haggle, and provenance handoff."); lines.add("Operational note: trader shelves now have generated containers for bought/sold item movement."); break;
+            case "Hiver": lines.add("Role: ordinary arcology resident; baseline faction texture for habs, markets, work floors, and neutral civilian spaces."); lines.add("Gameplay use: social camouflage and crowd density rather than specialized services."); break;
+            case "Scavenger": lines.add("Role: marginal salvage actor tied to trash warrens, sewer edges, and low-trust trading."); lines.add("Expected goods: cheap tools, bad food, improvised water, lock tools, and scrap."); break;
+            case "Ganger": lines.add("Role: hostile or coercive local criminal power; raises heat and controls gang rooms."); lines.add("Behavior: can threaten, patrol, attack, or trade through fences depending on context."); break;
+            case "Civic Wardens": lines.add("Role: law enforcement pressure and procedural brutality rather than civic comfort."); lines.add("Behavior: interrogations, checkpoints, suspicion reactions, restricted stock, and faction-only spaces."); break;
+            case "Concord Guard": lines.add("Role: military presence around billets, depots, and field logistics."); lines.add("Expected goods: rations, water, armor, weapons, and rugged tools."); break;
+            case "Mechanist Collegia Adept": lines.add("Role: machine-cult worker, trader, tutor, or gatekeeper around forge cloisters and relic ducts."); lines.add("Expected goods: machine parts, sacred wire, tool rolls, data spikes, and machine doctrine."); break;
+            case "Mutant": lines.add("Role: hostile or semi-feral sewer/warren threat with its own camps and warning signs."); lines.add("Behavior: generally attacks on sight in mutant layers."); break;
+            case "Cultist": lines.add("Role: heretical sewer-camp threat tied to illegal shrines, ritual objects, and hidden danger."); lines.add("Behavior: generally hostile when discovered in cult spaces."); break;
+            case "Outcast": lines.add("Role: disconnected survivor used for marginal spaces, barter, rumor, or faction ambiguity."); lines.add("Behavior: should not automatically share civilian trust or ganger hostility."); break;
+            case "Passive: Vending Machine": lines.add("Role: passive service object pretending to be an NPC entry for inspection/trade convenience."); lines.add("Use: sells ration/water/supply goods from map-object state and logs stock/cooldown changes."); break;
+            case "Passive: Concord Shrine": lines.add("Role: passive loyal shrine fixture for interaction, attention, and faith/social consequences."); lines.add("Use: should support lawful/Concord flavor without duplicating heretical shrine risk."); break;
+            default: lines.add("Role: passive illegal shrine fixture with cult risk, suspicion/heat consequences, and forbidden-service hooks."); lines.add("Use: distinct from Concord shrines because interacting with it should be socially and legally dangerous."); break;
+        }
+        lines.add("Actor standard: every active NPC now has a stable numeric identifier and string ID for logging/save tracking.");
+        return lines;
+    }

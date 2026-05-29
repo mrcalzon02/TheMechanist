@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: advanceAuditTracePlaybackIfNeeded
+// Lines: 10713-10724
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void advanceAuditTracePlaybackIfNeeded() {
+        if (!auditTracePlaying || auditTraceSteps == null || auditTraceSteps.isEmpty()) return;
+        long now = System.currentTimeMillis();
+        if (now - auditTraceLastAdvance < 1000L) return;
+        auditTraceLastAdvance = now;
+        if (auditTraceIndex < auditTraceSteps.size() - 1) {
+            auditTraceIndex++;
+            applyAuditTraceStep("automatic one-second trace advance");
+        } else {
+            auditTracePlaying = false;
+        }
+    }

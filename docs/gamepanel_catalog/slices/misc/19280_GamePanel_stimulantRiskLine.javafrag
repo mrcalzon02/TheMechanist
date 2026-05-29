@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: stimulantRiskLine
+// Lines: 19280-19285
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String stimulantRiskLine() {
+        if (stimulantStrain <= 0) return "no current stimulant strain is apparent.";
+        if (stimulantStrain >= 8) return "heavy stimulant strain; more wakefulness drugs may trade sleep debt for dangerous crash pressure.";
+        if (stimulantStrain >= 4) return "moderate stimulant strain; use more only if escape matters more than recovery.";
+        return "light stimulant strain; still plan real sleep soon.";
+    }

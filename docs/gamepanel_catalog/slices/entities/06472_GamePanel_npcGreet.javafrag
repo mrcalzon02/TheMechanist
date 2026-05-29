@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcGreet
+// Lines: 6472-6478
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void npcGreet() {
+        if (activeConversationNpc == null) { logEvent("No one is close enough to answer."); return; }
+        conversationBranch = activeConversationNpc.name + ": " + npcGreeting(activeConversationNpc);
+        lastConversation = conversationBranch;
+        logConversation("NPC_GREET", activeConversationNpc.name + " role=" + activeConversationNpc.role + " faction=" + activeConversationNpc.faction.label + " line=" + conversationBranch);
+        advanceTurn("speaks cautiously with " + activeConversationNpc.name + ".");
+    }

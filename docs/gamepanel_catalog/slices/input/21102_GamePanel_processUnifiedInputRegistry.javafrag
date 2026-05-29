@@ -1,0 +1,60 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: processUnifiedInputRegistry
+// Lines: 21102-21154
+// Category: input
+// This is an examination slice, not compiled source.
+
+    void processUnifiedInputRegistry(long now) {
+        // Keyboard retains the existing direct KeyEvent path. This timer consumer only
+        // translates GAMEPAD source states so a controller release cannot erase a held key.
+        if (inputRegistry.consumePressed(InputAction.PAUSE, InputSource.GAMEPAD) || inputRegistry.consumePressed(InputAction.CANCEL, InputSource.GAMEPAD)) {
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("gamepad cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            else if (screen==Screen.PANEL) closePanel();
+            else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
+            else setScreen(Screen.MENU);
+            repaint();
+            return;
+        }
+        if (inputRegistry.consumePressed(InputAction.CONFIRM, InputSource.GAMEPAD)) {
+            if (screen == Screen.GAME && manualMovementPlanActive) confirmManualMovementPlan();
+            else if (screen == Screen.INTRO_CRAWL) continueFromIntroCrawl();
+            else if (screen == Screen.ZONE_SPLASH) continueFromZoneSplash();
+            else activateSelectedButtonUniversal();
+            repaint();
+        }
+        if (inputRegistry.consumePressed(InputAction.INVENTORY, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.INVENTORY); return; }
+        if (inputRegistry.consumePressed(InputAction.CHARACTER, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.CHARACTER); return; }
+        if (inputRegistry.consumePressed(InputAction.LOOK, InputSource.GAMEPAD) && screen == Screen.GAME) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
+        if (inputRegistry.consumePressed(InputAction.PLAN_MOVE, InputSource.GAMEPAD) && screen == Screen.GAME) { beginManualMovementPlan(); return; }
+        if (inputRegistry.consumePressed(InputAction.ZOOM_IN, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(1, "gamepad bumper");
+        if (inputRegistry.consumePressed(InputAction.ZOOM_OUT, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(-1, "gamepad bumper");
+        if (now < nextUnifiedInputRepeatMillis) return;
+        int dx = 0, dy = 0;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_LEFT, InputSource.GAMEPAD)) dx--;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_RIGHT, InputSource.GAMEPAD)) dx++;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_UP, InputSource.GAMEPAD)) dy--;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_DOWN, InputSource.GAMEPAD)) dy++;
+        if (dx == 0 && dy == 0) return;
+        nextUnifiedInputRepeatMillis = now + 125L;
+        if (screen == Screen.GAME && world != null && manualMovementPlanActive) {
+            nudgeManualMovementPlan(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.GAME && world != null) {
+            queueOrExecuteMovementInput(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.LOOK && world != null) {
+            lookCursorActive = true;
+            lookX = Math.max(0, Math.min(world.w-1, lookX+Integer.compare(dx, 0)));
+            lookY = Math.max(0, Math.min(world.h-1, lookY+Integer.compare(dy, 0)));
+            lookStackIndex = 0;
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.INTERACT && world != null) {
+            moveInteractCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.COMBAT && world != null) {
+            moveCombatCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive && world != null) {
+            moveBuildCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (!buttons.isEmpty()) {
+            moveSelectedButton(dy < 0 || dx < 0 ? -1 : 1);
+        }
+        repaint();
+    }

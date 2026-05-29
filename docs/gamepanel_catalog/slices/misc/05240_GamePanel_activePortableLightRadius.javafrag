@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activePortableLightRadius
+// Lines: 5240-5244
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int activePortableLightRadius() {
+        PortableLightProfile p = PortableLightProfile.profile(activePortableLightItem);
+        if (p == null || activePortableLightExpiresTurn <= turn) return 0;
+        return Math.max(0, p.radius);
+    }

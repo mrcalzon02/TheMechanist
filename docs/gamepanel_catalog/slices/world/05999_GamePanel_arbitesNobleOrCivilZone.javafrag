@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: arbitesNobleOrCivilZone
+// Lines: 5999-6002
+// Category: world
+// This is an examination slice, not compiled source.
+
+    boolean arbitesNobleOrCivilZone() {
+        if (world == null || world.zoneType == null) return false;
+        return arbitesPatrolEligibleZone();
+    }

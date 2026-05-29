@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: nearbyBankAlarmPanelDisabled
+// Lines: 9284-9293
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    boolean nearbyBankAlarmPanelDisabled(int tx, int ty, BankProfile b) {
+        if (world == null) return false;
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || !"bank-alarm-panel".equals(m.type)) continue;
+            BankProfile mb = bankProfileFromStock(m.stockState);
+            if (b != null && mb != null && !b.id.equals(mb.id)) continue;
+            if (Math.abs(m.x - tx) + Math.abs(m.y - ty) <= 10 && bankAlarmPanelDisabled(m)) return true;
+        }
+        return false;
+    }

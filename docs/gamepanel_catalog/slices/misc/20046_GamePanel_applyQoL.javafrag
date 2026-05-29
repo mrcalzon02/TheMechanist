@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyQoL
+// Lines: 20046-20050
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void applyQoL(String message) {
+        logEvent(message);
+        DebugLog.audit("GAMEPLAY_QOL_OPTIONS", GameplayQualityOfLifeAuthority.auditSummary(options));
+        repaint();
+    }

@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: readableOn
+// Lines: 16944-16944
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Color readableOn(Color c){ int lum=(c.getRed()*299+c.getGreen()*587+c.getBlue()*114)/1000; return lum<95?Color.WHITE:Color.BLACK; }

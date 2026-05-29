@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseStoredItemSafetyLine
+// Lines: 18587-18597
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String baseStoredItemSafetyLine(String item) {
+        if (item == null || item.isBlank()) return "unknown stored item";
+        String low = item.toLowerCase(Locale.ROOT);
+        if (isQuestOrEvidenceItem(item)) return "quest/evidence item; protect it until the right turn-in";
+        if (ItemCatalog.isFirearmLike(item) || low.contains("knife") || low.contains("pistol") || low.contains("shotgun") || low.contains("grenade")) return "weapon-linked; raids, law, or rivals may care";
+        if (low.contains("data spike") || low.contains("lockpick") || low.contains("keycard") || low.contains("stolen") || low.contains("profane") || low.contains("contraband")) return "restricted or suspicious if searched";
+        if (low.contains("permit") || low.contains("stock certificate") || low.contains("gold") || low.contains("trade chit")) return "commerce-useful; consider banking, permits, or contracts";
+        if (low.contains("med") || low.contains("bandage") || low.contains("field dressing") || low.contains("antiseptic")) return "medical reserve; keep near clinics or dangerous work";
+        if (low.contains("ration") || low.contains("food") || low.contains("water")) return "survival reserve; keep some carried before travel";
+        return "ordinary stored goods";
+    }

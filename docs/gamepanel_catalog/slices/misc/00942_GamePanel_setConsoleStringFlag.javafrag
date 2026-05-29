@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setConsoleStringFlag
+// Lines: 942-947
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void setConsoleStringFlag(String key, String value) {
+        String safe = ChatRuntimeAuthority.ChatSecurity.sanitizeIdentifier(key == null ? "value" : key);
+        String text = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(value == null ? "" : value);
+        consoleStringFlags.put(safe, text);
+        logEvent("CONSOLE VALUE: " + safe + "=" + text + ".");
+    }

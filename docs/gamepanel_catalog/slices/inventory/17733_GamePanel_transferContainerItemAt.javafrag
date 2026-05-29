@@ -1,0 +1,39 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: transferContainerItemAt
+// Lines: 17733-17764
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemInstance transferContainerItemAt(String fromContainerId, ArrayList<String> fromLegacy, int idx,
+                                         String toContainerId, String toLabel, ArrayList<String> toLegacy,
+                                         String route) {
+        if (idx < 0 || idx >= fromLegacy.size()) return null;
+        String accessProblem = ActorAccessAuthority.containerTransferProblem(this, fromContainerId, toContainerId, route);
+        if (accessProblem != null) {
+            DebugLog.audit("ACTOR_ACCESS_BLOCK", "legacy container transfer blocked from=" + fromContainerId + " to=" + toContainerId + " route=" + route + " reason=" + accessProblem + " state=" + stateSummary());
+            return null;
+        }
+        String item = fromLegacy.remove(idx);
+        ItemInstance inst = removeContainerInstanceAt(fromContainerId, idx, item);
+        ItemProvenanceRecord prior = inst != null && inst.provenance != null ? inst.provenance : takeProvenanceForItem(item);
+        ItemProvenanceRecord moved = ItemProvenanceRecord.transferred(prior, item, world, turn, route == null ? "moved between containers" : route);
+        ContainerRecord dest = ensureContainer(toContainerId, toLabel);
+        if (inst == null) {
+            String id = nextItemInstanceId();
+            inst = new ItemInstance(id, item, dest.id, moved == null ? "" : moved.unitId, moved);
+            itemInstances.put(id, inst);
+            dest.itemInstanceIds.add(id);
+        } else {
+            inst.displayName = item;
+            inst.containerId = dest.id;
+            inst.provenance = moved;
+            inst.provenanceUnitId = moved == null ? inst.provenanceUnitId : moved.unitId;
+            itemInstances.put(inst.id, inst);
+            dest.itemInstanceIds.add(inst.id);
+        }
+        if (toLegacy != null) toLegacy.add(item);
+        rememberItemProvenance(item, moved);
+        DebugLog.audit("CONTAINER_TRANSFER", "item=" + item + " from=" + fromContainerId + " to=" + toContainerId + " route=" + route + " instance=" + (inst==null?"none":inst.id) + " state=" + stateSummary());
+        return inst;
+    }

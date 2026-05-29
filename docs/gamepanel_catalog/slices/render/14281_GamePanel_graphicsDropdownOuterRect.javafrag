@@ -1,0 +1,43 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: graphicsDropdownOuterRect
+// Lines: 14281-14316
+// Category: render
+// This is an examination slice, not compiled source.
+
+    Rectangle graphicsDropdownOuterRect() {
+        if (screen != Screen.OPTIONS || graphicsDropdown < 0 || (optionsTab != 0 && optionsTab != 1 && optionsTab != 4)) return new Rectangle(0,0,0,0);
+        int w = getWidth(), h = getHeight();
+        Rectangle optionSafe = optionControlInnerSafeRect();
+        int requestedCols = optionsTab == 7 ? 4 : 3;
+        int colGap = Math.max(6, GuiLayoutApi.columnGap(uiScaleFactor()) - 4);
+        int bw = Math.max(104, (optionSafe.width - colGap * (requestedCols - 1)) / requestedCols);
+        int gap = bw + colGap;
+        int y = optionSafe.y;
+        int itemCount;
+        int x;
+        int ddY;
+        int ddW;
+        if (graphicsDropdown == 0) {
+            itemCount = 3; x = optionSafe.x; ddY = y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 1) {
+            itemCount = Math.min(DisplayResolutionAuthority.choiceCount(), Math.max(8, Math.min(14, optionSafe.height / Math.max(22, scaled(26))))); x = optionSafe.x + gap; ddY = y + Math.max(24, Math.min(34, optionSafe.height / 6)); ddW = bw * 2 + colGap;
+        } else if (graphicsDropdown == 2) {
+            itemCount = GameOptions.PALETTE_NAMES.length; x = optionSafe.x + gap; ddY = optionsTab == 4 ? y + scaled(198) : y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 3) {
+            itemCount = GameOptions.DOWNSCALE_LABELS.length; x = optionSafe.x; ddY = y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 4) {
+            itemCount = GameOptions.TARGET_FPS_LABELS.length; x = optionSafe.x + gap; ddY = y + scaled(42); ddW = bw;
+        } else if (graphicsDropdown == 5) {
+            itemCount = GameOptions.RENDER_QUALITY_LABELS.length; x = optionSafe.x + gap*2; ddY = y + scaled(42); ddW = bw;
+        } else return new Rectangle(0,0,0,0);
+        int rowH = Math.max(26, scaled(30));
+        int ddH = Math.max(rowH + 18, 18 + itemCount * rowH + Math.max(0, itemCount - 1) * scaled(4));
+        Rectangle controls = optionControlInnerSafeRect();
+        int maxBottom = Math.max(controls.y + controls.height + 24, getHeight() - 76);
+        if (ddY + ddH > maxBottom) ddY = Math.max(controls.y, maxBottom - ddH);
+        int minX = Math.max(24, optionPanelInnerSafeRect().x);
+        int maxX = Math.max(minX, optionPanelInnerSafeRect().x + optionPanelInnerSafeRect().width - ddW);
+        x = Math.max(minX, Math.min(x, maxX));
+        return new Rectangle(x, ddY, Math.max(120, ddW), ddH);
+    }

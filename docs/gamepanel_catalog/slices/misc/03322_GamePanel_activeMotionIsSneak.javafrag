@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activeMotionIsSneak
+// Lines: 3322-3322
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean activeMotionIsSneak() { return activeMotionStateIndex == MOTION_SNEAK; }

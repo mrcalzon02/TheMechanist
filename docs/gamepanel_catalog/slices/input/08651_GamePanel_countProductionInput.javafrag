@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: countProductionInput
+// Lines: 8651-8653
+// Category: input
+// This is an examination slice, not compiled source.
+
+    int countProductionInput(String item) {
+        return ProductionContainerAuthority.countAvailable(this, item);
+    }

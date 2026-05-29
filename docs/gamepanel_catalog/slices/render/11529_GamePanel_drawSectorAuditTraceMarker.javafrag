@@ -1,0 +1,46 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawSectorAuditTraceMarker
+// Lines: 11529-11567
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawSectorAuditTraceMarker(Graphics2D g, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        if (step == null || auditWorld == null || !auditWorld.inBounds(step.x, step.y)) return;
+        int sx = ox + (step.x - camX) * cellW;
+        int sy = oy + (step.y - camY) * cellH;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setStroke(new BasicStroke(Math.max(2f, cellW / 9f)));
+        if (step.ghostRect != null) {
+            Rectangle gr = step.ghostRect;
+            int gx1 = Math.max(gr.x, camX), gy1 = Math.max(gr.y, camY);
+            int gx2 = Math.min(gr.x + gr.width, camX + Math.max(1, (mapRect().width - 18) / Math.max(1, cellW)));
+            int gy2 = Math.min(gr.y + gr.height, camY + Math.max(1, (mapRect().height - 18) / Math.max(1, cellH)));
+            if (gx1 < gx2 && gy1 < gy2) {
+                int rx = ox + (gx1 - camX) * cellW;
+                int ry = oy + (gy1 - camY) * cellH;
+                int rw = Math.max(1, (gx2 - gx1) * cellW);
+                int rh = Math.max(1, (gy2 - gy1) * cellH);
+                gg.setComposite(AlphaComposite.SrcOver.derive(step.rejected ? 0.18f : 0.16f));
+                gg.setColor(step.rejected ? new Color(255, 70, 45) : new Color(245, 225, 95));
+                gg.fillRect(rx, ry, rw, rh);
+                gg.setComposite(AlphaComposite.SrcOver.derive(0.82f));
+                gg.drawRect(rx, ry, Math.max(1, rw - 1), Math.max(1, rh - 1));
+            }
+        }
+        if (sx + cellW >= ox && sy + cellH >= oy && sx <= ox + Math.max(1, auditWorld.w) * cellW && sy <= oy + Math.max(1, auditWorld.h) * cellH) {
+            gg.setComposite(AlphaComposite.SrcOver);
+            if (step.rejected) {
+                gg.setColor(new Color(255, 70, 45, 230));
+                gg.drawLine(sx + 3, sy + 3, sx + cellW - 4, sy + cellH - 4);
+                gg.drawLine(sx + cellW - 4, sy + 3, sx + 3, sy + cellH - 4);
+            } else {
+                gg.setColor(new Color(245, 225, 95, 235));
+                gg.drawRect(sx + 2, sy + 2, Math.max(3, cellW - 5), Math.max(3, cellH - 5));
+                gg.drawLine(sx + cellW / 2, sy - Math.max(2, cellH / 3), sx + cellW / 2, sy + cellH + Math.max(2, cellH / 3));
+                gg.drawLine(sx - Math.max(2, cellW / 3), sy + cellH / 2, sx + cellW + Math.max(2, cellW / 3), sy + cellH / 2);
+            }
+        }
+        gg.dispose();
+    }

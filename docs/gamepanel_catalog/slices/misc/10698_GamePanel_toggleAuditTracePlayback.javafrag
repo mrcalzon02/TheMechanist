@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleAuditTracePlayback
+// Lines: 10698-10704
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleAuditTracePlayback() {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) { repaint(); return; }
+        auditTracePlaying = !auditTracePlaying;
+        if (auditTracePlaying && auditTraceIndex >= auditTraceSteps.size() - 1) auditTraceIndex = 0;
+        auditTraceLastAdvance = System.currentTimeMillis();
+        applyAuditTraceStep(auditTracePlaying ? "trace playback" : "trace paused");
+    }

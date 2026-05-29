@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: machineQualityTier
+// Lines: 8190-8193
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int machineQualityTier(BaseObject obj) {
+        if (obj == null) return 0;
+        return Math.max(0, Math.min(ItemQuality.NAMES.length-1, MachineTierAuthority.qualityCeilingTier(obj)));
+    }

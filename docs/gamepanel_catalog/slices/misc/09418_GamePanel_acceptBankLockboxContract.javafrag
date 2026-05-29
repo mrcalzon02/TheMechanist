@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: acceptBankLockboxContract
+// Lines: 9418-9431
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void acceptBankLockboxContract() {
+        BankProfile b = selectedBankProfile();
+        if (b == null) { logEvent("LOCKBOX CONTRACT: select a bank branch or credit terminal first."); return; }
+        FactionContract existing = activeContractFor(Faction.NOBLE, "LOCKBOX");
+        if (existing != null) { logEvent("LOCKBOX CONTRACT blocked: active noble-bank job already exists: " + existing.longLine()); return; }
+        FactionContract c = FactionContract.createBankLockboxContract(b, atlas, world, rng, factionStanding.getOrDefault(Faction.NOBLE, 0));
+        factionContracts.add(c);
+        lastContractFaction = Faction.NOBLE;
+        lastBankLockboxContractReport = "Accepted " + c.id + " from a " + b.label + " fixer: " + c.description;
+        logEvent("LOCKBOX CONTRACT ACCEPTED: " + c.longLine());
+        recordPlayerNewsEvent("bank-rumor", b.label + " private retrieval offer", Faction.NOBLE, "quiet rumors of a sealed bank-property retrieval docket moving through private hands", 2);
+        DebugLog.audit("BANK_LOCKBOX_CONTRACT_ACCEPT", c.longLine() + " state=" + stateSummary());
+        advanceTurn("accepts a noble-bank lockbox retrieval job."); repaint();
+    }

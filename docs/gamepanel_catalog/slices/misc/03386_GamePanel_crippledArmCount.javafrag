@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: crippledArmCount
+// Lines: 3386-3394
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int crippledArmCount() {
+        if (active == null || active.body == null) return 0;
+        int n = 0;
+        for (BodyPart bp : active.body.values()) {
+            String low = bp.name.toLowerCase(Locale.ROOT);
+            if ((low.contains("arm") || low.contains("hand") || low.contains("finger")) && bp.currentHealth() <= bp.maxHealth()*0.25) n++;
+        }
+        return n;
+    }

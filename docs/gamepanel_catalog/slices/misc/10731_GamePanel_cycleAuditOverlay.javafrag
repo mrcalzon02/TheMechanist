@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleAuditOverlay
+// Lines: 10731-10731
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleAuditOverlay() { auditOverlayMode = Math.floorMod(auditOverlayMode + 1, SectorAuditRuntimeAuthority.OVERLAY_LABELS.length); repaint(); }

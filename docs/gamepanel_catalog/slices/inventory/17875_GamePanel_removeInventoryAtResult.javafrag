@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: removeInventoryAtResult
+// Lines: 17875-17883
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemActionResult removeInventoryAtResult(int idx, String route) {
+        if (idx < 0 || idx >= inventory.size()) return ItemActionResult.fail("No carried item exists at that index.", "remove inventory idx failed idx=" + idx + " route=" + route);
+        String item = inventory.remove(idx);
+        ItemInstance inst = removeContainerInstanceAt(CONTAINER_PLAYER_INVENTORY, idx, item);
+        ItemProvenanceRecord pr = inst == null ? takeProvenanceForItem(item) : inst.provenance;
+        if (inst != null) inst.provenance = pr;
+        if (pr != null) takeProvenanceForItem(item);
+        return ItemActionResult.ok(item, inst == null ? "" : inst.id, CONTAINER_PLAYER_INVENTORY, pr, item + " removed from carried inventory.", "remove inventory idx=" + idx + " item=" + item + " instance=" + (inst==null?"none":inst.id) + " route=" + route);
+    }

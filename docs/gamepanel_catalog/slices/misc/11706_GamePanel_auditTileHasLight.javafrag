@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditTileHasLight
+// Lines: 11706-11710
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean auditTileHasLight(int x, int y) {
+        if (auditWorld == null || auditWorld.lightSources == null) return false;
+        for (ZoneLightSourceRecord l : auditWorld.lightSources) if (l != null && l.x == x && l.y == y) return true;
+        return false;
+    }

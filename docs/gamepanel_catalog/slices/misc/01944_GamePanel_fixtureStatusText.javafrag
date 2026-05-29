@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: fixtureStatusText
+// Lines: 1944-1965
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String fixtureStatusText(MapObjectState mos) {
+        if (mos == null) return "";
+        String type = mos.type == null ? "" : mos.type;
+        String stock = mos.stockState == null ? "" : mos.stockState;
+        if (type.contains("vending")) return mos.cooldownUntilTurn > turn ? "restocking; check back later." : "ready to use.";
+        if (type.contains("shrine")) return "available for prayer or inspection.";
+        if (type.equals("shop")) return "trade stock point.";
+        if (type.equals("sector-governor")) return stock.contains("present") ? "the exit papers may be here." : "no exit papers are visible.";
+        if (type.equals("martian-emergency-machine")) return "machine controls are present; inspect or operate if you have access.";
+        if (type.equals("contract-object")) return "sealed objective item.";
+        if (type.equals("corpse-container")) return "searchable remains.";
+        if (type.contains("explosive")) return "dangerous device; keep distance unless prepared.";
+        if (type.contains("newspaper")) return "readable public news source.";
+        if (type.equals("broadcast-device")) return "public broadcast receiver.";
+        if (type.equals("bank-terminal")) return "account access terminal.";
+        if (type.equals("bank-vault")) return stock.contains("open=true") ? "vault is open." : "vault is sealed.";
+        if (type.equals("bank-alarm-panel")) return stock.contains("disabled=true") ? "alarm panel is disabled." : "alarm panel is armed.";
+        if (type.equals("light-fixture")) return "fixed local light source.";
+        if (type.equals("light-switch")) return stock.contains("on=false") ? "local lights are off." : "local lights are on.";
+        if (type.equals("faction-journal")) return "private faction notes.";
+        return "inspectable fixture.";
+    }

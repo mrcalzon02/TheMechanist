@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handleDisguiseFailure
+// Lines: 5919-5930
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void handleDisguiseFailure(Faction witness, String reason) {
+        lastDisguiseFailure = witness;
+        Faction territorial = factionOnlyRoomFactionAt(playerX, playerY);
+        char here = (world != null && world.inBounds(playerX, playerY)) ? world.tiles[playerX][playerY] : '.';
+        if (territorial != witness && factionForTile(here) != witness) {
+            logEvent("DISGUISE READ: " + witness.label + " notices the false cover, but this is not their faction-only territory. No hostility follows.");
+            DebugLog.audit("DISGUISE_NON_TERRITORY_FAILURE", "witness=" + witness + " reason=" + reason + " state=" + stateSummary());
+            return;
+        }
+        logEvent("ALERT: " + witness.label + " recognizes your disguise is wrong inside controlled territory. Interrogation begins.");
+        handleInterrogation(witness, reason);
+    }

@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawFactionRelationsPanel
+// Lines: 16947-16966
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawFactionRelationsPanel(Graphics2D g){
+        int W=getWidth(),H=getHeight(); int x=70,y=82,w=W-140,h=H-155;
+        g.setColor(new Color(5,6,6,246)); g.fillRect(x,y,w,h); drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"FACTION RELATIONS",W/2,y+44);
+        String[][] groups={
+            factionGroup(Faction.HIVER,Faction.HIVER_BLOCK_AUREL,Faction.HIVER_BLOCK_MARROW,Faction.HIVER_BLOCK_SUMPLEDGER),
+            factionGroup(Faction.BANDIT,Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH),
+            factionGroup(Faction.NOBLE,Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY),
+            factionGroup(Faction.SCAVENGER,Faction.CIVIC LEDGER OFFICE,Faction.CIVIC WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANIST COLLEGIA),
+            factionGroup(Faction.MUTANT,Faction.CULTIST,Faction.ROGUE_MACHINE,Faction.HERETIC)
+        };
+        String[] titles={"HIVER BLOCKS","GANGS","NOBLE HOUSES","CIVIL / LAW","OUTCASTS"};
+        int colW=(w-70)/5; int startY=y+96;
+        for(int c=0;c<5;c++){
+            int cx=x+30+c*colW; drawSlicedFrame(g,cx,startY,colW-14,h-130,"inner");
+            g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, GuiLayoutApi.fitLabel(titles[c], g.getFontMetrics(), colW-34), cx+(colW-14)/2,startY+30);
+            ArrayList<String> ls=new ArrayList<>(); for(String v:groups[c]) ls.add("  "+v);
+            drawScrollableWrappedLines(g,ls,cx+14,startY+62,colW-42,h-202,factionScroll,"factions");
+        }
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: productionWorkerQueueLine
+// Lines: 7852-7857
+// Category: production
+// This is an examination slice, not compiled source.
+
+    String productionWorkerQueueLine(BaseObject machine) {
+        if (machine == null) return "no machine selected.";
+        String worker = machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "no assigned worker" : "worker " + machine.assignedWorker;
+        String recipe = machine.assignedRecipe == null || machine.assignedRecipe.isBlank() ? "no assigned recipe" : "assigned recipe " + machine.assignedRecipe;
+        return worker + "; " + recipe + "; queue " + machine.productionQueueRemaining + "/" + Math.max(1, machine.productionQueueTarget) + ".";
+    }

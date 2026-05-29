@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawSectorGrid
+// Lines: 17017-17036
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawSectorGrid(Graphics2D g,int x,int y,int w,int h){
+        g.setFont(uiFont); int cell=Math.max(64, Math.min(w,h)/3-18); int gridW=cell*3+36, gridH=cell*3+36; int ox=x+(w-gridW)/2, oy=y+(h-gridH)/2;
+        for(int yy=0;yy<3;yy++) for(int xx=0;xx<3;xx++){
+            ZoneType zt = zoneTypeForMapCell(xx+1, yy+1, mapLayerView);
+            String icon = MapLayerSurfaceAuthority.iconForZoneType(zt);
+            String name = zt.label;
+            boolean current = atlas != null && atlas.zoneX == xx+1 && atlas.zoneY == yy+1 && MapLayerSurfaceAuthority.displayLayerIndex(atlas.floor, atlas.sewer) == mapLayerView;
+            int px=ox+xx*(cell+18), py=oy+yy*(cell+18);
+            g.setColor(new Color(10,12,12)); g.fillRoundRect(px,py,cell,cell,10,10);
+            g.setColor(current ? new Color(245,220,130) : factionUiColorForZone(zt)); g.drawRoundRect(px,py,cell,cell,10,10);
+            if(current){ g.drawRoundRect(px+3,py+3,cell-6,cell-6,8,8); }
+            drawContractObjectiveMarker(g, xx + 1, yy + 1, mapLayerView, px, py, cell);
+            g.setFont(titleFont); g.setColor(factionUiColorForZone(zt)); center(g,icon,px+cell/2,py+cell/2-2);
+            g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            drawCenteredZoneLabel(g, name, px+6, py+cell-34, cell-12, 28);
+            if(xx<2){ g.setColor(new Color(210,190,120)); g.drawString("→",px+cell+5,py+cell/2); }
+            if(yy<2){ g.setColor(new Color(210,190,120)); center(g,"↓",px+cell/2,py+cell+18); }
+        }
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, "Selected slice: " + MapLayerSurfaceAuthority.label(mapLayerView), x+w/2, y+20);
+    }

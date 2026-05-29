@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyZoneFixtureLightVisibility
+// Lines: 5533-5542
+// Category: world
+// This is an examination slice, not compiled source.
+
+    int applyZoneFixtureLightVisibility() {
+        if (world == null || visibleTiles == null || rememberedTiles == null || world.lightSources == null) return 0;
+        int added = 0;
+        for (ZoneLightSourceRecord l : world.lightSources) {
+            if (!lightSourceCurrentlyEmitting(l)) continue;
+            if (!world.inBounds(l.x, l.y)) continue;
+            added += applyLightCircle(l.x, l.y, Math.max(1, l.radius), false);
+        }
+        return added;
+    }

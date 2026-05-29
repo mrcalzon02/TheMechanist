@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: unlockKnowledge
+// Lines: 2981-2986
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean unlockKnowledge(String name) {
+        if (name == null || name.isBlank()) return false;
+        boolean added = unlockedKnowledges.add(name);
+        if (added) DebugLog.audit("KNOWLEDGE_UNLOCK", name + " state=" + stateSummary());
+        return added;
+    }

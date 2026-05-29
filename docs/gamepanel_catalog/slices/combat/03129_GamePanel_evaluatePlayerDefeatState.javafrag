@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: evaluatePlayerDefeatState
+// Lines: 3129-3137
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    void evaluatePlayerDefeatState(String cause, String attacker, String weapon, String location) {
+        if (screen == Screen.LOST || active == null) return;
+        if (shouldPlayerDieNow()) {
+            triggerPlayerDeath(cause, attacker, weapon, location);
+        } else if (shouldPlayerFallUnconsciousNow()) {
+            if (arbitesAuthorityText(attacker) || arbitesAuthorityText(weapon)) handleArbitesCapture("incapacitated by Civic Wardens authority", Math.max(2, suspicion / 4 + wounds / 6));
+            else handlePlayerUnconsciousness(cause, attacker, weapon, false);
+        }
+    }

@@ -1,0 +1,31 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: acceptJvmSettingsAndRestart
+// Lines: 20194-20217
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void acceptJvmSettingsAndRestart() {
+        JvmRuntimeProfileAuthority.save(jvmRuntimeProfile);
+        java.util.List<String> command = new ArrayList<>();
+        String javaExe = Paths.get(System.getProperty("java.home", ""), "bin", isWindowsHost() ? "java.exe" : "java").toString();
+        command.add(javaExe);
+        command.addAll(jvmRuntimeProfile.buildJvmArgs());
+        command.add("-cp");
+        command.add(System.getProperty("java.class.path"));
+        command.add(TheMechanist.class.getName());
+        DebugLog.audit("JVM_RESTART", "Restarting with command=" + command);
+        logEvent("Restarting with accepted JVM profile: " + jvmRuntimeProfile.targetLabel() + ".");
+        try {
+            new ProcessBuilder(command).inheritIO().start();
+            shutdownRuntime();
+            Window win = SwingUtilities.getWindowAncestor(this);
+            if (win != null) win.dispose();
+            System.exit(0);
+        } catch (Throwable t) {
+            DebugLog.error("JVM_RESTART", "Failed to restart with selected JVM profile.", t);
+            jvmRuntimeNotice = "Restart failed: " + t.getMessage();
+            logEvent(jvmRuntimeNotice);
+            repaint();
+        }
+    }

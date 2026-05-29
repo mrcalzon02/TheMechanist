@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: closePanel
+// Lines: 852-862
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void closePanel() {
+        sounds.play("panelClose", options);
+        PanelMode closing = panelMode;
+        clearExpiredPanelState(panelMode, "explicit close");
+        if (!lookCursorActive) { lookX = playerX; lookY = playerY; }
+        if (previousScreen == Screen.LOST) setScreen(Screen.LOST);
+        else if (previousScreen == Screen.MENU || previousScreen == Screen.PAUSE || previousScreen == Screen.OPTIONS || previousScreen == Screen.WORLD_SELECT || previousScreen == Screen.WORLD_SETUP || previousScreen == Screen.CHARACTER) setScreen(previousScreen);
+        else if (previousScreen == Screen.MODS || previousScreen == Screen.SECTOR_AUDIT) setScreen(previousScreen);
+        else if (world == null && closing == PanelMode.SAVELOAD) setScreen(Screen.MENU);
+        else setScreen(Screen.GAME);
+    }

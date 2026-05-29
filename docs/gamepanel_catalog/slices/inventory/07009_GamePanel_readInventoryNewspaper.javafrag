@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: readInventoryNewspaper
+// Lines: 7009-7023
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void readInventoryNewspaper(String item) {
+        int day = currentInnDay();
+        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        int issueDay = day;
+        if (low.contains("yesterday")) issueDay = Math.max(0, day - 1);
+        else if (low.contains("old")) issueDay = Math.max(0, day - 2 - Math.abs(Objects.hash(item, seed)) % 5);
+        else if (low.contains("mush")) { logEvent("The paper mush has surrendered all information to damp, boot grease, and time."); advanceTurn("tries to read paper mush."); return; }
+        String issue = ImperialNewsNetworkApi.ensureDailyIssue(this, issueDay, rng);
+        logEvent("NEWSPAPER day " + issueDay + ": " + issue);
+        lastInnNewsIssue = issue;
+        gainXp("Investigation", 1, "read public faction news");
+        DebugLog.audit("INN_READ_PAPER", "item=" + item + " issueDay=" + issueDay + " issue=" + issue + " state=" + stateSummary());
+        advanceTurn("reads a newspaper.");
+        repaint();
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: noblePermitCost
+// Lines: 18721-18726
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int noblePermitCost() {
+        int nobleStanding = Math.max(factionStanding.getOrDefault(Faction.NOBLE, 0), 0);
+        int existing = 0;
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && obj.businessOpen) existing++;
+        return Math.max(8, 18 + existing * 6 - nobleStanding * 2);
+    }

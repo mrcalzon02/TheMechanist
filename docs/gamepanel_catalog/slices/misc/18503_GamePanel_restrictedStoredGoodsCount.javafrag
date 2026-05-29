@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: restrictedStoredGoodsCount
+// Lines: 18503-18510
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int restrictedStoredGoodsCount() {
+        int count = 0;
+        for (String item : baseStorage) {
+            String risk = baseStoredItemSafetyLine(item).toLowerCase(Locale.ROOT);
+            if (risk.contains("restricted") || risk.contains("suspicious") || risk.contains("weapon") || risk.contains("quest/evidence")) count++;
+        }
+        return count;
+    }

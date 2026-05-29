@@ -1,0 +1,41 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: begForImperialScript
+// Lines: 6303-6336
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void begForImperialScript(RoomProfile rp, ZoneType zt) {
+        if (zt == ZoneType.MUTANT_WARRENS || zt == ZoneType.MUTANT_SEWER_CAMP || zt == ZoneType.CULTIST_SEWER_CAMP) {
+            lastScavengeReport = "That's a bad idea. What, do you want to get shanked? Begging is disabled in mutant and cultist zones.";
+            logEvent(lastScavengeReport);
+            showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
+            DebugLog.audit("BEG_DISABLED", "zone="+zt.label+" room="+rp.name+" state="+stateSummary());
+            return;
+        }
+        int payoutBase = beggingPayoutBase(zt);
+        int risk = beggingArbitesRisk(zt);
+        int chance = Math.max(8, Math.min(85, payoutBase + stat("Charm",5)*3 + (rp.name.toLowerCase(Locale.ROOT).contains("queue")?8:0)));
+        int roll = rng.nextInt(100)+1;
+        int riskRoll = rng.nextInt(100)+1;
+        DebugLog.audit("BEG_SCRIPT", "zone="+zt.label+" room="+rp.name+" roll="+roll+" chance="+chance+" riskRoll="+riskRoll+" risk="+risk+" state="+stateSummary());
+        if (riskRoll <= risk) {
+            int fine = Math.min(countMoney(), Math.max(1, risk/12));
+            if (fine > 0) spendImperialScript(fine);
+            suspicion += Math.max(1, risk/20);
+            lastScavengeReport = "Civic Wardens attention catches your begging. Fine: " + fine + " script. Suspicion rises to " + suspicion + ".";
+            logEvent(lastScavengeReport);
+        } else if (roll <= chance) {
+            int amount = Math.max(1, 1 + rng.nextInt(Math.max(2, payoutBase/12 + 1)));
+            addImperialScript(amount);
+            purgePhysicalScriptInstances("begging payout must remain tracked cash");
+            lastScavengeReport = "Begged for Concord Script in " + zt.label + ": gained " + amount + " tracked cash, not an inventory item.";
+            logEvent(lastScavengeReport);
+        } else {
+            lastScavengeReport = "Begged for Concord Script in " + zt.label + ": nothing but contempt.";
+            logEvent(lastScavengeReport);
+        }
+        showTimedAlert("SCAVENGE RESULT", lastScavengeReport, 3600);
+        for (int i=0;i<Math.max(2, 6 - stat("Agility",5)/3);i++) advanceTurn("begs for Concord Script.");
+        repaint();
+    }

@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: slidePixelOffset
+// Lines: 3422-3428
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Point slidePixelOffset(TileMotion m, int cellW, int cellH) {
+        if (m == null || m.done(System.currentTimeMillis())) return new Point(0, 0);
+        double p = m.progress(System.currentTimeMillis());
+        int ox = (int)Math.round((m.fromX - m.toX) * cellW * (1.0 - p));
+        int oy = (int)Math.round((m.fromY - m.toY) * cellH * (1.0 - p));
+        return new Point(ox, oy);
+    }

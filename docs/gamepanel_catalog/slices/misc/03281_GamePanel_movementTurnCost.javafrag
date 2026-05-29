@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: movementTurnCost
+// Lines: 3281-3287
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int movementTurnCost() {
+        int cost = movementBaseTurnCost();
+        if (movementModeIndex == MOTION_SNEAK) cost += 2;      // SNEAK: slow, crouched, concealment-first travel.
+        else if (movementModeIndex == MOTION_WALK) cost += 1; // WALK: deliberate and observant.
+        else if (movementModeIndex == MOTION_SPRINT) cost = Math.max(1, cost - 1); // SPRINT: fast, loud, sloppy.
+        return Math.max(1, cost);
+    }

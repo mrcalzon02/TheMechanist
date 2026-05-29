@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: requestDoomModeToggle
+// Lines: 20052-20072
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void requestDoomModeToggle() {
+        if (options == null) { logEvent("doom mode unchanged: options unavailable."); return; }
+        if (options.doomModeEnabled) {
+            applyQoL(GameplayQualityOfLifeAuthority.setDoomMode(options, false));
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "doom mode is highly experimental and may cause instability.\n\nEnable the first-person 3D viewport wrapper for this profile?",
+                "Enable experimental doom mode?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.YES_OPTION) {
+            applyQoL(GameplayQualityOfLifeAuthority.setDoomMode(options, true));
+            logEvent("doom mode assets/renderer unlocked. LWJGL dependency status: " + LwjglRenderBackendProbe.statusLine() + ".");
+        } else {
+            options.doomModeEnabled = false;
+            options.save();
+            applyQoL("doom mode remains OFF.");
+        }
+    }

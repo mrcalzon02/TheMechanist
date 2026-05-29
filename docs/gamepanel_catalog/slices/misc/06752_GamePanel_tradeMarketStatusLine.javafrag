@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeMarketStatusLine
+// Lines: 6752-6763
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String tradeMarketStatusLine(String item, ItemDef def, boolean buying) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use) + " " + (activeTrader == null ? "" : activeTrader.archetype + " " + activeTrader.zoneLabel)).toLowerCase(Locale.ROOT);
+        if (text.contains("noble") || text.contains("permit") || text.contains("stock certificate") || text.contains("gold")) return "status-sensitive noble or paper asset; licenses, reputation, and witnesses may matter.";
+        if (text.contains("civic Wardens") || text.contains("guard") || text.contains("military") || text.contains("munitorum") || text.contains("mass-Reactive Carbine") || text.contains("carapace")) return "controlled faction or military good; carrying or reselling it can draw authority attention.";
+        if (text.contains("cult") || text.contains("heretic") || text.contains("profane") || text.contains("narcotic") || text.contains("black-market") || text.contains("black market")) return "illicit or black-market good; useful, valuable, and dangerous if searched.";
+        if (ItemCatalog.isFirearmLike(item) || ItemCatalog.isExplosiveLike(item)) return "weapon market good; legality depends on faction space, permits, and who sees the transfer.";
+        if (text.contains("data spike") || text.contains("lockpick") || text.contains("keycard") || text.contains("hacking")) return "access tool; ordinary traders may sell it, but secure areas treat it as suspicious.";
+        if (text.contains("medical") || text.contains("medicae") || text.contains("injector") || text.contains("stim")) return "medical or drug good; clinics value it, law may care if it looks counterfeit or combat-ready.";
+        if (activeTrader != null && activeTrader.supplyChainSummary != null && !activeTrader.supplyChainSummary.isBlank()) return "supply-chain stock; availability depends on this trader's current route and local pressure.";
+        if (buying) return "ordinary local stock while this trader has it.";
+        return "ordinary resale good unless local ownership or faction pressure says otherwise.";
+    }

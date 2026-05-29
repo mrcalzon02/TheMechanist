@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: dropPortableLightItem
+// Lines: 18189-18203
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void dropPortableLightItem(String item) {
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { logEvent("Drop failed: selected light is not removable."); return; }
+        PortableLightProfile p = PortableLightProfile.profile(item);
+        if (p == null) { logEvent("Drop failed: no portable-light profile for " + item + "."); return; }
+        ItemActionResult dropped = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, CONTAINER_VOID_DISCARDED, "portable light drop ledger", null, "dropped as active floor light");
+        int dur = p.remainingDuration(turn, activePortableLightItem, activePortableLightExpiresTurn);
+        portableLights.add(new PortableLightInstance(p.name, playerX, playerY, p.radius, turn + Math.max(1, dur), portableLightWorldKey(), "dropped"));
+        while (portableLights.size() > 48) portableLights.remove(0);
+        if (p.name.equals(activePortableLightItem)) { activePortableLightItem=""; activePortableLightExpiresTurn=0; activePortableLightWorn=false; }
+        lastPortableLightReport = "DROPPED LIGHT: " + p.name + " left burning at " + playerX + "," + playerY + " with radius " + p.radius + ".";
+        logEvent(lastPortableLightReport + " " + (dropped.provenance == null ? "" : dropped.provenance.summary()));
+        sensoryCacheWorld = null;
+        advanceTurn("drops a light source."); repaint();
+    }

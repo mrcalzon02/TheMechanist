@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: itemCategoryLine
+// Lines: 16572-16580
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String itemCategoryLine(String item, ItemDef def) {
+        if (def != null) return def.category + (def.weapon ? " / weapon" : "");
+        String low = item.toLowerCase(Locale.ROOT);
+        if (looksWearable(item)) return "clothing or disguise";
+        if (low.contains("ration") || low.contains("food") || low.contains("water") || low.contains("canteen")) return "survival supply";
+        if (low.contains("scrap") || low.contains("machine") || low.contains("supplies") || low.contains("tool")) return "tool or work material";
+        if (PortableLightProfile.isLightItem(item)) return "portable light";
+        return "uncataloged carried object";
+    }

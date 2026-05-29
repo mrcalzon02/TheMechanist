@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: corridorBlockingTooClose
+// Lines: 10001-10005
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean corridorBlockingTooClose(int x, int y, java.util.List<Point> occupied) {
+        if (occupied == null) return false;
+        for (Point p : occupied) if (p != null && Math.abs(p.x-x) <= 1 && Math.abs(p.y-y) <= 1) return true;
+        return false;
+    }

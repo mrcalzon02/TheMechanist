@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerAtClaimedBase
+// Lines: 9079-9079
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean playerAtClaimedBase() { return baseClaimed && world != null && claimedRoomId >= 0 && world.roomIdAt(playerX, playerY) == claimedRoomId; }

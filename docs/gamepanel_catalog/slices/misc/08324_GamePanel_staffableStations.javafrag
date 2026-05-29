@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: staffableStations
+// Lines: 8324-8329
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<BaseObject> staffableStations() {
+        ArrayList<BaseObject> out = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (StaffingLaborBridgeAuthority.isMachineStation(obj) || StaffingLaborBridgeAuthority.isDefenseStation(obj)) out.add(obj);
+        selectedStaffingStationIndex = Math.max(0, Math.min(selectedStaffingStationIndex, Math.max(0, out.size()-1)));
+        return out;
+    }

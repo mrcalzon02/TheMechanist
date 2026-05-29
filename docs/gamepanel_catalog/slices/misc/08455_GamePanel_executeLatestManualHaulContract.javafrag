@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: executeLatestManualHaulContract
+// Lines: 8455-8461
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void executeLatestManualHaulContract() {
+        String result = LogisticsManualHaulExecutionAuthority.executeLatestContract(this);
+        lastLogisticsHaulExecutionReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_MANUAL_HAUL_EXECUTION", result + " state=" + stateSummary());
+        repaint();
+    }

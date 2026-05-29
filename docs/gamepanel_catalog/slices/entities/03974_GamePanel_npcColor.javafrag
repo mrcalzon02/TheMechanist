@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcColor
+// Lines: 3974-3987
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    Color npcColor(Faction f) {
+        switch(f) {
+            case MINISTORUM: return new Color(235,210,120);
+            case SORORITAS: return new Color(230,230,235);
+            case CIVIC WARDENS: return new Color(90,150,255);
+            case IMPERIAL_GUARD: return new Color(120,190,115);
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(210,80,70);
+            case MUTANT: return new Color(115,210,100);
+            case CULTIST: case HERETIC: return new Color(190,80,210);
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(230,70,55);
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return new Color(210,180,80);
+            default: return new Color(210,190,126);
+        }
+    }

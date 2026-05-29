@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: currentOperatorPortraitIcon
+// Lines: 10524-10535
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BufferedImage currentOperatorPortraitIcon() {
+        try {
+            Optional<NameLockedProfilePortraitAuthority.Entry> preferred = NameLockedProfilePortraitAuthority.match(resolveOperatorProfileName());
+            if (preferred.isPresent()) {
+                BufferedImage img = images.getNameLockedProfilePortrait(preferred.get().key);
+                if (img != null) return img;
+            }
+            FallbackProfileManagementAuthority.LocalProfile p = FallbackProfileManagementAuthority.loadOrCreate(userProfile);
+            if (p != null) return images.getPortrait(0, p.portraitIndex);
+        } catch (Throwable ignored) {}
+        return images.getPortrait(0, 0);
+    }

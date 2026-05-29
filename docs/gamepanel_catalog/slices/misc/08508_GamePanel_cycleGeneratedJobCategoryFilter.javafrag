@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleGeneratedJobCategoryFilter
+// Lines: 8508-8512
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleGeneratedJobCategoryFilter() {
+        generatedJobCategoryFilterIndex = (generatedJobCategoryFilterIndex + 1) % ControlledProductionJobAuthority.categoryFilters().length;
+        selectedGeneratedProductionJobIndex = 0;
+        refreshGeneratedProductionForecast("Generated job category filter -> " + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex));
+    }

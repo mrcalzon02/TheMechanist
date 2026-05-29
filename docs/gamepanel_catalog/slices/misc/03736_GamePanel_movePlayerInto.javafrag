@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: movePlayerInto
+// Lines: 3736-3748
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void movePlayerInto(int nx, int ny, String reason) {
+        int oldX = playerX, oldY = playerY;
+        beginPlayerTileSlide(oldX, oldY, nx, ny);
+        sounds.playFootstep(movementSurfaceKeyAt(nx, ny), 0, options);
+        playerX = nx;
+        playerY = ny;
+        lookX = playerX;
+        lookY = playerY;
+        lookCursorActive = false;
+        interactCursorActive = false;
+        advanceMovementTurn(reason);
+        enforceEntityOccupancy("player-move");
+    }

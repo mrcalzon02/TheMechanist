@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: acceptEulaGate
+// Lines: 908-918
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void acceptEulaGate() {
+        try {
+            EulaConsentAuthority.accept(userProfile);
+            eulaGateActive = false;
+            showTimedAlert("EULA ACCEPTED", "Consent recorded locally. Runtime access is now unlocked.", 2600);
+            repaint();
+        } catch (Throwable t) {
+            DebugLog.error("EULA_ACCEPT", "Consent failed; closing by fail-closed policy.", t);
+            requestApplicationExit("EULA consent persistence failure");
+        }
+    }

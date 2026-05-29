@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: transferContainerItemResultAt
+// Lines: 17697-17705
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemActionResult transferContainerItemResultAt(String fromContainerId, ArrayList<String> fromLegacy, int idx,
+                                                    String toContainerId, String toLabel, ArrayList<String> toLegacy,
+                                                    String route) {
+        ItemInstance inst = transferContainerItemAt(fromContainerId, fromLegacy, idx, toContainerId, toLabel, toLegacy, route);
+        if (inst == null) return ItemActionResult.fail("No item instance was available for transfer.", "container transfer failed from=" + fromContainerId + " to=" + toContainerId + " idx=" + idx);
+        return ItemActionResult.ok(inst.displayName, inst.id, toContainerId, inst.provenance,
+                inst.displayName + " moved to " + toLabel + ".",
+                "container transfer item=" + inst.displayName + " instance=" + inst.id + " from=" + fromContainerId + " to=" + toContainerId + " route=" + route);
+    }

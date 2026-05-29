@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcProjectedStep
+// Lines: 15543-15562
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    Point npcProjectedStep(NpcEntity npc) {
+        if (world == null || npc == null) return null;
+        int tx = npc.x, ty = npc.y;
+        if ("Hostile".equalsIgnoreCase(npc.state)) { tx = playerX; ty = playerY; }
+        else if (npc.needTarget != null) { tx = npc.needTarget.x; ty = npc.needTarget.y; }
+        else if ("Guard".equalsIgnoreCase(npc.state) && Math.abs(npc.x-npc.homeX)+Math.abs(npc.y-npc.homeY) > 2) { tx = npc.homeX; ty = npc.homeY; }
+        else if ("Patrol".equalsIgnoreCase(npc.state) || "Wander".equalsIgnoreCase(npc.state) || "Idle".equalsIgnoreCase(npc.state) || "Inspect".equalsIgnoreCase(npc.state)) {
+            int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{0,0}};
+            int[] d = dirs[Math.abs((npc.id.hashCode()+Math.max(1,turn)*31)) % dirs.length];
+            int wx = npc.x + d[0], wy = npc.y + d[1];
+            if (world.walkable(wx, wy) && world.npcAt(wx, wy) == null && !(wx == playerX && wy == playerY)) return new Point(wx, wy);
+            return new Point(npc.x, npc.y);
+        } else return new Point(npc.x, npc.y);
+        int dx = Integer.compare(tx, npc.x), dy = Integer.compare(ty, npc.y);
+        Point p1 = Math.abs(tx-npc.x) > Math.abs(ty-npc.y) ? new Point(npc.x + dx, npc.y) : new Point(npc.x, npc.y + dy);
+        if (world.walkable(p1.x, p1.y) && !(p1.x == playerX && p1.y == playerY) && world.npcAt(p1.x, p1.y) == null) return p1;
+        Point p2 = Math.abs(tx-npc.x) > Math.abs(ty-npc.y) ? new Point(npc.x, npc.y + dy) : new Point(npc.x + dx, npc.y);
+        if (world.walkable(p2.x, p2.y) && !(p2.x == playerX && p2.y == playerY) && world.npcAt(p2.x, p2.y) == null) return p2;
+        return new Point(npc.x, npc.y);
+    }

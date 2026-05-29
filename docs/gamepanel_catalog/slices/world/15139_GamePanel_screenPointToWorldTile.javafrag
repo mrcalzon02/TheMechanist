@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: screenPointToWorldTile
+// Lines: 15139-15156
+// Category: world
+// This is an examination slice, not compiled source.
+
+    Point screenPointToWorldTile(int sx, int sy) {
+        if (world == null) return null;
+        Rectangle map = inputMapRect();
+        FontMetrics fm = getFontMetrics(asciiFont);
+        int cellW = tileIconMode()
+                ? scaled(zoomedMapPixels(options.mapTilePixelSize()))
+                : Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+        int cellH = tileIconMode()
+                ? scaled(zoomedMapPixels(options.mapTilePixelSize()))
+                : Math.max(10, scaled(zoomedMapPixels(Math.max(14, fm.getHeight()))));
+        MapViewportTransformAuthority.Viewport viewport = MapViewportTransformAuthority.compute(
+                map, world.w, world.h, playerX, playerY, cellW, cellH,
+                10, tileIconMode() ? 10 : 10 + fm.getAscent());
+        Point out = viewport.pointToTile(sx, sy);
+        if (out == null) return null;
+        if (!world.inBounds(out.x, out.y)) return null;
+        return out;
+    }

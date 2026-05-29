@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcEvasionModifier
+// Lines: 4567-4576
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    int npcEvasionModifier(NpcEntity npc) {
+        if (npc == null) return 0;
+        switch(npc.activeMotionStateIndex) {
+            case MOTION_SNEAK: return 6;
+            case MOTION_SPRINT: return 5;
+            case MOTION_RUN: return 3;
+            case MOTION_WALK: return 1;
+            default: return 0;
+        }
+    }

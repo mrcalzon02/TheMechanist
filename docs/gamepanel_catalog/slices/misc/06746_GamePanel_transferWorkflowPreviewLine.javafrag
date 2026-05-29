@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: transferWorkflowPreviewLine
+// Lines: 6746-6750
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String transferWorkflowPreviewLine(String action, String source, String target, String item, int quantity, String capacity, String permission, String quest, String risk, String reversal) {
+        String safeItem = item == null || item.isBlank() ? "selected item" : item;
+        int qty = Math.max(1, quantity);
+        return action + " " + safeItem + " x" + qty + " from " + source + " to " + target + "; " + capacity + "; " + permission + "; " + quest + "; risk: " + risk + "; " + reversal + ".";
+    }

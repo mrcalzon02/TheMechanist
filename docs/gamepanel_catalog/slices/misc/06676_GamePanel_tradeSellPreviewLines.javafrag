@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeSellPreviewLines
+// Lines: 6676-6696
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> tradeSellPreviewLines(String item) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) return lines;
+        if (item == null || item.equals("Concord Script")) {
+            lines.add("Sale preview: select a carried item in INVENTORY before selling.");
+            return lines;
+        }
+        int carried = countInventory(item);
+        if (carried <= 0) {
+            lines.add("Sale preview: " + item + " is a counter or resource stack, not a sellable carried copy yet.");
+            return lines;
+        }
+        int sellPrice = activeTrader.sellPrice(item);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(item));
+        lines.add("Sale preview: " + item + " x" + carried + " would sell for " + sellPrice + " script each.");
+        lines.add("Seller read: catalog value about " + catalogValue + "; " + tradePricePressureLine(sellPrice, catalogValue) + ".");
+        lines.add("Market status: " + tradeMarketStatusLine(item, ItemCatalog.get(item), false));
+        lines.add("Transfer preview: " + tradeSellTransferPreviewLine(item, sellPrice));
+        lines.add("Sale caution: " + itemLegalRiskLine(item, ItemCatalog.get(item)));
+        return lines;
+    }

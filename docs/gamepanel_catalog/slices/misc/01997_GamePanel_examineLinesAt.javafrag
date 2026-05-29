@@ -1,0 +1,78 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: examineLinesAt
+// Lines: 1997-2067
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> examineLinesAt(int tx, int ty) {
+        ArrayList<String> lines = new ArrayList<>();
+        int depth = examineDepth();
+        if (world == null || !world.inBounds(tx, ty)) {
+            lines.add("EXAMINE");
+            lines.add("There is nothing reliable to examine there.");
+            return lines;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            lines.add("EXAMINE: " + npc.name);
+            if (npc.isAnimalActor()) {
+                lines.add(npc.animalLine() + ".");
+                lines.addAll(petCareReadabilityLines(npc, tx, ty, false));
+            } else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(npc, worldTurn);
+                lines.add((npc.role == null || npc.role.isBlank() ? "Underhive resident" : npc.role)
+                        + " aligned with " + (npc.faction == null ? "no known faction" : npc.faction.label) + ".");
+                lines.add("Age read: " + npc.ageLine() + ".");
+                lines.add(npc.isMinorActor() ? "Rank read: member only; no formal rank before adulthood." : "Rank read: " + npc.factionRankTitle + ".");
+            }
+            IntentReadResult intent = intentReadFor(npc);
+            if (intent != null && intent.available) lines.add(intent.summary);
+            lines.add("Visible equipment: " + visibleNpcEquipmentLine(npc) + ".");
+            String evidence = questEvidenceReadLine(npc);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add(npcConditionReadLine(npc));
+            lines.add(npcCombatReadinessLine(npc));
+            if (depth >= 2) lines.add(npcThreatReadLine(npc, intent));
+            if (depth >= 3) lines.add(npcSensesReadLine(npc, intent));
+            return lines;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) {
+            lines.add("EXAMINE: " + obj.name);
+            lines.add(obj.description == null || obj.description.isBlank() ? "A constructed object in this room." : obj.description);
+            lines.add(baseObjectConditionReadLine(obj));
+            if (depth >= 2) lines.add(baseObjectUseReadLine(obj));
+            if (depth >= 3) lines.add(baseObjectWorkReadLine(obj));
+            return lines;
+        }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) {
+            String label = mos.label == null || mos.label.isBlank() ? "Fixture" : mos.label;
+            lines.add("EXAMINE: " + label);
+            lines.add(fixtureInspectionLine(mos));
+            String evidence = questEvidenceReadLine(mos);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add("Use Interact for available actions.");
+            if (depth >= 2) lines.add("Closer read: " + fixtureStatusText(mos));
+            if (depth >= 3) lines.add("Territory read: " + ownershipText(tx, ty) + ".");
+            return lines;
+        }
+        EnvironmentalHazardRecord hazard = hazardAt(tx, ty);
+        if (hazard != null) {
+            lines.add("EXAMINE: " + hazard.label);
+            lines.add(hazard.warningText());
+            lines.add("Severity: " + hazard.severityText() + ".");
+            if (depth >= 2) lines.add("Avoidance read: plan around it before committing movement.");
+            if (depth >= 3) lines.add("Context read: light " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+            return lines;
+        }
+        char ch = world.tiles[tx][ty];
+        lines.add("EXAMINE: " + describeTile(ch));
+        lines.add("Ownership: " + ownershipText(tx, ty) + ".");
+        lines.add("Light: " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+        if (isDoorTile(ch)) lines.add("Door read: " + describeDoor(ch) + ". Interact can test access.");
+        if (depth >= 2) lines.add("Floor read: " + roomContextReadLine(tx, ty) + ".");
+        if (depth >= 3) lines.add("Approach read: movement here is " + (world.walkable(tx, ty) ? "possible if the route stays clear" : "blocked until the obstacle changes") + ".");
+        return lines;
+    }

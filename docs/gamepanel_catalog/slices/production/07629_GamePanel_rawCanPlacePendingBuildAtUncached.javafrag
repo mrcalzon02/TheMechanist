@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: rawCanPlacePendingBuildAtUncached
+// Lines: 7629-7642
+// Category: production
+// This is an examination slice, not compiled source.
+
+    String rawCanPlacePendingBuildAtUncached(int x, int y) {
+        if (pendingBuildRecipe == null) return "No build recipe selected.";
+        if (world == null || x < 0 || y < 0 || x >= world.w || y >= world.h) return "Outside world bounds.";
+        if (!isInClaimedRoom(x, y)) return "Tile is outside the claimed room.";
+        if (world.tiles[x][y] == '#') return "Cannot build inside a wall.";
+        if (!world.walkable(x, y)) return "Tile is not walkable.";
+        if (baseObjectAt(x, y) != null) return "Tile already contains a base object.";
+        if (x == playerX && y == playerY) return "Move off the target tile before placing the object.";
+        String live = LiveProductionPlacementAuthority.validateBuildPlacement(this, pendingBuildRecipe, x, y);
+        if (!"OK".equals(live)) return live;
+        String access = SelfEntombmentConstructionAuthority.validate(this, pendingBuildRecipe, x, y);
+        if (!"OK".equals(access)) return access;
+        return "OK";
+    }

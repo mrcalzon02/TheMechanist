@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: itemPlayerFacingOriginLine
+// Lines: 16598-16605
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String itemPlayerFacingOriginLine(String item) {
+        ItemProvenanceRecord pr = provenanceForItem(item);
+        if (pr == null) return "no reliable origin is recorded for this stack.";
+        String s = pr.summary();
+        if (s == null || s.isBlank()) return "no reliable origin is recorded for this stack.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
+    }

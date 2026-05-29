@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: maybeNpcRangedAttack
+// Lines: 3915-3915
+// Category: combat
+// This is an examination slice, not compiled source.
+
+            if (!suppressHostilePursuit && maybeNpcRangedAttack(npc, dist)) { /* spent turn firing or reloading */ }

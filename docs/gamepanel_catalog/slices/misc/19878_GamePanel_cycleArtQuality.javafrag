@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleArtQuality
+// Lines: 19878-19887
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleArtQuality() {
+        options.artQualityIndex = Math.floorMod(options.artQualityIndex + 1, GameOptions.ART_QUALITY_LABELS.length);
+        options.applyGeneratedAssetRuntimeProperties();
+        options.save();
+        AssetManager.reloadGeneratedAssetRuntime();
+        images.reloadArtQuality(options);
+        sounds.play("tab", options);
+        logEvent("Art quality cache now " + options.artQualityLabel() + ". Generated semantic assets request tier " + options.artQualityFolder() + "; external payload " + options.generatedAssetPayloadRootShortLabel() + ".");
+        repaint();
+    }

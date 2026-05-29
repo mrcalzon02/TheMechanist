@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditTileHasEntity
+// Lines: 11723-11725
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean auditTileHasEntity(int x, int y) {
+        return auditWorld != null && auditWorld.npcAt(x, y) != null;
+    }

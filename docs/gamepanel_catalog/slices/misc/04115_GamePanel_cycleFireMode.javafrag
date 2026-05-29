@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleFireMode
+// Lines: 4115-4119
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleFireMode() {
+        combatFireModeIndex = Math.floorMod(combatFireModeIndex + 1, FIRE_MODE_LABELS.length);
+        lastTargetingReport = "Fire mode now " + fireModeLabel() + ".";
+        sounds.play("tab", options);
+    }

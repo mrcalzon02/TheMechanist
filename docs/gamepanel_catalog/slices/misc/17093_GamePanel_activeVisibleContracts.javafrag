@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activeVisibleContracts
+// Lines: 17093-17096
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        for (FactionContract c : activeVisibleContracts()) {
+            ContractZoneTarget target = contractZoneTarget(c);
+            if (target != null && contractTargetOnCurrentMapLayer(target) && target.zoneX == zx && target.zoneY == zy) matches.add(c);
+        }

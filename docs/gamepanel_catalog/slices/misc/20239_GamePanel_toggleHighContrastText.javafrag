@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleHighContrastText
+// Lines: 20239-20246
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleHighContrastText() {
+        options.highContrastText = !options.highContrastText;
+        options.save();
+        logEvent("High contrast text containers " + (options.highContrastText ? "enabled" : "disabled") + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(userProfile));
+        repaint();
+    }

@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: transferFirstEquipmentItemBackToInventory
+// Lines: 16816-16829
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemActionResult transferFirstEquipmentItemBackToInventory(int slot, String expectedItem, String route) {
+        String cid = equipmentContainerIdForSlot(slot);
+        ContainerRecord c = itemContainers.get(cid);
+        if (c != null && !c.itemInstanceIds.isEmpty()) {
+            String chosen = null;
+            for (String id : new ArrayList<String>(c.itemInstanceIds)) {
+                ItemInstance inst = itemInstances.get(id);
+                if (inst != null && (expectedItem == null || expectedItem.isBlank() || ItemQuality.namesMatch(inst.displayName, expectedItem))) { chosen = id; break; }
+            }
+            if (chosen == null) chosen = c.itemInstanceIds.get(0);
+            return transferContainerItemResultByInstanceId(chosen, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, route);
+        }
+        return ItemActionResult.fail("No tracked item was present in equipment slot " + slot + ".", "equipment transfer back failed slot=" + slot + " item=" + expectedItem);
+    }

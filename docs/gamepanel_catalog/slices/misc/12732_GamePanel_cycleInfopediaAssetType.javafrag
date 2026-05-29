@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleInfopediaAssetType
+// Lines: 12732-12743
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleInfopediaAssetType(int delta) {
+        AssetType[] types = SemanticAssetInfopediaAuthority.browseTypes();
+        int slots = types.length + 1; // All + explicit types.
+        int raw = infopediaAssetTypeIndex + 1;
+        raw = Math.floorMod(raw + delta, slots);
+        infopediaAssetTypeIndex = raw - 1;
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }

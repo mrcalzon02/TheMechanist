@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: getHeight
+// Lines: 572-574
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    @Override public int getHeight() {
+        return virtualRenderContext ? renderScaling.virtualHeight() : super.getHeight();
+    }

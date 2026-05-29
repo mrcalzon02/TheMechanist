@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: clearExpiredPauseState
+// Lines: 835-839
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void clearExpiredPauseState(String reason) {
+        if (scrollbarDragActive) DebugLog.audit("UI_CLOSE", "Clearing expired pause state due to " + reason + " | " + stateSummary());
+        scrollbarDragActive = false;
+        activeScrollTag = "";
+    }

@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseSizeStatusLine
+// Lines: 18614-18630
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseSizeStatusLine() {
+        int tiles = 0;
+        if (world != null && claimedRoomId >= 0) {
+            for (int yy=0; yy<world.h; yy++) for (int xx=0; xx<world.w; xx++) if (world.roomIdAt(xx, yy) == claimedRoomId) tiles++;
+        }
+        int defenses = 0, workshops = 0, comforts = 0, services = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj.symbol == 'd' || obj.symbol == 'a' || obj.symbol == 'x' || obj.symbol == 'p' || obj.symbol == 'g' || obj.symbol == 'D' || obj.symbol == 'T' || obj.symbol == 'H') defenses++;
+            if (obj.symbol == 'w' || obj.symbol == 'e' || obj.symbol == 'f' || obj.symbol == 'l' || obj.symbol == 'L' || obj.symbol == 'k' || obj.symbol == 'q' || obj.symbol == 'G') workshops++;
+            if (obj.symbol == 'c' || obj.symbol == 'u' || obj.symbol == 'v') comforts++;
+            if (obj.isBusinessAsset()) services++;
+        }
+        String status = workshops > 0 ? "operational workshop" : (baseObjects.isEmpty() ? "claimed / undeveloped" : "habitable stash-room");
+        if (services > 0) status += ", commerce capable";
+        if (defenses > 0) status += ", defended";
+        return (tiles <= 0 ? "unknown room size" : tiles + " tiles") + " | objects " + baseObjects.size() + " | workshops " + workshops + " | comforts " + comforts + " | defenses " + defenses + " | " + status;
+    }

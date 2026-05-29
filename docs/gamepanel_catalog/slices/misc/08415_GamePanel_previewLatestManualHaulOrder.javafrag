@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: previewLatestManualHaulOrder
+// Lines: 8415-8421
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void previewLatestManualHaulOrder() {
+        String result = LogisticsRouteReadinessPreviewAuthority.createManualHaulPreview(this);
+        lastLogisticsRoutePreviewReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_ROUTE_READINESS_PREVIEW", result + " state=" + stateSummary());
+        repaint();
+    }

@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recordLatestManualHaulContract
+// Lines: 8423-8429
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void recordLatestManualHaulContract() {
+        String result = LogisticsManualHaulContractAuthority.createManualHaulContract(this);
+        lastLogisticsHaulContractReport = result;
+        logEvent(result);
+        DebugLog.audit("LOGISTICS_MANUAL_HAUL_CONTRACT", result + " state=" + stateSummary());
+        repaint();
+    }

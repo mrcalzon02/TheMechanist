@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionByLabel
+// Lines: 13884-13884
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Faction factionByLabel(String label) { for (Faction f: Faction.values()) if (f.label.equals(label)) return f; return null; }

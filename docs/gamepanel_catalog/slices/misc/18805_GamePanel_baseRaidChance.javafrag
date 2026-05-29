@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseRaidChance
+// Lines: 18805-18809
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int baseRaidChance(int security) {
+        int pressure = baseRaidPressure(security);
+        if (pressure < 12) return 0;
+        return Math.max(2, Math.min(45, pressure));
+    }

@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: strategicRaidChance
+// Lines: 19145-19152
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int strategicRaidChance() {
+        Faction f = highestFactionMarketPressureFaction();
+        int pressure = f == Faction.NONE ? 0 : factionMarketPressure.getOrDefault(f, 0);
+        if (pressure < 25) return 0;
+        int power = playerFactionPower();
+        int security = baseSecurityRating();
+        return Math.max(1, Math.min(55, pressure / 3 + power / 8 - security / 3));
+    }

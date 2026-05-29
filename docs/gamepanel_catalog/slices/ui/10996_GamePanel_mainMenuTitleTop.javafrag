@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mainMenuTitleTop
+// Lines: 10996-10998
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    int mainMenuTitleTop(int H) {
+        return Math.max(24, Math.min(54, H / 16));
+    }

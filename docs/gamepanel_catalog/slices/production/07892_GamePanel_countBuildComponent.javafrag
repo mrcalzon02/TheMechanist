@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: countBuildComponent
+// Lines: 7892-7894
+// Category: production
+// This is an examination slice, not compiled source.
+
+    int countBuildComponent(String item) {
+        return countProductionInput(item);
+    }

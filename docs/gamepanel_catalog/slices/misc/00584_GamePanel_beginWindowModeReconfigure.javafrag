@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: beginWindowModeReconfigure
+// Lines: 584-587
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void beginWindowModeReconfigure() {
+        windowModeReconfiguring = true;
+        try { DebugLog.audit("WINDOW_RECONFIGURE_BEGIN", "suppressRuntimeShutdown=true timerRunning=" + timer.isRunning()); } catch (Throwable ignored) {}
+    }

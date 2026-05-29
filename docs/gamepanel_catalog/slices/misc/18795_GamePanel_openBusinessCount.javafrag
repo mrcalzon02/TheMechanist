@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openBusinessCount
+// Lines: 18795-18799
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int openBusinessCount() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && obj.businessOpen) n++;
+        return n;
+    }

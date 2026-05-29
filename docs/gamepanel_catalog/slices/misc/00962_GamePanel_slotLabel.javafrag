@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: slotLabel
+// Lines: 962-962
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String slotLabel(int slot) { return SaveSlotSurfaceApi.slotLabel(slot); }

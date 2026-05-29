@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: chaosShrineName
+// Lines: 2489-2492
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String chaosShrineName(int x, int y) {
+        String[] names = {"the Blood God", "the Plague God", "the Changer of Ways", "the Prince of Excess"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 13 + y * 29, names.length)];
+    }

@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: resetPushPastIntent
+// Lines: 3832-3839
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void resetPushPastIntent() {
+        pushPastIntentNpcId = "";
+        pushPastIntentX = Integer.MIN_VALUE;
+        pushPastIntentY = Integer.MIN_VALUE;
+        pushPastIntentDx = 0;
+        pushPastIntentDy = 0;
+        pushPastIntentCount = 0;
+    }

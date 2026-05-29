@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: zoneAuditDropdownInnerRect
+// Lines: 11749-11752
+// Category: world
+// This is an examination slice, not compiled source.
+
+    Rectangle zoneAuditDropdownInnerRect(UiLayout L) {
+        Rectangle r = zoneAuditDropdownOuterRect(L);
+        return new Rectangle(r.x + 10, r.y + 10, Math.max(1, r.width - 20), Math.max(1, r.height - 20));
+    }

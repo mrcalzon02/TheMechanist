@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: currentTargetInventoryStacks
+// Lines: 16378-16396
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    LinkedHashMap<String,Integer> currentTargetInventoryStacks() {
+        LinkedHashMap<String,Integer> out = new LinkedHashMap<>();
+        if (world == null || !world.inBounds(playerX, playerY)) return out;
+        BaseObject base = baseObjectAt(playerX, playerY);
+        if (base != null) out.put(base.name, 1);
+        if (world.mapObjects != null) {
+            for (MapObjectState m : world.mapObjects) {
+                if (m != null && m.x == playerX && m.y == playerY) {
+                    String label = m.label == null || m.label.isBlank() ? m.type : m.label;
+                    if (label == null || label.isBlank()) label = "floor feature";
+                    out.put(label, out.getOrDefault(label, 0) + 1);
+                }
+            }
+        }
+        char ch = world.tiles[playerX][playerY];
+        String tile = "Floor tile: " + describeTile(ch);
+        out.put(tile, 1);
+        return out;
+    }

@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inGameEditorPalettes
+// Lines: 11112-11120
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String[][] inGameEditorPalettes() {
+        return new String[][]{
+                {"Items", "sealed ration", "stubcarbine", "logic Engine core", "repair kit", "water canister", "scrap bundle"},
+                {"Entity Spawners", "civilian spawn", "guard patrol node", "scavenger camp node", "bound Labor Automaton route", "trader counter", "hostile ambush"},
+                {"Floor Tiles", "worn-plasteel", "oil-stained iron", "stone and brass", "deck plating", "ceramite tile", "sump grate"},
+                {"Wall Tiles", "hab partition", "bulkhead wall", "gothic stone", "corrugated barricade", "sealed hatch", "service conduit"},
+                {"Objects", "cot", "sink", "dresser", "cabinet", "generator", "pillar", "altar", "terminal", "crate", "candle rack"}
+        };
+    }

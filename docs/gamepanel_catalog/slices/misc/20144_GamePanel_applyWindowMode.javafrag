@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyWindowMode
+// Lines: 20144-20149
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void applyWindowMode() {
+        renderScaling.applyOptions(options);
+        logEvent(WindowModeSurfaceAuthority.apply(this, options));
+        DebugLog.audit("GRAPHICS_APPLY", renderScaling.auditSummary());
+        repaint();
+    }

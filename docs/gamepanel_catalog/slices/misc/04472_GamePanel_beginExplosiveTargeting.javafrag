@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: beginExplosiveTargeting
+// Lines: 4472-4486
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void beginExplosiveTargeting() {
+        if (world == null || active == null) { logEvent("EXPLOSIVE TARGETING failed: no active world or character."); return; }
+        String item = firstCarriedExplosiveItem();
+        if (item.isBlank()) { logEvent("EXPLOSIVE TARGETING: no carried grenade, mine, satchel, claymore, plasma bomb, or melta grenade."); return; }
+        combatCursorActive = true;
+        explosiveTargetingMode = true;
+        selectedExplosiveItem = item;
+        combatX = Math.max(0, Math.min(world.w-1, playerX + Math.max(-1, Math.min(1, lastMoveDx)) * Math.max(2, Math.min(6, explosiveThrowRange(item)))));
+        combatY = Math.max(0, Math.min(world.h-1, playerY + Math.max(-1, Math.min(1, lastMoveDy)) * Math.max(2, Math.min(6, explosiveThrowRange(item)))));
+        if (combatX == playerX && combatY == playerY) combatX = Math.min(world.w-1, playerX + 3);
+        lookCursorActive = false;
+        interactCursorActive = false;
+        lastTargetingReport = "Explosive reticle armed for " + item + ". Move reticle; G/Enter throws or plants depending on explosive type.";
+        openPanel(PanelMode.COMBAT);
+    }

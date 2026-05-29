@@ -1,0 +1,77 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: scanForDistantSounds
+// Lines: 5632-5701
+// Category: audio
+// This is an examination slice, not compiled source.
+
+    void scanForDistantSounds(String reason) {
+        int hr = hearingRange();
+        int heard = 0;
+        ArrayList<String> heardLines = new ArrayList<>();
+        for (int x=Math.max(0, playerX-hr); x<=Math.min(world.w-1, playerX+hr); x++) {
+            for (int y=Math.max(0, playerY-hr); y<=Math.min(world.h-1, playerY+hr); y++) {
+                if (isVisible(x,y)) continue;
+                char ch = world.tiles[x][y];
+                if (!makesSound(ch)) continue;
+                int dist = Math.abs(playerX-x) + Math.abs(playerY-y);
+                int chance = soundChance(ch, x, y, dist);
+                int roll = rng.nextInt(100) + 1;
+                DebugLog.audit("HEARING_CHECK", "reason=" + reason + " tile=" + ch + " at=" + x + "," + y + " dist=" + dist + " roll=" + roll + " chance=" + chance + " noisePenalty=" + noisePenaltyAt(x,y) + " state=" + stateSummary());
+                if (roll <= chance) {
+                    heard++;
+                    String label = soundLabel(ch);
+                    addSoundPing(x, y, label);
+                    maybePlayHeardSoundCue(label, dist);
+                    if (heardLines.size() < 3) heardLines.add(directionAndDistanceLabel(x, y) + " " + label);
+                }
+            }
+        }
+        if (world.noiseSources != null) {
+            for (ZoneNoiseSourceRecord ns : world.noiseSources) {
+                if (ns == null || !ns.active || !world.inBounds(ns.x, ns.y)) continue;
+                int dist = Math.abs(playerX-ns.x) + Math.abs(playerY-ns.y);
+                if (dist <= 0 || dist > Math.min(hr + 6, ns.radius + hr/2)) continue;
+                if (isVisible(ns.x, ns.y) && dist > detailVisionRange()) continue;
+                int chance = Math.max(4, Math.min(92, 18 + stat("Hearing",6)*5 + ns.intensity - dist*4 - noisePenaltyAt(playerX, playerY)/3));
+                if (ns.intermittent && Math.floorMod(turn + ns.phase, Math.max(2, ns.period)) == 0) chance /= 3;
+                int roll = rng.nextInt(100) + 1;
+                DebugLog.audit("HEARING_NOISE_SOURCE", "reason=" + reason + " source=" + ns.summary() + " dist=" + dist + " roll=" + roll + " chance=" + chance + " state=" + stateSummary());
+                if (roll <= chance) {
+                    heard++;
+                    addSoundPing(ns.x, ns.y, ns.label);
+                    maybePlayHeardSoundCue(ns.label, dist);
+                    if (heardLines.size() < 3) heardLines.add(directionAndDistanceLabel(ns.x, ns.y) + " " + ns.label);
+                }
+            }
+        }
+        if (world.npcs != null) {
+            for (NpcEntity npc : world.npcs) {
+                if (npc == null) continue;
+                int dist = Math.abs(playerX-npc.x) + Math.abs(playerY-npc.y);
+                if (dist <= 0 || dist > hr) continue;
+                if (isVisible(npc.x, npc.y) && dist > Math.max(2, detailVisionRange())) continue;
+                int chance = npcSoundChance(npc, dist);
+                int roll = rng.nextInt(100) + 1;
+                DebugLog.audit("HEARING_NPC_CHECK", "reason=" + reason + " npc=" + npc.id + " at=" + npc.x + "," + npc.y + " state=" + npc.state + " dist=" + dist + " roll=" + roll + " chance=" + chance + " active=" + activeMotionStateLabel());
+                if (roll <= chance) {
+                    heard++;
+                    String label = npcSoundLabel(npc);
+                    addSoundPing(npc.x, npc.y, label);
+                    maybePlayHeardSoundCue(label, dist);
+                    if (heardLines.size() < 3) heardLines.add(directionAndDistanceLabel(npc.x, npc.y) + " " + label + (npc.activeMotionStateIndex == MOTION_SNEAK ? " — possible sneaking entity" : ""));
+                }
+            }
+        }
+        lastHeardCount = heard;
+        if (heard > 0) {
+            String detail = heardLines.isEmpty() ? "" : " — " + String.join("; ", heardLines);
+            lastSensesReport = "Heard " + heard + " disturbance(s) within " + hr + " tiles on " + reason + detail + ".";
+            if (turn != lastHearingLogTurn || heard >= 2) {
+                logEvent(lastSensesReport);
+                lastHearingLogTurn = turn;
+            }
+        } else {
+            lastSensesReport = "No clear distant sounds on " + reason + ".";
+        }
+    }

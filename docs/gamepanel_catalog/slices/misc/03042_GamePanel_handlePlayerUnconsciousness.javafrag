@@ -1,0 +1,32 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handlePlayerUnconsciousness
+// Lines: 3042-3066
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void handlePlayerUnconsciousness(String cause, String attacker, String weapon, boolean theftRisk) {
+        if (screen == Screen.LOST) return;
+        runUnconsciousEvents++;
+        int stolenItems = 0;
+        int stolenScript = 0;
+        if (theftRisk) {
+            stolenScript = unconsciousScriptLoss();
+            if (stolenScript > 0) carriedScript = Math.max(0, carriedScript - stolenScript);
+            stolenItems = unconsciousItemLoss();
+        }
+        Point wake = unconsciousWakePoint();
+        playerX = wake.x; playerY = wake.y; lookX = playerX; lookY = playerY;
+        fatigue = Math.max(0, Math.min(10, fatigue / 2));
+        sleepNeed = 0;
+        pain = Math.max(0, pain / 2);
+        bleeding = 0;
+        wounds = Math.max(0, wounds - 2);
+        if (active != null && active.body != null) healWorstBodyPart(25.0);
+        updateSensoryModel("unconscious relocation");
+        DebugLog.audit("PLAYER_UNCONSCIOUS", "cause=" + cause + " attacker=" + attacker + " weapon=" + weapon + " scriptLost=" + stolenScript + " inventoryLost=" + stolenItems + " wake=" + playerX + "," + playerY + " state=" + stateSummary());
+        logEvent("UNCONSCIOUS: " + cause + ". You are carried, dragged, ransomed, or simply found later and wake at " + wakePointLabel(wake) + ".");
+        if (stolenScript > 0) logEvent("SCRIPT STOLEN: " + stolenScript + " Concord Script was lifted from your pockets while you were out.");
+        if (stolenItems > 0) logEvent("ITEMS LOST: " + stolenItems + " carried item(s) were gone when you woke.");
+        maybeAutosave("unconscious recovery");
+    }

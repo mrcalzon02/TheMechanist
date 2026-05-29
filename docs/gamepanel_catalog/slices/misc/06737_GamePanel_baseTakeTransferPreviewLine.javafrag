@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseTakeTransferPreviewLine
+// Lines: 6737-6744
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseTakeTransferPreviewLine() {
+        String item = baseStorage.isEmpty() ? null : baseStorage.get(baseStorage.size() - 1);
+        String capacity = inventoryWeight() + 1 <= carryCapacity() ? "carry capacity ok" : "blocked: carried load would exceed capacity";
+        String permission = baseStorageAccessLine();
+        String quest = isQuestOrEvidenceItem(item) ? "quest/evidence warning: carrying it may expose it to sale/drop mistakes" : "not marked as quest evidence";
+        String risk = item == null ? "no stored item selected" : baseStoredItemSafetyLine(item);
+        return transferWorkflowPreviewLine("take", "claimed base storage", "carried inventory", item == null ? "newest stored item" : item, 1, capacity, permission, quest, risk, "reversible with STASH while storage has room");
+    }

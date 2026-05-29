@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawInGameGenericEditor
+// Lines: 11235-11249
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawInGameGenericEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center) {
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, entity.name() + "  [" + entity.id() + "]", center.x + 18, center.y + 58);
+        g.setFont(smallFont);
+        int y = center.y + 90;
+        for (Map.Entry<String,Object> e : entity.properties().entrySet()) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(e.getKey() + ":", g.getFontMetrics(), 160), center.x + 24, y);
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(String.valueOf(e.getValue()), g.getFontMetrics(), center.width - 210), center.x + 178, y);
+            y += 24;
+            if (y > center.y + center.height - 24) break;
+        }
+    }

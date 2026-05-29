@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: hoveredButtonDescription
+// Lines: 17591-17594
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    String hoveredButtonDescription() {
+        for (ButtonBox b : buttons) if (b.contains(mouseX, mouseY)) return b.tip;
+        return null;
+    }

@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isPlantableExplosive
+// Lines: 4239-4239
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isPlantableExplosive(String item) { return ExplosiveProfile.forItem(item).plantable; }

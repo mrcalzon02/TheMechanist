@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditTileIconPixels
+// Lines: 14702-14705
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int auditTileIconPixels() {
+        int base = options == null ? 32 : options.mapTilePixelSize();
+        return Math.max(16, Math.min(base, (int)Math.round(base * 0.78)));
+    }

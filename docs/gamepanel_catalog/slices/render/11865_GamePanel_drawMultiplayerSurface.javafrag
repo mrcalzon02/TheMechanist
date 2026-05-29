@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawMultiplayerSurface
+// Lines: 11865-11867
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawMultiplayerSurface(Graphics2D g) {
+        multiplayerPainter.paint(g, this);
+    }

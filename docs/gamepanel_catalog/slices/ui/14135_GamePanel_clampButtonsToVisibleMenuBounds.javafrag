@@ -1,0 +1,58 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: clampButtonsToVisibleMenuBounds
+// Lines: 14135-14185
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void clampButtonsToVisibleMenuBounds() {
+        int W = getWidth(), H = getHeight();
+        Rectangle screenSafe = new Rectangle(12, 12, Math.max(1, W - 24), Math.max(1, H - 24));
+        Rectangle optionPanelSafe = optionPanelInnerSafeRect();
+        Rectangle commandSafe = commandPanelInnerSafeRect();
+        Rectangle inventoryActionSafe = inventoryActionInnerSafeRect();
+        Rectangle worldSetupActionSafe = worldSetupActionInnerSafeRect();
+        Rectangle saveLoadSafe = saveLoadButtonSafeRect();
+
+        for (ButtonBox b : buttons) {
+            Rectangle safe = screenSafe;
+            if (screen == Screen.OPTIONS && b.label != null && !b.label.equals("BACK")) safe = isGraphicsDropdownButton(b) ? graphicsDropdownInnerRect() : optionPanelSafe;
+            else if (screen == Screen.WORLD_SETUP && b.label != null && !b.label.equals("BACK")) safe = b.label.equals("GENERATE WORLD") ? worldSetupGenerateInnerSafeRect() : worldSetupActionSafe;
+            else if (isCommandSurfaceButton(b)) safe = commandSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && isInventoryActionButton(b)) safe = inventoryActionSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.SAVELOAD && b.label != null && !b.label.equals("BACK")) safe = saveLoadSafe;
+            fitButtonInto(b, safe);
+        }
+
+        if (screen == Screen.GAME) {
+            java.util.List<ButtonBox> group = commandSurfaceButtons();
+            flowButtonGroup(group, commandSafe, 1);
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY) {
+            java.util.List<ButtonBox> group = inventoryActionButtons();
+            flowButtonGroup(group, inventoryActionSafe, 1);
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.SAVELOAD) {
+            flowSaveLoadButtons();
+        } else if (screen == Screen.PANEL && panelUsesCommandSurface()) {
+            java.util.List<ButtonBox> group = commandSurfaceButtons();
+            int cols = group.size() > 14 || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH ? 2 : 1;
+            flowButtonGroup(group, commandSafe, cols);
+        } else if (screen == Screen.OPTIONS) {
+            flowOptionsButtons(optionPanelSafe);
+        } else if (screen == Screen.WORLD_SETUP) {
+            java.util.List<ButtonBox> actionGroup = new ArrayList<>();
+            for (ButtonBox b : buttons) if (b.label != null && !b.label.equals("BACK") && !b.label.equals("GENERATE WORLD")) actionGroup.add(b);
+            flowButtonGroup(actionGroup, worldSetupActionSafe, 2);
+            Rectangle genSafe = worldSetupGenerateInnerSafeRect();
+            for (ButtonBox b : buttons) if (b.label != null && b.label.equals("GENERATE WORLD")) { b.r = new Rectangle(genSafe.x, genSafe.y, genSafe.width, Math.max(22, Math.min(30, genSafe.height))); }
+        }
+
+        for (ButtonBox b : buttons) {
+            Rectangle safe = screenSafe;
+            if (screen == Screen.OPTIONS && b.label != null && !b.label.equals("BACK")) safe = isGraphicsDropdownButton(b) ? graphicsDropdownInnerRect() : optionPanelSafe;
+            else if (screen == Screen.WORLD_SETUP && b.label != null && !b.label.equals("BACK")) safe = b.label.equals("GENERATE WORLD") ? worldSetupGenerateInnerSafeRect() : worldSetupActionSafe;
+            else if (isCommandSurfaceButton(b)) safe = commandSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && isInventoryActionButton(b)) safe = inventoryActionSafe;
+            else if (screen == Screen.PANEL && panelMode == PanelMode.SAVELOAD && b.label != null && !b.label.equals("BACK")) safe = saveLoadSafe;
+            fitButtonInto(b, safe);
+        }
+    }

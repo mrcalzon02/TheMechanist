@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: localNoiseFieldAt
+// Lines: 5829-5831
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int localNoiseFieldAt(int tx, int ty) {
+        return noisePenaltyAt(tx, ty);
+    }

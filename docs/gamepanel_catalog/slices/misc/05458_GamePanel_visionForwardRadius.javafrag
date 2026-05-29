@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: visionForwardRadius
+// Lines: 5458-5468
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    double visionForwardRadius() {
+        int vr = visionRange();
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return vr + 1.0;
+            case MOTION_SNEAK: return Math.max(3, vr - 0.5);
+            case MOTION_WALK: return vr + 1.0;
+            case MOTION_RUN: return Math.max(3, vr * 0.92);
+            case MOTION_SPRINT: return Math.max(3, vr * 0.82);
+            default: return vr;
+        }
+    }

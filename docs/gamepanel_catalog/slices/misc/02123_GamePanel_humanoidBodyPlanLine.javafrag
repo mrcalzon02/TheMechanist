@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: humanoidBodyPlanLine
+// Lines: 2123-2127
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String humanoidBodyPlanLine(NpcEntity npc) {
+        if (npc.isMinorActor()) return "smaller humanoid frame";
+        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("bound Labor Automaton")) return "augmented humanoid frame";
+        return "humanoid body plan";
+    }

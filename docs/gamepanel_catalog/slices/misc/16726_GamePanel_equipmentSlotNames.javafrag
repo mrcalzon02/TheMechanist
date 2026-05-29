@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: equipmentSlotNames
+// Lines: 16726-16733
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        switch (Math.max(0, Math.min(idx, equipmentSlotNames().length-1))) {
+            case 0: return equippedHeadgearItem == null ? "" : equippedHeadgearItem;
+            case 1: return equippedArmorItem == null ? "" : equippedArmorItem;
+            case 2: return equippedClothing == null ? "" : equippedClothing.name;
+            case 3: return equippedLeftHandItem == null ? "" : equippedLeftHandItem;
+            case 4: return equippedRightHandItem == null ? "" : equippedRightHandItem;
+            default: return equippedBackpackItem == null ? "" : equippedBackpackItem;
+        }

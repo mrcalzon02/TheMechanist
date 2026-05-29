@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: alertBankGuardsNear
+// Lines: 9401-9416
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void alertBankGuardsNear(int tx, int ty, BankProfile b, int severity) {
+        if (world == null) return;
+        int alerted = 0;
+        for (NpcEntity n : world.npcs) {
+            if (n == null || n.role == null) continue;
+            String role = n.role.toLowerCase(Locale.ROOT);
+            if (!(role.contains("bank security") || role.contains("vault guard") || role.contains("branch guard") || role.contains("bank manager"))) continue;
+            int d = Math.abs(n.x - tx) + Math.abs(n.y - ty);
+            if (d > 18 + severity * 2) continue;
+            n.state = role.contains("manager") ? "Alarmed" : "Alarm Response";
+            n.activeMotionStateIndex = MOTION_RUN;
+            if (role.contains("guard")) { n.faction = Faction.NOBLE; n.equippedRangedWeapon = n.equippedRangedWeapon == null || n.equippedRangedWeapon.isBlank() ? "Autopistol" : n.equippedRangedWeapon; n.loadedShots = Math.max(n.loadedShots, 6); n.ammoReloadsRemaining = Math.max(n.ammoReloadsRemaining, 2); }
+            alerted++;
+        }
+        if (alerted > 0) lastBankAlarmReport = "Alarm at " + (b==null?"unknown bank":b.label) + " alerted " + alerted + " local manager/guard actor(s).";
+    }

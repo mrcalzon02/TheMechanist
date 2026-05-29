@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditTileHasInteractable
+// Lines: 11687-11693
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean auditTileHasInteractable(int x, int y) {
+        if (auditWorld == null) return false;
+        MapObjectState mo = auditWorld.mapObjectAt(x, y);
+        if (mo != null) return true;
+        char ch = auditWorld.inBounds(x, y) ? auditWorld.tiles[x][y] : 0;
+        return auditWorld.isDoorSymbol(ch) || ch == 'S' || ch == 'E' || ch == 'v' || ch == '<' || ch == '>';
+    }

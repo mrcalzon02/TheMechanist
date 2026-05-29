@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: readableButtonHeight
+// Lines: 19851-19851
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    int readableButtonHeight(int preferred) { return Math.max(28, Math.min(preferred, Math.max(24, getHeight() / 11))); }

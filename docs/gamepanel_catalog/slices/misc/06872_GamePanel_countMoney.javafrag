@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: countMoney
+// Lines: 6872-6872
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int countMoney() { return Math.max(0, carriedScript); }

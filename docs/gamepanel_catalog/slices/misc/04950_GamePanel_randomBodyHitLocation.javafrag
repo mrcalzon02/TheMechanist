@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: randomBodyHitLocation
+// Lines: 4950-4953
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String randomBodyHitLocation() {
+        String[] parts = {"head", "torso", "left arm", "right arm", "left leg", "right leg"};
+        return parts[rng.nextInt(parts.length)];
+    }

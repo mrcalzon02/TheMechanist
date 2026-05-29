@@ -1,0 +1,32 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeHaggle
+// Lines: 6838-6862
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void tradeHaggle() {
+        if (activeTrader == null) { lastTradeReport = "No trader is currently engaged for haggling."; logEvent(lastTradeReport); return; }
+        activeTrader.haggleAttempts++;
+        int charm = stat("Charm", 5);
+        int chance = Math.max(5, Math.min(92, 30 + charm * 5 - activeTrader.haggleAttempts * 10));
+        int roll = rng.nextInt(100) + 1;
+        if (roll <= chance) {
+            int gain = 5 + rng.nextInt(11);
+            activeTrader.discountPct = Math.min(45, activeTrader.discountPct + gain);
+            conversationBranch = activeTrader.name + ": Fine. I shave " + gain + "% from the slate. Do not smile like you earned it.";
+            lastTradeReport = "Haggle succeeded: roll " + roll + " <= " + chance + ". Discount now " + activeTrader.discountPct + "%.";
+        } else if (roll > chance + 30 || activeTrader.haggleAttempts >= 3) {
+            int penalty = 5 + rng.nextInt(11);
+            activeTrader.discountPct = 0;
+            activeTrader.markupPct = Math.min(50, activeTrader.markupPct + penalty);
+            conversationBranch = activeTrader.name + ": That tone just cost you. Prices rise " + penalty + "%.";
+            lastTradeReport = "Haggle angered trader: roll " + roll + " > " + chance + ". Discounts cleared; markup now " + activeTrader.markupPct + "%.";
+        } else {
+            conversationBranch = activeTrader.name + ": No. Ask again and I may remember my larger prices.";
+            lastTradeReport = "Haggle failed safely: roll " + roll + " > " + chance + ". Further attempts are risky.";
+        }
+        logEvent(lastTradeReport); logConversation("TRADE_HAGGLE", conversationBranch);
+        DebugLog.audit("TRADE_OPTION", "HAGGLE roll=" + roll + " chance=" + chance + " attempts=" + activeTrader.haggleAttempts + " discount=" + activeTrader.discountPct + " markup=" + activeTrader.markupPct + " trader=" + activeTrader.name + " state=" + stateSummary());
+        advanceTurn("haggles with " + activeTrader.name + ".");
+    }

@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activeFaction
+// Lines: 5193-5196
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Faction activeFaction() {
+        if (active == null || active.job == null) return Faction.NONE;
+        return JobProfile.get(active.job).faction;
+    }

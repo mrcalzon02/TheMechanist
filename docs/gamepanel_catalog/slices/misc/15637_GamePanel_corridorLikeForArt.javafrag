@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: corridorLikeForArt
+// Lines: 15637-15641
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean corridorLikeForArt(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return false;
+        char t = world.tiles[x][y];
+        return world.roomIds[x][y] < 0 && (world.isCorridorGlyph(t) || t == 'D' || t == '/' || t == '|');
+    }

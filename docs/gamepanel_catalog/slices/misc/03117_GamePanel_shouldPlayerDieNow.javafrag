@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: shouldPlayerDieNow
+// Lines: 3117-3123
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean shouldPlayerDieNow() {
+        if (active == null || active.body == null) return false;
+        BodyPart head = active.body.get("Head");
+        BodyPart torso = active.body.get("Torso");
+        boolean vitalDestroyed = (head != null && head.destroyed()) || (torso != null && torso.destroyed());
+        return vitalDestroyed || wounds >= 20 || (wounds >= 16 && bleeding > 0);
+    }

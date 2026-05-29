@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionStrategyLines
+// Lines: 18995-19014
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> factionStrategyLines() {
+        FactionStrategySimulationApi.ensurePlans(this);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Strategic simulation: " + lastFactionSimulationReport);
+        lines.add("Public news seed: " + lastPublicNewsBulletin);
+        lines.add("Latest INN issue: " + lastInnNewsIssue);
+        lines.add("Latest INN broadcast: " + lastBroadcastReport);
+        lines.add("Latest player-news filing: " + lastPlayerNewsReport);
+        lines.add("Latest authority facility inspection: " + lastAuthorityFacilityInspectionReport);
+        int shown = 0;
+        for (FactionStrategicPlan plan : factionStrategicPlans) {
+            if (plan == null) continue;
+            lines.add("  " + plan.shortLine());
+            if (++shown >= 12) {
+                if (factionStrategicPlans.size() > shown) lines.add("  ... " + (factionStrategicPlans.size() - shown) + " additional faction plans hidden by panel limit.");
+                break;
+            }
+        }
+        return lines;
+    }

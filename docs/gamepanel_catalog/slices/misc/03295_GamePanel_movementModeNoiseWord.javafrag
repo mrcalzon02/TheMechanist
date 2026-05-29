@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: movementModeNoiseWord
+// Lines: 3295-3300
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String movementModeNoiseWord() {
+        if (movementModeIndex == MOTION_SNEAK) return "careful crouched movement";
+        if (movementModeIndex == MOTION_WALK) return "quiet movement";
+        if (movementModeIndex == MOTION_SPRINT) return "sprinting boots";
+        return "movement";
+    }

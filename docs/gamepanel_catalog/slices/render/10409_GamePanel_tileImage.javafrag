@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tileImage
+// Lines: 10409-10419
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void tileImage(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {
+        if (img == null || w <= 0 || h <= 0) return;
+        int stepW = Math.max(1, Math.min(w, img.getWidth()));
+        int stepH = Math.max(1, Math.min(h, img.getHeight()));
+        for (int yy=y; yy<y+h; yy+=stepH) {
+            for (int xx=x; xx<x+w; xx+=stepW) {
+                int dw = Math.min(stepW, x+w-xx), dh = Math.min(stepH, y+h-yy);
+                RenderImageScaleCacheAuthority.draw(g, img, xx, yy, dw, dh);
+            }
+        }
+    }

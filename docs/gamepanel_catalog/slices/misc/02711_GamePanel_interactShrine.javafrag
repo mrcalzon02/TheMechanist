@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactShrine
+// Lines: 2711-2726
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void interactShrine(int tx, int ty, char ch) {
+        if (ch == 'I') {
+            int gain = Math.max(1, stat("Faith", 1) / 2);
+            sleepNeed = Math.max(0, sleepNeed - 1);
+            lastConversation = "You make the sign before " + imperialShrineName(tx,ty) + ". Faith steadies the hand. Sleep need -1.";
+            logEvent(lastConversation);
+            DebugLog.audit("SHRINE_IMPERIAL", lastConversation + " faithGain=" + gain + " state=" + stateSummary());
+        } else {
+            suspicion += 1;
+            stimulantStrain += 1;
+            lastConversation = "You inspect a forbidden shrine to " + chaosShrineName(tx,ty) + ". The air tastes like copper and litigation. Suspicion +1, strain +1.";
+            logEvent(lastConversation);
+            DebugLog.audit("SHRINE_HERETIC", lastConversation + " state=" + stateSummary());
+        }
+        advanceTurn("interacts with a shrine.");
+    }

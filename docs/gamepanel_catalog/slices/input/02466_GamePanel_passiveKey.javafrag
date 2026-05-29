@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: passiveKey
+// Lines: 2466-2466
+// Category: input
+// This is an examination slice, not compiled source.
+
+    String passiveKey(int x, int y) { return (world == null ? 0 : world.locationKey()) + ":" + x + ":" + y; }

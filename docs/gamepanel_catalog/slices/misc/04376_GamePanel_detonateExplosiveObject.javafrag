@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: detonateExplosiveObject
+// Lines: 4376-4383
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void detonateExplosiveObject(MapObjectState m, String cause) {
+        if (world == null || m == null) return;
+        ExplosiveProfile ep = ExplosiveProfile.forItem(m.stockState);
+        int cx = m.x, cy = m.y;
+        restoreMapObjectUnderlyingTile(m);
+        world.mapObjects.remove(m);
+        detonateExplosiveAt(cx, cy, ep, cause);
+    }

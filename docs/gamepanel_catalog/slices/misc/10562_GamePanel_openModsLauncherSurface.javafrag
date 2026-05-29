@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openModsLauncherSurface
+// Lines: 10562-10568
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openModsLauncherSurface() {
+        logEvent(launcherShell.activate(LauncherShellStateAuthority.Route.MODS, "main menu mods/tools"));
+        String body = launcherRuntime.openModsSurface();
+        logEvent(body);
+        setScreen(Screen.MODS);
+        repaint();
+    }

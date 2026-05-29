@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: generateConfiguredWorldForCharacterCreation
+// Lines: 10873-10886
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void generateConfiguredWorldForCharacterCreation() {
+        worldSetup = pendingWorldSetup == null ? WorldSetupSettings.standard() : pendingWorldSetup.copy();
+        WorldGenerationApi.setActiveSettings(worldSetup);
+        seed = System.currentTimeMillis() ^ Objects.hash(worldSetup.encode(), availableWorlds.size(), eventLog.size());
+        NameLockedProfilePortraitAuthority.setActiveOperatorProfileName(resolveOperatorProfileName());
+        atlas = new WorldAtlas(seed, worldSetup);
+        worldSelectedForCharacter = true;
+        selectedWorldSummary = atlas.hiveWorld.summary();
+        lastWorldSetupReport = "Generated " + selectedWorldSummary;
+        generateCandidates(); candidateIndex = 0; jobIndex = 0; jobDossierScroll = 0; jobDossierTab = 0;
+        logEvent("WORLD GENERATED: " + selectedWorldSummary);
+        DebugLog.audit("WORLD_GENERATED_FOR_CHARACTER", selectedWorldSummary + " setup=" + worldSetup.encode());
+        setScreen(Screen.CHARACTER);
+    }

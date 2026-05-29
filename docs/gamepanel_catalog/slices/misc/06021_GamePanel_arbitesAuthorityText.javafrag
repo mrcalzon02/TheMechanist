@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: arbitesAuthorityText
+// Lines: 6021-6025
+// Category: misc
+// This is an examination slice, not compiled source.
+
+boolean arbitesAuthorityText(String text) {
+        if (text == null) return false;
+        String l = text.toLowerCase(Locale.ROOT);
+        return l.contains("civic Wardens") || l.contains("law enforcement") || l.contains("precinct") || l.contains("suppression") || l.contains("riot");
+    }

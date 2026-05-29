@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inGameEditorPaletteCategory
+// Lines: 11121-11125
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String inGameEditorPaletteCategory() {
+        String[][] p = inGameEditorPalettes();
+        inGameEditorPaletteTab = Math.max(0, Math.min(p.length-1, inGameEditorPaletteTab));
+        return p[inGameEditorPaletteTab][0];
+    }

@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: nearestOpenFeatureTile
+// Lines: 10028-10044
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Point nearestOpenFeatureTile(int sx, int sy) {
+        if (world == null) return null;
+        for (int r=1; r<=5; r++) {
+            for (int dx=-r; dx<=r; dx++) for (int dy=-r; dy<=r; dy++) {
+                if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
+                int x=sx+dx, y=sy+dy;
+                if (!world.inBounds(x,y) || !world.walkable(x,y)) continue;
+                char ch=world.tiles[x][y];
+                if (isDoorTile(ch) || ch == 'D') continue;
+                if (baseObjectAt(x,y) != null) continue;
+                boolean occupied=false;
+                if (world.mapObjects != null) for (MapObjectState other: world.mapObjects) if (other != null && other.x == x && other.y == y) { occupied=true; break; }
+                if (!occupied) return new Point(x,y);
+            }
+        }
+        return null;
+    }

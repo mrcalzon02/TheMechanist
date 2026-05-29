@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: updateDynamicMusic
+// Lines: 625-633
+// Category: audio
+// This is an examination slice, not compiled source.
+
+    void updateDynamicMusic(String reason) {
+        if (sounds == null) return;
+        String key = desiredMusicContext();
+        sounds.requestMusic(key, options);
+        if (!key.equals(lastMusicAuditKey) || (reason != null && reason.toLowerCase(Locale.ROOT).contains("combat"))) {
+            lastMusicAuditKey = key;
+            DebugLog.audit("MUSIC_ROUTE", "reason=" + reason + " key=" + key + " screen=" + screen + (world == null ? "" : " zone=" + world.zoneType.label) + " combatUntil=" + combatMusicUntilTurn + " governorUntil=" + governorBattleMusicUntilTurn + " turn=" + turn);
+        }
+    }

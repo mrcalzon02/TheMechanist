@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: advanceTurn
+// Lines: 3195-3201
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void advanceTurn(String reason) {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.runAuthoritativeTurn(this, reason, () -> advanceTurnBody(reason));
+            return;
+        }
+        advanceTurnBody(reason);
+    }

@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeSellSelected
+// Lines: 6817-6836
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void tradeSellSelected() {
+        if (activeTrader == null) { tradeSellScrap(); return; }
+        String item = selectedInventoryItemName();
+        if (item == null || item.equals("Concord Script")) { lastTradeReport = "Select a carried item that is not money before selling."; logEvent(lastTradeReport); return; }
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { lastTradeReport = "That item is not in your carried goods list yet. Itemized counters will be sellable after the next economy pass."; logEvent(lastTradeReport); return; }
+        if (isQuestOrEvidenceItem(item)) {
+            lastTradeReport = "Sale blocked: " + item + " looks like quest evidence or delivery proof. Turn it in, stash it, or inspect contracts before selling.";
+            logEvent(lastTradeReport);
+            return;
+        }
+        int value = activeTrader.sellPrice(item);
+        ItemActionResult sold = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, traderShelfContainerId(activeTrader), activeTrader.name + " trader shelf", null, "sold by player to " + activeTrader.name);
+        if (!sold.success) { lastTradeReport = "Sale failed: " + sold.playerText; logEvent(lastTradeReport); DebugLog.warn("TRADE_SELL_FAIL", sold.auditText + " state=" + stateSummary()); return; }
+        addImperialScript(value);
+        lastTradeReport = "ITEM SOLD: Sold " + item + " to " + activeTrader.name + " for " + value + " concord script. " + (sold.provenance == null ? "Origin transferred without detailed ledger." : sold.provenance.summary());
+        logEvent(lastTradeReport); logConversation("TRADE_SELL", lastTradeReport); gainXp("Commerce", 1, "sale");
+        DebugLog.audit("TRADE_OPTION", "SELL item=" + item + " value=" + value + " trader=" + activeTrader.name + " instance=" + sold.itemInstanceId + " state=" + stateSummary());
+        advanceTurn("sells " + item + ".");
+    }

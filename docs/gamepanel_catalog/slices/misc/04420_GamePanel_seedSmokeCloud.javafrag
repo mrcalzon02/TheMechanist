@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: seedSmokeCloud
+// Lines: 4420-4425
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void seedSmokeCloud(int cx, int cy, int radius) {
+        for (int x=Math.max(0,cx-radius); x<=Math.min(world.w-1,cx+radius); x++) for (int y=Math.max(0,cy-radius); y<=Math.min(world.h-1,cy+radius); y++) {
+            if (Math.abs(x-cx)+Math.abs(y-cy) <= radius && rng.nextBoolean()) addSoundPing(x, y, "smoke");
+        }
+        logEvent("SMOKE: a dirty occluding cloud boils out. Full smoke vision math is queued for the lighting/occlusion pass.");
+    }

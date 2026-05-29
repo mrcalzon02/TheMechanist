@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: scrollEulaGate
+// Lines: 13957-13963
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void scrollEulaGate(int direction, boolean page) {
+        int d = Integer.compare(direction, 0);
+        if (d == 0) return;
+        int step = page ? 8 : 3;
+        eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + d * step));
+        repaint();
+    }

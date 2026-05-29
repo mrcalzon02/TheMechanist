@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseStorageCapacity
+// Lines: 18538-18547
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    int baseStorageCapacity() {
+        int cap = 6;
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || obj.integrity <= 0) continue;
+            if (obj.symbol == 's') cap += Math.max(0, obj.capacity);
+            else if (obj.symbol == 'G' || obj.symbol == 'q' || obj.symbol == 'k') cap += Math.max(0, obj.capacity / 2);
+            else if (obj.isBusinessAsset()) cap += Math.max(0, obj.capacity / 3);
+        }
+        return Math.max(cap, baseStorage.size());
+    }

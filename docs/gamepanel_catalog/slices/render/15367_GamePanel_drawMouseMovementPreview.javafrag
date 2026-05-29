@@ -1,0 +1,38 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawMouseMovementPreview
+// Lines: 15367-15397
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawMouseMovementPreview(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (!mouseMovePreviewActive) return;
+        if (!manualMovementPlanActive && System.currentTimeMillis() - mouseMovePreviewLastMillis > 4000L) { clearMouseMovementPreview("timeout"); return; }
+        Graphics2D gg = (Graphics2D) g.create();
+        int range = Math.max(1, movementModeRange());
+        for (int i=0; i<mouseMovePreviewPath.size(); i++) {
+            Point p = mouseMovePreviewPath.get(i);
+            if (p.x < camX || p.y < camY || p.x >= camX + cols || p.y >= camY + rows) continue;
+            int px = ox + (p.x - camX) * cellW, py = oy + (p.y - camY) * cellH;
+            boolean inAction = i < range;
+            gg.setColor(inAction ? new Color(120, 230, 150, 170) : new Color(235, 70, 55, 170));
+            gg.drawRoundRect(px+3, py+3, Math.max(2, cellW-7), Math.max(2, cellH-7), 6, 6);
+            if (!inAction) { gg.drawLine(px+4, py+4, px+cellW-5, py+cellH-5); gg.drawLine(px+cellW-5, py+4, px+4, py+cellH-5); }
+        }
+        if (mouseMoveTargetX >= camX && mouseMoveTargetY >= camY && mouseMoveTargetX < camX + cols && mouseMoveTargetY < camY + rows) {
+            int px = ox + (mouseMoveTargetX - camX) * cellW, py = oy + (mouseMoveTargetY - camY) * cellH;
+            gg.setColor(mouseMovePreviewValid ? new Color(245, 220, 110) : new Color(255, 60, 45));
+            gg.setStroke(new BasicStroke(2f)); gg.drawRect(px, py, Math.max(1,cellW-1), Math.max(1,cellH-1));
+        }
+        gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        FontMetrics fm = gg.getFontMetrics();
+        int bw = Math.min(380, Math.max(160, fm.stringWidth(mouseMovePreviewStatus) + 18));
+        int anchorX = mouseX >= 0 ? mouseX : getWidth() / 2;
+        int anchorY = mouseY >= 0 ? mouseY : Math.max(42, getHeight() / 2);
+        int bx = Math.max(8, Math.min(getWidth() - bw - 8, anchorX + 18));
+        int by = Math.max(8, Math.min(getHeight() - 42, anchorY + 18));
+        gg.setColor(new Color(0,0,0,220)); gg.fillRoundRect(bx, by, bw, 28, 8, 8);
+        gg.setColor(mouseMovePreviewValid ? new Color(120,230,150) : new Color(250,90,70)); gg.drawRoundRect(bx, by, bw, 28, 8, 8);
+        drawUiTextLine(gg, GuiLayoutApi.fitLabel(mouseMovePreviewStatus, fm, bw-16), bx+9, by+19);
+        gg.dispose();
+    }

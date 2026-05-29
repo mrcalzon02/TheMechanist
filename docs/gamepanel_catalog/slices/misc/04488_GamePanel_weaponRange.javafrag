@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: weaponRange
+// Lines: 4488-4498
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int weaponRange(String weapon) {
+        if (weapon == null || !ItemCatalog.isFirearmLike(weapon)) return 1;
+        String low = ItemQuality.stripManufacturingIdentity(weapon).toLowerCase(Locale.ROOT);
+        if (low.contains("shotgun")) return 5;
+        if (low.contains("flamer") || low.contains("melta")) return 4;
+        if (low.contains("pistol") || low.contains("revolver")) return 7;
+        if (low.contains("stubber") || low.contains("carbine") || low.contains("webber")) return 9;
+        if (low.contains("rifle") || low.contains("las") || low.contains("mass-Reactive Carbine")) return 12;
+        if (low.contains("autocannon") || low.contains("long")) return 14;
+        return 8;
+    }

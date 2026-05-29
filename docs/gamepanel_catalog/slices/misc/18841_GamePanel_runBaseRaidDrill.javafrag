@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: runBaseRaidDrill
+// Lines: 18841-18846
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void runBaseRaidDrill() {
+        if (!baseClaimed) { logEvent("Raid drill failed: no claimed base exists."); return; }
+        int security = baseSecurityRating();
+        logEvent("RAID DRILL: threat=" + zoneRaidThreatName() + ", defense=" + security + ", pressure=" + baseRaidPressure(security) + ", hourly chance=" + baseRaidChance(security) + "%, guards=" + securityStaffCount() + ", status=" + baseRaidWarningLine() + ".");
+        DebugLog.audit("BASE_RAID_DRILL", "threat=" + zoneRaidThreatName() + " security=" + security + " pressure=" + baseRaidPressure(security) + " chance=" + baseRaidChance(security) + " guards=" + securityStaffCount() + " state=" + stateSummary());
+    }

@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawSectorAuditCommandPanel
+// Lines: 11797-11802
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawSectorAuditCommandPanel(Graphics2D g, UiLayout L) {
+        // 0.9.10iq: the sector-audit command frame is now button-only. The former
+        // explanatory body copy lived under the buttons and made the right rail read
+        // like a collision bug at Windows test density.
+        drawRightPanelFrame(g);
+    }

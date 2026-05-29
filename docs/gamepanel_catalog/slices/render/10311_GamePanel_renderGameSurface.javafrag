@@ -1,0 +1,45 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: renderGameSurface
+// Lines: 10311-10348
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void renderGameSurface(Graphics2D g) {
+        drawBackground(g);
+        scrollRegions.clear();
+        rebuildButtons();
+        clampButtonsToVisibleMenuBounds();
+        applySemanticButtonIcons();
+        assignButtonDebugIds();
+        if (screen == Screen.BOOT) drawBoot(g);
+        else if (screen == Screen.LOADING) drawLoading(g);
+        else if (screen == Screen.MENU) drawMenu(g);
+        else if (screen == Screen.MODS) drawModsSurface(g);
+            else if (screen == Screen.EDITOR) drawInGameEditorSurface(g);
+        else if (screen == Screen.MULTIPLAYER) drawMultiplayerSurface(g);
+        else if (screen == Screen.SECTOR_AUDIT) drawSectorAuditSurface(g);
+        else if (screen == Screen.WORLD_SELECT) drawWorldSelect(g);
+        else if (screen == Screen.WORLD_SETUP) drawWorldSetup(g);
+        else if (screen == Screen.CHARACTER) drawCharacter(g);
+        else if (screen == Screen.KNOWLEDGE) drawKnowledgeScreen(g);
+        else if (screen == Screen.INTRO_CRAWL) drawIntroCrawl(g);
+        else if (screen == Screen.GAME) {
+            drawGame(g);
+            renderNormalModeVisualJuice(g);
+            firstPersonRenderViewport.render(g, this);
+        }
+        else if (screen == Screen.PAUSE) drawPause(g);
+        else if (screen == Screen.PANEL) drawPanel(g);
+        else if (screen == Screen.ZONE_SPLASH) drawZoneSplash(g);
+        else if (screen == Screen.CAPTURE) drawCaptureScreen(g);
+        else if (screen == Screen.LOST) drawLostScreen(g);
+        else drawOptions(g);
+        if (options.screenSaver && screen != Screen.BOOT && screen != Screen.LOADING && System.currentTimeMillis() - lastInputMillis > 15L*60L*1000L) drawIdleScreensaver(g);
+        if (eulaGateActive) drawEulaOverlay(g);
+        int hoverButtonIndex = activeHoverButtonIndex();
+        for (int i=0;i<buttons.size();i++) buttons.get(i).draw(g, uiFont, i==selectedButton || i==hoverButtonIndex, images, options);
+        drawHoverHelp(g, hoverButtonIndex);
+        // Modal/profile/info alerts must sit above menu buttons, not beneath them.
+        drawTimedAlert(g);
+    }

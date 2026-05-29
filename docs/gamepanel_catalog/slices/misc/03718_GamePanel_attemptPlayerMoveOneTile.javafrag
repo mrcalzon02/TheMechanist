@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: attemptPlayerMoveOneTile
+// Lines: 3718-3734
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean attemptPlayerMoveOneTile(int dx, int dy) {
+        if (world == null) return false;
+        int nx = playerX + dx, ny = playerY + dy;
+        if (!world.walkable(nx, ny)) {
+            resetPushPastIntent();
+            logEvent("Movement blocked at " + nx + "," + ny + ".");
+            return false;
+        }
+        NpcEntity blocker = world.npcAt(nx, ny);
+        if (blocker != null) {
+            return handleOccupiedMovementTarget(blocker, dx, dy, nx, ny);
+        }
+        resetPushPastIntent();
+        movePlayerInto(nx, ny, movementModeLabel().toLowerCase(Locale.ROOT) + "s to " + nx + "," + ny + " over " + describeTile(world.tiles[nx][ny]) + ".");
+        checkTrapAfterPlayerMove(nx, ny);
+        return true;
+    }

@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectInGameEditorTab
+// Lines: 11077-11083
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void selectInGameEditorTab(int idx) {
+        java.util.List<String> names = inGameEditorNames();
+        inGameEditorTabIndex = Math.max(0, Math.min(Math.max(0, names.size()-1), idx));
+        inGameEditorEntityIndex = 0;
+        inGameEditorStatus = "Editor tab: " + inGameEditorName() + ".";
+        repaint();
+    }

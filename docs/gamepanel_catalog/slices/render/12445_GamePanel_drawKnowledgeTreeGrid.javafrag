@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawKnowledgeTreeGrid
+// Lines: 12445-12450
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawKnowledgeTreeGrid(Graphics2D g, Rectangle canvas) {
+        g.setColor(new Color(18, 20, 18));
+        int step = 48;
+        for (int x = -500; x < 1800; x += step) g.drawLine(x, -500, x, 1600);
+        for (int y = -500; y < 1600; y += step) g.drawLine(-500, y, 1800, y);
+    }

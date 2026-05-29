@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: stackedInventoryNames
+// Lines: 17935-17941
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> stackedInventoryNames() {
+        LinkedHashMap<String,Integer> stacks = stackInventory(inventory);
+        if (supplies>0) stacks.put("Construction supplies", stacks.getOrDefault("Construction supplies",0)+supplies);
+        if (food>0) stacks.put("Food reserve", stacks.getOrDefault("Food reserve",0)+food);
+        if (water>0) stacks.put("Water reserve", stacks.getOrDefault("Water reserve",0)+water);
+        return new ArrayList<>(stacks.keySet());
+    }

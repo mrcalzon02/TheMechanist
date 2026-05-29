@@ -1,0 +1,59 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawEulaOverlay
+// Lines: 13904-13955
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawEulaOverlay(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        int panelW = Math.min(980, Math.max(560, W - 80));
+        int panelH = Math.min(720, Math.max(420, H - 80));
+        int x = (W - panelW) / 2;
+        int y = (H - panelH) / 2;
+        g.setColor(new Color(0,0,0,220));
+        g.fillRect(0, 0, W, H);
+        g.setColor(new Color(5,6,6,248));
+        g.fillRoundRect(x, y, panelW, panelH, 18, 18);
+        drawSlicedFrame(g, x, y, panelW, panelH, "outer");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "MANDATORY EULA NOTICE", x + panelW / 2, y + 36);
+        g.setFont(smallFont);
+        int contentX = x + 38;
+        int contentY = y + 70;
+        int contentW = panelW - 76;
+        int contentH = panelH - 154;
+        g.setFont(smallFont);
+        FontMetrics eulaFm = g.getFontMetrics();
+        java.util.List<String> lines = new ArrayList<>();
+        for (String paragraph : EulaConsentAuthority.eulaText()) {
+            java.util.List<String> wrapped = GuiLayoutApi.wrapText(paragraph, eulaFm, contentW - 10);
+            if (wrapped.isEmpty()) lines.add(""); else lines.addAll(wrapped);
+            lines.add("");
+        }
+        int lineH = Math.max(16, eulaFm.getHeight() + 2);
+        int visibleLines = Math.max(1, contentH / lineH);
+        eulaMaxScroll = Math.max(0, lines.size() - visibleLines);
+        eulaScroll = Math.max(0, Math.min(eulaScroll, eulaMaxScroll));
+        Shape oldClip = g.getClip();
+        g.setClip(contentX - 4, contentY - 4, contentW + 8, contentH + 8);
+        int yy = contentY;
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        for (int i = eulaScroll; i < lines.size() && yy <= contentY + contentH; i++) {
+            String line = lines.get(i);
+            if (line == null || line.isEmpty()) {
+                yy += Math.max(6, lineH / 2);
+                continue;
+            }
+            boolean header = line.equals("THE MECHANIST END USER LICENSE AND CONSENT NOTICE") || line.equals("INTELLECTUAL PROPERTY DISCLAIMER & FAN PROJECT ACKNOWLEDGMENT") || line.equals("IMPORTANT NOTICE: UNOFFICIAL FAN-MADE CONTENT");
+            g.setColor(header ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString(line, contentX, yy);
+            yy += lineH;
+        }
+        g.setClip(oldClip);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String scrollText = "Scroll wheel / Up / Down / PgUp / PgDn to read. Lines " + Math.min(lines.size(), eulaScroll + 1) + "-" + Math.min(lines.size(), eulaScroll + visibleLines) + " of " + lines.size() + ".";
+        g.drawString(GuiLayoutApi.fitLabel(scrollText, g.getFontMetrics(), contentW), contentX, y + panelH - 84);
+        g.drawString("Keyboard: Enter/A accepts. Escape/Q/X exits.", contentX, y + panelH - 30);
+    }

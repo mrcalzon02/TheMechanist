@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: moveAuditCursor
+// Lines: 10743-10748
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void moveAuditCursor(int dx, int dy) {
+        if (auditWorld == null) return;
+        auditCursorX = Math.max(0, Math.min(auditWorld.w - 1, auditCursorX + dx));
+        auditCursorY = Math.max(0, Math.min(auditWorld.h - 1, auditCursorY + dy));
+        repaint();
+    }

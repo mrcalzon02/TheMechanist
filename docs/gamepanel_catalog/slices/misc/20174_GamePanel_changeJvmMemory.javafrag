@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeJvmMemory
+// Lines: 20174-20177
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void changeJvmMemory(int deltaMb) {
+        JvmRuntimeProfileAuthority.changeMemory(jvmRuntimeProfile, deltaMb);
+        markJvmProfileChanged("JVM max heap profile now " + jvmRuntimeProfile.maxRamMb + " MB.");
+    }

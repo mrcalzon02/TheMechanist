@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: workAssembleParts
+// Lines: 8107-8116
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void workAssembleParts() {
+        if (!canUseWorkbench()) return;
+        int detritus = inventory.lastIndexOf("Mechanical detritus");
+        if (detritus < 0 || supplies < 1) { logEvent("Workbench: assembling parts needs Mechanical detritus and 1 supply."); return; }
+        removeInventoryAtWithTrace(detritus); supplies -= 1; machineParts += 2; fatigue = Math.min(20, fatigue + 1);
+        logEvent("Workbench assembled machine parts from detritus: +2 machine parts, -1 supply.");
+        ProductionQueueRecordBridge.recordWorkbenchAction(this, firstBaseObject('w'), "assemble machine parts", 1, active == null ? "player manual operation" : active.name + " manual operation");
+        DebugLog.audit("WORKBENCH_ASSEMBLE_PARTS", "supplies=" + supplies + " parts=" + machineParts + " fatigue=" + fatigue + " state=" + stateSummary());
+        advanceTurn("assembles machine parts at the workbench.");
+    }

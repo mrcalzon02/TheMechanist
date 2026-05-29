@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: removeContainerInstanceByName
+// Lines: 17835-17848
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ItemInstance removeContainerInstanceByName(String containerId, String item) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || item == null) return null;
+        for (int i=0; i<c.itemInstanceIds.size(); i++) {
+            String id = c.itemInstanceIds.get(i);
+            ItemInstance inst = itemInstances.get(id);
+            if (inst != null && item.equals(inst.displayName)) {
+                c.itemInstanceIds.remove(i);
+                itemInstances.remove(id);
+                return inst;
+            }
+        }
+        return null;
+    }

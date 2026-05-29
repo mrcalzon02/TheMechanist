@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: multiplayerJoinSteamFriend
+// Lines: 10779-10784
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void multiplayerJoinSteamFriend() {
+        multiplayerMenu.joinViaSteamFriend();
+        logEvent(multiplayerMenu.status());
+        showTimedAlert("STEAM FRIEND", multiplayerMenu.status(), 4200);
+        repaint();
+    }

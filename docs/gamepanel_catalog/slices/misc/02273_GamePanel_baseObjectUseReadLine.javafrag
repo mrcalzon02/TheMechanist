@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseObjectUseReadLine
+// Lines: 2273-2280
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseObjectUseReadLine(BaseObject obj) {
+        if (obj == null) return "Use read: no object is readable there.";
+        if (obj.underConstruction) return "Use read: construction is incomplete and needs staged work.";
+        if (obj.isBusinessAsset()) return "Use read: service counter; " + obj.businessReturnLine(this);
+        if (obj.armed) return "Use read: armed fixture; approach and interaction may carry risk.";
+        if (obj.assignedRecipe != null && !obj.assignedRecipe.isBlank()) return "Use read: assigned to " + obj.assignedRecipe + ".";
+        return "Use read: stable built object; Interact or base management may expose its work path.";
+    }

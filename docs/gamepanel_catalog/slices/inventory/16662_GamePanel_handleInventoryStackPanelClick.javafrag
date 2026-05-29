@@ -1,0 +1,45 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handleInventoryStackPanelClick
+// Lines: 16662-16699
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    boolean handleInventoryStackPanelClick(int mx, int my) {
+        if (screen != Screen.PANEL || panelMode != PanelMode.INVENTORY) return false;
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(36, W/2 - Math.min(880, W-72)/2);
+        int y=Math.max(68, H/2 - Math.min(440, H-110)/2);
+        int w=Math.min(880, W - x*2);
+        int h=Math.min(440, H - y - 54);
+        int gap=Math.max(12, scaled(12));
+        int top=y+128;
+        int bottomBoxH=Math.max(78, Math.min(108, h/4));
+        int colH=Math.max(110, h - (top-y) - bottomBoxH - 26);
+        int actionW=Math.max(150, Math.min(210, w/4));
+        int invW=Math.max(180, (w - 52 - actionW - gap*2)/2);
+        int targetW=Math.max(180, w - 52 - actionW - gap*2 - invW);
+        int invX=x+24;
+        int targetX=invX+invW+gap;
+        LinkedHashMap<String,Integer> invStacks=displayedInventoryStacks();
+        LinkedHashMap<String,Integer> targetStacks=currentTargetInventoryStacks();
+        int hit = inventoryGridIndexAt(invStacks, invX+12, top+48, invW-24, colH-60, mx, my);
+        if (hit >= 0) {
+            selectedInventoryIndex = Math.max(0, Math.min(hit, Math.max(0, invStacks.size()-1)));
+            inventoryTargetColumnActive = false;
+            inventoryItemDescriptionScroll = 0;
+            logEvent("Inventory selection: highlighted carried stack " + selectedInventoryStackName() + ".");
+            repaint();
+            return true;
+        }
+        hit = inventoryGridIndexAt(targetStacks, targetX+12, top+48, targetW-24, colH-60, mx, my);
+        if (hit >= 0) {
+            selectedTargetInventoryIndex = Math.max(0, Math.min(hit, Math.max(0, targetStacks.size()-1)));
+            inventoryTargetColumnActive = true;
+            inventoryItemDescriptionScroll = 0;
+            logEvent("Inventory target: highlighted floor/container stack " + selectedTargetInventoryName() + ".");
+            repaint();
+            return true;
+        }
+        return false;
+    }

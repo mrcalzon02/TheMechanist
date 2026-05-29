@@ -1,0 +1,48 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: colorFor
+// Lines: 19807-19847
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Color colorFor(char ch) {
+        switch(ch) {
+            case '-': return new Color(105,96,84);
+            case '#': return new Color(95,90,82);
+            case '%': return new Color(82,80,74);
+            case '&': return new Color(76,78,82);
+            case '^': return new Color(86,72,58);
+            case '8': return new Color(64,78,84);
+            case '0': return new Color(68,68,78);
+            case '*': return new Color(88,72,58);
+            case '?': return new Color(120,100,62);
+            case '!': return new Color(130,76,52);
+            case ' ': return new Color(2,2,4);
+            case '.': return new Color(85,82,75);
+            case ';': return new Color(55,55,50);
+            case '_': return new Color(96,90,80);
+            case '+': return new Color(160,120,70);
+            case 'g': return new Color(180,75,65);
+            case 'm': return new Color(110,180,95);
+            case 'R': return new Color(140,160,180);
+            case 'W': return new Color(205,185,115);
+            case 'A': return new Color(90,140,220);
+            case 'T': return new Color(210,180,90);
+            case 'Q': return new Color(235,205,100);
+            case 'C': return new Color(180,150,210);
+            case 'H': return new Color(190,70,190);
+            case 'N': return new Color(125,115,90);
+            case 'q': return new Color(220,170,90);
+            case 'r': return new Color(120,70,55);
+            case 'e': return new Color(115,190,205);
+            case 'f': return new Color(195,135,95);
+            case 'l': return new Color(165,135,220);
+            case 'x': return new Color(140,220,140);
+            case 'p': return new Color(70,115,210);
+            case 'b': return new Color(155,55,45);
+            case 'h': return new Color(145,135,105);
+            case 'n': return new Color(205,185,120);
+            case 'M': return new Color(100,145,100);
+            default: return new Color(45,45,45);
+        }
+    }

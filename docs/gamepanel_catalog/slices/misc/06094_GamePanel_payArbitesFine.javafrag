@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: payArbitesFine
+// Lines: 6094-6115
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int payArbitesFine(int amount) {
+        int remaining = Math.max(0, amount);
+        int paid = 0;
+        int fromPocket = Math.min(carriedScript, remaining);
+        carriedScript -= fromPocket; paid += fromPocket; remaining -= fromPocket;
+        if (remaining > 0) {
+            for (BankProfile b : BankProfile.ALL) {
+                if (remaining <= 0) break;
+                if (b.arbitesFineProtected) continue;
+                int bal = bankBalance(b.id);
+                if (bal <= 0) continue;
+                int take = Math.min(bal, remaining);
+                bankBalances.put(b.id, bal - take);
+                paid += take; remaining -= take;
+            }
+        }
+        if (remaining > 0 && baseStashedScript > 0 && rng.nextInt(100) < 20) {
+            int take = Math.min(baseStashedScript, Math.max(1, remaining / 2));
+            baseStashedScript -= take; paid += take; remaining -= take;
+        }
+        return paid;
+    }

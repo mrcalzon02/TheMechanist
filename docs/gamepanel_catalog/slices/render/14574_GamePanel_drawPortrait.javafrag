@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawPortrait
+// Lines: 14574-14594
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawPortrait(Graphics2D g, int x, int y, Candidate c) {
+        g.setColor(new Color(22,22,24)); g.fillRect(x,y,140,150);
+        g.setColor(new Color(160,150,110)); g.drawRect(x,y,140,150);
+        NameLockedProfilePortraitAuthority.Entry locked = NameLockedProfilePortraitAuthority.unlockedEntry(cachedOperatorProfileName, c == null ? "" : c.name);
+        BufferedImage face = null;
+        String portraitLabel = "IMPORTED DOSSIER";
+        if (locked != null) {
+            face = images.getNameLockedProfilePortrait(locked.key);
+            portraitLabel = "PROFILE DOSSIER";
+            if (c != null) c.nameLockedProfileKey = locked.key;
+        }
+        if (face == null && c != null) face = images.getPortrait(c.portraitSheet, c.portraitIndex);
+        if (face != null) {
+            g.drawImage(face, x+6, y+6, 128, 128, null);
+            g.setFont(smallFont); g.setColor(new Color(190,180,130));
+            g.drawString(portraitLabel, x+10, y+145);
+        } else {
+            g.setFont(new Font("Monospaced", Font.BOLD, 18));
+            for (int i=0;i<c.portrait.length;i++) g.drawString(c.portrait[i], x+30, y+35+i*20);
+        }
+    }

@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditTileHasContainer
+// Lines: 11695-11704
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    boolean auditTileHasContainer(int x, int y) {
+        if (auditWorld == null || auditWorld.mapObjects == null) return false;
+        for (MapObjectState mo : auditWorld.mapObjects) {
+            if (mo == null || mo.x != x || mo.y != y) continue;
+            String low = ((mo.type == null ? "" : mo.type) + " " + (mo.label == null ? "" : mo.label) + " " + (mo.stockState == null ? "" : mo.stockState)).toLowerCase(Locale.ROOT);
+            if (low.contains("container") || low.contains("crate") || low.contains("stock") || low.contains("vault") || low.contains("cache") || low.contains("corpse")) return true;
+        }
+        char ch = auditWorld.inBounds(x, y) ? auditWorld.tiles[x][y] : 0;
+        return ch == 'b' || ch == 's' || ch == 'q' || ch == '?' || ch == '$' || ch == 'r';
+    }

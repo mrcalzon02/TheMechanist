@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: multiplayerHostCurrentWorld
+// Lines: 10786-10794
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void multiplayerHostCurrentWorld() {
+        WorldSetupSettings settings = (worldSetup == null ? WorldSetupSettings.standard() : worldSetup.copy());
+        long hostSeed = seed == 0L ? System.currentTimeMillis() : seed;
+        String hostWorldName = selectedWorldSummary == null || selectedWorldSummary.isBlank() ? "Mechanist Hosted Arcology" : selectedWorldSummary;
+        HostBindingResult result = multiplayerMenu.hostFromWorld(hostSeed, hostWorldName, "local-hosted-world", settings, ServerConfig.DEFAULT_MAX_PLAYERS);
+        logEvent("MULTIPLAYER HOST: " + result.compactLine());
+        showTimedAlert(result.success() ? "HOST BOUND" : "HOST FAILED", result.compactLine(), 5200);
+        repaint();
+    }

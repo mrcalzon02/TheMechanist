@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isRestProp
+// Lines: 6383-6383
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isRestProp(char c) { return c=='b' || c=='h' || c=='n' || c=='q'; }

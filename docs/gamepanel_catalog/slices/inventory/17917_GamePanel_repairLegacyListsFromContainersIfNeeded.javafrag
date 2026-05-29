@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: repairLegacyListsFromContainersIfNeeded
+// Lines: 17917-17923
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void repairLegacyListsFromContainersIfNeeded() {
+        if (!inventory.isEmpty() || !baseStorage.isEmpty() || itemContainers.isEmpty()) return;
+        ContainerRecord inv = itemContainers.get(CONTAINER_PLAYER_INVENTORY);
+        if (inv != null) for (String id : inv.itemInstanceIds) { ItemInstance inst = itemInstances.get(id); if (inst != null) inventory.add(inst.displayName); }
+        ContainerRecord base = itemContainers.get(CONTAINER_BASE_STORAGE);
+        if (base != null) for (String id : base.itemInstanceIds) { ItemInstance inst = itemInstances.get(id); if (inst != null) baseStorage.add(inst.displayName); }
+    }

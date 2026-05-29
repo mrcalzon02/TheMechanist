@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openMultiplayerLauncherSurface
+// Lines: 10750-10757
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openMultiplayerLauncherSurface() {
+        logEvent(launcherShell.activate(LauncherShellStateAuthority.Route.MULTIPLAYER, "main menu multiplayer"));
+        String body = launcherRuntime.openMultiplayerSurface();
+        multiplayerMenu.activate(userProfile);
+        logEvent(body);
+        setScreen(Screen.MULTIPLAYER);
+        repaint();
+    }

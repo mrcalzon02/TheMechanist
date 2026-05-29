@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: containerNextItemSummary
+// Lines: 9471-9479
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String containerNextItemSummary(String containerId) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || c.itemInstanceIds.isEmpty()) return "no visible contents";
+        String id = c.itemInstanceIds.get(0);
+        ItemInstance inst = itemInstances.get(id);
+        if (inst == null) return "missing item record";
+        String trace = inst.provenance == null ? "untraced" : inst.provenance.summary();
+        return inst.displayName + " [" + id + "] — " + trace;
+    }

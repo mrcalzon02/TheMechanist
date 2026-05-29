@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isWindowsHost
+// Lines: 20219-20219
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isWindowsHost() { return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win"); }

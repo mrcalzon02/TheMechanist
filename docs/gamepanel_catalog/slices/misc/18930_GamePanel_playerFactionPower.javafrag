@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerFactionPower
+// Lines: 18930-18946
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int playerFactionPower() {
+        int power = 0;
+        power += Math.max(0, factionRecruits.size() * 2);
+        power += Math.max(0, openBusinessCount() * 4);
+        power += Math.max(0, baseStorage.size() / 3);
+        power += Math.max(0, baseObjects.size() * 2);
+        power += Math.max(0, businessSellPowerBonus() * 2);
+        power += Math.max(0, cargoNetworkCapacity() / 4);
+        power += Math.max(0, xp / 20);
+        for (BaseObject obj : baseObjects) {
+            if (obj == null) continue;
+            if (obj.symbol == 'T' || obj.symbol == 'H') power += 8;
+            if (obj.symbol == 'g' || obj.symbol == 'p') power += 4;
+            power += Math.max(0, ItemQuality.tierIndex((obj.qualityName == null ? "Common" : obj.qualityName) + " base asset") / 2);
+        }
+        return power;
+    }

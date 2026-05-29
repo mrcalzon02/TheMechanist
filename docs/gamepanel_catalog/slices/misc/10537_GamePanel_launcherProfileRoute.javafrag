@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: launcherProfileRoute
+// Lines: 10537-10544
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    LauncherShellStateAuthority.RouteDescriptor launcherProfileRoute(java.util.List<LauncherShellStateAuthority.RouteDescriptor> routes) {
+        if (routes != null) {
+            for (LauncherShellStateAuthority.RouteDescriptor route : routes) {
+                if (route != null && route.route == LauncherShellStateAuthority.Route.PROFILE) return route;
+            }
+        }
+        return new LauncherShellStateAuthority.RouteDescriptor(LauncherShellStateAuthority.Route.PROFILE, "PROFILE", "Open the active operator identity.", false);
+    }

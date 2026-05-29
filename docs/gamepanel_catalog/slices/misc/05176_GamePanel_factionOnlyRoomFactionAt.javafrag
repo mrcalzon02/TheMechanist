@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionOnlyRoomFactionAt
+// Lines: 5176-5190
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Faction factionOnlyRoomFactionAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return Faction.NONE;
+        int rid = world.roomIdAt(x, y);
+        if (rid < 0) return Faction.NONE;
+        RoomProfile rp = world.roomProfile(rid);
+        if (rp == null) return Faction.NONE;
+        String text = ((rp.name == null ? "" : rp.name) + " " + (rp.descriptor == null ? "" : rp.descriptor) + " " + (rp.featureText == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
+        if (!text.contains("faction-only") && !text.contains("gang colors") && !text.contains("marked patron")) return Faction.NONE;
+        if (text.contains("bandit") || text.contains("gang")) return Faction.BANDIT;
+        if (text.contains("civic Wardens") || text.contains("precinct")) return Faction.CIVIC WARDENS;
+        if (text.contains("noble")) return Faction.NOBLE;
+        if (text.contains("guard") || text.contains("military") || text.contains("pdf")) return Faction.IMPERIAL_GUARD;
+        if (text.contains("hiver")) return Faction.HIVER;
+        return Faction.NONE;
+    }

@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawKnowledgeBranchTabs
+// Lines: 12361-12379
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawKnowledgeBranchTabs(Graphics2D g) {
+        Rectangle bar = knowledgeBranchBarRect();
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        int count = Math.max(1, branches.size());
+        int gap = Math.max(6, Math.min(10, bar.width / 80));
+        int tabW = Math.max(82, (bar.width - gap * Math.max(0, count - 1)) / count);
+        int i = 0;
+        for (KnowledgeTree tree : branches.values()) {
+            int x = bar.x + i * (tabW + gap);
+            boolean active = tree.id().equals(activeKnowledgeBranchId);
+            g.setColor(active ? new Color(34, 46, 32, 232) : new Color(10, 13, 12, 220));
+            g.fillRoundRect(x, bar.y, tabW, bar.height, 10, 10);
+            g.setColor(active ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+            g.drawRoundRect(x, bar.y, tabW, bar.height, 10, 10);
+            g.setFont(smallFont);
+            center(g, GuiLayoutApi.fitLabel(tree.displayName(), g.getFontMetrics(), tabW - 8), x + tabW / 2, bar.y + 22);
+            i++;
+        }
+    }

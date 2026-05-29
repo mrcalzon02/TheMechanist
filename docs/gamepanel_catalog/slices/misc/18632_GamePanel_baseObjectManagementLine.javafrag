@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseObjectManagementLine
+// Lines: 18632-18641
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String baseObjectManagementLine(BaseObject obj) {
+        String recipe = (obj.assignedRecipe == null || obj.assignedRecipe.isBlank()) ? "none" : obj.assignedRecipe;
+        String worker = (obj.assignedWorker == null || obj.assignedWorker.isBlank()) ? "unassigned" : obj.assignedWorker;
+        String kind = obj.isBusinessAsset() ? "business/service" : (obj.symbol == 'c' ? "berthing" : (obj.symbol == 's' ? "storage" : (obj.symbol == 'L' ? "laboratory apparatus" : (obj.symbol == 'd' || obj.symbol == 'a' || obj.symbol == 'x' || obj.symbol == 'p' || obj.symbol == 'g' || obj.symbol == 'D' || obj.symbol == 'T' || obj.symbol == 'H' ? "security" : (obj.symbol == 'k' || obj.symbol == 'q' || obj.symbol == 'G' ? "cargo/logistics" : "production/support")))));
+        String commerce = obj.isBusinessAsset() ? " | business " + (obj.businessOpen ? (obj.permittedBusiness ? "licensed" : "ILLEGAL") : "closed") + " | local heat " + obj.businessHeat : "";
+        String live = obj.symbol == 'L' ? " | live placement " + LiveProductionPlacementAuthority.objectPlacementLine(this, obj) : "";
+        String queue = " | queue " + Math.max(0, obj.productionQueueRemaining) + "/" + Math.max(1, obj.productionQueueTarget);
+        String staffing = (StaffingLaborBridgeAuthority.isMachineStation(obj) || StaffingLaborBridgeAuthority.isDefenseStation(obj)) ? " | " + StaffingLaborBridgeAuthority.readinessLine(this, obj) : "";
+        return obj.name + " at " + obj.x + "," + obj.y + " | " + kind + " | quality " + obj.qualityName + " | faction " + factionLabel(obj.faction) + " | integrity " + obj.integrity + " | charges " + obj.charges + commerce + live + " | recipe " + recipe + " | worker " + worker + queue + staffing + ".";
+    }

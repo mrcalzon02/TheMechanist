@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: targetPanelCursorFromMouse
+// Lines: 20738-20757
+// Category: input
+// This is an examination slice, not compiled source.
+
+    void targetPanelCursorFromMouse(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return;
+        if (panelMode == PanelMode.LOOK) {
+            lookCursorActive = true;
+            lookX = tx; lookY = ty;
+            lookStackIndex = 0; lookStackScroll = 0;
+            activeScrollTag = "look-stack";
+        } else if (panelMode == PanelMode.COMBAT) {
+            combatCursorActive = true;
+            combatX = tx; combatY = ty;
+            lastTargetingReport = targetingSolutionAt(tx, ty).summary;
+        } else if (panelMode == PanelMode.INTERACT) {
+            interactCursorActive = true;
+            lookX = tx; lookY = ty;
+            clampInteractCursorToAdjacent();
+            lookStackIndex = 0;
+            updatePendingInteractionSummary();
+        }
+        DebugLog.audit("MOUSE_TARGETING", "panel=" + panelMode + " tile=" + tx + "," + ty + " source=virtual-map");
+    }

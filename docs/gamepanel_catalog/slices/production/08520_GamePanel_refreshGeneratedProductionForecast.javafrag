@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: refreshGeneratedProductionForecast
+// Lines: 8520-8535
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void refreshGeneratedProductionForecast(String prefix) {
+        ArrayList<FactionRecipeVariant> jobs = visibleGeneratedProductionJobs();
+        BaseObject machine = selectedWorkerMachine();
+        if (jobs.isEmpty()) {
+            lastGeneratedProductionReport = "No generated jobs match filters category=" + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex) + " status=" + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex) + ".";
+            lastGeneratedProductionQueueReport = "Queue forecast unavailable: no filtered job.";
+            logEvent(prefix + ": " + lastGeneratedProductionReport);
+            repaint();
+            return;
+        }
+        FactionRecipeVariant v = jobs.get(Math.max(0, Math.min(selectedGeneratedProductionJobIndex, jobs.size()-1)));
+        lastGeneratedProductionReport = v.outputName + " | " + ControlledProductionJobAuthority.shortStatus(this, machine, v);
+        lastGeneratedProductionQueueReport = ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        logEvent(prefix + ": " + lastGeneratedProductionReport);
+        repaint();
+    }

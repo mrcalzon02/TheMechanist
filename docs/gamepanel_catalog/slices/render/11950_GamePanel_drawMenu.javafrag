@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawMenu
+// Lines: 11950-11952
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawMenu(Graphics2D g) {
+        mainMenuPainter.paint(g, this);
+    }

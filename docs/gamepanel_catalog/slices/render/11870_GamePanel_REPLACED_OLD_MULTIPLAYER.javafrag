@@ -1,0 +1,86 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: REPLACED_OLD_MULTIPLAYER
+// Lines: 11870-11948
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void REPLACED_OLD_MULTIPLAYER(Graphics2D g) {
+        int W = getWidth();
+        Rectangle panel = multiplayerMenuPanelRect();
+        Rectangle content = multiplayerContentRect(panel);
+        Rectangle action = multiplayerActionRect(panel);
+        g.setColor(new Color(0, 0, 0, 196));
+        g.fillRoundRect(panel.x, panel.y, panel.width, panel.height, 16, 16);
+        drawSlicedFrame(g, panel.x, panel.y, panel.width, panel.height, "inner");
+        stampUiFrameId(g, "F", "multiplayer-menu", panel.x, panel.y, panel.width, panel.height);
+        g.setFont(titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, panel.height / 12f))));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "MULTIPLAYER CONNECTION", W / 2, panel.y + 42);
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+
+        g.setColor(new Color(12, 14, 13, 226));
+        g.fillRoundRect(content.x, content.y, content.width, content.height, 12, 12);
+        g.setColor(new Color(145, 118, 64, 135));
+        g.drawRoundRect(content.x, content.y, content.width, content.height, 12, 12);
+        g.setColor(new Color(12, 14, 13, 220));
+        g.fillRoundRect(action.x, action.y, action.width, action.height, 12, 12);
+        g.setColor(new Color(145, 118, 64, 125));
+        g.drawRoundRect(action.x, action.y, action.width, action.height, 12, 12);
+
+        int leftX = content.x + 14;
+        int textW = Math.max(240, content.width - 28);
+        int y = content.y + 26;
+        Shape oldClip = g.getClip();
+        g.setClip(content.x + 8, content.y + 8, content.width - 16, content.height - 16);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Direct address:", leftX, y); y += fm.getHeight() + 4;
+        String direct = (multiplayerMenu.inputActive() ? "> " : "  ") + multiplayerMenu.directInput() + (multiplayerMenu.inputActive() && (System.currentTimeMillis() / 450) % 2 == 0 ? "_" : "");
+        g.setColor(new Color(18, 22, 20, 230));
+        g.fillRoundRect(leftX, y - fm.getAscent() - 5, textW, fm.getHeight() + 12, 8, 8);
+        g.setColor(multiplayerMenu.inputActive() ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+        g.drawString(GuiLayoutApi.fitLabel(direct, fm, Math.max(220, textW - 12)), leftX + 8, y);
+        y += fm.getHeight() + 24;
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        g.drawString("IPv4 example: 192.168.1.10:25565", leftX, y); y += fm.getHeight();
+        g.drawString("IPv6 example: [2001:db8::1]:25565", leftX, y); y += fm.getHeight() + 18;
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Recent servers:", leftX, y); y += fm.getHeight() + 4;
+        java.util.List<MultiplayerMenuController.ConnectionHistoryItem> history = multiplayerMenu.history();
+        for (int i = 0; i < Math.min(5, history.size()); i++) {
+            boolean selected = i == multiplayerMenu.historyIndex();
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString((selected ? "> " : "  ") + GuiLayoutApi.fitLabel(history.get(i).shortLine(), fm, Math.max(220, textW - 8)), leftX, y);
+            y += fm.getHeight() + 2;
+        }
+        if (history.isEmpty()) { g.setColor(optionColor(GameOptions.TEXT_DIM)); g.drawString("  No connection history yet.", leftX, y); y += fm.getHeight() + 2; }
+        y += 14;
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("Favorites:", leftX, y); y += fm.getHeight() + 4;
+        java.util.List<MultiplayerMenuController.FavoriteServer> favs = multiplayerMenu.favorites();
+        for (int i = 0; i < Math.min(5, favs.size()); i++) {
+            boolean selected = i == multiplayerMenu.favoriteIndex();
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString((selected ? "> " : "  ") + GuiLayoutApi.fitLabel(favs.get(i).shortLine(), fm, Math.max(220, textW - 8)), leftX, y);
+            y += fm.getHeight() + 2;
+        }
+        if (favs.isEmpty()) { g.setColor(optionColor(GameOptions.TEXT_DIM)); g.drawString("  No favorite servers saved.", leftX, y); y += fm.getHeight() + 2; }
+
+        int statusY = Math.max(y + 14, content.y + content.height - 74);
+        g.setColor(new Color(18, 22, 20, 225));
+        g.fillRoundRect(leftX, statusY, textW, 60, 10, 10);
+        g.setColor(new Color(145, 118, 64, 120));
+        g.drawRoundRect(leftX, statusY, textW, 60, 10, 10);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        java.util.List<String> wrapped = GuiLayoutApi.wrapText(multiplayerMenu.status(), fm, Math.max(220, textW - 18));
+        int yy = statusY + 20;
+        for (int i = 0; i < Math.min(2, wrapped.size()); i++) { g.drawString(wrapped.get(i), leftX + 9, yy); yy += fm.getHeight(); }
+        g.setColor(multiplayerMenu.hasActiveHost() ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+        g.drawString(GuiLayoutApi.fitLabel(multiplayerMenu.activeHostLine(), fm, Math.max(220, textW - 18)), leftX + 9, statusY + 50);
+        g.setClip(oldClip);
+
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(9f, smallFont.getSize2D() - 2f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "CONNECTION COMMANDS", action.x + action.width / 2, action.y + 22);
+    }

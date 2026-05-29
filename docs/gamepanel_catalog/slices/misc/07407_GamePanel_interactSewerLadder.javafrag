@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactSewerLadder
+// Lines: 7407-7412
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void interactSewerLadder(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer ladder."); return; }
+        if (!atlas.sewer) { logEvent("This ladder/drain is not connected to a sewer layer from here."); return; }
+        atlas.sewer = false;
+        loadAtlasWorld("sewer ladder back to Floor " + atlas.floor, null);
+    }

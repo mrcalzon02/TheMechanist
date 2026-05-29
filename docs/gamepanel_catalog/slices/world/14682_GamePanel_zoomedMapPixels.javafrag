@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: zoomedMapPixels
+// Lines: 14682-14684
+// Category: world
+// This is an examination slice, not compiled source.
+
+    int zoomedMapPixels(int basePixels) {
+        return Math.max(6, (int)Math.round(basePixels * (options.worldZoomPercent() / 100.0)));
+    }

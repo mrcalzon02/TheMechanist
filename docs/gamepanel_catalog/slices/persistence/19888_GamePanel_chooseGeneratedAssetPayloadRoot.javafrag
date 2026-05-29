@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: chooseGeneratedAssetPayloadRoot
+// Lines: 19888-19910
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void chooseGeneratedAssetPayloadRoot() {
+        try {
+            JFileChooser chooser = new JFileChooser(options.hasGeneratedAssetPayloadRoot() ? new File(options.generatedAssetPayloadRoot()) : new File("."));
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setDialogTitle("Select The Mechanist generated-art payload root");
+            int result = chooser.showOpenDialog(this);
+            if (result != JFileChooser.APPROVE_OPTION || chooser.getSelectedFile() == null) {
+                logEvent("Generated-art payload root unchanged.");
+                return;
+            }
+            File selected = chooser.getSelectedFile();
+            options.generatedAssetPayloadRoot = selected.getAbsolutePath();
+            options.applyGeneratedAssetRuntimeProperties();
+            options.save();
+            AssetManager.reloadGeneratedAssetRuntime();
+            images.reloadArtQuality(options);
+            sounds.play("tab", options);
+            logEvent("Generated-art payload root set to " + options.generatedAssetPayloadRootLabel() + ". Requested tier: " + options.artQualityFolder() + ".");
+            repaint();
+        } catch (Throwable t) {
+            logEvent("Could not select generated-art payload root: " + t.getMessage());
+        }
+    }

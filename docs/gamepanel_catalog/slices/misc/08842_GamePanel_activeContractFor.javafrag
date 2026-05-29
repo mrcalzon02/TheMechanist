@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activeContractFor
+// Lines: 8842-8845
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    FactionContract activeContractFor(Faction f, String type) {
+        for (FactionContract c : factionContracts) if (!c.completed && c.faction == f && c.type.equals(type)) return c;
+        return null;
+    }

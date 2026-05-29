@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: onOff
+// Lines: 19853-19853
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String onOff(boolean b) { return b ? "ON" : "OFF"; }

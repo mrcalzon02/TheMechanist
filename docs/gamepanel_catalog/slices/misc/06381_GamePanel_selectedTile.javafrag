@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedTile
+// Lines: 6381-6381
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    char selectedTile() { return SelectedContextSurfaceApi.selectedTile(world, lookCursorActive, lookX, lookY, playerX, playerY); }

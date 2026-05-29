@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: knowledgeRightPaneRect
+// Lines: 12226-12230
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle knowledgeRightPaneRect() {
+        Rectangle r = knowledgeModalRect();
+        int w = Math.max(260, Math.min(330, r.width / 3));
+        return new Rectangle(r.x + r.width - 22 - w, r.y + 98, w, r.height - 124);
+    }

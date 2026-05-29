@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isIntermapTransitTile
+// Lines: 7242-7242
+// Category: world
+// This is an examination slice, not compiled source.
+
+    boolean isIntermapTransitTile(char ch) { return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E'; }

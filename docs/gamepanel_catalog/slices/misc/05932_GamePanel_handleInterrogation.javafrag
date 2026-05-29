@@ -1,0 +1,50 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: handleInterrogation
+// Lines: 5932-5974
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void handleInterrogation(Faction witness, String reason) {
+        int roll = rng.nextInt(100) + 1;
+        int chance = interrogationChance(witness);
+        DebugLog.audit("INTERROGATION", "witness=" + witness + " reason=" + reason + " roll=" + roll + " chance=" + chance + " clothing=" + equippedClothing.name + " state=" + stateSummary());
+        if (witness == Faction.CIVIC WARDENS && turn < arbitesInspectionCooldownUntilTurn) {
+            lastInterrogation = "Civic Wardens scrutiny delayed: recent inspection cooldown until turn " + arbitesInspectionCooldownUntilTurn + ".";
+            lastArbitesPatrolReport = lastInterrogation;
+            return;
+        }
+        if (roll <= chance) {
+            lastInterrogation = "Talked past " + witness.label + " scrutiny. Roll " + roll + " <= " + chance + ".";
+            logEvent("Interrogation survived: " + witness.label + " accepts your explanation for now.");
+            if (witness == Faction.CIVIC WARDENS) {
+                arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
+                lastArbitesPatrolReport = lastInterrogation + " Next street inspection no sooner than " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
+            }
+        } else {
+            factionStanding.put(witness, factionStanding.getOrDefault(witness, 0) - 1);
+            if (witness == Faction.CIVIC WARDENS) {
+                suspicion += 3;
+                arbitesInspectionCooldownUntilTurn = Math.max(arbitesInspectionCooldownUntilTurn, turn + ARBITES_INSPECTION_COOLDOWN_TURNS);
+                boolean captured = roll >= chance + 12 || suspicion >= 10 || reason.toLowerCase(Locale.ROOT).contains("trespass");
+                if (captured) {
+                    if (turn < arbitesCaptureCooldownUntilTurn) {
+                        lastInterrogation = "Failed Civic Wardens interrogation, but recent custody paperwork blocks a fresh jail processing until " + TimeSurfaceApi.timeTextAtTurn(arbitesCaptureCooldownUntilTurn) + ". They rough you up, record your face, and move you along.";
+                        lastArbitesPatrolReport = lastInterrogation;
+                        pain = Math.min(24, pain + 2);
+                        fatigue = Math.min(30, fatigue + 1);
+                        logEvent("CIVIC WARDENS INSPECTION: " + lastInterrogation);
+                        return;
+                    }
+                    lastInterrogation = "Failed Civic Wardens interrogation hard enough to be processed. Roll " + roll + " > " + chance + ".";
+                    handleArbitesCapture("failed interrogation: " + reason, Math.max(1, (roll - chance) / 10 + suspicion / 6));
+                    return;
+                }
+            }
+            if (witness == Faction.BANDIT) gangHeat += 2;
+            lastInterrogation = "Failed " + witness.label + " interrogation. Roll " + roll + " > " + chance + ". Temporary hostility active.";
+            if (witness == Faction.CIVIC WARDENS) lastArbitesPatrolReport = lastInterrogation + " Inspection cooldown until " + TimeSurfaceApi.timeTextAtTurn(arbitesInspectionCooldownUntilTurn) + ".";
+            temporaryHostileTurns.put(witness, 8);
+            logEvent("FAILED INTERROGATION: " + witness.label + " turns hostile while nearby.");
+        }
+    }

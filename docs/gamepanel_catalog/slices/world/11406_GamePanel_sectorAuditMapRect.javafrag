@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: sectorAuditMapRect
+// Lines: 11406-11406
+// Category: world
+// This is an examination slice, not compiled source.
+
+    Rectangle sectorAuditMapRect() { return uiLayout().map; }

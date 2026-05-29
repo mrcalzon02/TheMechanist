@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: oppositeEdge
+// Lines: 7392-7398
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String oppositeEdge(String dir) {
+        if ("N".equals(dir)) return "S";
+        if ("S".equals(dir)) return "N";
+        if ("W".equals(dir)) return "E";
+        if ("E".equals(dir)) return "W";
+        return "";
+    }

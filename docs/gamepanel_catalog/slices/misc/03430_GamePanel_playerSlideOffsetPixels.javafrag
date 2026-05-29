@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerSlideOffsetPixels
+// Lines: 3430-3434
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Point playerSlideOffsetPixels(int cellW, int cellH) {
+        if (playerTileMotion == null) return new Point(0,0);
+        if (playerTileMotion.toX != playerX || playerTileMotion.toY != playerY || playerTileMotion.done(System.currentTimeMillis())) { playerTileMotion = null; return new Point(0,0); }
+        return slidePixelOffset(playerTileMotion, cellW, cellH);
+    }

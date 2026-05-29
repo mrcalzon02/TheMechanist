@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseExpansionHeatGuidanceLines
+// Lines: 18433-18442
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> baseExpansionHeatGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        int security = baseSecurityRating();
+        int pressure = baseRaidPressure(security);
+        lines.add("Expansion heat: " + heatPressureBand(gangHeat, suspicion, pressure) + " | gang heat " + gangHeat + " | Civic Wardens suspicion " + suspicion + " | raid pressure " + pressure + ".");
+        lines.add("Heat drivers: " + baseExpansionHeatDriverLine());
+        lines.add("Suspicion drivers: " + baseExpansionSuspicionDriverLine());
+        lines.add("Heat relief: " + baseExpansionHeatReliefLine(security));
+        return lines;
+    }

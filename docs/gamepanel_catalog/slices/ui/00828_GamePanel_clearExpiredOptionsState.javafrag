@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: clearExpiredOptionsState
+// Lines: 828-833
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void clearExpiredOptionsState(String reason) {
+        if (graphicsDropdown != -1 || scrollbarDragActive) DebugLog.audit("UI_CLOSE", "Clearing expired options controls due to " + reason + " | dropdown=" + graphicsDropdown + " | " + stateSummary());
+        graphicsDropdown = -1;
+        scrollbarDragActive = false;
+        activeScrollTag = "";
+    }

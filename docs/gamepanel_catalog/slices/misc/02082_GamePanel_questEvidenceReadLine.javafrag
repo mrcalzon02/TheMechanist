@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: questEvidenceReadLine
+// Lines: 2082-2092
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String questEvidenceReadLine(MapObjectState m) {
+        if (m == null) return "";
+        if ("contract-object".equals(m.type)) {
+            FactionContract c = contractForTargetEntity(m.id);
+            if (c != null) return "Quest evidence: sealed retrieval objective for " + c.faction.label + "; take the sealed object and return it unopened.";
+            return "Quest evidence: sealed retrieval objective; take it only if you intend to carry contract evidence.";
+        }
+        if ("faction-journal".equals(m.type)) return "Quest evidence: faction leader journal; stealing it creates physical intelligence that the INN may buy.";
+        if ("corpse-container".equals(m.type)) return "Quest evidence: remains may contain proof items, stolen goods, or recoverable equipment; inspect before taking all.";
+        return "";
+    }

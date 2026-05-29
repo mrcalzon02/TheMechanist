@@ -1,0 +1,50 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: maybeRollZoneTransitionEvent
+// Lines: 7471-7513
+// Category: world
+// This is an examination slice, not compiled source.
+
+    String maybeRollZoneTransitionEvent(String reason) {
+        if (world == null || active == null) return "";
+        int visits = active.zoneVisitCounts.getOrDefault(world.zoneType.label, 0) + 1;
+        active.zoneVisitCounts.put(world.zoneType.label, visits);
+        int baseChance = 18 + Math.min(20, visits * 2);
+        if (atlas != null && atlas.floor <= 2) baseChance += 8;
+        if (equippedClothing != null && equippedClothing.alignedFaction == Faction.CIVIC WARDENS && (world.zoneType == ZoneType.GANGER_TURF || world.zoneType == ZoneType.MUTANT_WARRENS)) baseChance += 10;
+        int roll = rng.nextInt(100);
+        if (roll >= baseChance) { lastTransitionEvent = "No event. roll=" + roll + " chance=" + baseChance; return ""; }
+        String[] benign = {
+            "A maintenance procession passes in the distance, lamps bobbing like tired insects.",
+            "A child watches you from a vent grille, then vanishes before the question can form.",
+            "A vox-speaker coughs three words of a sermon before dying into static.",
+            "A freight chain rattles somewhere behind the wall, dragging unseen tonnage through the arcology bones.",
+            "Someone has chalked a warning on the doorframe. The spelling is poor. The fear is not."
+        };
+        int rarity = rng.nextInt(100);
+        String result;
+        if (rarity < 70) {
+            result = "Zone event: " + benign[rng.nextInt(benign.length)];
+        } else if (rarity < 86) {
+            String item = (world.zoneType == ZoneType.SEWER_CONDUIT || world.zoneType == ZoneType.MUTANT_SEWER_CAMP) ? "Sealed water ration" : "Emergency ration";
+            addInventoryItem(item, ItemProvenanceRecord.found(item, world, turn, "threshold cache"));
+            result = "Uncommon zone event: you find " + item + " wedged near the threshold.";
+        } else if (rarity < 95) {
+            Faction f = world.npcFactionForRoom(0);
+            factionStanding.put(f, factionStanding.getOrDefault(f,0)+1);
+            result = "Rare zone event: a fleeting contact gives you a nod. " + f.label + " standing +1.";
+        } else {
+            Point adj = adjacentOpenNearPlayer();
+            if (adj != null) {
+                NpcEntity hostile = NpcEntity.create(world.npcFactionForRoom(0), world.zoneType, adj.x, adj.y, rng);
+                hostile.state = "HOSTILE";
+                world.npcs.add(hostile);
+                result = "Hostile zone event: something was waiting by the threshold. " + hostile.name + " appears nearby.";
+            } else {
+                result = "Rare zone event: hostile movement echoes nearby, but no creature finds a clean approach.";
+            }
+        }
+        lastTransitionEvent = result + " roll=" + roll + " chance=" + baseChance + " rarity=" + rarity;
+        DebugLog.audit("ZONE_TRANSITION_EVENT", lastTransitionEvent);
+        return result;
+    }

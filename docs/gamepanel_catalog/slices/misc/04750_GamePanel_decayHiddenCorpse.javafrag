@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: decayHiddenCorpse
+// Lines: 4750-4765
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void decayHiddenCorpse(MapObjectState m) {
+        if (world == null || m == null) return;
+        String cid = m.stockState == null || m.stockState.isBlank() ? corpseLootContainerId(m.id) : m.stockState;
+        java.util.List<String> decayed = drainContainerItemNames(cid, 999);
+        String pileId = CONTAINER_CORPSE_LOOT_PREFIX + "decayed." + ContainerIdentityApi.safeToken(m.id);
+        ensureContainer(pileId, "Decayed belongings and skeleton pile");
+        for (String item : decayed) if (!item.equals("Scrap bit") || rng.nextBoolean()) addItemToContainerResult(pileId, "Decayed belongings", item, ItemProvenanceRecord.found(item, world, turn, "decayed corpse belongings"), null, "hidden corpse decay");
+        m.type = "skeleton-pile";
+        m.label = "Skeleton and decayed belongings / " + (world.zoneType == null ? "unknown" : world.zoneType.label);
+        m.stockState = pileId;
+        m.glyph = 'r';
+        m.cooldownUntilTurn = turn + 999999;
+        if (world.inBounds(m.x,m.y)) world.tiles[m.x][m.y] = 'r';
+        logEvent("CORPSE DECAY: an unnoticed body has become a skeleton and a pile of degraded belongings. Quality is not improved by rot. Stunning revelation.");
+        DebugLog.audit("CORPSE_DECAY", "id=" + m.id + " decayedItems=" + decayed.size() + " turn=" + turn);
+    }

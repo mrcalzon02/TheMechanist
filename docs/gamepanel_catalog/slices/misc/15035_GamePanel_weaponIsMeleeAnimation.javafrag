@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: weaponIsMeleeAnimation
+// Lines: 15035-15038
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean weaponIsMeleeAnimation(String weapon) {
+        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
+        return !ItemCatalog.isFirearmLike(weapon) || w.contains("chain") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw") || w.contains("maul") || w.contains("hammer") || w.contains("club");
+    }

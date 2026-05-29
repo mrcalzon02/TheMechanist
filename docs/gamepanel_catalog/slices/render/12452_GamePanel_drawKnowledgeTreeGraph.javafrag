@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawKnowledgeTreeGraph
+// Lines: 12452-12465
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawKnowledgeTreeGraph(Graphics2D g, KnowledgeTree tree) {
+        Map<String, KnowledgeNode> byId = tree.nodeMap();
+        g.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        for (KnowledgeNode node : tree.nodes()) {
+            for (String preId : node.prerequisiteNodeIds()) {
+                KnowledgeNode pre = byId.get(preId);
+                if (pre == null) continue;
+                KnowledgeTree.NodeState state = tree.stateOf(node);
+                g.setColor(pre.unlocked() && node.unlocked() ? new Color(40, 150, 70) : (state == KnowledgeTree.NodeState.AVAILABLE ? new Color(194, 166, 55) : new Color(83, 83, 78)));
+                g.drawLine((int)pre.x(), (int)pre.y(), (int)node.x(), (int)node.y());
+            }
+        }
+        for (KnowledgeNode node : tree.nodes()) drawKnowledgeTreeNode(g, tree, node);
+    }

@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: processMachineOperationQueueTick
+// Lines: 3243-3252
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void processMachineOperationQueueTick(boolean sleeping) {
+        if (machineOperationQueue == null) return;
+        int work = machineOperationQueue.tick(turn, 1, sleeping ? 3 : 2);
+        if (work > 0 && turn % 25 == 0) DebugLog.audit("MACHINE_OPERATION_QUEUE", machineOperationQueue.auditSummary());
+        if (turn == 1) {
+            DebugLog.audit("UNIVERSAL_WINDOW_AUTHORITY", universalWindowAuthority.auditSummary());
+            DebugLog.audit("CONSTRUCTION_GOVERNANCE", constructionGovernanceAuthority.auditSummary());
+            DebugLog.audit("MACHINE_OPERATION_STATUS_BRIDGE", MachineOperationStatusBridge.compactSummary(this));
+            }
+    }

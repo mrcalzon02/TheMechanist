@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactionApproachStatusFor
+// Lines: 15291-15296
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String interactionApproachStatusFor(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty) || !world.inBounds(lookX, lookY)) return "";
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return "";
+        if (Math.abs(tx - lookX) <= 1 && Math.abs(ty - lookY) <= 1 && !(tx == lookX && ty == lookY)) return "approach tile for " + interactionTargetLabel(lookX, lookY);
+        return "";
+    }

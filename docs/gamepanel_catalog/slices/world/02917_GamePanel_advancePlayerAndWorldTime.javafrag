@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: advancePlayerAndWorldTime
+// Lines: 2917-2926
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void advancePlayerAndWorldTime(int deltaTurns, String reason) {
+        if (deltaTurns <= 0) return;
+        long beforeWorld = worldTurn;
+        turn += deltaTurns;
+        worldTurn += deltaTurns;
+        if (beforeWorld / AgeAndWorldTimeAuthority.TURNS_PER_YEAR != worldTurn / AgeAndWorldTimeAuthority.TURNS_PER_YEAR) {
+            int aged = AgeAndWorldTimeAuthority.synchronizeLoadedActors(this, reason == null ? "world-time-advance" : reason);
+            DebugLog.audit("AGE_WORLD_TIME", "yearBoundary worldTurn=" + worldTurn + " playerTurn=" + turn + " actorsUpdated=" + aged + " reason=" + (reason == null ? "unknown" : reason));
+        }
+    }

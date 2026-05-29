@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: doorwayExposureBonus
+// Lines: 5772-5782
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int doorwayExposureBonus(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return 0;
+        if (isDoorTile(world.tiles[x][y])) return 24;
+        int bonus = 0;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1}};
+        for (int[] d: dirs) {
+            int nx=x+d[0], ny=y+d[1];
+            if (world.inBounds(nx,ny) && isDoorTile(world.tiles[nx][ny])) bonus = Math.max(bonus, 10);
+        }
+        return bonus;
+    }

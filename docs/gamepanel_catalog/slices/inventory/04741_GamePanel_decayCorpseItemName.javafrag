@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: decayCorpseItemName
+// Lines: 4741-4748
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String decayCorpseItemName(String item) {
+        if (item == null || item.isBlank()) return "Scrap bit";
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("scrap") || low.contains("junk") || low.contains("detritus")) return "Scrap bit";
+        int tier = Math.max(0, ItemQuality.tierIndex(item) - 1);
+        String base = ItemQuality.stripQuality(item);
+        return ItemQuality.NAMES[Math.max(0, Math.min(ItemQuality.NAMES.length-1, tier))] + " " + base;
+    }

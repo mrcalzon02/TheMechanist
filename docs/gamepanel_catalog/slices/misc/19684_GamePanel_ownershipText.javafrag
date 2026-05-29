@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: ownershipText
+// Lines: 19684-19692
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String ownershipText(int x, int y) {
+        if (world == null) return "No world loaded.";
+        int rid = world.roomIdAt(x, y);
+        if (rid < 0) return "Corridor/unclaimable passage.";
+        if (baseClaimed && rid == claimedRoomId) return "Friendly claimed territory, tinted light green.";
+        Faction owner = world.roomFaction(rid);
+        if (owner != Faction.NONE) return owner.label + " claimed room, color-coded by faction.";
+        return "Neutral unclaimed room, gray/white territory.";
+    }

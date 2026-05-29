@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: activePortableLightVisionBonus
+// Lines: 5246-5250
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int activePortableLightVisionBonus() {
+        int r = activePortableLightRadius();
+        if (r <= 0) return 0;
+        return Math.max(1, Math.min(4, r / 2));
+    }

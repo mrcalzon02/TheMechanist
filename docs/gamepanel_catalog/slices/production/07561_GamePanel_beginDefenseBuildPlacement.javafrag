@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: beginDefenseBuildPlacement
+// Lines: 7561-7567
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void beginDefenseBuildPlacement(BuildRecipe recipe) {
+        if (recipe == null) { logEvent("Defense build selection failed: no recipe."); return; }
+        String advisory = DefenseBuildSelectionAuthority.advisoryFor(recipe);
+        if (universalWindowAuthority != null) universalWindowAuthority.open("construction", turn, advisory);
+        logEvent(advisory);
+        beginBuildPlacement(recipe);
+    }

@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawModalScrim
+// Lines: 16362-16368
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawModalScrim(Graphics2D g) {
+        // Hard reset for modal space.  This prevents older free-drawn GUI layers from
+        // visually stacking behind the current modal while preserving the persistent
+        // outer game wrapper underneath.
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 0, getWidth(), getHeight());
+    }

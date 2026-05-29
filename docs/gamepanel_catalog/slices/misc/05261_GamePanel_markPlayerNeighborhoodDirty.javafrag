@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: markPlayerNeighborhoodDirty
+// Lines: 5261-5263
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void markPlayerNeighborhoodDirty(String reason) {
+        markLocalDirtyRegion(reason, playerX, playerY, Math.max(6, visionRange()+2), true, true, true, false);
+    }

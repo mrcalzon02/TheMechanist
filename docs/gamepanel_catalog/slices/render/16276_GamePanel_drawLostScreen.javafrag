@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawLostScreen
+// Lines: 16276-16296
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawLostScreen(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(new Color(8, 0, 0, 235));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 42, 42, W-84, H-84, "inner");
+        g.setFont(titleFont);
+        g.setColor(new Color(230, 70, 55));
+        center(g, "YOU LOST", W/2, 105);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, lastDefeatSummary == null || lastDefeatSummary.isBlank() ? "The underhive has filed its final report." : lastDefeatSummary, W/2, 150);
+        ArrayList<String> lines = new ArrayList<>();
+        if (lastLossScoreLines == null || lastLossScoreLines.isEmpty()) lines.addAll(PlayerDefeatAndScoreAuthority.lossScoreLines(this));
+        else lines.addAll(lastLossScoreLines);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, lines, 86, 190, W-172, H-370, 0, "lostscreen");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "Open the save/load menu to choose a manual or autosave slot, or quit and let the clerks inventory your bones.", W/2, H-185);
+    }

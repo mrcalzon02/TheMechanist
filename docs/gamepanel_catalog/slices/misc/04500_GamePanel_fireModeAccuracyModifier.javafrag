@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: fireModeAccuracyModifier
+// Lines: 4500-4505
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int fireModeAccuracyModifier() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 12;
+        if ("BURST".equals(fm)) return -8;
+        return 0;
+    }

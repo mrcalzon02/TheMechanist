@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: firstBaseObject
+// Lines: 8052-8055
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BaseObject firstBaseObject(char symbol) {
+        for (BaseObject obj : baseObjects) if (obj.symbol == symbol) return obj;
+        return null;
+    }

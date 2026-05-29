@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: petOwnershipReadLine
+// Lines: 2182-2188
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String petOwnershipReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no readable ownership.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "handled companion of " + npc.companionOf + "; taking or commanding it is not implied.";
+        String territory = ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+        if (territory.contains("faction") || territory.contains("owned") || territory.contains("restricted")) return "local territory claims custody; ask, buy, or be invited before treating it as yours.";
+        return "no visible personal handler; still not automatically yours.";
+    }

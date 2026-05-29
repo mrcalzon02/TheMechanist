@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedWorkerMachine
+// Lines: 8317-8321
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BaseObject selectedWorkerMachine() {
+        ArrayList<BaseObject> ms = recruitOperableMachines();
+        if (ms.isEmpty()) return null;
+        return ms.get(Math.max(0, Math.min(selectedWorkerMachineIndex, ms.size()-1)));
+    }

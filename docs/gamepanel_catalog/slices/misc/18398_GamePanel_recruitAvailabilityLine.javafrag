@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recruitAvailabilityLine
+// Lines: 18398-18405
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String recruitAvailabilityLine(RecruitWorker r) {
+        if (r == null) return "availability unknown";
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty)) return "on guard duty; unavailable for crew shifts";
+        if (r.loyalty <= 2) return "available but unreliable; keep risk low";
+        if (r.skill >= 4) return "available skilled labor";
+        return "available general labor";
+    }

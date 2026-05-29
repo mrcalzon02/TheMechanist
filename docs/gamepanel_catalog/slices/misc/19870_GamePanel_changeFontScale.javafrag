@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeFontScale
+// Lines: 19870-19873
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void changeFontScale(int delta) {
+        options.fontScale = Math.max(50, Math.min(200, options.fontScale + delta*5));
+        applyOptions(); options.save(); sounds.play("tab", options); logEvent("Text scale now " + options.fontScale + "%. Compact default is " + GameOptions.COMPACT_DEFAULT_FONT_SCALE + "%; larger text remains available as opt-in."); repaint();
+    }

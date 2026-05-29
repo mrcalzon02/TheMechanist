@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: portableLightIntensity
+// Lines: 5357-5366
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int portableLightIntensity(String item) {
+        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        if (low.contains("swamp lantern") || low.contains("lantern")) return 72;
+        if (low.contains("flashlight")) return 76;
+        if (low.contains("glow")) return 52;
+        if (low.contains("phosphor")) return 58;
+        if (low.contains("stub")) return 42;
+        if (low.contains("helmet") || low.contains("rig")) return 56;
+        return 55;
+    }

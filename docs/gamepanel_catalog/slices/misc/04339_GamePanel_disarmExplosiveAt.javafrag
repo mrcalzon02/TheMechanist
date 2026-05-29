@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: disarmExplosiveAt
+// Lines: 4339-4357
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void disarmExplosiveAt(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, "planted-explosive");
+        if (m == null) { logEvent("DISARM: no planted explosive selected."); return; }
+        ExplosiveProfile ep = ExplosiveProfile.forItem(m.stockState);
+        int turns = Math.max(1, ep.disarmTurns);
+        int score = stat("Intellect",5) + stat("Mechanics",5) + stat("Vision",5) / 2;
+        int difficulty = 12 + ep.complexity * 4;
+        int roll = rng.nextInt(20) + score;
+        for (int i=0;i<turns;i++) advanceTurn(i==0 ? "attempts to disarm " + ep.name + "." : "continues the disarm work.");
+        if (roll >= difficulty) {
+            restoreMapObjectUnderlyingTile(m);
+            world.mapObjects.remove(m);
+            addInventoryItem(ep.name, ItemProvenanceRecord.found(ep.name, world, turn, "disarmed and recovered planted explosive"));
+            logEvent("DISARM SUCCESS: recovered " + ep.name + ". Roll " + roll + " vs " + difficulty + ".");
+        } else {
+            logEvent("DISARM FAILED: " + ep.name + " bites back. Roll " + roll + " vs " + difficulty + ".");
+            detonateExplosiveObject(m, "failed disarm");
+        }
+    }

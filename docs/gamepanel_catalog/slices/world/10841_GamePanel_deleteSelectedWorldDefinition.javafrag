@@ -1,0 +1,38 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: deleteSelectedWorldDefinition
+// Lines: 10841-10871
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void deleteSelectedWorldDefinition() {
+        if (availableWorlds == null || availableWorlds.isEmpty()) {
+            lastWorldSetupReport = "No saved world definition is selected for deletion.";
+            repaint();
+            return;
+        }
+        int idx = Math.max(0, Math.min(selectedWorldIndex, availableWorlds.size() - 1));
+        WorldSaveInfo info = availableWorlds.get(idx);
+        String summary = info == null ? "unknown world" : info.summaryLine();
+        try {
+            Path worldDir = CampaignWorldApi.worldDir().toAbsolutePath().normalize();
+            Path target = info.path.toAbsolutePath().normalize();
+            String name = target.getFileName() == null ? "" : target.getFileName().toString();
+            if (!target.startsWith(worldDir) || !name.endsWith(".mechworld")) {
+                throw new IOException("Refusing to delete path outside generated-world directory: " + target);
+            }
+            Files.deleteIfExists(target);
+            DebugLog.audit("WORLD_DEFINITION_DELETED", "path=" + target + " summary=" + summary);
+            lastWorldSetupReport = "Deleted world definition: " + summary;
+        } catch (Exception ex) {
+            DebugLog.error("WORLD_DEFINITION_DELETE_FAILED", "Could not delete selected world definition: " + summary, ex);
+            lastWorldSetupReport = "Could not delete selected world definition: " + ex.getMessage();
+        }
+        availableWorlds = WorldSaveInfo.listExistingWorlds();
+        selectedWorldIndex = Math.max(0, Math.min(idx, Math.max(0, availableWorlds.size() - 1)));
+        if (availableWorlds.isEmpty()) {
+            pendingWorldSetup = WorldSetupSettings.standard();
+            lastWorldSetupReport += " No saved worlds remain; generate a new arcology world before character creation.";
+        }
+        repaint();
+    }

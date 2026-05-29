@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: runGuarded
+// Lines: 881-889
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void runGuarded(String system, String detail, Runnable action) {
+        try {
+            DebugLog.audit(system, detail + " | state=" + stateSummary());
+            action.run();
+        } catch (Throwable t) {
+            DebugLog.error(system, detail + " failed | state=" + stateSummary(), t);
+            logEvent("ERROR in " + system + ": " + t.getClass().getSimpleName() + " - diagnostic details were recorded.");
+        }
+    }

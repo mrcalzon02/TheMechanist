@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleMovementMode
+// Lines: 3262-3271
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleMovementMode() {
+        clearPendingMovementInput("movement-mode-change");
+        movementModeIndex = Math.floorMod(movementModeIndex + 1, MOVEMENT_MODE_LABELS.length);
+        resetPushPastIntent();
+        updateMoveGhostTarget(lastMoveDx, lastMoveDy);
+        sounds.play("tab", options);
+        logEvent("Movement mode now " + movementModeLabel() + ": range " + movementModeRange() + ", per-tile cost " + movementTurnCost() + " turn(s). SNEAK hides but ruins disguise credibility; WALK observes; RUN/SPRINT evade better but see, hear, and aim worse until a no-move turn settles you.");
+        DebugLog.audit("MOVEMENT_MODE", "selected=" + movementModeLabel() + " active=" + activeMotionStateLabel() + " range=" + movementModeRange() + " cost=" + movementTurnCost() + " turn=" + turn);
+        repaint();
+    }

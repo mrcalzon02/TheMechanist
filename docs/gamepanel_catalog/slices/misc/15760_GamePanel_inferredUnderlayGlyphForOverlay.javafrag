@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inferredUnderlayGlyphForOverlay
+// Lines: 15760-15762
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    char inferredUnderlayGlyphForOverlay(char ch, int worldX, int worldY) {
+        return TileDataCompilationAuthority.inferredUnderlayGlyph(world, worldX, worldY, ch);
+    }

@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inventoryItemDetailLines
+// Lines: 16539-16557
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> inventoryItemDetailLines(String item, boolean targetStack) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (item == null || item.isBlank()) {
+            lines.add(targetStack ? "No target stack selected." : "No carried stack selected.");
+            return lines;
+        }
+        ItemDef def = ItemCatalog.get(item);
+        String cleanName = ItemQuality.stripManufacturingIdentity(item);
+        lines.add((targetStack ? "TARGET: " : "SELECTED: ") + item);
+        lines.add("Stack: " + inventoryStackContextLine(item, targetStack));
+        lines.add("Quality and value: " + itemQualityValueLine(item));
+        lines.add("Category: " + itemCategoryLine(item, def));
+        lines.add("Likely action: " + itemLikelyActionLine(item, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(item, def));
+        lines.add("Origin: " + itemPlayerFacingOriginLine(item));
+        if (def != null && def.description != null && !def.description.isBlank()) lines.add("Read: " + def.description);
+        else lines.add("Read: " + cleanName + " has no reliable catalog description yet.");
+        return lines;
+    }

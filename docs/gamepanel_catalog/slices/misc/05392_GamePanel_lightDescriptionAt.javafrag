@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: lightDescriptionAt
+// Lines: 5392-5400
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String lightDescriptionAt(int x, int y) {
+        int l = lightLevelAt(x, y);
+        if (l >= 75) return "brightly lit";
+        if (l >= 50) return "lit";
+        if (l >= 30) return "dim";
+        if (l >= 14) return "gloom";
+        if (l > 0) return "dark";
+        return "blackout";
+    }

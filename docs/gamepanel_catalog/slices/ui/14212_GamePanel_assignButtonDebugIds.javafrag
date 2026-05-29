@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: assignButtonDebugIds
+// Lines: 14212-14217
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void assignButtonDebugIds() {
+        for (int i=0; i<buttons.size(); i++) {
+            ButtonBox b = buttons.get(i);
+            if (b != null) b.uiDebugId = i + 1;
+        }
+    }

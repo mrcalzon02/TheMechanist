@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tileImageForRenderedGlyph
+// Lines: 15643-15643
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BufferedImage tileImageForRenderedGlyph(char ch) { return semanticTileImageForRenderedGlyph(ch, -1, -1); }

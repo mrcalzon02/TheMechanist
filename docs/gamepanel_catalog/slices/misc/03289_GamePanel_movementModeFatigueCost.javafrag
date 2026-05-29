@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: movementModeFatigueCost
+// Lines: 3289-3293
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int movementModeFatigueCost() {
+        if (movementModeIndex == MOTION_SPRINT) return 1;
+        if (movementModeIndex == MOTION_SNEAK) return 1;
+        return 0;
+    }

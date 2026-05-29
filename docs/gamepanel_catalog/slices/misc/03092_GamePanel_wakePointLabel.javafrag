@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: wakePointLabel
+// Lines: 3092-3096
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String wakePointLabel(Point p) {
+        if (baseClaimed && p != null && p.x == baseX && p.y == baseY) return "your claimed base";
+        if (world != null && p != null && world.inBounds(p.x, p.y) && world.tiles[p.x][p.y] == 'C') return "the nearest medicae clinic";
+        return "the nearest safe walkable point";
+    }

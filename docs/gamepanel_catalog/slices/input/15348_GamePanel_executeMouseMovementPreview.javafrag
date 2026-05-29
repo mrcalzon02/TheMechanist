@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: executeMouseMovementPreview
+// Lines: 15348-15365
+// Category: input
+// This is an examination slice, not compiled source.
+
+    void executeMouseMovementPreview() {
+        if (!mouseMovePreviewActive || !mouseMovePreviewValid || mouseMovePreviewPath.isEmpty()) { clearMouseMovementPreview("execute-invalid"); repaint(); return; }
+        int range = Math.max(1, movementModeRange());
+        int steps = Math.min(range, mouseMovePreviewPath.size());
+        Point dest = mouseMovePreviewPath.get(steps - 1);
+        int dx = Integer.compare(dest.x, playerX);
+        int dy = Integer.compare(dest.y, playerY);
+        int fromX = playerX, fromY = playerY;
+        playerX = dest.x; playerY = dest.y;
+        beginPlayerTileSlide(fromX, fromY, playerX, playerY);
+        lastMoveDx = dx; lastMoveDy = dy;
+        activeMotionStateIndex = movementModeIndex;
+        updateSensoryModel("mouse movement preview execution");
+        checkTrapAfterPlayerMove(playerX, playerY);
+        advanceTurn("moves by mouse path preview.");
+        clearMouseMovementPreview("executed");
+        repaint();
+    }

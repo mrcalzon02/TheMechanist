@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeResolution
+// Lines: 19967-19970
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void changeResolution(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeResolution(options, delta));
+        repaint();
+    }

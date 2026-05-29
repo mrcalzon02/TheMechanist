@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: ammoStatusForWeapon
+// Lines: 4200-4203
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String ammoStatusForWeapon(String weapon) {
+        if (!ItemCatalog.isFirearmLike(weapon)) return "melee / no ammunition";
+        return loadedShotsForWeapon(weapon) + "/" + magazineCapacityForWeapon(weapon) + " loaded; ammo " + ammoItemForWeapon(weapon) + " x" + countInventory(ammoItemForWeapon(weapon));
+    }

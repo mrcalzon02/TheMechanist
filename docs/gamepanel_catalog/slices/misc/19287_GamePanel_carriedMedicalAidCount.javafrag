@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: carriedMedicalAidCount
+// Lines: 19287-19294
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int carriedMedicalAidCount() {
+        int n = 0;
+        for (String item : inventory) {
+            String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+            if (low.contains("bandage") || low.contains("medkit") || low.contains("antiseptic") || low.contains("field dressing") || low.contains("injector") || low.contains("medicae")) n++;
+        }
+        return n;
+    }

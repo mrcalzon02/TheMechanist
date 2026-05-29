@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: canPlacePendingBuildAt
+// Lines: 7648-7650
+// Category: production
+// This is an examination slice, not compiled source.
+
+    String canPlacePendingBuildAt(int x, int y) {
+        return constructionPlacementResult(pendingBuildRecipe, x, y, rawCanPlacePendingBuildAt(x, y));
+    }

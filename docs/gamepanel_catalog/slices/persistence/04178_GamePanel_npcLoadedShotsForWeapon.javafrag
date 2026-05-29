@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcLoadedShotsForWeapon
+// Lines: 4178-4181
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    int npcLoadedShotsForWeapon(NpcEntity npc) {
+        ensureNpcCombatLoadout(npc);
+        return npc == null ? 0 : Math.max(0, npc.loadedShots);
+    }

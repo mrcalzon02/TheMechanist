@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: petGestureName
+// Lines: 2369-2377
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String petGestureName(NpcEntity npc) {
+        String key = ((npc == null || npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc == null || npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return "ear scritches";
+        if (key.contains("rat") || key.contains("mouse")) return "a nose boop";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return "a head pat";
+        if (key.contains("lizard")) return "a chin rub";
+        if (key.contains("glowfish")) return "a bowl tap";
+        return "a gentle petting gesture";
+    }

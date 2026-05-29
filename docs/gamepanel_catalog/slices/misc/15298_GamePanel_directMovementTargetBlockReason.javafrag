@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: directMovementTargetBlockReason
+// Lines: 15298-15309
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String directMovementTargetBlockReason(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "Movement target is outside the known map.";
+        if (tx == playerX && ty == playerY) return "Movement target is your current position.";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return "Destination occupied.";
+        if (!world.walkable(tx, ty)) {
+            char ch = world.tiles[tx][ty];
+            if (isDoorTile(ch) || ch == 'D') return "Door is closed.";
+            return "Path blocked.";
+        }
+        return null;
+    }

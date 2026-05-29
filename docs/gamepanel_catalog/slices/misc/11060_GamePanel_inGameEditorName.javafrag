@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inGameEditorName
+// Lines: 11060-11065
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String inGameEditorName() {
+        java.util.List<String> names = inGameEditorNames();
+        if (names.isEmpty()) return "Room Editor";
+        inGameEditorTabIndex = Math.max(0, Math.min(names.size() - 1, inGameEditorTabIndex));
+        return names.get(inGameEditorTabIndex);
+    }

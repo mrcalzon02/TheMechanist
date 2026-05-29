@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: examineDepth
+// Lines: 1993-1995
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int examineDepth() {
+        return Math.max(1, Math.min(3, repeatedExamineCount));
+    }

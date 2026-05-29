@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcArmorEstimate
+// Lines: 2231-2238
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    String npcArmorEstimate(NpcEntity npc) {
+        String armor = npc.equippedArmor == null ? "" : npc.equippedArmor.trim();
+        if (armor.isBlank()) return "no obvious armor";
+        int value = ItemCatalog.priceFor(armor);
+        if (value >= 35 || armor.toLowerCase(Locale.ROOT).contains("carapace")) return "heavy visible protection: " + armor;
+        if (value >= 14 || armor.toLowerCase(Locale.ROOT).contains("flak") || armor.toLowerCase(Locale.ROOT).contains("vest")) return "moderate visible protection: " + armor;
+        return "light visible protection: " + armor;
+    }

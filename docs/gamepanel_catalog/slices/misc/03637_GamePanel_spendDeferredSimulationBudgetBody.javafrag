@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: spendDeferredSimulationBudgetBody
+// Lines: 3637-3658
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void spendDeferredSimulationBudgetBody(String reason, int budgetMillis) {
+        if (budgetMillis <= 0 || deferredSimulationDebt <= 0) return;
+        long start = System.nanoTime();
+        long deadline = start + budgetMillis * 1_000_000L;
+        int paid = 0;
+        while (deferredSimulationDebt > 0 && System.nanoTime() < deadline) {
+            int chunk = Math.min(deferredSimulationDebt, 8);
+            AbstractDistantZoneSimulation.TickResult ar = abstractDistantZoneSimulation.spend(world, playerX, playerY, turn, chunk);
+            int spent = Math.max(1, ar.deferredPaid);
+            deferredSimulationDebt = Math.max(0, deferredSimulationDebt - spent);
+            paid += spent;
+            profilingAbstractZoneTicks += ar.ledgersTouched;
+            profilingAbstractZoneWork += ar.spentWork;
+            if (abstractDistantZoneSimulation.shouldAudit(turn)) DebugLog.audit("ABSTRACT_DISTANT_ZONE", "reason=" + reason + " " + ar.summary + " global=" + abstractDistantZoneSimulation.globalSummary() + " debt=" + deferredSimulationDebt);
+            if (ar.spentWork <= 0 && chunk <= 1) break;
+        }
+        if (paid > 0) {
+            profilingDeferredBudgetRuns++;
+            profilingIdleBudgetNanos += Math.max(0L, System.nanoTime() - start);
+            if (profilingDeferredBudgetRuns % 100 == 0) DebugLog.audit("SIM_BUDGET", "reason=" + reason + " paid=" + paid + " remainingDebt=" + deferredSimulationDebt + " budgetMs=" + budgetMillis + " turn=" + turn);
+        }
+    }

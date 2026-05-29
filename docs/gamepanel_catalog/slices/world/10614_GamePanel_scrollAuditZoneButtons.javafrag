@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: scrollAuditZoneButtons
+// Lines: 10614-10620
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void scrollAuditZoneButtons(int delta) {
+        ZoneType[] values = ZoneType.values();
+        if (values.length == 0) return;
+        int visible = Math.max(3, Math.min(5, values.length));
+        auditZoneButtonScroll = Math.max(0, Math.min(Math.max(0, values.length - visible), auditZoneButtonScroll + delta));
+        repaint();
+    }

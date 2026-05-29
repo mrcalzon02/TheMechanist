@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerTreatmentPriorityLine
+// Lines: 19269-19278
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String playerTreatmentPriorityLine() {
+        if (bleeding > 0) return "stop bleeding first with bandages, field dressings, sleep recovery, or clinic support.";
+        if (infectionRisk >= 5) return "find antiseptic, medicae care, or a clinic before infection pressure worsens.";
+        if (crippledLegCount() > 0) return "avoid long movement and seek recovery; damaged legs raise travel risk.";
+        if (crippledArmCount() > 0) return "avoid precision work and fighting until arms or hands recover.";
+        if (pain >= 12) return "rest or medical help before combat; pain can make good choices expensive.";
+        if (fatigue >= 20 || sleepNeed >= MAX_SLEEP_NEED / 2) return "sleep in a cot if food and water allow it.";
+        if (wounds > 0) return "rest, use medical supplies, or visit a clinic before the next fight.";
+        return "keep food, water, and medical supplies ready before taking risks.";
+    }

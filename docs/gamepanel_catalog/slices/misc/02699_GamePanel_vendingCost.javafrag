@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: vendingCost
+// Lines: 2699-2699
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int vendingCost(char ch) { return PublicServiceMediaAuthority.vendingCost(ch); }

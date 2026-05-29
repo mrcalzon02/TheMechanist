@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleJvmRuntimeProfile
+// Lines: 20159-20162
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleJvmRuntimeProfile() {
+        JvmRuntimeProfileAuthority.cycleTarget(jvmRuntimeProfile);
+        markJvmProfileChanged("JVM runtime profile now " + jvmRuntimeProfile.targetLabel() + ".");
+    }

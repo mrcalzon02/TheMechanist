@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeOfferDetailLines
+// Lines: 6659-6674
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> tradeOfferDetailLines(TradeOffer offer) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (offer == null || activeTrader == null) return lines;
+        ItemDef def = offer.catalogDef();
+        int buyPrice = activeTrader.buyPrice(offer);
+        int catalogValue = Math.max(1, ItemCatalog.priceFor(offer.name));
+        lines.add("Selected offer: " + offer.name + " for " + buyPrice + " script.");
+        lines.add("Price read: catalog value about " + catalogValue + "; " + tradePricePressureLine(buyPrice, catalogValue) + ".");
+        lines.add("Stock context: " + tradeStockContextLine(offer));
+        lines.add("Market status: " + tradeMarketStatusLine(offer.name, def, true));
+        lines.add("Transfer preview: " + tradeBuyTransferPreviewLine(offer, buyPrice));
+        lines.add("Likely use: " + itemLikelyActionLine(offer.name, def));
+        lines.add("Legal risk: " + itemLegalRiskLine(offer.name, def));
+        lines.add("Origin: " + tradeOfferOriginLine(offer));
+        return lines;
+    }

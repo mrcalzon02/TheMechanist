@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: maybeAutosave
+// Lines: 987-999
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void maybeAutosave(String reason) {
+        if (active == null || world == null || atlas == null || screen == Screen.LOST) return;
+        if (turn <= 0 || turn == lastAutosaveTurn) return;
+        if (turn % AUTOSAVE_INTERVAL_TURNS != 0) return;
+        try {
+            writeSaveFile(AUTOSAVE_HOURLY_SLOT, true);
+            lastAutosaveTurn = turn;
+            logEvent("AUTOSAVE: hourly save at turn " + turn + " after " + reason + ".");
+        } catch (Throwable t) {
+            DebugLog.error("AUTOSAVE_FAILED", "Hourly autosave failed at turn " + turn + " reason=" + reason, t);
+            logEvent("AUTOSAVE WARNING: could not write hourly autosave. Diagnostic details were recorded.");
+        }
+    }

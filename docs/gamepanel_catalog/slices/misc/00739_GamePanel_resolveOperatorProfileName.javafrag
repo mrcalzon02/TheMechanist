@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: resolveOperatorProfileName
+// Lines: 739-748
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String resolveOperatorProfileName() {
+        try {
+            if (userProfile != null && userProfile.wrapperDetected && userProfile.displayName != null && !userProfile.displayName.isBlank()) return userProfile.displayName;
+            FallbackProfileManagementAuthority.LocalProfile p = FallbackProfileManagementAuthority.loadOrCreate(userProfile);
+            if (p != null && p.profileName != null && !p.profileName.isBlank()) return p.profileName;
+        } catch (Throwable t) {
+            DebugLog.warn("NAME_LOCKED_PROFILE_PORTRAIT", "profile-name resolution fell back: " + t.getMessage());
+        }
+        return userProfile == null ? "Local Operator" : userProfile.displayName;
+    }

@@ -1,0 +1,31 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawTimedAlert
+// Lines: 13965-13988
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawTimedAlert(Graphics2D g) {
+        if (alertUntilMillis <= System.currentTimeMillis() || alertTitle == null || alertTitle.isEmpty()) return;
+        int W = getWidth(), H = getHeight();
+        int w = Math.min(620, Math.max(360, W - 160));
+        int h = 150;
+        int x = (W - w) / 2;
+        int y = Math.max(90, H / 2 - h / 2);
+        g.setColor(new Color(0,0,0,168));
+        g.fillRect(0,0,W,H);
+        g.setColor(new Color(4,5,4,244));
+        g.fillRoundRect(x,y,w,h,16,16);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, alertTitle, x + w/2, y + 38);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        int yy = y + 70;
+        for(String line: TextSurfaceApi.wrap(alertBody, Math.max(34,(w-56)/8))) {
+            center(g, line, x + w/2, yy);
+            yy += 18;
+            if (yy > y + h - 18) break;
+        }
+    }

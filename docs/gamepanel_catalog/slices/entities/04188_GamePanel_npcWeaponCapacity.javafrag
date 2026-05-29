@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcWeaponCapacity
+// Lines: 4188-4191
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    int npcWeaponCapacity(NpcEntity npc) {
+        ensureNpcCombatLoadout(npc);
+        return npc == null ? 0 : magazineCapacityForWeapon(npc.equippedRangedWeapon);
+    }

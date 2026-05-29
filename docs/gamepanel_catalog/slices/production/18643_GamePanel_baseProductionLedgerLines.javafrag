@@ -1,0 +1,32 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseProductionLedgerLines
+// Lines: 18643-18667
+// Category: production
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> baseProductionLedgerLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        ArrayList<BaseObject> machines = recruitOperableMachines();
+        if (machines.isEmpty()) { lines.add("  No recruit-operable machines built."); return lines; }
+        for (BaseObject machine : machines) {
+            String recipeName = machine.assignedRecipe == null ? "" : machine.assignedRecipe;
+            if (recipeName.isBlank()) { lines.add("  " + machine.name + ": idle. No recipe assigned."); continue; }
+            if (ControlledProductionJobAuthority.isGeneratedAssignment(recipeName)) {
+                FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(recipeName);
+                if (v == null) { lines.add("  " + machine.name + ": invalid generated job assignment " + recipeName + "."); continue; }
+                String block = ControlledProductionJobAuthority.operationProblem(this, machine, v, false);
+                String manual = ControlledProductionJobAuthority.manualFallbackLine(this, machine, v);
+                lines.add("  " + machine.name + ": " + v.outputName + " | " + ControlledProductionJobAuthority.inputForecastLine(this, v) + " | queue " + machine.productionQueueRemaining + "/" + Math.max(1, machine.productionQueueTarget) + " | equipment " + v.equipmentSummary() + " | staffed " + (block == null ? "ready" : "blocked: " + block) + " | " + manual);
+                continue;
+            }
+            CraftingRecipe r = CraftingRecipe.byName(recipeName);
+            if (r == null) { lines.add("  " + machine.name + ": invalid recipe assignment " + recipeName + "."); continue; }
+            String block = r.blockingProblemForMachine(this, machine);
+            String q = cappedProductionQuality(machine, r.requiredKnowledge);
+            String output = ProductionRecipe.create(r.outputBaseItem, productionFactionFor(machine, r.faction), q, r.requiredKnowledge, machine.name).outputItemName();
+            lines.add("  " + machine.name + ": " + recipeName + " -> " + output + " x" + r.outputCount + " | uses " + r.inputSummary() + " | " + (block == null ? "ready" : "blocked: " + block));
+        }
+        lines.addAll(LiveProductionPlacementAuthority.baseReadinessLines(this, 8));
+        return lines;
+    }

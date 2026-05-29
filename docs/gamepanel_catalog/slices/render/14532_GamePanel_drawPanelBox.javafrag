@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawPanelBox
+// Lines: 14532-14542
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawPanelBox(Graphics2D g, int x, int y, int w, int h, String title) {
+        g.setColor(new Color(4, 7, 6, 232));
+        g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", title, x, y, w, h);
+        if (title != null && !title.isBlank()) {
+            g.setFont(uiFont);
+            g.setColor(optionColor(GameOptions.TEXT_TITLE));
+            g.drawString(title, x+18, y+32);
+        }
+    }

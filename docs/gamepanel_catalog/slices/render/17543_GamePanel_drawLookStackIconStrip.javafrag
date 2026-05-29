@@ -1,0 +1,24 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawLookStackIconStrip
+// Lines: 17543-17559
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawLookStackIconStrip(Graphics2D g, int tx, int ty, int x, int y, int maxIcons, int size) {
+        if (world == null || !world.inBounds(tx, ty) || maxIcons <= 0) return;
+        int drawn = 0;
+        char ch = world.tiles[tx][ty];
+        BufferedImage tile = images.getTile(ch);
+        if (tile != null && drawn < maxIcons) { g.drawImage(tile, x + drawn*(size+5), y, size, size, null); drawn++; }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null && drawn < maxIcons) { BufferedImage img = ObjectSemanticAssetAuthority.imageForMapObject(mos); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null && drawn < maxIcons) { BufferedImage img = ObjectSemanticAssetAuthority.imageForBaseObject(obj); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null && drawn < maxIcons) { BufferedImage img = images.getNpcPortraitFor(npc); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        for (int i=0; i<drawn; i++) {
+            g.setColor(new Color(230,205,120));
+            g.drawRect(x + i*(size+5), y, size, size);
+        }
+    }

@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setScreen
+// Lines: 763-784
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void setScreen(Screen next) {
+        Screen oldScreen = screen;
+        PanelMode oldPanel = panelMode;
+        if (screen != next) previousScreen = screen;
+        if (next == Screen.PANEL || next == Screen.OPTIONS || next == Screen.PAUSE) sounds.play("panelOpen", options);
+        if (oldScreen == Screen.PANEL && next != Screen.PANEL) clearExpiredPanelState(oldPanel, "screen change to " + next);
+        if (oldScreen == Screen.OPTIONS && next != Screen.OPTIONS) clearExpiredOptionsState("screen change to " + next);
+        if (oldScreen == Screen.PAUSE && next != Screen.PAUSE) clearExpiredPauseState("screen change to " + next);
+        if (oldScreen == Screen.INTRO_CRAWL && next != Screen.INTRO_CRAWL) sounds.stopIntroCrawlNarration("screen change to " + next);
+        if (next == Screen.INTRO_CRAWL) {
+            introCrawlStartMillis = System.currentTimeMillis();
+            if (introCrawlLines.isEmpty()) introCrawlLines = images.loadIntroCrawlLines();
+            sounds.playIntroCrawlNarration(options);
+            DebugLog.audit("INTRO_CRAWL_BEGIN", "lines=" + introCrawlLines.size() + " queuedZoneSplash=" + introCrawlQueuedZoneSplash + " textTargetMs=" + INTRO_CRAWL_TEXT_TARGET_MS + " audioExpectedMs=" + INTRO_CRAWL_AUDIO_EXPECTED_MS + " audioTailSafetyMs=" + INTRO_CRAWL_AUDIO_TAIL_SAFETY_MS);
+        }
+        screen = next;
+        selectedButton = 0;
+        activeScrollTag = "";
+        requestFocusInWindow();
+        updateDynamicMusic("screen change to " + next);
+        repaint();
+    }

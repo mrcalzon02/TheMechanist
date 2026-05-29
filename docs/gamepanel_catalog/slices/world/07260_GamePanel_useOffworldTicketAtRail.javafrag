@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: useOffworldTicketAtRail
+// Lines: 7260-7269
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void useOffworldTicketAtRail() {
+        if (!selectedInteractionIsSectorRail()) { logEvent("Off-world departure failed: select a rail authority counter or platform marker in a Neutral Rail Depot."); return; }
+        if (!hasOffworldTicket()) { logEvent("Off-world departure blocked: no genuine Off-world ticket is carried. Find a governor who has one, bribe them, or take it from their body."); return; }
+        offworldTicketsFound = Math.max(offworldTicketsFound, 1);
+        alertTitle = "OFF-WORLD PASSAGE SECURED";
+        alertBody = "The rail authority validates the impossible ticket. The sector, your warrants, your abandoned enemies, and every hungry room behind you become someone else's accounting problem. Victory route complete.";
+        logEvent("VICTORY: Off-world ticket accepted at the rail authority. You escape the sector stack.");
+        DebugLog.audit("OFFWORLD_VICTORY", "ticket=true state=" + stateSummary());
+        setScreen(Screen.ZONE_SPLASH);
+    }

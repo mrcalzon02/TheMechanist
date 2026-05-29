@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectedKnowledgeNode
+// Lines: 12203-12206
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    KnowledgeNode selectedKnowledgeNode(KnowledgeTree tree) {
+        if (tree == null || selectedKnowledgeNodeId == null) return null;
+        return tree.node(selectedKnowledgeNodeId);
+    }

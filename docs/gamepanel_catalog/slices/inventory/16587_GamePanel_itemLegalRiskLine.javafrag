@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: itemLegalRiskLine
+// Lines: 16587-16596
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String itemLegalRiskLine(String item, ItemDef def) {
+        String text = (item + " " + (def == null ? "" : def.category + " " + def.source + " " + def.use)).toLowerCase(Locale.ROOT);
+        if (text.contains("contraband") || text.contains("illicit") || text.contains("black-market") || text.contains("black market") || text.contains("stolen") || text.contains("leader journal") || text.contains("profane") || text.contains("heretic")) return "restricted or suspicious if searched by law, guild, or faction authority.";
+        if (text.contains("permit") || text.contains("ticket") || text.contains("ration") || text.contains("water") || text.contains("food") || text.contains("medical") || text.contains("field dressing")) return "ordinary possession unless a local authority has posted tighter rules.";
+        if (def != null && def.weapon) return "weapon possession can draw attention in lawful, noble, or guarded spaces.";
+        if (ItemCatalog.isFirearmLike(item)) return "firearm-like gear can draw attention in lawful, noble, or guarded spaces.";
+        if (looksWearable(item) && factionForClothingItem(item) != Faction.NONE) return "faction clothing may help or endanger you depending on who sees it.";
+        if (text.contains("keycard") || text.contains("data spike") || text.contains("lockpick") || text.contains("hacking")) return "access tools may look suspicious near secure doors, vaults, or patrols.";
+        return "no obvious legal risk from the item name alone.";
+    }

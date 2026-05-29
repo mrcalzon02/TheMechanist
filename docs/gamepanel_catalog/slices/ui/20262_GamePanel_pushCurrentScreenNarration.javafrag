@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: pushCurrentScreenNarration
+// Lines: 20262-20268
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void pushCurrentScreenNarration() {
+        String next = "The Mechanist screen: " + screen + (panelMode == PanelMode.NONE ? "" : ", panel " + panelMode) + (world == null ? "" : ", zone " + world.zoneType.label + ", turn " + turn) + ".";
+        AccessibilityCompatibilityAuthority.pushNarration(this, lastAccessibleNarration, next);
+        lastAccessibleNarration = next;
+        logEvent("Accessibility narration updated for current screen.");
+        repaint();
+    }

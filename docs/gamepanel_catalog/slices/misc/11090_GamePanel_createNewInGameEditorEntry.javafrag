@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: createNewInGameEditorEntry
+// Lines: 11090-11097
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void createNewInGameEditorEntry() {
+        SimulationEditorRepository.EditableEntity created = inGameEditorRepository.createBlankEntity(inGameEditorName());
+        java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorEntities();
+        for (int i=0;i<entities.size();i++) if (entities.get(i).id().equals(created.id())) { inGameEditorEntityIndex = i; break; }
+        inGameEditorStatus = "Created new " + inGameEditorName().replace(" Editor", "") + " entry: " + created.name() + ".";
+        DebugLog.audit("INGAME_EDITOR_NEW", inGameEditorName() + " id=" + created.id());
+        repaint();
+    }

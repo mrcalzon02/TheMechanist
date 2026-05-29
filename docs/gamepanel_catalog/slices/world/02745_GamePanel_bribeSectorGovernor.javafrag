@@ -1,0 +1,29 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bribeSectorGovernor
+// Lines: 2745-2766
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void bribeSectorGovernor() {
+        if (world == null || !world.inBounds(lookX, lookY) || world.tiles[lookX][lookY] != 'Q') { logEvent("Governor bribe failed: no sector governor is selected."); return; }
+        int fee = governorAudienceFee();
+        if (!spendImperialScript(fee)) { logEvent("Governor bribe failed: the chamberlain requires " + fee + " Concord Script. You have " + countMoney() + "."); return; }
+        governorBribesPaid++;
+        suspicion = Math.max(0, suspicion - 3);
+        if (governorHasTicket()) {
+            addInventoryItem("Off-world ticket", ItemProvenanceRecord.of("Off-world ticket", Faction.NOBLE, "Sector Governor audience", world, turn, "seed-bound governor travel warrant", "bribed from sector governor"));
+            offworldTicketsFound++;
+            logEvent("VICTORY ROUTE: the sector governor produces a genuine off-world ticket. You can leave the sector, your debts, and probably several crimes behind.");
+            alertTitle = "OFF-WORLD TICKET ACQUIRED";
+            alertBody = "The Governor takes the lavish fee and, by some bureaucratic miracle, hands over a true off-world ticket. This is the win condition route: reach the rail or exit authority and depart.";
+            alertUntilMillis = System.currentTimeMillis() + 9000L;
+        } else {
+            logEvent("BETRAYAL: the Governor pockets " + fee + " script and has no ticket. Guards erupt from concealed doors. Find another sector governor, if you survive.");
+            spawnGovernorGuards(5 + rng.nextInt(4));
+            suspicion += 8; gangHeat += 5;
+        }
+        DebugLog.audit("GOVERNOR_BRIBE", "fee="+fee+" hasTicket="+governorHasTicket()+" bribes="+governorBribesPaid+" tickets="+offworldTicketsFound+" state="+stateSummary());
+        advanceTurn("bribes the sector governor.");
+        repaint();
+    }

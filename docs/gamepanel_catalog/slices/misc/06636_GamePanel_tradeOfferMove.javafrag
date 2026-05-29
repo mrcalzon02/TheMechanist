@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tradeOfferMove
+// Lines: 6636-6643
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void tradeOfferMove(int delta) {
+        if (activeTrader == null || activeTrader.offers.isEmpty()) return;
+        selectedTradeOffer = Math.floorMod(selectedTradeOffer + delta, activeTrader.offers.size());
+        TradeOffer offer = selectedTradeOffer();
+        lastTradeReport = "Selected offer: " + offer.name + " for " + activeTrader.buyPrice(offer) + " concord script.";
+        DebugLog.audit("TRADE_SELECT", lastTradeReport + " state=" + stateSummary());
+        repaint();
+    }

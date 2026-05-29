@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: UiLayout
+// Method: UiLayout
+// Lines: 14617-14619
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        UiLayout(Rectangle root, Rectangle topBar, Rectangle map, Rectangle command, Rectangle tactical, Rectangle modal, Rectangle leftInfo) {
+            this.root=root; this.topBar=topBar; this.map=map; this.command=command; this.tactical=tactical; this.modal=modal; this.leftInfo=leftInfo;
+        }

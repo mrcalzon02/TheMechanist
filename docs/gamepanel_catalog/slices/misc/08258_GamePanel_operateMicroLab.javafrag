@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: operateMicroLab
+// Lines: 8258-8269
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void operateMicroLab() {
+        if (!canUseWorkbench()) return;
+        if (firstBaseObject('l') == null) { logEvent("Research blocked: no Micro Lab has been built in this base."); return; }
+        if (!hasKnowledge("Underhive Basics")) { logEvent("Research blocked: Underhive Basics is required to organize even crude research."); return; }
+        if (machineParts < 1) { logEvent("Research blocked: Micro Lab work needs 1 machine part as consumed apparatus and salvage medium."); return; }
+        machineParts -= 1;
+        gainXp("Knowledge", 6, "micro lab research");
+        if (!hasKnowledge("Underhive Research Methods")) { unlockKnowledge("Underhive Research Methods"); logEvent("KNOWLEDGE DISCOVERED: Underhive Research Methods from Micro Lab work."); }
+        logEvent("RESEARCH: Micro Lab consumes 1 machine part and produces knowledge progress.");
+        DebugLog.audit("PRODUCTION_LAB", "parts=" + machineParts + " kc=" + knowledgeCredits + " state=" + stateSummary());
+        advanceTurn("runs a micro lab research cycle.");
+    }

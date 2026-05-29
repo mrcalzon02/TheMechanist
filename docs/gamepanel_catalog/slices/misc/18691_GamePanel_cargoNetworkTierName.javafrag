@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cargoNetworkTierName
+// Lines: 18691-18698
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String cargoNetworkTierName() {
+        boolean center=false, post=false, carry=false;
+        for (BaseObject obj : baseObjects) { if (obj.symbol=='G') center=true; if (obj.symbol=='q') post=true; if (obj.symbol=='k') carry=true; }
+        if (center) return "Logistics Center";
+        if (post) return "Supply Post";
+        if (carry) return "Carrying Station";
+        return "none";
+    }

@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: markZoneVisitedAndCheckFirstType
+// Lines: 10046-10055
+// Category: world
+// This is an examination slice, not compiled source.
+
+    boolean markZoneVisitedAndCheckFirstType() {
+        if (world == null || atlas == null) return false;
+        String key = atlas.sectorX + ":" + atlas.sectorY + ":" + atlas.zoneX + ":" + atlas.zoneY + ":" + atlas.floor + ":" + atlas.sewer;
+        visitedZoneInstances.add(key);
+        boolean firstType = !visitedZoneTypes.contains(world.zoneType);
+        visitedZoneTypes.add(world.zoneType);
+        if (active != null) active.visitedZoneTypes.add(world.zoneType.label);
+        DebugLog.audit("ZONE_VISIT", "key=" + key + " zoneType=" + world.zoneType.label + " firstType=" + firstType + " visitedTypes=" + visitedZoneTypes.size());
+        return firstType;
+    }

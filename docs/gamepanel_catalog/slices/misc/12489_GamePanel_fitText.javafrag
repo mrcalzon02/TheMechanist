@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: fitText
+// Lines: 12489-12496
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    static String fitText(String text, FontMetrics fm, int width) {
+        if (text == null) return "";
+        if (fm.stringWidth(text) <= width) return text;
+        String suffix = "…";
+        String t = text;
+        while (!t.isEmpty() && fm.stringWidth(t + suffix) > width) t = t.substring(0, t.length() - 1);
+        return t + suffix;
+    }

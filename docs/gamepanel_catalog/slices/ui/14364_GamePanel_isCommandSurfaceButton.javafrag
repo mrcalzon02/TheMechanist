@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isCommandSurfaceButton
+// Lines: 14364-14372
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    boolean isCommandSurfaceButton(ButtonBox b) {
+        if (b == null || b.label == null || b.label.equals("BACK")) return false;
+        // Phase 4 containment rule: command-surface membership is semantic, not
+        // geometric. Several older panels originally placed their buttons beside or
+        // below the command tablet and then expected later code to corral them. If
+        // we decide membership by rectangle intersection, those off-frame buttons
+        // are never reclaimed and can spill down the screen.
+        return screen == Screen.GAME || (screen == Screen.PANEL && panelUsesCommandSurface());
+    }

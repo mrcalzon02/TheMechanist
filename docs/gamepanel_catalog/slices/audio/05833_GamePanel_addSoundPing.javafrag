@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: addSoundPing
+// Lines: 5833-5839
+// Category: audio
+// This is an examination slice, not compiled source.
+
+    void addSoundPing(int x, int y, String label) {
+        for (SensePing p : sensePings) {
+            if (Math.abs(p.x-x) <= 1 && Math.abs(p.y-y) <= 1 && p.label.equals(label)) { p.x=x; p.y=y; p.ttl=4; return; }
+        }
+        sensePings.add(new SensePing(x,y,label,4));
+        while (sensePings.size() > 10) sensePings.remove(0);
+    }

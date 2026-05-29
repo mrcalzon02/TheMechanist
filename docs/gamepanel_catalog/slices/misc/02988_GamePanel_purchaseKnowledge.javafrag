@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: purchaseKnowledge
+// Lines: 2988-2995
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void purchaseKnowledge(String name, int cost) {
+        if (unlockKnowledge(name)) {
+            knowledgeCredits = Math.max(0, knowledgeCredits - Math.max(0, cost));
+            logEvent("KNOWLEDGE UNLOCKED: " + name + ". Remaining knowledge credits: " + knowledgeCredits + ".");
+        } else {
+            logEvent("Knowledge already known: " + name + ".");
+        }
+    }

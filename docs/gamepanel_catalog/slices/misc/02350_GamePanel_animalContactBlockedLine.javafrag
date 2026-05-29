@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: animalContactBlockedLine
+// Lines: 2350-2357
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String animalContactBlockedLine(NpcEntity npc) {
+        if (npc == null) return "There is no companion animal there.";
+        if (!npc.isAnimalActor()) return npc.name + " is a person, not a pet.";
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return npc.name + " is not safe to touch.";
+        if ("farm-animal".equals(npc.creatureKind)) return npc.name + " is working stock, not a companion animal; it keeps a cautious distance.";
+        if ("kennel-animal".equals(npc.creatureKind)) return npc.name + " is on duty and should not be distracted.";
+        return npc.name + " is not tame enough to pet.";
+    }

@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: defaultTerrainIntegrity
+// Lines: 4676-4683
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int defaultTerrainIntegrity(char ch) {
+        if (ch == '#' || ch == '%' || InterstitialInfrastructureApi.isInterstitialSolid(ch)) return 40;
+        if (isDoorTile(ch)) return 18;
+        if (tileProvidesSoftCover(ch)) return 10;
+        if (ch == '*' || ch == 'R' || ch == 'N' || ch == '1' || ch == '2' || ch == '3' || ch == '4' || ch == '5') return 12;
+        if (ch == '.' || ch == '+' || ch == ',' || ch == ';' || ch == ':' || ch == '~' || ch == '=') return 6;
+        return 8;
+    }

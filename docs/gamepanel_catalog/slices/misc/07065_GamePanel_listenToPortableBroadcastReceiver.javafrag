@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: listenToPortableBroadcastReceiver
+// Lines: 7065-7076
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void listenToPortableBroadcastReceiver(String item) {
+        String low = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        String kind = low.contains("pict") || low.contains("screen") || low.contains("television") ? "pict-screen" : "radio";
+        String report = ImperialNewsNetworkApi.broadcastBulletin(this, kind + "/portable", rng);
+        lastBroadcastReport = report;
+        lastInnNewsIssue = report;
+        logEvent("PORTABLE INN " + kind.toUpperCase(Locale.ROOT) + ": " + report);
+        gainXp("Investigation", 1, "monitored portable INN broadcast");
+        DebugLog.audit("INN_PORTABLE_BROADCAST", "item=" + item + " kind=" + kind + " report=" + report + " state=" + stateSummary());
+        advanceTurn("listens to a carried broadcast receiver.");
+        repaint();
+    }

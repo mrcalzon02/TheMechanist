@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawPortableLightObjects
+// Lines: 14976-14991
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawPortableLightObjects(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (portableLights.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(10, Math.min(18, cellH/2))));
+        for (PortableLightInstance l : portableLights) {
+            if (l == null || l.expiresTurn <= turn || !sameWorldLocation(l.worldKey)) continue;
+            if (l.x < camX || l.y < camY || l.x >= camX+cols || l.y >= camY+rows) continue;
+            if (!isVisible(l.x,l.y) && !isRemembered(l.x,l.y)) continue;
+            int px=ox+(l.x-camX)*cellW, py=oy+(l.y-camY)*cellH;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.62f));
+            gg.setColor(new Color(250, 230, 120));
+            gg.drawOval(px+Math.max(1,cellW/5), py+Math.max(1,cellH/5), Math.max(4,cellW*3/5), Math.max(4,cellH*3/5));
+            gg.drawString("*", px+Math.max(3,cellW/3), py+Math.max(12,(cellH*2)/3));
+        }
+        gg.dispose();
+    }

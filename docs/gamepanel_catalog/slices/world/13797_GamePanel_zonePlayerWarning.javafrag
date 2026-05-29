@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: zonePlayerWarning
+// Lines: 13797-13805
+// Category: world
+// This is an examination slice, not compiled source.
+
+    String zonePlayerWarning(ZoneType z) {
+        if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.MUTANT_WARRENS) return "expect hostile mutants and poor escape conditions";
+        if (z==ZoneType.CULTIST_SEWER_CAMP) return "expect illegal ritual danger and hostile cultists";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "misbehavior raises suspicion faster here";
+        if (z==ZoneType.GANGER_TURF) return "violence and theft raise gang heat quickly here";
+        if (z==ZoneType.MECHANICUS_RELIC_DUCT) return "rare machine objects may be valuable, restricted, or dangerous";
+        if (z==ZoneType.NOBLE_SERVICE_SPINE) return "high-value scraps come with access and attention risks";
+        return "inspect rooms before assuming public access or safe loot";
+    }

@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: updateLoadingPhase
+// Lines: 9882-9894
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    void updateLoadingPhase(String status, String detail, int progress) {
+        String safeStatus = status == null ? "Loading..." : status;
+        String safeDetail = detail == null ? "" : detail;
+        int safeProgress = Math.max(0, Math.min(99, progress));
+        SwingUtilities.invokeLater(() -> {
+            loadingStatus = safeStatus;
+            loadingDetail = safeDetail;
+            loadingProgress = Math.max(loadingProgress, safeProgress);
+            lastLoadingPulseMillis = System.currentTimeMillis();
+            repaint();
+        });
+        DebugLog.audit("LOADING_SUBSTEP", "progress=" + safeProgress + " status=" + safeStatus + " detail=" + safeDetail);
+    }

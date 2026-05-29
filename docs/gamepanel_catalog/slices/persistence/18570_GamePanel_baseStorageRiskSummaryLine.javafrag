@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseStorageRiskSummaryLine
+// Lines: 18570-18585
+// Category: persistence
+// This is an examination slice, not compiled source.
+
+    String baseStorageRiskSummaryLine() {
+        int restricted = 0, weapons = 0, commerce = 0, fragile = 0;
+        for (String item : baseStorage) {
+            String risk = baseStoredItemSafetyLine(item).toLowerCase(Locale.ROOT);
+            if (risk.contains("restricted") || risk.contains("suspicious") || risk.contains("illicit")) restricted++;
+            if (risk.contains("weapon")) weapons++;
+            if (risk.contains("commerce")) commerce++;
+            if (risk.contains("medical") || risk.contains("survival")) fragile++;
+        }
+        ArrayList<String> bits = new ArrayList<>();
+        if (restricted > 0) bits.add(restricted + " restricted/suspicious");
+        if (weapons > 0) bits.add(weapons + " weapon-linked");
+        if (commerce > 0) bits.add(commerce + " commerce-useful");
+        if (fragile > 0) bits.add(fragile + " survival/medical");
+        return bits.isEmpty() ? "no obvious high-risk stored goods." : String.join(", ", bits) + " stored stack(s).";
+    }

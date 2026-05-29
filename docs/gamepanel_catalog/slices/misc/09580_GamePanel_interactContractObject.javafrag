@@ -1,0 +1,26 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactContractObject
+// Lines: 9580-9598
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void interactContractObject(int tx, int ty) {
+        if (world == null) { logEvent("Contract object failed: no world loaded."); return; }
+        MapObjectState found = null;
+        for (MapObjectState m : world.mapObjects) if (m.x == tx && m.y == ty && "contract-object".equals(m.type)) { found = m; break; }
+        if (found == null) { logEvent("You find an empty sealed crate scar. Whatever mattered here is gone."); return; }
+        String cid = contractObjectContainerId(found.id);
+        if (containerItemCount(cid) <= 0) {
+            String legacyItem = found.stockState == null || found.stockState.isBlank() ? found.label : found.stockState;
+            addItemToContainerResult(cid, "Contract sealed object " + found.id, legacyItem,
+                    ItemProvenanceRecord.found(legacyItem, world, turn, "sealed contract container " + found.id + " migrated to persistent container"),
+                    null, "migrate legacy contract object stock");
+        }
+        ItemActionResult moved = transferFirstContainerItemToInventory(cid, "retrieved from persistent contract container " + found.id);
+        if (!moved.success) { logEvent("CONTRACT RETRIEVAL BLOCKED: " + moved.playerText); return; }
+        cleanupPersistentStockMarkerIfEmpty(found, cid);
+        logEvent("CONTRACT RETRIEVAL: recovered " + moved.itemName + " from " + cid + " [" + moved.itemInstanceId + "]. Return it to the issuing faction representative for payment.");
+        gainXp("Scavenge", 2, "contract retrieval");
+        advanceTurn("retrieves sealed contract object.");
+    }

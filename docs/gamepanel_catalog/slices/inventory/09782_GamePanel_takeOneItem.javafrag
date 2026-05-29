@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: takeOneItem
+// Lines: 9782-9791
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void takeOneItem() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Base storage can only be accessed inside the claimed room for now."); return; }
+        if (baseStorage.isEmpty()) { logEvent("Base storage is empty."); return; }
+        if (inventoryWeight() + 1 > carryCapacity()) { logEvent("Cannot recover item: inventory would exceed Strength-derived carry capacity."); return; }
+        String sourceItem = baseStorage.get(baseStorage.size()-1);
+        ItemActionResult moved = transferContainerItemResultAt(CONTAINER_BASE_STORAGE, baseStorage, baseStorage.size()-1, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, "recovered from player base storage");
+        String item = moved.success ? moved.itemName : sourceItem;
+        if (!moved.success) DebugLog.warn("CONTAINER_TRANSFER", moved.auditText + " state=" + stateSummary());
+        logEvent("Recovered " + item + " from base storage. Origin: " + itemPlayerFacingOriginLine(item));
+    }

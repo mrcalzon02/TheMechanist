@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: inventoryStackContextLine
+// Lines: 16559-16563
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String inventoryStackContextLine(String item, boolean targetStack) {
+        int count = targetStack ? currentTargetInventoryStacks().getOrDefault(item, 1) : displayedInventoryStacks().getOrDefault(item, countInventory(item));
+        String place = targetStack ? "visible at the current floor or container target" : "carried in your inventory";
+        return Math.max(1, count) + " " + (count == 1 ? "copy" : "copies") + " " + place + ".";
+    }

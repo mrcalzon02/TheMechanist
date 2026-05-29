@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: showPetFeedback
+// Lines: 2345-2348
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void showPetFeedback(String title, String body, boolean alert) {
+        if (alert) showTimedAlert(title, body, 4600);
+        else logEvent(title + ": " + body);
+    }

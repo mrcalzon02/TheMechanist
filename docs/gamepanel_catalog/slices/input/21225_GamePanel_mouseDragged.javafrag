@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mouseDragged
+// Lines: 21225-21230
+// Category: input
+// This is an examination slice, not compiled source.
+
+    @Override public void mouseDragged(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        mouseX=mp.x; mouseY=mp.y; if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mouseX, mouseY, SwingUtilities.isRightMouseButton(e))) { return; } if (screen == Screen.KNOWLEDGE && knowledgeTreeDragging && knowledgeTreeLastDrag != null) { panKnowledgeTree(mp.x - knowledgeTreeLastDrag.x, mp.y - knowledgeTreeLastDrag.y); knowledgeTreeLastDrag = mp; repaint(); return; } if (firstPersonRenderViewport.handleMouseDragged(this, mouseX, mouseY)) { repaint(); return; } handleScrollbarDrag(mouseX, mouseY); repaint();
+    }

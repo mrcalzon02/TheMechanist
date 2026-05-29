@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: governorHasTicket
+// Lines: 2730-2734
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean governorHasTicket() {
+        if (atlas == null || world == null) return false;
+        long key = seed ^ world.seed ^ (atlas.sectorX * 1000003L) ^ (atlas.sectorY * 9176L) ^ 0x51C70A7E5EEDL;
+        return Math.floorMod(key, 100) < 35;
+    }

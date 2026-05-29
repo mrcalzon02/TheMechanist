@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: stabilizeWorstLimb
+// Lines: 18100-18109
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void stabilizeWorstLimb(double minHealth) {
+        if (active == null || active.body == null) return;
+        BodyPart worst = null;
+        for (BodyPart bp : active.body.values()) {
+            String low = bp.name.toLowerCase(Locale.ROOT);
+            if (!(low.contains("leg") || low.contains("arm") || low.contains("hand") || low.contains("foot"))) continue;
+            if (worst == null || bp.currentHealth() < worst.currentHealth()) worst = bp;
+        }
+        if (worst != null && worst.currentHealth() < minHealth) worst.health = Math.min(worst.maxHealth(), minHealth);
+    }

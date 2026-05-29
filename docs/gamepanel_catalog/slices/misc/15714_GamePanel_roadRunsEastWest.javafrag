@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: roadRunsEastWest
+// Lines: 15714-15725
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean roadRunsEastWest(int worldX, int worldY) {
+        if (world == null || !world.inBounds(worldX, worldY)) return false;
+        boolean west = roadLaneForArt(worldX-1, worldY);
+        boolean east = roadLaneForArt(worldX+1, worldY);
+        boolean north = roadLaneForArt(worldX, worldY-1);
+        boolean south = roadLaneForArt(worldX, worldY+1);
+        boolean ewOpposed = west && east;
+        boolean nsOpposed = north && south;
+        if (ewOpposed && !nsOpposed) return true;
+        if (nsOpposed) return false;
+        return (west || east) && !(north || south);
+    }

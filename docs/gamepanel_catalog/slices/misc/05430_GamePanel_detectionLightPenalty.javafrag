@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: detectionLightPenalty
+// Lines: 5430-5440
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int detectionLightPenalty(int observerX, int observerY, int targetX, int targetY) {
+        int target = lightLevelAt(targetX, targetY);
+        int observer = lightLevelAt(observerX, observerY);
+        int penalty = 0;
+        if (target < 8) penalty += 20;
+        else if (target < 18) penalty += 12;
+        else if (target < 32) penalty += 6;
+        if (observer < 8) penalty += 4;
+        if (target >= 65) penalty -= 6;
+        return Math.max(0, Math.min(28, penalty));
+    }

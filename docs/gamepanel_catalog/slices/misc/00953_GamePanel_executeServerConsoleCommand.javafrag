@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: executeServerConsoleCommand
+// Lines: 953-957
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String executeServerConsoleCommand(String rawInput) {
+        String result = singlePlayerSectorBridge.executeAdminConsoleCommand(this, rawInput);
+        logEvent(result);
+        return result;
+    }

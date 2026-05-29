@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: nearestBankProfileForManager
+// Lines: 9274-9283
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    BankProfile nearestBankProfileForManager(NpcEntity n) {
+        if (world != null && n != null) {
+            MapObjectState best = null; int bd = 9999;
+            for (MapObjectState m : world.mapObjects) if (m != null && ("bank-terminal".equals(m.type) || "bank-vault".equals(m.type))) {
+                int d = Math.abs(m.x-n.x)+Math.abs(m.y-n.y); if (d < bd) { bd=d; best=m; }
+            }
+            if (best != null) return bankProfileFromStock(best.stockState);
+        }
+        return BankProfile.ALL[0];
+    }

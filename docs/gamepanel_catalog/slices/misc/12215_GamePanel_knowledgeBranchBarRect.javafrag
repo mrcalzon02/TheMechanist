@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: knowledgeBranchBarRect
+// Lines: 12215-12218
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Rectangle knowledgeBranchBarRect() {
+        Rectangle r = knowledgeModalRect();
+        return new Rectangle(r.x + 22, r.y + 52, r.width - 44, 34);
+    }

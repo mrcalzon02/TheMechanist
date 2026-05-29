@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: portableLightStatusLine
+// Lines: 18245-18250
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String portableLightStatusLine() {
+        PortableLightProfile p = PortableLightProfile.profile(activePortableLightItem);
+        if (p == null || activePortableLightExpiresTurn <= turn) return "Portable light: none active.";
+        int remain = Math.max(0, activePortableLightExpiresTurn - turn);
+        return "Portable light: " + p.name + " " + (activePortableLightWorn ? "worn" : "carried") + " radius " + p.radius + " remaining ~" + Math.max(1, remain / Math.max(1,TURNS_PER_HOUR)) + "h.";
+    }

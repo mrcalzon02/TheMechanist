@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: stackLinesFor
+// Lines: 16398-16409
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> stackLinesFor(LinkedHashMap<String,Integer> stacks, int selected) {
+        ArrayList<String> lines = new ArrayList<>();
+        int i = 0;
+        for (Map.Entry<String,Integer> e : stacks.entrySet()) {
+            String name = e.getKey();
+            int count = Math.max(1, e.getValue());
+            lines.add((i == selected ? "> " : "  ") + name + (count > 1 ? " x" + count : ""));
+            i++;
+        }
+        if (lines.isEmpty()) lines.add("  — empty —");
+        return lines;
+    }

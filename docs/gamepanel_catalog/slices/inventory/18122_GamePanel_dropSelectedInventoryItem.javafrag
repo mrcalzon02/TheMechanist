@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: dropSelectedInventoryItem
+// Lines: 18122-18141
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void dropSelectedInventoryItem() {
+        String item = selectedCarriedInventoryActionItem();
+        if (item == null) { logEvent("Inventory empty. Nothing to drop."); return; }
+        if (item.equals("Construction supplies") && supplies > 0) { supplies--; logEvent("Dropped one Construction supply onto the floor. It may or may not still be there later."); }
+        else if (item.equals("Food reserve") && food > 0) { food--; addInventoryItem("Dropped food ration", ItemProvenanceRecord.found("Dropped food ration", world, turn, "converted from abstract food reserve")); logEvent("Converted one abstract food reserve into a carried dropped food ration item."); }
+        else if (item.equals("Water reserve") && water > 0) { water--; addInventoryItem("Dropped water ration", ItemProvenanceRecord.found("Dropped water ration", world, turn, "converted from abstract water reserve")); logEvent("Converted one abstract water reserve into a carried dropped water ration item."); }
+        else if (PortableLightProfile.isLightItem(item)) {
+            dropPortableLightItem(item);
+        }
+        else {
+            int idx = inventory.indexOf(item);
+            if (idx >= 0) {
+                ItemActionResult dropped = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, CONTAINER_VOID_DISCARDED, "discarded item ledger", null, "dropped by player in active sector");
+                logEvent("ITEM DROPPED: Dropped one " + item + ". The item leaves your active carried stack. " + (dropped.provenance == null ? "Origin: untraced legacy item." : dropped.provenance.summary()));
+                DebugLog.audit("INVENTORY_DROP", dropped.auditText + " state=" + stateSummary());
+            } else logEvent("Drop failed: selected stack is not currently removable.");
+        }
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, stackedInventoryNames().size()-1)));
+        advanceTurn("drops an inventory item."); repaint();
+    }

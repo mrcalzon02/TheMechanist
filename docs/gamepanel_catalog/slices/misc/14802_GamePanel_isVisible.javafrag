@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isVisible
+// Lines: 14802-14809
+// Category: misc
+// This is an examination slice, not compiled source.
+
+            if (baseClaimed && isVisible(baseX, baseY) && baseX >= camX && baseY >= camY && baseX < camX + cols && baseY < camY + rows) {
+                g.setColor(new Color(220, 240, 180));
+                if (tileIconMode()) {
+                    int px = ox + (baseX - camX) * cellW, py = oy + (baseY - camY) * cellH;
+                    g.drawRect(px+2, py+2, Math.max(4,cellW-4), Math.max(4,cellH-4));
+                    g.drawString("B", px + Math.max(3,cellW/3), py + Math.max(12,(cellH*2)/3));
+                } else g.drawString("B", ox + (baseX - camX) * cellW, oy + (baseY - camY) * cellH);
+            }

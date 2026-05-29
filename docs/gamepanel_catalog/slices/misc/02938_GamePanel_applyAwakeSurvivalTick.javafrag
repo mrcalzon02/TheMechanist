@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyAwakeSurvivalTick
+// Lines: 2938-2950
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void applyAwakeSurvivalTick() {
+        if (turn > 0 && turn % TURNS_PER_HOUR == 0) {
+            sleepNeed = Math.min(MAX_SLEEP_NEED, sleepNeed + TURNS_PER_HOUR);
+            DebugLog.audit("SLEEP_PRESSURE", "sleepNeed=" + sleepNeed + "/" + MAX_SLEEP_NEED + " time=" + timeText() + " state=" + stateSummary());
+        }
+        if (turn > 0 && turn % (8 * TURNS_PER_HOUR) == 0) {
+            if (food > 0) food--;
+            if (water > 0) water--;
+            DebugLog.audit("AWAKE_METABOLISM", "food=" + food + " water=" + water + " sleepNeed=" + sleepNeed + " time=" + timeText() + " state=" + stateSummary());
+            logEvent("SURVIVAL CLOCK: eight hours pass. Food " + food + "/" + MAX_FOOD_WATER + ", water " + water + "/" + MAX_FOOD_WATER + ".");
+        }
+        if (sleepNeed >= MAX_SLEEP_NEED) passOutFromSleepNeed();
+    }

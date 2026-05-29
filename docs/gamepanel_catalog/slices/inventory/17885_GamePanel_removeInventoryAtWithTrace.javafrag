@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: removeInventoryAtWithTrace
+// Lines: 17885-17888
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String removeInventoryAtWithTrace(int idx) {
+        ItemActionResult r = removeInventoryAtResult(idx, "legacy indexed remove");
+        return r.success ? r.itemName : null;
+    }

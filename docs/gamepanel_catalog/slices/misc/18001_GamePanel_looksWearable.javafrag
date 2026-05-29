@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: looksWearable
+// Lines: 18001-18004
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean looksWearable(String item) {
+        String low = item.toLowerCase(Locale.ROOT);
+        return low.contains("clothing") || low.contains("coat") || low.contains("rags") || low.contains("uniform") || low.contains("workwear") || low.contains("colors") || low.contains("robe");
+    }

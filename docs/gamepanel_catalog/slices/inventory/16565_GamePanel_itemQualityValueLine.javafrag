@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: itemQualityValueLine
+// Lines: 16565-16570
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    String itemQualityValueLine(String item) {
+        int tier = Math.max(0, Math.min(ItemQuality.NAMES.length - 1, ItemQuality.tierIndex(item)));
+        String quality = ItemQuality.NAMES[tier];
+        int value = Math.max(1, ItemCatalog.priceFor(item));
+        return quality + " quality, about " + value + " script before local markup, barter pressure, or faction demand.";
+    }

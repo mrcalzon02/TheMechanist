@@ -1,0 +1,30 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: maybeNpcAmbient
+// Lines: 3950-3972
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void maybeNpcAmbient(NpcEntity npc, int dist) {
+        if (npc == null || rng.nextDouble() > 0.22) return;
+        String line;
+        if (npc.isAnimalActor()) {
+            line = npc.name + (npc.isPetActor() ? " pads after its keeper, claws faint on the deck." : " scrapes, sniffs, or chitters somewhere in the local gloom.");
+            logEvent(line);
+            addSoundPing(npc.x, npc.y, "animal");
+            return;
+        }
+        switch(npc.faction) {
+            case MINISTORUM: line = npc.name + " murmurs a lawful prayer beside candle smoke and hungry pilgrims."; break;
+            case SORORITAS: line = npc.name + " watches the nave in absolute silence, which is worse than a threat."; break;
+            case CIVIC WARDENS: line = npc.name + " snaps: Move along. Papers ready if asked."; break;
+            case IMPERIAL_GUARD: line = npc.name + " checks a las-pack and watches the corridor."; break;
+            case MECHANIST COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: line = npc.name + " murmurs a binharic maintenance cant."; break;
+            case MUTANT: line = npc.name + " scrapes along the wall, wet breathing behind broken teeth."; break;
+            case CULTIST: case HERETIC: line = npc.name + " whispers to something that is not visibly present."; break;
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: line = npc.name + " eyes your kit and weighs the odds."; break;
+            default: line = npc.name + " keeps moving, trying not to be noticed."; break;
+        }
+        logEvent(line);
+        addSoundPing(npc.x, npc.y, "voice");
+    }

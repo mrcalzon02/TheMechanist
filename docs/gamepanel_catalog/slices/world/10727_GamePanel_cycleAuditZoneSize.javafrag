@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleAuditZoneSize
+// Lines: 10727-10727
+// Category: world
+// This is an examination slice, not compiled source.
+
+    void cycleAuditZoneSize() { auditZoneSizeIndex = (auditZoneSizeIndex + 1) % WorldSetupSettings.ZONE_SIZE.length; regenerateSectorAuditWorld("cycle zone size"); }

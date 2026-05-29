@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: countStolenLeaderJournals
+// Lines: 9060-9060
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int countStolenLeaderJournals() { int n=0; for (String item : inventory) if (isStolenLeaderJournalItem(item)) n++; return n; }

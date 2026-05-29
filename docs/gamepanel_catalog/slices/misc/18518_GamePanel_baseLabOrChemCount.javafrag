@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseLabOrChemCount
+// Lines: 18518-18522
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int baseLabOrChemCount() {
+        int count = 0;
+        for (BaseObject obj : baseObjects) if ("lab or chemical machine".equals(baseObjectExpansionHeatTag(obj))) count++;
+        return count;
+    }

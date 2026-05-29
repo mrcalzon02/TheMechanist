@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionMemberEquipmentAuthorityLine
+// Lines: 18343-18348
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String factionMemberEquipmentAuthorityLine() {
+        if (factionRecruits.isEmpty()) return "no controlled member is available for gear assignment.";
+        if (!hasKnowledge("Workshop Labor Discipline")) return "direct equipment handoff waits for Workshop Labor Discipline; use storage and duty assignment for now.";
+        if (!baseClaimed || world == null || !isInClaimedRoom(playerX, playerY)) return "gear review is safest inside the claimed room with the roster present.";
+        return "authorized recruits may be reviewed for gear, but transfers must respect duty, access, ownership, and carry safety.";
+    }

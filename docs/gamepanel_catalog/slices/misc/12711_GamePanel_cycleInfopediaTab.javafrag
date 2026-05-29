@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: cycleInfopediaTab
+// Lines: 12711-12719
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void cycleInfopediaTab(int delta) {
+        String[] tabs = infopediaTabs();
+        infopediaTab = Math.max(0, Math.min(tabs.length-1, infopediaTab + delta));
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }

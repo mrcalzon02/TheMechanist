@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: selectEquipmentSlot
+// Lines: 16748-16752
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void selectEquipmentSlot(int delta) {
+        selectedEquipmentSlotIndex = Math.floorMod(selectedEquipmentSlotIndex + delta, equipmentSlotNames().length);
+        logEvent("EQUIPMENT: selected " + equipmentSlotNames()[selectedEquipmentSlotIndex] + " slot.");
+        repaint();
+    }

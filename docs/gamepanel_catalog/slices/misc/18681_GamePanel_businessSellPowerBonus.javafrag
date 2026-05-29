@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: businessSellPowerBonus
+// Lines: 18681-18683
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int businessSellPowerBonus() {
+        return Math.min(8, baseDecorRating()/2 + businessAddonRating());
+    }

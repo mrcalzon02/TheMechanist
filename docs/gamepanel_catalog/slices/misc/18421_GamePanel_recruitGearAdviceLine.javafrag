@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recruitGearAdviceLine
+// Lines: 18421-18431
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String recruitGearAdviceLine(RecruitWorker r) {
+        if (r == null) return "review manually";
+        String role = safeRecruitRole(r).toLowerCase(Locale.ROOT);
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty) || role.contains("guard") || role.contains("soldier") || role.contains("ganger")) return "prioritize armor, weapon, and light";
+        if (role.contains("trader") || role.contains("clerk") || role.contains("merchant")) return "prioritize lawful clothing and permits";
+        if (role.contains("mechanic") || role.contains("tech") || role.contains("adept") || role.contains("worker")) return "prioritize tools and protective clothing";
+        if (role.contains("medic") || role.contains("medicae") || role.contains("doctor")) return "prioritize medical stock and clean clothing";
+        if (r.loyalty <= 2) return "avoid valuable gear until trust improves";
+        return "match gear to assigned station";
+    }

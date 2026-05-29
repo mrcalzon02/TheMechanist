@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: togglePerformanceDiagnostics
+// Lines: 20221-20228
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void togglePerformanceDiagnostics() {
+        String line = performanceDiagnostics.toggle();
+        options.diagnosticsOverlay = performanceDiagnostics.visible();
+        options.save();
+        logEvent(line);
+        DebugLog.audit("PERFORMANCE_DIAGNOSTICS", performanceDiagnostics.auditSummary());
+        repaint();
+    }

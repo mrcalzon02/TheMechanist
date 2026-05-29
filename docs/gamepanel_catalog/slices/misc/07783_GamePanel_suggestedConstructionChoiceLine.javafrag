@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: suggestedConstructionChoiceLine
+// Lines: 7783-7790
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String suggestedConstructionChoiceLine() {
+        if (!hasBaseObject('s')) return "Storage Crate for safe capacity";
+        if (!hasBaseObject('c')) return "Sleeping Cot for recovery";
+        if (!hasBaseObject('u')) return "Water Barrel for reserve water";
+        if (!hasBaseObject('w')) return "Scrap Workbench to unlock repair and fabrication paths";
+        if (!hasKnowledge("Commerce Permits")) return "Watch Post or Barricade before risky commerce";
+        return "choose production, commerce, logistics, or defense based on your next goal";
+    }

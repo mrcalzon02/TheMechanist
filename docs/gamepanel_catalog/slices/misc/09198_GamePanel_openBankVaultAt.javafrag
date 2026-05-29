@@ -1,0 +1,46 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openBankVaultAt
+// Lines: 9198-9236
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openBankVaultAt(int tx, int ty) {
+        MapObjectState m = bankVaultAt(tx, ty);
+        if (m == null) { logEvent("BANK VAULT: no vault selected."); return; }
+        BankProfile b = bankProfileFromStock(m.stockState);
+        if (bankVaultLooted(m)) { logEvent("BANK VAULT: " + b.label + " vault has already been emptied. The remaining wealth is structural arrogance."); return; }
+        int access = bankVaultAccessScore();
+        int diff = bankVaultDifficulty(b);
+        boolean credential = countInventory("Bank manager keycard") > 0 || countInventory("Secure vault key") > 0;
+        boolean localAlarmDisabled = nearbyBankAlarmPanelDisabled(tx, ty, b);
+        int roll = rng.nextInt(100);
+        if (!credential && access + roll < diff) {
+            int sev = Math.max(3, diff/18);
+            if (localAlarmDisabled) sev = Math.max(1, sev - 2);
+            raiseBankHeistAlarmAt(b, "failed vault access roll " + (access + roll) + " vs " + diff, sev, tx, ty);
+            if (m.stockState != null && !m.stockState.contains("alarmed=true")) m.stockState += ";alarmed=true";
+            logEvent("BANK VAULT FAILED: access score " + access + "+roll " + roll + " < difficulty " + diff + ". Alarm pressure rises. " + lastBankHeistReport);
+            advanceTurn("fails a bank vault intrusion."); repaint(); return;
+        }
+        ArrayList<String> loot = BankHeistApi.vaultLootFor(b, rng);
+        int cash = BankHeistApi.vaultCashFor(b, rng);
+        for (String item : loot) addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.NOBLE, b.label + " vault", world, turn, "vault reserve / client sealed property", "stolen from bank vault by player"));
+        addImperialScript(cash);
+        m.vendCount = 1;
+        if (m.stockState == null) m.stockState = b.id;
+        if (!m.stockState.contains("locked=false")) m.stockState += ";locked=false";
+        if (!m.stockState.contains("open=true")) m.stockState += ";open=true";
+        if (!m.stockState.contains("looted=true")) m.stockState += ";looted=true";
+        lootedBankVaultIds.add(m.id);
+        suspicion += b.upperHive ? 8 : (b.midHive ? 5 : 3);
+        gangHeat += 1;
+        lastBankHeistReport = "Opened " + b.label + " vault at " + (world == null ? "unknown zone" : world.zoneName) + "; stole " + loot.size() + " item(s) and " + cash + " script; suspicion now " + suspicion + ".";
+        logEvent("BANK HEIST: " + lastBankHeistReport + " Loot: " + String.join(", ", loot) + ".");
+        recordPlayerNewsEvent("bank-heist", b.label + " vault breach", Faction.NOBLE, "unreported vault breach at " + b.label + "; authorities are comparing permits, keys, and shoeprints", Math.max(5, loot.size()+3));
+        int alarmSeverity = Math.max(5, loot.size()+2);
+        if (localAlarmDisabled) alarmSeverity = Math.max(2, alarmSeverity - 3);
+        raiseBankHeistAlarmAt(b, localAlarmDisabled ? "vault opened after alarm panel bypass" : "vault opened", alarmSeverity, tx, ty);
+        DebugLog.audit("BANK_VAULT_OPEN", "bank=" + b.id + " items=" + loot + " cash=" + cash + " score=" + access + " diff=" + diff + " state=" + stateSummary());
+        advanceTurn("loots a bank vault."); repaint();
+    }

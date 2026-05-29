@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: acceptFactionContract
+// Lines: 8850-8863
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void acceptFactionContract(String type) {
+        Faction f = activeRepFaction();
+        if (f == Faction.NONE) { logEvent("Contract failed: no faction representative is currently recognized."); return; }
+        FactionContract existing = activeContractFor(f, type);
+        if (existing != null) { logEvent("Contract blocked: " + f.label + " already has an active " + type.toLowerCase(Locale.ROOT) + " contract: " + existing.shortLine()); return; }
+        FactionContract c = FactionContract.create(type, f, atlas, world, rng, factionStanding.getOrDefault(f, 0));
+        factionContracts.add(c);
+        lastContractFaction = f;
+        conversationBranch = f.label + " issues a " + c.displayType() + ": " + c.displayDescription();
+        logEvent("CONTRACT ACCEPTED: " + c.longLine());
+        spawnContractTargetsForCurrentWorld();
+        gainXp("Contracts", 1, "accepted faction contract");
+        advanceTurn("accepts a faction contract.");
+    }

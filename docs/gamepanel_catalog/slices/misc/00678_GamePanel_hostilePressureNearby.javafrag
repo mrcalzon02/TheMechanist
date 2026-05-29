@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: hostilePressureNearby
+// Lines: 678-687
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean hostilePressureNearby() {
+        if (world == null || world.npcs == null || active == null) return false;
+        for (NpcEntity npc : world.npcs) {
+            if (!isHostileNpc(npc)) continue;
+            int d = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            if (d <= 4) return true;
+            if (d <= 12 && visibleTiles != null && isVisible(npc.x, npc.y)) return true;
+        }
+        return false;
+    }

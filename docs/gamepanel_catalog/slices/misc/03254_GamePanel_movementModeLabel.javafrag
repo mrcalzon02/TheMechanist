@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: movementModeLabel
+// Lines: 3254-3256
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String movementModeLabel() {
+        return MOVEMENT_MODE_LABELS[Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, movementModeIndex))];
+    }

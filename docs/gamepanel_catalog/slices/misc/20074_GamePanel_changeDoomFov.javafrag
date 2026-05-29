@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeDoomFov
+// Lines: 20074-20077
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void changeDoomFov(int delta) {
+        if (options == null) { logEvent("doom mode FOV unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.setDoomFov(options, options.doomModeFovDegrees + delta));
+    }

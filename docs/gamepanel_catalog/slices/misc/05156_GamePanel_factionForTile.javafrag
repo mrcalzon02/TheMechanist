@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionForTile
+// Lines: 5156-5170
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Faction factionForTile(char ch) {
+        switch (ch) {
+            case 'g': return Faction.BANDIT;
+            case 'm': return Faction.MUTANT;
+            case 'R': return Faction.ROGUE_MACHINE;
+            case 'A': return Faction.CIVIC WARDENS;
+            case 'p': return Faction.CIVIC WARDENS;
+            case 'b': return Faction.BANDIT;
+            case 'h': return Faction.HIVER;
+            case 'n': return Faction.NOBLE;
+            case 'M': return Faction.IMPERIAL_GUARD;
+            case 'H': return Faction.HERETIC;
+            default: return Faction.NONE;
+        }
+    }

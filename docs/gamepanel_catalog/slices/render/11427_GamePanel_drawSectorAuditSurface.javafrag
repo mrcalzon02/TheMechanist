@@ -1,0 +1,83 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawSectorAuditSurface
+// Lines: 11427-11502
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawSectorAuditSurface(Graphics2D g) {
+        advanceAuditTracePlaybackIfNeeded();
+        if (auditWorld == null) regenerateSectorAuditWorld("draw missing audit world");
+        UiLayout L = uiLayout();
+        Rectangle map = L.map;
+        g.setFont(auditAsciiFont());
+        int cellW = auditMapCellW(g);
+        int cellH = auditMapCellH(g);
+        int cols = Math.max(1, (map.width - 18) / Math.max(1, cellW));
+        int rows = Math.max(1, (map.height - 18) / Math.max(1, cellH));
+        int camX = auditWorld == null ? 0 : Math.max(0, Math.min(auditWorld.w - cols, auditCursorX - cols / 2));
+        int camY = auditWorld == null ? 0 : Math.max(0, Math.min(auditWorld.h - rows, auditCursorY - rows / 2));
+        g.setColor(Color.BLACK);
+        g.fillRect(map.x, map.y, map.width, map.height);
+        drawSlicedFrame(g, map.x, map.y, map.width, map.height, "inner");
+        stampUiFrameId(g, "F", "zone-audit-map", map.x, map.y, map.width, map.height);
+        Shape oldClip = g.getClip();
+        g.setClip(map.x + 7, map.y + 7, map.width - 14, map.height - 14);
+        int ox = map.x + 10;
+        int oy = sectorAuditTileIconMode() ? map.y + 10 : map.y + 10 + g.getFontMetrics(auditAsciiFont()).getAscent();
+        if (auditWorld != null) {
+            World oldWorld = world;
+            boolean[][] oldVisibleTiles = visibleTiles;
+            boolean[][] oldRememberedTiles = rememberedTiles;
+            world = auditWorld;
+            visibleTiles = SectorAuditRuntimeAuthority.fullBrightMask(auditWorld);
+            rememberedTiles = visibleTiles;
+            try {
+                for (int sy = 0; sy < rows; sy++) {
+                    int y = camY + sy;
+                    if (y < 0 || y >= auditWorld.h) continue;
+                    for (int sx = 0; sx < cols; sx++) {
+                        int x = camX + sx;
+                        if (x < 0 || x >= auditWorld.w) continue;
+                        char ch = auditWorld.tiles[x][y];
+                        if (sectorAuditTileIconMode()) drawMapTileIcon(g, ch, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 1.0f, true);
+                        else { g.setColor(colorForTile(x, y, ch)); g.drawString(String.valueOf(ch), ox + sx * cellW, oy + sy * cellH); }
+                    }
+                }
+                if (auditWorld.mapObjects != null) {
+                    for (MapObjectState mo : auditWorld.mapObjects) {
+                        if (mo == null || mo.x < camX || mo.y < camY || mo.x >= camX + cols || mo.y >= camY + rows) continue;
+                        if (sectorAuditTileIconMode()) drawMapFeatureIcon(g, mo, ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH, cellW, cellH, new Color(100, 210, 160, 70));
+                        else { g.setColor(new Color(170, 215, 155)); g.drawString(String.valueOf(mo.glyph), ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH); }
+                    }
+                }
+                if (auditWorld.lightSources != null) drawZoneLightFixtureObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.hazardWarnings != null) drawEnvironmentalHazardOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.trapRecords != null) drawTrapWarningOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                if (auditWorld.npcs != null) {
+                    for (NpcEntity npc : auditWorld.npcs) {
+                        if (npc == null || npc.x < camX || npc.y < camY || npc.x >= camX + cols || npc.y >= camY + rows) continue;
+                        if (sectorAuditTileIconMode()) drawNpcMapIcon(g, npc, ox + (npc.x - camX) * cellW, oy + (npc.y - camY) * cellH, cellW, cellH);
+                        else { g.setColor(npcColor(npc.faction)); g.drawString(String.valueOf(npc.symbol), ox + (npc.x - camX) * cellW, oy + (npc.y - camY) * cellH); }
+                    }
+                }
+                drawSectorAuditDiagnosticOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+                drawSectorAuditTraceMarker(g, camX, camY, ox, oy, cellW, cellH);
+                drawZoneAuditGenerationLogOverlay(g, map, camX, camY, ox, oy, cellW, cellH);
+            } finally { world = oldWorld; visibleTiles = oldVisibleTiles; rememberedTiles = oldRememberedTiles; }
+            int sx = auditCursorX - camX, sy = auditCursorY - camY;
+            if (sx >= 0 && sy >= 0 && sx < cols && sy < rows) {
+                int rx = ox + sx * cellW, ry = oy + sy * cellH;
+                g.setColor(new Color(245, 210, 95));
+                g.drawRect(rx - 2, ry - 2, cellW + 4, cellH + 4);
+                g.drawLine(rx + cellW/2, ry - 5, rx + cellW/2, ry + Math.max(2, cellH/4));
+                g.drawLine(rx + cellW/2, ry + cellH + 5, rx + cellW/2, ry + cellH - Math.max(2, cellH/4));
+                g.drawLine(rx - 5, ry + cellH/2, rx + Math.max(2, cellW/4), ry + cellH/2);
+                g.drawLine(rx + cellW + 5, ry + cellH/2, rx + cellW - Math.max(2, cellW/4), ry + cellH/2);
+            }
+        }
+        g.setClip(oldClip);
+        drawSectorAuditCommandPanel(g, L);
+        drawSectorAuditInfoPanel(g, L);
+        drawSectorAuditZoneDropdown(g, L);
+    }

@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: applyRandomArbitesStatLoss
+// Lines: 6117-6129
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String applyRandomArbitesStatLoss() {
+        String[] candidates = {"Strength","Agility","Endurance","Nerve","Charm","Vision","Hearing","Melee","Firearms"};
+        String statName = candidates[rng.nextInt(candidates.length)];
+        int old = active.stats.getOrDefault(statName, Candidate.statMin(statName));
+        if (old <= 0) {
+            active.stats.put(statName, 0);
+            return statName + " 0->0 FATAL CUSTODY TRAUMA";
+        }
+        int neu = Math.max(0, old - 1);
+        active.stats.put(statName, neu);
+        if (neu <= 0) return statName + " " + old + "->0 FATAL CUSTODY TRAUMA";
+        return statName + " " + old + "->" + neu;
+    }

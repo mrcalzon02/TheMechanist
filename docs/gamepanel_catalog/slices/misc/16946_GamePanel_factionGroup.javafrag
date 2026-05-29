@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionGroup
+// Lines: 16946-16946
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String[] factionGroup(Faction... fs){ String[] out=new String[fs.length]; for(int i=0;i<fs.length;i++) out[i]=fs[i].label+" "+factionStanding.getOrDefault(fs[i],0); return out; }

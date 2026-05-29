@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactionTargetLabel
+// Lines: 15280-15289
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String interactionTargetLabel(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "the selected target";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return npc.name;
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) return obj.name;
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) return mos.label == null || mos.label.isBlank() ? "fixture" : mos.label;
+        return describeTile(world.tiles[tx][ty]);
+    }

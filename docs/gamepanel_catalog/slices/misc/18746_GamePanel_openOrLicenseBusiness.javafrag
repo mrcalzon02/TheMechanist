@@ -1,0 +1,28 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openOrLicenseBusiness
+// Lines: 18746-18766
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openOrLicenseBusiness() {
+        if (!baseClaimed) { logEvent("Business opening blocked: no claimed base exists."); return; }
+        BaseObject obj = firstClosedBusiness();
+        if (obj == null) { logEvent("Business opening blocked: no closed business-capable asset exists. Build a shop counter, medicae stall, storage crate, workbench, barrel, condenser, forge, or lab."); return; }
+        if (consumeBusinessPermit()) {
+            obj.businessOpen = true;
+            obj.permittedBusiness = true;
+            obj.businessHeat = Math.max(0, obj.businessHeat - 2);
+            logEvent("BUSINESS LICENSED: " + obj.businessName() + " opens under a noble permit. Heat gain reduced; paperwork becomes its own small monster.");
+        } else {
+            obj.businessOpen = true;
+            obj.permittedBusiness = false;
+            obj.businessHeat += 4;
+            gangHeat += 2;
+            suspicion += 2;
+            logEvent("ILLEGAL BUSINESS OPENED: " + obj.businessName() + " begins trading without a noble permit. Heat +2, suspicion +2. The ledger is a weapon pointed at you.");
+        }
+        recordPlayerNewsEvent(obj.permittedBusiness ? "licensed-service-opened" : "illegal-service-opened", obj.businessName(), Faction.NONE, (obj.permittedBusiness ? "licensed" : "unlicensed") + " service opened in claimed space", obj.permittedBusiness ? 2 : 6);
+        DebugLog.audit("BUSINESS_OPEN", obj.businessName()+" permitted="+obj.permittedBusiness+" heat="+obj.businessHeat+" state="+stateSummary());
+        repaint();
+    }

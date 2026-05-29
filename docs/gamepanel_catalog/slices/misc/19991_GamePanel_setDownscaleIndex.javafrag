@@ -1,0 +1,14 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: setDownscaleIndex
+// Lines: 19991-19997
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void setDownscaleIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setDownscaleIndex(options, idx));
+        renderScaling.applyOptions(options);
+        graphicsDropdown = -1;
+        DebugLog.audit("RENDER_DOWNSCALE", renderScaling.auditSummary());
+        repaint();
+    }

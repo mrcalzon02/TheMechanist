@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playstationPromptFor
+// Lines: 20405-20420
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String playstationPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "PlayStation: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "PlayStation: Cross";
+            case CANCEL: return "PlayStation: Circle";
+            case INVENTORY: return "PlayStation: Square";
+            case CHARACTER: return "PlayStation: Triangle";
+            case PAUSE: return "PlayStation: Options";
+            case LOOK: return "PlayStation: Share/Create";
+            case ZOOM_IN: return "PlayStation: R1";
+            case ZOOM_OUT: return "PlayStation: L1";
+            case ATTACK: return "PlayStation: right stick up";
+            case PLAN_MOVE: return "PlayStation: right stick down";
+            default: return "PlayStation: keyboard fallback";
+        }
+    }

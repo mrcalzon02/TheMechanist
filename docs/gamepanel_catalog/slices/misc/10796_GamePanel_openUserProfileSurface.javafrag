@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: openUserProfileSurface
+// Lines: 10796-10807
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void openUserProfileSurface() {
+        logEvent(launcherShell.activate(LauncherShellStateAuthority.Route.PROFILE, "main menu profile"));
+        if (userProfile != null && userProfile.wrapperDetected) {
+            String body = UserProfileAuthority.openProfile(userProfile);
+            logEvent(body);
+            showTimedAlert("USER PROFILE", body + " " + userProfile.provider + " // " + userProfile.shortId(), 5200);
+        } else {
+            FallbackProfileManagementAuthority.openProfileManager(this, userProfile, options, jvmRuntimeProfile, renderScaling, this::repaint);
+            logEvent("Fallback local profile manager opened.");
+        }
+        repaint();
+    }

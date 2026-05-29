@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: consumeProductionInputNamedResult
+// Lines: 8655-8657
+// Category: input
+// This is an examination slice, not compiled source.
+
+    ProductionInputConsumptionRecord consumeProductionInputNamedResult(String item, String route) {
+        return ProductionContainerAuthority.consumeOne(this, item, route);
+    }

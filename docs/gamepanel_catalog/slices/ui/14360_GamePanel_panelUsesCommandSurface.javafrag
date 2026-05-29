@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: panelUsesCommandSurface
+// Lines: 14360-14362
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    boolean panelUsesCommandSurface() {
+        return panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT || panelMode == PanelMode.SCAVENGE || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH || panelMode == PanelMode.BASES || panelMode == PanelMode.TRADE;
+    }

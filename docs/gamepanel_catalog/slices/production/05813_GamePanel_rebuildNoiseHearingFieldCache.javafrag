@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: rebuildNoiseHearingFieldCache
+// Lines: 5813-5820
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void rebuildNoiseHearingFieldCache(String reason) {
+        if (world == null) return;
+        if (world.noiseFieldTurn == turn && world.noiseField != null && !localDirtyTracker.noiseDirty(world)) return;
+        NoiseHearingFieldApi.Result nr = NoiseHearingFieldApi.rebuild(world, turn);
+        profilingNoiseCacheRebuilds++;
+        localDirtyTracker.clearNoise(world);
+        if (nr != null && nr.changedSummary) DebugLog.audit("NOISE_HEARING_FIELD", "reason=" + reason + " " + nr.summary() + " rebuilds=" + profilingNoiseCacheRebuilds);
+    }

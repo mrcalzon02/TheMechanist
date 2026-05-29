@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: moveBuildCursor
+// Lines: 7610-7618
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void moveBuildCursor(int dx, int dy) {
+        if (!buildPlacementActive || world == null) return;
+        int nx = buildX + dx, ny = buildY + dy;
+        if (nx >= 0 && ny >= 0 && nx < world.w && ny < world.h && isInClaimedRoom(nx, ny)) {
+            buildX = nx; buildY = ny;
+        }
+        clampBuildCursorToClaimedRoom();
+        updatePendingBuildSummary();
+    }

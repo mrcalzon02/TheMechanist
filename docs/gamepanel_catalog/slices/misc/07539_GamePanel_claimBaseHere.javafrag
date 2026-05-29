@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: claimBaseHere
+// Lines: 7539-7549
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void claimBaseHere() {
+        if (world == null) return;
+        int rid = world.roomIdAt(playerX, playerY);
+        if (rid < 0) { logEvent("You can only claim an actual room, not a corridor or wall seam."); return; }
+        baseClaimed = true;
+        baseX = playerX; baseY = playerY; claimedRoomId = rid;
+        suspicion += 2; gangHeat += 1;
+        DebugLog.audit("BASE_CLAIM", "claimedRoom=" + claimedRoomId + " at=" + baseX + "," + baseY + " state=" + stateSummary());
+        logEvent("Room claimed at " + baseX + "," + baseY + " as friendly territory. The law will want paperwork. The gangs will want contents.");
+        recordPlayerNewsEvent("room-claim", "claimed room " + claimedRoomId, Faction.NONE, "new private foothold reported in " + (world == null ? "unknown zone" : world.zoneType.label), 3);
+    }

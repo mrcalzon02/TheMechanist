@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isDoorTile
+// Lines: 5862-5862
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isDoorTile(char ch) { return ch == '/' || ch == '|' || ch == 'L' || ch == 'X' || ch == 'V'; }

@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: confirmInteractionBody
+// Lines: 2849-2858
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void confirmInteractionBody() {
+        if (world == null) return;
+        updatePendingInteractionSummary();
+        DebugLog.audit("INTERACT_CONFIRM", pendingInteractionSummary + " state=" + stateSummary());
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        if (obj != null && obj.symbol == 'c') { sleepOnCot(pendingSleepHours); return; }
+        int turns = agilityActionCost(world.tiles[lookX][lookY], obj);
+        interactAt(lookX, lookY);
+        for (int i=1; i<turns; i++) advanceTurn("continues the interaction at " + lookX + "," + lookY + ".");
+    }

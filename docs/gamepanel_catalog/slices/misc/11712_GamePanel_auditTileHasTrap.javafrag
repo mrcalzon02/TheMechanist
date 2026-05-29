@@ -1,0 +1,17 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditTileHasTrap
+// Lines: 11712-11721
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean auditTileHasTrap(int x, int y) {
+        if (auditWorld == null) return false;
+        if (auditWorld.trapRecords != null) for (TrapRecord t : auditWorld.trapRecords) if (t != null && t.x == x && t.y == y) return true;
+        if (auditWorld.mapObjects != null) for (MapObjectState mo : auditWorld.mapObjects) {
+            if (mo == null || mo.x != x || mo.y != y) continue;
+            String low = ((mo.type == null ? "" : mo.type) + " " + (mo.label == null ? "" : mo.label)).toLowerCase(Locale.ROOT);
+            if (low.contains("trap") || low.contains("mine") || low.contains("explosive") || low.contains("alarm")) return true;
+        }
+        return false;
+    }

@@ -1,0 +1,35 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: talkToNpc
+// Lines: 6422-6449
+// Category: entities
+// This is an examination slice, not compiled source.
+
+    void talkToNpc(NpcEntity npc) {
+        if (npc != null) runNpcTalkedTo++;
+        activeConversationNpc = npc;
+        selectedTradeOffer = 0;
+        if (npc.isTrader()) {
+            activeTrader = TraderSession.forNpc(npc, world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType, rng);
+            activeTrader.sourceSite = siteForFaction(npc.faction, world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType);
+            activeTrader.applyNpcSiteStock(activeTrader.sourceSite, rng, world, turn);
+            activeTrader.applySupplyChainStock(world, turn, rng);
+            conversationBranch = npc.name + ": I buy, I sell, and I remember faces. Try not to make yours expensive.";
+            lastTradeReport = "Trader contacted: " + npc.name + " inventory=" + activeTrader.offers.size() + " zone=" + activeTrader.zoneLabel + ".";
+            logConversation("OPEN_TRADER", conversationBranch);
+            openPanel(PanelMode.TRADE);
+            return;
+        }
+        activeTrader = null;
+        if (npc.isProtectedCleric()) {
+            conversationBranch = npc.name + ": The temple stands even when its congregation does not. Confess, pray, or leave your sins where the floor can count them.";
+            lastConversation = conversationBranch;
+            logConversation("MINISTORUM_HEAD_CLERIC", conversationBranch);
+            openPanel(PanelMode.TRADE);
+            return;
+        }
+        conversationBranch = npcGreeting(npc);
+        lastConversation = npc.name + " says: " + conversationBranch;
+        logConversation("NPC_TALK", npc.name + " faction=" + npc.faction.label + " state=" + npc.state + " role=" + npc.role + " line=" + conversationBranch);
+        openPanel(PanelMode.TRADE);
+    }

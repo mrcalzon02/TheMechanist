@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: contractTurnInReady
+// Lines: 6626-6628
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean contractTurnInReady(FactionContract c) {
+        return c != null && c.requiredTurnInItem != null && inventory.contains(c.requiredTurnInItem);
+    }

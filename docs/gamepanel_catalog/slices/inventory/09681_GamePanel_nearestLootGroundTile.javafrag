@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: nearestLootGroundTile
+// Lines: 9681-9694
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    Point nearestLootGroundTile(int sx, int sy) {
+        if (world == null) return null;
+        if (world.inBounds(sx, sy) && world.walkable(sx, sy) && world.npcAt(sx, sy) == null && !(sx == playerX && sy == playerY)) return new Point(sx, sy);
+        for (int radius = 1; radius <= 3; radius++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int dyAbs = radius - Math.abs(dx);
+                for (int sign = -1; sign <= 1; sign += 2) {
+                    int x = sx + dx, y = sy + dyAbs * sign;
+                    if (world.inBounds(x, y) && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY)) return new Point(x, y);
+                }
+            }
+        }
+        return null;
+    }

@@ -1,0 +1,50 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: baseManagementLines
+// Lines: 18285-18327
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ArrayList<String> baseManagementLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("PLAYER FACTION BASE MANAGEMENT");
+        if (!baseClaimed) {
+            lines.add("No faction base has been claimed yet. Claim a room through BUILD before management records exist.");
+            lines.add("Planned management scope: multiple bases, remote traders, production ledgers, and recruit assignment per room.");
+            return lines;
+        }
+        String loc = world == null ? (baseX + "," + baseY) : world.zoneCoordText() + " " + world.layerText() + " @ " + baseX + "," + baseY;
+        lines.add("Base name: " + baseDisplayName());
+        lines.add("Location: " + loc + " | Claimed room id " + claimedRoomId + ".");
+        lines.add("Size/status: " + baseSizeStatusLine());
+        lines.add("Population: recruits " + factionRecruits.size() + "/" + recruitCapacity() + " | available labor " + availableRecruitLabor() + " | security staff " + securityStaffCount() + ".");
+        lines.addAll(baseRosterGuidanceLines());
+        lines.add("Business permits: " + businessPermitCount() + " | open businesses " + openBusinessCount() + " | illegal businesses " + illegalBusinessCount() + " | security rating " + baseSecurityRating() + " | likely raid pressure: " + zoneRaidThreatName() + ".");
+        lines.addAll(baseExpansionHeatGuidanceLines());
+        lines.add("Raid risk: pressure " + baseRaidPressure(baseSecurityRating()) + " | chance " + baseRaidChance(baseSecurityRating()) + "% per hourly pressure check | " + baseRaidWarningLine() + ".");
+        lines.add("Faction rivalry: " + highestFactionMarketPressureLine() + " | faction power " + playerFactionPower() + " | strategic raid chance " + strategicRaidChance() + "% hourly.");
+        lines.add("Contested markets: " + contestedMarketSummaryLine() + ".");
+        lines.add("Commerce power: decor " + baseDecorRating() + " | add-ons " + businessAddonRating() + " | sell bonus +" + businessSellPowerBonus() + " | cargo tier " + cargoNetworkTierName() + " capacity " + cargoNetworkCapacity() + ".");
+        if (factionRecruits.isEmpty()) lines.add("  No recruits assigned. Recruit people through conversation once berthing doctrine and free cots exist.");
+        else for (RecruitWorker r : factionRecruits) lines.add("  Worker: " + r.name + " — " + r.role + " | " + factionLabel(r.faction) + " | skill " + r.skill + " loyalty " + r.loyalty + " | duty " + r.duty + ".");
+        lines.add("");
+        lines.add("Built base assets:");
+        if (baseObjects.isEmpty()) lines.add("  None. This is a claimed room awaiting base fixtures.");
+        else for (BaseObject obj : baseObjects) lines.add("  " + baseObjectManagementLine(obj));
+        lines.add("");
+        lines.add("Production ledger:");
+        lines.addAll(baseProductionLedgerLines());
+        lines.add("");
+        lines.add("Storage and reserves:");
+        lines.add("  Carried construction supplies: " + supplies + " | machine parts: " + machineParts + " | food reserve: " + food + " | water reserve: " + water + ".");
+        lines.addAll(baseStorageGuidanceLines());
+        LinkedHashMap<String,Integer> stacks = stackInventory(baseStorage);
+        if (stacks.isEmpty()) lines.add("  Base storage is empty.");
+        else for (Map.Entry<String,Integer> e : stacks.entrySet()) lines.add("  Stored: " + e.getKey() + " x" + e.getValue() + " | value each " + ItemCatalog.priceFor(e.getKey()) + " | " + baseStoredItemSafetyLine(e.getKey()));
+        lines.add("");
+        lines.add("Owned businesses / services / traders:");
+        lines.addAll(ownedBusinessLines());
+        lines.add("");
+        lines.add("Management note: permits make businesses lawful. Illegal businesses still run, but raise heat and can trigger Civic Wardens, ganger, mutant, or cultist raids by zone.");
+        return lines;
+    }

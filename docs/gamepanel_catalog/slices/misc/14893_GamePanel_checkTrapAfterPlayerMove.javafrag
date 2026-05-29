@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: checkTrapAfterPlayerMove
+// Lines: 14893-14908
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void checkTrapAfterPlayerMove(int x, int y) {
+        TrapRecord t = trapAt(x, y);
+        if (t == null || !t.canTrigger()) return;
+        int detection = 25 + stat("Intellect",5)*4 + (lookCursorActive ? 8 : 0);
+        if (t.hidden && detection >= t.detectionDifficulty) {
+            t.state = "revealed"; t.hidden = false;
+            logEvent("You spot a " + t.label + " before fully committing weight to it.");
+            return;
+        }
+        t.state = "triggered"; t.triggeredTurn = turn; t.hidden = false;
+        String consequence = t.triggerText();
+        lastSensesReport = "Trap noise: " + consequence;
+        if (t.noiseRadius > 0) world.noiseSources.add(new ZoneNoiseSourceRecord(t.id+"-noise", t.label + " discharge", "trap", x, y, t.noiseRadius, Math.max(20,t.severity*12), true, false, 0, 1, t.id));
+        logEvent(consequence);
+        if (t.damage > 0) applyPlayerBodyDamage(t.damage, randomBodyHitLocation(), "triggered " + t.label, t.effect);
+    }

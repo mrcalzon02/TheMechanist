@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: assignSelectedRecipeToMachine
+// Lines: 8472-8487
+// Category: production
+// This is an examination slice, not compiled source.
+
+    void assignSelectedRecipeToMachine() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Assignment failed: stand inside your claimed base room."); return; }
+        if (!hasKnowledge("Workshop Labor Discipline")) { logEvent("Assignment failed: Workshop Labor Discipline is required before recruits can be assigned to machines."); return; }
+        BaseObject machine = selectedWorkerMachine();
+        if (machine == null) { logEvent("Assignment failed: no recruit-operable machine selected."); return; }
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        CraftingRecipe r = recipes.get(Math.max(0, Math.min(selectedCraftRecipeIndex, recipes.size()-1)));
+        if (r.disabled) { logEvent("Assignment failed: no unlocked recipe selected."); return; }
+        if (r.machineSymbol != ' ' && r.machineSymbol != machine.symbol) { logEvent("Assignment failed: " + r.name + " requires " + r.machineLabel() + ", not " + machine.name + "."); return; }
+        String problem = r.assignmentProblem(this, machine);
+        if (problem != null) { logEvent("Assignment failed: " + problem); return; }
+        machine.assignedRecipe = r.name;
+        machine.assignedWorker = factionRecruits.isEmpty() ? "unmanned" : factionRecruits.get(0).name;
+        logEvent("ASSIGNED: " + machine.name + " will run " + r.name + " when recruits perform a production shift.");
+        DebugLog.audit("RECIPE_ASSIGNED", "machine=" + machine.name + " recipe=" + r.name + " worker=" + machine.assignedWorker + " state=" + stateSummary());
+    }

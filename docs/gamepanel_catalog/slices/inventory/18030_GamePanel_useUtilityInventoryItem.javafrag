@@ -1,0 +1,46 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: useUtilityInventoryItem
+// Lines: 18030-18068
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void useUtilityInventoryItem(String item) {
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { logEvent("Cannot use " + item + ": no carried copy found."); return; }
+        String low = item.toLowerCase(Locale.ROOT);
+        int oldWounds=wounds, oldFatigue=fatigue, oldSuspicion=suspicion, oldHeat=gangHeat;
+        if (isMedicalUseItem(low)) {
+            removeInventoryAtWithTrace(idx);
+            applyMedicalItemEffect(item, low, oldWounds, oldFatigue);
+        } else if (low.contains("leader journal")) {
+            logEvent("STOLEN JOURNAL: " + item + ". INN bounty estimate " + InnBountyApi.journalBounty(item, null) + " Concord Script. Sell at an INN bureau or newspaper dispenser contact point.");
+            return;
+        } else if (low.contains("sealed bank lockbox") || low.contains("stock certificate") || low.contains("house gold")) {
+            logEvent("BANK HEIST LOOT: " + item + " is valuable, incriminating, and best sold through a trader, faction contact, or noble heist quest profile. Merely staring at it does not launder it.");
+            return;
+        } else if (low.contains("newspaper") || low.contains("paper mush")) {
+            readInventoryNewspaper(item);
+            return;
+        } else if (low.contains("radio") || low.contains("pict-screen") || low.contains("pict screen") || low.contains("television")) {
+            listenToPortableBroadcastReceiver(item);
+            return;
+        } else if (PortableLightProfile.isLightItem(item)) {
+            usePortableLightItem(item);
+            return;
+        } else if (low.contains("data spike") || low.contains("keycard") || low.contains("lockpick") || low.contains("hacking tools") || low.contains("tool roll") || low.contains("tool bundle")) {
+            logEvent(item + " is now active as a carried tool. Door, vault, vending, and interaction checks automatically read it from inventory; it is not consumed by manual USE.");
+            return;
+        } else if (low.contains("trade chit") || low.contains("concord script")) {
+            logEvent(item + " is currency. Use TRADE/VEND/SERVICE menus to spend it; direct USE would merely annoy the coin.");
+            return;
+        } else if (low.contains("map") || low.contains("survey")) {
+            removeInventoryAtWithTrace(idx); suspicion = Math.max(0, suspicion - 1); gangHeat = Math.max(0, gangHeat - 1);
+            logEvent("Studied " + item + ". Suspicion " + oldSuspicion + "->" + suspicion + ", gang heat " + oldHeat + "->" + gangHeat + ". The route ledger grows less stupid.");
+        } else {
+            logEvent("No direct use action wired for " + item + ". Try DROP, WORKBENCH, TRADE, or context interaction.");
+            return;
+        }
+        DebugLog.audit("INVENTORY_USE_UTILITY", "item=" + item + " wounds=" + oldWounds + "->" + wounds + " fatigue=" + oldFatigue + "->" + fatigue + " suspicion=" + oldSuspicion + "->" + suspicion + " heat=" + oldHeat + "->" + gangHeat + " state=" + stateSummary());
+        advanceTurn("uses a utility item"); repaint();
+    }

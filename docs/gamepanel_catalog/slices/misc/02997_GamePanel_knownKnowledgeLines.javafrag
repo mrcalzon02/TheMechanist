@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: knownKnowledgeLines
+// Lines: 2997-3002
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    java.util.List<String> knownKnowledgeLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (unlockedKnowledges.isEmpty()) lines.add("Known: none recorded yet.");
+        else for (String k : unlockedKnowledges) lines.add("Known: " + k);
+        return lines;
+    }

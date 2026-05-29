@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isEmergencyMachine
+// Lines: 2494-2494
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isEmergencyMachine(char ch) { return "YJBKOZPFU".indexOf(ch) >= 0; }

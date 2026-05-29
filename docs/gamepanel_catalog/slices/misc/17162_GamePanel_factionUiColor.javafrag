@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: factionUiColor
+// Lines: 17162-17170
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Color factionUiColor(int xx,int yy){
+        if(xx==2&&yy==1) return new Color(70,130,220); // Civic Wardens blue
+        if(xx==1&&yy==0) return new Color(190,55,45); // gangs red
+        if(xx==1&&yy==1) return new Color(210,190,110); // trade neutral
+        if(xx==2&&yy==2) return new Color(150,80,190); // forge/mechanist Collegia
+        if(xx==1&&yy==2) return new Color(160,130,70); // noble
+        if(xx==0&&yy==0) return new Color(160,210,150); // civil
+        return new Color(120,150,120);
+    }

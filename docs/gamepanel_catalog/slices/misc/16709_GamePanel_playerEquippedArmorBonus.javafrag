@@ -1,0 +1,22 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: playerEquippedArmorBonus
+// Lines: 16709-16723
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    int playerEquippedArmorBonus() {
+        int bonus = 0;
+        String a = equippedArmorItem == null ? "" : equippedArmorItem.toLowerCase(Locale.ROOT);
+        String h = equippedHeadgearItem == null ? "" : equippedHeadgearItem.toLowerCase(Locale.ROOT);
+        if (!a.isBlank()) {
+            bonus += 1;
+            if (a.contains("armor") || a.contains("armour") || a.contains("flak") || a.contains("carapace") || a.contains("cuirass") || a.contains("breastplate")) bonus += 2;
+            if (a.contains("civic Wardens") || a.contains("suppression") || a.contains("riot")) bonus += 1;
+        }
+        if (!h.isBlank()) {
+            bonus += 1;
+            if (h.contains("helmet") || h.contains("helm") || h.contains("riot") || h.contains("flak")) bonus += 1;
+        }
+        return bonus;
+    }

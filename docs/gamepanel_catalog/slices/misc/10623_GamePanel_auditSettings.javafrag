@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: auditSettings
+// Lines: 10623-10633
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    WorldSetupSettings auditSettings() {
+        WorldSetupSettings s = WorldSetupSettings.standard();
+        s.zoneSize = Math.max(0, Math.min(3, auditZoneSizeIndex));
+        s.zoneDensity = Math.max(0, Math.min(3, auditZoneDensityIndex));
+        // Zone Audit is a placement-density inspection surface; use a crowded
+        // civilian baseline instead of the former sparse testing override so NPC
+        // fields, bottlenecks, and doorway blocking are visible during audit.
+        s.npcDensity = 3;
+        s.simulationAge = 0;
+        return s;
+    }

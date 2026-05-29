@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: npcCombatReadinessLine
+// Lines: 2108-2121
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    String npcCombatReadinessLine(NpcEntity npc) {
+        if (npc == null) return "Combat readiness: unknown.";
+        if (npc.hp >= 9000) return "Combat readiness: protected or story-critical; ordinary violence is unlikely to resolve this cleanly.";
+        if (npc.isAnimalActor()) {
+            if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) return "Combat readiness: animal is dangerous if approached or cornered.";
+            return "Combat readiness: animal is not presenting as an armed combatant.";
+        }
+        int danger = Math.max(0, npc.equipmentTier) + (ItemCatalog.isFirearmLike(npc.equippedRangedWeapon) ? 2 : 0) + (npc.equippedExplosive == null || npc.equippedExplosive.isBlank() ? 0 : 2);
+        if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) danger += 2;
+        if (danger >= 6) return "Combat readiness: severe threat; armor, ranged weapon, or explosive risk is visible.";
+        if (danger >= 3) return "Combat readiness: armed and risky; plan cover, distance, or escape.";
+        if (danger >= 1) return "Combat readiness: lightly armed or protected.";
+        return "Combat readiness: no obvious combat kit.";
+    }

@@ -1,0 +1,36 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawItemQualityFrame
+// Lines: 16449-16477
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawItemQualityFrame(Graphics2D g, String item, int x, int y, int w, int h, boolean overlay) {
+        int tier = ItemQuality.tierIndex(item);
+        Color c;
+        switch (Math.max(0, Math.min(7, tier))) {
+            case 0: c = new Color(70,70,70, overlay ? 190 : 80); break;
+            case 1: c = new Color(118,90,70, overlay ? 190 : 80); break;
+            case 3: c = new Color(120,170,110, overlay ? 210 : 90); break;
+            case 4: c = new Color(110,165,220, overlay ? 220 : 100); break;
+            case 5: c = new Color(205,170,65, overlay ? 230 : 110); break;
+            case 6: c = new Color(185,105,225, overlay ? 230 : 110); break;
+            case 7: c = new Color(240,230,160, overlay ? 240 : 120); break;
+            default: c = new Color(110,95,62, overlay ? 170 : 70);
+        }
+        Stroke old = g.getStroke();
+        g.setColor(c);
+        if (overlay && tier >= 4) {
+            g.setStroke(new BasicStroke(Math.max(2f, Math.min(4f, w/13f))));
+            g.drawRoundRect(x+1, y+1, Math.max(1,w-3), Math.max(1,h-3), 8, 8);
+            if (tier >= 6) {
+                g.drawLine(x+4, y+4, x+Math.max(4,w/3), y+4);
+                g.drawLine(x+4, y+4, x+4, y+Math.max(4,h/3));
+                g.drawLine(x+w-5, y+h-5, x+w-Math.max(5,w/3), y+h-5);
+                g.drawLine(x+w-5, y+h-5, x+w-5, y+h-Math.max(5,h/3));
+            }
+        } else {
+            g.drawRect(x, y, Math.max(1,w), Math.max(1,h));
+        }
+        g.setStroke(old);
+    }

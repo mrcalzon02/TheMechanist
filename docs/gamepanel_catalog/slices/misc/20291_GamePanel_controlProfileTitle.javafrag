@@ -1,0 +1,16 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: controlProfileTitle
+// Lines: 20291-20299
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String controlProfileTitle() {
+        switch (controlsTab) {
+            case 1: return "XBOX CONTROL REFERENCE";
+            case 2: return "PLAYSTATION CONTROL REFERENCE";
+            case 3: return "STEAM DECK CONTROL REFERENCE";
+            case 4: return "GENERIC CONTROLLER REFERENCE";
+            default: return "KEYBOARD AND MOUSE CONTROL REFERENCE";
+        }
+    }

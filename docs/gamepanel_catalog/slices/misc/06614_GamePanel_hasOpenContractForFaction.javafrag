@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: hasOpenContractForFaction
+// Lines: 6614-6616
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean hasOpenContractForFaction(Faction f) {
+        return activeContractFor(f, "BOUNTY") == null || activeContractFor(f, "FETCH") == null;
+    }

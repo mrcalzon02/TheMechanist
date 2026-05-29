@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: mapCellW
+// Lines: 14686-14690
+// Category: render
+// This is an examination slice, not compiled source.
+
+    int mapCellW(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+    }

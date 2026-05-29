@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: changeUiScale
+// Lines: 19874-19877
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void changeUiScale(int delta) {
+        options.uiScale = Math.max(50, Math.min(200, options.uiScale + delta*5));
+        applyOptions(); options.save(); sounds.play("tab", options); logEvent("GUI scale now " + options.uiScale + "%. Compact default is " + GameOptions.COMPACT_DEFAULT_UI_SCALE + "%; larger chrome remains available as opt-in."); repaint();
+    }

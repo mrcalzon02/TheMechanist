@@ -1,0 +1,48 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: clearExpiredPanelState
+// Lines: 786-826
+// Category: ui
+// This is an examination slice, not compiled source.
+
+    void clearExpiredPanelState(PanelMode expired, String reason) {
+        if (expired == PanelMode.NONE) return;
+        DebugLog.audit("UI_CLOSE", "Clearing expired panel " + expired + " due to " + reason + " | " + stateSummary());
+        activeScrollTag = "";
+        scrollbarDragActive = false;
+        if (expired == PanelMode.LOOK) {
+            lookCursorActive = false;
+            lookStackIndex = 0;
+            lookX = playerX;
+            lookY = playerY;
+        }
+        if (expired == PanelMode.COMBAT) {
+            combatCursorActive = false;
+            combatX = combatY = -1;
+            lastTargetingReport = "No target selected.";
+        }
+        if (expired == PanelMode.INTERACT) {
+            interactCursorActive = false;
+            pendingInteractionSummary = "No interaction selected.";
+        }
+        if (expired == PanelMode.BUILD || expired == PanelMode.WORKBENCH) {
+            buildPlacementActive = false;
+            pendingBuildRecipe = null;
+            pendingBuildSummary = "No build selected.";
+            buildX = -1;
+            buildY = -1;
+        }
+        if (expired == PanelMode.TRADE) {
+            activeTrader = null;
+            selectedTradeOffer = 0;
+            conversationBranch = "No active conversation.";
+        }
+        if (expired == PanelMode.INTERACT || expired == PanelMode.TRADE) {
+            activeConversationNpc = null;
+        }
+        if (expired == PanelMode.INFOPEDIA) {
+            infopediaScroll = 0;
+            infopediaDetailScroll = 0;
+        }
+        if (panelMode == expired) panelMode = PanelMode.NONE;
+    }

@@ -1,0 +1,11 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: isMachineOrEquipmentName
+// Lines: 5346-5349
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean isMachineOrEquipmentName(String name) {
+        String n = name == null ? "" : name.toLowerCase(Locale.ROOT);
+        return n.contains("machine") || n.contains("forge") || n.contains("smelter") || n.contains("condenser") || n.contains("engine") || n.contains("lab") || n.contains("bench") || n.contains("terminal") || n.contains("turret") || n.contains("relay") || n.contains("sensor");
+    }

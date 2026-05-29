@@ -1,0 +1,48 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawEnvironmentalHazardOverlays
+// Lines: 14934-14974
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawEnvironmentalHazardOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (world == null || world.hazardWarnings == null || world.hazardWarnings.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        int tri = Math.max(8, Math.min(16, Math.min(cellW, cellH) / 2));
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(9, Math.min(15, tri))));
+        for (EnvironmentalHazardRecord h : world.hazardWarnings) {
+            if (h == null || h.x < camX || h.y < camY || h.x >= camX + cols || h.y >= camY + rows) continue;
+            boolean vis = isVisible(h.x, h.y), rem = isRemembered(h.x, h.y);
+            if (!vis && !rem) continue;
+            int px = ox + (h.x - camX) * cellW, py = oy + (h.y - camY) * cellH;
+            float alpha = vis ? 0.82f : 0.34f;
+            int frame = Math.floorMod(turn + h.phase, 3);
+            int yy = tileIconMode() ? py : py - cellH + 3;
+            Color c = h.color();
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.42f, alpha * (0.24f + 0.08f * frame))));
+            gg.setColor(c);
+            if (h.family.contains("wire") || h.family.contains("electric")) {
+                int y0 = yy + Math.max(3, cellH/3);
+                gg.drawLine(px + 2, y0, px + cellW/3, yy + cellH - 3);
+                gg.drawLine(px + cellW/3, yy + cellH - 3, px + (cellW*2)/3, yy + 4);
+                gg.drawLine(px + (cellW*2)/3, yy + 4, px + cellW - 3, yy + Math.max(4, cellH/2));
+            } else if (h.family.contains("sludge") || h.family.contains("runoff")) {
+                gg.fillOval(px + Math.max(1, frame), yy + cellH/3, Math.max(6, cellW - 4), Math.max(4, cellH/3));
+                gg.drawArc(px + 2, yy + 2, Math.max(6, cellW - 5), Math.max(6, cellH - 5), frame * 40, 180);
+            } else {
+                gg.drawArc(px + 2 + frame, yy + 3, Math.max(6, cellW - 5), Math.max(6, cellH/2), 20, 220);
+                gg.drawArc(px + 4, yy + Math.max(4, cellH/3), Math.max(5, cellW - 8), Math.max(6, cellH/2), 210, 220);
+                gg.drawString("~", px + Math.max(2, cellW/3), yy + Math.max(12, (cellH*2)/3));
+            }
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            gg.setColor(new Color(220, 35, 28));
+            gg.setStroke(new BasicStroke(Math.max(1.0f, Math.min(2.0f, cellW / 18.0f))));
+            gg.drawRect(px + 1, yy + 1, Math.max(1, cellW - 3), Math.max(1, cellH - 3));
+            int[] xs = {px + cellW - tri - 1, px + cellW - 1, px + cellW - tri/2 - 1};
+            int[] ys = {yy + 1, yy + 1, yy + tri + 1};
+            gg.fillPolygon(xs, ys, 3);
+            gg.setColor(Color.BLACK);
+            gg.drawString("!", px + cellW - tri + Math.max(1, tri/4), yy + Math.max(10, tri));
+        }
+        gg.dispose();
+    }

@@ -1,0 +1,27 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactCorpseContainer
+// Lines: 9705-9724
+// Category: inventory
+// This is an examination slice, not compiled source.
+
+    void interactCorpseContainer(int tx, int ty) {
+        if (world == null) { logEvent("Corpse inspection failed: no world loaded."); return; }
+        MapObjectState found = null;
+        for (MapObjectState m : world.mapObjects) if (m.x == tx && m.y == ty && "corpse-container".equals(m.type)) { found = m; break; }
+        if (found == null) { logEvent("The corpse marker has no persistent body container left here."); return; }
+        String cid = found.stockState == null || found.stockState.isBlank() ? corpseLootContainerId(found.id) : found.stockState;
+        int scriptTaken = collectCorpseScriptIfPresent(found);
+        ItemActionResult moved = transferFirstContainerItemToInventory(cid, "looted from persistent corpse container " + found.id);
+        if (!moved.success) {
+            if (scriptTaken > 0) logEvent("CORPSE SCRIPT: recovered " + scriptTaken + " concord script from " + found.label + ".");
+            logEvent("CORPSE EMPTY: " + moved.playerText + " Clearing abandoned marker.");
+            cleanupPersistentStockMarkerIfEmpty(found, cid);
+            return;
+        }
+        int remain = containerItemCount(cid);
+        logEvent("CORPSE LOOT: recovered " + moved.itemName + " [" + moved.itemInstanceId + "]" + (scriptTaken > 0 ? " and " + scriptTaken + " concord script" : "") + " from " + found.label + ". Remaining items: " + remain + ".");
+        gainXp("Scavenge", 1, "corpse loot");
+        cleanupPersistentStockMarkerIfEmpty(found, cid);
+        advanceTurn("loots corpse container.");
+    }

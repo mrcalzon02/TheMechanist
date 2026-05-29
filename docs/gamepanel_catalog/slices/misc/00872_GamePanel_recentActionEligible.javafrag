@@ -1,0 +1,15 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recentActionEligible
+// Lines: 872-879
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean recentActionEligible(String s) {
+        if (s == null || s.isBlank()) return false;
+        String low = s.toLowerCase(Locale.ROOT);
+        if (low.startsWith("opened panel:") || low.startsWith("closed panel:") || low.startsWith("benchmark") || low.startsWith("metric/") || low.startsWith("audit/") || low.startsWith("settings/") || low.startsWith("debug") || low.contains("worstpaintms") || low.contains("renderprofile=") || low.contains("current.log") || low.contains("runtime.log") || low.contains("errors.log")) return false;
+        if (low.contains("viewport zoom") || low.contains("world zoom") || low.startsWith("graphics dropdown") || low.startsWith("font scale") || low.startsWith("gui scale") || low.startsWith("tile icon rendering") || low.startsWith("screensaver") || low.startsWith("floating hover help") || low.startsWith("move preview") || low.contains("movement ghost") || low.startsWith("selected inventory") || low.startsWith("inventory item selected") || low.startsWith("equipment: selected")) return false;
+        if (low.contains("route selected:") || low.contains("launcher shell") || low.contains("authority=") || low.contains("local-server boundary") || low.contains("zone audit generated") || low.contains("not-yet-implemented")) return false;
+        return true;
+    }

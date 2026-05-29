@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bankManagerPreview
+// Lines: 9192-9196
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String bankManagerPreview(int tx, int ty) {
+        NpcEntity n = bankManagerAt(tx, ty);
+        if (n == null) return "No bank manager selected.";
+        return n.name + " / " + n.role + " / " + n.rankLine() + ". A manager keycard may open nearby bank vaults, assuming alarms, guards, witnesses, and law remain theoretical.";
+    }

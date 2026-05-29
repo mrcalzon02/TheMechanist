@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: constructionExpansionHeatLine
+// Lines: 7748-7760
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    String constructionExpansionHeatLine(BuildRecipe r) {
+        if (r == null) return "choose a build to see whether it looks quiet, commercial, restricted, or defensive.";
+        String category = constructionCategoryFor(r);
+        String attention = r.attention <= 0 ? "quiet" : (r.attention <= 1 ? "minor" : (r.attention <= 3 ? "noticeable" : "high"));
+        String after = "Current base pressure is " + heatPressureBand(gangHeat, suspicion, baseRaidPressure(baseSecurityRating())) + ".";
+        if (r.requiredFaction != Faction.NONE) return attention + " restricted build in " + category + "; missing authority can turn attention into inspection or faction trouble. " + after;
+        String low = r.name == null ? "" : r.name.toLowerCase(Locale.ROOT);
+        if (low.contains("turret") || low.contains("sensor") || low.contains("security") || low.contains("armory")) return attention + " defense/security build; it improves raid survival but tells rivals the room is worth attacking. " + after;
+        if (low.contains("shop") || low.contains("business") || low.contains("clinic")) return attention + " public-facing service build; permits and staffing decide whether it looks lawful or suspicious. " + after;
+        if (low.contains("lab") || low.contains("chem") || low.contains("distillation") || low.contains("injector")) return attention + " laboratory or chemical build; expect legal and faction curiosity if it operates in the open. " + after;
+        if (r.attention > 0) return attention + " visible expansion in " + category + "; security, permits, and quiet storage reduce the follow-up risk. " + after;
+        return "quiet " + category + " build; ordinary survival improvements add little pressure by themselves. " + after;
+    }

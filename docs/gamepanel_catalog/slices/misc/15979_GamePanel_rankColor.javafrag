@@ -1,0 +1,19 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: rankColor
+// Lines: 15979-15990
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    Color rankColor(int rank) {
+        switch(Math.max(1, Math.min(8, rank))) {
+            case 1: return new Color(255, 216, 80);
+            case 2: return new Color(225, 225, 235);
+            case 3: return new Color(220, 76, 64);
+            case 4: return new Color(90, 155, 245);
+            case 5: return new Color(90, 210, 120);
+            case 6: return new Color(230, 155, 55);
+            case 7: return new Color(105, 210, 220);
+            default: return new Color(150, 150, 155);
+        }
+    }

@@ -1,0 +1,10 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: consumeProductionInputNamed
+// Lines: 8659-8661
+// Category: input
+// This is an examination slice, not compiled source.
+
+    boolean consumeProductionInputNamed(String item) {
+        return consumeProductionInputNamedResult(item, "legacy production consume").success;
+    }

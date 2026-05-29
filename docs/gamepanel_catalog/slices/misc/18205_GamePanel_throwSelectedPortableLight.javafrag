@@ -1,0 +1,33 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: throwSelectedPortableLight
+// Lines: 18205-18230
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void throwSelectedPortableLight() {
+        String item = selectedInventoryItemName();
+        if (item == null) { logEvent("No selected item to throw."); return; }
+        if (!PortableLightProfile.isLightItem(item)) { logEvent("THROW LIGHT blocked: selected stack is not a portable light source."); return; }
+        int idx = inventory.indexOf(item);
+        if (idx < 0) { logEvent("THROW LIGHT blocked: selected light is not removable from inventory."); return; }
+        PortableLightProfile p = PortableLightProfile.profile(item);
+        if (p == null) { logEvent("THROW LIGHT blocked: no light profile registered for " + item + "."); return; }
+        int fx = facingDx(), fy = facingDy();
+        int range = Math.max(1, p.throwRange);
+        int tx = playerX, ty = playerY;
+        for (int step=0; step<range; step++) {
+            int nx = tx + fx, ny = ty + fy;
+            if (world == null || !world.inBounds(nx,ny) || !world.walkable(nx,ny) || world.npcAt(nx,ny) != null) break;
+            tx = nx; ty = ny;
+        }
+        ItemActionResult thrown = transferContainerItemResultAt(CONTAINER_PLAYER_INVENTORY, inventory, idx, CONTAINER_VOID_DISCARDED, "portable light throw ledger", null, "thrown as active light source");
+        int dur = p.remainingDuration(turn, activePortableLightItem, activePortableLightExpiresTurn);
+        portableLights.add(new PortableLightInstance(p.name, tx, ty, p.radius, turn + Math.max(1, dur), portableLightWorldKey(), "thrown"));
+        while (portableLights.size() > 48) portableLights.remove(0);
+        if (p.name.equals(activePortableLightItem)) { activePortableLightItem=""; activePortableLightExpiresTurn=0; activePortableLightWorn=false; }
+        lastPortableLightReport = "THROWN LIGHT: " + p.name + " lands at " + tx + "," + ty + ", radius " + p.radius + ", burn remaining about " + Math.max(1,dur/TURNS_PER_HOUR) + "h.";
+        logEvent(lastPortableLightReport + " " + (thrown.provenance == null ? "" : thrown.provenance.summary()));
+        sensoryCacheWorld = null;
+        advanceTurn("throws a light source."); repaint();
+    }

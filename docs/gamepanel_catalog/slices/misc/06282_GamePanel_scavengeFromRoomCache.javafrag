@@ -1,0 +1,18 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: scavengeFromRoomCache
+// Lines: 6282-6292
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    ItemActionResult scavengeFromRoomCache(String target, int roomId, RoomProfile rp, ZoneType zt) {
+        ensureRoomCacheSeeded(roomId, rp, zt);
+        String id = roomCacheContainerId(roomId);
+        ContainerRecord c = itemContainers.get(id);
+        if (c == null || c.itemInstanceIds.isEmpty()) return ItemActionResult.fail("Room cache is empty.", "room cache empty id=" + id + " target=" + target);
+        String chosen = RoomContainerApi.chooseInstanceForTarget(target, c, itemInstances);
+        if (chosen == null || chosen.isBlank()) return ItemActionResult.fail("Room cache had no matching item.", "room cache no match id=" + id + " target=" + target);
+        ItemActionResult moved = transferContainerItemResultByInstanceId(chosen, CONTAINER_PLAYER_INVENTORY, "Player carried inventory", inventory, "scavenged from persistent room cache " + id);
+        DebugLog.audit("ROOM_CONTAINER_API", "scavenge target=" + target + " roomCache=" + id + " item=" + moved.itemName + " instance=" + moved.itemInstanceId + " success=" + moved.success);
+        return moved;
+    }

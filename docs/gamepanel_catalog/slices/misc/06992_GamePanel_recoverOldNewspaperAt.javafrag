@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: recoverOldNewspaperAt
+// Lines: 6992-7005
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void recoverOldNewspaperAt(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.DISCARDED_NEWSPRINT_SOURCE);
+        if (m == null) return;
+        int age = Math.max(1, currentInnDay() - safeParseInt(MapObjectState.itemNameFromStock(m.stockState), currentInnDay()-1));
+        String item = age <= 1 ? "Yesterday's INN newspaper" : (age <= 6 ? "Old INN newspaper" : "Useless paper mush");
+        if (inventoryWeight() + 1 > carryCapacity()) { logEvent("Cannot recover " + item + ": carrying load is full."); return; }
+        addInventoryItem(item, ItemProvenanceRecord.of(item, Faction.INN, "discarded public newsprint source", world, turn, "old newspaper day " + MapObjectState.itemNameFromStock(m.stockState), "recovered from trash or floor litter"));
+        world.mapObjects.remove(m);
+        if (world.inBounds(tx, ty)) { char old = MapObjectState.underlyingTileFromStock(m.stockState); if (old == 0 || old == 'o' || old == '1') old = '.'; world.tiles[tx][ty] = old; }
+        logEvent("Recovered " + item + ". Yesterday's public truth is now trash, which is still more useful than most official signage.");
+        DebugLog.audit("INN_OLD_PAPER_RECOVER", "at=" + tx + "," + ty + " age=" + age + " item=" + item + " state=" + stateSummary());
+        advanceTurn("recovers discarded newsprint.");
+        repaint();
+    }

@@ -1,0 +1,20 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: corridorArtRotatesEastWest
+// Lines: 15623-15635
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    boolean corridorArtRotatesEastWest(char ch, int worldX, int worldY) {
+        // 0.9.10fn/ji: road art resolves through compiled road shape keys, while
+        // corridor art now follows the compiled same-family corridor orientation.
+        // Maintenance/exterior/sewer corridor runs therefore orient toward the next
+        // nearest tile of the same corridor type instead of borrowing unrelated halls.
+        if (ch == ';' || ch == '_') return false;
+        if (world == null || !images.corridorArtUsesNorthSouth(ch)) return false;
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d != null && "corridor".equals(d.baseLayer)) return "east_west".equals(d.shape);
+        boolean ew = corridorLikeForArt(worldX-1, worldY) || corridorLikeForArt(worldX+1, worldY);
+        boolean ns = corridorLikeForArt(worldX, worldY-1) || corridorLikeForArt(worldX, worldY+1);
+        return ew && !ns;
+    }

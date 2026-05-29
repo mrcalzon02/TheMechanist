@@ -1,0 +1,13 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: toggleFrameLimiter
+// Lines: 20012-20017
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void toggleFrameLimiter() {
+        logEvent(OptionsBoundaryAuthority.toggleFrameLimiter(options));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }

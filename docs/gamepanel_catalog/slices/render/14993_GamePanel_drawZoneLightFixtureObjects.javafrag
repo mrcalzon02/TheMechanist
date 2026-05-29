@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawZoneLightFixtureObjects
+// Lines: 14993-15008
+// Category: render
+// This is an examination slice, not compiled source.
+
+    void drawZoneLightFixtureObjects(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (world == null || world.lightSources == null || world.lightSources.isEmpty()) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setFont(new Font("Monospaced", Font.BOLD, Math.max(9, Math.min(16, cellH/2))));
+        for (ZoneLightSourceRecord l : world.lightSources) {
+            if (l == null || l.x < camX || l.y < camY || l.x >= camX+cols || l.y >= camY+rows) continue;
+            if (!isVisible(l.x,l.y) && !isRemembered(l.x,l.y)) continue;
+            int px=ox+(l.x-camX)*cellW, py=oy+(l.y-camY)*cellH;
+            float alpha = l.on && l.powered ? (l.flicker && Math.floorMod(turn + l.phase, Math.max(2,l.flickerPeriod)) == 0 ? 0.25f : 0.46f) : 0.16f;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            gg.setColor(l.color());
+            gg.drawOval(px+Math.max(1,cellW/4), py+Math.max(1,cellH/4), Math.max(4,cellW/2), Math.max(4,cellH/2));
+            gg.drawString(l.on && l.powered ? "¤" : "·", px+Math.max(2,cellW/3), py+Math.max(11,(cellH*2)/3));
+        }
+        gg.dispose();
+    }

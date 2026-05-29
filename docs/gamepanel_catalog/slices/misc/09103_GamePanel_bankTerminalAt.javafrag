@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: bankTerminalAt
+// Lines: 9103-9103
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    MapObjectState bankTerminalAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-terminal"); }

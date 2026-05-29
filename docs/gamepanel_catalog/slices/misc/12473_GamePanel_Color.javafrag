@@ -1,0 +1,8 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: Color
+// Lines: 12473-12473
+// Category: misc
+// This is an examination slice, not compiled source.
+
+        Color border = selected ? new Color(230, 220, 150) : switch (state) { case UNLOCKED -> new Color(88, 218, 105); case AVAILABLE -> new Color(245, 215, 78); case LOCKED -> new Color(116, 116, 110); };

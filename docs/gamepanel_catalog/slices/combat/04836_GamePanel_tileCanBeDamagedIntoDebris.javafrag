@@ -1,0 +1,12 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: tileCanBeDamagedIntoDebris
+// Lines: 4836-4840
+// Category: combat
+// This is an examination slice, not compiled source.
+
+    boolean tileCanBeDamagedIntoDebris(char ch) {
+        if (ch == '.' || ch == '+' || ch == ',' || ch == ';' || ch == ':' || ch == '~' || ch == '=' || ch == '-' || ch == '`') return false;
+        if (ch == InterstitialInfrastructureApi.VOID_SPACE) return false;
+        return !isProtectedTransitionTile(ch);
+    }

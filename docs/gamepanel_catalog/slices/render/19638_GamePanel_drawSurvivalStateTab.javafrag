@@ -1,0 +1,21 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: drawSurvivalStateTab
+// Lines: 19638-19651
+// Category: render
+// This is an examination slice, not compiled source.
+
+void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "survival-state", x, y, w, h);
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "SURVIVAL", x + 12, y + 18);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Food: " + food + "/" + MAX_FOOD_WATER + " | Water: " + water + "/" + MAX_FOOD_WATER);
+        lines.add("Sleep need: " + sleepNeed + "/" + MAX_SLEEP_NEED);
+        lines.add("Fatigue: " + fatigue + " | Wounds: " + wounds + " | Pain: " + pain);
+        lines.add("Bleeding: " + bleeding + " | Infection risk: " + infectionRisk);
+        lines.add("Script carried " + countMoney() + " | banked " + totalBankedCash() + " | base " + countBaseStoredScript());
+        drawClippedWrappedLines(g, lines, x + 12, y + 28, w - 24, h - 36, smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)), false);
+    }

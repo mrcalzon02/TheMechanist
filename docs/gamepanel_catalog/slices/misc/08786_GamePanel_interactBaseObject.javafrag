@@ -1,0 +1,25 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: interactBaseObject
+// Lines: 8786-8803
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void interactBaseObject(BaseObject obj) {
+        if (obj != null && obj.underConstruction) {
+            contributeToConstructionSite(obj);
+            return;
+        }
+        String passiveDefenseLine = PassiveDefenseEffectsAuthority.isPassiveDefense(obj.symbol) ? PassiveDefenseEffectsAuthority.inspectLine(obj) : null;
+        switch (obj.symbol) {
+            case 's': logEvent("Storage crate accessed. Capacity " + obj.capacity + ". Base storage currently " + baseStorage.size() + " item(s). Use STASH/TAKE."); break;
+            case 'w': logEvent("Scrap workbench accessed. Uses=" + obj.charges + ". Converts Scrap bit into supplies/parts and repairs damaged clothing."); break;
+            case 'd': logEvent("Barricade inspected. " + passiveDefenseLine); break;
+            case 'S': case 'R': case 'W': case 'D': case 'Y': case 'N': case 'P': case 'J': case 'U': case 'Z': case 'T': case 'H': logEvent("Defense inspected. " + passiveDefenseLine); break;
+            case 'c': logEvent("Sleeping cot inspected. Use DRINK/REST to reduce fatigue and later recover wounds/body damage."); break;
+            case 'u': logEvent("Water barrel inspected. Stored water charges " + obj.charges + "/" + obj.capacity + ". Global reserve " + water + "."); break;
+            case 'a': logEvent("Alarm trap inspected. Armed=" + obj.armed + ". Use SECURITY to arm it and audit base defenses."); break;
+            default: logEvent("Base object inspected: " + obj.name + ". " + obj.description + (passiveDefenseLine == null ? "" : " " + passiveDefenseLine));
+        }
+        DebugLog.audit("BASE_OBJECT_INSPECT", obj.name + " symbol=" + obj.symbol + " integrity=" + obj.integrity + " charges=" + obj.charges + " armed=" + obj.armed + " state=" + stateSummary());
+    }

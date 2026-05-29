@@ -1,0 +1,23 @@
+// Extracted from src/mechanist/GamePanel.java
+// Owner: GamePanel
+// Method: turnInBankLockboxContract
+// Lines: 9433-9448
+// Category: misc
+// This is an examination slice, not compiled source.
+
+    void turnInBankLockboxContract() {
+        FactionContract found = null;
+        for (FactionContract c : factionContracts) if (!c.completed && "LOCKBOX".equals(c.type)) { found = c; break; }
+        if (found == null) { logEvent("LOCKBOX CONTRACT: no active noble-bank retrieval job is open."); return; }
+        if (!inventory.contains(found.requiredTurnInItem)) { logEvent("LOCKBOX CONTRACT: you need " + found.publicRequiredItem() + " for the active noble retrieval job. Current report: " + lastBankLockboxContractReport); return; }
+        removeInventoryItem(found.requiredTurnInItem);
+        found.completed = true;
+        addImperialScript(found.payout);
+        factionStanding.put(Faction.NOBLE, factionStanding.getOrDefault(Faction.NOBLE, 0) + found.repReward);
+        suspicion += Math.max(1, found.payout / 800);
+        lastBankLockboxContractReport = "Completed the noble retrieval job by delivering " + found.publicRequiredItem() + "; paid " + found.payout + " script and gained noble standing +" + found.repReward + ".";
+        logEvent("LOCKBOX CONTRACT PAID: " + lastBankLockboxContractReport);
+        recordPlayerNewsEvent("bank-heist", "private lockbox changed hands", Faction.NOBLE, "rumor claims sealed bank property changed hands outside ordinary branch custody", 3);
+        DebugLog.audit("BANK_LOCKBOX_CONTRACT_TURNIN", found.longLine() + " state=" + stateSummary());
+        advanceTurn("turns in bank heist property."); repaint();
+    }
