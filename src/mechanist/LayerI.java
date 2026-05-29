@@ -23,4 +23,8 @@ public class LayerI {
     static int scaled(GamePanel panel, int value) {
         return Math.max(1, (int)Math.round(value * uiScaleFactor(panel)));
     }
+
+    static int readableButtonHeight(GamePanel panel, int preferred) {
+        return Math.max(28, Math.min(preferred, Math.max(24, panel.getHeight() / 11)));
+    }
 }
