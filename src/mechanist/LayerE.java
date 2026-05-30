@@ -16,4 +16,8 @@ public class LayerE {
         }
         applyQoL(panel, GameplayQualityOfLifeAuthority.setDoomFov(panel.options, panel.options.doomModeFovDegrees + delta));
     }
+
+    static void requestDoomModeToggle(GamePanel panel) {
+        DoomRuntimeOptionsSubsystem.requestDoomModeToggle(panel);
+    }
 }
