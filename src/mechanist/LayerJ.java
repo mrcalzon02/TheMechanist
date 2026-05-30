@@ -14,4 +14,8 @@ public class LayerJ {
     static void cycleJvmPipelineProfile(GamePanel panel) {
         JvmRuntimeOptionsSubsystem.cycleJvmPipelineProfile(panel);
     }
+
+    static void changeJvmMemory(GamePanel panel, int deltaMb) {
+        JvmRuntimeOptionsSubsystem.changeJvmMemory(panel, deltaMb);
+    }
 }
