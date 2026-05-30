@@ -34,4 +34,8 @@ public class LayerJ {
     static void acceptJvmSettingsAndRestart(GamePanel panel) {
         JvmRuntimeOptionsSubsystem.acceptJvmSettingsAndRestart(panel);
     }
+
+    static boolean isWindowsHost() {
+        return JvmRuntimeOptionsSubsystem.isWindowsHost();
+    }
 }
