@@ -12,4 +12,8 @@ public class LayerH {
             default: return "KEYBOARD AND MOUSE CONTROL REFERENCE";
         }
     }
+
+    static boolean requiredMovementInput(InputAction action) {
+        return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT || action == InputAction.MOVE_RIGHT;
+    }
 }
