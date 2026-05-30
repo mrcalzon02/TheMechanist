@@ -10,4 +10,8 @@ public class LayerJ {
     static void cycleJvmGarbageCollector(GamePanel panel) {
         JvmRuntimeOptionsSubsystem.cycleJvmGarbageCollector(panel);
     }
+
+    static void cycleJvmPipelineProfile(GamePanel panel) {
+        JvmRuntimeOptionsSubsystem.cycleJvmPipelineProfile(panel);
+    }
 }
