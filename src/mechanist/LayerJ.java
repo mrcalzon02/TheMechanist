@@ -22,4 +22,8 @@ public class LayerJ {
     static void toggleJvmStringDeduplication(GamePanel panel) {
         JvmRuntimeOptionsSubsystem.toggleJvmStringDeduplication(panel);
     }
+
+    static void toggleJvmTransparentAcceleration(GamePanel panel) {
+        JvmRuntimeOptionsSubsystem.toggleJvmTransparentAcceleration(panel);
+    }
 }
