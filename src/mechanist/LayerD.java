@@ -81,6 +81,13 @@ public class LayerD {
         }
     }
 
+    static void addThemeDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
+        for (int i = 0; i < GameOptions.PALETTE_NAMES.length; i++) {
+            final int idx = i;
+            panel.buttons.add(new ButtonBox(GameOptions.PALETTE_NAMES[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Select option.", () -> setColorPreset(panel, idx)));
+        }
+    }
+
     static void setWindowMode(GamePanel panel, int mode) {
         panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode));
         panel.graphicsDropdown = -1;
