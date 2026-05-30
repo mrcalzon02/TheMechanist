@@ -32,4 +32,11 @@ public class LayerH {
         if (action == InputAction.MOVE_RIGHT) return "D / Right";
         return null;
     }
+
+    static String navigationPromptText(InputAction action) {
+        if (action == InputAction.CONFIRM) return "Enter / Space";
+        if (action == InputAction.CANCEL) return "Escape";
+        if (action == InputAction.PAUSE) return "Escape";
+        return null;
+    }
 }
