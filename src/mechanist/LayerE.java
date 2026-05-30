@@ -20,4 +20,8 @@ public class LayerE {
     static void requestDoomModeToggle(GamePanel panel) {
         DoomRuntimeOptionsSubsystem.requestDoomModeToggle(panel);
     }
+
+    static void cycleDoomFogMode(GamePanel panel) {
+        DoomRuntimeOptionsSubsystem.cycleDoomFogMode(panel);
+    }
 }
