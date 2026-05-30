@@ -20,4 +20,8 @@ public class LayerH {
     static boolean requiredNavigationInput(InputAction action) {
         return action == InputAction.CONFIRM || action == InputAction.CANCEL || action == InputAction.PAUSE;
     }
+
+    static boolean requiredInputAction(InputAction action) {
+        return requiredMovementInput(action) || requiredNavigationInput(action);
+    }
 }
