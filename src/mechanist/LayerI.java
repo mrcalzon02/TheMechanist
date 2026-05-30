@@ -27,4 +27,8 @@ public class LayerI {
     static int readableButtonHeight(GamePanel panel, int preferred) {
         return Math.max(28, Math.min(preferred, Math.max(24, panel.getHeight() / 11)));
     }
+
+    static int readableGap(GamePanel panel, int preferred) {
+        return Math.max(8, Math.min(preferred, Math.max(6, panel.getHeight() / 42)));
+    }
 }
