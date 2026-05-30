@@ -49,6 +49,17 @@ public class LayerD {
         }
     }
 
+    static void addResolutionDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
+        int available = DisplayResolutionAuthority.choiceCount();
+        int visible = Math.max(1, Math.min(available, inner.height / Math.max(1, rowH)));
+        int start = Math.max(0, Math.min(Math.max(0, available - visible), panel.options.resolutionIndex - visible / 2));
+        for (int row = 0; row < visible; row++) {
+            final int idx = start + row;
+            String prefix = idx == panel.options.resolutionIndex ? "> " : "";
+            panel.buttons.add(new ButtonBox(prefix + DisplayResolutionAuthority.modeLabel(idx), inner.x, inner.y + row * rowH, inner.width, rowH - 2, "Select detected/safe resolution " + DisplayResolutionAuthority.modeLabel(idx) + ".", () -> setResolutionIndex(panel, idx)));
+        }
+    }
+
     static void setWindowMode(GamePanel panel, int mode) {
         panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode));
         panel.graphicsDropdown = -1;
