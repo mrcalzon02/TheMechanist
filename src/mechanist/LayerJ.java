@@ -18,4 +18,8 @@ public class LayerJ {
     static void changeJvmMemory(GamePanel panel, int deltaMb) {
         JvmRuntimeOptionsSubsystem.changeJvmMemory(panel, deltaMb);
     }
+
+    static void toggleJvmStringDeduplication(GamePanel panel) {
+        JvmRuntimeOptionsSubsystem.toggleJvmStringDeduplication(panel);
+    }
 }
