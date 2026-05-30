@@ -31,4 +31,8 @@ public class LayerG {
     static void chooseGeneratedAssetPayloadRoot(GamePanel panel) {
         GeneratedArtPayloadOptionsSubsystem.chooseGeneratedAssetPayloadRoot(panel);
     }
+
+    static void clearGeneratedAssetPayloadRoot(GamePanel panel) {
+        GeneratedArtPayloadOptionsSubsystem.clearGeneratedAssetPayloadRoot(panel);
+    }
 }
