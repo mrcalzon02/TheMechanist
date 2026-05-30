@@ -30,4 +30,8 @@ public class LayerJ {
     static void toggleJvmNoAa(GamePanel panel) {
         JvmRuntimeOptionsSubsystem.toggleJvmNoAa(panel);
     }
+
+    static void acceptJvmSettingsAndRestart(GamePanel panel) {
+        JvmRuntimeOptionsSubsystem.acceptJvmSettingsAndRestart(panel);
+    }
 }
