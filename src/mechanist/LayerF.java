@@ -48,4 +48,9 @@ public class LayerF {
         panel.logEvent(OptionsBoundaryAuthority.cycleColorTarget(panel.options));
         panel.repaint();
     }
+
+    static void cycleColorPreset(GamePanel panel) {
+        panel.logEvent(OptionsBoundaryAuthority.cycleColorPreset(panel.options));
+        panel.repaint();
+    }
 }
