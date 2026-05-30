@@ -41,10 +41,6 @@ public class LayerH {
     }
 
     static String keyboardPromptFor(InputAction action) {
-        String text = movementPromptText(action);
-        if (text != null) return "Keyboard: " + text;
-        text = navigationPromptText(action);
-        if (text != null) return "Keyboard: " + text;
-        return null;
+        return ControlReferenceTextSubsystem.keyboardPromptFor(action);
     }
 }
