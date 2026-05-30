@@ -31,4 +31,9 @@ public class LayerI {
     static int readableGap(GamePanel panel, int preferred) {
         return Math.max(8, Math.min(preferred, Math.max(6, panel.getHeight() / 42)));
     }
+
+    static boolean worldZoomControlActive(GamePanel panel) {
+        if (panel.screen == Screen.SECTOR_AUDIT) return panel.auditWorld != null;
+        return panel.world != null && (panel.screen == Screen.GAME || (panel.screen == Screen.PANEL && (panel.panelMode == PanelMode.LOOK || panel.panelMode == PanelMode.COMBAT || panel.panelMode == PanelMode.INTERACT || panel.panelMode == PanelMode.SCAVENGE || panel.panelMode == PanelMode.BUILD || panel.panelMode == PanelMode.WORKBENCH)));
+    }
 }
