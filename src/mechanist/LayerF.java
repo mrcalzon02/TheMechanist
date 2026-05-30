@@ -43,4 +43,9 @@ public class LayerF {
         panel.logEvent("Screen shake intensity now " + panel.options.screenShakePercent + "%.");
         panel.repaint();
     }
+
+    static void cycleColorTarget(GamePanel panel) {
+        panel.logEvent(OptionsBoundaryAuthority.cycleColorTarget(panel.options));
+        panel.repaint();
+    }
 }
