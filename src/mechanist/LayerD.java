@@ -60,6 +60,13 @@ public class LayerD {
         }
     }
 
+    static void addTargetFpsDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
+        for (int i = 0; i < GameOptions.TARGET_FPS_LABELS.length; i++) {
+            final int idx = i;
+            panel.buttons.add(new ButtonBox(GameOptions.TARGET_FPS_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use target frame pacing " + GameOptions.TARGET_FPS_LABELS[i] + ".", () -> setTargetFpsIndex(panel, idx)));
+        }
+    }
+
     static void setWindowMode(GamePanel panel, int mode) {
         panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode));
         panel.graphicsDropdown = -1;
