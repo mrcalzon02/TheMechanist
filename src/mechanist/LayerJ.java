@@ -26,4 +26,8 @@ public class LayerJ {
     static void toggleJvmTransparentAcceleration(GamePanel panel) {
         JvmRuntimeOptionsSubsystem.toggleJvmTransparentAcceleration(panel);
     }
+
+    static void toggleJvmNoAa(GamePanel panel) {
+        JvmRuntimeOptionsSubsystem.toggleJvmNoAa(panel);
+    }
 }
