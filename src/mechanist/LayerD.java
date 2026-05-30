@@ -41,6 +41,14 @@ public class LayerD {
         return false;
     }
 
+    static void addWindowModeDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
+        String[] modes = {"Windowed", "Borderless Windowed", "Exclusive Fullscreen"};
+        for (int i = 0; i < modes.length; i++) {
+            final int idx = i;
+            panel.buttons.add(new ButtonBox(modes[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Select " + modes[i] + " window mode.", () -> setWindowMode(panel, idx)));
+        }
+    }
+
     static void setWindowMode(GamePanel panel, int mode) {
         panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode));
         panel.graphicsDropdown = -1;
