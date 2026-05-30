@@ -50,4 +50,13 @@ public class LayerI {
         }
         panel.repaint();
     }
+
+    static void changeFontScale(GamePanel panel, int delta) {
+        panel.options.fontScale = Math.max(50, Math.min(200, panel.options.fontScale + delta * 5));
+        DisplayScaleOptionsSubsystem.applyOptions(panel);
+        panel.options.save();
+        panel.sounds.play("tab", panel.options);
+        panel.logEvent("Text scale now " + panel.options.fontScale + "%.");
+        panel.repaint();
+    }
 }
