@@ -24,4 +24,12 @@ public class LayerH {
     static boolean requiredInputAction(InputAction action) {
         return requiredMovementInput(action) || requiredNavigationInput(action);
     }
+
+    static String movementPromptText(InputAction action) {
+        if (action == InputAction.MOVE_UP) return "W / Up";
+        if (action == InputAction.MOVE_DOWN) return "S / Down";
+        if (action == InputAction.MOVE_LEFT) return "A / Left";
+        if (action == InputAction.MOVE_RIGHT) return "D / Right";
+        return null;
+    }
 }
