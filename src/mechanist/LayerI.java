@@ -36,4 +36,18 @@ public class LayerI {
         if (panel.screen == Screen.SECTOR_AUDIT) return panel.auditWorld != null;
         return panel.world != null && (panel.screen == Screen.GAME || (panel.screen == Screen.PANEL && (panel.panelMode == PanelMode.LOOK || panel.panelMode == PanelMode.COMBAT || panel.panelMode == PanelMode.INTERACT || panel.panelMode == PanelMode.SCAVENGE || panel.panelMode == PanelMode.BUILD || panel.panelMode == PanelMode.WORKBENCH)));
     }
+
+    static void changeWorldZoom(GamePanel panel, int delta, String source) {
+        int before = panel.options.worldZoomIndex;
+        panel.options.worldZoomIndex = Math.max(0, Math.min(GameOptions.WORLD_ZOOM_LABELS.length - 1, panel.options.worldZoomIndex + delta));
+        if (panel.options.worldZoomIndex != before) {
+            panel.options.save();
+            panel.sounds.play("tab", panel.options);
+            panel.logEvent("Viewport zoom " + panel.options.worldZoomLabel() + " via " + source + ".");
+            DebugLog.audit("VIEWPORT_ZOOM", "source=" + source + " index=" + panel.options.worldZoomIndex + " label=" + panel.options.worldZoomLabel() + " mode=" + panel.screen + "/" + panel.panelMode + " state=" + panel.stateSummary());
+        } else {
+            panel.logEvent("Viewport zoom already at " + panel.options.worldZoomLabel() + ".");
+        }
+        panel.repaint();
+    }
 }
