@@ -39,4 +39,12 @@ public class LayerH {
         if (action == InputAction.PAUSE) return "Escape";
         return null;
     }
+
+    static String keyboardPromptFor(InputAction action) {
+        String text = movementPromptText(action);
+        if (text != null) return "Keyboard: " + text;
+        text = navigationPromptText(action);
+        if (text != null) return "Keyboard: " + text;
+        return null;
+    }
 }
