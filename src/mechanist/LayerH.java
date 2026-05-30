@@ -16,4 +16,8 @@ public class LayerH {
     static boolean requiredMovementInput(InputAction action) {
         return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT || action == InputAction.MOVE_RIGHT;
     }
+
+    static boolean requiredNavigationInput(InputAction action) {
+        return action == InputAction.CONFIRM || action == InputAction.CANCEL || action == InputAction.PAUSE;
+    }
 }
