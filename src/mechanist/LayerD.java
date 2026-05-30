@@ -67,6 +67,13 @@ public class LayerD {
         }
     }
 
+    static void addRenderQualityDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
+        for (int i = 0; i < GameOptions.RENDER_QUALITY_LABELS.length; i++) {
+            final int idx = i;
+            panel.buttons.add(new ButtonBox(GameOptions.RENDER_QUALITY_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use render quality profile " + GameOptions.RENDER_QUALITY_LABELS[i] + ".", () -> setRenderQualityIndex(panel, idx)));
+        }
+    }
+
     static void setWindowMode(GamePanel panel, int mode) {
         panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode));
         panel.graphicsDropdown = -1;
