@@ -35,4 +35,8 @@ public class LayerG {
     static void clearGeneratedAssetPayloadRoot(GamePanel panel) {
         GeneratedArtPayloadOptionsSubsystem.clearGeneratedAssetPayloadRoot(panel);
     }
+
+    static void cycleMapTileSize(GamePanel panel) {
+        MapViewportOptionsSubsystem.cycleMapTileSize(panel);
+    }
 }
