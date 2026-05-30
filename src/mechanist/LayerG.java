@@ -43,4 +43,8 @@ public class LayerG {
     static boolean worldZoomControlActive(GamePanel panel) {
         return MapViewportOptionsSubsystem.worldZoomControlActive(panel);
     }
+
+    static void changeWorldZoom(GamePanel panel, int delta, String source) {
+        MapViewportOptionsSubsystem.changeWorldZoom(panel, delta, source);
+    }
 }
