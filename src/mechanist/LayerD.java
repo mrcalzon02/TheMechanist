@@ -41,6 +41,19 @@ public class LayerD {
         return false;
     }
 
+    static void addGraphicsDropdownButtons(GamePanel panel, int x, int y, int bw, int gap) {
+        if (panel.graphicsDropdown < 0) return;
+        java.awt.Rectangle inner = panel.graphicsDropdownInnerRect();
+        if (inner.width <= 0 || inner.height <= 0) return;
+        int rowH = Math.max(20, Math.min(30, panel.scaled(27)));
+        if (panel.graphicsDropdown == 0) addWindowModeDropdownButtons(panel, inner, rowH);
+        else if (panel.graphicsDropdown == 1) addResolutionDropdownButtons(panel, inner, rowH);
+        else if (panel.graphicsDropdown == 2) addThemeDropdownButtons(panel, inner, rowH);
+        else if (panel.graphicsDropdown == 3) addDownscaleDropdownButtons(panel, inner, rowH);
+        else if (panel.graphicsDropdown == 4) addTargetFpsDropdownButtons(panel, inner, rowH);
+        else if (panel.graphicsDropdown == 5) addRenderQualityDropdownButtons(panel, inner, rowH);
+    }
+
     static void addWindowModeDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
         String[] modes = {"Windowed", "Borderless Windowed", "Exclusive Fullscreen"};
         for (int i = 0; i < modes.length; i++) {
