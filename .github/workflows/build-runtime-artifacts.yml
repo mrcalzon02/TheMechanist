@@ -2,14 +2,6 @@ name: Build runtime artifacts
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'ROOT_build/build_runtime_artifacts.ps1'
-      - 'ROOT_tools/jar_artifact_auditor.py'
-      - '.github/workflows/build-runtime-artifacts.yml'
 
 permissions:
   contents: write
