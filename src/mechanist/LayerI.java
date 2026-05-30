@@ -59,4 +59,13 @@ public class LayerI {
         panel.logEvent("Text scale now " + panel.options.fontScale + "%.");
         panel.repaint();
     }
+
+    static void changeUiScale(GamePanel panel, int delta) {
+        panel.options.uiScale = Math.max(50, Math.min(200, panel.options.uiScale + delta * 5));
+        DisplayScaleOptionsSubsystem.applyOptions(panel);
+        panel.options.save();
+        panel.sounds.play("tab", panel.options);
+        panel.logEvent("GUI scale now " + panel.options.uiScale + "%.");
+        panel.repaint();
+    }
 }
