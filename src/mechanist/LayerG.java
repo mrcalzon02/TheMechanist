@@ -27,4 +27,8 @@ public class LayerG {
         panel.logEvent("Art quality cache now " + panel.options.artQualityLabel() + ".");
         panel.repaint();
     }
+
+    static void chooseGeneratedAssetPayloadRoot(GamePanel panel) {
+        GeneratedArtPayloadOptionsSubsystem.chooseGeneratedAssetPayloadRoot(panel);
+    }
 }
