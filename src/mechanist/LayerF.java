@@ -53,4 +53,9 @@ public class LayerF {
         panel.logEvent(OptionsBoundaryAuthority.cycleColorPreset(panel.options));
         panel.repaint();
     }
+
+    static void adjustSelectedColor(GamePanel panel, int delta) {
+        panel.logEvent(OptionsBoundaryAuthority.adjustSelectedColor(panel.options, delta));
+        panel.repaint();
+    }
 }
