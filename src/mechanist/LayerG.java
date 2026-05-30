@@ -39,4 +39,8 @@ public class LayerG {
     static void cycleMapTileSize(GamePanel panel) {
         MapViewportOptionsSubsystem.cycleMapTileSize(panel);
     }
+
+    static boolean worldZoomControlActive(GamePanel panel) {
+        return MapViewportOptionsSubsystem.worldZoomControlActive(panel);
+    }
 }
