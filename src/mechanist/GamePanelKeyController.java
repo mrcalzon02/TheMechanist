@@ -15,11 +15,51 @@ final class GamePanelKeyController {
         int code = event.getKeyCode();
         if (KeyEarlyScreenController.handleEarlyKey(panel, code)) return;
         if (CharacterNameKeyController.handleCharacterNameEditKey(panel, code)) return;
+        if (handleEscapeRoute(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
         if (handleEditorKey(panel, event, code)) return;
         if (handleMultiplayerKey(panel, code)) return;
         if (handleTabKey(panel, code)) return;
         if (handleScrollKeys(panel, code)) return;
+    }
+
+    static boolean handleEscapeRoute(GamePanel panel, int code) {
+        if (code != KeyEvent.VK_ESCAPE) return false;
+        if (panel.screen == GamePanel.Screen.GAME && panel.manualMovementPlanActive) {
+            panel.cancelManualMovementPlan("keyboard cancel");
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.GAME) {
+            panel.setScreen(GamePanel.Screen.PAUSE);
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.PANEL) {
+            panel.closePanel();
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.PAUSE) {
+            panel.setScreen(GamePanel.Screen.GAME);
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.SECTOR_AUDIT) {
+            panel.setScreen(GamePanel.Screen.MODS);
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.KNOWLEDGE) {
+            panel.closeKnowledgeScreen();
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.MULTIPLAYER) {
+            panel.multiplayerMenu.endDirectEdit();
+            panel.setScreen(GamePanel.Screen.MENU);
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.MODS) {
+            panel.setScreen(GamePanel.Screen.MENU);
+            return true;
+        }
+        panel.setScreen(GamePanel.Screen.MENU);
+        return true;
     }
 
     static boolean handleEditorKey(GamePanel panel, KeyEvent event, int code) {
