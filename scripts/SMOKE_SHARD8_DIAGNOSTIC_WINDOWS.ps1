@@ -1,0 +1,104 @@
+param(
+    [switch]$SkipRun,
+    [switch]$VerboseJava
+)
+
+$ErrorActionPreference = 'Continue'
+$root = Split-Path -Parent $PSScriptRoot
+$stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+$diagRoot = Join-Path $root 'diagnostics'
+$runRoot = Join-Path $diagRoot "shard8_smoke_$stamp"
+New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
+
+$summary = Join-Path $runRoot 'SUMMARY.txt'
+$compileLog = Join-Path $runRoot 'compile.log'
+$javacLog = Join-Path $runRoot 'javac_filelist.log'
+$sourceList = Join-Path $runRoot 'sources.txt'
+$envLog = Join-Path $runRoot 'environment.log'
+$gitLog = Join-Path $runRoot 'git_state.log'
+
+function Write-Section($name) {
+    $line = "==== $name ===="
+    Add-Content -LiteralPath $summary -Value "`r`n$line"
+    Write-Host $line
+}
+
+function Run-Captured($name, $scriptBlock, $logPath) {
+    Write-Section $name
+    Add-Content -LiteralPath $summary -Value "Log: $logPath"
+    try {
+        & $scriptBlock *>&1 | Tee-Object -FilePath $logPath
+        $code = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 0 }
+        Add-Content -LiteralPath $summary -Value "ExitCode: $code"
+        return $code
+    } catch {
+        $_ | Out-String | Tee-Object -FilePath $logPath
+        Add-Content -LiteralPath $summary -Value "Exception: $($_.Exception.Message)"
+        return 999
+    }
+}
+
+"Shard 8 Smoke Diagnostic Run: $stamp" | Set-Content -LiteralPath $summary
+"Repository root: $root" | Add-Content -LiteralPath $summary
+"Run folder: $runRoot" | Add-Content -LiteralPath $summary
+
+Run-Captured 'Environment' {
+    Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
+    Write-Host "OS: $([System.Environment]::OSVersion.VersionString)"
+    Write-Host "ProcessArch: $([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)"
+    Write-Host "CurrentDir: $(Get-Location)"
+    java -version
+    if (Get-Command javac -ErrorAction SilentlyContinue) { javac -version }
+    if (Get-Command mvn -ErrorAction SilentlyContinue) { mvn -version }
+    if (Get-Command git -ErrorAction SilentlyContinue) { git --version }
+} $envLog | Out-Null
+
+Run-Captured 'Git state' {
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        git -C $root rev-parse --show-toplevel
+        git -C $root rev-parse HEAD
+        git -C $root status --short
+    } else {
+        Write-Host 'git not available'
+    }
+} $gitLog | Out-Null
+
+Write-Section 'Source inventory'
+Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName } | Set-Content -LiteralPath $sourceList
+$count = (Get-Content -LiteralPath $sourceList | Measure-Object).Count
+"Java source files: $count" | Add-Content -LiteralPath $summary
+"Source list: $sourceList" | Add-Content -LiteralPath $summary
+
+if ($SkipRun) {
+    Write-Section 'Skipped compile by request'
+    exit 0
+}
+
+$compileExit = 999
+if (Test-Path -LiteralPath (Join-Path $root 'pom.xml') -PathType Leaf -and (Get-Command mvn -ErrorAction SilentlyContinue)) {
+    $compileExit = Run-Captured 'Maven compile smoke' { mvn -f (Join-Path $root 'pom.xml') -DskipTests compile } $compileLog
+} elseif (Get-Command javac -ErrorAction SilentlyContinue) {
+    $classes = Join-Path $runRoot 'classes'
+    New-Item -ItemType Directory -Force -Path $classes | Out-Null
+    $args = @('-encoding', 'UTF-8', '-d', $classes, '@' + $sourceList)
+    if ($VerboseJava) { $args = @('-verbose') + $args }
+    $compileExit = Run-Captured 'Javac compile smoke' { javac @args } $compileLog
+} else {
+    Write-Section 'Compile unavailable'
+    'Neither Maven nor javac is available on PATH.' | Tee-Object -FilePath $compileLog
+    $compileExit = 127
+}
+
+Write-Section 'Compile error extraction'
+$errors = Join-Path $runRoot 'compile_errors.tsv'
+& (Join-Path $PSScriptRoot 'EXTRACT_SMOKE_COMPILE_ERRORS_WINDOWS.ps1') -LogPath $compileLog -OutputPath $errors | Tee-Object -FilePath $javacLog
+"Error table: $errors" | Add-Content -LiteralPath $summary
+"Final compile exit: $compileExit" | Add-Content -LiteralPath $summary
+
+if ($compileExit -eq 0) {
+    Write-Host "SMOKE PASS: compile succeeded. Logs: $runRoot"
+} else {
+    Write-Host "SMOKE FAIL: compile failed with exit $compileExit. Logs: $runRoot"
+}
+
+exit $compileExit
