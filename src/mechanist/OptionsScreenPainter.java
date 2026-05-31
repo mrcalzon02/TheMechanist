@@ -107,6 +107,14 @@ final class OptionsScreenPainter {
         return lines;
     }
 
+    static List<String> controlsLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>(ControlReferenceTextSubsystem.controlReferenceLines(panel.controlsTab));
+        if (panel.controlsTab == 4) {
+            lines.add("Runtime controller status: " + (panel.gamepadInputEngine == null ? "not started" : panel.gamepadInputEngine.status()));
+        }
+        return lines;
+    }
+
     static String subtitle(int optionsTab) {
         if (optionsTab == 0) return "Display mode, detected resolution, text density, and interface scale";
         if (optionsTab == 1) return "Text size, text crispness, interface scale, and hover-help density";
