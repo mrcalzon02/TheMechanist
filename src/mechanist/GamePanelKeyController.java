@@ -21,10 +21,14 @@ final class GamePanelKeyController {
         if (handleInfopediaPanelKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
         if (handleTargetingPanelKey(panel, code)) return;
+        if (handleBuildPlacementPanelKey(panel, code)) return;
+        if (handleUniversalMenuKey(panel, code)) return;
         if (handleEditorKey(panel, event, code)) return;
         if (handleMultiplayerKey(panel, code)) return;
         if (handleTabKey(panel, code)) return;
         if (handleScrollKeys(panel, code)) return;
+        if (handleCharacterScreenKey(panel, code)) return;
+        if (handleGameWorldKey(panel, code)) return;
     }
 
     static boolean handleEscapeRoute(GamePanel panel, int code) {
@@ -158,6 +162,97 @@ final class GamePanelKeyController {
             panel.repaint();
             return true;
         }
+        return false;
+    }
+
+    static boolean handleBuildPlacementPanelKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.PANEL || panel.world == null || !panel.buildPlacementActive) return false;
+        if (panel.panelMode != GamePanel.PanelMode.BUILD && panel.panelMode != GamePanel.PanelMode.WORKBENCH) return false;
+        int dx = 0;
+        int dy = 0;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) dx = -1;
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
+        if (dx != 0 || dy != 0) { panel.moveBuildCursor(dx, dy); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_E) { panel.confirmBuildPlacement(); panel.repaint(); return true; }
+        return false;
+    }
+
+    static boolean handleUniversalMenuKey(GamePanel panel, int code) {
+        boolean cursorSpecial = panel.screen == GamePanel.Screen.PANEL && (panel.panelMode == GamePanel.PanelMode.LOOK || panel.panelMode == GamePanel.PanelMode.COMBAT || panel.panelMode == GamePanel.PanelMode.INTERACT || panel.panelMode == GamePanel.PanelMode.INFOPEDIA || ((panel.panelMode == GamePanel.PanelMode.BUILD || panel.panelMode == GamePanel.PanelMode.WORKBENCH) && panel.buildPlacementActive));
+        if (panel.screen == GamePanel.Screen.GAME || cursorSpecial) return false;
+        if (code == KeyEvent.VK_W || code == KeyEvent.VK_A || code == KeyEvent.VK_UP || code == KeyEvent.VK_LEFT) { panel.moveSelectedButton(-1); return true; }
+        if (code == KeyEvent.VK_S || code == KeyEvent.VK_D || code == KeyEvent.VK_DOWN || code == KeyEvent.VK_RIGHT) { panel.moveSelectedButton(1); return true; }
+        if (code == KeyEvent.VK_E || code == KeyEvent.VK_ENTER) { panel.activateSelectedButtonUniversal(); return true; }
+        return false;
+    }
+
+    static boolean handleCharacterScreenKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.CHARACTER) return false;
+        if (code == KeyEvent.VK_PAGE_UP) { panel.jobDossierScroll = Math.max(0, panel.jobDossierScroll - 3); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_PAGE_DOWN) { panel.jobDossierScroll += 3; panel.repaint(); return true; }
+        if (panel.candidates.isEmpty()) return false;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            panel.characterNameEditActive = false;
+            panel.candidateIndex = (panel.candidateIndex + panel.candidates.size() - 1) % panel.candidates.size();
+            resetCharacterDossier(panel);
+            return true;
+        }
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            panel.characterNameEditActive = false;
+            panel.candidateIndex = (panel.candidateIndex + 1) % panel.candidates.size();
+            resetCharacterDossier(panel);
+            return true;
+        }
+        return false;
+    }
+
+    static void resetCharacterDossier(GamePanel panel) {
+        panel.jobIndex = 0;
+        panel.jobDossierScroll = 0;
+        panel.jobDossierTab = 0;
+        panel.logEvent("Selected candidate " + panel.candidates.get(panel.candidateIndex).name);
+        panel.repaint();
+    }
+
+    static boolean handleGameWorldKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.GAME || panel.world == null) return false;
+        if (handleManualMovementPlanKey(panel, code)) return true;
+        if (code == KeyEvent.VK_R) { panel.cycleMovementMode(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_P) { panel.beginManualMovementPlan(); return true; }
+        if (code == KeyEvent.VK_PERIOD || code == KeyEvent.VK_NUMPAD5) { panel.waitOneTurn(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_L) { panel.interactCursorActive = false; panel.lookX = panel.playerX; panel.lookY = panel.playerY; panel.lookCursorActive = true; panel.openPanel(GamePanel.PanelMode.LOOK); return true; }
+        if (code == KeyEvent.VK_E) { panel.beginInteractMode(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_I) { panel.openPanel(GamePanel.PanelMode.INVENTORY); return true; }
+        if (code == KeyEvent.VK_F) { panel.beginCombatTargeting(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_G) { panel.beginExplosiveTargeting(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_X) { panel.reloadCurrentRangedWeapon(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_C) { panel.openPanel(GamePanel.PanelMode.CHARACTER); return true; }
+        if (code == KeyEvent.VK_B) { panel.openPanel(GamePanel.PanelMode.BUILD); return true; }
+        if (code == KeyEvent.VK_M) { panel.openPanel(GamePanel.PanelMode.MAP); return true; }
+        int dx = 0;
+        int dy = 0;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) dx = -1;
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
+        if (code == KeyEvent.VK_W) dy = -1;
+        if (code == KeyEvent.VK_S) dy = 1;
+        if (dx != 0 || dy != 0) panel.queueOrExecuteMovementInput(dx, dy);
+        panel.repaint();
+        panel.sanityCheck("KEY_END");
+        return dx != 0 || dy != 0;
+    }
+
+    static boolean handleManualMovementPlanKey(GamePanel panel, int code) {
+        if (!panel.manualMovementPlanActive) return false;
+        int dx = 0;
+        int dy = 0;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) dx = -1;
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
+        if (dx != 0 || dy != 0) { panel.nudgeManualMovementPlan(dx, dy); return true; }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E) { panel.confirmManualMovementPlan(); return true; }
         return false;
     }
 
