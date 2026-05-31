@@ -1,4 +1,5 @@
 # The Mechanist — Standards and Practices
+This document should be contained in Root_docs/ If it is not there it should be moved to there.
 
 This document contains durable project rules. It is not a changelog, not a pass report, and not a temporary planning scratchpad.
 
@@ -10,16 +11,18 @@ The repository is organized by audience and authority. Files should live where t
 
 ```text
 /
-  docs/                       Project/process documentation, generated indexes, audits, milestones.
+  Root_docs/                       Project/process documentation, generated indexes, audits, milestones.
   ROOT_tools/                 Developer tools, dashboards, indexers, packagers, slicers, release scaffolds.
   ROOT_RELEASE/               Local release staging output. Generated/scaffolded, not source authority.
   ROOT_SRC_assets/            Source/raw asset material when present; not necessarily game-facing.
+  PACKAGE_installer/		Intended to create a package installer for package_launcher Designed to be one or two files in executable format that when unpack into the launcher that then can retrieve the client and server  
+  PACKAGE_launcher/			Intended to be a stand alone launcher updater program packaged in the installer that when it is run it fetches the client and contained server.
   PACKAGE_client/             Client package tree and package-facing assets/indexes.
-  PACKAGE_server/             Server package tree when present.
-  modding/                    Public modding API docs, examples, templates, and modder-facing material.
-  src/                        Runtime source code.
-  assets/                     Runtime/shared assets only when the project tree uses this as an active source.
-  tools/                      Legacy or third-party packaging tools only when not yet migrated to ROOT_tools.
+  PACKAGE_server/             Server package tree when present. Intended to be inside the client when downloaded but also must be its own self contained downloadable package for server operators individually selectable in the launcher 
+  PACKAGE_client/modding/     Public modding API docs, examples, templates, and modder-facing material.
+  src/                        Runtime source code. Compiles into full runtime 
+  assets/                     Runtime/shared assets only when the project tree uses this as an active source. Should be depreciated Assets should be contained either in source or in their subsequent folders  Within their packaging 
+  tools/                      Legacy or third-party packaging tools only when not yet migrated to ROOT_tools. Should be depreciated.
 ```
 
 `ROOT_tools/` is the preferred home for project-owned Python tools and local dashboards.
@@ -32,9 +35,9 @@ The repository is organized by audience and authority. Files should live where t
 
 ## Documentation containment standard
 
-Root `docs/` is for project operations, engineering context, release process, build instructions, audit reports, standards, command references, milestone tracking, and development history.
+Root `Root_docs/` is for project operations, engineering context, release process, build instructions, audit reports, standards, command references, milestone tracking, and development history.
 
-Root `docs/` is not a lore dump, a gameplay encyclopedia, an in-universe codex, a player-facing manual, or an asset staging area.
+Root `Root_docs/` is not a lore dump, a gameplay encyclopedia, an in-universe codex, a player-facing manual, or an asset staging area.
 
 The old rule that `docs/` must contain exactly four durable documents is retired. The current project uses additional generated and process documents, including command references, milestone data, repository manifests, document indexes, dashboard data, and purgation audits.
 
@@ -47,20 +50,6 @@ Allowed root-doc classes:
 - `audit_report`: generated or manually curated audit output.
 - `milestone_tracker`: roadmap, current status, review markers.
 - `generated_index`: repository/file/document indexes produced by tools.
-
-Client-facing lore, Historicus material, faction lore, place lore, item lore, character lore, and player-facing codex/encyclopedia entries belong under:
-
-```text
-PACKAGE_client/assets/infopedia/
-```
-
-Historicus material specifically belongs under:
-
-```text
-PACKAGE_client/assets/infopedia/historicus/
-```
-
-Root docs may contain a short engineering note explaining infopedia format, indexing, localization, or packaging, but the actual player-facing lore belongs in the client infopedia tree.
 
 ## Documentation purgation standard
 
@@ -96,13 +85,13 @@ Generated documentation is allowed when it is useful for review and clearly rege
 Current generated/project index examples:
 
 ```text
-docs/repository_file_manifest.tsv
-docs/repository_manifest_audit_report.md
-docs/repository_manifest_audit_issues.tsv
-docs/document_index.json
-docs/document_index.tsv
-docs/document_purgation_audit.json
-docs/document_purgation_audit.tsv
+repository_file_manifest.tsv
+repository_manifest_audit_report.md
+repository_manifest_audit_issues.tsv
+document_index.json
+document_index.tsv
+document_purgation_audit.json
+document_purgation_audit.tsv
 ```
 
 Generated documents should not be manually edited unless the tool explicitly expects manual curation.
@@ -171,14 +160,14 @@ ROOT_RELEASE/checksums/
 ROOT_RELEASE/logs/
 ROOT_RELEASE/release_scaffold_manifest.json
 ```
-
+The stage of development has not yet been completed therefore none of these files exist, At creation time the route release file number will contain a version number and will be frozen/archived So development may continue on live version while a documented and frozen release is maintained for archival purposes 
 A release command must not claim production completion until it has actually built or copied the installer, launcher, client, server, checksums, release manifest, and any required runtime/license files.
 
 ## Application icon and launcher asset standard
 
 The program icon is a first-class runtime/package asset, not only a desktop-launcher decoration.
 
-Keep Java/Swing window icon, taskbar icon attempts, native Windows executable icon, Linux `.desktop` `Icon=` identifier, installer icon, and package-copied hicolor/ICO/PNG assets aligned to the same source set.
+Keep Java/Swing window icon  , taskbar icon attempts, native Windows executable icon, Linux `.desktop` `Icon=` identifier, installer icon, and package-copied hicolor/ICO/PNG assets aligned to the same source set.
 
 Do not replace the icon by editing only one launcher wrapper. Update bundled icon assets, runtime icon authority, package icon metadata, and installer metadata together.
 
