@@ -7,7 +7,7 @@ The project goal is to strip-mine `GamePanel.java` behavior into named subsystem
 ## Overall Completion Estimate
 
 - Shard 8 structural extraction: **100%**
-- Shard 8 compile/caller cleanup: **about 35-45%**
+- Shard 8 compile/caller cleanup: **about 40-50%**
 - Whole GamePanel strip-mining project: **about 10-12%**
 
 The whole-project percentage remains low because Shards 1-7 still need direct subsystem integration, but Shard 8 is no longer the extraction bottleneck.
@@ -36,7 +36,7 @@ Shard 8 functional material has been moved into:
 
 ## Marker S8-B — Static Preflight
 
-Status: **Active**
+Status: **Nearly complete**
 
 Current work is checking extracted Shard 8 files for obvious problems before the full compile sweep:
 
@@ -57,16 +57,18 @@ Recent completed cleanup:
 - `MouseEarlyScreenController` restored `INTRO_CRAWL` mouse preflight so click-to-continue is not lost before map-point conversion.
 - `MouseGamePanelController` and `MouseLateUiController` were checked against the visible shard click flow and had no obvious line-level behavior drift in the fetched sections.
 - Painter preflight found missing shared text helper classes and added `TextSurfaceApi` plus `TextLayoutAuthority` so `OptionsScreenPainter`, `UiTextSurfacePainter`, and `UiHoverHelpPainter` have their expected wrap APIs.
+- Runtime bridge preflight found one obvious compile risk in `LayerI`: unqualified `Screen`/`PanelMode` references. `LayerI` now delegates zoom helpers to `MapViewportOptionsSubsystem`.
+- `OptionsBoundaryAuthority` could not be confirmed at its expected path and should be treated as a first compile-sweep watch item instead of guessed into existence without compiler output.
 
 Next preflight targets:
 
-1. Runtime bridge layers B-J
-2. First compile sweep
-3. Small compile-error cluster repair in extracted files
+1. First compile sweep
+2. Small compile-error cluster repair in extracted files
+3. Caller wiring stabilization
 
 ## Marker S8-C — Compile Sweep
 
-Status: **Next**
+Status: **Next immediate milestone**
 
 Run after static preflight is acceptable:
 
@@ -75,6 +77,14 @@ Run after static preflight is acceptable:
 3. Run `scripts/EXTRACT_COMPILE_ERRORS_WINDOWS.bat` if using the Windows sweep script.
 4. Repair the smallest extracted-file error clusters first.
 5. Do not edit `GamePanel.java` unless the strip-mining rule is explicitly suspended.
+
+Compile-sweep watch items:
+
+- Confirm whether `OptionsBoundaryAuthority` exists under another file or must be created as a named subsystem.
+- Confirm whether `GameOptions` is a top-level class, package-private class in another file, or still shard-local.
+- Verify all extracted controller calls match current `GamePanel` API names.
+- Verify text wrapping helpers compile against Java 17.
+- Verify runtime bridge layers B-J can see all named subsystem targets.
 
 ## Marker S8-D — Caller Wiring
 
@@ -117,4 +127,4 @@ Likely target families:
 
 ## Current One-Sentence Marker
 
-Shard 8 is structurally mined and currently near the end of static preflight before compile sweep; mouse-controller drift was corrected, painter text-helper dependencies were added, and the next concrete target is runtime bridge-layer preflight followed by the first compile sweep.
+Shard 8 is structurally mined and static preflight is nearly complete; mouse-controller drift was corrected, painter text-helper dependencies were added, runtime bridge preflight fixed `LayerI`, and the next concrete target is the first compile sweep plus small extracted-file error cluster repair.
