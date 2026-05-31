@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 final class GamePanelKeyController {
     private GamePanelKeyController() {}
@@ -19,6 +20,7 @@ final class GamePanelKeyController {
         if (handleSectorAuditKey(panel, code)) return;
         if (handleInfopediaPanelKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
+        if (handleTargetingPanelKey(panel, code)) return;
         if (handleEditorKey(panel, event, code)) return;
         if (handleMultiplayerKey(panel, code)) return;
         if (handleTabKey(panel, code)) return;
@@ -100,6 +102,62 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_PAGE_UP) { panel.activeScrollTag = "infopedia-detail"; panel.scrollActivePanel(-1, true); return true; }
         if (code == KeyEvent.VK_PAGE_DOWN) { panel.activeScrollTag = "infopedia-detail"; panel.scrollActivePanel(1, true); return true; }
         if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_E) { panel.activeScrollTag = "infopedia-list"; panel.repaint(); return true; }
+        return false;
+    }
+
+    static boolean handleTargetingPanelKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.PANEL) return false;
+        if (panel.panelMode == GamePanel.PanelMode.COMBAT && panel.world != null) return handleCombatPanelKey(panel, code);
+        if ((panel.panelMode == GamePanel.PanelMode.LOOK || panel.panelMode == GamePanel.PanelMode.INTERACT) && panel.world != null) return handleLookInteractPanelKey(panel, code);
+        return false;
+    }
+
+    static boolean handleCombatPanelKey(GamePanel panel, int code) {
+        int dx = 0;
+        int dy = 0;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) dx = -1;
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
+        if (code == KeyEvent.VK_F) { panel.cycleFireMode(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_G) { panel.throwSelectedExplosiveAtCursor(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_X) { panel.reloadCurrentRangedWeapon(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { panel.confirmCombatTarget(); panel.repaint(); return true; }
+        if (dx != 0 || dy != 0) { panel.moveCombatCursor(dx, dy); panel.repaint(); return true; }
+        return false;
+    }
+
+    static boolean handleLookInteractPanelKey(GamePanel panel, int code) {
+        if ((code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E) && panel.panelMode == GamePanel.PanelMode.INTERACT) { panel.confirmInteraction(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_E && panel.panelMode == GamePanel.PanelMode.LOOK) { panel.examineSelectedLookTarget(); panel.repaint(); return true; }
+        int dx = 0;
+        int dy = 0;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) dx = -1;
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
+        if (dx != 0 || dy != 0) {
+            if (panel.panelMode == GamePanel.PanelMode.INTERACT) panel.moveInteractCursor(dx, dy);
+            else {
+                panel.lookCursorActive = true;
+                panel.lookX = Math.max(0, Math.min(panel.world.w - 1, panel.lookX + dx));
+                panel.lookY = Math.max(0, Math.min(panel.world.h - 1, panel.lookY + dy));
+                panel.lookStackIndex = 0;
+                panel.lookStackScroll = 0;
+            }
+            panel.repaint();
+            return true;
+        }
+        if (panel.panelMode == GamePanel.PanelMode.LOOK && (code == KeyEvent.VK_OPEN_BRACKET || code == KeyEvent.VK_CLOSE_BRACKET)) {
+            ArrayList<String> stack = panel.tileStackAt(panel.lookX, panel.lookY);
+            if (!stack.isEmpty()) {
+                panel.lookStackIndex += (code == KeyEvent.VK_CLOSE_BRACKET ? 1 : -1);
+                panel.lookStackIndex = Math.max(0, Math.min(stack.size() - 1, panel.lookStackIndex));
+                panel.lookStackScroll = 0;
+            }
+            panel.repaint();
+            return true;
+        }
         return false;
     }
 
