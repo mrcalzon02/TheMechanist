@@ -84,6 +84,24 @@ final class OptionsScreenPainter {
         List<String> lines = linesForTab(panel);
         int h = panel.optionsTab == 4 ? Math.max(96, info.height - 72) : info.height;
         panel.drawTextPanel(g, info.x, info.y, info.width, h, lines, false);
+        if (panel.optionsTab == 4) paintColorSwatches(panel, g, info);
+    }
+
+    static void paintColorSwatches(GamePanel panel, Graphics2D g, java.awt.Rectangle info) {
+        int swatchY = info.y + Math.max(96, info.height - 66);
+        int sx = info.x + 18;
+        for (int i = 0; i < GameOptions.COLOR_KEYS.length; i++) {
+            int px = sx + i * Math.max(128, (info.width - 36) / GameOptions.COLOR_KEYS.length);
+            g.setColor(new Color(panel.options.colorValue(i)));
+            g.fillRect(px, swatchY, 28, 18);
+            g.setColor(i == panel.options.colorTarget ? LayerF.optionColor(panel, GameOptions.TEXT_HIGHLIGHT) : LayerF.optionColor(panel, GameOptions.TEXT_MAIN));
+            g.drawRect(px, swatchY, 28, 18);
+            g.setFont(panel.smallFont);
+            for (String line : TextSurfaceApi.wrap(GameOptions.COLOR_KEYS[i], 11)) {
+                panel.drawUiTextLine(g, line, px + 34, swatchY + 13);
+                break;
+            }
+        }
     }
 
     static List<String> linesForTab(GamePanel panel) {
