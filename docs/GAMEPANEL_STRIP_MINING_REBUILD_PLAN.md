@@ -23,11 +23,11 @@ This document is the durable handoff record for the strip-mining operation. Upda
 
 Active extraction zone: `src/mechanist/gamepanel-shard8.txt`.
 
-Shard 8 contains options/runtime-control logic and is now approximately **85-90% mined structurally**. This estimate reflects code that has been moved or bridged into smaller classes, not final verified shard deletion. Total GamePanel rebuild remains **under 10% complete** because Shards 1-7 and major gameplay/rendering/input systems remain mostly untouched.
+Shard 8 contains options/runtime-control logic and is now approximately **90-95% mined structurally**. This estimate reflects code that has been moved or bridged into smaller classes, not final verified shard deletion. Total GamePanel rebuild remains **under 10% complete** because Shards 1-7 and major gameplay/rendering/input systems remain mostly untouched.
 
 Current state by shard:
 
-- `gamepanel-shard8.txt` — active, heavily mined; remaining work is mostly glue, drawing/layout, exact caller replacement, and any still-blocked control-reference prompt fragments.
+- `gamepanel-shard8.txt` — active and nearly mined for runtime helpers; remaining work is mostly options drawing/layout, control-reference switch duplication already owned by `ControlReferenceTextSubsystem`, exact caller replacement, and later shard deletion after compile verification.
 - `gamepanel-shard1.txt` through `gamepanel-shard7.txt` — mostly untouched; do not assume their functional boundaries are known yet.
 - `GamePanel.java` — legacy monolith only; do not patch through connector.
 
@@ -46,6 +46,8 @@ The connector-compatible pattern that works best is now confirmed:
 
 Granular scoping recovered several earlier bypassed items that failed when attempted as bundled payloads. The successful pattern is especially strong for bridge methods into existing named subsystems.
 
+Automatic `Build runtime artifacts` workflow spam is paused: `.github/workflows/build-runtime-artifacts.yml` is currently manual-only via `workflow_dispatch`. Re-enable automatic push triggers only when artifact builds are wanted again.
+
 ## Named Subsystems Already Present
 
 - `DisplayScaleOptionsSubsystem.java`
@@ -56,10 +58,12 @@ Granular scoping recovered several earlier bypassed items that failed when attem
   - Do not duplicate its switch tables into `LayerH`. Use delegates.
 
 - `AccessibilityRuntimeOptionsSubsystem.java`
-  - Accessibility/diagnostics support. Some small runtime helpers also live in `LayerF`.
+  - Accessibility/diagnostics support, including `pushCurrentScreenNarration(GamePanel panel)`.
+  - `LayerF` now bridges narration into this subsystem.
 
 - `JvmRuntimeOptionsSubsystem.java`
   - JVM profile mutation and restart orchestration.
+  - `LayerJ` now bridges the full JVM block from Shard 8 into this subsystem.
 
 - `MapViewportOptionsSubsystem.java`
   - Map tile size and world zoom controls. `LayerG` now bridges into it.
@@ -143,9 +147,11 @@ Current responsibilities:
 - `toggleHighContrastText(GamePanel panel)`
 - `toggleInstantDialogueText(GamePanel panel)`
 - `adjustScreenShake(GamePanel panel, int delta)`
+- `pushCurrentScreenNarration(GamePanel panel)` delegate to `AccessibilityRuntimeOptionsSubsystem`
 - `cycleColorTarget(GamePanel panel)` bridge to `OptionsBoundaryAuthority`
 - `cycleColorPreset(GamePanel panel)` bridge to `OptionsBoundaryAuthority`
 - `adjustSelectedColor(GamePanel panel, int delta)` bridge to `OptionsBoundaryAuthority`
+- `optionColor(GamePanel panel, int key)` bridge to `OptionsBoundaryAuthority`
 
 Important recovery note: the color-helper trio failed when bundled, then succeeded as three one-method commits.
 
@@ -210,6 +216,22 @@ Current responsibilities:
 
 LayerI has accepted many small commits and is a stable target for tiny utility extraction.
 
+### `LayerJ.java` — JVM Runtime Bridges
+
+Filled for the JVM runtime block from Shard 8.
+
+Current responsibilities:
+
+- `cycleJvmRuntimeProfile(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `cycleJvmGarbageCollector(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `cycleJvmPipelineProfile(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `changeJvmMemory(GamePanel panel, int deltaMb)` delegate to `JvmRuntimeOptionsSubsystem`
+- `toggleJvmStringDeduplication(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `toggleJvmTransparentAcceleration(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `toggleJvmNoAa(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `acceptJvmSettingsAndRestart(GamePanel panel)` delegate to `JvmRuntimeOptionsSubsystem`
+- `isWindowsHost()` delegate to `JvmRuntimeOptionsSubsystem`
+
 ## Recovered Earlier-Bypassed Material
 
 Recovered after granular segmentation:
@@ -220,12 +242,15 @@ Recovered after granular segmentation:
 - Required input predicate, split into movement/navigation/composite helpers in `LayerH`.
 - Keyboard movement and navigation prompt helpers in `LayerH`.
 - `LayerH.keyboardPromptFor(...)`, recovered as a delegate into `ControlReferenceTextSubsystem`.
+- JVM runtime profile controls, recovered as delegates into `LayerJ`.
+- Current-screen narration and option-color read helper, recovered in `LayerF`.
 
 Still connector-sensitive or not worth duplicating:
 
 - Remaining non-required keyboard prompt families. Use `ControlReferenceTextSubsystem.keyboardPromptFor(...)` instead.
 - Control action label/context delegates into `LayerH`. The named subsystem already owns this material.
 - Large switch tables of any kind.
+- Large options painter/drawing blocks unless split into a dedicated options painter class in small sections.
 
 ## Blocked Payload Log
 
@@ -250,12 +275,14 @@ Do not blindly retry these exact payloads:
 ## Suggested Immediate Next Steps
 
 1. Stop trying to copy remaining prompt strings into `LayerH`; rely on `ControlReferenceTextSubsystem` for full keyboard/controller prompt text.
-2. Fetch `LayerH.java` and confirm the current accepted control-reference bridge state before any further edits.
-3. Fetch `gamepanel-shard8.txt` and identify the next non-control-reference block still present.
-4. Prefer bridge methods into existing named subsystems over local duplicate logic.
-5. Begin a compile sweep soon, because Shard 8 has enough recovered material to identify missing symbols and bad assumptions.
-6. After compile errors are known, fix only small files, one error cluster at a time.
-7. Do not delete shard text until local build passes and source block ownership is exact.
+2. Treat the Shard 8 runtime-helper portion as nearly mined; remaining Shard 8 work is now dominated by `drawOptions(Graphics2D g)` and options-screen rendering/layout.
+3. Start an `OptionsScreenPainter` or similarly named painter extraction only in small sections, with no method over 800 lines.
+4. First painter target should be the options screen frame/header/subtitle/outer layout shell, not the entire tab renderer.
+5. Then extract each options tab body one at a time: Display, Text/UI, Audio, Controls, Graphics, JVM, Accessibility, QoL.
+6. Prefer reusing existing layer bridges inside the painter rather than duplicating runtime mutation logic.
+7. Begin a compile sweep after the Shard 8 painter extraction is either complete or intentionally deferred.
+8. After compile errors are known, fix only small files, one error cluster at a time.
+9. Do not delete shard text until local build passes and source block ownership is exact.
 
 ## Recompilation Readiness
 
@@ -277,4 +304,4 @@ Compile-sweep protocol:
 
 ## Current One-Sentence Handoff
 
-The operation is currently finishing Shard 8 strip-mining by recovering previously blocked options/control-reference material through granular connector-compatible commits; Shard 8 is roughly 85-90% structurally mined, the graphics dropdown package, Doom bridge, color helpers, and core control-reference helpers are recovered, remaining prompt-table duplication should be avoided in favor of `ControlReferenceTextSubsystem`, and the next practical milestone is a full compile sweep before any shard source deletion.
+The operation is finishing Shard 8 strip-mining by recovering runtime helpers into connector-compatible layers without touching `GamePanel.java`; Shard 8 is roughly 90-95% structurally mined, runtime helper blocks are largely bridged into Layers B-J and named subsystems, the remaining meaningful Shard 8 target is options-screen drawing/layout extraction into a painter class, and only after that should we run the full compile sweep and repair small error clusters.
