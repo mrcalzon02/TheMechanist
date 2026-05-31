@@ -58,4 +58,8 @@ public class LayerF {
         panel.logEvent(OptionsBoundaryAuthority.adjustSelectedColor(panel.options, delta));
         panel.repaint();
     }
+
+    static java.awt.Color optionColor(GamePanel panel, int key) {
+        return OptionsBoundaryAuthority.optionColor(panel.options, key);
+    }
 }
