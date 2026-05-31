@@ -7,7 +7,7 @@ The project goal is to strip-mine `GamePanel.java` behavior into named subsystem
 ## Overall Completion Estimate
 
 - Shard 8 structural extraction: **100%**
-- Shard 8 compile/caller cleanup: **about 20-30%**
+- Shard 8 compile/caller cleanup: **about 25-35%**
 - Whole GamePanel strip-mining project: **about 10-12%**
 
 The whole-project percentage remains low because Shards 1-7 still need direct subsystem integration, but Shard 8 is no longer the extraction bottleneck.
@@ -52,6 +52,18 @@ Recent completed cleanup:
 
 - `GamePanelKeyController` route order was aligned closer to the original shard flow.
 - Top-level Knowledge screen key dispatch was restored through `handleKnowledgeScreenKey(...)`.
+- Progress-marker tracking was added as a durable document.
+- Direct-file preflight is now preferred over repository search alone because code search can lag newly committed files.
+
+Next preflight targets:
+
+1. `MouseEarlyScreenController`
+2. `MouseGamePanelController`
+3. `MouseLateUiController`
+4. `OptionsScreenPainter`
+5. `UiTextSurfacePainter`
+6. `UiHoverHelpPainter`
+7. Runtime bridge layers B-J
 
 ## Marker S8-C — Compile Sweep
 
@@ -106,4 +118,4 @@ Likely target families:
 
 ## Current One-Sentence Marker
 
-Shard 8 is structurally mined and currently in static preflight before compile sweep; the next concrete milestone is to finish obvious extracted-file cleanup, run compile, repair small error clusters, then begin Shards 1-7 direct subsystem integration under the larger-chunk model.
+Shard 8 is structurally mined and currently in static preflight before compile sweep; progress markers are now durable, direct-file preflight has begun, and the next concrete milestone is to finish obvious extracted-file cleanup, run compile, repair small error clusters, then begin Shards 1-7 direct subsystem integration under the larger-chunk model.
