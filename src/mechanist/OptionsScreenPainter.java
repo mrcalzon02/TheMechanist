@@ -1,5 +1,10 @@
 package mechanist;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.util.Collections;
+
 final class OptionsScreenPainter {
     private OptionsScreenPainter() {}
 
@@ -50,6 +55,24 @@ final class OptionsScreenPainter {
         int w = layout.panelW - 88;
         int h = Math.max(96, layout.panelY + layout.panelH - y - 50);
         return new java.awt.Rectangle(x, y, w, h);
+    }
+
+    static void paintShell(GamePanel panel, Graphics2D g) {
+        Layout layout = layout(panel);
+        g.setColor(LayerF.optionColor(panel, GameOptions.BACKGROUND));
+        g.fillRect(0, 0, layout.width, layout.height);
+        panel.drawSlicedFrame(g, 20, 20, layout.width - 40, layout.height - 40, "outer");
+        panel.drawPanelBox(g, layout.panelX, layout.panelY, layout.panelW, layout.panelH, "OPTIONS");
+        g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(10f, Math.min(14f, layout.height / 64f))));
+        g.setColor(LayerF.optionColor(panel, GameOptions.TEXT_TITLE));
+        g.drawString("OPTIONS", layout.panelX + 18, layout.panelY + 26);
+        java.awt.Rectangle sub = subtitleBox(layout);
+        panel.drawTextPanel(g, sub.x, sub.y, sub.width, sub.height, Collections.singletonList(subtitle(panel.optionsTab)), true);
+        java.awt.Rectangle controls = controlsBox(layout);
+        g.setColor(new Color(0, 0, 0, 202));
+        g.fillRoundRect(controls.x, controls.y, controls.width, controls.height, 12, 12);
+        panel.drawSlicedFrame(g, controls.x, controls.y, controls.width, controls.height, "inner");
+        panel.stampUiFrameId(g, "T", "options-controls", controls.x, controls.y, controls.width, controls.height);
     }
 
     static String subtitle(int optionsTab) {
