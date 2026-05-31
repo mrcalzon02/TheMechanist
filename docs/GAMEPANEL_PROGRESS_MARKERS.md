@@ -7,7 +7,7 @@ The project goal is to strip-mine `GamePanel.java` behavior into named subsystem
 ## Overall Completion Estimate
 
 - Shard 8 structural extraction: **100%**
-- Shard 8 compile/caller cleanup: **about 25-35%**
+- Shard 8 compile/caller cleanup: **about 30-40%**
 - Whole GamePanel strip-mining project: **about 10-12%**
 
 The whole-project percentage remains low because Shards 1-7 still need direct subsystem integration, but Shard 8 is no longer the extraction bottleneck.
@@ -54,16 +54,16 @@ Recent completed cleanup:
 - Top-level Knowledge screen key dispatch was restored through `handleKnowledgeScreenKey(...)`.
 - Progress-marker tracking was added as a durable document.
 - Direct-file preflight is now preferred over repository search alone because code search can lag newly committed files.
+- `MouseEarlyScreenController` restored `INTRO_CRAWL` mouse preflight so click-to-continue is not lost before map-point conversion.
+- `MouseGamePanelController` and `MouseLateUiController` were checked against the visible shard click flow and had no obvious line-level behavior drift in the fetched sections.
 
 Next preflight targets:
 
-1. `MouseEarlyScreenController`
-2. `MouseGamePanelController`
-3. `MouseLateUiController`
-4. `OptionsScreenPainter`
-5. `UiTextSurfacePainter`
-6. `UiHoverHelpPainter`
-7. Runtime bridge layers B-J
+1. `OptionsScreenPainter`
+2. `UiTextSurfacePainter`
+3. `UiHoverHelpPainter`
+4. Runtime bridge layers B-J
+5. First compile sweep
 
 ## Marker S8-C — Compile Sweep
 
@@ -118,4 +118,4 @@ Likely target families:
 
 ## Current One-Sentence Marker
 
-Shard 8 is structurally mined and currently in static preflight before compile sweep; progress markers are now durable, direct-file preflight has begun, and the next concrete milestone is to finish obvious extracted-file cleanup, run compile, repair small error clusters, then begin Shards 1-7 direct subsystem integration under the larger-chunk model.
+Shard 8 is structurally mined and currently in static preflight before compile sweep; mouse-controller preflight has restored intro-click handling and narrowed the next target to options/text painters, then runtime bridge layers, then the first compile sweep.
