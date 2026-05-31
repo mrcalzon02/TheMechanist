@@ -16,6 +16,7 @@ final class GamePanelKeyController {
         if (KeyEarlyScreenController.handleEarlyKey(panel, code)) return;
         if (CharacterNameKeyController.handleCharacterNameEditKey(panel, code)) return;
         if (handleEscapeRoute(panel, code)) return;
+        if (handleSectorAuditKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
         if (handleEditorKey(panel, event, code)) return;
         if (handleMultiplayerKey(panel, code)) return;
@@ -60,6 +61,25 @@ final class GamePanelKeyController {
         }
         panel.setScreen(GamePanel.Screen.MENU);
         return true;
+    }
+
+    static boolean handleSectorAuditKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.SECTOR_AUDIT) return false;
+        if (code == KeyEvent.VK_R) { panel.rerollSectorAudit(); return true; }
+        if (code == KeyEvent.VK_T) { panel.cycleAuditZoneType(1); return true; }
+        if (code == KeyEvent.VK_G) { panel.cycleAuditZoneDensity(); return true; }
+        if (code == KeyEvent.VK_O) { panel.cycleAuditOverlay(); return true; }
+        if (code == KeyEvent.VK_N) { panel.jumpAuditFinding(1); return true; }
+        if (code == KeyEvent.VK_B) { panel.jumpAuditFinding(-1); return true; }
+        int dx = 0;
+        int dy = 0;
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) dx = -1;
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
+        if (dx != 0 || dy != 0) { panel.moveAuditCursor(dx, dy); return true; }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { panel.repaint(); return true; }
+        return false;
     }
 
     static boolean handleEditorKey(GamePanel panel, KeyEvent event, int code) {
