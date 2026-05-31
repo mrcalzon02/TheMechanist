@@ -104,6 +104,16 @@ final class OptionsScreenPainter {
         }
     }
 
+    static void paintGraphicsDropdownPopup(GamePanel panel, Graphics2D g) {
+        if (panel.screen != GamePanel.Screen.OPTIONS || panel.graphicsDropdown < 0 || (panel.optionsTab != 0 && panel.optionsTab != 1 && panel.optionsTab != 4)) return;
+        java.awt.Rectangle r = panel.graphicsDropdownOuterRect();
+        if (r.width <= 0 || r.height <= 0) return;
+        g.setColor(new Color(0, 0, 0, 218));
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
+        panel.drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
+        panel.stampUiFrameId(g, "F", "graphics-dropdown-popup", r.x, r.y, r.width, r.height);
+    }
+
     static List<String> linesForTab(GamePanel panel) {
         if (panel.optionsTab == 0) return displayLines(panel);
         if (panel.optionsTab == 1) return textUiLines(panel);
