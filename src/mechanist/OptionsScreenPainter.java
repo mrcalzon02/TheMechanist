@@ -3,7 +3,9 @@ package mechanist;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 final class OptionsScreenPainter {
     private OptionsScreenPainter() {}
@@ -73,6 +75,36 @@ final class OptionsScreenPainter {
         g.fillRoundRect(controls.x, controls.y, controls.width, controls.height, 12, 12);
         panel.drawSlicedFrame(g, controls.x, controls.y, controls.width, controls.height, "inner");
         panel.stampUiFrameId(g, "T", "options-controls", controls.x, controls.y, controls.width, controls.height);
+    }
+
+    static List<String> displayLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Window Mode: " + panel.options.windowModeLabel());
+        lines.add("Resolution: " + panel.options.resolutionLabel());
+        lines.add("Detected/Safe Display Modes: " + DisplayResolutionAuthority.choiceCount());
+        lines.add("Screensaver: " + (panel.options.screenSaver ? "ON" : "OFF"));
+        lines.add("Display owns windowed, borderless windowed, exclusive fullscreen, resolution selection, and applying those monitor/window settings.");
+        return lines;
+    }
+
+    static List<String> textUiLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Font/Text Scale: " + panel.options.fontScale + "%");
+        lines.add("GUI/Chrome Scale: " + panel.options.uiScale + "%");
+        lines.add("Text Crispness: " + panel.options.renderQualityLabel());
+        lines.add("Floating Hover Help: " + (panel.options.hoverHelp ? "ON" : "OFF"));
+        lines.add("Compact text is the default; larger text is an opt-in accessibility setting. Crispness changes Java2D text-rendering hints without pretending to be text size.");
+        return lines;
+    }
+
+    static List<String> audioLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("SFX: " + (panel.options.soundEnabled ? "ON" : "OFF") + " / " + panel.options.sfxVolume + "%");
+        lines.add("MUSIC: " + (panel.options.musicEnabled ? "ON" : "OFF") + " / " + panel.options.musicVolume + "%");
+        lines.add("VOICE / CONVERSATION: " + (panel.options.conversationSound ? "ON" : "OFF") + " / " + panel.options.conversationVolume + "%");
+        lines.add("BOOT SOUND: " + (panel.options.bootSound ? "ON" : "OFF"));
+        lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming logic Engine.");
+        return lines;
     }
 
     static String subtitle(int optionsTab) {
