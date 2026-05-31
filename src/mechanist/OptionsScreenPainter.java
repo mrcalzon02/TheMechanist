@@ -77,6 +77,26 @@ final class OptionsScreenPainter {
         panel.stampUiFrameId(g, "T", "options-controls", controls.x, controls.y, controls.width, controls.height);
     }
 
+    static void paintBody(GamePanel panel, Graphics2D g) {
+        Layout layout = layout(panel);
+        java.awt.Rectangle info = infoBox(layout);
+        g.setFont(panel.smallFont);
+        List<String> lines = linesForTab(panel);
+        int h = panel.optionsTab == 4 ? Math.max(96, info.height - 72) : info.height;
+        panel.drawTextPanel(g, info.x, info.y, info.width, h, lines, false);
+    }
+
+    static List<String> linesForTab(GamePanel panel) {
+        if (panel.optionsTab == 0) return displayLines(panel);
+        if (panel.optionsTab == 1) return textUiLines(panel);
+        if (panel.optionsTab == 2) return audioLines(panel);
+        if (panel.optionsTab == 3) return controlsLines(panel);
+        if (panel.optionsTab == 4) return graphicsLines(panel);
+        if (panel.optionsTab == 5) return jvmLines(panel);
+        if (panel.optionsTab == 6) return accessibilityLines(panel);
+        return qolLines(panel);
+    }
+
     static List<String> displayLines(GamePanel panel) {
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Window Mode: " + panel.options.windowModeLabel());
