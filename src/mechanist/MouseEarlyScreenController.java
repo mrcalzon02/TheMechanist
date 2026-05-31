@@ -8,7 +8,19 @@ import javax.swing.SwingUtilities;
 final class MouseEarlyScreenController {
     private MouseEarlyScreenController() {}
 
+    static boolean handlePreMappedClick(GamePanel panel) {
+        if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+            panel.continueFromIntroCrawl();
+            return true;
+        }
+        return false;
+    }
+
     static boolean handleIntroZoneEditorAndAudit(GamePanel panel, MouseEvent event, int mx, int my) {
+        if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+            panel.continueFromIntroCrawl();
+            return true;
+        }
         if (panel.screen == GamePanel.Screen.ZONE_SPLASH) {
             panel.continueFromZoneSplash();
             panel.repaint();
