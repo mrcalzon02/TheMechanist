@@ -30,4 +30,15 @@ final class OptionsScreenPainter {
         int panelH = Math.max(430, height - panelY - 64);
         return new Layout(width, height, panelX, panelY, panelW, panelH);
     }
+
+    static String subtitle(int optionsTab) {
+        if (optionsTab == 0) return "Display mode, detected resolution, text density, and interface scale";
+        if (optionsTab == 1) return "Text size, text crispness, interface scale, and hover-help density";
+        if (optionsTab == 2) return "Sound channels and volumes";
+        if (optionsTab == 3) return "Controls and command bindings";
+        if (optionsTab == 4) return "Graphics rendering, frame pacing, art quality, motion, and color treatment";
+        if (optionsTab == 5) return "RESTART REQUIRED: JVM heap, GC, Java2D pipeline, client/server/thin-client/single-player profiles";
+        if (optionsTab == 6) return "Accessibility compatibility, color vision correction, readable text, narration hooks, and reduced motion";
+        return "Quality-of-life defaults for storage, construction, logistics, item safety, production, market, and notification friction";
+    }
 }
