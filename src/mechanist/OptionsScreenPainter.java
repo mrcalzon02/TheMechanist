@@ -39,6 +39,15 @@ final class OptionsScreenPainter {
         return new java.awt.Rectangle(x, y, w, h);
     }
 
+    static java.awt.Rectangle infoBox(Layout layout) {
+        java.awt.Rectangle controls = controlsBox(layout);
+        int x = layout.panelX + 44;
+        int y = controls.y + controls.height + 12;
+        int w = layout.panelW - 88;
+        int h = Math.max(96, layout.panelY + layout.panelH - y - 50);
+        return new java.awt.Rectangle(x, y, w, h);
+    }
+
     static String subtitle(int optionsTab) {
         if (optionsTab == 0) return "Display mode, detected resolution, text density, and interface scale";
         if (optionsTab == 1) return "Text size, text crispness, interface scale, and hover-help density";
