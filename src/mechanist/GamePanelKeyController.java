@@ -17,16 +17,17 @@ final class GamePanelKeyController {
         if (KeyEarlyScreenController.handleEarlyKey(panel, code)) return;
         if (CharacterNameKeyController.handleCharacterNameEditKey(panel, code)) return;
         if (handleEscapeRoute(panel, code)) return;
+        if (handleKnowledgeScreenKey(panel, code)) return;
+        if (handleEditorKey(panel, event, code)) return;
+        if (handleMultiplayerKey(panel, code)) return;
         if (handleSectorAuditKey(panel, code)) return;
         if (handleInfopediaPanelKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
-        if (handleTargetingPanelKey(panel, code)) return;
-        if (handleBuildPlacementPanelKey(panel, code)) return;
         if (handleUniversalMenuKey(panel, code)) return;
-        if (handleEditorKey(panel, event, code)) return;
-        if (handleMultiplayerKey(panel, code)) return;
+        if (handleTargetingPanelKey(panel, code)) return;
         if (handleTabKey(panel, code)) return;
         if (handleScrollKeys(panel, code)) return;
+        if (handleBuildPlacementPanelKey(panel, code)) return;
         if (handleCharacterScreenKey(panel, code)) return;
         if (handleGameWorldKey(panel, code)) return;
     }
@@ -67,6 +68,12 @@ final class GamePanelKeyController {
             return true;
         }
         panel.setScreen(GamePanel.Screen.MENU);
+        return true;
+    }
+
+    static boolean handleKnowledgeScreenKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.KNOWLEDGE) return false;
+        panel.handleKnowledgeKeyPressed(code);
         return true;
     }
 
