@@ -115,6 +115,60 @@ final class OptionsScreenPainter {
         return lines;
     }
 
+    static List<String> graphicsLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Render Downscale: " + panel.options.downscaleLabel() + " / internal " + panel.renderScaling.internalWidth() + "x" + panel.renderScaling.internalHeight());
+        lines.add("Target FPS: " + panel.options.targetFpsLabel() + " / Frame limiter " + panel.options.frameLimitLabel() + " / timer delay " + panel.options.targetTimerDelayMs() + "ms");
+        lines.add("Render Quality: " + panel.options.renderQualityLabel());
+        lines.add("Visual Lighting FX: " + panel.options.lightingFxLabel() + " / render-only deterministic lightmap");
+        lines.add("Runtime Profile: " + panel.jvmRuntimeProfile.targetLabel() + " / memory " + panel.jvmRuntimeProfile.initialRamMb + "-" + panel.jvmRuntimeProfile.maxRamMb + " MB / " + panel.jvmRuntimeProfile.gc.label + ".");
+        lines.add("Reduced Motion: " + (panel.options.reducedMotion ? "ON" : "OFF"));
+        lines.add("F3 Performance Overlay: " + (panel.options.diagnosticsOverlay ? "ON" : "OFF") + ".");
+        lines.add("Frame pacing: " + panel.frameLimiter.snapshot(panel.renderStressTest.active()).compactLine());
+        lines.add("Imported Portrait Sheets: " + (panel.options.importedPortraits ? "ON" : "OFF"));
+        lines.add("Tile Icon Rendering: " + (panel.options.tileIconRendering ? "ON" : "OFF"));
+        lines.add("Art Quality Cache: " + panel.options.artQualityLabel() + " / folder " + panel.options.artQualityFolder());
+        lines.add("Generated Art Payload: " + panel.options.generatedAssetPayloadRootLabel());
+        try {
+            var runtime = AssetManager.generatedAssetRuntime();
+            lines.add("Generated Runtime: " + (runtime.runtimeManifestPresent() && runtime.tierManifestPresent() ? "ready" : "partial") + " / payload roots " + runtime.generatedPayloadRoots().size());
+        } catch (Throwable ignored) {
+            lines.add("Generated Runtime: unavailable");
+        }
+        lines.add("Map Tile Size: " + panel.options.mapTileSizeLabel() + " / " + panel.options.mapTilePixelSize() + "px before GUI scale");
+        lines.add("Render Scaling Profile: " + panel.renderScaling.profileLabel() + " / option downscale " + panel.renderScaling.downscaleLabel() + " / F10 cycles profiles.");
+        lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset] + " / Editing " + panel.options.colorTargetLabel());
+        return lines;
+    }
+
+    static List<String> jvmLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(panel.jvmRuntimeRestartPending ? "RESTART PENDING: selected JVM profile has been saved; use ACCEPT + RESTART to relaunch now." : "RESTART REQUIRED: selected JVM options do not fully affect the active process until restart.");
+        lines.add("Current profile: " + panel.jvmRuntimeProfile.targetLabel() + " / " + panel.jvmRuntimeProfile.mode);
+        lines.add("Memory profile: -Xms" + panel.jvmRuntimeProfile.initialRamMb + "M / -Xmx" + panel.jvmRuntimeProfile.maxRamMb + "M.");
+        lines.add("Garbage collector: " + panel.jvmRuntimeProfile.gc.label + "; string dedupe: " + (panel.jvmRuntimeProfile.stringDeduplication ? "ON" : "OFF") + ".");
+        lines.add("Java2D pipeline: " + panel.jvmRuntimeProfile.pipelineLabel() + "; transparent blit: " + (panel.jvmRuntimeProfile.transparentAcceleration ? "ON" : "OFF") + "; noaa: " + (panel.jvmRuntimeProfile.disableVectorAntialiasing ? "ON" : "OFF") + ".");
+        lines.add("Compiled restart flags: " + String.join(" ", panel.jvmRuntimeProfile.buildJvmArgs()));
+        lines.add("Launcher/main menu, graphical client, thin network client, single-player combined, and headless server are separate profiles of the same program.");
+        lines.add("Single-player combined profiles assume local client, local host, and authoritative server lane share one JVM process.");
+        lines.add("The multiplayer server remains headless/status-initializer only until the server/network layer is fully examined and opened.");
+        lines.add(panel.jvmRuntimeNotice);
+        return lines;
+    }
+
+    static List<String> accessibilityLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>(AccessibilityCompatibilityAuthority.optionLines(panel.options));
+        lines.add("Additional diegetic palettes now include Protan Ember, Deutan Steel, Tritan Brass, and Legibility Slate.");
+        lines.add("Visual-check path: enable the performance overlay, activate a color-vision correction, and watch frame pacing for the extra backbuffer pass.");
+        return lines;
+    }
+
+    static List<String> qolLines(GamePanel panel) {
+        ArrayList<String> lines = new ArrayList<>(GameplayQualityOfLifeAuthority.optionLines(panel.options));
+        lines.add("These switches are preferences and integration contracts: supported systems should consume them instead of reintroducing hard-coded hostile defaults.");
+        return lines;
+    }
+
     static String subtitle(int optionsTab) {
         if (optionsTab == 0) return "Display mode, detected resolution, text density, and interface scale";
         if (optionsTab == 1) return "Text size, text crispness, interface scale, and hover-help density";
