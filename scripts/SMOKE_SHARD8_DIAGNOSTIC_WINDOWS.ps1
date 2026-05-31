@@ -85,9 +85,9 @@ if ($hasPom -and $hasMaven) {
 } elseif ($hasJavac) {
     $classes = Join-Path $runRoot 'classes'
     New-Item -ItemType Directory -Force -Path $classes | Out-Null
-    $args = @('-encoding', 'UTF-8', '-d', $classes, '@' + $sourceList)
-    if ($VerboseJava) { $args = @('-verbose') + $args }
-    $compileExit = Run-Captured 'Javac compile smoke' { javac @args } $compileLog
+    $javacArgs = @('-encoding', 'UTF-8', '-d', $classes, '@' + $sourceList)
+    if ($VerboseJava) { $javacArgs = @('-verbose') + $javacArgs }
+    $compileExit = Run-Captured 'Javac compile smoke' { & javac @javacArgs } $compileLog
 } else {
     Write-Section 'Compile unavailable'
     'Neither Maven nor javac is available on PATH.' | Tee-Object -FilePath $compileLog
