@@ -17,6 +17,7 @@ final class GamePanelKeyController {
         if (CharacterNameKeyController.handleCharacterNameEditKey(panel, code)) return;
         if (handleEscapeRoute(panel, code)) return;
         if (handleSectorAuditKey(panel, code)) return;
+        if (handleInfopediaPanelKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
         if (handleEditorKey(panel, event, code)) return;
         if (handleMultiplayerKey(panel, code)) return;
@@ -79,6 +80,26 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
         if (dx != 0 || dy != 0) { panel.moveAuditCursor(dx, dy); return true; }
         if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { panel.repaint(); return true; }
+        return false;
+    }
+
+    static boolean handleInfopediaPanelKey(GamePanel panel, int code) {
+        if (panel.screen != GamePanel.Screen.PANEL || panel.panelMode != GamePanel.PanelMode.INFOPEDIA) return false;
+        if (panel.isAssetInfopediaTab(panel.infopediaTab)) {
+            if (code == KeyEvent.VK_SLASH) { panel.activeScrollTag = "infopedia-asset-filter"; panel.repaint(); return true; }
+            if ("infopedia-asset-filter".equals(panel.activeScrollTag)) {
+                if (code == KeyEvent.VK_BACK_SPACE) { panel.backspaceInfopediaAssetFilter(); return true; }
+                if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) { panel.activeScrollTag = "infopedia-list"; panel.repaint(); return true; }
+                return true;
+            }
+        }
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { panel.cycleInfopediaTab(-1); return true; }
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { panel.cycleInfopediaTab(1); return true; }
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { panel.moveInfopediaSelection(-1); return true; }
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { panel.moveInfopediaSelection(1); return true; }
+        if (code == KeyEvent.VK_PAGE_UP) { panel.activeScrollTag = "infopedia-detail"; panel.scrollActivePanel(-1, true); return true; }
+        if (code == KeyEvent.VK_PAGE_DOWN) { panel.activeScrollTag = "infopedia-detail"; panel.scrollActivePanel(1, true); return true; }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_E) { panel.activeScrollTag = "infopedia-list"; panel.repaint(); return true; }
         return false;
     }
 
