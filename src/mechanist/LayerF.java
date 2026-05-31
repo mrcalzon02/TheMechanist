@@ -44,6 +44,10 @@ public class LayerF {
         panel.repaint();
     }
 
+    static void pushCurrentScreenNarration(GamePanel panel) {
+        AccessibilityRuntimeOptionsSubsystem.pushCurrentScreenNarration(panel);
+    }
+
     static void cycleColorTarget(GamePanel panel) {
         panel.logEvent(OptionsBoundaryAuthority.cycleColorTarget(panel.options));
         panel.repaint();
