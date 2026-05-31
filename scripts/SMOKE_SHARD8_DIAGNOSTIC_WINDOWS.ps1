@@ -16,6 +16,7 @@ $javacLog = Join-Path $runRoot 'javac_filelist.log'
 $sourceList = Join-Path $runRoot 'sources.txt'
 $envLog = Join-Path $runRoot 'environment.log'
 $gitLog = Join-Path $runRoot 'git_state.log'
+New-Item -ItemType File -Force -Path $compileLog | Out-Null
 
 function Write-Section($name) {
     $line = "==== $name ===="
@@ -75,9 +76,13 @@ if ($SkipRun) {
 }
 
 $compileExit = 999
-if (Test-Path -LiteralPath (Join-Path $root 'pom.xml') -PathType Leaf -and (Get-Command mvn -ErrorAction SilentlyContinue)) {
-    $compileExit = Run-Captured 'Maven compile smoke' { mvn -f (Join-Path $root 'pom.xml') -DskipTests compile } $compileLog
-} elseif (Get-Command javac -ErrorAction SilentlyContinue) {
+$pomPath = Join-Path $root 'pom.xml'
+$hasPom = Test-Path -LiteralPath $pomPath -PathType Leaf
+$hasMaven = [bool](Get-Command mvn -ErrorAction SilentlyContinue)
+$hasJavac = [bool](Get-Command javac -ErrorAction SilentlyContinue)
+if ($hasPom -and $hasMaven) {
+    $compileExit = Run-Captured 'Maven compile smoke' { mvn -f $pomPath -DskipTests compile } $compileLog
+} elseif ($hasJavac) {
     $classes = Join-Path $runRoot 'classes'
     New-Item -ItemType Directory -Force -Path $classes | Out-Null
     $args = @('-encoding', 'UTF-8', '-d', $classes, '@' + $sourceList)
