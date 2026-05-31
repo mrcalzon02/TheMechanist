@@ -7,7 +7,7 @@ The project goal is to strip-mine `GamePanel.java` behavior into named subsystem
 ## Overall Completion Estimate
 
 - Shard 8 structural extraction: **100%**
-- Shard 8 compile/caller cleanup: **about 30-40%**
+- Shard 8 compile/caller cleanup: **about 35-45%**
 - Whole GamePanel strip-mining project: **about 10-12%**
 
 The whole-project percentage remains low because Shards 1-7 still need direct subsystem integration, but Shard 8 is no longer the extraction bottleneck.
@@ -56,14 +56,13 @@ Recent completed cleanup:
 - Direct-file preflight is now preferred over repository search alone because code search can lag newly committed files.
 - `MouseEarlyScreenController` restored `INTRO_CRAWL` mouse preflight so click-to-continue is not lost before map-point conversion.
 - `MouseGamePanelController` and `MouseLateUiController` were checked against the visible shard click flow and had no obvious line-level behavior drift in the fetched sections.
+- Painter preflight found missing shared text helper classes and added `TextSurfaceApi` plus `TextLayoutAuthority` so `OptionsScreenPainter`, `UiTextSurfacePainter`, and `UiHoverHelpPainter` have their expected wrap APIs.
 
 Next preflight targets:
 
-1. `OptionsScreenPainter`
-2. `UiTextSurfacePainter`
-3. `UiHoverHelpPainter`
-4. Runtime bridge layers B-J
-5. First compile sweep
+1. Runtime bridge layers B-J
+2. First compile sweep
+3. Small compile-error cluster repair in extracted files
 
 ## Marker S8-C — Compile Sweep
 
@@ -118,4 +117,4 @@ Likely target families:
 
 ## Current One-Sentence Marker
 
-Shard 8 is structurally mined and currently in static preflight before compile sweep; mouse-controller preflight has restored intro-click handling and narrowed the next target to options/text painters, then runtime bridge layers, then the first compile sweep.
+Shard 8 is structurally mined and currently near the end of static preflight before compile sweep; mouse-controller drift was corrected, painter text-helper dependencies were added, and the next concrete target is runtime bridge-layer preflight followed by the first compile sweep.
