@@ -7,7 +7,7 @@ The project goal is to strip-mine `GamePanel.java` behavior into named subsystem
 ## Overall Completion Estimate
 
 - Shard 8 structural extraction: **100%**
-- Shard 8 compile/caller cleanup: **about 40-50%**
+- Shard 8 compile/caller cleanup: **about 45-55%**
 - Whole GamePanel strip-mining project: **about 10-12%**
 
 The whole-project percentage remains low because Shards 1-7 still need direct subsystem integration, but Shard 8 is no longer the extraction bottleneck.
@@ -36,9 +36,9 @@ Shard 8 functional material has been moved into:
 
 ## Marker S8-B — Static Preflight
 
-Status: **Nearly complete**
+Status: **Complete enough for smoke diagnostics**
 
-Current work is checking extracted Shard 8 files for obvious problems before the full compile sweep:
+Current work checked extracted Shard 8 files for obvious problems before the full compile sweep:
 
 - Route-order drift from the shard
 - Missing screen branches
@@ -60,23 +60,43 @@ Recent completed cleanup:
 - Runtime bridge preflight found one obvious compile risk in `LayerI`: unqualified `Screen`/`PanelMode` references. `LayerI` now delegates zoom helpers to `MapViewportOptionsSubsystem`.
 - `OptionsBoundaryAuthority` could not be confirmed at its expected path and should be treated as a first compile-sweep watch item instead of guessed into existence without compiler output.
 
-Next preflight targets:
+## Marker S8-C — Smoke Diagnostics / Compile Sweep
 
-1. First compile sweep
-2. Small compile-error cluster repair in extracted files
-3. Caller wiring stabilization
+Status: **Ready to run locally**
 
-## Marker S8-C — Compile Sweep
+Diagnostic scripts added:
 
-Status: **Next immediate milestone**
+- `scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1`
+- `scripts/EXTRACT_SMOKE_COMPILE_ERRORS_WINDOWS.ps1`
+- `diagnostics/README.md`
 
-Run after static preflight is acceptable:
+Run command:
 
-1. Pull latest repository locally.
-2. Run `scripts/COMPILE_SWEEP_WINDOWS.bat` or `mvn -DskipTests compile`.
-3. Run `scripts/EXTRACT_COMPILE_ERRORS_WINDOWS.bat` if using the Windows sweep script.
-4. Repair the smallest extracted-file error clusters first.
-5. Do not edit `GamePanel.java` unless the strip-mining rule is explicitly suspended.
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1
+```
+
+Inventory-only dry run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1 -SkipRun
+```
+
+The smoke runner writes timestamped logs under:
+
+```text
+diagnostics/shard8_smoke_YYYYMMDD_HHMMSS/
+```
+
+Expected outputs:
+
+- `SUMMARY.txt`
+- `environment.log`
+- `git_state.log`
+- `sources.txt`
+- `compile.log`
+- `compile_errors.tsv`
+- `javac_filelist.log`
 
 Compile-sweep watch items:
 
@@ -127,4 +147,4 @@ Likely target families:
 
 ## Current One-Sentence Marker
 
-Shard 8 is structurally mined and static preflight is nearly complete; mouse-controller drift was corrected, painter text-helper dependencies were added, runtime bridge preflight fixed `LayerI`, and the next concrete target is the first compile sweep plus small extracted-file error cluster repair.
+Shard 8 is structurally mined, static preflight is complete enough for smoke diagnostics, local smoke scripts now capture environment/git/source/compile/error logs, and the next concrete target is to run the smoke diagnostic, inspect `compile_errors.tsv`, and repair the smallest extracted-file error clusters first.
