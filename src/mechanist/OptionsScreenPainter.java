@@ -31,6 +31,10 @@ final class OptionsScreenPainter {
         return new Layout(width, height, panelX, panelY, panelW, panelH);
     }
 
+    static java.awt.Rectangle subtitleBox(Layout layout) {
+        return new java.awt.Rectangle(layout.panelX + 44, layout.panelY + 74, layout.panelW - 88, 28);
+    }
+
     static java.awt.Rectangle controlsBox(Layout layout) {
         int x = layout.panelX + 44;
         int y = layout.panelY + 108;
