@@ -25,7 +25,6 @@ A conservative bridge supplies minimal behavior to preserve compile/run continui
 | `DebugLog.error(String,String)` | Direct fix | Active, acceptable | Two-argument overload delegates to existing three-argument `error(system,message,Throwable)` with `null`. Used by `TileArtSystem`. |
 | `TileArtSystem.semanticKeyForBuildName(String)` | Direct fix / bridge | Active | Provides normalized semantic key extraction for existing `GamePanel` calls. May later move into a dedicated semantic asset authority. |
 | `TileArtSystem.semanticKeyForMapObject(MapObjectState)` | Direct fix / bridge | Active | Uses reflection to tolerate uncertain `MapObjectState` field ownership while compile-cleaning. Future cleanup should replace reflection with a typed public accessor if/when the map object model is stabilized. |
-| `TileArtSystem.byAlias` | Compatibility alias pattern | Temporary debt | Added as a public/package compatibility view to satisfy stale `TileInfopediaAuthority` access. Retire by changing `TileInfopediaAuthority` to use `art.getRegistry().getAlias(a)` or `art.getRegistry().aliasView()`. Do not add more private field reach-through. |
 | `GeneratedArtPayloadOptionsSubsystem` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
 | `LayerG` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
 | `OptionsScreenPainter` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
@@ -38,6 +37,12 @@ A conservative bridge supplies minimal behavior to preserve compile/run continui
 | Legacy `Faction` labels | Direct visible-label neutralization | Active | Legacy constants retained, visible labels changed to Concord-safe language where appropriate. |
 | `ArbitesPrecinctFixtureAuthority` class name | Deferred compatibility debt | Legacy retained | Do not rename class until a controlled file/class rename pass with migration/compile audit is planned. Player-facing language should use Civic Wardens. |
 | `GuardPdfDefenseFixtureAuthority` class name | Deferred compatibility debt | Legacy retained | Potential Concord rename later, but not during compile-cluster cleanup. |
+
+## Retired Bridges
+
+| Bridge / File | Former Category | Retired In | Notes |
+|---|---|---|---|
+| `TileArtSystem.byAlias` | Compatibility alias pattern | Shard mining public-registry cleanup | `TileInfopediaAuthority.loadedAliasSummary(...)` now uses `art.getRegistry().getAlias(a)`. The `TileArtSystem.byAlias` field was removed; repository search found no remaining `byAlias` references after the cleanup. |
 
 ## Rules for Adding a Bridge
 
@@ -59,13 +64,12 @@ Registry interactions should go through public APIs:
 - `AssetManager.metadata(...)`
 - `AssetManager.generatedAssetRuntime()`
 
-Temporary exception:
+Former temporary exception:
 
-- `TileArtSystem.byAlias` exists only as a compatibility view. It should not be copied as a pattern.
+- `TileArtSystem.byAlias` has been retired and must not be restored as a pattern.
 
 ## Current Retirement Targets
 
-1. Replace `TileInfopediaAuthority` use of `art.byAlias` with public registry access.
-2. Replace `TileArtSystem.semanticKeyForMapObject(...)` reflection with typed `MapObjectState` access once map-object semantics are confirmed.
-3. Re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if present.
-4. Plan controlled Concord rename passes only after active shard mining remains compile-clean.
+1. Replace `TileArtSystem.semanticKeyForMapObject(...)` reflection with typed `MapObjectState` access once map-object semantics are confirmed.
+2. Re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if present.
+3. Plan controlled Concord rename passes only after active shard mining remains compile-clean.
