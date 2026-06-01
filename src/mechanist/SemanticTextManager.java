@@ -27,6 +27,7 @@ final class SemanticTextManager {
 
     private final Path localeDirectory;
     private final LinkedHashMap<String, Properties> loaded = new LinkedHashMap<>();
+    private final LinkedHashSet<String> missingKeysLogged = new LinkedHashSet<>();
     private String languageCode;
 
     private SemanticTextManager(Path localeDirectory, String languageCode) {
@@ -92,13 +93,22 @@ final class SemanticTextManager {
         String value = active.getProperty(key);
         if (value == null) value = loadLanguage(DEFAULT_LANGUAGE).getProperty(key);
         if (value == null) value = fallbackEnglish().get(key);
-        return value == null ? "⟦" + key + "⟧" : value;
+        if (value == null) {
+            logMissingKey(key);
+            return key;
+        }
+        return value;
     }
 
     String text(String semanticKey, Object... args) {
         String pattern = text(semanticKey);
         if (args == null || args.length == 0) return pattern;
-        return MessageFormat.format(pattern, args);
+        try {
+            return MessageFormat.format(pattern, args);
+        } catch (IllegalArgumentException ex) {
+            DebugLog.error("SEMANTIC_TEXT", "message-format failed key=" + semanticKey + " language=" + languageCode + " pattern=" + pattern, ex);
+            return pattern;
+        }
     }
 
     boolean hasKey(String semanticKey) {
@@ -107,8 +117,18 @@ final class SemanticTextManager {
         return loadLanguage(languageCode).containsKey(key) || loadLanguage(DEFAULT_LANGUAGE).containsKey(key) || fallbackEnglish().containsKey(key);
     }
 
+    ArrayList<String> missingKeysSnapshot() {
+        return new ArrayList<>(missingKeysLogged);
+    }
+
     Map<String, String> fallbackSnapshot() {
         return Collections.unmodifiableMap(fallbackEnglish());
+    }
+
+    private void logMissingKey(String key) {
+        if (missingKeysLogged.add(languageCode + ":" + key)) {
+            DebugLog.error("SEMANTIC_TEXT", "missing semantic text key language=" + languageCode + " key=" + key + " displaying-key-as-failsafe=true");
+        }
     }
 
     private Properties loadLanguage(String code) {
@@ -120,8 +140,8 @@ final class SemanticTextManager {
         if (Files.isRegularFile(file)) {
             try (InputStream in = Files.newInputStream(file)) {
                 p.load(in);
-            } catch (IOException ignored) {
-                // Fallback text remains authoritative if a locale file is missing or malformed.
+            } catch (IOException ex) {
+                DebugLog.error("SEMANTIC_TEXT", "failed to load locale file=" + file, ex);
             }
         }
         loaded.put(normalized, p);
