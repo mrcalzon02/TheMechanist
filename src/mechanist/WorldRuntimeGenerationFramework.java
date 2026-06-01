@@ -131,35 +131,52 @@ class World {
     boolean[][] visitedZones = new boolean[3][3];
     World(long seed,int w,int h){this.seed=seed;this.w=w;this.h=h;this.r=new Random(seed);tiles=new char[w][h]; roomIds=new int[w][h]; noiseField=new int[w][h]; for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y]=-1;}
     void generate(){
+        WorldGenerationPipelineRunState state = new WorldGenerationPipelineRunState();
+        worldgenPhaseResetAndSeed(state);
+        worldgenPhasePlazaAndRoads(state);
+        worldgenPhaseRoomsAndFactionClaims(state);
+        worldgenPhaseRoadAdjacencyFixturesAndValidation(state);
+        worldgenPhaseBoundaryInterwallAndMetadata(state);
+        worldgenPhasePopulationEconomyAndFinalCompile(state);
+    }
+
+    void worldgenPhaseResetAndSeed(WorldGenerationPipelineRunState state){
         // 0.9.10ji PLAZA-FIRST / ROAD-SECOND SECTOR SEED:
         // The plaza is the first physical claim placed in every zone. Roads then grow
         // from that central civic tile mass, while later rooms are bumped down the
         // generation queue and must respect both the plaza and road network.
-        int target = 0;
-        int attempts = 0;
+        state.target = 0;
+        state.attempts = 0;
+        state.repairs = 0;
+        state.widenedCorridors = 0;
+        state.doorwayObjectRepairs = 0;
         resetGenerationState(seed ^ 0x91010ADEL);
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) tiles[x][y]='#';
         SectorGenerationTraceAuthority.record(this, "RESET", "Plaza-first zone substrate filled before central anchor placement.");
         visitedZones[Math.max(0,Math.min(2,zoneX-1))][Math.max(0,Math.min(2,zoneY-1))] = true;
+    }
 
-        Rectangle centralPlaza = seedCentralPlazaAnchor();
-        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza placed before roads, rooms, fixtures, and transitions.", centralPlaza, false);
-        int plazaApron = seedCentralPlazaRoadApron(centralPlaza);
-        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza one-tile street apron cut before road placement apronTiles=" + plazaApron + ".", centralPlaza, false);
+    void worldgenPhasePlazaAndRoads(WorldGenerationPipelineRunState state){
+        state.centralPlaza = seedCentralPlazaAnchor();
+        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza placed before roads, rooms, fixtures, and transitions.", state.centralPlaza, false);
+        int plazaApron = seedCentralPlazaRoadApron(state.centralPlaza);
+        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza one-tile street apron cut before road placement apronTiles=" + plazaApron + ".", state.centralPlaza, false);
 
         RoadGridIntegrationAuthority.Result roadGridResult = RoadGridIntegrationAuthority.apply(this, r);
-        int plazaStreetLinks = connectCentralPlazaToStreetGrid(centralPlaza);
+        int plazaStreetLinks = connectCentralPlazaToStreetGrid(state.centralPlaza);
         SectorGenerationTraceAuthority.record(this, "ROADS", "Core road grid placed after the central plaza anchor: " + roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
         DebugLog.audit("PLAZA_FIRST_ROAD_GRID", roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
 
-        decorateCentralPlaza(centralPlaza);
-        SectorGenerationTraceAuthority.record(this, "ASSET-SWEEP", "Central plaza decoration sweep completed after roads so plaza remains the sole first generation claim.", centralPlaza, false);
+        decorateCentralPlaza(state.centralPlaza);
+        SectorGenerationTraceAuthority.record(this, "ASSET-SWEEP", "Central plaza decoration sweep completed after roads so plaza remains the sole first generation claim.", state.centralPlaza, false);
+    }
 
-        target = roadFirstRoomTarget();
-        attempts = buildRoadFirstRoomLayout(target);
-        SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first room seed completed rooms=" + rooms.size() + " target=" + target + " attempts=" + attempts);
+    void worldgenPhaseRoomsAndFactionClaims(WorldGenerationPipelineRunState state){
+        state.target = roadFirstRoomTarget();
+        state.attempts = buildRoadFirstRoomLayout(state.target);
+        SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first room seed completed rooms=" + rooms.size() + " target=" + state.target + " attempts=" + state.attempts);
 
-        ensureRoomQuotaFromStreetBlocks(target);
+        ensureRoomQuotaFromStreetBlocks(state.target);
         applyFactionRoomManifest();
         SectorGenerationTraceAuthority.record(this, "MANIFEST", "Faction room manifest applied to road-first rooms.");
         markSpecialRooms();
@@ -177,7 +194,9 @@ class World {
         placeSpecialInReachableRoom(sewerLayer ? 'v' : 'S', 0.18, 0.20);
         placeSpecialInReachableRoom('E', 0.82, 0.20);
         stampFactionRepresentativeBarNearTransit();
+    }
 
+    void worldgenPhaseRoadAdjacencyFixturesAndValidation(WorldGenerationPipelineRunState state){
         RoadAdjacencyIntegrationAuthority.Result roadAdjacencyResult = RoadAdjacencyIntegrationAuthority.apply(this, r);
         SectorGenerationTraceAuthority.record(this, "ROADS", "Road-adjacent civic structures applied after room placement: " + roadAdjacencyResult.summary());
         DebugLog.audit("ROAD_ADJACENCY_FOUNDATION", roadAdjacencyResult.summary());
@@ -189,24 +208,27 @@ class World {
         DebugLog.audit("ROOM_FIXTURE_INTERACTIONS", roomFixtureResult.summary());
         validateSpecialTransitions();
         validateWorldgenSelfReport("POST_ROAD_FIRST_TRANSITION_STAMP");
-        int repairs = repairWorldgenValidationIssues("POST_ROAD_FIRST_TRANSITION_STAMP");
-        int widenedCorridors = widenOneTileCorridors("POST_REPAIR_TWO_WIDE_PREFERENCE");
-        if(widenedCorridors > 0) {
+        state.repairs = repairWorldgenValidationIssues("POST_ROAD_FIRST_TRANSITION_STAMP");
+        state.widenedCorridors = widenOneTileCorridors("POST_REPAIR_TWO_WIDE_PREFERENCE");
+        if(state.widenedCorridors > 0) {
             validateSpecialTransitions();
-            repairs += repairWorldgenValidationIssues("POST_CORRIDOR_WIDEN");
+            state.repairs += repairWorldgenValidationIssues("POST_CORRIDOR_WIDEN");
         }
-        if(repairs > 0 || widenedCorridors > 0) validateWorldgenSelfReport("POST_REPAIR");
+        if(state.repairs > 0 || state.widenedCorridors > 0) validateWorldgenSelfReport("POST_REPAIR");
         if(!allRoomsReachableStrict()) {
             DebugLog.warn("LEVELGEN_POST_VALIDATE", "Road-first validation still found detached content; preserving rooms for Zone Audit trace. seed="+seed+" zone="+zoneType.label);
         }
         validateWorldgenSelfReport("FINAL_PRE_POPULATE");
+    }
+
+    void worldgenPhaseBoundaryInterwallAndMetadata(WorldGenerationPipelineRunState state){
         applyBoundedOuterHiveWall();
         SectorGenerationTraceAuthority.record(this, "BOUNDARY", "Bounded outer arcology wall/interwall envelope applied.");
         int sectorDoorRepairs = stampRoadMaintenanceTransitionDoors();
         if(sectorDoorRepairs > 0) SectorGenerationTraceAuthority.record(this, "TRANSITIONS", "Road-end double doors stamped against the inner maintenance bulkhead, not map tile edges.");
         int boundaryRepairs = repairUnreachableRooms("POST_BOUNDARY_LAYER");
         if(boundaryRepairs > 0){
-            repairs += boundaryRepairs;
+            state.repairs += boundaryRepairs;
             validateWorldgenSelfReport("POST_BOUNDARY_REPAIR");
         }
         applyInterstitialHiveMass();
@@ -224,21 +246,28 @@ class World {
         DebugLog.audit("ECONOMIC_TOPOLOGY_MAP_INTEL_BRIDGE", mapIntelResult.summary());
         RetargetReadinessAuditAuthority.Result retargetResult = RetargetReadinessAuditAuthority.apply(this);
         DebugLog.audit("RETARGET_READINESS_AUDIT", retargetResult.summary());
-        DebugLog.audit("WORLDGEN_ACCEPTANCE", "status=" + (repairs>0 ? "REPAIRED" : "ACCEPTED") + " repairs="+repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        DebugLog.audit("WORLDGEN_ACCEPTANCE", "status=" + (state.repairs>0 ? "REPAIRED" : "ACCEPTED") + " repairs="+state.repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+    }
+
+    void worldgenPhasePopulationEconomyAndFinalCompile(WorldGenerationPipelineRunState state){
         populate();
         SectorGenerationTraceAuthority.record(this, "POPULATION", "Population, resident amenities, and ordinary entities seeded after road-first terrain/facility layout.");
-        int doorwayObjectRepairs = 0;
+        WorldEconomyInitializationAuthority.Result economyInit = WorldEconomyInitializationAuthority.apply(this, r);
+        DebugLog.audit("WORLD_ECONOMY_INITIALIZATION", economyInit.summary());
+        state.doorwayObjectRepairs = 0;
         for(int pass=0; pass<4; pass++){
             int fixed = sanitizeGeneratedObjectDoorAccess();
-            doorwayObjectRepairs += fixed;
+            state.doorwayObjectRepairs += fixed;
             if(fixed == 0) break;
         }
-        if(doorwayObjectRepairs > 0) DebugLog.audit("OBJECT_DOORWAY_CLEARANCE_REPAIR", "relocatedOrRemoved="+doorwayObjectRepairs+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        if(state.doorwayObjectRepairs > 0) DebugLog.audit("OBJECT_DOORWAY_CLEARANCE_REPAIR", "relocatedOrRemoved="+state.doorwayObjectRepairs+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
         TileDataCompilationAuthority.Result tileCompileResult = TileDataCompilationAuthority.compile(this);
         SectorGenerationTraceAuthority.record(this, "TILE-COMPILE", "Tile descriptors compiled for renderer and audit view: " + tileCompileResult.summary());
         DebugLog.audit("TILE_DATA_COMPILE", tileCompileResult.summary());
-        DebugLog.log("Generated road-first world seed="+seed+" zone="+zoneType.label+" layer="+layerText()+" rooms="+rooms.size()+" attempts="+attempts+" roads=core-first");
+        DebugLog.log("Generated road-first world seed="+seed+" zone="+zoneType.label+" layer="+layerText()+" rooms="+rooms.size()+" attempts="+state.attempts+" roads=core-first");
     }
+
+
 
     void applyBoundedOuterHiveWall(){
         // 0.8.79 BOUNDED OUTER ARCOLOGY WALL PASS:
