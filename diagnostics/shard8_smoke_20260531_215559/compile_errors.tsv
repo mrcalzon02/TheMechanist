@@ -1,0 +1,8 @@
+﻿file	line	column	kind	message
+javac.exe : src\mechanist\WorldRuntimeGenerationFramework.java	1923		error	';' expected
+src\mechanist\WorldRuntimeGenerationFramework.java	1923		error	illegal start of expression
+src\mechanist\WorldRuntimeGenerationFramework.java	1923		error	not a statement
+src\mechanist\WorldRuntimeGenerationFramework.java	1923		error	';' expected
+src\mechanist\WorldRuntimeGenerationFramework.java	1932		error	';' expected
+src\mechanist\WorldRuntimeGenerationFramework.java	1932		error	not a statement
+src\mechanist\WorldRuntimeGenerationFramework.java	1933		error	'else' without 'if'

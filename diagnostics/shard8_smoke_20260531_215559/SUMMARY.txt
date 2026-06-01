@@ -1,0 +1,24 @@
+Shard 8 Smoke Diagnostic Run: 20260531_215559
+Repository root: C:\GITS\The Mechanist\TheMechanist
+Run folder: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559
+
+==== Environment ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\environment.log
+ExitCode: 0
+
+==== Git state ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\git_state.log
+ExitCode: 0
+
+==== Source inventory ====
+Java source files: 367
+Source list: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\sources.txt
+Javac response file: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\javac_sources.args
+
+==== Javac compile smoke ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\compile.log
+ExitCode: 1
+
+==== Compile error extraction ====
+Error table: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\compile_errors.tsv
+Final compile exit: Working directory: C:\GITS\The Mechanist\TheMechanist javac -encoding UTF-8 -d C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_215559\classes @C:\Users\Admin\AppData\Local\Temp\mechanist_javac_sources_20260531_215559.args Temp response file: C:\Users\Admin\AppData\Local\Temp\mechanist_javac_sources_20260531_215559.args First five javac source args: "src/mechanist/AbstractDistantZoneSimulation.java" "src/mechanist/AccessibilityCompatibilityAuthority.java" "src/mechanist/AccessibilityRuntimeOptionsSubsystem.java" "src/mechanist/AdminCommandDispatcher.java" "src/mechanist/AdminDeobfuscatorPanel.java" src\mechanist\WorldRuntimeGenerationFramework.java:1923: error: ';' expected         char[] civic Wardens = {'A','q','b','n','N'};                     ^ src\mechanist\WorldRuntimeGenerationFramework.java:1923: error: illegal start of expression         char[] civic Wardens = {'A','q','b','n','N'};                                ^ src\mechanist\WorldRuntimeGenerationFramework.java:1923: error: not a statement         char[] civic Wardens = {'A','q','b','n','N'};                                 ^ src\mechanist\WorldRuntimeGenerationFramework.java:1923: error: ';' expected         char[] civic Wardens = {'A','q','b','n','N'};                                    ^ src\mechanist\WorldRuntimeGenerationFramework.java:1932: error: ';' expected         else if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) pool = civic Wardens;                                                                       ^ src\mechanist\WorldRuntimeGenerationFramework.java:1932: error: not a statement         else if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) pool = civic Wardens;                                                                        ^ src\mechanist\WorldRuntimeGenerationFramework.java:1933: error: 'else' without 'if'         else if(zoneType==ZoneType.MECHANICUS_RELIC_DUCT || zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER) pool = mech;         ^ 7 errors 1
