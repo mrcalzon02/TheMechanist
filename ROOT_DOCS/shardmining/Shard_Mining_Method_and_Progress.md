@@ -162,8 +162,24 @@ Moved/removed:
 Status:
 
 - Repository search for `byAlias` returned no remaining code or documentation references after the cleanup.
-- The GitHub connector cannot run the Windows smoke harness directly from this environment; smoke should be run on the Windows workstation with `scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1` after pulling latest `main`.
-- Remaining compatibility debt: `TileArtSystem.semanticKeyForMapObject(...)` still uses reflection until typed `MapObjectState` access is confirmed, and `IntroCrawlSurfacePainter` remains a conservative bridge.
+- Windows smoke artifact `diagnostics/shard8_smoke_20260601_084116/SUMMARY.txt` reports javac `ExitCode: 0`.
+- `diagnostics/shard8_smoke_20260601_084116/compile_errors.tsv` remains header-only.
+
+### Typed MapObjectState Semantic Cleanup Pass
+
+Moved/removed:
+
+- Replaced `TileArtSystem.semanticKeyForMapObject(...)` reflection probing with typed access to `MapObjectState.label`, `MapObjectState.type`, and `MapObjectState.stockState`.
+- Removed the `java.lang.reflect.Field` import and the private reflective `firstStringField(...)` helper from `TileArtSystem`.
+- Added a simple typed `firstNonBlank(...)` helper for the known semantic object fields.
+- Updated `Compatibility_Ledger.md` to mark the reflection bridge as retired.
+- Updated `Architecture_Map.md` to record the typed `MapObjectState` cleanup in the asset/registry zone.
+
+Status:
+
+- The typed fields are already used by `ObjectSemanticAssetAuthority.assetIdForMapObject(...)`, so this pass follows an existing compile-validated shape instead of guessing.
+- Smoke still needs to be re-run after this code change and the generated diagnostics pushed if meaningful.
+- Remaining compatibility debt: `IntroCrawlSurfacePainter` remains a conservative bridge; controlled Concord rename work remains parked.
 
 ### Concord/IP Sweep Status
 
@@ -184,7 +200,7 @@ Important note:
 
 1. Pull latest `main`.
 2. Run the Windows smoke harness because the last pass changed code in the asset/registry zone.
-3. If smoke is clean, continue to the next compact retirement target: typed `MapObjectState` semantic access if safe, or re-mining the richer `IntroCrawlSurfacePainter` if the original body is still recoverable.
+3. If smoke is clean, continue to the next compact retirement target: re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if it is still recoverable, or choose the next compile-safe UI/runtime slice.
 4. If smoke fails, use the generated `compile_errors.tsv` as the work queue and patch the smallest compiler-stopping cluster first.
 5. Continue updating this progress journal and `Architecture_Map.md` after each pass.
 
