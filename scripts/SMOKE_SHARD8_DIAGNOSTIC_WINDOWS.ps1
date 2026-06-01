@@ -14,6 +14,7 @@ $summary = Join-Path $runRoot 'SUMMARY.txt'
 $compileLog = Join-Path $runRoot 'compile.log'
 $javacLog = Join-Path $runRoot 'javac_filelist.log'
 $sourceList = Join-Path $runRoot 'sources.txt'
+$javacSourceArgs = Join-Path $runRoot 'javac_sources.args'
 $envLog = Join-Path $runRoot 'environment.log'
 $gitLog = Join-Path $runRoot 'git_state.log'
 New-Item -ItemType File -Force -Path $compileLog | Out-Null
@@ -37,6 +38,11 @@ function Run-Captured($name, $scriptBlock, $logPath) {
         Add-Content -LiteralPath $summary -Value "Exception: $($_.Exception.Message)"
         return 999
     }
+}
+
+function Quote-JavacArgFilePath($path) {
+    if ($null -eq $path) { return '""' }
+    return '"' + ($path -replace '\\', '\\' -replace '"', '\"') + '"'
 }
 
 "Shard 8 Smoke Diagnostic Run: $stamp" | Set-Content -LiteralPath $summary
@@ -66,9 +72,11 @@ Run-Captured 'Git state' {
 
 Write-Section 'Source inventory'
 Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName } | Set-Content -LiteralPath $sourceList
+Get-Content -LiteralPath $sourceList | ForEach-Object { Quote-JavacArgFilePath $_ } | Set-Content -LiteralPath $javacSourceArgs -Encoding UTF8
 $count = (Get-Content -LiteralPath $sourceList | Measure-Object).Count
 "Java source files: $count" | Add-Content -LiteralPath $summary
 "Source list: $sourceList" | Add-Content -LiteralPath $summary
+"Javac response file: $javacSourceArgs" | Add-Content -LiteralPath $summary
 
 if ($SkipRun) {
     Write-Section 'Skipped compile by request'
@@ -85,9 +93,13 @@ if ($hasPom -and $hasMaven) {
 } elseif ($hasJavac) {
     $classes = Join-Path $runRoot 'classes'
     New-Item -ItemType Directory -Force -Path $classes | Out-Null
-    $javacArgs = @('-encoding', 'UTF-8', '-d', $classes, '@' + $sourceList)
+    $responseArg = '@' + $javacSourceArgs
+    $javacArgs = @('-encoding', 'UTF-8', '-d', $classes, $responseArg)
     if ($VerboseJava) { $javacArgs = @('-verbose') + $javacArgs }
-    $compileExit = Run-Captured 'Javac compile smoke' { & javac @javacArgs } $compileLog
+    $compileExit = Run-Captured 'Javac compile smoke' {
+        Write-Host ('javac ' + ($javacArgs -join ' '))
+        & javac @javacArgs
+    } $compileLog
 } else {
     Write-Section 'Compile unavailable'
     'Neither Maven nor javac is available on PATH.' | Tee-Object -FilePath $compileLog
