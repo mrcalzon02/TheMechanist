@@ -1920,7 +1920,7 @@ class World {
     void decorateCentralPlaza(Rectangle plaza){
         char[] civic = {'T','q','b','h','n'};
         char[] gang = {'g','q','b','p','N'};
-        char[] civic Wardens = {'A','q','b','n','N'};
+        char[] civicWardens = {'A','q','b','n','N'};
         char[] mech = {'N','R','Z','Y','J','P','F'};
         char[] sewerUtility = {'N','Z','Y','F','v','m','p'};
         char[] cult = {'c','c','o','b','p'};
@@ -1929,7 +1929,7 @@ class World {
         char[] pool = civic;
         if(sewerLayer || zoneType==ZoneType.SEWER_CONDUIT || zoneType==ZoneType.MUTANT_SEWER_CAMP || zoneType==ZoneType.CULTIST_SEWER_CAMP) pool = sewerUtility;
         else if(zoneType==ZoneType.GANGER_TURF) pool = gang;
-        else if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) pool = civic Wardens;
+        else if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) pool = civicWardens;
         else if(zoneType==ZoneType.MECHANICUS_RELIC_DUCT || zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER) pool = mech;
         else if(zoneType==ZoneType.CULTIST_SEWER_CAMP) pool = cult;
         else if(zoneType==ZoneType.MUTANT_WARRENS || zoneType==ZoneType.MUTANT_SEWER_CAMP) pool = mutant;
