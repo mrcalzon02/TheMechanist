@@ -2,7 +2,6 @@ package mechanist;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,21 +97,14 @@ final class TileArtSystem {
 
     static String semanticKeyForMapObject(MapObjectState obj) {
         if (obj == null) return null;
-        String key = firstStringField(obj, "semanticKey", "assetKey", "assetId", "artKey", "name", "label", "type");
+        String key = firstNonBlank(obj.label, obj.type, obj.stockState);
         return semanticKeyForBuildName(key);
     }
 
-    private static String firstStringField(Object obj, String... fieldNames) {
-        if (obj == null || fieldNames == null) return null;
-        Class<?> type = obj.getClass();
-        for (String fieldName : fieldNames) {
-            try {
-                Field f = type.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                Object value = f.get(obj);
-                if (value instanceof String s && !s.isBlank()) return s;
-            } catch (Throwable ignored) {
-            }
+    private static String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String value : values) {
+            if (value != null && !value.isBlank()) return value;
         }
         return null;
     }
