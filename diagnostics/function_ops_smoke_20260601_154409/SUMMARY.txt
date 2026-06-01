@@ -33,3 +33,4 @@ WARN	mermaid_position_warnings	review	10 WARN rows require ownership review.
 
 ==== Existing javac/Maven compile smoke ====
 Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260601_154409\compile_smoke_wrapper.log
+ExitCode: -1073741510
