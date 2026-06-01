@@ -2,7 +2,7 @@
 
 Status: canonical shard-mining system map. Always check this file before continuing GamePanel or shard-shell extraction work.
 
-Last verified clean smoke baseline: `diagnostics/shard8_smoke_20260601_084116/compile_errors.tsv` contains only the header and no compiler errors.
+Last verified clean smoke baseline: `diagnostics/shard8_smoke_20260601_125730/compile_errors.tsv` contains only the header and no compiler errors.
 
 ## Current Refactor Goal
 
@@ -39,12 +39,12 @@ Purpose: draw isolated screens and UI surfaces without swelling `GamePanel.java`
 Current files:
 
 - `src/mechanist/BootSurfacePainter.java` — boot screen painter.
-- `src/mechanist/IntroCrawlSurfacePainter.java` — conservative intro crawl bridge added after clean compile pass.
+- `src/mechanist/IntroCrawlSurfacePainter.java` — extracted intro crawl surface owner with gradient backdrop, ambience, wrapped crawl text, fade handling, rule line, and pulsing prompt.
 - `src/mechanist/OptionsScreenPainter.java` — extracted options screen body/shell painter.
 - `src/mechanist/RenderScalingCrtAuthority.java` — render scaling / CRT-adjacent runtime authority.
 - `src/mechanist/FramePacingAndStressFramework.java` — frame pacing and stress profile support.
 
-Current status: `IntroCrawlSurfacePainter` is a conservative bridge, not the final rich crawl implementation. It exists to preserve compile/run continuity without touching `GamePanel.java`.
+Current status: `IntroCrawlSurfacePainter` is no longer only a conservative compile bridge. It owns the visible intro crawl surface. No recoverable original GamePanel intro body was visible on `main`, so the bridge debt was retired by making the extracted surface self-contained instead of expanding `GamePanel.java`.
 
 ### 3. Runtime Options / Display / JVM Zone
 
@@ -198,11 +198,11 @@ Current files:
 - `diagnostics/shard8_smoke_*/compile_errors.tsv`
 - `diagnostics/shard8_smoke_*/SUMMARY.txt`
 
-Current baseline: `diagnostics/shard8_smoke_20260601_084116/compile_errors.tsv` has zero compiler errors.
+Current baseline: `diagnostics/shard8_smoke_20260601_125730/compile_errors.tsv` has zero compiler errors.
 
 ## Current Shard Mining Assignment
 
 - Active focus: Shard 8 / UI-runtime-support and GamePanel hollowing path.
 - Shards 1–7: compatibility errors cleared earlier.
-- Shard 8 smoke: clean compile at `20260601_084116`.
+- Shard 8 smoke: clean compile at `20260601_125730`.
 - Next work: resume extraction passes from the shard source-of-truth, update maps/progress after each pass, run smoke, then delete mined material from the shard when the new subsystem owns it.
