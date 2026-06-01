@@ -50,6 +50,76 @@ ZONE_RULES: List[Tuple[str, str, Sequence[str], str]] = [
     ("DIAGNOSTIC_DOC", "Diagnostics Smoke Audit", [r"debug|diagnostic|smoke|audit|test|validation|report|ledger|history|manifest"], "Smoke scripts, debug reports, validation, generated ledgers, diagnostics, and audit tooling."),
 ]
 
+ZONE_LABELS: Dict[str, str] = {zone_id: label for zone_id, label, _patterns, _desc in ZONE_RULES}
+ZONE_LABELS["UNPOSITIONED"] = "Unpositioned / Needs Map Assignment"
+
+# Explicit ownership beats keyword heuristics.  The first operation-smoke run
+# showed that generic render/UI words inside large framework files pushed major
+# simulation/economy/generation modules into UI_RENDER.  These overrides are the
+# durable Mermaid positions for known top-level owners and obvious boundary files.
+MODULE_OVERRIDES: List[Tuple[str, str, str]] = [
+    ("MediaLayerAlpha.java", "UI_RENDER", "Media layer rendering/visual composition owner."),
+    ("WorldRuntimeGenerationFramework.java", "WORLD_GEN", "World generation framework owner."),
+    ("Road", "WORLD_GEN", "Road/frontage/grid generation family."),
+    ("Room", "WORLD_GEN", "Room/profile/generation family."),
+    ("Spawn", "WORLD_GEN", "Spawn placement/generation family."),
+    ("Zone", "WORLD_GEN", "Zone generation/audit/transition family."),
+    ("Atlas", "WORLD_GEN", "Atlas/world map family."),
+    ("ProductionAuthorityFramework.java", "FIXTURE_MACHINE", "Production and powered-machine authority owner."),
+    ("IndustrialForgeFixtureAuthority.java", "FIXTURE_MACHINE", "Fixture machine owner."),
+    ("FoodBioProductionFixtureAuthority.java", "FIXTURE_MACHINE", "Production fixture owner."),
+    ("Fixture", "FIXTURE_MACHINE", "Fixture interaction family."),
+    ("Machine", "FIXTURE_MACHINE", "Machine interaction family."),
+    ("Vending", "FIXTURE_MACHINE", "Vending interaction family."),
+    ("ItemEconomyFramework.java", "INVENTORY_PERSIST", "Item economy/catalog authority owner."),
+    ("ContainerTradeFramework.java", "INVENTORY_PERSIST", "Container trade/inventory owner."),
+    ("Inventory", "INVENTORY_PERSIST", "Inventory family."),
+    ("Item", "INVENTORY_PERSIST", "Item family."),
+    ("Trade", "INVENTORY_PERSIST", "Trade family."),
+    ("GameStorageManager.java", "INVENTORY_PERSIST", "Save/storage owner."),
+    ("CharacterSaveManager.java", "INVENTORY_PERSIST", "Character save owner."),
+    ("FallbackProfileManagementAuthority.java", "INVENTORY_PERSIST", "Profile persistence owner."),
+    ("WorldSimulationFramework.java", "COMBAT_SIM", "World simulation owner."),
+    ("PopulationPersonnelFramework.java", "COMBAT_SIM", "Population/personnel simulation owner."),
+    ("FactionServicesFramework.java", "COMBAT_SIM", "Faction service/simulation owner."),
+    ("Faction.java", "COMBAT_SIM", "Faction model owner."),
+    ("Combat", "COMBAT_SIM", "Combat family."),
+    ("Npc", "COMBAT_SIM", "NPC/entity family."),
+    ("Entity", "COMBAT_SIM", "Entity family."),
+    ("Movement", "COMBAT_SIM", "Movement/pathing family."),
+    ("Path", "COMBAT_SIM", "Pathing family."),
+    ("Turn", "COMBAT_SIM", "Turn simulation family."),
+    ("InfrastructurePromotionRegistry.java", "ASSET_REGISTRY", "Infrastructure registry/catalog owner."),
+    ("Asset", "ASSET_REGISTRY", "Asset registry family."),
+    ("Tile", "ASSET_REGISTRY", "Tile/art registry family."),
+    ("Glyph", "ASSET_REGISTRY", "Glyph/art registry family."),
+    ("Portrait", "ASSET_REGISTRY", "Portrait semantic asset family."),
+    ("Semantic", "ASSET_REGISTRY", "Semantic registry family."),
+    ("GameOptionsFramework.java", "RUNTIME_OPTIONS", "Game options owner."),
+    ("Options", "RUNTIME_OPTIONS", "Options/runtime controls family."),
+    ("RuntimePathResolver.java", "RUNTIME_OPTIONS", "Runtime path/options support."),
+    ("FirstPerson3DFramework.java", "UI_RENDER", "Experimental first-person renderer owner."),
+    ("SimulationEditorSuite.java", "UI_RENDER", "In-game editor UI surface owner."),
+    ("Painter", "UI_RENDER", "Screen painter family."),
+    ("Surface", "UI_RENDER", "Screen surface family."),
+    ("Screen", "UI_RENDER", "Screen rendering family."),
+    ("Panel", "UI_RENDER", "Panel/rendering family."),
+    ("Key", "UI_INPUT", "Keyboard/input family."),
+    ("Input", "UI_INPUT", "Input family."),
+    ("Mouse", "UI_INPUT", "Mouse input family."),
+    ("Scroll", "UI_INPUT", "Scroll/navigation family."),
+    ("Command", "UI_INPUT", "Command/action routing family."),
+    ("Server", "SERVER_AUTH", "Server authority family."),
+    ("Client", "SERVER_AUTH", "Client/server boundary family."),
+    ("Launcher", "SERVER_AUTH", "Launcher boundary family."),
+    ("Packet", "SERVER_AUTH", "Network packet family."),
+    ("Network", "SERVER_AUTH", "Network family."),
+    ("Debug", "DIAGNOSTIC_DOC", "Debug/diagnostic family."),
+    ("Diagnostic", "DIAGNOSTIC_DOC", "Diagnostic family."),
+    ("Smoke", "DIAGNOSTIC_DOC", "Smoke testing family."),
+    ("Audit", "DIAGNOSTIC_DOC", "Audit family."),
+]
+
 CLASS_RE = re.compile(r"\b(?:public\s+|private\s+|protected\s+|abstract\s+|final\s+|static\s+)*(class|interface|enum|record)\s+([A-Za-z_$][\w$]*)")
 METHOD_RE = re.compile(
     r"^\s*(?:(?:public|private|protected|static|final|synchronized|abstract|native|strictfp)\s+)*"
@@ -146,7 +216,19 @@ def parse_function_count(lines: Sequence[str]) -> int:
     return count
 
 
+def override_zone(path: str) -> Tuple[Optional[str], Optional[str]]:
+    hay = path.replace("\\", "/")
+    filename = hay.rsplit("/", 1)[-1]
+    for needle, zone_id, _reason in MODULE_OVERRIDES:
+        if needle == filename or needle in hay:
+            return zone_id, ZONE_LABELS.get(zone_id, zone_id)
+    return None, None
+
+
 def classify(path: str, text: str) -> Tuple[str, str]:
+    zone_id, label = override_zone(path)
+    if zone_id and label:
+        return zone_id, label
     hay = f"{path}\n{text[:6000]}".lower()
     for zone_id, label, patterns, _desc in ZONE_RULES:
         if any(re.search(pattern, hay, re.IGNORECASE) for pattern in patterns):
@@ -196,8 +278,6 @@ def module_record(path: Path) -> ModuleRecord:
 
 def mermaid(records: Sequence[ModuleRecord]) -> str:
     by_zone: Dict[str, List[ModuleRecord]] = defaultdict(list)
-    zone_labels = {zone_id: label for zone_id, label, _patterns, _desc in ZONE_RULES}
-    zone_labels["UNPOSITIONED"] = "Unpositioned / Needs Map Assignment"
     for record in records:
         by_zone[record.zone_id].append(record)
 
@@ -269,6 +349,8 @@ def write_reports(records: Sequence[ModuleRecord]) -> None:
         f.write("\n## Status Counts\n\n")
         for status, count in sorted(status_counts.items()):
             f.write(f"- `{status}`: `{count}` modules\n")
+        f.write("\n## Explicit Override Rule\n\n")
+        f.write("Explicit `MODULE_OVERRIDES` entries in `scripts/BUILD_MERMAID_CODE_MAP.py` beat broad keyword heuristics. Add an override when a known owner is misclassified by generic words such as render, panel, or audit.\n")
         f.write("\n## Master Mermaid Map\n\n")
         f.write(map_block)
         f.write("\n## Generated Ledgers\n\n")
