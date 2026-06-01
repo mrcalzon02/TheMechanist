@@ -40,9 +40,15 @@ function Run-Captured($name, $scriptBlock, $logPath) {
     }
 }
 
-function Quote-JavacArgFilePath($path) {
-    if ($null -eq $path) { return '""' }
-    return '"' + ($path -replace '\\', '\\' -replace '"', '\"') + '"'
+function Convert-ToJavacRelativePath($path) {
+    $relative = [System.IO.Path]::GetRelativePath($root, $path)
+    $relative = $relative -replace '\\', '/'
+    return '"' + ($relative -replace '"', '\"') + '"'
+}
+
+function Write-Utf8NoBomLines($path, $lines) {
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllLines($path, [string[]]$lines, $encoding)
 }
 
 "Shard 8 Smoke Diagnostic Run: $stamp" | Set-Content -LiteralPath $summary
@@ -71,9 +77,11 @@ Run-Captured 'Git state' {
 } $gitLog | Out-Null
 
 Write-Section 'Source inventory'
-Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName } | Set-Content -LiteralPath $sourceList
-Get-Content -LiteralPath $sourceList | ForEach-Object { Quote-JavacArgFilePath $_ } | Set-Content -LiteralPath $javacSourceArgs -Encoding UTF8
-$count = (Get-Content -LiteralPath $sourceList | Measure-Object).Count
+$sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName })
+$sources | Set-Content -LiteralPath $sourceList
+$javacArgLines = @($sources | ForEach-Object { Convert-ToJavacRelativePath $_ })
+Write-Utf8NoBomLines $javacSourceArgs $javacArgLines
+$count = $sources.Count
 "Java source files: $count" | Add-Content -LiteralPath $summary
 "Source list: $sourceList" | Add-Content -LiteralPath $summary
 "Javac response file: $javacSourceArgs" | Add-Content -LiteralPath $summary
@@ -93,12 +101,22 @@ if ($hasPom -and $hasMaven) {
 } elseif ($hasJavac) {
     $classes = Join-Path $runRoot 'classes'
     New-Item -ItemType Directory -Force -Path $classes | Out-Null
-    $responseArg = '@' + $javacSourceArgs
+    $tempArgFile = Join-Path ([System.IO.Path]::GetTempPath()) "mechanist_javac_sources_$stamp.args"
+    Write-Utf8NoBomLines $tempArgFile $javacArgLines
+    $responseArg = '@' + $tempArgFile
     $javacArgs = @('-encoding', 'UTF-8', '-d', $classes, $responseArg)
     if ($VerboseJava) { $javacArgs = @('-verbose') + $javacArgs }
     $compileExit = Run-Captured 'Javac compile smoke' {
-        Write-Host ('javac ' + ($javacArgs -join ' '))
-        & javac @javacArgs
+        Push-Location $root
+        try {
+            Write-Host ('Working directory: ' + (Get-Location))
+            Write-Host ('javac ' + ($javacArgs -join ' '))
+            Write-Host ('Temp response file: ' + $tempArgFile)
+            & javac @javacArgs
+        } finally {
+            Pop-Location
+            if (Test-Path -LiteralPath $tempArgFile) { Remove-Item -LiteralPath $tempArgFile -Force }
+        }
     } $compileLog
 } else {
     Write-Section 'Compile unavailable'
