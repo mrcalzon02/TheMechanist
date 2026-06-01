@@ -1,6 +1,6 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-06-01 14:31:14`
+Generated: `2026-06-01 14:46:44`
 
 ```mermaid
 flowchart TD
