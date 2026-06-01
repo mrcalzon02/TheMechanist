@@ -1,5 +1,7 @@
 package mechanist;
 
+import mechanist.assets.AssetManager;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -156,7 +158,7 @@ final class OptionsScreenPainter {
     }
 
     static List<String> controlsLines(GamePanel panel) {
-        ArrayList<String> lines = new ArrayList<>(ControlReferenceTextSubsystem.controlReferenceLines(panel.controlsTab));
+        ArrayList<String> lines = new ArrayList<>(ControlReferenceTextSubsystem.controlsReferenceLines(panel));
         if (panel.controlsTab == 4) {
             lines.add("Runtime controller status: " + (panel.gamepadInputEngine == null ? "not started" : panel.gamepadInputEngine.status()));
         }
