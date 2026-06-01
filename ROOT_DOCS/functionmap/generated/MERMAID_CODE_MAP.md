@@ -1,36 +1,6 @@
-# Mermaid Code Map Master Record
+# Generated Mermaid Code Map
 
-Status: active master code-position map.
-
-Generated/evaluated: `2026-06-01 14:31:14`
-
-## Top-Line Rule
-
-Every code module, generated code error, compile error cluster, or subsystem remap must submit a Mermaid position before it is considered mapped. Unpositioned modules are architecture debt, not invisible implementation detail.
-
-## Counts
-
-- Java modules mapped: `365`
-- Unpositioned modules: `1`
-- Oversized mapped modules: `10`
-
-## Zone Counts
-
-- `COMBAT_SIM`: `11` modules
-- `FIXTURE_MACHINE`: `2` modules
-- `INVENTORY_PERSIST`: `2` modules
-- `RUNTIME_OPTIONS`: `38` modules
-- `UI_INPUT`: `73` modules
-- `UI_RENDER`: `221` modules
-- `UNPOSITIONED`: `1` modules
-- `WORLD_GEN`: `17` modules
-
-## Status Counts
-
-- `positioned`: `364` modules
-- `unpositioned_error`: `1` modules
-
-## Master Mermaid Map
+Generated: `2026-06-01 14:31:14`
 
 ```mermaid
 flowchart TD
@@ -114,9 +84,3 @@ flowchart TD
     ROOT --> Z_UNPOSITIONED["Unpositioned / Needs Map Assignment<br/>1 modules"]
     Z_UNPOSITIONED --> M_src_mechanist_MediaLayerAlpha_java["src/mechanist/MediaLayerAlpha.java<br/>2 funcs / 9 lines"]
 ```
-
-## Generated Ledgers
-
-- `ROOT_docs/functionmap/generated/CODE_MERMAID_POSITION_LEDGER.tsv`
-- `ROOT_docs/functionmap/generated/CODE_MERMAID_EVALUATION.tsv`
-- `ROOT_docs/functionmap/generated/MERMAID_CODE_MAP.md`
