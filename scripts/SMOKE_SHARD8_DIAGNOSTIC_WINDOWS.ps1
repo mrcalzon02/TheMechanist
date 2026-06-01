@@ -5,6 +5,8 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
+$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd('\', '/')
+$rootPrefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
 $runRoot = Join-Path $diagRoot "shard8_smoke_$stamp"
@@ -40,8 +42,13 @@ function Run-Captured($name, $scriptBlock, $logPath) {
     }
 }
 
-function Convert-ToJavacRelativePath($path) {
-    $relative = [System.IO.Path]::GetRelativePath($root, $path)
+function Convert-ToJavacRelativePath($sourcePath) {
+    $full = [System.IO.Path]::GetFullPath([string]$sourcePath)
+    if ($full.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relative = $full.Substring($rootPrefix.Length)
+    } else {
+        $relative = $full
+    }
     $relative = $relative -replace '\\', '/'
     return '"' + ($relative -replace '"', '\"') + '"'
 }
@@ -52,7 +59,7 @@ function Write-Utf8NoBomLines($path, $lines) {
 }
 
 "Shard 8 Smoke Diagnostic Run: $stamp" | Set-Content -LiteralPath $summary
-"Repository root: $root" | Add-Content -LiteralPath $summary
+"Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Run folder: $runRoot" | Add-Content -LiteralPath $summary
 
 Run-Captured 'Environment' {
@@ -112,6 +119,8 @@ if ($hasPom -and $hasMaven) {
             Write-Host ('Working directory: ' + (Get-Location))
             Write-Host ('javac ' + ($javacArgs -join ' '))
             Write-Host ('Temp response file: ' + $tempArgFile)
+            Write-Host ('First five javac source args:')
+            $javacArgLines | Select-Object -First 5 | ForEach-Object { Write-Host $_ }
             & javac @javacArgs
         } finally {
             Pop-Location
