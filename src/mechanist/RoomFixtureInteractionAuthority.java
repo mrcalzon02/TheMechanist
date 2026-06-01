@@ -24,9 +24,9 @@ final class RoomFixtureInteractionAuthority {
     private RoomFixtureInteractionAuthority() {}
 
     static final class Result {
-        int medicae, labs, forge, foodBio, domesticHab, bars, civic Wardens, nobleSecurity, guardPdfDefense, civic, skipped;
+        int medicae, labs, forge, foodBio, domesticHab, bars, civicWardens, nobleSecurity, guardPdfDefense, civic, skipped;
         String summary(){
-            return "roomFixtures medicae="+medicae+" labs="+labs+" forge="+forge+" foodBio="+foodBio+" domesticHab="+domesticHab+" bars="+bars+" civic Wardens="+civic Wardens+" nobleSecurity="+nobleSecurity+" guardPdfDefense="+guardPdfDefense+" civic="+civic+" skipped="+skipped+
+            return "roomFixtures medicae="+medicae+" labs="+labs+" forge="+forge+" foodBio="+foodBio+" domesticHab="+domesticHab+" bars="+bars+" civicWardens="+civicWardens+" nobleSecurity="+nobleSecurity+" guardPdfDefense="+guardPdfDefense+" civic="+civic+" skipped="+skipped+
                     " rule=interior fixtures are readable semantic hooks for shared operations and service surfaces";
         }
     }
@@ -55,7 +55,7 @@ final class RoomFixtureInteractionAuthority {
             else if (FoodBioProductionFixtureAuthority.isFamilyType(type)) res.foodBio++;
             else if (DomesticHabFixtureAuthority.isFamilyType(type)) res.domesticHab++;
             else if (BarMarketSocialFixtureAuthority.isFamilyType(type)) res.bars++;
-            else if (ArbitesPrecinctFixtureAuthority.isFamilyType(type)) res.civic Wardens++;
+            else if (ArbitesPrecinctFixtureAuthority.isFamilyType(type)) res.civicWardens++;
             else if (NobleEstateSecurityFixtureAuthority.isFamilyType(type)) res.nobleSecurity++;
             else if (GuardPdfDefenseFixtureAuthority.isFamilyType(type)) res.guardPdfDefense++;
             else if (CIVIC_FIXTURE.equals(type)) res.civic++;
@@ -71,9 +71,9 @@ final class RoomFixtureInteractionAuthority {
         if (contains(low, "forge", "workshop", "workbench", "machine", "assembler", "smelter", "press", "repair booth", "maintenance", "condenser", "reclamation", "boiler", "component warehouse")) return IndustrialForgeFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
         if (contains(low, "hab", "apartment", "dormitory", "dorm", "bedroom", "cot", "bunk", "quarters", "washroom", "bathroom", "lavatory", "kitchenette", "dresser", "wardrobe", "domestic", "living room", "common room")) return DomesticHabFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
         if (contains(low, "food", "kitchen", "cafeteria", "canteen", "mess", "galley", "pantry", "ration", "nutrient", "hydroponic", "greenhouse", "orchard", "garden", "algae", "fungus", "fungal", "animal pen", "livestock", "cloning", "bio-vat", "refrigerator", "freezer", "cooler")) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
-        if (contains(low, "holding", "cell", "detention", "interrogation", "evidence", "contraband", "armory", "complaint", "precinct", "civic Wardens", "baton", "perp")) return ArbitesPrecinctFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
+        if (contains(low, "holding", "cell", "detention", "interrogation", "evidence", "contraband", "armory", "complaint", "precinct", "civic wardens", "baton", "perp")) return ArbitesPrecinctFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
         if (contains(low, "estate security", "noble security", "gilded sentry", "private turret", "shield relay", "void shield", "energy fence", "laser pylon", "security panel", "panic room", "treasury", "heirloom vault", "noble gate", "house guard")) return NobleEstateSecurityFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
-        if (contains(low, "pdf", "astra militarum", "concord guard", "guard", "barracks", "billet", "muster", "sandbag", "checkpoint", "watch post", "field defense", "munition", "quartermaster", "turret lane")) return GuardPdfDefenseFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
+        if (contains(low, "pdf", "charter guard", "concord guard", "guard", "barracks", "billet", "muster", "sandbag", "checkpoint", "watch post", "field defense", "munition", "quartermaster", "turret lane")) return GuardPdfDefenseFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
         if (contains(low, "bar", "tavern", "amasec", "dining", "food court", "market", "storefront", "vendor", "barter", "trade", "shop", "counter", "representative")) return BarMarketSocialFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
         if (contains(low, "office", "permit", "public", "service", "queue", "civic Ledger Office")) return CIVIC_FIXTURE;
         if (w.zoneType == ZoneType.MECHANICUS_FORGE_CLOISTER || w.zoneType == ZoneType.MECHANICUS_RELIC_DUCT) return r.nextDouble() < 0.35 ? IndustrialForgeFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r) : (r.nextDouble() < 0.20 ? LabChemicalFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r) : null);
@@ -81,7 +81,7 @@ final class RoomFixtureInteractionAuthority {
         if (w.zoneType == ZoneType.IMPERIAL_GUARD_BILLET) {
             double roll = r.nextDouble();
             if (roll < 0.58) return GuardPdfDefenseFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
-            if (roll < 0.76) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
+            if (roll < 0.76) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, r, roomId);
             if (roll < 0.88) return DomesticHabFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.94) return BarMarketSocialFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             return null;
@@ -91,7 +91,7 @@ final class RoomFixtureInteractionAuthority {
             double roll = r.nextDouble();
             if (roll < 0.32) return NobleEstateSecurityFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.48) return BarMarketSocialFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
-            if (roll < 0.62) return MedicaeFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
+            if (roll < 0.62) return MedicaeFixtureAuthority.chooseRoomFixtureType(w, rp, z);
             if (roll < 0.72) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.84) return DomesticHabFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.90) return CIVIC_FIXTURE;
