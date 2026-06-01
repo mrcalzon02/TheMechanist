@@ -86,7 +86,7 @@ Current files:
 
 Important rule: registry interaction must go through public APIs such as `TileArtSystem.getRegistry()`, `TileImageRegistry.getAlias(...)`, `TileImageRegistry.aliasView()`, `AssetManager.metadata(...)`, and generated-runtime public methods. Do not add new private-field reach-through.
 
-Current state: `TileInfopediaAuthority` now uses `art.getRegistry().getAlias(a)` for loaded-alias checks, and the temporary `TileArtSystem.byAlias` compatibility view has been removed. Repository search found no remaining `byAlias` references after this cleanup.
+Current state: `TileInfopediaAuthority` now uses `art.getRegistry().getAlias(a)` for loaded-alias checks, and the temporary `TileArtSystem.byAlias` compatibility view has been removed. `TileArtSystem.semanticKeyForMapObject(...)` now uses typed `MapObjectState.label`, `type`, and `stockState` access instead of reflection, matching the existing typed semantic path in `ObjectSemanticAssetAuthority`.
 
 ### 5. Input / Controls Zone
 
