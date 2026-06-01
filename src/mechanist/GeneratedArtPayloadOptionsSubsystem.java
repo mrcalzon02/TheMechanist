@@ -1,5 +1,7 @@
 package mechanist;
 
+import mechanist.assets.AssetManager;
+
 import java.io.File;
 import javax.swing.JFileChooser;
 
