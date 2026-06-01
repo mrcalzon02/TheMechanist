@@ -4,7 +4,10 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
-$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd('\\', '/')
+$rootFull = [System.IO.Path]::GetFullPath($root)
+while ($rootFull.EndsWith('\\') -or $rootFull.EndsWith('/')) {
+    $rootFull = $rootFull.Substring(0, $rootFull.Length - 1)
+}
 $rootPrefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
