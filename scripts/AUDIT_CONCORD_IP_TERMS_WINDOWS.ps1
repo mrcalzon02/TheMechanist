@@ -4,6 +4,8 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
+$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd('\\', '/')
+$rootPrefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
 if ([string]::IsNullOrWhiteSpace($OutputName)) { $OutputName = "concord_ip_audit_$stamp.tsv" }
@@ -21,15 +23,25 @@ $terms = @(
     'servitor', 'medicae', 'civic Wardens'
 )
 
+function Convert-ToRepoRelativePath($path) {
+    $full = [System.IO.Path]::GetFullPath([string]$path)
+    if ($full.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relative = $full.Substring($rootPrefix.Length)
+    } else {
+        $relative = $full
+    }
+    return ($relative -replace '\\', '/')
+}
+
 function Classify-Hit($path, $line) {
-    if ($path -match '\\.java$') {
+    if ($path -match '\.java$') {
         if ($line -match '^\s*(public\s+)?(final\s+)?class\s+') { return 'java-class' }
         if ($line -match '^\s*(public|private|protected|static|final|void|int|boolean|String|char|double|float|long|short|byte)\b') { return 'java-code' }
         if ($line -match '"') { return 'java-string-or-code' }
         return 'java-other'
     }
-    if ($path -match '\\.(md|txt)$') { return 'documentation' }
-    if ($path -match '\\.(json|cfg|properties|yml|yaml|xml)$') { return 'data-or-config' }
+    if ($path -match '\.(md|txt)$') { return 'documentation' }
+    if ($path -match '\.(json|cfg|properties|yml|yaml|xml)$') { return 'data-or-config' }
     return 'other'
 }
 
@@ -37,12 +49,12 @@ $rows = New-Object System.Collections.Generic.List[string]
 $rows.Add("term`tfile`tline`tcategory`ttext")
 $files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object {
     $_.FullName -notmatch '\\.git\\' -and
-    $_.FullName -notmatch '\\diagnostics\\shard8_smoke_' -and
+    $_.FullName -notmatch '\\diagnostics\\' -and
     $_.Extension -in @('.java', '.md', '.txt', '.json', '.cfg', '.properties', '.yml', '.yaml', '.xml', '.bat', '.ps1')
 }
 
 foreach ($file in $files) {
-    $relative = [System.IO.Path]::GetRelativePath($root, $file.FullName) -replace '\\', '/'
+    $relative = Convert-ToRepoRelativePath $file.FullName
     $lines = Get-Content -LiteralPath $file.FullName -ErrorAction SilentlyContinue
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
