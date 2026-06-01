@@ -1,14 +1,14 @@
 # Function Map Summary
 
-Generated: `2026-06-01 13:31:59`
+Generated: `2026-06-01 13:33:06`
 
 ## Counts
 
-- Files inventoried: `2141`
+- Files inventoried: `2149`
 - Java classes/interfaces/enums/records: `1131`
 - Java functions/methods parsed: `7130`
 - Duplicate function-name groups: `490`
-- Documents inventoried: `89`
+- Documents inventoried: `90`
 - Document retirement candidate rows: `46`
 - Oversized owner rows: `41`
 
@@ -42,7 +42,7 @@ Generated: `2026-06-01 13:31:59`
 
 ## Document Status Guesses
 
-- `active_or_governance`: `37` documents
+- `active_or_governance`: `38` documents
 - `review_for_retirement`: `30` documents
 - `unknown_review`: `22` documents
 
