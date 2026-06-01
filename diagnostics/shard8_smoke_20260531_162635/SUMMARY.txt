@@ -1,0 +1,24 @@
+Shard 8 Smoke Diagnostic Run: 20260531_162635
+Repository root: C:\GITS\The Mechanist\TheMechanist
+Run folder: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635
+
+==== Environment ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\environment.log
+ExitCode: 0
+
+==== Git state ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\git_state.log
+ExitCode: 0
+
+==== Source inventory ====
+Java source files: 367
+Source list: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\sources.txt
+Javac response file: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\javac_sources.args
+
+==== Javac compile smoke ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\compile.log
+ExitCode: 2
+
+==== Compile error extraction ====
+Error table: C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\compile_errors.tsv
+Final compile exit: Working directory: C:\GITS\The Mechanist\TheMechanist javac -encoding UTF-8 -d C:\GITS\The Mechanist\TheMechanist\diagnostics\shard8_smoke_20260531_162635\classes @C:\Users\Admin\AppData\Local\Temp\mechanist_javac_sources_20260531_162635.args Temp response file: C:\Users\Admin\AppData\Local\Temp\mechanist_javac_sources_20260531_162635.args error: invalid flag:  Usage: javac <options> <source files> use --help for a list of possible options 2
