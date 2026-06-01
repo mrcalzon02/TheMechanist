@@ -231,10 +231,12 @@ final class TileInfopediaAuthority {
 
     static String loadedAliasSummary(Entry e, TileArtSystem art) {
         if (e == null || art == null || e.aliases.length == 0) return "no runtime art loaded";
+        TileImageRegistry registry = art.getRegistry();
+        if (registry == null) return "no runtime art loaded";
         int loaded = 0;
         ArrayList<String> missing = new ArrayList<>();
         for (String a : e.aliases) {
-            if (a != null && art.byAlias.get(a) != null) loaded++;
+            if (registry.getAlias(a) != null) loaded++;
             else missing.add(a);
         }
         if (missing.isEmpty()) return loaded + "/" + e.aliases.length + " present";
