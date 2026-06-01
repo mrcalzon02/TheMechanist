@@ -12,7 +12,7 @@ The project is refactoring an oversized Java 17 Swing monolith/shard shell into 
 
 Latest known clean compile smoke:
 
-- `diagnostics/shard8_smoke_20260601_084116/compile_errors.tsv`
+- `diagnostics/shard8_smoke_20260601_125730/compile_errors.tsv`
 - result: header only; no compiler error rows
 
 Recent compiler cleanup path:
@@ -24,6 +24,8 @@ Recent compiler cleanup path:
 5. Cleared the compact 13-error support cluster through direct bridges/imports/API corrections.
 6. Added `IntroCrawlSurfacePainter` as a conservative bridge without touching `GamePanel.java`.
 7. Confirmed clean smoke compile.
+8. Retired registry/private reach-through debt and MapObjectState reflection debt through compact Asset/Registry passes.
+9. Replaced the conservative intro crawl implementation with a fuller self-contained screen surface.
 
 ## Shard Mining Method
 
@@ -127,7 +129,7 @@ Result:
 
 - `compile_errors.tsv` contains only header.
 - Javac smoke reached source compile and found zero errors.
-- This is the current handoff baseline.
+- This is the original handoff baseline.
 
 ### Support Cluster Cleared
 
@@ -147,7 +149,7 @@ Moved/bridged:
 Status:
 
 - Compile-clean.
-- Some bridges are intentionally temporary and should be retired during cleanup.
+- Some bridges were intentionally temporary and have since been retired.
 
 ### Public Registry Cleanup Pass
 
@@ -178,8 +180,24 @@ Moved/removed:
 Status:
 
 - The typed fields are already used by `ObjectSemanticAssetAuthority.assetIdForMapObject(...)`, so this pass follows an existing compile-validated shape instead of guessing.
+- Windows smoke artifact `diagnostics/shard8_smoke_20260601_125730/SUMMARY.txt` reports javac `ExitCode: 0`.
+- `diagnostics/shard8_smoke_20260601_125730/compile_errors.tsv` remains header-only.
+
+### Intro Crawl Surface Finalization Pass
+
+Moved/removed:
+
+- Replaced the minimal conservative `IntroCrawlSurfacePainter` body with a fuller stateless rendering surface.
+- Added a gradient backdrop, scanline/particle ambience, title/shadow rendering, rule line, wrapped multi-paragraph crawl text, top/bottom fade handling, and pulsing prompt.
+- Kept ownership outside `GamePanel.java`; the painter still consumes only panel dimensions, fonts, and boot clock state.
+- Updated `Compatibility_Ledger.md` to retire the conservative intro crawl bridge debt.
+- Updated `Architecture_Map.md` to mark `IntroCrawlSurfacePainter` as the visible intro surface owner.
+
+Status:
+
+- No recoverable original GamePanel intro body was visible on `main`; `GamePanel.java` currently resolves as an empty file through the GitHub view.
 - Smoke still needs to be re-run after this code change and the generated diagnostics pushed if meaningful.
-- Remaining compatibility debt: `IntroCrawlSurfacePainter` remains a conservative bridge; controlled Concord rename work remains parked.
+- Remaining compatibility debt: controlled Concord rename work remains parked; continue compact compile-safe UI/runtime slices.
 
 ### Concord/IP Sweep Status
 
@@ -199,8 +217,8 @@ Important note:
 ## Current Next Steps
 
 1. Pull latest `main`.
-2. Run the Windows smoke harness because the last pass changed code in the asset/registry zone.
-3. If smoke is clean, continue to the next compact retirement target: re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if it is still recoverable, or choose the next compile-safe UI/runtime slice.
+2. Run the Windows smoke harness because the last pass changed code in the rendering zone.
+3. If smoke is clean, continue selecting compact compile-safe UI/runtime shard-mining slices from the architecture map.
 4. If smoke fails, use the generated `compile_errors.tsv` as the work queue and patch the smallest compiler-stopping cluster first.
 5. Continue updating this progress journal and `Architecture_Map.md` after each pass.
 
