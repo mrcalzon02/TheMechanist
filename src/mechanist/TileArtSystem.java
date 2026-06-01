@@ -1,14 +1,12 @@
 package mechanist;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
@@ -20,13 +18,11 @@ import javax.imageio.ImageIO;
  */
 final class TileArtSystem {
     private final TileImageRegistry registry;
-    final Map<String, BufferedImage> byAlias;
     private String activeArtRoot = "";
     private String activeQualityTier = "low_32";
 
     public TileArtSystem(TileImageRegistry registry) {
         this.registry = registry != null ? registry : new TileImageRegistry();
-        this.byAlias = this.registry.aliasView();
     }
 
     /**
