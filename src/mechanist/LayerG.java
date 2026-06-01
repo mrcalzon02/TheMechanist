@@ -1,5 +1,7 @@
 package mechanist;
 
+import mechanist.assets.AssetManager;
+
 public class LayerG {
     public LayerG() {}
 
