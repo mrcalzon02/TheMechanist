@@ -3,6 +3,7 @@ package mechanist;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,7 +14,7 @@ import javax.imageio.ImageIO;
 /**
  * Orchestration engine for tile-art loading and lifecycle management.
  *
- * This class handles coordinate reading, PNG I/O streaming, and links the other 
+ * This class handles coordinate reading, PNG I/O streaming, and links the other
  * decomposed architectural components together at runtime.
  */
 final class TileArtSystem {
@@ -30,11 +31,11 @@ final class TileArtSystem {
      */
     public boolean loadTileArt(String packDir, String cacheDir, String fallbackRoot, String targetQuality) {
         registry.clear();
-        
+
         // 1. Resolve path authority
         this.activeArtRoot = ArtPackManager.prepareAndResolveRoot(packDir, cacheDir, fallbackRoot);
         this.activeQualityTier = ArtPackManager.normalizeQualityFolder(targetQuality);
-        
+
         String cellsPathStr = ArtPackManager.resolveQualityCellsRoot(activeArtRoot, activeQualityTier);
         Path cellsDir = Paths.get(cellsPathStr);
 
@@ -65,7 +66,7 @@ final class TileArtSystem {
         try {
             String fileName = file.getFileName().toString();
             String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
-            
+
             BufferedImage img = ImageIO.read(file.toFile());
             if (img == null) {
                 DebugLog.warn("TILE_ART", "Skipping corrupted file header payload: " + fileName);
@@ -85,6 +86,36 @@ final class TileArtSystem {
         } catch (Exception ex) {
             DebugLog.warn("TILE_ART", "Failed to decode target image sequence: " + file + " -> " + ex.getMessage());
         }
+    }
+
+    static String semanticKeyForBuildName(String buildName) {
+        if (buildName == null) return null;
+        String normalized = buildName.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("^_+", "")
+                .replaceAll("_+$", "");
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    static String semanticKeyForMapObject(MapObjectState obj) {
+        if (obj == null) return null;
+        String key = firstStringField(obj, "semanticKey", "assetKey", "assetId", "artKey", "name", "label", "type");
+        return semanticKeyForBuildName(key);
+    }
+
+    private static String firstStringField(Object obj, String... fieldNames) {
+        if (obj == null || fieldNames == null) return null;
+        Class<?> type = obj.getClass();
+        for (String fieldName : fieldNames) {
+            try {
+                Field f = type.getDeclaredField(fieldName);
+                f.setAccessible(true);
+                Object value = f.get(obj);
+                if (value instanceof String s && !s.isBlank()) return s;
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
     }
 
     public TileImageRegistry getRegistry() {
