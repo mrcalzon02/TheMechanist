@@ -1,7 +1,8 @@
 param(
     [switch]$SkipCompile,
     [switch]$VerboseJava,
-    [switch]$AllowArchivedShardCopies
+    [switch]$AllowArchivedShardCopies,
+    [int]$CommandTimeoutSeconds = 900
 )
 
 $ErrorActionPreference = 'Continue'
@@ -39,24 +40,42 @@ function Add-Gate($severity, $gate, $status, $message) {
     else { Write-Host "OK    [$gate] $safeMessage" -ForegroundColor Green }
 }
 
-function Run-Captured($name, $scriptBlock, $logPath) {
+function Run-ProcessCaptured($name, $exe, [string[]]$argList, $logPath, [int]$timeoutSeconds) {
     Write-Section $name
     Add-Content -LiteralPath $summary -Value "Log: $logPath"
+    Add-Content -LiteralPath $summary -Value "TimeoutSeconds: $timeoutSeconds"
+    $stdout = "$logPath.stdout.tmp"
+    $stderr = "$logPath.stderr.tmp"
+    Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
     try {
-        & $scriptBlock *>&1 | Tee-Object -FilePath $logPath
-        $code = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 0 }
+        $p = Start-Process -FilePath $exe -ArgumentList $argList -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        $finished = $p.WaitForExit([Math]::Max(1, $timeoutSeconds) * 1000)
+        if (-not $finished) {
+            try { $p.Kill($true) } catch { try { $p.Kill() } catch {} }
+            "TIMEOUT after $timeoutSeconds seconds: $exe $($argList -join ' ')" | Tee-Object -FilePath $logPath
+            if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Add-Content -LiteralPath $logPath }
+            if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Add-Content -LiteralPath $logPath }
+            Add-Content -LiteralPath $summary -Value "ExitCode: 124"
+            return 124
+        }
+        if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Tee-Object -FilePath $logPath }
+        if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Tee-Object -FilePath $logPath -Append }
+        $code = $p.ExitCode
         Add-Content -LiteralPath $summary -Value "ExitCode: $code"
         return $code
     } catch {
         $_ | Out-String | Tee-Object -FilePath $logPath
         Add-Content -LiteralPath $summary -Value "Exception: $($_.Exception.Message)"
         return 999
+    } finally {
+        Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
     }
 }
 
 "Function Map Operations Smoke: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Run folder: $runRoot" | Add-Content -LiteralPath $summary
+"Command timeout seconds: $CommandTimeoutSeconds" | Add-Content -LiteralPath $summary
 "Function Map Operations Smoke: $stamp" | Set-Content -LiteralPath $opsLog
 
 Write-Section 'Tooling preflight'
@@ -106,10 +125,10 @@ if ($archiveHits.Count -gt 0) {
 Write-Section 'Regenerate function and Mermaid maps'
 $functionMapExit = 999
 if ($hasPython) {
-    $functionMapExit = Run-Captured 'Function map builder' { py -3 (Join-Path $root 'scripts\BUILD_FUNCTION_MAP.py') --apply } (Join-Path $runRoot 'function_map_builder.log')
+    $functionMapExit = Run-ProcessCaptured 'Function map builder' 'py' @('-3', (Join-Path $root 'scripts\BUILD_FUNCTION_MAP.py'), '--apply') (Join-Path $runRoot 'function_map_builder.log') $CommandTimeoutSeconds
     if ($functionMapExit -eq 0) { Add-Gate 'INFO' 'function_map_builder' 'pass' 'Function map regenerated.' } else { Add-Gate 'ERROR' 'function_map_builder' 'fail' "Exit code $functionMapExit" }
 
-    $mermaidExit = Run-Captured 'Mermaid code map builder' { py -3 (Join-Path $root 'scripts\BUILD_MERMAID_CODE_MAP.py') --apply } (Join-Path $runRoot 'mermaid_code_map_builder.log')
+    $mermaidExit = Run-ProcessCaptured 'Mermaid code map builder' 'py' @('-3', (Join-Path $root 'scripts\BUILD_MERMAID_CODE_MAP.py'), '--apply') (Join-Path $runRoot 'mermaid_code_map_builder.log') $CommandTimeoutSeconds
     if ($mermaidExit -eq 0) { Add-Gate 'INFO' 'mermaid_code_map_builder' 'pass' 'Mermaid code position map regenerated.' } else { Add-Gate 'ERROR' 'mermaid_code_map_builder' 'fail' "Exit code $mermaidExit" }
 } else {
     Add-Gate 'ERROR' 'map_builders' 'skipped' 'py launcher missing; function/Mermaid maps were not regenerated.'
@@ -156,7 +175,7 @@ if ($SkipCompile) {
     if (Test-Path -LiteralPath $compileScript -PathType Leaf) {
         $args = @('-ExecutionPolicy', 'Bypass', '-File', $compileScript)
         if ($VerboseJava) { $args += '-VerboseJava' }
-        $compileExit = Run-Captured 'Existing javac/Maven compile smoke' { powershell @args } $compileRunLog
+        $compileExit = Run-ProcessCaptured 'Existing javac/Maven compile smoke' 'powershell' $args $compileRunLog $CommandTimeoutSeconds
         if ($compileExit -eq 0) { Add-Gate 'INFO' 'compile_smoke' 'pass' 'Existing compile smoke completed successfully.' } else { Add-Gate 'ERROR' 'compile_smoke' 'fail' "Compile smoke failed with exit code $compileExit." }
     } else {
         Add-Gate 'ERROR' 'compile_smoke_script' 'missing' 'scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1 not found.'
