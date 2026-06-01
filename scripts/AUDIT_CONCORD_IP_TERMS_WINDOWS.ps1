@@ -3,8 +3,16 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
+$AuditVersion = '2026-05-31-v4-powershell5-safe'
+Write-Host "Concord IP audit script $AuditVersion"
+
 $root = Split-Path -Parent $PSScriptRoot
-$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd('\\', '/')
+$rootFull = [System.IO.Path]::GetFullPath($root)
+$backslash = [string][char]92
+$slash = [string][char]47
+while ($rootFull.EndsWith($backslash) -or $rootFull.EndsWith($slash)) {
+    $rootFull = $rootFull.Substring(0, $rootFull.Length - 1)
+}
 $rootPrefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
@@ -25,8 +33,8 @@ $terms = @(
 
 function Convert-ToRepoRelativePath($path) {
     $full = [System.IO.Path]::GetFullPath([string]$path)
-    if ($full.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $relative = $full.Substring($rootPrefix.Length)
+    if ($full.StartsWith($script:rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relative = $full.Substring($script:rootPrefix.Length)
     } else {
         $relative = $full
     }
