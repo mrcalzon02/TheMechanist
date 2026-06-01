@@ -86,7 +86,7 @@ Current files:
 
 Important rule: registry interaction must go through public APIs such as `TileArtSystem.getRegistry()`, `TileImageRegistry.getAlias(...)`, `TileImageRegistry.aliasView()`, `AssetManager.metadata(...)`, and generated-runtime public methods. Do not add new private-field reach-through.
 
-Current compatibility debt: `TileArtSystem.byAlias` was added as a temporary compatibility view to satisfy stale `TileInfopediaAuthority` access. It should be retired in a later cleanup by changing `TileInfopediaAuthority` to use `art.getRegistry().getAlias(a)` or `art.getRegistry().aliasView()`.
+Current state: `TileInfopediaAuthority` now uses `art.getRegistry().getAlias(a)` for loaded-alias checks, and the temporary `TileArtSystem.byAlias` compatibility view has been removed. Repository search found no remaining `byAlias` references after this cleanup.
 
 ### 5. Input / Controls Zone
 
