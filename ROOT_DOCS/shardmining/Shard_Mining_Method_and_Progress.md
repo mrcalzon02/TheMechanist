@@ -149,6 +149,22 @@ Status:
 - Compile-clean.
 - Some bridges are intentionally temporary and should be retired during cleanup.
 
+### Public Registry Cleanup Pass
+
+Moved/removed:
+
+- Replaced `TileInfopediaAuthority.loadedAliasSummary(...)` direct `art.byAlias` access with `art.getRegistry().getAlias(a)`.
+- Removed the temporary `TileArtSystem.byAlias` field from `TileArtSystem`.
+- Removed the stale `java.io.File` and `java.util.Map` imports from `TileArtSystem` as part of the alias-field cleanup.
+- Updated `Compatibility_Ledger.md` to move `TileArtSystem.byAlias` from active debt to retired bridge.
+- Updated `Architecture_Map.md` so the asset/registry zone reflects the public-registry cleanup.
+
+Status:
+
+- Repository search for `byAlias` returned no remaining code or documentation references after the cleanup.
+- The GitHub connector cannot run the Windows smoke harness directly from this environment; smoke should be run on the Windows workstation with `scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1` after pulling latest `main`.
+- Remaining compatibility debt: `TileArtSystem.semanticKeyForMapObject(...)` still uses reflection until typed `MapObjectState` access is confirmed, and `IntroCrawlSurfacePainter` remains a conservative bridge.
+
 ### Concord/IP Sweep Status
 
 The Concord/IP neutralization sweep was started and documented, but it is parked as backlog so shard mining can continue. Do not resume broad renaming until current shard mining has a stable plan and compile baseline.
@@ -167,14 +183,10 @@ Important note:
 ## Current Next Steps
 
 1. Pull latest `main`.
-2. Confirm clean baseline by running smoke only if needed.
-3. Open `Architecture_Map.md` before choosing the next extraction.
-4. Pick the next shard-owned behavior cluster.
-5. Extract into a named subsystem/authority.
-6. Wire minimal bridge.
-7. Smoke test.
-8. Delete mined shard body when safe.
-9. Update this progress journal and `Architecture_Map.md`.
+2. Run the Windows smoke harness because the last pass changed code in the asset/registry zone.
+3. If smoke is clean, continue to the next compact retirement target: typed `MapObjectState` semantic access if safe, or re-mining the richer `IntroCrawlSurfacePainter` if the original body is still recoverable.
+4. If smoke fails, use the generated `compile_errors.tsv` as the work queue and patch the smallest compiler-stopping cluster first.
+5. Continue updating this progress journal and `Architecture_Map.md` after each pass.
 
 ## Do Not Do
 
