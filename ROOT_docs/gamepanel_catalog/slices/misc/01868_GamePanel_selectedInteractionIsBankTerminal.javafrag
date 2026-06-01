@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: selectedInteractionIsBankTerminal
-// Lines: 1868-1868
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean selectedInteractionIsBankTerminal() { return isBankTerminalAt(lookX, lookY); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isBankManager
-// Lines: 9191-9191
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean isBankManager(NpcEntity n) { return n != null && n.role != null && n.role.toLowerCase(Locale.ROOT).contains("bank manager"); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: emptySlotLabel
-// Lines: 16703-16703
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    String emptySlotLabel(String item) { return item == null || item.isBlank() ? "empty" : item; }

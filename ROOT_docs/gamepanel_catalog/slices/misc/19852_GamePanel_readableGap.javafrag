@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: readableGap
-// Lines: 19852-19852
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int readableGap(int preferred) { return Math.max(8, Math.min(preferred, Math.max(6, getHeight() / 42))); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: acceptFetchContract
-// Lines: 8848-8848
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void acceptFetchContract() { acceptFactionContract("FETCH"); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: adjustSelectedColor
-// Lines: 20272-20272
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void adjustSelectedColor(int delta) { logEvent(OptionsBoundaryAuthority.adjustSelectedColor(options, delta)); repaint(); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: inGameRoomGridRect
-// Lines: 11110-11110
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    Rectangle inGameRoomGridRect() { Rectangle c = inGameEditorCenterRect(); return new Rectangle(c.x + 18, c.y + 76, c.width - 36, Math.max(140, c.height - 122)); }

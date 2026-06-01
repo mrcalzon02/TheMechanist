@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: handleKnowledgeTreeClick
-// Lines: 20821-20821
-// Category: misc
-// This is an examination slice, not compiled source.
-
-        if (screen == Screen.KNOWLEDGE && handleKnowledgeTreeClick(mx, my)) { requestFocusInWindow(); return; }

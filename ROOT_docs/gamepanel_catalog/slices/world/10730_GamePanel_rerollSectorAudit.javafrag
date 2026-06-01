@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: rerollSectorAudit
-// Lines: 10730-10730
-// Category: world
-// This is an examination slice, not compiled source.
-
-    void rerollSectorAudit() { regenerateSectorAuditWorld("reroll zone audit"); }

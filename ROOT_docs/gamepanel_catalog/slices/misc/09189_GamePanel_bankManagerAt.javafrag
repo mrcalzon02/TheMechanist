@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: bankManagerAt
-// Lines: 9189-9189
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    NpcEntity bankManagerAt(int tx, int ty) { NpcEntity n = world == null ? null : world.npcAt(tx, ty); return isBankManager(n) ? n : null; }

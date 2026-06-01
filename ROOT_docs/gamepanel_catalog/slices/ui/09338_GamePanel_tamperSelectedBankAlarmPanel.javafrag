@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: tamperSelectedBankAlarmPanel
-// Lines: 9338-9338
-// Category: ui
-// This is an examination slice, not compiled source.
-
-    void tamperSelectedBankAlarmPanel() { tamperBankAlarmPanelAt(lookX, lookY); }

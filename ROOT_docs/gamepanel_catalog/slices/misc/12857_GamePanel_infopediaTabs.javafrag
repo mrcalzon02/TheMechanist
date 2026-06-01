@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: infopediaTabs
-// Lines: 12857-12857
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    String[] infopediaTabs() { return new String[]{"ZONES", "ROOMS", "ITEMS", "WEAPONS", "SURVIVAL", "COMBAT", "BODY", "MEDICAL", "HEAT", "XP", "KNOWLEDGE", "CRAFTING", "PRODUCTION", "AUDITS", "DEFENSES", "NPCS", "FACTIONS", "TILES", "ASSETS"}; }

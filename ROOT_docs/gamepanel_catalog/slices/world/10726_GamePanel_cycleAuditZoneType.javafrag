@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: cycleAuditZoneType
-// Lines: 10726-10726
-// Category: world
-// This is an examination slice, not compiled source.
-
-    void cycleAuditZoneType(int delta) { auditZoneDropdownOpen = false; setAuditZoneTypeIndex(auditZoneTypeIndex + delta); }

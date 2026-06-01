@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isBankManagerAt
-// Lines: 9190-9190
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean isBankManagerAt(int tx, int ty) { return bankManagerAt(tx, ty) != null; }

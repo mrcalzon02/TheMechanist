@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: selectInGameEditorPaletteTab
-// Lines: 11133-11133
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void selectInGameEditorPaletteTab(int idx) { inGameEditorPaletteTab = Math.max(0, Math.min(inGameEditorPalettes().length-1, idx)); inGameEditorPaletteIndex = 0; inGameEditorStatus = "Palette category: " + inGameEditorPaletteCategory() + "."; repaint(); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isShrine
-// Lines: 2465-2465
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean isShrine(char ch) { return ch == 'I' || ch == 'H'; }

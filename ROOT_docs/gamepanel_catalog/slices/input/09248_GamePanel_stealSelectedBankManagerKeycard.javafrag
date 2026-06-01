@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: stealSelectedBankManagerKeycard
-// Lines: 9248-9248
-// Category: input
-// This is an examination slice, not compiled source.
-
-    void stealSelectedBankManagerKeycard() { stealBankManagerKeycardAt(lookX, lookY); }

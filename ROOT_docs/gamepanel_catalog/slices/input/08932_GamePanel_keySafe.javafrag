@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: keySafe
-// Lines: 8932-8932
-// Category: input
-// This is an examination slice, not compiled source.
-
-    String keySafe(String s) { return s == null ? "" : s; }

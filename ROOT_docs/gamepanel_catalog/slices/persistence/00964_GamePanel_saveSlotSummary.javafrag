@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: saveSlotSummary
-// Lines: 964-964
-// Category: persistence
-// This is an examination slice, not compiled source.
-
-    String saveSlotSummary(int slot) { return SaveSlotSurfaceApi.saveSlotSummary(slot); }

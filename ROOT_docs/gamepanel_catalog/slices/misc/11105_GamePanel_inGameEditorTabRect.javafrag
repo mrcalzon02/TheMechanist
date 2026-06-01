@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: inGameEditorTabRect
-// Lines: 11105-11105
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    Rectangle inGameEditorTabRect() { Rectangle r = inGameEditorOuterRect(); return new Rectangle(r.x + 20, r.y + 54, r.width - 40, 34); }

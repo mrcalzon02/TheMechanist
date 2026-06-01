@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: totalBankedCash
-// Lines: 9118-9118
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int totalBankedCash() { int n=0; for (int v : bankBalances.values()) n += Math.max(0, v); return n; }

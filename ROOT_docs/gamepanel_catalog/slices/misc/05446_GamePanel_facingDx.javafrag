@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: facingDx
-// Lines: 5446-5446
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int facingDx() { return lastMoveDx == 0 && lastMoveDy == 0 ? 1 : Integer.compare(lastMoveDx, 0); }

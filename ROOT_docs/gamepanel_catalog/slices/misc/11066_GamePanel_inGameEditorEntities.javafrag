@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: inGameEditorEntities
-// Lines: 11066-11066
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    java.util.List<SimulationEditorRepository.EditableEntity> inGameEditorEntities() { return inGameEditorRepository.entities(inGameEditorName()); }

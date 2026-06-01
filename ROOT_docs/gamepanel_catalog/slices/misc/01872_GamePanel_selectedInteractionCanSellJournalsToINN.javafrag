@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: selectedInteractionCanSellJournalsToINN
-// Lines: 1872-1872
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean selectedInteractionCanSellJournalsToINN() { return canSellLeaderJournalsToINNAt(lookX, lookY); }

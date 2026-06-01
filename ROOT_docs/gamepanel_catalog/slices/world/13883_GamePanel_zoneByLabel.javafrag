@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: zoneByLabel
-// Lines: 13883-13883
-// Category: world
-// This is an examination slice, not compiled source.
-
-    ZoneType zoneByLabel(String label) { for (ZoneType z: ZoneType.values()) if (z.label.equals(label)) return z; return null; }

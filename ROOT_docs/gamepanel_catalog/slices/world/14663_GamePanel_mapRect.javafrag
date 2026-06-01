@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: mapRect
-// Lines: 14663-14663
-// Category: world
-// This is an examination slice, not compiled source.
-
-    Rectangle mapRect() { return uiLayout().map; }

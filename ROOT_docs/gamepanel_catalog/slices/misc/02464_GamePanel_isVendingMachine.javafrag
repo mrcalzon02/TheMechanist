@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isVendingMachine
-// Lines: 2464-2464
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean isVendingMachine(char ch) { return PublicServiceMediaAuthority.isVendingSymbol(ch); }

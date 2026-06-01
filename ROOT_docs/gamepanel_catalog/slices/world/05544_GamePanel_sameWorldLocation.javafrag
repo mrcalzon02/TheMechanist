@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: sameWorldLocation
-// Lines: 5544-5544
-// Category: world
-// This is an examination slice, not compiled source.
-
-    boolean sameWorldLocation(String key) { return world != null && key != null && key.equals(portableLightWorldKey()); }

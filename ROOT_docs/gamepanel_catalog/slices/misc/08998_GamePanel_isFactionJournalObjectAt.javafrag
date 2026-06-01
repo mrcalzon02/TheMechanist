@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isFactionJournalObjectAt
-// Lines: 8998-8998
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean isFactionJournalObjectAt(int tx, int ty) { return factionJournalObjectAt(tx, ty) != null; }

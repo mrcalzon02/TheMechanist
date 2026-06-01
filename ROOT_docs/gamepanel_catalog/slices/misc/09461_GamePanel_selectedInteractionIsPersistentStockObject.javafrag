@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: selectedInteractionIsPersistentStockObject
-// Lines: 9461-9461
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean selectedInteractionIsPersistentStockObject() { return isPersistentStockObjectAt(lookX, lookY); }

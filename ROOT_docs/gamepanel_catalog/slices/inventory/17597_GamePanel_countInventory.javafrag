@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: countInventory
-// Lines: 17597-17597
-// Category: inventory
-// This is an examination slice, not compiled source.
-
-    int countInventory(String item) { return countContainerItems(CONTAINER_PLAYER_INVENTORY, inventory, item); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: sameFactionFamily
-// Lines: 2543-2543
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: SaveLoadUiRects
-// Method: SaveLoadUiRects
-// Lines: 14454-14454
-// Category: persistence
-// This is an examination slice, not compiled source.
-
-        SaveLoadUiRects(Rectangle outer, Rectangle info, Rectangle manual, Rectangle auto) { this.outer=outer; this.info=info; this.manual=manual; this.auto=auto; }

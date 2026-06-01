@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: localDay
-// Lines: 2898-2898
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int localDay() { return Math.floorMod((turn / TURNS_PER_HOUR) / HOURS_PER_DAY, DAYS_PER_MONTH) + 1; }

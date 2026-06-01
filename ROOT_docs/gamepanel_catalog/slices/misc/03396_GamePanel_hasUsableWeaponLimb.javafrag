@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: hasUsableWeaponLimb
-// Lines: 3396-3396
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean hasUsableWeaponLimb() { return crippledArmCount() < 3; }

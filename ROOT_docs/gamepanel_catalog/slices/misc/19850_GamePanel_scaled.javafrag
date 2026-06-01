@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: scaled
-// Lines: 19850-19850
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int scaled(int v) { return Math.max(1, (int)Math.round(v * uiScaleFactor())); }

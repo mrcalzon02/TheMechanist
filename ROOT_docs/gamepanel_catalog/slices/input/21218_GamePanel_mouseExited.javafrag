@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: mouseExited
-// Lines: 21218-21218
-// Category: input
-// This is an examination slice, not compiled source.
-
-    @Override public void mouseExited(MouseEvent e) { mouseX=-1; mouseY=-1; repaint(); }

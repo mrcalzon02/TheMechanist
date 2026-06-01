@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: terrainKey
-// Lines: 4674-4674
-// Category: input
-// This is an examination slice, not compiled source.
-
-    String terrainKey(int x, int y) { return x + "," + y; }

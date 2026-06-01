@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: inGameEditorCenterRect
-// Lines: 11108-11108
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    Rectangle inGameEditorCenterRect() { Rectangle l = inGameEditorLeftRect(); Rectangle rr = inGameEditorRightRect(); int x = l.x + l.width + 16; return new Rectangle(x, l.y, Math.max(260, rr.x - x - 16), l.height); }

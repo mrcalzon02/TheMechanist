@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: bankProfileFromStock
-// Lines: 9179-9179
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    BankProfile bankProfileFromStock(String stock) { return BankProfile.byId(MapObjectState.itemNameFromStock(stock)); }

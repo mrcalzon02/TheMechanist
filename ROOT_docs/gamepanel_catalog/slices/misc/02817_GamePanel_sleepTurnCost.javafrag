@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: sleepTurnCost
-// Lines: 2817-2817
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int sleepTurnCost(int hours) { return Math.max(1, hours * TURNS_PER_HOUR); }

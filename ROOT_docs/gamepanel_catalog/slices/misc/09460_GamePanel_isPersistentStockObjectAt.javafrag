@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isPersistentStockObjectAt
-// Lines: 9460-9460
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    boolean isPersistentStockObjectAt(int tx, int ty) { return persistentStockObjectAt(tx, ty) != null; }

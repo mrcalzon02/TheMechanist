@@ -1,2 +1,0 @@
-record_type	kind	name	owner	start_line	end_line	line_count	public	package_private	top_level_index	extract_recommendation	extraction_phase	notes
-top_level_declaration	class	TheMechanist		16	46	31	true	false	1	keep_in_place	phase_0_anchor	Public application entrypoint. Keep file anchor stable while extracting siblings.

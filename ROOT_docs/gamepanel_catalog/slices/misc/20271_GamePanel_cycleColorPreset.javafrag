@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: cycleColorPreset
-// Lines: 20271-20271
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void cycleColorPreset() { logEvent(OptionsBoundaryAuthority.cycleColorPreset(options)); repaint(); }

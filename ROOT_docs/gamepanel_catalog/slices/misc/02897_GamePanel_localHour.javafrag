@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: localHour
-// Lines: 2897-2897
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int localHour() { return Math.floorMod(turn / TURNS_PER_HOUR, HOURS_PER_DAY); }

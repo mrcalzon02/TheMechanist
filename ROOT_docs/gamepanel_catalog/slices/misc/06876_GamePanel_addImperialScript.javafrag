@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: addImperialScript
-// Lines: 6876-6876
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void addImperialScript(int amount) { if (amount > 0) carriedScript = Math.min(Integer.MAX_VALUE - amount, Math.max(0, carriedScript)) + amount; }

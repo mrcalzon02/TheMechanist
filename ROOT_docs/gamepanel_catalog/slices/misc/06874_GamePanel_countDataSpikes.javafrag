@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: countDataSpikes
-// Lines: 6874-6874
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int countDataSpikes() { return countInventory("Data spike"); }

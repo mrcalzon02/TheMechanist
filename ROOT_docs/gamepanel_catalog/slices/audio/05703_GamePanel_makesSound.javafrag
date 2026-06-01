@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: makesSound
-// Lines: 5703-5703
-// Category: audio
-// This is an examination slice, not compiled source.
-
-    boolean makesSound(char ch) { return ch == 'g' || ch == 'm' || ch == 'R' || ch == 'A' || ch == 'N' || ch == 'p' || ch == 'b' || ch == 'M'; }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: vendingStockText
-// Lines: 2477-2477
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    String vendingStockText(char ch) { return PublicServiceMediaAuthority.vendingStockText(ch); }

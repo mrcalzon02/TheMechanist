@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: inGameEditorRedo
-// Lines: 11099-11099
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void inGameEditorRedo() { inGameEditorUndoRedo.redo(); inGameEditorStatus = "Redo: " + inGameEditorUndoRedo.compactState(); repaint(); }

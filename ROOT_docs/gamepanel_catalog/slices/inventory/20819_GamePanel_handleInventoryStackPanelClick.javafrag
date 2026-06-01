@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: handleInventoryStackPanelClick
-// Lines: 20819-20819
-// Category: inventory
-// This is an examination slice, not compiled source.
-
-        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && handleInventoryStackPanelClick(mx, my)) { requestFocusInWindow(); return; }

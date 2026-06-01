@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: inputMapRect
-// Lines: 14665-14665
-// Category: input
-// This is an examination slice, not compiled source.
-
-    Rectangle inputMapRect() { return virtualUiLayout().map; }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: safeParseInt
-// Lines: 7007-7007
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    int safeParseInt(String text, int d) { try { return Integer.parseInt(text == null ? "" : text.trim()); } catch(Exception e) { return d; } }

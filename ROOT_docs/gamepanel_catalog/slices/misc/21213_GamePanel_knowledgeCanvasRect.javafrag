@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: knowledgeCanvasRect
-// Lines: 21213-21213
-// Category: misc
-// This is an examination slice, not compiled source.
-
-        if (screen == Screen.KNOWLEDGE && knowledgeCanvasRect().contains(mp)) { knowledgeTreeLastDrag = mp; knowledgeTreeDragging = true; return; }

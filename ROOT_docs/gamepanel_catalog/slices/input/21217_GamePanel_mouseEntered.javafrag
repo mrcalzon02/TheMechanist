@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: mouseEntered
-// Lines: 21217-21217
-// Category: input
-// This is an examination slice, not compiled source.
-
-    @Override public void mouseEntered(MouseEvent e) {}

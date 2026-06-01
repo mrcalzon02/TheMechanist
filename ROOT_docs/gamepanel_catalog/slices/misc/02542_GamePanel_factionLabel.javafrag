@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: factionLabel
-// Lines: 2542-2542
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    String factionLabel(Faction f) { return f == null ? "none" : f.label; }

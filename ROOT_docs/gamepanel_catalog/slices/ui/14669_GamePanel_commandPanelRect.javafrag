@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: commandPanelRect
-// Lines: 14669-14669
-// Category: ui
-// This is an examination slice, not compiled source.
-
-    Rectangle commandPanelRect() { return uiLayout().command; }

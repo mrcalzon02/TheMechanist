@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: acceptBountyContract
-// Lines: 8847-8847
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    void acceptBountyContract() { acceptFactionContract("BOUNTY"); }

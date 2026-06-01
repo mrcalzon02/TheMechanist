@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: mouseReleased
-// Lines: 21216-21216
-// Category: input
-// This is an examination slice, not compiled source.
-
-    @Override public void mouseReleased(MouseEvent e) { scrollbarDragActive=false; knowledgeTreeDragging=false; knowledgeTreeLastDrag=null; }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: selectInGameEditorPaletteItem
-// Lines: 11134-11134
-// Category: inventory
-// This is an examination slice, not compiled source.
-
-    void selectInGameEditorPaletteItem(int idx) { inGameEditorPaletteIndex = Math.max(0, idx); inGameEditorStatus = "Palette item: " + inGameEditorSelectedPaletteItem() + "."; repaint(); }

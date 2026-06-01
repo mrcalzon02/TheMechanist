@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: bankVaultAt
-// Lines: 9177-9177
-// Category: misc
-// This is an examination slice, not compiled source.
-
-    MapObjectState bankVaultAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-vault"); }

@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: uiScaleFactor
-// Lines: 19849-19849
-// Category: entities
-// This is an examination slice, not compiled source.
-
-    double uiScaleFactor() { return DisplayDensityAuthority.clampScale(options.uiScale / 100.0f); }

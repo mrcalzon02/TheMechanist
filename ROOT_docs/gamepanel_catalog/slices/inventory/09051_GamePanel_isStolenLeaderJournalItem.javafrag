@@ -1,8 +1,0 @@
-// Extracted from src/mechanist/GamePanel.java
-// Owner: GamePanel
-// Method: isStolenLeaderJournalItem
-// Lines: 9051-9051
-// Category: inventory
-// This is an examination slice, not compiled source.
-
-    boolean isStolenLeaderJournalItem(String item) { return item != null && item.toLowerCase(Locale.ROOT).contains("stolen") && item.toLowerCase(Locale.ROOT).contains("leader journal"); }
