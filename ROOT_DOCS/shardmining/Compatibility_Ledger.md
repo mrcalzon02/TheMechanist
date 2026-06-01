@@ -30,7 +30,6 @@ A conservative bridge supplies minimal behavior to preserve compile/run continui
 | `OptionsScreenPainter` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
 | `OptionsScreenPainter.controlsLines(...)` | Direct fix | Active, acceptable | Corrected nonexistent `controlReferenceLines(int)` to real `controlsReferenceLines(GamePanel)`. |
 | `RuntimePathResolver.resolveDirectoryPath(...)` fallback | Direct fix | Active, acceptable | Replaced invalid `Path.getPath()` with `Path.toString()`. |
-| `IntroCrawlSurfacePainter` | Conservative bridge | Active, not final | Added to satisfy `GamePanel` `ScreenPainter` reference without touching `GamePanel.java`. Rich original intro crawl behavior can be re-mined later. |
 | `Faction.CIVIC_LEDGER_OFFICE` | Compatibility alias pattern | Active | Neutral alias added while legacy enum constants remain for save/profile compatibility. |
 | `Faction.CIVIC_WARDENS` | Compatibility alias pattern | Active | Neutral alias added while `ARBITES` remains for compatibility. |
 | `Faction.MECHANIST_COLLEGIA` | Compatibility alias pattern | Active | Neutral alias added while `MECHANICUS` remains for compatibility. |
@@ -44,6 +43,7 @@ A conservative bridge supplies minimal behavior to preserve compile/run continui
 |---|---|---|---|
 | `TileArtSystem.byAlias` | Compatibility alias pattern | Shard mining public-registry cleanup | `TileInfopediaAuthority.loadedAliasSummary(...)` now uses `art.getRegistry().getAlias(a)`. The `TileArtSystem.byAlias` field was removed; repository search found no remaining `byAlias` references after the cleanup. |
 | `TileArtSystem.semanticKeyForMapObject(...)` reflection helper | Compatibility bridge | MapObjectState typed semantic cleanup | `TileArtSystem` no longer imports `java.lang.reflect.Field` or probes fields reflectively. It now uses typed `MapObjectState.label`, `type`, and `stockState`, matching the existing typed usage in `ObjectSemanticAssetAuthority`. |
+| `IntroCrawlSurfacePainter` conservative implementation | Conservative bridge | Intro crawl surface finalization | The file now owns a fuller self-contained intro crawl surface: gradient backdrop, scanline/particle ambience, wrapped multi-paragraph crawl text, fade handling, rule line, and pulsing prompt. No GamePanel shard body was visible on `main` to recover. |
 
 ## Rules for Adding a Bridge
 
@@ -71,5 +71,5 @@ Former temporary exception:
 
 ## Current Retirement Targets
 
-1. Re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if present.
-2. Plan controlled Concord rename passes only after active shard mining remains compile-clean.
+1. Plan controlled Concord rename passes only after active shard mining remains compile-clean.
+2. Continue selecting compact compile-safe UI/runtime shard-mining slices from the architecture map.
