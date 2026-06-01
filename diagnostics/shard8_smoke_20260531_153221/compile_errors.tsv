@@ -1,3 +1,0 @@
-﻿file	line	column	kind	message
-			diagnostic	javac.exe : error: invalid flag: @
-			diagnostic	    + CategoryInfo          : NotSpecified: (error: invalid flag: @:String) [], RemoteException
