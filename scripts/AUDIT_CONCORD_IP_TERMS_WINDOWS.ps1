@@ -55,11 +55,11 @@ $files = Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object {
 
 foreach ($file in $files) {
     $relative = Convert-ToRepoRelativePath $file.FullName
-    $lines = Get-Content -LiteralPath $file.FullName -ErrorAction SilentlyContinue
+    $lines = @(Get-Content -LiteralPath $file.FullName -ErrorAction SilentlyContinue)
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        $line = $lines[$i]
+        $line = [string]$lines[$i]
         foreach ($term in $terms) {
-            if ($line.IndexOf($term, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+            if ($line.IndexOf([string]$term, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
                 $category = Classify-Hit $relative $line
                 $clean = ($line.Trim() -replace "`t", ' ')
                 $rows.Add("$term`t$relative`t$($i + 1)`t$category`t$clean")
