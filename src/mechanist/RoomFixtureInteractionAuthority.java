@@ -81,7 +81,7 @@ final class RoomFixtureInteractionAuthority {
         if (w.zoneType == ZoneType.IMPERIAL_GUARD_BILLET) {
             double roll = r.nextDouble();
             if (roll < 0.58) return GuardPdfDefenseFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
-            if (roll < 0.76) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, r, roomId);
+            if (roll < 0.76) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.88) return DomesticHabFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.94) return BarMarketSocialFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             return null;
@@ -91,7 +91,7 @@ final class RoomFixtureInteractionAuthority {
             double roll = r.nextDouble();
             if (roll < 0.32) return NobleEstateSecurityFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.48) return BarMarketSocialFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
-            if (roll < 0.62) return MedicaeFixtureAuthority.chooseRoomFixtureType(w, rp, z);
+            if (roll < 0.62) return MedicaeFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.72) return FoodBioProductionFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.84) return DomesticHabFixtureAuthority.chooseRoomFixtureType(w, rp, roomId, r);
             if (roll < 0.90) return CIVIC_FIXTURE;
