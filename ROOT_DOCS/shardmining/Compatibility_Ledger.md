@@ -24,7 +24,7 @@ A conservative bridge supplies minimal behavior to preserve compile/run continui
 |---|---|---|---|
 | `DebugLog.error(String,String)` | Direct fix | Active, acceptable | Two-argument overload delegates to existing three-argument `error(system,message,Throwable)` with `null`. Used by `TileArtSystem`. |
 | `TileArtSystem.semanticKeyForBuildName(String)` | Direct fix / bridge | Active | Provides normalized semantic key extraction for existing `GamePanel` calls. May later move into a dedicated semantic asset authority. |
-| `TileArtSystem.semanticKeyForMapObject(MapObjectState)` | Direct fix / bridge | Active | Uses reflection to tolerate uncertain `MapObjectState` field ownership while compile-cleaning. Future cleanup should replace reflection with a typed public accessor if/when the map object model is stabilized. |
+| `TileArtSystem.semanticKeyForMapObject(MapObjectState)` | Direct fix / bridge | Active, typed | Uses the typed `MapObjectState` fields already consumed by `ObjectSemanticAssetAuthority`: `label`, `type`, and `stockState`. Reflection bridge removed. |
 | `GeneratedArtPayloadOptionsSubsystem` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
 | `LayerG` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
 | `OptionsScreenPainter` `AssetManager` import | Direct fix | Active, acceptable | Missing import repaired. |
@@ -43,6 +43,7 @@ A conservative bridge supplies minimal behavior to preserve compile/run continui
 | Bridge / File | Former Category | Retired In | Notes |
 |---|---|---|---|
 | `TileArtSystem.byAlias` | Compatibility alias pattern | Shard mining public-registry cleanup | `TileInfopediaAuthority.loadedAliasSummary(...)` now uses `art.getRegistry().getAlias(a)`. The `TileArtSystem.byAlias` field was removed; repository search found no remaining `byAlias` references after the cleanup. |
+| `TileArtSystem.semanticKeyForMapObject(...)` reflection helper | Compatibility bridge | MapObjectState typed semantic cleanup | `TileArtSystem` no longer imports `java.lang.reflect.Field` or probes fields reflectively. It now uses typed `MapObjectState.label`, `type`, and `stockState`, matching the existing typed usage in `ObjectSemanticAssetAuthority`. |
 
 ## Rules for Adding a Bridge
 
@@ -70,6 +71,5 @@ Former temporary exception:
 
 ## Current Retirement Targets
 
-1. Replace `TileArtSystem.semanticKeyForMapObject(...)` reflection with typed `MapObjectState` access once map-object semantics are confirmed.
-2. Re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if present.
-3. Plan controlled Concord rename passes only after active shard mining remains compile-clean.
+1. Re-mine `IntroCrawlSurfacePainter` from the original richer shard behavior if present.
+2. Plan controlled Concord rename passes only after active shard mining remains compile-clean.
