@@ -39,7 +39,7 @@ final class RuntimePathResolver {
                 return resolveAssetFile(raw).getPath();
             }
         }
-        return preferredClientRoot().getPath();
+        return preferredClientRoot().toString();
     }
 
     static String workingDirectorySummary() {
