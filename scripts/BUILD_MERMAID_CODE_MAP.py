@@ -38,11 +38,12 @@ GENERATED_ROOT = OUT_ROOT / "generated"
 MASTER_RECORD = OUT_ROOT / "Mermaid_Code_Map_Master.md"
 
 ZONE_RULES: List[Tuple[str, str, Sequence[str], str]] = [
+    ("LOCALIZATION_TEXT", "Localization Text", [r"locali[sz]e|locale|language|translation|semantic text|text manager|properties"], "Semantic player-facing text keys, locale files, translation selection, and language override surfaces."),
     ("UI_RENDER", "UI Render Surfaces", [r"paint|draw|render|surface|painter|graphics|hud|overlay|splash|menu|panel|frame|color|font|infopedia"], "Screen painters, immediate-mode drawing, HUD, visual panels, and display line providers."),
     ("UI_INPUT", "UI Input Navigation", [r"key|mouse|wheel|scroll|input|controller|gamepad|keyboard|route|navigation|button"], "Keyboard, mouse, controller, scrollbars, button routing, and screen route changes."),
     ("RUNTIME_OPTIONS", "Runtime Options", [r"option|display|graphics|sound|volume|jvm|runtime|accessibility|scale|density|doom"], "Display/audio/JVM/accessibility/options runtime controls."),
     ("WORLD_GEN", "World Generation Transition", [r"world|zone|sector|atlas|generation|transition|audit|room|road|plaza|frontage|terrain"], "World setup, atlas, zones, rooms, roads, generation audit, and transitions."),
-    ("INVENTORY_PERSIST", "Inventory Items Persistence", [r"inventory|item|container|loot|equip|save|load|autosave|profile|persistence|storage|economy|trade"], "Inventory, item catalog/economy, equipment, containers, save/load/profile, and trade persistence."),
+    ("INVENTORY_PERSIST", "Inventory Items Persistence", [r"inventory|item|container|loot|equip|save|load|autosave|profile|persistence|storage|economy|trade|stock"], "Inventory, item catalog/economy, equipment, containers, save/load/profile, trade persistence, and stock ledgers."),
     ("FIXTURE_MACHINE", "Fixtures Machines", [r"fixture|machine|vending|interact|use|hack|smelter|assembler|relay|turret|defense|production"], "Fixtures, machines, vending, powered devices, production, and construction defenses."),
     ("COMBAT_SIM", "Combat Entity Simulation", [r"combat|attack|damage|npc|entity|turn|advance|move|movement|motion|path|faction|heat|suspicion|simulation|population|personnel"], "Entity state, turn advancement, combat, movement, factions, heat/suspicion, simulation, and population systems."),
     ("ASSET_REGISTRY", "Asset Registry Art", [r"asset|registry|tile|art|image|glyph|semantic|texture|atlas|portrait|icon"], "Asset registry, tile art, glyphs, semantic art, portraits, icons, and texture indexes."),
@@ -53,11 +54,23 @@ ZONE_RULES: List[Tuple[str, str, Sequence[str], str]] = [
 ZONE_LABELS: Dict[str, str] = {zone_id: label for zone_id, label, _patterns, _desc in ZONE_RULES}
 ZONE_LABELS["UNPOSITIONED"] = "Unpositioned / Needs Map Assignment"
 
-# Explicit ownership beats keyword heuristics.  The first operation-smoke run
-# showed that generic render/UI words inside large framework files pushed major
-# simulation/economy/generation modules into UI_RENDER.  These overrides are the
-# durable Mermaid positions for known top-level owners and obvious boundary files.
 MODULE_OVERRIDES: List[Tuple[str, str, str]] = [
+    ("SemanticTextManager.java", "LOCALIZATION_TEXT", "Semantic key text manager and locale loader."),
+    ("MainMenuLanguageSelectorAuthority.java", "LOCALIZATION_TEXT", "Main-menu language selector and locale override surface."),
+    ("Locale", "LOCALIZATION_TEXT", "Locale and translation family."),
+    ("Language", "LOCALIZATION_TEXT", "Language selector family."),
+    ("Localization", "LOCALIZATION_TEXT", "Localization family."),
+    ("TextManager", "LOCALIZATION_TEXT", "Semantic text manager family."),
+    ("FactionWideStockTracker.java", "INVENTORY_PERSIST", "Faction-wide stock ledger owner."),
+    ("ZoneFactionStockTracker.java", "INVENTORY_PERSIST", "Zone/faction stock ledger owner."),
+    ("FactionInventoryStockAuthority.java", "INVENTORY_PERSIST", "Faction stock access authority owner."),
+    ("TraderTradeActionAuthority.java", "INVENTORY_PERSIST", "Trader action/offer authority owner."),
+    ("LimitedVendingStockAuthority.java", "FIXTURE_MACHINE", "Limited vending stock authority owner."),
+    ("FactionPopulationTracker.java", "COMBAT_SIM", "Faction-wide population ledger owner."),
+    ("ZonePopulationTracker.java", "COMBAT_SIM", "Zone/faction population ledger owner."),
+    ("StockTracker", "INVENTORY_PERSIST", "Stock tracking family."),
+    ("StockAuthority", "INVENTORY_PERSIST", "Stock authority family."),
+    ("PopulationTracker", "COMBAT_SIM", "Population tracking family."),
     ("MediaLayerAlpha.java", "UI_RENDER", "Media layer rendering/visual composition owner."),
     ("WorldRuntimeGenerationFramework.java", "WORLD_GEN", "World generation framework owner."),
     ("Road", "WORLD_GEN", "Road/frontage/grid generation family."),
@@ -94,7 +107,7 @@ MODULE_OVERRIDES: List[Tuple[str, str, str]] = [
     ("Tile", "ASSET_REGISTRY", "Tile/art registry family."),
     ("Glyph", "ASSET_REGISTRY", "Glyph/art registry family."),
     ("Portrait", "ASSET_REGISTRY", "Portrait semantic asset family."),
-    ("Semantic", "ASSET_REGISTRY", "Semantic registry family."),
+    ("SemanticAsset", "ASSET_REGISTRY", "Semantic asset registry family."),
     ("GameOptionsFramework.java", "RUNTIME_OPTIONS", "Game options owner."),
     ("Options", "RUNTIME_OPTIONS", "Options/runtime controls family."),
     ("RuntimePathResolver.java", "RUNTIME_OPTIONS", "Runtime path/options support."),
@@ -262,25 +275,13 @@ def module_record(path: Path) -> ModuleRecord:
         status = "retired_empty_shell"
         zone_id = "DIAGNOSTIC_DOC"
         zone_label = "Diagnostics Smoke Audit"
-    return ModuleRecord(
-        path=r,
-        class_count=classes,
-        function_count=functions,
-        line_count=len(lines),
-        byte_count=len(text.encode("utf-8", errors="replace")),
-        zone_id=zone_id,
-        zone_label=zone_label,
-        node_id=node_id_for(r),
-        status=status,
-        sha256=digest(text),
-    )
+    return ModuleRecord(r, classes, functions, len(lines), len(text.encode("utf-8", errors="replace")), zone_id, zone_label, node_id_for(r), status, digest(text))
 
 
 def mermaid(records: Sequence[ModuleRecord]) -> str:
     by_zone: Dict[str, List[ModuleRecord]] = defaultdict(list)
     for record in records:
         by_zone[record.zone_id].append(record)
-
     lines: List[str] = ["flowchart TD"]
     lines.append('    ROOT["The Mechanist Codebase<br/>Mermaid position master"]')
     lines.append('    ERRORS["Code errors / unmapped modules<br/>must submit map position"]')
@@ -316,23 +317,10 @@ def write_reports(records: Sequence[ModuleRecord]) -> None:
     status_counts = Counter(r.status for r in records)
     unpositioned = [r for r in records if r.status == "unpositioned_error"]
     oversized = [r for r in records if r.line_count >= 800 or r.byte_count >= 120_000 or r.function_count >= 75]
-
-    write_tsv(
-        GENERATED_ROOT / "CODE_MERMAID_POSITION_LEDGER.tsv",
-        ["path", "node_id", "zone_id", "zone_label", "status", "classes", "functions", "lines", "bytes", "sha256"],
-        [(r.path, r.node_id, r.zone_id, r.zone_label, r.status, r.class_count, r.function_count, r.line_count, r.byte_count, r.sha256) for r in records],
-    )
-    write_tsv(
-        GENERATED_ROOT / "CODE_MERMAID_EVALUATION.tsv",
-        ["severity", "path", "node_id", "zone_id", "status", "message"],
-        [("ERROR", r.path, r.node_id, r.zone_id, r.status, "Module did not receive a Mermaid position; add rule or explicit ownership.") for r in unpositioned]
-        + [("WARN", r.path, r.node_id, r.zone_id, r.status, f"Oversized mapped module: {r.function_count} funcs / {r.line_count} lines / {r.byte_count} bytes") for r in oversized],
-    )
-
+    write_tsv(GENERATED_ROOT / "CODE_MERMAID_POSITION_LEDGER.tsv", ["path", "node_id", "zone_id", "zone_label", "status", "classes", "functions", "lines", "bytes", "sha256"], [(r.path, r.node_id, r.zone_id, r.zone_label, r.status, r.class_count, r.function_count, r.line_count, r.byte_count, r.sha256) for r in records])
+    write_tsv(GENERATED_ROOT / "CODE_MERMAID_EVALUATION.tsv", ["severity", "path", "node_id", "zone_id", "status", "message"], [("ERROR", r.path, r.node_id, r.zone_id, r.status, "Module did not receive a Mermaid position; add rule or explicit ownership.") for r in unpositioned] + [("WARN", r.path, r.node_id, r.zone_id, r.status, f"Oversized mapped module: {r.function_count} funcs / {r.line_count} lines / {r.byte_count} bytes") for r in oversized])
     map_block = mermaid(records)
-    generated_md = GENERATED_ROOT / "MERMAID_CODE_MAP.md"
-    generated_md.write_text("# Generated Mermaid Code Map\n\nGenerated: `" + stamp + "`\n\n" + map_block, encoding="utf-8")
-
+    (GENERATED_ROOT / "MERMAID_CODE_MAP.md").write_text("# Generated Mermaid Code Map\n\nGenerated: `" + stamp + "`\n\n" + map_block, encoding="utf-8")
     with MASTER_RECORD.open("w", encoding="utf-8", newline="\n") as f:
         f.write("# Mermaid Code Map Master Record\n\n")
         f.write("Status: active master code-position map.\n\n")
@@ -350,7 +338,7 @@ def write_reports(records: Sequence[ModuleRecord]) -> None:
         for status, count in sorted(status_counts.items()):
             f.write(f"- `{status}`: `{count}` modules\n")
         f.write("\n## Explicit Override Rule\n\n")
-        f.write("Explicit `MODULE_OVERRIDES` entries in `scripts/BUILD_MERMAID_CODE_MAP.py` beat broad keyword heuristics. Add an override when a known owner is misclassified by generic words such as render, panel, or audit.\n")
+        f.write("Explicit `MODULE_OVERRIDES` entries in `scripts/BUILD_MERMAID_CODE_MAP.py` beat broad keyword heuristics. Add an override when a known owner is misclassified by generic words such as render, panel, audit, semantic, faction, or zone.\n")
         f.write("\n## Master Mermaid Map\n\n")
         f.write(map_block)
         f.write("\n## Generated Ledgers\n\n")
