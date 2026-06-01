@@ -1,0 +1,1174 @@
+# 06_interaction_fixtures_machines
+
+Generated: 20260601_131932
+
+Fixture, emergency machine, vending, powered-machine, and hack interaction rules.
+
+These are raw GamePanel shard extraction blocks, not compile-ready Java classes.
+
+---
+Source: gamepanel-shard3.txt:327-334
+Kind: method
+Name: fixtureInspectionLine
+SHA256: 6b16fe545bedb78d8d476f873518a4ecd95f4ae8944da7e46fa657bea3afa140
+
+```java
+    String fixtureInspectionLine(MapObjectState mos) {
+        if (mos == null) return "unknown fixture.";
+        String label = mos.label == null || mos.label.isBlank()
+                ? (mos.type == null || mos.type.isBlank() ? "Fixture" : mos.type.replace('-', ' '))
+                : mos.label;
+        String status = fixtureStatusText(mos);
+        return status.isBlank() ? label + "." : label + " - " + status;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:389-459
+Kind: method
+Name: examineLinesAt
+SHA256: d7d6d6bdfbfaa593336663caf8b77753bc8c5fd9d8519fe017963cc188c10431
+
+```java
+    ArrayList<String> examineLinesAt(int tx, int ty) {
+        ArrayList<String> lines = new ArrayList<>();
+        int depth = examineDepth();
+        if (world == null || !world.inBounds(tx, ty)) {
+            lines.add("EXAMINE");
+            lines.add("There is nothing reliable to examine there.");
+            return lines;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            lines.add("EXAMINE: " + npc.name);
+            if (npc.isAnimalActor()) {
+                lines.add(npc.animalLine() + ".");
+                lines.addAll(petCareReadabilityLines(npc, tx, ty, false));
+            } else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(npc, worldTurn);
+                lines.add((npc.role == null || npc.role.isBlank() ? "Underhive resident" : npc.role)
+                        + " aligned with " + (npc.faction == null ? "no known faction" : npc.faction.label) + ".");
+                lines.add("Age read: " + npc.ageLine() + ".");
+                lines.add(npc.isMinorActor() ? "Rank read: member only; no formal rank before adulthood." : "Rank read: " + npc.factionRankTitle + ".");
+            }
+            IntentReadResult intent = intentReadFor(npc);
+            if (intent != null && intent.available) lines.add(intent.summary);
+            lines.add("Visible equipment: " + visibleNpcEquipmentLine(npc) + ".");
+            String evidence = questEvidenceReadLine(npc);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add(npcConditionReadLine(npc));
+            lines.add(npcCombatReadinessLine(npc));
+            if (depth >= 2) lines.add(npcThreatReadLine(npc, intent));
+            if (depth >= 3) lines.add(npcSensesReadLine(npc, intent));
+            return lines;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) {
+            lines.add("EXAMINE: " + obj.name);
+            lines.add(obj.description == null || obj.description.isBlank() ? "A constructed object in this room." : obj.description);
+            lines.add(baseObjectConditionReadLine(obj));
+            if (depth >= 2) lines.add(baseObjectUseReadLine(obj));
+            if (depth >= 3) lines.add(baseObjectWorkReadLine(obj));
+            return lines;
+        }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) {
+            String label = mos.label == null || mos.label.isBlank() ? "Fixture" : mos.label;
+            lines.add("EXAMINE: " + label);
+            lines.add(fixtureInspectionLine(mos));
+            String evidence = questEvidenceReadLine(mos);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add("Use Interact for available actions.");
+            if (depth >= 2) lines.add("Closer read: " + fixtureStatusText(mos));
+            if (depth >= 3) lines.add("Territory read: " + ownershipText(tx, ty) + ".");
+            return lines;
+        }
+        EnvironmentalHazardRecord hazard = hazardAt(tx, ty);
+        if (hazard != null) {
+            lines.add("EXAMINE: " + hazard.label);
+            lines.add(hazard.warningText());
+            lines.add("Severity: " + hazard.severityText() + ".");
+            if (depth >= 2) lines.add("Avoidance read: plan around it before committing movement.");
+            if (depth >= 3) lines.add("Context read: light " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+            return lines;
+        }
+        char ch = world.tiles[tx][ty];
+        lines.add("EXAMINE: " + describeTile(ch));
+        lines.add("Ownership: " + ownershipText(tx, ty) + ".");
+        lines.add("Light: " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+        if (isDoorTile(ch)) lines.add("Door read: " + describeDoor(ch) + ". Interact can test access.");
+        if (depth >= 2) lines.add("Floor read: " + roomContextReadLine(tx, ty) + ".");
+        if (depth >= 3) lines.add("Approach read: movement here is " + (world.walkable(tx, ty) ? "possible if the route stays clear" : "blocked until the obstacle changes") + ".");
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:632-644
+Kind: method
+Name: baseObjectConditionReadLine
+SHA256: 88dfab53f7286cdd20fed0a125c0b35db483044427c2d241b55cfdbe04a1f4c3
+
+```java
+    String baseObjectConditionReadLine(BaseObject obj) {
+        if (obj == null) return "Condition read: no constructed object is readable.";
+        String condition;
+        if (obj.integrity <= 0) condition = "broken";
+        else if (obj.underConstruction) condition = "under construction";
+        else if (obj.integrity <= 4) condition = "fragile";
+        else if (obj.integrity <= 10) condition = "worn but usable";
+        else if (obj.integrity <= 20) condition = "sturdy";
+        else condition = "heavily built";
+        String armor = obj.cover > 0 ? "cover value visible" : "no obvious cover";
+        String danger = obj.armed ? "armed or defensive fixture" : (obj.attention >= 3 ? "valuable enough to attract attention" : "low immediate danger");
+        return "Condition read: " + condition + "; " + armor + "; " + danger + ".";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:665-672
+Kind: method
+Name: baseObjectUseReadLine
+SHA256: d1afb1c6d2160db45c9aa71a547945dd6f4bd958c13dc1bd51c4c90002345bd5
+
+```java
+    String baseObjectUseReadLine(BaseObject obj) {
+        if (obj == null) return "Use read: no object is readable there.";
+        if (obj.underConstruction) return "Use read: construction is incomplete and needs staged work.";
+        if (obj.isBusinessAsset()) return "Use read: service counter; " + obj.businessReturnLine(this);
+        if (obj.armed) return "Use read: armed fixture; approach and interaction may carry risk.";
+        if (obj.assignedRecipe != null && !obj.assignedRecipe.isBlank()) return "Use read: assigned to " + obj.assignedRecipe + ".";
+        return "Use read: stable built object; Interact or base management may expose its work path.";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:780-832
+Kind: method
+Name: updatePendingInteractionSummary
+SHA256: 60eb3d7b785958057bc1e3b0ad17178ff96e52bae3d1300b888ff9d1cdbc1271
+
+```java
+void updatePendingInteractionSummary() {
+        if (world == null) { pendingInteractionSummary = "No world loaded."; return; }
+        if (!world.inBounds(lookX, lookY)) { pendingInteractionSummary = "No reachable target selected."; return; }
+        if (Math.abs(lookX-playerX) > 1 || Math.abs(lookY-playerY) > 1) {
+            Point approach = selectedInteractionApproachTile();
+            pendingInteractionSummary = approach == null
+                    ? "Selected target is too far away to use. Move next to it first."
+                    : "Selected target is too far away to use. PLAN MOVE can approach " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ".";
+            return;
+        }
+        NpcEntity npc = world.npcAt(lookX, lookY);
+        if (npc != null) {
+            if (npc.isPetActor()) pendingInteractionSummary = "Pet interaction: " + npc.name + " is close enough for " + petGestureName(npc) + ".";
+            else if (npc.isAnimalActor()) pendingInteractionSummary = "Animal interaction blocked: " + animalContactBlockedLine(npc);
+            else pendingInteractionSummary = "Talk to " + npc.name + ", " + (npc.role == null || npc.role.isBlank() ? "local resident" : npc.role) + ".";
+            return;
+        }
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        char ch = world.tiles[lookX][lookY];
+        int turns = agilityActionCost(ch, obj);
+        String target = obj != null ? obj.name : describeTile(ch);
+        if (obj == null && isDoorTile(ch)) {
+            int diff = (ch=='/'?0:(ch=='|'?8:(ch=='L'?14:(ch=='V'?16:22))));
+            pendingInteractionSummary = "Door access: " + target + ". Time: " + turns + " turn(s). Difficulty estimate " + diff + ". " + doorPreflightHint(ch);
+        } else if (obj != null && obj.symbol == 'c') {
+            int cost = sleepFoodWaterCost(pendingSleepHours);
+            pendingInteractionSummary = "Sleep on cot for " + pendingSleepHours + "h? Time: " + sleepTurnCost(pendingSleepHours) + " turns. Cost: " + cost + " food + " + cost + " water. Reduces sleep need up to " + sleepTurnCost(pendingSleepHours) + "/" + MAX_SLEEP_NEED + ". Max 8h.";
+        } else if (obj == null && isFactionJournalObjectAt(lookX, lookY)) {
+            pendingInteractionSummary = factionJournalPreview(lookX, lookY);
+        } else if (obj == null && isBankTerminalAt(lookX, lookY)) {
+            pendingInteractionSummary = bankTerminalPreview(lookX, lookY);
+        } else if (obj == null && isBankVaultAt(lookX, lookY)) {
+            pendingInteractionSummary = bankVaultPreview(lookX, lookY);
+        } else if (obj == null && isBankAlarmPanelAt(lookX, lookY)) {
+            pendingInteractionSummary = bankAlarmPanelPreview(lookX, lookY);
+        } else if (obj == null && isBankManagerAt(lookX, lookY)) {
+            pendingInteractionSummary = bankManagerPreview(lookX, lookY);
+        } else if (obj == null && isPersistentStockObjectAt(lookX, lookY)) {
+            pendingInteractionSummary = persistentStockInteractionSummary(lookX, lookY);
+        } else if (obj == null && isVendingMachine(ch)) {
+            pendingInteractionSummary = vendingPreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter to vend.";
+        } else if (obj == null && isShrine(ch)) {
+            pendingInteractionSummary = shrinePreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter to pray/inspect.";
+        } else if (obj == null && isEmergencyMachine(ch)) {
+            pendingInteractionSummary = emergencyMachinePreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter for machine options.";
+        } else if (obj == null && (ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E')) {
+            pendingInteractionSummary = "INTERMAP TRANSIT — " + intermapTransitLabel(ch) + ": " + transitionPreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM or Enter to transition.";
+        } else if (obj == null && ch == 'Q') {
+            pendingInteractionSummary = governorPreview(lookX, lookY) + " Use BRIBE GOVERNOR or ATTACK GOVERNOR.";
+        } else {
+            pendingInteractionSummary = "Interact with " + target + "? Time: " + turns + " turn(s), modified by Agility.";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:847-854
+Kind: method
+Name: doorPreflightHint
+SHA256: dba75823673cf74cb16f84b80909018dab488fda1ace6b830e1f06625361114d
+
+```java
+    String doorPreflightHint(char ch) {
+        if (ch == '/') return "Open passage; no door work needed.";
+        if (ch == '|') return "Closed door; opening may make sight lines and sound travel farther.";
+        if (ch == 'L') return "Locked or chained; keys, lockpicks, tools, Mechanics, or Intellect can help.";
+        if (ch == 'V') return "Vent panel; tools or a careful access check may be needed.";
+        if (ch == 'X') return "Electronic security; a keycard, hacking tools, data spike, or skill check may be needed.";
+        return "Sealed access; ordinary interaction may not be enough.";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:860-860
+Kind: method
+Name: vendingName
+SHA256: 3c9d28e2c3b103f94729d7c324181af1469f4f69cad31e945a46216d89831564
+
+```java
+    String vendingName(char ch) { return PublicServiceMediaAuthority.vendingName(ch); }
+```
+
+---
+Source: gamepanel-shard3.txt:862-867
+Kind: method
+Name: vendingPreview
+SHA256: 5869d37fb53cf1a644026556f028cf9b47f8d27682e359030c5059edbf967369
+
+```java
+    String vendingPreview(char ch, int x, int y) {
+        String key = passiveKey(x,y);
+        int until = passiveCooldownUntilTurn.getOrDefault(key, 0);
+        int hacked = vendingHackVendCount.getOrDefault(key, 0);
+        return PublicServiceMediaAuthority.vendingPreview(ch, until, hacked);
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:869-869
+Kind: method
+Name: vendingStockText
+SHA256: af35c52bc15736f5722cc6d206432ee78216e166dbf41ac26ffb0e211c0c7332
+
+```java
+    String vendingStockText(char ch) { return PublicServiceMediaAuthority.vendingStockText(ch); }
+```
+
+---
+Source: gamepanel-shard3.txt:871-874
+Kind: method
+Name: shrinePreview
+SHA256: 9cdeab5532bf5ed6f4f61d1c2b73537d14eb56c75c3d631fe972f37b05f1fb97
+
+```java
+    String shrinePreview(char ch, int x, int y) {
+        if (ch == 'I') return "Concord shrine: " + imperialShrineName(x,y) + ". A legal devotional fixture for brief prayer and composure.";
+        return "Heretical shrine: " + chaosShrineName(x,y) + ". Illegal, dangerous, and probably listening.";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:887-900
+Kind: method
+Name: emergencyMachineName
+SHA256: b3490bfdc4b75cc616364571706f7e5ea6407f0c49d1684e3c53943167c6bfed
+
+```java
+    String emergencyMachineName(char ch) {
+        switch(ch) {
+            case 'Y': return "Martian atmospheric water condenser";
+            case 'J': return "Martian emergency assembler";
+            case 'B': return "Martian emergency boiler";
+            case 'K': return "Martian micro laboratorium";
+            case 'O': return "Martian emergency miner";
+            case 'Z': return "Martian relay power grid";
+            case 'P': return "Martian emergency smelter";
+            case 'F': return "Martian emergency steam engine";
+            case 'U': return "disabled emergency steam engine";
+            default: return "Martian emergency machine";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:901-913
+Kind: method
+Name: emergencyMachineImagePath
+SHA256: 65b6e56947367f118de48ac84856bc1d9c55f789282dea563733c0f1b85d4b67
+
+```java
+    String emergencyMachineImagePath(char ch) {
+        switch(ch) {
+            case 'Y': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-atmospheric-water-condenser.png";
+            case 'J': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-assembler.png";
+            case 'B': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-boiler.png";
+            case 'K': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-laboratorium.png";
+            case 'O': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-miner.png";
+            case 'Z': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-power-grid.png";
+            case 'P': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-smelter.png";
+            case 'F': case 'U': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-steam-engine.png";
+            default: return "assets/imported_tech_priests/thumbnail.png";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:914-921
+Kind: method
+Name: emergencyMachineLocked
+SHA256: 7f765355f85cef184abe49380be7023daba59282f34cf33a6f83a22123aa094b
+
+```java
+    boolean emergencyMachineLocked(int x, int y, char ch) {
+        String key = passiveKey(x,y);
+        if (unlockedEmergencyMachines.contains(key)) return false;
+        // Stable seeded lock chance per fixture. Owned faction zones are more likely to lock their machines.
+        int hash = Math.abs(Objects.hash(world == null ? 0 : world.locationKey(), x, y, ch));
+        int chance = owningFactionAt(x,y) == Faction.NONE ? 28 : 62;
+        return (hash % 100) < chance;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:922-927
+Kind: method
+Name: emergencyMachinePreview
+SHA256: 06913c378bfb08c60913f4352bef93a3dd323784e4751e939a36501e62753ee5
+
+```java
+    String emergencyMachinePreview(char ch, int x, int y) {
+        String lock = emergencyMachineLocked(x,y,ch) ? "LOCKED: hack/pick/keycard required before use" : "usable";
+        Faction owner = owningFactionAt(x,y);
+        String power = machinePowered(ch) ? "powered" : "unpowered/current slice dark";
+        return emergencyMachineName(ch) + " [" + lock + ", " + power + ", owner=" + factionLabel(owner) + "]. Preview asset: " + emergencyMachineImagePath(ch);
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:956-959
+Kind: method
+Name: machinePowered
+SHA256: 53cd5b3a07b014bf400c970c89e06b4fe3532f5bda31bc602c4fdceb2b67cad2
+
+```java
+    boolean machinePowered(char ch) {
+        if (ch == 'F' || ch == 'U' || ch == 'Z') return true;
+        return world == null || !poweredDownSlices.contains(String.valueOf(world.locationKey()));
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:985-985
+Kind: method
+Name: interactEmergencyMachine
+SHA256: 52f5a882c583e8ca4c6968ca8af6fc840477dc36bee46d005b98598aaa943488
+
+```java
+    void interactEmergencyMachine(int tx, int ty, char ch) {
+```
+
+---
+Source: gamepanel-shard3.txt:986-999
+Kind: residual
+Name: residual_986_999
+SHA256: f5cba68fc74abe75fbc30acc3a3a571ea8af4dfa6ed3c2685e992425c2213a16
+
+```java
+        if (!ensureMachineAccess(tx,ty,ch)) return;
+        if (!machinePowered(ch)) {
+            logEvent(emergencyMachineName(ch) + " is unpowered. Powered doors are easier to force, security is down, visibility is reduced, and machinery is inaccessible until power is restored.");
+            advanceTurn("checks unpowered machinery.");
+            return;
+        }
+        switch(ch) {
+            case 'Y':
+                int waterGain = 2 + rng.nextInt(4);
+                for(int i=0;i<waterGain;i++) addInventoryItem("Water bottle", ItemProvenanceRecord.producedByFixture("Water bottle", Faction.HIVER, emergencyMachineName(ch), world, turn, "condensed atmospheric moisture", "dispensed to player by emergency condenser"));
+                logEvent("The condenser coughs out " + waterGain + " units of drinkable water.");
+                break;
+            case 'J':
+                if (countInventory("Machine part") >= 1 && countInventory("Construction supplies") >= 1) { removeInventoryOne("Machine part"); removeInventoryOne("Construction supplies"); addInventoryItem("Assembled component", ItemProvenanceRecord.producedByFixture("Assembled component"
+```
+
+---
+Source: gamepanel-shard4.txt:93-93
+Kind: method
+Name: vendingCost
+SHA256: a98a44118ee41cdba685006e0b7182cb44d762c24beb754543145caf897069eb
+
+```java
+    int vendingCost(char ch) { return PublicServiceMediaAuthority.vendingCost(ch); }
+```
+
+---
+Source: gamepanel-shard4.txt:1393-1404
+Kind: method
+Name: hostileIntentBark
+SHA256: 10088c7750f2951cd5b6e67bebd8ad078fe2e4b5fded85258f64077a7f68c984
+
+```java
+    String hostileIntentBark(NpcEntity npc, int dist) {
+        if (npc == null) return "Something notices you.";
+        if (npc.isAnimalActor()) return npc.name + " notices you and breaks into animal violence.";
+        switch(npc.faction) {
+            case MUTANT: return npc.name + " sees you and surges forward, wet claws scraping for purchase.";
+            case CULTIST: case HERETIC: return npc.name + " points and howls a broken litany. Hostile intent confirmed.";
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH:
+                return npc.name + " clocks your movement, reaches for a weapon, and commits to violence.";
+            case ROGUE_MACHINE: return npc.name + " acquires target lock. The machine has made a decision.";
+            default: return npc.name + " turns hostile and closes distance.";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2498-2513
+Kind: method
+Name: npcAttackWeapon
+SHA256: b2547c56b46200e840459d61fa15ebfea20549640b5e1cd1e3d93dff2944aa4e
+
+```java
+    String npcAttackWeapon(NpcEntity npc) {
+        if (npc == null) return "unknown weapon";
+        ensureNpcCombatLoadout(npc);
+        if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) return npc.equippedMeleeWeapon;
+        switch (npc.faction) {
+            case SORORITAS: return "Chainsword";
+            case CIVIC_WARDENS: return "Civic Wardens shock maul";
+            case IMPERIAL_GUARD: return "Guard trench knife";
+            case MUTANT: return "Mutant scrap axe";
+            case ROGUE_MACHINE: return "machine talons";
+            case CULTIST: case HERETIC: return "Cult ritual blade";
+            case GANGER_RED_GRIN: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: case BANDIT: return "Ganger chain cleaver";
+            case NOBLE: return "Duelling Sword";
+            default: return "Knife";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2714-2738
+Kind: method
+Name: addDoorAndMachineFallbackLight
+SHA256: 4f830f54dc30ac4c7a38b5fbd9900b1403c7353bbd6a04709521003dcc877228
+
+```java
+    void addDoorAndMachineFallbackLight() {
+        if (world == null || lightLevelTiles == null) return;
+        boolean starterCivilLighting = world.zoneType != null && (world.zoneType == ZoneType.NEUTRAL_CIVILIAN_FLOOR || world.zoneType.name().contains("HIVER") || world.zoneType.label.toLowerCase(Locale.ROOT).contains("civil") || world.zoneType.label.toLowerCase(Locale.ROOT).contains("hab"));
+        for (int x=0; x<world.w; x++) for (int y=0; y<world.h; y++) {
+            char ch = world.tiles[x][y];
+            if (isDoorTile(ch) || ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E') {
+                addLightLevelSource(x, y, 2, 40, new Color(190,150,80));
+            }
+            if (starterCivilLighting && (world.isCorridorGlyph(ch) || ch == '.' || ch == '+') && Math.floorMod(x * 31 + y * 17, 13) == 0) {
+                addLightLevelSource(x, y, 2, 34, new Color(210,170,95));
+            }
+        }
+        for (BaseObject obj : baseObjects) {
+            if (obj == null) continue;
+            boolean machine = isMachineOrEquipmentName(obj.name) || obj.assignedRecipe != null && !obj.assignedRecipe.isBlank();
+            if (machine) addLightLevelSource(obj.x, obj.y, obj.assignedRecipe != null && !obj.assignedRecipe.isBlank() ? 3 : 1, obj.assignedRecipe != null && !obj.assignedRecipe.isBlank() ? 58 : 28, new Color(230,155,80));
+        }
+        if (world.mapObjects != null) for (MapObjectState m : world.mapObjects) {
+            if (m == null) continue;
+            String n = ((m.label == null ? "" : m.label) + " " + (m.type == null ? "" : m.type)).toLowerCase(Locale.ROOT);
+            if (n.contains("machine") || n.contains("smelter") || n.contains("forge") || n.contains("condenser") || n.contains("generator") || n.contains("engine") || n.contains("lab") || n.contains("terminal") || n.contains("crate")) {
+                addLightLevelSource(m.x, m.y, n.contains("smelter") || n.contains("forge") || n.contains("engine") || n.contains("generator") ? 3 : 1, n.contains("smelter") || n.contains("forge") || n.contains("engine") || n.contains("generator") ? 54 : 24, new Color(220,145,75));
+            }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2740-2743
+Kind: method
+Name: isMachineOrEquipmentName
+SHA256: f7688953600b9102cdfbed6a5b5e6f1e96deea611ec7c99275e5ddc47253964d
+
+```java
+    boolean isMachineOrEquipmentName(String name) {
+        String n = name == null ? "" : name.toLowerCase(Locale.ROOT);
+        return n.contains("machine") || n.contains("forge") || n.contains("smelter") || n.contains("condenser") || n.contains("engine") || n.contains("lab") || n.contains("bench") || n.contains("terminal") || n.contains("turret") || n.contains("relay") || n.contains("sensor");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:43-50
+Kind: method
+Name: dataSpikeScavengeChance
+SHA256: b40587c7a115cf29356387f03ecd22bab96fe7970e2cdec4502443db2fc57ef3
+
+```java
+    double dataSpikeScavengeChance(RoomProfile rp, ZoneType zt) {
+        String rn = rp == null || rp.name == null ? "" : rp.name.toLowerCase(Locale.ROOT);
+        double base = 0.003; // very rare baseline
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) base += 0.012;
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) base += 0.008;
+        if (rn.contains("machine") || rn.contains("logic Engine") || rn.contains("vault") || rn.contains("archive") || rn.contains("security")) base += 0.010;
+        return Math.min(0.035, base);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:623-623
+Kind: method
+Name: countDataSpikes
+SHA256: ff9bf67b1736cdefc0af67a3085b7ef0fdaa083a84ca9dc6192b4aa6e9da38d3
+
+```java
+    int countDataSpikes() { return countInventory("Data spike"); }
+```
+
+---
+Source: gamepanel-shard5.txt:624-624
+Kind: method
+Name: consumeDataSpike
+SHA256: af02a5994ca979b94fd9c2a02d69d8228a03f34b4b7251960edc32048e743d72
+
+```java
+    boolean consumeDataSpike() { return removeInventoryOne("Data spike"); }
+```
+
+---
+Source: gamepanel-shard5.txt:827-829
+Kind: method
+Name: interactHere
+SHA256: 42c8ade0203431f0bb01331f24c1e03b2652ad3265cc7ef4df4e9b6cd58b4de2
+
+```java
+    void interactHere() {
+        beginInteractMode();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1149-1154
+Kind: method
+Name: interactSewerHatch
+SHA256: 411f9df70d99dcf3f354c69c66d44b2c64848696168ebe55830b0682da177482
+
+```java
+    void interactSewerHatch(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer hatch."); return; }
+        if (atlas.sewer) { logEvent("This hatch logic is already on a sewer layer; use a ladder/drain marker instead."); return; }
+        atlas.sewer = true;
+        loadAtlasWorld("sewer hatch down to Floor " + atlas.floor + "B", null);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1156-1161
+Kind: method
+Name: interactSewerLadder
+SHA256: b78e765ffaa54be1a24abbf481effd11feb48edfa7448dfef48e61d399576403
+
+```java
+    void interactSewerLadder(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for sewer ladder."); return; }
+        if (!atlas.sewer) { logEvent("This ladder/drain is not connected to a sewer layer from here."); return; }
+        atlas.sewer = false;
+        loadAtlasWorld("sewer ladder back to Floor " + atlas.floor, null);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1163-1169
+Kind: method
+Name: interactElevator
+SHA256: 2cbf32ec7c92e4c427a5a527b3fe8ad3647442b58b0c7967f7bf20a706bcbbbd
+
+```java
+    void interactElevator(int tx, int ty) {
+        if (atlas == null || world == null) { logEvent("No sector atlas available for elevator."); return; }
+        if (atlas.floor >= 10) { logEvent("The elevator coughs against the upper limit of this sector stack. No higher route is mapped yet."); advanceTurn("tests a capped elevator."); return; }
+        atlas.floor = Math.min(10, atlas.floor + 1);
+        atlas.sewer = false;
+        loadAtlasWorld("elevator ascent to Floor " + atlas.floor, null);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1451-1476
+Kind: method
+Name: constructionMenuGuidanceLines
+SHA256: a2bb70d7c8e346da94b94548234282668e03ecddae85c53f4d1867cd1a46703b
+
+```java
+    ArrayList<String> constructionMenuGuidanceLines(BuildRecipe selected) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (!baseClaimed) {
+            lines.add("Build access: claim a room before placing construction.");
+            lines.add("Good first builds after claiming: Storage Crate, Sleeping Cot, Water Barrel, then Scrap Workbench.");
+            return lines;
+        }
+        if (world == null || !isInClaimedRoom(playerX, playerY)) {
+            lines.add("Build access: stand inside your claimed room before placing construction.");
+            lines.add("The list still shows what you can prepare, but placement waits for claimed-room footing.");
+            return lines;
+        }
+        if (selected == null) {
+            lines.add("Build categories: survival, storage, production, commerce, logistics, and defense.");
+            lines.add("Suggested next build: " + suggestedConstructionChoiceLine() + ".");
+            lines.add("Resources: supplies " + supplies + ", machine parts " + machineParts + ", stored components " + constructionComponentReadinessLine() + ".");
+            return lines;
+        }
+        lines.add("Build category: " + constructionCategoryFor(selected) + ".");
+        lines.add("Cost: supplies " + selected.supplyCost + ", parts " + selected.partCost + ", components " + selected.componentCostSummary(4) + ".");
+        lines.add("Readiness: " + constructionReadinessLine(selected));
+        lines.add("Permission risk: " + constructionPermissionRiskLine(selected));
+        lines.add("Heat impact: " + constructionExpansionHeatLine(selected));
+        lines.add("Placement rule: " + constructionPlacementHintLine(selected));
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1573-1579
+Kind: method
+Name: productionMachineStateLine
+SHA256: 2d53de1b04db3f0c579d1861491f74932dee8281bf2a3739570fe818e96f5968
+
+```java
+    String productionMachineStateLine(BaseObject machine) {
+        if (machine == null) return "not selected";
+        if (machine.integrity <= 0) return "broken and cannot run";
+        if (machine.underConstruction) return "still under construction";
+        String q = machine.qualityName == null || machine.qualityName.isBlank() ? "Common" : machine.qualityName;
+        return "available at " + q + " quality with integrity " + machine.integrity;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1581-1587
+Kind: method
+Name: productionRecipeReadLine
+SHA256: e74342779859ab0b263f3da0689ad17a19f1f8d27cd9abd320e69e971627a457
+
+```java
+    String productionRecipeReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null) return "no visible recipe is selected.";
+        if (recipe.disabled) return "unlock production knowledge to reveal real recipes.";
+        String problem = recipe.assignmentProblem(this, machine);
+        String status = problem == null ? "fits this machine" : "does not fit yet: " + problem;
+        return recipe.name + " -> " + recipe.outputBaseItem + "; " + status;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1589-1593
+Kind: method
+Name: productionInputReadLine
+SHA256: de8cb2c1f78bce4966f8a6aa6bf864fe0f9c897ba9df8495af4346465b57cf54
+
+```java
+    String productionInputReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null || recipe.disabled) return "no recipe inputs available.";
+        String problem = recipe.blockingProblemForMachine(this, machine);
+        return recipe.inputSummary() + (problem == null ? "; inputs are ready." : "; blocked: " + problem);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1595-1599
+Kind: method
+Name: productionOutputReadLine
+SHA256: 9e9f30c3d545f5c84504ea31d39a4c5d490f6fb79d7b6a096822f61afcb364f5
+
+```java
+    String productionOutputReadLine(CraftingRecipe recipe, BaseObject machine) {
+        if (recipe == null || recipe.disabled) return "no output forecast available.";
+        String quality = machine == null ? "unknown quality" : cappedProductionQuality(machine, recipe.requiredKnowledge);
+        return recipe.outputCount + "x " + recipe.outputBaseItem + " at up to " + quality + "; takes " + recipe.turnCost + " turn(s), fatigue +" + recipe.fatigueCost + ", XP +" + recipe.xpGain + " " + recipe.xpSkill + ".";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1601-1606
+Kind: method
+Name: productionWorkerQueueLine
+SHA256: 784bc009c48c07101a1f1ab6ad45278f3e565cf4f02cf94170345fb18ea0096a
+
+```java
+    String productionWorkerQueueLine(BaseObject machine) {
+        if (machine == null) return "no machine selected.";
+        String worker = machine.assignedWorker == null || machine.assignedWorker.isBlank() ? "no assigned worker" : "worker " + machine.assignedWorker;
+        String recipe = machine.assignedRecipe == null || machine.assignedRecipe.isBlank() ? "no assigned recipe" : "assigned recipe " + machine.assignedRecipe;
+        return worker + "; " + recipe + "; queue " + machine.productionQueueRemaining + "/" + Math.max(1, machine.productionQueueTarget) + ".";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1608-1619
+Kind: method
+Name: productionNextUnblockLine
+SHA256: b1c8839439f8e746d5ad75a353bbf1e1d59eadfa013539b0881a7abef2c68c8a
+
+```java
+    String productionNextUnblockLine(CraftingRecipe recipe, BaseObject machine) {
+        if (machine == null) return "select or build a production machine.";
+        if (machine.integrity <= 0) return "repair or replace the damaged machine.";
+        if (machine.underConstruction) return "finish the staged construction before production.";
+        if (recipe == null || recipe.disabled) return "unlock production knowledge or select another visible recipe.";
+        String problem = recipe.blockingProblemForMachine(this, machine);
+        if (problem == null) {
+            if (machine.assignedWorker == null || machine.assignedWorker.isBlank()) return "run manually or assign a worker if recruit labor is available.";
+            return "queue or run the selected recipe when ready.";
+        }
+        return problem;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1939-1942
+Kind: method
+Name: machineQualityTier
+SHA256: a9d31ed5666bf949c2c0b76f928eb7bb12760cf6cc17ef26b1567a9f95fd634c
+
+```java
+    int machineQualityTier(BaseObject obj) {
+        if (obj == null) return 0;
+        return Math.max(0, Math.min(ItemQuality.NAMES.length-1, MachineTierAuthority.qualityCeilingTier(obj)));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2092-2100
+Kind: method
+Name: moveStaffingStationSelection
+SHA256: 9399f9193a4b2a1721090cdb189f9e47970f666c6868dd9ecadbc56c9c960d1f
+
+```java
+    void moveStaffingStationSelection(int delta) {
+        ArrayList<BaseObject> stations = staffableStations();
+        if (stations.isEmpty()) { logEvent("Staffing station selection failed: no machine or defense station exists."); return; }
+        selectedStaffingStationIndex = Math.max(0, Math.min(stations.size()-1, selectedStaffingStationIndex + delta));
+        BaseObject station = stations.get(selectedStaffingStationIndex);
+        lastStaffingAssignmentReport = ManualStaffingAssignmentAuthority.selectionLine(this, station, selectedStaffingWorker());
+        logEvent("Selected staffing station: " + station.name + " at " + station.x + "," + station.y + ".");
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2212-2219
+Kind: method
+Name: moveWorkerMachineSelection
+SHA256: 7686c4240cc22a54e14a8d9730fcdbc8a514ef604ea2c7c47682f917b1ed998c
+
+```java
+    void moveWorkerMachineSelection(int delta) {
+        ArrayList<BaseObject> ms = recruitOperableMachines();
+        if (ms.isEmpty()) { logEvent("Machine selection failed: no recruit-operable base machines exist."); return; }
+        selectedWorkerMachineIndex = Math.max(0, Math.min(ms.size()-1, selectedWorkerMachineIndex + delta));
+        BaseObject m = ms.get(selectedWorkerMachineIndex);
+        logEvent("Selected production machine: " + m.name + " [" + m.qualityName + "] assigned recipe=" + (m.assignedRecipe == null || m.assignedRecipe.isBlank() ? "none" : m.assignedRecipe) + ".");
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2269-2284
+Kind: method
+Name: refreshGeneratedProductionForecast
+SHA256: 955fbea3742d2024183ff71177712805ebcc76c0b02bae6c785be4464e974fc4
+
+```java
+    void refreshGeneratedProductionForecast(String prefix) {
+        ArrayList<FactionRecipeVariant> jobs = visibleGeneratedProductionJobs();
+        BaseObject machine = selectedWorkerMachine();
+        if (jobs.isEmpty()) {
+            lastGeneratedProductionReport = "No generated jobs match filters category=" + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex) + " status=" + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex) + ".";
+            lastGeneratedProductionQueueReport = "Queue forecast unavailable: no filtered job.";
+            logEvent(prefix + ": " + lastGeneratedProductionReport);
+            repaint();
+            return;
+        }
+        FactionRecipeVariant v = jobs.get(Math.max(0, Math.min(selectedGeneratedProductionJobIndex, jobs.size()-1)));
+        lastGeneratedProductionReport = v.outputName + " | " + ControlledProductionJobAuthority.shortStatus(this, machine, v);
+        lastGeneratedProductionQueueReport = ControlledProductionJobAuthority.queueForecastLine(this, machine, v);
+        logEvent(prefix + ": " + lastGeneratedProductionReport);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2930-2937
+Kind: method
+Name: bankVaultPreview
+SHA256: 585f409465d38291137bccbe8be5d66e291db987f0e68fabbda7353d0a92f901
+
+```java
+    String bankVaultPreview(int tx, int ty) {
+        MapObjectState m = bankVaultAt(tx, ty);
+        if (m == null) return "No bank vault selected.";
+        BankProfile b = bankProfileFromStock(m.stockState);
+        String state = bankVaultLooted(m) ? "looted/emptied" : "locked and valuable";
+        boolean alarmed = m.cooldownUntilTurn > turn || (m.stockState != null && m.stockState.contains("alarmed=true"));
+        return "Bank vault: " + b.label + " / patron " + b.noblePatron + " / " + state + (alarmed?" / alarmed":"") + ". Access: Bank manager keycard, Secure vault key, Data spike, Lockpicks, or hacking tools. Alarm cooldown until turn " + Math.max(0, bankHeistAlarmCooldownUntilTurn) + ". Last heist report: " + lastBankHeistReport + " Last alarm: " + lastBankAlarmReport;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2986-2995
+Kind: method
+Name: bankVaultAccessScore
+SHA256: bc3e8e8666d78c1e700dc65aad8ba8f60c55c3fa6eb71ceae1bca3eb9a128064
+
+```java
+    int bankVaultAccessScore() {
+        int score = stat("Intellect", 6) * 5 + stat("Agility", 6) * 2;
+        if (countInventory("Bank manager keycard") > 0) score += 70;
+        if (countInventory("Secure vault key") > 0) score += 55;
+        if (countInventory("Data spike") > 0) score += 30;
+        if (countInventory("Lockpicks") > 0) score += 18;
+        if (countInventory("Hacking tools") > 0 || countInventory("Tool bundle") > 0 || countInventory("Mechanist Collegia tool roll") > 0) score += 12;
+        if ("SNEAK".equals(movementModeLabel()) || "SNEAK".equals(activeMotionStateLabel())) score += 8;
+        return score;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3733-3736
+Kind: method
+Name: isBlockingFeatureCandidate
+SHA256: cb49606b873640bc24a6754ad2b19a271d877440cfe5c589e218c64f08390654
+
+```java
+    boolean isBlockingFeatureCandidate(String label, String type) {
+        String n = ((label == null ? "" : label) + " " + (type == null ? "" : type)).toLowerCase(Locale.ROOT);
+        return n.contains("crate") || n.contains("vending") || n.contains("locker") || n.contains("machine") || n.contains("smelter") || n.contains("forge") || n.contains("bench") || n.contains("cabinet") || n.contains("terminal") || n.contains("barricade");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3814-3830
+Kind: method
+Name: zoneFirstImpression
+SHA256: 36da844fab3bdf4f2a0421938146cb0ccb0a6cc11a6be95e0f7b28422ed6af80
+
+```java
+    String zoneFirstImpression(ZoneType z) {
+        switch(z) {
+            case NEUTRAL_CIVILIAN_FLOOR: return "The air here is stale but organized. Queue rails, hab doors, ration counters, and tired civilians form the soft machinery of sanctioned poverty. Civic Wardens eyes linger at checkpoints, not hostile, but always counting permits, packages, and faces.";
+            case GANGER_TURF: return "Painted warnings crawl across the walls. The corridors smell of cheap propellant, spoiled protein, and recently decided violence. Every door feels claimed, every shadow priced, and every stranger judged by whether they can bleed.";
+            case MUTANT_SEWER_CAMP: return "The sewer is no longer merely infrastructure. It has become habitation: hide tents, bone heaps, fungal mats, and territorial claw marks. Things shift in the wet dark with the confidence of locals who have forgotten human law.";
+            case CULTIST_SEWER_CAMP: return "The drains here have been painted with devotional filth. Candles gutter in sump niches where no sane worker would kneel. The hymns are quiet, broken, and too close to the rhythm of dripping water.";
+            case SEWER_CONDUIT: return "This is the honest underbelly of the arcology: pipe thunder, rusted ladders, black water, and maintenance labels nobody living still respects. Sound carries strangely here, then vanishes into machinery.";
+            case ARBITES_PRECINCT_EDGE: return "Authority has mass here. Blue steel doors, public counters, holding cells, and weapon ports make the architecture itself feel like a threat. Even silence sounds like paperwork being prepared against you.";
+            case MECHANICUS_FORGE_CLOISTER: return "Red utility lamps pulse over conduit shrines and machine cells. The air tastes of hot metal and old incense. Every wall implies that a machine is listening, or worse, waiting for proper authorization.";
+            case IMPERIAL_GUARD_BILLET: return "Bunks, ration crates, armory cages, and bored soldiers occupy the space with military exhaustion. Discipline is present, but so is hunger, boredom, and the hard practicality of people trained to shoot first when confused.";
+            case SECTOR_GOVERNORS_MANSION: return "The sector governor's mansion squats at the top of the stack: gold leaf, gun slots, private clerks, hidden guards, and one possible off-world ticket determined by the world seed. Pay, kill, or leave.";
+            case NOBLE_SERVICE_SPINE: return "The walls are cleaner here in the way servant corridors are clean: polished where watched, rotten where ignored. Locked pantries, service bells, and hidden security slits remind you that nobility begins above and leaks downward as danger.";
+            case ADMINISTRATUM_ARCHIVE: return "Paper, dust, stamps, counters, and cages. The room is not designed to kill you quickly, only to bury you beneath procedure until hunger performs the execution.";
+            case NEUTRAL_RAIL_DEPOT: return "The sector breathes through this place. Rail locks, cargo cages, depot clerks, and quiet guards make an uneasy peace around trade. Everyone is neutral because everyone is being watched.";
+            default: return "The zone resolves out of smoke and geometry: walls, doors, stale air, and the private misery of whatever faction has made this slice of the arcology its own.";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:2817-2844
+Kind: method
+Name: heatInfopediaLines
+SHA256: 8f7c7b4c56c722f4d46cdcd77bef8f54e506c459f8a66a389f642ac767c6aef5
+
+```java
+    java.util.List<String> heatInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Heat and Suspicion Overview":
+                lines.add("Attention pressure overview");
+                lines.add("Current pressure: gang heat " + gangHeat + ", Civic Wardens suspicion " + suspicion + ". Heat is criminal/local danger; suspicion is procedural/legal attention.");
+                break;
+            case "Hourly Decay":
+                lines.add("Attention decay reference");
+                lines.add("Once each 100-turn hour, heat and suspicion decay by 1 while awake. Sleeping counts as laying low and decays each by 2 per hour.");
+                lines.add("If no base is claimed, suspicion receives one extra hourly decay point because the character is not leaving a stable property trail yet.");
+                break;
+            case "Heat Sources":
+                lines.add("Gang heat source reference");
+                lines.add("Heat rises from criminal violence, gang spaces, failed illegal work, noisy construction, obvious theft, hostile attention, and reckless underhive behavior.");
+                break;
+            case "Suspicion Sources":
+                lines.add("Civic Wardens suspicion source reference");
+                lines.add("Suspicion rises from law attention, illegal shrine/vending/security interactions, visible contraband work, official failures, and poor disguise outcomes.");
+                break;
+            default:
+                lines.add("Attention avoidance reference");
+                lines.add("Laying low, sleeping, lawful permits, better disguise behavior, and avoiding noisy crimes reduce pressure or prevent new pressure.");
+                lines.add("Security and barricades improve raid defense but may also make a base more visible as an organized operation.");
+                break;
+        }
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3046-3059
+Kind: method
+Name: factionRoleText
+SHA256: a452c44ec2eb74d51f0156b3a650bb8042e804fbc0c769884b1b169aef5c241d
+
+```java
+    String factionRoleText(Faction f) {
+        if (f==null) return "unresolved faction label";
+        String n=f.name();
+        if (f==Faction.NONE) return "neutral/no-faction marker for generic objects and unowned systems";
+        if (n.contains("MECHANIST COLLEGIA")) return "machine authority, technical services, machine goods, and doctrine gates";
+        if (n.contains("GANGER") || f==Faction.BANDIT) return "local criminal power, heat pressure, fences, and violent control of turf";
+        if (n.contains("HIVER") || f==Faction.HIVER) return "civilian labor/population bloc for habs, markets, and ordinary survival";
+        if (n.contains("NOBLE") || f==Faction.NOBLE) return "upper-spire property, permits, luxury goods, servants, and status pressure";
+        if (f==Faction.CIVIC_WARDENS) return "law enforcement, suspicion pressure, paperwork, and coercive order";
+        if (f==Faction.IMPERIAL_GUARD) return "military logistics, rations, armor, weapons, and depot discipline";
+        if (f==Faction.CIVIC_LEDGER_OFFICE) return "records, permits, forms, and bureaucratic access";
+        if (f==Faction.SCAVENGER) return "salvage economy, low-trust goods, trash routes, and survival barter";
+        return "specialized local faction with its own standing, hostility, and production bias";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4486-4495
+Kind: method
+Name: interactionTargetLabel
+SHA256: 3736685b7ed0c0d502c4208316e568f584afa3d48f8a4b95f839d3ce3edaed94
+
+```java
+    String interactionTargetLabel(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "the selected target";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return npc.name;
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) return obj.name;
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) return mos.label == null || mos.label.isBlank() ? "fixture" : mos.label;
+        return describeTile(world.tiles[tx][ty]);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4497-4502
+Kind: method
+Name: interactionApproachStatusFor
+SHA256: 015b0269eddbf450abde5142992fd09b33f759ddf9462c51a6d465c1914e20a9
+
+```java
+    String interactionApproachStatusFor(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty) || !world.inBounds(lookX, lookY)) return "";
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return "";
+        if (Math.abs(tx - lookX) <= 1 && Math.abs(ty - lookY) <= 1 && !(tx == lookX && ty == lookY)) return "approach tile for " + interactionTargetLabel(lookX, lookY);
+        return "";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4890-4901
+Kind: method
+Name: assetTypeForDescriptor
+SHA256: 19e4403c43439fc728ee7bdf3591b85d25995a066c42f3af3ace98bbc7138ace
+
+```java
+    AssetType assetTypeForDescriptor(CompiledTileDescriptor d) {
+        if (d == null) return AssetType.UNKNOWN;
+        String layer = (d.baseLayer == null ? "" : d.baseLayer).toLowerCase(Locale.ROOT);
+        String family = (d.family == null ? "" : d.family).toLowerCase(Locale.ROOT);
+        if (layer.contains("wall") || family.contains("wall")) return AssetType.WALL_TILE;
+        if (layer.contains("road") || family.contains("road")) return AssetType.ROAD_TILE;
+        if (layer.contains("sidewalk") || family.contains("sidewalk")) return AssetType.SIDEWALK_TILE;
+        if (layer.contains("corridor") || family.contains("corridor") || family.contains("sewer") || family.contains("maintenance")) return AssetType.CORRIDOR_TILE;
+        if (layer.contains("door") || family.contains("door") || layer.contains("fixture") || family.contains("fixture")) return AssetType.FIXTURE;
+        if (layer.contains("corpse") || family.contains("corpse") || family.contains("decay")) return AssetType.CORPSE_DECAY;
+        return AssetType.FLOOR_TILE;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1005-1047
+Kind: method
+Name: baseManagementLines
+SHA256: af696a9c4aadab0747a4e55a59ba831b01cb27fea53d1578f40031de67982015
+
+```java
+    ArrayList<String> baseManagementLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("PLAYER FACTION BASE MANAGEMENT");
+        if (!baseClaimed) {
+            lines.add("No faction base has been claimed yet. Claim a room through BUILD before management records exist.");
+            lines.add("Planned management scope: multiple bases, remote traders, production ledgers, and recruit assignment per room.");
+            return lines;
+        }
+        String loc = world == null ? (baseX + "," + baseY) : world.zoneCoordText() + " " + world.layerText() + " @ " + baseX + "," + baseY;
+        lines.add("Base name: " + baseDisplayName());
+        lines.add("Location: " + loc + " | Claimed room id " + claimedRoomId + ".");
+        lines.add("Size/status: " + baseSizeStatusLine());
+        lines.add("Population: recruits " + factionRecruits.size() + "/" + recruitCapacity() + " | available labor " + availableRecruitLabor() + " | security staff " + securityStaffCount() + ".");
+        lines.addAll(baseRosterGuidanceLines());
+        lines.add("Business permits: " + businessPermitCount() + " | open businesses " + openBusinessCount() + " | illegal businesses " + illegalBusinessCount() + " | security rating " + baseSecurityRating() + " | likely raid pressure: " + zoneRaidThreatName() + ".");
+        lines.addAll(baseExpansionHeatGuidanceLines());
+        lines.add("Raid risk: pressure " + baseRaidPressure(baseSecurityRating()) + " | chance " + baseRaidChance(baseSecurityRating()) + "% per hourly pressure check | " + baseRaidWarningLine() + ".");
+        lines.add("Faction rivalry: " + highestFactionMarketPressureLine() + " | faction power " + playerFactionPower() + " | strategic raid chance " + strategicRaidChance() + "% hourly.");
+        lines.add("Contested markets: " + contestedMarketSummaryLine() + ".");
+        lines.add("Commerce power: decor " + baseDecorRating() + " | add-ons " + businessAddonRating() + " | sell bonus +" + businessSellPowerBonus() + " | cargo tier " + cargoNetworkTierName() + " capacity " + cargoNetworkCapacity() + ".");
+        if (factionRecruits.isEmpty()) lines.add("  No recruits assigned. Recruit people through conversation once berthing doctrine and free cots exist.");
+        else for (RecruitWorker r : factionRecruits) lines.add("  Worker: " + r.name + " — " + r.role + " | " + factionLabel(r.faction) + " | skill " + r.skill + " loyalty " + r.loyalty + " | duty " + r.duty + ".");
+        lines.add("");
+        lines.add("Built base assets:");
+        if (baseObjects.isEmpty()) lines.add("  None. This is a claimed room awaiting base fixtures.");
+        else for (BaseObject obj : baseObjects) lines.add("  " + baseObjectManagementLine(obj));
+        lines.add("");
+        lines.add("Production ledger:");
+        lines.addAll(baseProductionLedgerLines());
+        lines.add("");
+        lines.add("Storage and reserves:");
+        lines.add("  Carried construction supplies: " + supplies + " | machine parts: " + machineParts + " | food reserve: " + food + " | water reserve: " + water + ".");
+        lines.addAll(baseStorageGuidanceLines());
+        LinkedHashMap<String,Integer> stacks = stackInventory(baseStorage);
+        if (stacks.isEmpty()) lines.add("  Base storage is empty.");
+        else for (Map.Entry<String,Integer> e : stacks.entrySet()) lines.add("  Stored: " + e.getKey() + " x" + e.getValue() + " | value each " + ItemCatalog.priceFor(e.getKey()) + " | " + baseStoredItemSafetyLine(e.getKey()));
+        lines.add("");
+        lines.add("Owned businesses / services / traders:");
+        lines.addAll(ownedBusinessLines());
+        lines.add("");
+        lines.add("Management note: permits make businesses lawful. Illegal businesses still run, but raise heat and can trigger Civic Wardens, ganger, mutant, or cultist raids by zone.");
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1101-1106
+Kind: method
+Name: baseRosterCommandLine
+SHA256: 77063a18c8d1cf3532eac7b3d217f7a85519e121a19370bff5e579add6b67d5f
+
+```java
+    String baseRosterCommandLine() {
+        if (!hasKnowledge("Recruit Berthing Doctrine")) return "recruiting is limited until Recruit Berthing Doctrine is known.";
+        if (!hasKnowledge("Workshop Labor Discipline")) return "recruits can join, but machine assignment needs Workshop Labor Discipline.";
+        if (factionRecruits.size() >= recruitCapacity()) return "berths are full; build more cots or release pressure before recruiting.";
+        return "recruitment and assignment are available within cot capacity and station access.";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1127-1139
+Kind: method
+Name: recruitBestAssignmentLine
+SHA256: 98704e771e8c6a2e62ce66b480eea8a2b2235e85142bf28c422ab35c2b686936
+
+```java
+    String recruitBestAssignmentLine(RecruitWorker r) {
+        if (r == null) return "inspect roster";
+        String role = safeRecruitRole(r).toLowerCase(Locale.ROOT);
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty)) return "guard posts, alarms, and raid defense";
+        if (role.contains("guard") || role.contains("civic Wardens") || role.contains("soldier") || role.contains("ganger")) return "security or dangerous hauling";
+        if (role.contains("trader") || role.contains("clerk") || role.contains("merchant")) return "shop counters, logistics, or market-facing work";
+        if (role.contains("mechanic") || role.contains("tech") || role.contains("adept") || role.contains("worker")) return "workbench, forge, condenser, or machine crew";
+        if (role.contains("medic") || role.contains("medicae") || role.contains("doctor")) return "clinic stall or medical stock support";
+        if (r.skill >= 4) return "highest-value production station";
+        if (r.loyalty <= 2) return "low-risk labor until trust improves";
+        return "general labor or the next unstafed machine";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1211-1221
+Kind: method
+Name: baseObjectExpansionHeatTag
+SHA256: 928d04a3b167476f7af68f58d1ad92b25bc5c772879ace9b893ca24880a524b1
+
+```java
+    String baseObjectExpansionHeatTag(BaseObject obj) {
+        if (obj == null || obj.integrity <= 0) return null;
+        String low = obj.name == null ? "" : obj.name.toLowerCase(Locale.ROOT);
+        if (obj.armed || low.contains("turret") || low.contains("sensor") || low.contains("security") || low.contains("barricade") || low.contains("barracks")) return "defense/security fixture";
+        if (obj.isBusinessAsset()) return obj.permittedBusiness ? "licensed business" : "unlicensed business";
+        if (low.contains("clinic") || low.contains("medicae")) return "clinic service";
+        if (low.contains("lab") || low.contains("chem") || low.contains("distillation") || low.contains("injector") || low.contains("fume")) return "lab or chemical machine";
+        if (low.contains("workbench") || low.contains("forge") || low.contains("machine") || low.contains("condenser")) return "production machine";
+        if (obj.attention >= 3) return "valuable visible fixture";
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1232-1236
+Kind: method
+Name: baseDefenseAttentionCount
+SHA256: 8d0787bfbb2b839f97f7415cb0049a1727f734a0e4a194b9cb2af641a9917f2d
+
+```java
+    int baseDefenseAttentionCount() {
+        int count = 0;
+        for (BaseObject obj : baseObjects) if ("defense/security fixture".equals(baseObjectExpansionHeatTag(obj))) count++;
+        return count;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1238-1242
+Kind: method
+Name: baseLabOrChemCount
+SHA256: 6812789c2d05999874297847281fab57570f0df203477e1c4f97a69fb2c3a150
+
+```java
+    int baseLabOrChemCount() {
+        int count = 0;
+        for (BaseObject obj : baseObjects) if ("lab or chemical machine".equals(baseObjectExpansionHeatTag(obj))) count++;
+        return count;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1363-1387
+Kind: method
+Name: baseProductionLedgerLines
+SHA256: b9af0051bcc767f2668a550e89d35ab056af29296b71925da3e478b6ce2f7a8b
+
+```java
+    ArrayList<String> baseProductionLedgerLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        ArrayList<BaseObject> machines = recruitOperableMachines();
+        if (machines.isEmpty()) { lines.add("  No recruit-operable machines built."); return lines; }
+        for (BaseObject machine : machines) {
+            String recipeName = machine.assignedRecipe == null ? "" : machine.assignedRecipe;
+            if (recipeName.isBlank()) { lines.add("  " + machine.name + ": idle. No recipe assigned."); continue; }
+            if (ControlledProductionJobAuthority.isGeneratedAssignment(recipeName)) {
+                FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(recipeName);
+                if (v == null) { lines.add("  " + machine.name + ": invalid generated job assignment " + recipeName + "."); continue; }
+                String block = ControlledProductionJobAuthority.operationProblem(this, machine, v, false);
+                String manual = ControlledProductionJobAuthority.manualFallbackLine(this, machine, v);
+                lines.add("  " + machine.name + ": " + v.outputName + " | " + ControlledProductionJobAuthority.inputForecastLine(this, v) + " | queue " + machine.productionQueueRemaining + "/" + Math.max(1, machine.productionQueueTarget) + " | equipment " + v.equipmentSummary() + " | staffed " + (block == null ? "ready" : "blocked: " + block) + " | " + manual);
+                continue;
+            }
+            CraftingRecipe r = CraftingRecipe.byName(recipeName);
+            if (r == null) { lines.add("  " + machine.name + ": invalid recipe assignment " + recipeName + "."); continue; }
+            String block = r.blockingProblemForMachine(this, machine);
+            String q = cappedProductionQuality(machine, r.requiredKnowledge);
+            String output = ProductionRecipe.create(r.outputBaseItem, productionFactionFor(machine, r.faction), q, r.requiredKnowledge, machine.name).outputItemName();
+            lines.add("  " + machine.name + ": " + recipeName + " -> " + output + " x" + r.outputCount + " | uses " + r.inputSummary() + " | " + (block == null ? "ready" : "blocked: " + block));
+        }
+        lines.addAll(LiveProductionPlacementAuthority.baseReadinessLines(this, 8));
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1682-1690
+Kind: method
+Name: rivalFactionForRecipe
+SHA256: 017cc1b48b02fa2b05c79e99482e5842ec7fbcebee8f70b9ec75ac67889600f3
+
+```java
+    Faction rivalFactionForRecipe(CraftingRecipe r, ProductionRecipe pr) {
+        String text = ((r == null ? "" : (r.name + " " + r.outputBaseItem + " " + r.requiredKnowledge)) + " " + (pr == null ? "" : pr.outputItemName())).toLowerCase(Locale.ROOT);
+        if (text.contains("water") || text.contains("ration") || text.contains("food")) return Faction.HIVER_BLOCK_SUMPLEDGER;
+        if (text.contains("med") || text.contains("bandage") || text.contains("antiseptic") || text.contains("splint")) return Faction.CIVIC_WARDENS;
+        if (text.contains("weapon") || text.contains("ammo") || text.contains("stub") || text.contains("blade")) return Faction.BANDIT;
+        if (text.contains("construction") || text.contains("machine") || text.contains("forge") || text.contains("logic Engine")) return Faction.MECHANIST_COLLEGIA;
+        if (text.contains("knowledge") || text.contains("doctrine") || text.contains("permit")) return Faction.CIVIC_LEDGER_OFFICE;
+        return Faction.BANDIT;
+    }
+```

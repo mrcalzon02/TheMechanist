@@ -1,0 +1,356 @@
+# 10_options_runtime_controls
+
+Generated: 20260601_131932
+
+Options screen actions and display/audio/JVM/accessibility toggles.
+
+These are raw GamePanel shard extraction blocks, not compile-ready Java classes.
+
+---
+Source: gamepanel-shard2.txt:438-444
+Kind: method
+Name: toggleConsoleFlag
+SHA256: 189587118d622c5de2ca6d690639de38b4efae3bae56d42ea7566d89fd2d721d
+
+```java
+    boolean toggleConsoleFlag(String key) {
+        String safe = ChatRuntimeAuthority.ChatSecurity.sanitizeIdentifier(key == null ? "flag" : key);
+        boolean next = !consoleBooleanFlags.getOrDefault(safe, false);
+        consoleBooleanFlags.put(safe, next);
+        logEvent("CONSOLE FLAG: " + safe + " " + (next ? "enabled" : "disabled") + ".");
+        return next;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1509-1513
+Kind: method
+Name: cycleFireMode
+SHA256: 9775b2af5ab639d95821aed01fffc12cfb38378fbe971569253591b9e0d931da
+
+```java
+    void cycleFireMode() {
+        combatFireModeIndex = Math.floorMod(combatFireModeIndex + 1, FIRE_MODE_LABELS.length);
+        lastTargetingReport = "Fire mode now " + fireModeLabel() + ".";
+        sounds.play("tab", options);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2257-2261
+Kind: method
+Name: cycleGeneratedJobCategoryFilter
+SHA256: 2cee86ba6fee5d2b86b10557a02de808f51b8d2fdb78a1d2e787b72b7a247434
+
+```java
+    void cycleGeneratedJobCategoryFilter() {
+        generatedJobCategoryFilterIndex = (generatedJobCategoryFilterIndex + 1) % ControlledProductionJobAuthority.categoryFilters().length;
+        selectedGeneratedProductionJobIndex = 0;
+        refreshGeneratedProductionForecast("Generated job category filter -> " + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2263-2267
+Kind: method
+Name: cycleGeneratedJobReadinessFilter
+SHA256: e5a7e64f9211ae53c0dbfa0a5339619b93b5cbbac260166abfdb1301996d82e1
+
+```java
+    void cycleGeneratedJobReadinessFilter() {
+        generatedJobReadinessFilterIndex = (generatedJobReadinessFilterIndex + 1) % ControlledProductionJobAuthority.readinessFilters().length;
+        selectedGeneratedProductionJobIndex = 0;
+        refreshGeneratedProductionForecast("Generated job status filter -> " + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4390-4396
+Kind: method
+Name: toggleAuditTracePlayback
+SHA256: eb45df7ce76fac8b9d471dc79db2b8833ca1aa4a490c216d0cbb2a9777c90f54
+
+```java
+    void toggleAuditTracePlayback() {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) { repaint(); return; }
+        auditTracePlaying = !auditTracePlaying;
+        if (auditTracePlaying && auditTraceIndex >= auditTraceSteps.size() - 1) auditTraceIndex = 0;
+        auditTraceLastAdvance = System.currentTimeMillis();
+        applyAuditTraceStep(auditTracePlaying ? "trace playback" : "trace paused");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4418-4418
+Kind: method
+Name: cycleAuditZoneType
+SHA256: 838255e9f7a3cdb1ed644cf4a3edac41ac3cda3332f8aa79360b587f842f9aae
+
+```java
+    void cycleAuditZoneType(int delta) { auditZoneDropdownOpen = false; setAuditZoneTypeIndex(auditZoneTypeIndex + delta); }
+```
+
+---
+Source: gamepanel-shard5.txt:4421-4421
+Kind: method
+Name: toggleAuditSewerLayer
+SHA256: bedd12f012f81d4c3b05aad0ac75abb6b8998ebc03f8adb98d0c15ad1daca451
+
+```java
+    void toggleAuditSewerLayer() { auditSewerLayer = !auditSewerLayer; regenerateSectorAuditWorld("toggle sewer layer"); }
+```
+
+---
+Source: gamepanel-shard5.txt:4423-4423
+Kind: method
+Name: cycleAuditOverlay
+SHA256: 0fee69f2367f636671637b66d90f2340b233366feac7ce0f3cb6f2411eef8955
+
+```java
+    void cycleAuditOverlay() { auditOverlayMode = Math.floorMod(auditOverlayMode + 1, SectorAuditRuntimeAuthority.OVERLAY_LABELS.length); repaint(); }
+```
+
+---
+Source: gamepanel-shard5.txt:4458-4463
+Kind: method
+Name: multiplayerJoinFavorite
+SHA256: bf4f529847ea856cc9384629ff08f86ed182aead6782a16da9a766b6bb4ff45b
+
+```java
+    void multiplayerJoinFavorite() {
+        NetworkPortAuthority.Endpoint endpoint = multiplayerMenu.joinFavorite();
+        logEvent("MULTIPLAYER FAVORITE ENDPOINT: " + endpoint.display());
+        showTimedAlert("FAVORITE READY", endpoint.display(), 3600);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:206-213
+Kind: method
+Name: mainMenuTitleDrawSize
+SHA256: 51278bce8fa4205223228695944214504f8b6e0b11c151e8ee8d3e5975a953ad
+
+```java
+    Dimension mainMenuTitleDrawSize(BufferedImage title, int W, int H) {
+        int maxTitleW = Math.min(1170, W - 54);
+        int maxTitleH = Math.max(132, Math.min(285, (int)(H * 0.40)));
+        double scale = Math.min(maxTitleW / (double)Math.max(1, title.getWidth()), maxTitleH / (double)Math.max(1, title.getHeight()));
+        int tw = Math.max(620, (int)Math.round(title.getWidth() * scale));
+        int th = Math.max(118, (int)Math.round(title.getHeight() * scale));
+        return new Dimension(tw, th);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3826-3846
+Kind: method
+Name: compute
+SHA256: a3ecadaa2c0ccd18c651dc2729a96c7b4bf4e6a7f57061d06f06949bf2909779
+
+```java
+        static UiLayout compute(int w, int h, double scale) {
+            int margin = Math.max(12, (int)Math.round(16*scale));
+            int topH = Math.max(24, (int)Math.round(30*scale));
+            int bottomH = Math.max(92, Math.min(128, (int)Math.round(110*scale)));
+            int actionFeedH = Math.max(66, Math.min(88, (int)Math.round(76*scale)));
+            int gap = Math.max(6, (int)Math.round(8*scale));
+            int commandW = Math.max(132, Math.min(184, (int)Math.round(152*scale)));
+            int y = margin + topH + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(230, h - y - bottomH - actionFeedH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin+4, Math.max(1,w-margin*2-24), topH);
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + actionFeedH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }
+```
+
+---
+Source: gamepanel-shard6.txt:3848-3866
+Kind: method
+Name: computeSectorAudit
+SHA256: 24f0196b8c8169df984ca610ab2037c4e2393c5197c52313af9b30ed8ae0a7cd
+
+```java
+        static UiLayout computeSectorAudit(int w, int h, double scale) {
+            int margin = Math.max(8, (int)Math.round(12*scale));
+            int gap = Math.max(5, (int)Math.round(6*scale));
+            int commandW = Math.max(118, Math.min(166, (int)Math.round(142*scale)));
+            int bottomH = Math.max(80, Math.min(112, (int)Math.round(94*scale)));
+            int y = margin + gap;
+            int commandX = w - margin - commandW;
+            int mapX = margin + 12;
+            int mapW = Math.max(360, commandX - mapX - gap);
+            int mapH = Math.max(260, h - y - bottomH - margin - gap * 2);
+            Rectangle root = new Rectangle(0,0,w,h);
+            Rectangle top = new Rectangle(margin+12, margin, Math.max(1,w-margin*2-24), Math.max(1, gap));
+            Rectangle map = new Rectangle(mapX, y, mapW, mapH);
+            Rectangle cmd = new Rectangle(commandX, y, commandW, Math.max(180, h-y-margin));
+            Rectangle tactical = new Rectangle(mapX, y + mapH + gap, mapW, bottomH);
+            Rectangle modal = new Rectangle(margin+36, y, Math.max(420, w-(margin+36)*2), Math.max(300, h-y-margin-bottomH/3));
+            Rectangle left = new Rectangle(margin+12, y, Math.max(240, Math.min(340, mapW/3)), mapH);
+            return new UiLayout(root, top, map, cmd, tactical, modal, left);
+        }
+```
+
+---
+Source: gamepanel-shard8.txt:116-119
+Kind: method
+Name: cycleWindowMode
+SHA256: e3c7b6d9807f52419a6894e7bb1c673668d961935dd6790fbcba91b71b42eeaf
+
+```java
+    void cycleWindowMode() {
+        logEvent(OptionsBoundaryAuthority.cycleWindowMode(options));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:125-129
+Kind: method
+Name: toggleGraphicsDropdown
+SHA256: 0df17ae791f1fd529db253fee5a27f66ee535c74d18e6af5d8f3b4742c514171
+
+```java
+    void toggleGraphicsDropdown(int which) {
+        graphicsDropdown = (graphicsDropdown == which) ? -1 : which;
+        logEvent("Graphics dropdown " + (graphicsDropdown < 0 ? "closed" : "opened") + ".");
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:165-170
+Kind: method
+Name: toggleFrameLimiter
+SHA256: 9283115211d0c9c0c9a30fee929f02a9f89c6ddcc3aaccb0cabb1d650af49457
+
+```java
+    void toggleFrameLimiter() {
+        logEvent(OptionsBoundaryAuthority.toggleFrameLimiter(options));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:187-191
+Kind: method
+Name: cycleLightingFx
+SHA256: 691cdd45b2ec4866890390a7b5d13518e50870e23fd694675e05ade6e8b82839
+
+```java
+    void cycleLightingFx() {
+        int next = (options.lightingFxIndex + 1) % GameOptions.LIGHTING_FX_LABELS.length;
+        logEvent(OptionsBoundaryAuthority.setLightingFxIndex(options, next));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:193-197
+Kind: method
+Name: toggleReducedMotion
+SHA256: 14576586bff040720695e81826a92fdbebe21b8516d027061e6ffcb104a26e2c
+
+```java
+    void toggleReducedMotion() {
+        logEvent(OptionsBoundaryAuthority.toggleReducedMotion(options));
+        applyOptions();
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:227-230
+Kind: method
+Name: changeDoomFov
+SHA256: 0429bc510af7416745298056fb4303bfb7b2b614860608eeebfc9b431907df77
+
+```java
+    void changeDoomFov(int delta) {
+        if (options == null) { logEvent("doom mode FOV unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.setDoomFov(options, options.doomModeFovDegrees + delta));
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:232-235
+Kind: method
+Name: cycleDoomFogMode
+SHA256: 2395ca958d4320ef8fb8a0345b7a87c627e17cf02b5e25b4c65851e6a08cbeec
+
+```java
+    void cycleDoomFogMode() {
+        if (options == null) { logEvent("doom mode fog unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.cycleDoomFogMode(options));
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:332-335
+Kind: method
+Name: toggleJvmStringDeduplication
+SHA256: 536ffd87427e9016e2eb9c8adedab34151abf08bc86da4871391be20e0392197
+
+```java
+    void toggleJvmStringDeduplication() {
+        jvmRuntimeProfile.stringDeduplication = !jvmRuntimeProfile.stringDeduplication;
+        markJvmProfileChanged("JVM string deduplication " + (jvmRuntimeProfile.stringDeduplication ? "enabled" : "disabled") + ".");
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:337-340
+Kind: method
+Name: toggleJvmTransparentAcceleration
+SHA256: f2cf4a9008e7ffb02180da559247a0d88914022a0d4d36ac0dd6fe3511841505
+
+```java
+    void toggleJvmTransparentAcceleration() {
+        jvmRuntimeProfile.transparentAcceleration = !jvmRuntimeProfile.transparentAcceleration;
+        markJvmProfileChanged("Java2D transparent blit acceleration " + (jvmRuntimeProfile.transparentAcceleration ? "enabled" : "disabled") + ".");
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:342-345
+Kind: method
+Name: toggleJvmNoAa
+SHA256: 5a7c0877e4a04c59ecc764e47d2d458b29d8f8f7bc422ff59c3073b7cf46a0b3
+
+```java
+    void toggleJvmNoAa() {
+        jvmRuntimeProfile.disableVectorAntialiasing = !jvmRuntimeProfile.disableVectorAntialiasing;
+        markJvmProfileChanged("Java2D vector antialias suppression " + (jvmRuntimeProfile.disableVectorAntialiasing ? "enabled" : "disabled") + ".");
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:423-423
+Kind: method
+Name: cycleColorTarget
+SHA256: 7901496ad26802affd91f8afc72769fc0cf6c2e854dd568ffe860aac29be36e0
+
+```java
+    void cycleColorTarget() { logEvent(OptionsBoundaryAuthority.cycleColorTarget(options)); repaint(); }
+```
+
+---
+Source: gamepanel-shard8.txt:424-424
+Kind: method
+Name: cycleColorPreset
+SHA256: 53e0a2bee93f9f2063bf31fdf3124236cbc0cbdd8610d7eeeafc38e389f10e25
+
+```java
+    void cycleColorPreset() { logEvent(OptionsBoundaryAuthority.cycleColorPreset(options)); repaint(); }
+```

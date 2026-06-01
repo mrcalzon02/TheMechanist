@@ -1,0 +1,5228 @@
+# 99_unassigned_fragments
+
+Generated: 20260601_131932
+
+Fallback for partial methods, class shell material, and unmatched fragments.
+
+These are raw GamePanel shard extraction blocks, not compile-ready Java classes.
+
+---
+Source: gamepanel-shard2.txt:77-85
+Kind: residual
+Name: residual_77_85
+SHA256: 888f3c4b45976033bf9b9938cc1cceac17f6a41a7dd806f0b7d710acb7c0c309
+
+```java
+
+    @Override public int getWidth() {
+        return virtualRenderContext ? renderScaling.virtualWidth() : super.getWidth();
+    }
+
+    @Override public int getHeight() {
+        return virtualRenderContext ? renderScaling.virtualHeight() : super.getHeight();
+    }
+
+```
+
+---
+Source: gamepanel-shard2.txt:108-113
+Kind: method
+Name: ensureRuntimeTimerRunning
+SHA256: fce4b922c37a58f8973961f2426d602f7c4b8c5472ff2ca8806b9005ff16f80f
+
+```java
+    void ensureRuntimeTimerRunning(String reason) {
+        if (!timer.isRunning()) {
+            timer.start();
+            try { DebugLog.warn("RUNTIME_TIMER_RESTART", "Swing timer was stopped; restarted for " + reason + "."); } catch (Throwable ignored) {}
+        }
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:130-132
+Kind: method
+Name: mapInputPoint
+SHA256: 6aed2b911944935829ef9de40fc7a62b9f116bdc54616747fd5367057f38d54b
+
+```java
+    Point mapInputPoint(MouseEvent e) {
+        return renderScaling.mapPhysicalToVirtual(e.getX(), e.getY(), super.getWidth(), super.getHeight());
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:374-380
+Kind: method
+Name: logEvent
+SHA256: 8a5d5d6626bdd4f413be18d9b22c1c81b81ab03b908d8f087484fd4e67d62252
+
+```java
+    void logEvent(String s) {
+        DebugLog.log(s);
+        if (recentActionEligible(s)) {
+            eventLog.add(s);
+            while (eventLog.size() > 80) eventLog.remove(0);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:446-450
+Kind: method
+Name: setConsoleNumericFlag
+SHA256: 94583517239498c10c890515cb6a8af20a2bc27c02359ee12cec0d24ff29e028
+
+```java
+    void setConsoleNumericFlag(String key, float value) {
+        String safe = ChatRuntimeAuthority.ChatSecurity.sanitizeIdentifier(key == null ? "value" : key);
+        consoleNumericFlags.put(safe, value);
+        logEvent("CONSOLE VALUE: " + safe + "=" + value + ".");
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:452-457
+Kind: method
+Name: setConsoleStringFlag
+SHA256: 1c3c7aee1492fad9fbbc4a1840de2e1aa75a0b535f958a4a85507fcbc70b06dc
+
+```java
+    void setConsoleStringFlag(String key, String value) {
+        String safe = ChatRuntimeAuthority.ChatSecurity.sanitizeIdentifier(key == null ? "value" : key);
+        String text = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(value == null ? "" : value);
+        consoleStringFlags.put(safe, text);
+        logEvent("CONSOLE VALUE: " + safe + "=" + text + ".");
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:459-461
+Kind: method
+Name: openChatWindow
+SHA256: 4fa66fe7a2d035a36a36c51ab9ca92bbb3a88566ab2a7b9570ae417b995a8110
+
+```java
+    void openChatWindow() {
+        if (chatRuntime != null) { chatRuntime.openOrFocus(); logEvent("Chat opened."); }
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:463-467
+Kind: method
+Name: executeServerConsoleCommand
+SHA256: 69cc3e89deb9c98323b961ff13cf4b4c257ab87025d6c284b80052d4aaf66f8c
+
+```java
+    String executeServerConsoleCommand(String rawInput) {
+        String result = singlePlayerSectorBridge.executeAdminConsoleCommand(this, rawInput);
+        logEvent(result);
+        return result;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:228-243
+Kind: method
+Name: agilityActionCost
+SHA256: 5c9e5f85bb6f1f9d59d45e90ce6c9ce13154b469ec6bed59f0538dbf73f0bc3a
+
+```java
+    int agilityActionCost(char ch, BaseObject obj) {
+        int agility = stat("Agility", 6);
+        int base = 2;
+        if (obj != null) {
+            if (obj.symbol == 'c') base = 4;
+            else if (obj.symbol == 'u') base = 2;
+            else if (obj.symbol == 'w') base = 6;
+            else if (obj.symbol == 's') base = 3;
+            else if (obj.symbol == 'a' || obj.symbol == 'd') base = 4;
+        } else if (ch == 'T' || ch == 'q' || ch == 'A') base = 3;
+        else if (isVendingMachine(ch)) base = 3;
+        else if (isShrine(ch)) base = 4;
+        else if (isEmergencyMachine(ch)) base = 6;
+        else if (ch == 'C' || ch == 'H' || ch == 'R') base = 5;
+        return Math.max(1, base + 3 - agility / 3);
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:246-249
+Kind: method
+Name: selectedInteractionIsCot
+SHA256: e473ab1c681f03465c171d1446fca6e447659fb1e7a9d43d72ca09b71b116910
+
+```java
+    boolean selectedInteractionIsCot() {
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        return obj != null && obj.symbol == 'c';
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:259-259
+Kind: method
+Name: selectedInteractionIsFactionJournal
+SHA256: 1acef4b617724c3fa57ed1700962024dd1e73f87a03e7165b9dcc6b564b1982a
+
+```java
+    boolean selectedInteractionIsFactionJournal() { return isFactionJournalObjectAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard3.txt:260-260
+Kind: method
+Name: selectedInteractionIsBankTerminal
+SHA256: e4ede346b89ec64918c4ef5dc365b733adce5643f0b21eb1e470b616c0d473c9
+
+```java
+    boolean selectedInteractionIsBankTerminal() { return isBankTerminalAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard3.txt:261-261
+Kind: method
+Name: selectedInteractionIsBankVault
+SHA256: d6e4c76561701b70ba7cf4082dd6cee314a67f569c264fef53eb738680b7e1a3
+
+```java
+    boolean selectedInteractionIsBankVault() { return isBankVaultAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard3.txt:262-262
+Kind: method
+Name: selectedInteractionIsBankAlarmPanel
+SHA256: 33b3bf2d5757be6e2ed75fd24830d5947f7a50776d40586e803ca3645a5c3230
+
+```java
+    boolean selectedInteractionIsBankAlarmPanel() { return isBankAlarmPanelAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard3.txt:263-263
+Kind: method
+Name: selectedInteractionIsBankManager
+SHA256: d23c5398f3bf905dc5cfdade338e27f5610ea36b5bd063863f787f2740806f66
+
+```java
+    boolean selectedInteractionIsBankManager() { return isBankManagerAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard3.txt:264-264
+Kind: method
+Name: selectedInteractionCanSellJournalsToINN
+SHA256: ca9a517c343972ebdee9ee79c11a3a1287355bfaf658814b1505f52fd7c745bb
+
+```java
+    boolean selectedInteractionCanSellJournalsToINN() { return canSellLeaderJournalsToINNAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard3.txt:376-383
+Kind: method
+Name: updateExamineFocus
+SHA256: cbed85cf2f3ee49ff1f51e66689e5b6b6b974056978c7e3f14ea75fe39a9c77a
+
+```java
+    void updateExamineFocus(int tx, int ty) {
+        boolean sameTarget = tx == lastExamineX && ty == lastExamineY && lastExamineWorldTurn >= 0L
+                && worldTurn - lastExamineWorldTurn <= 6L;
+        repeatedExamineCount = sameTarget ? Math.min(3, repeatedExamineCount + 1) : 1;
+        lastExamineX = tx;
+        lastExamineY = ty;
+        lastExamineWorldTurn = worldTurn;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:385-387
+Kind: method
+Name: examineDepth
+SHA256: cabfb37469b69745d29992459e0719fe041ba47b09ce359208a2c5a4e6663b08
+
+```java
+    int examineDepth() {
+        return Math.max(1, Math.min(3, repeatedExamineCount));
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:486-490
+Kind: method
+Name: contractForTargetEntity
+SHA256: a6b9c402ce028a29efddd933471afba5facdd16ca064ff6ea97513cd1cf78ee7
+
+```java
+    FactionContract contractForTargetEntity(String targetEntityId) {
+        if (targetEntityId == null || targetEntityId.isBlank()) return null;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && targetEntityId.equals(c.targetEntityId)) return c;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:674-680
+Kind: method
+Name: baseObjectWorkReadLine
+SHA256: a53f2b451187e848865316d46f363d07f6d82c10290b018434c0ce88015721f1
+
+```java
+    String baseObjectWorkReadLine(BaseObject obj) {
+        if (obj == null) return "Work read: nothing usable is visible.";
+        String quality = obj.qualityName == null || obj.qualityName.isBlank() ? "common" : obj.qualityName.toLowerCase(Locale.ROOT);
+        String worker = obj.assignedWorker == null || obj.assignedWorker.isBlank() ? "no assigned worker" : "worker " + obj.assignedWorker;
+        String queue = obj.productionQueueRemaining > 0 ? "queued work " + obj.productionQueueRemaining + "/" + Math.max(1, obj.productionQueueTarget) : "no queued work";
+        return "Work read: " + quality + " quality, " + worker + ", " + queue + ".";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:737-740
+Kind: method
+Name: showPetFeedback
+SHA256: 5b6993b31fc2008ba997dac706c082340dacde1aebcf68d781170dd54c5db023
+
+```java
+    void showPetFeedback(String title, String body, boolean alert) {
+        if (alert) showTimedAlert(title, body, 4600);
+        else logEvent(title + ": " + body);
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:771-778
+Kind: method
+Name: describeDoor
+SHA256: 2676f47703d7d8d349f9427a2380167ee34597b386be3021831b916e845d0597
+
+```java
+    String describeDoor(char ch) {
+        if (ch == '/') return "open archway";
+        if (ch == '|') return "hinged scrap door";
+        if (ch == 'L') return "locked/chained door";
+        if (ch == 'V') return "ventilation panel";
+        if (ch == 'X') return "sealed security door";
+        return "unknown door";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:856-856
+Kind: method
+Name: isVendingMachine
+SHA256: d22ce9e9c0435419717db78353f7a6e71d679ba98fb4cb30f57f4536b88a352f
+
+```java
+    boolean isVendingMachine(char ch) { return PublicServiceMediaAuthority.isVendingSymbol(ch); }
+```
+
+---
+Source: gamepanel-shard3.txt:857-857
+Kind: method
+Name: isShrine
+SHA256: 1b3ab3f40f677b28b2f965ed59272de67969aebd480850830555b67dea084e13
+
+```java
+    boolean isShrine(char ch) { return ch == 'I' || ch == 'H'; }
+```
+
+---
+Source: gamepanel-shard3.txt:886-886
+Kind: method
+Name: isEmergencyMachine
+SHA256: eb883597f8e3f59a9fde0342a6576ff28d3202c2246432ad84acbedf24800601
+
+```java
+    boolean isEmergencyMachine(char ch) { return "YJBKOZPFU".indexOf(ch) >= 0; }
+```
+
+---
+Source: gamepanel-shard4.txt:211-211
+Kind: method
+Name: sleepTurnCost
+SHA256: bb26a0e379719e42c30aa77c50d1bff64417ee3f24201b5e6469b03d2a4b7b7c
+
+```java
+    int sleepTurnCost(int hours) { return Math.max(1, hours * TURNS_PER_HOUR); }
+```
+
+---
+Source: gamepanel-shard4.txt:212-216
+Kind: method
+Name: sleepFoodWaterCost
+SHA256: 6c7b788d800a2097ba3f02a070689e1d233d2cd92d38032a0595efe3faced2d0
+
+```java
+    int sleepFoodWaterCost(int hours) {
+        boolean uninjured = wounds <= 0 && totalBodyDamagePercent() <= 0.1;
+        double rate = uninjured ? 5.0 / 32.0 : 5.0 / 8.0;
+        return Math.max(1, (int)Math.ceil(hours * rate));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:217-222
+Kind: method
+Name: totalBodyDamagePercent
+SHA256: 8812fa87a93e16ac32658091c4a251a42f07fb14e081892eba53936da2b1e6e2
+
+```java
+    double totalBodyDamagePercent() {
+        if (active == null || active.body == null || active.body.isEmpty()) return wounds;
+        double lost = 0, max = 0;
+        for (BodyPart bp : active.body.values()) { lost += Math.max(0, bp.maxHealth() - bp.currentHealth()); max += Math.max(1, bp.maxHealth()); }
+        return max <= 0 ? 0 : (lost / max) * 100.0;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:224-228
+Kind: method
+Name: changePendingSleepHours
+SHA256: 33d9d86e191ef7fb9054a27fe04731d96a4f0a0aa1b1b675c57efcfebef1f9ba
+
+```java
+    void changePendingSleepHours(int delta) {
+        pendingSleepHours = Math.max(1, Math.min(8, pendingSleepHours + delta));
+        updatePendingInteractionSummary();
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:296-298
+Kind: method
+Name: timeText
+SHA256: 51c85e039a61a4aeff9811ea57449d3cef5466f900bb3487e0f3e2dec945aed4
+
+```java
+    String timeText() {
+        return "M" + localMonth() + " D" + localDay() + " H" + localHour() + " +" + turnWithinHour() + "/" + TURNS_PER_HOUR + "t";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:300-300
+Kind: method
+Name: worldTimeText
+SHA256: 363216b40ae59d7c6cc1f3af1bffd877bc2acfa8cc9a2a8f2e6aa8e7ed438314
+
+```java
+    String worldTimeText() { return AgeAndWorldTimeAuthority.worldTimeText(worldTurn); }
+```
+
+---
+Source: gamepanel-shard4.txt:382-389
+Kind: method
+Name: purchaseKnowledge
+SHA256: b9decaad277577a9b4619ced365a51e13ef57bbd12a7b57e73900d68eac79f7a
+
+```java
+    void purchaseKnowledge(String name, int cost) {
+        if (unlockKnowledge(name)) {
+            knowledgeCredits = Math.max(0, knowledgeCredits - Math.max(0, cost));
+            logEvent("KNOWLEDGE UNLOCKED: " + name + ". Remaining knowledge credits: " + knowledgeCredits + ".");
+        } else {
+            logEvent("Knowledge already known: " + name + ".");
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:391-396
+Kind: method
+Name: knownKnowledgeLines
+SHA256: 509fbf04e8fd2b0916171a4339487eef0ecc6abc24df9aa3116dc8b19b61827c
+
+```java
+    java.util.List<String> knownKnowledgeLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (unlockedKnowledges.isEmpty()) lines.add("Known: none recorded yet.");
+        else for (String k : unlockedKnowledges) lines.add("Known: " + k);
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:398-400
+Kind: method
+Name: hasKnowledge
+SHA256: 683572938f03884e4296b14ae5f996cfd718cc7bc0b2152cd06a6f8aaf666883
+
+```java
+    boolean hasKnowledge(String name) {
+        return name == null || name.isBlank() || unlockedKnowledges.contains(name);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:432-434
+Kind: method
+Name: passOutFromSleepNeed
+SHA256: c9f692feb8c187beb160b390f0e6b075d83831f5a2a4d53e2917dd3c2cbb0d31
+
+```java
+    void passOutFromSleepNeed() {
+        handlePlayerUnconsciousness("exhaustion collapse", "sleep debt", "untreated exhaustion", true);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:462-466
+Kind: method
+Name: unconsciousScriptLoss
+SHA256: 6661b48de1d506484e9b7a0fceb8225cd7ccfea5fcb3c1395866a90d4f082c13
+
+```java
+    int unconsciousScriptLoss() {
+        if (carriedScript <= 0) return 0;
+        int pct = 10 + rng.nextInt(6); // usually around a tenth; enough to sting without total liquidation.
+        return Math.max(1, Math.min(carriedScript, (int)Math.ceil(carriedScript * pct / 100.0)));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:482-484
+Kind: method
+Name: unconsciousWakePoint
+SHA256: 5fa90e4b022d859ee862f89e4c5f803336444cc8ca8ab08fe8b0a1145c689ab6
+
+```java
+    Point unconsciousWakePoint() {
+        return playerLifecycleService.resolveUnconsciousWakePoint(this);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:511-517
+Kind: method
+Name: shouldPlayerDieNow
+SHA256: 3a6c7668cecc0dbba250df6a1edc0196780e36efd8aeff32dee28b844c801a38
+
+```java
+    boolean shouldPlayerDieNow() {
+        if (active == null || active.body == null) return false;
+        BodyPart head = active.body.get("Head");
+        BodyPart torso = active.body.get("Torso");
+        boolean vitalDestroyed = (head != null && head.destroyed()) || (torso != null && torso.destroyed());
+        return vitalDestroyed || wounds >= 20 || (wounds >= 16 && bleeding > 0);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:519-521
+Kind: method
+Name: shouldPlayerFallUnconsciousNow
+SHA256: f1dfde8aa17c804412b2ea7154c6a40d30ba34ad3154499aa8a6ab3d95ecf65c
+
+```java
+    boolean shouldPlayerFallUnconsciousNow() {
+        return wounds >= 12 || fatigue >= 24 || pain >= 18;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:549-555
+Kind: method
+Name: advanceTurnSleeping
+SHA256: 976eacd8a1674d006f09ffcbe3e711da851fb774fbf1d5587807ba70e1a64628
+
+```java
+    void advanceTurnSleeping(String reason) {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.runAuthoritativeTurn(this, "sleep: " + reason, () -> advanceTurnSleepingBody(reason));
+            return;
+        }
+        advanceTurnSleepingBody(reason);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:580-587
+Kind: method
+Name: passiveSleepBodyRecovery
+SHA256: 3b6d7b89fce7e225ca7ea059e51b3ca048745e8f220b50d783a8c218696b306e
+
+```java
+    void passiveSleepBodyRecovery() {
+        if (active == null || active.body == null) return;
+        if (wounds > 0 && bleeding <= 0) wounds = Math.max(0, wounds - 1);
+        if (fatigue > 0) fatigue = Math.max(0, fatigue - 1);
+        if (pain > 0) pain = Math.max(0, pain - 2);
+        if (bleeding <= 0) healWorstBodyPart(20.0);
+        logEvent("REST RECOVERY: sleep reduces fatigue/pain and slowly restores the worst body part if bleeding is controlled.");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:648-650
+Kind: method
+Name: movementModeLabel
+SHA256: 5d4ecacfdc5ba7404de371498d282572c0656be29cd0345d21a9d772e7d4b9ea
+
+```java
+    String movementModeLabel() {
+        return MOVEMENT_MODE_LABELS[Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, movementModeIndex))];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:652-654
+Kind: method
+Name: movementModeRange
+SHA256: 9c9193b1be711a0a1e0bd1a0d38b8379790b01c0d1b4366cd5bc9fbfabd5a8ae
+
+```java
+    int movementModeRange() {
+        return MOVEMENT_MODE_RANGES[Math.max(0, Math.min(MOVEMENT_MODE_RANGES.length-1, movementModeIndex))];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:667-673
+Kind: method
+Name: movementBaseTurnCost
+SHA256: 8aefdb06f21c87be009a653d6358a4ed2ceb8eaa58b83ecaa09a9d3014fe7cfd
+
+```java
+    int movementBaseTurnCost() {
+        int cost = 1 + Math.max(0, inventoryWeight() - carryCapacity());
+        int legPenalty = crippledLegCount();
+        if (legPenalty > 0) cost += legPenalty;
+        if (pain >= 6) cost += 1;
+        return Math.max(1, cost);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:675-681
+Kind: method
+Name: movementTurnCost
+SHA256: 384fec0ce08bc665e9e2a096de384fc0825ac267a6a3f5d2424448d875a310ff
+
+```java
+    int movementTurnCost() {
+        int cost = movementBaseTurnCost();
+        if (movementModeIndex == MOTION_SNEAK) cost += 2;      // SNEAK: slow, crouched, concealment-first travel.
+        else if (movementModeIndex == MOTION_WALK) cost += 1; // WALK: deliberate and observant.
+        else if (movementModeIndex == MOTION_SPRINT) cost = Math.max(1, cost - 1); // SPRINT: fast, loud, sloppy.
+        return Math.max(1, cost);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:683-687
+Kind: method
+Name: movementModeFatigueCost
+SHA256: cf7eb866b6f74cbc8f3e19b5304d8bf172ab7f7f26e4f31b575f1a9d23b2e343
+
+```java
+    int movementModeFatigueCost() {
+        if (movementModeIndex == MOTION_SPRINT) return 1;
+        if (movementModeIndex == MOTION_SNEAK) return 1;
+        return 0;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:696-700
+Kind: method
+Name: activeMotionStateLabel
+SHA256: 041aeb5b4b3edad2d58458179b74286f09dcc3c15853ba8b08327f0f313ecfa2
+
+```java
+    String activeMotionStateLabel() {
+        if (activeMotionStateIndex == MOTION_STATIONARY) return "STATIONARY";
+        int idx = Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, activeMotionStateIndex));
+        return MOVEMENT_MODE_LABELS[idx];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:702-704
+Kind: method
+Name: markPlayerMovedThisTurn
+SHA256: b1acfd42f4e95459494b4b32d9030bd71b2aeaaeb32fa9a4a1371362852f189e
+
+```java
+    void markPlayerMovedThisTurn() {
+        activeMotionStateIndex = Math.max(0, Math.min(MOVEMENT_MODE_LABELS.length-1, movementModeIndex));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:716-716
+Kind: method
+Name: activeMotionIsSneak
+SHA256: 1ee5bb1234f55084dd3a057e7890e69ed1a2a0a3589eed30e6c5100e61119311
+
+```java
+    boolean activeMotionIsSneak() { return activeMotionStateIndex == MOTION_SNEAK; }
+```
+
+---
+Source: gamepanel-shard4.txt:718-727
+Kind: method
+Name: motionVisionModifier
+SHA256: aaf5728537ecb0ea4646740468be6a9e5bf6f0d367ea46f7c508a5eb96ad78f2
+
+```java
+    int motionVisionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 3;
+            case MOTION_SNEAK: return 1;
+            case MOTION_WALK: return 2;
+            case MOTION_RUN: return -1;
+            case MOTION_SPRINT: return -3;
+            default: return 0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:729-738
+Kind: method
+Name: motionDetailVisionModifier
+SHA256: 95702dd01589ea0754fabf049d17407c293d7e5d8f80207ba4ab0124bdafb9bd
+
+```java
+    int motionDetailVisionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_SNEAK: return 1;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -1;
+            case MOTION_SPRINT: return -2;
+            default: return 0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:740-749
+Kind: method
+Name: motionHearingModifier
+SHA256: 2f7cc171557415006290d0d9918d7f71e06e622c9783e65f8f1e374d0e049aa6
+
+```java
+    int motionHearingModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 4;
+            case MOTION_SNEAK: return 2;
+            case MOTION_WALK: return 2;
+            case MOTION_RUN: return -2;
+            case MOTION_SPRINT: return -5;
+            default: return 0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:751-760
+Kind: method
+Name: playerAttackMotionSkillModifier
+SHA256: e0b5f122800c3a3c3b91e0b0756a1caa90af756455ed843c3889895425d88f26
+
+```java
+    int playerAttackMotionSkillModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return 2;
+            case MOTION_WALK: return 1;
+            case MOTION_RUN: return -3;
+            case MOTION_SPRINT: return -5;
+            case MOTION_SNEAK: return -2;
+            default: return 0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:762-771
+Kind: method
+Name: playerDefenseMotionModifier
+SHA256: f3777d8e0e6257349941d6fa840181ea56a7c1085ded9d430bf5ea2286852101
+
+```java
+    int playerDefenseMotionModifier() {
+        switch(activeMotionStateIndex) {
+            case MOTION_SNEAK: return 6;
+            case MOTION_SPRINT: return 4;
+            case MOTION_RUN: return 3;
+            case MOTION_WALK: return 1;
+            case MOTION_STATIONARY: return 0;
+            default: return 0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:773-778
+Kind: method
+Name: crippledLegCount
+SHA256: 350efb22142f324efc7b191e3c3e8e8e484a141e3b6dffb8a517ae990a4f1408
+
+```java
+    int crippledLegCount() {
+        if (active == null || active.body == null) return 0;
+        int n = 0;
+        for (BodyPart bp : active.body.values()) if (bp.name.toLowerCase(Locale.ROOT).contains("leg") && bp.currentHealth() <= bp.maxHealth()*0.25) n++;
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:780-788
+Kind: method
+Name: crippledArmCount
+SHA256: 53f834d036e733e0bfd4ddd439f95eaf8899a8301980061231a3b8801bd54e21
+
+```java
+    int crippledArmCount() {
+        if (active == null || active.body == null) return 0;
+        int n = 0;
+        for (BodyPart bp : active.body.values()) {
+            String low = bp.name.toLowerCase(Locale.ROOT);
+            if ((low.contains("arm") || low.contains("hand") || low.contains("finger")) && bp.currentHealth() <= bp.maxHealth()*0.25) n++;
+        }
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:790-790
+Kind: method
+Name: hasUsableWeaponLimb
+SHA256: 73541fb7a3a5136de3e5d984beb0022c2d7a8bb5bcfda2b607e9d15a28b258bd
+
+```java
+    boolean hasUsableWeaponLimb() { return crippledArmCount() < 3; }
+```
+
+---
+Source: gamepanel-shard4.txt:793-798
+Kind: method
+Name: movementSlideDurationMillis
+SHA256: 046c1c552153ea209edc3399c452b70c8126673c755d28aa8363ed850d9b4710
+
+```java
+    int movementSlideDurationMillis(int motionMode) {
+        if (motionMode == MOTION_SPRINT) return MOVE_SLIDE_SPRINT_MS;
+        if (motionMode == MOTION_SNEAK) return MOVE_SLIDE_SNEAK_MS;
+        if (motionMode == MOTION_WALK) return 120;
+        return MOVE_SLIDE_BASE_MS;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:816-822
+Kind: method
+Name: slidePixelOffset
+SHA256: 159dfe7eb94db5787a6041fb29a1549a2f5529e2b6c856312ffb57e59c92b820
+
+```java
+    Point slidePixelOffset(TileMotion m, int cellW, int cellH) {
+        if (m == null || m.done(System.currentTimeMillis())) return new Point(0, 0);
+        double p = m.progress(System.currentTimeMillis());
+        int ox = (int)Math.round((m.fromX - m.toX) * cellW * (1.0 - p));
+        int oy = (int)Math.round((m.fromY - m.toY) * cellH * (1.0 - p));
+        return new Point(ox, oy);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:824-828
+Kind: method
+Name: playerSlideOffsetPixels
+SHA256: 80e32cc6aa15a4d59792c9aac1b6d34f0738f7a4391bd7c89a90162e1ddc2141
+
+```java
+    Point playerSlideOffsetPixels(int cellW, int cellH) {
+        if (playerTileMotion == null) return new Point(0,0);
+        if (playerTileMotion.toX != playerX || playerTileMotion.toY != playerY || playerTileMotion.done(System.currentTimeMillis())) { playerTileMotion = null; return new Point(0,0); }
+        return slidePixelOffset(playerTileMotion, cellW, cellH);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:838-842
+Kind: method
+Name: pruneTileMotions
+SHA256: cb04d7da4cbaf2598244d1bfcd685a47f141ea3290fa77b0fb5bf5a60b8fcccc
+
+```java
+    void pruneTileMotions() {
+        long now = System.currentTimeMillis();
+        if (playerTileMotion != null && playerTileMotion.done(now)) playerTileMotion = null;
+        if (!npcTileMotions.isEmpty()) npcTileMotions.entrySet().removeIf(e -> e.getValue() == null || e.getValue().done(now));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:857-868
+Kind: method
+Name: pickWeightedCue
+SHA256: 732260d662333d2cd589411bcdb37ca80da790d57c3015bcbbeba0bb5d0a71fc
+
+```java
+    String pickWeightedCue(String[] keys, int[] weights) {
+        if (keys == null || keys.length == 0) return "ambient_machine";
+        int total = 0;
+        for (int w : weights) total += Math.max(0, w);
+        if (total <= 0) return keys[0];
+        int roll = rng.nextInt(total);
+        for (int i=0; i<keys.length; i++) {
+            roll -= Math.max(0, weights[Math.min(i, weights.length-1)]);
+            if (roll < 0) return keys[i];
+        }
+        return keys[keys.length-1];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:901-907
+Kind: method
+Name: maybePlayHeardSoundCue
+SHA256: df368bf8bcc9ddcf33d9fd90304cf83df5d608d3fb2d3b491f3bbe4058f7a4a6
+
+```java
+    void maybePlayHeardSoundCue(String label, int distance) {
+        long now = System.currentTimeMillis();
+        if (options == null || !options.soundEnabled) return;
+        if (now - lastHearingCueAudioMillis < CORE_AMBIENT_SOUND_PING_AUDIO_COOLDOWN_MS) return;
+        lastHearingCueAudioMillis = now;
+        sounds.playDistantCue(soundPingAudioKey(label), Math.max(2, distance), options);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:940-948
+Kind: method
+Name: inputPacingIntervalMillis
+SHA256: 9228092c464223e2dcb17dc1342b95f6acf4c085f4f7f59a75f9802302f5a93d
+
+```java
+    int inputPacingIntervalMillis() {
+        switch (movementModeIndex) {
+            case MOTION_SNEAK: return INPUT_PACING_SNEAK_INTERVAL_MS;
+            case MOTION_WALK: return INPUT_PACING_WALK_INTERVAL_MS;
+            case MOTION_SPRINT: return INPUT_PACING_SPRINT_INTERVAL_MS;
+            case MOTION_RUN:
+            default: return INPUT_PACING_RUN_INTERVAL_MS;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1009-1020
+Kind: method
+Name: processPendingMovementInput
+SHA256: e8d371dfa35e93833ef79de08a3f195f1a5dc4e3e47ae319cbfa3d3f9101b889
+
+```java
+    void processPendingMovementInput() {
+        if (!pendingHeldMove) return;
+        if (!movementInputWouldAdvanceWorld()) { clearPendingMovementInput("timer-not-gameplay"); return; }
+        long now = System.currentTimeMillis();
+        if (now < nextWorldActionAllowedMillis) return;
+        int dx = pendingMoveDx, dy = pendingMoveDy;
+        pendingMoveDx = 0;
+        pendingMoveDy = 0;
+        pendingHeldMove = false;
+        executePacedMovement(dx, dy, "held-buffer");
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1022-1029
+Kind: method
+Name: spendDeferredSimulationBudget
+SHA256: ada8413b41afc7536ee61860598aec7aef972c1d7617065908c79bf131eab74d
+
+```java
+    void spendDeferredSimulationBudget(String reason, int budgetMillis) {
+        if (budgetMillis <= 0 || deferredSimulationDebt <= 0) return;
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.mutate(this, "deferred simulation budget: " + reason, () -> spendDeferredSimulationBudgetBody(reason, budgetMillis));
+            return;
+        }
+        spendDeferredSimulationBudgetBody(reason, budgetMillis);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1087-1093
+Kind: method
+Name: pathSeekingAlternates
+SHA256: 5e56f5d386da4e7eefed13860e7771ae9af537a95f1e28fe21402b3fb2500409
+
+```java
+    int[][] pathSeekingAlternates(int dx, int dy) {
+        if (dx == 0 && dy < 0) return new int[][]{{1,0},{-1,0},{0,-1}};   // north: try right first, then left, then straight if it opens.
+        if (dx == 0 && dy > 0) return new int[][]{{-1,0},{1,0},{0,1}};    // south: mirror the preference so corridors do not jitter.
+        if (dx > 0 && dy == 0) return new int[][]{{0,1},{0,-1},{1,0}};    // east: try down/up around corners.
+        if (dx < 0 && dy == 0) return new int[][]{{0,-1},{0,1},{-1,0}};   // west: try up/down around corners.
+        return new int[][]{{dx,dy}};
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1226-1233
+Kind: method
+Name: resetPushPastIntent
+SHA256: 2140022d2bb27b8fac7ca1abc7b4a7a1d39e017ff7c3c07308c061cd4867f892
+
+```java
+    void resetPushPastIntent() {
+        pushPastIntentNpcId = "";
+        pushPastIntentX = Integer.MIN_VALUE;
+        pushPastIntentY = Integer.MIN_VALUE;
+        pushPastIntentDx = 0;
+        pushPastIntentDy = 0;
+        pushPastIntentCount = 0;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1504-1507
+Kind: method
+Name: fireModeLabel
+SHA256: c3ec44eab12b4f70f69fc9555db4215c0cc5a069a7b6c5ff05f459db20b75bd1
+
+```java
+    String fireModeLabel() {
+        if (combatFireModeIndex < 0 || combatFireModeIndex >= FIRE_MODE_LABELS.length) combatFireModeIndex = 0;
+        return FIRE_MODE_LABELS[combatFireModeIndex];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1517-1520
+Kind: method
+Name: weaponLoadKey
+SHA256: 4c1498fc0531b26617c0a1407f0fe801984f0c993d98051a6be091da6369e46b
+
+```java
+    String weaponLoadKey(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "Bare hands" : weapon).toLowerCase(Locale.ROOT).trim();
+        return w.isBlank() ? "bare hands" : w;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1522-1539
+Kind: method
+Name: ammoItemForWeapon
+SHA256: ed4193254d1a1af1299c1393d0499e64f87f7771fe0eb593125c5ff0b8156d95
+
+```java
+    String ammoItemForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return "";
+        if (w.contains("las")) return "Las charge pack";
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("chem sprayer") || w.contains("acid spitter")) return "Industrial Fuelgel canister";
+        if (w.contains("melta") || w.contains("inferno")) return "Melta charge cell";
+        if (w.contains("plasma")) return "Plasma flask";
+        if (w.contains("bolt") || w.contains("mass-Reactive Carbine")) return "Bolt round magazine";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "Arc capacitor pack";
+        if (w.contains("webber") || w.contains("web ")) return "Web cartridge";
+        if (w.contains("needle") || w.contains("toxin")) return "Needle toxin vial";
+        if (w.contains("shotgun") || w.contains("pipe shotgun")) return "Shot shell handful";
+        if (w.contains("autogun") || w.contains("autopistol") || w.contains("scrap autogun") || w.contains("auto")) return w.contains("autocannon") ? "Autocannon shell belt" : "Autogun magazine";
+        if (w.contains("heavy stubber")) return "Heavy stubber belt";
+        if (w.contains("stub") || w.contains("revolver") || w.contains("dueling") || w.contains("hunting") || w.contains("marksman") || w.contains("sniper") || w.contains("zip pistol") || w.contains("cult martyr pistol")) return "Stub cartridge box";
+        if (w.contains("nail")) return "Stub cartridge box";
+        return "Autogun magazine";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1541-1558
+Kind: method
+Name: magazineCapacityForWeapon
+SHA256: 667ccf7e0793c963d62115dfca9e2d6213f26045264ee017062d1103e9c20250
+
+```java
+    int magazineCapacityForWeapon(String weapon) {
+        String w = ItemQuality.stripManufacturingIdentity(weapon == null ? "" : weapon).toLowerCase(Locale.ROOT);
+        if (!ItemCatalog.isFirearmLike(weapon)) return 0;
+        if (w.contains("zip pistol") || w.contains("laslock") || w.contains("martyr pistol")) return 1;
+        if (w.contains("melta") || w.contains("inferno")) return 2;
+        if (w.contains("flamer") || w.contains("chem sprayer") || w.contains("acid spitter")) return 4;
+        if (w.contains("plasma")) return w.contains("heavy") ? 6 : 4;
+        if (w.contains("shotgun")) return 5;
+        if (w.contains("revolver") || w.contains("dueling")) return 6;
+        if (w.contains("pistol")) return 8;
+        if (w.contains("bolt")) return w.contains("heavy") || w.contains("storm") ? 16 : 8;
+        if (w.contains("autocannon")) return 6;
+        if (w.contains("heavy stubber")) return 20;
+        if (w.contains("autogun") || w.contains("auto")) return 20;
+        if (w.contains("las")) return 12;
+        if (w.contains("rifle") || w.contains("carbine") || w.contains("stubber")) return 10;
+        return 8;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1561-1566
+Kind: method
+Name: setLoadedShotsForWeapon
+SHA256: 7f8887acbf3069d7c4d952bb697e3fcbc6ea18d844fc06873f31ae4272ac1a99
+
+```java
+    void setLoadedShotsForWeapon(String weapon, int shots) {
+        String key = weaponLoadKey(weapon);
+        int cap = magazineCapacityForWeapon(weapon);
+        if (cap <= 0 || shots <= 0) loadedWeaponShots.remove(key);
+        else loadedWeaponShots.put(key, Math.min(cap, shots));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1587-1592
+Kind: method
+Name: fireModeAmmoCost
+SHA256: c619a921a1fbbfd41bbaf8f6b55c8314e8905ecd0c0277dc70deaea2bf7be4f3
+
+```java
+    int fireModeAmmoCost(String weapon) {
+        if (!ItemCatalog.isFirearmLike(weapon)) return 0;
+        String fm = fireModeLabel();
+        if ("BURST".equals(fm)) return Math.min(3, Math.max(1, magazineCapacityForWeapon(weapon)));
+        return 1;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1594-1597
+Kind: method
+Name: ammoStatusForWeapon
+SHA256: ebc266d08dd36f05b62975ecb05606c00d91858554bd7b038798d6a60b1b4a21
+
+```java
+    String ammoStatusForWeapon(String weapon) {
+        if (!ItemCatalog.isFirearmLike(weapon)) return "melee / no ammunition";
+        return loadedShotsForWeapon(weapon) + "/" + magazineCapacityForWeapon(weapon) + " loaded; ammo " + ammoItemForWeapon(weapon) + " x" + countInventory(ammoItemForWeapon(weapon));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1599-1610
+Kind: method
+Name: consumeLoadedShotsForAttack
+SHA256: db6d178af59bbe08a4a44e478988cdf0263cf4ce67cfa09b906c2c0bfa048f06
+
+```java
+    boolean consumeLoadedShotsForAttack(TargetingSolution ts) {
+        if (ts == null || !ts.ranged) return true;
+        int need = Math.max(1, ts.ammoCost);
+        int have = loadedShotsForWeapon(ts.weaponName);
+        if (have < need) {
+            logEvent("RELOAD REQUIRED: " + ts.weaponName + " has " + have + "/" + magazineCapacityForWeapon(ts.weaponName) + " shots loaded. Press X to reload using " + ammoItemForWeapon(ts.weaponName) + ".");
+            sounds.playReloadEffect(options);
+            return false;
+        }
+        setLoadedShotsForWeapon(ts.weaponName, have - need);
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1697-1701
+Kind: method
+Name: processExplosiveAndCorpseEcologyTick
+SHA256: 5b66cab0327cecad193c771cc883e7e3e962a0a62bab71b135601c3d0f15929e
+
+```java
+    void processExplosiveAndCorpseEcologyTick() {
+        tickThrownAndPlantedExplosives();
+        tickCorpseEcology();
+        tickFactionWallRepairAndHiveQuake();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1731-1731
+Kind: method
+Name: selectedInteractionIsExplosiveObject
+SHA256: d4d5ff7381769c2673d20153a8e7d36155109b77def5cdad1ac9840a637a61fe
+
+```java
+    boolean selectedInteractionIsExplosiveObject() { return mapObjectAt(lookX, lookY, "planted-explosive") != null; }
+```
+
+---
+Source: gamepanel-shard4.txt:1848-1855
+Kind: method
+Name: confirmCombatTarget
+SHA256: 6127f2baf83915376ab7670e96777a1ff0a34e053252def3a9b6b988c0a8c78e
+
+```java
+    void confirmCombatTarget() {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new ConfirmCombatCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, combatX, combatY));
+            repaint();
+            return;
+        }
+        confirmCombatTargetBody();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1882-1892
+Kind: method
+Name: weaponRange
+SHA256: 7b5d9e408b68e16c027fc11e15a0fb7e412d816347313f1f41e411de9dd561d1
+
+```java
+    int weaponRange(String weapon) {
+        if (weapon == null || !ItemCatalog.isFirearmLike(weapon)) return 1;
+        String low = ItemQuality.stripManufacturingIdentity(weapon).toLowerCase(Locale.ROOT);
+        if (low.contains("shotgun")) return 5;
+        if (low.contains("flamer") || low.contains("melta")) return 4;
+        if (low.contains("pistol") || low.contains("revolver")) return 7;
+        if (low.contains("stubber") || low.contains("carbine") || low.contains("webber")) return 9;
+        if (low.contains("rifle") || low.contains("las") || low.contains("mass-Reactive Carbine")) return 12;
+        if (low.contains("autocannon") || low.contains("long")) return 14;
+        return 8;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1894-1899
+Kind: method
+Name: fireModeAccuracyModifier
+SHA256: da3819be62b314362fa19acdb23f568394210fb8ae1b1ecff9921e9d7a41816a
+
+```java
+    int fireModeAccuracyModifier() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 12;
+        if ("BURST".equals(fm)) return -8;
+        return 0;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1901-1906
+Kind: method
+Name: fireModeDamageModifier
+SHA256: f5807dfcabd1b2cdc8c3332b8639537aeae8657adcb7d261560ddb25bfe99d66
+
+```java
+    int fireModeDamageModifier() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 1;
+        if ("BURST".equals(fm)) return 2;
+        return 0;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1908-1913
+Kind: method
+Name: fireModeTimeCost
+SHA256: ed8ddb07d7809d768371c943bd227c551b77e5bb363030cde1c19b3f79900214
+
+```java
+    int fireModeTimeCost() {
+        String fm = fireModeLabel();
+        if ("AIMED".equals(fm)) return 2;
+        if ("BURST".equals(fm)) return 2;
+        return 1;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2019-2021
+Kind: method
+Name: tileProvidesSoftCover
+SHA256: 4be863d9390d53c92584d36eeb36580c0fd0befb271414646cef355b235cebe0
+
+```java
+    boolean tileProvidesSoftCover(char ch) {
+        return ch == 's' || ch == 'c' || ch == 'u' || ch == 'w' || ch == 'N' || ch == 'B' || ch == 'T' || ch == 'H' || ch == 'M' || ch == 'G' || ch == 'k' || ch == 'q' || ch == 'd' || ch == 'S' || ch == 'R' || ch == 'W' || ch == 'D' || ch == 'Y' || ch == 'J' || ch == 'U' || ch == 'Z' || ch == 'P' || ch == 'a' || ch == 'p' || ch == 'g' || ch == 'x' || ch == '1' || ch == '2' || ch == '3' || ch == '4' || ch == '5';
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2031-2047
+Kind: method
+Name: linePoints
+SHA256: 9e81b42378dac9496d0377af64288ad69fddf63a4454a7cfc3bf4fa992352fb6
+
+```java
+    ArrayList<Point> linePoints(int x0, int y0, int x1, int y1) {
+        ArrayList<Point> pts = new ArrayList<>();
+        int dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0, y = y0;
+        while (true) {
+            pts.add(new Point(x,y));
+            if (x == x1 && y == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
+            if (pts.size() > 256) break;
+        }
+        return pts;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2068-2068
+Kind: method
+Name: terrainKey
+SHA256: 0589261f29ed942e1747e0647cd43b604eacdd4f410bd2538fdea55eeeb4ea6c
+
+```java
+    String terrainKey(int x, int y) { return x + "," + y; }
+```
+
+---
+Source: gamepanel-shard4.txt:2070-2077
+Kind: method
+Name: defaultTerrainIntegrity
+SHA256: 68584d260d407c5f046e59f52d2bff332076b07791ff0dac8ad093772da4d44f
+
+```java
+    int defaultTerrainIntegrity(char ch) {
+        if (ch == '#' || ch == '%' || InterstitialInfrastructureApi.isInterstitialSolid(ch)) return 40;
+        if (isDoorTile(ch)) return 18;
+        if (tileProvidesSoftCover(ch)) return 10;
+        if (ch == '*' || ch == 'R' || ch == 'N' || ch == '1' || ch == '2' || ch == '3' || ch == '4' || ch == '5') return 12;
+        if (ch == '.' || ch == '+' || ch == ',' || ch == ';' || ch == ':' || ch == '~' || ch == '=') return 6;
+        return 8;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2226-2228
+Kind: method
+Name: isProtectedTransitionTile
+SHA256: c1e87b054cdb33b7518713afafb903c055e067260d06a7044d7191d5d4c12bda
+
+```java
+    boolean isProtectedTransitionTile(char ch) {
+        return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E';
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2230-2234
+Kind: method
+Name: tileCanBeDamagedIntoDebris
+SHA256: 2c44b79a97bee38d031734fd1db8d399b6d40aa2678a990fac5591b16dcd553e
+
+```java
+    boolean tileCanBeDamagedIntoDebris(char ch) {
+        if (ch == '.' || ch == '+' || ch == ',' || ch == ';' || ch == ':' || ch == '~' || ch == '=' || ch == '-' || ch == '`') return false;
+        if (ch == InterstitialInfrastructureApi.VOID_SPACE) return false;
+        return !isProtectedTransitionTile(ch);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2344-2347
+Kind: method
+Name: randomBodyHitLocation
+SHA256: 5a83b07ec449944abf1f71be2087b1ce15abb78655681a123ac2125011a48a26
+
+```java
+    String randomBodyHitLocation() {
+        String[] parts = {"head", "torso", "left arm", "right arm", "left leg", "right leg"};
+        return parts[rng.nextInt(parts.length)];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2450-2454
+Kind: method
+Name: weaponAddsSleepPressure
+SHA256: 612253c84f84b18c485c43a6e0d328ae7981bc09818845799875753f10869974
+
+```java
+    boolean weaponAddsSleepPressure(String weapon) {
+        if (weapon == null) return false;
+        String l = weapon.toLowerCase(Locale.ROOT);
+        return l.contains("shock") || l.contains("taser") || l.contains("stun") || l.contains("webber") || l.contains("sleep gas") || l.contains("gas") || l.contains("tranq") || l.contains("compliance") || l.contains("arc");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2515-2528
+Kind: method
+Name: bodyPartForLocation
+SHA256: 2f31b99d30b805d03b67b19d2ba942841e3bacb7642d3be425eb15cbd1c2d3e7
+
+```java
+    BodyPart bodyPartForLocation(String location) {
+        if (active == null || active.body == null || active.body.isEmpty() || location == null) return null;
+        String loc = location.toLowerCase(Locale.ROOT);
+        if (loc.contains("head")) return active.body.get("Head");
+        if (loc.contains("torso") || loc.contains("mass") || loc.contains("breath")) return active.body.get("Torso");
+        if (loc.contains("hip")) return active.body.get("Hips");
+        if (loc.contains("left arm")) return firstExistingPart("L Upper Arm", "L Lower Arm", "L Hand");
+        if (loc.contains("right arm")) return firstExistingPart("R Upper Arm", "R Lower Arm", "R Hand");
+        if (loc.contains("arm") || loc.contains("hand")) return rng.nextBoolean() ? firstExistingPart("L Upper Arm", "L Lower Arm", "L Hand") : firstExistingPart("R Upper Arm", "R Lower Arm", "R Hand");
+        if (loc.contains("left leg")) return firstExistingPart("L Upper Leg", "L Lower Leg", "L Foot");
+        if (loc.contains("right leg")) return firstExistingPart("R Upper Leg", "R Lower Leg", "R Foot");
+        if (loc.contains("leg") || loc.contains("knee")) return rng.nextBoolean() ? firstExistingPart("L Upper Leg", "L Lower Leg", "L Foot") : firstExistingPart("R Upper Leg", "R Lower Leg", "R Foot");
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2530-2534
+Kind: method
+Name: firstExistingPart
+SHA256: 276d5be321d2fe21ce76ecab07b745bb6661d98ab3edd1580122fbe81761b399
+
+```java
+    BodyPart firstExistingPart(String... names) {
+        if (active == null || active.body == null) return null;
+        for (String n : names) { BodyPart bp = active.body.get(n); if (bp != null) return bp; }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2566-2568
+Kind: method
+Name: tileIsFactionOnly
+SHA256: e3a873043411bea5936c7f877c03471f54aef13f66bef032a585f1f68568d221
+
+```java
+    boolean tileIsFactionOnly(char ch) {
+        return ch == 'p' || ch == 'b' || ch == 'h' || ch == 'n' || ch == 'M';
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2640-2644
+Kind: method
+Name: activePortableLightVisionBonus
+SHA256: 0effbff3580a72a3a421eb9fab53b35c1ae1e603c7642537294df5e86135952d
+
+```java
+    int activePortableLightVisionBonus() {
+        int r = activePortableLightRadius();
+        if (r <= 0) return 0;
+        return Math.max(1, Math.min(4, r / 2));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2655-2657
+Kind: method
+Name: markPlayerNeighborhoodDirty
+SHA256: 0ff9d8c22a0118b501f70f18940c02a0970c265cef787eef2230a8aed57fcf18
+
+```java
+    void markPlayerNeighborhoodDirty(String reason) {
+        markLocalDirtyRegion(reason, playerX, playerY, Math.max(6, visionRange()+2), true, true, true, false);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2786-2794
+Kind: method
+Name: lightDescriptionAt
+SHA256: edee2584a5a5fbb2d7e69922bc4583785680bfa6f1f4cdd20ff699fc8b6c634a
+
+```java
+    String lightDescriptionAt(int x, int y) {
+        int l = lightLevelAt(x, y);
+        if (l >= 75) return "brightly lit";
+        if (l >= 50) return "lit";
+        if (l >= 30) return "dim";
+        if (l >= 14) return "gloom";
+        if (l > 0) return "dark";
+        return "blackout";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2796-2810
+Kind: method
+Name: lightAllowsPlayerVision
+SHA256: d0ea5309e4e20c5779591e900b295708200074d9dd3f3576a4941ed9a6b238e1
+
+```java
+    boolean lightAllowsPlayerVision(int x, int y, int distance) {
+        if (x == playerX && y == playerY) return true;
+        int l = lightLevelAt(x, y);
+        if (distance <= 1) return true;
+        int threshold;
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: threshold = 7; break;
+            case MOTION_SNEAK: threshold = 10; break;
+            case MOTION_WALK: threshold = 12; break;
+            case MOTION_RUN: threshold = 18; break;
+            case MOTION_SPRINT: threshold = 24; break;
+            default: threshold = 12;
+        }
+        return l >= threshold;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2836-2836
+Kind: method
+Name: visionRange
+SHA256: c137ffc35cb105823de10d114721958976a2fd3faf7893dc7eb2f9be7e7e28bd
+
+```java
+    int visionRange() { return Math.max(3, Math.min(18, 4 + stat("Vision", 6) / 2 + motionVisionModifier() + activePortableLightVisionBonus())); }
+```
+
+---
+Source: gamepanel-shard4.txt:2837-2837
+Kind: method
+Name: detailVisionRange
+SHA256: 256757405bc2189f1c768284d9738bbbe3da4f7c616886de3eace3d98ab6ef4b
+
+```java
+    int detailVisionRange() { return Math.max(1, Math.min(11, 2 + stat("Vision", 6) / 3 + motionDetailVisionModifier() + Math.max(0, activePortableLightVisionBonus()/2))); }
+```
+
+---
+Source: gamepanel-shard4.txt:2838-2838
+Kind: method
+Name: hearingRange
+SHA256: bf1906112870e51a1783b85c86240f46661e11abb90784e02d97cba5e868a3b8
+
+```java
+    int hearingRange() { return Math.max(3, Math.min(22, 5 + stat("Hearing", 6) + motionHearingModifier())); }
+```
+
+---
+Source: gamepanel-shard4.txt:2840-2840
+Kind: method
+Name: facingDx
+SHA256: 70fc9fda11cfd03d6dbf619acebd03271777f26bc82420e250705553f7c1af83
+
+```java
+    int facingDx() { return lastMoveDx == 0 && lastMoveDy == 0 ? 1 : Integer.compare(lastMoveDx, 0); }
+```
+
+---
+Source: gamepanel-shard4.txt:2841-2841
+Kind: method
+Name: facingDy
+SHA256: 40c5f4220bbad88af512a844b9bea49975eec23342fb9cb4a09808a1f5a22439
+
+```java
+    int facingDy() { return lastMoveDx == 0 && lastMoveDy == 0 ? 0 : Integer.compare(lastMoveDy, 0); }
+```
+
+---
+Source: gamepanel-shard4.txt:2843-2850
+Kind: method
+Name: facingLabel
+SHA256: 89cd44270ee6d4c35c3ce577d0605948f73b5fff04cbaee689b45aae44820a18
+
+```java
+    String facingLabel() {
+        int fx = facingDx(), fy = facingDy();
+        if (fx > 0) return "E";
+        if (fx < 0) return "W";
+        if (fy > 0) return "S";
+        if (fy < 0) return "N";
+        return "E";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2852-2862
+Kind: method
+Name: visionForwardRadius
+SHA256: d5c1be997d06f93843a64f6e541f564764693c15473ae61b5c5e38183f4813c1
+
+```java
+    double visionForwardRadius() {
+        int vr = visionRange();
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return vr + 1.0;
+            case MOTION_SNEAK: return Math.max(3, vr - 0.5);
+            case MOTION_WALK: return vr + 1.0;
+            case MOTION_RUN: return Math.max(3, vr * 0.92);
+            case MOTION_SPRINT: return Math.max(3, vr * 0.82);
+            default: return vr;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2864-2874
+Kind: method
+Name: visionSideRadius
+SHA256: f6788e44494291b5869f255bd240c967caf542181f4d385a04276666e2b16d09
+
+```java
+    double visionSideRadius() {
+        int vr = visionRange();
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return Math.max(3, vr * 0.92);
+            case MOTION_SNEAK: return Math.max(2.5, vr * 0.62);
+            case MOTION_WALK: return Math.max(3, vr * 0.75);
+            case MOTION_RUN: return Math.max(2, vr * 0.45);
+            case MOTION_SPRINT: return Math.max(1.5, vr * 0.32);
+            default: return Math.max(2, vr * 0.7);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2876-2886
+Kind: method
+Name: visionRearRadius
+SHA256: 12de586bd9a298d368dd3eeb85b01def197be4d0e9afe0019e66927fb618ff49
+
+```java
+    double visionRearRadius() {
+        int vr = visionRange();
+        switch(activeMotionStateIndex) {
+            case MOTION_STATIONARY: return Math.max(3, vr * 0.75);
+            case MOTION_SNEAK: return Math.max(2, vr * 0.52);
+            case MOTION_WALK: return Math.max(2, vr * 0.55);
+            case MOTION_RUN: return Math.max(1.5, vr * 0.25);
+            case MOTION_SPRINT: return Math.max(1.0, vr * 0.15);
+            default: return Math.max(2, vr * 0.45);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2888-2904
+Kind: method
+Name: inPlayerVisionShape
+SHA256: efac20272be52ca74b3544d6b712d33cf24c184bbe86a17e63ae9e73400aacf5
+
+```java
+    boolean inPlayerVisionShape(int x, int y) {
+        if (x == playerX && y == playerY) return true;
+        int dx = x - playerX, dy = y - playerY;
+        int fx = facingDx(), fy = facingDy();
+        double forward = dx * fx + dy * fy;
+        double side = Math.abs(dx * fy - dy * fx);
+        if (forward >= 0) {
+            double a = Math.max(1.0, visionForwardRadius());
+            double b = Math.max(1.0, visionSideRadius());
+            return (forward*forward)/(a*a) + (side*side)/(b*b) <= 1.0;
+        } else {
+            double a = Math.max(1.0, visionRearRadius());
+            double b = Math.max(1.0, visionSideRadius() * 0.78);
+            double rear = -forward;
+            return (rear*rear)/(a*a) + (side*side)/(b*b) <= 1.0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2954-2956
+Kind: method
+Name: isVisible
+SHA256: fdacc95e4b435880beac26497795052b8fb2c542446143f6b55527df8aecaade
+
+```java
+    boolean isVisible(int x, int y) {
+        return visibleTiles != null && x >= 0 && y >= 0 && x < visibleTiles.length && y < visibleTiles[0].length && visibleTiles[x][y];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2958-2960
+Kind: method
+Name: isRemembered
+SHA256: c56c4a5d8cab64e5ca7d10c6a1376edbe4736398fa0c535e043d010c57f29143
+
+```java
+    boolean isRemembered(int x, int y) {
+        return rememberedTiles != null && x >= 0 && y >= 0 && x < rememberedTiles.length && y < rememberedTiles[0].length && rememberedTiles[x][y];
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3018-3024
+Kind: method
+Name: decaySoundPings
+SHA256: 9e01c162886d25e0dbdd7d38fbc8851953e6f191f2d5474f9cb4d74287f8fa1a
+
+```java
+    void decaySoundPings() {
+        for (int i=sensePings.size()-1; i>=0; i--) {
+            SensePing p = sensePings.get(i);
+            p.ttl--;
+            if (p.ttl <= 0) sensePings.remove(i);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3097-3097
+Kind: method
+Name: makesSound
+SHA256: d85dd2e508eab72d18140c82063ebf6bb5c657dd6dd5998097a91f0af9059412
+
+```java
+    boolean makesSound(char ch) { return ch == 'g' || ch == 'm' || ch == 'R' || ch == 'A' || ch == 'N' || ch == 'p' || ch == 'b' || ch == 'M'; }
+```
+
+---
+Source: gamepanel-shard4.txt:3109-3114
+Kind: method
+Name: soundChance
+SHA256: 8a677f9144db3463a48993f4b411b05e0cbeefc5775bb56e4feda72ffabf832a
+
+```java
+    int soundChance(char ch, int x, int y, int dist) {
+        int base = 15 + stat("Hearing", 6) * 6 - dist * 4 - noisePenaltyAt(x,y);
+        if (ch == 'N' || ch == 'R') base += 18;
+        if (ch == 'A' || ch == 'p' || ch == 'M') base += 8;
+        return Math.max(3, Math.min(85, base));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3178-3183
+Kind: method
+Name: detectionObstructionPenalty
+SHA256: 8d77c6787da0c1b51d1b01316f89e29d9c8cddade50ac8ea7f35c2e97b0da956
+
+```java
+    int detectionObstructionPenalty(int x0, int y0, int x1, int y1, boolean includeEntities) {
+        TargetingSolution scratch = new TargetingSolution();
+        int raw = rangedCoverPenalty(x0,y0,x1,y1,includeEntities,scratch);
+        if (scratch.coverHardBlocked) return 60;
+        return Math.max(0, Math.min(45, raw / 2));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3197-3205
+Kind: method
+Name: directionAndDistanceLabel
+SHA256: fd1991bb4618e885149672a3d619529b630aca69bc6b58eabf3ec9eb246bc96e
+
+```java
+    String directionAndDistanceLabel(int x, int y) {
+        int dx = x - playerX, dy = y - playerY;
+        String ns = dy < 0 ? "north" : (dy > 0 ? "south" : "");
+        String ew = dx < 0 ? "west" : (dx > 0 ? "east" : "");
+        String dir = ns.isEmpty() ? ew : (ew.isEmpty() ? ns : ns + "-" + ew);
+        if (dir.isEmpty()) dir = "nearby";
+        int dist = Math.abs(dx) + Math.abs(dy);
+        return dir + " ~" + dist + "t:";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3223-3225
+Kind: method
+Name: localNoiseFieldAt
+SHA256: be42dbfa0376dcb95d7edb3b948ee2185f760602910d999ac09e99ee604ae7d8
+
+```java
+    int localNoiseFieldAt(int tx, int ty) {
+        return noisePenaltyAt(tx, ty);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3227-3233
+Kind: method
+Name: addSoundPing
+SHA256: 439dc1e93317297fdf81701a0496d781b8a475b52ebb9f08dc6540990de83bde
+
+```java
+    void addSoundPing(int x, int y, String label) {
+        for (SensePing p : sensePings) {
+            if (Math.abs(p.x-x) <= 1 && Math.abs(p.y-y) <= 1 && p.label.equals(label)) { p.x=x; p.y=y; p.ttl=4; return; }
+        }
+        sensePings.add(new SensePing(x,y,label,4));
+        while (sensePings.size() > 10) sensePings.remove(0);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3251-3254
+Kind: method
+Name: blocksLineOfSight
+SHA256: 71145d4e5fae2350a553b3589f313e8d2f5e84d393962dda41b844ad9252b4b8
+
+```java
+    boolean blocksLineOfSight(char ch) {
+        // Walls and closed/secured doors block sight. Open archways/floor/corridors do not.
+        return ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE || ch == '|' || ch == 'L' || ch == 'X' || ch == 'V';
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3256-3256
+Kind: method
+Name: isDoorTile
+SHA256: 8622df4f5d86f74368e7d4f7647466551491a75e9ea0585c7ec0ece230562315
+
+```java
+    boolean isDoorTile(char ch) { return ch == '/' || ch == '|' || ch == 'L' || ch == 'X' || ch == 'V'; }
+```
+
+---
+Source: gamepanel-shard4.txt:3369-3372
+Kind: residual
+Name: residual_3369_3372
+SHA256: dffcac2ae429a5db57f65984af22b3d6ad28b64b6444ca1d767f1cf7d88485a6
+
+```java
+
+    static final int ARBITES_INSPECTION_COOLDOWN_TURNS = 4 * TURNS_PER_HOUR;
+    static final int ARBITES_CAPTURE_COOLDOWN_TURNS = 3 * HOURS_PER_DAY * TURNS_PER_HOUR;
+
+```
+
+---
+Source: gamepanel-shard4.txt:3415-3419
+Kind: method
+Name: arbitesAuthorityText
+SHA256: 81c0f457091ee2b289c8398af507a0e3bedbdc91e2bb2a92a1091ff59994feca
+
+```java
+boolean arbitesAuthorityText(String text) {
+        if (text == null) return false;
+        String l = text.toLowerCase(Locale.ROOT);
+        return l.contains("civic Wardens") || l.contains("law enforcement") || l.contains("precinct") || l.contains("suppression") || l.contains("riot");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3488-3509
+Kind: method
+Name: payArbitesFine
+SHA256: d52a6edfdf80757077985ff7dea0c6688b4715d9381d7bd854ffc25ab41834f8
+
+```java
+    int payArbitesFine(int amount) {
+        int remaining = Math.max(0, amount);
+        int paid = 0;
+        int fromPocket = Math.min(carriedScript, remaining);
+        carriedScript -= fromPocket; paid += fromPocket; remaining -= fromPocket;
+        if (remaining > 0) {
+            for (BankProfile b : BankProfile.ALL) {
+                if (remaining <= 0) break;
+                if (b.arbitesFineProtected) continue;
+                int bal = bankBalance(b.id);
+                if (bal <= 0) continue;
+                int take = Math.min(bal, remaining);
+                bankBalances.put(b.id, bal - take);
+                paid += take; remaining -= take;
+            }
+        }
+        if (remaining > 0 && baseStashedScript > 0 && rng.nextInt(100) < 20) {
+            int take = Math.min(baseStashedScript, Math.max(1, remaining / 2));
+            baseStashedScript -= take; paid += take; remaining -= take;
+        }
+        return paid;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3561-3561
+Kind: method
+Name: scavengeCurrentRoom
+SHA256: 67415c8083a2762a65115e6a44ca493e8f130f5dabdc1501d5dea2532cfb97d8
+
+```java
+    void scavengeCurrentRoom() { scavengeFor("General supplies"); }
+```
+
+---
+Source: gamepanel-shard4.txt:3622-3624
+Kind: method
+Name: roomCacheContainerLabel
+SHA256: 186c735d41a8e94581e8c930fd2e8bc7b52fcf85477838c3af8fcbbb97e1bc7d
+
+```java
+    String roomCacheContainerLabel(int roomId, RoomProfile rp, ZoneType zt) {
+        return RoomContainerApi.containerLabel(roomId, rp, zt);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:87-95
+Kind: method
+Name: beggingPayoutBase
+SHA256: 742cd0dad6b421f4dfd0aa02332360e6c0bf5d7adf71fd661ce665b6d4e5c59c
+
+```java
+    int beggingPayoutBase(ZoneType zt) {
+        if (zt == ZoneType.NOBLE_SERVICE_SPINE) return 64;
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) return 50;
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return 40;
+        if (zt == ZoneType.NEUTRAL_CIVILIAN_FLOOR || zt == ZoneType.SUMP_MARKET || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return 32;
+        if (zt == ZoneType.HAB_STACK || zt == ZoneType.TRASH_WARREN || zt == ZoneType.TRAIN_SERVICE_YARD) return 22;
+        if (zt == ZoneType.GANGER_TURF) return 14;
+        return 18;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:96-104
+Kind: method
+Name: beggingArbitesRisk
+SHA256: 313df85c0bc5949fde2ed903b9e1c32b2a94e6159e7c37f23606ac5a42a0357c
+
+```java
+    int beggingArbitesRisk(ZoneType zt) {
+        if (zt == ZoneType.NOBLE_SERVICE_SPINE) return 48;
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE || zt == ZoneType.ARBITES_PRECINCT_EDGE) return 38;
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return 26;
+        if (zt == ZoneType.NEUTRAL_CIVILIAN_FLOOR || zt == ZoneType.SUMP_MARKET || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return 20;
+        if (zt == ZoneType.HAB_STACK || zt == ZoneType.TRASH_WARREN || zt == ZoneType.TRAIN_SERVICE_YARD) return 12;
+        if (zt == ZoneType.GANGER_TURF) return 6;
+        return 10;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:132-132
+Kind: method
+Name: isRestProp
+SHA256: 41785e04c948f8e221ac7e351a65c5262231011f4b7cbe32247b2315b385d506
+
+```java
+    boolean isRestProp(char c) { return c=='b' || c=='h' || c=='n' || c=='q'; }
+```
+
+---
+Source: gamepanel-shard5.txt:151-151
+Kind: method
+Name: selectedCoordText
+SHA256: b419c8eba413490e78d0493346eef6a7062316c7cf78250723ea97be11cdef9b
+
+```java
+    String selectedCoordText() { return SelectedContextSurfaceApi.selectedCoordText(lookCursorActive, lookX, lookY, playerX, playerY); }
+```
+
+---
+Source: gamepanel-shard5.txt:287-292
+Kind: method
+Name: npcLeaveConversation
+SHA256: 93970e968a3113a9bc4821589c82670bdfc2525c35a857623faf5079eecb914c
+
+```java
+    void npcLeaveConversation() {
+        if (activeConversationNpc != null) logConversation("NPC_LEAVE", "Ended conversation with " + activeConversationNpc.name + ".");
+        activeConversationNpc = null;
+        activeTrader = null;
+        closePanel();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:379-383
+Kind: method
+Name: selectedTradeOffer
+SHA256: ffe97edfc5d3b5da1e36c4c5ecf08a633f32c70f51bd3109dfb1d7e14d78f085
+
+```java
+    TradeOffer selectedTradeOffer() {
+        if (activeTrader == null || activeTrader.offers.isEmpty()) return null;
+        selectedTradeOffer = Math.max(0, Math.min(selectedTradeOffer, activeTrader.offers.size()-1));
+        return activeTrader.offers.get(selectedTradeOffer);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:394-406
+Kind: method
+Name: selectedTradeReadabilityLines
+SHA256: 4fb527fc62670c6fcf116744a4ac0c58cf6eed731f4216327bd7950fb2e4aa4f
+
+```java
+    ArrayList<String> selectedTradeReadabilityLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (activeTrader == null) {
+            lines.add("Selected offer: no active trader.");
+            return lines;
+        }
+        TradeOffer offer = selectedTradeOffer();
+        if (offer == null) lines.add("Selected offer: this trader has no visible stock right now.");
+        else lines.addAll(tradeOfferDetailLines(offer));
+        String sellItem = selectedInventoryItemName();
+        lines.addAll(tradeSellPreviewLines(sellItem));
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:514-521
+Kind: method
+Name: tradePricePressureLine
+SHA256: 4eb1837004f34aea6a0219c68acb917f198b886e1f4e8ced920ea51a70238718
+
+```java
+    String tradePricePressureLine(int actual, int catalogValue) {
+        int base = Math.max(1, catalogValue);
+        if (actual >= Math.ceil(base * 1.35)) return "the counter is charging a heavy premium";
+        if (actual > base) return "the counter is above ordinary catalog value";
+        if (actual == base) return "the counter matches ordinary catalog value";
+        if (actual <= Math.floor(base * 0.55)) return "the counter is paying hard-bargain resale rates";
+        return "the counter is below ordinary catalog value";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:523-528
+Kind: method
+Name: tradeStockContextLine
+SHA256: 47eaffe75e5edf16055e0e77b7faf7727b0eed8d7665e2a7be7071e330f8b714
+
+```java
+    String tradeStockContextLine(TradeOffer offer) {
+        if (offer == null) return "no selected stock.";
+        String source = offer.catalogDef() == null ? "local trader stock" : offer.catalogDef().source;
+        String category = offer.catalogDef() == null ? offer.category : offer.catalogDef().category;
+        return category + " from " + source + "; trader markup " + activeTrader.markupPct + "% and haggle discount " + activeTrader.discountPct + "% are already included.";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:530-536
+Kind: method
+Name: tradeOfferOriginLine
+SHA256: 2774c505d60b45e59fc7c69335d1549a50f25a34f3acd882a50d22c6bf0edc3c
+
+```java
+    String tradeOfferOriginLine(TradeOffer offer) {
+        if (offer == null || offer.provenance == null) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        String s = offer.provenance.summary();
+        if (s == null || s.isBlank()) return "the trader presents it as ordinary local stock; no detailed origin is available.";
+        if (s.startsWith("Origin: ")) s = s.substring("Origin: ".length());
+        return s;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:621-621
+Kind: method
+Name: countMoney
+SHA256: e9cc359e04baac7148174cb2e707b7674859616589669a2bf3623baf3c94af50
+
+```java
+    int countMoney() { return Math.max(0, carriedScript); }
+```
+
+---
+Source: gamepanel-shard5.txt:622-622
+Kind: method
+Name: countBaseStoredScript
+SHA256: 5bfdbc2b5788c8cb1c68302e0205698c0bb285f43281a385c14d38ab90e3f84e
+
+```java
+    int countBaseStoredScript() { return Math.max(0, baseStashedScript); }
+```
+
+---
+Source: gamepanel-shard5.txt:625-625
+Kind: method
+Name: addImperialScript
+SHA256: b7b4e49a02c3a6bd5eed92b9ba9b6dff4019bf9d27233dc66299bdd1422dfe5c
+
+```java
+    void addImperialScript(int amount) { if (amount > 0) carriedScript = Math.min(Integer.MAX_VALUE - amount, Math.max(0, carriedScript)) + amount; }
+```
+
+---
+Source: gamepanel-shard5.txt:626-631
+Kind: method
+Name: spendImperialScript
+SHA256: 4ea765fcda9c14a3ac3032afbefe798c5a3aa402fcea01832085303ae10aff8a
+
+```java
+    boolean spendImperialScript(int amount) {
+        if (amount <= 0) return true;
+        if (countMoney() < amount) return false;
+        carriedScript = Math.max(0, carriedScript - amount);
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:633-640
+Kind: method
+Name: migratePhysicalScriptFromList
+SHA256: 0d9a59389c57b74bf7d98dc4fc4393945124b39034f639f798aa9f7f1b3466f6
+
+```java
+    int migratePhysicalScriptFromList(ArrayList<String> list) {
+        if (list == null || list.isEmpty()) return 0;
+        int n = 0;
+        for (int i=list.size()-1; i>=0; i--) {
+            if ("Concord Script".equalsIgnoreCase(String.valueOf(list.get(i)))) { list.remove(i); n++; }
+        }
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:756-756
+Kind: method
+Name: safeParseInt
+SHA256: 2aa9bf60385a1095840307902160ed4700d216756da1c408bca47f0761ec2e19
+
+```java
+    int safeParseInt(String text, int d) { try { return Integer.parseInt(text == null ? "" : text.trim()); } catch(Exception e) { return d; } }
+```
+
+---
+Source: gamepanel-shard5.txt:991-991
+Kind: method
+Name: isIntermapTransitTile
+SHA256: b6da7193ca5f737d488f15d64a58d2638d30c5e7777d53c050712b73bdaa5202
+
+```java
+    boolean isIntermapTransitTile(char ch) { return ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E'; }
+```
+
+---
+Source: gamepanel-shard5.txt:993-1001
+Kind: method
+Name: intermapTransitLabel
+SHA256: 993a7dd23f5c1f5e375eb5e40ba1b8895709c80d933ee8916f9fe3bab3c7be62
+
+```java
+    String intermapTransitLabel(char ch) {
+        switch (ch) {
+            case 'D': return "Maintenance-bulkhead double doors";
+            case 'S': return "Sewer access hatch";
+            case 'v': return "Sewer ladder / drain ascent";
+            case 'E': return "Elevator cage";
+            default: return "Intermap transit";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1062-1067
+Kind: method
+Name: mixNewSectorSeed
+SHA256: 9e54c78c04bc5195efe1fce13d35fd58cdca65e66fc2f9b7ca27db1286dde302
+
+```java
+    long mixNewSectorSeed(long oldSeed, int turnCount, int money, int xpValue, int knowledgeValue) {
+        long x = oldSeed ^ 0x5EC70A7E47A11L;
+        x ^= ((long)turnCount << 21) ^ ((long)money << 9) ^ ((long)xpValue << 3) ^ knowledgeValue;
+        x ^= (x << 13); x ^= (x >>> 7); x ^= (x << 17);
+        return x == 0 ? System.currentTimeMillis() : x;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1141-1147
+Kind: method
+Name: oppositeEdge
+SHA256: 8989de3db0260b622253a3e0dbd168f840ada10d3ffd4a0446e300f6e8641815
+
+```java
+    String oppositeEdge(String dir) {
+        if ("N".equals(dir)) return "S";
+        if ("S".equals(dir)) return "N";
+        if ("W".equals(dir)) return "E";
+        if ("E".equals(dir)) return "W";
+        return "";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1304-1307
+Kind: method
+Name: baseObjectAt
+SHA256: 7a32182ae31c6d4451dda79b1fda5347ae0662dd874c85583103791ff39a710d
+
+```java
+    BaseObject baseObjectAt(int x, int y) {
+        for (BaseObject obj : baseObjects) if (obj.x == x && obj.y == y) return obj;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1393-1395
+Kind: method
+Name: rawCanPlacePendingBuildAt
+SHA256: e4ace13080a62d745663e08b778b521ae4beb132dd509f0004394cbf9baf2b85
+
+```java
+    String rawCanPlacePendingBuildAt(int x, int y) {
+        return ConstructionPlacementFeedbackAuthority.cachedRawPlacement(this, pendingBuildRecipe, x, y);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1397-1399
+Kind: method
+Name: canPlacePendingBuildAt
+SHA256: 0b196cad8386705efd630bad8d543dd9b7ed4d69b5d40cc98e98a8b5a63ae077
+
+```java
+    String canPlacePendingBuildAt(int x, int y) {
+        return constructionPlacementResult(pendingBuildRecipe, x, y, rawCanPlacePendingBuildAt(x, y));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1401-1405
+Kind: method
+Name: constructionPlacementResult
+SHA256: 2d4b87ade768446ece713248171b8270f6d91981e0103a6921e6363483ae8c73
+
+```java
+    String constructionPlacementResult(BuildRecipe recipe, int x, int y, String rawReason) {
+        String blueprint = constructionBlueprintFor(recipe);
+        String context = (recipe == null ? "no recipe" : recipe.name) + " at " + x + "," + y;
+        return constructionGovernanceAuthority.explainPlacementResult(blueprint, "OK".equals(rawReason), rawReason, context);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1407-1422
+Kind: method
+Name: constructionBlueprintFor
+SHA256: bc4541c089d89fbc46595418dc457cb86dc00d520d8853ae31a1b761407b97f7
+
+```java
+    String constructionBlueprintFor(BuildRecipe recipe) {
+        if (recipe == null) return "basic_room_stamp";
+        char symbol = recipe.symbol;
+        String name = recipe.name == null ? "" : recipe.name.toLowerCase(Locale.ROOT);
+        if (symbol == 'L' || symbol == 'e' || symbol == 'f' || symbol == 'l' || symbol == 'M' || name.contains("forge") || name.contains("lab") || name.contains("condenser") || name.contains("medicae")) return "machine_placement";
+        String defenseBlueprint = DefenseSemanticIntegration.blueprintForRecipe(recipe.name);
+        if (defenseBlueprint != null) return defenseBlueprint;
+        if (name.contains("turret")) return "defense_turret";
+        if (name.contains("barricade") || name.contains("sandbag")) return "defense_obstruction";
+        if (name.contains("wall")) return "defense_wall";
+        if (name.contains("wire")) return "defense_area_denial";
+        if (name.contains("sensor")) return "defense_sensor";
+        if (name.contains("door")) return "defense_access_control";
+        if (name.contains("trap") || name.contains("alarm")) return "hazard_feature";
+        return "basic_room_stamp";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1424-1431
+Kind: method
+Name: updatePendingBuildSummary
+SHA256: 722adc491d7f4dc09f229329dc742f5bf391aca378ca9452c7d2a7ee09f592d6
+
+```java
+    void updatePendingBuildSummary() {
+        if (pendingBuildRecipe == null) { pendingBuildSummary = "No build selected."; return; }
+        String place = canPlacePendingBuildAt(buildX, buildY);
+        int turns = buildTurns(pendingBuildRecipe);
+        int fail = buildFailureChance(pendingBuildRecipe);
+        String comps = pendingBuildRecipe.componentCosts.isEmpty() ? "components none" : "components " + pendingBuildRecipe.componentCostSummary(4);
+        pendingBuildSummary = ConstructionPlacementFeedbackAuthority.formatSummary(pendingBuildRecipe, buildX, buildY, place, comps, turns, fail);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1433-1436
+Kind: method
+Name: buildTurns
+SHA256: be0a44144be7e40174067827ca9d636a52bae4b62fe0a6733f7c8a2b6a942e15
+
+```java
+    int buildTurns(BuildRecipe r) {
+        int body = stat("Strength", 6) + stat("Agility", 6);
+        return Math.max(1, r.baseTurns - body / 5);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1438-1441
+Kind: method
+Name: buildFailureChance
+SHA256: 79ff66d8a6b88ab0dc060cb5e65274c82311b46329ebf391dfd894695240d34e
+
+```java
+    int buildFailureChance(BuildRecipe r) {
+        int mind = stat("Intellect", 6) + stat("Faith", 6);
+        return Math.max(2, Math.min(80, r.baseFail - mind * 3));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1443-1449
+Kind: method
+Name: buildRequirementProblem
+SHA256: 79b6e689f4a35a464a8776dd1cbb2648e791d90b4f424aed503970532838c3ce
+
+```java
+    String buildRequirementProblem(BuildRecipe r) {
+        String structural = buildStructuralRequirementProblem(r);
+        if (!"OK".equals(structural)) return structural;
+        String compProblem = buildComponentRequirementProblem(r);
+        if (!"OK".equals(compProblem)) return compProblem;
+        return "OK";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1511-1518
+Kind: method
+Name: constructionPlacementHintLine
+SHA256: ed57b434b7d92e1ed4c14e6357b8efeeb1a76dc1c261070a1d81ba9fe16c203f
+
+```java
+    String constructionPlacementHintLine(BuildRecipe r) {
+        if (r == null) return "choose a build first.";
+        if (r.symbol == 'd' || r.symbol == 'D' || r.symbol == 'Y' || r.symbol == 'W' || r.symbol == 'S' || r.symbol == 'R') return "best used as a choke point, cover edge, or room boundary inside your claim.";
+        if (r.symbol == 'c' || r.symbol == 'u' || r.symbol == 's') return "place where you can reach it quickly without blocking door paths.";
+        if (r.requiresWorkbench) return "needs workshop access and enough open room for service traffic.";
+        if (r.attention >= 3) return "keep paths open; valuable or armed builds invite trouble.";
+        return "place on a clear tile inside the claimed room.";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1520-1530
+Kind: method
+Name: constructionCategoryFor
+SHA256: 73e3f1a535fcdc8c4d8250334bcbdf9972246e25aa17626940c5684f1bcbc683
+
+```java
+    String constructionCategoryFor(BuildRecipe r) {
+        if (r == null) return "none";
+        String n = r.name.toLowerCase(Locale.ROOT);
+        if (n.contains("cot") || n.contains("water") || n.contains("condenser") || n.contains("ration")) return "survival";
+        if (n.contains("storage") || n.contains("crate")) return "storage";
+        if (n.contains("workbench") || n.contains("forge") || n.contains("lab") || n.contains("chem") || n.contains("distillation") || n.contains("sterile") || n.contains("fume") || n.contains("injector")) return "production";
+        if (n.contains("shop") || n.contains("business") || n.contains("clinic") || n.contains("decor")) return "commerce and services";
+        if (n.contains("carry") || n.contains("supply") || n.contains("logistics")) return "logistics";
+        if (n.contains("barricade") || n.contains("post") || n.contains("barracks") || n.contains("turret") || n.contains("shield") || n.contains("sandbag") || n.contains("wire") || n.contains("wall") || n.contains("door") || n.contains("sensor") || n.contains("security")) return "defense and access";
+        return "general construction";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1532-1539
+Kind: method
+Name: suggestedConstructionChoiceLine
+SHA256: 8fa27e4765454e92a38c440b7827568d602a135cfd8415c83da65cd5c0988f25
+
+```java
+    String suggestedConstructionChoiceLine() {
+        if (!hasBaseObject('s')) return "Storage Crate for safe capacity";
+        if (!hasBaseObject('c')) return "Sleeping Cot for recovery";
+        if (!hasBaseObject('u')) return "Water Barrel for reserve water";
+        if (!hasBaseObject('w')) return "Scrap Workbench to unlock repair and fabrication paths";
+        if (!hasKnowledge("Commerce Permits")) return "Watch Post or Barricade before risky commerce";
+        return "choose production, commerce, logistics, or defense based on your next goal";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1541-1549
+Kind: method
+Name: constructionComponentReadinessLine
+SHA256: 93ae1bf71ca29910842d7dbbddf888a0fc04e82035731754f23274a182515140
+
+```java
+    String constructionComponentReadinessLine() {
+        String[] samples = {"Tool bundle", "Rivet set", "Wire bundle", "Circuit wafer"};
+        ArrayList<String> bits = new ArrayList<>();
+        for (String s : samples) {
+            int have = countBuildComponent(s);
+            if (have > 0) bits.add(s + " x" + have);
+        }
+        return bits.isEmpty() ? "no common build components visible" : String.join(", ", bits);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1631-1639
+Kind: method
+Name: buildComponentRequirementProblem
+SHA256: 47440a903d590351d926f5a4a6d0685b29e3afb1aa8a37570e21621ce07250f6
+
+```java
+    String buildComponentRequirementProblem(BuildRecipe r) {
+        if (r == null || r.componentCosts.isEmpty()) return "OK";
+        ArrayList<String> missing = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : r.componentCosts.entrySet()) {
+            int have = countBuildComponent(e.getKey());
+            if (have < e.getValue()) missing.add(e.getKey() + " " + have + "/" + e.getValue());
+        }
+        return missing.isEmpty() ? "OK" : "needs components: " + String.join(", ", missing) + ".";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1796-1799
+Kind: method
+Name: hasBaseObject
+SHA256: 5fd36a6da64d7637069a8e467a1f51b8fa732caed53fba3c0afef3a07a1b9b3c
+
+```java
+    boolean hasBaseObject(char symbol) {
+        for (BaseObject obj : baseObjects) if (obj.symbol == symbol) return true;
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1801-1804
+Kind: method
+Name: firstBaseObject
+SHA256: 94faedad1d7584654c037dc799350e807c6a509351d4da83219ca6efbbcda850
+
+```java
+    BaseObject firstBaseObject(char symbol) {
+        for (BaseObject obj : baseObjects) if (obj.symbol == symbol) return obj;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1868-1875
+Kind: method
+Name: visibleCraftingRecipes
+SHA256: b837f0ed61acea86312b32ab12557f04b680d3a64fd9bf19914a117db666a041
+
+```java
+    java.util.List<CraftingRecipe> visibleCraftingRecipes() {
+        ArrayList<CraftingRecipe> all = CraftingRecipe.all();
+        ArrayList<CraftingRecipe> out = new ArrayList<>();
+        for (CraftingRecipe r : all) if (r.visibleTo(this)) out.add(r);
+        if (out.isEmpty()) out.add(CraftingRecipe.noKnownRecipes());
+        selectedCraftRecipeIndex = Math.max(0, Math.min(selectedCraftRecipeIndex, out.size()-1));
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1877-1884
+Kind: method
+Name: moveCraftRecipeSelection
+SHA256: 1978c05a364e40a1f3ed61c2a1016ff9806619ec11cdb8a2e4b5a5ea4ea32a2f
+
+```java
+    void moveCraftRecipeSelection(int delta) {
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        if (recipes.isEmpty()) { selectedCraftRecipeIndex = 0; logEvent("Crafting: no recipe list available."); return; }
+        selectedCraftRecipeIndex = Math.max(0, Math.min(recipes.size()-1, selectedCraftRecipeIndex + delta));
+        CraftingRecipe r = recipes.get(selectedCraftRecipeIndex);
+        logEvent("Selected recipe: " + r.name + " — " + r.shortStatus(this));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1886-1890
+Kind: method
+Name: requiredMachineFor
+SHA256: e04ef9d9b64686cd0913038bb7f600ead62572b503515a052a541435eef4eda1
+
+```java
+    BaseObject requiredMachineFor(CraftingRecipe r) {
+        if (r == null) return null;
+        if (r.machineSymbol == ' ') return firstBaseObject('w');
+        return firstBaseObject(r.machineSymbol);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1935-1937
+Kind: method
+Name: bestKnownProductionTier
+SHA256: 6974db8a34ba4f33f4da626aabff89068ce31fdb9d0b371758fdc8b1ac7956ca
+
+```java
+    int bestKnownProductionTier() {
+        return Math.max(0, Math.min(ItemQuality.NAMES.length-1, QualityAuthorityApi.bestKnownTier(unlockedKnowledges)));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2021-2025
+Kind: method
+Name: recruitCapacity
+SHA256: 1f98ccf2413de4767a0d40f82f13a36223a94a084f92527d995bd3cb1acff81b
+
+```java
+    int recruitCapacity() {
+        int cap = 0;
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'c') cap += Math.max(1, 1 + ItemQuality.tierIndex((obj.qualityName == null ? "Common" : obj.qualityName) + " cot") / 3);
+        return cap;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2027-2031
+Kind: method
+Name: availableRecruitLabor
+SHA256: 0b3956333e304aed127567f5116654fd60756aa6806dde7b08e72b2ffc71a317
+
+```java
+    int availableRecruitLabor() {
+        int labor = 0;
+        for (RecruitWorker r : factionRecruits) if (r == null || !"security".equalsIgnoreCase(r.duty)) labor++;
+        return Math.max(0, labor);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2033-2037
+Kind: method
+Name: securityStaffCount
+SHA256: 1ca8ec16cfef565f3489f27b2236597b99fc7407cc7a27ba1ba54644ac06bde9
+
+```java
+    int securityStaffCount() {
+        int n = 0;
+        for (RecruitWorker r : factionRecruits) if (r != null && "security".equalsIgnoreCase(r.duty)) n++;
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2059-2064
+Kind: method
+Name: recruitOperableMachines
+SHA256: d99b0b19682d2e7c4457380da664a8c0a28d920945a3ca47622a9440a6c300c9
+
+```java
+    ArrayList<BaseObject> recruitOperableMachines() {
+        ArrayList<BaseObject> out = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'w' || obj.symbol == 'e' || obj.symbol == 'f' || obj.symbol == 'l' || obj.symbol == 'x' || obj.symbol == 'L') out.add(obj);
+        selectedWorkerMachineIndex = Math.max(0, Math.min(selectedWorkerMachineIndex, Math.max(0, out.size()-1)));
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2066-2070
+Kind: method
+Name: selectedWorkerMachine
+SHA256: ef57091eec0957b4b1874e17e0c7a15cfc97a8504c09160e8e6ee9bd7840e937
+
+```java
+    BaseObject selectedWorkerMachine() {
+        ArrayList<BaseObject> ms = recruitOperableMachines();
+        if (ms.isEmpty()) return null;
+        return ms.get(Math.max(0, Math.min(selectedWorkerMachineIndex, ms.size()-1)));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2073-2078
+Kind: method
+Name: staffableStations
+SHA256: 48b77e899e30a106d27174510b6c46c91a1bd1afe5588b02a4b4d9c1c6fd2664
+
+```java
+    ArrayList<BaseObject> staffableStations() {
+        ArrayList<BaseObject> out = new ArrayList<>();
+        for (BaseObject obj : baseObjects) if (StaffingLaborBridgeAuthority.isMachineStation(obj) || StaffingLaborBridgeAuthority.isDefenseStation(obj)) out.add(obj);
+        selectedStaffingStationIndex = Math.max(0, Math.min(selectedStaffingStationIndex, Math.max(0, out.size()-1)));
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2080-2084
+Kind: method
+Name: selectedStaffingStation
+SHA256: 97f72d0993a5876f8d6928c886a912910c6b22cc26c8b332fe5953b7a8b144f1
+
+```java
+    BaseObject selectedStaffingStation() {
+        ArrayList<BaseObject> stations = staffableStations();
+        if (stations.isEmpty()) return null;
+        return stations.get(Math.max(0, Math.min(selectedStaffingStationIndex, stations.size()-1)));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2086-2090
+Kind: method
+Name: selectedStaffingWorker
+SHA256: 9d1798a5ee69e758fdb95c9d0bc6b8f17bf1e5fbfd688c4e9149c07801d5a21a
+
+```java
+    RecruitWorker selectedStaffingWorker() {
+        if (factionRecruits.isEmpty()) return null;
+        selectedStaffingWorkerIndex = Math.max(0, Math.min(selectedStaffingWorkerIndex, factionRecruits.size()-1));
+        return factionRecruits.get(selectedStaffingWorkerIndex);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2102-2109
+Kind: method
+Name: moveStaffingWorkerSelection
+SHA256: 86da981737e502c448153a477fe4b351ae9815039452e86fcf7f59cc51ef83e1
+
+```java
+    void moveStaffingWorkerSelection(int delta) {
+        if (factionRecruits.isEmpty()) { logEvent("Staffing worker selection failed: no recruited workers available."); return; }
+        selectedStaffingWorkerIndex = Math.max(0, Math.min(factionRecruits.size()-1, selectedStaffingWorkerIndex + delta));
+        RecruitWorker worker = selectedStaffingWorker();
+        lastStaffingAssignmentReport = ManualStaffingAssignmentAuthority.selectionLine(this, selectedStaffingStation(), worker);
+        logEvent("Selected staffing worker: " + (worker == null ? "none" : worker.name + " (" + worker.duty + ")") + ".");
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2238-2242
+Kind: method
+Name: visibleGeneratedProductionJobs
+SHA256: d7020e71acdfc2eb3d8f4403abf4121f0cb6f5ea0055fcdca2aa83274b2dd30d
+
+```java
+    ArrayList<FactionRecipeVariant> visibleGeneratedProductionJobs() {
+        ArrayList<FactionRecipeVariant> all = ControlledProductionJobAuthority.visibleJobs(this, 240);
+        selectedGeneratedProductionJobIndex = Math.max(0, Math.min(selectedGeneratedProductionJobIndex, Math.max(0, all.size()-1)));
+        return all;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2244-2248
+Kind: method
+Name: selectedGeneratedProductionJob
+SHA256: afc937cbe3257ad04f3139866843c53b33061b68757cbf37cd78e15aab4bebdd
+
+```java
+    FactionRecipeVariant selectedGeneratedProductionJob() {
+        ArrayList<FactionRecipeVariant> jobs = visibleGeneratedProductionJobs();
+        if (jobs.isEmpty()) return null;
+        return jobs.get(Math.max(0, Math.min(selectedGeneratedProductionJobIndex, jobs.size()-1)));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2250-2255
+Kind: method
+Name: moveGeneratedProductionJobSelection
+SHA256: 1e2d5c89fe901781769ff914e0a373c29464ea22fb7dd6cb6673c8589e8a2248
+
+```java
+    void moveGeneratedProductionJobSelection(int delta) {
+        ArrayList<FactionRecipeVariant> jobs = visibleGeneratedProductionJobs();
+        if (jobs.isEmpty()) { logEvent("Generated production selection failed: no filtered generated jobs are available in this base context."); return; }
+        selectedGeneratedProductionJobIndex = Math.max(0, Math.min(jobs.size()-1, selectedGeneratedProductionJobIndex + delta));
+        refreshGeneratedProductionForecast("Selected generated production job");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2318-2321
+Kind: method
+Name: firstAvailableRecruitName
+SHA256: 9b99de047353627a6737f9dd70c03236df60f3655b761cc120537347b0d6223d
+
+```java
+    String firstAvailableRecruitName() {
+        for (RecruitWorker r : factionRecruits) if (r != null && !"security".equalsIgnoreCase(r.duty)) return r.name;
+        return factionRecruits.isEmpty() ? "unmanned" : factionRecruits.get(0).name;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2469-2473
+Kind: method
+Name: canUseWorkbench
+SHA256: 8cd7706c95088bff256cfecfd372a985d78a3c1dad9323e18fde59de3ee8d9ba
+
+```java
+    boolean canUseWorkbench() {
+        if (!baseClaimed || !isInClaimedRoom(playerX, playerY)) { logEvent("Workbench use requires standing inside your claimed room."); return false; }
+        if (firstBaseObject('w') == null) { logEvent("No Scrap Workbench built yet."); return false; }
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2596-2596
+Kind: method
+Name: acceptBountyContract
+SHA256: 48f87366cb2fb14009cf73235dc552827cca355497f50642dc968e6e0abd7350
+
+```java
+    void acceptBountyContract() { acceptFactionContract("BOUNTY"); }
+```
+
+---
+Source: gamepanel-shard5.txt:2597-2597
+Kind: method
+Name: acceptFetchContract
+SHA256: ce0a1275e87d2f5cfddac29c936438045187dea0edfd79a63bc7fa9e72a79781
+
+```java
+    void acceptFetchContract() { acceptFactionContract("FETCH"); }
+```
+
+---
+Source: gamepanel-shard5.txt:2705-2705
+Kind: method
+Name: contractObjectContainerId
+SHA256: 4542b92dea5fdba2e7cb67f0e97904cd53fe58748716f49316f164f335222772
+
+```java
+    String contractObjectContainerId(String contractObjectId) { return CONTAINER_CONTRACT_OBJECT_PREFIX + ContainerIdentityApi.safeToken(contractObjectId == null ? "unknown" : contractObjectId); }
+```
+
+---
+Source: gamepanel-shard5.txt:2706-2706
+Kind: method
+Name: corpseLootContainerId
+SHA256: 9e9a6a22128bebeae947f96197a1d5910f7501630c435601cb3c8eb45da9ee71
+
+```java
+    String corpseLootContainerId(String corpseObjectId) { return CONTAINER_CORPSE_LOOT_PREFIX + ContainerIdentityApi.safeToken(corpseObjectId == null ? "unknown" : corpseObjectId); }
+```
+
+---
+Source: gamepanel-shard5.txt:2747-2747
+Kind: method
+Name: isFactionJournalObjectAt
+SHA256: 02908b9c7c6ddaefc838df116cf032bedaaab096c98a0c7581b8867957fc3c50
+
+```java
+    boolean isFactionJournalObjectAt(int tx, int ty) { return factionJournalObjectAt(tx, ty) != null; }
+```
+
+---
+Source: gamepanel-shard5.txt:2756-2760
+Kind: method
+Name: findFactionStrategicPlanById
+SHA256: 751a777f2d2e889187b1afa177b54e19581c72aafc31cf29db9ac785f6ee424c
+
+```java
+    FactionStrategicPlan findFactionStrategicPlanById(String id) {
+        if (id == null) return null;
+        for (FactionStrategicPlan p : factionStrategicPlans) if (p != null && id.equals(p.id)) return p;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2852-2852
+Kind: method
+Name: bankTerminalAt
+SHA256: a6e45c861a0bbc46b145dc07c9a2cd70483e98c1b0a7abd7fc60c1b551de46bd
+
+```java
+    MapObjectState bankTerminalAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-terminal"); }
+```
+
+---
+Source: gamepanel-shard5.txt:2853-2853
+Kind: method
+Name: isBankTerminalAt
+SHA256: c7cfd37840be64029461c0ae3ca254e8b4c701880aa55d31d7a80472b8a91e0a
+
+```java
+    boolean isBankTerminalAt(int tx, int ty) { return bankTerminalAt(tx, ty) != null; }
+```
+
+---
+Source: gamepanel-shard5.txt:2855-2858
+Kind: method
+Name: selectedBankProfile
+SHA256: 4c2f09ff6df472999078e8f08c13b851ce6f54fd900a8b5534e8a34721aef220
+
+```java
+    BankProfile selectedBankProfile() {
+        MapObjectState m = bankTerminalAt(lookX, lookY);
+        return m == null ? null : BankProfile.byId(MapObjectState.itemNameFromStock(m.stockState));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2860-2864
+Kind: method
+Name: selectedBankTerminalKind
+SHA256: c42006153285420c9c27deec376948a70f8584c1c2015da0eec18133fe2f2863
+
+```java
+    String selectedBankTerminalKind() {
+        MapObjectState m = bankTerminalAt(lookX, lookY);
+        if (m == null || m.stockState == null) return "terminal";
+        return m.stockState.contains("kind=branch") ? "branch office" : "credit terminal kiosk";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2866-2866
+Kind: method
+Name: bankBalance
+SHA256: d2e7283a832109bcdc936a687293a608ce989630215cea5875d17157908739bf
+
+```java
+    int bankBalance(String bankId) { return bankBalances.getOrDefault(bankId, 0); }
+```
+
+---
+Source: gamepanel-shard5.txt:2867-2867
+Kind: method
+Name: totalBankedCash
+SHA256: 50349f673c93734c6f072cd7ca8e4a7783d399626ec91050b37331bc94334430
+
+```java
+    int totalBankedCash() { int n=0; for (int v : bankBalances.values()) n += Math.max(0, v); return n; }
+```
+
+---
+Source: gamepanel-shard5.txt:2869-2876
+Kind: method
+Name: bankTerminalPreview
+SHA256: 8e20f3c3d7ed852aa250e39854f79f9eb841dfb80d931efee5d56d2e34d8fe92
+
+```java
+    String bankTerminalPreview(int tx, int ty) {
+        MapObjectState m = bankTerminalAt(tx, ty);
+        if (m == null) return "No bank terminal selected.";
+        BankProfile b = BankProfile.byId(MapObjectState.itemNameFromStock(m.stockState));
+        boolean branch = m.stockState != null && m.stockState.contains("kind=branch");
+        boolean open = openBankAccounts.contains(b.id);
+        return b.label + " " + (branch?"branch office":"credit terminal kiosk") + " / aligned with " + b.noblePatron + ". Open fee " + b.openFee + " script. Balance " + bankBalance(b.id) + ". Carried cash " + countMoney() + ". " + b.reputation + (open?" Account open.":" Account not open.") + (b.arbitesFineProtected?" Civic Wardens fine seizure protection: strong.":" Civic Wardens fine seizure protection: ordinary.");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2890-2890
+Kind: method
+Name: depositAllToSelectedBank
+SHA256: 21ac126a50239c555183d7f62ef8d511d724f4a0434199e990197eb6a399501f
+
+```java
+    void depositAllToSelectedBank() { depositToSelectedBank(Integer.MAX_VALUE); }
+```
+
+---
+Source: gamepanel-shard5.txt:2926-2926
+Kind: method
+Name: bankVaultAt
+SHA256: 53cbca090d90d12d446095700b775b2ffea6901ec218f39107e9770e2f0d6475
+
+```java
+    MapObjectState bankVaultAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-vault"); }
+```
+
+---
+Source: gamepanel-shard5.txt:2927-2927
+Kind: method
+Name: isBankVaultAt
+SHA256: 03f24e0c46c380b4c5295aa895ca3455d318bf126c54876672cdb5794fdc0f43
+
+```java
+    boolean isBankVaultAt(int tx, int ty) { return bankVaultAt(tx, ty) != null; }
+```
+
+---
+Source: gamepanel-shard5.txt:2928-2928
+Kind: method
+Name: bankProfileFromStock
+SHA256: 69e58de269f460b442353fb766d477a1e2015180ef1de66ebe2acb69bb3bf7e1
+
+```java
+    BankProfile bankProfileFromStock(String stock) { return BankProfile.byId(MapObjectState.itemNameFromStock(stock)); }
+```
+
+---
+Source: gamepanel-shard5.txt:2929-2929
+Kind: method
+Name: bankVaultLooted
+SHA256: 0fc5fec1ae8f11cfc07927931cc6d2d7184cfbc8f1735b8312f9faa8bd841f8e
+
+```java
+    boolean bankVaultLooted(MapObjectState m) { return m == null || m.vendCount > 0 || lootedBankVaultIds.contains(m.id) || (m.stockState != null && m.stockState.contains("looted=true")); }
+```
+
+---
+Source: gamepanel-shard5.txt:2939-2939
+Kind: method
+Name: isBankManagerAt
+SHA256: 8ab51b9c16675facb243a244332af98b8b14e136875697baabb55309fd87527e
+
+```java
+    boolean isBankManagerAt(int tx, int ty) { return bankManagerAt(tx, ty) != null; }
+```
+
+---
+Source: gamepanel-shard5.txt:2940-2940
+Kind: method
+Name: isBankManager
+SHA256: 73bea182f63a74385d53369a23280b0813331fb8cb0b27baed7a452561263913
+
+```java
+    boolean isBankManager(NpcEntity n) { return n != null && n.role != null && n.role.toLowerCase(Locale.ROOT).contains("bank manager"); }
+```
+
+---
+Source: gamepanel-shard5.txt:2941-2945
+Kind: method
+Name: bankManagerPreview
+SHA256: 6998ed0564a6843ce8dee48adda6d5cf43952df886d1335af21386890342ce1d
+
+```java
+    String bankManagerPreview(int tx, int ty) {
+        NpcEntity n = bankManagerAt(tx, ty);
+        if (n == null) return "No bank manager selected.";
+        return n.name + " / " + n.role + " / " + n.rankLine() + ". A manager keycard may open nearby bank vaults, assuming alarms, guards, witnesses, and law remain theoretical.";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2946-2946
+Kind: method
+Name: openSelectedBankVault
+SHA256: e5abd83798051b7f77d3885f4a63393115cc588c01ea4f4c6534a73e647380f1
+
+```java
+    void openSelectedBankVault() { openBankVaultAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard5.txt:2996-2996
+Kind: method
+Name: bankVaultDifficulty
+SHA256: 6cbd1170cbcccc632d914ed86c13dcb3bba945b722fab78623e65bbaf088836e
+
+```java
+    int bankVaultDifficulty(BankProfile b) { return b == null ? 65 : (b.upperHive ? 105 : (b.midHive ? 82 : 58)); }
+```
+
+---
+Source: gamepanel-shard5.txt:2997-2997
+Kind: method
+Name: stealSelectedBankManagerKeycard
+SHA256: c2c1664a0414c0c63e7d34ee7b584fffa6e385a6c4fb8797d10958652be34731
+
+```java
+    void stealSelectedBankManagerKeycard() { stealBankManagerKeycardAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard5.txt:3043-3045
+Kind: method
+Name: raiseBankHeistAlarm
+SHA256: 944928e266376e73f5dbca9d3fccbc8286a59fdc631a37c5777c0a8b86087aea
+
+```java
+    void raiseBankHeistAlarm(BankProfile b, String reason, int severity) {
+        raiseBankHeistAlarmAt(b, reason, severity, playerX, playerY);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3067-3067
+Kind: method
+Name: bankAlarmPanelAt
+SHA256: 75b3d0c645c101307344b85b17adcb45e58e6a2caaef26b5f4e0cd9d5594214f
+
+```java
+    MapObjectState bankAlarmPanelAt(int tx, int ty) { return mapObjectAt(tx, ty, "bank-alarm-panel"); }
+```
+
+---
+Source: gamepanel-shard5.txt:3068-3068
+Kind: method
+Name: isBankAlarmPanelAt
+SHA256: 0200f8cbfb5a36b86841d9fdaa6b33e680ee1aa1bad950a3b2e63c9a49f80580
+
+```java
+    boolean isBankAlarmPanelAt(int tx, int ty) { return bankAlarmPanelAt(tx, ty) != null; }
+```
+
+---
+Source: gamepanel-shard5.txt:3069-3071
+Kind: method
+Name: bankAlarmPanelDisabled
+SHA256: b62b1ece7d9b0d834bcb10df83c5b2b36161f0239085055b15ece4c0e41d0f90
+
+```java
+    boolean bankAlarmPanelDisabled(MapObjectState m) {
+        return m == null || disabledBankAlarmPanelIds.contains(m.id) || (m.stockState != null && m.stockState.contains("disabled=true"));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3087-3087
+Kind: method
+Name: tamperSelectedBankAlarmPanel
+SHA256: c9962d7e29732cdafeec15ffd4e844cb11913091179011010d12b15593056150
+
+```java
+    void tamperSelectedBankAlarmPanel() { tamperBankAlarmPanelAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard5.txt:3209-3209
+Kind: method
+Name: isPersistentStockObjectAt
+SHA256: 0e0e508873e115ff7e16fa8dd7acc756e99cc10d7b6f81873616a8ac7d80fe92
+
+```java
+    boolean isPersistentStockObjectAt(int tx, int ty) { return persistentStockObjectAt(tx, ty) != null; }
+```
+
+---
+Source: gamepanel-shard5.txt:3210-3210
+Kind: method
+Name: selectedInteractionIsPersistentStockObject
+SHA256: d1905c1b0c2b7f85980695a6af133136ae4293c60740557fa50e64db12d24411
+
+```java
+    boolean selectedInteractionIsPersistentStockObject() { return isPersistentStockObjectAt(lookX, lookY); }
+```
+
+---
+Source: gamepanel-shard5.txt:3298-3303
+Kind: method
+Name: compactStackSummary
+SHA256: 4d66a4c281ca9abc93502b65df57162a5f44f26ffca97f40de372a06681f3c03
+
+```java
+    String compactStackSummary(LinkedHashMap<String,Integer> stacks) {
+        if (stacks == null || stacks.isEmpty()) return "nothing";
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : stacks.entrySet()) parts.add(e.getKey() + (e.getValue() > 1 ? " x" + e.getValue() : ""));
+        return String.join(", ", parts);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3750-3754
+Kind: method
+Name: corridorBlockingTooClose
+SHA256: a4b2ac346b3b276e15f8a1ba3551ea5f8d9fd40e94a88c8390299e0253234890
+
+```java
+    boolean corridorBlockingTooClose(int x, int y, java.util.List<Point> occupied) {
+        if (occupied == null) return false;
+        for (Point p : occupied) if (p != null && Math.abs(p.x-x) <= 1 && Math.abs(p.y-y) <= 1) return true;
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4216-4227
+Kind: method
+Name: currentOperatorPortraitIcon
+SHA256: 3305dcf2cd6facdeca43dae80d30b058cda4436483d78b9d5c15ebc80ec0bcee
+
+```java
+    BufferedImage currentOperatorPortraitIcon() {
+        try {
+            Optional<NameLockedProfilePortraitAuthority.Entry> preferred = NameLockedProfilePortraitAuthority.match(resolveOperatorProfileName());
+            if (preferred.isPresent()) {
+                BufferedImage img = images.getNameLockedProfilePortrait(preferred.get().key);
+                if (img != null) return img;
+            }
+            FallbackProfileManagementAuthority.LocalProfile p = FallbackProfileManagementAuthority.loadOrCreate(userProfile);
+            if (p != null) return images.getPortrait(0, p.portraitIndex);
+        } catch (Throwable ignored) {}
+        return images.getPortrait(0, 0);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4269-4269
+Kind: method
+Name: openZoneAuditSurface
+SHA256: ce1f07f2b058300c11ca70e2230bcad39c20ef1ca82f458c32ca9ac806aeb9a3
+
+```java
+    void openZoneAuditSurface() { openSectorAuditSurface(); }
+```
+
+---
+Source: gamepanel-shard5.txt:4296-4304
+Kind: method
+Name: containedAuditZoneButtonStart
+SHA256: e973559b2e8105b30492c52f97607df714e808c1f33816db8a15feca360c9db6
+
+```java
+    int containedAuditZoneButtonStart(int visible) {
+        ZoneType[] values = ZoneType.values();
+        if (values.length == 0) return 0;
+        int v = Math.max(1, Math.min(visible, values.length));
+        if (auditZoneTypeIndex < auditZoneButtonScroll) auditZoneButtonScroll = auditZoneTypeIndex;
+        if (auditZoneTypeIndex >= auditZoneButtonScroll + v) auditZoneButtonScroll = auditZoneTypeIndex - v + 1;
+        auditZoneButtonScroll = Math.max(0, Math.min(Math.max(0, values.length - v), auditZoneButtonScroll));
+        return auditZoneButtonScroll;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4361-4373
+Kind: method
+Name: refreshSectorAuditSnapshot
+SHA256: 9a705898548add2186bc8bcb96b0265c142fab8c213a7ac438bb641b97fc97fe
+
+```java
+    void refreshSectorAuditSnapshot(WorldSetupSettings auditSettings, long previousSeed, String reason) {
+        if (auditWorld == null) return;
+        auditSnapshot = SectorAuditRuntimeAuthority.analyze(auditWorld, auditSettings, previousSeed, auditSeed);
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        String traceLine = step == null ? "trace=none" : step.line(auditTraceSteps == null ? 0 : auditTraceSteps.size());
+        auditReport = traceLine + " | " + auditSnapshot.summary + " reason=" + reason;
+        if (step != null) { auditCursorX = step.x; auditCursorY = step.y; }
+        else {
+            SectorAuditRuntimeAuthority.AuditFinding firstFinding = auditSnapshot.selected(0);
+            if (firstFinding != null) { auditCursorX = firstFinding.x; auditCursorY = firstFinding.y; }
+            else { auditCursorX = Math.max(0, auditWorld.w / 2); auditCursorY = Math.max(0, auditWorld.h / 2); }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4375-4379
+Kind: method
+Name: currentAuditTraceStep
+SHA256: 59c264deb578c72bbb55f9d562cc9cd08d78e9219882c153f808df483cdd9501
+
+```java
+    SectorGenerationTraceAuthority.Step currentAuditTraceStep() {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return null;
+        auditTraceIndex = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        return auditTraceSteps.get(auditTraceIndex);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4398-4403
+Kind: method
+Name: stepAuditTrace
+SHA256: cb3406d6604d5700241d8a5a2dba9d1469dc378ff0786af98924a36ebc003d91
+
+```java
+    void stepAuditTrace(int delta) {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) { repaint(); return; }
+        auditTracePlaying = false;
+        auditTraceIndex = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex + delta));
+        applyAuditTraceStep("manual trace step");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4405-4416
+Kind: method
+Name: advanceAuditTracePlaybackIfNeeded
+SHA256: 7818487dcbf408175c45d39226dddbc414aa21aa975625148cd1bbef1605a1a1
+
+```java
+    void advanceAuditTracePlaybackIfNeeded() {
+        if (!auditTracePlaying || auditTraceSteps == null || auditTraceSteps.isEmpty()) return;
+        long now = System.currentTimeMillis();
+        if (now - auditTraceLastAdvance < 1000L) return;
+        auditTraceLastAdvance = now;
+        if (auditTraceIndex < auditTraceSteps.size() - 1) {
+            auditTraceIndex++;
+            applyAuditTraceStep("automatic one-second trace advance");
+        } else {
+            auditTracePlaying = false;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4424-4433
+Kind: method
+Name: jumpAuditFinding
+SHA256: d5aedf3ccaee2ef8bc082f968c63d3001cf999ead834bb13850e9db9a75eb0c8
+
+```java
+    void jumpAuditFinding(int delta) {
+        if (auditSnapshot == null || auditSnapshot.findings.isEmpty() || auditWorld == null) { repaint(); return; }
+        auditFindingIndex = Math.floorMod(auditFindingIndex + delta, auditSnapshot.findings.size());
+        SectorAuditRuntimeAuthority.AuditFinding f = auditSnapshot.selected(auditFindingIndex);
+        if (f != null) {
+            auditCursorX = Math.max(0, Math.min(auditWorld.w - 1, f.x));
+            auditCursorY = Math.max(0, Math.min(auditWorld.h - 1, f.y));
+        }
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4435-4440
+Kind: method
+Name: moveAuditCursor
+SHA256: 84ab97e573a2ff8901f1d623a584251d00ca355972bafa0de1346069459a4e29
+
+```java
+    void moveAuditCursor(int dx, int dy) {
+        if (auditWorld == null) return;
+        auditCursorX = Math.max(0, Math.min(auditWorld.w - 1, auditCursorX + dx));
+        auditCursorY = Math.max(0, Math.min(auditWorld.h - 1, auditCursorY + dy));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4465-4469
+Kind: method
+Name: multiplayerSaveFavorite
+SHA256: 05c977afcc3e02287794f1b7492c4333f24cc91338fd559eaf390dc71f56a1fa
+
+```java
+    void multiplayerSaveFavorite() {
+        multiplayerMenu.addFavoriteFromDirect("Favorite " + (multiplayerMenu.favorites().size() + 1));
+        logEvent("MULTIPLAYER FAVORITE SAVED: " + multiplayerMenu.directInput());
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4471-4476
+Kind: method
+Name: multiplayerJoinSteamFriend
+SHA256: 260fe17ebe8616c84c62f8956b00796432cc13786606257dd5bf43e44eed3483
+
+```java
+    void multiplayerJoinSteamFriend() {
+        multiplayerMenu.joinViaSteamFriend();
+        logEvent(multiplayerMenu.status());
+        showTimedAlert("STEAM FRIEND", multiplayerMenu.status(), 4200);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:202-204
+Kind: method
+Name: mainMenuTitleTop
+SHA256: 0dd22328fc37cece0dab243d3a21e610084680667cdc69e23dedebd14d7699b2
+
+```java
+    int mainMenuTitleTop(int H) {
+        return Math.max(24, Math.min(54, H / 16));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:215-222
+Kind: method
+Name: mainMenuSubtitleDrawSize
+SHA256: 9a927e107a4f85f78c256f1f2435498632e372434129c1fc6fe3221e6533f7a2
+
+```java
+    Dimension mainMenuSubtitleDrawSize(BufferedImage subtitle, int W, int H) {
+        int maxSubW = Math.min(1050, W - 84);
+        int maxSubH = Math.max(70, Math.min(150, H / 5));
+        double subScale = Math.min(maxSubW / (double)Math.max(1, subtitle.getWidth()), maxSubH / (double)Math.max(1, subtitle.getHeight()));
+        int sw = Math.max(640, (int)Math.round(subtitle.getWidth() * subScale));
+        int sh = Math.max(60, (int)Math.round(subtitle.getHeight() * subScale));
+        return new Dimension(sw, sh);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:265-265
+Kind: method
+Name: inGameEditorNames
+SHA256: 8f15a294c1ddd8c8b43b1b4366755ca1a157d08c85744ecdc3faf4c1ad4f1dcc
+
+```java
+    java.util.List<String> inGameEditorNames() { return SimulationEditorRepository.EDITORS; }
+```
+
+---
+Source: gamepanel-shard6.txt:266-271
+Kind: method
+Name: inGameEditorName
+SHA256: b9d6110470a103765f61974f7b1572a23481c6ce2341231d425824c74d309e4b
+
+```java
+    String inGameEditorName() {
+        java.util.List<String> names = inGameEditorNames();
+        if (names.isEmpty()) return "Room Editor";
+        inGameEditorTabIndex = Math.max(0, Math.min(names.size() - 1, inGameEditorTabIndex));
+        return names.get(inGameEditorTabIndex);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:272-272
+Kind: method
+Name: inGameEditorEntities
+SHA256: 044ef6419548651a181bb11b96ec7e823957bc826387cac15c75dccd88aa30fe
+
+```java
+    java.util.List<SimulationEditorRepository.EditableEntity> inGameEditorEntities() { return inGameEditorRepository.entities(inGameEditorName()); }
+```
+
+---
+Source: gamepanel-shard6.txt:273-278
+Kind: method
+Name: inGameEditorEntity
+SHA256: b83683bebd4c5485fcd2d0e1c7e145aa80603d8cc5a93e5aed025fe9195761ea
+
+```java
+    SimulationEditorRepository.EditableEntity inGameEditorEntity() {
+        java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorEntities();
+        if (entities.isEmpty()) return null;
+        inGameEditorEntityIndex = Math.max(0, Math.min(entities.size() - 1, inGameEditorEntityIndex));
+        return entities.get(inGameEditorEntityIndex);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:279-282
+Kind: method
+Name: inGameEditorRef
+SHA256: 286e99d1cff957c2205081c47106f9f42738625780198c489b68f37728b30848
+
+```java
+    SimulationEditorRepository.EntityRef inGameEditorRef() {
+        SimulationEditorRepository.EditableEntity e = inGameEditorEntity();
+        return e == null ? null : new SimulationEditorRepository.EntityRef(inGameEditorName(), e.id());
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:283-289
+Kind: method
+Name: selectInGameEditorTab
+SHA256: 8d3568d20c5e639c79a93d243056920c103ec8f6e745bd1e7f02ac08ff88b2c1
+
+```java
+    void selectInGameEditorTab(int idx) {
+        java.util.List<String> names = inGameEditorNames();
+        inGameEditorTabIndex = Math.max(0, Math.min(Math.max(0, names.size()-1), idx));
+        inGameEditorEntityIndex = 0;
+        inGameEditorStatus = "Editor tab: " + inGameEditorName() + ".";
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:290-295
+Kind: method
+Name: selectInGameEditorEntity
+SHA256: 97ea1007c5775b7847eb9f007dc7b761bf4f7d575dd34e616521fb202dfbf3b7
+
+```java
+    void selectInGameEditorEntity(int idx) {
+        inGameEditorEntityIndex = Math.max(0, Math.min(Math.max(0, inGameEditorEntities().size()-1), idx));
+        SimulationEditorRepository.EditableEntity e = inGameEditorEntity();
+        inGameEditorStatus = e == null ? "No entry selected." : "Selected " + e.name() + ".";
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:304-304
+Kind: method
+Name: inGameEditorUndo
+SHA256: 61e0a72d3f0aa94b9427e1566deed3593a9ef8b8edecc5283a663625e43bf2eb
+
+```java
+    void inGameEditorUndo() { inGameEditorUndoRedo.undo(); inGameEditorStatus = "Undo: " + inGameEditorUndoRedo.compactState(); repaint(); }
+```
+
+---
+Source: gamepanel-shard6.txt:305-305
+Kind: method
+Name: inGameEditorRedo
+SHA256: 18ece9bf3db61d639940a723615ff365f9cd1820bbea6bfe46ab17b8585d7c27
+
+```java
+    void inGameEditorRedo() { inGameEditorUndoRedo.redo(); inGameEditorStatus = "Redo: " + inGameEditorUndoRedo.compactState(); repaint(); }
+```
+
+---
+Source: gamepanel-shard6.txt:327-331
+Kind: method
+Name: inGameEditorPaletteCategory
+SHA256: f8a161e23ffeab6525a4866105f856dd4e663552f51d29641f6691fa2efbdc66
+
+```java
+    String inGameEditorPaletteCategory() {
+        String[][] p = inGameEditorPalettes();
+        inGameEditorPaletteTab = Math.max(0, Math.min(p.length-1, inGameEditorPaletteTab));
+        return p[inGameEditorPaletteTab][0];
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:332-338
+Kind: method
+Name: inGameEditorSelectedPaletteItem
+SHA256: 7d7194e0e6e8df9992fc6e0ec78a654cfa98427f2f30f1248071c172bc615e4e
+
+```java
+    String inGameEditorSelectedPaletteItem() {
+        String[][] p = inGameEditorPalettes();
+        inGameEditorPaletteTab = Math.max(0, Math.min(p.length-1, inGameEditorPaletteTab));
+        int max = Math.max(1, p[inGameEditorPaletteTab].length - 1);
+        inGameEditorPaletteIndex = Math.max(0, Math.min(max-1, inGameEditorPaletteIndex));
+        return p[inGameEditorPaletteTab][inGameEditorPaletteIndex + 1];
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:339-339
+Kind: method
+Name: selectInGameEditorPaletteTab
+SHA256: 53c66e1b952662c5bd89b23e3fe0ccb3714dc3def34748e4e1536627670e1f3b
+
+```java
+    void selectInGameEditorPaletteTab(int idx) { inGameEditorPaletteTab = Math.max(0, Math.min(inGameEditorPalettes().length-1, idx)); inGameEditorPaletteIndex = 0; inGameEditorStatus = "Palette category: " + inGameEditorPaletteCategory() + "."; repaint(); }
+```
+
+---
+Source: gamepanel-shard6.txt:544-552
+Kind: method
+Name: editorFloorColor
+SHA256: ee43404fd1c15231f43efe430d975372521e9bf9ad55459d19b5221ed88ee66a
+
+```java
+    Color editorFloorColor(String floor) {
+        String f = floor == null ? "" : floor.toLowerCase(Locale.ROOT);
+        if (f.contains("oil")) return new Color(44, 48, 36);
+        if (f.contains("stone")) return new Color(62, 55, 46);
+        if (f.contains("deck")) return new Color(48, 56, 58);
+        if (f.contains("ceramite")) return new Color(64, 64, 60);
+        if (f.contains("sump")) return new Color(38, 56, 48);
+        return new Color(50, 54, 48);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:553-564
+Kind: method
+Name: decodeEditorGrid
+SHA256: 0c4ac23e19f3aa17597ab5283e49b19bf81f9110e009c053fa43aae0a1b68a14
+
+```java
+    Map<String,String> decodeEditorGrid(String raw) {
+        LinkedHashMap<String,String> out = new LinkedHashMap<>();
+        if (raw == null || raw.isBlank()) return out;
+        for (String part : raw.split(";")) {
+            int eq = part.indexOf('=');
+            if (eq <= 0) continue;
+            String key = part.substring(0, eq).trim();
+            String val = part.substring(eq+1).trim();
+            if (key.matches("\\d+,\\d+") && !val.isBlank()) out.put(key, val);
+        }
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:565-580
+Kind: method
+Name: encodeEditorGrid
+SHA256: e8ca722af19ce4e0bea9a3e794ca82d163d3808aabf7b603304be1bc5af7d8e2
+
+```java
+    String encodeEditorGrid(Map<String,String> cells) {
+        if (cells == null || cells.isEmpty()) return "";
+        ArrayList<String> keys = new ArrayList<>(cells.keySet());
+        keys.sort((a,b) -> {
+            String[] aa=a.split(","); String[] bb=b.split(",");
+            int ay=Integer.parseInt(aa[1]), by=Integer.parseInt(bb[1]);
+            if (ay != by) return Integer.compare(ay, by);
+            return Integer.compare(Integer.parseInt(aa[0]), Integer.parseInt(bb[0]));
+        });
+        StringBuilder sb = new StringBuilder();
+        for (String k : keys) {
+            if (sb.length() > 0) sb.append(';');
+            sb.append(k).append('=').append(cells.get(k).replace(';', ',').replace('=', ':'));
+        }
+        return sb.toString();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:595-609
+Kind: method
+Name: handleInGameEditorGridPaint
+SHA256: 757a1b55fc0a907b5e5a88b9b849fb87742c0c1c78358dd905e4dfd4749b0e9d
+
+```java
+    boolean handleInGameEditorGridPaint(int mx, int my, boolean erase) {
+        Point cell = inGameEditorGridCellAt(mx, my);
+        if (cell == null) return false;
+        SimulationEditorRepository.EntityRef ref = inGameEditorRef();
+        if (ref == null) return false;
+        Object old = inGameEditorRepository.property(ref, "layoutCells");
+        Map<String,String> cells = decodeEditorGrid(String.valueOf(old == null ? "" : old));
+        String key = cell.x + "," + cell.y;
+        if (erase) cells.remove(key); else cells.put(key, inGameEditorSelectedPaletteItem());
+        String next = encodeEditorGrid(cells);
+        inGameEditorUndoRedo.execute(new EditorCommand.PropertyChange(inGameEditorRepository, ref, "layoutCells", old == null ? "" : old, next, inGameEditorEventBus));
+        inGameEditorStatus = (erase ? "Erased" : "Placed " + inGameEditorSelectedPaletteItem()) + " at room cell " + cell.x + "," + cell.y + ".";
+        repaint();
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:614-631
+Kind: method
+Name: screenPointToAuditTile
+SHA256: 7e27509c12791ebac48153b6b05bbba35ed2e66f1fb140964eb3b50392aea854
+
+```java
+    Point screenPointToAuditTile(int sx, int sy) {
+        if (auditWorld == null) return null;
+        Rectangle map = inputMapRect();
+        int cellW = auditMapCellW(null);
+        int cellH = auditMapCellH(null);
+        int cols = Math.max(1, (map.width - 18) / Math.max(1, cellW));
+        int rows = Math.max(1, (map.height - 18) / Math.max(1, cellH));
+        int camX = Math.max(0, Math.min(auditWorld.w - cols, auditCursorX - cols / 2));
+        int camY = Math.max(0, Math.min(auditWorld.h - rows, auditCursorY - rows / 2));
+        int ox = map.x + 10, oy = map.y + 10;
+        int drawW = cols * Math.max(1, cellW);
+        int drawH = rows * Math.max(1, cellH);
+        if (sx < ox || sy < oy || sx >= ox + drawW || sy >= oy + drawH) return null;
+        int tx = camX + Math.floorDiv(sx - ox, Math.max(1, cellW));
+        int ty = camY + Math.floorDiv(sy - oy, Math.max(1, cellH));
+        if (!auditWorld.inBounds(tx, ty)) return null;
+        return new Point(tx, ty);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1074-1075
+Kind: residual
+Name: residual_1074_1075
+SHA256: 9141f1ef960e76d765b0da59c47921c707a7f4846f863537cc5ac71b622c99b8
+
+```java
+
+    // Old manual rendering loop removed algorithmically
+```
+
+---
+Source: gamepanel-shard6.txt:1159-1160
+Kind: residual
+Name: residual_1159_1160
+SHA256: 9141f1ef960e76d765b0da59c47921c707a7f4846f863537cc5ac71b622c99b8
+
+```java
+
+    // Old manual rendering loop removed algorithmically
+```
+
+---
+Source: gamepanel-shard6.txt:1221-1222
+Kind: residual
+Name: residual_1221_1222
+SHA256: 9141f1ef960e76d765b0da59c47921c707a7f4846f863537cc5ac71b622c99b8
+
+```java
+
+    // Old manual rendering loop removed algorithmically
+```
+
+---
+Source: gamepanel-shard6.txt:1356-1360
+Kind: method
+Name: introCrawlTextDurationMillis
+SHA256: 58bb544530c5a005278f2d75e72186828d04acb5dfb9efd9c77c56c1f75dc38c
+
+```java
+    long introCrawlTextDurationMillis(ArrayList<String> wrapped, long leadInMs, long charMs, long blankMs, long linePauseMs) {
+        long totalMs = leadInMs;
+        for (String line : wrapped) totalMs += (line.isEmpty() ? blankMs : Math.max(780L, line.length() * charMs)) + linePauseMs;
+        return totalMs;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1362-1373
+Kind: method
+Name: introCrawlCharMillisForTarget
+SHA256: 2ad45a149ac1e5e78f652ee4cbf1311096af72fd30c8e03c3017e2c7c60f8198
+
+```java
+    long introCrawlCharMillisForTarget(ArrayList<String> wrapped, long leadInMs, long blankMs, long linePauseMs, long targetMs) {
+        long fixedMs = leadInMs;
+        long characterCount = 0L;
+        for (String line : wrapped) {
+            fixedMs += linePauseMs;
+            if (line.isEmpty()) fixedMs += blankMs;
+            else characterCount += Math.max(1, line.length());
+        }
+        if (characterCount <= 0L) return 55L;
+        long budget = Math.max(characterCount, targetMs - fixedMs);
+        return Math.max(34L, Math.min(96L, Math.round(budget / (double)characterCount)));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1395-1397
+Kind: method
+Name: liveKnowledgeBranches
+SHA256: 9b40e0e2ae859acab88752cb04561a630ec3fc6d692aa8e307eb9acaa4fa2744
+
+```java
+    LinkedHashMap<String, KnowledgeTree> liveKnowledgeBranches() {
+        return KnowledgeMenu.createBranches(knowledgeCredits, unlockedKnowledges);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1399-1407
+Kind: method
+Name: activeKnowledgeTreeSnapshot
+SHA256: 5401fca3ce8c9c4f9d070fbdcd73f860766e4c49a0743da48ea9b8b8b0835924
+
+```java
+    KnowledgeTree activeKnowledgeTreeSnapshot() {
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        KnowledgeTree tree = branches.get(activeKnowledgeBranchId);
+        if (tree == null && !branches.isEmpty()) {
+            tree = branches.values().iterator().next();
+            activeKnowledgeBranchId = tree.id();
+        }
+        return tree;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1409-1412
+Kind: method
+Name: selectedKnowledgeNode
+SHA256: 0d0cb5547cbb09bf7d0cf523c8c2e19d31042767c196abcd9087d7b34cf5e067
+
+```java
+    KnowledgeNode selectedKnowledgeNode(KnowledgeTree tree) {
+        if (tree == null || selectedKnowledgeNodeId == null) return null;
+        return tree.node(selectedKnowledgeNodeId);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1448-1454
+Kind: method
+Name: resetKnowledgeTreeView
+SHA256: 5b0708697c576012d4a5140a7f2fc754671ecf055a173ba144be2d50bbdab007
+
+```java
+    void resetKnowledgeTreeView() {
+        knowledgeTreeScale = 1.0;
+        knowledgeTreePanX = 70.0;
+        knowledgeTreePanY = 68.0;
+        knowledgeTreeLastDrag = null;
+        knowledgeTreeDragging = false;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1456-1459
+Kind: method
+Name: panKnowledgeTree
+SHA256: c0d2dcd3e8f4d5c912e987f79ec9ba505c4eda151f3abf6f4f826f14d1c4fff4
+
+```java
+    void panKnowledgeTree(int dx, int dy) {
+        knowledgeTreePanX += dx;
+        knowledgeTreePanY += dy;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1461-1473
+Kind: method
+Name: zoomKnowledgeTreeAt
+SHA256: d660098a66472265ce98014409365ca1ce06dd0d9ae57592a5858dfbec85a471
+
+```java
+    void zoomKnowledgeTreeAt(int sx, int sy, double wheelRotation) {
+        Rectangle canvas = knowledgeCanvasRect();
+        if (!canvas.contains(sx, sy)) { scrollActivePanel((int)Math.signum(wheelRotation), false); return; }
+        double old = knowledgeTreeScale;
+        double next = Math.max(0.35, Math.min(2.75, old * Math.pow(1.10, -wheelRotation)));
+        if (Math.abs(next - old) < 0.0001) return;
+        double wx = (sx - canvas.x - knowledgeTreePanX) / old;
+        double wy = (sy - canvas.y - knowledgeTreePanY) / old;
+        knowledgeTreeScale = next;
+        knowledgeTreePanX = sx - canvas.x - wx * next;
+        knowledgeTreePanY = sy - canvas.y - wy * next;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1504-1514
+Kind: method
+Name: attemptKnowledgeUnlock
+SHA256: c24ee5d744dfa8aa084c0119528655563293165e26d7f599ebad4fd719f861a8
+
+```java
+    void attemptKnowledgeUnlock() {
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        KnowledgeNode node = selectedKnowledgeNode(tree);
+        if (tree == null || node == null) { logEvent("Knowledge unlock blocked: select a node first."); repaint(); return; }
+        if (unlockedKnowledges.contains(node.id())) { logEvent("Knowledge already known: " + node.name() + "."); repaint(); return; }
+        if (!tree.prerequisitesMet(node)) { logEvent("Knowledge unlock blocked: prerequisites are not met for " + node.name() + "."); repaint(); return; }
+        if (knowledgeCredits < node.pointCost()) { logEvent("Knowledge unlock blocked: " + node.name() + " costs " + node.pointCost() + " knowledge credit(s); you have " + knowledgeCredits + "."); repaint(); return; }
+        purchaseKnowledge(node.id(), node.pointCost());
+        selectedKnowledgeNodeId = node.id();
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1516-1528
+Kind: method
+Name: handleKnowledgeTreeClick
+SHA256: 1d823911ae01c303800fb2c4519576110ea30981201e43723b06c4c260c2e6cb
+
+```java
+    boolean handleKnowledgeTreeClick(int mx, int my) {
+        Rectangle canvas = knowledgeCanvasRect();
+        if (!canvas.contains(mx, my)) return false;
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        KnowledgeNode hit = knowledgeNodeAt(tree, mx, my);
+        if (hit != null) {
+            selectedKnowledgeNodeId = hit.id();
+            sounds.play("tab", options);
+            repaint();
+            return true;
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1530-1539
+Kind: method
+Name: knowledgeNodeAt
+SHA256: 623e2a8b26d744e35a0a8da5c1268a273e0dff994566b2c4cc903beee98cbcde
+
+```java
+    KnowledgeNode knowledgeNodeAt(KnowledgeTree tree, int mx, int my) {
+        if (tree == null) return null;
+        Rectangle canvas = knowledgeCanvasRect();
+        double wx = (mx - canvas.x - knowledgeTreePanX) / knowledgeTreeScale;
+        double wy = (my - canvas.y - knowledgeTreePanY) / knowledgeTreeScale;
+        for (KnowledgeNode n : tree.nodes()) {
+            if (Math.abs(wx - n.x()) <= 78.0 && Math.abs(wy - n.y()) <= 29.0) return n;
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1541-1552
+Kind: method
+Name: handleKnowledgeKeyPressed
+SHA256: 3e29082d43454f72ef8718bc8bb4a380ce71dc997bb3e7b9b335a5c2bf135597
+
+```java
+    void handleKnowledgeKeyPressed(int code) {
+        if (code == KeyEvent.VK_ESCAPE) { closeKnowledgeScreen(); return; }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E) { attemptKnowledgeUnlock(); return; }
+        if (code == KeyEvent.VK_HOME) { resetKnowledgeTreeView(); repaint(); return; }
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        ArrayList<String> ids = new ArrayList<>(branches.keySet());
+        int idx = Math.max(0, ids.indexOf(activeKnowledgeBranchId));
+        if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { activeKnowledgeBranchId = ids.get(Math.max(0, idx - 1)); selectedKnowledgeNodeId = null; resetKnowledgeTreeView(); repaint(); return; }
+        if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { activeKnowledgeBranchId = ids.get(Math.min(ids.size() - 1, idx + 1)); selectedKnowledgeNodeId = null; resetKnowledgeTreeView(); repaint(); return; }
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { knowledgeTreePanY += 24; repaint(); return; }
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { knowledgeTreePanY -= 24; repaint(); return; }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1695-1702
+Kind: method
+Name: fitText
+SHA256: 66c797ddfdd6cdf3c7ca67bd9807f7348dff4f18c105a46aa04e90222a911cde
+
+```java
+    static String fitText(String text, FontMetrics fm, int width) {
+        if (text == null) return "";
+        if (fm.stringWidth(text) <= width) return text;
+        String suffix = "…";
+        String t = text;
+        while (!t.isEmpty() && fm.stringWidth(t + suffix) > width) t = t.substring(0, t.length() - 1);
+        return t + suffix;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1927-1930
+Kind: method
+Name: isAssetInfopediaTab
+SHA256: 0d3a615e9381f3f3a596647e9ce781c1e2efc1e270ff85a9730c1b5e8a60df44
+
+```java
+    boolean isAssetInfopediaTab(int tab) {
+        String[] tabs = infopediaTabs();
+        return tab >= 0 && tab < tabs.length && "ASSETS".equals(tabs[tab]);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1932-1936
+Kind: method
+Name: selectedInfopediaAssetType
+SHA256: f873dc0eaf12cf7e8fefa11752a5f47ea4c18557daee45293eb7b0076b20eee5
+
+```java
+    AssetType selectedInfopediaAssetType() {
+        AssetType[] types = SemanticAssetInfopediaAuthority.browseTypes();
+        if (infopediaAssetTypeIndex < 0 || infopediaAssetTypeIndex >= types.length) return null;
+        return types[infopediaAssetTypeIndex];
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1961-1969
+Kind: method
+Name: backspaceInfopediaAssetFilter
+SHA256: 745d8514db7d7010dea6e0cfbd1e0869c884d3e0b49f1c72a8c2ffe65676665d
+
+```java
+    void backspaceInfopediaAssetFilter() {
+        if (!infopediaAssetFilter.isEmpty()) {
+            infopediaAssetFilter = infopediaAssetFilter.substring(0, infopediaAssetFilter.length() - 1);
+            infopediaSelected = 0;
+            infopediaScroll = 0;
+            infopediaDetailScroll = 0;
+            repaint();
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:2441-2451
+Kind: method
+Name: infopediaDetailLinesWithRelated
+SHA256: fda80c347b72c96487cb732a8eb18e433fcbced2540cf3fcc0fd769e0bbf1fea
+
+```java
+    java.util.List<String> infopediaDetailLinesWithRelated(int tab, String entry) {
+        ArrayList<String> lines = new ArrayList<>(infopediaDetailLines(tab, entry));
+        ArrayList<String> related = infopediaRelatedEntries(tab, entry);
+        if (!related.isEmpty()) {
+            lines.add("");
+            lines.add("Related entries:");
+            for (String r : related) lines.add("  LINK: " + r);
+            lines.add("Use the LINK buttons below the detail pane to jump directly to the first related entries.");
+        }
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3089-3089
+Kind: method
+Name: zoneByLabel
+SHA256: 7693c15377fad6523d47e5dc21315040fb3282137169bd2a39a8fa121e720305
+
+```java
+    ZoneType zoneByLabel(String label) { for (ZoneType z: ZoneType.values()) if (z.label.equals(label)) return z; return null; }
+```
+
+---
+Source: gamepanel-shard6.txt:3656-3659
+Kind: residual
+Name: residual_3656_3659
+SHA256: d88e786c52c999a7505bfb49d80a3d4eb63b33fc3ff046f98d868a306576f4fd
+
+```java
+
+
+    static final class SaveLoadUiRects {
+        final Rectangle outer, info, manual, auto;
+```
+
+---
+Source: gamepanel-shard6.txt:3660-3660
+Kind: method
+Name: SaveLoadUiRects
+SHA256: 5bf5e4c01e918b845e063b575840b96e2636dff08d71438ab9c198566cf49a14
+
+```java
+        SaveLoadUiRects(Rectangle outer, Rectangle info, Rectangle manual, Rectangle auto) { this.outer=outer; this.info=info; this.manual=manual; this.auto=auto; }
+```
+
+---
+Source: gamepanel-shard6.txt:3661-3662
+Kind: residual
+Name: residual_3661_3662
+SHA256: 8b7f0d8906f0ac494b7af771b15142f81a7b154e7c746d70c8b6c44de61df482
+
+```java
+    }
+
+```
+
+---
+Source: gamepanel-shard6.txt:3663-3675
+Kind: method
+Name: saveLoadUiRects
+SHA256: 61314aa9d8e1cfc8e30a21fd048a0974172ffa260754cad0df4b22dcd5eb008a
+
+```java
+    SaveLoadUiRects saveLoadUiRects() {
+        Rectangle modal = uiLayout().modal;
+        int x = Math.max(36, modal.x), y = Math.max(56, modal.y - 8);
+        int w = Math.min(getWidth() - x*2, modal.width), h = Math.min(getHeight() - y - 40, modal.height + 30);
+        int infoH = Math.max(72, h/4);
+        Rectangle info = new Rectangle(x+28, y+58, Math.max(1, w-56), infoH);
+        int listsY = y + 58 + infoH + 14;
+        int listsH = Math.max(100, h - (listsY - y) - 44);
+        int gap = 24;
+        int colW = Math.max(120, (w - 72 - gap) / 2);
+        int mx = x + 28, ax = mx + colW + gap;
+        return new SaveLoadUiRects(new Rectangle(x,y,w,h), info, new Rectangle(mx, listsY, colW, listsH), new Rectangle(ax, listsY, colW, listsH));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3820-3822
+Kind: residual
+Name: residual_3820_3822
+SHA256: 84c4b7ad46fd15fa762c3aa82e40f09af304041c44c3e619964931204e8536f7
+
+```java
+
+    static class UiLayout {
+        final Rectangle root, topBar, map, command, tactical, modal, leftInfo;
+```
+
+---
+Source: gamepanel-shard6.txt:3867-3868
+Kind: residual
+Name: residual_3867_3868
+SHA256: 8b7f0d8906f0ac494b7af771b15142f81a7b154e7c746d70c8b6c44de61df482
+
+```java
+    }
+
+```
+
+---
+Source: gamepanel-shard6.txt:3877-3879
+Kind: method
+Name: tileIconMode
+SHA256: f8e6a23931b7441b1bc14b0e938821c343a3017565658a2a9d5d15ac30501c59
+
+```java
+    boolean tileIconMode() {
+        return options.tileIconRendering && images.hasTileArt();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3888-3890
+Kind: method
+Name: zoomedMapPixels
+SHA256: fd9a13454c1c6aa8d84a69014cb7ef514b1f6cb089bb664edaa00370a77b26f2
+
+```java
+    int zoomedMapPixels(int basePixels) {
+        return Math.max(6, (int)Math.round(basePixels * (options.worldZoomPercent() / 100.0)));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4216-4220
+Kind: method
+Name: pruneCombatAnimations
+SHA256: a8b7e815ea8ac882241d8627e5a3827b65947e9a8778f70c3f79775a8fda92b6
+
+```java
+    void pruneCombatAnimations(long now) {
+        if (!explosionAnimations.isEmpty()) explosionAnimations.removeIf(a -> now - a.startMillis > a.durationMillis);
+        if (combatAnimations.isEmpty()) return;
+        combatAnimations.removeIf(a -> now - a.startMillis > a.durationMillis);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4228-4239
+Kind: method
+Name: projectileGlyphForWeapon
+SHA256: 598b1d5c385ce13e796b84120e43f8bf9c781b0651c70cac2bf8dd464fe4787b
+
+```java
+    String projectileGlyphForWeapon(String weapon, boolean hit, int frame) {
+        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
+        if (w.contains("flamer") || w.contains("flame") || w.contains("industrial Fuelgel") || w.contains("melta") || w.contains("inferno")) return (frame % 3 == 0) ? "=0)" : (frame % 3 == 1 ? "=o)" : "==)" );
+        if (w.contains("las") || w.contains("laser")) return "~~~~";
+        if (w.contains("plasma")) return "~~O~";
+        if (w.contains("arc") || w.contains("shock") || w.contains("lightning")) return "~Z~";
+        if (w.contains("chain") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw")) {
+            String[] spin = {"//", "--", "\\\\", "||"};
+            return spin[Math.floorMod(frame, spin.length)];
+        }
+        return hit ? "--~" : "-~.";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4241-4244
+Kind: method
+Name: weaponIsMeleeAnimation
+SHA256: e72b0f1772e49fe2542293d98d56e12a835df0b391d9db1356822ef836f76f02
+
+```java
+    boolean weaponIsMeleeAnimation(String weapon) {
+        String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
+        return !ItemCatalog.isFirearmLike(weapon) || w.contains("chain") || w.contains("sword") || w.contains("knife") || w.contains("blade") || w.contains("axe") || w.contains("dagger") || w.contains("claw") || w.contains("maul") || w.contains("hammer") || w.contains("club");
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4416-4419
+Kind: method
+Name: confirmManualMovementPlan
+SHA256: 54065e98ca3c0480fcc4ac3235e5f33c94d0ddc4e3c3326123473477dc915cb2
+
+```java
+    void confirmManualMovementPlan() {
+        if (!manualMovementPlanActive) return;
+        executeMouseMovementPreview();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4849-4849
+Kind: method
+Name: tileImageForRenderedGlyph
+SHA256: 123c37042e1868b924daf216099360cee380b62f8a73d6b326acf5a81a0968e8
+
+```java
+    BufferedImage tileImageForRenderedGlyph(char ch) { return semanticTileImageForRenderedGlyph(ch, -1, -1); }
+```
+
+---
+Source: gamepanel-shard6.txt:4911-4918
+Kind: method
+Name: roadVariantKeyForArt
+SHA256: 794fbaeabb9293008ae8b96d8b8b5661c8fe14ea96983fd3565498a454933464
+
+```java
+    String roadVariantKeyForArt(String semantic, int worldX, int worldY) {
+        if (semantic == null || worldX < 0 || worldY < 0) return semantic;
+        if (semantic.startsWith("road_corner_") || semantic.startsWith("road_end_") || semantic.startsWith("tile_road_corner_") || semantic.startsWith("tile_road_end_")) return semantic;
+        if (!(semantic.equals("road_north_south") || semantic.equals("road_east_west") || semantic.equals("road_intersection") || semantic.equals("road_sidewalk") ||
+              semantic.equals("tile_road_north_south") || semantic.equals("tile_road_east_west") || semantic.equals("tile_road_intersection") || semantic.equals("tile_road_sidewalk"))) return semantic;
+        int variant = 1 + Math.abs(Objects.hash(worldX / 3, worldY / 3, semantic)) % 5;
+        return semantic + "_v" + variant;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4947-4951
+Kind: method
+Name: roadLikeForArt
+SHA256: ea9d9845913be7d7246acc789be9307dd11ed9c845bf3825f2b990f37b550cad
+
+```java
+    boolean roadLikeForArt(int x, int y) {
+        // 0.9.10fs: sidewalks are street-family tiles, not road-connectivity tiles.
+        // Counting them as roads made lane tiles see four neighbors and render as intersections.
+        return roadLaneForArt(x,y);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4953-4955
+Kind: method
+Name: isWallGlyphForArt
+SHA256: d2cf31587a4d963a5f4ef084dbba651c4f955c2ecac6643f5de155608a1b8c20
+
+```java
+    boolean isWallGlyphForArt(char ch) {
+        return ch == '#' || ch == '%' || ch == '&' || ch == '^' || ch == '8' || ch == '0';
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4957-4960
+Kind: method
+Name: isTerrainGlyphForArt
+SHA256: 632f524e1a3f5964708748d02a84db6b07e5f013971d75a56977a73ec1f654bb
+
+```java
+    boolean isTerrainGlyphForArt(char ch) {
+        return ch == ' ' || ch == '.' || ch == ',' || ch == '`' || ch == '+' || ch == '=' || ch == ':' || ch == '-' || ch == '~' || ch == ';' || ch == '_' ||
+               isWallGlyphForArt(ch) || ch == '/' || ch == '|' || ch == 'L' || ch == 'V' || ch == 'X' || ch == 'D';
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4962-4964
+Kind: method
+Name: isOverlayGlyphForArt
+SHA256: c3e60fabf13239885d0a2382dfca899bc90f8df6c127dfe6eac91844ee307104
+
+```java
+    boolean isOverlayGlyphForArt(char ch) {
+        return TileDataCompilationAuthority.overlayAliasForGlyph(ch) != null;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4970-4974
+Kind: method
+Name: underlayImageForOverlayGlyph
+SHA256: e92726544c35c5cc72e00d852284b4d2ba0e9103070eed88c138487c79bc7131
+
+```java
+    BufferedImage underlayImageForOverlayGlyph(char ch, int worldX, int worldY) {
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d == null || !d.hasOverlay()) return null;
+        return images.getTile(d.underlayArtKey, d.underlayGlyph == null ? '.' : d.underlayGlyph.charValue());
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5114-5123
+Kind: method
+Name: activePortraitImage
+SHA256: 34ff97f50fa45be63aa091bd9820df3b98b11a160506fdffd2efaa2e308fccce
+
+```java
+    BufferedImage activePortraitImage() {
+        if (!options.importedPortraits || active == null) return null;
+        NameLockedProfilePortraitAuthority.Entry locked = NameLockedProfilePortraitAuthority.unlockedEntry(cachedOperatorProfileName, active.name);
+        if (locked != null) {
+            active.nameLockedProfileKey = locked.key;
+            BufferedImage img = images.getNameLockedProfilePortrait(locked.key);
+            if (img != null) return img;
+        }
+        return images.getPortrait(active.portraitSheet, active.portraitIndex);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5185-5196
+Kind: method
+Name: rankColor
+SHA256: 40b3dc6dd3630e59da59660ee19ad71c6eec45675528be72aea0e8b7ce4ad9e4
+
+```java
+    Color rankColor(int rank) {
+        switch(Math.max(1, Math.min(8, rank))) {
+            case 1: return new Color(255, 216, 80);
+            case 2: return new Color(225, 225, 235);
+            case 3: return new Color(220, 76, 64);
+            case 4: return new Color(90, 155, 245);
+            case 5: return new Color(90, 210, 120);
+            case 6: return new Color(230, 155, 55);
+            case 7: return new Color(105, 210, 220);
+            default: return new Color(150, 150, 155);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5430-5433
+Kind: method
+Name: contextPromptLine
+SHA256: e3dc45f6ed6bf425bb57e91239d9d224e712a9d74827df5260d5533ca2169e09
+
+```java
+    String contextPromptLine(InputAction action, String use, boolean enabled, String disabledReason) {
+        String state = enabled ? "ready" : "disabled: " + (disabledReason == null || disabledReason.isBlank() ? "not available in this context" : disabledReason);
+        return "Prompt: " + promptLabel(action) + " - " + use + " (" + state + ").";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5435-5439
+Kind: method
+Name: promptLabel
+SHA256: 61231a3b8f485858aa384fec2f7726379450645792ae2c8100ee60fc35b1e0e3
+
+```java
+    String promptLabel(InputAction action) {
+        String prompt = keyboardPromptFor(action);
+        int idx = prompt.indexOf(':');
+        return idx >= 0 ? prompt.substring(idx + 1).trim() : prompt;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5604-5615
+Kind: method
+Name: stackLinesFor
+SHA256: 5cec633c17593800db19ba2e1a7e567c0b35248647a44ee12366caec12c3928b
+
+```java
+    ArrayList<String> stackLinesFor(LinkedHashMap<String,Integer> stacks, int selected) {
+        ArrayList<String> lines = new ArrayList<>();
+        int i = 0;
+        for (Map.Entry<String,Integer> e : stacks.entrySet()) {
+            String name = e.getKey();
+            int count = Math.max(1, e.getValue());
+            lines.add((i == selected ? "> " : "  ") + name + (count > 1 ? " x" + count : ""));
+            i++;
+        }
+        if (lines.isEmpty()) lines.add("  — empty —");
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5617-5622
+Kind: method
+Name: selectedInventoryStackName
+SHA256: a1c0310f923e6dc35559655fdf0a1d7d4a506e1a2d3d1c97c5daace6e16b2849
+
+```java
+    String selectedInventoryStackName() {
+        ArrayList<String> names = new ArrayList<>(displayedInventoryStacks().keySet());
+        if (names.isEmpty()) return null;
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, names.size()-1));
+        return names.get(selectedInventoryIndex);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5624-5629
+Kind: method
+Name: selectedTargetInventoryName
+SHA256: bc0d277a4161e46bd205d31b48d63252fc8142cff9a3d53fa1d441d69750b71b
+
+```java
+    String selectedTargetInventoryName() {
+        ArrayList<String> names = new ArrayList<>(currentTargetInventoryStacks().keySet());
+        if (names.isEmpty()) return null;
+        selectedTargetInventoryIndex = Math.max(0, Math.min(selectedTargetInventoryIndex, names.size()-1));
+        return names.get(selectedTargetInventoryIndex);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5631-5637
+Kind: method
+Name: moveTargetInventorySelection
+SHA256: 5b604af36b3c4ce7256bb4a4b3a1f876ed08686d13a2e97c8b0da80869256493
+
+```java
+    void moveTargetInventorySelection(int delta) {
+        int size = currentTargetInventoryStacks().size();
+        if (size <= 0) { selectedTargetInventoryIndex = 0; inventoryItemDescriptionScroll = 0; return; }
+        selectedTargetInventoryIndex = Math.max(0, Math.min(size-1, selectedTargetInventoryIndex + delta));
+        inventoryItemDescriptionScroll = 0;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5853-5866
+Kind: method
+Name: inventoryGridIndexAt
+SHA256: ac37f7463b261e40cab29d98748d7a2313e728329c7ba70203c5752b14ae4a41
+
+```java
+    int inventoryGridIndexAt(LinkedHashMap<String,Integer> stacks, int x, int y, int w, int h, int mx, int my) {
+        if (stacks == null || stacks.isEmpty()) return -1;
+        if (mx < x || my < y || mx >= x + w || my >= y + h) return -1;
+        int cell = Math.max(34, Math.min(48, Math.max(1, w) / Math.max(3, Math.min(5, stacks.size()))));
+        int gap = 6;
+        int cols = Math.max(1, (w + gap) / (cell + gap));
+        for (int i = 0; i < stacks.size(); i++) {
+            int cx = x + (i % cols) * (cell + gap);
+            int cy = y + (i / cols) * (cell + gap);
+            if (cy + cell > y + h) break;
+            if (mx >= cx && my >= cy && mx <= cx + cell && my <= cy + cell) return i;
+        }
+        return -1;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5907-5907
+Kind: method
+Name: equipmentSlotNames
+SHA256: c89cf1883135ec0b32ef937a40d2a79fd6b9b4299d013d1ccbf004d6b322c1bf
+
+```java
+    String[] equipmentSlotNames() { return new String[]{"Headgear", "Armor", "Clothing", "Left hand", "Right hand", "Backpack"}; }
+```
+
+---
+Source: gamepanel-shard6.txt:5911-5913
+Kind: method
+Name: equipmentContainerIdForSlot
+SHA256: 5eac08ccb6a746d997e80154f773cdc9ec22d65e0c39c650c26a2fd8eb2b0aa9
+
+```java
+    String equipmentContainerIdForSlot(int idx) {
+        return CONTAINER_PLAYER_EQUIPMENT_PREFIX + Math.max(0, Math.min(idx, equipmentSlotNames().length-1));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5915-5929
+Kind: method
+Name: playerEquippedArmorBonus
+SHA256: e7628c8d7adb738654f13b8f2fe9837a67403757d728b8effa14a58b85a80f10
+
+```java
+    int playerEquippedArmorBonus() {
+        int bonus = 0;
+        String a = equippedArmorItem == null ? "" : equippedArmorItem.toLowerCase(Locale.ROOT);
+        String h = equippedHeadgearItem == null ? "" : equippedHeadgearItem.toLowerCase(Locale.ROOT);
+        if (!a.isBlank()) {
+            bonus += 1;
+            if (a.contains("armor") || a.contains("armour") || a.contains("flak") || a.contains("carapace") || a.contains("cuirass") || a.contains("breastplate")) bonus += 2;
+            if (a.contains("civic Wardens") || a.contains("suppression") || a.contains("riot")) bonus += 1;
+        }
+        if (!h.isBlank()) {
+            bonus += 1;
+            if (h.contains("helmet") || h.contains("helm") || h.contains("riot") || h.contains("flak")) bonus += 1;
+        }
+        return bonus;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5931-5940
+Kind: method
+Name: equippedItemForSlot
+SHA256: 2e833ab394f223710080eb1ab56d14eba5ea542449050557430a0bc7d69adac4
+
+```java
+    String equippedItemForSlot(int idx) {
+        switch (Math.max(0, Math.min(idx, equipmentSlotNames().length-1))) {
+            case 0: return equippedHeadgearItem == null ? "" : equippedHeadgearItem;
+            case 1: return equippedArmorItem == null ? "" : equippedArmorItem;
+            case 2: return equippedClothing == null ? "" : equippedClothing.name;
+            case 3: return equippedLeftHandItem == null ? "" : equippedLeftHandItem;
+            case 4: return equippedRightHandItem == null ? "" : equippedRightHandItem;
+            default: return equippedBackpackItem == null ? "" : equippedBackpackItem;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5960-5967
+Kind: method
+Name: unequipSelectedEquipmentSlot
+SHA256: 5a1ce5f8a2b5bd974c4a186ef42cc3e367fe3ba773afd945f82e4bcd527061eb
+
+```java
+    void unequipSelectedEquipmentSlot() {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            singlePlayerSectorBridge.submitCommand(this, new UnequipEquipmentCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, selectedEquipmentSlotIndex));
+            repaint();
+            return;
+        }
+        unequipSelectedEquipmentSlotBody();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6142-6149
+Kind: method
+Name: bodyPartColor
+SHA256: 05663e295ebde9995d56f1d01a7caff1c46cc27ab6a559cd53e5d2b65804c5aa
+
+```java
+    Color bodyPartColor(BodyPart bp){
+        if(bp == null) return new Color(36,38,36);
+        double ratio = Math.max(0.0, Math.min(1.0, bp.currentHealth() / Math.max(1.0, bp.maxHealth())));
+        if(ratio <= 0.0) return Color.BLACK;
+        int red = (int)(225 * (1.0-ratio));
+        int green = (int)(225 * ratio);
+        return new Color(red, green, 35);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6150-6150
+Kind: method
+Name: readableOn
+SHA256: 9d8cac150fb8afc5b42270c580e8521c90735ffd7268bd3390122f716b6f8925
+
+```java
+    Color readableOn(Color c){ int lum=(c.getRed()*299+c.getGreen()*587+c.getBlue()*114)/1000; return lum<95?Color.WHITE:Color.BLACK; }
+```
+
+---
+Source: gamepanel-shard6.txt:6262-6266
+Kind: method
+Name: activeVisibleContracts
+SHA256: 4bceb7b03e5b986888581a00bd07bd44ea0ca7daf3391537aecc66a72bd0ab1a
+
+```java
+    ArrayList<FactionContract> activeVisibleContracts() {
+        ArrayList<FactionContract> out = new ArrayList<>();
+        for (FactionContract c : factionContracts) if (c != null && !c.completed) out.add(c);
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6268-6277
+Kind: method
+Name: contractZoneTarget
+SHA256: b3ae4725d3d915467a064c4ecc9ac51d6ff00b1f933ba86f072071887c5cf0af
+
+```java
+    ContractZoneTarget contractZoneTarget(FactionContract c) {
+        if (c == null || c.targetZoneKey == null || c.targetZoneKey.isBlank()) return null;
+        String[] a = c.targetZoneKey.split(",");
+        if (a.length < 6) return null;
+        try {
+            return new ContractZoneTarget(Integer.parseInt(a[0]), Integer.parseInt(a[1]), Integer.parseInt(a[2]), Integer.parseInt(a[3]), Integer.parseInt(a[4]), Boolean.parseBoolean(a[5]));
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6316-6319
+Kind: residual
+Name: residual_6316_6319
+SHA256: 8d4ec315511c4e84f132a6519e0253e07fe03ae85430bb81299c1ea39c96618e
+
+```java
+
+    static final class ContractZoneTarget {
+        final int sectorX, sectorY, zoneX, zoneY, floor;
+        final boolean sewer;
+```
+
+---
+Source: gamepanel-shard6.txt:6320-6327
+Kind: method
+Name: ContractZoneTarget
+SHA256: 586eeef32f8ed2c52acd18c80b6c8b77f1bbfb1662bfa80743875d5f89e32ba9
+
+```java
+        ContractZoneTarget(int sectorX, int sectorY, int zoneX, int zoneY, int floor, boolean sewer) {
+            this.sectorX = sectorX;
+            this.sectorY = sectorY;
+            this.zoneX = zoneX;
+            this.zoneY = zoneY;
+            this.floor = floor;
+            this.sewer = sewer;
+        }
+```
+
+---
+Source: gamepanel-shard6.txt:6328-6329
+Kind: residual
+Name: residual_6328_6329
+SHA256: 8b7f0d8906f0ac494b7af771b15142f81a7b154e7c746d70c8b6c44de61df482
+
+```java
+    }
+
+```
+
+---
+Source: gamepanel-shard6.txt:6355-6367
+Kind: method
+Name: factionUiColorForZone
+SHA256: 578205b17c9e85562de30559595e0f3d325ab3c3aa5f0324d59d3365981bb08a
+
+```java
+    Color factionUiColorForZone(ZoneType z){
+        if(z==ZoneType.ARBITES_PRECINCT_EDGE) return new Color(70,130,220);
+        if(z==ZoneType.GANGER_TURF) return new Color(190,55,45);
+        if(z==ZoneType.NEUTRAL_RAIL_DEPOT || z==ZoneType.NEUTRAL_CIVILIAN_FLOOR || z==ZoneType.SUMP_MARKET) return new Color(160,210,150);
+        if(z==ZoneType.MECHANICUS_FORGE_CLOISTER || z==ZoneType.MECHANICUS_RELIC_DUCT) return new Color(150,80,190);
+        if(z==ZoneType.SECTOR_GOVERNORS_MANSION) return new Color(205,165,70);
+        if(z==ZoneType.NOBLE_SERVICE_SPINE) return new Color(160,130,70);
+        if(z==ZoneType.MUTANT_WARRENS || z==ZoneType.MUTANT_SEWER_CAMP) return new Color(110,190,80);
+        if(z==ZoneType.CULTIST_SEWER_CAMP) return new Color(170,70,160);
+        if(z==ZoneType.SEWER_CONDUIT) return new Color(90,120,105);
+        if(z==ZoneType.IMPERIAL_GUARD_BILLET) return new Color(90,150,90);
+        return new Color(120,150,120);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6368-6376
+Kind: method
+Name: factionUiColor
+SHA256: a7ee98627c5b4d486cf4a96ff1b6d77f5008f2d7481aec4ab174eba708f8a901
+
+```java
+    Color factionUiColor(int xx,int yy){
+        if(xx==2&&yy==1) return new Color(70,130,220); // Civic Wardens blue
+        if(xx==1&&yy==0) return new Color(190,55,45); // gangs red
+        if(xx==1&&yy==1) return new Color(210,190,110); // trade neutral
+        if(xx==2&&yy==2) return new Color(150,80,190); // forge/mechanist Collegia
+        if(xx==1&&yy==2) return new Color(160,130,70); // noble
+        if(xx==0&&yy==0) return new Color(160,210,150); // civil
+        return new Color(120,150,120);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:343-347
+Kind: method
+Name: traderShelfContainerId
+SHA256: b3ab84c6530280f312416232075e54b814108fac2cc3c904e8f99778b20864e6
+
+```java
+String traderShelfContainerId(TraderSession trader) {
+        if (trader == null) return CONTAINER_TRADER_SHELF_PREFIX + "unknown";
+        String site = trader.sourceSite == null ? "nosite" : trader.sourceSite.name + "." + trader.sourceSite.locationKey();
+        return CONTAINER_TRADER_SHELF_PREFIX + ContainerIdentityApi.safeToken(trader.name) + "." + ContainerIdentityApi.safeToken(site);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:385-388
+Kind: method
+Name: nextItemInstanceId
+SHA256: f83a1c073e8a6299e85adaf9304d4e447670c0ea52dafc89a919122adf3af614
+
+```java
+    String nextItemInstanceId() {
+        while (itemInstances.containsKey("I" + nextItemInstanceSeq)) nextItemInstanceSeq++;
+        return "I" + (nextItemInstanceSeq++);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:663-668
+Kind: method
+Name: selectedInventoryItemName
+SHA256: fcf37c90a4f2cdeacf86e6800127a970d5f37e7e2af4fb525dddd45057879c51
+
+```java
+    String selectedInventoryItemName() {
+        ArrayList<String> names = stackedInventoryNames();
+        if (names.isEmpty()) return null;
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, names.size()-1));
+        return names.get(selectedInventoryIndex);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:790-792
+Kind: method
+Name: isMedicalUseItem
+SHA256: bb90f1478c949397088c1b962e5caaec4cb5d9e43b032a2a10bc2c6a7b4af462
+
+```java
+    boolean isMedicalUseItem(String low) {
+        return low.contains("field dressing") || low.contains("bandage") || low.contains("medkit") || low.contains("medicae") || low.contains("injector") || low.contains("antiseptic") || low.contains("splint");
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:820-829
+Kind: method
+Name: stabilizeWorstLimb
+SHA256: 5b5d436a73ec7cc6e7164090fa678b93eac5a189fbc583128774437f6b8aaea2
+
+```java
+    void stabilizeWorstLimb(double minHealth) {
+        if (active == null || active.body == null) return;
+        BodyPart worst = null;
+        for (BodyPart bp : active.body.values()) {
+            String low = bp.name.toLowerCase(Locale.ROOT);
+            if (!(low.contains("leg") || low.contains("arm") || low.contains("hand") || low.contains("foot"))) continue;
+            if (worst == null || bp.currentHealth() < worst.currentHealth()) worst = bp;
+        }
+        if (worst != null && worst.currentHealth() < minHealth) worst.health = Math.min(worst.maxHealth(), minHealth);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:831-840
+Kind: method
+Name: healWorstBodyPart
+SHA256: 3ddf10350f37fac6fcf5aae57fd2bb3625e2db4d3d2ea88962c5fd8ca60c0b36
+
+```java
+    void healWorstBodyPart(double amount) {
+        if (active == null || active.body == null) return;
+        BodyPart worst = null;
+        for (BodyPart bp : active.body.values()) if (worst == null || bp.currentHealth()/bp.maxHealth() < worst.currentHealth()/worst.maxHealth()) worst = bp;
+        if (worst != null) {
+            double before = worst.currentHealth();
+            worst.health = Math.min(worst.maxHealth(), worst.currentHealth() + amount);
+            logEvent("BODY RECOVERY: " + worst.name + " HP " + String.format(Locale.US,"%.0f", before) + "->" + String.format(Locale.US,"%.0f", worst.currentHealth()) + ".");
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1049-1061
+Kind: method
+Name: baseRosterGuidanceLines
+SHA256: 1a561db3f1db63c28588f8d7863694d99ed7665ccc59bfa8bd9f2ba0b24db3e3
+
+```java
+    ArrayList<String> baseRosterGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Roster command: " + baseRosterCommandLine());
+        lines.add("Equipment authority: " + factionMemberEquipmentAuthorityLine());
+        lines.add("Equipment candidates: " + factionMemberEquipmentCandidateLine());
+        if (factionRecruits.isEmpty()) {
+            lines.add("  Roster empty: recruit people through conversation once berthing doctrine and free cots exist.");
+            lines.add("  Next recruit use: build cots, unlock Recruit Berthing Doctrine, then look for talkable locals with useful roles.");
+            return lines;
+        }
+        for (RecruitWorker r : factionRecruits) lines.add("  " + recruitRosterLine(r));
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1114-1116
+Kind: method
+Name: safeRecruitRole
+SHA256: 73076e5f14accd78bc39f545ce94bf6e7149de2457f6f5dbfaa764fe03d4befd
+
+```java
+    String safeRecruitRole(RecruitWorker r) {
+        return r == null || r.role == null || r.role.isBlank() ? "base worker" : r.role;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1118-1125
+Kind: method
+Name: recruitAvailabilityLine
+SHA256: 9690aa45cc55b227e962aef2ab8386e11946904c7ebc944e2a3aefc859524ced
+
+```java
+    String recruitAvailabilityLine(RecruitWorker r) {
+        if (r == null) return "availability unknown";
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty)) return "on guard duty; unavailable for crew shifts";
+        if (r.loyalty <= 2) return "available but unreliable; keep risk low";
+        if (r.skill >= 4) return "available skilled labor";
+        return "available general labor";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1141-1151
+Kind: method
+Name: recruitGearAdviceLine
+SHA256: ac12c2dbb9fd2f2d44f84d4c0bf1b552cb378de923d9680b7a3c977854fc19ba
+
+```java
+    String recruitGearAdviceLine(RecruitWorker r) {
+        if (r == null) return "review manually";
+        String role = safeRecruitRole(r).toLowerCase(Locale.ROOT);
+        String duty = r.duty == null || r.duty.isBlank() ? "labor" : r.duty.toLowerCase(Locale.ROOT);
+        if ("security".equals(duty) || role.contains("guard") || role.contains("soldier") || role.contains("ganger")) return "prioritize armor, weapon, and light";
+        if (role.contains("trader") || role.contains("clerk") || role.contains("merchant")) return "prioritize lawful clothing and permits";
+        if (role.contains("mechanic") || role.contains("tech") || role.contains("adept") || role.contains("worker")) return "prioritize tools and protective clothing";
+        if (role.contains("medic") || role.contains("medicae") || role.contains("doctor")) return "prioritize medical stock and clean clothing";
+        if (r.loyalty <= 2) return "avoid valuable gear until trust improves";
+        return "match gear to assigned station";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1173-1188
+Kind: method
+Name: baseExpansionHeatDriverLine
+SHA256: 7b234de50bc117d3ac5ebe2afa564e0ef16012c9b9956b44be7daed8c9eb992a
+
+```java
+    String baseExpansionHeatDriverLine() {
+        LinkedHashMap<String,Integer> drivers = new LinkedHashMap<>();
+        if (illegalBusinessCount() > 0) drivers.put("illegal open business", illegalBusinessCount());
+        if (openBusinessCount() > 0) drivers.put("public shop/service traffic", openBusinessCount());
+        for (BaseObject obj : baseObjects) {
+            String tag = baseObjectExpansionHeatTag(obj);
+            if (tag == null) continue;
+            drivers.put(tag, drivers.getOrDefault(tag, 0) + 1);
+        }
+        int restricted = restrictedStoredGoodsCount();
+        if (restricted > 0) drivers.put("restricted stored goods", restricted);
+        if (drivers.isEmpty()) return "no major expansion drivers beyond ordinary survival presence.";
+        ArrayList<String> parts = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : drivers.entrySet()) parts.add(e.getKey() + " x" + e.getValue());
+        return String.join(", ", parts) + ".";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1258-1267
+Kind: method
+Name: baseStorageCapacity
+SHA256: c686c6e74c5df1555e7679b2bff5d94e52e2d6b9dc7b5f23257e58ff1dc3f9df
+
+```java
+    int baseStorageCapacity() {
+        int cap = 6;
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || obj.integrity <= 0) continue;
+            if (obj.symbol == 's') cap += Math.max(0, obj.capacity);
+            else if (obj.symbol == 'G' || obj.symbol == 'q' || obj.symbol == 'k') cap += Math.max(0, obj.capacity / 2);
+            else if (obj.isBusinessAsset()) cap += Math.max(0, obj.capacity / 3);
+        }
+        return Math.max(cap, baseStorage.size());
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1276-1281
+Kind: method
+Name: baseStorageCapacityPressureLine
+SHA256: da3b220de2e88156be13d934f0f7fa0c2dead911c4f599dd6bdc54337e379163
+
+```java
+    String baseStorageCapacityPressureLine(int used, int cap) {
+        if (cap <= 0) return "no storage capacity is available yet.";
+        if (used >= cap) return "storage is full until you build crates/logistics or remove goods.";
+        if (used >= Math.max(1, cap * 3 / 4)) return "storage is getting crowded.";
+        return "storage has usable room.";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1389-1393
+Kind: method
+Name: baseDecorRating
+SHA256: 38da96a8f2ddca83aa886e84f50f27a705eeed2d1fba0bf191a91397cf1f90d8
+
+```java
+    int baseDecorRating() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'v') n += Math.max(1, ItemQuality.tierIndex((obj.qualityName==null?"Common":obj.qualityName)+" decor")/2 + 1);
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1395-1399
+Kind: method
+Name: businessAddonRating
+SHA256: 716440a191264623b83e620f8acca39a5645e142c124f5eb1615f195b350187e
+
+```java
+    int businessAddonRating() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'A') n += Math.max(1, ItemQuality.tierIndex((obj.qualityName==null?"Common":obj.qualityName)+" addon")/2 + 1);
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1401-1403
+Kind: method
+Name: businessSellPowerBonus
+SHA256: faf835f5360047e254967c6f9dad524ef88d1ccae695c5a488e5c312447ccb69
+
+```java
+    int businessSellPowerBonus() {
+        return Math.min(8, baseDecorRating()/2 + businessAddonRating());
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1405-1409
+Kind: method
+Name: cargoNetworkCapacity
+SHA256: 1200990d10edc65819985951917ea7b25558bfa1ca46fc724dfd92ad3ed2a2f5
+
+```java
+    int cargoNetworkCapacity() {
+        int cap = 0;
+        for (BaseObject obj : baseObjects) if (obj.symbol == 'k' || obj.symbol == 'q' || obj.symbol == 'G') cap += Math.max(0, obj.capacity);
+        return cap;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1411-1418
+Kind: method
+Name: cargoNetworkTierName
+SHA256: 3ce722b6fb5529c8ac1d2819013fbd0e6ec9ba1e3209e07ae5c7ef857de54357
+
+```java
+    String cargoNetworkTierName() {
+        boolean center=false, post=false, carry=false;
+        for (BaseObject obj : baseObjects) { if (obj.symbol=='G') center=true; if (obj.symbol=='q') post=true; if (obj.symbol=='k') carry=true; }
+        if (center) return "Logistics Center";
+        if (post) return "Supply Post";
+        if (carry) return "Carrying Station";
+        return "none";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1461-1464
+Kind: method
+Name: firstClosedBusiness
+SHA256: fd90acb2e8f243e5980c4b0a9fd4871abfc50a355dcf68361a07d0be89d752c2
+
+```java
+    BaseObject firstClosedBusiness() {
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && !obj.businessOpen) return obj;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1488-1507
+Kind: method
+Name: baseSecurityRating
+SHA256: 7bc992a972937403d09f032efcf0c319a8f044456b681939b114e825bbd78622
+
+```java
+    int baseSecurityRating() {
+        int rating = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj.symbol == 'd') rating += 2 + Math.max(0, obj.cover);
+            if (obj.symbol == 'a' && obj.armed) rating += 3;
+            if (obj.symbol == 'x') rating += 4 + ItemQuality.tierIndex((obj.qualityName==null?"Common":obj.qualityName)+" node")/2;
+            if (obj.symbol == 'p') rating += 3 + Math.max(0, obj.cover);
+            if (obj.symbol == 'g') rating += 4 + Math.max(0, obj.capacity/2);
+            if (obj.symbol == 'D') rating += 4 + Math.max(0, obj.cover);
+            if (obj.symbol == 'T') rating += 8 + Math.max(0, obj.cover) + Math.max(0, obj.charges);
+            if (obj.symbol == 'H') rating += 6 + Math.max(0, obj.cover) + Math.max(0, obj.charges);
+            if (obj.symbol == 'v') rating += 1;
+            if (obj.symbol == 'A') rating += 1;
+            if (obj.symbol == 'B' || obj.symbol == 'M') rating += obj.permittedBusiness ? 1 : 0;
+            if (PassiveDefenseEffectsAuthority.isPassiveDefense(obj.symbol)) rating += PassiveDefenseEffectsAuthority.raidResistance(obj);
+        }
+        rating += Math.max(0, availableRecruitLabor()/2);
+        rating += securityStaffCount() * 3;
+        return rating;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1509-1513
+Kind: method
+Name: illegalBusinessCount
+SHA256: 5bb79301be35a623fecfa4816f194f2a5ecd3d5aee1dd61d36a2ba902e24cd98
+
+```java
+    int illegalBusinessCount() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && obj.businessOpen && !obj.permittedBusiness) n++;
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1515-1519
+Kind: method
+Name: openBusinessCount
+SHA256: 6e45679a6101363e41cdad30da80439acb8040ff8ed8593a906c0d142603714e
+
+```java
+    int openBusinessCount() {
+        int n = 0;
+        for (BaseObject obj : baseObjects) if (obj.isBusinessAsset() && obj.businessOpen) n++;
+        return n;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1525-1529
+Kind: method
+Name: baseRaidChance
+SHA256: 136cd7ae3bdc85e2dcad17c5c05661c50aed96c2428e0925fa2cd5baa20201af
+
+```java
+    int baseRaidChance(int security) {
+        int pressure = baseRaidPressure(security);
+        if (pressure < 12) return 0;
+        return Math.max(2, Math.min(45, pressure));
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1531-1539
+Kind: method
+Name: baseRaidWarningLine
+SHA256: 30ac206932e60a320d6510bbd5c40e160d5406af681c86ee82be25b7d236ecbd
+
+```java
+    String baseRaidWarningLine() {
+        int security = baseSecurityRating();
+        int pressure = baseRaidPressure(security);
+        if (pressure < 8) return "quiet but not safe";
+        if (pressure < 12) return "watchful pressure building";
+        if (pressure < 24) return "raid possible";
+        if (pressure < 40) return "raid likely";
+        return "base is loudly inviting punishment";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1650-1666
+Kind: method
+Name: playerFactionPower
+SHA256: 67be43a4c32781b95847032b555dd628aaf27f4d7a43c5e725cea94885b399bd
+
+```java
+    int playerFactionPower() {
+        int power = 0;
+        power += Math.max(0, factionRecruits.size() * 2);
+        power += Math.max(0, openBusinessCount() * 4);
+        power += Math.max(0, baseStorage.size() / 3);
+        power += Math.max(0, baseObjects.size() * 2);
+        power += Math.max(0, businessSellPowerBonus() * 2);
+        power += Math.max(0, cargoNetworkCapacity() / 4);
+        power += Math.max(0, xp / 20);
+        for (BaseObject obj : baseObjects) {
+            if (obj == null) continue;
+            if (obj.symbol == 'T' || obj.symbol == 'H') power += 8;
+            if (obj.symbol == 'g' || obj.symbol == 'p') power += 4;
+            power += Math.max(0, ItemQuality.tierIndex((obj.qualityName == null ? "Common" : obj.qualityName) + " base asset") / 2);
+        }
+        return power;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1707-1709
+Kind: method
+Name: seedFactionStrategicSimulation
+SHA256: 38e03d97f257134e45d8cbc1886a36740c61647d4dacc8ee11e320f622d27336
+
+```java
+    void seedFactionStrategicSimulation() {
+        FactionStrategySimulationApi.ensurePlans(this);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1775-1780
+Kind: method
+Name: npcProductionLines
+SHA256: 7ffd0822ef184f070bb29c3dbc1cc9e559c10814be9e5355a20a3b1751f3035e
+
+```java
+    ArrayList<String> npcProductionLines() {
+        seedNpcFactionProductionSites();
+        ArrayList<String> lines = new ArrayList<>();
+        for (NpcFactionSite site : npcFactionSites) lines.add("  " + site.summaryLine());
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1885-1887
+Kind: method
+Name: parseTrailingInt
+SHA256: 091afd65c7b3218c01d9357d25487f5bf1135a75efe8bb2e743bb40178e3195d
+
+```java
+    int parseTrailingInt(String text) {
+        try { return Integer.parseInt(text.replaceAll("^.* ", "")); } catch(Exception e) { return 0; }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1965-1972
+Kind: method
+Name: playerMedicalGuidanceLines
+SHA256: 42e86c01f596c235ea7e0c6be70091f952e8a8fd44d1095e6745cc6b47dd34e6
+
+```java
+    ArrayList<String> playerMedicalGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Medical read: " + playerMedicalStatusLine());
+        lines.add("Treatment priority: " + playerTreatmentPriorityLine());
+        lines.add("Drug risk: " + stimulantRiskLine());
+        lines.add("Available aid: carried " + carriedMedicalAidCount() + ", base medical reserve " + medicalStockCount() + ", clinic support " + clinicSupportLine() + ".");
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1974-1987
+Kind: method
+Name: playerMedicalStatusLine
+SHA256: de4827762f4728a4ad63ab27dbac9cfa1a321a0f4e89e16f0f35b42cf316e2ec
+
+```java
+    String playerMedicalStatusLine() {
+        ArrayList<String> bits = new ArrayList<>();
+        if (bleeding > 0) bits.add(bleeding >= 3 ? "serious bleeding" : "minor bleeding");
+        if (infectionRisk > 0) bits.add(infectionRisk >= 5 ? "high infection risk" : "infection risk");
+        if (pain > 0) bits.add(pain >= 12 ? "severe pain" : (pain >= 6 ? "pain affecting focus" : "manageable pain"));
+        if (fatigue >= 20) bits.add("near collapse from fatigue");
+        else if (fatigue >= 10) bits.add("tired");
+        if (sleepNeed >= MAX_SLEEP_NEED) bits.add("dangerous sleep debt");
+        else if (sleepNeed >= MAX_SLEEP_NEED / 2) bits.add("mounting sleep debt");
+        if (wounds >= 12) bits.add("heavy wounds");
+        else if (wounds > 0) bits.add("wounded");
+        if (bits.isEmpty()) return "stable enough for ordinary action.";
+        return String.join(", ", bits) + ".";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2000-2005
+Kind: method
+Name: stimulantRiskLine
+SHA256: 89339d37192f245f30ed42aef0ed214a77091c18d394880570384da6cf3b6222
+
+```java
+    String stimulantRiskLine() {
+        if (stimulantStrain <= 0) return "no current stimulant strain is apparent.";
+        if (stimulantStrain >= 8) return "heavy stimulant strain; more wakefulness drugs may trade sleep debt for dangerous crash pressure.";
+        if (stimulantStrain >= 4) return "moderate stimulant strain; use more only if escape matters more than recovery.";
+        return "light stimulant strain; still plan real sleep soon.";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2016-2019
+Kind: method
+Name: clinicSupportLine
+SHA256: a6e910f21646e15d5428a686d2ab9f770f33560f4fa72819487cc8fe4ecaaf56
+
+```java
+    String clinicSupportLine() {
+        for (BaseObject obj : baseObjects) if (obj != null && obj.integrity > 0 && (obj.symbol == 'M' || obj.name.toLowerCase(Locale.ROOT).contains("medicae") || obj.name.toLowerCase(Locale.ROOT).contains("clinic"))) return "available at base";
+        return "not built here";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2021-2034
+Kind: method
+Name: ownedBusinessLines
+SHA256: 35c602117b9b6fe0f6007647f9826505d85f1b0236ec93aff673f25749a5ae48
+
+```java
+    ArrayList<String> ownedBusinessLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        int businessCount = 0;
+        for (BaseObject obj : baseObjects) {
+            if (!obj.isBusinessAsset()) continue;
+            businessCount++;
+            lines.add("  " + obj.businessName() + " — " + (obj.businessOpen ? (obj.permittedBusiness ? "LICENSED" : "ILLEGAL") : "closed") + " — " + obj.businessReturnLine(this));
+        }
+        if (businessCount == 0) {
+            lines.add("  No owned public business is open yet.");
+            lines.add("  Build a shop counter, medicae stall, storage crate, workbench, water barrel, condenser, forge, or lab; then improve selling power with decor and business add-ons before buying a permit or opening illegally.");
+        }
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:2-2
+Kind: method
+Name: uiScaleFactor
+SHA256: 1f9a9b9fe5429393e50d7789477777d018360e4317d5b477d2f297092667c4ae
+
+```java
+    double uiScaleFactor() { return DisplayDensityAuthority.clampScale(options.uiScale / 100.0f); }
+```
+
+---
+Source: gamepanel-shard8.txt:4-4
+Kind: method
+Name: readableButtonHeight
+SHA256: fba3e6a75e3b18661f1cb2bac25d96cc5ce48318ed3a9cb7e5380dd0b1708804
+
+```java
+    int readableButtonHeight(int preferred) { return Math.max(28, Math.min(preferred, Math.max(24, getHeight() / 11))); }
+```
+
+---
+Source: gamepanel-shard8.txt:5-5
+Kind: method
+Name: readableGap
+SHA256: a0cbfeaf046e718023f77717af9ad69944a0e1dfcfbc3eabb33c1caef7e4563a
+
+```java
+    int readableGap(int preferred) { return Math.max(8, Math.min(preferred, Math.max(6, getHeight() / 42))); }
+```
+
+---
+Source: gamepanel-shard8.txt:6-6
+Kind: method
+Name: onOff
+SHA256: 911fa1224c35ac90373b52698eb08e76aed0f26a0242cce44914fb0da4211bb2
+
+```java
+    String onOff(boolean b) { return b ? "ON" : "OFF"; }
+```
+
+---
+Source: gamepanel-shard8.txt:105-109
+Kind: method
+Name: changeMusicVolume
+SHA256: 276d67ace8b10ad361d23f71f757812dbfe10a3632dbeb579f9b529f4b98d132
+
+```java
+    void changeMusicVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeMusicVolume(options, delta));
+        sounds.setMusicVolume(options);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:110-114
+Kind: method
+Name: changeConversationVolume
+SHA256: 7c11a2638d81ea9c52071ee9040871e67a9154c8910fcd8ddb6d1be5743b1011
+
+```java
+    void changeConversationVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeConversationVolume(options, delta));
+        sounds.play("type", options);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:120-123
+Kind: method
+Name: changeResolution
+SHA256: 8db6e5becbba657fa1a9a5be24229d3b060d5ac40387e16469f01103095c8ea1
+
+```java
+    void changeResolution(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeResolution(options, delta));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:131-135
+Kind: method
+Name: setWindowMode
+SHA256: 2cf74e0782c5a3e95e3773b8b2efac034a7f722d13b83d48835668e83c755b03
+
+```java
+    void setWindowMode(int mode) {
+        logEvent(OptionsBoundaryAuthority.setWindowMode(options, mode));
+        graphicsDropdown = -1;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:137-142
+Kind: method
+Name: setResolutionIndex
+SHA256: 3ca9603545e1b3537e3f4bd0da3dce467ec64f9be34231664b093eb77d596d0c
+
+```java
+    void setResolutionIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setResolutionIndex(options, idx));
+        graphicsDropdown = -1;
+        applyWindowMode();
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:152-156
+Kind: method
+Name: setColorPreset
+SHA256: d4ee6a2eebd117752efce9f423cac6196d1d4c6baf43460b0b4b243b17d7166d
+
+```java
+    void setColorPreset(int idx) {
+        logEvent(OptionsBoundaryAuthority.setColorPreset(options, idx));
+        graphicsDropdown = -1;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:158-163
+Kind: method
+Name: setTargetFpsIndex
+SHA256: 553df1aef72da11618b86cdcef264d4c604cc8a1711487dfb79f20f0455fe013
+
+```java
+    void setTargetFpsIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setTargetFpsIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:180-185
+Kind: method
+Name: setRenderQualityIndex
+SHA256: 60c95f770589b9601bcd9fd146295d24a541a900595d47f7dfbb71141c0cd9ec
+
+```java
+    void setRenderQualityIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setRenderQualityIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:372-372
+Kind: method
+Name: isWindowsHost
+SHA256: 4508fb77c58ac01288452daefadcf9c4804417e5178abc9858ec45b4ccf072f4
+
+```java
+    boolean isWindowsHost() { return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win"); }
+```
+
+---
+Source: gamepanel-shard8.txt:425-425
+Kind: method
+Name: adjustSelectedColor
+SHA256: 4d843f4146a311dc01ec275ba14dd9c555f4483b814a9b9270a70b7c31d5eb91
+
+```java
+    void adjustSelectedColor(int delta) { logEvent(OptionsBoundaryAuthority.adjustSelectedColor(options, delta)); repaint(); }
+```
+
+---
+Source: gamepanel-shard8.txt:454-458
+Kind: method
+Name: requiredInputAction
+SHA256: f8f1c04f9fba1c793a28d698fe444e5ea27cd27690659dd2aa7b22873b5e68b6
+
+```java
+    boolean requiredInputAction(InputAction action) {
+        return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT
+                || action == InputAction.MOVE_RIGHT || action == InputAction.CONFIRM || action == InputAction.CANCEL
+                || action == InputAction.PAUSE;
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:531-539
+Kind: method
+Name: controllerPromptFor
+SHA256: 4cadd143f44317bee3c4a0124c50ce9d23b36525252bf627448accdbf43938de
+
+```java
+    String controllerPromptFor(InputAction action) {
+        switch (controlsTab) {
+            case 1: return xboxPromptFor(action);
+            case 2: return playstationPromptFor(action);
+            case 3: return steamPromptFor(action);
+            case 4: return genericPromptFor(action);
+            default: return "Controller: see controller tabs";
+        }
+    }
+```

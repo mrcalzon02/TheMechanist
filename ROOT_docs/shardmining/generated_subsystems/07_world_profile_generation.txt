@@ -1,0 +1,2992 @@
+# 07_world_profile_generation
+
+Generated: 20260601_131932
+
+Profile flow, world setup, generation, atlas, zone transition, and audit UI.
+
+These are raw GamePanel shard extraction blocks, not compile-ready Java classes.
+
+---
+Source: gamepanel-shard2.txt:159-186
+Kind: method
+Name: zoneAmbientMusicContext
+SHA256: ddda901556717242c84c14adb646b4a755b2c3e4ea3e4c9d2b36859230b500dd
+
+```java
+    String zoneAmbientMusicContext() {
+        if (world == null) return "LOW_HABITATION";
+        RoomProfile rp = world.roomProfile(world.roomIdAt(playerX, playerY));
+        String roomText = ((rp == null ? "" : rp.name) + " " + (rp == null ? "" : rp.descriptor) + " " + (rp == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
+        if (roomText.contains("clinic") || roomText.contains("triage") || roomText.contains("infirmary")) return "TRIAGE";
+        if (roomText.contains("rite") || roomText.contains("chapel") || roomText.contains("choir")) return "CIVIC_RECORDS";
+        switch (world.zoneType) {
+            case GANGER_TURF: return "GANG_TURF";
+            case ARBITES_PRECINCT_EDGE: return "PUBLIC_ORDER";
+            case ADMINISTRATUM_ARCHIVE: return "CIVIC_RECORDS";
+            case IMPERIAL_GUARD_BILLET: return "CHARTER_GUARD";
+            case MECHANICUS_FORGE_CLOISTER:
+            case MECHANICUS_RELIC_DUCT: return "ENGINE_HOUSE";
+            case CULTIST_SEWER_CAMP: return "PROSCRIBED_CELL";
+            case MUTANT_SEWER_CAMP:
+            case MUTANT_WARRENS: return "OUTCAST";
+            case TRAIN_SERVICE_YARD:
+            case NEUTRAL_RAIL_DEPOT: return "TRAIN";
+            case SECTOR_GOVERNORS_MANSION: return "ESTATE_PALACE";
+            case NOBLE_SERVICE_SPINE: return "ESTATE";
+            case NEUTRAL_CIVILIAN_FLOOR:
+            case HAB_STACK:
+            case SUMP_MARKET:
+            case TRASH_WARREN:
+            case SEWER_CONDUIT:
+            default: return "LOW_HABITATION";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:188-197
+Kind: method
+Name: hostilePressureNearby
+SHA256: dc5411a0ad6d2d4147a9b60d84e66285f193420ce22280a37c37349cc6e2ec3c
+
+```java
+    boolean hostilePressureNearby() {
+        if (world == null || world.npcs == null || active == null) return false;
+        for (NpcEntity npc : world.npcs) {
+            if (!isHostileNpc(npc)) continue;
+            int d = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            if (d <= 4) return true;
+            if (d <= 12 && visibleTiles != null && isVisible(npc.x, npc.y)) return true;
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:199-207
+Kind: method
+Name: hostileGovernorPressureNearby
+SHA256: 5053a8ebc3b8f299dc40a577de6702f5d0eab44f9dfaa24c5658a28e365ecd5c
+
+```java
+    boolean hostileGovernorPressureNearby() {
+        if (world == null || world.npcs == null || active == null) return false;
+        for (NpcEntity npc : world.npcs) {
+            if (!isHostileNpc(npc) || !isGovernorCombatNpc(npc)) continue;
+            int d = Math.abs(npc.x - playerX) + Math.abs(npc.y - playerY);
+            if (d <= 12) return true;
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:209-213
+Kind: method
+Name: isGovernorCombatNpc
+SHA256: 9a54d2dd92c8a31a3e034fd31dfa6e8028ab9b53ff33753db7dff5cddf115785
+
+```java
+    boolean isGovernorCombatNpc(NpcEntity npc) {
+        if (npc == null) return false;
+        String hay = ((npc.name == null ? "" : npc.name) + " " + (npc.role == null ? "" : npc.role)).toLowerCase(Locale.ROOT);
+        return hay.contains("governor") || (world != null && world.zoneType == ZoneType.SECTOR_GOVERNORS_MANSION && isHostileNpc(npc));
+    }
+```
+
+---
+Source: gamepanel-shard2.txt:267-271
+Kind: method
+Name: refreshNameLockedCandidateState
+SHA256: 0dd6141d3ba0f43ba803318568f0896d7e31f8bd027c05f7bb05727436bb7b0a
+
+```java
+    void refreshNameLockedCandidateState(Candidate c) {
+        if (c == null) return;
+        NameLockedProfilePortraitAuthority.Entry e = NameLockedProfilePortraitAuthority.unlockedEntry(cachedOperatorProfileName, c.name);
+        c.nameLockedProfileKey = e == null ? "" : e.key;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:210-220
+Kind: method
+Name: moveInteractCursor
+SHA256: a5c10f07d6601c2a5ba77f6e275098e7e9c618848c2a214c5575ba6c03c14690
+
+```java
+    void moveInteractCursor(int dx, int dy) {
+        if (world == null) return;
+        int nx = lookX + dx;
+        int ny = lookY + dy;
+        // Interaction cursor is deliberately bound to the eight tiles around the player plus the standing tile.
+        if (Math.abs(nx - playerX) <= 1 && Math.abs(ny - playerY) <= 1 && nx >= 0 && ny >= 0 && nx < world.w && ny < world.h) {
+            lookX = nx; lookY = ny; lookStackIndex = 0;
+        }
+        clampInteractCursorToAdjacent();
+        updatePendingInteractionSummary();
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:222-226
+Kind: method
+Name: clampInteractCursorToAdjacent
+SHA256: f91cbd5a72ba7345a184e20380c00dc3db895b317f72ae3a6604a1865768e2d5
+
+```java
+    void clampInteractCursorToAdjacent() {
+        lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX));
+        lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY));
+        if (world != null) { lookX = Math.max(0, Math.min(world.w - 1, lookX)); lookY = Math.max(0, Math.min(world.h - 1, lookY)); }
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:251-253
+Kind: method
+Name: selectedInteractionIsGovernor
+SHA256: 88f9daeac8f922e2f0ebdc2c93f2216ee5b06c7eac5cea4154bdfb9b556780b1
+
+```java
+    boolean selectedInteractionIsGovernor() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'Q';
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:255-257
+Kind: method
+Name: selectedInteractionIsSectorRail
+SHA256: f205ec329760abae7d2ff85535e28d263115753e7afc79d47bc3b2107c159e83
+
+```java
+    boolean selectedInteractionIsSectorRail() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'T' && world.zoneType == ZoneType.NEUTRAL_RAIL_DEPOT;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:271-275
+Kind: method
+Name: canScavengeFromCurrentRoom
+SHA256: 5c9035a9c058bc036612359111c242eadad744061532344fab705103619528ff
+
+```java
+    boolean canScavengeFromCurrentRoom() {
+        if (world == null) return false;
+        int rid = world.roomIdAt(playerX, playerY);
+        return rid >= 0 && rid != claimedRoomId;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:359-374
+Kind: method
+Name: examineSelectedLookTarget
+SHA256: 86ab93e47c618860c0867036284064383960751b2d1a819065fefef2f2af5e11
+
+```java
+    void examineSelectedLookTarget() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        if (!world.inBounds(tx, ty) || !isVisible(tx, ty)) {
+            showTimedAlert("EXAMINE", "Too little is visible from here. Move closer, improve the light, or use Look on a visible tile first.", 4200);
+            return;
+        }
+        updateExamineFocus(tx, ty);
+        ArrayList<String> lines = examineLinesAt(tx, ty);
+        String title = lines.isEmpty() ? "EXAMINE" : lines.remove(0);
+        String body = lines.isEmpty() ? "No further readable detail is available." : String.join(" ", lines);
+        showTimedAlert(title, body, 7600);
+        logEvent(title + ": " + body);
+        advanceTurn("examines the selected target.");
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:605-612
+Kind: method
+Name: animalShelterReadLine
+SHA256: 96724ea641071d45d6803d179e5f6d7b54dbd761068a301108af69ebb5405e62
+
+```java
+    String animalShelterReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "shelter is unreadable";
+        String tile = describeTile(world.tiles[tx][ty]).toLowerCase(Locale.ROOT);
+        String room = roomContextReadLine(tx, ty).toLowerCase(Locale.ROOT);
+        if (room.contains("room") || tile.contains("floor") || tile.contains("hab") || tile.contains("market")) return "under cover or inside a usable space";
+        if (tile.contains("sewer") || tile.contains("hazard") || tile.contains("waste")) return "poor shelter with environmental stress";
+        return "shelter looks uncertain";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:682-687
+Kind: method
+Name: roomContextReadLine
+SHA256: 3b916ec2005392d5af325672c0c2cc7ee4a5030419e2ef707ba21c85250fc4d9
+
+```java
+    String roomContextReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "no reliable room context";
+        int roomId = world.roomIdAt(tx, ty);
+        if (roomId < 0) return "open passage or edge space";
+        return "room space with " + ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:699-705
+Kind: method
+Name: petSelectedLookPet
+SHA256: cdb9b48f2dbe6ee3955a451313c04a1a68bcd7b682ce4e1bc14eb0c7964ff669
+
+```java
+    void petSelectedLookPet() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        petNpcAt(tx, ty, true);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:707-735
+Kind: method
+Name: petNpcAt
+SHA256: bc171dd7210db9cc942d51207475280b4b6dbd10c3f8522fe0ca9dac1c99b98f
+
+```java
+    void petNpcAt(int tx, int ty, boolean alert) {
+        if (world == null || !world.inBounds(tx, ty)) {
+            showPetFeedback("PET", "There is no reachable companion animal there.", alert);
+            return;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc == null) {
+            showPetFeedback("PET", "There is no companion animal there.", alert);
+            return;
+        }
+        if (!npc.isPetActor()) {
+            showPetFeedback("PET", animalContactBlockedLine(npc), alert);
+            if (npc.isAnimalActor()) advanceTurn("checks an animal's mood.");
+            return;
+        }
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) {
+            showPetFeedback("PET", npc.name + " is too far away for a gentle greeting.", alert);
+            return;
+        }
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) {
+            showPetFeedback("PET", npc.name + " is too tense to touch safely.", alert);
+            advanceTurn("backs off from a tense companion animal.");
+            return;
+        }
+        String line = petInteractionLine(npc);
+        showPetFeedback("PET", line, alert);
+        logEvent("PET: " + line);
+        advanceTurn("pets " + npc.name + ".");
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:858-858
+Kind: method
+Name: passiveKey
+SHA256: 07f7015cb804b3fcc0682336aee2b998a1dbed28649ba106bcdd9d5e8fb63ebd
+
+```java
+    String passiveKey(int x, int y) { return (world == null ? 0 : world.locationKey()) + ":" + x + ":" + y; }
+```
+
+---
+Source: gamepanel-shard3.txt:876-879
+Kind: method
+Name: imperialShrineName
+SHA256: 90eb98089e60206c10250355006791d917e7367a24f68d0d985cb21635ecfe44
+
+```java
+    String imperialShrineName(int x, int y) {
+        String[] names = {"Saint Drusus of the Worn Gate", "Saint Sabbat of the Red Road", "Saint Vidicus of the Iron Ledger", "Saint Lucia of the Last Lamp", "Saint Gelt of the Unpaid Tithe"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 31 + y * 17, names.length)];
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:881-884
+Kind: method
+Name: chaosShrineName
+SHA256: fe19c4f508565219df56e91a17150bb570b3f84775e07427df237429109323a6
+
+```java
+    String chaosShrineName(int x, int y) {
+        String[] names = {"the Blood God", "the Plague God", "the Changer of Ways", "the Prince of Excess"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 13 + y * 29, names.length)];
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:928-933
+Kind: method
+Name: owningFactionAt
+SHA256: 78bab89ebdc4c93241e478b87d4c56dacb3f03238d74e496ddfc65e08decfb9c
+
+```java
+    Faction owningFactionAt(int x, int y) {
+        if (world == null || x < 0 || y < 0 || x >= world.w || y >= world.h) return Faction.NONE;
+        int rid = world.roomIds[x][y];
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return Faction.NONE;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:124-128
+Kind: method
+Name: governorHasTicket
+SHA256: d241a1e426fb8cd2fc17ed927c54ec5634a52fae4214045bdc58776c8b068783
+
+```java
+    boolean governorHasTicket() {
+        if (atlas == null || world == null) return false;
+        long key = seed ^ world.seed ^ (atlas.sectorX * 1000003L) ^ (atlas.sectorY * 9176L) ^ 0x51C70A7E5EEDL;
+        return Math.floorMod(key, 100) < 35;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:130-133
+Kind: method
+Name: governorAudienceFee
+SHA256: 92295066580d5ae8c3d46a5ea937f568952ca13856094c2de407c11feedc5fef
+
+```java
+    int governorAudienceFee() {
+        int power = playerFactionPower();
+        return Math.max(250, 900 + power * 18 + (atlas == null ? 0 : (atlas.sectorX + atlas.sectorY) * 125));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:135-137
+Kind: method
+Name: governorPreview
+SHA256: bbe16d3882f8d42534f84d0f1417f4cd51c0b8cac3c1e8ccc45baacfb3249226
+
+```java
+    String governorPreview(int x, int y) {
+        return "SECTOR GOVERNOR AUDIENCE: fee " + governorAudienceFee() + " Concord Script. Some governors have a seed-bound off-world ticket; some will take your money anyway.";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:191-209
+Kind: method
+Name: spawnGovernorGuards
+SHA256: 79cd390c1f15798e2563bbf6e30797be15d311f2c5dfad5ff7f7274644aa517c
+
+```java
+    void spawnGovernorGuards(int count) {
+        if (world == null) return;
+        int spawned = 0;
+        int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1},{2,0},{-2,0},{0,2},{0,-2},{3,1},{-3,1},{1,3},{1,-3}};
+        for (int i=0; i<dirs.length && spawned<count; i++) {
+            int nx = lookX + dirs[i][0], ny = lookY + dirs[i][1];
+            if (world.walkable(nx, ny) && world.npcAt(nx, ny) == null) {
+                NpcEntity guard = NpcEntity.create(Faction.IMPERIAL_GUARD, world.zoneType, nx, ny, rng);
+                guard.name = "Governor's Guard " + (spawned + 1);
+                guard.role = "Governor Guard";
+                guard.state = "Hostile";
+                guard.hp = 18;
+                world.npcs.add(guard);
+                spawned++;
+            }
+        }
+        logEvent("HOSTILE INTENT: " + spawned + " governor guards surge into combat posture.");
+        noteCombatMusicActivity(true, "governor guards spawned");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:230-241
+Kind: method
+Name: confirmInteraction
+SHA256: b2ce8002a343469caae7864bf999daa4a86cd35bc9a2d60c0509e4524e643014
+
+```java
+    void confirmInteraction() {
+        if (singlePlayerSectorBridge.shouldOwnAuthoritativeTurns(this) && !singlePlayerSectorBridge.insideAuthoritativeTurn()) {
+            String transition = world != null && world.inBounds(lookX, lookY) && isIntermapTransitTile(world.tiles[lookX][lookY]) ? transitionPreview(world.tiles[lookX][lookY], lookX, lookY) : "selected interaction";
+            WorldCommandRequest command = world != null && world.inBounds(lookX, lookY) && isIntermapTransitTile(world.tiles[lookX][lookY])
+                    ? new ChangeZoneCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, transition)
+                    : new ConfirmInteractionCommand(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, lookX, lookY);
+            singlePlayerSectorBridge.submitCommand(this, command);
+            repaint();
+            return;
+        }
+        confirmInteractionBody();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:302-309
+Kind: method
+Name: worldLocationSummary
+SHA256: 9905bfbde3dd621b0dbe40239ffdc4f65e47809f875fb194339c241adf8ef093
+
+```java
+    String worldLocationSummary() {
+        if (atlas == null && world == null) return "No active world location.";
+        String sectorName = atlas == null || atlas.hiveWorld == null ? "unmapped" : atlas.hiveWorld.sectorName(atlas.sectorX, atlas.sectorY);
+        String sector = atlas == null ? "unknown sector" : "sector " + atlas.sectorX + "," + atlas.sectorY + " (" + sectorName + ")";
+        String zone = world == null ? "unknown zone" : world.zoneType.label + " " + world.zoneCoordText();
+        String layer = world == null ? "unknown layer" : world.layerText();
+        return sector + "; " + zone + "; " + layer + ".";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:486-490
+Kind: method
+Name: wakePointLabel
+SHA256: 8c0947010ba2ae800067d7f300a7994a7ff9b90ce43f8069c4f5f117373a2bfb
+
+```java
+    String wakePointLabel(Point p) {
+        if (baseClaimed && p != null && p.x == baseX && p.y == baseY) return "your claimed base";
+        if (world != null && p != null && world.inBounds(p.x, p.y) && world.tiles[p.x][p.y] == 'C') return "the nearest medicae clinic";
+        return "the nearest safe walkable point";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:492-509
+Kind: method
+Name: nearestMedicalFacilityPoint
+SHA256: a42bba6b544c98c21f13477fd3e28633c9b70babdf0df62e16ecc096ee47cd27
+
+```java
+    Point nearestMedicalFacilityPoint() {
+        if (world == null) return null;
+        Point best = null; int bestD = Integer.MAX_VALUE;
+        for (int x=1;x<world.w-1;x++) for (int y=1;y<world.h-1;y++) {
+            boolean clinicTile = world.tiles[x][y] == 'C';
+            boolean medRoom = false;
+            int rid = world.roomIdAt(x,y);
+            if (rid >= 0 && rid < world.roomProfiles.size() && world.roomProfiles.get(rid) != null) {
+                String n = world.roomProfiles.get(rid).name.toLowerCase(Locale.ROOT);
+                medRoom = n.contains("medicae") || n.contains("clinic") || n.contains("triage") || n.contains("infirmary") || n.contains("aid");
+            }
+            if ((clinicTile || medRoom) && world.walkable(x,y)) {
+                int d = Math.abs(x-playerX) + Math.abs(y-playerY);
+                if (d < bestD) { bestD = d; best = new Point(x,y); }
+            }
+        }
+        return best;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:870-886
+Kind: method
+Name: coreAmbientCueForZone
+SHA256: 23569eaebb5785ca9e3a727adaa661659f560ee36e6259a4c70ed5744f81d0bb
+
+```java
+    String coreAmbientCueForZone() {
+        if (world == null || world.zoneType == null) return "ambient_machine";
+        String z = world.zoneType.label.toLowerCase(Locale.ROOT);
+        if (z.contains("sewer") || z.contains("sump")) return pickWeightedCue(
+            new String[]{"ambient_pipe","ambient_vent","ambient_drip","ambient_sludge","ambient_alarm_far"},
+            new int[]{32,24,24,16,4});
+        if (z.contains("noble") || z.contains("governor")) return pickWeightedCue(
+            new String[]{"ambient_tv","ambient_radio","ambient_chime","ambient_servitor","ambient_door_servo"},
+            new int[]{30,26,16,16,12});
+        if (z.contains("industrial") || z.contains("mechanist Collegia") || z.contains("factory")) return pickWeightedCue(
+            new String[]{"ambient_machine","ambient_spark","ambient_press","ambient_servo","ambient_alarm_far","ambient_vent"},
+            new int[]{30,20,18,14,8,10});
+        if (z.contains("market") || z.contains("hab")) return pickWeightedCue(
+            new String[]{"ambient_radio","ambient_tv","ambient_machine","ambient_door_servo","ambient_pipe"},
+            new int[]{32,22,18,14,14});
+        return pickWeightedCue(new String[]{"ambient_machine","ambient_pipe","ambient_radio","ambient_spark","ambient_vent"}, new int[]{34,20,18,14,14});
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:909-922
+Kind: method
+Name: movementSurfaceKeyAt
+SHA256: 07a78b305f1da34827bd99bbc8aac9be9312893e9ec1626d71d3c28e78c9664f
+
+```java
+    String movementSurfaceKeyAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return "metal";
+        EnvironmentalHazardRecord h = hazardAt(x, y);
+        if (h != null) {
+            String f = h.family == null ? "" : h.family.toLowerCase(Locale.ROOT);
+            if (f.contains("sludge") || f.contains("runoff") || f.contains("sewer")) return "sludge";
+            if (f.contains("wire") || f.contains("electric")) return "grate";
+        }
+        char t = world.tiles[x][y];
+        if (t == '~' || t == ',' || t == ';') return "sludge";
+        if (t == ':' || t == '=') return "grate";
+        if (t == '*' || t == '`') return "debris";
+        return "metal";
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:924-938
+Kind: method
+Name: updateMoveGhostTarget
+SHA256: 6fc76d74bb2c3a53402051ca3e795aea1a7908259bc1a89950e4d361e388b906
+
+```java
+    void updateMoveGhostTarget(int dx, int dy) {
+        if (world == null) { moveGhostX = moveGhostY = -1; moveGhostRange = 1; return; }
+        if (dx == 0 && dy == 0) { dx = lastMoveDx; dy = lastMoveDy; }
+        if (dx == 0 && dy == 0) { moveGhostX = playerX; moveGhostY = playerY; moveGhostRange = 0; return; }
+        lastMoveDx = dx; lastMoveDy = dy;
+        int tx = playerX, ty = playerY;
+        int range = movementModeRange();
+        for (int i=0; i<range; i++) {
+            int nx = tx + dx, ny = ty + dy;
+            if (world == null || !world.walkable(nx, ny)) break;
+            tx = nx; ty = ny;
+            if (world.npcAt(nx, ny) != null) break;
+        }
+        moveGhostX = tx; moveGhostY = ty; moveGhostRange = Math.max(1, range);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1083-1085
+Kind: method
+Name: stepIsClearForPath
+SHA256: a6ef082374c2733a306b14de874129d903cc790efcc0bcca0134dff08f34b22c
+
+```java
+    boolean stepIsClearForPath(int x, int y) {
+        return world != null && world.inBounds(x, y) && world.walkable(x, y) && world.npcAt(x, y) == null;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1112-1128
+Kind: method
+Name: attemptPlayerMoveOneTile
+SHA256: a802173583942e9ca953a85203860e1328ee8c485de26b109e9c7f45cbb28ad4
+
+```java
+    boolean attemptPlayerMoveOneTile(int dx, int dy) {
+        if (world == null) return false;
+        int nx = playerX + dx, ny = playerY + dy;
+        if (!world.walkable(nx, ny)) {
+            resetPushPastIntent();
+            logEvent("Movement blocked at " + nx + "," + ny + ".");
+            return false;
+        }
+        NpcEntity blocker = world.npcAt(nx, ny);
+        if (blocker != null) {
+            return handleOccupiedMovementTarget(blocker, dx, dy, nx, ny);
+        }
+        resetPushPastIntent();
+        movePlayerInto(nx, ny, movementModeLabel().toLowerCase(Locale.ROOT) + "s to " + nx + "," + ny + " over " + describeTile(world.tiles[nx][ny]) + ".");
+        checkTrapAfterPlayerMove(nx, ny);
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1235-1245
+Kind: method
+Name: shoveDestinationFor
+SHA256: 1e51dde07b880df5e26d527ae436f98d2b51d7e447ebefe10de1ecdceb0eaba6
+
+```java
+    Point shoveDestinationFor(NpcEntity blocker, int dx, int dy) {
+        if (world == null || blocker == null) return null;
+        int[][] candidates;
+        if (dx != 0) candidates = new int[][]{{dx,0},{0,-1},{0,1},{-dx,0}};
+        else candidates = new int[][]{{0,dy},{-1,0},{1,0},{0,-dy}};
+        for (int[] d : candidates) {
+            int sx = blocker.x + d[0], sy = blocker.y + d[1];
+            if (canNpcOccupyForShove(sx, sy)) return new Point(sx, sy);
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1247-1249
+Kind: method
+Name: canNpcOccupyForShove
+SHA256: a20dd7f42ab3563d5cc4fbfcd18cffed20894a4127877b631284f45c71ffa4ff
+
+```java
+    boolean canNpcOccupyForShove(int x, int y) {
+        return world != null && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1435-1446
+Kind: method
+Name: maybeGrantSneakXp
+SHA256: da2029cf5c6d687606580211c1d21c5854903a855c754f37ca4f011ada0391ce
+
+```java
+    void maybeGrantSneakXp(String source) {
+        if (!activeMotionIsSneak() || world == null || world.npcs == null || turn == lastSneakXpTurn) return;
+        for (NpcEntity npc : world.npcs) {
+            if (npc == null || !isHostileNpc(npc)) continue;
+            int dist = Math.abs(npc.x-playerX)+Math.abs(npc.y-playerY);
+            if (dist <= 8 && !npc.hostileBarked) {
+                lastSneakXpTurn = turn;
+                gainXp("Stealth", 1, "successful sneaking action — " + source);
+                return;
+            }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1465-1474
+Kind: method
+Name: nearestAttackTarget
+SHA256: 694353ccad485e783216c44c7662f2644897394683486242005f592e1f68751b
+
+```java
+    NpcEntity nearestAttackTarget() {
+        if (world == null || world.npcs == null) return null;
+        NpcEntity best = null; int bestDist = 999;
+        for (NpcEntity npc : world.npcs) {
+            if (!isHostileNpc(npc) || npc.isUntargetableAnchor()) continue;
+            int d = Math.abs(npc.x-playerX) + Math.abs(npc.y-playerY);
+            if (d <= 1 && d < bestDist) { best = npc; bestDist = d; }
+        }
+        return best;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1703-1715
+Kind: method
+Name: tickThrownAndPlantedExplosives
+SHA256: cfff49eaef00838850b96495b77dffea92f456179e7b106ea460ae104466a009
+
+```java
+    void tickThrownAndPlantedExplosives() {
+        if (world == null || world.mapObjects == null || world.mapObjects.isEmpty()) return;
+        ArrayList<MapObjectState> copy = new ArrayList<>(world.mapObjects);
+        for (MapObjectState m : copy) {
+            if (m == null) continue;
+            if ("thrown-explosive".equals(m.type) && turn >= m.cooldownUntilTurn) { detonateExplosiveObject(m, "fuse expiry"); continue; }
+            if ("planted-explosive".equals(m.type)) {
+                if ((playerX == m.x && playerY == m.y) || Math.abs(playerX-m.x)+Math.abs(playerY-m.y) <= 1) maybeTriggerPlantedExplosive(m, true, null);
+                if (world == null || !world.mapObjects.contains(m)) continue;
+                for (NpcEntity n : new ArrayList<>(world.npcs)) if (Math.abs(n.x-m.x)+Math.abs(n.y-m.y) <= 0) { maybeTriggerPlantedExplosive(m, false, n); break; }
+            }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1733-1751
+Kind: method
+Name: disarmExplosiveAt
+SHA256: 103c4646578b6052e16c6ac2dd6b0b6e6ea001fb97b16651ff36b45c74d50128
+
+```java
+    void disarmExplosiveAt(int tx, int ty) {
+        MapObjectState m = mapObjectAt(tx, ty, "planted-explosive");
+        if (m == null) { logEvent("DISARM: no planted explosive selected."); return; }
+        ExplosiveProfile ep = ExplosiveProfile.forItem(m.stockState);
+        int turns = Math.max(1, ep.disarmTurns);
+        int score = stat("Intellect",5) + stat("Mechanics",5) + stat("Vision",5) / 2;
+        int difficulty = 12 + ep.complexity * 4;
+        int roll = rng.nextInt(20) + score;
+        for (int i=0;i<turns;i++) advanceTurn(i==0 ? "attempts to disarm " + ep.name + "." : "continues the disarm work.");
+        if (roll >= difficulty) {
+            restoreMapObjectUnderlyingTile(m);
+            world.mapObjects.remove(m);
+            addInventoryItem(ep.name, ItemProvenanceRecord.found(ep.name, world, turn, "disarmed and recovered planted explosive"));
+            logEvent("DISARM SUCCESS: recovered " + ep.name + ". Roll " + roll + " vs " + difficulty + ".");
+        } else {
+            logEvent("DISARM FAILED: " + ep.name + " bites back. Roll " + roll + " vs " + difficulty + ".");
+            detonateExplosiveObject(m, "failed disarm");
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1753-1761
+Kind: method
+Name: mapObjectAt
+SHA256: fc0272bdf04713ccef3c32db95e7ffea3dd5d681a282d3a9a70712bc1aca8dde
+
+```java
+    MapObjectState mapObjectAt(int x, int y, String type) {
+        if (world == null || world.mapObjects == null) return null;
+        String wanted = AssetIntegrationDisciplineAuthority.canonicalType(type);
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || m.x != x || m.y != y) continue;
+            if (type == null || Objects.equals(wanted, AssetIntegrationDisciplineAuthority.canonicalType(m.type))) return m;
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1763-1768
+Kind: method
+Name: restoreMapObjectUnderlyingTile
+SHA256: 2d2cd34a59b04ca717ed0f99b7525eb8b0d6bbee5d0ae54725e9159bb16d8b8e
+
+```java
+    void restoreMapObjectUnderlyingTile(MapObjectState m) {
+        if (world == null || m == null || !world.inBounds(m.x,m.y)) return;
+        char old = MapObjectState.underlyingTileFromStock(m.stockState);
+        if (old == 0 || old == '*' || old == '!' || old == 'r') old = '.';
+        world.tiles[m.x][m.y] = old;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1770-1777
+Kind: method
+Name: detonateExplosiveObject
+SHA256: 0162a8b1abc12ccff568b6ee8252e84dbc550651edf0206f3735066e8681e278
+
+```java
+    void detonateExplosiveObject(MapObjectState m, String cause) {
+        if (world == null || m == null) return;
+        ExplosiveProfile ep = ExplosiveProfile.forItem(m.stockState);
+        int cx = m.x, cy = m.y;
+        restoreMapObjectUnderlyingTile(m);
+        world.mapObjects.remove(m);
+        detonateExplosiveAt(cx, cy, ep, cause);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1814-1819
+Kind: method
+Name: seedSmokeCloud
+SHA256: 572e3dd5c455a178294c523bb7cfd2868c6d6a2b3c3f9b28c5674f13a9e9f836
+
+```java
+    void seedSmokeCloud(int cx, int cy, int radius) {
+        for (int x=Math.max(0,cx-radius); x<=Math.min(world.w-1,cx+radius); x++) for (int y=Math.max(0,cy-radius); y<=Math.min(world.h-1,cy+radius); y++) {
+            if (Math.abs(x-cx)+Math.abs(y-cy) <= radius && rng.nextBoolean()) addSoundPing(x, y, "smoke");
+        }
+        logEvent("SMOKE: a dirty occluding cloud boils out. Full smoke vision math is queued for the lighting/occlusion pass.");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1835-1846
+Kind: method
+Name: moveCombatCursor
+SHA256: faee75ae5d3ec6e8909bde6b4657ae3c0a5a797557e990d75bdf020c8ff3baf6
+
+```java
+    void moveCombatCursor(int dx, int dy) {
+        if (world == null) return;
+        combatCursorActive = true;
+        if (combatX < 0 || combatY < 0) { combatX = playerX; combatY = playerY; }
+        combatX = Math.max(0, Math.min(world.w-1, combatX + dx));
+        combatY = Math.max(0, Math.min(world.h-1, combatY + dy));
+        if (explosiveTargetingMode) lastTargetingReport = explosiveTargetingSummary(combatX, combatY);
+        else {
+            TargetingSolution ts = targetingSolutionAt(combatX, combatY);
+            lastTargetingReport = ts.summaryLine();
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1857-1864
+Kind: method
+Name: confirmCombatTargetBody
+SHA256: 0a20d956e2c6683580fb35d92e82db16477e07f1b5fe19b9a8e96814f7287cf9
+
+```java
+    void confirmCombatTargetBody() {
+        if (world == null || active == null) return;
+        if (explosiveTargetingMode) { throwSelectedExplosiveAtCursor(); return; }
+        TargetingSolution ts = targetingSolutionAt(combatX, combatY);
+        lastTargetingReport = ts.summaryLine();
+        if (!ts.canFire) { logEvent("TARGETING BLOCKED: " + ts.summaryLine()); return; }
+        performCombatAttackAt(ts);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1915-1959
+Kind: method
+Name: targetingSolutionAt
+SHA256: 22153351006fb6402e442415a0114e841fc297e485e8602700d25d70e9142607
+
+```java
+    TargetingSolution targetingSolutionAt(int tx, int ty) {
+        TargetingSolution ts = new TargetingSolution();
+        ts.targetX = tx; ts.targetY = ty;
+        if (world == null || active == null) { ts.canFire=false; ts.summary="No active tactical world."; return ts; }
+        if (!world.inBounds(tx, ty)) { ts.canFire=false; ts.summary="Target outside world bounds."; return ts; }
+        ts.weaponName = bestWeaponName();
+        ts.ranged = ts.weaponName != null && ItemCatalog.isFirearmLike(ts.weaponName);
+        if (ts.weaponName == null) ts.weaponName = "Bare hands";
+        ts.range = weaponRange(ts.weaponName);
+        ts.distance = Math.abs(tx-playerX) + Math.abs(ty-playerY);
+        ts.targetNpc = world.npcAt(tx, ty);
+        ts.fireMode = fireModeLabel();
+        ts.loadedShots = loadedShotsForWeapon(ts.weaponName);
+        ts.magazineCapacity = magazineCapacityForWeapon(ts.weaponName);
+        ts.ammoCost = fireModeAmmoCost(ts.weaponName);
+        ts.ammoItem = ammoItemForWeapon(ts.weaponName);
+        ts.needsReload = ts.ranged && ts.loadedShots < Math.max(1, ts.ammoCost);
+        ts.shieldReduction = shieldMitigationPercentAt(tx, ty, ts.targetNpc == null ? Faction.NONE : ts.targetNpc.faction);
+        ts.coverPenalty = rangedCoverPenalty(playerX, playerY, tx, ty, true, ts);
+        ts.darknessPenalty = ts.ranged ? rangedDarknessPenalty(playerX, playerY, tx, ty) : 0;
+        int skill = ts.ranged ? stat("Firearms", 5) : stat("Melee", 5);
+        if (ts.ranged && !hasUsableWeaponLimb()) { ts.canFire=false; ts.summary="Arms/hands too damaged to aim a ranged weapon."; ts.hitPercent=0; return ts; }
+        if (ts.ranged && ts.needsReload) { ts.canFire=false; ts.summary="Reload required: " + ts.weaponName + " has " + ts.loadedShots + "/" + ts.magazineCapacity + " loaded; needs " + Math.max(1,ts.ammoCost) + " for " + ts.fireMode + ". Press X to reload using " + ts.ammoItem + "."; ts.hitPercent=0; return ts; }
+        if (!ts.ranged && ts.distance > 1) { ts.canFire=false; ts.summary="Melee attacks require an adjacent tile."; ts.hitPercent=0; return ts; }
+        if (ts.ranged && ts.distance > ts.range) { ts.canFire=false; ts.summary="Out of range: " + ts.distance + "/" + ts.range + "."; ts.hitPercent=0; return ts; }
+        if (ts.targetNpc == null && !ts.ranged) { ts.canFire=false; ts.summary="No adjacent entity to strike."; ts.hitPercent=0; return ts; }
+        int distancePenalty = ts.ranged ? Math.max(0, ts.distance - 2) * 4 : 0;
+        int targetMotionDefense = ts.targetNpc == null ? 0 : npcEvasionModifier(ts.targetNpc);
+        int targetArmor = ts.targetNpc == null ? 0 : factionArmor(ts.targetNpc);
+        int base = ts.ranged ? 52 : 65;
+        int hit = base + skill * 5 + playerAttackMotionSkillModifier() + fireModeAccuracyModifier() - distancePenalty - ts.coverPenalty - ts.darknessPenalty - targetMotionDefense - targetArmor * 2;
+        if (ts.targetNpc == null && ts.ranged && !ts.coverHardBlocked) {
+            // Directly attacking empty floor, wall, or an object is not a contest
+            // against a dodging actor. If the line is clear and the target is in
+            // range, the shot should be highly reliable so terrain/object attacks
+            // are usable instead of displaying a miserable 0% on nothing.
+            hit = Math.max(hit, 92 + Math.max(0, fireModeAccuracyModifier() / 3));
+        } else if (ts.targetNpc == null) hit -= ts.ranged ? 8 : 30;
+        if (ts.coverHardBlocked) hit = 0;
+        ts.hitPercent = Math.max(0, Math.min(95, hit));
+        ts.canFire = ts.hitPercent > 0 && (ts.ranged || ts.targetNpc != null);
+        String targetLabel = ts.targetNpc == null ? ("direct terrain/object " + describeTile(world.tiles[tx][ty])) : ts.targetNpc.name;
+        ts.summary = (ts.ranged ? "Ranged" : "Melee") + " target " + tx + "," + ty + " | " + targetLabel + " | hit " + ts.hitPercent + "% | " + (ts.ranged ? ("ammo " + ts.loadedShots + "/" + ts.magazineCapacity + " cost " + ts.ammoCost + " | light -" + ts.darknessPenalty + " | ") : "") + ts.coverSummary;
+        return ts;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1972-1984
+Kind: method
+Name: shieldMitigationPercentAt
+SHA256: 20aa3b80c7dd0f3347b8db0ae23545fd1a4a06472f6cb890f816e18768b84ddd
+
+```java
+    int shieldMitigationPercentAt(int tx, int ty, Faction defenderFaction) {
+        if (world == null || baseObjects == null || baseObjects.isEmpty()) return 0;
+        int room = world.inBounds(tx, ty) ? world.roomIds[tx][ty] : -9999;
+        int shield = 0;
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || obj.symbol != 'H' || !obj.armed || obj.charges <= 0) continue;
+            int oroom = world.inBounds(obj.x, obj.y) ? world.roomIds[obj.x][obj.y] : -9998;
+            boolean sameRoom = room >= 0 && room == oroom;
+            boolean nearby = Math.abs(obj.x - tx) + Math.abs(obj.y - ty) <= 5;
+            if (sameRoom || nearby) shield += Math.max(2, obj.cover);
+        }
+        return Math.max(0, Math.min(60, shield * 4));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:1986-2017
+Kind: method
+Name: rangedCoverPenalty
+SHA256: e6e156a686bf84c81ee45e87f1b977a52707af3db9578d10d160ae8b963758bb
+
+```java
+    int rangedCoverPenalty(int x0, int y0, int x1, int y1, boolean includeEntities, TargetingSolution ts) {
+        int penalty = 0;
+        ArrayList<Point> pts = linePoints(x0, y0, x1, y1);
+        int total = Math.max(1, pts.size() - 1);
+        ArrayList<String> blockers = new ArrayList<>();
+        for (int i=1; i<pts.size(); i++) {
+            Point p = pts.get(i);
+            boolean targetTile = (p.x == x1 && p.y == y1);
+            if (world == null || !world.inBounds(p.x,p.y)) continue;
+            int base = 0;
+            char ch = world.tiles[p.x][p.y];
+            BaseObject obj = baseObjectAt(p.x,p.y);
+            NpcEntity n = world.npcAt(p.x,p.y);
+            if (!targetTile && blocksLineOfSight(ch)) base = (ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE) ? 100 : 45;
+            else if (!targetTile && isDoorTile(ch)) base = 32;
+            if (!targetTile && obj != null) base = Math.max(base, 16 + PassiveDefenseEffectsAuthority.coverPenalty(obj));
+            else if (!targetTile && tileProvidesSoftCover(ch)) base = Math.max(base, 12);
+            if (includeEntities && !targetTile && n != null) base = Math.max(base, isHostileNpc(n) ? 22 : 28);
+            if (base > 0) {
+                double progress = i / (double) total;
+                int scaled = (int)Math.round(base * (0.35 + 0.65 * progress));
+                penalty += scaled;
+                if (blockers.size() < 4) blockers.add(blockerLabel(ch, obj, n) + "@" + p.x + "," + p.y + " -" + scaled);
+                if (base >= 100) {
+                    penalty = Math.max(penalty, 100);
+                    if (ts != null) ts.coverHardBlocked = true;
+                }
+            }
+        }
+        if (ts != null) ts.coverSummary = blockers.isEmpty() ? "clear firing lane" : String.join("; ", blockers);
+        return Math.max(0, Math.min(140, penalty));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2051-2066
+Kind: method
+Name: strayImpactPoint
+SHA256: bd801951293b676f6ce12f418fcaf6e2b3eee5db2f0c95de9bdb907cbf2b97d3
+
+```java
+    Point strayImpactPoint(TargetingSolution ts) {
+        if (ts == null || world == null) return new Point(playerX, playerY);
+        int dx = Integer.compare(ts.targetX - playerX, 0);
+        int dy = Integer.compare(ts.targetY - playerY, 0);
+        int sideX = dy;
+        int sideY = -dx;
+        int range = Math.max(1, ts.distance);
+        int scatter = 1 + rng.nextInt(Math.max(1, Math.min(3, 1 + range / 4)));
+        if (rng.nextBoolean()) scatter = -scatter;
+        int forward = rng.nextInt(3) - 1;
+        int ix = ts.targetX + sideX * scatter + dx * forward;
+        int iy = ts.targetY + sideY * scatter + dy * forward;
+        ix = Math.max(0, Math.min(world.w-1, ix));
+        iy = Math.max(0, Math.min(world.h-1, iy));
+        return new Point(ix, iy);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2080-2086
+Kind: method
+Name: isPublicCorpseLocation
+SHA256: e1f8994699562222b1039601257fa3ba30c39250cafb228dd82a84b7cde98182
+
+```java
+    boolean isPublicCorpseLocation(MapObjectState m) {
+        if (world == null || m == null) return false;
+        int rid = world.roomIdAt(m.x,m.y);
+        if (rid < 0) return true;
+        Faction f = rid < world.roomFactions.size() ? world.roomFactions.get(rid) : Faction.NONE;
+        return f == Faction.CIVIC_WARDENS || f == Faction.IMPERIAL_GUARD || f == Faction.NOBLE || f == Faction.MINISTORUM || f == Faction.CIVIC_LEDGER_OFFICE || f == Faction.HIVER || f == Faction.NONE;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2100-2105
+Kind: method
+Name: nearbyWitnessCount
+SHA256: 97ac0e7b4f47a56a03023e7030f9914c3952b059135dbf590daa2505524aee8d
+
+```java
+    int nearbyWitnessCount(int x, int y, int range) {
+        if (world == null) return 0;
+        int c = 0;
+        for (NpcEntity n : world.npcs) if (n != null && Math.abs(n.x-x)+Math.abs(n.y-y) <= range && !isHostileNpc(n)) c++;
+        return c;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2161-2180
+Kind: method
+Name: tickFactionWallRepairAndHiveQuake
+SHA256: 70e9eb832daae00ae5faa351b9276524546865df9abbc71d1c0f6a537b49e7d5
+
+```java
+    void tickFactionWallRepairAndHiveQuake() {
+        if (world == null || terrainIntegrity.isEmpty()) return;
+        if (turn % 37 != 0) return;
+        for (String key : new ArrayList<>(terrainIntegrity.keySet())) {
+            int hp = terrainIntegrity.getOrDefault(key, 1);
+            if (hp > 0) continue;
+            String[] a = key.split(",");
+            if (a.length != 2) continue;
+            int x, y;
+            try { x = Integer.parseInt(a[0]); y = Integer.parseInt(a[1]); } catch(Exception ex) { continue; }
+            if (!world.inBounds(x,y)) continue;
+            char ch = world.tiles[x][y];
+            if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == '%' || ch == '&' || ch == '^' || ch == '8' || ch == '0') {
+                if (rng.nextInt(100) < 35) { world.tiles[x][y] = '*'; terrainIntegrity.remove(key); logEvent("ARCOLOGY-QUAKE FILL: overhead debris slumps into an intra-wall breach at " + x + "," + y + ". The arcology repairs itself by dropping masonry on the problem."); }
+            } else if (ch == '*' || ch == '#' || isDoorTile(ch)) {
+                Faction f = factionControllingTile(x,y);
+                if (f != Faction.NONE && rng.nextInt(100) < 45) { world.tiles[x][y] = '#'; terrainIntegrity.put(key, defaultTerrainIntegrity('#')); logEvent("FACTION REPAIR: " + f.label + " workers draw supplies from nearby stock and patch damaged wall/door structure at " + x + "," + y + "."); }
+            }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2182-2187
+Kind: method
+Name: factionControllingTile
+SHA256: cd7c2e4f6c0e02d4e24c457ede6c9e81fa88108d03bece45e596b1f9a13597d3
+
+```java
+    Faction factionControllingTile(int x, int y) {
+        if (world == null) return Faction.NONE;
+        int rid = world.roomIdAt(x,y);
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE ? Faction.CIVIC_WARDENS : (world.zoneType == ZoneType.IMPERIAL_GUARD_BILLET ? Faction.IMPERIAL_GUARD : Faction.NONE);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2236-2290
+Kind: method
+Name: performCombatAttackAt
+SHA256: 59360b0ddeb195b367a5695676e3f583d16d0ed5ebfc761b648252f649272571
+
+```java
+    void performCombatAttackAt(TargetingSolution ts) {
+        if (ts == null || world == null || active == null) return;
+        noteCombatMusicActivity(ts.targetNpc != null && isGovernorCombatNpc(ts.targetNpc), "player targeted combat");
+        if (!consumeLoadedShotsForAttack(ts)) return;
+        sounds.playWeaponEffect(ts.weaponName, ts.ranged, options);
+        int time = fireModeTimeCost();
+        int roll = rng.nextInt(100) + 1;
+        String label = ts.targetNpc == null ? ("terrain " + describeTile(world.tiles[ts.targetX][ts.targetY])) : ts.targetNpc.name;
+        if (roll > ts.hitPercent) {
+            Point missPoint = ts.ranged ? strayImpactPoint(ts) : new Point(ts.targetX, ts.targetY);
+            startCombatAnimation(ts.weaponName, playerX, playerY, missPoint.x, missPoint.y, false);
+            int terrainDmg = Math.max(1, ItemCatalog.priceFor(ts.weaponName) / 10 + fireModeDamageModifier());
+            String impact = ts.ranged ? applyStrayImpactDamage(missPoint.x, missPoint.y, terrainDmg, "missed " + ts.weaponName) : "";
+            String miss = ts.coverPenalty > 0 ? " Shot defeated by obstruction/cover: " + ts.coverSummary + "." : "";
+            logEvent("ATTACK MISSED: " + active.name + " fires/strikes at " + label + " with " + ts.weaponName + " [" + ts.fireMode + "]. Chance " + ts.hitPercent + "%, roll " + roll + "." + miss + (impact.isBlank()?"":" " + impact));
+            gainXp(ts.ranged ? "Firearms" : "Melee", 1, "missed targeted attack");
+            for (int i=0;i<time;i++) advanceTurn("recovers from a targeted attack.");
+            return;
+        }
+        startCombatAnimation(ts.weaponName, playerX, playerY, ts.targetX, ts.targetY, true);
+        if (ts.targetNpc != null && ts.targetNpc.isUntargetableAnchor()) {
+            logEvent("ATTACK BLOCKED: " + ts.targetNpc.name + " is a protected continuity anchor and cannot be targeted.");
+            return;
+        }
+        if (ts.targetNpc == null) {
+            int terrainDmg = Math.max(1, ItemCatalog.priceFor(ts.weaponName) / 8 + fireModeDamageModifier() + 1);
+            String impact = applyStrayImpactDamage(ts.targetX, ts.targetY, terrainDmg, "direct " + ts.weaponName);
+            logEvent("ATTACK IMPACT: " + active.name + " hits " + label + " at " + ts.targetX + "," + ts.targetY + ". " + impact);
+            gainXp(ts.ranged ? "Firearms" : "Melee", 1, "terrain shot");
+            for (int i=0;i<time;i++) advanceTurn("fires at terrain/cover.");
+            return;
+        }
+        String weapon = ts.weaponName;
+        boolean armed = weapon != null;
+        int skill = Math.max(1, (ts.ranged ? stat("Firearms",5) : stat("Melee",5)) + playerAttackMotionSkillModifier());
+        int base = armed ? Math.max(2, ItemCatalog.priceFor(weapon) / 4) : 2;
+        int raw = base + Math.max(0, skill/2) + fireModeDamageModifier() + rng.nextInt(4);
+        int armor = factionArmor(ts.targetNpc);
+        int shieldCut = ts.shieldReduction <= 0 ? 0 : Math.max(1, (raw * ts.shieldReduction) / 100);
+        int dmg = Math.max(1, raw - armor - shieldCut);
+        ts.targetNpc.hp -= dmg;
+        String zone = ts.ranged ? randomBodyHitLocation() : randomTargetedCombatReward(ts.targetNpc);
+        logEvent("ATTACK HIT: " + ts.targetNpc.name + " struck in " + zone + " for " + dmg + " damage after armor " + armor + (shieldCut > 0 ? " and shield mitigation " + shieldCut : "") + ". HP now " + Math.max(0,ts.targetNpc.hp) + ". Chance " + ts.hitPercent + "%, roll " + roll + ", line " + ts.coverSummary + ".");
+        gainXp(ts.ranged ? "Firearms" : "Melee", ts.targetNpc.hp <= 0 ? 5 : 3, "targeted combat hit");
+        if (ts.targetNpc.hp <= 0) {
+            runKills++;
+            String corpseLine = createCorpseLootContainer(ts.targetNpc, "targeted combat");
+            PersonnelReplacementRequest req = PersonnelProvenanceApi.recordDeathAndScheduleReplacement(world, ts.targetNpc, turn, rng, "targeted combat");
+            recordProminentKillForNews(ts.targetNpc, "targeted combat");
+            world.npcs.remove(ts.targetNpc);
+            String repl = req == null ? "No replacement source was scheduled." : " Replacement due from " + req.source + " at turn " + req.dueTurn + ".";
+            logEvent("ENEMY DOWN: " + label + " is incapacitated. " + repl + " " + corpseLine);
+        }
+        for (int i=0;i<time;i++) advanceTurn(ts.ranged ? "uses ranged fire mode " + ts.fireMode.toLowerCase(Locale.ROOT) + "." : "makes a melee attack.");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2292-2342
+Kind: method
+Name: performCombatAttack
+SHA256: d1da96a2cf9b311f64860e8a16b75ce46fd5d1dae23662e567d7b0edd2c397cf
+
+```java
+    void performCombatAttack(boolean targeted) {
+        if (world == null || active == null) { logEvent("Combat failed: no active world or character is loaded."); return; }
+        NpcEntity target = nearestAttackTarget();
+        if (target == null) { logEvent("Combat blocked: no adjacent hostile target. Move beside a hostile or wait for it to close."); return; }
+        if (target.isUntargetableAnchor()) { logEvent("Combat blocked: " + target.name + " is protected and non-targetable."); return; }
+        noteCombatMusicActivity(isGovernorCombatNpc(target), "player combat attack");
+        String weapon = bestWeaponName();
+        boolean adjacentRanged = weapon != null && ItemCatalog.isFirearmLike(weapon);
+        if (adjacentRanged) {
+            TargetingSolution ts = targetingSolutionAt(target.x, target.y);
+            if (!consumeLoadedShotsForAttack(ts)) return;
+        }
+        sounds.playWeaponEffect(weapon, adjacentRanged, options);
+        startCombatAnimation(weapon, playerX, playerY, target.x, target.y, true);
+        boolean armed = weapon != null;
+        if (armed && !hasUsableWeaponLimb()) { logEvent("Combat failed: your arms/hands are too damaged to keep a weapon working. Use medical care or fight bare-handed later."); return; }
+        int skill = Math.max(stat("Melee", 5), armed && ItemCatalog.isFirearmLike(weapon) ? stat("Firearms",5) : stat("Melee",5));
+        int armPenalty = crippledArmCount() * 2;
+        int painPenalty = pain >= 6 ? 2 : 0;
+        int motionPenalty = playerAttackMotionSkillModifier();
+        skill = Math.max(1, skill - armPenalty - painPenalty + motionPenalty);
+        int defense = 8 + Math.max(0, target.idleBias) + factionArmor(target);
+        int roll = rng.nextInt(20) + 1 + skill;
+        int hitTarget = defense + (targeted ? 5 : 0);
+        int time = targeted ? 2 : 1;
+        if (roll < hitTarget) {
+            if (adjacentRanged) { Point missPoint = new Point(Math.max(0, Math.min(world.w-1, target.x + rng.nextInt(3)-1)), Math.max(0, Math.min(world.h-1, target.y + rng.nextInt(3)-1))); startCombatAnimation(weapon, playerX, playerY, missPoint.x, missPoint.y, false); applyStrayImpactDamage(missPoint.x, missPoint.y, Math.max(1, ItemCatalog.priceFor(weapon)/10), "adjacent miss " + weapon); }
+            logEvent("ATTACK MISSED: " + active.name + " attacks " + target.name + (armed ? " with " + weapon : " bare-handed") + ". Roll " + roll + " < " + hitTarget + ". Active motion " + activeMotionStateLabel() + " modifies aim by " + playerAttackMotionSkillModifier() + ".");
+            gainXp(armed && ItemCatalog.isFirearmLike(weapon) ? "Firearms" : "Melee", 1, "missed combat attack");
+            for (int i=0;i<time;i++) advanceTurn("attacks and recovers balance.");
+            return;
+        }
+        int base = armed ? Math.max(2, ItemCatalog.priceFor(weapon) / 4) : 2;
+        int raw = base + Math.max(0, skill/2) + rng.nextInt(4);
+        int armor = factionArmor(target);
+        int dmg = Math.max(1, raw - armor);
+        target.hp -= dmg;
+        String zone = targeted ? randomTargetedCombatReward(target) : randomBodyHitLocation();
+        logEvent("ATTACK HIT: " + target.name + " struck in " + zone + " for " + dmg + " damage after armor " + armor + ". HP now " + Math.max(0,target.hp) + ". Active motion " + activeMotionStateLabel() + " modifies aim by " + playerAttackMotionSkillModifier() + ".");
+        gainXp(armed && ItemCatalog.isFirearmLike(weapon) ? "Firearms" : "Melee", target.hp <= 0 ? 5 : 3, "combat hit");
+        if (target.hp <= 0) {
+            runKills++;
+            String corpseLine = createCorpseLootContainer(target, "player combat");
+            PersonnelReplacementRequest req = PersonnelProvenanceApi.recordDeathAndScheduleReplacement(world, target, turn, rng, "player combat");
+            recordProminentKillForNews(target, "adjacent combat");
+            world.npcs.remove(target);
+            String repl = req == null ? "No replacement source was scheduled." : " Replacement due from " + req.source + " at turn " + req.dueTurn + ".";
+            logEvent("ENEMY DOWN: " + target.name + " is incapacitated. " + target.originSummary() + repl + " " + corpseLine);
+        }
+        for (int i=0;i<time;i++) advanceTurn(targeted ? "makes a careful targeted attack." : "makes a combat attack.");
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2357-2372
+Kind: method
+Name: strayImpactPointFrom
+SHA256: 7648350fc3a1700e2c5301fdcc001af52a71933640fdc2a5f52443c95f437c5d
+
+```java
+    Point strayImpactPointFrom(int sx, int sy, int tx, int ty, int distance) {
+        if (world == null) return new Point(tx, ty);
+        int dx = Integer.compare(tx - sx, 0);
+        int dy = Integer.compare(ty - sy, 0);
+        int sideX = dy;
+        int sideY = -dx;
+        int range = Math.max(1, distance);
+        int scatter = 1 + rng.nextInt(Math.max(1, Math.min(3, 1 + range / 4)));
+        if (rng.nextBoolean()) scatter = -scatter;
+        int forward = rng.nextInt(3) - 1;
+        int ix = tx + sideX * scatter + dx * forward;
+        int iy = ty + sideY * scatter + dy * forward;
+        ix = Math.max(0, Math.min(world.w-1, ix));
+        iy = Math.max(0, Math.min(world.h-1, iy));
+        return new Point(ix, iy);
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2570-2584
+Kind: method
+Name: factionOnlyRoomFactionAt
+SHA256: 423f52ff28854cc8b6b76dc4e835f8b7277852b93d67627da5d3628c6ba510a1
+
+```java
+    Faction factionOnlyRoomFactionAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return Faction.NONE;
+        int rid = world.roomIdAt(x, y);
+        if (rid < 0) return Faction.NONE;
+        RoomProfile rp = world.roomProfile(rid);
+        if (rp == null) return Faction.NONE;
+        String text = ((rp.name == null ? "" : rp.name) + " " + (rp.descriptor == null ? "" : rp.descriptor) + " " + (rp.featureText == null ? "" : rp.featureText)).toLowerCase(Locale.ROOT);
+        if (!text.contains("faction-only") && !text.contains("gang colors") && !text.contains("marked patron")) return Faction.NONE;
+        if (text.contains("bandit") || text.contains("gang")) return Faction.BANDIT;
+        if (text.contains("civic Wardens") || text.contains("precinct")) return Faction.CIVIC_WARDENS;
+        if (text.contains("noble")) return Faction.NOBLE;
+        if (text.contains("guard") || text.contains("military") || text.contains("pdf")) return Faction.IMPERIAL_GUARD;
+        if (text.contains("hiver")) return Faction.HIVER;
+        return Faction.NONE;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2646-2653
+Kind: method
+Name: markLocalDirtyRegion
+SHA256: ccf6d47d7ceba2358b04e841e35abf8c0bfbf01b1639734e05d07656420bd313
+
+```java
+    void markLocalDirtyRegion(String reason, int cx, int cy, int radius, boolean light, boolean noise, boolean vision, boolean hazard) {
+        if (world == null) return;
+        localDirtyTracker.mark(world, cx, cy, radius, light, noise, vision, hazard, reason);
+        if (light) lightLevelCacheTurn = -999999;
+        if (noise) world.noiseFieldTurn = -1;
+        if (vision) { sensoryCacheX = Integer.MIN_VALUE; sensoryCacheWorld = null; }
+        lastDirtyRegionReport = localDirtyTracker.summary();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2659-2663
+Kind: method
+Name: ensureLightLevelCache
+SHA256: 699f8a0d7b7282817a3debd76de25a9aff34b029ac571ca39797d7963a9d0d79
+
+```java
+    void ensureLightLevelCache() {
+        if (world == null) return;
+        boolean needs = lightLevelTiles == null || lightLevelCacheWorld != world || lightLevelTiles.length != world.w || lightLevelTiles[0].length != world.h || lightLevelCacheTurn != turn || localDirtyTracker.lightDirty(world);
+        if (needs) rebuildLightLevelCache();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2665-2676
+Kind: method
+Name: ambientLightLevelForWorld
+SHA256: d6dd50e681a4d4bc067ff2b927c2df73d7d6604320653d667267a4f292aaf4bc
+
+```java
+    int ambientLightLevelForWorld() {
+        if (world == null || world.zoneType == null) return 12;
+        String label = world.zoneType.label == null ? world.zoneType.name() : world.zoneType.label;
+        String z = label.toLowerCase(Locale.ROOT);
+        if (world.sewerLayer || z.contains("sewer") || z.contains("sump")) return 4;
+        if (z.contains("noble") || z.contains("governor")) return 28;
+        if (z.contains("hiver") || z.contains("civilian") || z.contains("civil") || z.contains("hab") || z.contains("market")) return 24;
+        if (z.contains("civic Wardens") || z.contains("civic Ledger Office") || z.contains("news") || z.contains("civic")) return 22;
+        if (z.contains("mechanist Collegia") || z.contains("forge") || z.contains("industrial") || z.contains("guard")) return 17;
+        if (z.contains("ganger") || z.contains("mutant") || z.contains("trash") || z.contains("abandoned") || z.contains("cult")) return 7;
+        return 14;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2762-2778
+Kind: method
+Name: addLightLevelSource
+SHA256: 9d52cae3be36ba40a45389bb626f645a19f5d5591b3581341df14e0a8f543c6c
+
+```java
+    void addLightLevelSource(int sx, int sy, int radius, int intensity, Color color) {
+        if (world == null || lightLevelTiles == null || !world.inBounds(sx, sy)) return;
+        int r = Math.max(1, Math.min(12, radius));
+        int power = Math.max(1, Math.min(100, intensity));
+        for (int x=Math.max(0,sx-r); x<=Math.min(world.w-1,sx+r); x++) for (int y=Math.max(0,sy-r); y<=Math.min(world.h-1,sy+r); y++) {
+            double dist = Math.hypot(x - sx, y - sy);
+            if (dist > r + 0.001) continue;
+            // End-point walls may be lit, but any tile behind a blocking wall remains dark.
+            if (!hasLineOfSight(sx, sy, x, y)) continue;
+            double norm = Math.max(0.0, Math.min(1.0, dist / Math.max(1.0, r)));
+            double smooth = norm * norm * (3.0 - 2.0 * norm);
+            double falloff = Math.max(0.0, (1.0 - smooth) * 0.82 + 0.18 / (1.0 + 2.0 * norm * norm));
+            int add = (int)Math.round(power * falloff);
+            if (add <= 0) continue;
+            lightLevelTiles[x][y] = Math.max(lightLevelTiles[x][y], Math.min(100, add));
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2780-2784
+Kind: method
+Name: lightLevelAt
+SHA256: 14b7b20ea03e0d05c4814434050bebfb4ca4b31fdbe2bbd3bcb7fe5287e2ce0e
+
+```java
+    int lightLevelAt(int x, int y) {
+        ensureLightLevelCache();
+        if (world == null || lightLevelTiles == null || x < 0 || y < 0 || x >= lightLevelTiles.length || y >= lightLevelTiles[0].length) return 0;
+        return Math.max(0, Math.min(100, lightLevelTiles[x][y]));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2906-2911
+Kind: method
+Name: portableLightCacheDirty
+SHA256: 1e2b91a2d04b0f6f535ca3c0721fb18083a1e218f5e872ae880733bb19afb4f1
+
+```java
+    boolean portableLightCacheDirty() {
+        if (activePortableLightExpiresTurn > 0 && activePortableLightExpiresTurn <= turn) return true;
+        for (PortableLightInstance l : portableLights) if (l != null && l.expiresTurn <= turn) return true;
+        if (world != null && world.hasFlickeringLights() && lightingCacheTurn != turn) return true;
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:2938-2938
+Kind: method
+Name: sameWorldLocation
+SHA256: e8024ae40c61a5ca0a87c7b6bb7a4c13b432ef69f125001d922884314b0f1abd
+
+```java
+    boolean sameWorldLocation(String key) { return world != null && key != null && key.equals(portableLightWorldKey()); }
+```
+
+---
+Source: gamepanel-shard4.txt:2939-2939
+Kind: method
+Name: portableLightWorldKey
+SHA256: 16aaa49c07fc0120942611378a290e63bde54728f08960f7109a1f6d5ba2c5f4
+
+```java
+    String portableLightWorldKey() { return world == null ? "none" : (world.locationKey() + ":" + world.layerText()); }
+```
+
+---
+Source: gamepanel-shard4.txt:2962-3003
+Kind: method
+Name: updateSensoryModel
+SHA256: 862ab845177fe7c912e0b4cb5af8700994c24c7cf86a2109271047eadd133ac2
+
+```java
+    void updateSensoryModel(String reason) {
+        if (world == null || active == null || visibleTiles == null || rememberedTiles == null) return;
+        int vr = visionRange();
+        ensureLightLevelCache();
+        rebuildNoiseHearingFieldCache(reason);
+        int fx = facingDx(), fy = facingDy();
+        boolean fullRecalcNeeded = sensoryCacheWorld != world || sensoryCacheX != playerX || sensoryCacheY != playerY || sensoryCacheVision != vr || sensoryCacheFacingDx != fx || sensoryCacheFacingDy != fy || sensoryCacheMotion != activeMotionStateIndex || portableLightCacheDirty() || !"paint".equals(reason);
+        if (!fullRecalcNeeded) return;
+        int visible = 0;
+        int maxSpan = Math.max(vr + 2, (int)Math.ceil(Math.max(visionForwardRadius(), Math.max(visionSideRadius(), visionRearRadius()))) + 2);
+        Rectangle clearRect = localDirtyTracker.visibilityClearRect(world, playerX, playerY, maxSpan, lastVisibilityDirtyRect);
+        clearVisibleTiles(clearRect);
+        lastVisibilityDirtyRect = clearRect;
+        for (int dx=-maxSpan; dx<=maxSpan; dx++) for (int dy=-maxSpan; dy<=maxSpan; dy++) {
+            int x = playerX + dx, y = playerY + dy;
+            if (x < 0 || y < 0 || x >= world.w || y >= world.h) continue;
+            if (!inPlayerVisionShape(x, y)) continue;
+            int dist = Math.abs(dx) + Math.abs(dy);
+            if (!lightAllowsPlayerVision(x, y, dist)) continue;
+            if (hasLineOfSight(playerX, playerY, x, y)) {
+                visibleTiles[x][y] = true;
+                rememberedTiles[x][y] = true;
+                visible++;
+            }
+        }
+        // 0.9.10jh: light is a visibility gate, not remote clairvoyance.
+        // Zone fixtures and thrown lights no longer reveal distant rooms by themselves;
+        // the player still needs immediate vision-shape range and line of sight.
+        lightingCacheTurn = turn;
+        lastVisibleCount = visible;
+        sensoryCacheWorld = world;
+        sensoryCacheX = playerX;
+        sensoryCacheY = playerY;
+        sensoryCacheVision = vr;
+        sensoryCacheFacingDx = fx;
+        sensoryCacheFacingDy = fy;
+        sensoryCacheMotion = activeMotionStateIndex;
+        decaySoundPings();
+        if (!"paint".equals(reason)) scanForDistantSounds(reason);
+        localDirtyTracker.clearVision(world);
+        lastDirtyRegionReport = localDirtyTracker.summary();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3166-3176
+Kind: method
+Name: doorwayExposureBonus
+SHA256: 6de0f008511681a6f273f1a4ddb1ab54c709a4dc993914404ea096fe356339a8
+
+```java
+    int doorwayExposureBonus(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return 0;
+        if (isDoorTile(world.tiles[x][y])) return 24;
+        int bonus = 0;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1}};
+        for (int[] d: dirs) {
+            int nx=x+d[0], ny=y+d[1];
+            if (world.inBounds(nx,ny) && isDoorTile(world.tiles[nx][ny])) bonus = Math.max(bonus, 10);
+        }
+        return bonus;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3216-3221
+Kind: method
+Name: noisePenaltyAt
+SHA256: 35d118f51d4ee8104be66890a0d34485282d874053056f6aa35efd9d5cd3cea3
+
+```java
+    int noisePenaltyAt(int tx, int ty) {
+        if (world == null) return 0;
+        if (world.noiseField == null || world.noiseFieldTurn != turn || localDirtyTracker.noiseDirty(world)) rebuildNoiseHearingFieldCache("noise-query");
+        if (world.noiseField != null && world.inBounds(tx,ty)) return Math.max(0, Math.min(70, world.noiseField[tx][ty]));
+        return 0;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3235-3249
+Kind: method
+Name: hasLineOfSight
+SHA256: 4642df6048a02894ca63308d649746da2115ae0898e3c9850d1f4038d55f717b
+
+```java
+    boolean hasLineOfSight(int x0, int y0, int x1, int y1) {
+        int dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0, y = y0;
+        while (true) {
+            if (!(x == x0 && y == y0) && blocksLineOfSight(world.tiles[x][y])) return x == x1 && y == y1;
+            if (x == x1 && y == y1) return true;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
+            if (x < 0 || y < 0 || x >= world.w || y >= world.h) return false;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3299-3311
+Kind: method
+Name: nearbyDisguiseWitnessFactions
+SHA256: cf120c54803b3af6239b8b64be04bc0bcb40a69c3ecd835fa87864adece3a91d
+
+```java
+    LinkedHashSet<Faction> nearbyDisguiseWitnessFactions(int radius) {
+        LinkedHashSet<Faction> witnesses = new LinkedHashSet<>();
+        if (world == null || world.npcs == null) return witnesses;
+        int r = Math.max(1, radius);
+        for (NpcEntity npc : world.npcs) {
+            if (npc == null || npc.hp <= 0 || npc.faction == null || npc.faction == Faction.NONE) continue;
+            int dist = Math.max(Math.abs(npc.x - playerX), Math.abs(npc.y - playerY));
+            if (dist > r) continue;
+            if (dist > 1 && !hasLineOfSight(npc.x, npc.y, playerX, playerY)) continue;
+            witnesses.add(npc.faction);
+        }
+        return witnesses;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3373-3391
+Kind: method
+Name: arbitesPatrolEligibleZone
+SHA256: b004b1c2ecd387bfe5a4e77982697bbfb8d058cfb34921ebf76ba7d124e758f6
+
+```java
+    boolean arbitesPatrolEligibleZone() {
+        if (world == null || world.zoneType == null) return false;
+        switch (world.zoneType) {
+            case NEUTRAL_CIVILIAN_FLOOR:
+            case HAB_STACK:
+            case SUMP_MARKET:
+            case TRAIN_SERVICE_YARD:
+            case ADMINISTRATUM_ARCHIVE:
+            case IMPERIAL_GUARD_BILLET:
+            case SECTOR_GOVERNORS_MANSION:
+            case NOBLE_SERVICE_SPINE:
+            case IMPERIAL_NEWS_NETWORK:
+            case NEUTRAL_RAIL_DEPOT:
+            case ARBITES_PRECINCT_EDGE:
+                return true;
+            default:
+                return false;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3393-3396
+Kind: method
+Name: arbitesNobleOrCivilZone
+SHA256: afa9629f019af8d8ab0a08364f49697c3ff6509f92d2694bbbe29aa9ffbc34cc
+
+```java
+    boolean arbitesNobleOrCivilZone() {
+        if (world == null || world.zoneType == null) return false;
+        return arbitesPatrolEligibleZone();
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3539-3552
+Kind: method
+Name: nearestArbitesReleasePoint
+SHA256: 1043fc8e76147fec0614e0b06826eacd2bf0349d81b1e79ceb6311619764ae1b
+
+```java
+    Point nearestArbitesReleasePoint() {
+        if (world == null) return new Point(playerX, playerY);
+        Point best = null; int bestD = Integer.MAX_VALUE;
+        for (int x=1; x<world.w-1; x++) for (int y=1; y<world.h-1; y++) {
+            char ch = world.tiles[x][y];
+            boolean precinct = ch == 'p' || ch == 'A' || (world.zoneType == ZoneType.ARBITES_PRECINCT_EDGE && world.walkable(x,y));
+            if (!precinct || !world.walkable(x,y) || world.npcAt(x,y) != null) continue;
+            int d = Math.abs(x-playerX) + Math.abs(y-playerY);
+            if (d < bestD) { bestD = d; best = new Point(x,y); }
+        }
+        if (best != null) return best;
+        Point sp = world.startPoint();
+        return new Point(Math.max(1, Math.min(world.w-2, sp.x)), Math.max(1, Math.min(world.h-2, sp.y)));
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3555-3559
+Kind: method
+Name: currentRoomUnclaimed
+SHA256: 309cf59eb5c3ed281292c40db3805b68c8b1dcca06c9049d7b2e477ede6a65cb
+
+```java
+    boolean currentRoomUnclaimed() {
+        if (world == null) return false;
+        int id = world.roomIdAt(playerX, playerY);
+        return id >= 0 && id != claimedRoomId;
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:3618-3620
+Kind: method
+Name: roomCacheContainerId
+SHA256: 2c538e4c933b07675c4dfb56e521d6a1f7e08cba7f37ddbd1145d4cab469ecbd
+
+```java
+    String roomCacheContainerId(int roomId) {
+        return RoomContainerApi.containerId(world == null ? 0 : world.locationKey(), roomId);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:124-128
+Kind: method
+Name: tradeAskRumors
+SHA256: df5ea38bff595e9feeba35dba611f355740b6cf15ac14744340d9f298fc10811
+
+```java
+    void tradeAskRumors() {
+        if (world == null) return;
+        lastTradeReport = "Rumor: this zone is " + world.zoneType.label + ". Room tables favor " + world.zoneType.descriptor + ". Sector map remains fogged until visited.";
+        logEvent(lastTradeReport); advanceTurn("asks depot rumors.");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:130-130
+Kind: method
+Name: selectedTile
+SHA256: f82799bd3d5107b302cfdc541a929f7f218999c798b2f208dc7c6343b3b2ee12
+
+```java
+    char selectedTile() { return SelectedContextSurfaceApi.selectedTile(world, lookCursorActive, lookX, lookY, playerX, playerY); }
+```
+
+---
+Source: gamepanel-shard5.txt:613-619
+Kind: method
+Name: tradeAskTraderRumors
+SHA256: c01f5fd80576fd2d83689556f7fd4eb773a5a6ffac6f55a748a6d7e59aafcce9
+
+```java
+    void tradeAskTraderRumors() {
+        if (activeTrader == null) { tradeAskRumors(); return; }
+        String line = activeTrader.name + ": " + activeTrader.rumor(world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType, rng);
+        lastTradeReport = line;
+        logConversation("TRADE_RUMOR", line);
+        advanceTurn("asks trader rumors.");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:673-679
+Kind: method
+Name: recordProminentKillForNews
+SHA256: 762a9b489c373937e8d2e903a6cb689ba91608f5707644cefec1d770b636cb28
+
+```java
+    void recordProminentKillForNews(NpcEntity target, String context) {
+        if (target == null) return;
+        boolean prominent = target.factionRank <= 3 || (target.faction != null && (target.faction == Faction.CIVIC_WARDENS || target.faction == Faction.IMPERIAL_GUARD || target.faction == Faction.SORORITAS || target.faction == Faction.NOBLE || (target.faction.name().startsWith("NOBLE"))));
+        if (!prominent) return;
+        String rank = (target.factionRankTitle == null || target.factionRankTitle.isBlank()) ? ("rank " + target.factionRank) : target.factionRankTitle;
+        recordPlayerNewsEvent("prominent-kill", rank + " " + target.name, target.faction, "killed or incapacitated during " + context + " near " + (world == null ? "unknown" : world.zoneCoordText()), Math.max(4, 10 - Math.max(1, target.factionRank)));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1082-1095
+Kind: method
+Name: transitionPreview
+SHA256: 22b7dfd0b899cf3f41b489a91dd1cfee41888ff2a04da968064f7f2a39e7abb2
+
+```java
+    String transitionPreview(char ch, int tx, int ty) {
+        if (atlas == null || world == null) return "No atlas loaded.";
+        if (ch == 'D') {
+            String dir = edgeDirection(tx, ty);
+            int nzx = atlas.zoneX, nzy = atlas.zoneY, nsx = atlas.sectorX, nsy = atlas.sectorY;
+            if ("N".equals(dir)) nzy--; else if ("S".equals(dir)) nzy++; else if ("W".equals(dir)) nzx--; else if ("E".equals(dir)) nzx++;
+            if (nzx < 1 || nzx > 3 || nzy < 1 || nzy > 3) return "The double doors open toward interwall voids and crawlways. No sane human goes there.";
+            return "Travel through double doors " + dir + " to sector " + nsx + "," + nsy + " zone " + nzx + "," + nzy + " floor " + atlas.floor + (atlas.sewer ? "B" : "") + ".";
+        }
+        if (ch == 'S') return "Open sewer hatch and descend to Floor " + atlas.floor + "B beneath this zone.";
+        if (ch == 'v') return "Climb the sewer ladder back to Floor " + atlas.floor + " above this sewer layer.";
+        if (ch == 'E') return "Operate elevator to Floor " + Math.min(10, atlas.floor + 1) + " in this zone, skipping the sewer interlayer.";
+        return "Unknown transition.";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1097-1113
+Kind: method
+Name: edgeDirection
+SHA256: 11d427713538c085897ff5ac4cd2a8a125dbe36c6055d96fa0f6fcb4d53ecab4
+
+```java
+    String edgeDirection(int tx, int ty) {
+        // 0.9.10ji: transition double doors now sit on the inner maintenance
+        // bulkhead rather than the literal map-edge tile. Resolve destination
+        // by the closest zone boundary so door placement can follow the new
+        // road -> maintenance-wall design without breaking transition logic.
+        if (world == null) return "?";
+        int n = Math.max(0, ty);
+        int s = Math.max(0, world.h - 1 - ty);
+        int wdist = Math.max(0, tx);
+        int e = Math.max(0, world.w - 1 - tx);
+        int best = Math.min(Math.min(n, s), Math.min(wdist, e));
+        if(best == n) return "N";
+        if(best == s) return "S";
+        if(best == wdist) return "W";
+        if(best == e) return "E";
+        return "?";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1131-1139
+Kind: method
+Name: oppositeEdgeSpawn
+SHA256: ff58edddb6b712f170e92b14fd62331454ae37d5fd4dcd3af4e8e024de203734
+
+```java
+    Point oppositeEdgeSpawn(String dir, int tx, int ty) {
+        if (world == null) return null;
+        pendingTransitionReturnEdge = oppositeEdge(dir);
+        // Carry the source door's axis coordinate across the boundary so the
+        // destination can place the player beside the matching return doors,
+        // not in an arbitrary edge-nearest room. Sewer travel intentionally
+        // does not use this path; sewer exits remain the chaotic exception.
+        return new Point(tx, ty);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1264-1269
+Kind: method
+Name: adjacentOpenNearPlayer
+SHA256: 5d0f595d57d654a00ac7c68f4453f5d3e09e04eb5478b631526290fb628c8842
+
+```java
+    Point adjacentOpenNearPlayer() {
+        if (world == null) return null;
+        int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
+        for(int[] d:dirs){ int x=playerX+d[0], y=playerY+d[1]; if(world.walkable(x,y) && world.npcAt(x,y)==null) return new Point(x,y); }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1300-1302
+Kind: method
+Name: isInClaimedRoom
+SHA256: ef9f6d71fd1f45f38f7447785bd9b9f9bce91c6f56b1123b147722bd15e7dc7e
+
+```java
+    boolean isInClaimedRoom(int x, int y) {
+        return baseClaimed && world != null && claimedRoomId >= 0 && world.roomIdAt(x, y) == claimedRoomId;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1359-1367
+Kind: method
+Name: moveBuildCursor
+SHA256: c32eb855e8d015fd31a9c0b1d6832989597bbc779a37b378e582ba22501ff831
+
+```java
+    void moveBuildCursor(int dx, int dy) {
+        if (!buildPlacementActive || world == null) return;
+        int nx = buildX + dx, ny = buildY + dy;
+        if (nx >= 0 && ny >= 0 && nx < world.w && ny < world.h && isInClaimedRoom(nx, ny)) {
+            buildX = nx; buildY = ny;
+        }
+        clampBuildCursorToClaimedRoom();
+        updatePendingBuildSummary();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1369-1376
+Kind: method
+Name: clampBuildCursorToClaimedRoom
+SHA256: fe7764f865d77115b163731cd4706ffc79ea9fa18484309408b396f8e379fdee
+
+```java
+    void clampBuildCursorToClaimedRoom() {
+        if (world == null || !baseClaimed) return;
+        if (buildX < 0 || buildY < 0 || buildX >= world.w || buildY >= world.h || !isInClaimedRoom(buildX, buildY)) {
+            Point spot = findOpenBaseSpot();
+            if (spot != null) { buildX = spot.x; buildY = spot.y; }
+            else { buildX = playerX; buildY = playerY; }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2521-2533
+Kind: method
+Name: findOpenBaseSpot
+SHA256: 6f774e19ea6fab4f4deee88f45f0df051b04714e3e4fe7e68e8b89e69e578e23
+
+```java
+    Point findOpenBaseSpot() {
+        if (world == null || claimedRoomId < 0) return null;
+        Rectangle rr = world.roomRect(claimedRoomId);
+        if (rr == null) return null;
+        for (int y=rr.y; y<rr.y+rr.height; y++) for (int x=rr.x; x<rr.x+rr.width; x++) {
+            if (!world.walkable(x,y)) continue;
+            if (x == playerX && y == playerY) continue;
+            if (baseObjectAt(x,y) != null) continue;
+            char t = world.tiles[x][y];
+            if (t == '.' || t == '+') return new Point(x,y);
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2599-2612
+Kind: method
+Name: acceptFactionContract
+SHA256: cc3cdae70b0e24ca5ff9d072d4ee4e6d7860b76d6ff950c264b8af8eabd4f831
+
+```java
+    void acceptFactionContract(String type) {
+        Faction f = activeRepFaction();
+        if (f == Faction.NONE) { logEvent("Contract failed: no faction representative is currently recognized."); return; }
+        FactionContract existing = activeContractFor(f, type);
+        if (existing != null) { logEvent("Contract blocked: " + f.label + " already has an active " + type.toLowerCase(Locale.ROOT) + " contract: " + existing.shortLine()); return; }
+        FactionContract c = FactionContract.create(type, f, atlas, world, rng, factionStanding.getOrDefault(f, 0));
+        factionContracts.add(c);
+        lastContractFaction = f;
+        conversationBranch = f.label + " issues a " + c.displayType() + ": " + c.displayDescription();
+        logEvent("CONTRACT ACCEPTED: " + c.longLine());
+        spawnContractTargetsForCurrentWorld();
+        gainXp("Contracts", 1, "accepted faction contract");
+        advanceTurn("accepts a faction contract.");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2634-2642
+Kind: method
+Name: spawnContractTargetsForCurrentWorld
+SHA256: 622b507c4a587d34cd06f171bff6a5e9b616246fb596d404a6446ed47cda32bf
+
+```java
+    void spawnContractTargetsForCurrentWorld() {
+        if (world == null || atlas == null) return;
+        String key = currentZoneKey();
+        for (FactionContract c : factionContracts) {
+            if (c.completed || !key.equals(c.targetZoneKey)) continue;
+            if (c.type.equals("BOUNTY")) spawnBountyTarget(c);
+            else if (c.type.equals("FETCH") || c.type.equals("LOCKBOX")) spawnFetchObject(c);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2644-2647
+Kind: method
+Name: currentZoneKey
+SHA256: c429b03c1fb7e61113feb2bb6507f9d20ba3d2e42df780e8e327fce9d08a2606
+
+```java
+    String currentZoneKey() {
+        if (atlas == null) return "0,0,0,0,0,false";
+        return atlas.sectorX + "," + atlas.sectorY + "," + atlas.zoneX + "," + atlas.zoneY + "," + atlas.floor + "," + atlas.sewer;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2738-2745
+Kind: method
+Name: factionJournalObjectAt
+SHA256: 608f3c555c84614b1affbf6d453aa9e936d8f4114d429bb08624306c03e647f0
+
+```java
+    MapObjectState factionJournalObjectAt(int tx, int ty) {
+        if (world == null) return null;
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || m.x != tx || m.y != ty) continue;
+            if ("faction-journal".equals(m.type)) return m;
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2802-2807
+Kind: method
+Name: canSellLeaderJournalsToINNAt
+SHA256: 3eca54b79584db0b856226bfddd4ee13bdff279de5ef58c4987a564845f87bf5
+
+```java
+    boolean canSellLeaderJournalsToINNAt(int tx, int ty) {
+        if (world == null) return false;
+        if (world.zoneType == ZoneType.IMPERIAL_NEWS_NETWORK) return true;
+        MapObjectState m = mapObjectAt(tx, ty, AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER);
+        return m != null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2828-2828
+Kind: method
+Name: playerAtClaimedBase
+SHA256: 27d262f319348b3b7662683648bbfb258bdffa2d65bc326cc9d5feb88785bc7f
+
+```java
+    boolean playerAtClaimedBase() { return baseClaimed && world != null && claimedRoomId >= 0 && world.roomIdAt(playerX, playerY) == claimedRoomId; }
+```
+
+---
+Source: gamepanel-shard5.txt:2938-2938
+Kind: method
+Name: bankManagerAt
+SHA256: 2e2b4efd9298fcc56747ecc52965653d4c037e3b29d554d6749e2a6abe10fa29
+
+```java
+    NpcEntity bankManagerAt(int tx, int ty) { NpcEntity n = world == null ? null : world.npcAt(tx, ty); return isBankManager(n) ? n : null; }
+```
+
+---
+Source: gamepanel-shard5.txt:3023-3032
+Kind: method
+Name: nearestBankProfileForManager
+SHA256: 2955447d3f2a1d39bde6f1cf93e8869bb449fe2e3403c64f74ddb063b304231f
+
+```java
+    BankProfile nearestBankProfileForManager(NpcEntity n) {
+        if (world != null && n != null) {
+            MapObjectState best = null; int bd = 9999;
+            for (MapObjectState m : world.mapObjects) if (m != null && ("bank-terminal".equals(m.type) || "bank-vault".equals(m.type))) {
+                int d = Math.abs(m.x-n.x)+Math.abs(m.y-n.y); if (d < bd) { bd=d; best=m; }
+            }
+            if (best != null) return bankProfileFromStock(best.stockState);
+        }
+        return BankProfile.ALL[0];
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3033-3042
+Kind: method
+Name: nearbyBankAlarmPanelDisabled
+SHA256: bbbd6df286b1625eab974c5b17d90cb09aa26a467c8281fbca4a7a75b0c53963
+
+```java
+    boolean nearbyBankAlarmPanelDisabled(int tx, int ty, BankProfile b) {
+        if (world == null) return false;
+        for (MapObjectState m : world.mapObjects) {
+            if (m == null || !"bank-alarm-panel".equals(m.type)) continue;
+            BankProfile mb = bankProfileFromStock(m.stockState);
+            if (b != null && mb != null && !b.id.equals(mb.id)) continue;
+            if (Math.abs(m.x - tx) + Math.abs(m.y - ty) <= 10 && bankAlarmPanelDisabled(m)) return true;
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3072-3079
+Kind: method
+Name: bankProfileFromNearbyBankObject
+SHA256: 8f0b16a47fd1312da3c28142f26cb40b81a4582068a6efa882bc38e3b2dedc4e
+
+```java
+    BankProfile bankProfileFromNearbyBankObject(int tx, int ty) {
+        MapObjectState best = null; int bd = 9999;
+        if (world != null) for (MapObjectState m : world.mapObjects) if (m != null && ("bank-terminal".equals(m.type) || "bank-vault".equals(m.type) || "bank-alarm-panel".equals(m.type))) {
+            int d = Math.abs(m.x - tx) + Math.abs(m.y - ty);
+            if (d < bd) { bd = d; best = m; }
+        }
+        return best == null ? BankProfile.ALL[0] : bankProfileFromStock(best.stockState);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3150-3165
+Kind: method
+Name: alertBankGuardsNear
+SHA256: 8ddf6dddafc8b8153a3a7cae961ec39f6f37e8091b9c0d98597438db86675cb2
+
+```java
+    void alertBankGuardsNear(int tx, int ty, BankProfile b, int severity) {
+        if (world == null) return;
+        int alerted = 0;
+        for (NpcEntity n : world.npcs) {
+            if (n == null || n.role == null) continue;
+            String role = n.role.toLowerCase(Locale.ROOT);
+            if (!(role.contains("bank security") || role.contains("vault guard") || role.contains("branch guard") || role.contains("bank manager"))) continue;
+            int d = Math.abs(n.x - tx) + Math.abs(n.y - ty);
+            if (d > 18 + severity * 2) continue;
+            n.state = role.contains("manager") ? "Alarmed" : "Alarm Response";
+            n.activeMotionStateIndex = MOTION_RUN;
+            if (role.contains("guard")) { n.faction = Faction.NOBLE; n.equippedRangedWeapon = n.equippedRangedWeapon == null || n.equippedRangedWeapon.isBlank() ? "Autopistol" : n.equippedRangedWeapon; n.loadedShots = Math.max(n.loadedShots, 6); n.ammoReloadsRemaining = Math.max(n.ammoReloadsRemaining, 2); }
+            alerted++;
+        }
+        if (alerted > 0) lastBankAlarmReport = "Alarm at " + (b==null?"unknown bank":b.label) + " alerted " + alerted + " local manager/guard actor(s).";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3430-3443
+Kind: method
+Name: nearestLootGroundTile
+SHA256: 9253816397af57ff71d11c3f53b366e453ec40ff0f8d3382863ae46760b84bae
+
+```java
+    Point nearestLootGroundTile(int sx, int sy) {
+        if (world == null) return null;
+        if (world.inBounds(sx, sy) && world.walkable(sx, sy) && world.npcAt(sx, sy) == null && !(sx == playerX && sy == playerY)) return new Point(sx, sy);
+        for (int radius = 1; radius <= 3; radius++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int dyAbs = radius - Math.abs(dx);
+                for (int sign = -1; sign <= 1; sign += 2) {
+                    int x = sx + dx, y = sy + dyAbs * sign;
+                    if (world.inBounds(x, y) && world.walkable(x, y) && world.npcAt(x, y) == null && !(x == playerX && y == playerY)) return new Point(x, y);
+                }
+            }
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3505-3518
+Kind: method
+Name: nearestFactionForRepresentative
+SHA256: e8f7eaae893d074f4273ba4fcb756b2f6e88fc0e808d5e5072b98f0b4f416213
+
+```java
+    Faction nearestFactionForRepresentative() {
+        Faction best = Faction.BANDIT;
+        int bestD = 999;
+        for (int dx=-6; dx<=6; dx++) for (int dy=-6; dy<=6; dy++) {
+            int x = playerX+dx, y = playerY+dy;
+            if (world == null || x<0 || y<0 || x>=world.w || y>=world.h) continue;
+            Faction f = factionForTile(world.tiles[x][y]);
+            if (f != Faction.NONE && f != Faction.MUTANT && f != Faction.ROGUE_MACHINE) {
+                int d = Math.abs(dx)+Math.abs(dy);
+                if (d < bestD) { bestD=d; best=f; }
+            }
+        }
+        return best;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3542-3548
+Kind: method
+Name: carryCapacity
+SHA256: d3519cf72401339c06acf16e538c03130d94188808b88ff0a57533075b41968e
+
+```java
+    int carryCapacity() {
+        if (worldSetup != null && worldSetup.hoarderMode) return 999999;
+        if (active == null) return 12;
+        int strength = active.stats.getOrDefault("Strength", 5);
+        int endurance = active.stats.getOrDefault("Endurance", 5);
+        return 6 + strength * 2 + endurance / 2;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3555-3557
+Kind: method
+Name: carryStatusText
+SHA256: 5335c381a5c68d84f8c51583479e6620f7a8c21afb2191d607b6fdd469973554
+
+```java
+    String carryStatusText() {
+        return (worldSetup != null && worldSetup.hoarderMode) ? (inventoryWeight() + " / UNLIMITED bulk (Hoarder mode)") : inventoryWeight() + " / " + carryCapacity() + " bulk (Strength + Endurance derived)";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3559-3564
+Kind: method
+Name: moveJob
+SHA256: 46ac82ffee07caacb923474cd033399716425e280ad9e2d975d4bf19c6f93556
+
+```java
+    void moveJob(int delta) {
+        Candidate c = candidates.get(candidateIndex);
+        jobIndex = (jobIndex + c.jobs.size() + delta) % c.jobs.size();
+        JobProfile jp = JobProfile.get(c.jobs.get(jobIndex));
+        logEvent("Selected job " + c.jobs.get(jobIndex) + " — " + jp.shortIdentity() + (jp.meets(c) ? "" : " [INVALID REQUIREMENTS]"));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3675-3701
+Kind: method
+Name: sanitizeCurrentWorldFeaturePlacement
+SHA256: 96e024d4341edfcaccfe5eb84c5d1201a8d5f0d5e1c4f98ca597775057c1491b
+
+```java
+    void sanitizeCurrentWorldFeaturePlacement(String reason) {
+        if (world == null) return;
+        int repaired = 0;
+        if (world.mapObjects != null) {
+            ArrayList<MapObjectState> copy = new ArrayList<>(world.mapObjects);
+            for (MapObjectState m : copy) {
+                if (m == null || !world.inBounds(m.x, m.y)) { world.mapObjects.remove(m); repaired++; continue; }
+                char ch = world.tiles[m.x][m.y];
+                if (isDoorTile(ch) || ch == 'D' || !world.walkable(m.x, m.y)) {
+                    Point p = nearestOpenFeatureTile(m.x, m.y);
+                    if (p != null) { m.x = p.x; m.y = p.y; repaired++; }
+                    else { world.mapObjects.remove(m); repaired++; }
+                }
+            }
+        }
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || world == null || !world.inBounds(obj.x, obj.y)) continue;
+            char ch = world.tiles[obj.x][obj.y];
+            if (isDoorTile(ch) || ch == 'D' || !world.walkable(obj.x, obj.y)) {
+                Point p = nearestOpenFeatureTile(obj.x, obj.y);
+                if (p != null) { obj.x = p.x; obj.y = p.y; repaired++; }
+            }
+        }
+        repaired += enforceCorridorBlockingClearance();
+        repaired += trimRoadsAtBoundaryAndHivewallCrossings();
+        if (repaired > 0) DebugLog.warn("FEATURE_PLACEMENT_REPAIR", "reason=" + reason + " repaired=" + repaired + " zone=" + (world.zoneType==null?"unknown":world.zoneType.label));
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3703-3731
+Kind: method
+Name: enforceCorridorBlockingClearance
+SHA256: e01d083a269b253d0a571bc7ea671c744e4a8a732ad8a2a10896f13288bb0f3d
+
+```java
+    int enforceCorridorBlockingClearance() {
+        if (world == null) return 0;
+        int repaired = 0;
+        ArrayList<Point> occupiedBlocking = new ArrayList<>();
+        if (world.mapObjects != null) {
+            for (MapObjectState m : new ArrayList<>(world.mapObjects)) {
+                if (m == null || !world.inBounds(m.x,m.y)) continue;
+                if (!isBlockingFeatureCandidate(m.label, m.type)) continue;
+                if (!isCorridorOrDoorAdjacency(m.x, m.y)) continue;
+                if (corridorBlockingTooClose(m.x, m.y, occupiedBlocking)) {
+                    Point p = nearestOpenFeatureTile(m.x, m.y);
+                    if (p != null) { m.x = p.x; m.y = p.y; repaired++; }
+                    else { world.mapObjects.remove(m); repaired++; }
+                }
+                occupiedBlocking.add(new Point(m.x, m.y));
+            }
+        }
+        for (BaseObject obj : baseObjects) {
+            if (obj == null || !world.inBounds(obj.x,obj.y)) continue;
+            if (!isBlockingFeatureCandidate(obj.name, String.valueOf(obj.symbol))) continue;
+            if (!isCorridorOrDoorAdjacency(obj.x, obj.y)) continue;
+            if (corridorBlockingTooClose(obj.x, obj.y, occupiedBlocking)) {
+                Point p = nearestOpenFeatureTile(obj.x, obj.y);
+                if (p != null) { obj.x = p.x; obj.y = p.y; repaired++; }
+            }
+            occupiedBlocking.add(new Point(obj.x, obj.y));
+        }
+        return repaired;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3738-3748
+Kind: method
+Name: isCorridorOrDoorAdjacency
+SHA256: c5f5769f1e2e2348493911094ca45db1c36db8d418ab0e4ed502fa6714719a50
+
+```java
+    boolean isCorridorOrDoorAdjacency(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return false;
+        char here = world.tiles[x][y];
+        if (world.isCorridorGlyph(here) || isDoorTile(here) || here == 'D') return true;
+        for (int dx=-1; dx<=1; dx++) for (int dy=-1; dy<=1; dy++) {
+            if (dx==0 && dy==0) continue;
+            int nx=x+dx, ny=y+dy;
+            if (world.inBounds(nx,ny) && (world.isCorridorGlyph(world.tiles[nx][ny]) || isDoorTile(world.tiles[nx][ny]) || world.tiles[nx][ny]=='D')) return true;
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3756-3775
+Kind: method
+Name: trimRoadsAtBoundaryAndHivewallCrossings
+SHA256: 63c448307d7def6c1efefa1223058392b79ab277848d4bb4d6f57da99fb1a206
+
+```java
+    int trimRoadsAtBoundaryAndHivewallCrossings() {
+        if (world == null) return 0;
+        int changed = 0;
+        for (int x=0; x<world.w; x++) for (int y=0; y<world.h; y++) {
+            char ch = world.tiles[x][y];
+            boolean road = ch == ';' || ch == '_' || ch == ':';
+            if (!road) continue;
+            boolean edge = x <= 0 || y <= 0 || x >= world.w-1 || y >= world.h-1;
+            boolean hivewallCross = false;
+            for (int dx=-1; dx<=1; dx++) for (int dy=-1; dy<=1; dy++) {
+                int nx=x+dx, ny=y+dy;
+                if (world.inBounds(nx,ny) && world.tiles[nx][ny] == '-') hivewallCross = true;
+            }
+            if (edge || hivewallCross) {
+                world.tiles[x][y] = edge ? InterstitialInfrastructureApi.VOID_SPACE : '.';
+                changed++;
+            }
+        }
+        return changed;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:3777-3793
+Kind: method
+Name: nearestOpenFeatureTile
+SHA256: 7a30b8756587ab3291ccf70326595eb1b588746354ee25b8f02022e2c509d1f3
+
+```java
+    Point nearestOpenFeatureTile(int sx, int sy) {
+        if (world == null) return null;
+        for (int r=1; r<=5; r++) {
+            for (int dx=-r; dx<=r; dx++) for (int dy=-r; dy<=r; dy++) {
+                if (Math.abs(dx) != r && Math.abs(dy) != r) continue;
+                int x=sx+dx, y=sy+dy;
+                if (!world.inBounds(x,y) || !world.walkable(x,y)) continue;
+                char ch=world.tiles[x][y];
+                if (isDoorTile(ch) || ch == 'D') continue;
+                if (baseObjectAt(x,y) != null) continue;
+                boolean occupied=false;
+                if (world.mapObjects != null) for (MapObjectState other: world.mapObjects) if (other != null && other.x == x && other.y == y) { occupied=true; break; }
+                if (!occupied) return new Point(x,y);
+            }
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4419-4419
+Kind: method
+Name: cycleAuditZoneSize
+SHA256: f1ad804414a9b930a19f706cc4c5da12dc67de51eb960af3aca92d7d44b8fcd1
+
+```java
+    void cycleAuditZoneSize() { auditZoneSizeIndex = (auditZoneSizeIndex + 1) % WorldSetupSettings.ZONE_SIZE.length; regenerateSectorAuditWorld("cycle zone size"); }
+```
+
+---
+Source: gamepanel-shard5.txt:4420-4420
+Kind: method
+Name: cycleAuditZoneDensity
+SHA256: 11942664757423003f1abe2a3ebcdf4ab983b44991eec51fe42bc53c3c2d235e
+
+```java
+    void cycleAuditZoneDensity() { auditZoneDensityIndex = (auditZoneDensityIndex + 1) % WorldSetupSettings.ZONE_DENSITY.length; regenerateSectorAuditWorld("cycle zone density"); }
+```
+
+---
+Source: gamepanel-shard5.txt:4478-4486
+Kind: method
+Name: multiplayerHostCurrentWorld
+SHA256: 24872f3ec6e47e362f47d4563d27f00744e5763a04e5ad0bb625a5b82ee9555a
+
+```java
+    void multiplayerHostCurrentWorld() {
+        WorldSetupSettings settings = (worldSetup == null ? WorldSetupSettings.standard() : worldSetup.copy());
+        long hostSeed = seed == 0L ? System.currentTimeMillis() : seed;
+        String hostWorldName = selectedWorldSummary == null || selectedWorldSummary.isBlank() ? "Mechanist Hosted Arcology" : selectedWorldSummary;
+        HostBindingResult result = multiplayerMenu.hostFromWorld(hostSeed, hostWorldName, "local-hosted-world", settings, ServerConfig.DEFAULT_MAX_PLAYERS);
+        logEvent("MULTIPLAYER HOST: " + result.compactLine());
+        showTimedAlert(result.success() ? "HOST BOUND" : "HOST FAILED", result.compactLine(), 5200);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1951-1959
+Kind: method
+Name: appendInfopediaAssetFilter
+SHA256: bae725c937467286cefc15af4173979b47d55db7b1ed43c958e75eee8e7daaa5
+
+```java
+    void appendInfopediaAssetFilter(char ch) {
+        if (Character.isISOControl(ch)) return;
+        if (infopediaAssetFilter.length() >= 48) return;
+        infopediaAssetFilter = (infopediaAssetFilter + ch).trim().replaceAll("\\s+", " ");
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:2039-2051
+Kind: method
+Name: existingInfopediaRelatedEntries
+SHA256: 7a98f4b81560e8e6fac03c030437ab688fbafbbcc6dca9357185121eb484614f
+
+```java
+    ArrayList<String> existingInfopediaRelatedEntries(java.util.List<String> candidates, String currentEntry) {
+        ArrayList<String> out = new ArrayList<>();
+        if (candidates == null) return out;
+        HashSet<String> seen = new HashSet<>();
+        for (String candidate : candidates) {
+            String found = findInfopediaEntryLabel(candidate);
+            if (found == null || found.equalsIgnoreCase(currentEntry)) continue;
+            String key = found.toLowerCase(Locale.ROOT);
+            if (seen.add(key)) out.add(found);
+            if (out.size() >= 6) break;
+        }
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:2735-2775
+Kind: method
+Name: bodyInfopediaLines
+SHA256: 1512be356b513f0407f5ee9c6db0b051c8de6913a5859eeacf76ca4a80d3a5a8
+
+```java
+    java.util.List<String> bodyInfopediaLines(String entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        switch(entry) {
+            case "Body Overview":
+                lines.add("Body-state overview");
+                lines.add("Tracked parts include head, torso, hips, upper/lower arms, hands, fingers, upper/lower legs, and feet. Each part has local health derived from endurance.");
+                lines.add("Current body pressure: wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ", pain " + pain + ".");
+                break;
+            case "Crippled Legs":
+                lines.add("Mobility injury reference");
+                lines.add("Crippled legs and feet increase movement time cost, turning injury into lost time and therefore into survival pressure.");
+                lines.add("Current crippled leg/foot count: " + crippledLegCount() + ".");
+                break;
+            case "Crippled Arms and Hands":
+                lines.add("Tool and weapon injury reference");
+                lines.add("Crippled arms, hands, and fingers penalize weapon and tool use. Severe arm damage can prevent carried weapon attacks.");
+                lines.add("Current crippled arm/hand count: " + crippledArmCount() + ".");
+                break;
+            case "Bleeding":
+                lines.add("Bleeding reference");
+                lines.add("Bleeding creates hourly wound/fatigue pressure until bandaged or treated.");
+                lines.add("Current bleeding: " + bleeding + ". Bandages and medicae supplies are the intended first answers.");
+                break;
+            case "Pain":
+                lines.add("Pain reference");
+                lines.add("Pain imposes action friction and decays slowly. Stimulants may keep the character upright but are not wound treatment.");
+                lines.add("Current pain: " + pain + ".");
+                break;
+            case "Infection Risk":
+                lines.add("Infection-risk reference");
+                lines.add("Infection risk can worsen if injuries are not treated with antiseptic or better medicae supplies.");
+                lines.add("Current infection risk: " + infectionRisk + ".");
+                break;
+            default:
+                lines.add("Incapacitation reference");
+                lines.add("Severe accumulated damage, body/head trauma, and exhaustion can push the character out of useful action.");
+                lines.add("Purpose: body systems make injury a continuing operational problem, not a single red number.");
+                break;
+        }
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3091-3091
+Kind: method
+Name: samplePropsForZone
+SHA256: ce8bea70f919bda0713d1b039c57b46470aa97ce126f24e58f099b814f923076
+
+```java
+    char[] samplePropsForZone(ZoneType z) { World tmp = world; if(tmp != null && tmp.zoneType==z) return tmp.propPaletteForZone(); return new char[]{'o','u','t','N'}; }
+```
+
+---
+Source: gamepanel-shard6.txt:3092-3101
+Kind: method
+Name: likelyNpcText
+SHA256: d305df70ee14dfda82e4eca411887a2132bed5d17a81eb91b0d92cdc963ef6b5
+
+```java
+    String likelyNpcText(ZoneType z) {
+        if (z==ZoneType.MUTANT_SEWER_CAMP || z==ZoneType.MUTANT_WARRENS) return "mutants only, generally hostile";
+        if (z==ZoneType.CULTIST_SEWER_CAMP) return "cultists only, generally hostile";
+        if (z==ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens and police clerks";
+        if (z==ZoneType.IMPERIAL_GUARD_BILLET) return "Concord Guard personnel";
+        if (z==ZoneType.GANGER_TURF) return "gangers, fences, intimidated locals";
+        if (z==ZoneType.MECHANICUS_FORGE_CLOISTER) return "Mechanist Collegia adepts, workers, bound Labor Automaton-adjacent personnel";
+        if (z==ZoneType.NEUTRAL_CIVILIAN_FLOOR || z==ZoneType.SUMP_MARKET || z==ZoneType.NEUTRAL_RAIL_DEPOT) return "civilians, traders, police presence";
+        return "zone-appropriate civilians, outcasts, or local owners";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4093-4097
+Kind: method
+Name: trapAt
+SHA256: a23e9b04469dd5f92c6535760c32ff063b4f9b499f41ff25b5315c28c7983c38
+
+```java
+    TrapRecord trapAt(int x, int y) {
+        if (world == null || world.trapRecords == null) return null;
+        for (TrapRecord t : world.trapRecords) if (t != null && t.x == x && t.y == y && !"disarmed".equals(t.state)) return t;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4099-4114
+Kind: method
+Name: checkTrapAfterPlayerMove
+SHA256: d0acecef627b4c9f900bb1d85e5a232c7b4e7e489e064c8befe031058ab60f37
+
+```java
+    void checkTrapAfterPlayerMove(int x, int y) {
+        TrapRecord t = trapAt(x, y);
+        if (t == null || !t.canTrigger()) return;
+        int detection = 25 + stat("Intellect",5)*4 + (lookCursorActive ? 8 : 0);
+        if (t.hidden && detection >= t.detectionDifficulty) {
+            t.state = "revealed"; t.hidden = false;
+            logEvent("You spot a " + t.label + " before fully committing weight to it.");
+            return;
+        }
+        t.state = "triggered"; t.triggeredTurn = turn; t.hidden = false;
+        String consequence = t.triggerText();
+        lastSensesReport = "Trap noise: " + consequence;
+        if (t.noiseRadius > 0) world.noiseSources.add(new ZoneNoiseSourceRecord(t.id+"-noise", t.label + " discharge", "trap", x, y, t.noiseRadius, Math.max(20,t.severity*12), true, false, 0, 1, t.id));
+        logEvent(consequence);
+        if (t.damage > 0) applyPlayerBodyDamage(t.damage, randomBodyHitLocation(), "triggered " + t.label, t.effect);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4134-4138
+Kind: method
+Name: hazardAt
+SHA256: 99d210358e1696a1bf63762ec55981866d93bf733ebb4830476d8897287a55e8
+
+```java
+    EnvironmentalHazardRecord hazardAt(int x, int y) {
+        if (world == null || world.hazardWarnings == null) return null;
+        for (EnvironmentalHazardRecord h : world.hazardWarnings) if (h != null && h.x == x && h.y == y) return h;
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4345-4362
+Kind: method
+Name: screenPointToWorldTile
+SHA256: d31f7865feff0f5a3fa2c5b88f8a57333f097a6e1d59d380049f64259fca9338
+
+```java
+    Point screenPointToWorldTile(int sx, int sy) {
+        if (world == null) return null;
+        Rectangle map = inputMapRect();
+        FontMetrics fm = getFontMetrics(asciiFont);
+        int cellW = tileIconMode()
+                ? scaled(zoomedMapPixels(options.mapTilePixelSize()))
+                : Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+        int cellH = tileIconMode()
+                ? scaled(zoomedMapPixels(options.mapTilePixelSize()))
+                : Math.max(10, scaled(zoomedMapPixels(Math.max(14, fm.getHeight()))));
+        MapViewportTransformAuthority.Viewport viewport = MapViewportTransformAuthority.compute(
+                map, world.w, world.h, playerX, playerY, cellW, cellH,
+                10, tileIconMode() ? 10 : 10 + fm.getAscent());
+        Point out = viewport.pointToTile(sx, sy);
+        if (out == null) return null;
+        if (!world.inBounds(out.x, out.y)) return null;
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4404-4414
+Kind: method
+Name: nudgeManualMovementPlan
+SHA256: 1194c54c79e609adf217fdacfaae7f683b353c19757388fc83679143bf392440
+
+```java
+    void nudgeManualMovementPlan(int dx, int dy) {
+        if (world == null || dx == 0 && dy == 0) return;
+        if (!manualMovementPlanActive) beginManualMovementPlan();
+        int baseX = mouseMoveTargetX >= 0 ? mouseMoveTargetX : playerX;
+        int baseY = mouseMoveTargetY >= 0 ? mouseMoveTargetY : playerY;
+        int tx = Math.max(0, Math.min(world.w - 1, baseX + dx));
+        int ty = Math.max(0, Math.min(world.h - 1, baseY + dy));
+        updateMouseMovementPreviewTo(tx, ty);
+        manualMovementPlanActive = true;
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4453-4475
+Kind: method
+Name: selectedInteractionApproachTile
+SHA256: 2eb79cf56e3b3ec4a2636c997f95699fbf33135900a433dd02b01e03d3b4d72f
+
+```java
+    Point selectedInteractionApproachTile() {
+        if (world == null || !world.inBounds(lookX, lookY)) return null;
+        if (!hasSelectedInteractionTarget(lookX, lookY)) return null;
+        if (Math.abs(lookX - playerX) <= 1 && Math.abs(lookY - playerY) <= 1) return null;
+        ArrayList<Point> candidates = new ArrayList<>();
+        for (int dy=-1; dy<=1; dy++) for (int dx=-1; dx<=1; dx++) {
+            if (dx == 0 && dy == 0) continue;
+            int x = lookX + dx, y = lookY + dy;
+            if (!world.inBounds(x, y) || !world.walkable(x, y)) continue;
+            if (world.npcAt(x, y) != null) continue;
+            if (x == playerX && y == playerY) continue;
+            candidates.add(new Point(x, y));
+        }
+        Point best = null;
+        int bestScore = Integer.MAX_VALUE;
+        for (Point p : candidates) {
+            ArrayList<Point> path = findPreviewPath(playerX, playerY, p.x, p.y, 80);
+            if (path.isEmpty()) continue;
+            int score = path.size() * 10 + Math.abs(p.x - playerX) + Math.abs(p.y - playerY);
+            if (best == null || score < bestScore) { best = p; bestScore = score; }
+        }
+        return best;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4477-4484
+Kind: method
+Name: hasSelectedInteractionTarget
+SHA256: c4625abdd5626ced42ef5b0d5aa8839f5a4eb117b70e092c4ffe2cb5947d912b
+
+```java
+    boolean hasSelectedInteractionTarget(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return false;
+        if (world.npcAt(tx, ty) != null) return true;
+        if (baseObjectAt(tx, ty) != null) return true;
+        if (world.mapObjectAt(tx, ty) != null) return true;
+        char ch = world.tiles[tx][ty];
+        return isDoorTile(ch) || isIntermapTransitTile(ch) || isVendingMachine(ch) || isShrine(ch) || isEmergencyMachine(ch) || ch == 'Q' || ch == 'T';
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4504-4515
+Kind: method
+Name: directMovementTargetBlockReason
+SHA256: 1fc41bfbe8be3e547add8637079543c7b80904387d0c210d0d0b4ec203e2f507
+
+```java
+    String directMovementTargetBlockReason(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "Movement target is outside the known map.";
+        if (tx == playerX && ty == playerY) return "Movement target is your current position.";
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) return "Destination occupied.";
+        if (!world.walkable(tx, ty)) {
+            char ch = world.tiles[tx][ty];
+            if (isDoorTile(ch) || ch == 'D') return "Door is closed.";
+            return "Path blocked.";
+        }
+        return null;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4526-4552
+Kind: method
+Name: findPreviewPath
+SHA256: ece428bf1b732906acc7f144432e192c8f1041a5ea82ead568d592c81eeafef2
+
+```java
+    ArrayList<Point> findPreviewPath(int sx, int sy, int tx, int ty, int maxNodes) {
+        ArrayList<Point> empty = new ArrayList<>();
+        if (world == null || !world.inBounds(sx, sy) || !world.inBounds(tx, ty) || !world.walkable(tx, ty)) return empty;
+        int max = Math.max(4, maxNodes);
+        ArrayDeque<Point> q = new ArrayDeque<>();
+        HashMap<String, Point> prev = new HashMap<>();
+        Point start = new Point(sx, sy); q.add(start); prev.put(sx+","+sy, null);
+        int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1}}; int seen = 0;
+        while(!q.isEmpty() && seen++ < max*max) {
+            Point p = q.removeFirst();
+            if (p.x == tx && p.y == ty) break;
+            Arrays.sort(dirs, Comparator.comparingInt(d -> Math.abs((p.x + d[0]) - tx) + Math.abs((p.y + d[1]) - ty)));
+            for (int[] d: dirs) {
+                int nx = p.x + d[0], ny = p.y + d[1]; String key = nx + "," + ny;
+                if (!world.inBounds(nx, ny) || prev.containsKey(key) || !world.walkable(nx, ny)) continue;
+                if (world.npcAt(nx, ny) != null && !(nx == tx && ny == ty)) continue;
+                prev.put(key, p); q.addLast(new Point(nx, ny));
+            }
+        }
+        String target = tx + "," + ty;
+        if (!prev.containsKey(target)) return empty;
+        ArrayList<Point> rev = new ArrayList<>();
+        Point cur = new Point(tx, ty);
+        while(cur != null && !(cur.x == sx && cur.y == sy)) { rev.add(cur); cur = prev.get(cur.x + "," + cur.y); }
+        Collections.reverse(rev);
+        return rev;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4640-4643
+Kind: method
+Name: selectedLookNpc
+SHA256: a423c0956d6dc9856f7482a66e60bea8c12485c3df4fd56572f8df45f657c8c6
+
+```java
+    NpcEntity selectedLookNpc() {
+        if (world == null || !lookCursorActive || !world.inBounds(lookX, lookY) || !isVisible(lookX, lookY)) return null;
+        return world.npcAt(lookX, lookY);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4749-4768
+Kind: method
+Name: npcProjectedStep
+SHA256: 02a4dfdc5a7273dcd41567c0e1453f77133e04b80deb714d098f11837e2acb34
+
+```java
+    Point npcProjectedStep(NpcEntity npc) {
+        if (world == null || npc == null) return null;
+        int tx = npc.x, ty = npc.y;
+        if ("Hostile".equalsIgnoreCase(npc.state)) { tx = playerX; ty = playerY; }
+        else if (npc.needTarget != null) { tx = npc.needTarget.x; ty = npc.needTarget.y; }
+        else if ("Guard".equalsIgnoreCase(npc.state) && Math.abs(npc.x-npc.homeX)+Math.abs(npc.y-npc.homeY) > 2) { tx = npc.homeX; ty = npc.homeY; }
+        else if ("Patrol".equalsIgnoreCase(npc.state) || "Wander".equalsIgnoreCase(npc.state) || "Idle".equalsIgnoreCase(npc.state) || "Inspect".equalsIgnoreCase(npc.state)) {
+            int[][] dirs={{1,0},{-1,0},{0,1},{0,-1},{0,0}};
+            int[] d = dirs[Math.abs((npc.id.hashCode()+Math.max(1,turn)*31)) % dirs.length];
+            int wx = npc.x + d[0], wy = npc.y + d[1];
+            if (world.walkable(wx, wy) && world.npcAt(wx, wy) == null && !(wx == playerX && wy == playerY)) return new Point(wx, wy);
+            return new Point(npc.x, npc.y);
+        } else return new Point(npc.x, npc.y);
+        int dx = Integer.compare(tx, npc.x), dy = Integer.compare(ty, npc.y);
+        Point p1 = Math.abs(tx-npc.x) > Math.abs(ty-npc.y) ? new Point(npc.x + dx, npc.y) : new Point(npc.x, npc.y + dy);
+        if (world.walkable(p1.x, p1.y) && !(p1.x == playerX && p1.y == playerY) && world.npcAt(p1.x, p1.y) == null) return p1;
+        Point p2 = Math.abs(tx-npc.x) > Math.abs(ty-npc.y) ? new Point(npc.x, npc.y + dy) : new Point(npc.x + dx, npc.y);
+        if (world.walkable(p2.x, p2.y) && !(p2.x == playerX && p2.y == playerY) && world.npcAt(p2.x, p2.y) == null) return p2;
+        return new Point(npc.x, npc.y);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4829-4841
+Kind: method
+Name: corridorArtRotatesEastWest
+SHA256: c720f857032ac144d3f73ab6fe7cf6098f3063bea3d9b764305a6e2f3776ecda
+
+```java
+    boolean corridorArtRotatesEastWest(char ch, int worldX, int worldY) {
+        // 0.9.10fn/ji: road art resolves through compiled road shape keys, while
+        // corridor art now follows the compiled same-family corridor orientation.
+        // Maintenance/exterior/sewer corridor runs therefore orient toward the next
+        // nearest tile of the same corridor type instead of borrowing unrelated halls.
+        if (ch == ';' || ch == '_') return false;
+        if (world == null || !images.corridorArtUsesNorthSouth(ch)) return false;
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d != null && "corridor".equals(d.baseLayer)) return "east_west".equals(d.shape);
+        boolean ew = corridorLikeForArt(worldX-1, worldY) || corridorLikeForArt(worldX+1, worldY);
+        boolean ns = corridorLikeForArt(worldX, worldY-1) || corridorLikeForArt(worldX, worldY+1);
+        return ew && !ns;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4843-4847
+Kind: method
+Name: corridorLikeForArt
+SHA256: 6f4e5e98cc31b59b0f653daa9a7a11179997c9b86708e22c73292315469b9982
+
+```java
+    boolean corridorLikeForArt(int x, int y) {
+        if (world == null || !world.inBounds(x,y)) return false;
+        char t = world.tiles[x][y];
+        return world.roomIds[x][y] < 0 && (world.isCorridorGlyph(t) || t == 'D' || t == '/' || t == '|');
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4851-4853
+Kind: method
+Name: tileDescriptorForRenderedGlyph
+SHA256: cfd8095fb98ef6a7d871a1dd24c64d33bdb36f464ca71c5635cd0da7603468da
+
+```java
+    CompiledTileDescriptor tileDescriptorForRenderedGlyph(char ch, int worldX, int worldY) {
+        return TileDataCompilationAuthority.resolve(world, worldX, worldY, ch);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4903-4909
+Kind: method
+Name: roadSemanticKeyForArt
+SHA256: c041c179f68c24a0f14ff709c1dc78077223e3dca030494b0036e077a1c79169
+
+```java
+    String roadSemanticKeyForArt(int worldX, int worldY, char fallbackGlyph) {
+        if (world == null || !world.inBounds(worldX, worldY)) return fallbackGlyph == '_' ? "road_sidewalk" : "road_north_south";
+        if (fallbackGlyph == '_' && !sidewalkPromotesToRoadForArt(worldX, worldY)) return "road_sidewalk";
+        String shape = TileDataCompilationAuthority.roadShape(world, worldX, worldY);
+        if (shape == null || shape.isBlank()) return fallbackGlyph == '_' ? "road_sidewalk" : "road_north_south";
+        return "road_" + shape;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4920-4931
+Kind: method
+Name: roadRunsEastWest
+SHA256: de333fe902dca05e8dfaa1f43f6d01386a7dd13dcbfa136e43f353dcb441f88d
+
+```java
+    boolean roadRunsEastWest(int worldX, int worldY) {
+        if (world == null || !world.inBounds(worldX, worldY)) return false;
+        boolean west = roadLaneForArt(worldX-1, worldY);
+        boolean east = roadLaneForArt(worldX+1, worldY);
+        boolean north = roadLaneForArt(worldX, worldY-1);
+        boolean south = roadLaneForArt(worldX, worldY+1);
+        boolean ewOpposed = west && east;
+        boolean nsOpposed = north && south;
+        if (ewOpposed && !nsOpposed) return true;
+        if (nsOpposed) return false;
+        return (west || east) && !(north || south);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4933-4935
+Kind: method
+Name: sidewalkPromotesToRoadForArt
+SHA256: 0d916eb9762832e29ac9db3f4b515082157db74878ef811073aea1a3be6c573e
+
+```java
+    boolean sidewalkPromotesToRoadForArt(int worldX, int worldY) {
+        return TileDataCompilationAuthority.sidewalkPromotesToRoad(world, worldX, worldY);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4937-4941
+Kind: method
+Name: roadLaneForArt
+SHA256: 92a7405ddee978b061883aa64cc17f34532dd2d35a5a3dadb615ad49942467ba
+
+```java
+    boolean roadLaneForArt(int x, int y) {
+        if (world == null || !world.inBounds(x,y) || world.tiles[x][y] != ';') return false;
+        if (world.roomIds != null && x >= 0 && y >= 0 && x < world.roomIds.length && y < world.roomIds[x].length && world.roomIds[x][y] >= 0) return false;
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4943-4945
+Kind: method
+Name: sidewalkForArt
+SHA256: 2f24f952b7a2eb536ef716e090bb9467d422785d5ff9796098a3debb9d42b212
+
+```java
+    boolean sidewalkForArt(int x, int y) {
+        return world != null && world.inBounds(x,y) && world.tiles[x][y] == '_';
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4966-4968
+Kind: method
+Name: inferredUnderlayGlyphForOverlay
+SHA256: 978fb0b859adbf241236772d79820b4a2f1242564bc8c8fc33ec6d803c114331
+
+```java
+    char inferredUnderlayGlyphForOverlay(char ch, int worldX, int worldY) {
+        return TileDataCompilationAuthority.inferredUnderlayGlyph(world, worldX, worldY, ch);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5584-5602
+Kind: method
+Name: currentTargetInventoryStacks
+SHA256: 1ca5c9f51024ff4a1e3a82c6bb3d05e87648bb323c3dcbbeaf9701bedf671d5d
+
+```java
+    LinkedHashMap<String,Integer> currentTargetInventoryStacks() {
+        LinkedHashMap<String,Integer> out = new LinkedHashMap<>();
+        if (world == null || !world.inBounds(playerX, playerY)) return out;
+        BaseObject base = baseObjectAt(playerX, playerY);
+        if (base != null) out.put(base.name, 1);
+        if (world.mapObjects != null) {
+            for (MapObjectState m : world.mapObjects) {
+                if (m != null && m.x == playerX && m.y == playerY) {
+                    String label = m.label == null || m.label.isBlank() ? m.type : m.label;
+                    if (label == null || label.isBlank()) label = "floor feature";
+                    out.put(label, out.getOrDefault(label, 0) + 1);
+                }
+            }
+        }
+        char ch = world.tiles[playerX][playerY];
+        String tile = "Floor tile: " + describeTile(ch);
+        out.put(tile, 1);
+        return out;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6244-6260
+Kind: method
+Name: contractObjectiveGuidanceLines
+SHA256: d223a203063d9c3ca6af96f1290f9ee0993f71b7920d466ec2e4058e7e2ad765
+
+```java
+    ArrayList<String> contractObjectiveGuidanceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        ArrayList<FactionContract> activeContracts = activeVisibleContracts();
+        if (activeContracts.isEmpty()) {
+            lines.add("Objective guidance: no active faction contracts are being tracked.");
+            return lines;
+        }
+        lines.add("Objective guidance:");
+        for (FactionContract c : activeContracts) {
+            ContractZoneTarget target = contractZoneTarget(c);
+            String state = c.spawned ? "target sign reported" : "search the destination zone";
+            String route = target == null ? "nearby contract zone" : readableContractRoute(target);
+            String marker = target != null && contractTargetOnCurrentMapLayer(target) ? "Map marker visible on this slice." : "Change map slice or travel toward the listed route.";
+            lines.add("- " + c.displayType() + " for " + c.faction.label + ": " + state + "; " + route + ". " + marker);
+        }
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6279-6283
+Kind: method
+Name: contractTargetOnCurrentMapLayer
+SHA256: b86fd3fbea49dcfba21ac31d464f19f45a4c6c544629f9e688960124d85e7a8c
+
+```java
+    boolean contractTargetOnCurrentMapLayer(ContractZoneTarget target) {
+        if (atlas == null || target == null) return false;
+        return target.sectorX == atlas.sectorX && target.sectorY == atlas.sectorY
+                && MapLayerSurfaceAuthority.displayLayerIndex(target.floor, target.sewer) == mapLayerView;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6330-6335
+Kind: method
+Name: zoneTypeForMapCell
+SHA256: 165e87859b3c9c45583d99a298cc91f74cd4016a61705a7e995a2fa5b0a454a8
+
+```java
+    ZoneType zoneTypeForMapCell(int zx, int zy, int layerIndex) {
+        int floorNum = MapLayerSurfaceAuthority.floor(layerIndex);
+        boolean sewerSlice = MapLayerSurfaceAuthority.isSewer(layerIndex);
+        if (atlas != null && atlas.slices[atlas.sectorX-1][atlas.sectorY-1][zx-1][zy-1][layerIndex] != null) return atlas.slices[atlas.sectorX-1][atlas.sectorY-1][zx-1][zy-1][layerIndex].zoneType;
+        return WorldAtlas.zoneTypeForSlice(zx, zy, floorNum, sewerSlice);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1063-1068
+Kind: method
+Name: factionMemberEquipmentAuthorityLine
+SHA256: 3ee5279b2e089f2ecfc2dcf8fda78a2337d68fd6c9999e91373d369ec4cea0c1
+
+```java
+    String factionMemberEquipmentAuthorityLine() {
+        if (factionRecruits.isEmpty()) return "no controlled member is available for gear assignment.";
+        if (!hasKnowledge("Workshop Labor Discipline")) return "direct equipment handoff waits for Workshop Labor Discipline; use storage and duty assignment for now.";
+        if (!baseClaimed || world == null || !isInClaimedRoom(playerX, playerY)) return "gear review is safest inside the claimed room with the roster present.";
+        return "authorized recruits may be reviewed for gear, but transfers must respect duty, access, ownership, and carry safety.";
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1327-1332
+Kind: method
+Name: baseDisplayName
+SHA256: d25ee900c3594ba4f58f5c57c1a44800a9ffd184078d6bb7ca26ffd0ae215a28
+
+```java
+    String baseDisplayName() {
+        if (!baseClaimed) return "No Claimed Base";
+        if (world == null) return "Room " + claimedRoomId + " Holding";
+        String z = world.zoneType == null ? "Underhive" : world.zoneType.label;
+        return z + " Holding " + Math.max(0, claimedRoomId);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1568-1589
+Kind: method
+Name: zoneRaidThreatName
+SHA256: d13ea53cc6a99d294120a187f0b19f3b41c0ddb4f4df0ff467a73b2de0a58ed2
+
+```java
+    String zoneRaidThreatName() {
+        if (world == null || world.zoneType == null) return "local opportunists";
+        switch (world.zoneType) {
+            case ARBITES_PRECINCT_EDGE:
+            case ADMINISTRATUM_ARCHIVE:
+            case NEUTRAL_CIVILIAN_FLOOR:
+            case NOBLE_SERVICE_SPINE:
+            case NEUTRAL_RAIL_DEPOT:
+                return "Adeptus Civic Wardens enforcement team";
+            case GANGER_TURF:
+            case SUMP_MARKET:
+            case TRASH_WARREN:
+                return "local ganger crew";
+            case MUTANT_WARRENS:
+            case MUTANT_SEWER_CAMP:
+                return "mutant raiding pack";
+            case CULTIST_SEWER_CAMP:
+                return "cultist assault cell";
+            default:
+                return gangHeat > suspicion ? "local ganger crew" : "Adeptus Civic Wardens inspection team";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1750-1761
+Kind: method
+Name: siteForFaction
+SHA256: 5a4a6ac8f12fc843b094981c2cef890a60231bb742ef44d99d5a2f4c490b5946
+
+```java
+    NpcFactionSite siteForFaction(Faction faction, ZoneType zone) {
+        seedNpcFactionProductionSites();
+        Faction f = faction == null ? Faction.NONE : faction;
+        for (NpcFactionSite site : npcFactionSites) if (sameFactionFamily(site.faction, f) || site.faction == f) return site;
+        if (zone == ZoneType.MECHANICUS_FORGE_CLOISTER) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.MECHANIST_COLLEGIA) return site;
+        if (zone == ZoneType.IMPERIAL_GUARD_BILLET) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.IMPERIAL_GUARD) return site;
+        if (zone == ZoneType.NOBLE_SERVICE_SPINE) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.NOBLE) return site;
+        if (zone == ZoneType.IMPERIAL_NEWS_NETWORK) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.INN) return site;
+        if (zone == ZoneType.GANGER_TURF || zone == ZoneType.SUMP_MARKET || zone == ZoneType.TRASH_WARREN) for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.BANDIT) return site;
+        for (NpcFactionSite site : npcFactionSites) if (site.faction == Faction.HIVER) return site;
+        return npcFactionSites.isEmpty() ? null : npcFactionSites.get(0);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:1818-1836
+Kind: method
+Name: ambientRivalFaction
+SHA256: 1ba58a0c8c8e2cf01e5d50bb44d4725e7456e57a0830c462842c9e040a53ab08
+
+```java
+    Faction ambientRivalFaction() {
+        if (world == null || world.zoneType == null) return Faction.BANDIT;
+        switch (world.zoneType) {
+            case ARBITES_PRECINCT_EDGE:
+            case ADMINISTRATUM_ARCHIVE:
+            case NEUTRAL_CIVILIAN_FLOOR:
+            case NOBLE_SERVICE_SPINE:
+            case NEUTRAL_RAIL_DEPOT: return Faction.CIVIC_WARDENS;
+            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST_COLLEGIA;
+            case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
+            case GANGER_TURF:
+            case SUMP_MARKET:
+            case TRASH_WARREN: return Faction.BANDIT;
+            case MUTANT_WARRENS:
+            case MUTANT_SEWER_CAMP: return Faction.MUTANT;
+            case CULTIST_SEWER_CAMP: return Faction.CULTIST;
+            default: return Faction.BANDIT;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2301-2321
+Kind: method
+Name: newsArchiveLines
+SHA256: 7f61b40fd386ff10d25628c1e6246ebb933203b91592781bb04fa1188a42c773
+
+```java
+    ArrayList<String> newsArchiveLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Character-visible news ledger: papers read, radios heard, pict screens watched, and public events filed.");
+        lines.add("World time: " + worldTimeText() + " | Survival: " + timeText() + " | Zone: " + (world == null ? "none" : world.zoneType.label + " " + world.zoneCoordText()));
+        lines.add("");
+        lines.add("Latest INN issue: " + lastInnNewsIssue);
+        lines.add("Latest broadcast: " + lastBroadcastReport);
+        lines.add("Latest player-linked filing: " + lastPlayerNewsReport);
+        lines.add("");
+        if (playerNewsEvents.isEmpty()) {
+            lines.add("No tracked character-news events yet. Reading papers, hearing radios, watching pict screens, or creating public incidents will populate this archive.");
+        } else {
+            lines.add("TRACKED NEWS EVENTS");
+            for (PlayerNewsEvent ev : playerNewsEvents) {
+                if (ev == null) continue;
+                lines.add("- " + ev.shortLine() + " | seen/heard day " + ev.day + " at " + ev.zone + " | faction " + factionLabel(ev.faction()) + " | severity " + ev.severity);
+                if (ev.detail != null && !ev.detail.isBlank()) lines.add("  " + ev.detail);
+            }
+        }
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2396-2402
+Kind: method
+Name: roomSeenByPlayer
+SHA256: 12f1e43cc6b20273aef20317f56488fe2caa2aa50b1af2a6357fd021041cdb24
+
+```java
+    boolean roomSeenByPlayer(int roomId) {
+        if(world == null || roomId < 0 || rememberedTiles == null) return false;
+        for(int x=0; x<world.w; x++) for(int y=0; y<world.h; y++) {
+            if(world.roomIds[x][y] == roomId && rememberedTiles[x][y]) return true;
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2404-2412
+Kind: method
+Name: ownershipText
+SHA256: 601ef42e7af4666aa8c95bdc233733acbf5a121ac956e2d1dd12056652d5cfe4
+
+```java
+    String ownershipText(int x, int y) {
+        if (world == null) return "No world loaded.";
+        int rid = world.roomIdAt(x, y);
+        if (rid < 0) return "Corridor/unclaimable passage.";
+        if (baseClaimed && rid == claimedRoomId) return "Friendly claimed territory, tinted light green.";
+        Faction owner = world.roomFaction(rid);
+        if (owner != Faction.NONE) return owner.label + " claimed room, color-coded by faction.";
+        return "Neutral unclaimed room, gray/white territory.";
+    }
+```

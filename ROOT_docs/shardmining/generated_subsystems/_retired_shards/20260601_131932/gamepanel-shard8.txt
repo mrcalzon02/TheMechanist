@@ -1,0 +1,1428 @@
+
+    double uiScaleFactor() { return DisplayDensityAuthority.clampScale(options.uiScale / 100.0f); }
+    int scaled(int v) { return Math.max(1, (int)Math.round(v * uiScaleFactor())); }
+    int readableButtonHeight(int preferred) { return Math.max(28, Math.min(preferred, Math.max(24, getHeight() / 11))); }
+    int readableGap(int preferred) { return Math.max(8, Math.min(preferred, Math.max(6, getHeight() / 42))); }
+    String onOff(boolean b) { return b ? "ON" : "OFF"; }
+
+    void applyOptions() {
+        double f = DisplayDensityAuthority.clampScale(options.fontScale / 100.0f);
+        DisplayDensityAuthority.applyGlobalSwingTextScale(options);
+        titleFont = new Font("Monospaced", Font.BOLD, Math.max(20, (int)Math.round(36*f)));
+        uiFont = new Font("Monospaced", Font.BOLD, Math.max(10, (int)Math.round(16*f)));
+        smallFont = new Font("Monospaced", Font.BOLD, Math.max(8, (int)Math.round(12*f)));
+        asciiFont = new Font("Monospaced", Font.BOLD, Math.max(8, (int)Math.round(13*f)));
+        renderScaling.applyOptions(options);
+        if (timer != null) timer.setDelay(options.targetTimerDelayMs());
+        frameLimiter.configure(options);
+        DebugLog.audit("DISPLAY_DENSITY", DisplayDensityAuthority.auditSummary(options));
+        DebugLog.audit("DISPLAY_RESOLUTION", DisplayResolutionAuthority.auditSummary(options));
+        DebugLog.audit("OPTIONS", "Applied options fontScale=" + options.fontScale + " uiScale=" + options.uiScale + " sfx=" + options.sfxVolume + " music=" + options.musicVolume + " conversation=" + options.conversationVolume + " windowMode=" + options.windowMode + " resolution=" + options.resolutionLabel() + " downscale=" + options.downscaleLabel() + " targetFps=" + options.targetFpsLabel() + " frameLimited=" + options.frameLimitLabel() + " renderQuality=" + options.renderQualityLabel() + " reducedMotion=" + options.reducedMotion + " artQuality=" + options.artQualityLabel() + " generatedPayload=" + options.generatedAssetPayloadRootShortLabel() + " mapTileSize=" + options.mapTileSizeLabel() + " worldZoom=" + options.worldZoomLabel());
+    }
+
+    void changeFontScale(int delta) {
+        options.fontScale = Math.max(50, Math.min(200, options.fontScale + delta*5));
+        applyOptions(); options.save(); sounds.play("tab", options); logEvent("Text scale now " + options.fontScale + "%. Compact default is " + GameOptions.COMPACT_DEFAULT_FONT_SCALE + "%; larger text remains available as opt-in."); repaint();
+    }
+    void changeUiScale(int delta) {
+        options.uiScale = Math.max(50, Math.min(200, options.uiScale + delta*5));
+        applyOptions(); options.save(); sounds.play("tab", options); logEvent("GUI scale now " + options.uiScale + "%. Compact default is " + GameOptions.COMPACT_DEFAULT_UI_SCALE + "%; larger chrome remains available as opt-in."); repaint();
+    }
+    void cycleArtQuality() {
+        options.artQualityIndex = Math.floorMod(options.artQualityIndex + 1, GameOptions.ART_QUALITY_LABELS.length);
+        options.applyGeneratedAssetRuntimeProperties();
+        options.save();
+        AssetManager.reloadGeneratedAssetRuntime();
+        images.reloadArtQuality(options);
+        sounds.play("tab", options);
+        logEvent("Art quality cache now " + options.artQualityLabel() + ". Generated semantic assets request tier " + options.artQualityFolder() + "; external payload " + options.generatedAssetPayloadRootShortLabel() + ".");
+        repaint();
+    }
+    void chooseGeneratedAssetPayloadRoot() {
+        try {
+            JFileChooser chooser = new JFileChooser(options.hasGeneratedAssetPayloadRoot() ? new File(options.generatedAssetPayloadRoot()) : new File("."));
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setDialogTitle("Select The Mechanist generated-art payload root");
+            int result = chooser.showOpenDialog(this);
+            if (result != JFileChooser.APPROVE_OPTION || chooser.getSelectedFile() == null) {
+                logEvent("Generated-art payload root unchanged.");
+                return;
+            }
+            File selected = chooser.getSelectedFile();
+            options.generatedAssetPayloadRoot = selected.getAbsolutePath();
+            options.applyGeneratedAssetRuntimeProperties();
+            options.save();
+            AssetManager.reloadGeneratedAssetRuntime();
+            images.reloadArtQuality(options);
+            sounds.play("tab", options);
+            logEvent("Generated-art payload root set to " + options.generatedAssetPayloadRootLabel() + ". Requested tier: " + options.artQualityFolder() + ".");
+            repaint();
+        } catch (Throwable t) {
+            logEvent("Could not select generated-art payload root: " + t.getMessage());
+        }
+    }
+    void clearGeneratedAssetPayloadRoot() {
+        options.generatedAssetPayloadRoot = "";
+        options.applyGeneratedAssetRuntimeProperties();
+        options.save();
+        AssetManager.reloadGeneratedAssetRuntime();
+        images.reloadArtQuality(options);
+        sounds.play("tab", options);
+        logEvent("External generated-art payload root cleared. Runtime will use bundled generated low_32 fallback unless a JVM flag supplies another root.");
+        repaint();
+    }
+    void cycleMapTileSize() {
+        options.mapTileSizeIndex = Math.floorMod(options.mapTileSizeIndex + 1, GameOptions.MAP_TILE_SIZE_LABELS.length);
+        options.save();
+        sounds.play("tab", options);
+        logEvent("Map tile size now " + options.mapTileSizeLabel() + " (" + options.mapTilePixelSize() + "px before GUI scale).");
+        repaint();
+    }
+
+    boolean worldZoomControlActive() {
+        if (screen == Screen.SECTOR_AUDIT) return auditWorld != null;
+        return world != null && (screen == Screen.GAME || (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.SCAVENGE || panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH)));
+    }
+
+    void changeWorldZoom(int delta, String source) {
+        int before = options.worldZoomIndex;
+        options.worldZoomIndex = Math.max(0, Math.min(GameOptions.WORLD_ZOOM_LABELS.length - 1, options.worldZoomIndex + delta));
+        if (options.worldZoomIndex != before) {
+            options.save();
+            sounds.play("tab", options);
+            logEvent("Viewport zoom " + options.worldZoomLabel() + " via " + source + ".");
+            DebugLog.audit("VIEWPORT_ZOOM", "source=" + source + " index=" + options.worldZoomIndex + " label=" + options.worldZoomLabel() + " mode=" + screen + "/" + panelMode + " state=" + stateSummary());
+        } else {
+            logEvent("Viewport zoom already at " + options.worldZoomLabel() + ".");
+        }
+        repaint();
+    }
+    void changeSfxVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeSfxVolume(options, delta));
+        sounds.play("button", options);
+        repaint();
+    }
+    void changeMusicVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeMusicVolume(options, delta));
+        sounds.setMusicVolume(options);
+        repaint();
+    }
+    void changeConversationVolume(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeConversationVolume(options, delta));
+        sounds.play("type", options);
+        repaint();
+    }
+
+    void cycleWindowMode() {
+        logEvent(OptionsBoundaryAuthority.cycleWindowMode(options));
+        repaint();
+    }
+    void changeResolution(int delta) {
+        logEvent(OptionsBoundaryAuthority.changeResolution(options, delta));
+        repaint();
+    }
+
+    void toggleGraphicsDropdown(int which) {
+        graphicsDropdown = (graphicsDropdown == which) ? -1 : which;
+        logEvent("Graphics dropdown " + (graphicsDropdown < 0 ? "closed" : "opened") + ".");
+        repaint();
+    }
+
+    void setWindowMode(int mode) {
+        logEvent(OptionsBoundaryAuthority.setWindowMode(options, mode));
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void setResolutionIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setResolutionIndex(options, idx));
+        graphicsDropdown = -1;
+        applyWindowMode();
+        repaint();
+    }
+
+    void setDownscaleIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setDownscaleIndex(options, idx));
+        renderScaling.applyOptions(options);
+        graphicsDropdown = -1;
+        DebugLog.audit("RENDER_DOWNSCALE", renderScaling.auditSummary());
+        repaint();
+    }
+
+    void setColorPreset(int idx) {
+        logEvent(OptionsBoundaryAuthority.setColorPreset(options, idx));
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void setTargetFpsIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setTargetFpsIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void toggleFrameLimiter() {
+        logEvent(OptionsBoundaryAuthority.toggleFrameLimiter(options));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void toggleRenderStressTest() {
+        logEvent(renderStressTest.toggle(frameLimiter));
+        options.diagnosticsOverlay = true;
+        performanceDiagnostics.setVisible(true);
+        options.save();
+        repaint();
+    }
+
+    void setRenderQualityIndex(int idx) {
+        logEvent(OptionsBoundaryAuthority.setRenderQualityIndex(options, idx));
+        applyOptions();
+        graphicsDropdown = -1;
+        repaint();
+    }
+
+    void cycleLightingFx() {
+        int next = (options.lightingFxIndex + 1) % GameOptions.LIGHTING_FX_LABELS.length;
+        logEvent(OptionsBoundaryAuthority.setLightingFxIndex(options, next));
+        repaint();
+    }
+
+    void toggleReducedMotion() {
+        logEvent(OptionsBoundaryAuthority.toggleReducedMotion(options));
+        applyOptions();
+        repaint();
+    }
+
+    void applyQoL(String message) {
+        logEvent(message);
+        DebugLog.audit("GAMEPLAY_QOL_OPTIONS", GameplayQualityOfLifeAuthority.auditSummary(options));
+        repaint();
+    }
+
+    void requestDoomModeToggle() {
+        if (options == null) { logEvent("doom mode unchanged: options unavailable."); return; }
+        if (options.doomModeEnabled) {
+            applyQoL(GameplayQualityOfLifeAuthority.setDoomMode(options, false));
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "doom mode is highly experimental and may cause instability.\n\nEnable the first-person 3D viewport wrapper for this profile?",
+                "Enable experimental doom mode?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice == JOptionPane.YES_OPTION) {
+            applyQoL(GameplayQualityOfLifeAuthority.setDoomMode(options, true));
+            logEvent("doom mode assets/renderer unlocked. LWJGL dependency status: " + LwjglRenderBackendProbe.statusLine() + ".");
+        } else {
+            options.doomModeEnabled = false;
+            options.save();
+            applyQoL("doom mode remains OFF.");
+        }
+    }
+
+    void changeDoomFov(int delta) {
+        if (options == null) { logEvent("doom mode FOV unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.setDoomFov(options, options.doomModeFovDegrees + delta));
+    }
+
+    void cycleDoomFogMode() {
+        if (options == null) { logEvent("doom mode fog unchanged: options unavailable."); return; }
+        applyQoL(GameplayQualityOfLifeAuthority.cycleDoomFogMode(options));
+    }
+
+
+    boolean isGraphicsDropdownButton(ButtonBox b) {
+        if (b == null || b.label == null) return false;
+        String label = b.label.trim();
+        if (label.startsWith("> ")) label = label.substring(2).trim();
+        if (graphicsDropdown == 0) {
+            return label.equals("Windowed") || label.equals("Borderless Windowed") || label.equals("Exclusive Fullscreen");
+        }
+        if (graphicsDropdown == 1) {
+            for (int i=0;i<DisplayResolutionAuthority.choiceCount();i++) if (label.equals(DisplayResolutionAuthority.modeLabel(i))) return true;
+            return false;
+        }
+        if (graphicsDropdown == 2) {
+            for (String name : GameOptions.PALETTE_NAMES) if (label.equals(name)) return true;
+            return false;
+        }
+        if (graphicsDropdown == 3) {
+            for (String name : GameOptions.DOWNSCALE_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        if (graphicsDropdown == 4) {
+            for (String name : GameOptions.TARGET_FPS_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        if (graphicsDropdown == 5) {
+            for (String name : GameOptions.RENDER_QUALITY_LABELS) if (label.equals(name)) return true;
+            return false;
+        }
+        return false;
+    }
+
+    void addGraphicsDropdownButtons(int x, int y, int bw, int gap) {
+        if (graphicsDropdown < 0) return;
+        Rectangle inner = graphicsDropdownInnerRect();
+        if (inner.width <= 0 || inner.height <= 0) return;
+        int rowH = Math.max(20, Math.min(30, scaled(27)));
+        int yy = inner.y;
+        if (graphicsDropdown == 0) {
+            String[] modes = {"Windowed", "Borderless Windowed", "Exclusive Fullscreen"};
+            for (int i=0;i<modes.length;i++) { final int idx=i; buttons.add(new ButtonBox(modes[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Select " + modes[i] + " window mode.", () -> setWindowMode(idx))); }
+        } else if (graphicsDropdown == 1) {
+            int available = DisplayResolutionAuthority.choiceCount();
+            int visible = Math.max(1, Math.min(available, inner.height / Math.max(1, rowH)));
+            int start = Math.max(0, Math.min(Math.max(0, available - visible), options.resolutionIndex - visible/2));
+            for (int row=0; row<visible; row++) {
+                final int idx=start+row;
+                String prefix = idx==options.resolutionIndex ? "> " : "";
+                buttons.add(new ButtonBox(prefix + DisplayResolutionAuthority.modeLabel(idx), inner.x, yy+row*rowH, inner.width, rowH-2, "Select detected/safe resolution " + DisplayResolutionAuthority.modeLabel(idx) + ".", () -> setResolutionIndex(idx)));
+            }
+        } else if (graphicsDropdown == 2) {
+            for (int i=0;i<GameOptions.PALETTE_NAMES.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.PALETTE_NAMES[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Apply palette globally: " + GameOptions.PALETTE_NAMES[i] + ".", () -> setColorPreset(idx))); }
+        } else if (graphicsDropdown == 3) {
+            for (int i=0;i<GameOptions.DOWNSCALE_LABELS.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.DOWNSCALE_LABELS[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Use internal render scale " + GameOptions.DOWNSCALE_LABELS[i] + ".", () -> setDownscaleIndex(idx))); }
+        } else if (graphicsDropdown == 4) {
+            for (int i=0;i<GameOptions.TARGET_FPS_LABELS.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.TARGET_FPS_LABELS[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Use target frame pacing " + GameOptions.TARGET_FPS_LABELS[i] + ".", () -> setTargetFpsIndex(idx))); }
+        } else if (graphicsDropdown == 5) {
+            for (int i=0;i<GameOptions.RENDER_QUALITY_LABELS.length;i++) { final int idx=i; buttons.add(new ButtonBox(GameOptions.RENDER_QUALITY_LABELS[i], inner.x, yy+i*rowH, inner.width, rowH-2, "Use render quality profile " + GameOptions.RENDER_QUALITY_LABELS[i] + ".", () -> setRenderQualityIndex(idx))); }
+        }
+    }
+
+    void applyWindowMode() {
+        renderScaling.applyOptions(options);
+        logEvent(WindowModeSurfaceAuthority.apply(this, options));
+        DebugLog.audit("GRAPHICS_APPLY", renderScaling.auditSummary());
+        repaint();
+    }
+    void markJvmProfileChanged(String message) {
+        JvmRuntimeProfileAuthority.save(jvmRuntimeProfile);
+        jvmRuntimeRestartPending = true;
+        jvmRuntimeNotice = message + " Saved to settings/jvm_runtime.properties. Restart required for full effect.";
+        logEvent(jvmRuntimeNotice);
+        DebugLog.audit("JVM_RUNTIME_PROFILE", JvmRuntimeProfileAuthority.auditSummary(jvmRuntimeProfile));
+        repaint();
+    }
+
+    void cycleJvmRuntimeProfile() {
+        JvmRuntimeProfileAuthority.cycleTarget(jvmRuntimeProfile);
+        markJvmProfileChanged("JVM runtime profile now " + jvmRuntimeProfile.targetLabel() + ".");
+    }
+
+    void cycleJvmGarbageCollector() {
+        JvmRuntimeProfileAuthority.cycleGc(jvmRuntimeProfile);
+        markJvmProfileChanged("JVM garbage collector profile now " + jvmRuntimeProfile.gc.label + ".");
+    }
+
+    void cycleJvmPipelineProfile() {
+        JvmRuntimeProfileAuthority.cyclePipeline(jvmRuntimeProfile);
+        markJvmProfileChanged("Java2D pipeline profile now " + jvmRuntimeProfile.pipelineLabel() + ".");
+    }
+
+    void changeJvmMemory(int deltaMb) {
+        JvmRuntimeProfileAuthority.changeMemory(jvmRuntimeProfile, deltaMb);
+        markJvmProfileChanged("JVM max heap profile now " + jvmRuntimeProfile.maxRamMb + " MB.");
+    }
+
+    void toggleJvmStringDeduplication() {
+        jvmRuntimeProfile.stringDeduplication = !jvmRuntimeProfile.stringDeduplication;
+        markJvmProfileChanged("JVM string deduplication " + (jvmRuntimeProfile.stringDeduplication ? "enabled" : "disabled") + ".");
+    }
+
+    void toggleJvmTransparentAcceleration() {
+        jvmRuntimeProfile.transparentAcceleration = !jvmRuntimeProfile.transparentAcceleration;
+        markJvmProfileChanged("Java2D transparent blit acceleration " + (jvmRuntimeProfile.transparentAcceleration ? "enabled" : "disabled") + ".");
+    }
+
+    void toggleJvmNoAa() {
+        jvmRuntimeProfile.disableVectorAntialiasing = !jvmRuntimeProfile.disableVectorAntialiasing;
+        markJvmProfileChanged("Java2D vector antialias suppression " + (jvmRuntimeProfile.disableVectorAntialiasing ? "enabled" : "disabled") + ".");
+    }
+
+    void acceptJvmSettingsAndRestart() {
+        JvmRuntimeProfileAuthority.save(jvmRuntimeProfile);
+        java.util.List<String> command = new ArrayList<>();
+        String javaExe = Paths.get(System.getProperty("java.home", ""), "bin", isWindowsHost() ? "java.exe" : "java").toString();
+        command.add(javaExe);
+        command.addAll(jvmRuntimeProfile.buildJvmArgs());
+        command.add("-cp");
+        command.add(System.getProperty("java.class.path"));
+        command.add(TheMechanist.class.getName());
+        DebugLog.audit("JVM_RESTART", "Restarting with command=" + command);
+        logEvent("Restarting with accepted JVM profile: " + jvmRuntimeProfile.targetLabel() + ".");
+        try {
+            new ProcessBuilder(command).inheritIO().start();
+            shutdownRuntime();
+            Window win = SwingUtilities.getWindowAncestor(this);
+            if (win != null) win.dispose();
+            System.exit(0);
+        } catch (Throwable t) {
+            DebugLog.error("JVM_RESTART", "Failed to restart with selected JVM profile.", t);
+            jvmRuntimeNotice = "Restart failed: " + t.getMessage();
+            logEvent(jvmRuntimeNotice);
+            repaint();
+        }
+    }
+
+    boolean isWindowsHost() { return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win"); }
+
+    void togglePerformanceDiagnostics() {
+        String line = performanceDiagnostics.toggle();
+        options.diagnosticsOverlay = performanceDiagnostics.visible();
+        options.save();
+        logEvent(line);
+        DebugLog.audit("PERFORMANCE_DIAGNOSTICS", performanceDiagnostics.auditSummary());
+        repaint();
+    }
+
+    void cycleCvdMode() {
+        options.cvdModeIndex = (options.cvdModeIndex + 1) % AccessibilityCompatibilityAuthority.CvdMode.values().length;
+        options.save();
+        logEvent("Color vision correction: " + AccessibilityCompatibilityAuthority.cvdLabel(options.cvdModeIndex) + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(userProfile));
+        repaint();
+    }
+
+    void toggleHighContrastText() {
+        options.highContrastText = !options.highContrastText;
+        options.save();
+        logEvent("High contrast text containers " + (options.highContrastText ? "enabled" : "disabled") + ".");
+        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(options));
+        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(userProfile));
+        repaint();
+    }
+
+    void toggleInstantDialogueText() {
+        options.instantDialogueText = !options.instantDialogueText;
+        options.save();
+        logEvent("Instant conversation text " + (options.instantDialogueText ? "enabled" : "disabled") + ".");
+        repaint();
+    }
+
+    void adjustScreenShake(int delta) {
+        options.screenShakePercent = Math.max(0, Math.min(100, options.screenShakePercent + delta));
+        options.save();
+        logEvent("Screen shake intensity now " + options.screenShakePercent + "%.");
+        repaint();
+    }
+
+    void pushCurrentScreenNarration() {
+        String next = "The Mechanist screen: " + screen + (panelMode == PanelMode.NONE ? "" : ", panel " + panelMode) + (world == null ? "" : ", zone " + world.zoneType.label + ", turn " + turn) + ".";
+        AccessibilityCompatibilityAuthority.pushNarration(this, lastAccessibleNarration, next);
+        lastAccessibleNarration = next;
+        logEvent("Accessibility narration updated for current screen.");
+        repaint();
+    }
+
+    void cycleColorTarget() { logEvent(OptionsBoundaryAuthority.cycleColorTarget(options)); repaint(); }
+    void cycleColorPreset() { logEvent(OptionsBoundaryAuthority.cycleColorPreset(options)); repaint(); }
+    void adjustSelectedColor(int delta) { logEvent(OptionsBoundaryAuthority.adjustSelectedColor(options, delta)); repaint(); }
+    Color optionColor(int key) { return OptionsBoundaryAuthority.optionColor(options, key); }
+
+    ArrayList<String> controlsReferenceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(controlProfileTitle());
+        lines.add("Action names are shared across keyboard and controller paths; context decides whether a prompt moves, examines, interacts, confirms, or backs out.");
+        lines.add("Required recovery actions: Move, Confirm, Cancel/Back, Pause/Menu, and a keyboard/mouse fallback.");
+        for (InputAction action : InputAction.values()) {
+            lines.add(inputActionLabel(action) + " | " + inputActionContext(action) + " | "
+                    + keyboardPromptFor(action) + " | " + controllerPromptFor(action)
+                    + (requiredInputAction(action) ? " | required" : ""));
+        }
+        lines.add("Context overlap: E examines while the Look panel is open and interacts from the game surface; A/Cross confirms in menus and examines/interacts only where that panel owns the prompt.");
+        lines.add("Safe fallback: Escape/B/Circle backs out, and keyboard movement remains available if a controller is missing or reconnecting.");
+        if (rebindingTarget != null && !rebindingTarget.isEmpty()) lines.add(rebindingTarget);
+        return lines;
+    }
+
+    String controlProfileTitle() {
+        switch (controlsTab) {
+            case 1: return "XBOX CONTROL REFERENCE";
+            case 2: return "PLAYSTATION CONTROL REFERENCE";
+            case 3: return "STEAM DECK CONTROL REFERENCE";
+            case 4: return "GENERIC CONTROLLER REFERENCE";
+            default: return "KEYBOARD AND MOUSE CONTROL REFERENCE";
+        }
+    }
+
+    boolean requiredInputAction(InputAction action) {
+        return action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT
+                || action == InputAction.MOVE_RIGHT || action == InputAction.CONFIRM || action == InputAction.CANCEL
+                || action == InputAction.PAUSE;
+    }
+
+    String inputActionLabel(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Move / nudge up";
+            case MOVE_DOWN: return "Move / nudge down";
+            case MOVE_LEFT: return "Move / nudge left";
+            case MOVE_RIGHT: return "Move / nudge right";
+            case CONFIRM: return "Confirm / choose";
+            case CANCEL: return "Cancel / back";
+            case WAIT: return "Wait one turn";
+            case INTERACT: return "Interact";
+            case EXAMINE: return "Examine visible target";
+            case INVENTORY: return "Inventory";
+            case CHARACTER: return "Character dossier";
+            case BUILD: return "Build and base tools";
+            case SENSES: return "Senses";
+            case PLAN_MOVE: return "Plan exact movement";
+            case PAUSE: return "Pause / menu";
+            case LOOK: return "Look";
+            case MAP: return "Map";
+            case ZOOM_IN: return "Zoom in";
+            case ZOOM_OUT: return "Zoom out";
+            case ATTACK: return "Combat targeting";
+            case RELOAD: return "Reload";
+            default: return action.name();
+        }
+    }
+
+    String inputActionContext(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "movement, targeting, lists";
+            case CONFIRM: return "menus, targeting, planning";
+            case CANCEL: return "global recovery";
+            case WAIT: return "game surface";
+            case INTERACT: return "game surface and interact panel";
+            case EXAMINE: return "Look panel";
+            case INVENTORY: case CHARACTER: case BUILD: case SENSES: case LOOK: case MAP: return "game surface";
+            case PLAN_MOVE: return "game surface movement planning";
+            case PAUSE: return "global menu";
+            case ZOOM_IN: case ZOOM_OUT: return "map and viewport";
+            case ATTACK: case RELOAD: return "combat";
+            default: return "general";
+        }
+    }
+
+    String keyboardPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Keyboard: W / Up";
+            case MOVE_DOWN: return "Keyboard: S / Down";
+            case MOVE_LEFT: return "Keyboard: A / Left";
+            case MOVE_RIGHT: return "Keyboard: D / Right";
+            case CONFIRM: return "Keyboard: Enter / Space";
+            case CANCEL: return "Keyboard: Escape";
+            case WAIT: return "Keyboard: . / Numpad 5";
+            case INTERACT: return "Keyboard: E";
+            case EXAMINE: return "Keyboard: E while looking";
+            case INVENTORY: return "Keyboard: I";
+            case CHARACTER: return "Keyboard: C";
+            case BUILD: return "Keyboard: B";
+            case SENSES: return "Keyboard: G";
+            case PLAN_MOVE: return "Keyboard: P";
+            case PAUSE: return "Keyboard: Escape";
+            case LOOK: return "Keyboard: L";
+            case MAP: return "Keyboard: M";
+            case ZOOM_IN: return "Keyboard: Home / wheel up";
+            case ZOOM_OUT: return "Keyboard: End / wheel down";
+            case ATTACK: return "Keyboard: F";
+            case RELOAD: return "Keyboard: X";
+            default: return "Keyboard: unassigned";
+        }
+    }
+
+    String controllerPromptFor(InputAction action) {
+        switch (controlsTab) {
+            case 1: return xboxPromptFor(action);
+            case 2: return playstationPromptFor(action);
+            case 3: return steamPromptFor(action);
+            case 4: return genericPromptFor(action);
+            default: return "Controller: see controller tabs";
+        }
+    }
+
+    String xboxPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Xbox: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Xbox: A";
+            case CANCEL: return "Xbox: B";
+            case INVENTORY: return "Xbox: X";
+            case CHARACTER: return "Xbox: Y";
+            case PAUSE: return "Xbox: Menu";
+            case LOOK: return "Xbox: View";
+            case ZOOM_IN: return "Xbox: RB";
+            case ZOOM_OUT: return "Xbox: LB";
+            case ATTACK: return "Xbox: right stick up";
+            case PLAN_MOVE: return "Xbox: right stick down";
+            default: return "Xbox: keyboard fallback";
+        }
+    }
+
+    String playstationPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "PlayStation: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "PlayStation: Cross";
+            case CANCEL: return "PlayStation: Circle";
+            case INVENTORY: return "PlayStation: Square";
+            case CHARACTER: return "PlayStation: Triangle";
+            case PAUSE: return "PlayStation: Options";
+            case LOOK: return "PlayStation: Share/Create";
+            case ZOOM_IN: return "PlayStation: R1";
+            case ZOOM_OUT: return "PlayStation: L1";
+            case ATTACK: return "PlayStation: right stick up";
+            case PLAN_MOVE: return "PlayStation: right stick down";
+            default: return "PlayStation: keyboard fallback";
+        }
+    }
+
+    String steamPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Steam: stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Steam: A";
+            case CANCEL: return "Steam: B";
+            case INVENTORY: return "Steam: X";
+            case CHARACTER: return "Steam: Y";
+            case PAUSE: return "Steam: Menu";
+            case LOOK: return "Steam: View";
+            case ZOOM_IN: return "Steam: R1";
+            case ZOOM_OUT: return "Steam: L1";
+            case ATTACK: return "Steam: right stick up";
+            case PLAN_MOVE: return "Steam: right stick down";
+            default: return "Steam: keyboard fallback";
+        }
+    }
+
+    String genericPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Generic: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Generic: south face";
+            case CANCEL: return "Generic: east face";
+            case INVENTORY: return "Generic: west face";
+            case CHARACTER: return "Generic: north face";
+            case PAUSE: return "Generic: Start";
+            case LOOK: return "Generic: Back/Select";
+            case ZOOM_IN: return "Generic: right bumper";
+            case ZOOM_OUT: return "Generic: left bumper";
+            case ATTACK: return "Generic: right stick up";
+            case PLAN_MOVE: return "Generic: right stick down";
+            default: return "Generic: keyboard fallback";
+        }
+    }
+
+    void drawOptions(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(optionColor(GameOptions.BACKGROUND));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 20, 20, W-40, H-40, "outer");
+
+        int panelX = Math.max(34, W/2 - Math.min(620, W/2 - 34));
+        int panelY = Math.max(34, H / 22);
+        int panelW = Math.min(W - panelX * 2, Math.max(980, W - 90));
+        int panelH = Math.max(430, H - panelY - 64);
+        drawPanelBox(g, panelX, panelY, panelW, panelH, "OPTIONS");
+
+        g.setFont(smallFont.deriveFont(Font.BOLD, Math.max(10f, Math.min(14f, H / 64f)))); g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        g.drawString("OPTIONS", panelX + 18, panelY + 26);
+        String sub;
+        if (optionsTab == 0) sub = "Display mode, detected resolution, text density, and interface scale";
+        else if (optionsTab == 1) sub = "Text size, text crispness, interface scale, and hover-help density";
+        else if (optionsTab == 2) sub = "Sound channels and volumes";
+        else if (optionsTab == 3) sub = "Controls and command bindings";
+        else if (optionsTab == 4) sub = "Graphics rendering, frame pacing, art quality, motion, and color treatment";
+        else if (optionsTab == 5) sub = "RESTART REQUIRED: JVM heap, GC, Java2D pipeline, client/server/thin-client/single-player profiles";
+        else if (optionsTab == 6) sub = "Accessibility compatibility, color vision correction, readable text, narration hooks, and reduced motion";
+        else sub = "Quality-of-life defaults for storage, construction, logistics, item safety, production, market, and notification friction";
+
+        int subPanelY = panelY + 74;
+        drawTextPanel(g, panelX + 44, subPanelY, panelW - 88, 28, Collections.singletonList(sub), true);
+
+        int controlsBoxX = panelX + 44;
+        int controlsBoxY = panelY + 108;
+        int controlsBoxW = panelW - 88;
+        int controlsBoxH = Math.max(116, Math.min(188, panelH / 4));
+        g.setColor(new Color(0, 0, 0, 202));
+        g.fillRoundRect(controlsBoxX, controlsBoxY, controlsBoxW, controlsBoxH, 12, 12);
+        drawSlicedFrame(g, controlsBoxX, controlsBoxY, controlsBoxW, controlsBoxH, "inner");
+        stampUiFrameId(g, "T", "options-controls", controlsBoxX, controlsBoxY, controlsBoxW, controlsBoxH);
+
+        int infoX = panelX + 44;
+        int infoY = controlsBoxY + controlsBoxH + 12;
+        int infoW = panelW - 88;
+        int infoH = Math.max(96, panelY + panelH - infoY - 50);
+        g.setFont(smallFont);
+
+        if (optionsTab == 0) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("Window Mode: " + options.windowModeLabel());
+            lines.add("Resolution: " + options.resolutionLabel());
+            lines.add("Detected/Safe Display Modes: " + DisplayResolutionAuthority.choiceCount());
+            lines.add("Screensaver: " + (options.screenSaver ? "ON" : "OFF"));
+            lines.add("Display owns windowed, borderless windowed, exclusive fullscreen, resolution selection, and applying those monitor/window settings.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 1) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("Font/Text Scale: " + options.fontScale + "%");
+            lines.add("GUI/Chrome Scale: " + options.uiScale + "%");
+            lines.add("Text Crispness: " + options.renderQualityLabel());
+            lines.add("Floating Hover Help: " + (options.hoverHelp ? "ON" : "OFF"));
+            lines.add("Compact text is the default; larger text is an opt-in accessibility setting. Crispness changes Java2D text-rendering hints without pretending to be text size.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 2) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("SFX: " + (options.soundEnabled ? "ON" : "OFF") + " / " + options.sfxVolume + "%");
+            lines.add("MUSIC: " + (options.musicEnabled ? "ON" : "OFF") + " / " + options.musicVolume + "%");
+            lines.add("VOICE / CONVERSATION: " + (options.conversationSound ? "ON" : "OFF") + " / " + options.conversationVolume + "%");
+            lines.add("BOOT SOUND: " + (options.bootSound ? "ON" : "OFF"));
+            lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming logic Engine." );
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 3) {
+            ArrayList<String> lines = controlsReferenceLines();
+            if (controlsTab == 4) lines.add("Runtime controller status: " + (gamepadInputEngine == null ? "not started" : gamepadInputEngine.status()));
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 4) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add("Render Downscale: " + options.downscaleLabel() + " / internal " + renderScaling.internalWidth() + "x" + renderScaling.internalHeight());
+            lines.add("Target FPS: " + options.targetFpsLabel() + " / Frame limiter " + options.frameLimitLabel() + " / timer delay " + options.targetTimerDelayMs() + "ms");
+            lines.add("Render Quality: " + options.renderQualityLabel());
+            lines.add("Visual Lighting FX: " + options.lightingFxLabel() + " / render-only deterministic lightmap");
+            lines.add("Runtime Profile: " + jvmRuntimeProfile.targetLabel() + " / memory " + jvmRuntimeProfile.initialRamMb + "-" + jvmRuntimeProfile.maxRamMb + " MB / " + jvmRuntimeProfile.gc.label + ".");
+            lines.add("Reduced Motion: " + (options.reducedMotion ? "ON" : "OFF"));
+            lines.add("F3 Performance Overlay: " + (options.diagnosticsOverlay ? "ON" : "OFF") + ".");
+            lines.add("Frame pacing: " + frameLimiter.snapshot(renderStressTest.active()).compactLine());
+            lines.add("Imported Portrait Sheets: " + (options.importedPortraits ? "ON" : "OFF"));
+            lines.add("Tile Icon Rendering: " + (options.tileIconRendering ? "ON" : "OFF"));
+            lines.add("Art Quality Cache: " + options.artQualityLabel() + " / folder " + options.artQualityFolder());
+            lines.add("Generated Art Payload: " + options.generatedAssetPayloadRootLabel());
+            try {
+                var runtime = AssetManager.generatedAssetRuntime();
+                lines.add("Generated Runtime: " + (runtime.runtimeManifestPresent() && runtime.tierManifestPresent() ? "ready" : "partial") + " / payload roots " + runtime.generatedPayloadRoots().size());
+            } catch (Throwable ignored) {
+                lines.add("Generated Runtime: unavailable");
+            }
+            lines.add("Map Tile Size: " + options.mapTileSizeLabel() + " / " + options.mapTilePixelSize() + "px before GUI scale");
+            lines.add("Render Scaling Profile: " + renderScaling.profileLabel() + " / option downscale " + renderScaling.downscaleLabel() + " / F10 cycles profiles.");
+            lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[options.colorPreset] + " / Editing " + options.colorTargetLabel());
+            drawTextPanel(g, infoX, infoY, infoW, Math.max(96, infoH-72), lines, false);
+            int swatchY = infoY + Math.max(96, infoH-66);
+            int sx = infoX + 18;
+            for (int i=0; i<GameOptions.COLOR_KEYS.length; i++) {
+                int px = sx + i * Math.max(128, (infoW-36)/GameOptions.COLOR_KEYS.length);
+                g.setColor(new Color(options.colorValue(i)));
+                g.fillRect(px, swatchY, 28, 18);
+                g.setColor(i == options.colorTarget ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+                g.drawRect(px, swatchY, 28, 18);
+                g.setFont(smallFont);
+                for(String line: TextSurfaceApi.wrap(GameOptions.COLOR_KEYS[i], 11)) { drawUiTextLine(g, line, px+34, swatchY+13); break; }
+            }
+        } else if (optionsTab == 5) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add(jvmRuntimeRestartPending ? "RESTART PENDING: selected JVM profile has been saved; use ACCEPT + RESTART to relaunch now." : "RESTART REQUIRED: selected JVM options do not fully affect the active process until restart.");
+            lines.add("Current profile: " + jvmRuntimeProfile.targetLabel() + " / " + jvmRuntimeProfile.mode);
+            lines.add("Memory profile: -Xms" + jvmRuntimeProfile.initialRamMb + "M / -Xmx" + jvmRuntimeProfile.maxRamMb + "M.");
+            lines.add("Garbage collector: " + jvmRuntimeProfile.gc.label + "; string dedupe: " + (jvmRuntimeProfile.stringDeduplication ? "ON" : "OFF") + ".");
+            lines.add("Java2D pipeline: " + jvmRuntimeProfile.pipelineLabel() + "; transparent blit: " + (jvmRuntimeProfile.transparentAcceleration ? "ON" : "OFF") + "; noaa: " + (jvmRuntimeProfile.disableVectorAntialiasing ? "ON" : "OFF") + ".");
+            lines.add("Compiled restart flags: " + String.join(" ", jvmRuntimeProfile.buildJvmArgs()));
+            lines.add("Launcher/main menu, graphical client, thin network client, single-player combined, and headless server are separate profiles of the same program.");
+            lines.add("Single-player combined profiles assume local client, local host, and authoritative server lane share one JVM process.");
+            lines.add("The multiplayer server remains headless/status-initializer only until the server/network layer is fully examined and opened.");
+            lines.add(jvmRuntimeNotice);
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else if (optionsTab == 6) {
+            ArrayList<String> lines = new ArrayList<>(AccessibilityCompatibilityAuthority.optionLines(options));
+            lines.add("Additional diegetic palettes now include Protan Ember, Deutan Steel, Tritan Brass, and Legibility Slate.");
+            lines.add("Visual-check path: enable the performance overlay, activate a color-vision correction, and watch frame pacing for the extra backbuffer pass.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        } else {
+            ArrayList<String> lines = new ArrayList<>(GameplayQualityOfLifeAuthority.optionLines(options));
+            lines.add("These switches are preferences and integration contracts: supported systems should consume them instead of reintroducing hard-coded hostile defaults.");
+            drawTextPanel(g, infoX, infoY, infoW, infoH, lines, false);
+        }
+        drawGraphicsDropdownPopupFrame(g);
+    }
+
+    void drawGraphicsDropdownPopupFrame(Graphics2D g) {
+        if (screen != Screen.OPTIONS || graphicsDropdown < 0 || (optionsTab != 0 && optionsTab != 1 && optionsTab != 4)) return;
+        Rectangle r = graphicsDropdownOuterRect();
+        if (r.width <= 0 || r.height <= 0) return;
+        g.setColor(new Color(0, 0, 0, 218));
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
+        drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
+        stampUiFrameId(g, "F", "graphics-dropdown-popup", r.x, r.y, r.width, r.height);
+    }
+
+    void drawClippedWrappedLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h, Font font, boolean centered) {
+        if (lines == null || w <= 4 || h <= 4) return;
+        Font oldFont = g.getFont();
+        Shape oldClip = g.getClip();
+        g.setFont(font == null ? smallFont : font);
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(12, fm.getHeight() + 1);
+        g.setClip(x, y, Math.max(1, w), Math.max(1, h));
+        int yy = y + fm.getAscent();
+        for (String line : TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(8, w - 4))) {
+            if (yy > y + h) { g.setClip(oldClip); g.setFont(oldFont); return; }
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy); else g.drawString(line, x, yy);
+            yy += lineH;
+        }
+        g.setClip(oldClip);
+        g.setFont(oldFont);
+    }
+
+    void drawFrameWrappedCenteredText(Graphics2D g, String text, int x, int y, int w, int h, Font font) {
+        if (text == null) text = "";
+        Font oldFont = g.getFont();
+        g.setFont(font == null ? uiFont : font);
+        FontMetrics fm = g.getFontMetrics();
+        java.util.List<String> lines = TextLayoutAuthority.wrapPixels(g, g.getFont(), text, Math.max(8, w - 8));
+        int lineH = Math.max(fm.getHeight() + 6, 22);
+        int totalH = lines.size() * lineH;
+        int yy = y + Math.max(fm.getAscent(), (h - totalH) / 2 + fm.getAscent());
+        for (String line : lines) {
+            if (yy > y + h) break;
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            center(g, line, x + w / 2, yy);
+            yy += lineH;
+        }
+        g.setFont(oldFont);
+    }
+
+    void drawTextPanel(Graphics2D g, int x, int y, int w, int h, java.util.List<String> lines, boolean centered) {
+        if (w <= 4 || h <= 4) return;
+        g.setColor(new Color(0, 0, 0, 224));
+        g.fillRoundRect(x, y, w, h, 12, 12);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "T", lines == null || lines.isEmpty() ? "text-panel" : lines.get(0), x, y, w, h);
+        Shape oldClip = g.getClip();
+        g.setClip(x + 8, y + 8, Math.max(1, w - 16), Math.max(1, h - 16));
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        int yy = y + 22;
+        for (String line : TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(8, w - 32))) {
+            if (yy > y + h - 8) { g.setClip(oldClip); return; }
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy); else g.drawString(line, x + 14, yy);
+            yy += fm.getHeight();
+        }
+        g.setClip(oldClip);
+    }
+
+    void drawIdleScreensaver(Graphics2D g) {
+        Graphics2D gg=(Graphics2D)g.create();
+        gg.setColor(Color.BLACK); gg.fillRect(0,0,getWidth(),getHeight());
+        drawLoading(gg);
+        gg.setFont(uiFont); gg.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(gg, "IDLE UNDERHIVE SKYLINE — move mouse or press any key to return", getWidth()/2, getHeight()-42);
+        gg.dispose();
+    }
+
+    void drawHoverHelp(Graphics2D g, int hoverButtonIndex) {
+        if (!options.hoverHelp) return;
+        String help = null;
+        if (hoverButtonIndex >= 0 && hoverButtonIndex < buttons.size()) help = buttons.get(hoverButtonIndex).tip;
+        else if (mouseX < 0 && selectedButton >= 0 && selectedButton < buttons.size() && buttonIsModalInteractive(buttons.get(selectedButton))) help = buttons.get(selectedButton).tip;
+        if (help == null || mouseX < 0 || mouseY < 0) return;
+        g.setFont(smallFont);
+        int maxChars = 34;
+        java.util.List<String> lines = TextSurfaceApi.wrap(help, maxChars);
+        FontMetrics fm = g.getFontMetrics();
+        int tw = 0;
+        for (String line : lines) tw = Math.max(tw, fm.stringWidth(line));
+        int boxW = Math.min(340, Math.max(190, tw + 22));
+        int lineH = fm.getHeight();
+        int boxH = Math.max(34, lines.size()*lineH + 14);
+        int x = mouseX + 18;
+        int y = mouseY + 18;
+        if (x + boxW > getWidth() - 12) x = mouseX - boxW - 18;
+        if (y + boxH > getHeight() - 12) y = mouseY - boxH - 18;
+        x = Math.max(8, x); y = Math.max(8, y);
+        g.setColor(new Color(8,8,9,238)); g.fillRect(x, y, boxW, boxH);
+        g.setColor(new Color(165,138,82)); g.drawRect(x, y, boxW, boxH);
+        g.setColor(new Color(220,205,160));
+        int ty = y + 18;
+        for (String line : lines) { drawUiTextLine(g, line, x+11, ty); ty += lineH; }
+    }
+
+    void drawUiTextLine(Graphics2D g, String s, int x, int y) {
+        if (s == null) return;
+        FontMetrics fm = g.getFontMetrics();
+        int tw = fm.stringWidth(s);
+        int th = fm.getHeight();
+        Color old = g.getColor();
+        g.setColor(new Color(0, 0, 0, 196));
+        g.fillRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
+        g.setColor(new Color(128, 105, 58, 135));
+        g.drawRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
+        g.setColor(old);
+        g.drawString(s, x, y);
+    }
+
+    void center(Graphics2D g, String s, int x, int y) {
+        FontMetrics fm = g.getFontMetrics();
+        drawUiTextLine(g, s, x - fm.stringWidth(s)/2, y);
+    }
+
+    boolean buttonIsModalInteractive(ButtonBox b) {
+        if (b == null) return false;
+        if (screen == Screen.OPTIONS && graphicsDropdown >= 0) return isGraphicsDropdownButton(b);
+        if (screen == Screen.SECTOR_AUDIT && auditZoneDropdownOpen) return isZoneAuditDropdownButton(b) || (b.label != null && b.label.startsWith("ZONE:"));
+        return true;
+    }
+
+    int activeHoverButtonIndex() {
+        if (mouseX < 0 || mouseY < 0) return -1;
+        // Topmost buttons win. When a dropdown is open it is modal for hover and
+        // help text as well as clicks, so obscured controls underneath cannot glow.
+        for (int i=buttons.size()-1; i>=0; i--) {
+            ButtonBox b = buttons.get(i);
+            if (!buttonIsModalInteractive(b)) continue;
+            if (b.contains(mouseX, mouseY)) return i;
+        }
+        return -1;
+    }
+
+    void activateSelectedButton() {
+        if (!buttons.isEmpty() && selectedButton >=0 && selectedButton < buttons.size()) {
+            ButtonBox b = buttons.get(selectedButton);
+            if (!buttonIsModalInteractive(b)) { sounds.play("panelClose", options); return; }
+            sounds.play("button", options);
+            runGuarded("BUTTON", "activate selected button " + b.label, b.action);
+        }
+    }
+
+
+    void targetPanelCursorFromMouse(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return;
+        if (panelMode == PanelMode.LOOK) {
+            lookCursorActive = true;
+            lookX = tx; lookY = ty;
+            lookStackIndex = 0; lookStackScroll = 0;
+            activeScrollTag = "look-stack";
+        } else if (panelMode == PanelMode.COMBAT) {
+            combatCursorActive = true;
+            combatX = tx; combatY = ty;
+            lastTargetingReport = targetingSolutionAt(tx, ty).summary;
+        } else if (panelMode == PanelMode.INTERACT) {
+            interactCursorActive = true;
+            lookX = tx; lookY = ty;
+            clampInteractCursorToAdjacent();
+            lookStackIndex = 0;
+            updatePendingInteractionSummary();
+        }
+        DebugLog.audit("MOUSE_TARGETING", "panel=" + panelMode + " tile=" + tx + "," + ty + " source=virtual-map");
+    }
+
+    @Override public void mouseClicked(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        if (screen == Screen.INTRO_CRAWL) { continueFromIntroCrawl(); return; }
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        int mx = mp.x, my = mp.y;
+        if (screen==Screen.ZONE_SPLASH) { continueFromZoneSplash(); repaint(); requestFocusInWindow(); return; }
+        if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mx, my, SwingUtilities.isRightMouseButton(e))) { requestFocusInWindow(); return; }
+        if (screen == Screen.SECTOR_AUDIT && auditZoneDropdownOpen) {
+            for (int i=buttons.size()-1;i>=0;i--) {
+                ButtonBox b = buttons.get(i);
+                boolean zoneSelectorControl = isZoneAuditDropdownButton(b) || (b != null && b.label != null && b.label.startsWith("ZONE:"));
+                if (zoneSelectorControl && b.contains(mx, my)) {
+                    selectedButton=i;
+                    sounds.play("button", options);
+                    runGuarded("MOUSE", "click zone audit selector " + b.label, b.action);
+                    repaint();
+                    requestFocusInWindow();
+                    return;
+                }
+            }
+            Rectangle dd = zoneAuditDropdownOuterRect(uiLayout());
+            if (dd.contains(mx, my)) { repaint(); requestFocusInWindow(); return; }
+            auditZoneDropdownOpen = false;
+            repaint();
+            requestFocusInWindow();
+            return;
+        }
+        if (screen == Screen.SECTOR_AUDIT && auditWorld != null) {
+            Point tile = screenPointToAuditTile(mx, my);
+            if (tile != null) { auditCursorX = tile.x; auditCursorY = tile.y; repaint(); requestFocusInWindow(); return; }
+        }
+        if (screen == Screen.GAME && world != null && firstPersonRenderViewport.handleMouseClicked(this, e, mx, my)) {
+            requestFocusInWindow();
+            return;
+        }
+        if (screen == Screen.GAME && world != null) {
+            Point tile = screenPointToWorldTile(mx, my);
+            if (SwingUtilities.isRightMouseButton(e) && tile != null) {
+                if (tile.x == playerX && tile.y == playerY) {
+                    clearMouseMovementPreview("right-click self opens look targeting");
+                    interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK);
+                    repaint(); requestFocusInWindow(); return;
+                }
+                if (mouseMovePreviewActive) clearMouseMovementPreview("right-click toggle");
+                else updateMouseMovementPreviewTo(tile.x, tile.y);
+                repaint(); requestFocusInWindow(); return;
+            }
+            if (SwingUtilities.isLeftMouseButton(e) && mouseMovePreviewActive) {
+                executeMouseMovementPreview();
+                requestFocusInWindow(); return;
+            }
+        }
+        if (screen == Screen.PANEL && world != null && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT)) {
+            Point tile = screenPointToWorldTile(mx, my);
+            if (tile != null && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e))) {
+                targetPanelCursorFromMouse(tile.x, tile.y);
+                repaint(); requestFocusInWindow(); return;
+            }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && handleInventoryStackPanelClick(mx, my)) { requestFocusInWindow(); return; }
+        if (findScrollRegion(mx,my) != null) { handleScrollbarClick(mx,my); repaint(); requestFocusInWindow(); return; }
+        if (screen == Screen.KNOWLEDGE && handleKnowledgeTreeClick(mx, my)) { requestFocusInWindow(); return; }
+        if (screen==Screen.OPTIONS && graphicsDropdown>=0) {
+            // Open dropdowns are modal blockers. They must consume the click before
+            // any button underneath them can receive it. This prevents selecting a
+            // dropdown value while also triggering an obscured option button.
+            for (int i=buttons.size()-1;i>=0;i--) {
+                ButtonBox b = buttons.get(i);
+                if (isGraphicsDropdownButton(b) && b.contains(mx, my)) {
+                    selectedButton=i;
+                    sounds.play("button", options);
+                    runGuarded("MOUSE", "click dropdown " + b.label, b.action);
+                    repaint();
+                    return;
+                }
+            }
+            // Clicked outside the dropdown: close it and swallow the click.
+            graphicsDropdown=-1;
+            repaint();
+            requestFocusInWindow();
+            return;
+        }
+        if (screen == Screen.CHARACTER) {
+            if (characterNameEditRect.contains(mx, my)) {
+                characterNameEditActive = true;
+                requestFocusInWindow();
+                repaint();
+                return;
+            } else if (characterNameEditActive) {
+                Candidate c = candidates.isEmpty() ? null : candidates.get(candidateIndex);
+                if (c != null) { c.name = CharacterCreationAuthority.sanitizePlayerName(c.name, rng); refreshNameLockedCandidateState(c); }
+                characterNameEditActive = false;
+            }
+        }
+        for (int i=buttons.size()-1;i>=0;i--) if (buttonIsModalInteractive(buttons.get(i)) && buttons.get(i).contains(mx, my)) { selectedButton=i; sounds.play("button", options); runGuarded("MOUSE", "click button " + buttons.get(i).label, buttons.get(i).action); repaint(); return; }
+        requestFocusInWindow();
+    }
+    @Override public void keyPressed(KeyEvent e) {
+        keyboardInputBridge.keyPressed(e);
+        runGuarded("INPUT", "keyPressed code=" + e.getKeyCode(), () -> handleKeyPressed(e));
+    }
+
+    void handleKeyPressed(KeyEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        int code=e.getKeyCode();
+        if (eulaGateActive) {
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_A) { acceptEulaGate(); repaint(); return; }
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q || code == KeyEvent.VK_X) { requestApplicationExit("EULA declined by key"); return; }
+            if (code == KeyEvent.VK_PAGE_DOWN) { scrollEulaGate(1, true); return; }
+            if (code == KeyEvent.VK_PAGE_UP) { scrollEulaGate(-1, true); return; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { scrollEulaGate(1, false); return; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { scrollEulaGate(-1, false); return; }
+            if (code == KeyEvent.VK_HOME) { eulaScroll = 0; repaint(); return; }
+            if (code == KeyEvent.VK_END) { eulaScroll = Math.max(0, eulaMaxScroll); repaint(); return; }
+            return;
+        }
+        if (code == KeyEvent.VK_F3) { togglePerformanceDiagnostics(); return; }
+        if (code == KeyEvent.VK_F1 && (screen == Screen.GAME || screen == Screen.PANEL)) { toggleTacticalSlate(); return; }
+        if (code == KeyEvent.VK_Y && screen != Screen.EDITOR) { openChatWindow(); return; }
+        if (screen == Screen.GAME && firstPersonRenderViewport.handleKeyPressed(this, code)) { repaint(); return; }
+        if (worldZoomControlActive() && (code == KeyEvent.VK_HOME || code == KeyEvent.VK_END)) {
+            changeWorldZoom(code == KeyEvent.VK_HOME ? 1 : -1, code == KeyEvent.VK_HOME ? "HOME" : "END");
+            return;
+        }
+        if (screen==Screen.INTRO_CRAWL) {
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_ESCAPE) { continueFromIntroCrawl(); repaint(); }
+            return;
+        }
+        if (screen==Screen.ZONE_SPLASH) {
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_ESCAPE) { continueFromZoneSplash(); repaint(); }
+            return;
+        }
+        if (screen==Screen.CAPTURE) {
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_ESCAPE || code==KeyEvent.VK_E) { setScreen(Screen.GAME); repaint(); }
+            return;
+        }
+        if (screen==Screen.BOOT) {
+            if (code==KeyEvent.VK_ESCAPE || code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE) { sounds.play("button", options); finishBootSequence("key"); }
+            return;
+        }
+        if (screen == Screen.CHARACTER && characterNameEditActive) {
+            Candidate c = candidates.isEmpty() ? null : candidates.get(candidateIndex);
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER) {
+                if (c != null) { c.name = CharacterCreationAuthority.sanitizePlayerName(c.name, rng); refreshNameLockedCandidateState(c); }
+                characterNameEditActive = false;
+                repaint();
+                return;
+            }
+            if (code == KeyEvent.VK_BACK_SPACE) {
+                if (c != null && c.name != null && !c.name.isEmpty()) { c.name = c.name.substring(0, c.name.length()-1); refreshNameLockedCandidateState(c); }
+                repaint();
+                return;
+            }
+            if (code == KeyEvent.VK_DELETE) {
+                if (c != null) { c.name = ""; refreshNameLockedCandidateState(c); }
+                repaint();
+                return;
+            }
+            return;
+        }
+        if (code==KeyEvent.VK_ESCAPE) {
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("keyboard cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            else if (screen==Screen.PANEL) closePanel();
+            else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
+            else if (screen==Screen.SECTOR_AUDIT) setScreen(Screen.MODS);
+            else if (screen==Screen.KNOWLEDGE) closeKnowledgeScreen();
+            else if (screen==Screen.MULTIPLAYER) { multiplayerMenu.endDirectEdit(); setScreen(Screen.MENU); }
+            else if (screen==Screen.MODS) setScreen(Screen.MENU);
+            else setScreen(Screen.MENU);
+            return;
+        }
+        if (screen == Screen.KNOWLEDGE) { handleKnowledgeKeyPressed(code); return; }
+        if (screen == Screen.EDITOR) {
+            if (code == KeyEvent.VK_N) { createNewInGameEditorEntry(); return; }
+            if (code == KeyEvent.VK_Z && e.isControlDown()) { inGameEditorUndo(); return; }
+            if (code == KeyEvent.VK_Y && e.isControlDown()) { inGameEditorRedo(); return; }
+        }
+        if (screen == Screen.MULTIPLAYER && multiplayerMenu.handleKeyPressed(code)) { repaint(); return; }
+        if (screen == Screen.SECTOR_AUDIT) {
+            if (code == KeyEvent.VK_R) { rerollSectorAudit(); return; }
+            if (code == KeyEvent.VK_T) { cycleAuditZoneType(1); return; }
+            if (code == KeyEvent.VK_G) { cycleAuditZoneDensity(); return; }
+            if (code == KeyEvent.VK_O) { cycleAuditOverlay(); return; }
+            if (code == KeyEvent.VK_N) { jumpAuditFinding(1); return; }
+            if (code == KeyEvent.VK_B) { jumpAuditFinding(-1); return; }
+            int dx=0, dy=0;
+            switch(code) {
+                case KeyEvent.VK_LEFT: case KeyEvent.VK_A: dx=-1; break;
+                case KeyEvent.VK_RIGHT: case KeyEvent.VK_D: dx=1; break;
+                case KeyEvent.VK_UP: case KeyEvent.VK_W: dy=-1; break;
+                case KeyEvent.VK_DOWN: case KeyEvent.VK_S: dy=1; break;
+            }
+            if (dx != 0 || dy != 0) { moveAuditCursor(dx, dy); return; }
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { repaint(); return; }
+        }
+        // Infopedia has its own two-axis navigation. It must run before universal menu
+        // navigation, otherwise W/S and arrow keys only move the highlighted button chrome
+        // and never change the currently examined entry in the index.
+        if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA) {
+            if (isAssetInfopediaTab(infopediaTab)) {
+                if (code == KeyEvent.VK_SLASH) { activeScrollTag = "infopedia-asset-filter"; repaint(); return; }
+                if ("infopedia-asset-filter".equals(activeScrollTag)) {
+                    if (code == KeyEvent.VK_BACK_SPACE) { backspaceInfopediaAssetFilter(); return; }
+                    if (code == KeyEvent.VK_ENTER) { activeScrollTag = "infopedia-list"; repaint(); return; }
+                    if (code == KeyEvent.VK_ESCAPE) { activeScrollTag = "infopedia-list"; repaint(); return; }
+                    return;
+                }
+            }
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) { cycleInfopediaTab(-1); return; }
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) { cycleInfopediaTab(1); return; }
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) { moveInfopediaSelection(-1); return; }
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) { moveInfopediaSelection(1); return; }
+            if (code==KeyEvent.VK_PAGE_UP) { activeScrollTag="infopedia-detail"; scrollActivePanel(-1, true); return; }
+            if (code==KeyEvent.VK_PAGE_DOWN) { activeScrollTag="infopedia-detail"; scrollActivePanel(1, true); return; }
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_E) { activeScrollTag="infopedia-list"; repaint(); return; }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY) {
+            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { inventoryTargetColumnActive = false; inventoryItemDescriptionScroll = 0; repaint(); return; }
+            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { inventoryTargetColumnActive = true; inventoryItemDescriptionScroll = 0; repaint(); return; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { if (inventoryTargetColumnActive) moveTargetInventorySelection(-1); else moveInventorySelection(-1); repaint(); return; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { if (inventoryTargetColumnActive) moveTargetInventorySelection(1); else moveInventorySelection(1); repaint(); return; }
+            if (code == KeyEvent.VK_PAGE_UP || code == KeyEvent.VK_PAGE_DOWN) { inventoryItemDescriptionScroll = Math.max(0, inventoryItemDescriptionScroll + (code == KeyEvent.VK_PAGE_DOWN ? 3 : -3)); repaint(); return; }
+        }
+        // Universal menu control standard: every menu button must be reachable by keyboard.
+        // WASD/arrow navigation selects visible buttons; E/Enter confirms the highlighted button.
+        // Cursor-special modes keep their movement controls below.
+        if (screen != Screen.GAME && !(screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT || panelMode == PanelMode.INFOPEDIA || ((panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive)))) {
+            if (code==KeyEvent.VK_W || code==KeyEvent.VK_A || code==KeyEvent.VK_UP || code==KeyEvent.VK_LEFT) { moveSelectedButton(-1); return; }
+            if (code==KeyEvent.VK_S || code==KeyEvent.VK_D || code==KeyEvent.VK_DOWN || code==KeyEvent.VK_RIGHT) { moveSelectedButton(1); return; }
+            if (code==KeyEvent.VK_E || code==KeyEvent.VK_ENTER) { activateSelectedButtonUniversal(); return; }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && (code == KeyEvent.VK_PAGE_UP || code == KeyEvent.VK_PAGE_DOWN)) {
+            inventoryItemDescriptionScroll = Math.max(0, inventoryItemDescriptionScroll + (code == KeyEvent.VK_PAGE_DOWN ? 3 : -3));
+            repaint();
+            return;
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.INVENTORY && code == KeyEvent.VK_T) { throwSelectedPortableLight(); return; }
+        if (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.COMBAT || panelMode == PanelMode.INTERACT)) {
+            if ((code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_E) && panelMode == PanelMode.INTERACT) { confirmInteraction(); repaint(); return; }
+            if (code==KeyEvent.VK_E && panelMode == PanelMode.LOOK) { examineSelectedLookTarget(); repaint(); return; }
+            if (code==KeyEvent.VK_ENTER && panelMode == PanelMode.COMBAT) { confirmCombatTarget(); repaint(); return; }
+            if (code==KeyEvent.VK_ENTER) { activateSelectedButtonUniversal(); return; }
+        }
+        if (code==KeyEvent.VK_TAB) { if(!buttons.isEmpty()) selectedButton=(selectedButton+1)%buttons.size(); sounds.play("tab", options); repaint(); return; }
+        if (screen == Screen.PANEL && panelMode == PanelMode.COMBAT && world != null) {
+            int dx=0, dy=0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) dx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) dx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) dy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) dy=1;
+            if (code == KeyEvent.VK_F) { cycleFireMode(); repaint(); return; }
+            if (code == KeyEvent.VK_G) { throwSelectedExplosiveAtCursor(); repaint(); return; }
+            if (code == KeyEvent.VK_X) { reloadCurrentRangedWeapon(); repaint(); return; }
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { confirmCombatTarget(); repaint(); return; }
+            if (dx != 0 || dy != 0) { moveCombatCursor(dx, dy); repaint(); return; }
+        }
+        if (screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT) && world != null) {
+            int dx=0, dy=0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) dx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) dx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) dy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) dy=1;
+            if (dx!=0 || dy!=0) {
+                if (panelMode == PanelMode.INTERACT) moveInteractCursor(dx, dy);
+                else { lookCursorActive = true; lookX = Math.max(0, Math.min(world.w-1, lookX+dx)); lookY = Math.max(0, Math.min(world.h-1, lookY+dy)); lookStackIndex = 0; lookStackScroll = 0; }
+                repaint(); return;
+            }
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.LOOK && (code==KeyEvent.VK_OPEN_BRACKET || code==KeyEvent.VK_CLOSE_BRACKET)) {
+            ArrayList<String> stack = tileStackAt(lookX, lookY);
+            if (!stack.isEmpty()) { lookStackIndex += (code==KeyEvent.VK_CLOSE_BRACKET ? 1 : -1); lookStackIndex = Math.max(0, Math.min(stack.size()-1, lookStackIndex)); lookStackScroll = 0; }
+            repaint(); return;
+        }
+        if (code==KeyEvent.VK_PAGE_UP) { if(scrollActivePanel(-1, true)) return; }
+        if (code==KeyEvent.VK_PAGE_DOWN) { if(scrollActivePanel(1, true)) return; }
+        if ((screen==Screen.PANEL || screen==Screen.CHARACTER) && (code==KeyEvent.VK_UP || code==KeyEvent.VK_W)) { if(scrollActivePanel(-1, false)) return; }
+        if ((screen==Screen.PANEL || screen==Screen.CHARACTER) && (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S)) { if(scrollActivePanel(1, false)) return; }
+        if (screen != Screen.GAME && screen != Screen.PANEL && code==KeyEvent.VK_DOWN) { if(!buttons.isEmpty()) selectedButton=(selectedButton+1)%buttons.size(); repaint(); return; }
+        if (screen != Screen.GAME && screen != Screen.PANEL && code==KeyEvent.VK_UP) { if(!buttons.isEmpty()) selectedButton=(selectedButton+buttons.size()-1)%buttons.size(); repaint(); return; }
+        // Look stack cycling is bound to [ and ]; PageUp/PageDown are reserved for slower text scrolling.
+        if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive && world != null) {
+            int dx=0, dy=0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) dx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) dx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) dy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) dy=1;
+            if (dx!=0 || dy!=0) { moveBuildCursor(dx, dy); repaint(); return; }
+        }
+        if (screen == Screen.PANEL && panelMode != PanelMode.LOOK && panelMode != PanelMode.COMBAT && code==KeyEvent.VK_DOWN) { if(!buttons.isEmpty()) selectedButton=(selectedButton+1)%buttons.size(); repaint(); return; }
+        if (screen == Screen.PANEL && panelMode != PanelMode.LOOK && panelMode != PanelMode.COMBAT && code==KeyEvent.VK_UP) { if(!buttons.isEmpty()) selectedButton=(selectedButton+buttons.size()-1)%buttons.size(); repaint(); return; }
+        if (code==KeyEvent.VK_E && screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive) {
+            confirmBuildPlacement();
+            repaint();
+            return;
+        }
+        if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE) { activateSelectedButton(); repaint(); return; }
+        if (screen == Screen.CHARACTER) {
+            if (code==KeyEvent.VK_PAGE_UP) { jobDossierScroll=Math.max(0, jobDossierScroll-3); repaint(); return; }
+            if (code==KeyEvent.VK_PAGE_DOWN) { jobDossierScroll+=3; repaint(); return; }
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) { characterNameEditActive=false; candidateIndex=(candidateIndex+candidates.size()-1)%candidates.size(); jobIndex=0; jobDossierScroll=0; jobDossierTab=0; logEvent("Selected candidate " + candidates.get(candidateIndex).name); repaint(); return; }
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) { characterNameEditActive=false; candidateIndex=(candidateIndex+1)%candidates.size(); jobIndex=0; jobDossierScroll=0; jobDossierTab=0; logEvent("Selected candidate " + candidates.get(candidateIndex).name); repaint(); return; }
+        }
+        if (screen != Screen.GAME || world == null) return;
+        if (manualMovementPlanActive) {
+            int mdx = 0, mdy = 0;
+            if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_A) mdx=-1;
+            if (code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_D) mdx=1;
+            if (code==KeyEvent.VK_UP || code==KeyEvent.VK_W) mdy=-1;
+            if (code==KeyEvent.VK_DOWN || code==KeyEvent.VK_S) mdy=1;
+            if (mdx != 0 || mdy != 0) { nudgeManualMovementPlan(mdx, mdy); return; }
+            if (code==KeyEvent.VK_ENTER || code==KeyEvent.VK_SPACE || code==KeyEvent.VK_E) { confirmManualMovementPlan(); return; }
+        }
+        if (code==KeyEvent.VK_R) { cycleMovementMode(); repaint(); return; }
+        if (code==KeyEvent.VK_P) { beginManualMovementPlan(); return; }
+        if (code==KeyEvent.VK_PERIOD || code==KeyEvent.VK_NUMPAD5) { waitOneTurn(); repaint(); return; }
+        if (code==KeyEvent.VK_L) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
+        if (code==KeyEvent.VK_E) {
+            if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive) { confirmBuildPlacement(); repaint(); return; }
+            beginInteractMode(); repaint(); return;
+        }
+        if (code==KeyEvent.VK_I) { openPanel(PanelMode.INVENTORY); return; }
+        if (code==KeyEvent.VK_F) { beginCombatTargeting(); repaint(); return; }
+        if (code==KeyEvent.VK_G) { beginExplosiveTargeting(); repaint(); return; }
+        if (code==KeyEvent.VK_X) { reloadCurrentRangedWeapon(); repaint(); return; }
+        if (code==KeyEvent.VK_C) { openPanel(PanelMode.CHARACTER); return; }
+        if (code==KeyEvent.VK_B) { openPanel(PanelMode.BUILD); return; }
+        if (code==KeyEvent.VK_G) { openPanel(PanelMode.SENSES); return; }
+        if (code==KeyEvent.VK_M) { openPanel(PanelMode.MAP); return; }
+        int dx=0,dy=0;
+        switch(code) {
+            case KeyEvent.VK_LEFT: case KeyEvent.VK_A: dx=-1; break;
+            case KeyEvent.VK_RIGHT: case KeyEvent.VK_D: dx=1; break;
+            case KeyEvent.VK_W: dy=-1; break;
+            case KeyEvent.VK_S: dy=1; break;
+        }
+        if (dx!=0 || dy!=0) {
+            queueOrExecuteMovementInput(dx, dy);
+        }
+        repaint();
+        sanityCheck("KEY_END");
+    }
+    void processUnifiedInputRegistry(long now) {
+        // Keyboard retains the existing direct KeyEvent path. This timer consumer only
+        // translates GAMEPAD source states so a controller release cannot erase a held key.
+        if (inputRegistry.consumePressed(InputAction.PAUSE, InputSource.GAMEPAD) || inputRegistry.consumePressed(InputAction.CANCEL, InputSource.GAMEPAD)) {
+            if (screen==Screen.GAME && manualMovementPlanActive) cancelManualMovementPlan("gamepad cancel");
+            else if (screen==Screen.GAME) setScreen(Screen.PAUSE);
+            else if (screen==Screen.PANEL) closePanel();
+            else if (screen==Screen.PAUSE) setScreen(Screen.GAME);
+            else setScreen(Screen.MENU);
+            repaint();
+            return;
+        }
+        if (inputRegistry.consumePressed(InputAction.CONFIRM, InputSource.GAMEPAD)) {
+            if (screen == Screen.GAME && manualMovementPlanActive) confirmManualMovementPlan();
+            else if (screen == Screen.INTRO_CRAWL) continueFromIntroCrawl();
+            else if (screen == Screen.ZONE_SPLASH) continueFromZoneSplash();
+            else activateSelectedButtonUniversal();
+            repaint();
+        }
+        if (inputRegistry.consumePressed(InputAction.INVENTORY, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.INVENTORY); return; }
+        if (inputRegistry.consumePressed(InputAction.CHARACTER, InputSource.GAMEPAD) && screen == Screen.GAME) { openPanel(PanelMode.CHARACTER); return; }
+        if (inputRegistry.consumePressed(InputAction.LOOK, InputSource.GAMEPAD) && screen == Screen.GAME) { interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); return; }
+        if (inputRegistry.consumePressed(InputAction.PLAN_MOVE, InputSource.GAMEPAD) && screen == Screen.GAME) { beginManualMovementPlan(); return; }
+        if (inputRegistry.consumePressed(InputAction.ZOOM_IN, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(1, "gamepad bumper");
+        if (inputRegistry.consumePressed(InputAction.ZOOM_OUT, InputSource.GAMEPAD) && worldZoomControlActive()) changeWorldZoom(-1, "gamepad bumper");
+        if (now < nextUnifiedInputRepeatMillis) return;
+        int dx = 0, dy = 0;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_LEFT, InputSource.GAMEPAD)) dx--;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_RIGHT, InputSource.GAMEPAD)) dx++;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_UP, InputSource.GAMEPAD)) dy--;
+        if (inputRegistry.isActiveFromSource(InputAction.MOVE_DOWN, InputSource.GAMEPAD)) dy++;
+        if (dx == 0 && dy == 0) return;
+        nextUnifiedInputRepeatMillis = now + 125L;
+        if (screen == Screen.GAME && world != null && manualMovementPlanActive) {
+            nudgeManualMovementPlan(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.GAME && world != null) {
+            queueOrExecuteMovementInput(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.LOOK && world != null) {
+            lookCursorActive = true;
+            lookX = Math.max(0, Math.min(world.w-1, lookX+Integer.compare(dx, 0)));
+            lookY = Math.max(0, Math.min(world.h-1, lookY+Integer.compare(dy, 0)));
+            lookStackIndex = 0;
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.INTERACT && world != null) {
+            moveInteractCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && panelMode == PanelMode.COMBAT && world != null) {
+            moveCombatCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (screen == Screen.PANEL && (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH) && buildPlacementActive && world != null) {
+            moveBuildCursor(Integer.compare(dx, 0), Integer.compare(dy, 0));
+        } else if (!buttons.isEmpty()) {
+            moveSelectedButton(dy < 0 || dx < 0 ? -1 : 1);
+        }
+        repaint();
+    }
+
+    void auditLoadingWatchdog() {
+        long now = System.currentTimeMillis();
+        long sinceStart = now - loadingStartMillis;
+        long sincePulse = now - lastLoadingPulseMillis;
+        if (loadingStep == 0 && sinceStart > 1200L && !loadingWatchdogReported) {
+            loadingWatchdogReported = true;
+            loadingWatchdogRepeats++;
+            DebugLog.warn("LOADING_WATCHDOG_ZERO", "Loader remained at step zero for " + sinceStart + "ms. Forcing an audited progress tick. status=" + loadingStatus + " detail=" + loadingDetail);
+            loadingStatus = "Watchdog forced loader heartbeat.";
+            loadingDetail = "The loader had not advanced from step zero; an audited progress tick was forced so the UI cannot silently stall.";
+            try { progressLoading(); } catch (Throwable t) { DebugLog.error("LOADING_WATCHDOG_FORCE_FAILED", "Forced loading heartbeat failed.", t); }
+        } else if (loadingFinalizationRunning && now - loadingFinalizationStartMillis > 3000L && sincePulse > 2200L) {
+            loadingWatchdogRepeats++;
+            DebugLog.warn("LOADING_FINALIZER_WATCHDOG", "Background finalizer still running kind=" + loadingFinalizationKind + " elapsedMs=" + (now - loadingFinalizationStartMillis) + " step=" + loadingStep + " progress=" + loadingProgress + " repeat=" + loadingWatchdogRepeats);
+            loadingStatus = "Still finalizing " + loadingFinalizationKind + "...";
+            loadingDetail = "The background finalizer is alive. If this repeats for too long, diagnostic details will show the stuck phase rather than silently freezing.";
+            lastLoadingPulseMillis = now;
+        } else if (sincePulse > 2200L && sinceStart > 2200L && loadingProgress < 100) {
+            loadingWatchdogRepeats++;
+            DebugLog.warn("LOADING_WATCHDOG_STALL", "Loader pulse stale for " + sincePulse + "ms at step=" + loadingStep + " progress=" + loadingProgress + ". repeat=" + loadingWatchdogRepeats);
+            lastLoadingPulseMillis = now;
+        }
+    }
+
+    @Override public void actionPerformed(ActionEvent e) {
+        long framePulseNanos = System.nanoTime();
+        if (!frameLimiter.shouldRunPulse(framePulseNanos)) return;
+        if (eulaGateActive) { repaint(); return; }
+        if (screen == Screen.LOADING) {
+            try { progressLoading(); }
+            catch (Throwable t) {
+                DebugLog.error("LOADING_PROGRESS_FAILED", "Loader progress tick failed at step=" + loadingStep + " progress=" + loadingProgress + " status=" + loadingStatus, t);
+                loadingStatus = "Loader fault caught; returning to menu.";
+                loadingDetail = "Diagnostic details were recorded. The watchdog caught the failure instead of silently freezing at zero.";
+                setScreen(Screen.MENU);
+            }
+        }
+        if (screen == Screen.LOADING) auditLoadingWatchdog();
+        long now = System.currentTimeMillis();
+        if (now - lastMusicDirectiveMillis > 1000L) { lastMusicDirectiveMillis = now; updateDynamicMusic("timer"); }
+        if (screen == Screen.BOOT && options.bootSound && ((System.currentTimeMillis() - bootStartMillis) / 950) != bootStage) { bootStage = (int)((System.currentTimeMillis() - bootStartMillis) / 950); sounds.play("type", options); }
+        if (screen == Screen.BOOT && System.currentTimeMillis() - bootStartMillis > 15800) finishBootSequence("timer");
+        processUnifiedInputRegistry(now);
+        firstPersonRenderViewport.updateContinuousMotion(this);
+        processPendingMovementInput();
+        singlePlayerSectorBridge.maybeRunContinuousTick(this);
+        spendDeferredSimulationBudget((screen == Screen.GAME ? "active-timer" : "idle-ui-timer"), screen == Screen.GAME ? ACTIVE_SIMULATION_BUDGET_MS : IDLE_SIMULATION_BUDGET_MS);
+        maybePlayCoreAmbientCue(now);
+        pruneTileMotions();
+        pruneCombatAnimations(now);
+        repaint();
+    }
+    @Override public void mousePressed(MouseEvent e) {
+        requestFocusInWindow();
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mp.x, mp.y, SwingUtilities.isRightMouseButton(e))) { return; }
+        if (screen == Screen.KNOWLEDGE && knowledgeCanvasRect().contains(mp)) { knowledgeTreeLastDrag = mp; knowledgeTreeDragging = true; return; }
+        if (findScrollRegion(mp.x, mp.y) != null) { handleScrollbarClick(mp.x, mp.y); repaint(); }
+    }
+    @Override public void mouseReleased(MouseEvent e) { scrollbarDragActive=false; knowledgeTreeDragging=false; knowledgeTreeLastDrag=null; }
+    @Override public void mouseEntered(MouseEvent e) {}
+    @Override public void mouseExited(MouseEvent e) { mouseX=-1; mouseY=-1; repaint(); }
+    @Override public void mouseMoved(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        Point mp = mapInputPoint(e);
+        if (mp == null) { mouseX=-1; mouseY=-1; repaint(); return; }
+        mouseX=mp.x; mouseY=mp.y; if (firstPersonRenderViewport.handleMouseMoved(this, mouseX, mouseY)) { repaint(); return; } if (mouseMovePreviewActive && screen == Screen.GAME && world != null) { Point t = screenPointToWorldTile(mouseX, mouseY); if (t != null) updateMouseMovementPreviewTo(t.x, t.y); } repaint();
+    }
+    @Override public void mouseDragged(MouseEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        Point mp = mapInputPoint(e);
+        if (mp == null) return;
+        mouseX=mp.x; mouseY=mp.y; if (screen == Screen.EDITOR && (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) && handleInGameEditorGridPaint(mouseX, mouseY, SwingUtilities.isRightMouseButton(e))) { return; } if (screen == Screen.KNOWLEDGE && knowledgeTreeDragging && knowledgeTreeLastDrag != null) { panKnowledgeTree(mp.x - knowledgeTreeLastDrag.x, mp.y - knowledgeTreeLastDrag.y); knowledgeTreeLastDrag = mp; repaint(); return; } if (firstPersonRenderViewport.handleMouseDragged(this, mouseX, mouseY)) { repaint(); return; } handleScrollbarDrag(mouseX, mouseY); repaint();
+    }
+    @Override public void mouseWheelMoved(MouseWheelEvent e) {
+        lastInputMillis=System.currentTimeMillis();
+        if (eulaGateActive) { scrollEulaGate(e.getWheelRotation(), false); return; }
+        if (screen == Screen.KNOWLEDGE) { Point mp = mapInputPoint(e); if (mp != null) zoomKnowledgeTreeAt(mp.x, mp.y, e.getPreciseWheelRotation()); return; }
+        if (worldZoomControlActive() && !e.isShiftDown()) {
+            int rot = e.getWheelRotation();
+            if (rot != 0) changeWorldZoom(rot < 0 ? 1 : -1, "mouse wheel");
+            return;
+        }
+        if (screen == Screen.PANEL && panelMode == PanelMode.MAP && e.isShiftDown()) {
+            mapLayerView = Math.max(0, Math.min(19, mapLayerView + e.getWheelRotation()));
+            DebugLog.audit("UI_SCROLL", "map layer=" + mapLayerView);
+            repaint();
+            return;
+        }
+        scrollActivePanel(e.getWheelRotation(), false);
+    }
+    @Override public void keyTyped(KeyEvent e) {
+        if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA && isAssetInfopediaTab(infopediaTab) && "infopedia-asset-filter".equals(activeScrollTag)) {
+            char ch = e.getKeyChar();
+            if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\b' && ch != '\n' && ch != '\r' && ch != '\u001b') { appendInfopediaAssetFilter(ch); }
+            return;
+        }
+        if (screen == Screen.MULTIPLAYER) { multiplayerMenu.keyTyped(e.getKeyChar()); repaint(); return; }
+        if (screen == Screen.CHARACTER && characterNameEditActive && !candidates.isEmpty()) {
+            char ch = e.getKeyChar();
+            Candidate c = candidates.get(candidateIndex);
+            if (CharacterCreationAuthority.acceptNameChar(ch) && c.name.length() < CharacterCreationAuthority.MAX_PLAYER_NAME_LENGTH) {
+                c.name = CharacterCreationAuthority.normalizeSpacing(c.name + ch);
+                refreshNameLockedCandidateState(c);
+                repaint();
+            }
+        }
+    } @Override public void keyReleased(KeyEvent e) {
+        keyboardInputBridge.keyReleased(e);
+        int code = e.getKeyCode();
+        if (firstPersonRenderViewport.handleKeyReleased(this, code)) { repaint(); return; }
+        if (code==KeyEvent.VK_LEFT || code==KeyEvent.VK_RIGHT || code==KeyEvent.VK_UP || code==KeyEvent.VK_DOWN || code==KeyEvent.VK_A || code==KeyEvent.VK_D || code==KeyEvent.VK_W || code==KeyEvent.VK_S) {
+            pendingMoveDx = 0;
+            pendingMoveDy = 0;
+            pendingHeldMove = false;
+            DebugLog.audit("INPUT_PACING_RELEASE", "release preserved movement ghost armed=" + movementGhostArmed + " armed=" + armedMoveDx + "," + armedMoveDy + " turn=" + turn);
+        }
+    }
+}

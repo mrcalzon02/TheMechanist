@@ -1,0 +1,999 @@
+
+                    buttons.add(new ButtonBox("UNEQUIP", slotX, slotButtonY + 68, 217, 28, "Move the selected equipped item back to carried inventory if possible.", this::unequipSelectedEquipmentSlot));
+                }
+            } else if (panelMode == PanelMode.SAVELOAD) {
+                SaveLoadUiRects sl = saveLoadUiRects();
+                int topButtonH = Math.max(20, Math.min(28, sl.manual.height / 8));
+                buttons.add(new ButtonBox("SAVE DIAGNOSTIC", sl.manual.x + 14, sl.manual.y + 54, Math.max(80, sl.manual.width - 28), topButtonH,
+                        "Record a compact save-health report for troubleshooting.", this::logPersistenceDiagnostic));
+                buttons.add(new ButtonBox("LOAD MENU", sl.auto.x + 14, sl.auto.y + 54, Math.max(80, sl.auto.width - 28), topButtonH,
+                        "Manual saves and autosaves are listed in separate columns.", () -> logEvent("The load menu is already open.")));
+                int rowGap = Math.max(4, scaled(4));
+                int rowStart = sl.manual.y + 90;
+                int available = Math.max(72, sl.manual.y + sl.manual.height - 18 - rowStart);
+                int rowH = Math.max(18, Math.min(28, (available - rowGap * Math.max(0, SAVE_SLOT_COUNT - 1)) / Math.max(1, SAVE_SLOT_COUNT)));
+                int half = Math.max(60, (sl.manual.width - 36) / 2);
+                for (int i=1;i<=SAVE_SLOT_COUNT;i++) {
+                    final int slot=i;
+                    int sy=rowStart+(i-1)*(rowH+rowGap);
+                    buttons.add(new ButtonBox("MANUAL " + i + " LOAD", sl.manual.x + 14, sy, half, rowH, "Load manual save slot " + i + ".", () -> loadGameSlot(slot)));
+                    buttons.add(new ButtonBox("SAVE " + i, sl.manual.x + 22 + half, sy, Math.max(60, sl.manual.width - 36 - half), rowH, "Write the active run into manual save slot " + i + ".", () -> saveGameSlot(slot)));
+                }
+                int[] autos = { AUTOSAVE_HOURLY_SLOT, AUTOSAVE_ZONE_SLOT, -1001, -1002, -1003 };
+                String[] labels = { "AUTO 1 HOUR", "AUTO 2 ZONE", "AUTO 3 EMPTY", "AUTO 4 EMPTY", "AUTO 5 EMPTY" };
+                int autoRows = labels.length;
+                int autoAvailable = Math.max(90, sl.auto.y + sl.auto.height - 18 - rowStart);
+                int autoRowH = Math.max(18, Math.min(28, (autoAvailable - rowGap * Math.max(0, autoRows - 1)) / Math.max(1, autoRows)));
+                for (int i=0;i<labels.length;i++) {
+                    final int slot = autos[i];
+                    final int ordinal = i + 1;
+                    int sy=rowStart+i*(autoRowH+rowGap);
+                    if (slot == -1001 || slot == -1002 || slot == -1003) {
+                        buttons.add(new ButtonBox(labels[i], sl.auto.x + 14, sy, Math.max(80, sl.auto.width - 28), autoRowH, "Empty autosave column slot.", () -> logEvent("Autosave slot " + ordinal + " is empty.")));
+                    } else {
+                        buttons.add(new ButtonBox(labels[i], sl.auto.x + 14, sy, Math.max(80, sl.auto.width - 28), autoRowH, "Load autosave slot " + ordinal + ".", () -> loadGameSlot(slot)));
+                    }
+                }
+            } else if (panelMode == PanelMode.BUILD) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14;
+                int by = cmd.y + 50;
+                int bw = Math.max(110, cmd.width - 28);
+                int total = 30;
+                int bh = Math.max(16, Math.min(26, (cmd.height - 62) / total - 2));
+                int step = bh + 2;
+                int n = 0;
+                buttons.add(new ButtonBox("CLAIM ROOM", bx, by + step*(n++), bw, bh, "Claim the current room as your illegal foothold. Claimed rooms tint light green.", this::claimBaseHere));
+                buttons.add(new ButtonBox("STORAGE", bx, by + step*(n++), bw, bh, BuildRecipe.storage().shortTip(), () -> beginBuildPlacement(BuildRecipe.storage())));
+                buttons.add(new ButtonBox("WORKBENCH", bx, by + step*(n++), bw, bh, BuildRecipe.workbench().shortTip(), () -> beginBuildPlacement(BuildRecipe.workbench())));
+                buttons.add(new ButtonBox("BARRICADE", bx, by + step*(n++), bw, bh, BuildRecipe.barricade().shortTip(), () -> beginBuildPlacement(BuildRecipe.barricade())));
+                buttons.add(new ButtonBox("COT", bx, by + step*(n++), bw, bh, BuildRecipe.cot().shortTip(), () -> beginBuildPlacement(BuildRecipe.cot())));
+                buttons.add(new ButtonBox("WATER BARREL", bx, by + step*(n++), bw, bh, BuildRecipe.water().shortTip(), () -> beginBuildPlacement(BuildRecipe.water())));
+                buttons.add(new ButtonBox("ALARM", bx, by + step*(n++), bw, bh, BuildRecipe.alarm().shortTip(), () -> beginBuildPlacement(BuildRecipe.alarm())));
+                buttons.add(new ButtonBox("SHOP COUNTER", bx, by + step*(n++), bw, bh, BuildRecipe.shopCounter().shortTip(), () -> beginBuildPlacement(BuildRecipe.shopCounter())));
+                buttons.add(new ButtonBox("CLINIC STALL", bx, by + step*(n++), bw, bh, BuildRecipe.clinicStall().shortTip(), () -> beginBuildPlacement(BuildRecipe.clinicStall())));
+                buttons.add(new ButtonBox("STASH ITEM", bx, by + step*(n++), bw, bh, "Move one carried item into base storage.", this::stashOneItem));
+                buttons.add(new ButtonBox("TAKE ITEM", bx, by + step*(n++), bw, bh, "Move one stored item back into inventory.", this::takeOneItem));
+                buttons.add(new ButtonBox("DRINK/REST", bx, by + step*(n++), bw, bh, "Use water barrel/cot mechanics in your claimed room.", this::useComfortStructures));
+                buttons.add(new ButtonBox("SECURITY", bx, by + step*(n++), bw, bh, "Inspect barricades and arm alarm traps.", this::useSecurityStructures));
+                buttons.add(new ButtonBox("WATCH POST", bx, by + step*(n++), bw, bh, BuildRecipe.watchPost().shortTip(), () -> beginBuildPlacement(BuildRecipe.watchPost())));
+                buttons.add(new ButtonBox("GUARD BARRACKS", bx, by + step*(n++), bw, bh, BuildRecipe.guardBarracks().shortTip(), () -> beginBuildPlacement(BuildRecipe.guardBarracks())));
+                buttons.add(new ButtonBox("POWER TURRET", bx, by + step*(n++), bw, bh, BuildRecipe.powerTurret().shortTip(), () -> beginBuildPlacement(BuildRecipe.powerTurret())));
+                buttons.add(new ButtonBox("SHIELD RELAY", bx, by + step*(n++), bw, bh, BuildRecipe.shieldRelay().shortTip(), () -> beginBuildPlacement(BuildRecipe.shieldRelay())));
+                buttons.add(new ButtonBox("DECOR", bx, by + step*(n++), bw, bh, BuildRecipe.decor().shortTip(), () -> beginBuildPlacement(BuildRecipe.decor())));
+                buttons.add(new ButtonBox("BUSINESS ADDON", bx, by + step*(n++), bw, bh, BuildRecipe.businessAddon().shortTip(), () -> beginBuildPlacement(BuildRecipe.businessAddon())));
+                buttons.add(new ButtonBox("CARRY STATION", bx, by + step*(n++), bw, bh, BuildRecipe.carryingStation().shortTip(), () -> beginBuildPlacement(BuildRecipe.carryingStation())));
+                buttons.add(new ButtonBox("SUPPLY POST", bx, by + step*(n++), bw, bh, BuildRecipe.supplyPost().shortTip(), () -> beginBuildPlacement(BuildRecipe.supplyPost())));
+                buttons.add(new ButtonBox("LOGISTICS", bx, by + step*(n++), bw, bh, BuildRecipe.logisticsCenter().shortTip(), () -> beginBuildPlacement(BuildRecipe.logisticsCenter())));
+                buttons.add(new ButtonBox("SANDBAGS", bx, by + step*(n++), bw, bh, BuildRecipe.sandbagLine().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.sandbagLine())));
+                buttons.add(new ButtonBox("WIRE", bx, by + step*(n++), bw, bh, BuildRecipe.razorWireCoil().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.razorWireCoil())));
+                buttons.add(new ButtonBox("DEF WALL", bx, by + step*(n++), bw, bh, BuildRecipe.reinforcedWallPanel().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.reinforcedWallPanel())));
+                buttons.add(new ButtonBox("ARB DOOR", bx, by + step*(n++), bw, bh, BuildRecipe.arbitesReinforcedDoor().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.arbitesReinforcedDoor())));
+                buttons.add(new ButtonBox("SENSOR", bx, by + step*(n++), bw, bh, BuildRecipe.securitySensorMast().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.securitySensorMast())));
+                buttons.add(new ButtonBox("L TURRET", bx, by + step*(n++), bw, bh, BuildRecipe.lightStubTurret().shortTip(), () -> beginDefenseBuildPlacement(BuildRecipe.lightStubTurret())));
+                buttons.add(new ButtonBox("DEF INFO", bx, by + step*(n++), bw, bh, "Open the Infopedia defense index and inspect the semantic/stat profiles for buildable defenses.", this::openDefenseInfopedia));
+                buttons.add(new ButtonBox("VALIDATE", bx, by + step*(n++), bw, bh, "Open the construction placement report for the selected tile; runs on demand only.", this::openConstructionValidationInfopedia));
+            } else if (panelMode == PanelMode.BASES) {
+                int bx = w - 360;
+                int by = Math.max(170, h/2 - 140);
+                buttons.add(new ButtonBox("BUY PERMIT", bx, by, 300, 34, "Buy a noble commerce permit for one owned business foundation. Permits reduce legal heat.", this::buyBusinessPermit));
+                buttons.add(new ButtonBox("OPEN BUSINESS", bx, by+42, 300, 34, "Open the first unlicensed business foundation as an illegal business if no permit is available.", this::openOrLicenseBusiness));
+                buttons.add(new ButtonBox("COLLECT INCOME", bx, by+84, 300, 34, "Run owned shops and services for one business tick. Illegal work raises heat.", this::collectBusinessIncome));
+                buttons.add(new ButtonBox("SECURITY AUDIT", bx, by+126, 300, 34, "Inspect base security, heat mitigation, and raid defense strength.", this::useSecurityStructures));
+                buttons.add(new ButtonBox("GUARD DUTY", bx, by+168, 300, 34, "Assign the next available recruit to security duty, or rotate guards back into general labor.", this::toggleRecruitGuardDuty));
+                buttons.add(new ButtonBox("RAID DRILL", bx, by+210, 300, 34, "Run a defensive drill and show the current raid risk math without forcing an attack.", this::runBaseRaidDrill));
+                buttons.add(new ButtonBox("CARGO AUDIT", bx, by+252, 300, 34, "Review cargo transfer range, logistics capacity, and transfer readiness between owned bases.", this::runCargoNetworkAudit));
+                buttons.add(new ButtonBox("STASH CASH", bx, by+294, 145, 34, "Move all carried Concord Script into your claimed-base cash stash.", this::stashAllScriptAtBase));
+                buttons.add(new ButtonBox("TAKE CASH", bx+155, by+294, 145, 34, "Withdraw up to 100 Concord Script from your claimed-base cash stash.", () -> takeScriptFromBase(100)));
+            } else if (panelMode == PanelMode.TRADE) {
+                Rectangle cmd = commandPanelRect();
+                int bx = cmd.x + 14; int by = cmd.y + 64; int bw = Math.max(120, cmd.width - 28);
+                if (activeTrader != null) {
+                    buttons.add(new ButtonBox("OFFER -", bx, by, bw, 36, "Move to previous trader offer.", () -> tradeOfferMove(-1)));
+                    buttons.add(new ButtonBox("OFFER +", bx, by+44, bw, 36, "Move to next trader offer.", () -> tradeOfferMove(1)));
+                    buttons.add(new ButtonBox("BUY", bx, by+88, bw, 36, "Buy the selected trader offer using concord script.", this::tradeBuySelected));
+                    buttons.add(new ButtonBox("SELL", bx, by+132, bw, 36, "Sell the currently selected inventory item to this trader.", this::tradeSellSelected));
+                    buttons.add(new ButtonBox("HAGGLE", bx, by+176, bw, 36, "Attempt a Charm-based haggle. Repeated attempts may anger the trader and raise prices.", this::tradeHaggle));
+                    buttons.add(new ButtonBox("RUMOR", bx, by+220, bw, 36, "Ask this trader for zone-appropriate rumors.", this::tradeAskTraderRumors));
+                } else {
+                    buttons.add(new ButtonBox("GREET", bx, by, bw, 36, "Offer a neutral greeting and test the current conversation branch.", this::npcGreet));
+                    buttons.add(new ButtonBox("ASK WORK", bx, by+44, bw, 36, "Ask what this person does in the zone.", this::npcAskWork));
+                    buttons.add(new ButtonBox("ASK FACTION", bx, by+88, bw, 36, "Ask about their faction and local mood.", this::npcAskFaction));
+                    buttons.add(new ButtonBox("ASK NEEDS", bx, by+132, bw, 36, "Ask about hunger, thirst, sleep, and immediate trouble. Logged for NPC simulation tests.", this::npcAskNeeds));
+                    buttons.add(new ButtonBox("RECRUIT", bx, by+176, bw, 36, "Attempt to recruit this person into your faction base. Requires cots, doctrine, supplies, and tolerable standing.", this::recruitActiveNpc));
+                    buttons.add(new ButtonBox("TAKE BOUNTY", bx, by+220, bw, 36, "Accept this faction's single active bounty contract. Target spawns in an adjacent zone and carries the required ident chip.", this::acceptBountyContract));
+                    buttons.add(new ButtonBox("TAKE FETCH", bx, by+264, bw, 36, "Accept this faction's single active retrieval contract. Sealed cargo spawns in an adjacent zone container.", this::acceptFetchContract));
+                    buttons.add(new ButtonBox("TURN IN", bx, by+308, bw, 36, "Turn in a matching ident chip or sealed object for script and faction standing.", this::turnInFactionContract));
+                    if (activeConversationNpc != null && activeConversationNpc.isProtectedCleric()) {
+                        buttons.add(new ButtonBox("PRAY 24H", bx, by+352, bw, 36, "Undertake a 24-hour rite of Concord forgiveness. Costs food, water, fatigue, and sleep debt; restores some civil Concord standing.", this::prayImperialForgivenessService));
+                        buttons.add(new ButtonBox("LEAVE", bx, by+396, bw, 36, "End the conversation and return to the game.", this::npcLeaveConversation));
+                    } else {
+                        buttons.add(new ButtonBox("LEAVE", bx, by+352, bw, 36, "End the conversation and return to the game.", this::npcLeaveConversation));
+                    }
+                }
+            } else if (panelMode == PanelMode.MAP) {
+                int bx = w/2-330; int by = h-118;
+                buttons.add(new ButtonBox("SLICE MAP", bx, by, 150, 38, "Show the diegetic map of the current sector slice/floor.", () -> { mapTab = 0; repaint(); }));
+                buttons.add(new ButtonBox("ROOM INTEL", bx+170, by, 170, 38, "Show room-type and scavenge intel separately from the map.", () -> { mapTab = 1; repaint(); }));
+                buttons.add(new ButtonBox("LAYER -", bx+360, by, 130, 38, "Scroll the sector map down through lower floor/sewer slices.", () -> { mapLayerView = Math.max(0, mapLayerView - 1); repaint(); }));
+                buttons.add(new ButtonBox("LAYER +", bx+510, by, 130, 38, "Scroll the sector map up through higher floor slices.", () -> { mapLayerView = Math.min(19, mapLayerView + 1); repaint(); }));
+            } else if (panelMode == PanelMode.WORKBENCH) {
+                int bx = w - 360;
+                int by = Math.max(165, h/2 - 215);
+                buttons.add(new ButtonBox("PROCESS SCRAP", bx, by, 300, 34, "Convert one Scrap bit into supplies and machine parts.", this::workProcessScrap));
+                buttons.add(new ButtonBox("REPAIR CLOTHING", bx, by+42, 300, 34, "Repair damaged equipped clothing using supplies and machine parts.", this::workRepairClothing));
+                buttons.add(new ButtonBox("ASSEMBLE PARTS", bx, by+84, 300, 34, "Use mechanical detritus and supplies to assemble machine parts.", this::workAssembleParts));
+                buttons.add(new ButtonBox("RECIPE -", bx, by+126, 145, 34, "Move to previous known crafting recipe.", () -> moveCraftRecipeSelection(-1)));
+                buttons.add(new ButtonBox("RECIPE +", bx+155, by+126, 145, 34, "Move to next known crafting recipe.", () -> moveCraftRecipeSelection(1)));
+                buttons.add(new ButtonBox("CRAFT SELECTED", bx, by+168, 300, 34, "Craft the selected known recipe if requirements and ingredients are available.", this::craftSelectedRecipe));
+                buttons.add(new ButtonBox("MACHINE -", bx, by+210, 145, 34, "Select previous recruit-operable production machine in the base.", () -> moveWorkerMachineSelection(-1)));
+                buttons.add(new ButtonBox("MACHINE +", bx+155, by+210, 145, 34, "Select next recruit-operable production machine in the base.", () -> moveWorkerMachineSelection(1)));
+                buttons.add(new ButtonBox("STAFF -", bx, by+252, 145, 34, "Select previous staffable machine or defensive station for manual assignment.", () -> moveStaffingStationSelection(-1)));
+                buttons.add(new ButtonBox("STAFF +", bx+155, by+252, 145, 34, "Select next staffable machine or defensive station for manual assignment.", () -> moveStaffingStationSelection(1)));
+                buttons.add(new ButtonBox("WORKER -", bx, by+294, 145, 34, "Select previous recruited worker for manual station assignment.", () -> moveStaffingWorkerSelection(-1)));
+                buttons.add(new ButtonBox("WORKER +", bx+155, by+294, 145, 34, "Select next recruited worker for manual station assignment.", () -> moveStaffingWorkerSelection(1)));
+                buttons.add(new ButtonBox("ASSIGN STAFF", bx, by+336, 145, 34, "Assign selected worker to selected staffable station. Does not automate production yet.", this::assignSelectedWorkerToStaffingStation));
+                buttons.add(new ButtonBox("CLEAR STAFF", bx+155, by+336, 145, 34, "Clear manual staffing from selected staffable station.", this::clearSelectedStaffingStationWorker));
+                buttons.add(new ButtonBox("ASSIGN RECIPE", bx, by+378, 300, 34, "Assign the selected visible recipe to the selected machine for faction recruit labor.", this::assignSelectedRecipeToMachine));
+                buttons.add(new ButtonBox("RUN CREW SHIFT", bx, by+420, 300, 34, "Spend time and let recruited workers run their assigned machines once.", this::runRecruitProductionShift));
+                buttons.add(new ButtonBox("GEN JOB -", bx, by+462, 145, 34, "Move to previous controlled generated/factional production job within the active filters.", () -> moveGeneratedProductionJobSelection(-1)));
+                buttons.add(new ButtonBox("GEN JOB +", bx+155, by+462, 145, 34, "Move to next controlled generated/factional production job within the active filters.", () -> moveGeneratedProductionJobSelection(1)));
+                buttons.add(new ButtonBox("JOB CATEGORY", bx, by+504, 145, 34, "Cycle generated-job category filter: all, weapons, chems, survival, textile, salvage/maintenance.", this::cycleGeneratedJobCategoryFilter));
+                buttons.add(new ButtonBox("JOB STATUS", bx+155, by+504, 145, 34, "Cycle generated-job readiness filter: all, ready, missing-input, apparatus, contraband, manual.", this::cycleGeneratedJobReadinessFilter));
+                buttons.add(new ButtonBox("ASSIGN GEN JOB", bx, by+546, 300, 34, "Assign the selected generated/factional job to the selected valid machine or apparatus and seed its queue.", this::assignSelectedGeneratedProductionJob));
+                buttons.add(new ButtonBox("QUEUE -", bx, by+588, 145, 34, "Reduce queued runs for the selected assigned machine.", () -> adjustSelectedMachineQueue(-1)));
+                buttons.add(new ButtonBox("QUEUE +", bx+155, by+588, 145, 34, "Increase queued runs for the selected assigned machine.", () -> adjustSelectedMachineQueue(1)));
+                buttons.add(new ButtonBox("LOGISTICS", bx, by+630, 145, 34, "Forecast selected machine input reservation intent. Does not move goods yet.", this::forecastSelectedLogisticsReservation));
+                buttons.add(new ButtonBox("PLAN DELIVERY", bx+155, by+630, 145, 34, "Record a bounded delivery plan from the selected machine forecast. No goods move yet.", this::recordSelectedLogisticsDeliveryIntent));
+                buttons.add(new ButtonBox("CHOOSE SOURCE", bx, by+798, 300, 34, "Record where the latest logistics plan should draw its inputs from. No item lock or transfer yet.", this::recordLatestLogisticsSourceReservation));
+                buttons.add(new ButtonBox("PLAN ROUTE", bx, by+840, 300, 34, "Estimate a manual haul route from the latest logistics source. No pathfinding or hauling yet.", this::displayLatestLogisticsRouteIntent));
+                buttons.add(new ButtonBox("HAUL PREVIEW", bx, by+882, 300, 34, "Preview readiness and warnings for a manual haul order before execution.", this::previewLatestManualHaulOrder));
+                buttons.add(new ButtonBox("HAUL CONTRACT", bx, by+924, 300, 34, "Record a bounded manual haul contract from the current logistics chain. No movement or transfer yet.", this::recordLatestManualHaulContract));
+                buttons.add(new ButtonBox("PREFLIGHT", bx, by+966, 145, 34, "Check whether the latest manual haul contract is plausibly fulfillable before manual execution.", this::preflightLatestManualHaulContract));
+                buttons.add(new ButtonBox("LIFECYCLE", bx+155, by+966, 145, 34, "Check haul contract expiry, staleness, and cancellation lifecycle.", this::checkLatestLogisticsContractLifecycle));
+                buttons.add(new ButtonBox("EXEC HAUL", bx, by+1008, 145, 34, "Execute the latest preflighted manual haul contract by carrying visible inputs into the selected station buffer.", this::executeLatestManualHaulContract));
+                buttons.add(new ButtonBox("CANCEL HAUL", bx+155, by+1008, 145, 34, "Cancel the latest manual haul contract record before execution.", this::cancelLatestLogisticsHaulContract));
+                buttons.add(new ButtonBox("MANUAL RUN", bx, by+630, 300, 34, "Operate the selected assigned machine yourself when no worker is available, paying the manual time and fatigue cost.", this::runManualSelectedProductionJob));
+                buttons.add(new ButtonBox("CONDENSE WATER", bx, by+672, 300, 34, "Run a built condenser to produce water if its doctrine is known.", this::operateAtmosCondenser));
+                buttons.add(new ButtonBox("FORGE SUPPLIES", bx, by+714, 300, 34, "Run a built micro forge to turn parts into supplies if its doctrine is known.", this::operateMicroForge));
+                buttons.add(new ButtonBox("LAB RESEARCH", bx, by+756, 300, 34, "Run a built micro lab to convert time and parts into XP/knowledge progress.", this::operateMicroLab));
+                buttons.add(new ButtonBox("ATMOS", bx, by+672, 145, 34, BuildRecipe.atmosCondenser().shortTip(), () -> beginBuildPlacement(BuildRecipe.atmosCondenser())));
+                buttons.add(new ButtonBox("FORGE", bx+155, by+672, 145, 34, BuildRecipe.microForge().shortTip(), () -> beginBuildPlacement(BuildRecipe.microForge())));
+                buttons.add(new ButtonBox("MICRO LAB", bx, by+714, 145, 34, BuildRecipe.microLab().shortTip(), () -> beginBuildPlacement(BuildRecipe.microLab())));
+                buttons.add(new ButtonBox("CHEM BENCH", bx+155, by+714, 145, 34, BuildRecipe.crudeChemBench().shortTip(), () -> beginBuildPlacement(BuildRecipe.crudeChemBench())));
+                buttons.add(new ButtonBox("DISTILL", bx, by+672, 145, 34, BuildRecipe.distillationColumn().shortTip(), () -> beginBuildPlacement(BuildRecipe.distillationColumn())));
+                buttons.add(new ButtonBox("STERILE", bx+155, by+672, 145, 34, BuildRecipe.sterileBench().shortTip(), () -> beginBuildPlacement(BuildRecipe.sterileBench())));
+                buttons.add(new ButtonBox("FUME HOOD", bx, by+714, 145, 34, BuildRecipe.fumeHood().shortTip(), () -> beginBuildPlacement(BuildRecipe.fumeHood())));
+                buttons.add(new ButtonBox("INJECTOR", bx+155, by+714, 145, 34, BuildRecipe.injectorStation().shortTip(), () -> beginBuildPlacement(BuildRecipe.injectorStation())));
+            }
+        }
+        if (selectedButton >= buttons.size()) selectedButton = Math.max(0, buttons.size()-1);
+    }
+
+    void activateCommand(String label) {
+        sounds.play("button", options);
+        switch(label) {
+            case "WAIT": waitOneTurn(); break;
+            case "MOVE MODE": cycleMovementMode(); break;
+            case "PLAN MOVE": beginManualMovementPlan(); break;
+            case "LOOK": interactCursorActive=false; lookX=playerX; lookY=playerY; lookCursorActive=true; openPanel(PanelMode.LOOK); break;
+            case "INTERACT": beginInteractMode(); break;
+            case "COMBAT": beginCombatTargeting(); break;
+            case "INVENTORY": openPanel(PanelMode.INVENTORY); break;
+            case "CHARACTER": openPanel(PanelMode.CHARACTER); break;
+            case "BUILD": openPanel(PanelMode.BUILD); break;
+            case "BASES": openPanel(PanelMode.BASES); break;
+            case "WORK": if (hasBaseObject('w')) openPanel(PanelMode.WORKBENCH); else logEvent("No Scrap Workbench built yet. Build one before using WORK."); break;
+            case "SENSES": openPanel(PanelMode.SENSES); break;
+            case "MAP": openPanel(PanelMode.MAP); break;
+            case "NEWS": openPanel(PanelMode.NEWS); break;
+            case "LOG": openPanel(PanelMode.LOG); break;
+            case "CHAT": openChatWindow(); break;
+            case "SAVE/LOAD": openPanel(PanelMode.SAVELOAD); break;
+            case "MENU": setScreen(Screen.PAUSE); break;
+        }
+    }
+
+
+
+    void beginInteractMode() {
+        if (world == null) return;
+        interactCursorActive = true;
+        // Default to the tile underfoot if it has an object, otherwise the eastern adjacent tile.
+        if (baseObjectAt(playerX, playerY) != null || world.tiles[playerX][playerY] != '.') { lookX = playerX; lookY = playerY; }
+        else { lookX = Math.min(world.w - 1, playerX + 1); lookY = playerY; }
+        clampInteractCursorToAdjacent();
+        updatePendingInteractionSummary();
+        openPanel(PanelMode.INTERACT);
+    }
+
+    void moveInteractCursor(int dx, int dy) {
+        if (world == null) return;
+        int nx = lookX + dx;
+        int ny = lookY + dy;
+        // Interaction cursor is deliberately bound to the eight tiles around the player plus the standing tile.
+        if (Math.abs(nx - playerX) <= 1 && Math.abs(ny - playerY) <= 1 && nx >= 0 && ny >= 0 && nx < world.w && ny < world.h) {
+            lookX = nx; lookY = ny; lookStackIndex = 0;
+        }
+        clampInteractCursorToAdjacent();
+        updatePendingInteractionSummary();
+    }
+
+    void clampInteractCursorToAdjacent() {
+        lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX));
+        lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY));
+        if (world != null) { lookX = Math.max(0, Math.min(world.w - 1, lookX)); lookY = Math.max(0, Math.min(world.h - 1, lookY)); }
+    }
+
+    int agilityActionCost(char ch, BaseObject obj) {
+        int agility = stat("Agility", 6);
+        int base = 2;
+        if (obj != null) {
+            if (obj.symbol == 'c') base = 4;
+            else if (obj.symbol == 'u') base = 2;
+            else if (obj.symbol == 'w') base = 6;
+            else if (obj.symbol == 's') base = 3;
+            else if (obj.symbol == 'a' || obj.symbol == 'd') base = 4;
+        } else if (ch == 'T' || ch == 'q' || ch == 'A') base = 3;
+        else if (isVendingMachine(ch)) base = 3;
+        else if (isShrine(ch)) base = 4;
+        else if (isEmergencyMachine(ch)) base = 6;
+        else if (ch == 'C' || ch == 'H' || ch == 'R') base = 5;
+        return Math.max(1, base + 3 - agility / 3);
+    }
+
+    
+    boolean selectedInteractionIsCot() {
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        return obj != null && obj.symbol == 'c';
+    }
+
+    boolean selectedInteractionIsGovernor() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'Q';
+    }
+
+    boolean selectedInteractionIsSectorRail() {
+        return world != null && world.inBounds(lookX, lookY) && world.tiles[lookX][lookY] == 'T' && world.zoneType == ZoneType.NEUTRAL_RAIL_DEPOT;
+    }
+
+    boolean selectedInteractionIsFactionJournal() { return isFactionJournalObjectAt(lookX, lookY); }
+    boolean selectedInteractionIsBankTerminal() { return isBankTerminalAt(lookX, lookY); }
+    boolean selectedInteractionIsBankVault() { return isBankVaultAt(lookX, lookY); }
+    boolean selectedInteractionIsBankAlarmPanel() { return isBankAlarmPanelAt(lookX, lookY); }
+    boolean selectedInteractionIsBankManager() { return isBankManagerAt(lookX, lookY); }
+    boolean selectedInteractionCanSellJournalsToINN() { return canSellLeaderJournalsToINNAt(lookX, lookY); }
+
+    PortableLightInstance portableLightAt(int x, int y) {
+        for (PortableLightInstance l : portableLights) if (l != null && l.x == x && l.y == y && l.expiresTurn > turn && sameWorldLocation(l.worldKey)) return l;
+        return null;
+    }
+
+    boolean canScavengeFromCurrentRoom() {
+        if (world == null) return false;
+        int rid = world.roomIdAt(playerX, playerY);
+        return rid >= 0 && rid != claimedRoomId;
+    }
+
+    ArrayList<String> tileStackAt(int tx, int ty) {
+        ArrayList<String> stack = new ArrayList<>();
+        if (world == null || tx < 0 || ty < 0 || tx >= world.w || ty >= world.h) {
+            stack.add("Unknown void beyond the active auspex map.");
+            return stack;
+        }
+        boolean vis = isVisible(tx, ty);
+        boolean rem = isRemembered(tx, ty);
+        char ch = world.tiles[tx][ty];
+        if (!vis && !rem) {
+            stack.add("Unseen fog: no reliable reading.");
+            return stack;
+        }
+        stack.add("TILE: '" + ch + "' — " + describeTile(ch));
+        CompiledTileDescriptor td = TileDataCompilationAuthority.resolve(world, tx, ty, ch);
+        if (td != null) stack.add(td.inspectLine());
+        if (isDoorTile(ch)) stack.add("DOOR SURFACE: " + describeDoor(ch));
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null && vis) stack.add("ENTITY: " + npc.name + " / " + npc.faction.label + " / " + npc.state);
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null && vis) stack.add("BASE OBJECT: " + obj.name + " — " + obj.description);
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null && vis) stack.add("FIXTURE: " + fixtureInspectionLine(mos));
+        PortableLightInstance light = portableLightAt(tx, ty);
+        if (light != null && vis) stack.add("PORTABLE LIGHT: " + light.itemName + " / radius " + light.radius + " / expires in ~" + Math.max(1,(light.expiresTurn-turn)/Math.max(1,TURNS_PER_HOUR)) + "h / " + light.placement + ".");
+        if (vis || rem) stack.add("LIGHT: " + lightDescriptionAt(tx, ty) + " — level " + lightLevelAt(tx, ty) + "/100.");
+        EnvironmentalHazardRecord hz = hazardAt(tx, ty);
+        if (hz != null && (vis || rem)) stack.add("HAZARD: " + hz.label + " / " + hz.family + " / " + hz.severityText() + " — " + hz.warningText());
+        if (isDoorTile(ch)) stack.add("DOOR: " + describeDoor(ch) + " — closed doors block line of sight unless opened.");
+        if ("YJBKOZPFU".indexOf(ch) >= 0) stack.add("MARTIAN MACHINE: " + emergencyMachineName(ch) + " — inspect or operate if powered/unlocked.");
+        if (ch == 'T') stack.add("RAIL / TRADE DEPOT: local trade and route authority point. In a Neutral Rail Depot this can move you to a new sector or validate an Off-world ticket.");
+        if (ch == 'Q') stack.add("SECTOR GOVERNOR: a lavishly protected exit-gate to off-world victory, bribery, betrayal, or knife work.");
+        int rid = world.roomIdAt(tx, ty);
+        if (rid >= 0) {
+            RoomProfile rp = world.roomProfile(rid);
+            stack.add("ROOM: " + rp.name + " — " + rp.descriptor);
+            stack.add("FEATURES: " + rp.featureText);
+            stack.add("OWNERSHIP: " + ownershipText(tx, ty));
+        } else if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE) {
+            stack.add("INTERSTITIAL ARCOLOGY MASS: " + describeTile(ch));
+        } else {
+            stack.add("CORRIDOR/OPENWORK: " + describeTile(ch));
+        }
+        if (isIntermapTransitTile(ch)) {
+            stack.add("INTERMAP TRANSIT: " + intermapTransitLabel(ch));
+            stack.add("DESTINATION: " + transitionPreview(ch, tx, ty));
+        }
+        return stack;
+    }
+
+    String fixtureInspectionLine(MapObjectState mos) {
+        if (mos == null) return "unknown fixture.";
+        String label = mos.label == null || mos.label.isBlank()
+                ? (mos.type == null || mos.type.isBlank() ? "Fixture" : mos.type.replace('-', ' '))
+                : mos.label;
+        String status = fixtureStatusText(mos);
+        return status.isBlank() ? label + "." : label + " - " + status;
+    }
+
+    String fixtureStatusText(MapObjectState mos) {
+        if (mos == null) return "";
+        String type = mos.type == null ? "" : mos.type;
+        String stock = mos.stockState == null ? "" : mos.stockState;
+        if (type.contains("vending")) return mos.cooldownUntilTurn > turn ? "restocking; check back later." : "ready to use.";
+        if (type.contains("shrine")) return "available for prayer or inspection.";
+        if (type.equals("shop")) return "trade stock point.";
+        if (type.equals("sector-governor")) return stock.contains("present") ? "the exit papers may be here." : "no exit papers are visible.";
+        if (type.equals("martian-emergency-machine")) return "machine controls are present; inspect or operate if you have access.";
+        if (type.equals("contract-object")) return "sealed objective item.";
+        if (type.equals("corpse-container")) return "searchable remains.";
+        if (type.contains("explosive")) return "dangerous device; keep distance unless prepared.";
+        if (type.contains("newspaper")) return "readable public news source.";
+        if (type.equals("broadcast-device")) return "public broadcast receiver.";
+        if (type.equals("bank-terminal")) return "account access terminal.";
+        if (type.equals("bank-vault")) return stock.contains("open=true") ? "vault is open." : "vault is sealed.";
+        if (type.equals("bank-alarm-panel")) return stock.contains("disabled=true") ? "alarm panel is disabled." : "alarm panel is armed.";
+        if (type.equals("light-fixture")) return "fixed local light source.";
+        if (type.equals("light-switch")) return stock.contains("on=false") ? "local lights are off." : "local lights are on.";
+        if (type.equals("faction-journal")) return "private faction notes.";
+        return "inspectable fixture.";
+    }
+
+    void examineSelectedLookTarget() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        if (!world.inBounds(tx, ty) || !isVisible(tx, ty)) {
+            showTimedAlert("EXAMINE", "Too little is visible from here. Move closer, improve the light, or use Look on a visible tile first.", 4200);
+            return;
+        }
+        updateExamineFocus(tx, ty);
+        ArrayList<String> lines = examineLinesAt(tx, ty);
+        String title = lines.isEmpty() ? "EXAMINE" : lines.remove(0);
+        String body = lines.isEmpty() ? "No further readable detail is available." : String.join(" ", lines);
+        showTimedAlert(title, body, 7600);
+        logEvent(title + ": " + body);
+        advanceTurn("examines the selected target.");
+    }
+
+    void updateExamineFocus(int tx, int ty) {
+        boolean sameTarget = tx == lastExamineX && ty == lastExamineY && lastExamineWorldTurn >= 0L
+                && worldTurn - lastExamineWorldTurn <= 6L;
+        repeatedExamineCount = sameTarget ? Math.min(3, repeatedExamineCount + 1) : 1;
+        lastExamineX = tx;
+        lastExamineY = ty;
+        lastExamineWorldTurn = worldTurn;
+    }
+
+    int examineDepth() {
+        return Math.max(1, Math.min(3, repeatedExamineCount));
+    }
+
+    ArrayList<String> examineLinesAt(int tx, int ty) {
+        ArrayList<String> lines = new ArrayList<>();
+        int depth = examineDepth();
+        if (world == null || !world.inBounds(tx, ty)) {
+            lines.add("EXAMINE");
+            lines.add("There is nothing reliable to examine there.");
+            return lines;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null) {
+            lines.add("EXAMINE: " + npc.name);
+            if (npc.isAnimalActor()) {
+                lines.add(npc.animalLine() + ".");
+                lines.addAll(petCareReadabilityLines(npc, tx, ty, false));
+            } else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(npc, worldTurn);
+                lines.add((npc.role == null || npc.role.isBlank() ? "Underhive resident" : npc.role)
+                        + " aligned with " + (npc.faction == null ? "no known faction" : npc.faction.label) + ".");
+                lines.add("Age read: " + npc.ageLine() + ".");
+                lines.add(npc.isMinorActor() ? "Rank read: member only; no formal rank before adulthood." : "Rank read: " + npc.factionRankTitle + ".");
+            }
+            IntentReadResult intent = intentReadFor(npc);
+            if (intent != null && intent.available) lines.add(intent.summary);
+            lines.add("Visible equipment: " + visibleNpcEquipmentLine(npc) + ".");
+            String evidence = questEvidenceReadLine(npc);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add(npcConditionReadLine(npc));
+            lines.add(npcCombatReadinessLine(npc));
+            if (depth >= 2) lines.add(npcThreatReadLine(npc, intent));
+            if (depth >= 3) lines.add(npcSensesReadLine(npc, intent));
+            return lines;
+        }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null) {
+            lines.add("EXAMINE: " + obj.name);
+            lines.add(obj.description == null || obj.description.isBlank() ? "A constructed object in this room." : obj.description);
+            lines.add(baseObjectConditionReadLine(obj));
+            if (depth >= 2) lines.add(baseObjectUseReadLine(obj));
+            if (depth >= 3) lines.add(baseObjectWorkReadLine(obj));
+            return lines;
+        }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null) {
+            String label = mos.label == null || mos.label.isBlank() ? "Fixture" : mos.label;
+            lines.add("EXAMINE: " + label);
+            lines.add(fixtureInspectionLine(mos));
+            String evidence = questEvidenceReadLine(mos);
+            if (!evidence.isBlank()) lines.add(evidence);
+            lines.add("Use Interact for available actions.");
+            if (depth >= 2) lines.add("Closer read: " + fixtureStatusText(mos));
+            if (depth >= 3) lines.add("Territory read: " + ownershipText(tx, ty) + ".");
+            return lines;
+        }
+        EnvironmentalHazardRecord hazard = hazardAt(tx, ty);
+        if (hazard != null) {
+            lines.add("EXAMINE: " + hazard.label);
+            lines.add(hazard.warningText());
+            lines.add("Severity: " + hazard.severityText() + ".");
+            if (depth >= 2) lines.add("Avoidance read: plan around it before committing movement.");
+            if (depth >= 3) lines.add("Context read: light " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+            return lines;
+        }
+        char ch = world.tiles[tx][ty];
+        lines.add("EXAMINE: " + describeTile(ch));
+        lines.add("Ownership: " + ownershipText(tx, ty) + ".");
+        lines.add("Light: " + lightDescriptionAt(tx, ty) + "; noise cover " + localNoiseFieldAt(tx, ty) + ".");
+        if (isDoorTile(ch)) lines.add("Door read: " + describeDoor(ch) + ". Interact can test access.");
+        if (depth >= 2) lines.add("Floor read: " + roomContextReadLine(tx, ty) + ".");
+        if (depth >= 3) lines.add("Approach read: movement here is " + (world.walkable(tx, ty) ? "possible if the route stays clear" : "blocked until the obstacle changes") + ".");
+        return lines;
+    }
+
+    String questEvidenceReadLine(NpcEntity npc) {
+        if (npc == null) return "";
+        for (FactionContract c : factionContracts) {
+            if (c == null || c.completed) continue;
+            if ("BOUNTY".equals(c.type) && c.targetEntityId != null && c.targetEntityId.equals(npc.id)) {
+                String proof = c.publicRequiredItem();
+                String state = npc.hp <= 0 ? "proof should be recoverable from the body" : "proof is only recoverable after the target is dealt with";
+                return "Quest evidence: this appears to match an active " + c.faction.label + " bounty; " + proof + " is the turn-in proof, and " + state + ".";
+            }
+        }
+        return "";
+    }
+
+    String questEvidenceReadLine(MapObjectState m) {
+        if (m == null) return "";
+        if ("contract-object".equals(m.type)) {
+            FactionContract c = contractForTargetEntity(m.id);
+            if (c != null) return "Quest evidence: sealed retrieval objective for " + c.faction.label + "; take the sealed object and return it unopened.";
+            return "Quest evidence: sealed retrieval objective; take it only if you intend to carry contract evidence.";
+        }
+        if ("faction-journal".equals(m.type)) return "Quest evidence: faction leader journal; stealing it creates physical intelligence that the INN may buy.";
+        if ("corpse-container".equals(m.type)) return "Quest evidence: remains may contain proof items, stolen goods, or recoverable equipment; inspect before taking all.";
+        return "";
+    }
+
+    FactionContract contractForTargetEntity(String targetEntityId) {
+        if (targetEntityId == null || targetEntityId.isBlank()) return null;
+        for (FactionContract c : factionContracts) if (c != null && !c.completed && targetEntityId.equals(c.targetEntityId)) return c;
+        return null;
+    }
+
+    String npcConditionReadLine(NpcEntity npc) {
+        if (npc == null) return "Condition read: no body is readable.";
+        String body = npc.isAnimalActor() ? animalBodyPlanLine(npc) : humanoidBodyPlanLine(npc);
+        String injury = npcInjuryEstimate(npc);
+        String armor = npcArmorEstimate(npc);
+        return "Condition read: " + body + "; " + injury + "; " + armor + ".";
+    }
+
+    String npcCombatReadinessLine(NpcEntity npc) {
+        if (npc == null) return "Combat readiness: unknown.";
+        if (npc.hp >= 9000) return "Combat readiness: protected or story-critical; ordinary violence is unlikely to resolve this cleanly.";
+        if (npc.isAnimalActor()) {
+            if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) return "Combat readiness: animal is dangerous if approached or cornered.";
+            return "Combat readiness: animal is not presenting as an armed combatant.";
+        }
+        int danger = Math.max(0, npc.equipmentTier) + (ItemCatalog.isFirearmLike(npc.equippedRangedWeapon) ? 2 : 0) + (npc.equippedExplosive == null || npc.equippedExplosive.isBlank() ? 0 : 2);
+        if (isHostileNpc(npc) || "Hostile".equalsIgnoreCase(npc.state)) danger += 2;
+        if (danger >= 6) return "Combat readiness: severe threat; armor, ranged weapon, or explosive risk is visible.";
+        if (danger >= 3) return "Combat readiness: armed and risky; plan cover, distance, or escape.";
+        if (danger >= 1) return "Combat readiness: lightly armed or protected.";
+        return "Combat readiness: no obvious combat kit.";
+    }
+
+    String humanoidBodyPlanLine(NpcEntity npc) {
+        if (npc.isMinorActor()) return "smaller humanoid frame";
+        if (npc.role != null && npc.role.toLowerCase(Locale.ROOT).contains("bound Labor Automaton")) return "augmented humanoid frame";
+        return "humanoid body plan";
+    }
+
+    String animalBodyPlanLine(NpcEntity npc) {
+        String key = ((npc.creatureKind == null ? "" : npc.creatureKind) + " " + (npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("hound") || key.contains("dog") || key.contains("mastiff")) return "quadruped predator/companion body";
+        if (key.contains("cat")) return "small agile quadruped body";
+        if (key.contains("rat") || key.contains("mouse")) return "small skittering animal body";
+        if (key.contains("lizard")) return "low reptilian body";
+        if (key.contains("glowfish")) return "contained aquatic body";
+        if ("farm-animal".equals(npc.creatureKind)) return "working animal body";
+        return "non-human animal body";
+    }
+
+    ArrayList<String> petCareReadabilityLines(NpcEntity npc, int tx, int ty, boolean compact) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null || !npc.isAnimalActor()) return lines;
+        String prefix = compact ? "" : "Pet care: ";
+        if (!npc.isPetActor()) {
+            lines.add(prefix + animalContactBlockedLine(npc));
+            lines.add("Animal care: " + animalNeedReadLine(npc) + "; " + animalShelterReadLine(tx, ty) + ".");
+            return lines;
+        }
+        lines.add(prefix + animalNeedReadLine(npc) + "; " + petTemperamentReadLine(npc) + ".");
+        lines.add("Ownership: " + petOwnershipReadLine(npc, tx, ty));
+        lines.add("Adoption/sale: " + petAdoptionSaleReadLine(npc, tx, ty));
+        lines.add("Access: " + petAccessibilityReadLine(npc, tx, ty) + " " + pettingPermissionReadLine(npc, tx, ty));
+        lines.add("Shelter: " + animalShelterReadLine(tx, ty) + ".");
+        return lines;
+    }
+
+    String animalNeedReadLine(NpcEntity npc) {
+        if (npc == null) return "basic needs are unreadable";
+        ArrayList<String> needs = new ArrayList<>();
+        if (npc.hunger >= 8) needs.add("very hungry");
+        else if (npc.hunger >= 5) needs.add("hungry");
+        else needs.add("fed enough for now");
+        if (npc.thirst >= 8) needs.add("very thirsty");
+        else if (npc.thirst >= 5) needs.add("thirsty");
+        else needs.add("watered enough for now");
+        if (npc.sleepDebt >= 10) needs.add("badly tired");
+        else if (npc.sleepDebt >= 6) needs.add("tired");
+        else needs.add("rested enough for now");
+        return String.join(", ", needs);
+    }
+
+    String petTemperamentReadLine(NpcEntity npc) {
+        if (npc == null) return "temperament unclear";
+        String state = npc.state == null ? "" : npc.state.toLowerCase(Locale.ROOT);
+        if ("hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "frightened or hostile enough that touching is unsafe";
+        if (state.contains("guard") || state.contains("duty") || state.contains("patrol")) return "trained and alert, but not openly hostile";
+        if (state.contains("fright") || state.contains("fear") || state.contains("tense")) return "nervous and needs space";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "friendly toward its handler";
+        return "calm enough to consider a gentle approach";
+    }
+
+    String petOwnershipReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no readable ownership.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "handled companion of " + npc.companionOf + "; taking or commanding it is not implied.";
+        String territory = ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+        if (territory.contains("faction") || territory.contains("owned") || territory.contains("restricted")) return "local territory claims custody; ask, buy, or be invited before treating it as yours.";
+        return "no visible personal handler; still not automatically yours.";
+    }
+
+    String petAdoptionSaleReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null || !npc.isPetActor()) return "not a companion adoption target.";
+        String context = (describeTile(world != null && world.inBounds(tx, ty) ? world.tiles[tx][ty] : ' ') + " " + roomContextReadLine(tx, ty) + " " + ownershipText(tx, ty)).toLowerCase(Locale.ROOT);
+        if (context.contains("market") || context.contains("shop") || context.contains("stall")) return "possible vendor or adoption context, but no purchase is confirmed until a trade/service option says so.";
+        if (npc.companionOf != null && !npc.companionOf.isBlank()) return "already bonded to a handler; not for sale from this screen.";
+        return "no adoption or sale offer is visible from here.";
+    }
+
+    String petAccessibilityReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "no animal is reachable.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return npc.name + " is too far away; move adjacent first.";
+        if (!isVisible(tx, ty)) return npc.name + " is not clearly visible enough for safe contact.";
+        return npc.name + " is close enough for gentle contact.";
+    }
+
+    String pettingPermissionReadLine(NpcEntity npc, int tx, int ty) {
+        if (npc == null) return "Petting is unavailable.";
+        if (!npc.isPetActor()) return animalContactBlockedLine(npc);
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return "Petting is blocked because it is not safe to touch.";
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) return "Petting is blocked by distance.";
+        return "Interact or PET can offer " + petGestureName(npc) + ".";
+    }
+
+    String animalShelterReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "shelter is unreadable";
+        String tile = describeTile(world.tiles[tx][ty]).toLowerCase(Locale.ROOT);
+        String room = roomContextReadLine(tx, ty).toLowerCase(Locale.ROOT);
+        if (room.contains("room") || tile.contains("floor") || tile.contains("hab") || tile.contains("market")) return "under cover or inside a usable space";
+        if (tile.contains("sewer") || tile.contains("hazard") || tile.contains("waste")) return "poor shelter with environmental stress";
+        return "shelter looks uncertain";
+    }
+
+    String npcInjuryEstimate(NpcEntity npc) {
+        if (npc.hp >= 9000) return "no readable injury under protected status";
+        if (npc.hp <= 0) return "down or dying";
+        if (npc.hp <= 3) return "badly hurt";
+        if (npc.hp <= 7) return "wounded";
+        if (npc.hp <= 11) return "scuffed or tired";
+        return "looks healthy";
+    }
+
+    String npcArmorEstimate(NpcEntity npc) {
+        String armor = npc.equippedArmor == null ? "" : npc.equippedArmor.trim();
+        if (armor.isBlank()) return "no obvious armor";
+        int value = ItemCatalog.priceFor(armor);
+        if (value >= 35 || armor.toLowerCase(Locale.ROOT).contains("carapace")) return "heavy visible protection: " + armor;
+        if (value >= 14 || armor.toLowerCase(Locale.ROOT).contains("flak") || armor.toLowerCase(Locale.ROOT).contains("vest")) return "moderate visible protection: " + armor;
+        return "light visible protection: " + armor;
+    }
+
+    String baseObjectConditionReadLine(BaseObject obj) {
+        if (obj == null) return "Condition read: no constructed object is readable.";
+        String condition;
+        if (obj.integrity <= 0) condition = "broken";
+        else if (obj.underConstruction) condition = "under construction";
+        else if (obj.integrity <= 4) condition = "fragile";
+        else if (obj.integrity <= 10) condition = "worn but usable";
+        else if (obj.integrity <= 20) condition = "sturdy";
+        else condition = "heavily built";
+        String armor = obj.cover > 0 ? "cover value visible" : "no obvious cover";
+        String danger = obj.armed ? "armed or defensive fixture" : (obj.attention >= 3 ? "valuable enough to attract attention" : "low immediate danger");
+        return "Condition read: " + condition + "; " + armor + "; " + danger + ".";
+    }
+
+    String npcThreatReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null) return "Threat read: no person is readable there.";
+        if (npc.isAnimalActor()) return "Threat read: posture matters more than equipment.";
+        String gear = visibleNpcEquipmentLine(npc);
+        String mood = isHostileNpc(npc) ? "dangerous now" : ("Hostile".equalsIgnoreCase(npc.state) ? "openly hostile" : "not openly hostile");
+        String intentText = intent == null || !intent.available || intent.intent == null || intent.intent.isBlank() ? "intent unclear" : intent.intent.toLowerCase(Locale.ROOT);
+        return "Threat read: " + mood + "; " + intentText + "; " + gear + ".";
+    }
+
+    String npcSensesReadLine(NpcEntity npc, IntentReadResult intent) {
+        if (npc == null || npc.isAnimalActor()) return "Senses read: only broad posture is readable.";
+        int vision = intent != null && intent.available ? intent.visionRange : npcVisionRange(npc);
+        int hearing = intent != null && intent.available ? intent.hearingRange : npcHearingRange(npc);
+        String motion = npc.activeMotionLabel() == null || npc.activeMotionLabel().isBlank() ? "unclear motion" : npc.activeMotionLabel();
+        String line = "Senses read: vision about " + vision + ", hearing about " + hearing + ", motion " + motion.toLowerCase(Locale.ROOT);
+        if (intent != null && intent.available && intent.attackLine) line += "; has a clear attack line";
+        return line + ".";
+    }
+
+    String baseObjectUseReadLine(BaseObject obj) {
+        if (obj == null) return "Use read: no object is readable there.";
+        if (obj.underConstruction) return "Use read: construction is incomplete and needs staged work.";
+        if (obj.isBusinessAsset()) return "Use read: service counter; " + obj.businessReturnLine(this);
+        if (obj.armed) return "Use read: armed fixture; approach and interaction may carry risk.";
+        if (obj.assignedRecipe != null && !obj.assignedRecipe.isBlank()) return "Use read: assigned to " + obj.assignedRecipe + ".";
+        return "Use read: stable built object; Interact or base management may expose its work path.";
+    }
+
+    String baseObjectWorkReadLine(BaseObject obj) {
+        if (obj == null) return "Work read: nothing usable is visible.";
+        String quality = obj.qualityName == null || obj.qualityName.isBlank() ? "common" : obj.qualityName.toLowerCase(Locale.ROOT);
+        String worker = obj.assignedWorker == null || obj.assignedWorker.isBlank() ? "no assigned worker" : "worker " + obj.assignedWorker;
+        String queue = obj.productionQueueRemaining > 0 ? "queued work " + obj.productionQueueRemaining + "/" + Math.max(1, obj.productionQueueTarget) : "no queued work";
+        return "Work read: " + quality + " quality, " + worker + ", " + queue + ".";
+    }
+
+    String roomContextReadLine(int tx, int ty) {
+        if (world == null || !world.inBounds(tx, ty)) return "no reliable room context";
+        int roomId = world.roomIdAt(tx, ty);
+        if (roomId < 0) return "open passage or edge space";
+        return "room space with " + ownershipText(tx, ty).toLowerCase(Locale.ROOT);
+    }
+
+    String visibleNpcEquipmentLine(NpcEntity npc) {
+        if (npc == null || npc.isAnimalActor()) return "no obvious carried gear";
+        ArrayList<String> gear = new ArrayList<>();
+        if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) gear.add(npc.equippedMeleeWeapon);
+        if (npc.equippedRangedWeapon != null && !npc.equippedRangedWeapon.isBlank()) gear.add(npc.equippedRangedWeapon);
+        if (npc.equippedArmor != null && !npc.equippedArmor.isBlank()) gear.add(npc.equippedArmor);
+        if (gear.isEmpty()) return "no obvious carried gear";
+        return String.join(", ", gear.subList(0, Math.min(3, gear.size())));
+    }
+
+    void petSelectedLookPet() {
+        if (world == null) return;
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        petNpcAt(tx, ty, true);
+        repaint();
+    }
+
+    void petNpcAt(int tx, int ty, boolean alert) {
+        if (world == null || !world.inBounds(tx, ty)) {
+            showPetFeedback("PET", "There is no reachable companion animal there.", alert);
+            return;
+        }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc == null) {
+            showPetFeedback("PET", "There is no companion animal there.", alert);
+            return;
+        }
+        if (!npc.isPetActor()) {
+            showPetFeedback("PET", animalContactBlockedLine(npc), alert);
+            if (npc.isAnimalActor()) advanceTurn("checks an animal's mood.");
+            return;
+        }
+        if (Math.abs(tx - playerX) > 1 || Math.abs(ty - playerY) > 1) {
+            showPetFeedback("PET", npc.name + " is too far away for a gentle greeting.", alert);
+            return;
+        }
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) {
+            showPetFeedback("PET", npc.name + " is too tense to touch safely.", alert);
+            advanceTurn("backs off from a tense companion animal.");
+            return;
+        }
+        String line = petInteractionLine(npc);
+        showPetFeedback("PET", line, alert);
+        logEvent("PET: " + line);
+        advanceTurn("pets " + npc.name + ".");
+    }
+
+    void showPetFeedback(String title, String body, boolean alert) {
+        if (alert) showTimedAlert(title, body, 4600);
+        else logEvent(title + ": " + body);
+    }
+
+    String animalContactBlockedLine(NpcEntity npc) {
+        if (npc == null) return "There is no companion animal there.";
+        if (!npc.isAnimalActor()) return npc.name + " is a person, not a pet.";
+        if ("Hostile".equalsIgnoreCase(npc.state) || isHostileNpc(npc)) return npc.name + " is not safe to touch.";
+        if ("farm-animal".equals(npc.creatureKind)) return npc.name + " is working stock, not a companion animal; it keeps a cautious distance.";
+        if ("kennel-animal".equals(npc.creatureKind)) return npc.name + " is on duty and should not be distracted.";
+        return npc.name + " is not tame enough to pet.";
+    }
+
+    String petInteractionLine(NpcEntity npc) {
+        String key = ((npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return npc.name + " accepts careful ear scritches and pretends it was their idea.";
+        if (key.contains("rat") || key.contains("mouse")) return npc.name + " receives a tiny nose boop and chirrs at the attention.";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return npc.name + " leans into a head pat.";
+        if (key.contains("lizard")) return npc.name + " permits a cautious chin rub.";
+        if (key.contains("glowfish")) return npc.name + " watches your fingertip tap the bowl and glows a little brighter.";
+        return npc.name + " accepts a gentle petting gesture.";
+    }
+
+    String petGestureName(NpcEntity npc) {
+        String key = ((npc == null || npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc == null || npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return "ear scritches";
+        if (key.contains("rat") || key.contains("mouse")) return "a nose boop";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return "a head pat";
+        if (key.contains("lizard")) return "a chin rub";
+        if (key.contains("glowfish")) return "a bowl tap";
+        return "a gentle petting gesture";
+    }
+
+    String describeDoor(char ch) {
+        if (ch == '/') return "open archway";
+        if (ch == '|') return "hinged scrap door";
+        if (ch == 'L') return "locked/chained door";
+        if (ch == 'V') return "ventilation panel";
+        if (ch == 'X') return "sealed security door";
+        return "unknown door";
+    }
+
+void updatePendingInteractionSummary() {
+        if (world == null) { pendingInteractionSummary = "No world loaded."; return; }
+        if (!world.inBounds(lookX, lookY)) { pendingInteractionSummary = "No reachable target selected."; return; }
+        if (Math.abs(lookX-playerX) > 1 || Math.abs(lookY-playerY) > 1) {
+            Point approach = selectedInteractionApproachTile();
+            pendingInteractionSummary = approach == null
+                    ? "Selected target is too far away to use. Move next to it first."
+                    : "Selected target is too far away to use. PLAN MOVE can approach " + interactionTargetLabel(lookX, lookY) + " from " + approach.x + "," + approach.y + ".";
+            return;
+        }
+        NpcEntity npc = world.npcAt(lookX, lookY);
+        if (npc != null) {
+            if (npc.isPetActor()) pendingInteractionSummary = "Pet interaction: " + npc.name + " is close enough for " + petGestureName(npc) + ".";
+            else if (npc.isAnimalActor()) pendingInteractionSummary = "Animal interaction blocked: " + animalContactBlockedLine(npc);
+            else pendingInteractionSummary = "Talk to " + npc.name + ", " + (npc.role == null || npc.role.isBlank() ? "local resident" : npc.role) + ".";
+            return;
+        }
+        BaseObject obj = baseObjectAt(lookX, lookY);
+        char ch = world.tiles[lookX][lookY];
+        int turns = agilityActionCost(ch, obj);
+        String target = obj != null ? obj.name : describeTile(ch);
+        if (obj == null && isDoorTile(ch)) {
+            int diff = (ch=='/'?0:(ch=='|'?8:(ch=='L'?14:(ch=='V'?16:22))));
+            pendingInteractionSummary = "Door access: " + target + ". Time: " + turns + " turn(s). Difficulty estimate " + diff + ". " + doorPreflightHint(ch);
+        } else if (obj != null && obj.symbol == 'c') {
+            int cost = sleepFoodWaterCost(pendingSleepHours);
+            pendingInteractionSummary = "Sleep on cot for " + pendingSleepHours + "h? Time: " + sleepTurnCost(pendingSleepHours) + " turns. Cost: " + cost + " food + " + cost + " water. Reduces sleep need up to " + sleepTurnCost(pendingSleepHours) + "/" + MAX_SLEEP_NEED + ". Max 8h.";
+        } else if (obj == null && isFactionJournalObjectAt(lookX, lookY)) {
+            pendingInteractionSummary = factionJournalPreview(lookX, lookY);
+        } else if (obj == null && isBankTerminalAt(lookX, lookY)) {
+            pendingInteractionSummary = bankTerminalPreview(lookX, lookY);
+        } else if (obj == null && isBankVaultAt(lookX, lookY)) {
+            pendingInteractionSummary = bankVaultPreview(lookX, lookY);
+        } else if (obj == null && isBankAlarmPanelAt(lookX, lookY)) {
+            pendingInteractionSummary = bankAlarmPanelPreview(lookX, lookY);
+        } else if (obj == null && isBankManagerAt(lookX, lookY)) {
+            pendingInteractionSummary = bankManagerPreview(lookX, lookY);
+        } else if (obj == null && isPersistentStockObjectAt(lookX, lookY)) {
+            pendingInteractionSummary = persistentStockInteractionSummary(lookX, lookY);
+        } else if (obj == null && isVendingMachine(ch)) {
+            pendingInteractionSummary = vendingPreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter to vend.";
+        } else if (obj == null && isShrine(ch)) {
+            pendingInteractionSummary = shrinePreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter to pray/inspect.";
+        } else if (obj == null && isEmergencyMachine(ch)) {
+            pendingInteractionSummary = emergencyMachinePreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM/Enter for machine options.";
+        } else if (obj == null && (ch == 'D' || ch == 'S' || ch == 'v' || ch == 'E')) {
+            pendingInteractionSummary = "INTERMAP TRANSIT — " + intermapTransitLabel(ch) + ": " + transitionPreview(ch, lookX, lookY) + " Time: " + turns + " turn(s). Press CONFIRM or Enter to transition.";
+        } else if (obj == null && ch == 'Q') {
+            pendingInteractionSummary = governorPreview(lookX, lookY) + " Use BRIBE GOVERNOR or ATTACK GOVERNOR.";
+        } else {
+            pendingInteractionSummary = "Interact with " + target + "? Time: " + turns + " turn(s), modified by Agility.";
+        }
+    }
+
+    void addInfopediaRelatedEntryButtons(Rectangle modal, java.util.List<String> entries) {
+        if (entries == null || entries.isEmpty()) return;
+        String selectedEntry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        ArrayList<String> related = infopediaRelatedEntries(infopediaTab, selectedEntry);
+        int rx = modal.x + modal.width - 456;
+        int ry = modal.y + modal.height - 86;
+        for (int i=0; i<Math.min(3, related.size()); i++) {
+            String target = related.get(i);
+            final String jump = target;
+            buttons.add(new ButtonBox("LINK: " + TextSurfaceApi.ellipsize(target, 22), rx + i * 148, ry, 140, 30, "Open related Infopedia entry: " + target, () -> openInfopediaEntry(jump)));
+        }
+    }
+
+    String doorPreflightHint(char ch) {
+        if (ch == '/') return "Open passage; no door work needed.";
+        if (ch == '|') return "Closed door; opening may make sight lines and sound travel farther.";
+        if (ch == 'L') return "Locked or chained; keys, lockpicks, tools, Mechanics, or Intellect can help.";
+        if (ch == 'V') return "Vent panel; tools or a careful access check may be needed.";
+        if (ch == 'X') return "Electronic security; a keycard, hacking tools, data spike, or skill check may be needed.";
+        return "Sealed access; ordinary interaction may not be enough.";
+    }
+
+    boolean isVendingMachine(char ch) { return PublicServiceMediaAuthority.isVendingSymbol(ch); }
+    boolean isShrine(char ch) { return ch == 'I' || ch == 'H'; }
+    String passiveKey(int x, int y) { return (world == null ? 0 : world.locationKey()) + ":" + x + ":" + y; }
+
+    String vendingName(char ch) { return PublicServiceMediaAuthority.vendingName(ch); }
+
+    String vendingPreview(char ch, int x, int y) {
+        String key = passiveKey(x,y);
+        int until = passiveCooldownUntilTurn.getOrDefault(key, 0);
+        int hacked = vendingHackVendCount.getOrDefault(key, 0);
+        return PublicServiceMediaAuthority.vendingPreview(ch, until, hacked);
+    }
+
+    String vendingStockText(char ch) { return PublicServiceMediaAuthority.vendingStockText(ch); }
+
+    String shrinePreview(char ch, int x, int y) {
+        if (ch == 'I') return "Concord shrine: " + imperialShrineName(x,y) + ". A legal devotional fixture for brief prayer and composure.";
+        return "Heretical shrine: " + chaosShrineName(x,y) + ". Illegal, dangerous, and probably listening.";
+    }
+
+    String imperialShrineName(int x, int y) {
+        String[] names = {"Saint Drusus of the Worn Gate", "Saint Sabbat of the Red Road", "Saint Vidicus of the Iron Ledger", "Saint Lucia of the Last Lamp", "Saint Gelt of the Unpaid Tithe"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 31 + y * 17, names.length)];
+    }
+
+    String chaosShrineName(int x, int y) {
+        String[] names = {"the Blood God", "the Plague God", "the Changer of Ways", "the Prince of Excess"};
+        return names[Math.floorMod((world == null ? 0 : world.locationKey()) + x * 13 + y * 29, names.length)];
+    }
+
+    boolean isEmergencyMachine(char ch) { return "YJBKOZPFU".indexOf(ch) >= 0; }
+    String emergencyMachineName(char ch) {
+        switch(ch) {
+            case 'Y': return "Martian atmospheric water condenser";
+            case 'J': return "Martian emergency assembler";
+            case 'B': return "Martian emergency boiler";
+            case 'K': return "Martian micro laboratorium";
+            case 'O': return "Martian emergency miner";
+            case 'Z': return "Martian relay power grid";
+            case 'P': return "Martian emergency smelter";
+            case 'F': return "Martian emergency steam engine";
+            case 'U': return "disabled emergency steam engine";
+            default: return "Martian emergency machine";
+        }
+    }
+    String emergencyMachineImagePath(char ch) {
+        switch(ch) {
+            case 'Y': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-atmospheric-water-condenser.png";
+            case 'J': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-assembler.png";
+            case 'B': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-boiler.png";
+            case 'K': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-laboratorium.png";
+            case 'O': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-miner.png";
+            case 'Z': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-power-grid.png";
+            case 'P': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-smelter.png";
+            case 'F': case 'U': return "assets/imported_tech_priests/graphics/icons/martian-micro/tech-priests-emergency-steam-engine.png";
+            default: return "assets/imported_tech_priests/thumbnail.png";
+        }
+    }
+    boolean emergencyMachineLocked(int x, int y, char ch) {
+        String key = passiveKey(x,y);
+        if (unlockedEmergencyMachines.contains(key)) return false;
+        // Stable seeded lock chance per fixture. Owned faction zones are more likely to lock their machines.
+        int hash = Math.abs(Objects.hash(world == null ? 0 : world.locationKey(), x, y, ch));
+        int chance = owningFactionAt(x,y) == Faction.NONE ? 28 : 62;
+        return (hash % 100) < chance;
+    }
+    String emergencyMachinePreview(char ch, int x, int y) {
+        String lock = emergencyMachineLocked(x,y,ch) ? "LOCKED: hack/pick/keycard required before use" : "usable";
+        Faction owner = owningFactionAt(x,y);
+        String power = machinePowered(ch) ? "powered" : "unpowered/current slice dark";
+        return emergencyMachineName(ch) + " [" + lock + ", " + power + ", owner=" + factionLabel(owner) + "]. Preview asset: " + emergencyMachineImagePath(ch);
+    }
+    Faction owningFactionAt(int x, int y) {
+        if (world == null || x < 0 || y < 0 || x >= world.w || y >= world.h) return Faction.NONE;
+        int rid = world.roomIds[x][y];
+        if (rid >= 0 && rid < world.roomFactions.size()) return world.roomFactions.get(rid);
+        return Faction.NONE;
+    }
+    String factionLabel(Faction f) { return f == null ? "none" : f.label; }
+    boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }
+    static boolean sameFactionFamilyStatic(Faction a, Faction b) {
+        if (a == null || b == null) return false;
+        if (a == b) return true;
+        if ((a == Faction.MECHANIST_COLLEGIA || a.name().startsWith("MECHANIST COLLEGIA")) && (b == Faction.MECHANIST_COLLEGIA || b.name().startsWith("MECHANIST COLLEGIA"))) return true;
+        if ((a == Faction.MINISTORUM || a == Faction.SORORITAS) && (b == Faction.MINISTORUM || b == Faction.SORORITAS)) return true;
+        if ((a == Faction.BANDIT || a.name().startsWith("GANGER")) && (b == Faction.BANDIT || b.name().startsWith("GANGER"))) return true;
+        if ((a == Faction.HIVER || a.name().startsWith("HIVER")) && (b == Faction.HIVER || b.name().startsWith("HIVER"))) return true;
+        if ((a == Faction.NOBLE || a.name().startsWith("NOBLE")) && (b == Faction.NOBLE || b.name().startsWith("NOBLE"))) return true;
+        return false;
+    }
+    boolean playerIsFactionMember(Faction f) {
+        if (f == null || f == Faction.NONE) return true;
+        if (active == null) return false;
+        Faction pf = JobProfile.get(active.job).faction;
+        return pf == f || sameFactionFamily(pf, f);
+    }
+    Faction playerFaction() {
+        if (active == null) return Faction.NONE;
+        try { return JobProfile.get(active.job).faction; } catch (Throwable ignored) { return Faction.NONE; }
+    }
+    boolean machinePowered(char ch) {
+        if (ch == 'F' || ch == 'U' || ch == 'Z') return true;
+        return world == null || !poweredDownSlices.contains(String.valueOf(world.locationKey()));
+    }
+    boolean ensureMachineAccess(int tx, int ty, char ch) {
+        Faction owner = owningFactionAt(tx,ty);
+        if (owner != Faction.NONE && !playerIsFactionMember(owner)) {
+            suspicion += 2;
+            factionStanding.put(owner, factionStanding.getOrDefault(owner, 0) - 3);
+            temporaryHostileTurns.put(owner, turn + 12);
+            logEvent("Unauthorized use of " + emergencyMachineName(ch) + " in " + factionLabel(owner) + " territory triggers hostility and standing loss.");
+            DebugLog.audit("EMM_FACTION_HOSTILITY", emergencyMachineName(ch)+" owner="+owner+" at="+tx+","+ty+" state="+stateSummary());
+        }
+        if (emergencyMachineLocked(tx,ty,ch)) {
+            int score = stat("Mechanics",3) + stat("Intellect",3) + rng.nextInt(12) + (countInventory("Keycard")>0 ? 6 : 0) + (countInventory("Hacking tools")>0 ? 5 : 0) + (countInventory("Lockpicks")>0 ? 3 : 0);
+            int diff = 12 + (owner == Faction.NONE ? 0 : 6);
+            if (score >= diff) {
+                unlockedEmergencyMachines.add(passiveKey(tx,ty));
+                logEvent("Access granted: you bypass the lock on the " + emergencyMachineName(ch) + ".");
+                DebugLog.audit("EMM_UNLOCK", emergencyMachineName(ch)+" score="+score+" diff="+diff+" at="+tx+","+ty);
+                return true;
+            }
+            logEvent("Access denied: " + emergencyMachineName(ch) + " remains locked. Need keycard, lockpicks, hacking tools, Intellect, or Mechanics. Roll " + score + " < " + diff + ".");
+            DebugLog.audit("EMM_UNLOCK_FAIL", emergencyMachineName(ch)+" score="+score+" diff="+diff+" at="+tx+","+ty);
+            advanceTurn("fails to access emergency machine.");
+            return false;
+        }
+        return true;
+    }
+    void interactEmergencyMachine(int tx, int ty, char ch) {
+        if (!ensureMachineAccess(tx,ty,ch)) return;
+        if (!machinePowered(ch)) {
+            logEvent(emergencyMachineName(ch) + " is unpowered. Powered doors are easier to force, security is down, visibility is reduced, and machinery is inaccessible until power is restored.");
+            advanceTurn("checks unpowered machinery.");
+            return;
+        }
+        switch(ch) {
+            case 'Y':
+                int waterGain = 2 + rng.nextInt(4);
+                for(int i=0;i<waterGain;i++) addInventoryItem("Water bottle", ItemProvenanceRecord.producedByFixture("Water bottle", Faction.HIVER, emergencyMachineName(ch), world, turn, "condensed atmospheric moisture", "dispensed to player by emergency condenser"));
+                logEvent("The condenser coughs out " + waterGain + " units of drinkable water.");
+                break;
+            case 'J':
+                if (countInventory("Machine part") >= 1 && countInventory("Construction supplies") >= 1) { removeInventoryOne("Machine part"); removeInventoryOne("Construction supplies"); addInventoryItem("Assembled component", ItemProvenanceRecord.producedByFixture("Assembled component"

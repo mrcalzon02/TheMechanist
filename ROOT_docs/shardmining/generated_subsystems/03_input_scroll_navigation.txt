@@ -1,0 +1,328 @@
+# 03_input_scroll_navigation
+
+Generated: 20260601_131932
+
+Keyboard, mouse, controller, scrollbars, and route changes.
+
+These are raw GamePanel shard extraction blocks, not compile-ready Java classes.
+
+---
+Source: gamepanel-shard3.txt:521-530
+Kind: method
+Name: animalBodyPlanLine
+SHA256: 6666507458773576fbf49276b7ae9853663e297460654701312ff811b7d79a62
+
+```java
+    String animalBodyPlanLine(NpcEntity npc) {
+        String key = ((npc.creatureKind == null ? "" : npc.creatureKind) + " " + (npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("hound") || key.contains("dog") || key.contains("mastiff")) return "quadruped predator/companion body";
+        if (key.contains("cat")) return "small agile quadruped body";
+        if (key.contains("rat") || key.contains("mouse")) return "small skittering animal body";
+        if (key.contains("lizard")) return "low reptilian body";
+        if (key.contains("glowfish")) return "contained aquatic body";
+        if ("farm-animal".equals(npc.creatureKind)) return "working animal body";
+        return "non-human animal body";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:751-759
+Kind: method
+Name: petInteractionLine
+SHA256: 16308721d323910c3d8f98337f0e3a8a8ff10969d2021aaf67dbab23b3a6731b
+
+```java
+    String petInteractionLine(NpcEntity npc) {
+        String key = ((npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return npc.name + " accepts careful ear scritches and pretends it was their idea.";
+        if (key.contains("rat") || key.contains("mouse")) return npc.name + " receives a tiny nose boop and chirrs at the attention.";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return npc.name + " leans into a head pat.";
+        if (key.contains("lizard")) return npc.name + " permits a cautious chin rub.";
+        if (key.contains("glowfish")) return npc.name + " watches your fingertip tap the bowl and glows a little brighter.";
+        return npc.name + " accepts a gentle petting gesture.";
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:761-769
+Kind: method
+Name: petGestureName
+SHA256: 6dcecbebded30cabab5ec657932e66d709c034611c09ca8b14fa3c7f6597e4f5
+
+```java
+    String petGestureName(NpcEntity npc) {
+        String key = ((npc == null || npc.animalProfileId == null ? "" : npc.animalProfileId) + " " + (npc == null || npc.name == null ? "" : npc.name)).toLowerCase(Locale.ROOT);
+        if (key.contains("cat")) return "ear scritches";
+        if (key.contains("rat") || key.contains("mouse")) return "a nose boop";
+        if (key.contains("hound") || key.contains("dog") || key.contains("malamute") || key.contains("pup") || key.contains("mastiff")) return "a head pat";
+        if (key.contains("lizard")) return "a chin rub";
+        if (key.contains("glowfish")) return "a bowl tap";
+        return "a gentle petting gesture";
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1551-1571
+Kind: method
+Name: selectedProductionGuidanceLines
+SHA256: 6d2ea3d456501098483f80a27ead68f405b3d5b08ddcd9aad5621ec04da7c1c5
+
+```java
+    ArrayList<String> selectedProductionGuidanceLines(BaseObject machine) {
+        ArrayList<String> lines = new ArrayList<>();
+        java.util.List<CraftingRecipe> recipes = visibleCraftingRecipes();
+        CraftingRecipe recipe = null;
+        if (!recipes.isEmpty()) {
+            selectedCraftRecipeIndex = Math.max(0, Math.min(selectedCraftRecipeIndex, recipes.size() - 1));
+            recipe = recipes.get(selectedCraftRecipeIndex);
+        }
+        if (machine == null) {
+            lines.add("Production guidance: build or select a workbench, condenser, forge, lab, or security node before assigning production.");
+            lines.add("Next unblock: use BUILD for the missing machine, then return here to choose a recipe.");
+            return lines;
+        }
+        lines.add("Production guidance: " + machine.name + " is " + productionMachineStateLine(machine) + ".");
+        lines.add("Recipe read: " + productionRecipeReadLine(recipe, machine));
+        lines.add("Input read: " + productionInputReadLine(recipe, machine));
+        lines.add("Output read: " + productionOutputReadLine(recipe, machine));
+        lines.add("Worker and queue: " + productionWorkerQueueLine(machine));
+        lines.add("Next unblock: " + productionNextUnblockLine(recipe, machine));
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1918-1927
+Kind: method
+Name: consumeInventoryNamed
+SHA256: c357ddacf7c815394caf6ff3c25f2c1416643f08de1f46bfff8e4e074a3dede7
+
+```java
+    boolean consumeInventoryNamed(String item) {
+        int idx = inventory.indexOf(item);
+        if (idx >= 0) { removeInventoryAtWithTrace(idx); return true; }
+        // Also accept quality/faction variants whose catalog base matches the requested input.
+        for (int i=0;i<inventory.size();i++) {
+            String carried = inventory.get(i);
+            if (ItemQuality.stripManufacturingIdentity(carried).equalsIgnoreCase(item)) { removeInventoryAtWithTrace(i); return true; }
+        }
+        return false;
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:1944-1949
+Kind: method
+Name: cappedProductionQuality
+SHA256: 1627638d47f9c72a9377499efa0fd7b74290e5b8485e572548333b8ad645fd12
+
+```java
+    String cappedProductionQuality(BaseObject obj, String recipeKnowledge) {
+        int knowledgeTier = bestKnownProductionTier();
+        int machineTier = machineQualityTier(obj);
+        // Input-material, facility, and worker ceilings are now explicit authority hooks. They default open until those ledgers carry quality tiers.
+        return QualityAuthorityApi.cappedQualityName(recipeKnowledge, knowledgeTier, machineTier, QualityAuthorityApi.UNLIMITED_TIER, QualityAuthorityApi.UNLIMITED_TIER, QualityAuthorityApi.UNLIMITED_TIER);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:2681-2681
+Kind: method
+Name: keySafe
+SHA256: 9b769cce5f6a4ab292a54de73d335cef1626210c9b12f5377d0e36fe1f62d99d
+
+```java
+    String keySafe(String s) { return s == null ? "" : s; }
+```
+
+---
+Source: gamepanel-shard5.txt:4306-4312
+Kind: method
+Name: scrollAuditZoneButtons
+SHA256: bd9f27691c10f4e520d2687a1526818d3f46bb6da1a031f8a929696713706384
+
+```java
+    void scrollAuditZoneButtons(int delta) {
+        ZoneType[] values = ZoneType.values();
+        if (values.length == 0) return;
+        int visible = Math.max(3, Math.min(5, values.length));
+        auditZoneButtonScroll = Math.max(0, Math.min(Math.max(0, values.length - visible), auditZoneButtonScroll + delta));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3163-3169
+Kind: method
+Name: scrollEulaGate
+SHA256: 97744425145c62592797eeefe166e10480ab28a5d0a4af00f860dfa582c5e9a4
+
+```java
+    void scrollEulaGate(int direction, boolean page) {
+        int d = Integer.compare(direction, 0);
+        if (d == 0) return;
+        int step = page ? 8 : 3;
+        eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + d * step));
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4554-4571
+Kind: method
+Name: executeMouseMovementPreview
+SHA256: 863c82a27e9b6872a67600d82c83f55c98a7ea876137f8bfdbc4847c98575281
+
+```java
+    void executeMouseMovementPreview() {
+        if (!mouseMovePreviewActive || !mouseMovePreviewValid || mouseMovePreviewPath.isEmpty()) { clearMouseMovementPreview("execute-invalid"); repaint(); return; }
+        int range = Math.max(1, movementModeRange());
+        int steps = Math.min(range, mouseMovePreviewPath.size());
+        Point dest = mouseMovePreviewPath.get(steps - 1);
+        int dx = Integer.compare(dest.x, playerX);
+        int dy = Integer.compare(dest.y, playerY);
+        int fromX = playerX, fromY = playerY;
+        playerX = dest.x; playerY = dest.y;
+        beginPlayerTileSlide(fromX, fromY, playerX, playerY);
+        lastMoveDx = dx; lastMoveDy = dy;
+        activeMotionStateIndex = movementModeIndex;
+        updateSensoryModel("mouse movement preview execution");
+        checkTrapAfterPlayerMove(playerX, playerY);
+        advanceTurn("moves by mouse path preview.");
+        clearMouseMovementPreview("executed");
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:16-23
+Kind: method
+Name: scrollActivePanel
+SHA256: 18831e1565fecb85706120c51cb75e9b161c043988d904cd510ec8384c41ff9a
+
+```java
+    boolean scrollActivePanel(int delta, boolean page){
+        String tag=currentScrollableTag();
+        if(tag.isEmpty()) return false;
+        int step=page ? ("look-stack".equals(tag) ? 3 : 5) : 1;
+        applyScrollValue(tag, getScrollValue(tag)+delta*step, true);
+        repaint();
+        return true;
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:542-545
+Kind: method
+Name: provenanceSummaryForItem
+SHA256: 6ac2712df306bb1e86f37abc670c6aa5280b21d6bb35caae190816f204224dd9
+
+```java
+    String provenanceSummaryForItem(String item) {
+        ItemProvenanceRecord pr = provenanceForItem(item);
+        return pr == null ? "Origin: untraced legacy item. Reserved full-world generation will assign a factory, worker, input ledger, and trade path." : pr.summary();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:444-452
+Kind: method
+Name: controlProfileTitle
+SHA256: a5a2ee6df8f5b54014e56cf471ae037f09413fa56edfc90d655444a9a4d7cf30
+
+```java
+    String controlProfileTitle() {
+        switch (controlsTab) {
+            case 1: return "XBOX CONTROL REFERENCE";
+            case 2: return "PLAYSTATION CONTROL REFERENCE";
+            case 3: return "STEAM DECK CONTROL REFERENCE";
+            case 4: return "GENERIC CONTROLLER REFERENCE";
+            default: return "KEYBOARD AND MOUSE CONTROL REFERENCE";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:504-529
+Kind: method
+Name: keyboardPromptFor
+SHA256: 57facb445d7ac7048996f0b0df3088e4a284fbc83e1e5fd29dd9c09f2010ceb6
+
+```java
+    String keyboardPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Keyboard: W / Up";
+            case MOVE_DOWN: return "Keyboard: S / Down";
+            case MOVE_LEFT: return "Keyboard: A / Left";
+            case MOVE_RIGHT: return "Keyboard: D / Right";
+            case CONFIRM: return "Keyboard: Enter / Space";
+            case CANCEL: return "Keyboard: Escape";
+            case WAIT: return "Keyboard: . / Numpad 5";
+            case INTERACT: return "Keyboard: E";
+            case EXAMINE: return "Keyboard: E while looking";
+            case INVENTORY: return "Keyboard: I";
+            case CHARACTER: return "Keyboard: C";
+            case BUILD: return "Keyboard: B";
+            case SENSES: return "Keyboard: G";
+            case PLAN_MOVE: return "Keyboard: P";
+            case PAUSE: return "Keyboard: Escape";
+            case LOOK: return "Keyboard: L";
+            case MAP: return "Keyboard: M";
+            case ZOOM_IN: return "Keyboard: Home / wheel up";
+            case ZOOM_OUT: return "Keyboard: End / wheel down";
+            case ATTACK: return "Keyboard: F";
+            case RELOAD: return "Keyboard: X";
+            default: return "Keyboard: unassigned";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:558-573
+Kind: method
+Name: playstationPromptFor
+SHA256: b014fecdcf033d73baa0ef00694307da3c8289f607bc52fcf3b923de16119477
+
+```java
+    String playstationPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "PlayStation: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "PlayStation: Cross";
+            case CANCEL: return "PlayStation: Circle";
+            case INVENTORY: return "PlayStation: Square";
+            case CHARACTER: return "PlayStation: Triangle";
+            case PAUSE: return "PlayStation: Options";
+            case LOOK: return "PlayStation: Share/Create";
+            case ZOOM_IN: return "PlayStation: R1";
+            case ZOOM_OUT: return "PlayStation: L1";
+            case ATTACK: return "PlayStation: right stick up";
+            case PLAN_MOVE: return "PlayStation: right stick down";
+            default: return "PlayStation: keyboard fallback";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:592-607
+Kind: method
+Name: genericPromptFor
+SHA256: 0651158d7291828092ac48b94273b74f10a7304423c6ceda38409f4224adcedc
+
+```java
+    String genericPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Generic: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Generic: south face";
+            case CANCEL: return "Generic: east face";
+            case INVENTORY: return "Generic: west face";
+            case CHARACTER: return "Generic: north face";
+            case PAUSE: return "Generic: Start";
+            case LOOK: return "Generic: Back/Select";
+            case ZOOM_IN: return "Generic: right bumper";
+            case ZOOM_OUT: return "Generic: left bumper";
+            case ATTACK: return "Generic: right stick up";
+            case PLAN_MOVE: return "Generic: right stick down";
+            default: return "Generic: keyboard fallback";
+        }
+    }
+```

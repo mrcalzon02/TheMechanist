@@ -1,0 +1,3209 @@
+# 02_render_surfaces
+
+Generated: 20260601_131932
+
+Immediate-mode drawing, screen surfaces, HUD, and visual panels.
+
+These are raw GamePanel shard extraction blocks, not compile-ready Java classes.
+
+---
+Source: gamepanel-shard3.txt:277-325
+Kind: method
+Name: tileStackAt
+SHA256: 164d0e15d68c0f51b91efe7d1885f5e77765d0ff58e6d6cccc2d308afdbeaa6d
+
+```java
+    ArrayList<String> tileStackAt(int tx, int ty) {
+        ArrayList<String> stack = new ArrayList<>();
+        if (world == null || tx < 0 || ty < 0 || tx >= world.w || ty >= world.h) {
+            stack.add("Unknown void beyond the active auspex map.");
+            return stack;
+        }
+        boolean vis = isVisible(tx, ty);
+        boolean rem = isRemembered(tx, ty);
+        char ch = world.tiles[tx][ty];
+        if (!vis && !rem) {
+            stack.add("Unseen fog: no reliable reading.");
+            return stack;
+        }
+        stack.add("TILE: '" + ch + "' — " + describeTile(ch));
+        CompiledTileDescriptor td = TileDataCompilationAuthority.resolve(world, tx, ty, ch);
+        if (td != null) stack.add(td.inspectLine());
+        if (isDoorTile(ch)) stack.add("DOOR SURFACE: " + describeDoor(ch));
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null && vis) stack.add("ENTITY: " + npc.name + " / " + npc.faction.label + " / " + npc.state);
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null && vis) stack.add("BASE OBJECT: " + obj.name + " — " + obj.description);
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null && vis) stack.add("FIXTURE: " + fixtureInspectionLine(mos));
+        PortableLightInstance light = portableLightAt(tx, ty);
+        if (light != null && vis) stack.add("PORTABLE LIGHT: " + light.itemName + " / radius " + light.radius + " / expires in ~" + Math.max(1,(light.expiresTurn-turn)/Math.max(1,TURNS_PER_HOUR)) + "h / " + light.placement + ".");
+        if (vis || rem) stack.add("LIGHT: " + lightDescriptionAt(tx, ty) + " — level " + lightLevelAt(tx, ty) + "/100.");
+        EnvironmentalHazardRecord hz = hazardAt(tx, ty);
+        if (hz != null && (vis || rem)) stack.add("HAZARD: " + hz.label + " / " + hz.family + " / " + hz.severityText() + " — " + hz.warningText());
+        if (isDoorTile(ch)) stack.add("DOOR: " + describeDoor(ch) + " — closed doors block line of sight unless opened.");
+        if ("YJBKOZPFU".indexOf(ch) >= 0) stack.add("MARTIAN MACHINE: " + emergencyMachineName(ch) + " — inspect or operate if powered/unlocked.");
+        if (ch == 'T') stack.add("RAIL / TRADE DEPOT: local trade and route authority point. In a Neutral Rail Depot this can move you to a new sector or validate an Off-world ticket.");
+        if (ch == 'Q') stack.add("SECTOR GOVERNOR: a lavishly protected exit-gate to off-world victory, bribery, betrayal, or knife work.");
+        int rid = world.roomIdAt(tx, ty);
+        if (rid >= 0) {
+            RoomProfile rp = world.roomProfile(rid);
+            stack.add("ROOM: " + rp.name + " — " + rp.descriptor);
+            stack.add("FEATURES: " + rp.featureText);
+            stack.add("OWNERSHIP: " + ownershipText(tx, ty));
+        } else if (InterstitialInfrastructureApi.isInterstitialSolid(ch) || ch == InterstitialInfrastructureApi.VOID_SPACE) {
+            stack.add("INTERSTITIAL ARCOLOGY MASS: " + describeTile(ch));
+        } else {
+            stack.add("CORRIDOR/OPENWORK: " + describeTile(ch));
+        }
+        if (isIntermapTransitTile(ch)) {
+            stack.add("INTERMAP TRANSIT: " + intermapTransitLabel(ch));
+            stack.add("DESTINATION: " + transitionPreview(ch, tx, ty));
+        }
+        return stack;
+    }
+```
+
+---
+Source: gamepanel-shard3.txt:834-845
+Kind: method
+Name: addInfopediaRelatedEntryButtons
+SHA256: ca25c41c24f20020ff1fb4c2a3c4d9eebc2de805982414883a3d7152d574315e
+
+```java
+    void addInfopediaRelatedEntryButtons(Rectangle modal, java.util.List<String> entries) {
+        if (entries == null || entries.isEmpty()) return;
+        String selectedEntry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        ArrayList<String> related = infopediaRelatedEntries(infopediaTab, selectedEntry);
+        int rx = modal.x + modal.width - 456;
+        int ry = modal.y + modal.height - 86;
+        for (int i=0; i<Math.min(3, related.size()); i++) {
+            String target = related.get(i);
+            final String jump = target;
+            buttons.add(new ButtonBox("LINK: " + TextSurfaceApi.ellipsize(target, 22), rx + i * 148, ry, 140, 30, "Open related Infopedia entry: " + target, () -> openInfopediaEntry(jump)));
+        }
+    }
+```
+
+---
+Source: gamepanel-shard4.txt:411-421
+Kind: method
+Name: purchaseSelectedInfopediaKnowledge
+SHA256: 31abcdd1b756940789504d94d7c372f45accfac7c7f9415216d6f225e24ae50a
+
+```java
+    void purchaseSelectedInfopediaKnowledge() {
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        if (!"KNOWLEDGE".equals(infopediaTabs()[Math.max(0, Math.min(infopediaTab, infopediaTabs().length-1))]) || entries.isEmpty()) { logEvent("Knowledge unlock failed: open the KNOWLEDGE Infopedia tab first."); return; }
+        String entry = entries.get(Math.max(0, Math.min(infopediaSelected, entries.size()-1)));
+        KnowledgeDef def = KnowledgeDef.get(entry);
+        if (def == null) { logEvent("Knowledge unlock failed: '" + entry + "' is a reference article, not a purchasable doctrine."); return; }
+        if (unlockedKnowledges.contains(def.name)) { logEvent("Knowledge already known: " + def.name + "."); return; }
+        if (knowledgeCredits < def.cost) { logEvent("Knowledge unlock blocked: " + def.name + " costs " + def.cost + " knowledge credit(s); you have " + knowledgeCredits + "."); return; }
+        purchaseKnowledge(def.name, def.cost);
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4100-4109
+Kind: method
+Name: renderNormalModeVisualJuice
+SHA256: c19c4d787da43195e156089359be865a7e2b79a206fbe5815bf06dc6a669d934
+
+```java
+    void renderNormalModeVisualJuice(Graphics2D g) {
+        if (g == null) return;
+        int w = Math.max(1, getWidth());
+        int h = Math.max(1, getHeight());
+        normalParticleEmitter.update(1.0f / 30.0f);
+        normalParticleEmitter.render(g);
+        normalLightmapRenderer.renderSingleWarmLight(g, w, h, Math.max(24, w / 2f), Math.max(24, h - 58f), 130f, 0.75f);
+        renderStressTest.updateAndRender(g, this, w, h);
+        if (options != null && options.doomModeEnabled) sharedHudOverlay.renderHUD(g, PlayerState.fromPanel(this), w, h);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4111-4119
+Kind: method
+Name: drawBackground
+SHA256: 315233fdd781f361a4a2911a1789c79a1126bcea98e62bd30a16deff25638c0a
+
+```java
+    void drawBackground(Graphics2D g) {
+        int w=getWidth(), h=getHeight();
+        g.setColor(new Color(7,7,9)); g.fillRect(0,0,w,h);
+        g.setColor(new Color(20,20,18));
+        for (int y=0;y<h;y+=32) g.drawLine(0,y,w,y);
+        g.setColor(new Color(38,31,23));
+        for (int x=0;x<w;x+=84) g.drawLine(x,0,x-30,h);
+        drawGuiChrome(g);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4121-4128
+Kind: method
+Name: drawGuiChrome
+SHA256: fec3c9ef5645d0e00c7dfbbe721ff5dc5debb596f5702a476e6ebaf3633b77b1
+
+```java
+    void drawGuiChrome(Graphics2D g) {
+        int w = getWidth(), h = getHeight();
+        // GUI AUTHORITY PASS 0.8.7:
+        // Only the root game window owns the cogitator_frame_0536 outer frame.
+        // Sub-panels must draw their own inner bezel only when they actually exist,
+        // preventing persistent stacked chrome from accumulating behind menus.
+        drawSlicedFrame(g, 14, 14, w-28, h-28, "outer");
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4130-4156
+Kind: method
+Name: drawSlicedFrame
+SHA256: e9e8dec2aa0edee8d0ee27f8b69c4e8aeda20c33da636b300501f385a8954435
+
+```java
+    void drawSlicedFrame(Graphics2D g, int x, int y, int w, int h, String kind) {
+        if (images.hasFrameSlices()) {
+            BufferedImage tl = images.get("corner_top_left"), tr = images.get("corner_top_right"), bl = images.get("corner_bottom_left"), br = images.get("corner_bottom_right");
+            BufferedImage t = images.get(kind.equals("inner") ? "inner_bezel_t" : "top_rail_left_mid");
+            BufferedImage b = images.get(kind.equals("inner") ? "inner_bezel_b" : "bottom_rail_left_mid");
+            BufferedImage l = images.get(kind.equals("inner") ? "inner_bezel_l" : "left_column_mid");
+            BufferedImage r = images.get(kind.equals("inner") ? "inner_bezel_r" : "right_column_mid");
+            BufferedImage c = images.get("inner_display_center");
+            int cs = kind.equals("inner") ? 18 : 32;
+            g.setColor(new Color(4,5,5, kind.equals("inner") ? 150 : 210));
+            g.fillRect(x+cs, y+cs, Math.max(1,w-cs*2), Math.max(1,h-cs*2));
+            if (c != null) RenderImageScaleCacheAuthority.draw(g, c, x+cs, y+cs, w-cs*2, h-cs*2);
+            tileImage(g, t, x+cs, y, w-cs*2, cs);
+            tileImage(g, b, x+cs, y+h-cs, w-cs*2, cs);
+            tileImage(g, l, x, y+cs, cs, h-cs*2);
+            tileImage(g, r, x+w-cs, y+cs, cs, h-cs*2);
+            if (tl != null) RenderImageScaleCacheAuthority.draw(g, tl, x, y, cs, cs);
+            if (tr != null) RenderImageScaleCacheAuthority.draw(g, tr, x+w-cs, y, cs, cs);
+            if (bl != null) RenderImageScaleCacheAuthority.draw(g, bl, x, y+h-cs, cs, cs);
+            if (br != null) RenderImageScaleCacheAuthority.draw(g, br, x+w-cs, y+h-cs, cs, cs);
+        } else {
+            g.setColor(new Color(30,25,18,210)); g.fillRect(x,y,w,h);
+            g.setColor(new Color(120,92,52)); g.drawRect(x,y,w,h);
+            g.setColor(new Color(62,50,32)); g.drawRect(x+3,y+3,w-6,h-6);
+        }
+        stampUiFrameId(g, "F", kind, x, y, w, h);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4158-4168
+Kind: method
+Name: tileImage
+SHA256: 6f01158a9a6d477ce73ac3868e70780f0fc77d90b240599e5d9350c336a07903
+
+```java
+    void tileImage(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {
+        if (img == null || w <= 0 || h <= 0) return;
+        int stepW = Math.max(1, Math.min(w, img.getWidth()));
+        int stepH = Math.max(1, Math.min(h, img.getHeight()));
+        for (int yy=y; yy<y+h; yy+=stepH) {
+            for (int xx=x; xx<x+w; xx+=stepW) {
+                int dw = Math.min(stepW, x+w-xx), dh = Math.min(stepH, y+h-yy);
+                RenderImageScaleCacheAuthority.draw(g, img, xx, yy, dw, dh);
+            }
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4180-4182
+Kind: method
+Name: drawBoot
+SHA256: 5efd3d26ced3c4d48c8f34f05adb05b278e3ff22f0e29d29971946dcf6ede1b2
+
+```java
+                                                                                                                                                                                                                                    void drawBoot(Graphics2D g) {
+        bootSurfacePainter.paint(g, this);
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4184-4192
+Kind: method
+Name: drawBootGear
+SHA256: 0d8e34bf787bfb34b6ef18be2af343929d772484c7fc5a5c06fcb4b0ae862780
+
+```java
+    void drawBootGear(Graphics2D g, int cx, int cy, int size, long elapsed) {
+        BufferedImage frame = images.getBootSpinnerFrame(elapsed / 420); // slower rough-assets medallion animation
+        if (frame != null) {
+            int s = size;
+            g.drawImage(frame, cx-s/2, cy-s/2, s, s, null);
+        } else {
+            drawRotatingGear(g, cx, cy, size/2, elapsed / 260.0);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard5.txt:4194-4213
+Kind: method
+Name: drawRotatingGear
+SHA256: 90a27ce848983a22fe80b66d2258e4c8248d801a650648d38f31755e588270ab
+
+```java
+    void drawRotatingGear(Graphics2D g, int cx, int cy, int r, double angle) {
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.translate(cx, cy);
+        gg.rotate(angle);
+        gg.setStroke(new BasicStroke(3));
+        gg.setColor(new Color(45, 39, 31));
+        gg.fillOval(-r, -r, r*2, r*2);
+        gg.setColor(new Color(184, 150, 82));
+        gg.drawOval(-r, -r, r*2, r*2);
+        for (int i=0;i<16;i++) {
+            double a = Math.PI * 2 * i / 16.0;
+            int x1=(int)(Math.cos(a)*(r-8)), y1=(int)(Math.sin(a)*(r-8));
+            int x2=(int)(Math.cos(a)*(r+14)), y2=(int)(Math.sin(a)*(r+14));
+            gg.drawLine(x1,y1,x2,y2);
+        }
+        gg.setColor(new Color(8,8,9)); gg.fillOval(-24,-24,48,48);
+        gg.setColor(new Color(184, 150, 82)); gg.drawOval(-24,-24,48,48);
+        gg.drawLine(-r+15,0,r-15,0); gg.drawLine(0,-r+15,0,r-15);
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:441-455
+Kind: method
+Name: drawInGameGenericEditor
+SHA256: 2ec0e9d41a662e41fc80b10d02255cf490f3be5f20359475718b641721c1de8e
+
+```java
+    void drawInGameGenericEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center) {
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, entity.name() + "  [" + entity.id() + "]", center.x + 18, center.y + 58);
+        g.setFont(smallFont);
+        int y = center.y + 90;
+        for (Map.Entry<String,Object> e : entity.properties().entrySet()) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(e.getKey() + ":", g.getFontMetrics(), 160), center.x + 24, y);
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(String.valueOf(e.getValue()), g.getFontMetrics(), center.width - 210), center.x + 178, y);
+            y += 24;
+            if (y > center.y + center.height - 24) break;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:457-502
+Kind: method
+Name: drawInGameRoomEditor
+SHA256: 72ab7c195c12ff11658ba6c81e16c0f32a64edb95506cf3a52240415f32bf596
+
+```java
+    void drawInGameRoomEditor(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle center) {
+        Map<String,Object> props = entity.properties();
+        int roomW = editorInt(props.get("width"), 1, 32, 8);
+        int roomH = editorInt(props.get("height"), 1, 32, 6);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, entity.name() + "  [" + roomW + "x" + roomH + "]", center.x + 18, center.y + 58);
+        Rectangle grid = inGameRoomGridRect();
+        g.setColor(new Color(10, 10, 10, 235));
+        g.fillRect(grid.x, grid.y, grid.width, grid.height);
+        g.setColor(new Color(130,112,70,150));
+        g.drawRect(grid.x, grid.y, grid.width, grid.height);
+        int cell = Math.max(10, Math.min(42, Math.min((grid.width - 12) / Math.max(1, roomW), (grid.height - 12) / Math.max(1, roomH))));
+        int gridW = cell * roomW;
+        int gridH = cell * roomH;
+        int ox = grid.x + (grid.width - gridW) / 2;
+        int oy = grid.y + (grid.height - gridH) / 2;
+        Map<String,String> cells = decodeEditorGrid(String.valueOf(props.getOrDefault("layoutCells", "")));
+        String floor = String.valueOf(props.getOrDefault("floorMaterial", "worn-plasteel"));
+        for (int y=0; y<roomH; y++) for (int x=0; x<roomW; x++) {
+            boolean wall = x == 0 || y == 0 || x == roomW-1 || y == roomH-1;
+            int px = ox + x*cell, py = oy + y*cell;
+            g.setColor(wall ? new Color(88,72,48) : editorFloorColor(floor));
+            g.fillRect(px, py, cell, cell);
+            String placed = cells.get(x + "," + y);
+            if (placed != null && !placed.isBlank()) {
+                BufferedImage placedImg = ObjectSemanticAssetAuthority.imageForAssetId(ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), placed));
+                if (placedImg != null) {
+                    g.drawImage(placedImg, px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), null);
+                    g.setColor(new Color(12, 12, 8, 130));
+                    g.drawRoundRect(px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), 6, 6);
+                } else {
+                    g.setColor(new Color(42, 86, 74, 215));
+                    g.fillRoundRect(px+3, py+3, Math.max(4, cell-6), Math.max(4, cell-6), 6, 6);
+                    g.setColor(new Color(235, 212, 128));
+                    String mark = placed.length() <= 2 ? placed : placed.substring(0, 1).toUpperCase(Locale.ROOT);
+                    center(g, mark, px + cell/2, py + cell/2 + 5);
+                }
+            }
+            g.setColor(new Color(0,0,0,140));
+            g.drawRect(px, py, cell, cell);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, "Palette: " + inGameEditorPaletteCategory() + " / " + inGameEditorSelectedPaletteItem() + " | assetId=" + ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), inGameEditorSelectedPaletteItem()), center.x + 18, center.y + center.height - 28);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:504-536
+Kind: method
+Name: drawInGameEditorInspector
+SHA256: f3da7c4ce18f5f186866bc8383f4706de7dd9e93d4fcd146e1bad81b5f56997a
+
+```java
+    void drawInGameEditorInspector(Graphics2D g, SimulationEditorRepository.EditableEntity entity, Rectangle right) {
+        g.setFont(smallFont);
+        if (entity == null) return;
+        if ("Room Editor".equals(inGameEditorName())) {
+            String assetId = ObjectSemanticAssetAuthority.assetIdForEditorPalette(inGameEditorPaletteCategory(), inGameEditorSelectedPaletteItem());
+            BufferedImage icon = ObjectSemanticAssetAuthority.imageForAssetId(assetId);
+            int box = Math.max(64, Math.min(96, right.width / 3));
+            int ix = right.x + right.width - box - 16;
+            int iy = right.y + 42;
+            g.setColor(new Color(8, 10, 9, 235));
+            g.fillRect(ix, iy, box, box);
+            g.setColor(new Color(130,112,70,180));
+            g.drawRect(ix, iy, box, box);
+            if (icon != null) g.drawImage(icon, ix + 4, iy + 4, box - 8, box - 8, null);
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            drawUiTextLine(g, "Palette assetId=" + assetId, right.x + 14, iy + box + 18);
+        }
+        int y = right.y + ("Room Editor".equals(inGameEditorName()) ? 322 : 44);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "SELECTED", right.x + 14, y); y += 22;
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(entity.name(), g.getFontMetrics(), right.width - 28), right.x + 14, y); y += 22;
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(entity.id(), g.getFontMetrics(), right.width - 28), right.x + 14, y); y += 24;
+        int maxY = right.y + right.height - 126;
+        for (Map.Entry<String,Object> e : entity.properties().entrySet()) {
+            if (y > maxY) break;
+            String value = String.valueOf(e.getValue());
+            if ("layoutCells".equals(e.getKey())) value = decodeEditorGrid(value).size() + " painted cells";
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(e.getKey() + ": " + value, g.getFontMetrics(), right.width - 28), right.x + 14, y);
+            y += 20;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:735-773
+Kind: method
+Name: drawSectorAuditTraceMarker
+SHA256: c4da0f00305c66d9ddfafe2e514ddbc27c098f72939c38084b4dffdb2b0ff0d5
+
+```java
+    void drawSectorAuditTraceMarker(Graphics2D g, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        if (step == null || auditWorld == null || !auditWorld.inBounds(step.x, step.y)) return;
+        int sx = ox + (step.x - camX) * cellW;
+        int sy = oy + (step.y - camY) * cellH;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setStroke(new BasicStroke(Math.max(2f, cellW / 9f)));
+        if (step.ghostRect != null) {
+            Rectangle gr = step.ghostRect;
+            int gx1 = Math.max(gr.x, camX), gy1 = Math.max(gr.y, camY);
+            int gx2 = Math.min(gr.x + gr.width, camX + Math.max(1, (mapRect().width - 18) / Math.max(1, cellW)));
+            int gy2 = Math.min(gr.y + gr.height, camY + Math.max(1, (mapRect().height - 18) / Math.max(1, cellH)));
+            if (gx1 < gx2 && gy1 < gy2) {
+                int rx = ox + (gx1 - camX) * cellW;
+                int ry = oy + (gy1 - camY) * cellH;
+                int rw = Math.max(1, (gx2 - gx1) * cellW);
+                int rh = Math.max(1, (gy2 - gy1) * cellH);
+                gg.setComposite(AlphaComposite.SrcOver.derive(step.rejected ? 0.18f : 0.16f));
+                gg.setColor(step.rejected ? new Color(255, 70, 45) : new Color(245, 225, 95));
+                gg.fillRect(rx, ry, rw, rh);
+                gg.setComposite(AlphaComposite.SrcOver.derive(0.82f));
+                gg.drawRect(rx, ry, Math.max(1, rw - 1), Math.max(1, rh - 1));
+            }
+        }
+        if (sx + cellW >= ox && sy + cellH >= oy && sx <= ox + Math.max(1, auditWorld.w) * cellW && sy <= oy + Math.max(1, auditWorld.h) * cellH) {
+            gg.setComposite(AlphaComposite.SrcOver);
+            if (step.rejected) {
+                gg.setColor(new Color(255, 70, 45, 230));
+                gg.drawLine(sx + 3, sy + 3, sx + cellW - 4, sy + cellH - 4);
+                gg.drawLine(sx + cellW - 4, sy + 3, sx + 3, sy + cellH - 4);
+            } else {
+                gg.setColor(new Color(245, 225, 95, 235));
+                gg.drawRect(sx + 2, sy + 2, Math.max(3, cellW - 5), Math.max(3, cellH - 5));
+                gg.drawLine(sx + cellW / 2, sy - Math.max(2, cellH / 3), sx + cellW / 2, sy + cellH + Math.max(2, cellH / 3));
+                gg.drawLine(sx - Math.max(2, cellW / 3), sy + cellH / 2, sx + cellW + Math.max(2, cellW / 3), sy + cellH / 2);
+            }
+        }
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:775-809
+Kind: method
+Name: drawZoneAuditGenerationLogOverlay
+SHA256: e3630c271526277fb2401e5e08dc20dcdd42913f5f61f293046fe5adfed36a84
+
+```java
+    void drawZoneAuditGenerationLogOverlay(Graphics2D g, Rectangle map, int camX, int camY, int ox, int oy, int cellW, int cellH) {
+        if (auditTraceSteps == null || auditTraceSteps.isEmpty()) return;
+        int current = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex));
+        int lines = Math.max(6, Math.min(12, map.height / 42));
+        int start = Math.max(0, current - lines + 2);
+        int end = Math.min(auditTraceSteps.size(), start + lines);
+        int panelW = Math.max(330, Math.min(560, map.width / 2));
+        int lineH = Math.max(15, g.getFontMetrics(smallFont).getHeight() + 2);
+        int panelH = 14 + (end - start) * lineH;
+        int px = map.x + 18;
+        int py = map.y + 18;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setColor(new Color(0, 0, 0, 178));
+        gg.fillRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setColor(new Color(145, 118, 64, 155));
+        gg.drawRoundRect(px, py, panelW, panelH, 10, 10);
+        gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D() - 3f)));
+        FontMetrics fm = gg.getFontMetrics();
+        int y = py + 12 + fm.getAscent();
+        for (int i = start; i < end; i++) {
+            SectorGenerationTraceAuthority.Step st = auditTraceSteps.get(i);
+            boolean selected = i == current;
+            if (selected) {
+                gg.setColor(new Color(145, 118, 64, 210));
+                gg.fillRect(px + 6, y - fm.getAscent() - 2, panelW - 12, lineH);
+            }
+            gg.setColor(st.rejected ? new Color(255, 145, 115) : (selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN)));
+            String line = st.line(auditTraceSteps.size());
+            int maxChars = Math.max(24, (panelW - 18) / Math.max(5, fm.charWidth('W')));
+            if (line.length() > maxChars) line = line.substring(0, Math.max(0, maxChars - 1)) + "…";
+            drawUiTextLine(gg, line, px + 10, y);
+            y += lineH;
+        }
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:811-890
+Kind: method
+Name: drawSectorAuditDiagnosticOverlays
+SHA256: 02a042cb53d4e7f5ffb6e136b2e606d8fa0df6474ebcf31d1ff8058a2055f7ad
+
+```java
+    void drawSectorAuditDiagnosticOverlays(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (auditWorld == null || auditOverlayMode == 0) return;
+        int mode = Math.floorMod(auditOverlayMode, SectorAuditRuntimeAuthority.OVERLAY_LABELS.length);
+        Composite oldComposite = g.getComposite();
+        Stroke oldStroke = g.getStroke();
+        if (mode == 2) { // rooms
+            for (int i = 0; i < auditWorld.rooms.size(); i++) {
+                Rectangle rr = auditWorld.rooms.get(i);
+                int x1 = Math.max(rr.x, camX), y1 = Math.max(rr.y, camY);
+                int x2 = Math.min(rr.x + rr.width, camX + cols), y2 = Math.min(rr.y + rr.height, camY + rows);
+                if (x1 >= x2 || y1 >= y2) continue;
+                boolean flagged = false;
+                if (auditSnapshot != null) for (SectorAuditRuntimeAuthority.AuditFinding f : auditSnapshot.findings) if (f.category.equals("ROOM") && f.label.contains(" " + i)) { flagged = true; break; }
+                g.setComposite(AlphaComposite.SrcOver.derive(flagged ? 0.28f : 0.15f));
+                g.setColor(flagged ? new Color(230, 80, 70) : new Color(90, 150, 230));
+                g.fillRect(ox + (x1 - camX) * cellW, oy + (y1 - camY) * cellH, Math.max(1, (x2 - x1) * cellW), Math.max(1, (y2 - y1) * cellH));
+                g.setComposite(AlphaComposite.SrcOver.derive(0.72f));
+                g.drawRect(ox + (x1 - camX) * cellW, oy + (y1 - camY) * cellH, Math.max(1, (x2 - x1) * cellW - 1), Math.max(1, (y2 - y1) * cellH - 1));
+            }
+        } else if (mode == 3 || mode == 4 || mode == 5 || mode >= 6) {
+            for (int sy=0; sy<rows; sy++) {
+                int y = camY + sy;
+                if (y < 0 || y >= auditWorld.h) continue;
+                for (int sx=0; sx<cols; sx++) {
+                    int x = camX + sx;
+                    if (x < 0 || x >= auditWorld.w) continue;
+                    char ch = auditWorld.tiles[x][y];
+                    CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(auditWorld, x, y, ch);
+                    Color color = null;
+                    float alpha = 0.0f;
+                    if (mode == 3) { // roads
+                        if (ch == RoadGridIntegrationAuthority.ROAD_LANE) { color = "intersection".equals(d == null ? null : d.shape) ? new Color(245, 210, 80) : new Color(80, 165, 245); alpha = 0.28f; }
+                        else if (ch == RoadGridIntegrationAuthority.SIDEWALK) { color = new Color(120, 220, 130); alpha = 0.20f; }
+                    } else if (mode == 4) { // boundary
+                        if (ch == InterstitialInfrastructureApi.VOID_SPACE) { color = new Color(120, 90, 200); alpha = 0.28f; }
+                        else if (d != null && "exterior_maintenance_bulkhead".equals(d.family)) { color = new Color(240, 180, 75); alpha = 0.30f; }
+                        else if (ch == '-') { color = new Color(85, 210, 190); alpha = 0.18f; }
+                    } else if (mode == 5) { // descriptors
+                        if (d != null && "fallback".equals(d.baseLayer)) { color = new Color(245, 70, 95); alpha = 0.36f; }
+                        else if (d != null && d.hasOverlay()) { color = new Color(210, 100, 245); alpha = 0.22f; }
+                    } else if (mode == 6) { // interactables
+                        if (auditTileHasInteractable(x, y)) { color = new Color(90, 240, 170); alpha = 0.30f; }
+                    } else if (mode == 7) { // containers
+                        if (auditTileHasContainer(x, y)) { color = new Color(225, 185, 90); alpha = 0.32f; }
+                    } else if (mode == 8) { // lights
+                        if (auditTileHasLight(x, y)) { color = new Color(255, 238, 130); alpha = 0.36f; }
+                    } else if (mode == 9) { // traps
+                        if (auditTileHasTrap(x, y)) { color = new Color(245, 80, 80); alpha = 0.36f; }
+                    } else if (mode == 10) { // entities
+                        if (auditTileHasEntity(x, y)) { color = new Color(125, 180, 255); alpha = 0.34f; }
+                    } else if (mode == 11) { // transitions
+                        if (auditTileHasTransition(x, y, ch)) { color = new Color(255, 150, 75); alpha = 0.36f; }
+                    }
+                    if (color != null) {
+                        g.setComposite(AlphaComposite.SrcOver.derive(alpha));
+                        g.setColor(color);
+                        g.fillRect(ox + sx * cellW, oy + sy * cellH, cellW, cellH);
+                    }
+                }
+            }
+        }
+        if (mode == 1 && auditSnapshot != null) {
+            for (int i=0; i<auditSnapshot.findings.size(); i++) {
+                SectorAuditRuntimeAuthority.AuditFinding f = auditSnapshot.findings.get(i);
+                if (f.x < camX || f.y < camY || f.x >= camX + cols || f.y >= camY + rows) continue;
+                int rx = ox + (f.x - camX) * cellW, ry = oy + (f.y - camY) * cellH;
+                boolean selected = i == Math.floorMod(auditFindingIndex, Math.max(1, auditSnapshot.findings.size()));
+                g.setComposite(AlphaComposite.SrcOver.derive(selected ? 0.82f : 0.48f));
+                g.setColor(f.severity.equals("ERROR") ? new Color(245, 75, 65) : new Color(245, 210, 75));
+                g.setStroke(new BasicStroke(selected ? 3f : 1.5f));
+                g.drawRect(rx + 1, ry + 1, Math.max(3, cellW - 2), Math.max(3, cellH - 2));
+                if (selected) {
+                    g.drawLine(rx, ry, rx + cellW, ry + cellH);
+                    g.drawLine(rx + cellW, ry, rx, ry + cellH);
+                }
+            }
+        }
+        g.setStroke(oldStroke);
+        g.setComposite(oldComposite);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1071-1073
+Kind: method
+Name: drawMultiplayerSurface
+SHA256: af889c48c825259bf533f8362c08c76c383e1fa3027fd8d66f0f7249b397f817
+
+```java
+    void drawMultiplayerSurface(Graphics2D g) {
+        multiplayerPainter.paint(g, this);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1156-1158
+Kind: method
+Name: drawMenu
+SHA256: b435408607d41c76d839d49bdc6d9b607d910ebaf16963508b1204f9a03bed1f
+
+```java
+    void drawMenu(Graphics2D g) {
+        mainMenuPainter.paint(g, this);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1218-1220
+Kind: method
+Name: drawIntroCrawl
+SHA256: 1032cfcc975ac4a69742b1fa638755c3028c8630bca3014894b9e01cbb0abfaf
+
+```java
+    void drawIntroCrawl(Graphics2D g) {
+        introCrawlPainter.paint(g, this);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1375-1386
+Kind: method
+Name: drawIntroCloudLayer
+SHA256: 9f8b315aabc8dbc2546fe102916b896f70304b59e2b4b762ec767409b9bf9eb6
+
+```java
+    void drawIntroCloudLayer(Graphics2D g, BufferedImage cloud, long elapsed, double pxPerMs, int yOffset, float alpha) {
+        if (cloud == null) return;
+        Graphics2D gg = (Graphics2D)g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.05f, Math.min(1f, alpha))));
+        int W = getWidth();
+        int targetH = Math.max(120, getHeight() / 3);
+        int targetW = Math.max(1, cloud.getWidth() * targetH / Math.max(1, cloud.getHeight()));
+        int y = 28 + yOffset;
+        int offset = (int)Math.floor((elapsed * pxPerMs) % Math.max(1, targetW));
+        for (int x = -offset - targetW; x < W + targetW; x += targetW) gg.drawImage(cloud, x, y, targetW, targetH, null);
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1475-1496
+Kind: method
+Name: rebuildKnowledgeScreenButtons
+SHA256: a42b6752d721020f6c2b26ea9a19340c80e8500da1119b7235e0a0ef443cea33
+
+```java
+    void rebuildKnowledgeScreenButtons() {
+        Rectangle modal = knowledgeModalRect();
+        Rectangle bar = knowledgeBranchBarRect();
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        int count = Math.max(1, branches.size());
+        int gap = Math.max(6, Math.min(10, bar.width / 80));
+        int tabW = Math.max(82, (bar.width - gap * Math.max(0, count - 1)) / count);
+        int i = 0;
+        for (KnowledgeTree tree : branches.values()) {
+            final String id = tree.id();
+            int bx = bar.x + i * (tabW + gap);
+            buttons.add(new ButtonBox(tree.displayName().toUpperCase(Locale.ROOT), bx, bar.y, tabW, bar.height, "Switch Knowledge Tree branch inside the game UI.", () -> { activeKnowledgeBranchId = id; selectedKnowledgeNodeId = null; resetKnowledgeTreeView(); repaint(); }));
+            i++;
+        }
+        Rectangle right = knowledgeRightPaneRect();
+        Rectangle left = knowledgeLeftPaneRect();
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        KnowledgeNode node = selectedKnowledgeNode(tree);
+        buttons.add(new ButtonBox("UNLOCK NODE", right.x + 18, right.y + right.height - 58, Math.max(120, right.width - 36), 34, "Spend character knowledge credits to unlock the selected node.", this::attemptKnowledgeUnlock));
+        buttons.add(new ButtonBox("CENTER TREE", left.x + 18, left.y + left.height - 48, Math.max(120, left.width - 36), 30, "Reset pan and zoom for the active tree.", () -> { resetKnowledgeTreeView(); repaint(); }));
+        buttons.add(new ButtonBox("BACK", modal.x + 18, modal.y + 14, 106, 30, "Close Knowledge and return to the previous in-game surface.", this::closeKnowledgeScreen));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1554-1565
+Kind: method
+Name: drawKnowledgeScreen
+SHA256: 62afdc52526c25721558ec838d8eaca15f3de71eed319fb67457d8ab417ee225
+
+```java
+    void drawKnowledgeScreen(Graphics2D g) {
+        drawBackground(g);
+        Rectangle modal = knowledgeModalRect();
+        drawPanelBox(g, modal.x, modal.y, modal.width, modal.height, "F9187 KNOWLEDGE TREE");
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_TITLE));
+        center(g, "CHARACTER KNOWLEDGE / PROGRESSION", modal.x + modal.width / 2, modal.y + 36);
+        drawKnowledgeBranchTabs(g);
+        drawKnowledgeLeftPane(g);
+        drawKnowledgeCanvas(g);
+        drawKnowledgeRightPane(g);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1567-1585
+Kind: method
+Name: drawKnowledgeBranchTabs
+SHA256: 37e3e4edc6af0147d0fd018285ea2eb9d62082b403541c765bbb53e121bbdcc4
+
+```java
+    void drawKnowledgeBranchTabs(Graphics2D g) {
+        Rectangle bar = knowledgeBranchBarRect();
+        LinkedHashMap<String, KnowledgeTree> branches = liveKnowledgeBranches();
+        int count = Math.max(1, branches.size());
+        int gap = Math.max(6, Math.min(10, bar.width / 80));
+        int tabW = Math.max(82, (bar.width - gap * Math.max(0, count - 1)) / count);
+        int i = 0;
+        for (KnowledgeTree tree : branches.values()) {
+            int x = bar.x + i * (tabW + gap);
+            boolean active = tree.id().equals(activeKnowledgeBranchId);
+            g.setColor(active ? new Color(34, 46, 32, 232) : new Color(10, 13, 12, 220));
+            g.fillRoundRect(x, bar.y, tabW, bar.height, 10, 10);
+            g.setColor(active ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_DIM));
+            g.drawRoundRect(x, bar.y, tabW, bar.height, 10, 10);
+            g.setFont(smallFont);
+            center(g, GuiLayoutApi.fitLabel(tree.displayName(), g.getFontMetrics(), tabW - 8), x + tabW / 2, bar.y + 22);
+            i++;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1604-1625
+Kind: method
+Name: drawKnowledgeRightPane
+SHA256: 7d7f2f5936ed8c5443fde35f8623eb383508eda16f93a0815b7bb44295c5f59e
+
+```java
+    void drawKnowledgeRightPane(Graphics2D g) {
+        Rectangle r = knowledgeRightPaneRect();
+        drawPanelBox(g, r.x, r.y, r.width, r.height, "F9189 INSPECTOR");
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        KnowledgeNode node = selectedKnowledgeNode(tree);
+        ArrayList<String> lines = new ArrayList<>();
+        if (node == null) {
+            lines.add("Select a node in the center tree.");
+            lines.add("Green is known. Yellow is unlockable. Gray is still locked by prerequisites or credits.");
+        } else {
+            KnowledgeTree.NodeState state = tree.stateOf(node);
+            lines.add(node.name());
+            lines.add("Cost: " + node.costLabel());
+            lines.add("State: " + switch (state) { case UNLOCKED -> "Known / unlocked"; case AVAILABLE -> "Available to unlock"; case LOCKED -> "Locked"; });
+            lines.add("");
+            String detail = node.longDescription() == null || node.longDescription().isBlank() ? node.shortDescription() : node.longDescription();
+            for (String raw : detail.split("\\n")) lines.add(raw);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawWrappedPanelLines(g, lines, r.x + 18, r.y + 58, r.width - 36, r.height - 130);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1627-1649
+Kind: method
+Name: drawKnowledgeCanvas
+SHA256: 6054d91c6167c4b7ab26ebbea8473bb2e06a55a3287f5784dd7debb69f7e9720
+
+```java
+    void drawKnowledgeCanvas(Graphics2D g) {
+        Rectangle canvas = knowledgeCanvasRect();
+        KnowledgeTree tree = activeKnowledgeTreeSnapshot();
+        g.setColor(new Color(4, 7, 6, 240));
+        g.fillRect(canvas.x, canvas.y, canvas.width, canvas.height);
+        drawSlicedFrame(g, canvas.x, canvas.y, canvas.width, canvas.height, "inner");
+        stampUiFrameId(g, "F", "knowledge-canvas", canvas.x, canvas.y, canvas.width, canvas.height);
+        Shape oldClip = g.getClip();
+        Graphics2D gg = (Graphics2D) g.create();
+        try {
+            gg.setClip(canvas.x + 8, canvas.y + 8, canvas.width - 16, canvas.height - 16);
+            gg.translate(canvas.x + knowledgeTreePanX, canvas.y + knowledgeTreePanY);
+            gg.scale(knowledgeTreeScale, knowledgeTreeScale);
+            drawKnowledgeTreeGrid(gg, canvas);
+            if (tree != null) drawKnowledgeTreeGraph(gg, tree);
+        } finally {
+            gg.dispose();
+            g.setClip(oldClip);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        g.drawString("Mouse wheel zooms. Drag pans. Click a node to inspect. Enter/Space unlocks selected.", canvas.x + 18, canvas.y + canvas.height - 18);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1651-1656
+Kind: method
+Name: drawKnowledgeTreeGrid
+SHA256: 364d22bd42c7fef4fdebde3e36f8f63de43b0c461822239e5401abb65ef13a6f
+
+```java
+    void drawKnowledgeTreeGrid(Graphics2D g, Rectangle canvas) {
+        g.setColor(new Color(18, 20, 18));
+        int step = 48;
+        for (int x = -500; x < 1800; x += step) g.drawLine(x, -500, x, 1600);
+        for (int y = -500; y < 1600; y += step) g.drawLine(-500, y, 1800, y);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1658-1671
+Kind: method
+Name: drawKnowledgeTreeGraph
+SHA256: 42dae936dc6b5f61f01881ffd628ebd5c74f71059976dbabc85c78b83dd843f4
+
+```java
+    void drawKnowledgeTreeGraph(Graphics2D g, KnowledgeTree tree) {
+        Map<String, KnowledgeNode> byId = tree.nodeMap();
+        g.setStroke(new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        for (KnowledgeNode node : tree.nodes()) {
+            for (String preId : node.prerequisiteNodeIds()) {
+                KnowledgeNode pre = byId.get(preId);
+                if (pre == null) continue;
+                KnowledgeTree.NodeState state = tree.stateOf(node);
+                g.setColor(pre.unlocked() && node.unlocked() ? new Color(40, 150, 70) : (state == KnowledgeTree.NodeState.AVAILABLE ? new Color(194, 166, 55) : new Color(83, 83, 78)));
+                g.drawLine((int)pre.x(), (int)pre.y(), (int)node.x(), (int)node.y());
+            }
+        }
+        for (KnowledgeNode node : tree.nodes()) drawKnowledgeTreeNode(g, tree, node);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1673-1693
+Kind: method
+Name: drawKnowledgeTreeNode
+SHA256: 15b3cc2c692008048eff0b29f649c457374b8eee944edc9be6a22f1c1328b117
+
+```java
+    void drawKnowledgeTreeNode(Graphics2D g, KnowledgeTree tree, KnowledgeNode node) {
+        KnowledgeTree.NodeState state = tree.stateOf(node);
+        boolean selected = node.id().equals(selectedKnowledgeNodeId);
+        int x = (int)Math.round(node.x() - 78.0);
+        int y = (int)Math.round(node.y() - 29.0);
+        Color fill = switch (state) { case UNLOCKED -> new Color(30, 112, 55); case AVAILABLE -> new Color(156, 130, 34); case LOCKED -> new Color(55, 56, 54); };
+        Color border = selected ? new Color(230, 220, 150) : switch (state) { case UNLOCKED -> new Color(88, 218, 105); case AVAILABLE -> new Color(245, 215, 78); case LOCKED -> new Color(116, 116, 110); };
+        g.setColor(fill);
+        g.fillRoundRect(x, y, 156, 58, 18, 18);
+        g.setStroke(new BasicStroke(selected ? 4.0f : 2.4f));
+        g.setColor(border);
+        g.drawRoundRect(x, y, 156, 58, 18, 18);
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        String title = fitText(node.name(), fm, 138);
+        String cost = state == KnowledgeTree.NodeState.UNLOCKED ? "KNOWN" : "Cost " + node.pointCost();
+        g.setColor(new Color(245, 242, 205));
+        g.drawString(title, x + 10, y + 25);
+        g.setColor(state == KnowledgeTree.NodeState.LOCKED ? new Color(190, 188, 170) : new Color(255, 242, 156));
+        g.drawString(cost, x + 10, y + 45);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1875-1915
+Kind: method
+Name: addInfopediaButtons
+SHA256: 1ac73be5369e9f622a0a4ec0e3e35b1bcc57503314f5a49449a24cd3f2d0a8c3
+
+```java
+    void addInfopediaButtons() {
+        Rectangle modal = uiLayout().modal;
+        int tabX = modal.x + 28, tabY = modal.y + 70;
+        String[] tabs = infopediaTabs();
+        int visibleTabs = Math.min(tabs.length, Math.max(1, (modal.width - 56) / 128));
+        int tabStart = Math.max(0, Math.min(infopediaTab - visibleTabs/2, tabs.length - visibleTabs));
+        for (int j=0;j<visibleTabs;j++) {
+            int i = tabStart + j;
+            final int idx=i;
+            String label = (idx == infopediaTab ? "[" + tabs[i] + "]" : tabs[i]);
+            buttons.add(new ButtonBox(label, tabX + j*128, tabY, 120, 32, "Infopedia tab: "+tabs[i], () -> { infopediaTab=idx; infopediaSelected=0; infopediaScroll=0; infopediaDetailScroll=0; repaint(); }));
+        }
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        int ex = modal.x + 36, ey = modal.y + 125;
+        int visible = Math.min(entries.size(), Math.max(1,(modal.height-175)/32));
+        for (int i=0; i<visible; i++) {
+            int idx = i + infopediaScroll;
+            if (idx >= entries.size()) break;
+            final int sel=idx;
+            String label = entries.get(idx);
+            buttons.add(new ButtonBox((idx==infopediaSelected?"> ":"") + label, ex, ey + i*34, 260, 29, "Open infopedia entry: "+label, () -> { infopediaSelected=sel; infopediaDetailScroll=0; repaint(); }));
+        }
+        buttons.add(new ButtonBox("◀ TYPE", modal.x+24, modal.y+22, 112, 30, "Previous Infopedia category/type.", () -> { cycleInfopediaTab(-1); }));
+        buttons.add(new ButtonBox("TYPE ▶", modal.x+modal.width-136, modal.y+22, 112, 30, "Next Infopedia category/type.", () -> { cycleInfopediaTab(1); }));
+        buttons.add(new ButtonBox("ENTRY ↑", ex, modal.y+modal.height-48, 120, 30, "Scroll/select previous infopedia entry.", () -> { moveInfopediaSelection(-1); }));
+        buttons.add(new ButtonBox("ENTRY ↓", ex+140, modal.y+modal.height-48, 120, 30, "Scroll/select next infopedia entry.", () -> { moveInfopediaSelection(1); }));
+        buttons.add(new ButtonBox("LIST", modal.x+modal.width-456, modal.y+modal.height-48, 78, 30, "Use wheel/drag/key scroll on the Infopedia entry list.", () -> { activeScrollTag = "infopedia-list"; repaint(); }));
+        buttons.add(new ButtonBox("DETAIL", modal.x+modal.width-370, modal.y+modal.height-48, 94, 30, "Use wheel/drag/key scroll on the Infopedia detail pane.", () -> { activeScrollTag = "infopedia-detail"; repaint(); }));
+        buttons.add(new ButtonBox("DETAIL ↑", modal.x+modal.width-268, modal.y+modal.height-48, 96, 30, "Scroll selected Infopedia detail upward.", () -> { scrollInfopediaDetail(-1, false); }));
+        buttons.add(new ButtonBox("DETAIL ↓", modal.x+modal.width-164, modal.y+modal.height-48, 96, 30, "Scroll selected Infopedia detail downward.", () -> { scrollInfopediaDetail(1, false); }));
+        if ("KNOWLEDGE".equals(tabs[Math.max(0, Math.min(infopediaTab, tabs.length-1))])) {
+            buttons.add(new ButtonBox("OPEN TREE", modal.x+modal.width-326, modal.y+modal.height-86, 220, 30, "Open the character-owned Knowledge Tree. Purchases no longer occur inside the Infopedia.", this::openKnowledgeMenu));
+        }
+        if (isAssetInfopediaTab(infopediaTab)) {
+            buttons.add(new ButtonBox("ASSET TYPE ◀", modal.x+154, modal.y+22, 130, 30, "Previous semantic asset purpose/type for the Infopedia asset index.", () -> { cycleInfopediaAssetType(-1); }));
+            buttons.add(new ButtonBox("ASSET TYPE ▶", modal.x+292, modal.y+22, 130, 30, "Next semantic asset purpose/type for the Infopedia asset index.", () -> { cycleInfopediaAssetType(1); }));
+            buttons.add(new ButtonBox("FILTER", modal.x+430, modal.y+22, 92, 30, "Focus the semantic asset text filter. Type to search IDs, names, paths, and descriptions.", () -> { activeScrollTag = "infopedia-asset-filter"; repaint(); }));
+            buttons.add(new ButtonBox("CLEAR", modal.x+530, modal.y+22, 82, 30, "Clear the semantic asset filter.", () -> { infopediaAssetFilter = ""; infopediaSelected = 0; infopediaScroll = 0; activeScrollTag = "infopedia-list"; repaint(); }));
+        }
+        addInfopediaRelatedEntryButtons(modal, entries);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1917-1925
+Kind: method
+Name: cycleInfopediaTab
+SHA256: 0fbaab4183b36c4491801cb1a22442835ff621450aad7f453832c0d3a7300415
+
+```java
+    void cycleInfopediaTab(int delta) {
+        String[] tabs = infopediaTabs();
+        infopediaTab = Math.max(0, Math.min(tabs.length-1, infopediaTab + delta));
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1938-1949
+Kind: method
+Name: cycleInfopediaAssetType
+SHA256: 3a80a4a5e4fc749d98154a92509f946a316b9514773618e9e8181a721d6799f3
+
+```java
+    void cycleInfopediaAssetType(int delta) {
+        AssetType[] types = SemanticAssetInfopediaAuthority.browseTypes();
+        int slots = types.length + 1; // All + explicit types.
+        int raw = infopediaAssetTypeIndex + 1;
+        raw = Math.floorMod(raw + delta, slots);
+        infopediaAssetTypeIndex = raw - 1;
+        infopediaSelected = 0;
+        infopediaScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1971-1981
+Kind: method
+Name: moveInfopediaSelection
+SHA256: 1c5f6708580a3eab89171ce81ba5b2b9f64f88106a363fa8d15272619b6e6cc1
+
+```java
+    void moveInfopediaSelection(int delta) {
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        if (entries.isEmpty()) { infopediaSelected = 0; return; }
+        infopediaSelected = Math.max(0, Math.min(entries.size()-1, infopediaSelected + delta));
+        int visible = Math.max(1, (uiLayout().modal.height-228)/32);
+        if (infopediaSelected < infopediaScroll) infopediaScroll = infopediaSelected;
+        if (infopediaSelected >= infopediaScroll + visible) infopediaScroll = infopediaSelected - visible + 1;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1983-1988
+Kind: method
+Name: scrollInfopediaDetail
+SHA256: 5b6713a7d7e2334a072c5764a1f883c6630a8d374f3aaa05c842dcf71d28359d
+
+```java
+    void scrollInfopediaDetail(int delta, boolean page) {
+        int step = page ? 8 : 3;
+        infopediaDetailScroll = Math.max(0, infopediaDetailScroll + Integer.compare(delta, 0) * step);
+        activeScrollTag = "infopedia-detail";
+        repaint();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:1990-2009
+Kind: method
+Name: openInfopediaEntry
+SHA256: ee9a6acfe5ecf447123462d779932ce030350ed7aa2076e1e3ca422249817e8e
+
+```java
+    void openInfopediaEntry(String target) {
+        if (target == null || target.isBlank()) return;
+        for (int t=0; t<infopediaTabs().length; t++) {
+            java.util.List<String> entries = infopediaEntries(t);
+            for (int i=0; i<entries.size(); i++) {
+                if (entries.get(i).equalsIgnoreCase(target) || ItemQuality.namesMatch(entries.get(i), target)) {
+                    infopediaTab = t;
+                    infopediaSelected = i;
+                    int visible = Math.max(1, (uiLayout().modal.height-228)/32);
+                    infopediaScroll = Math.max(0, i - visible / 2);
+                    infopediaDetailScroll = 0;
+                    activeScrollTag = "infopedia-detail";
+                    logEvent("INFOPEDIA LINK: opened " + entries.get(i) + ".");
+                    repaint();
+                    return;
+                }
+            }
+        }
+        logEvent("INFOPEDIA LINK: no entry found for " + target + ".");
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3014-3044
+Kind: method
+Name: factionSpecificNote
+SHA256: f063d2b115592f3e9d6e894caf82e6382b60a15ab50bdf94ad30d07b3d87d836
+
+```java
+    String factionSpecificNote(Faction f, String entry) {
+        if (f==null) return "entry exists in the menu without a current faction enum binding";
+        String n=f.name();
+        if (f==Faction.NONE) return "used when ownership should be deliberately absent, not merely unknown";
+        if (n.contains("CLOISTER_RED")) return "red-robed forge alignment; favor orthodox machine service and visible Mechanist Collegia authority";
+        if (n.contains("CLOISTER_RUST")) return "rust-cloister alignment; favor maintenance, salvage, and worn machine infrastructure";
+        if (n.contains("CLOISTER_VOID")) return "void-cloister alignment; favor sealed systems, space-adjacent hardware, and stranger machine rites";
+        if (n.contains("BLOCK_AUREL")) return "hiver block identity for local civilian loyalty, grudges, and housing politics";
+        if (n.contains("BLOCK_MARROW")) return "hiver block identity with poorer marrow-hab survival texture and local obligations";
+        if (n.contains("BLOCK_SUMPLEDGER")) return "hiver block identity tied to accounting, debts, sump trade, and civic ledgers";
+        if (n.contains("IRON_RATS")) return "gang variant leaning toward scrap, tunnels, ambush, and cheap intimidation";
+        if (n.contains("BLACK_SUMP")) return "gang variant leaning toward knives, sewer routes, and black-water extortion";
+        if (n.contains("CANDLE_JACKS")) return "gang variant leaning toward shrine-like menace, candles, and debt violence";
+        if (n.contains("RED_GRIN")) return "gang variant leaning toward open brutality, intimidation theater, and visible heat";
+        if (n.contains("CHAIN_SAINTS")) return "gang variant leaning toward chain weapons, false piety, and ritualized street control";
+        if (n.contains("ASH_MARKET")) return "gang variant leaning toward market rackets, teeth-debt markers, and trade coercion";
+        if (n.contains("WIRE_WOLVES")) return "gang variant leaning toward electrical theft, sabotage, and wire-running turf";
+        if (n.contains("DROWNED_9TH")) return "gang variant leaning toward sewer survivorship, drowned routes, and hidden water access";
+        if (n.contains("HOUSE_VARN")) return "noble house variant for contracts, permits, status games, and clean-paper cruelty";
+        if (n.contains("HOUSE_KASTOR")) return "noble house variant for guarded logistics, household service, and controlled access";
+        if (n.contains("HOUSE_MORVAIN")) return "noble house variant for old money, quiet hostility, and polished neglect";
+        if (n.contains("HOUSE_CYRA")) return "noble house variant for commerce, favor trading, and cosmetic legality";
+        if (n.contains("HOUSE_DRAKE")) return "noble house variant for militarized wealth, security contracts, and hard retaliation";
+        if (n.contains("HOUSE_TOLL")) return "noble house variant for fees, transit gates, licenses, and extraction by paperwork";
+        if (n.contains("HOUSE_OSSUARY")) return "noble house variant for funereal status, relic claims, and tasteful horror";
+        if (f==Faction.MUTANT) return "hostile biological underclass pressure; not the same as cult or machine danger";
+        if (f==Faction.CULTIST) return "illegal ritual cell pressure; socially and legally distinct from ordinary crime";
+        if (f==Faction.ROGUE_MACHINE) return "machine threat category; should key off failed automation and hostile mechanisms";
+        if (f==Faction.HERETIC) return "broad treasonous alignment for forbidden services, contraband doctrine, and high-risk contacts";
+        return "base faction entry; subfactions inherit this role but add local grudges, stock bias, and encounter flavor";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3110-3161
+Kind: method
+Name: drawEulaOverlay
+SHA256: 57d554aebbf0b59719624c6e66a76c0d4c525f0fba2e6f4baf4ceb309583baf2
+
+```java
+    void drawEulaOverlay(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        int panelW = Math.min(980, Math.max(560, W - 80));
+        int panelH = Math.min(720, Math.max(420, H - 80));
+        int x = (W - panelW) / 2;
+        int y = (H - panelH) / 2;
+        g.setColor(new Color(0,0,0,220));
+        g.fillRect(0, 0, W, H);
+        g.setColor(new Color(5,6,6,248));
+        g.fillRoundRect(x, y, panelW, panelH, 18, 18);
+        drawSlicedFrame(g, x, y, panelW, panelH, "outer");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "MANDATORY EULA NOTICE", x + panelW / 2, y + 36);
+        g.setFont(smallFont);
+        int contentX = x + 38;
+        int contentY = y + 70;
+        int contentW = panelW - 76;
+        int contentH = panelH - 154;
+        g.setFont(smallFont);
+        FontMetrics eulaFm = g.getFontMetrics();
+        java.util.List<String> lines = new ArrayList<>();
+        for (String paragraph : EulaConsentAuthority.eulaText()) {
+            java.util.List<String> wrapped = GuiLayoutApi.wrapText(paragraph, eulaFm, contentW - 10);
+            if (wrapped.isEmpty()) lines.add(""); else lines.addAll(wrapped);
+            lines.add("");
+        }
+        int lineH = Math.max(16, eulaFm.getHeight() + 2);
+        int visibleLines = Math.max(1, contentH / lineH);
+        eulaMaxScroll = Math.max(0, lines.size() - visibleLines);
+        eulaScroll = Math.max(0, Math.min(eulaScroll, eulaMaxScroll));
+        Shape oldClip = g.getClip();
+        g.setClip(contentX - 4, contentY - 4, contentW + 8, contentH + 8);
+        int yy = contentY;
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        for (int i = eulaScroll; i < lines.size() && yy <= contentY + contentH; i++) {
+            String line = lines.get(i);
+            if (line == null || line.isEmpty()) {
+                yy += Math.max(6, lineH / 2);
+                continue;
+            }
+            boolean header = line.equals("THE MECHANIST END USER LICENSE AND CONSENT NOTICE") || line.equals("INTELLECTUAL PROPERTY DISCLAIMER & FAN PROJECT ACKNOWLEDGMENT") || line.equals("IMPORTANT NOTICE: UNOFFICIAL FAN-MADE CONTENT");
+            g.setColor(header ? optionColor(GameOptions.TEXT_HIGHLIGHT) : optionColor(GameOptions.TEXT_MAIN));
+            g.drawString(line, contentX, yy);
+            yy += lineH;
+        }
+        g.setClip(oldClip);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String scrollText = "Scroll wheel / Up / Down / PgUp / PgDn to read. Lines " + Math.min(lines.size(), eulaScroll + 1) + "-" + Math.min(lines.size(), eulaScroll + visibleLines) + " of " + lines.size() + ".";
+        g.drawString(GuiLayoutApi.fitLabel(scrollText, g.getFontMetrics(), contentW), contentX, y + panelH - 84);
+        g.drawString("Keyboard: Enter/A accepts. Escape/Q/X exits.", contentX, y + panelH - 30);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3171-3194
+Kind: method
+Name: drawTimedAlert
+SHA256: b8c3a9108f92f9854896a100b742b251015a892c9e90846110edcc432723dedf
+
+```java
+    void drawTimedAlert(Graphics2D g) {
+        if (alertUntilMillis <= System.currentTimeMillis() || alertTitle == null || alertTitle.isEmpty()) return;
+        int W = getWidth(), H = getHeight();
+        int w = Math.min(620, Math.max(360, W - 160));
+        int h = 150;
+        int x = (W - w) / 2;
+        int y = Math.max(90, H / 2 - h / 2);
+        g.setColor(new Color(0,0,0,168));
+        g.fillRect(0,0,W,H);
+        g.setColor(new Color(4,5,4,244));
+        g.fillRoundRect(x,y,w,h,16,16);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, alertTitle, x + w/2, y + 38);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        int yy = y + 70;
+        for(String line: TextSurfaceApi.wrap(alertBody, Math.max(34,(w-56)/8))) {
+            center(g, line, x + w/2, yy);
+            yy += 18;
+            if (yy > y + h - 18) break;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3196-3218
+Kind: method
+Name: drawInfopediaPanel
+SHA256: 62bb09b5638782b5c668b459430ea9afaa06109dbcc568e91d0055c822847e49
+
+```java
+    void drawInfopediaPanel(Graphics2D g) {
+        Rectangle modal = uiLayout().modal;
+        g.setColor(new Color(3,4,4,248)); g.fillRect(modal.x, modal.y, modal.width, modal.height);
+        drawSlicedFrame(g, modal.x, modal.y, modal.width, modal.height, "inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"INFOPEDIA // UNDERHIVE LOGIC ENGINE", modal.x+modal.width/2, modal.y+45);
+        String[] tabs = infopediaTabs();
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String subtitle = isAssetInfopediaTab(infopediaTab)
+                ? "Semantic Asset Index: image previews, asset codes, type/purpose, and in-universe descriptions. Type filter: " + SemanticAssetInfopediaAuthority.typeLabel(selectedInfopediaAssetType()) + " | Search: " + (infopediaAssetFilter.isBlank() ? "<none>" : infopediaAssetFilter) + ("infopedia-asset-filter".equals(activeScrollTag) ? " _" : "")
+                : "Zones, rooms, items, weapons, NPC types, and factions. Entries summarize implemented reference rules and intended doctrine.";
+        center(g, GuiLayoutApi.fitLabel(subtitle, g.getFontMetrics(), modal.width-70), modal.x+modal.width/2, modal.y+102);
+        int listX=modal.x+28, listY=modal.y+120, listW=285, listH=modal.height-180;
+        drawSlicedFrame(g,listX,listY,listW,listH,"inner");
+        java.util.List<String> entries = infopediaEntries(infopediaTab);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,tabs[infopediaTab]+" INDEX",listX+listW/2,listY+32);
+        drawInfopediaEntryList(g, entries, listX+14, listY+62, listW-34, listH-108);
+        int detailX=listX+listW+24, detailY=listY, detailW=modal.x+modal.width-detailX-30, detailH=listH;
+        drawSlicedFrame(g,detailX,detailY,detailW,detailH,"inner");
+        String entry = entries.isEmpty()?"No entry":entries.get(Math.max(0,Math.min(infopediaSelected,entries.size()-1)));
+        drawInfopediaIcon(g, detailX+24, detailY+52, 128, 128, infopediaTab, entry);
+        java.util.List<String> details = infopediaDetailLinesWithRelated(infopediaTab, entry);
+        drawScrollableWrappedLines(g, details, detailX+178, detailY+58, detailW-210, detailH-96, infopediaDetailScroll, "infopedia-detail");
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3253-3269
+Kind: method
+Name: drawInfopediaIcon
+SHA256: 894e053e57d22fac615253adbaa63298f84f09c391473877e011ec47dc9434e9
+
+```java
+    void drawInfopediaIcon(Graphics2D g, int x, int y, int w, int h, int tab, String entry) {
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setColor(new Color(12,16,14)); g.fillRect(x+10,y+10,w-20,h-20);
+        if (isAssetInfopediaTab(tab)) {
+            drawSemanticAssetInfopediaIcon(g, x, y, w, h, entry);
+            return;
+        }
+        if (tab == 17) {
+            drawTileInfopediaIcon(g, x, y, w, h, entry);
+            return;
+        }
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); g.setFont(titleFont.deriveFont(34f));
+        String glyph = "?";
+        if(tab==0) glyph="Z"; else if(tab==1) glyph="R"; else if(tab==2) glyph="I"; else if(tab==3) glyph="W"; else if(tab==4) glyph="S"; else if(tab==5) glyph="C"; else if(tab==6) glyph="B"; else if(tab==7) glyph="M"; else if(tab==8) glyph="N"; else glyph="F";
+        center(g,glyph,x+w/2,y+h/2+10);
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM)); center(g,"reference icon",x+w/2,y+h-18);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3271-3304
+Kind: method
+Name: drawSemanticAssetInfopediaIcon
+SHA256: d59e30bb6a10f83009f924d75438a2aeedcd9596cd1e2a7ff4d59423373e65ea
+
+```java
+    void drawSemanticAssetInfopediaIcon(Graphics2D g, int x, int y, int w, int h, String entry) {
+        java.util.Optional<AssetMetadata> meta = SemanticAssetInfopediaAuthority.metadataForEntry(AssetManager.registry(), entry);
+        if (meta.isEmpty()) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            g.setFont(smallFont);
+            center(g, "asset index", x + w/2, y + h/2 - 8);
+            center(g, "select an asset ID", x + w/2, y + h/2 + 12);
+            return;
+        }
+        ImageIcon icon = AssetManager.getAsset(meta.get().id());
+        Image image = icon == null ? null : icon.getImage();
+        int ix = x + 14, iy = y + 14, iw = w - 28, ih = h - 44;
+        g.setColor(new Color(4,5,5,245));
+        g.fillRect(ix, iy, iw, ih);
+        g.setColor(new Color(115,96,58));
+        g.drawRect(ix, iy, iw, ih);
+        if (image != null) {
+            int srcW = Math.max(1, icon.getIconWidth());
+            int srcH = Math.max(1, icon.getIconHeight());
+            double scale = Math.min((double)(iw - 8) / srcW, (double)(ih - 8) / srcH);
+            int dw = Math.max(1, (int)Math.round(srcW * scale));
+            int dh = Math.max(1, (int)Math.round(srcH * scale));
+            int dx = ix + (iw - dw) / 2;
+            int dy = iy + (ih - dh) / 2;
+            g.drawImage(image, dx, dy, dw, dh, null);
+        } else {
+            g.setFont(titleFont.deriveFont(28f));
+            g.setColor(new Color(205,80,70));
+            center(g, "?", x + w/2, y + h/2);
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, meta.get().id(), x + w/2, y + h - 18);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3306-3338
+Kind: method
+Name: drawTileInfopediaIcon
+SHA256: d200ece72dc7e1412faf4ad5a23e8d1501c01f487eb6156ab7f6b876d88c98d1
+
+```java
+    void drawTileInfopediaIcon(Graphics2D g, int x, int y, int w, int h, String entry) {
+        TileInfopediaAuthority.Entry e = TileInfopediaAuthority.find(entry);
+        if (e == null || TileInfopediaAuthority.isHeader(entry)) {
+            g.setColor(optionColor(GameOptions.TEXT_DIM));
+            g.setFont(smallFont);
+            center(g, "tile family", x + w/2, y + h/2);
+            return;
+        }
+        int cells = Math.max(1, Math.min(5, e.aliases.length));
+        int pad = 14;
+        int cell = Math.max(22, Math.min((w - pad*2 - (cells-1)*5) / cells, h - 48));
+        int totalW = cells * cell + (cells-1)*5;
+        int xx = x + (w - totalW) / 2;
+        int yy = y + 22;
+        for (int i=0; i<cells; i++) {
+            BufferedImage img = images == null ? null : images.getTile(e.aliases[i], e.glyph == null ? '?' : e.glyph.charValue());
+            g.setColor(new Color(4,5,5,240));
+            g.fillRect(xx + i*(cell+5), yy, cell, cell);
+            g.setColor(new Color(115,96,58));
+            g.drawRect(xx + i*(cell+5), yy, cell, cell);
+            if (img != null) {
+                g.drawImage(img, xx + i*(cell+5)+2, yy+2, cell-4, cell-4, null);
+            } else {
+                g.setFont(smallFont);
+                g.setColor(new Color(205,80,70));
+                center(g, "?", xx + i*(cell+5)+cell/2, yy + cell/2 + 5);
+            }
+        }
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        String label = e.primaryAlias() == null ? e.label : e.primaryAlias();
+        center(g, GuiLayoutApi.fitLabel(label, g.getFontMetrics(), w-20), x + w/2, y + h - 18);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3738-3748
+Kind: method
+Name: drawPanelBox
+SHA256: 3f99813539b8b64a889814af0bfff2cf46a02aed4bf8691a3ed2cab8db978099
+
+```java
+    void drawPanelBox(Graphics2D g, int x, int y, int w, int h, String title) {
+        g.setColor(new Color(4, 7, 6, 232));
+        g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", title, x, y, w, h);
+        if (title != null && !title.isBlank()) {
+            g.setFont(uiFont);
+            g.setColor(optionColor(GameOptions.TEXT_TITLE));
+            g.drawString(title, x+18, y+32);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3750-3778
+Kind: method
+Name: drawWrappedPanelLines
+SHA256: e5d2e89333114e4e65cffc2371f5c5602c6da11a504933777c7c8a4a75877eef
+
+```java
+void drawWrappedPanelLines(Graphics2D g, java.util.List<String> lines, int x, int y, int w, int h) {
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(20, fm.getHeight() + 4);
+        int maxChars = Math.max(24, w / Math.max(7, fm.charWidth('M')));
+        int yy = y;
+        Shape old = g.getClip();
+        g.setClip(x-4, y-lineH, w+20, h+lineH);
+        for (String raw : lines) {
+            Color c = new Color(220, 208, 145); // readable lighter yellow on green/black GUI
+            if (raw.contains("Warning") || raw.contains("invalid") || raw.contains("FAILED") || raw.contains("Starving")) c = new Color(245, 120, 90);
+            else if (raw.startsWith("  -") || raw.startsWith("  ")) c = new Color(205, 198, 155);
+            else if (raw.endsWith(":")) c = new Color(235, 220, 150);
+            g.setColor(c);
+            for (String line : TextSurfaceApi.wrap(raw, maxChars)) {
+                if (yy > y + h) break;
+                g.drawString(line, x, yy);
+                yy += lineH;
+            }
+            if (yy > y + h) break;
+        }
+        g.setClip(old);
+        int needed = Math.max(0, lines.size() * lineH - h);
+        if (needed > 0) {
+            g.setColor(new Color(55, 46, 30));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, h);
+            g.setColor(new Color(220, 190, 105));
+            g.fillRect(x + w + 6, y - lineH + 4, 8, Math.max(24, h / 4));
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3892-3896
+Kind: method
+Name: mapCellW
+SHA256: 11ce5539779cb645afd90b083f942d6ecc34721281222367089fdcb195115021
+
+```java
+    int mapCellW(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(8, scaled(zoomedMapPixels(Math.max(10, fm.charWidth('W')))));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3898-3902
+Kind: method
+Name: mapCellH
+SHA256: 90139bc1ee6ea5331c712e160af9bb88df74aa3a94ebcfac098dad4da57d49de
+
+```java
+    int mapCellH(Graphics2D g) {
+        if (tileIconMode()) return scaled(zoomedMapPixels(options.mapTilePixelSize()));
+        FontMetrics fm = g.getFontMetrics(asciiFont);
+        return Math.max(10, scaled(zoomedMapPixels(Math.max(14, fm.getHeight()))));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:3927-4063
+Kind: method
+Name: drawGame
+SHA256: 981d31c4483eb349b7611917027ff53320e549527583b0cf88b1154e228fdb63
+
+```java
+    void drawGame(Graphics2D g) {
+        g.setFont(asciiFont);
+        Rectangle map = mapRect();
+        int cellW = mapCellW(g);
+        int cellH = mapCellH(g);
+        int worldW = world == null ? 0 : world.w;
+        int worldH = world == null ? 0 : world.h;
+        MapViewportTransformAuthority.Viewport viewport = MapViewportTransformAuthority.compute(
+                map, worldW, worldH, playerX, playerY, cellW, cellH,
+                10, tileIconMode() ? 10 : 10 + g.getFontMetrics(asciiFont).getAscent());
+        int cols = viewport.cols;
+        int rows = viewport.rows;
+        int camX = viewport.camX;
+        int camY = viewport.camY;
+        updateSensoryModel("paint");
+
+        // The active map is now a deliberately blank black CRT pane.  The clip prevents
+        // ASCII and fog highlights from bleeding into the surrounding chrome or command panel.
+        g.setColor(Color.BLACK);
+        g.fillRect(map.x, map.y, map.width, map.height);
+        g.setColor(new Color(92, 76, 48));
+        g.drawRect(map.x, map.y, map.width, map.height);
+        Shape oldClip = g.getClip();
+        g.setClip(map.x + 7, map.y + 7, map.width - 14, map.height - 14);
+        int ox = viewport.ox;
+        int oy = viewport.oy;
+
+        if (world != null) {
+            for (int sy = 0; sy < rows; sy++) {
+                int y = camY + sy;
+                if (y < 0 || y >= world.h) continue;
+                for (int sx = 0; sx < cols; sx++) {
+                    int x = camX + sx;
+                    if (x < 0 || x >= world.w) continue;
+                    boolean vis = isVisible(x, y);
+                    boolean rem = isRemembered(x, y);
+                    char ch = world.tiles[x][y];
+                    if (vis) {
+                        if (tileIconMode()) drawMapTileIcon(g, ch, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 1.0f, true);
+                        else { g.setColor(colorForTile(x, y, ch)); g.drawString(String.valueOf(ch), ox + sx * cellW, oy + sy * cellH); }
+                        drawLightDarknessOverlay(g, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, true);
+                    } else if (rem) {
+                        char memory = ((ch == '#' || InterstitialInfrastructureApi.isInterstitialSolid(ch)) ? '#' : (ch == InterstitialInfrastructureApi.VOID_SPACE ? ' ' : '.'));
+                        if (tileIconMode()) drawMapTileIcon(g, memory, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, 0.34f, false);
+                        else { g.setColor(new Color(42, 42, 45)); g.drawString(String.valueOf(memory), ox + sx * cellW, oy + sy * cellH); }
+                        drawLightDarknessOverlay(g, x, y, ox + sx * cellW, oy + sy * cellH, cellW, cellH, false);
+                    }
+                }
+            }
+
+            for (SensePing ping : sensePings) {
+                if (ping.ttl > 0 && !isVisible(ping.x, ping.y) && ping.x >= camX && ping.y >= camY && ping.x < camX + cols && ping.y < camY + rows) {
+                    g.setColor(new Color(210, 190, 105));
+                    if (tileIconMode()) {
+                        int px = ox + (ping.x - camX) * cellW, py = oy + (ping.y - camY) * cellH;
+                        g.drawOval(px + cellW/4, py + cellH/4, Math.max(4, cellW/2), Math.max(4, cellH/2));
+                        g.drawString("?", px + Math.max(2, cellW/3), py + Math.max(12, (cellH*2)/3));
+                    } else g.drawString("?", ox + (ping.x - camX) * cellW, oy + (ping.y - camY) * cellH);
+                }
+            }
+            if (world != null && world.mapObjects != null) {
+                for (MapObjectState mo : world.mapObjects) {
+                    if (mo != null && isVisible(mo.x, mo.y) && mo.x >= camX && mo.y >= camY && mo.x < camX + cols && mo.y < camY + rows && world != null && world.inBounds(mo.x, mo.y) && !isDoorTile(world.tiles[mo.x][mo.y]) && world.tiles[mo.x][mo.y] != 'D') {
+                        g.setColor(new Color(170, 215, 155));
+                        if (tileIconMode()) drawMapFeatureIcon(g, mo, ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH, cellW, cellH, new Color(100, 210, 160, 70));
+                        else g.drawString(String.valueOf(mo.glyph), ox + (mo.x - camX) * cellW, oy + (mo.y - camY) * cellH);
+                    }
+                }
+            }
+            for (BaseObject obj : baseObjects) {
+                if (isVisible(obj.x, obj.y) && obj.x >= camX && obj.y >= camY && obj.x < camX + cols && obj.y < camY + rows) {
+                    g.setColor(new Color(170, 230, 155));
+                    if (tileIconMode()) drawMapObjectIcon(g, obj, ox + (obj.x - camX) * cellW, oy + (obj.y - camY) * cellH, cellW, cellH, new Color(120, 230, 135, 80));
+                    else g.drawString(String.valueOf(obj.symbol), ox + (obj.x - camX) * cellW, oy + (obj.y - camY) * cellH);
+                }
+            }
+            drawPortableLightObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawZoneLightFixtureObjects(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            visualLighting.render(this, g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawEnvironmentalHazardOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawTrapWarningOverlays(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            if (baseClaimed && isVisible(baseX, baseY) && baseX >= camX && baseY >= camY && baseX < camX + cols && baseY < camY + rows) {
+                g.setColor(new Color(220, 240, 180));
+                if (tileIconMode()) {
+                    int px = ox + (baseX - camX) * cellW, py = oy + (baseY - camY) * cellH;
+                    g.drawRect(px+2, py+2, Math.max(4,cellW-4), Math.max(4,cellH-4));
+                    g.drawString("B", px + Math.max(3,cellW/3), py + Math.max(12,(cellH*2)/3));
+                } else g.drawString("B", ox + (baseX - camX) * cellW, oy + (baseY - camY) * cellH);
+            }
+            if ((lookCursorActive || interactCursorActive) && lookX >= camX && lookY >= camY && lookX < camX + cols && lookY < camY + rows) {
+                int sx = lookX - camX, sy = lookY - camY;
+                g.setColor(interactCursorActive ? new Color(120, 220, 180) : new Color(235, 205, 120));
+                int rx = ox + sx * cellW - 2;
+                int ry = oy + sy * cellH - 2;
+                g.drawRect(rx, ry, cellW + 4, cellH + 4);
+            }
+            if (buildPlacementActive && buildX >= camX && buildY >= camY && buildX < camX + cols && buildY < camY + rows) {
+                int sx = buildX - camX, sy = buildY - camY;
+                boolean ok = rawCanPlacePendingBuildAt(buildX, buildY).startsWith("OK");
+                g.setColor(ok ? new Color(105, 235, 125) : new Color(235, 70, 55));
+                if (tileIconMode()) {
+                    g.drawRect(ox + sx * cellW - 2, oy + sy * cellH - 2, cellW + 4, cellH + 4);
+                    g.drawString(ok ? "+" : "X", ox + sx * cellW + Math.max(3, cellW/3), oy + sy * cellH + Math.max(12, (cellH*2)/3));
+                } else {
+                    g.drawRect(ox + sx * cellW - 3, oy + sy * cellH - cellH + 2, cellW + 6, cellH + 5);
+                    g.drawString(ok ? "+" : "X", ox + sx * cellW, oy + sy * cellH);
+                }
+            }
+            drawMovementGhostPath(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawMouseMovementPreview(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawLookIntentOverlay(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawCombatTargetOverlay(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawCombatAnimations(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            drawExplosionAnimations(g, camX, camY, cols, rows, ox, oy, cellW, cellH);
+            if (world != null) {
+                for (NpcEntity npc : world.npcs) {
+                    if (npc.x >= camX && npc.y >= camY && npc.x < camX + cols && npc.y < camY + rows && isVisible(npc.x, npc.y)) {
+                        g.setColor(npcColor(npc.faction));
+                        Point off = npcSlideOffsetPixels(npc, cellW, cellH);
+                        if (tileIconMode()) drawNpcMapIcon(g, npc, ox + (npc.x - camX) * cellW + off.x, oy + (npc.y - camY) * cellH + off.y, cellW, cellH);
+                        else g.drawString(String.valueOf(npc.symbol), ox + (npc.x - camX) * cellW + off.x, oy + (npc.y - camY) * cellH + off.y);
+                    }
+                }
+            }
+            if (playerX >= camX && playerY >= camY && playerX < camX + cols && playerY < camY + rows) {
+                g.setColor(Color.WHITE);
+                Point off = playerSlideOffsetPixels(cellW, cellH);
+                if (tileIconMode()) drawPlayerMapIcon(g, ox + (playerX - camX) * cellW + off.x, oy + (playerY - camY) * cellH + off.y, cellW, cellH);
+                else g.drawString("@", ox + (playerX - camX) * cellW + off.x, oy + (playerY - camY) * cellH + off.y);
+            }
+        }
+        g.setClip(oldClip);
+
+        drawRightPanelFrame(g);
+        if (tacticalSlateVisible) drawCommandTablet(g, camX, camY);
+        drawRecentActionFeed(g);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4068-4090
+Kind: method
+Name: drawLightDarknessOverlay
+SHA256: 0acf98dc3c798ebbd190af8fdcd282fb6a15cc11e494bc28c04cdc8bed9fac46
+
+```java
+    void drawLightDarknessOverlay(Graphics2D g, int tx, int ty, int px, int py, int cellW, int cellH, boolean visible) {
+        int l = lightLevelAt(tx, ty);
+        int alpha;
+        if (!visible) alpha = 120;
+        else if (l >= 72) alpha = 0;
+        else if (l >= 52) alpha = 22;
+        else if (l >= 34) alpha = 50;
+        else if (l >= 18) alpha = 84;
+        else if (l >= 8) alpha = 118;
+        else alpha = 150;
+        if (alpha <= 0) return;
+        int yy = tileIconMode() ? py : py - cellH + 3;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.85f, alpha / 255f)));
+        gg.setColor(Color.BLACK);
+        gg.fillRect(px, yy, Math.max(1, cellW), Math.max(1, cellH));
+        if (visible && l >= 55) {
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(0.18f, (l-50)/220f)));
+            gg.setColor(new Color(245, 220, 135));
+            gg.fillRect(px, yy, Math.max(1, cellW), Math.max(1, cellH));
+        }
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4573-4603
+Kind: method
+Name: drawMouseMovementPreview
+SHA256: 054e1bb8510f0db4885f82c37af9d28b5a879a7e211b3409a563e4c00344ffb6
+
+```java
+    void drawMouseMovementPreview(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        if (!mouseMovePreviewActive) return;
+        if (!manualMovementPlanActive && System.currentTimeMillis() - mouseMovePreviewLastMillis > 4000L) { clearMouseMovementPreview("timeout"); return; }
+        Graphics2D gg = (Graphics2D) g.create();
+        int range = Math.max(1, movementModeRange());
+        for (int i=0; i<mouseMovePreviewPath.size(); i++) {
+            Point p = mouseMovePreviewPath.get(i);
+            if (p.x < camX || p.y < camY || p.x >= camX + cols || p.y >= camY + rows) continue;
+            int px = ox + (p.x - camX) * cellW, py = oy + (p.y - camY) * cellH;
+            boolean inAction = i < range;
+            gg.setColor(inAction ? new Color(120, 230, 150, 170) : new Color(235, 70, 55, 170));
+            gg.drawRoundRect(px+3, py+3, Math.max(2, cellW-7), Math.max(2, cellH-7), 6, 6);
+            if (!inAction) { gg.drawLine(px+4, py+4, px+cellW-5, py+cellH-5); gg.drawLine(px+cellW-5, py+4, px+4, py+cellH-5); }
+        }
+        if (mouseMoveTargetX >= camX && mouseMoveTargetY >= camY && mouseMoveTargetX < camX + cols && mouseMoveTargetY < camY + rows) {
+            int px = ox + (mouseMoveTargetX - camX) * cellW, py = oy + (mouseMoveTargetY - camY) * cellH;
+            gg.setColor(mouseMovePreviewValid ? new Color(245, 220, 110) : new Color(255, 60, 45));
+            gg.setStroke(new BasicStroke(2f)); gg.drawRect(px, py, Math.max(1,cellW-1), Math.max(1,cellH-1));
+        }
+        gg.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        FontMetrics fm = gg.getFontMetrics();
+        int bw = Math.min(380, Math.max(160, fm.stringWidth(mouseMovePreviewStatus) + 18));
+        int anchorX = mouseX >= 0 ? mouseX : getWidth() / 2;
+        int anchorY = mouseY >= 0 ? mouseY : Math.max(42, getHeight() / 2);
+        int bx = Math.max(8, Math.min(getWidth() - bw - 8, anchorX + 18));
+        int by = Math.max(8, Math.min(getHeight() - 42, anchorY + 18));
+        gg.setColor(new Color(0,0,0,220)); gg.fillRoundRect(bx, by, bw, 28, 8, 8);
+        gg.setColor(mouseMovePreviewValid ? new Color(120,230,150) : new Color(250,90,70)); gg.drawRoundRect(bx, by, bw, 28, 8, 8);
+        drawUiTextLine(gg, GuiLayoutApi.fitLabel(mouseMovePreviewStatus, fm, bw-16), bx+9, by+19);
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4784-4827
+Kind: method
+Name: drawLookIntentOverlay
+SHA256: 3cc3a66411f07b7e828679ca65940d1fdf09b1855004ba11206d67bd9de63a82
+
+```java
+    void drawLookIntentOverlay(Graphics2D g, int camX, int camY, int cols, int rows, int ox, int oy, int cellW, int cellH) {
+        NpcEntity npc = selectedLookNpc();
+        if (npc == null) return;
+        IntentReadResult read = intentReadFor(npc);
+        if (!read.available || read.degree < 2) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        int cx = ox + (npc.x - camX) * cellW + cellW/2;
+        int cy = oy + (npc.y - camY) * cellH + cellH/2;
+        if (read.degree >= 3) {
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.16f));
+            gg.setColor(new Color(245, 205, 90));
+            int span = Math.max(read.visionRange, read.hearingRange) + 1;
+            for (int x=Math.max(0, npc.x-span); x<=Math.min(world.w-1, npc.x+span); x++) for (int y=Math.max(0, npc.y-span); y<=Math.min(world.h-1, npc.y+span); y++) {
+                if (x < camX || y < camY || x >= camX + cols || y >= camY + rows) continue;
+                if (npcVisionContains(npc, x, y, read) && hasLineOfSight(npc.x, npc.y, x, y)) {
+                    gg.fillRect(ox + (x-camX)*cellW + 2, oy + (y-camY)*cellH + 2, Math.max(2, cellW-4), Math.max(2, cellH-4));
+                }
+            }
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.55f));
+            gg.setColor(new Color(115, 190, 230));
+            int rx = read.hearingRange * cellW;
+            int ry = read.hearingRange * cellH;
+            gg.drawOval(cx-rx, cy-ry, rx*2, ry*2);
+        }
+        if (read.degree >= 2 && (read.projectedX != npc.x || read.projectedY != npc.y)) {
+            int tx = ox + (read.projectedX - camX) * cellW + cellW/2;
+            int ty = oy + (read.projectedY - camY) * cellH + cellH/2;
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
+            gg.setColor(new Color(200, 230, 180));
+            gg.drawLine(cx, cy, tx, ty);
+            gg.drawRect(tx-cellW/4, ty-cellH/4, Math.max(3, cellW/2), Math.max(3, cellH/2));
+        }
+        if (read.attackLine) {
+            Stroke old = gg.getStroke();
+            gg.setStroke(new BasicStroke(Math.max(1.0f, cellW/14.0f), BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f, new float[]{6.0f, 5.0f}, 0.0f));
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.82f));
+            gg.setColor(new Color(245, 85, 70));
+            int px = ox + (playerX - camX) * cellW + cellW/2;
+            int py = oy + (playerY - camY) * cellH + cellH/2;
+            gg.drawLine(cx, cy, px, py);
+            gg.setStroke(old);
+        }
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4855-4888
+Kind: method
+Name: semanticTileImageForRenderedGlyph
+SHA256: 7d1734f56200f4ecebf33f7291c396d9822d05a9853ee285f7b76de9bf30103e
+
+```java
+    BufferedImage semanticTileImageForRenderedGlyph(char ch, int worldX, int worldY) {
+        // 0.9.10fn: the renderer no longer treats a raw ASCII glyph as the complete
+        // visual identity.  Stage 9 hardens this further: once a descriptor has a
+        // semantic asset ID, a missing registry image produces a typed missing tile
+        // instead of silently falling through to unrelated legacy art.
+        CompiledTileDescriptor d = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        if (d != null) {
+            if (d.hasOverlay()) {
+                BufferedImage overlay = images.getSemanticAssetImage(d.overlayAssetId);
+                if (overlay != null) return overlay;
+                if (d.overlayAssetId != null && !d.overlayAssetId.isBlank()) return AssetManager.missingAssetImage(assetTypeForDescriptor(d));
+                overlay = images.getTile(d.overlayArtKey, ch);
+                if (overlay != null) return overlay;
+            }
+            BufferedImage primary = images.getSemanticAssetImage(d.primaryAssetId);
+            if (primary != null) return primary;
+            if (d.primaryAssetId != null && !d.primaryAssetId.isBlank()) return AssetManager.missingAssetImage(assetTypeForDescriptor(d));
+            primary = images.getTile(d.primaryArtKey, ch);
+            if (primary != null) return primary;
+            if (d.primaryArtKey != null && d.primaryArtKey.matches("road_.*_v[1-5]")) {
+                String base = d.primaryArtKey.replaceAll("_v[1-5]$", "");
+                primary = images.getTile(base, ch);
+                if (primary != null) return primary;
+            }
+            if (d.underlayArtKey != null) {
+                BufferedImage under = images.getSemanticAssetImage(d.underlayAssetId);
+                if (under != null) return under;
+                if (d.underlayAssetId != null && !d.underlayAssetId.isBlank()) return AssetManager.missingAssetImage(assetTypeForDescriptor(d));
+                under = images.getTile(d.underlayArtKey, d.underlayGlyph == null ? '.' : d.underlayGlyph.charValue());
+                if (under != null) return under;
+            }
+        }
+        return images.getTile(ch);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4977-4979
+Kind: method
+Name: drawCachedMapImage
+SHA256: b6252dd1e4b97ed809a32542a3b160606738df764196a5795706cc0d58741e3c
+
+```java
+    void drawCachedMapImage(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {
+        RenderImageScaleCacheAuthority.draw(g, img, x, y, w, h);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:4981-5030
+Kind: method
+Name: drawMapTileIcon
+SHA256: d2dcaccc4a12eb8e8f5f28fc77cb2d6f7663d2e0287f046dd532d658a9e495f5
+
+```java
+    void drawMapTileIcon(Graphics2D g, char ch, int worldX, int worldY, int px, int py, int w, int h, float alpha, boolean tintOwnership) {
+        if (ch == InterstitialInfrastructureApi.VOID_SPACE) {
+            Graphics2D voidG = (Graphics2D) g.create();
+            voidG.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.05f, Math.min(1.0f, alpha))));
+            voidG.setColor(Color.BLACK);
+            voidG.fillRect(px, py, w, h);
+            voidG.dispose();
+            return;
+        }
+        CompiledTileDescriptor descriptor = tileDescriptorForRenderedGlyph(ch, worldX, worldY);
+        BufferedImage img = semanticTileImageForRenderedGlyph(ch, worldX, worldY);
+        BufferedImage underlay = underlayImageForOverlayGlyph(ch, worldX, worldY);
+        boolean rotateCorridorEastWest = tileIconMode() && img != null && corridorArtRotatesEastWest(ch, worldX, worldY);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.05f, Math.min(1.0f, alpha))));
+        if (img != null) {
+            if (underlay != null) drawCachedMapImage(gg, underlay, px, py, w, h);
+            if (rotateCorridorEastWest) {
+                gg.rotate(Math.PI / 2.0, px + w / 2.0, py + h / 2.0);
+                drawCachedMapImage(gg, img, px, py, w, h);
+            } else drawCachedMapImage(gg, img, px, py, w, h);
+        }
+        else {
+            gg.setColor(colorForTile(worldX, worldY, ch));
+            gg.fillRect(px, py, w, h);
+            gg.setColor(new Color(0,0,0,120));
+            gg.drawRect(px, py, Math.max(1,w-1), Math.max(1,h-1));
+        }
+        if (tintOwnership) {
+            Faction owner = Faction.NONE;
+            if (isInClaimedRoom(worldX, worldY) && (ch == '.' || ch == '+' || ch == ',' || ch == '`' || ch == ';' || ch == ':' || ch == '=' || ch == '-' || ch == '~')) owner = activeFaction();
+            else if (world != null) owner = world.roomFaction(world.roomIdAt(worldX, worldY));
+            if (owner != Faction.NONE) overlayColor(gg, px, py, w, h, colorForFaction(owner), 0.22f);
+        }
+        if (isWallGlyphForArt(ch)) {
+            overlayColor(gg, px, py, w, h, new Color(16, 12, 8), 0.52f);
+            gg.setColor(new Color(70, 54, 34, 105));
+            gg.drawRect(px + 2, py + 2, Math.max(1, w - 5), Math.max(1, h - 5));
+        } else if (descriptor != null && descriptor.isRoad && !descriptor.isSidewalk) {
+            gg.setColor(new Color(10, 10, 12, 75));
+            gg.fillRect(px, py, w, h);
+            drawRoadDirectionLines(gg, descriptor.shape == null ? "north_south" : descriptor.shape, px, py, w, h);
+        } else if (descriptor != null && descriptor.isSidewalk) {
+            gg.setColor(new Color(20, 20, 18, 36));
+            gg.fillRect(px, py, w, h);
+        }
+        gg.setColor(new Color(0,0,0,90));
+        gg.drawRect(px, py, Math.max(1,w-1), Math.max(1,h-1));
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5033-5054
+Kind: method
+Name: drawRoadDirectionLines
+SHA256: 90e6fb814db669022216d9f41b43335aa2f222ed4fcf6924f516453dbe28822e
+
+```java
+    void drawRoadDirectionLines(Graphics2D g, String shape, int px, int py, int w, int h) {
+        int cx = px + w / 2;
+        int cy = py + h / 2;
+        boolean west = false, east = false, north = false, south = false;
+        if ("intersection".equals(shape)) { west = east = north = south = true; }
+        else if ("east_west".equals(shape)) { west = east = true; }
+        else if ("north_south".equals(shape)) { north = south = true; }
+        else if ("corner_west_north".equals(shape)) { west = true; north = true; }
+        else if ("corner_west_south".equals(shape)) { west = true; south = true; }
+        else if ("corner_east_north".equals(shape)) { east = true; north = true; }
+        else if ("corner_east_south".equals(shape)) { east = true; south = true; }
+        else if ("end_west".equals(shape)) west = true;
+        else if ("end_east".equals(shape)) east = true;
+        else if ("end_north".equals(shape)) north = true;
+        else if ("end_south".equals(shape)) south = true;
+        else { north = south = true; }
+        g.setColor(new Color(185, 165, 94, 145));
+        if (west) g.drawLine(px + 2, cy, cx, cy);
+        if (east) g.drawLine(cx, cy, px + w - 3, cy);
+        if (north) g.drawLine(cx, py + 2, cx, cy);
+        if (south) g.drawLine(cx, cy, cx, py + h - 3);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5056-5091
+Kind: method
+Name: drawMapObjectIcon
+SHA256: 94562e239ba98e7fd622225354aa8dd4288625c6a4b083eb6ef21ec111f8d6f0
+
+```java
+    void drawMapObjectIcon(Graphics2D g, BaseObject obj, int px, int py, int w, int h, Color tint) {
+        char symbol = obj == null ? '?' : obj.symbol;
+        String semanticKey = obj == null ? null : TileArtSystem.semanticKeyForBuildName(obj.name);
+        BufferedImage img = ObjectSemanticAssetAuthority.imageForBaseObject(obj);
+        if (img == null) img = images.getTile(semanticKey, symbol);
+        if (img != null) drawCachedMapImage(g, img, px, py, w, h);
+        else {
+            g.setColor(new Color(25,25,22)); g.fillRect(px, py, w, h);
+            g.setColor(new Color(180,210,150)); g.drawString(String.valueOf(symbol), px + Math.max(2,w/3), py + Math.max(12,(h*2)/3));
+        }
+        if (tint != null) {
+            Graphics2D gg = (Graphics2D) g.create();
+            overlayColor(gg, px, py, w, h, tint, Math.max(0.05f, Math.min(0.45f, tint.getAlpha()/255f)));
+            gg.dispose();
+        }
+        if (obj != null && obj.underConstruction) {
+            Graphics2D gg = (Graphics2D) g.create();
+            Color built = new Color(170, 230, 155);
+            Color stage = ProgressiveConstructionAuthority.constructionOverlayColor(obj, built);
+            overlayColor(gg, px, py, w, h, stage, Math.max(0.18f, Math.min(0.65f, stage.getAlpha()/255f)));
+            int pct = Math.max(0, Math.min(100, obj.constructionVisualProgress));
+            int barW = Math.max(4, w - 4);
+            int fillW = Math.max(0, (barW * pct) / 100);
+            int barX = px + 2;
+            int barY = py - Math.max(4, h / 7);
+            gg.setColor(new Color(0,0,0,180));
+            gg.fillRect(barX - 1, barY - 1, barW + 2, Math.max(4, h / 8) + 2);
+            gg.setColor(new Color(175, 220, 255, 230));
+            gg.fillRect(barX, barY, fillW, Math.max(3, h / 8));
+            gg.setColor(new Color(235, 245, 255, 220));
+            gg.drawRect(barX - 1, barY - 1, barW + 1, Math.max(4, h / 8) + 1);
+            gg.dispose();
+        }
+        g.setColor(obj != null && obj.underConstruction ? new Color(175,220,255) : new Color(205,235,180));
+        g.drawRect(px, py, Math.max(1,w-1), Math.max(1,h-1));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5094-5111
+Kind: method
+Name: drawMapFeatureIcon
+SHA256: 2b6a251c88bd9961085cdaf62c8505fe1fe7e8cd319867063891c897d3b076a7
+
+```java
+    void drawMapFeatureIcon(Graphics2D g, MapObjectState obj, int px, int py, int w, int h, Color tint) {
+        char symbol = obj == null ? '?' : obj.glyph;
+        String semanticKey = TileArtSystem.semanticKeyForMapObject(obj);
+        BufferedImage img = ObjectSemanticAssetAuthority.imageForMapObject(obj);
+        if (img == null) img = images.getTile(semanticKey, symbol);
+        if (img != null) drawCachedMapImage(g, img, px, py, w, h);
+        else {
+            g.setColor(new Color(18,24,20)); g.fillRect(px, py, w, h);
+            g.setColor(new Color(170,225,170)); g.drawString(String.valueOf(symbol), px + Math.max(2,w/3), py + Math.max(12,(h*2)/3));
+        }
+        if (tint != null) {
+            Graphics2D gg = (Graphics2D) g.create();
+            overlayColor(gg, px, py, w, h, tint, Math.max(0.05f, Math.min(0.40f, tint.getAlpha()/255f)));
+            gg.dispose();
+        }
+        g.setColor(new Color(190,230,180));
+        g.drawRect(px, py, Math.max(1,w-1), Math.max(1,h-1));
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5125-5133
+Kind: method
+Name: drawPlayerMapIcon
+SHA256: 58131cbfce1bd88e7bf6f811bc3bf6595453c78756dfffb80b82764a498617af
+
+```java
+    void drawPlayerMapIcon(Graphics2D g, int px, int py, int w, int h) {
+        BufferedImage face = activePortraitImage();
+        if (face != null) drawCachedMapImage(g, face, px, py, w, h);
+        else { g.setColor(Color.WHITE); g.drawString("@", px + Math.max(2,w/3), py + Math.max(12,(h*2)/3)); }
+        overlayColor(g, px, py, w, h, new Color(255,255,255), 0.10f);
+        g.setColor(new Color(245,245,245));
+        g.drawRect(px, py, Math.max(1,w-1), Math.max(1,h-1));
+        drawPlayerActionCountdownOverlay(g, px, py, w, h);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5164-5183
+Kind: method
+Name: drawNpcMapIcon
+SHA256: d69c5bc3aaa8c8b2a2db7157f7e45be6a91d7cdbfb3fc3a49fcbb81f6629e20b
+
+```java
+    void drawNpcMapIcon(Graphics2D g, NpcEntity npc, int px, int py, int w, int h) {
+        BufferedImage face = options.importedPortraits ? images.getNpcPortraitFor(npc) : null;
+        if (face != null) drawCachedMapImage(g, face, px, py, w, h);
+        else { g.setColor(npcColor(npc.faction)); g.fillRect(px, py, w, h); g.setColor(Color.BLACK); g.drawString(String.valueOf(npc == null ? '?' : npc.symbol), px + Math.max(2,w/3), py + Math.max(12,(h*2)/3)); }
+        overlayColor(g, px, py, w, h, npcColor(npc == null ? Faction.NONE : npc.faction), npc != null && npc.isAnimalActor() ? 0.14f : 0.22f);
+        int stroke = Math.max(1, Math.min(3, Math.max(w, h) / 22));
+        Stroke oldStroke = g.getStroke();
+        if (npc != null && npc.isAnimalActor()) {
+            g.setColor(npc.isPetActor() ? new Color(130, 220, 145) : new Color(105, 150, 95));
+            g.setStroke(new BasicStroke(stroke));
+            g.drawRoundRect(px + stroke/2, py + stroke/2, Math.max(1,w-stroke), Math.max(1,h-stroke), Math.max(4,w/5), Math.max(4,h/5));
+        } else {
+            Color rankColor = rankColor(npc == null ? 8 : npc.factionRank);
+            g.setColor(rankColor);
+            g.setStroke(new BasicStroke(stroke));
+            g.drawRect(px + stroke/2, py + stroke/2, Math.max(1,w-stroke), Math.max(1,h-stroke));
+            drawRankBadge(g, npc == null ? 8 : npc.factionRank, px, py, w, h);
+        }
+        g.setStroke(oldStroke);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5198-5236
+Kind: method
+Name: drawRankBadge
+SHA256: 08c095398f8330ba47ca919bce3b6706f43d6b9d568ef112a61a4c67cc743c24
+
+```java
+    void drawRankBadge(Graphics2D g, int rank, int px, int py, int w, int h) {
+        int r = Math.max(1, Math.min(8, rank));
+        int size = Math.max(8, Math.min(16, Math.min(w, h) / 2));
+        int bx = px + w - size - Math.max(1, w / 18);
+        int by = py + Math.max(1, h / 18);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        gg.setColor(new Color(0,0,0,190));
+        gg.fillRoundRect(bx, by, size, size, Math.max(3,size/3), Math.max(3,size/3));
+        gg.setColor(rankColor(r));
+        int cx = bx + size/2, cy = by + size/2;
+        int pad = Math.max(2, size/6);
+        if (r == 1) {
+            Polygon star = new Polygon();
+            for(int i=0;i<10;i++){ double a=-Math.PI/2 + i*Math.PI/5; int rad=(i%2==0)?size/2-pad:size/4; star.addPoint(cx+(int)Math.round(Math.cos(a)*rad), cy+(int)Math.round(Math.sin(a)*rad)); }
+            gg.fillPolygon(star);
+        } else if (r == 2) {
+            Polygon diamond = new Polygon(new int[]{cx,bx+size-pad,cx,bx+pad}, new int[]{by+pad,cy,by+size-pad,cy}, 4);
+            gg.fillPolygon(diamond);
+        } else if (r == 3) {
+            Polygon tri = new Polygon(new int[]{cx,bx+size-pad,bx+pad}, new int[]{by+pad,by+size-pad,by+size-pad}, 3);
+            gg.fillPolygon(tri);
+        } else if (r == 4) {
+            gg.fillRect(bx+pad, by+pad, Math.max(2,size-pad*2), Math.max(2,size-pad*2));
+        } else if (r == 5) {
+            Polygon chev = new Polygon(new int[]{bx+pad,cx,bx+size-pad,bx+size-pad,cx,bx+pad}, new int[]{by+size/2,by+pad,by+size/2,by+size-pad,by+size/2+pad,by+size-pad}, 6);
+            gg.fillPolygon(chev);
+        } else if (r == 6) {
+            gg.fillRoundRect(bx+pad, by+size/3, size-pad*2, Math.max(2,size/3), 2, 2);
+        } else if (r == 7) {
+            gg.fillOval(bx+pad, by+pad, Math.max(2,size-pad*2), Math.max(2,size-pad*2));
+        } else {
+            gg.drawLine(bx+pad, by+pad, bx+size-pad, by+size-pad);
+            gg.drawLine(bx+size-pad, by+pad, bx+pad, by+size-pad);
+        }
+        gg.setColor(new Color(255,255,230,210));
+        gg.drawRoundRect(bx, by, size-1, size-1, Math.max(3,size/3), Math.max(3,size/3));
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5238-5244
+Kind: method
+Name: overlayColor
+SHA256: aa0264b0853e69cf0e24051df8ed9b2e712a07101cbb1d7b03e1a1efbc6545ee
+
+```java
+    void overlayColor(Graphics2D g, int x, int y, int w, int h, Color c, float alpha) {
+        Composite old = g.getComposite();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0.0f, Math.min(1.0f, alpha))));
+        g.setColor(c);
+        g.fillRect(x, y, w, h);
+        g.setComposite(old);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5355-5368
+Kind: method
+Name: tacticalPromptLine
+SHA256: 594399f7ddb186eff184335260f10b3a9ca817ad27ed1c4983ccdfb1dad75e39
+
+```java
+    String tacticalPromptLine() {
+        return "Controls: "
+                + "WASD or arrows move"
+                + " | " + promptLabel(InputAction.PLAN_MOVE) + " plan move"
+                + " | " + promptLabel(InputAction.WAIT) + " wait"
+                + " | " + promptLabel(InputAction.LOOK) + " look"
+                + " | " + promptLabel(InputAction.INTERACT) + " interact"
+                + " | " + promptLabel(InputAction.INVENTORY) + " inventory"
+                + " | " + promptLabel(InputAction.CHARACTER) + " character"
+                + " | " + promptLabel(InputAction.BUILD) + " build"
+                + " | " + promptLabel(InputAction.MAP) + " map"
+                + " | F1 slate"
+                + " | " + promptLabel(InputAction.PAUSE) + " menu";
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5441-5449
+Kind: method
+Name: drawRightPanelFrame
+SHA256: 80fb8f5f06af6bfed9ad24ebc9f40916bff59a98428385fca5efdf02e5122637
+
+```java
+    void drawRightPanelFrame(Graphics2D g) {
+        Rectangle cmd = commandPanelRect();
+        g.setColor(new Color(4, 4, 5, 232));
+        g.fillRect(cmd.x, cmd.y, cmd.width, cmd.height);
+        drawSlicedFrame(g, cmd.x, cmd.y, cmd.width, cmd.height, "inner");
+        g.setFont(uiFont);
+        g.setColor(new Color(200, 184, 132));
+        center(g, "COMMANDS", cmd.x + cmd.width / 2, cmd.y + 30);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5451-5454
+Kind: method
+Name: drawPause
+SHA256: 5e4ec99d51a404e973ef68200cf370a8aadcea8282a62c2eaf9162b7c8019f47
+
+```java
+    void drawPause(Graphics2D g) {
+        g.setFont(titleFont); g.setColor(new Color(200,184,132)); center(g, "PAUSED", getWidth()/2, 135);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_MAIN)); center(g, "The sump holds its breath. Autosave watches from a cracked logic Engine.", getWidth()/2, 185);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5456-5480
+Kind: method
+Name: drawCaptureScreen
+SHA256: c5e7705c3dd996862dd4a838dceca522cefdd440c64cb9a9e896b3895ca86d57
+
+```java
+    void drawCaptureScreen(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(new Color(3, 8, 18, 238));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 42, 42, W-84, H-84, "inner");
+        g.setFont(titleFont);
+        g.setColor(new Color(105, 155, 230));
+        center(g, "CIVIC WARDENS CUSTODY REPORT", W/2, 105);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "Released from holding. Read what the law has done to you before limping onward.", W/2, 150);
+        ArrayList<String> lines = new ArrayList<>();
+        String report = (lastCustodyReportDetailed == null || lastCustodyReportDetailed.isBlank()) ? lastCrimePunishmentReport : lastCustodyReportDetailed;
+        for (String raw : report.split("\\n")) lines.add(raw);
+        lines.add("");
+        lines.add("Current carried Script: " + countMoney() + "   Banked Script: " + totalBankedCash() + "   Base stash: " + baseStashedScript + ".");
+        lines.add("Heat: " + gangHeat + "   Civic Wardens suspicion: " + suspicion + "   Next inspection: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesInspectionCooldownUntilTurn)) + ".");
+        lines.add("Next jail processing: " + TimeSurfaceApi.timeTextAtTurn(Math.max(turn, arbitesCaptureCooldownUntilTurn)) + ".");
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, lines, 86, 190, W-172, H-340, 0, "capturescreen");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "Press Enter/Space/Escape or click ACKNOWLEDGE to return to the arcology.", W/2, H-185);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5482-5502
+Kind: method
+Name: drawLostScreen
+SHA256: af70999c5d4ab8f2523ee22d89833ee11d562efca29330de47d79f04e8a7c6d1
+
+```java
+    void drawLostScreen(Graphics2D g) {
+        int W = getWidth(), H = getHeight();
+        g.setColor(new Color(8, 0, 0, 235));
+        g.fillRect(0, 0, W, H);
+        drawSlicedFrame(g, 42, 42, W-84, H-84, "inner");
+        g.setFont(titleFont);
+        g.setColor(new Color(230, 70, 55));
+        center(g, "YOU LOST", W/2, 105);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, lastDefeatSummary == null || lastDefeatSummary.isBlank() ? "The underhive has filed its final report." : lastDefeatSummary, W/2, 150);
+        ArrayList<String> lines = new ArrayList<>();
+        if (lastLossScoreLines == null || lastLossScoreLines.isEmpty()) lines.addAll(PlayerDefeatAndScoreAuthority.lossScoreLines(this));
+        else lines.addAll(lastLossScoreLines);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, lines, 86, 190, W-172, H-370, 0, "lostscreen");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, "Open the save/load menu to choose a manual or autosave slot, or quit and let the clerks inventory your bones.", W/2, H-185);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5504-5522
+Kind: method
+Name: drawScavengeTargetPanel
+SHA256: 5359b1d62a790f0a42958f35718f8904399441aee28619a002dff53bf9dc9fe1
+
+```java
+    void drawScavengeTargetPanel(Graphics2D g) {
+        UiLayout L = uiLayout();
+        Rectangle r = L.tactical;
+        drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
+        g.setColor(new Color(0,0,0,220));
+        g.fillRoundRect(r.x+10, r.y+10, r.width-20, r.height-20, 10, 10);
+        g.setFont(uiFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        g.drawString("TARGETED SCAVENGE", r.x+24, r.y+38);
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Choose what you are trying to find. Targeted searching improves odds for that category but still uses room and zone tables.");
+        lines.add("Concord Script begging is zone-dependent: noble and civic Ledger Office districts pay best but draw Civic Wardens attention; mutant/cultist zones disable it outright.");
+        lines.add("Last result: " + lastScavengeReport);
+        lines.add("Room cache: " + lastRoomCacheReport);
+        int yy = r.y + 64;
+        for(String line: TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(80, r.width - 52))) { if(yy < r.y+r.height-12) g.drawString(line, r.x+24, yy); yy += 17; }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5568-5574
+Kind: method
+Name: drawModalScrim
+SHA256: cb17dfa5880b26d9912d5e3c845a406dad84178550c46f7297fc6e3cd43fafa5
+
+```java
+    void drawModalScrim(Graphics2D g) {
+        // Hard reset for modal space.  This prevents older free-drawn GUI layers from
+        // visually stacking behind the current modal while preserving the persistent
+        // outer game wrapper underneath.
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 0, getWidth(), getHeight());
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5639-5653
+Kind: method
+Name: drawMiniStackIcon
+SHA256: 7f70b2dc935cc0e8042253aa1ace7bdda5b17625f9ceb36f3d0124a542f9a88e
+
+```java
+    void drawMiniStackIcon(Graphics2D g, String name, int x, int y, int sz) {
+        char glyph = '?';
+        boolean floorTileStack = name != null && name.startsWith("Floor tile:") && world != null && world.inBounds(playerX, playerY);
+        if (floorTileStack) glyph = world.tiles[playerX][playerY];
+        else if (name != null && name.toLowerCase(Locale.ROOT).contains("door")) glyph = '|';
+        else if (name != null && name.toLowerCase(Locale.ROOT).contains("crate")) glyph = 's';
+        BufferedImage img = floorTileStack ? tileImageForRenderedGlyph(glyph) : images.getItemIcon(name);
+        if (img == null) img = images.getTile(glyph);
+        g.setColor(new Color(12,14,12,235));
+        g.fillRect(x, y, sz, sz);
+        drawItemQualityFrame(g, name, x, y, sz, sz, false);
+        if (img != null) g.drawImage(img, x+3, y+3, Math.max(1,sz-6), Math.max(1,sz-6), null);
+        else { g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); g.setFont(smallFont); center(g, String.valueOf(glyph), x+sz/2, y+sz/2+5); }
+        drawItemQualityFrame(g, name, x, y, sz, sz, true);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5655-5683
+Kind: method
+Name: drawItemQualityFrame
+SHA256: 89593ce2bbacdd5d6c8fe5547d7605c7cff87508d0c091f1a9846162418e92ad
+
+```java
+    void drawItemQualityFrame(Graphics2D g, String item, int x, int y, int w, int h, boolean overlay) {
+        int tier = ItemQuality.tierIndex(item);
+        Color c;
+        switch (Math.max(0, Math.min(7, tier))) {
+            case 0: c = new Color(70,70,70, overlay ? 190 : 80); break;
+            case 1: c = new Color(118,90,70, overlay ? 190 : 80); break;
+            case 3: c = new Color(120,170,110, overlay ? 210 : 90); break;
+            case 4: c = new Color(110,165,220, overlay ? 220 : 100); break;
+            case 5: c = new Color(205,170,65, overlay ? 230 : 110); break;
+            case 6: c = new Color(185,105,225, overlay ? 230 : 110); break;
+            case 7: c = new Color(240,230,160, overlay ? 240 : 120); break;
+            default: c = new Color(110,95,62, overlay ? 170 : 70);
+        }
+        Stroke old = g.getStroke();
+        g.setColor(c);
+        if (overlay && tier >= 4) {
+            g.setStroke(new BasicStroke(Math.max(2f, Math.min(4f, w/13f))));
+            g.drawRoundRect(x+1, y+1, Math.max(1,w-3), Math.max(1,h-3), 8, 8);
+            if (tier >= 6) {
+                g.drawLine(x+4, y+4, x+Math.max(4,w/3), y+4);
+                g.drawLine(x+4, y+4, x+4, y+Math.max(4,h/3));
+                g.drawLine(x+w-5, y+h-5, x+w-Math.max(5,w/3), y+h-5);
+                g.drawLine(x+w-5, y+h-5, x+w-5, y+h-Math.max(5,h/3));
+            }
+        } else {
+            g.drawRect(x, y, Math.max(1,w), Math.max(1,h));
+        }
+        g.setStroke(old);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:5685-5743
+Kind: method
+Name: drawInventoryStackPanel
+SHA256: fb6c9fe4dc80ffb4b02781d695a51fcbfa0b7fb608c2d6f08ed80217dc02687c
+
+```java
+    void drawInventoryStackPanel(Graphics2D g) {
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(36, W/2 - Math.min(880, W-72)/2);
+        int y=Math.max(68, H/2 - Math.min(440, H-110)/2);
+        int w=Math.min(880, W - x*2);
+        int h=Math.min(440, H - y - 54);
+        g.setColor(new Color(4,5,5,245));
+        g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g,"INVENTORY",W/2,y+40);
+
+        ArrayList<String> summary = new ArrayList<>();
+        summary.add("Carry " + carryStatusText() + "   Move " + movementModeLabel() + " range " + movementModeRange() + " cost " + movementTurnCost() + "   Tile " + playerX + "," + playerY + " " + (world==null?"no world":describeTile(world.tiles[playerX][playerY])));
+        summary.add("Script " + countMoney() + " carried / " + totalBankedCash() + " banked / " + countBaseStoredScript() + " base stash   Food " + food + "/" + MAX_FOOD_WATER + "   Water " + water + "/" + MAX_FOOD_WATER + "   Supplies " + supplies + "   Parts " + machineParts);
+        drawTextPanel(g, x+24, y+56, w-48, 58, summary, false);
+
+        int gap=Math.max(12, scaled(12));
+        int top=y+128;
+        int bottomBoxH=Math.max(78, Math.min(108, h/4));
+        int colH=Math.max(110, h - (top-y) - bottomBoxH - 26);
+        int actionW=Math.max(150, Math.min(210, w/4));
+        int invW=Math.max(180, (w - 52 - actionW - gap*2)/2);
+        int targetW=Math.max(180, w - 52 - actionW - gap*2 - invW);
+        int invX=x+24;
+        int targetX=invX+invW+gap;
+        int actionX=targetX+targetW+gap;
+        drawPanelBox(g, invX, top, invW, colH, (inventoryTargetColumnActive ? "CURRENT INVENTORY" : "▶ CURRENT INVENTORY"));
+        drawPanelBox(g, targetX, top, targetW, colH, (inventoryTargetColumnActive ? "▶ TARGET / FLOOR TILE" : "TARGET / FLOOR TILE"));
+        if (!inventoryTargetColumnActive) { g.setColor(new Color(235,205,120,180)); g.drawRoundRect(invX+4, top+34, invW-8, colH-40, 8, 8); }
+        else { g.setColor(new Color(235,205,120,180)); g.drawRoundRect(targetX+4, top+34, targetW-8, colH-40, 8, 8); }
+        drawPanelBox(g, actionX, top, actionW, colH, "ACTIONS");
+
+        LinkedHashMap<String,Integer> invStacks=displayedInventoryStacks();
+        LinkedHashMap<String,Integer> targetStacks=currentTargetInventoryStacks();
+        selectedInventoryIndex=Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, invStacks.size()-1)));
+        selectedTargetInventoryIndex=Math.max(0, Math.min(selectedTargetInventoryIndex, Math.max(0, targetStacks.size()-1)));
+        g.setFont(smallFont);
+        drawInventoryIconGrid(g, invStacks, selectedInventoryIndex, invX+12, top+48, invW-24, colH-60, "carried");
+        drawInventoryIconGrid(g, targetStacks, selectedTargetInventoryIndex, targetX+12, top+48, targetW-24, colH-60, "target");
+
+        String sel = inventoryTargetColumnActive ? null : selectedInventoryStackName();
+        String target = inventoryTargetColumnActive ? selectedTargetInventoryName() : null;
+        int infoY=top+colH+12;
+        drawSlicedFrame(g, x+24, infoY, w-48, bottomBoxH, "inner");
+        g.setColor(new Color(0,0,0,220));
+        g.fillRoundRect(x+34, infoY+10, w-68, bottomBoxH-20, 10, 10);
+        drawMiniStackIcon(g, sel == null ? target : sel, x+44, infoY+20, Math.max(42, bottomBoxH-40));
+        ArrayList<String> info=new ArrayList<>();
+        if (sel != null) {
+            info.addAll(inventoryItemDetailLines(sel, false));
+        } else if (target != null) {
+            info.addAll(inventoryItemDetailLines(target, true));
+        } else info.add("No carried item or target item selected.");
+        g.setFont(smallFont);
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        drawScrollableWrappedLines(g, info, x+104, infoY+30, w-150, bottomBoxH-42, inventoryItemDescriptionScroll, "inventory-info");
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6037-6064
+Kind: method
+Name: drawEquipmentSlots
+SHA256: e0f213c56fbc5c8e1db1292f170cfed12d4c99c2fbbdbd94f7aaeb5c7f9c639e
+
+```java
+    void drawEquipmentSlots(Graphics2D g, int x, int y, int w, int h) {
+        g.setFont(smallFont);
+        Shape old = g.getClip();
+        g.setClip(x, y, Math.max(1,w), Math.max(1,h));
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "EQUIPMENT", x + w/2, y + 22);
+        String[] names = equipmentSlotNames();
+        int rowH = Math.max(32, Math.min(42, (h - 36) / Math.max(1, names.length)));
+        for (int i=0; i<names.length; i++) {
+            int ry = y + 34 + i * rowH;
+            boolean selected = i == selectedEquipmentSlotIndex;
+            g.setColor(selected ? new Color(64,50,28,230) : new Color(14,16,15,225));
+            g.fillRoundRect(x+6, ry, w-12, rowH-5, 8, 8);
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : new Color(112,94,58));
+            g.drawRoundRect(x+6, ry, w-12, rowH-5, 8, 8);
+            int icon = Math.max(20, Math.min(30, rowH-8));
+            g.setColor(new Color(7,8,7,235));
+            g.fillRect(x+12, ry+4, icon, icon);
+            g.setColor(selected ? optionColor(GameOptions.TEXT_HIGHLIGHT) : new Color(120,105,70));
+            g.drawRect(x+12, ry+4, icon, icon);
+            String item = equippedItemForSlot(i);
+            String label = names[i] + ": " + (item == null || item.isBlank() ? "empty" : item);
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(label, g.getFontMetrics(), w - icon - 32), x + 18 + icon, ry + rowH/2 + 5);
+        }
+        g.setClip(old);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6066-6123
+Kind: method
+Name: drawCharacterDossierPanel
+SHA256: 038a9a245dc2d63fa49f5e1955666e8e91b4f00f39581d1eda325d079a60dae9
+
+```java
+    void drawCharacterDossierPanel(Graphics2D g) {
+        int W=getWidth(), H=getHeight();
+        int x=Math.max(24, W/45), y=Math.max(44, H/18), w=W-x*2, h=H-y-46;
+        g.setColor(new Color(5,6,6,248));
+        g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        stampUiFrameId(g, "F", "character-dossier", x, y, w, h);
+        g.setFont(titleFont);
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g,"CHARACTER DOSSIER",W/2,y+40);
+
+        int gutter = Math.max(14, scaled(14));
+        int contentTop = y + 68;
+        int contentH = h - 96;
+        int leftW = Math.max(190, Math.min(240, w / 5));
+        int rightW = Math.max(390, Math.min(500, w / 3));
+        int textX = x + gutter + leftW + gutter;
+        int paperX = x + w - gutter - rightW;
+        int textW = Math.max(260, paperX - textX - gutter);
+
+        int portraitSize = Math.min(170, Math.max(128, leftW - 24));
+        int portraitX = x + gutter + (leftW - portraitSize) / 2;
+        int portraitY = contentTop;
+        drawSlicedFrame(g, portraitX, portraitY, portraitSize, portraitSize, "inner");
+        if (active != null) {
+            Graphics2D pg = (Graphics2D) g.create();
+            double scale = (portraitSize - 20) / 150.0;
+            pg.translate(portraitX + 10, portraitY + 8);
+            pg.scale(scale, scale);
+            drawPortrait(pg, 0, 0, active);
+            pg.dispose();
+        }
+        int survivalY = portraitY + portraitSize + gutter;
+        drawSurvivalStateTab(g, x + gutter, survivalY, leftW, Math.max(128, contentTop + contentH - survivalY));
+
+        drawSlicedFrame(g, textX, contentTop, textW, contentH, "inner");
+        stampUiFrameId(g, "F", "character-dossier-text", textX, contentTop, textW, contentH);
+        ArrayList<String> lines=new ArrayList<>();
+        if(active!=null){
+            lines.add(active.name+" — "+active.job);
+            lines.add("Carry load: "+carryStatusText());
+            lines.add("Faction identity: "+equippedClothing.alignedFaction.label+" via "+equippedClothing.name+".");
+            lines.add("Equipment: head " + emptySlotLabel(equippedHeadgearItem) + "; armor " + emptySlotLabel(equippedArmorItem) + "; left " + emptySlotLabel(equippedLeftHandItem) + "; right " + emptySlotLabel(equippedRightHandItem) + "; pack " + emptySlotLabel(equippedBackpackItem) + ".");
+            lines.add("Defense estimate: clothing " + (equippedClothing == null ? 0 : equippedClothing.defense) + ", armor/headgear " + playerEquippedArmorBonus() + ".");
+            lines.add("Stats");
+            for(Map.Entry<String,Integer> e:active.stats.entrySet()) lines.add(String.format("  %-12s %2d", e.getKey()+":", e.getValue()));
+            lines.add("Body endurance / agility / equipment");
+            for(BodyPart bp: active.body.values()) lines.add("  "+bp.displayLine());
+            lines.add("Vital body locations use endurance as their current structural life pool. Reserved augments and armor will attach to these slots.");
+            lines.add("Attribute links: Head controls Intellect, Nerve, Vision, Hearing, Firearms. Hands and head govern Mechanics. Arms and hands govern Melee. Torso governs Faith. Limbs and torso govern Strength.");
+        } else lines.add("No active character.");
+        drawScrollableWrappedLines(g, lines, textX + 18, contentTop + 18, textW - 48, contentH - 36, characterScroll, "character");
+
+        drawSlicedFrame(g,paperX,contentTop,rightW,contentH,"inner");
+        int dollW = Math.max(170, Math.min(220, rightW / 2));
+        drawPaperDoll(g,paperX+12,contentTop+18,dollW,contentH-36);
+        drawEquipmentSlots(g, paperX+dollW+20, contentTop+18, Math.max(150, rightW-dollW-32), contentH-36);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6153-6172
+Kind: method
+Name: drawFactionRelationsPanel
+SHA256: dfc258808a3435635381ea88ac81a0a6d7cb2ea187ad990c022fe4cef76faf73
+
+```java
+    void drawFactionRelationsPanel(Graphics2D g){
+        int W=getWidth(),H=getHeight(); int x=70,y=82,w=W-140,h=H-155;
+        g.setColor(new Color(5,6,6,246)); g.fillRect(x,y,w,h); drawSlicedFrame(g,x,y,w,h,"inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"FACTION RELATIONS",W/2,y+44);
+        String[][] groups={
+            factionGroup(Faction.HIVER,Faction.HIVER_BLOCK_AUREL,Faction.HIVER_BLOCK_MARROW,Faction.HIVER_BLOCK_SUMPLEDGER),
+            factionGroup(Faction.BANDIT,Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH),
+            factionGroup(Faction.NOBLE,Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY),
+            factionGroup(Faction.SCAVENGER,Faction.CIVIC_LEDGER_OFFICE,Faction.CIVIC_WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANIST_COLLEGIA),
+            factionGroup(Faction.MUTANT,Faction.CULTIST,Faction.ROGUE_MACHINE,Faction.HERETIC)
+        };
+        String[] titles={"HIVER BLOCKS","GANGS","NOBLE HOUSES","CIVIL / LAW","OUTCASTS"};
+        int colW=(w-70)/5; int startY=y+96;
+        for(int c=0;c<5;c++){
+            int cx=x+30+c*colW; drawSlicedFrame(g,cx,startY,colW-14,h-130,"inner");
+            g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, GuiLayoutApi.fitLabel(titles[c], g.getFontMetrics(), colW-34), cx+(colW-14)/2,startY+30);
+            ArrayList<String> ls=new ArrayList<>(); for(String v:groups[c]) ls.add("  "+v);
+            drawScrollableWrappedLines(g,ls,cx+14,startY+62,colW-42,h-202,factionScroll,"factions");
+        }
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6174-6221
+Kind: method
+Name: drawDiegeticMapPanel
+SHA256: b5d425af8618f8e5716baf6175bdceb4192f17e48bc962a69a16d569e0872a81
+
+```java
+    void drawDiegeticMapPanel(Graphics2D g){
+        int W=getWidth(),H=getHeight(); int x=62,y=82,w=W-124,h=H-155;
+        g.setColor(new Color(5,6,6,246)); g.fillRect(x,y,w,h); drawSlicedFrame(g,x,y,w,h,"inner");
+        int leftW=Math.max(300, w/3); int rx=x+leftW+24; int rw=w-leftW-48;
+        drawSlicedFrame(g,x+18,y+72,leftW,h-105,"inner");
+        drawSlicedFrame(g,rx,y+72,rw,h-105,"inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,mapTab==0?"SECTOR MAP":"ROOM INTEL",W/2,y+44);
+        ArrayList<String> info=new ArrayList<>();
+        if(mapTab==0){
+            info.add("Current slice: "+MapLayerSurfaceAuthority.label(mapLayerView));
+            if(atlas != null){
+                info.add("Arcology world: " + atlas.hiveWorld.hiveName + " [" + atlas.hiveWorld.worldId + "]");
+                info.add("Worldgen progress: " + atlas.hiveWorld.progressSummary());
+                info.addAll(WorldGenerationProgressApi.progressLines(atlas.hiveWorld));
+            }
+            if(world != null){
+                info.add("Current named sector: " + world.sectorName);
+                info.add("Current named zone: " + world.zoneName);
+                info.addAll(contractObjectiveGuidanceLines());
+                info.add("Compact zone history: " + world.zoneHistory);
+                String zkey = atlas.hiveWorld.zoneKey(world.sectorX, world.sectorY, world.zoneX, world.zoneY, world.floor, world.sewerLayer);
+                info.add("Faction-control epochs:");
+                for(String line : WorldHistoryApi.epochLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Facility establishment ledger:");
+                for(String line : ZoneFacilityHistoryApi.facilityLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Production output ledger:");
+                for(String line : ProductionFacilityOutputSimulationApi.productionLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Stock movement ledger:");
+                for(String line : ProductionDistributionApi.stockMovementLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Conflict/loss/abandonment ledger:");
+                for(String line : HistoricalConflictLossApi.conflictLossLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Concrete historical item materialization ledger:");
+                for(String line : HistoricalItemMaterializationApi.materializedItemLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Population work assignment / facility labor ledger:");
+                for(String line : PopulationWorkAssignmentApi.laborAssignmentLines(atlas.hiveWorld, zkey)) info.add("- " + line);
+                info.add("Active-zone topology map/intel bridge:");
+                for(String line : EconomicTopologyMapIntelBridgeAuthority.mapPanelLines(this)) info.add("- " + line);
+            }
+            info.add("Map is diegetic: it shows what the character knows about the sector slice, with fog-of-war hiding unvisited certainty.");
+            info.add("Zone icons show rough types. Arrows show known adjacency. Doors that would lead outside the sector terminate in interwall voids: bottomless pits, crawl ways, and gangways no sane human enters.");
+            info.add("Message for invalid outside-sector exits: The crawl ways and interwall spaces are no place for humans.");
+        } else {
+            info.add("Room and scavenge descriptors live here, not over the sector map.");
+            if(world!=null) info.addAll(visibleRoomIntelLines());
+        }
+        drawScrollableWrappedLines(g,info,x+38,y+118,leftW-40,h-165,mapInfoScroll,"map-info");
+        drawSectorGrid(g,rx+32,y+118,rw-64,h-165);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6223-6242
+Kind: method
+Name: drawSectorGrid
+SHA256: 06e3986edcd19be3f94a70ce520bab36997bb5a786f69b1799f21befec2b850b
+
+```java
+    void drawSectorGrid(Graphics2D g,int x,int y,int w,int h){
+        g.setFont(uiFont); int cell=Math.max(64, Math.min(w,h)/3-18); int gridW=cell*3+36, gridH=cell*3+36; int ox=x+(w-gridW)/2, oy=y+(h-gridH)/2;
+        for(int yy=0;yy<3;yy++) for(int xx=0;xx<3;xx++){
+            ZoneType zt = zoneTypeForMapCell(xx+1, yy+1, mapLayerView);
+            String icon = MapLayerSurfaceAuthority.iconForZoneType(zt);
+            String name = zt.label;
+            boolean current = atlas != null && atlas.zoneX == xx+1 && atlas.zoneY == yy+1 && MapLayerSurfaceAuthority.displayLayerIndex(atlas.floor, atlas.sewer) == mapLayerView;
+            int px=ox+xx*(cell+18), py=oy+yy*(cell+18);
+            g.setColor(new Color(10,12,12)); g.fillRoundRect(px,py,cell,cell,10,10);
+            g.setColor(current ? new Color(245,220,130) : factionUiColorForZone(zt)); g.drawRoundRect(px,py,cell,cell,10,10);
+            if(current){ g.drawRoundRect(px+3,py+3,cell-6,cell-6,8,8); }
+            drawContractObjectiveMarker(g, xx + 1, yy + 1, mapLayerView, px, py, cell);
+            g.setFont(titleFont); g.setColor(factionUiColorForZone(zt)); center(g,icon,px+cell/2,py+cell/2-2);
+            g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            drawCenteredZoneLabel(g, name, px+6, py+cell-34, cell-12, 28);
+            if(xx<2){ g.setColor(new Color(210,190,120)); g.drawString("→",px+cell+5,py+cell/2); }
+            if(yy<2){ g.setColor(new Color(210,190,120)); center(g,"↓",px+cell/2,py+cell+18); }
+        }
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, "Selected slice: " + MapLayerSurfaceAuthority.label(mapLayerView), x+w/2, y+20);
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6285-6295
+Kind: method
+Name: readableContractRoute
+SHA256: 02b9486ed02b4e4e8749e0f5bca3e3e44a552b3b3c226559605d95b6b7f54308
+
+```java
+    String readableContractRoute(ContractZoneTarget target) {
+        if (target == null) return "nearby contract zone";
+        String layer = target.sewer ? "sewer route" : "surface route";
+        if (atlas != null && target.sectorX == atlas.sectorX && target.sectorY == atlas.sectorY) {
+            int dx = target.zoneX - atlas.zoneX;
+            int dy = target.zoneY - atlas.zoneY;
+            String direction = dx == 0 && dy == 0 ? "this zone" : (Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? "east" : "west") : (dy > 0 ? "south" : "north"));
+            return layer + " " + direction + " on floor " + target.floor;
+        }
+        return layer + " in a neighboring sector on floor " + target.floor;
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6336-6354
+Kind: method
+Name: drawCenteredZoneLabel
+SHA256: 48cc36a9492643327a57b95e617d6d00d3ffc21d47edc07734256854c36fff4b
+
+```java
+void drawCenteredZoneLabel(Graphics2D g, String text, int x, int y, int w, int h){
+        FontMetrics fm = g.getFontMetrics();
+        ArrayList<String> lines = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for(String part : text.split(" ")){
+            String trial = line.length()==0 ? part : line + " " + part;
+            if(fm.stringWidth(trial) > w && line.length()>0){ lines.add(line.toString()); line = new StringBuilder(part); }
+            else line = new StringBuilder(trial);
+        }
+        if(line.length()>0) lines.add(line.toString());
+        int maxLines = Math.max(1, h / Math.max(1, fm.getHeight()));
+        while(lines.size() > maxLines){
+            String last = lines.remove(lines.size()-1);
+            if(!lines.isEmpty()) lines.set(lines.size()-1, lines.get(lines.size()-1) + " …");
+            else { lines.add(last); break; }
+        }
+        int startY = y + Math.max(fm.getAscent(), (h - lines.size()*fm.getHeight())/2 + fm.getAscent());
+        for(int i=0;i<lines.size();i++) center(g, lines.get(i), x+w/2, startY + i*fm.getHeight());
+    }
+```
+
+---
+Source: gamepanel-shard6.txt:6400-6414
+Kind: method
+Name: getScrollValue
+SHA256: fcb88360cd2697639bcd1137d24a7888c01aa43f7fa18d69cebbc4014413e470
+
+```java
+    int getScrollValue(String tag){
+        switch(tag){
+            case "job-dossier": case "job-list": return jobDossierScroll;
+            case "inventory": return inventoryScroll;
+            case "inventory-info": return inventoryItemDescriptionScroll;
+            case "look-stack": return lookStackScroll;
+            case "character": return characterScroll;
+            case "factions": return factionScroll;
+            case "bases": return baseManagementScroll;
+            case "map-info": return mapInfoScroll;
+            case "infopedia-list": return infopediaScroll;
+            case "infopedia-detail": return infopediaDetailScroll;
+            default: return 0;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:48-66
+Kind: method
+Name: drawZoneSplash
+SHA256: d3c26a9092a221bf9b1436927b840d8e93f2b1efc88e82db0b972541ee9bb605
+
+```java
+    void drawZoneSplash(Graphics2D g) {
+        int W=getWidth(), H=getHeight();
+        g.setColor(new Color(4,5,6)); g.fillRect(0,0,W,H);
+        drawSlicedFrame(g, 70, 70, W-140, H-140, "inner");
+        g.setFont(titleFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        center(g, GuiLayoutApi.fitLabel(zoneSplashTitle == null || zoneSplashTitle.isEmpty() ? "FIRST IMPRESSION" : zoneSplashTitle, g.getFontMetrics(), W-180), W/2, 130);
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_DIM));
+        center(g, GuiLayoutApi.fitLabel(zoneSplashMeta == null ? "" : zoneSplashMeta, g.getFontMetrics(), W-180), W/2, 162);
+        g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        int bodyX = 104, bodyW = Math.max(260, W - 208);
+        int bodyY = 184;
+        int bodyH = Math.max(80, H - 330);
+        Shape oldSplashClip = g.getClip();
+        g.setClip(bodyX, bodyY, bodyW, bodyH);
+        drawFrameWrappedCenteredText(g, zoneSplashBody, bodyX + 12, bodyY + 26, bodyW - 24, bodyH - 34, uiFont);
+        g.setClip(oldSplashClip);
+        g.setFont(smallFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(g, "Press ENTER, SPACE, or click to continue into the zone.", W/2, H-115);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:68-70
+Kind: method
+Name: drawLoading
+SHA256: 1e0e22484f0f83c274e851a0c901b07c32b86b68fd8a77ffe023f7adcffe033b
+
+```java
+                                                                                                                                                                                                                                    void drawLoading(Graphics2D g) {
+        loadingSurfacePainter.paint(g, this);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:126-162
+Kind: method
+Name: drawCombatTargetDetailPanel
+SHA256: 3815c51cc913bdeae7100841c38a353bfe4f9fbae4203546fcb85ae69e9bb59c
+
+```java
+    void drawCombatTargetDetailPanel(Graphics2D g) {
+        int x = 145, y = 12, w = getWidth() - 380, h = 170;
+        int tx = combatCursorActive ? combatX : playerX;
+        int ty = combatCursorActive ? combatY : playerY;
+        TargetingSolution ts = targetingSolutionAt(tx, ty);
+        g.setColor(new Color(14, 4, 6, 240)); g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "combat-target-detail", x, y, w, h);
+        g.setFont(uiFont); g.setColor(new Color(245, 90, 80));
+        g.drawString("TARGETING / ATTACK — RED RETICLE", x + 14, y + 27);
+        g.setFont(smallFont); g.setColor(new Color(225, 195, 170));
+        String combatHeader = "Cursor " + tx + "," + ty + " | Weapon " + ts.weaponName + " | Mode " + fireModeLabel() + " | Range " + ts.distance + "/" + ts.range + " | Hit " + ts.hitPercent + "%";
+        java.util.List<String> combatHeaderLines = TextLayoutAuthority.wrapPixels(g, g.getFont(), combatHeader, Math.max(80, w - 32));
+        int combatHeaderY = y + 52;
+        for (int i = 0; i < Math.min(2, combatHeaderLines.size()); i++) {
+            g.drawString(combatHeaderLines.get(i), x + 14, combatHeaderY + i * Math.max(14, g.getFontMetrics().getHeight()));
+        }
+        int bodyTop = y + 66 + (combatHeaderLines.size() > 1 ? Math.max(14, g.getFontMetrics().getHeight()) : 0);
+        g.setColor(new Color(0,0,0,180)); g.fillRect(x + 14, bodyTop, w - 28, Math.max(24, y + h - bodyTop - 16));
+        g.setColor(new Color(115, 45, 42)); g.drawRect(x + 14, bodyTop, w - 28, Math.max(24, y + h - bodyTop - 16));
+        int yy = bodyTop + 20;
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(ts.summaryLine());
+        lines.add("Line: " + ts.coverSummary);
+        lines.add("Ammo/load: " + (ts.ranged ? (ts.loadedShots + "/" + ts.magazineCapacity + " loaded; " + ts.ammoItem + " x" + countInventory(ts.ammoItem) + "; attack cost " + ts.ammoCost) : "melee/no magazine") + ".");
+        lines.add("Cover penalty -" + ts.coverPenalty + "; darkness/light penalty -" + ts.darknessPenalty + "; shield mitigation estimate " + ts.shieldReduction + "%; movement/aim state " + activeMotionStateLabel() + " mod " + playerAttackMotionSkillModifier() + ".");
+        lines.add("Move reticle with WASD/arrows. F cycles fire mode. X reloads. Enter/Space confirms. ESC cancels.");
+        for (String line : lines) {
+            g.setColor(line.startsWith("Line:") ? new Color(215, 170, 130) : new Color(235, 215, 185));
+            for (String wrapped : TextLayoutAuthority.wrapPixels(g, g.getFont(), line, Math.max(80, w - 52))) {
+                if (yy > y + h - 10) break;
+                g.drawString(wrapped, x + 22, yy);
+                yy += 16;
+            }
+            if (yy > y + h - 10) break;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:164-240
+Kind: method
+Name: drawLookDetailPanel
+SHA256: 30eabbaf73ca8e218c6bf6ecda5fa9ad6626c805df6cf1d24c6a23ee128751fc
+
+```java
+    void drawLookDetailPanel(Graphics2D g) {
+        UiLayout L = uiLayout();
+        int x = Math.max(18, L.map.x);
+        int h = Math.max(190, Math.min(320, Math.max(getHeight() / 3, L.tactical.height + 54)));
+        int preferredY = L.map.y + L.map.height + 4;
+        int y = Math.min(Math.max(12, preferredY), Math.max(12, getHeight() - h - 24));
+        if (preferredY + h > getHeight() - 24) y = Math.max(L.map.y + 8, getHeight() - h - 24);
+        int w = Math.max(360, Math.min(L.map.width, getWidth() - x - 30));
+        int tx = lookCursorActive ? lookX : playerX;
+        int ty = lookCursorActive ? lookY : playerY;
+        boolean vis = isVisible(tx, ty);
+        boolean rem = isRemembered(tx, ty);
+        ArrayList<String> stack = tileStackAt(tx, ty);
+        if (!stack.isEmpty()) lookStackIndex = Math.max(0, Math.min(lookStackIndex, stack.size()-1));
+        g.setColor(new Color(8, 8, 10, 235)); g.fillRect(x, y, w, h);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "look-detail", x, y, w, h);
+        Shape oldClip = g.getClip();
+        g.setClip(x + 8, y + 8, Math.max(1, w - 16), Math.max(1, h - 16));
+        g.setFont(uiFont); g.setColor(new Color(220, 200, 140));
+        g.drawString("AUSPEX / LOOK — TILE STACK", x + 14, y + 27);
+        g.setFont(smallFont); g.setColor(new Color(205, 198, 165));
+        String seen = vis ? "VISIBLE" : (rem ? "REMEMBERED" : "UNKNOWN FOG");
+        int lookHeaderY = y + 50;
+        int lookHeaderLines = 0;
+        for (String wrapped : TextLayoutAuthority.wrapPixels(g, g.getFont(), "Cursor " + tx + "," + ty + " | " + seen + " | Arrows move selector | Wheel/Page scroll details | [/] cycles stacked contents", Math.max(80, w - 40))) {
+            if (lookHeaderLines >= 2) break;
+            g.drawString(wrapped, x + 14, lookHeaderY + lookHeaderLines * Math.max(12, g.getFontMetrics().getHeight()));
+            lookHeaderLines++;
+        }
+        int listX = x + 14, listY = y + 58 + Math.max(1, lookHeaderLines) * Math.max(12, g.getFontMetrics().getHeight()), listW = w - 28, listH = y + h - 14 - listY;
+        int iconColW = Math.max(58, Math.min(84, listH - 8));
+        int iconPaneX = listX + 10;
+        int iconPaneY = listY + 10;
+        int textX = iconPaneX + iconColW + 16;
+        int textW = Math.max(180, listX + listW - textX - 14);
+        g.setColor(new Color(0,0,0,180)); g.fillRect(listX, listY, listW, listH);
+        g.setColor(new Color(105, 92, 58)); g.drawRect(listX, listY, listW, listH);
+        g.setColor(new Color(22, 20, 15, 225)); g.fillRoundRect(iconPaneX - 2, iconPaneY - 2, iconColW + 4, Math.min(iconColW + 4, listH - 20), 8, 8);
+        g.setColor(new Color(105, 92, 58)); g.drawRoundRect(iconPaneX - 2, iconPaneY - 2, iconColW + 4, Math.min(iconColW + 4, listH - 20), 8, 8);
+        NpcEntity lookedNpc = (world != null && vis) ? world.npcAt(tx, ty) : null;
+        IntentReadResult intent = lookedNpc == null ? null : intentReadFor(lookedNpc);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("TILE: " + describeTile(world != null && world.inBounds(tx, ty) ? world.tiles[tx][ty] : ' '));
+        lines.add("OWNERSHIP: " + ownershipText(tx, ty));
+        if (world != null && world.inBounds(tx, ty)) {
+            lines.add("LIGHT/NOISE: light " + lightLevelAt(tx, ty) + " | noise cover " + localNoiseFieldAt(tx, ty) + " | room " + world.roomIdAt(tx, ty));
+            MapObjectState mo = world.mapObjectAt(tx, ty);
+            if (mo != null) lines.add("FIXTURE: " + (mo.label == null || mo.label.isBlank() ? mo.type : mo.label));
+            BaseObject bo = baseObjectAt(tx, ty);
+            if (bo != null) lines.add("BASE OBJECT: " + bo.name + " | attention " + bo.attention + " | cost " + bo.cost);
+        }
+        if (lookedNpc != null) {
+            if (lookedNpc.isAnimalActor()) {
+                lines.add("ANIMAL: " + lookedNpc.animalLine());
+                for (String petLine : petCareReadabilityLines(lookedNpc, tx, ty, true)) lines.add("PET: " + petLine);
+            }
+            else {
+                AgeAndWorldTimeAuthority.synchronizeNpc(lookedNpc, worldTurn);
+                lines.add("AGE: " + lookedNpc.ageYears + " years / " + lookedNpc.ageBand);
+                lines.add("RANK: " + (lookedNpc.isMinorActor() ? "member only — no formal rank before 16" : ("Rank " + lookedNpc.factionRank + " — " + lookedNpc.factionRankTitle)) + " [Infopedia: " + lookedNpc.faction.label + " ranks]");
+            }
+        }
+        if (intent != null && intent.available) lines.add("INTENT: " + intent.summary);
+        if (!stack.isEmpty()) lines.add((lookStackIndex + 1) + "/" + stack.size() + "  " + stack.get(lookStackIndex));
+        if (stack.size() > 1) {
+            for (int si = 0; si < stack.size(); si++) if (si != lookStackIndex) lines.add("STACK " + (si + 1) + ": " + TextSurfaceApi.ellipsize(stack.get(si), 120));
+            int prev = Math.max(0, lookStackIndex - 1);
+            int next = Math.min(stack.size() - 1, lookStackIndex + 1);
+            if (prev != lookStackIndex) lines.add("Prev: " + TextSurfaceApi.ellipsize(stack.get(prev), 80));
+            if (next != lookStackIndex) lines.add("Next: " + TextSurfaceApi.ellipsize(stack.get(next), 80));
+        }
+        g.setFont(smallFont);
+        drawLookStackIconForIndex(g, tx, ty, lookStackIndex, iconPaneX, iconPaneY, Math.min(iconColW, listH - 22));
+        drawScrollableWrappedLines(g, lines, textX, listY + 10, textW, listH - 20, lookStackScroll, "look-stack");
+        g.setClip(oldClip);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:242-261
+Kind: method
+Name: drawLookStackIconForIndex
+SHA256: 2ee197ee9d35105adfd6669d3443b43d7f2b27361ad2a20570016b004f3a69c4
+
+```java
+    void drawLookStackIconForIndex(Graphics2D g, int tx, int ty, int index, int x, int y, int size) {
+        if (world == null || !world.inBounds(tx, ty) || size <= 0) return;
+        ArrayList<String> stack = tileStackAt(tx, ty);
+        String line = (index >= 0 && index < stack.size()) ? stack.get(index) : "";
+        BufferedImage img = null;
+        char glyph = world.tiles[tx][ty];
+        NpcEntity npc = world.npcAt(tx, ty);
+        BaseObject obj = baseObjectAt(tx, ty);
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (line.startsWith("ENTITY:") && npc != null) img = images.getNpcPortraitFor(npc);
+        else if (line.startsWith("BASE OBJECT:") && obj != null) { img = ObjectSemanticAssetAuthority.imageForBaseObject(obj); }
+        else if (line.startsWith("FIXTURE:") && mos != null) { img = ObjectSemanticAssetAuthority.imageForMapObject(mos); }
+        else img = tileImageForRenderedGlyph(glyph);
+        g.setColor(new Color(8, 10, 9, 235));
+        g.fillRect(x, y, size, size);
+        g.setColor(new Color(230,205,120));
+        g.drawRect(x, y, size, size);
+        if (img != null) g.drawImage(img, x + 3, y + 3, Math.max(1, size - 6), Math.max(1, size - 6), null);
+        else { g.setFont(uiFont); g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g, String.valueOf(glyph), x + size/2, y + size/2 + 6); }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:263-279
+Kind: method
+Name: drawLookStackIconStrip
+SHA256: 50ad43100962e5a4bd1206d44facda4dda8896ded643cafacefe92215af0bb15
+
+```java
+    void drawLookStackIconStrip(Graphics2D g, int tx, int ty, int x, int y, int maxIcons, int size) {
+        if (world == null || !world.inBounds(tx, ty) || maxIcons <= 0) return;
+        int drawn = 0;
+        char ch = world.tiles[tx][ty];
+        BufferedImage tile = images.getTile(ch);
+        if (tile != null && drawn < maxIcons) { g.drawImage(tile, x + drawn*(size+5), y, size, size, null); drawn++; }
+        MapObjectState mos = world.mapObjectAt(tx, ty);
+        if (mos != null && drawn < maxIcons) { BufferedImage img = ObjectSemanticAssetAuthority.imageForMapObject(mos); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        BaseObject obj = baseObjectAt(tx, ty);
+        if (obj != null && drawn < maxIcons) { BufferedImage img = ObjectSemanticAssetAuthority.imageForBaseObject(obj); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        NpcEntity npc = world.npcAt(tx, ty);
+        if (npc != null && drawn < maxIcons) { BufferedImage img = images.getNpcPortraitFor(npc); if (img != null) { g.drawImage(img, x + drawn*(size+5), y, size, size, null); drawn++; } }
+        for (int i=0; i<drawn; i++) {
+            g.setColor(new Color(230,205,120));
+            g.drawRect(x + i*(size+5), y, size, size);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2288-2299
+Kind: method
+Name: drawNewsArchivePanel
+SHA256: 413091068cdda3c62272e1344ea744420bd8fc5cdde2892c5b2e2b096bc3e905
+
+```java
+    void drawNewsArchivePanel(Graphics2D g) {
+        Rectangle modal = uiLayout().modal;
+        int x = Math.max(34, modal.x - 18), y = Math.max(48, modal.y - 18);
+        int w = Math.min(getWidth() - x*2, modal.width + 36), h = Math.min(getHeight() - y - 38, modal.height + 36);
+        g.setColor(new Color(4,5,6,246)); g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        stampUiFrameId(g,"F","news-archive",x,y,w,h);
+        g.setFont(titleFont.deriveFont(Math.max(24f, titleFont.getSize2D()-10f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"NEWS ARCHIVE",x+w/2,y+42);
+        ArrayList<String> lines = newsArchiveLines();
+        drawScrollableWrappedLines(g, lines, x+30, y+76, w-74, h-108, infopediaDetailScroll, "infopedia-detail");
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2323-2356
+Kind: method
+Name: drawSaveLoadPanel
+SHA256: 4bcc4b3aebd5ea240898d0def4ce59857af595107c66a14b10be8e1221c85b00
+
+```java
+    void drawSaveLoadPanel(Graphics2D g) {
+        SaveLoadUiRects sl = saveLoadUiRects();
+        int x = sl.outer.x, y = sl.outer.y, w = sl.outer.width, h = sl.outer.height;
+        g.setColor(new Color(5,6,7,246)); g.fillRect(x,y,w,h);
+        drawSlicedFrame(g,x,y,w,h,"inner");
+        stampUiFrameId(g,"F","save-load-redesign",x,y,w,h);
+        g.setFont(titleFont.deriveFont(Math.max(22f, titleFont.getSize2D()-12f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT)); center(g,"LOAD / SAVE",x+w/2,y+40);
+        ArrayList<String> info = new ArrayList<>();
+        info.add("Run: seed=" + seed + " | Survival " + timeText() + " | World " + worldTimeText() + " | Score " + PlayerDefeatAndScoreAuthority.score(this));
+        info.add("Character: " + (active == null ? "no active run" : active.name + " / " + active.job) + " | Position " + playerX + "," + playerY + " | Zone " + (world == null ? "none" : world.zoneType.label));
+        info.add("Manual saves: slots 1-4. Autosaves: hourly and zone-transition live; remaining slots are empty.");
+        drawTextPanel(g, sl.info.x, sl.info.y, sl.info.width, sl.info.height, info, false);
+        int mx = sl.manual.x, listsY = sl.manual.y, colW = sl.manual.width, listsH = sl.manual.height;
+        int ax = sl.auto.x;
+        drawPanelBox(g, mx, listsY, colW, listsH, "MANUAL SAVE FILES");
+        drawPanelBox(g, ax, listsY, colW, listsH, "AUTOSAVE FILES");
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-2f)));
+        g.setColor(optionColor(GameOptions.TEXT_MAIN));
+        int rowGap = Math.max(4, scaled(4));
+        int rowStart = sl.manual.y + 84;
+        int manualAvailable = Math.max(72, sl.manual.y + sl.manual.height - 18 - rowStart);
+        int rowH = Math.max(18, Math.min(26, (manualAvailable - rowGap * Math.max(0, SAVE_SLOT_COUNT - 1)) / Math.max(1, SAVE_SLOT_COUNT)));
+        int yy = rowStart + Math.max(14, rowH - 5);
+        for (int i=1;i<=SAVE_SLOT_COUNT;i++) { drawUiTextLine(g, "Manual " + i + ": " + saveSlotSummary(i), mx+14, yy); yy += rowH + rowGap; }
+        int[] slots = {AUTOSAVE_HOURLY_SLOT, AUTOSAVE_ZONE_SLOT};
+        int autoAvailable = Math.max(90, sl.auto.y + sl.auto.height - 18 - rowStart);
+        int autoRowH = Math.max(18, Math.min(26, (autoAvailable - rowGap * 4) / 5));
+        yy = rowStart + Math.max(14, autoRowH - 5);
+        for (int i=0;i<5;i++) {
+            String txt = i < slots.length ? saveSlotSummary(slots[i]) : "empty";
+            drawUiTextLine(g, "Auto " + (i+1) + ": " + txt, ax+14, yy); yy += autoRowH + rowGap;
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2358-2371
+Kind: method
+Name: drawSurvivalStateTab
+SHA256: 577d304c2e5bdad1c143c22d27d5cacb2c6856d55fa2ff7cf9d408cf98ea060f
+
+```java
+void drawSurvivalStateTab(Graphics2D g, int x, int y, int w, int h) {
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "F", "survival-state", x, y, w, h);
+        g.setFont(smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)));
+        g.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        drawUiTextLine(g, "SURVIVAL", x + 12, y + 18);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Food: " + food + "/" + MAX_FOOD_WATER + " | Water: " + water + "/" + MAX_FOOD_WATER);
+        lines.add("Sleep need: " + sleepNeed + "/" + MAX_SLEEP_NEED);
+        lines.add("Fatigue: " + fatigue + " | Wounds: " + wounds + " | Pain: " + pain);
+        lines.add("Bleeding: " + bleeding + " | Infection risk: " + infectionRisk);
+        lines.add("Script carried " + countMoney() + " | banked " + totalBankedCash() + " | base " + countBaseStoredScript());
+        drawClippedWrappedLines(g, lines, x + 12, y + 28, w - 24, h - 36, smallFont.deriveFont(Math.max(8f, smallFont.getSize2D()-3f)), false);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2500-2507
+Kind: method
+Name: colorForTile
+SHA256: 7c5b05ab07ea54faed5ad35a5f057faefb1e3dc57ee0eae97bdd34ab7548237f
+
+```java
+    Color colorForTile(int x, int y, char ch) {
+        if (isInClaimedRoom(x, y) && (ch == '.' || ch == '+')) return new Color(105, 175, 105);
+        if (world != null && (ch == '.' || ch == '+')) {
+            Faction owner = world.roomFaction(world.roomIdAt(x, y));
+            if (owner != Faction.NONE) return colorForFaction(owner);
+        }
+        return colorFor(ch);
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2509-2525
+Kind: method
+Name: colorForFaction
+SHA256: 64a67ac79c3625c6a6fce1cae65319a9f9e3d2a8b8af1af1279566dc945cb26b
+
+```java
+    Color colorForFaction(Faction f) {
+        switch (f) {
+            case CIVIC_WARDENS: return new Color(70, 115, 210);
+            case BANDIT: case GANGER_IRON_RATS: case GANGER_BLACK_SUMP: case GANGER_CANDLE_JACKS: case GANGER_RED_GRIN: case GANGER_CHAIN_SAINTS: case GANGER_ASH_MARKET: case GANGER_WIRE_WOLVES: case GANGER_DROWNED_9TH: return new Color(150, 55, 45);
+            case MECHANIST_COLLEGIA: case MECHANICUS_CLOISTER_RED: case MECHANICUS_CLOISTER_RUST: case MECHANICUS_CLOISTER_VOID: return new Color(155, 80, 65);
+            case CIVIC_LEDGER_OFFICE: return new Color(145, 125, 95);
+            case MINISTORUM: return new Color(180, 150, 70);
+            case SORORITAS: return new Color(210, 210, 210);
+            case IMPERIAL_GUARD: return new Color(85, 135, 85);
+            case HIVER: case HIVER_BLOCK_AUREL: case HIVER_BLOCK_MARROW: case HIVER_BLOCK_SUMPLEDGER: return new Color(115, 105, 82);
+            case NOBLE: case NOBLE_HOUSE_VARN: case NOBLE_HOUSE_KASTOR: case NOBLE_HOUSE_MORVAIN: case NOBLE_HOUSE_CYRA: case NOBLE_HOUSE_DRAKE: case NOBLE_HOUSE_TOLL: case NOBLE_HOUSE_OSSUARY: return new Color(190, 170, 95);
+            case MUTANT: return new Color(75, 145, 80);
+            case CULTIST: case HERETIC: return new Color(150, 55, 155);
+            case ROGUE_MACHINE: return new Color(120, 145, 160);
+            default: return new Color(85,82,75);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard7.txt:2527-2567
+Kind: method
+Name: colorFor
+SHA256: 0120419184a60c633a3fa24904b768c742dd97b3c2c968ddb213f04dd40ce06c
+
+```java
+    Color colorFor(char ch) {
+        switch(ch) {
+            case '-': return new Color(105,96,84);
+            case '#': return new Color(95,90,82);
+            case '%': return new Color(82,80,74);
+            case '&': return new Color(76,78,82);
+            case '^': return new Color(86,72,58);
+            case '8': return new Color(64,78,84);
+            case '0': return new Color(68,68,78);
+            case '*': return new Color(88,72,58);
+            case '?': return new Color(120,100,62);
+            case '!': return new Color(130,76,52);
+            case ' ': return new Color(2,2,4);
+            case '.': return new Color(85,82,75);
+            case ';': return new Color(55,55,50);
+            case '_': return new Color(96,90,80);
+            case '+': return new Color(160,120,70);
+            case 'g': return new Color(180,75,65);
+            case 'm': return new Color(110,180,95);
+            case 'R': return new Color(140,160,180);
+            case 'W': return new Color(205,185,115);
+            case 'A': return new Color(90,140,220);
+            case 'T': return new Color(210,180,90);
+            case 'Q': return new Color(235,205,100);
+            case 'C': return new Color(180,150,210);
+            case 'H': return new Color(190,70,190);
+            case 'N': return new Color(125,115,90);
+            case 'q': return new Color(220,170,90);
+            case 'r': return new Color(120,70,55);
+            case 'e': return new Color(115,190,205);
+            case 'f': return new Color(195,135,95);
+            case 'l': return new Color(165,135,220);
+            case 'x': return new Color(140,220,140);
+            case 'p': return new Color(70,115,210);
+            case 'b': return new Color(155,55,45);
+            case 'h': return new Color(145,135,105);
+            case 'n': return new Color(205,185,120);
+            case 'M': return new Color(100,145,100);
+            default: return new Color(45,45,45);
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:426-426
+Kind: method
+Name: optionColor
+SHA256: 3a25f0558ee3c8e68a2e1fa48272b1de5a505b06037e531bef043033f6ced0dd
+
+```java
+    Color optionColor(int key) { return OptionsBoundaryAuthority.optionColor(options, key); }
+```
+
+---
+Source: gamepanel-shard8.txt:428-442
+Kind: method
+Name: controlsReferenceLines
+SHA256: 8738a1b3a62b7b17f780a5fd33a5790d72038a0aecab23251b8fdbf43a851006
+
+```java
+    ArrayList<String> controlsReferenceLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(controlProfileTitle());
+        lines.add("Action names are shared across keyboard and controller paths; context decides whether a prompt moves, examines, interacts, confirms, or backs out.");
+        lines.add("Required recovery actions: Move, Confirm, Cancel/Back, Pause/Menu, and a keyboard/mouse fallback.");
+        for (InputAction action : InputAction.values()) {
+            lines.add(inputActionLabel(action) + " | " + inputActionContext(action) + " | "
+                    + keyboardPromptFor(action) + " | " + controllerPromptFor(action)
+                    + (requiredInputAction(action) ? " | required" : ""));
+        }
+        lines.add("Context overlap: E examines while the Look panel is open and interacts from the game surface; A/Cross confirms in menus and examines/interacts only where that panel owns the prompt.");
+        lines.add("Safe fallback: Escape/B/Circle backs out, and keyboard movement remains available if a controller is missing or reconnecting.");
+        if (rebindingTarget != null && !rebindingTarget.isEmpty()) lines.add(rebindingTarget);
+        return lines;
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:460-485
+Kind: method
+Name: inputActionLabel
+SHA256: 3ba9d7abcab86487a49dff83f4d022c9ef14f871561a0f5df82c38b64f8eefc0
+
+```java
+    String inputActionLabel(InputAction action) {
+        switch (action) {
+            case MOVE_UP: return "Move / nudge up";
+            case MOVE_DOWN: return "Move / nudge down";
+            case MOVE_LEFT: return "Move / nudge left";
+            case MOVE_RIGHT: return "Move / nudge right";
+            case CONFIRM: return "Confirm / choose";
+            case CANCEL: return "Cancel / back";
+            case WAIT: return "Wait one turn";
+            case INTERACT: return "Interact";
+            case EXAMINE: return "Examine visible target";
+            case INVENTORY: return "Inventory";
+            case CHARACTER: return "Character dossier";
+            case BUILD: return "Build and base tools";
+            case SENSES: return "Senses";
+            case PLAN_MOVE: return "Plan exact movement";
+            case PAUSE: return "Pause / menu";
+            case LOOK: return "Look";
+            case MAP: return "Map";
+            case ZOOM_IN: return "Zoom in";
+            case ZOOM_OUT: return "Zoom out";
+            case ATTACK: return "Combat targeting";
+            case RELOAD: return "Reload";
+            default: return action.name();
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:487-502
+Kind: method
+Name: inputActionContext
+SHA256: 6e56ed54061f506efd5e526719fcc030e91ee05fba396247b54f34e0a4a3ebe7
+
+```java
+    String inputActionContext(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "movement, targeting, lists";
+            case CONFIRM: return "menus, targeting, planning";
+            case CANCEL: return "global recovery";
+            case WAIT: return "game surface";
+            case INTERACT: return "game surface and interact panel";
+            case EXAMINE: return "Look panel";
+            case INVENTORY: case CHARACTER: case BUILD: case SENSES: case LOOK: case MAP: return "game surface";
+            case PLAN_MOVE: return "game surface movement planning";
+            case PAUSE: return "global menu";
+            case ZOOM_IN: case ZOOM_OUT: return "map and viewport";
+            case ATTACK: case RELOAD: return "combat";
+            default: return "general";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:541-556
+Kind: method
+Name: xboxPromptFor
+SHA256: 86ff89514addf5bc92dee549b5d36843c287d4c3491eb755367d1665bf7b9ef4
+
+```java
+    String xboxPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Xbox: left stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Xbox: A";
+            case CANCEL: return "Xbox: B";
+            case INVENTORY: return "Xbox: X";
+            case CHARACTER: return "Xbox: Y";
+            case PAUSE: return "Xbox: Menu";
+            case LOOK: return "Xbox: View";
+            case ZOOM_IN: return "Xbox: RB";
+            case ZOOM_OUT: return "Xbox: LB";
+            case ATTACK: return "Xbox: right stick up";
+            case PLAN_MOVE: return "Xbox: right stick down";
+            default: return "Xbox: keyboard fallback";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:575-590
+Kind: method
+Name: steamPromptFor
+SHA256: a448a887fc1584b109dcd3fb8a59b7851333301a60672df499d2f9d1f9687d1d
+
+```java
+    String steamPromptFor(InputAction action) {
+        switch (action) {
+            case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Steam: stick / D-pad";
+            case CONFIRM: case INTERACT: case EXAMINE: return "Steam: A";
+            case CANCEL: return "Steam: B";
+            case INVENTORY: return "Steam: X";
+            case CHARACTER: return "Steam: Y";
+            case PAUSE: return "Steam: Menu";
+            case LOOK: return "Steam: View";
+            case ZOOM_IN: return "Steam: R1";
+            case ZOOM_OUT: return "Steam: L1";
+            case ATTACK: return "Steam: right stick up";
+            case PLAN_MOVE: return "Steam: right stick down";
+            default: return "Steam: keyboard fallback";
+        }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:787-805
+Kind: method
+Name: drawTextPanel
+SHA256: 5e483dc77d064ce66018e1dada3aae6b24abff85e55dfdcc3d2bb8230adefa52
+
+```java
+    void drawTextPanel(Graphics2D g, int x, int y, int w, int h, java.util.List<String> lines, boolean centered) {
+        if (w <= 4 || h <= 4) return;
+        g.setColor(new Color(0, 0, 0, 224));
+        g.fillRoundRect(x, y, w, h, 12, 12);
+        drawSlicedFrame(g, x, y, w, h, "inner");
+        stampUiFrameId(g, "T", lines == null || lines.isEmpty() ? "text-panel" : lines.get(0), x, y, w, h);
+        Shape oldClip = g.getClip();
+        g.setClip(x + 8, y + 8, Math.max(1, w - 16), Math.max(1, h - 16));
+        g.setFont(smallFont);
+        FontMetrics fm = g.getFontMetrics();
+        int yy = y + 22;
+        for (String line : TextLayoutAuthority.wrapAllPixels(g, g.getFont(), lines, Math.max(8, w - 32))) {
+            if (yy > y + h - 8) { g.setClip(oldClip); return; }
+            g.setColor(optionColor(GameOptions.TEXT_MAIN));
+            if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy); else g.drawString(line, x + 14, yy);
+            yy += fm.getHeight();
+        }
+        g.setClip(oldClip);
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:807-814
+Kind: method
+Name: drawIdleScreensaver
+SHA256: da05e676db55f266000edf4c334aa06b439514da377d8898f85d472588d2132a
+
+```java
+    void drawIdleScreensaver(Graphics2D g) {
+        Graphics2D gg=(Graphics2D)g.create();
+        gg.setColor(Color.BLACK); gg.fillRect(0,0,getWidth(),getHeight());
+        drawLoading(gg);
+        gg.setFont(uiFont); gg.setColor(optionColor(GameOptions.TEXT_HIGHLIGHT));
+        center(gg, "IDLE UNDERHIVE SKYLINE — move mouse or press any key to return", getWidth()/2, getHeight()-42);
+        gg.dispose();
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:816-841
+Kind: method
+Name: drawHoverHelp
+SHA256: 36036f38752d4888b5d71e5c80889ce5519e146caaece1f357c17cd8c50b6826
+
+```java
+    void drawHoverHelp(Graphics2D g, int hoverButtonIndex) {
+        if (!options.hoverHelp) return;
+        String help = null;
+        if (hoverButtonIndex >= 0 && hoverButtonIndex < buttons.size()) help = buttons.get(hoverButtonIndex).tip;
+        else if (mouseX < 0 && selectedButton >= 0 && selectedButton < buttons.size() && buttonIsModalInteractive(buttons.get(selectedButton))) help = buttons.get(selectedButton).tip;
+        if (help == null || mouseX < 0 || mouseY < 0) return;
+        g.setFont(smallFont);
+        int maxChars = 34;
+        java.util.List<String> lines = TextSurfaceApi.wrap(help, maxChars);
+        FontMetrics fm = g.getFontMetrics();
+        int tw = 0;
+        for (String line : lines) tw = Math.max(tw, fm.stringWidth(line));
+        int boxW = Math.min(340, Math.max(190, tw + 22));
+        int lineH = fm.getHeight();
+        int boxH = Math.max(34, lines.size()*lineH + 14);
+        int x = mouseX + 18;
+        int y = mouseY + 18;
+        if (x + boxW > getWidth() - 12) x = mouseX - boxW - 18;
+        if (y + boxH > getHeight() - 12) y = mouseY - boxH - 18;
+        x = Math.max(8, x); y = Math.max(8, y);
+        g.setColor(new Color(8,8,9,238)); g.fillRect(x, y, boxW, boxH);
+        g.setColor(new Color(165,138,82)); g.drawRect(x, y, boxW, boxH);
+        g.setColor(new Color(220,205,160));
+        int ty = y + 18;
+        for (String line : lines) { drawUiTextLine(g, line, x+11, ty); ty += lineH; }
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:843-855
+Kind: method
+Name: drawUiTextLine
+SHA256: 359a57a16f5e72b411f1d4c3d3441448d6220ff4cc5657e58f23b46e0c51b29b
+
+```java
+    void drawUiTextLine(Graphics2D g, String s, int x, int y) {
+        if (s == null) return;
+        FontMetrics fm = g.getFontMetrics();
+        int tw = fm.stringWidth(s);
+        int th = fm.getHeight();
+        Color old = g.getColor();
+        g.setColor(new Color(0, 0, 0, 196));
+        g.fillRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
+        g.setColor(new Color(128, 105, 58, 135));
+        g.drawRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
+        g.setColor(old);
+        g.drawString(s, x, y);
+    }
+```
+
+---
+Source: gamepanel-shard8.txt:857-860
+Kind: method
+Name: center
+SHA256: 8caa9be694a7caebba5dbe9226629165ce6f4f98a2817bef90ad88bc7431483c
+
+```java
+    void center(Graphics2D g, String s, int x, int y) {
+        FontMetrics fm = g.getFontMetrics();
+        drawUiTextLine(g, s, x - fm.stringWidth(s)/2, y);
+    }
+```
