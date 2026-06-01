@@ -27,6 +27,8 @@ Expected outputs:
 - `ROOT_DOCS/functionmap/generated/OVERSIZED_OWNERS.tsv`
 - `ROOT_DOCS/functionmap/generated/SUMMARY.md`
 
+Current reviewed report set: generated `2026-06-01 13:33:06`, supplied directly for the first ownership pass.
+
 ## Ownership Status Values
 
 Use these exact values in review notes:
@@ -38,6 +40,14 @@ Use these exact values in review notes:
 - `retire_candidate` — likely obsolete or replaced, requires smoke-safe removal plan.
 - `generated_reference` — generated extraction/report material retained as evidence only.
 - `do_not_touch` — high-risk persisted/save/runtime identity surface.
+
+Additional first-pass status labels:
+
+- `expected_multi_entrypoints` — duplicate `main`/launcher/smoke entrypoint pattern; not a duplicate-removal target by name alone.
+- `expected_java_object_pattern` — ordinary object methods such as `toString`, `equals`, or `hashCode`.
+- `codec_pattern_review` — save/persistence-adjacent codec helpers; high compatibility risk.
+- `display_text_pattern_review` — repeated display/line/label helpers; possible interface candidates only after manual review.
+- `retire_candidate_after_hash_verification` — generated backup copy can be removed only after source/retired copy hashes are confirmed.
 
 ## Initial Subsystem Zones
 
@@ -70,6 +80,37 @@ Use these exact values in review notes:
 |---|---|---|---|---|---|
 | 2026-06-01 | `scripts/EXTRACT_GAMEPANEL_SHARDS_TO_SUBSYSTEMS.py` | script | generated reference tool | generated_reference | Extraction already run; no more patching needed unless rerun support is explicitly required. |
 | 2026-06-01 | `ROOT_DOCS/shardmining/generated_subsystems/*` | generated subsystem docs | review input | generated_reference | Use as source material for reattachment, not compile-ready Java. |
+| 2026-06-01 | `src/mechanist/GamePanel.java` | active shell / monolith | narrow bridge shell while functions move outward | bridge_owner | Largest remaining owner: 1,397 parsed methods, 21,165 lines. Do not delete; drain through smoke-tested function moves. |
+| 2026-06-01 | `src/mechanist/GamePanel.java` extracted behavior | active shell / monolith | named subsystem owners | move_candidate | Treat GamePanel as source for the first remap wave, especially UI routing/rendering methods. |
+| 2026-06-01 | `src/mechanist/GamePanel.java::rebuildButtons` | GamePanel | `PanelButtonCommandRouter` or existing panel command authorities | move_candidate | First explicit remap target. Longest parsed GamePanel method: 719 lines. UI command wiring should move before gameplay mutation systems. |
+| 2026-06-01 | `src/mechanist/GamePanel.java::handleKeyPressed` | GamePanel | `GamePanelKeyController` / input navigation subsystem | move_candidate | Second UI-shell remap target after button routing. Avoid simulation mutation changes in the same pass. |
+| 2026-06-01 | `src/mechanist/GamePanel.java::drawOptions` | GamePanel | `OptionsScreenPainter` | move_candidate | Existing painter should absorb or bridge this surface if behavior is not already equivalent. |
+| 2026-06-01 | `src/mechanist/GamePanel.java::drawGame` | GamePanel | dedicated game surface painter / renderer bridge | move_candidate | Rendering-only extraction candidate after button/input routing. |
+| 2026-06-01 | `src/mechanist/GamePanel.java::drawCharacter` | GamePanel | character/dossier surface painter | move_candidate | Rendering-only extraction candidate; keep inventory/equipment mutation out of this pass. |
+| 2026-06-01 | GamePanel Infopedia line builders | GamePanel | specific Infopedia authority classes | move_candidate | Includes `infopediaDetailLines`, `productionInfopediaLines`, `auditInfopediaLines`; split by domain authority. |
+| 2026-06-01 | `src/mechanist/WorldRuntimeGenerationFramework.java` | active owner | future generation authorities | do_not_touch | Oversized but high-risk world-generation owner. Do not split until UI shell mapping is cleaner. |
+| 2026-06-01 | `src/mechanist/ProductionAuthorityFramework.java` | active owner | future production/recipe authorities | do_not_touch | Oversized production behavior. Long catalog methods may be data-definition concentration, not duplicate logic. |
+| 2026-06-01 | `src/mechanist/ItemEconomyFramework.java` | active owner | future catalog/economy authorities | do_not_touch | Save/catalog/economy-adjacent; high compatibility risk. |
+| 2026-06-01 | `src/mechanist/WorldSimulationFramework.java` | active owner | future simulation authorities | do_not_touch | Runtime/simulation mutation behavior. Keep out of first UI remap batch. |
+| 2026-06-01 | duplicate function group `main` | multiple launch/smoke/tool entrypoints | no consolidation by name | expected_multi_entrypoints | Expected Java tool/launcher pattern. |
+| 2026-06-01 | duplicate function groups `toString` / `equals` / `hashCode` | Java object/record implementations | no consolidation by name | expected_java_object_pattern | Expected Java pattern. |
+| 2026-06-01 | duplicate function groups `encode` / `decode` / `parse` / `esc` / `unesc` | local codec helpers | future codec review only | codec_pattern_review | Save/persistence-adjacent; do not consolidate without compatibility tests. |
+| 2026-06-01 | duplicate display helper groups `label` / `statusLines` / `lines` / `compact` / `auditLines` | local display helpers | possible interface review | display_text_pattern_review | Not deletion targets until source-equivalence is proven. |
+| 2026-06-01 | `ROOT_DOCS/shardmining/generated_subsystems/_retired_shards/*` | retired shard source copies | generated reference source of truth | generated_reference | Keep during active remap. Useful recovery material even though Git history also exists. |
+| 2026-06-01 | `ROOT_DOCS/shardmining/generated_subsystems/_backups/*` | duplicate extractor backups | future cleanup | retire_candidate_after_hash_verification | Only remove after confirming manifest and retired-shard copy hashes. |
+| 2026-06-01 | `docs/CONCORD_IP_NEUTRALIZATION_LEDGER.md` | parked IP governance | parked active governance | active_owner | Unknown-review by mapper, but semantically active parked-governance; not a retirement target. |
+
+## First Remap Batch
+
+Start with UI shell functions because they can usually be bridged without changing simulation state.
+
+1. `GamePanel.rebuildButtons` -> target owner: `PanelButtonCommandRouter` or existing panel command authorities.
+2. `GamePanel.handleKeyPressed` -> target owner: `GamePanelKeyController` / input navigation subsystem.
+3. `GamePanel.drawOptions` -> target owner: `OptionsScreenPainter`.
+4. `GamePanel.drawGame` and `GamePanel.drawCharacter` -> target owner: dedicated surface painters.
+5. Infopedia line builders -> target owner: specific Infopedia authority classes.
+
+Do not start with inventory, world generation, production, or simulation mutation until the UI routing shell is cleaner.
 
 ## Document Cleanup Rule
 
