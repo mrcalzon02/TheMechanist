@@ -1,13 +1,13 @@
 # Function Map Summary
 
-Generated: `2026-06-02 08:52:44`
+Generated: `2026-06-02 09:07:06`
 
 ## Counts
 
 - Files inventoried: `474`
-- Java classes/interfaces/enums/records: `1169`
-- Java functions/methods parsed: `6056`
-- Duplicate function-name groups: `483`
+- Java classes/interfaces/enums/records: `1171`
+- Java functions/methods parsed: `6076`
+- Duplicate function-name groups: `485`
 - Documents inventoried: `45`
 - Document retirement candidate rows: `1`
 - Oversized owner rows: `10`
@@ -22,7 +22,7 @@ Generated: `2026-06-02 08:52:44`
 - `runtime.options`: `366` functions
 - `server.authority.launcher`: `150` functions
 - `ui.input.navigation`: `344` functions
-- `ui.render.surface`: `2947` functions
+- `ui.render.surface`: `2967` functions
 - `unclassified`: `420` functions
 - `world.generation.transition`: `632` functions
 
@@ -36,7 +36,7 @@ Generated: `2026-06-02 08:52:44`
 - `runtime.options`: `49` classes
 - `server.authority.launcher`: `83` classes
 - `ui.input.navigation`: `52` classes
-- `ui.render.surface`: `376` classes
+- `ui.render.surface`: `378` classes
 - `unclassified`: `232` classes
 - `world.generation.transition`: `119` classes
 
