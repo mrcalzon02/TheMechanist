@@ -1,10 +1,10 @@
 # Function Map Summary
 
-Generated: `2026-06-02 08:05:50`
+Generated: `2026-06-02 08:52:44`
 
 ## Counts
 
-- Files inventoried: `473`
+- Files inventoried: `474`
 - Java classes/interfaces/enums/records: `1169`
 - Java functions/methods parsed: `6056`
 - Duplicate function-name groups: `483`
