@@ -4,19 +4,19 @@ param(
     [switch]$CleanOutput,
     [switch]$CleanClasses,
     [switch]$SkipAssetCopy,
-    [switch]$SkipSourceMirror,
+    [switch]$IncludeSourceMirror,
     [switch]$BuildJar
 )
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
-$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
+$rootFull = [System.IO.Path]::GetFullPath([string]$root).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
 $rootPrefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
 $runRoot = Join-Path $diagRoot "package_client_$stamp"
-$buildRoot = Join-Path $root 'build\package_client'
 $outRoot = if ([System.IO.Path]::IsPathRooted($OutputDir)) { $OutputDir } else { Join-Path $root $OutputDir }
+$outRoot = [System.IO.Path]::GetFullPath([string]$outRoot)
 $classes = Join-Path $outRoot 'classes'
 
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
@@ -26,6 +26,7 @@ $packageLog = Join-Path $runRoot 'package.log'
 $errors = Join-Path $runRoot 'package_compile_errors.tsv'
 $sourceList = Join-Path $runRoot 'sources.txt'
 $javacSourceArgs = Join-Path $runRoot 'javac_sources.args'
+$assetInventory = Join-Path $runRoot 'asset_inventory.txt'
 $manifest = Join-Path $runRoot 'MANIFEST.MF'
 
 function Write-Section($name) {
@@ -50,11 +51,7 @@ function Copy-FilePreserveTree($sourceRoot, $destRoot, $fileInfo) {
     $sourceFull = [System.IO.Path]::GetFullPath([string]$fileInfo.FullName)
     $rootFullLocal = [System.IO.Path]::GetFullPath([string]$sourceRoot).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
     $rootPrefixLocal = $rootFullLocal + [System.IO.Path]::DirectorySeparatorChar
-    if ($sourceFull.StartsWith($rootPrefixLocal, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $relative = $sourceFull.Substring($rootPrefixLocal.Length)
-    } else {
-        $relative = [System.IO.Path]::GetFileName($sourceFull)
-    }
+    if ($sourceFull.StartsWith($rootPrefixLocal, [System.StringComparison]::OrdinalIgnoreCase)) { $relative = $sourceFull.Substring($rootPrefixLocal.Length) } else { $relative = [System.IO.Path]::GetFileName($sourceFull) }
     if ([System.IO.Path]::IsPathRooted($relative)) { $relative = [System.IO.Path]::GetFileName($relative) }
     $dest = Join-Path -Path $destRoot -ChildPath $relative
     $parent = Split-Path -Parent $dest
@@ -62,34 +59,33 @@ function Copy-FilePreserveTree($sourceRoot, $destRoot, $fileInfo) {
     Copy-Item -LiteralPath $sourceFull -Destination $dest -Force -ErrorAction Stop
 }
 
-function Copy-MergeIfExists($source, $dest) {
-    if (-not (Test-Path -LiteralPath $source)) { return }
-    Write-Host "MERGE $source -> $dest"
-    if (Test-Path -LiteralPath $source -PathType Container) {
-        New-Item -ItemType Directory -Force -Path $dest | Out-Null
-        Get-ChildItem -LiteralPath $source -Recurse -File -Force | ForEach-Object { Copy-FilePreserveTree $source $dest $_ }
-    } else {
-        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
-        Copy-Item -LiteralPath $source -Destination $dest -Force -ErrorAction Continue
+function Copy-MergeIfExists($source, $dest, $label) {
+    if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+        "SKIP missing $label source: $source" | Tee-Object -FilePath $packageLog -Append
+        return 0
     }
-}
-
-function Copy-IfExists($source, $dest) {
-    if (Test-Path -LiteralPath $source) {
-        if (Test-Path -LiteralPath $source -PathType Container) {
-            Copy-MergeIfExists $source $dest
-        } else {
-            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
-            Copy-Item -LiteralPath $source -Destination $dest -Force -ErrorAction Continue
-        }
+    $sourceFull = [System.IO.Path]::GetFullPath([string]$source)
+    $destFull = [System.IO.Path]::GetFullPath([string]$dest)
+    $sourceNorm = $sourceFull.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
+    $destNorm = $destFull.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
+    if ($sourceNorm.Equals($destNorm, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $count = @(Get-ChildItem -LiteralPath $destFull -Recurse -File -Force -ErrorAction SilentlyContinue).Count
+        "PRESERVE $label already in package: $destFull ($count file(s))" | Tee-Object -FilePath $packageLog -Append
+        return $count
     }
+    New-Item -ItemType Directory -Force -Path $destFull | Out-Null
+    $files = @(Get-ChildItem -LiteralPath $sourceFull -Recurse -File -Force -ErrorAction SilentlyContinue)
+    foreach ($file in $files) { Copy-FilePreserveTree $sourceFull $destFull $file }
+    "MERGED $($files.Count) $label file(s): $sourceFull -> $destFull" | Tee-Object -FilePath $packageLog -Append
+    return $files.Count
 }
 
 function Publish-LatestPackageAliases() {
-    Copy-IfExists $summary (Join-Path $diagRoot 'LATEST_PACKAGE_SUMMARY.txt')
-    Copy-IfExists $compileLog (Join-Path $diagRoot 'LATEST_PACKAGE_COMPILE_LOG.txt')
-    Copy-IfExists $errors (Join-Path $diagRoot 'LATEST_PACKAGE_COMPILE_ERRORS.tsv')
-    Copy-IfExists $packageLog (Join-Path $diagRoot 'LATEST_PACKAGE_LOG.txt')
+    if (Test-Path -LiteralPath $summary) { Copy-Item -LiteralPath $summary -Destination (Join-Path $diagRoot 'LATEST_PACKAGE_SUMMARY.txt') -Force -ErrorAction Continue }
+    if (Test-Path -LiteralPath $compileLog) { Copy-Item -LiteralPath $compileLog -Destination (Join-Path $diagRoot 'LATEST_PACKAGE_COMPILE_LOG.txt') -Force -ErrorAction Continue }
+    if (Test-Path -LiteralPath $errors) { Copy-Item -LiteralPath $errors -Destination (Join-Path $diagRoot 'LATEST_PACKAGE_COMPILE_ERRORS.tsv') -Force -ErrorAction Continue }
+    if (Test-Path -LiteralPath $packageLog) { Copy-Item -LiteralPath $packageLog -Destination (Join-Path $diagRoot 'LATEST_PACKAGE_LOG.txt') -Force -ErrorAction Continue }
+    if (Test-Path -LiteralPath $assetInventory) { Copy-Item -LiteralPath $assetInventory -Destination (Join-Path $diagRoot 'LATEST_PACKAGE_ASSET_INVENTORY.txt') -Force -ErrorAction Continue }
 }
 
 function Resolve-CommandPath($name) {
@@ -97,17 +93,6 @@ function Resolve-CommandPath($name) {
     if (-not $cmd) { return $null }
     if ($cmd.Source) { return $cmd.Source }
     return $cmd.Name
-}
-
-function Resolve-SiblingTool($knownToolPath, $siblingName) {
-    if (-not $knownToolPath) { return $null }
-    $knownToolDir = Split-Path -Parent $knownToolPath
-    if (-not $knownToolDir) { return $null }
-    foreach ($candidateName in @("$siblingName.exe", "$siblingName.cmd", $siblingName)) {
-        $candidate = Join-Path $knownToolDir $candidateName
-        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
-    }
-    return $null
 }
 
 function Resolve-JavaHomeTool($toolName) {
@@ -119,55 +104,24 @@ function Resolve-JavaHomeTool($toolName) {
     return $null
 }
 
-function New-JarWithDotNetZip($sourceDir, $manifestSource, $targetJar, $logPath) {
-    try {
-        Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
-        if (Test-Path -LiteralPath $targetJar) { Remove-Item -LiteralPath $targetJar -Force -ErrorAction Stop }
-        $metaInf = Join-Path $sourceDir 'META-INF'
-        New-Item -ItemType Directory -Force -Path $metaInf | Out-Null
-        Copy-Item -LiteralPath $manifestSource -Destination (Join-Path $metaInf 'MANIFEST.MF') -Force -ErrorAction Stop
-        [System.IO.Compression.ZipFile]::CreateFromDirectory($sourceDir, $targetJar, [System.IO.Compression.CompressionLevel]::Optimal, $false)
-        "DOTNET ZIP JAR PASS: $targetJar" | Tee-Object -FilePath $logPath -Append
-        return 0
-    } catch {
-        "DOTNET ZIP JAR FAIL: $($_.Exception.Message)" | Tee-Object -FilePath $logPath -Append
-        return 1
-    }
-}
-
 "Client Package Run: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Package output: $outRoot" | Add-Content -LiteralPath $summary
 "Package mode: unfolded exposed client directory" | Add-Content -LiteralPath $summary
 "Classes output: $classes" | Add-Content -LiteralPath $summary
-"Build root: $buildRoot" | Add-Content -LiteralPath $summary
 "Max javac errors: $MaxErrors" | Add-Content -LiteralPath $summary
 "CleanOutput: $CleanOutput" | Add-Content -LiteralPath $summary
 "CleanClasses: $CleanClasses" | Add-Content -LiteralPath $summary
+"IncludeSourceMirror: $IncludeSourceMirror" | Add-Content -LiteralPath $summary
 "BuildJar: $BuildJar" | Add-Content -LiteralPath $summary
 
 Write-Section 'Tooling preflight'
 $javacExe = Resolve-CommandPath 'javac'
-$jarExe = Resolve-CommandPath 'jar'
 if (-not $javacExe) { $javacExe = Resolve-JavaHomeTool 'javac' }
-if (-not $jarExe) { $jarExe = Resolve-JavaHomeTool 'jar' }
-if ((-not $jarExe) -and $javacExe) { $jarExe = Resolve-SiblingTool $javacExe 'jar' }
-
 if (-not $javacExe) { 'ERROR: javac not found on PATH or JAVA_HOME.' | Tee-Object -FilePath $compileLog; Publish-LatestPackageAliases; exit 127 }
 "javac command: $javacExe" | Add-Content -LiteralPath $summary
 & $javacExe -version *>&1 | Tee-Object -FilePath $compileLog
-if ($BuildJar) {
-    if ($jarExe) {
-        "jar command: $jarExe" | Add-Content -LiteralPath $summary
-        & $jarExe --version *>&1 | Tee-Object -FilePath $packageLog
-    } else {
-        "jar command: unavailable; optional BuildJar will use .NET ZipFile fallback" | Add-Content -LiteralPath $summary
-        "WARN: jar not found; optional BuildJar will use .NET ZipFile fallback." | Tee-Object -FilePath $packageLog
-    }
-} else {
-    "jar command: not required; unfolded package is primary output" | Add-Content -LiteralPath $summary
-    "INFO: unfolded PACKAGE_client mode; jar assembly skipped unless -BuildJar is supplied." | Tee-Object -FilePath $packageLog
-}
+"INFO: unfolded PACKAGE_client mode; jar assembly skipped unless -BuildJar is supplied." | Tee-Object -FilePath $packageLog
 
 Write-Section 'Prepare unfolded PACKAGE_client directory'
 if ((Test-Path -LiteralPath $outRoot) -and $CleanOutput) {
@@ -180,6 +134,15 @@ if ((Test-Path -LiteralPath $classes) -and $CleanClasses) {
     Remove-Item -LiteralPath $classes -Recurse -Force -ErrorAction Continue
 }
 New-Item -ItemType Directory -Force -Path $classes | Out-Null
+
+$staleSrc = Join-Path $outRoot 'src'
+if ((Test-Path -LiteralPath $staleSrc) -and (-not $IncludeSourceMirror)) {
+    Write-Host "REMOVE STALE SOURCE MIRROR $staleSrc"
+    Remove-Item -LiteralPath $staleSrc -Recurse -Force -ErrorAction Continue
+}
+if ((Test-Path -LiteralPath (Join-Path $outRoot 'TheMechanist.jar')) -and (-not $BuildJar)) {
+    Remove-Item -LiteralPath (Join-Path $outRoot 'TheMechanist.jar') -Force -ErrorAction Continue
+}
 
 Write-Section 'Source inventory'
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName })
@@ -218,16 +181,36 @@ if ($compileExit -ne 0) {
     exit $compileExit
 }
 
-Write-Section 'Merge package resources'
+Write-Section 'Merge package assets and resources'
+$totalCopied = 0
 if (-not $SkipAssetCopy) {
-    Copy-MergeIfExists (Join-Path $root 'assets') (Join-Path $outRoot 'assets')
-    Copy-MergeIfExists (Join-Path $root 'settings') (Join-Path $outRoot 'settings')
-    Copy-MergeIfExists (Join-Path $root 'client\locale') (Join-Path $outRoot 'client\locale')
-    Copy-MergeIfExists (Join-Path $root 'locale') (Join-Path $outRoot 'locale')
+    $assetDest = Join-Path $outRoot 'assets'
+    $assetSources = @(
+        (Join-Path $root 'assets'),
+        (Join-Path $root 'client\assets'),
+        (Join-Path $root 'resources\assets'),
+        (Join-Path $root 'src\main\resources\assets')
+    )
+    foreach ($source in $assetSources) { $totalCopied += Copy-MergeIfExists $source $assetDest 'assets' }
+    $totalCopied += Copy-MergeIfExists (Join-Path $root 'settings') (Join-Path $outRoot 'settings') 'settings'
+    $totalCopied += Copy-MergeIfExists (Join-Path $root 'client\locale') (Join-Path $outRoot 'client\locale') 'client-locale'
+    $totalCopied += Copy-MergeIfExists (Join-Path $root 'locale') (Join-Path $outRoot 'locale') 'locale'
+    $totalCopied += Copy-MergeIfExists (Join-Path $root 'PACKAGE_client\assets') (Join-Path $outRoot 'assets') 'existing-package-assets'
 }
-if (-not $SkipSourceMirror) {
-    Copy-MergeIfExists (Join-Path $root 'src') (Join-Path $outRoot 'src')
+if ($IncludeSourceMirror) { $totalCopied += Copy-MergeIfExists (Join-Path $root 'src') (Join-Path $outRoot 'src') 'source-mirror' }
+
+$assetRoot = Join-Path $outRoot 'assets'
+if (Test-Path -LiteralPath $assetRoot -PathType Container) {
+    Get-ChildItem -LiteralPath $assetRoot -Recurse -File -Force -ErrorAction SilentlyContinue |
+        ForEach-Object { $_.FullName.Substring($assetRoot.Length).TrimStart([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)) } |
+        Sort-Object | Set-Content -LiteralPath $assetInventory
+} else {
+    'NO PACKAGE assets DIRECTORY PRESENT' | Set-Content -LiteralPath $assetInventory
 }
+$packageAssetCount = @(Get-ChildItem -LiteralPath $assetRoot -Recurse -File -Force -ErrorAction SilentlyContinue).Count
+"MergedResourceFiles: $totalCopied" | Add-Content -LiteralPath $summary
+"PackageAssetFiles: $packageAssetCount" | Add-Content -LiteralPath $summary
+"AssetInventory: $assetInventory" | Add-Content -LiteralPath $summary
 
 $runBat = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.bat'
 @(
@@ -256,12 +239,12 @@ $pkgManifest = Join-Path $outRoot 'PACKAGE_MANIFEST.txt'
     "Built: $stamp",
     'Primary layout: unfolded directory, not jar-first',
     'Classes: classes\mechanist\*.class',
-    'Source mirror: src\',
-    'Assets/settings/locale are merged in place when present',
-    "Source files: $($sources.Count)",
+    'Assets: assets\',
+    "Package asset files: $packageAssetCount",
+    "Source files compiled: $($sources.Count)",
     'Launch: RUN_THE_MECHANIST_CLIENT.bat or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1',
     'Manual launch: java -cp "classes;." mechanist.TheMechanist',
-    'Note: PACKAGE_client is preserved by default. Use -CleanOutput only when intentionally rebuilding from empty.'
+    'Note: PACKAGE_client is preserved by default. The src folder is removed unless -IncludeSourceMirror is supplied.'
 ) | Set-Content -LiteralPath $pkgManifest
 
 $layout = Join-Path $outRoot 'PACKAGE_LAYOUT.txt'
@@ -269,55 +252,32 @@ $layout = Join-Path $outRoot 'PACKAGE_LAYOUT.txt'
     'PACKAGE_client is the exposed unfolded client directory.',
     '',
     'Expected important paths:',
-    '  classes\                 Compiled Java classes, updated in place by PACKAGE_CLIENT_WINDOWS.ps1',
-    '  src\                     Source mirror for inspection/debugging/exposed-client review',
+    '  classes\                 Compiled Java classes',
     '  assets\                  Art/audio/data assets copied by merge, not destructive delete',
     '  settings\                Settings copied by merge when present',
     '  client\locale\ or locale\ Localization files copied by merge when present',
     '  RUN_THE_MECHANIST_CLIENT.bat',
     '  RUN_THE_MECHANIST_CLIENT.ps1',
     '',
-    'The package script intentionally does not delete this directory by default.',
+    'The full source folder is not included by default.',
     'The jar artifact is optional and is not the primary package output.'
 ) | Set-Content -LiteralPath $layout
 
 if ($BuildJar) {
     Write-Section 'Optional jar assembly'
+    $jarExe = Resolve-CommandPath 'jar'
+    if (-not $jarExe) { $jarExe = Resolve-JavaHomeTool 'jar' }
+    if (-not $jarExe) { 'ERROR: jar not found for optional -BuildJar mode.' | Tee-Object -FilePath $packageLog -Append; Publish-LatestPackageAliases; exit 127 }
     $jarPath = Join-Path $outRoot 'TheMechanist.jar'
-    Write-Utf8NoBomLines $manifest @(
-        'Manifest-Version: 1.0',
-        'Main-Class: mechanist.TheMechanist',
-        'Implementation-Title: The Mechanist',
-        "Implementation-Version: $stamp",
-        ''
-    )
-    if ($jarExe) {
-        Push-Location $classes
-        try {
-            & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
-            $jarExit = $LASTEXITCODE
-        } finally {
-            Pop-Location
-        }
-    } else {
-        $jarExit = New-JarWithDotNetZip $classes $manifest $jarPath $packageLog
-    }
+    Write-Utf8NoBomLines $manifest @('Manifest-Version: 1.0', 'Main-Class: mechanist.TheMechanist', 'Implementation-Title: The Mechanist', "Implementation-Version: $stamp", '')
+    Push-Location $classes
+    try { & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append; $jarExit = $LASTEXITCODE } finally { Pop-Location }
     "JarExit: $jarExit" | Add-Content -LiteralPath $summary
-    if ($jarExit -ne 0) {
-        Write-Host "CLIENT PACKAGE FAIL: optional jar assembly failed with exit $jarExit. Logs: $runRoot"
-        Publish-LatestPackageAliases
-        exit $jarExit
-    }
-    $jarInfo = Get-Item -LiteralPath $jarPath
-    "PackageJar: $jarPath" | Add-Content -LiteralPath $summary
-    "PackageJarBytes: $($jarInfo.Length)" | Add-Content -LiteralPath $summary
-} else {
-    "JarExit: skipped" | Add-Content -LiteralPath $summary
-}
+    if ($jarExit -ne 0) { Publish-LatestPackageAliases; exit $jarExit }
+} else { "JarExit: skipped" | Add-Content -LiteralPath $summary }
 
 $classCount = @(Get-ChildItem -LiteralPath $classes -Recurse -Filter '*.class' -ErrorAction SilentlyContinue).Count
 "ClassFiles: $classCount" | Add-Content -LiteralPath $summary
-"CLIENT PACKAGE PASS: unfolded client updated at $outRoot with $classCount class files" | Tee-Object -FilePath $packageLog -Append
+"CLIENT PACKAGE PASS: unfolded client updated at $outRoot with $classCount class files and $packageAssetCount package asset files" | Tee-Object -FilePath $packageLog -Append
 Publish-LatestPackageAliases
 exit 0
-
