@@ -44,22 +44,32 @@ function Run-ProcessCaptured($name, $exe, [string[]]$argList, $logPath, [int]$ti
     Write-Section $name
     Add-Content -LiteralPath $summary -Value "Log: $logPath"
     Add-Content -LiteralPath $summary -Value "TimeoutSeconds: $timeoutSeconds"
+    Add-Content -LiteralPath $summary -Value "Command: $exe $($argList -join ' ')"
     $stdout = "$logPath.stdout.tmp"
     $stderr = "$logPath.stderr.tmp"
     Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
     try {
-        $p = Start-Process -FilePath $exe -ArgumentList $argList -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        $psi = [System.Diagnostics.ProcessStartInfo]::new()
+        $psi.FileName = $exe
+        foreach ($arg in $argList) { [void]$psi.ArgumentList.Add([string]$arg) }
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $p = [System.Diagnostics.Process]::new()
+        $p.StartInfo = $psi
+        [void]$p.Start()
         $finished = $p.WaitForExit([Math]::Max(1, $timeoutSeconds) * 1000)
         if (-not $finished) {
             try { $p.Kill($true) } catch { try { $p.Kill() } catch {} }
             "TIMEOUT after $timeoutSeconds seconds: $exe $($argList -join ' ')" | Tee-Object -FilePath $logPath
-            if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Add-Content -LiteralPath $logPath }
-            if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Add-Content -LiteralPath $logPath }
             Add-Content -LiteralPath $summary -Value "ExitCode: 124"
             return 124
         }
-        if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Tee-Object -FilePath $logPath }
-        if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Tee-Object -FilePath $logPath -Append }
+        $outText = $p.StandardOutput.ReadToEnd()
+        $errText = $p.StandardError.ReadToEnd()
+        if ($outText -and $outText.Length -gt 0) { $outText | Tee-Object -FilePath $logPath }
+        if ($errText -and $errText.Length -gt 0) { $errText | Tee-Object -FilePath $logPath -Append }
         $code = $p.ExitCode
         Add-Content -LiteralPath $summary -Value "ExitCode: $code"
         return $code
