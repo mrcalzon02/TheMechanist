@@ -1,0 +1,7 @@
+Menu shard function locator: 20260602_150351
+Repo root: C:\GITS\The Mechanist\TheMechanist
+JavaFiles: 392
+MenuHitRows: 2215
+ButtonSetupHitRows: 47
+PainterHitRows: 20
+TemporaryBridgeContaminationRows: 35

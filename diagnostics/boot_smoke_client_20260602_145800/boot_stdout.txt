@@ -1,3 +1,32 @@
 [14:58:00.794] INFO The Mechanist logging initialized. Single active log is logs/current.log; prior run rotated to logs/previous.log.
 [14:58:00.796] INFO The Mechanist booting.
 [14:58:00.849] WARN/APP_ICON No application icon images were loaded; using host default window icon.
+[14:59:23.480] WARN/ART_PACK No verified art root found; returning fallback root=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r runtime=cwd=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client; jarDir=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\classes; clientRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
+[14:59:23.483] WARN/ART_PACK No usable art quality root found. requestedTier=low_32 artRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r expectedCells=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r\tiles\quality\low_32\cells runtime=cwd=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client; jarDir=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\classes; clientRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
+[14:59:23.489] WARN/ART_PACK No usable art quality root found. requestedTier=low_32 artRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r expectedCells=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r\tiles\quality\low_32\cells runtime=cwd=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client; jarDir=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\classes; clientRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
+[14:59:23.493] WARN/ART_PACK No usable art quality root found. requestedTier=low_32 artRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r expectedCells=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r\tiles\quality\low_32\cells runtime=cwd=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client; jarDir=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\classes; clientRoot=C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
+[14:59:23.497] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for markiplier path=assets/art/portraits/name_locked/markiplier.png
+[14:59:23.497] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for jacksepticeye path=assets/art/portraits/name_locked/jacksepticeye.png
+[14:59:23.497] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for tom_yogscast path=assets/art/portraits/name_locked/tom_yogscast.png
+[14:59:23.497] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for ben_yogscast path=assets/art/portraits/name_locked/ben_yogscast.png
+[14:59:23.497] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for quill18 path=assets/art/portraits/name_locked/quill18.png
+[14:59:23.498] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for the_spiffing_brit path=assets/art/portraits/name_locked/the_spiffing_brit.png
+[14:59:23.498] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for splitsie path=assets/art/portraits/name_locked/splitsie.png
+[14:59:23.498] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for wastedspace path=assets/art/portraits/name_locked/wastedspace.png
+[14:59:23.498] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for truepen path=assets/art/portraits/name_locked/truepen.png
+[14:59:23.499] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for dash_dashington path=assets/art/portraits/name_locked/dash_dashington.png
+[14:59:23.499] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for luetin09 path=assets/art/portraits/name_locked/luetin09.png
+[14:59:23.499] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for bricky path=assets/art/portraits/name_locked/bricky.png
+[14:59:23.499] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for dkdiamantes path=assets/art/portraits/name_locked/dkdiamantes.png
+[14:59:23.499] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for auspex_tactics path=assets/art/portraits/name_locked/auspex_tactics.png
+[14:59:23.499] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for weshammer path=assets/art/portraits/name_locked/weshammer.png
+[14:59:23.500] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for chapter_master_valrak path=assets/art/portraits/name_locked/chapter_master_valrak.png
+[14:59:23.500] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for majorkill path=assets/art/portraits/name_locked/majorkill.png
+[14:59:23.500] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for oculus_imperia path=assets/art/portraits/name_locked/oculus_imperia.png
+[14:59:23.500] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for baldermorts_guide path=assets/art/portraits/name_locked/baldermorts_guide.png
+[14:59:23.500] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for arbitor_ian path=assets/art/portraits/name_locked/arbitor_ian.png
+[14:59:23.501] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for wolf_lord_rho path=assets/art/portraits/name_locked/wolf_lord_rho.png
+[14:59:23.501] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for pancreasnowork path=assets/art/portraits/name_locked/pancreasnowork.png
+[14:59:23.501] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for a_vox_in_the_void path=assets/art/portraits/name_locked/a_vox_in_the_void.png
+[14:59:23.501] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for tabletop_titan path=assets/art/portraits/name_locked/tabletop_titan.png
+[14:59:23.501] WARN/NAME_LOCKED_PROFILE_PORTRAIT missing asset for miniac path=assets/art/portraits/name_locked/miniac.png
