@@ -6,6 +6,8 @@ This document is the navigation surface for the ordered milestone system. It rep
 
 This document is not a changelog. Completed implementation belongs in `DEVELOPMENT_HISTORY.md`. Durable implementation rules belong in `STANDARDS_AND_PRACTICES.md`. High-level doctrine belongs in `MASTER_GOVERNANCE_REVISION_II.md`.
 
+All files named in this index live under `ROOT_docs/` unless a different top-level root is explicitly stated.
+
 ## Document authority rule
 
 Read planning and implementation documents in this order:

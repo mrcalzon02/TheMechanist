@@ -16,13 +16,13 @@ The goal is not to create more documents for their own sake. The goal is to make
 
 When planning or implementing work, read documents in this order:
 
-1. `docs/MASTER_DEVELOPMENT_PLAN.md` - authoritative phase map, active checkpoint, dependencies, and roadmap boundaries.
-2. `docs/STANDARDS_AND_PRACTICES.md` - durable implementation, build, packaging, and coding rules.
-3. `docs/MASTER_GOVERNANCE_REVISION_II.md` - high-level governance and doctrine.
-4. `docs/DEVELOPMENT_HISTORY.md` - completed work and historical implementation facts.
-5. `docs/MILESTONE_INDEX.md` - ordered milestone navigation surface.
+1. `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md` - authoritative phase map, active checkpoint, dependencies, and roadmap boundaries.
+2. `ROOT_docs/STANDARDS_AND_PRACTICES.md` - durable implementation, build, packaging, and coding rules.
+3. `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md` - high-level governance and doctrine.
+4. `ROOT_docs/DEVELOPMENT_HISTORY.md` - completed work and historical implementation facts.
+5. `ROOT_docs/MILESTONE_INDEX.md` - ordered milestone navigation surface.
 6. Ordered milestone documents - detailed phase-aligned implementation targets.
-7. `docs/LEGACY_MILESTONE_SOURCE_MAP.md` and legacy topical milestone/supplement files - source/archive material only, not preferred implementation entry points.
+7. `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md` and legacy topical milestone/supplement files - source/archive material only, not preferred implementation entry points.
 
 If documents conflict, do not guess. Prefer the master plan for phase/dependency authority, standards for implementation rules, governance for doctrine, and the newest ordered milestone for detailed implementation targeting unless the user explicitly overrides.
 
