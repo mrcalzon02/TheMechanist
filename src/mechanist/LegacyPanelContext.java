@@ -26,6 +26,7 @@ class GamePanel extends JPanel {
     static final int HOURS_PER_DAY = 24;
     static final String CONTAINER_BASE_STORAGE = "base-storage";
     static final String CONTAINER_PLAYER_INVENTORY = "player-inventory";
+    static final String CONTAINER_MACHINE_INPUT_PREFIX = "machine-input-";
 
     enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
     enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING }
@@ -67,6 +68,7 @@ class GamePanel extends JPanel {
     final ArrayDeque<LogisticsRouteReadinessPreviewAuthority.ManualHaulPreviewRecord> logisticsRoutePreviewHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsContractLifecycleAuthority.ContractLifecycleRecord> logisticsContractLifecycleHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsHaulFulfillmentPreflightAuthority.FulfillmentPreflightRecord> logisticsHaulPreflightHistory = new ArrayDeque<>();
+    final ArrayDeque<LogisticsManualHaulExecutionAuthority.ManualHaulExecutionRecord> logisticsHaulExecutionHistory = new ArrayDeque<>();
     final ArrayList<FactionStrategicPlan> factionStrategicPlans = new ArrayList<>();
     final ArrayList<PlayerNewsEvent> playerNewsEvents = new ArrayList<>();
     final ArrayList<Point> mouseMovePreviewPath = new ArrayList<>();
@@ -136,6 +138,7 @@ class GamePanel extends JPanel {
     int nextLogisticsHaulContractSeq = 1;
     int nextLogisticsContractLifecycleSeq = 1;
     int nextLogisticsHaulPreflightSeq = 1;
+    int nextLogisticsHaulExecutionSeq = 1;
     int lastFactionSimulationDay = -1;
     int innLastIssueDay = -1;
     int eulaScroll;
@@ -164,6 +167,7 @@ class GamePanel extends JPanel {
     String lastPublicNewsBulletin = "No public bulletin has been issued.";
     String lastInnNewsIssue = "No Imperial News Network issue has been generated.";
     String lastBroadcastReport = "No broadcast has been received.";
+    String lastLogisticsHaulExecutionReport = "No manual haul execution has been recorded.";
     long bootStartMillis = System.currentTimeMillis();
     long lastInputMillis = System.currentTimeMillis();
     Font titleFont = new Font("Monospaced", Font.BOLD, 36);
@@ -280,6 +284,46 @@ class GamePanel extends JPanel {
 
     boolean verifyItemOperationalParity(String context) { return true; }
     void purgePhysicalScriptInstances(String reason) {}
+
+    ItemInstance transferContainerItemByName(String fromContainerId, ArrayList<String> fromLegacy, String itemName,
+                                             String toContainerId, String toLabel, ArrayList<String> toLegacy,
+                                             String reason) {
+        if (itemName == null || itemName.isBlank()) return null;
+        ensureContainer(fromContainerId, fromContainerId == null ? "source" : fromContainerId);
+        ensureContainer(toContainerId, toLabel == null ? toContainerId : toLabel);
+        ItemInstance found = null;
+        ContainerRecord from = itemContainers.get(fromContainerId);
+        if (from != null) {
+            Iterator<String> it = from.itemInstanceIds.iterator();
+            while (it.hasNext()) {
+                String id = it.next();
+                ItemInstance inst = itemInstances.get(id);
+                if (inst != null && ItemQuality.namesMatch(inst.displayName, itemName)) {
+                    found = inst;
+                    it.remove();
+                    break;
+                }
+            }
+        }
+        if (found == null && fromLegacy != null) {
+            for (Iterator<String> it = fromLegacy.iterator(); it.hasNext();) {
+                String s = it.next();
+                if (ItemQuality.namesMatch(s, itemName)) {
+                    it.remove();
+                    String id = "legacy-transfer-" + (itemInstances.size() + 1);
+                    found = new ItemInstance(id, s, toContainerId, "legacy-transfer", null);
+                    itemInstances.put(id, found);
+                    break;
+                }
+            }
+        }
+        if (found == null) return null;
+        found.containerId = toContainerId == null ? "unknown.container" : toContainerId;
+        ContainerRecord to = itemContainers.get(found.containerId);
+        if (to != null && !to.itemInstanceIds.contains(found.id)) to.itemInstanceIds.add(found.id);
+        if (toLegacy != null) toLegacy.add(found.displayName);
+        return found;
+    }
 
     String rawCanPlacePendingBuildAtUncached(int x, int y) { return rawCanPlacePendingBuildAt(x, y); }
     String rawCanPlacePendingBuildAt(int x, int y) { return pendingBuildRecipe == null ? "no selected build" : "ok"; }
