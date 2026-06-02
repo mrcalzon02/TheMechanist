@@ -1,0 +1,10 @@
+The Mechanist unfolded client package
+Built: 20260602_111805
+Primary layout: unfolded directory, not jar-first
+Classes: classes\mechanist\*.class
+Source mirror: src\
+Assets/settings/locale are merged in place when present
+Source files: 392
+Launch: RUN_THE_MECHANIST_CLIENT.bat or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1
+Manual launch: java -cp "classes;." mechanist.TheMechanist
+Note: PACKAGE_client is preserved by default. Use -CleanOutput only when intentionally rebuilding from empty.

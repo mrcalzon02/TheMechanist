@@ -1,0 +1,33 @@
+{
+  "schema": 3,
+  "package_id": "launcher-special-portraits-v1",
+  "legacy_package_id": "launcher-celebrity-portraits-v1",
+  "owner": "thin-launcher",
+  "purpose": "pre-client-special-name-locked-portrait-selection",
+  "publish_status": "quarantined-until-cleared",
+  "description": "Launcher-side package for approved special/name-locked portrait handoff before the full client asset catalog is mounted.",
+  "source_policy": {
+    "mode": "map-existing-client-source-asset-after-clearance",
+    "required_existing_asset_hint": "approved cleared special/name-locked portrait asset in main client",
+    "do_not_generate_replacement_art": true,
+    "do_not_copy_full_client_portrait_catalog": true,
+    "do_not_use_real_person_likeness_without_clearance": true,
+    "exact_asset_path_status": "pending-source-tree-location-audit"
+  },
+  "privacy_policy": {
+    "local_only": true,
+    "network_lookup": false,
+    "telemetry_upload": false
+  },
+  "selection_policy": {
+    "source": "launcher-special-name-detection-v1",
+    "fallback_if_no_match": "launcher-human-8x8-v1",
+    "client_may_replace_after_verified_full_asset_catalog": true
+  },
+  "entries": [],
+  "notes": [
+    "This package replaces legacy celebrity-facing wording with publish-safe special/name-lock terminology.",
+    "Do not ship real-person likeness mappings unless rights, license, parody, or original-character clearance is documented.",
+    "Do not include the full game portrait catalog in the launcher. The launcher needs only the minimal fallback human package and approved cleared special/name-locked portrait package."
+  ]
+}
