@@ -55,13 +55,13 @@ if (-not $java) {
 }
 
 $javaPath = if ($java.Source) { $java.Source } else { $java.Name }
-$argLine = '-cp "classes;." mechanist.TheMechanist'
+$argLine = '-Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist'
 "$javaPath $argLine" | Set-Content -LiteralPath $commandLine
 "Java: $javaPath" | Add-Content -LiteralPath $summary
 "Command: $argLine" | Add-Content -LiteralPath $summary
 
 try {
-    $proc = Start-Process -FilePath $javaPath -ArgumentList @('-cp', 'classes;.', 'mechanist.TheMechanist') -WorkingDirectory $pkg -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru -WindowStyle Normal
+    $proc = Start-Process -FilePath $javaPath -ArgumentList @('-Dmechanist.assetRoot=.', '-Dmechanist.generatedAssetRoot=.', '-Dmechanist.assetTier=low_32', '-Dmechanist.assetResolution=32', '-cp', 'classes;.', 'mechanist.TheMechanist') -WorkingDirectory $pkg -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru -WindowStyle Normal
     "ProcessId: $($proc.Id)" | Add-Content -LiteralPath $summary
     $exited = $proc.WaitForExit([Math]::Max(1, $Seconds) * 1000)
     if ($exited) {
@@ -88,3 +88,4 @@ try {
     Publish-LatestBootAliases
     exit 10
 }
+
