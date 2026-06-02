@@ -1,12 +1,12 @@
 # Legacy Panel Reference Summary
 
-Generated: `2026-06-01 21:52:23`
+Generated: `2026-06-01 21:59:47`
 
 Status: active retirement ledger for the temporary `LegacyPanelContext.java` bridge.
 
-- Total references: `2301`
-- Files with references: `103`
-- Unique member references: `245`
+- Total references: `2342`
+- Files with references: `105`
+- Unique member references: `247`
 
 ## Top Files
 
@@ -31,6 +31,7 @@ Status: active retirement ledger for the temporary `LegacyPanelContext.java` bri
 - `src/mechanist/MultiplayerSurfacePainter.java`: `41`
 - `src/mechanist/GeneratedArtPayloadOptionsSubsystem.java`: `40`
 - `src/mechanist/SaveEfficiencyAuthority.java`: `40`
+- `src/mechanist/LegacyPanelContextAdapters.java`: `39`
 - `src/mechanist/AdminCommandDispatcher.java`: `37`
 - `src/mechanist/MouseLateUiController.java`: `36`
 - `src/mechanist/FactionServicesFramework.java`: `30`
@@ -39,14 +40,13 @@ Status: active retirement ledger for the temporary `LegacyPanelContext.java` bri
 - `src/mechanist/PanelTargetingController.java`: `27`
 - `src/mechanist/UiModalButtonController.java`: `27`
 - `src/mechanist/LayerG.java`: `26`
-- `src/mechanist/MainMenuSurfacePainter.java`: `26`
 
 ## Top Members
 
-- `options`: `261`
-- `repaint`: `107`
-- `world`: `100`
-- `logEvent`: `69`
+- `options`: `262`
+- `repaint`: `108`
+- `world`: `103`
+- `logEvent`: `71`
 - `screen`: `59`
 - `jvmRuntimeProfile`: `36`
 - `panelMode`: `35`
@@ -54,19 +54,19 @@ Status: active retirement ledger for the temporary `LegacyPanelContext.java` bri
 - `atlas`: `28`
 - `add`: `28`
 - `graphicsDropdown`: `27`
+- `playerX`: `24`
+- `playerY`: `24`
 - `buttons`: `24`
 - `smallFont`: `23`
-- `playerX`: `22`
-- `playerY`: `22`
 - `requestFocusInWindow`: `20`
 - `sounds`: `20`
 - `optionColor`: `19`
 - `userProfile`: `13`
+- `turn`: `13`
 - `getHeight`: `13`
 - `renderScaling`: `13`
 - `multiplayerMenu`: `13`
 - `optionsTab`: `13`
-- `turn`: `12`
 - `images`: `12`
 - `selectedButton`: `12`
 - `baseX`: `11`

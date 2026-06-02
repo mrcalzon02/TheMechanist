@@ -1216,6 +1216,47 @@ src/mechanist/LayerJ.java	22	type-reference	GamePanel	UNASSIGNED legacy panel co
 src/mechanist/LayerJ.java	26	type-reference	GamePanel	UNASSIGNED legacy panel context	static void toggleJvmTransparentAcceleration(GamePanel panel) {
 src/mechanist/LayerJ.java	30	type-reference	GamePanel	UNASSIGNED legacy panel context	static void toggleJvmNoAa(GamePanel panel) {
 src/mechanist/LayerJ.java	34	type-reference	GamePanel	UNASSIGNED legacy panel context	static void acceptJvmSettingsAndRestart(GamePanel panel) {
+src/mechanist/LegacyPanelContextAdapters.java	6	type-reference	GamePanel	UNASSIGNED legacy panel context	* Adapter layer for retiring direct GamePanel parameters.
+src/mechanist/LegacyPanelContextAdapters.java	8	type-reference	GamePanel	UNASSIGNED legacy panel context	* These wrappers let subsystems migrate from `GamePanel` to narrow context
+src/mechanist/LegacyPanelContextAdapters.java	16	type-reference	GamePanel	UNASSIGNED legacy panel context	static PlayerCommandContext playerCommand(GamePanel panel) { return new PlayerCommandPanelAdapter(panel); }
+src/mechanist/LegacyPanelContextAdapters.java	17	type-reference	GamePanel	UNASSIGNED legacy panel context	static UiRenderContext uiRender(GamePanel panel) { return new UiRenderPanelAdapter(panel); }
+src/mechanist/LegacyPanelContextAdapters.java	18	type-reference	GamePanel	UNASSIGNED legacy panel context	static WorldRuntimeContext worldRuntime(GamePanel panel) { return new WorldRuntimePanelAdapter(panel); }
+src/mechanist/LegacyPanelContextAdapters.java	19	type-reference	GamePanel	UNASSIGNED legacy panel context	static InventoryPersistenceContext inventory(GamePanel panel) { return new InventoryPersistencePanelAdapter(panel); }
+src/mechanist/LegacyPanelContextAdapters.java	20	type-reference	GamePanel	UNASSIGNED legacy panel context	static AdminCommandContext adminCommand(GamePanel panel) { return new AdminCommandPanelAdapter(panel); }
+src/mechanist/LegacyPanelContextAdapters.java	24	type-reference	GamePanel	UNASSIGNED legacy panel context	private final GamePanel panel;
+src/mechanist/LegacyPanelContextAdapters.java	25	type-reference	GamePanel	UNASSIGNED legacy panel context	PlayerCommandPanelAdapter(GamePanel panel) { this.panel = panel; }
+src/mechanist/LegacyPanelContextAdapters.java	26	member-reference	world	WORLD_RUNTIME context	public World commandWorld() { return panel == null ? null : panel.world; }
+src/mechanist/LegacyPanelContextAdapters.java	27	member-reference	playerX	WORLD_RUNTIME context	public int playerX() { return panel == null ? 0 : panel.playerX; }
+src/mechanist/LegacyPanelContextAdapters.java	28	member-reference	playerY	WORLD_RUNTIME context	public int playerY() { return panel == null ? 0 : panel.playerY; }
+src/mechanist/LegacyPanelContextAdapters.java	29	member-reference	queueOrExecuteMovementInput	UNASSIGNED legacy panel context	public void queueOrExecuteMovementInput(int dx, int dy) { if (panel != null) panel.queueOrExecuteMovementInput(dx, dy); }
+src/mechanist/LegacyPanelContextAdapters.java	30	member-reference	logEvent	UNASSIGNED legacy panel context	public void logEvent(String line) { if (panel != null) panel.logEvent(line); }
+src/mechanist/LegacyPanelContextAdapters.java	34	type-reference	GamePanel	UNASSIGNED legacy panel context	private final GamePanel panel;
+src/mechanist/LegacyPanelContextAdapters.java	35	type-reference	GamePanel	UNASSIGNED legacy panel context	UiRenderPanelAdapter(GamePanel panel) { this.panel = panel; }
+src/mechanist/LegacyPanelContextAdapters.java	36	member-reference	options	UNASSIGNED legacy panel context	public GameOptions renderOptions() { return panel == null ? new GameOptions() : panel.options; }
+src/mechanist/LegacyPanelContextAdapters.java	37	member-reference	lastAccessibleNarration	UI_RENDER context	public String accessibleNarration() { return panel == null ? "" : panel.lastAccessibleNarration; }
+src/mechanist/LegacyPanelContextAdapters.java	38	member-reference	lastAccessibleNarration	UI_RENDER context	public void setAccessibleNarration(String narration) { if (panel != null) panel.lastAccessibleNarration = narration == null ? "" : narration; }
+src/mechanist/LegacyPanelContextAdapters.java	39	member-reference	repaint	UNASSIGNED legacy panel context	public void requestUiRepaint() { if (panel != null) panel.repaint(); }
+src/mechanist/LegacyPanelContextAdapters.java	43	type-reference	GamePanel	UNASSIGNED legacy panel context	private final GamePanel panel;
+src/mechanist/LegacyPanelContextAdapters.java	44	type-reference	GamePanel	UNASSIGNED legacy panel context	WorldRuntimePanelAdapter(GamePanel panel) { this.panel = panel; }
+src/mechanist/LegacyPanelContextAdapters.java	45	member-reference	world	WORLD_RUNTIME context	public World runtimeWorld() { return panel == null ? null : panel.world; }
+src/mechanist/LegacyPanelContextAdapters.java	46	member-reference	turn	WORLD_RUNTIME context	public int runtimeTurn() { return panel == null ? 0 : panel.turn; }
+src/mechanist/LegacyPanelContextAdapters.java	47	member-reference	worldTurn	WORLD_RUNTIME context	public int runtimeWorldTurn() { return panel == null ? 0 : panel.worldTurn; }
+src/mechanist/LegacyPanelContextAdapters.java	48	member-reference	advanceTurnBody	UNASSIGNED legacy panel context	public void advanceRuntimeTurn(String eventLine) { if (panel != null) panel.advanceTurnBody(eventLine); }
+src/mechanist/LegacyPanelContextAdapters.java	52	type-reference	GamePanel	UNASSIGNED legacy panel context	private final GamePanel panel;
+src/mechanist/LegacyPanelContextAdapters.java	53	type-reference	GamePanel	UNASSIGNED legacy panel context	InventoryPersistencePanelAdapter(GamePanel panel) { this.panel = panel; }
+src/mechanist/LegacyPanelContextAdapters.java	54	member-reference	inventory	INVENTORY_PERSIST / save context	public ArrayList<String> carriedInventory() { return panel == null ? new ArrayList<>() : panel.inventory; }
+src/mechanist/LegacyPanelContextAdapters.java	55	member-reference	carriedScript	INVENTORY_PERSIST / save context	public int carriedScript() { return panel == null ? 0 : panel.carriedScript; }
+src/mechanist/LegacyPanelContextAdapters.java	56	member-reference	baseStashedScript	INVENTORY_PERSIST / save context	public int bankedScript() { return panel == null ? 0 : panel.baseStashedScript; }
+src/mechanist/LegacyPanelContextAdapters.java	57	member-reference	addImperialScript	UNASSIGNED legacy panel context	public void addImperialScript(int amount) { if (panel != null) panel.addImperialScript(amount); }
+src/mechanist/LegacyPanelContextAdapters.java	61	type-reference	GamePanel	UNASSIGNED legacy panel context	private final GamePanel panel;
+src/mechanist/LegacyPanelContextAdapters.java	62	type-reference	GamePanel	UNASSIGNED legacy panel context	AdminCommandPanelAdapter(GamePanel panel) { this.panel = panel; }
+src/mechanist/LegacyPanelContextAdapters.java	63	member-reference	world	WORLD_RUNTIME context	public World adminWorld() { return panel == null ? null : panel.world; }
+src/mechanist/LegacyPanelContextAdapters.java	64	member-reference	logEvent	UNASSIGNED legacy panel context	public void adminLog(String line) { if (panel != null) panel.logEvent(line); }
+src/mechanist/LegacyPanelContextAdapters.java	66	member-reference	markLocalDirtyRegion	UNASSIGNED legacy panel context	if (panel != null) panel.markLocalDirtyRegion(reason, panel.playerX, panel.playerY, 8, true, true, true, false);
+src/mechanist/LegacyPanelContextAdapters.java	66	member-reference	playerX	WORLD_RUNTIME context	if (panel != null) panel.markLocalDirtyRegion(reason, panel.playerX, panel.playerY, 8, true, true, true, false);
+src/mechanist/LegacyPanelContextAdapters.java	66	member-reference	playerY	WORLD_RUNTIME context	if (panel != null) panel.markLocalDirtyRegion(reason, panel.playerX, panel.playerY, 8, true, true, true, false);
+src/mechanist/LegacyPanelRetargetContexts.java	6	type-reference	GamePanel	UNASSIGNED legacy panel context	* Narrow context interfaces for retiring the temporary GamePanel bridge.
+src/mechanist/LegacyPanelRetargetContexts.java	9	type-reference	GamePanel	UNASSIGNED legacy panel context	* instead of accepting the legacy GamePanel compatibility type.  The bridge may
 src/mechanist/LoadingSurfacePainter.java	9	type-reference	GamePanel	UI_RENDER context	* reconstructed from the GamePanel shards. It must never delegate back into itself.
 src/mechanist/LoadingSurfacePainter.java	13	type-reference	GamePanel	UI_RENDER context	public void paint(Graphics2D g, GamePanel panel) {
 src/mechanist/LoadingSurfacePainter.java	14	member-reference	getWidth	UI_RENDER context	int w = Math.max(1, panel.getWidth());

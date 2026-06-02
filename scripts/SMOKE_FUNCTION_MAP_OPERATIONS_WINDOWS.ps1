@@ -170,6 +170,16 @@ $summaryCandidates = @(
 $functionSummary = $summaryCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
 if ($functionSummary) { Copy-Item -LiteralPath $functionSummary -Destination $functionSummaryCopy -Force }
 
+
+Write-Section 'Legacy panel reference ledger'
+$legacyPanelExit = 999
+if ($hasPython) {
+    $legacyPanelExit = Run-ProcessCaptured 'Legacy panel reference ledger builder' 'py' @('-3', (Join-Path $root 'scripts\BUILD_LEGACY_PANEL_REFERENCE_LEDGER.py'), '--apply') (Join-Path $runRoot 'legacy_panel_reference_ledger.log') $CommandTimeoutSeconds
+    if ($legacyPanelExit -eq 0) { Add-Gate 'INFO' 'legacy_panel_reference_ledger' 'pass' 'Legacy panel reference ledger regenerated.' } else { Add-Gate 'ERROR' 'legacy_panel_reference_ledger' 'fail' "Exit code $legacyPanelExit" }
+} else {
+    Add-Gate 'ERROR' 'legacy_panel_reference_ledger' 'skipped' 'py launcher missing; legacy panel reference ledger was not regenerated.'
+}
+
 Write-Section 'Compile smoke'
 $compileExit = 0
 if ($SkipCompile) {
