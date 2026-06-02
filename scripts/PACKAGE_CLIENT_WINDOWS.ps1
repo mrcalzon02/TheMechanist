@@ -81,6 +81,31 @@ function Resolve-SiblingTool($knownToolPath, $siblingName) {
     return $null
 }
 
+function Resolve-JavaHomeTool($toolName) {
+    if (-not $env:JAVA_HOME) { return $null }
+    foreach ($candidateName in @("$toolName.exe", "$toolName.cmd", $toolName)) {
+        $candidate = Join-Path (Join-Path $env:JAVA_HOME 'bin') $candidateName
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    return $null
+}
+
+function New-JarWithDotNetZip($sourceDir, $manifestSource, $targetJar, $logPath) {
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+        if (Test-Path -LiteralPath $targetJar) { Remove-Item -LiteralPath $targetJar -Force -ErrorAction Stop }
+        $metaInf = Join-Path $sourceDir 'META-INF'
+        New-Item -ItemType Directory -Force -Path $metaInf | Out-Null
+        Copy-Item -LiteralPath $manifestSource -Destination (Join-Path $metaInf 'MANIFEST.MF') -Force -ErrorAction Stop
+        [System.IO.Compression.ZipFile]::CreateFromDirectory($sourceDir, $targetJar, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+        "DOTNET ZIP JAR PASS: $targetJar" | Tee-Object -FilePath $logPath -Append
+        return 0
+    } catch {
+        "DOTNET ZIP JAR FAIL: $($_.Exception.Message)" | Tee-Object -FilePath $logPath -Append
+        return 1
+    }
+}
+
 "Client Package Run: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Package output: $outRoot" | Add-Content -LiteralPath $summary
@@ -90,19 +115,20 @@ function Resolve-SiblingTool($knownToolPath, $siblingName) {
 Write-Section 'Tooling preflight'
 $javacExe = Resolve-CommandPath 'javac'
 $jarExe = Resolve-CommandPath 'jar'
+if (-not $javacExe) { $javacExe = Resolve-JavaHomeTool 'javac' }
+if (-not $jarExe) { $jarExe = Resolve-JavaHomeTool 'jar' }
 if ((-not $jarExe) -and $javacExe) { $jarExe = Resolve-SiblingTool $javacExe 'jar' }
 
-if (-not $javacExe) { 'ERROR: javac not found on PATH.' | Tee-Object -FilePath $compileLog; Publish-LatestPackageAliases; exit 127 }
-if (-not $jarExe) {
-    $msg = "ERROR: jar not found on PATH or beside javac. javac resolved to: $javacExe"
-    $msg | Tee-Object -FilePath $packageLog
-    Publish-LatestPackageAliases
-    exit 127
-}
+if (-not $javacExe) { 'ERROR: javac not found on PATH or JAVA_HOME.' | Tee-Object -FilePath $compileLog; Publish-LatestPackageAliases; exit 127 }
 "javac command: $javacExe" | Add-Content -LiteralPath $summary
-"jar command: $jarExe" | Add-Content -LiteralPath $summary
+if ($jarExe) {
+    "jar command: $jarExe" | Add-Content -LiteralPath $summary
+} else {
+    "jar command: unavailable; using .NET ZipFile fallback" | Add-Content -LiteralPath $summary
+    "WARN: jar not found on PATH, JAVA_HOME, or beside javac. javac resolved to: $javacExe. Falling back to .NET ZipFile packaging." | Tee-Object -FilePath $packageLog
+}
 & $javacExe -version *>&1 | Tee-Object -FilePath $compileLog
-& $jarExe --version *>&1 | Tee-Object -FilePath $packageLog
+if ($jarExe) { & $jarExe --version *>&1 | Tee-Object -FilePath $packageLog }
 
 Write-Section 'Source inventory'
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName })
@@ -147,23 +173,27 @@ Write-Section 'Assemble PACKAGE_client'
 if ((Test-Path -LiteralPath $outRoot) -and (-not $NoClean)) { Remove-Item -LiteralPath $outRoot -Recurse -Force -ErrorAction Continue }
 New-Item -ItemType Directory -Force -Path $outRoot | Out-Null
 $jarPath = Join-Path $outRoot 'TheMechanist.jar'
-@(
+Write-Utf8NoBomLines $manifest @(
     'Manifest-Version: 1.0',
     'Main-Class: mechanist.TheMechanist',
     'Implementation-Title: The Mechanist',
     "Implementation-Version: $stamp",
     ''
-) | Set-Content -LiteralPath $manifest
-Push-Location $classes
-try {
-    & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
-    $jarExit = $LASTEXITCODE
-} finally {
-    Pop-Location
+)
+if ($jarExe) {
+    Push-Location $classes
+    try {
+        & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
+        $jarExit = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
+} else {
+    $jarExit = New-JarWithDotNetZip $classes $manifest $jarPath $packageLog
 }
 "JarExit: $jarExit" | Add-Content -LiteralPath $summary
 if ($jarExit -ne 0) {
-    Write-Host "CLIENT PACKAGE FAIL: jar failed with exit $jarExit. Logs: $runRoot"
+    Write-Host "CLIENT PACKAGE FAIL: jar assembly failed with exit $jarExit. Logs: $runRoot"
     Publish-LatestPackageAliases
     exit $jarExit
 }
