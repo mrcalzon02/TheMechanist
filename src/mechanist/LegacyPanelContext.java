@@ -2,13 +2,10 @@ package mechanist;
 
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Random;
+import java.util.*;
 import javax.swing.JPanel;
 
 /**
@@ -30,7 +27,7 @@ class GamePanel extends JPanel {
     static final String CONTAINER_BASE_STORAGE = "base-storage";
     static final String CONTAINER_PLAYER_INVENTORY = "player-inventory";
 
-    enum Screen { BOOT, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
+    enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
     enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING }
 
     World world;
@@ -46,6 +43,9 @@ class GamePanel extends JPanel {
     LegacyRenderScaling renderScaling = new LegacyRenderScaling();
     LegacyFrameLimiter frameLimiter = new LegacyFrameLimiter();
     LegacyImageSurface images = new LegacyImageSurface();
+    LegacyFirstPersonRenderViewport firstPersonRenderViewport = new LegacyFirstPersonRenderViewport();
+    LegacyRenderStressTest renderStressTest = new LegacyRenderStressTest();
+    JvmRuntimeProfileAuthority.RuntimeConfig jvmRuntimeProfile = JvmRuntimeProfileAuthority.load();
     javax.swing.Timer timer;
 
     final ArrayList<String> inventory = new ArrayList<>();
@@ -53,14 +53,20 @@ class GamePanel extends JPanel {
     final ArrayList<BaseObject> baseObjects = new ArrayList<>();
     final ArrayList<String> baseStorage = new ArrayList<>();
     final ArrayList<Candidate> candidates = new ArrayList<>();
-    final ArrayList<Object> factionRecruits = new ArrayList<>();
+    final ArrayList<RecruitWorker> factionRecruits = new ArrayList<>();
     final ArrayList<Object> buttons = new ArrayList<>();
+    final LinkedHashMap<String, ContainerRecord> itemContainers = new LinkedHashMap<>();
+    final LinkedHashMap<String, ItemInstance> itemInstances = new LinkedHashMap<>();
     final HashSet<String> visitedZoneTypes = new HashSet<>();
     final HashSet<String> visitedZoneInstances = new HashSet<>();
     final HashSet<String> unlockedKnowledges = new HashSet<>();
     final ArrayDeque<LogisticsRouteIntentAuthority.RouteIntentRecord> logisticsRouteIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsDeliveryIntentAuthority.DeliveryIntentRecord> logisticsDeliveryIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsSourceReservationAuthority.SourceReservationRecord> logisticsSourceReservationHistory = new ArrayDeque<>();
+    final ArrayDeque<LogisticsManualHaulContractAuthority.ManualHaulContractRecord> logisticsHaulContractHistory = new ArrayDeque<>();
+    final ArrayDeque<LogisticsRouteReadinessPreviewAuthority.ManualHaulPreviewRecord> logisticsRoutePreviewHistory = new ArrayDeque<>();
+    final ArrayDeque<LogisticsContractLifecycleAuthority.ContractLifecycleRecord> logisticsContractLifecycleHistory = new ArrayDeque<>();
+    final ArrayDeque<LogisticsHaulFulfillmentPreflightAuthority.FulfillmentPreflightRecord> logisticsHaulPreflightHistory = new ArrayDeque<>();
     final ArrayList<FactionStrategicPlan> factionStrategicPlans = new ArrayList<>();
     final ArrayList<PlayerNewsEvent> playerNewsEvents = new ArrayList<>();
     final ArrayList<Point> mouseMovePreviewPath = new ArrayList<>();
@@ -86,6 +92,8 @@ class GamePanel extends JPanel {
     boolean mouseMovePreviewActive;
     boolean mouseMovePreviewValid;
     boolean inventoryTargetColumnActive;
+    boolean eulaGateActive;
+    boolean jvmRuntimeRestartPending;
     int turn;
     int worldTurn;
     int food;
@@ -124,8 +132,15 @@ class GamePanel extends JPanel {
     int nextLogisticsIntentSeq = 1;
     int nextLogisticsRouteIntentSeq = 1;
     int nextLogisticsSourceReservationSeq = 1;
+    int nextLogisticsRoutePreviewSeq = 1;
+    int nextLogisticsHaulContractSeq = 1;
+    int nextLogisticsContractLifecycleSeq = 1;
+    int nextLogisticsHaulPreflightSeq = 1;
     int lastFactionSimulationDay = -1;
     int innLastIssueDay = -1;
+    int eulaScroll;
+    int eulaMaxScroll;
+    int graphicsDropdown = -1;
     boolean baseClaimed;
     boolean characterNameEditActive;
     boolean manualMovementPlanActive;
@@ -137,6 +152,7 @@ class GamePanel extends JPanel {
     String lastAccessibleNarration = "";
     String activeScrollTag = "";
     String rebindingTarget = "";
+    String jvmRuntimeNotice = "";
     String lastTargetingReport = "No target selected.";
     String equippedLeftHandItem = "LEFT EMPTY";
     String equippedRightHandItem = "RIGHT EMPTY";
@@ -203,6 +219,7 @@ class GamePanel extends JPanel {
     boolean scrollActivePanel(int delta, boolean page) { return false; }
     void cycleFireMode() {}
     void throwSelectedExplosiveAtCursor() {}
+    void throwSelectedPortableLight() { logEvent("A portable light is thrown into the dark."); }
     void reloadCurrentRangedWeapon() {}
     void confirmCombatTarget() { confirmCombatTargetBody(); }
     void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; lookX = combatX; lookY = combatY; }
@@ -246,6 +263,23 @@ class GamePanel extends JPanel {
     void healWorstBodyPart(int amount) { wounds = Math.max(0, wounds - Math.max(0, amount)); }
     void triggerPlayerDeath(String cause, String attacker, String weapon, String location) { lastDefeatCause = cause; lastDefeatAttacker = attacker; lastDefeatWeapon = weapon; lastDefeatLocation = location; runUnconsciousEvents++; }
     void writeSaveFile(int slot, boolean quick) {}
+    void shutdownRuntime() {}
+
+    void toggleTacticalSlate() { openPanel(PanelMode.INFO); }
+    void openChatWindow() { openPanel(PanelMode.CONSOLE); }
+    boolean worldZoomControlActive() { return true; }
+    void changeWorldZoom(int delta, String source) { logEvent("World zoom changed by " + delta + " via " + source + "."); }
+    void continueFromIntroCrawl() { setScreen(Screen.GAME); }
+    void continueFromZoneSplash() { setScreen(Screen.GAME); }
+    void finishBootSequence(String source) { setScreen(Screen.MENU); logEvent("Boot sequence finished by " + source + "."); }
+    void acceptEulaGate() { eulaGateActive = false; logEvent("EULA accepted."); }
+    void scrollEulaGate(int delta, boolean page) { eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + delta * (page ? 10 : 1))); }
+    void openKnowledgeMenu() { setScreen(Screen.KNOWLEDGE); }
+    Rectangle graphicsDropdownInnerRect() { return new Rectangle(0, 0, Math.max(1, getWidth()), Math.max(1, getHeight())); }
+    int scaled(int value) { return value; }
+
+    boolean verifyItemOperationalParity(String context) { return true; }
+    void purgePhysicalScriptInstances(String reason) {}
 
     String rawCanPlacePendingBuildAtUncached(int x, int y) { return rawCanPlacePendingBuildAt(x, y); }
     String rawCanPlacePendingBuildAt(int x, int y) { return pendingBuildRecipe == null ? "no selected build" : "ok"; }
@@ -259,8 +293,16 @@ class GamePanel extends JPanel {
     void addFactionMarketPressure(Faction faction, int pressure, String reason) {}
     static boolean sameFactionFamilyStatic(Faction a, Faction b) { return a != null && b != null && (a == b || a.name().split("_")[0].equals(b.name().split("_")[0])); }
     String factionStockContainerId(NpcFactionSite site) { return site == null ? "faction-stock-none" : "faction-stock-" + Math.abs(site.name.hashCode()); }
-    void ensureContainer(String containerId, String label) {}
-    void addItemToContainerResult(String containerId, String label, String item, ItemProvenanceRecord provenance, Object source, String reason) {}
+    void ensureContainer(String containerId, String label) { if (containerId != null && !containerId.isBlank()) itemContainers.putIfAbsent(containerId, new ContainerRecord(containerId, label == null ? containerId : label)); }
+    void addItemToContainerResult(String containerId, String label, String item, ItemProvenanceRecord provenance, Object source, String reason) {
+        ensureContainer(containerId, label);
+        if (item == null || item.isBlank()) return;
+        String id = "legacy-item-" + (itemInstances.size() + 1);
+        ItemInstance inst = new ItemInstance(id, item, containerId, provenance == null ? "legacy" : provenance.unitId, provenance);
+        itemInstances.put(id, inst);
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c != null) c.itemInstanceIds.add(id);
+    }
 }
 
 final class LegacyPanelAtlas {
@@ -290,6 +332,7 @@ final class LegacyMultiplayerMenu {
 final class LegacySoundSurface {
     void play(String key, GameOptions options) {}
     void playDistantCue(String key, int distance, GameOptions options) { play(key, options); }
+    void setMusicVolume(GameOptions options) {}
 }
 
 final class LegacyRenderScaling {
@@ -307,9 +350,18 @@ final class LegacyImageSurface {
     BufferedImage getNpcPortraitFor(Object npc) { return null; }
 }
 
+final class LegacyFirstPersonRenderViewport {
+    boolean handleKeyPressed(GamePanel panel, int code) { return false; }
+}
+
+final class LegacyRenderStressTest {
+    String toggle(LegacyFrameLimiter limiter) { return "Render stress test toggled."; }
+}
+
 final class LegacyPerformanceDiagnostics {
     private boolean visible;
     String toggle() { visible = !visible; return visible ? "Performance diagnostics visible." : "Performance diagnostics hidden."; }
+    void setVisible(boolean visible) { this.visible = visible; }
     boolean visible() { return visible; }
     String auditSummary() { return "legacyPerformanceDiagnostics visible=" + visible; }
 }
