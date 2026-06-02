@@ -16,7 +16,7 @@ import javax.swing.JPanel;
  * extracted subsystems are retargeted toward narrower interfaces/managers.
  */
 @SuppressWarnings({"serial", "unused"})
-class GamePanel extends JPanel {
+class GamePanel extends LegacyPanelBridgeBase {
     static final int MOTION_STATIONARY = 0;
     static final int MOTION_SNEAK = 1;
     static final int MOTION_WALK = 2;
@@ -413,3 +413,4 @@ final class LegacyPerformanceDiagnostics {
 final class LegacyPanelProfile {
     String name = "none";
 }
+
