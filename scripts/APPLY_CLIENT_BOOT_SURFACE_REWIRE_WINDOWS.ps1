@@ -8,8 +8,10 @@ if (-not (Test-Path -LiteralPath $packageScriptPath -PathType Leaf)) { throw "Mi
 $panel = Get-Content -LiteralPath $panelPath -Raw
 
 # Fix compile errors introduced by the visible boot/image bridge patches.
+# Keep this idempotent: repeated runs must not turn java.awt.Graphics2D into java.awt.java.awt.Graphics2D.
 $panel = $panel.Replace('jvmRuntimeProfile.compactLine()', 'jvmRuntimeProfile.targetLabel()')
-$panel = $panel.Replace('Graphics2D g = img.createGraphics();', 'java.awt.Graphics2D g = img.createGraphics();')
+$panel = $panel.Replace('java.awt.java.awt.Graphics2D', 'java.awt.Graphics2D')
+$panel = $panel.Replace('    Graphics2D g = img.createGraphics();', '    java.awt.Graphics2D g = img.createGraphics();')
 
 # Ensure the compatibility panel has a visible real boot/menu surface, not a blank JPanel.
 if ($panel -notmatch 'private void paintGameBridgeSurface\(java\.awt\.Graphics2D g, int w, int h\)') {
