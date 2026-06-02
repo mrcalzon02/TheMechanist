@@ -1,7 +1,7 @@
 param(
     [switch]$SkipRun,
     [switch]$VerboseJava,
-    [int]$MaxErrors = 1000
+    [int]$MaxErrors = 200
 )
 
 $ErrorActionPreference = 'Continue'
