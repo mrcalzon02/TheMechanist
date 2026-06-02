@@ -1,7 +1,9 @@
 package mechanist;
 
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +31,7 @@ class GamePanel extends JPanel {
     static final String CONTAINER_PLAYER_INVENTORY = "player-inventory";
 
     enum Screen { BOOT, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
-    enum PanelMode { NONE, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING }
+    enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING }
 
     World world;
     LegacyPanelAtlas atlas;
@@ -43,6 +45,7 @@ class GamePanel extends JPanel {
     LegacySoundSurface sounds = new LegacySoundSurface();
     LegacyRenderScaling renderScaling = new LegacyRenderScaling();
     LegacyFrameLimiter frameLimiter = new LegacyFrameLimiter();
+    LegacyImageSurface images = new LegacyImageSurface();
     javax.swing.Timer timer;
 
     final ArrayList<String> inventory = new ArrayList<>();
@@ -59,7 +62,12 @@ class GamePanel extends JPanel {
     final ArrayDeque<LogisticsDeliveryIntentAuthority.DeliveryIntentRecord> logisticsDeliveryIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsSourceReservationAuthority.SourceReservationRecord> logisticsSourceReservationHistory = new ArrayDeque<>();
     final ArrayList<FactionStrategicPlan> factionStrategicPlans = new ArrayList<>();
+    final ArrayList<PlayerNewsEvent> playerNewsEvents = new ArrayList<>();
+    final ArrayList<Point> mouseMovePreviewPath = new ArrayList<>();
     final HashMap<Integer, String> innDailyIssues = new HashMap<>();
+    final HashMap<String, Boolean> consoleFlags = new HashMap<>();
+    final HashMap<String, Float> consoleNumericFlags = new HashMap<>();
+    final HashMap<String, String> consoleStringFlags = new HashMap<>();
 
     Random rng = new Random(0);
     long seed;
@@ -67,12 +75,17 @@ class GamePanel extends JPanel {
     int playerY;
     int lookX;
     int lookY;
+    int combatX;
+    int combatY;
     int baseX;
     int baseY;
     int buildX;
     int buildY;
     boolean lookCursorActive;
     boolean interactCursorActive;
+    boolean mouseMovePreviewActive;
+    boolean mouseMovePreviewValid;
+    boolean inventoryTargetColumnActive;
     int turn;
     int worldTurn;
     int food;
@@ -85,6 +98,7 @@ class GamePanel extends JPanel {
     int carriedScript;
     int baseStashedScript;
     int xp;
+    int knowledgeCredits;
     int runKills;
     int runCrafted;
     int runNpcTalkedTo;
@@ -96,6 +110,9 @@ class GamePanel extends JPanel {
     int controlsTab;
     int lookStackIndex;
     int lookStackScroll;
+    int inventoryItemDescriptionScroll;
+    int selectedInventoryIndex;
+    int selectedTargetInventoryIndex;
     int jobIndex;
     int jobDossierScroll;
     int jobDossierTab;
@@ -104,6 +121,7 @@ class GamePanel extends JPanel {
     int infectionRisk;
     int pain;
     int fatigue;
+    int nextLogisticsIntentSeq = 1;
     int nextLogisticsRouteIntentSeq = 1;
     int nextLogisticsSourceReservationSeq = 1;
     int lastFactionSimulationDay = -1;
@@ -115,9 +133,13 @@ class GamePanel extends JPanel {
     Screen screen = Screen.MENU;
     PanelMode panelMode = PanelMode.NONE;
     BuildRecipe pendingBuildRecipe;
+    String selectedKnowledgeNodeId;
     String lastAccessibleNarration = "";
     String activeScrollTag = "";
     String rebindingTarget = "";
+    String lastTargetingReport = "No target selected.";
+    String equippedLeftHandItem = "LEFT EMPTY";
+    String equippedRightHandItem = "RIGHT EMPTY";
     String lastDefeatAttacker = "unknown attacker";
     String lastDefeatWeapon = "unknown weapon";
     String lastDefeatCause = "unknown cause";
@@ -125,6 +147,7 @@ class GamePanel extends JPanel {
     String lastFactionSimulationReport = "No faction simulation has run.";
     String lastPublicNewsBulletin = "No public bulletin has been issued.";
     String lastInnNewsIssue = "No Imperial News Network issue has been generated.";
+    String lastBroadcastReport = "No broadcast has been received.";
     long bootStartMillis = System.currentTimeMillis();
     long lastInputMillis = System.currentTimeMillis();
     Font titleFont = new Font("Monospaced", Font.BOLD, 36);
@@ -136,12 +159,14 @@ class GamePanel extends JPanel {
     void executePacedMovementBody(int dx, int dy, String source) { playerX += dx; playerY += dy; lookX = playerX; lookY = playerY; }
     void clearPendingMovementInput(String reason) {}
     void advanceTurnBody(String line) { turn++; worldTurn++; if (line != null && !line.isBlank()) logEvent(line); }
+    void advanceTurn(String line) { advanceTurnBody(line); }
     void settlePlayerMotionAfterNoMoveTurn(String reason) {}
     void confirmInteractionBody() {}
     void confirmCombatTargetBody() {}
     void useSelectedInventoryItemBody() {}
     void unequipSelectedEquipmentSlotBody() {}
     void addImperialScript(int amount) { carriedScript += Math.max(0, amount); }
+    boolean spendImperialScript(int amount) { if (amount <= 0) return true; if (carriedScript < amount) return false; carriedScript -= amount; return true; }
     void markLocalDirtyRegion(String reason, int x, int y, int radius, boolean tiles, boolean npcs, boolean objects, boolean full) {}
     void updateSensoryModel(String reason) {}
     void refreshNameLockedCandidateState(Candidate candidate) {}
@@ -150,6 +175,10 @@ class GamePanel extends JPanel {
     boolean isRemembered(int x, int y) { return true; }
     int countMoney() { return Math.max(0, carriedScript); }
     int totalBankedCash() { return Math.max(0, baseStashedScript); }
+    int inventoryWeight() { return inventory == null ? 0 : inventory.size(); }
+    int carryCapacity() { return 40 + Math.max(0, supplies / 5); }
+    void addInventoryItem(String item, ItemProvenanceRecord provenance) { if (item != null && !item.isBlank()) inventory.add(item); }
+    void gainXp(String skill, int amount, String reason) { xp += Math.max(0, amount); }
     String facingLabel() { return "E"; }
     String activeMotionStateLabel() { return "stationary"; }
     String timeText() { return "day " + Math.max(0, turn / Math.max(1, TURNS_PER_HOUR * HOURS_PER_DAY)) + " hour " + Math.max(0, (turn / Math.max(1, TURNS_PER_HOUR)) % HOURS_PER_DAY); }
@@ -176,11 +205,15 @@ class GamePanel extends JPanel {
     void throwSelectedExplosiveAtCursor() {}
     void reloadCurrentRangedWeapon() {}
     void confirmCombatTarget() { confirmCombatTargetBody(); }
-    void moveCombatCursor(int dx, int dy) { lookX += dx; lookY += dy; }
+    void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; lookX = combatX; lookY = combatY; }
+    LegacyTargetingSolution targetingSolutionAt(int x, int y) { return new LegacyTargetingSolution("target=" + x + "," + y); }
     void confirmInteraction() { confirmInteractionBody(); }
     void examineSelectedLookTarget() {}
     void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; }
     ArrayList<String> tileStackAt(int x, int y) { return new ArrayList<>(); }
+    boolean isDoorTile(char tile) { return tile == '+' || tile == '/' || tile == '\\'; }
+    void interactDoorAt(int x, int y, char tile) { logEvent("Door interaction at " + x + "," + y + "."); advanceTurn("interacts with a door."); }
+    void enforceEntityOccupancy(String reason) {}
     void moveBuildCursor(int dx, int dy) { buildX += dx; buildY += dy; }
     void confirmBuildPlacement() {}
     void moveSelectedButton(int delta) { if (!buttons.isEmpty()) selectedButton = Math.floorMod(selectedButton + delta, buttons.size()); }
@@ -189,7 +222,7 @@ class GamePanel extends JPanel {
     void beginManualMovementPlan() { manualMovementPlanActive = true; }
     void waitOneTurn() { advanceTurnBody("waits."); }
     void beginInteractMode() { panelMode = PanelMode.INTERACT; screen = Screen.PANEL; }
-    void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = Screen.PANEL; }
+    void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = mode == PanelMode.CHARACTER ? Screen.CHARACTER : Screen.PANEL; }
     void beginCombatTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
     void beginExplosiveTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
     void queueOrExecuteMovementInput(int dx, int dy) { executePacedMovementBody(dx, dy, "legacy-queue"); }
@@ -200,6 +233,20 @@ class GamePanel extends JPanel {
     void inGameEditorUndo() {}
     void inGameEditorRedo() {}
 
+    void moveInventorySelection(int delta) { if (!inventory.isEmpty()) selectedInventoryIndex = Math.floorMod(selectedInventoryIndex + delta, inventory.size()); inventoryItemDescriptionScroll = 0; }
+    void moveTargetInventorySelection(int delta) { if (!baseStorage.isEmpty()) selectedTargetInventoryIndex = Math.floorMod(selectedTargetInventoryIndex + delta, baseStorage.size()); inventoryItemDescriptionScroll = 0; }
+
+    void beginWindowModeReconfigure() {}
+    void endWindowModeReconfigure() {}
+    void requestApplicationExit(String reason) { logEvent("Exit requested: " + (reason == null ? "unspecified" : reason)); }
+    String togglePerformanceDiagnostics() { return performanceDiagnostics.toggle(); }
+    boolean toggleConsoleFlag(String key) { String safe = key == null ? "" : key; boolean next = !Boolean.TRUE.equals(consoleFlags.get(safe)); consoleFlags.put(safe, next); return next; }
+    void setConsoleNumericFlag(String key, float value) { consoleNumericFlags.put(key == null ? "" : key, value); }
+    void setConsoleStringFlag(String key, String value) { consoleStringFlags.put(key == null ? "" : key, value == null ? "" : value); }
+    void healWorstBodyPart(int amount) { wounds = Math.max(0, wounds - Math.max(0, amount)); }
+    void triggerPlayerDeath(String cause, String attacker, String weapon, String location) { lastDefeatCause = cause; lastDefeatAttacker = attacker; lastDefeatWeapon = weapon; lastDefeatLocation = location; runUnconsciousEvents++; }
+    void writeSaveFile(int slot, boolean quick) {}
+
     String rawCanPlacePendingBuildAtUncached(int x, int y) { return rawCanPlacePendingBuildAt(x, y); }
     String rawCanPlacePendingBuildAt(int x, int y) { return pendingBuildRecipe == null ? "no selected build" : "ok"; }
     String constructionPlacementResult(BuildRecipe recipe, int x, int y, String raw) { return raw == null || raw.isBlank() ? "ok" : raw; }
@@ -207,6 +254,7 @@ class GamePanel extends JPanel {
     String buildComponentRequirementProblem(BuildRecipe recipe) { return "component requirements unresolved in legacy bridge"; }
     String buildRequirementProblem(BuildRecipe recipe) { return "build requirements unresolved in legacy bridge"; }
 
+    int currentInnDay() { return Math.max(0, turn / Math.max(1, TURNS_PER_HOUR * HOURS_PER_DAY)); }
     NpcFactionSite siteForFaction(Faction faction, ZoneType zoneType) { return null; }
     void addFactionMarketPressure(Faction faction, int pressure, String reason) {}
     static boolean sameFactionFamilyStatic(Faction a, Faction b) { return a != null && b != null && (a == b || a.name().split("_")[0].equals(b.name().split("_")[0])); }
@@ -225,6 +273,11 @@ final class LegacyPanelAtlas {
     boolean sewer;
 }
 
+final class LegacyTargetingSolution {
+    final String summary;
+    LegacyTargetingSolution(String summary) { this.summary = summary == null ? "No target selected." : summary; }
+}
+
 final class LegacyKeyboardInputBridge {
     void keyPressed(KeyEvent event) {}
 }
@@ -236,14 +289,22 @@ final class LegacyMultiplayerMenu {
 
 final class LegacySoundSurface {
     void play(String key, GameOptions options) {}
+    void playDistantCue(String key, int distance, GameOptions options) { play(key, options); }
 }
 
 final class LegacyRenderScaling {
     void applyOptions(GameOptions options) {}
+    String auditSummary() { return "legacyRenderScaling active"; }
 }
 
 final class LegacyFrameLimiter {
     void configure(GameOptions options) {}
+}
+
+final class LegacyImageSurface {
+    void reloadArtQuality(GameOptions options) {}
+    BufferedImage getTile(char tile) { return null; }
+    BufferedImage getNpcPortraitFor(Object npc) { return null; }
 }
 
 final class LegacyPerformanceDiagnostics {
