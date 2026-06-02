@@ -1,8 +1,11 @@
 param(
     [string]$OutputDir = "PACKAGE_client",
     [int]$MaxErrors = 200,
-    [switch]$NoClean,
-    [switch]$SkipAssetCopy
+    [switch]$CleanOutput,
+    [switch]$CleanClasses,
+    [switch]$SkipAssetCopy,
+    [switch]$SkipSourceMirror,
+    [switch]$BuildJar
 )
 
 $ErrorActionPreference = 'Continue'
@@ -13,8 +16,8 @@ $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
 $runRoot = Join-Path $diagRoot "package_client_$stamp"
 $buildRoot = Join-Path $root 'build\package_client'
-$classes = Join-Path $buildRoot 'classes'
 $outRoot = if ([System.IO.Path]::IsPathRooted($OutputDir)) { $OutputDir } else { Join-Path $root $OutputDir }
+$classes = Join-Path $outRoot 'classes'
 
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $summary = Join-Path $runRoot 'SUMMARY.txt'
@@ -43,12 +46,31 @@ function Write-Utf8NoBomLines($path, $lines) {
     [System.IO.File]::WriteAllLines($path, [string[]]$lines, $encoding)
 }
 
+function Copy-FilePreserveTree($sourceRoot, $destRoot, $fileInfo) {
+    $sourceFull = [System.IO.Path]::GetFullPath($fileInfo.FullName)
+    $rootFullLocal = [System.IO.Path]::GetFullPath($sourceRoot).TrimEnd('\\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $relative = if ($sourceFull.StartsWith($rootFullLocal, [System.StringComparison]::OrdinalIgnoreCase)) { $sourceFull.Substring($rootFullLocal.Length) } else { $fileInfo.Name }
+    $dest = Join-Path $destRoot $relative
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+    Copy-Item -LiteralPath $fileInfo.FullName -Destination $dest -Force -ErrorAction Continue
+}
+
+function Copy-MergeIfExists($source, $dest) {
+    if (-not (Test-Path -LiteralPath $source)) { return }
+    Write-Host "MERGE $source -> $dest"
+    if (Test-Path -LiteralPath $source -PathType Container) {
+        New-Item -ItemType Directory -Force -Path $dest | Out-Null
+        Get-ChildItem -LiteralPath $source -Recurse -File -Force | ForEach-Object { Copy-FilePreserveTree $source $dest $_ }
+    } else {
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+        Copy-Item -LiteralPath $source -Destination $dest -Force -ErrorAction Continue
+    }
+}
+
 function Copy-IfExists($source, $dest) {
     if (Test-Path -LiteralPath $source) {
-        Write-Host "COPY $source -> $dest"
         if (Test-Path -LiteralPath $source -PathType Container) {
-            if (Test-Path -LiteralPath $dest) { Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction Continue }
-            Copy-Item -LiteralPath $source -Destination $dest -Recurse -Force -ErrorAction Continue
+            Copy-MergeIfExists $source $dest
         } else {
             New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
             Copy-Item -LiteralPath $source -Destination $dest -Force -ErrorAction Continue
@@ -109,8 +131,13 @@ function New-JarWithDotNetZip($sourceDir, $manifestSource, $targetJar, $logPath)
 "Client Package Run: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Package output: $outRoot" | Add-Content -LiteralPath $summary
+"Package mode: unfolded exposed client directory" | Add-Content -LiteralPath $summary
+"Classes output: $classes" | Add-Content -LiteralPath $summary
 "Build root: $buildRoot" | Add-Content -LiteralPath $summary
 "Max javac errors: $MaxErrors" | Add-Content -LiteralPath $summary
+"CleanOutput: $CleanOutput" | Add-Content -LiteralPath $summary
+"CleanClasses: $CleanClasses" | Add-Content -LiteralPath $summary
+"BuildJar: $BuildJar" | Add-Content -LiteralPath $summary
 
 Write-Section 'Tooling preflight'
 $javacExe = Resolve-CommandPath 'javac'
@@ -121,14 +148,31 @@ if ((-not $jarExe) -and $javacExe) { $jarExe = Resolve-SiblingTool $javacExe 'ja
 
 if (-not $javacExe) { 'ERROR: javac not found on PATH or JAVA_HOME.' | Tee-Object -FilePath $compileLog; Publish-LatestPackageAliases; exit 127 }
 "javac command: $javacExe" | Add-Content -LiteralPath $summary
-if ($jarExe) {
-    "jar command: $jarExe" | Add-Content -LiteralPath $summary
-} else {
-    "jar command: unavailable; using .NET ZipFile fallback" | Add-Content -LiteralPath $summary
-    "WARN: jar not found on PATH, JAVA_HOME, or beside javac. javac resolved to: $javacExe. Falling back to .NET ZipFile packaging." | Tee-Object -FilePath $packageLog
-}
 & $javacExe -version *>&1 | Tee-Object -FilePath $compileLog
-if ($jarExe) { & $jarExe --version *>&1 | Tee-Object -FilePath $packageLog }
+if ($BuildJar) {
+    if ($jarExe) {
+        "jar command: $jarExe" | Add-Content -LiteralPath $summary
+        & $jarExe --version *>&1 | Tee-Object -FilePath $packageLog
+    } else {
+        "jar command: unavailable; optional BuildJar will use .NET ZipFile fallback" | Add-Content -LiteralPath $summary
+        "WARN: jar not found; optional BuildJar will use .NET ZipFile fallback." | Tee-Object -FilePath $packageLog
+    }
+} else {
+    "jar command: not required; unfolded package is primary output" | Add-Content -LiteralPath $summary
+    "INFO: unfolded PACKAGE_client mode; jar assembly skipped unless -BuildJar is supplied." | Tee-Object -FilePath $packageLog
+}
+
+Write-Section 'Prepare unfolded PACKAGE_client directory'
+if ((Test-Path -LiteralPath $outRoot) -and $CleanOutput) {
+    Write-Host "CLEAN OUTPUT $outRoot"
+    Remove-Item -LiteralPath $outRoot -Recurse -Force -ErrorAction Continue
+}
+New-Item -ItemType Directory -Force -Path $outRoot | Out-Null
+if ((Test-Path -LiteralPath $classes) -and $CleanClasses) {
+    Write-Host "CLEAN CLASSES $classes"
+    Remove-Item -LiteralPath $classes -Recurse -Force -ErrorAction Continue
+}
+New-Item -ItemType Directory -Force -Path $classes | Out-Null
 
 Write-Section 'Source inventory'
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName })
@@ -138,9 +182,7 @@ Write-Utf8NoBomLines $javacSourceArgs $javacArgLines
 "Java source files: $($sources.Count)" | Add-Content -LiteralPath $summary
 "Source list: $sourceList" | Add-Content -LiteralPath $summary
 
-Write-Section 'Compile client classes'
-if (Test-Path -LiteralPath $buildRoot) { Remove-Item -LiteralPath $buildRoot -Recurse -Force -ErrorAction Continue }
-New-Item -ItemType Directory -Force -Path $classes | Out-Null
+Write-Section 'Compile client classes into unfolded package'
 $tempArgFile = Join-Path ([System.IO.Path]::GetTempPath()) "mechanist_package_javac_sources_$stamp.args"
 Write-Utf8NoBomLines $tempArgFile $javacArgLines
 $responseArg = '@' + $tempArgFile
@@ -169,63 +211,105 @@ if ($compileExit -ne 0) {
     exit $compileExit
 }
 
-Write-Section 'Assemble PACKAGE_client'
-if ((Test-Path -LiteralPath $outRoot) -and (-not $NoClean)) { Remove-Item -LiteralPath $outRoot -Recurse -Force -ErrorAction Continue }
-New-Item -ItemType Directory -Force -Path $outRoot | Out-Null
-$jarPath = Join-Path $outRoot 'TheMechanist.jar'
-Write-Utf8NoBomLines $manifest @(
-    'Manifest-Version: 1.0',
-    'Main-Class: mechanist.TheMechanist',
-    'Implementation-Title: The Mechanist',
-    "Implementation-Version: $stamp",
-    ''
-)
-if ($jarExe) {
-    Push-Location $classes
-    try {
-        & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
-        $jarExit = $LASTEXITCODE
-    } finally {
-        Pop-Location
-    }
-} else {
-    $jarExit = New-JarWithDotNetZip $classes $manifest $jarPath $packageLog
-}
-"JarExit: $jarExit" | Add-Content -LiteralPath $summary
-if ($jarExit -ne 0) {
-    Write-Host "CLIENT PACKAGE FAIL: jar assembly failed with exit $jarExit. Logs: $runRoot"
-    Publish-LatestPackageAliases
-    exit $jarExit
-}
-
+Write-Section 'Merge package resources'
 if (-not $SkipAssetCopy) {
-    Copy-IfExists (Join-Path $root 'assets') (Join-Path $outRoot 'assets')
-    Copy-IfExists (Join-Path $root 'settings') (Join-Path $outRoot 'settings')
-    Copy-IfExists (Join-Path $root 'client\locale') (Join-Path $outRoot 'client\locale')
-    Copy-IfExists (Join-Path $root 'locale') (Join-Path $outRoot 'locale')
+    Copy-MergeIfExists (Join-Path $root 'assets') (Join-Path $outRoot 'assets')
+    Copy-MergeIfExists (Join-Path $root 'settings') (Join-Path $outRoot 'settings')
+    Copy-MergeIfExists (Join-Path $root 'client\locale') (Join-Path $outRoot 'client\locale')
+    Copy-MergeIfExists (Join-Path $root 'locale') (Join-Path $outRoot 'locale')
+}
+if (-not $SkipSourceMirror) {
+    Copy-MergeIfExists (Join-Path $root 'src') (Join-Path $outRoot 'src')
 }
 
 $runBat = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.bat'
 @(
     '@echo off',
+    'setlocal',
     'cd /d "%~dp0"',
-    'java -jar TheMechanist.jar',
-    'pause'
+    'java -cp "classes;." mechanist.TheMechanist',
+    'set MECH_EXIT=%ERRORLEVEL%',
+    'echo.',
+    'echo The Mechanist client exited with code %MECH_EXIT%.',
+    'pause',
+    'exit /b %MECH_EXIT%'
 ) | Set-Content -LiteralPath $runBat
+
+$runPs1 = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.ps1'
+@(
+    '$ErrorActionPreference = "Stop"',
+    'Set-Location -LiteralPath $PSScriptRoot',
+    '& java -cp "classes;." mechanist.TheMechanist',
+    'exit $LASTEXITCODE'
+) | Set-Content -LiteralPath $runPs1
 
 $pkgManifest = Join-Path $outRoot 'PACKAGE_MANIFEST.txt'
 @(
-    'The Mechanist client package',
+    'The Mechanist unfolded client package',
     "Built: $stamp",
-    "Jar: TheMechanist.jar",
-    "Main-Class: mechanist.TheMechanist",
+    'Primary layout: unfolded directory, not jar-first',
+    'Classes: classes\mechanist\*.class',
+    'Source mirror: src\',
+    'Assets/settings/locale are merged in place when present',
     "Source files: $($sources.Count)",
-    'Launch: RUN_THE_MECHANIST_CLIENT.bat or java -jar TheMechanist.jar'
+    'Launch: RUN_THE_MECHANIST_CLIENT.bat or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1',
+    'Manual launch: java -cp "classes;." mechanist.TheMechanist',
+    'Note: PACKAGE_client is preserved by default. Use -CleanOutput only when intentionally rebuilding from empty.'
 ) | Set-Content -LiteralPath $pkgManifest
 
-$jarInfo = Get-Item -LiteralPath $jarPath
-"PackageJar: $jarPath" | Add-Content -LiteralPath $summary
-"PackageJarBytes: $($jarInfo.Length)" | Add-Content -LiteralPath $summary
-"CLIENT PACKAGE PASS: $jarPath ($($jarInfo.Length) bytes)" | Tee-Object -FilePath $packageLog -Append
+$layout = Join-Path $outRoot 'PACKAGE_LAYOUT.txt'
+@(
+    'PACKAGE_client is the exposed unfolded client directory.',
+    '',
+    'Expected important paths:',
+    '  classes\                 Compiled Java classes, updated in place by PACKAGE_CLIENT_WINDOWS.ps1',
+    '  src\                     Source mirror for inspection/debugging/exposed-client review',
+    '  assets\                  Art/audio/data assets copied by merge, not destructive delete',
+    '  settings\                Settings copied by merge when present',
+    '  client\locale\ or locale\ Localization files copied by merge when present',
+    '  RUN_THE_MECHANIST_CLIENT.bat',
+    '  RUN_THE_MECHANIST_CLIENT.ps1',
+    '',
+    'The package script intentionally does not delete this directory by default.',
+    'The jar artifact is optional and is not the primary package output.'
+) | Set-Content -LiteralPath $layout
+
+if ($BuildJar) {
+    Write-Section 'Optional jar assembly'
+    $jarPath = Join-Path $outRoot 'TheMechanist.jar'
+    Write-Utf8NoBomLines $manifest @(
+        'Manifest-Version: 1.0',
+        'Main-Class: mechanist.TheMechanist',
+        'Implementation-Title: The Mechanist',
+        "Implementation-Version: $stamp",
+        ''
+    )
+    if ($jarExe) {
+        Push-Location $classes
+        try {
+            & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
+            $jarExit = $LASTEXITCODE
+        } finally {
+            Pop-Location
+        }
+    } else {
+        $jarExit = New-JarWithDotNetZip $classes $manifest $jarPath $packageLog
+    }
+    "JarExit: $jarExit" | Add-Content -LiteralPath $summary
+    if ($jarExit -ne 0) {
+        Write-Host "CLIENT PACKAGE FAIL: optional jar assembly failed with exit $jarExit. Logs: $runRoot"
+        Publish-LatestPackageAliases
+        exit $jarExit
+    }
+    $jarInfo = Get-Item -LiteralPath $jarPath
+    "PackageJar: $jarPath" | Add-Content -LiteralPath $summary
+    "PackageJarBytes: $($jarInfo.Length)" | Add-Content -LiteralPath $summary
+} else {
+    "JarExit: skipped" | Add-Content -LiteralPath $summary
+}
+
+$classCount = @(Get-ChildItem -LiteralPath $classes -Recurse -Filter '*.class' -ErrorAction SilentlyContinue).Count
+"ClassFiles: $classCount" | Add-Content -LiteralPath $summary
+"CLIENT PACKAGE PASS: unfolded client updated at $outRoot with $classCount class files" | Tee-Object -FilePath $packageLog -Append
 Publish-LatestPackageAliases
 exit 0
