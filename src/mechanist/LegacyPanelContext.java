@@ -741,7 +741,6 @@ final class LegacyImageSurface {
         String p = path.trim().replace('\\', '/');
         p = p.replaceFirst("^256px/", resolution + "px/");
         p = p.replace("_256px.", "_" + resolution + "px.");
-        p = p.replaceFirst("^" + java.util.regex.Pattern.quote(resolution + "px/") , "");
         return p;
     }
 
@@ -862,6 +861,7 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
 
 
 
