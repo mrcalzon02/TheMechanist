@@ -1609,7 +1609,6 @@ src/mechanist/MultiplayerSurfacePainter.java	109	member-reference	smallFont	UI_R
 src/mechanist/MultiplayerSurfacePainter.java	109	member-reference	smallFont	UI_RENDER context	g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(9f, panel.smallFont.getSize2D() - 2f)));
 src/mechanist/MultiplayerSurfacePainter.java	110	member-reference	optionColor	UI_RENDER context	g.setColor(panel.optionColor(GameOptions.TEXT_HIGHLIGHT));
 src/mechanist/MultiplayerSurfacePainter.java	111	member-reference	center	UI_RENDER context	panel.center(g, "CONNECTION COMMANDS", action.x + action.width / 2, action.y + 22);
-src/mechanist/NpcFactionSite.java	6	type-reference	GamePanel	COMBAT_SIM / INVENTORY_PERSIST faction context	* This model exists outside the temporary GamePanel bridge so faction strategy
 src/mechanist/NpcTurnBudgetScheduler.java	10	type-reference	GamePanel	UNASSIGNED legacy panel context	* work during the current player/world turn.  GamePanel remains the authority
 src/mechanist/OptionsDropdownMouseController.java	6	type-reference	GamePanel	UNASSIGNED legacy panel context	static boolean handleOptionsDropdownClick(GamePanel panel, int mx, int my) {
 src/mechanist/OptionsDropdownMouseController.java	7	type-reference	GamePanel	UNASSIGNED legacy panel context	if (panel.screen != GamePanel.Screen.OPTIONS || panel.graphicsDropdown < 0) return false;

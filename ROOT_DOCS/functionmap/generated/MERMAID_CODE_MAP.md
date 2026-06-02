@@ -1,6 +1,6 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-06-01 22:57:10`
+Generated: `2026-06-01 23:03:50`
 
 ```mermaid
 flowchart TD
@@ -105,7 +105,7 @@ flowchart TD
     Z_FIXTURE_MACHINE --> M_src_mechanist_NobleEstateSecurityFixtureAuthority_java["src/mechanist/NobleEstateSecurityFixtureAuthority.java<br/>16 funcs / 179 lines"]
     Z_FIXTURE_MACHINE --> M_src_mechanist_FrontageFixtureInteractionAuthority_java["src/mechanist/FrontageFixtureInteractionAuthority.java<br/>13 funcs / 179 lines"]
     Z_FIXTURE_MACHINE --> Z_FIXTURE_MACHINE_OTHER["+ 6 smaller modules"]
-    ROOT --> Z_COMBAT_SIM["Combat Entity Simulation<br/>22 modules"]
+    ROOT --> Z_COMBAT_SIM["Combat Entity Simulation<br/>21 modules"]
     Z_COMBAT_SIM --> M_src_mechanist_WorldSimulationFramework_java["src/mechanist/WorldSimulationFramework.java<br/>204 funcs / 1800 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_PopulationPersonnelFramework_java["src/mechanist/PopulationPersonnelFramework.java<br/>122 funcs / 1262 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_FactionServicesFramework_java["src/mechanist/FactionServicesFramework.java<br/>105 funcs / 939 lines"]
@@ -118,7 +118,7 @@ flowchart TD
     Z_COMBAT_SIM --> M_src_mechanist_RuntimePathResolver_java["src/mechanist/RuntimePathResolver.java<br/>12 funcs / 122 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_WorldTurnManager_java["src/mechanist/WorldTurnManager.java<br/>8 funcs / 74 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_ServerRuntimePaths_java["src/mechanist/ServerRuntimePaths.java<br/>18 funcs / 72 lines"]
-    Z_COMBAT_SIM --> Z_COMBAT_SIM_OTHER["+ 10 smaller modules"]
+    Z_COMBAT_SIM --> Z_COMBAT_SIM_OTHER["+ 9 smaller modules"]
     ROOT --> Z_ASSET_REGISTRY["Asset Registry Art<br/>22 modules"]
     Z_ASSET_REGISTRY --> M_src_mechanist_InfrastructurePromotionRegistry_java["src/mechanist/InfrastructurePromotionRegistry.java<br/>11 funcs / 1001 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_TileDataCompilationAuthority_java["src/mechanist/TileDataCompilationAuthority.java<br/>46 funcs / 603 lines"]
