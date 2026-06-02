@@ -1,5 +1,5 @@
 The Mechanist unfolded client package
-Built: 20260602_132953
+Built: 20260602_140153
 Primary layout: unfolded directory, not jar-first
 Classes: classes\mechanist\*.class
 Assets: assets\

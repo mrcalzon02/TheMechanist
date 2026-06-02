@@ -209,7 +209,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean characterNameEditActive;
     boolean manualMovementPlanActive;
     boolean buildPlacementActive;
-    Screen screen = Screen.MENU;
+    Screen screen = Screen.BOOT;
     PanelMode panelMode = PanelMode.NONE;
     BuildRecipe pendingBuildRecipe;
     String selectedKnowledgeNodeId;
@@ -241,7 +241,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         setBackground(new java.awt.Color(18, 17, 14));
         setFocusable(true);
         logEvent("GamePanel compatibility bridge initialized.");
-        installMainMenuInputBridge();
+        installExistingEarlyScreenInputBridge();
     }
     GamePanel(RuntimeProfile runtimeProfile) {
         this();
@@ -331,6 +331,25 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (inventory.isEmpty()) inventory.add("Ration pack");
         logEvent("New game bridge started from package client menu.");
     }
+
+    void installExistingEarlyScreenInputBridge() {
+        addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
+                if (KeyEarlyScreenController.handleEarlyKey(GamePanel.this, e.getKeyCode())) {
+                    repaint();
+                    requestFocusInWindow();
+                }
+            }
+        });
+        addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (MouseEarlyScreenController.handleIntroZoneEditorAndAudit(GamePanel.this, e, e.getX(), e.getY())) {
+                    repaint();
+                    requestFocusInWindow();
+                }
+            }
+        });
+    }
     @Override
     protected void paintComponent(java.awt.Graphics graphics) {
         super.paintComponent(graphics);
@@ -344,7 +363,19 @@ class GamePanel extends LegacyPanelBridgeBase {
             for (int x = 0; x < w; x += 32) g.drawLine(x, 0, x, h);
             for (int y = 0; y < h; y += 32) g.drawLine(0, y, w, y);
             try {
-                if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+                if (screen == Screen.BOOT) {
+                    new BootSurfacePainter().paint(g, this);
+                    return;
+                }
+                if (screen == Screen.INTRO_CRAWL) {
+                    new IntroCrawlSurfacePainter().paint(g, this);
+                    return;
+                }
+                if (screen == Screen.ZONE_SPLASH || screen == Screen.CAPTURE) {
+                    new LoadingSurfacePainter().paint(g, this);
+                    return;
+                }
+                if (screen == Screen.MENU || screen == Screen.MAIN) {
                     new MainMenuSurfacePainter().paint(g, this);
                     return;
                 }
@@ -532,9 +563,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     void openChatWindow() { openPanel(PanelMode.CONSOLE); }
     boolean worldZoomControlActive() { return true; }
     void changeWorldZoom(int delta, String source) { logEvent("World zoom changed by " + delta + " via " + source + "."); }
-    void continueFromIntroCrawl() { setScreen(Screen.GAME); }
+    void continueFromIntroCrawl() { setScreen(Screen.MENU); logEvent("Intro crawl completed."); }
     void continueFromZoneSplash() { setScreen(Screen.GAME); }
-    void finishBootSequence(String source) { setScreen(Screen.MENU); logEvent("Boot sequence finished by " + source + "."); }
+    void finishBootSequence(String source) { setScreen(Screen.INTRO_CRAWL); logEvent("Boot sequence finished by " + source + "."); }
     void acceptEulaGate() { eulaGateActive = false; logEvent("EULA accepted."); }
     void scrollEulaGate(int delta, boolean page) { eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + delta * (page ? 10 : 1))); }
     void openKnowledgeMenu() { setScreen(Screen.KNOWLEDGE); }
@@ -943,6 +974,8 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
+
 
 
 
