@@ -765,7 +765,7 @@ final class LegacyFrameLimiterSnapshot {
 }
 
 final class LegacyImageSurface {
-    private final MediaRuntimeFramework media = new MediaRuntimeFramework();
+    private final ImageCache media = new ImageCache();
     private boolean loaded;
     private GameOptions lastOptions;
 
@@ -843,6 +843,11 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
+
+
+
+
 
 
 

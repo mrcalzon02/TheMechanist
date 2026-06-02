@@ -6,7 +6,7 @@ if (-not (Test-Path -LiteralPath $panelPath -PathType Leaf)) { throw "Missing $p
 $text = Get-Content -LiteralPath $panelPath -Raw
 $new = @'
 final class LegacyImageSurface {
-    private final MediaRuntimeFramework media = new MediaRuntimeFramework();
+    private final ImageCache media = new ImageCache();
     private boolean loaded;
     private GameOptions lastOptions;
 
@@ -63,3 +63,5 @@ if ($text -notmatch $pattern) { throw 'Could not locate LegacyImageSurface block
 $text = [regex]::Replace($text, $pattern, $new + "`r`n`r`nfinal class LegacyFirstPersonRenderViewport", 1)
 Set-Content -LiteralPath $panelPath -Value $text
 Write-Host 'Rewired LegacyImageSurface to delegate to MediaRuntimeFramework.'
+
+
