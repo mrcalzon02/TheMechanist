@@ -1,9 +1,9 @@
 Latest Diagnostics Index
-Generated: 2026-06-02 09:07:12
+Generated: 2026-06-02 09:20:09
 Diagnostics root: C:\GITS\The Mechanist\TheMechanist\diagnostics
 
-Latest compile diagnostic: function_compile_smoke_20260602_090708
-Latest compile diagnostic path: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_compile_smoke_20260602_090708
+Latest compile diagnostic: function_compile_smoke_20260602_092005
+Latest compile diagnostic path: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_compile_smoke_20260602_092005
 
-Latest operations diagnostic: function_ops_smoke_20260602_090706
-Latest operations diagnostic path: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260602_090706
+Latest operations diagnostic: function_ops_smoke_20260602_092003
+Latest operations diagnostic path: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260602_092003

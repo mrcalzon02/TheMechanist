@@ -1,12 +1,12 @@
 # Function Map Summary
 
-Generated: `2026-06-02 09:07:06`
+Generated: `2026-06-02 09:20:03`
 
 ## Counts
 
 - Files inventoried: `474`
 - Java classes/interfaces/enums/records: `1171`
-- Java functions/methods parsed: `6076`
+- Java functions/methods parsed: `6077`
 - Duplicate function-name groups: `485`
 - Documents inventoried: `45`
 - Document retirement candidate rows: `1`
@@ -22,7 +22,7 @@ Generated: `2026-06-02 09:07:06`
 - `runtime.options`: `366` functions
 - `server.authority.launcher`: `150` functions
 - `ui.input.navigation`: `344` functions
-- `ui.render.surface`: `2967` functions
+- `ui.render.surface`: `2968` functions
 - `unclassified`: `420` functions
 - `world.generation.transition`: `632` functions
 

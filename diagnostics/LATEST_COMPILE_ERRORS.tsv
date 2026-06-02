@@ -1,23 +1,5 @@
 ﻿file	line	column	kind	message
-javac.exe : src\mechanist\LogisticsManualHaulExecutionAuthority.java	144		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	149		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	156		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	185		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	195		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	260		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	261		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	261		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	267		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	273		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	279		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	281		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	285		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	285		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	292		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	292		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	293		error	cannot find symbol
-src\mechanist\LogisticsManualHaulExecutionAuthority.java	311		error	cannot find symbol
-src\mechanist\LogisticsReservationForecastAuthority.java	99		error	cannot find symbol
+javac.exe : src\mechanist\LogisticsReservationForecastAuthority.java	99		error	cannot find symbol
 src\mechanist\LogisticsReservationForecastAuthority.java	115		error	cannot find symbol
 src\mechanist\LogisticsReservationForecastAuthority.java	135		error	cannot find symbol
 src\mechanist\LogisticsReservationForecastAuthority.java	156		error	cannot find symbol
@@ -181,8 +163,6 @@ src\mechanist\PersistenceFramework.java	98		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	101		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	104		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	107		error	cannot find symbol
-src\mechanist\PersistenceFramework.java	108		error	cannot find symbol
-src\mechanist\PersistenceFramework.java	110		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	111		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	112		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	113		error	cannot find symbol
@@ -199,3 +179,23 @@ src\mechanist\PersistenceFramework.java	132		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	133		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	134		error	cannot find symbol
 src\mechanist\PersistenceFramework.java	135		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	136		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	137		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	138		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	139		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	140		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	141		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	142		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	143		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	149		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	158		error	incompatible types: WorldAtlas cannot be converted to 
+src\mechanist\PersistenceFramework.java	159		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	163		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	164		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	165		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	166		error	incompatible types: possible lossy conversion from long to int
+src\mechanist\PersistenceFramework.java	168		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	168		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	168		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	170		error	cannot find symbol
+src\mechanist\PersistenceFramework.java	170		error	cannot find symbol

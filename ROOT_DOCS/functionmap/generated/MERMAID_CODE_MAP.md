@@ -1,6 +1,6 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-06-02 09:07:08`
+Generated: `2026-06-02 09:20:05`
 
 ```mermaid
 flowchart TD
@@ -28,8 +28,8 @@ flowchart TD
     Z_UI_RENDER --> M_src_mechanist_EconomicTopologyFramework_java["src/mechanist/EconomicTopologyFramework.java<br/>28 funcs / 452 lines"]
     Z_UI_RENDER --> M_src_mechanist_CharacterIdentityFramework_java["src/mechanist/CharacterIdentityFramework.java<br/>52 funcs / 430 lines"]
     Z_UI_RENDER --> M_src_mechanist_UiRuntimeSupportFramework_java["src/mechanist/UiRuntimeSupportFramework.java<br/>50 funcs / 428 lines"]
+    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>136 funcs / 415 lines"]
     Z_UI_RENDER --> M_src_mechanist_KnowledgeQualityFramework_java["src/mechanist/KnowledgeQualityFramework.java<br/>26 funcs / 413 lines"]
-    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>136 funcs / 371 lines"]
     Z_UI_RENDER --> M_src_mechanist_LogisticsManualHaulExecutionAuthority_java["src/mechanist/LogisticsManualHaulExecutionAuthority.java<br/>24 funcs / 349 lines"]
     Z_UI_RENDER --> M_src_mechanist_FramePacingAndStressFramework_java["src/mechanist/FramePacingAndStressFramework.java<br/>29 funcs / 334 lines"]
     Z_UI_RENDER --> M_src_mechanist_EconomicLocalTopologyMetadataSurfaceAuthority_java["src/mechanist/EconomicLocalTopologyMetadataSurfaceAuthority.java<br/>21 funcs / 323 lines"]
