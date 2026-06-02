@@ -1,6 +1,7 @@
 param(
     [switch]$SkipRun,
-    [switch]$VerboseJava
+    [switch]$VerboseJava,
+    [int]$MaxErrors = 1000
 )
 
 $ErrorActionPreference = 'Continue'
@@ -61,6 +62,7 @@ function Write-Utf8NoBomLines($path, $lines) {
 "Function Compile Diagnostic Run: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Run folder: $runRoot" | Add-Content -LiteralPath $summary
+"Javac max errors: $MaxErrors" | Add-Content -LiteralPath $summary
 
 Run-Captured 'Environment' {
     Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
@@ -111,7 +113,7 @@ if ($hasPom -and $hasMaven) {
     $tempArgFile = Join-Path ([System.IO.Path]::GetTempPath()) "mechanist_javac_sources_$stamp.args"
     Write-Utf8NoBomLines $tempArgFile $javacArgLines
     $responseArg = '@' + $tempArgFile
-    $javacArgs = @('-encoding', 'UTF-8', '-d', $classes, $responseArg)
+    $javacArgs = @('-Xmaxerrs', ([string][Math]::Max(100, $MaxErrors)), '-encoding', 'UTF-8', '-d', $classes, $responseArg)
     if ($VerboseJava) { $javacArgs = @('-verbose') + $javacArgs }
     $compileExit = Run-Captured 'Javac compile smoke' {
         Push-Location $root
