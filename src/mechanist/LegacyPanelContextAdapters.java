@@ -44,7 +44,7 @@ final class WorldRuntimePanelAdapter implements WorldRuntimeContext {
     WorldRuntimePanelAdapter(GamePanel panel) { this.panel = panel; }
     public World runtimeWorld() { return panel == null ? null : panel.world; }
     public int runtimeTurn() { return panel == null ? 0 : panel.turn; }
-    public int runtimeWorldTurn() { return panel == null ? 0 : panel.worldTurn; }
+    public int runtimeWorldTurn() { return panel == null ? 0 : (int)Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, panel.worldTurn)); }
     public void advanceRuntimeTurn(String eventLine) { if (panel != null) panel.advanceTurnBody(eventLine); }
 }
 
@@ -66,3 +66,4 @@ final class AdminCommandPanelAdapter implements AdminCommandContext {
         if (panel != null) panel.markLocalDirtyRegion(reason, panel.playerX, panel.playerY, 8, true, true, true, false);
     }
 }
+

@@ -24,15 +24,23 @@ class GamePanel extends LegacyPanelBridgeBase {
     static final int MOTION_SPRINT = 4;
     static final int TURNS_PER_HOUR = 100;
     static final int HOURS_PER_DAY = 24;
+    static final int MAX_FOOD_WATER = 100;
+    static final int AUTOSAVE_HOURLY_SLOT = 1001;
+    static final int AUTOSAVE_ZONE_SLOT = 1002;
     static final String CONTAINER_BASE_STORAGE = "base-storage";
     static final String CONTAINER_PLAYER_INVENTORY = "player-inventory";
     static final String CONTAINER_MACHINE_INPUT_PREFIX = "machine-input-";
+    static final String CONTAINER_TRADER_SHELF_PREFIX = "trader-shelf-";
+    static final String CONTAINER_FACTION_STOCK_PREFIX = "faction-stock-";
+    static final String CONTAINER_CONTRACT_OBJECT_PREFIX = "contract-object-";
+    static final String CONTAINER_CORPSE_LOOT_PREFIX = "corpse-loot-";
+    static final String CONTAINER_ROOM_CACHE_PREFIX = "room-cache-";
 
     enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
     enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING, SCAVENGE }
 
     World world;
-    LegacyPanelAtlas atlas;
+    WorldAtlas atlas;
     GameOptions options = new GameOptions();
     Candidate active;
     UserProfileAuthority.Profile userProfile = UserProfileAuthority.detect();
@@ -116,10 +124,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<NpcFactionSite> npcFactionSites = new ArrayList<>();
     final LinkedHashMap<String, Integer> loadedWeaponShots = new LinkedHashMap<>();
     final LinkedHashMap<String, Integer> terrainIntegrity = new LinkedHashMap<>();
-    final LinkedHashMap<String, ItemProvenanceRecord> itemProvenance = new LinkedHashMap<>();
-    final LinkedHashMap<Faction, Integer> factionStanding = new LinkedHashMap<>();
-    final LinkedHashMap<Faction, Integer> temporaryHostileTurns = new LinkedHashMap<>();
-    final LinkedHashMap<Faction, Integer> factionMarketPressure = new LinkedHashMap<>();
+    final LinkedHashMap<String, ArrayDeque<ItemProvenanceRecord>> itemProvenance = new LinkedHashMap<>();
+    final EnumMap<Faction, Integer> factionStanding = new EnumMap<>(Faction.class);
+    final EnumMap<Faction, Integer> temporaryHostileTurns = new EnumMap<>(Faction.class);
+    final EnumMap<Faction, Integer> factionMarketPressure = new EnumMap<>(Faction.class);
     final LinkedHashMap<String, Integer> bankBalances = new LinkedHashMap<>();
     final LinkedHashMap<Integer, Integer> scavengeCooldownUntilTurn = new LinkedHashMap<>();
     final HashSet<String> openBankAccounts = new HashSet<>();
@@ -193,6 +201,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     int eulaScroll;
     int eulaMaxScroll;
     int graphicsDropdown = -1;
+    int generatedJobCategoryFilterIndex;
+    int generatedJobReadinessFilterIndex;
+    int mouseX = -1;
+    int mouseY = -1;
     boolean baseClaimed;
     boolean characterNameEditActive;
     boolean manualMovementPlanActive;
@@ -224,6 +236,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     Font uiFont = new Font("Monospaced", Font.BOLD, 16);
     Font asciiFont = new Font("Monospaced", Font.BOLD, 13);
 
+    GamePanel() {}
+    GamePanel(JvmRuntimeProfileAuthority.RuntimeConfig runtimeProfile) {
+        if (runtimeProfile != null) this.jvmRuntimeProfile = runtimeProfile;
+    }
     void runGuarded(String tag, String reason, Runnable body) { if (body != null) body.run(); }
     void executePacedMovementBody(int dx, int dy, String source) { playerX += dx; playerY += dy; lookX = playerX; lookY = playerY; }
     void clearPendingMovementInput(String reason) {}
@@ -341,9 +357,63 @@ class GamePanel extends LegacyPanelBridgeBase {
     void configureBaseObject(BaseObject b) {}
     int activePortableLightRadius() { return activePortableLightItem == null || activePortableLightItem.isBlank() ? 0 : 6; }
     boolean sameWorldLocation(String worldKey) { return true; }
-    float portableLightIntensity(String itemName) { return 1.0f; }
+    int portableLightIntensity(String itemName) { return 100; }
     int ambientLightLevelForWorld() { return 50; }
 
+    boolean hasLineOfSight(int x0, int y0, int x1, int y1) { return true; }
+    boolean hasKnowledge(String knowledge) { return knowledge == null || knowledge.isBlank() || unlockedKnowledges.contains(knowledge); }
+    BaseObject requiredMachineFor(CraftingRecipe recipe) {
+        if (recipe == null) return null;
+        char symbol = recipe.machineSymbol == ' ' ? 'w' : recipe.machineSymbol;
+        BaseObject exact = firstBaseObject(symbol);
+        if (exact != null) return exact;
+        return baseObjects.isEmpty() ? null : baseObjects.get(0);
+    }
+    void consumeInventoryNamed(String item) {
+        if (item == null || item.isBlank()) return;
+        for (Iterator<String> it = inventory.iterator(); it.hasNext();) if (ItemQuality.namesMatch(it.next(), item)) { it.remove(); return; }
+        for (Iterator<String> it = baseStorage.iterator(); it.hasNext();) if (ItemQuality.namesMatch(it.next(), item)) { it.remove(); return; }
+    }
+    String cappedProductionQuality(BaseObject machine, String requiredKnowledge) { return machine == null || machine.qualityName == null || machine.qualityName.isBlank() ? "Common" : machine.qualityName; }
+    int availableRecruitLabor() { return Math.max(0, factionRecruits.size()); }
+    int stat(String statName, int fallback) { return Math.max(0, fallback); }
+    void rememberItemProvenance(String item, ItemProvenanceRecord record) {
+        if (item == null || item.isBlank() || record == null) return;
+        ArrayDeque<ItemProvenanceRecord> q = itemProvenance.computeIfAbsent(item, k -> new ArrayDeque<>());
+        q.addLast(record);
+        while (q.size() > 12) q.removeFirst();
+    }
+    ItemProvenanceRecord takeProvenanceForItem(String item) {
+        if (item == null || item.isBlank()) return null;
+        ArrayDeque<ItemProvenanceRecord> q = itemProvenance.get(item);
+        return q == null || q.isEmpty() ? null : q.removeFirst();
+    }
+    String persistentContainerIdForObject(MapObjectState obj) { return obj == null ? "object-none" : "object-" + Math.abs(Objects.hash(obj.type, obj.x, obj.y, obj.label)); }
+    int containerItemCount(String containerId) { ContainerRecord c = itemContainers.get(containerId); return c == null ? 0 : c.itemInstanceIds.size(); }
+    String containerNextItemSummary(String containerId) {
+        ContainerRecord c = itemContainers.get(containerId);
+        if (c == null || c.itemInstanceIds.isEmpty()) return "empty";
+        ItemInstance inst = itemInstances.get(c.itemInstanceIds.get(0));
+        return inst == null ? "unknown item" : inst.displayName;
+    }
+    boolean isInClaimedRoom(int x, int y) { return !baseClaimed || claimedRoomId < 0 || (Math.abs(x - baseX) <= 12 && Math.abs(y - baseY) <= 12); }
+    Faction playerFaction() { return baseClaimed ? Faction.HIVER : Faction.NONE; }
+    boolean playerIsFactionMember(Faction faction) { return faction == null || faction == Faction.NONE || sameFactionFamily(faction, playerFaction()); }
+    boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }
+    String baseDisplayName() { return claimedRoomId >= 0 ? "Claimed room " + claimedRoomId : "claimed base"; }
+    int machineQualityTier(BaseObject machine) { return QualityAuthorityApi.tierIndex(machine == null ? "Common" : machine.qualityName); }
+    ProductionInputConsumptionRecord consumeProductionInputNamedResult(String item, String route) { return ProductionContainerAuthority.consumeOne(this, item, route); }
+    BaseObject firstBaseObject(char symbol) { for (BaseObject b : baseObjects) if (b != null && b.symbol == symbol) return b; return null; }
+    void recordPlayerNewsEvent(String kind, String siteName, Faction faction, String text, int attention) { logEvent(text == null || text.isBlank() ? "Player news event recorded." : text); }
+    Point nearestMedicalFacilityPoint() { return new Point(playerX, playerY); }
+    BaseObject baseObjectAt(int x, int y) { for (BaseObject b : baseObjects) if (b != null && b.x == x && b.y == y) return b; return null; }
+    int recruitCapacity() { return Math.max(4, factionRecruits.size()); }
+    int securityStaffCount() { return 0; }
+    boolean buttonIsModalInteractive(ButtonBox button) { return button != null; }
+    void markZoneVisitedAndCheckFirstType() {
+        if (atlas != null && atlas.currentZoneType() != null) visitedZoneTypes.add(atlas.currentZoneType());
+        if (atlas != null) visitedZoneInstances.add(atlas.sectorX + ":" + atlas.sectorY + ":" + atlas.floor + ":" + atlas.zoneX + ":" + atlas.zoneY + ":" + atlas.sewer);
+    }
     boolean verifyItemOperationalParity(String context) { return true; }
     void purgePhysicalScriptInstances(String reason) {}
 
@@ -433,6 +503,15 @@ final class LegacyKeyboardInputBridge {
 final class LegacyMultiplayerMenu {
     boolean handleKeyPressed(int code) { return false; }
     void endDirectEdit() {}
+    boolean inputActive() { return false; }
+    String directInput() { return ""; }
+    java.util.List<MultiplayerMenuController.ConnectionHistoryItem> history() { return java.util.Collections.emptyList(); }
+    int historyIndex() { return -1; }
+    java.util.List<MultiplayerMenuController.FavoriteServer> favorites() { return java.util.Collections.emptyList(); }
+    int favoriteIndex() { return -1; }
+    String status() { return "Multiplayer menu unavailable in legacy bridge."; }
+    boolean hasActiveHost() { return false; }
+    String activeHostLine() { return "No active host."; }
 }
 
 final class LegacySoundSurface {
@@ -444,24 +523,39 @@ final class LegacySoundSurface {
 final class LegacyRenderScaling {
     void applyOptions(GameOptions options) {}
     String auditSummary() { return "legacyRenderScaling active"; }
+    int internalWidth() { return 1280; }
+    int internalHeight() { return 720; }
+    String profileLabel() { return "Legacy bridge"; }
+    String downscaleLabel() { return "1x"; }
 }
 
 final class LegacyFrameLimiter {
     void configure(GameOptions options) {}
+    LegacyFrameLimiterSnapshot snapshot(boolean stressActive) { return new LegacyFrameLimiterSnapshot(stressActive); }
+}
+
+final class LegacyFrameLimiterSnapshot {
+    final boolean stressActive;
+    LegacyFrameLimiterSnapshot(boolean stressActive) { this.stressActive = stressActive; }
+    String compactLine() { return stressActive ? "stress test active" : "nominal"; }
 }
 
 final class LegacyImageSurface {
     void reloadArtQuality(GameOptions options) {}
+    BufferedImage get(String key) { return null; }
     BufferedImage getTile(char tile) { return null; }
     BufferedImage getNpcPortraitFor(Object npc) { return null; }
 }
 
 final class LegacyFirstPersonRenderViewport {
     boolean handleKeyPressed(GamePanel panel, int code) { return false; }
+    boolean handleMouseClicked(GamePanel panel, java.awt.event.MouseEvent event, int mx, int my) { return false; }
 }
 
 final class LegacyRenderStressTest {
-    String toggle(LegacyFrameLimiter limiter) { return "Render stress test toggled."; }
+    private boolean active;
+    String toggle(LegacyFrameLimiter limiter) { active = !active; return active ? "Render stress test active." : "Render stress test inactive."; }
+    boolean active() { return active; }
 }
 
 final class LegacyPerformanceDiagnostics {
@@ -474,10 +568,8 @@ final class LegacyPerformanceDiagnostics {
 
 final class LegacyPanelProfile {
     String name = "none";
+}
 
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
-}}
-
-
-
+}
