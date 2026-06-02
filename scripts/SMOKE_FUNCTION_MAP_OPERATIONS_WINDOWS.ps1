@@ -40,36 +40,42 @@ function Add-Gate($severity, $gate, $status, $message) {
     else { Write-Host "OK    [$gate] $safeMessage" -ForegroundColor Green }
 }
 
+function Quote-ProcessArgument([string]$arg) {
+    if ($null -eq $arg) { return '""' }
+    $s = [string]$arg
+    if ($s.Length -eq 0) { return '""' }
+    if ($s -notmatch '[\s"]') { return $s }
+    return '"' + ($s -replace '"', '\"') + '"'
+}
+
+function ConvertTo-ProcessArguments([string[]]$argList) {
+    $parts = New-Object System.Collections.Generic.List[string]
+    foreach ($arg in $argList) { $parts.Add((Quote-ProcessArgument $arg)) | Out-Null }
+    return ($parts -join ' ')
+}
+
 function Run-ProcessCaptured($name, $exe, [string[]]$argList, $logPath, [int]$timeoutSeconds) {
     Write-Section $name
     Add-Content -LiteralPath $summary -Value "Log: $logPath"
     Add-Content -LiteralPath $summary -Value "TimeoutSeconds: $timeoutSeconds"
-    Add-Content -LiteralPath $summary -Value "Command: $exe $($argList -join ' ')"
+    $argsText = ConvertTo-ProcessArguments $argList
+    Add-Content -LiteralPath $summary -Value "Command: $exe $argsText"
     $stdout = "$logPath.stdout.tmp"
     $stderr = "$logPath.stderr.tmp"
     Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
     try {
-        $psi = [System.Diagnostics.ProcessStartInfo]::new()
-        $psi.FileName = $exe
-        foreach ($arg in $argList) { [void]$psi.ArgumentList.Add([string]$arg) }
-        $psi.UseShellExecute = $false
-        $psi.CreateNoWindow = $true
-        $psi.RedirectStandardOutput = $true
-        $psi.RedirectStandardError = $true
-        $p = [System.Diagnostics.Process]::new()
-        $p.StartInfo = $psi
-        [void]$p.Start()
+        $p = Start-Process -FilePath $exe -ArgumentList $argsText -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
         $finished = $p.WaitForExit([Math]::Max(1, $timeoutSeconds) * 1000)
         if (-not $finished) {
-            try { $p.Kill($true) } catch { try { $p.Kill() } catch {} }
-            "TIMEOUT after $timeoutSeconds seconds: $exe $($argList -join ' ')" | Tee-Object -FilePath $logPath
+            try { $p.Kill() } catch {}
+            "TIMEOUT after $timeoutSeconds seconds: $exe $argsText" | Tee-Object -FilePath $logPath
+            if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Add-Content -LiteralPath $logPath }
+            if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Add-Content -LiteralPath $logPath }
             Add-Content -LiteralPath $summary -Value "ExitCode: 124"
             return 124
         }
-        $outText = $p.StandardOutput.ReadToEnd()
-        $errText = $p.StandardError.ReadToEnd()
-        if ($outText -and $outText.Length -gt 0) { $outText | Tee-Object -FilePath $logPath }
-        if ($errText -and $errText.Length -gt 0) { $errText | Tee-Object -FilePath $logPath -Append }
+        if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Tee-Object -FilePath $logPath }
+        if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Tee-Object -FilePath $logPath -Append }
         $code = $p.ExitCode
         Add-Content -LiteralPath $summary -Value "ExitCode: $code"
         return $code
@@ -102,21 +108,15 @@ Write-Section 'Retired shard and GamePanel gates'
 $gamePanel = Join-Path $root 'src\mechanist\GamePanel.java'
 if (Test-Path -LiteralPath $gamePanel -PathType Leaf) {
     $gpItem = Get-Item -LiteralPath $gamePanel
-    if ($gpItem.Length -eq 0) {
-        Add-Gate 'WARN' 'gamepanel_shell' 'empty_tracked_shell' 'GamePanel.java exists but is empty; local git rm is still expected.'
-    } else {
-        Add-Gate 'ERROR' 'gamepanel_shell' 'active_content' "GamePanel.java still has $($gpItem.Length) bytes; active monolith content remains."
-    }
+    if ($gpItem.Length -eq 0) { Add-Gate 'WARN' 'gamepanel_shell' 'empty_tracked_shell' 'GamePanel.java exists but is empty; local git rm is still expected.' }
+    else { Add-Gate 'ERROR' 'gamepanel_shell' 'active_content' "GamePanel.java still has $($gpItem.Length) bytes; active monolith content remains." }
 } else {
     Add-Gate 'INFO' 'gamepanel_shell' 'removed' 'GamePanel.java is absent from active source tree.'
 }
 
 $activeShards = @(Get-ChildItem -LiteralPath (Join-Path $root 'src\mechanist') -Filter 'gamepanel-shard*.txt' -File -ErrorAction SilentlyContinue)
-if ($activeShards.Count -gt 0) {
-    Add-Gate 'ERROR' 'active_shard_files' 'present' ("Active shard text files remain in src/mechanist: " + (($activeShards | ForEach-Object { $_.Name }) -join ', '))
-} else {
-    Add-Gate 'INFO' 'active_shard_files' 'absent' 'No active gamepanel-shard*.txt files under src/mechanist.'
-}
+if ($activeShards.Count -gt 0) { Add-Gate 'ERROR' 'active_shard_files' 'present' ("Active shard text files remain in src/mechanist: " + (($activeShards | ForEach-Object { $_.Name }) -join ', ')) }
+else { Add-Gate 'INFO' 'active_shard_files' 'absent' 'No active gamepanel-shard*.txt files under src/mechanist.' }
 
 $archiveRoots = @(
     (Join-Path $root 'ROOT_docs\shardmining\generated_subsystems\_backups'),
@@ -155,16 +155,10 @@ if ($evalPath) {
     $rows = @(Import-Csv -LiteralPath $evalPath -Delimiter "`t")
     $errors = @($rows | Where-Object { $_.severity -eq 'ERROR' })
     $warnings = @($rows | Where-Object { $_.severity -eq 'WARN' })
-    if ($errors.Count -gt 0) {
-        Add-Gate 'ERROR' 'mermaid_position_errors' 'fail' "$($errors.Count) unpositioned/error module rows in CODE_MERMAID_EVALUATION.tsv"
-    } else {
-        Add-Gate 'INFO' 'mermaid_position_errors' 'pass' 'No ERROR rows in CODE_MERMAID_EVALUATION.tsv.'
-    }
-    if ($warnings.Count -gt 0) {
-        Add-Gate 'WARN' 'mermaid_position_warnings' 'review' "$($warnings.Count) WARN rows require ownership review."
-    } else {
-        Add-Gate 'INFO' 'mermaid_position_warnings' 'pass' 'No WARN rows in CODE_MERMAID_EVALUATION.tsv.'
-    }
+    if ($errors.Count -gt 0) { Add-Gate 'ERROR' 'mermaid_position_errors' 'fail' "$($errors.Count) unpositioned/error module rows in CODE_MERMAID_EVALUATION.tsv" }
+    else { Add-Gate 'INFO' 'mermaid_position_errors' 'pass' 'No ERROR rows in CODE_MERMAID_EVALUATION.tsv.' }
+    if ($warnings.Count -gt 0) { Add-Gate 'WARN' 'mermaid_position_warnings' 'review' "$($warnings.Count) WARN rows require ownership review." }
+    else { Add-Gate 'INFO' 'mermaid_position_warnings' 'pass' 'No WARN rows in CODE_MERMAID_EVALUATION.tsv.' }
 } else {
     Add-Gate 'ERROR' 'mermaid_evaluation_file' 'missing' 'CODE_MERMAID_EVALUATION.tsv was not found after builder run.'
 }
