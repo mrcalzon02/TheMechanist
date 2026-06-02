@@ -266,7 +266,16 @@ class GamePanel extends LegacyPanelBridgeBase {
             try {
                 if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
                     new MainMenuSurfacePainter().paint(g, this);
-                    drawVisibleBootStatus(g, w, h);
+                    return;
+                }
+                if (screen == Screen.OPTIONS) {
+                    OptionsScreenPainter.paintShell(this, g);
+                    OptionsScreenPainter.paintBody(this, g);
+                    OptionsScreenPainter.paintGraphicsDropdownPopup(this, g);
+                    return;
+                }
+                if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.INVENTORY || screen == Screen.CHARACTER || screen == Screen.INFO || screen == Screen.MAP || screen == Screen.KNOWLEDGE) {
+                    paintGameBridgeSurface(g, w, h);
                     return;
                 }
             } catch (Throwable t) {
@@ -279,6 +288,37 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
     }
 
+
+    private void paintGameBridgeSurface(java.awt.Graphics2D g, int w, int h) {
+        g.setColor(new java.awt.Color(12, 12, 10));
+        g.fillRect(0, 0, w, h);
+        int tile = Math.max(16, Math.min(32, Math.min(w, h) / 32));
+        for (int y = 0; y < h; y += tile) {
+            for (int x = 0; x < w; x += tile) {
+                boolean alt = ((x / tile) + (y / tile)) % 2 == 0;
+                g.setColor(alt ? new java.awt.Color(28, 29, 25) : new java.awt.Color(22, 23, 20));
+                g.fillRect(x, y, tile, tile);
+            }
+        }
+        g.setColor(new java.awt.Color(94, 76, 42));
+        for (int x = 0; x < w; x += tile) g.drawLine(x, 0, x, h);
+        for (int y = 0; y < h; y += tile) g.drawLine(0, y, w, y);
+        g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 18f));
+        g.setColor(new java.awt.Color(225, 205, 140));
+        g.drawString("THE MECHANIST - CLIENT SURFACE", 24, 36);
+        g.setFont(smallFont);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        int y = 66;
+        for (String line : java.util.List.of(
+                "Game surface bridge is painting from GamePanel state.",
+                "Screen=" + screen + " Panel=" + panelMode + " Turn=" + turn + " WorldTurn=" + worldTurn,
+                "Position=" + playerX + "," + playerY + "  Inventory=" + inventory.size() + "  Log=" + eventLog.size(),
+                "Assets root property=" + System.getProperty("mechanist.assetRoot", "."),
+                "Generated asset root property=" + System.getProperty("mechanist.generatedAssetRoot", "."))) {
+            g.drawString(line, 24, y);
+            y += 20;
+        }
+    }
     private void drawVisibleBootStatus(java.awt.Graphics2D g, int w, int h) {
         g.setFont(titleFont.deriveFont(java.awt.Font.BOLD, Math.max(28f, Math.min(52f, h / 10f))));
         g.setColor(new java.awt.Color(218, 198, 126));
@@ -289,7 +329,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         java.util.List<String> lines = new java.util.ArrayList<>();
         lines.add("Compatibility bridge boot surface active.");
         lines.add("Screen: " + screen + "  Panel: " + panelMode + "  Turn: " + turn);
-        lines.add("Runtime: " + (jvmRuntimeProfile == null ? "none" : jvmRuntimeProfile.compactLine()));
+        lines.add("Runtime: " + (jvmRuntimeProfile == null ? "none" : jvmRuntimeProfile.targetLabel()));
         lines.add("Events: " + eventLog.size() + "  Assets facade: " + (images == null ? "missing" : "ready"));
         lines.add("This fallback confirms Swing is painting while the full client surface is reconnected.");
         for (String line : lines) {
@@ -684,7 +724,7 @@ final class LegacyImageSurface {
 
     private BufferedImage generatedTitle() {
         BufferedImage img = new BufferedImage(760, 130, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = img.createGraphics();
+        java.awt.Graphics2D g = img.createGraphics();
         g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(new java.awt.Color(20, 18, 14, 230));
         g.fillRoundRect(0, 0, img.getWidth(), img.getHeight(), 22, 22);
@@ -702,7 +742,7 @@ final class LegacyImageSurface {
 
     private BufferedImage generatedSubtitle() {
         BufferedImage img = new BufferedImage(500, 46, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = img.createGraphics();
+        java.awt.Graphics2D g = img.createGraphics();
         g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
         g.setFont(new java.awt.Font("Monospaced", java.awt.Font.BOLD, 20));
         g.setColor(new java.awt.Color(170, 150, 105));
@@ -740,6 +780,7 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
 
 
 

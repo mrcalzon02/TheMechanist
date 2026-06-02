@@ -217,7 +217,7 @@ $runBat = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.bat'
     '@echo off',
     'setlocal',
     'cd /d "%~dp0"',
-    'java -cp "classes;." mechanist.TheMechanist',
+    'java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -cp "classes;." mechanist.TheMechanist',
     'set MECH_EXIT=%ERRORLEVEL%',
     'echo.',
     'echo The Mechanist client exited with code %MECH_EXIT%.',
@@ -229,7 +229,7 @@ $runPs1 = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.ps1'
 @(
     '$ErrorActionPreference = "Stop"',
     'Set-Location -LiteralPath $PSScriptRoot',
-    '& java -cp "classes;." mechanist.TheMechanist',
+    '& java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -cp "classes;." mechanist.TheMechanist',
     'exit $LASTEXITCODE'
 ) | Set-Content -LiteralPath $runPs1
 
@@ -243,7 +243,7 @@ $pkgManifest = Join-Path $outRoot 'PACKAGE_MANIFEST.txt'
     "Package asset files: $packageAssetCount",
     "Source files compiled: $($sources.Count)",
     'Launch: RUN_THE_MECHANIST_CLIENT.bat or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1',
-    'Manual launch: java -cp "classes;." mechanist.TheMechanist',
+    'Manual launch: java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -cp "classes;." mechanist.TheMechanist',
     'Note: PACKAGE_client is preserved by default. The src folder is removed unless -IncludeSourceMirror is supplied.'
 ) | Set-Content -LiteralPath $pkgManifest
 
@@ -281,3 +281,4 @@ $classCount = @(Get-ChildItem -LiteralPath $classes -Recurse -Filter '*.class' -
 "CLIENT PACKAGE PASS: unfolded client updated at $outRoot with $classCount class files and $packageAssetCount package asset files" | Tee-Object -FilePath $packageLog -Append
 Publish-LatestPackageAliases
 exit 0
+
