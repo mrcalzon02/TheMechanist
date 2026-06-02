@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-06-01 19:04:30`
+Generated/evaluated: `2026-06-01 21:25:44`
 
 ## Top-Line Rule
 
