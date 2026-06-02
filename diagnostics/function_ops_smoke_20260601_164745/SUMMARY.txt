@@ -1,0 +1,57 @@
+Function Map Operations Smoke: 20260601_164745
+Repository root: C:\GITS\The Mechanist\TheMechanist
+Run folder: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260601_164745
+Command timeout seconds: 900
+
+==== Tooling preflight ====
+INFO	python_launcher	present	py launcher found
+INFO	git	present	git found
+INFO	java	present	java found
+INFO	javac	present	javac found
+
+==== Retired shard and GamePanel gates ====
+INFO	gamepanel_shell	removed	GamePanel.java is absent from active source tree.
+INFO	active_shard_files	absent	No active gamepanel-shard*.txt files under src/mechanist.
+INFO	archived_shard_copies	absent	No generated_subsystems _backups/_retired_shards directories found.
+
+==== Regenerate function and Mermaid maps ====
+
+==== Function map builder ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260601_164745\function_map_builder.log
+TimeoutSeconds: 900
+Command: py -3 C:\GITS\The Mechanist\TheMechanist\scripts\BUILD_FUNCTION_MAP.py --apply
+Exception: You cannot call a method on a null-valued expression.
+ERROR	function_map_builder	fail	Exit code You cannot call a method on a null-valued expression. At C:\GITS\The Mechanist\TheMechanist\scripts\SMOKE_FUNCTION_MAP_OPERATIONS_WINDOWS.ps1:54 char:38 + ... each ($arg in $argList) { [void]$psi.ArgumentList.Add([string]$arg) } +                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     + CategoryInfo          : InvalidOperation: (:) [], RuntimeException     + FullyQualifiedErrorId : InvokeMethodOnNull    999
+
+==== Mermaid code map builder ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260601_164745\mermaid_code_map_builder.log
+TimeoutSeconds: 900
+Command: py -3 C:\GITS\The Mechanist\TheMechanist\scripts\BUILD_MERMAID_CODE_MAP.py --apply
+Exception: You cannot call a method on a null-valued expression.
+ERROR	mermaid_code_map_builder	fail	Exit code You cannot call a method on a null-valued expression. At C:\GITS\The Mechanist\TheMechanist\scripts\SMOKE_FUNCTION_MAP_OPERATIONS_WINDOWS.ps1:54 char:38 + ... each ($arg in $argList) { [void]$psi.ArgumentList.Add([string]$arg) } +                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     + CategoryInfo          : InvalidOperation: (:) [], RuntimeException     + FullyQualifiedErrorId : InvokeMethodOnNull    999
+
+==== Mermaid evaluation gate ====
+INFO	mermaid_position_errors	pass	No ERROR rows in CODE_MERMAID_EVALUATION.tsv.
+WARN	mermaid_position_warnings	review	10 WARN rows require ownership review.
+
+==== Compile smoke ====
+
+==== Existing javac/Maven compile smoke ====
+Log: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260601_164745\compile_smoke_wrapper.log
+TimeoutSeconds: 900
+Command: powershell -ExecutionPolicy Bypass -File C:\GITS\The Mechanist\TheMechanist\scripts\SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1
+Exception: You cannot call a method on a null-valued expression.
+ERROR	compile_smoke	fail	Compile smoke failed with exit code You cannot call a method on a null-valued expression. At C:\GITS\The Mechanist\TheMechanist\scripts\SMOKE_FUNCTION_MAP_OPERATIONS_WINDOWS.ps1:54 char:38 + ... each ($arg in $argList) { [void]$psi.ArgumentList.Add([string]$arg) } +                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     + CategoryInfo          : InvalidOperation: (:) [], RuntimeException     + FullyQualifiedErrorId : InvokeMethodOnNull    999.
+
+==== Final gate summary ====
+Gate table: C:\GITS\The Mechanist\TheMechanist\diagnostics\function_ops_smoke_20260601_164745\operation_gates.tsv
+Errors: 3
+Warnings: 1
+CompileExit: You cannot call a method on a null-valued expression.
+At C:\GITS\The Mechanist\TheMechanist\scripts\SMOKE_FUNCTION_MAP_OPERATIONS_WINDOWS.ps1:54 char:38
++ ... each ($arg in $argList) { [void]$psi.ArgumentList.Add([string]$arg) }
++                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+ 999
