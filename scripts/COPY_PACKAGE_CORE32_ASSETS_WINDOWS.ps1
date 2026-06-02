@@ -1,17 +1,24 @@
 param(
     [string]$PackageDir = "PACKAGE_client",
-    [string]$Tier = "low_32",
+    [int]$Resolution = 32,
     [switch]$CleanAssetRoot
 )
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
 $pkg = if ([System.IO.Path]::IsPathRooted($PackageDir)) { $PackageDir } else { Join-Path $root $PackageDir }
-$pkg = [System.IO.Path]::GetFullPath($pkg)
+$pkg = [System.IO.Path]::GetFullPath([string]$pkg)
+$compiledRoot = Join-Path $root 'ROOT_tools\atlas_asset_pipeline\compiled_assets'
+$sourceFolder = Join-Path $compiledRoot ("${Resolution}px")
 $assetRoot = Join-Path $pkg 'assets'
+$destCompiledRoot = Join-Path (Join-Path $assetRoot 'compiled_assets') ("${Resolution}px")
+$destIndexes = Join-Path $assetRoot 'indexes'
+$sourceIndex = Join-Path $compiledRoot 'asset_content_index_256px.tsv'
+$sourceManifest = Join-Path $compiledRoot 'asset_compile_manifest.json'
+$packageIndex = Join-Path $destIndexes ("asset_content_index_${Resolution}px.tsv")
 $diag = Join-Path $root 'diagnostics'
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-$run = Join-Path $diag "package_core32_assets_$stamp"
+$run = Join-Path $diag "package_compiled_${Resolution}px_assets_$stamp"
 New-Item -ItemType Directory -Force -Path $run | Out-Null
 $summary = Join-Path $run 'SUMMARY.txt'
 $copied = Join-Path $run 'copied.tsv'
@@ -25,54 +32,92 @@ function Publish-Latest() {
     Copy-Item -LiteralPath $inventory -Destination (Join-Path $diag 'LATEST_PACKAGE_ASSET_INVENTORY.txt') -Force -ErrorAction Continue
 }
 
-function Copy-Tree($source, $dest) {
-    if (-not (Test-Path -LiteralPath $source -PathType Container)) { return 0 }
-    $count = 0
-    $base = [System.IO.Path]::GetFullPath($source).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)) + [System.IO.Path]::DirectorySeparatorChar
-    Get-ChildItem -LiteralPath $source -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object {
-        $rel = $_.FullName.Substring($base.Length)
-        $target = Join-Path $dest $rel
-        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
-        Copy-Item -LiteralPath $_.FullName -Destination $target -Force -ErrorAction Stop
-        "$($_.FullName)`t$target`t$($_.Length)" | Add-Content -LiteralPath $copied
-        $script:bytes += [int64]$_.Length
-        $script:count++
-    }
-    return $count
+function Rewrite-ResolutionPath([string]$path, [int]$resolution) {
+    if ([string]::IsNullOrWhiteSpace($path)) { return $null }
+    $p = $path.Trim().Trim('"') -replace '\\','/'
+    $p = $p -replace '^256px/', ("${resolution}px/")
+    $p = $p -replace '_256px\.', ("_${resolution}px.")
+    return $p
 }
 
-"Generated core/package asset copy: $stamp" | Set-Content -LiteralPath $summary
+function Copy-IndexedAsset([string]$indexedPath) {
+    $rel = Rewrite-ResolutionPath $indexedPath $Resolution
+    if ([string]::IsNullOrWhiteSpace($rel)) { return }
+    $source = Join-Path $compiledRoot ($rel -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+        "$indexedPath`t$rel`tmissing source file" | Add-Content -LiteralPath $missing
+        $script:missingCount++
+        return
+    }
+    $tail = $rel -replace "^${Resolution}px/", ''
+    $dest = Join-Path $destCompiledRoot ($tail -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+    Copy-Item -LiteralPath $source -Destination $dest -Force -ErrorAction Stop
+    $len = (Get-Item -LiteralPath $source).Length
+    "$source`t$dest`t$len" | Add-Content -LiteralPath $copied
+    $script:copiedCount++
+    $script:copiedBytes += [int64]$len
+}
+
+"Compiled asset package copy run: $stamp" | Set-Content -LiteralPath $summary
 "Repo root: $root" | Add-Content -LiteralPath $summary
 "Package root: $pkg" | Add-Content -LiteralPath $summary
-"Tier: $Tier" | Add-Content -LiteralPath $summary
+"Compiled root: $compiledRoot" | Add-Content -LiteralPath $summary
+"Source folder: $sourceFolder" | Add-Content -LiteralPath $summary
+"Source index: $sourceIndex" | Add-Content -LiteralPath $summary
+"Destination compiled root: $destCompiledRoot" | Add-Content -LiteralPath $summary
+"Resolution: $Resolution" | Add-Content -LiteralPath $summary
 "source`tdestination`tbytes" | Set-Content -LiteralPath $copied
-"path	reason" | Set-Content -LiteralPath $missing
+"index_path`trewritten_path`treason" | Set-Content -LiteralPath $missing
 
 if ($CleanAssetRoot -and (Test-Path -LiteralPath $assetRoot)) { Remove-Item -LiteralPath $assetRoot -Recurse -Force -ErrorAction Continue }
-New-Item -ItemType Directory -Force -Path $assetRoot | Out-Null
-$script:count = 0
-$script:bytes = [int64]0
-
-# The package client must use the sliced/generated runtime tier, not source atlases.
-# Copy only canonical generated low_32/core_32 package trees when present.
-$destGenerated = Join-Path (Join-Path (Join-Path $assetRoot 'graphics') 'generated') $Tier
-Copy-Tree (Join-Path (Join-Path (Join-Path (Join-Path $root 'assets') 'graphics') 'generated') $Tier) $destGenerated | Out-Null
-Copy-Tree (Join-Path (Join-Path $root 'exports') $Tier) $destGenerated | Out-Null
-Copy-Tree (Join-Path $root 'core_32') $destGenerated | Out-Null
-Copy-Tree (Join-Path $root 'package_32') $destGenerated | Out-Null
-
-# Runtime indexes are small metadata and are required for registry/runtime resolution.
-$destIndexes = Join-Path $assetRoot 'indexes'
+New-Item -ItemType Directory -Force -Path $destCompiledRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $destIndexes | Out-Null
-foreach ($idxRoot in @((Join-Path $root 'assets\indexes'), (Join-Path $pkg 'assets\indexes'))) {
-    if (Test-Path -LiteralPath $idxRoot -PathType Container) {
-        Get-ChildItem -LiteralPath $idxRoot -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Extension.ToLowerInvariant() -in @('.json','.tsv','.txt') } | ForEach-Object {
-            $target = Join-Path $destIndexes $_.Name
-            Copy-Item -LiteralPath $_.FullName -Destination $target -Force -ErrorAction Continue
-            "$($_.FullName)`t$target`t$($_.Length)" | Add-Content -LiteralPath $copied
-            $script:count++
-            $script:bytes += [int64]$_.Length
-        }
+$script:copiedCount = 0
+$script:missingCount = 0
+$script:copiedBytes = [int64]0
+
+if (-not (Test-Path -LiteralPath $compiledRoot -PathType Container)) {
+    "ERROR: compiled asset root missing: $compiledRoot" | Add-Content -LiteralPath $summary
+    Publish-Latest
+    exit 2
+}
+if (-not (Test-Path -LiteralPath $sourceFolder -PathType Container)) {
+    "ERROR: source resolution folder missing: $sourceFolder" | Add-Content -LiteralPath $summary
+    Publish-Latest
+    exit 3
+}
+if (-not (Test-Path -LiteralPath $sourceIndex -PathType Leaf)) {
+    "ERROR: source index missing: $sourceIndex" | Add-Content -LiteralPath $summary
+    Publish-Latest
+    exit 4
+}
+
+$header = $true
+$rows = 0
+Get-Content -LiteralPath $sourceIndex -ErrorAction Stop | ForEach-Object {
+    $line = $_
+    if ($header) { $header = $false; return }
+    if ([string]::IsNullOrWhiteSpace($line)) { return }
+    $cols = $line -split "`t"
+    if ($cols.Count -lt 2) { return }
+    $rows++
+    Copy-IndexedAsset $cols[1]
+}
+
+if (Test-Path -LiteralPath $sourceManifest -PathType Leaf) { Copy-Item -LiteralPath $sourceManifest -Destination (Join-Path $destIndexes 'asset_compile_manifest.json') -Force -ErrorAction Continue }
+if (Test-Path -LiteralPath (Join-Path $compiledRoot 'asset_content_index_256px.json') -PathType Leaf) { Copy-Item -LiteralPath (Join-Path $compiledRoot 'asset_content_index_256px.json') -Destination (Join-Path $destIndexes 'asset_content_index_256px.json') -Force -ErrorAction Continue }
+if (Test-Path -LiteralPath $sourceIndex -PathType Leaf) { Copy-Item -LiteralPath $sourceIndex -Destination (Join-Path $destIndexes 'asset_content_index_256px.tsv') -Force -ErrorAction Continue }
+
+$first = $true
+Get-Content -LiteralPath $sourceIndex -ErrorAction Continue | ForEach-Object {
+    if ($first) { $_ | Set-Content -LiteralPath $packageIndex; $first = $false; return }
+    if ([string]::IsNullOrWhiteSpace($_)) { return }
+    $cols = $_ -split "`t"
+    if ($cols.Count -ge 3) {
+        $cols[1] = Rewrite-ResolutionPath $cols[1] $Resolution
+        $cols[2] = [string]$Resolution
+        ($cols -join "`t") | Add-Content -LiteralPath $packageIndex
     }
 }
 
@@ -82,10 +127,12 @@ if (Test-Path -LiteralPath $assetRoot -PathType Container) {
         Sort-Object | Set-Content -LiteralPath $inventory
 } else { 'NO PACKAGE assets DIRECTORY PRESENT' | Set-Content -LiteralPath $inventory }
 $final = @(Get-ChildItem -LiteralPath $assetRoot -Recurse -File -Force -ErrorAction SilentlyContinue).Count
-"CopiedFiles: $script:count" | Add-Content -LiteralPath $summary
-"CopiedBytes: $script:bytes" | Add-Content -LiteralPath $summary
+"IndexedRows: $rows" | Add-Content -LiteralPath $summary
+"CopiedAssets: $script:copiedCount" | Add-Content -LiteralPath $summary
+"MissingAssets: $script:missingCount" | Add-Content -LiteralPath $summary
+"CopiedBytes: $script:copiedBytes" | Add-Content -LiteralPath $summary
 "FinalPackageAssetFiles: $final" | Add-Content -LiteralPath $summary
-if ($script:count -eq 0) { "WARNING: no generated low_32/core_32/package_32 assets were found under canonical package roots." | Add-Content -LiteralPath $summary }
+"Package index: $packageIndex" | Add-Content -LiteralPath $summary
 Publish-Latest
-Write-Host "Copied $script:count generated package asset/index files. Final PACKAGE_client asset file count: $final"
+Write-Host "Copied $script:copiedCount indexed ${Resolution}px asset(s) into PACKAGE_client. Missing: $script:missingCount. Final asset files: $final"
 exit 0
