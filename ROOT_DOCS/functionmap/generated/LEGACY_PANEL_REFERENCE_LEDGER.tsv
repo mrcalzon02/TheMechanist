@@ -2229,58 +2229,43 @@ src/mechanist/VisualLightingAuthority.java	146	member-reference	isVisible	UNASSI
 src/mechanist/VisualLightingAuthority.java	147	member-reference	hasLineOfSight	UNASSIGNED legacy panel context	if (!game.hasLineOfSight(lightWorldX, lightWorldY, worldX, worldY)) continue;
 src/mechanist/WasteNewsprintScavengeAuthority.java	80	type-reference	GamePanel	UNASSIGNED legacy panel context	static int searchChance(GamePanel g, MapObjectState m) {
 src/mechanist/WasteNewsprintScavengeAuthority.java	92	type-reference	GamePanel	UNASSIGNED legacy panel context	static String chooseLoot(GamePanel g, MapObjectState m, Random r) {
-src/mechanist/WorldCommandRequest.java	5	type-reference	GamePanel	WORLD_RUNTIME context	* through legacy GamePanel methods while the authoritative runtime is being split out.
-src/mechanist/WorldCommandRequest.java	10	type-reference	GamePanel	WORLD_RUNTIME context	void apply(GamePanel game);
-src/mechanist/WorldCommandRequest.java	19	type-reference	GamePanel	WORLD_RUNTIME context	default String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	28	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	34	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.executePacedMovementBody(dx, dy, source == null ? "server-command" : source); }
-src/mechanist/WorldCommandRequest.java	34	member-reference	executePacedMovementBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.executePacedMovementBody(dx, dy, source == null ? "server-command" : source); }
-src/mechanist/WorldCommandRequest.java	39	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) { game.clearPendingMovementInput("wait-command"); game.advanceTurnBody("waits. The underhive does not become kinder."); game.settlePlayerMotionAfterNoMoveTurn("wait-command"); } }
-src/mechanist/WorldCommandRequest.java	39	member-reference	clearPendingMovementInput	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) { game.clearPendingMovementInput("wait-command"); game.advanceTurnBody("waits. The underhive does not become kinder."); game.settlePlayerMotionAfterNoMoveTurn("wait-command"); } }
-src/mechanist/WorldCommandRequest.java	39	member-reference	advanceTurnBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) { game.clearPendingMovementInput("wait-command"); game.advanceTurnBody("waits. The underhive does not become kinder."); game.settlePlayerMotionAfterNoMoveTurn("wait-command"); } }
-src/mechanist/WorldCommandRequest.java	39	member-reference	settlePlayerMotionAfterNoMoveTurn	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) { game.clearPendingMovementInput("wait-command"); game.advanceTurnBody("waits. The underhive does not become kinder."); game.settlePlayerMotionAfterNoMoveTurn("wait-command"); } }
-src/mechanist/WorldCommandRequest.java	44	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	47	member-reference	world	WORLD_RUNTIME context	if (game.world == null || !game.world.inBounds(x, y)) return "invalid interaction target";
-src/mechanist/WorldCommandRequest.java	47	member-reference	world	WORLD_RUNTIME context	if (game.world == null || !game.world.inBounds(x, y)) return "invalid interaction target";
-src/mechanist/WorldCommandRequest.java	50	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.confirmInteractionBody(); }
-src/mechanist/WorldCommandRequest.java	50	member-reference	confirmInteractionBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.confirmInteractionBody(); }
-src/mechanist/WorldCommandRequest.java	55	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	58	member-reference	world	WORLD_RUNTIME context	if (game.world == null || !game.world.inBounds(x, y)) return "invalid combat target";
-src/mechanist/WorldCommandRequest.java	58	member-reference	world	WORLD_RUNTIME context	if (game.world == null || !game.world.inBounds(x, y)) return "invalid combat target";
-src/mechanist/WorldCommandRequest.java	61	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.confirmCombatTargetBody(); }
-src/mechanist/WorldCommandRequest.java	61	member-reference	confirmCombatTargetBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.confirmCombatTargetBody(); }
-src/mechanist/WorldCommandRequest.java	66	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.useSelectedInventoryItemBody(); }
-src/mechanist/WorldCommandRequest.java	66	member-reference	useSelectedInventoryItemBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.useSelectedInventoryItemBody(); }
-src/mechanist/WorldCommandRequest.java	71	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	77	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.unequipSelectedEquipmentSlotBody(); }
-src/mechanist/WorldCommandRequest.java	77	member-reference	unequipSelectedEquipmentSlotBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.unequipSelectedEquipmentSlotBody(); }
-src/mechanist/WorldCommandRequest.java	82	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.confirmInteractionBody(); }
-src/mechanist/WorldCommandRequest.java	82	member-reference	confirmInteractionBody	WORLD_RUNTIME context	public void apply(GamePanel game) { if (game != null) game.confirmInteractionBody(); }
-src/mechanist/WorldCommandRequest.java	89	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	95	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	97	member-reference	addImperialScript	WORLD_RUNTIME context	game.addImperialScript(Math.max(0, amount));
-src/mechanist/WorldCommandRequest.java	98	member-reference	logEvent	WORLD_RUNTIME context	game.logEvent("ADMIN: credited " + amount + " Concord Script through the local server authority.");
-src/mechanist/WorldCommandRequest.java	106	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	112	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	115	member-reference	advanceTurnBody	WORLD_RUNTIME context	for (int i = 0; i < safeCount; i++) game.advanceTurnBody(i == 0 ? "is advanced by server authority." : "continues server-authority time advancement.");
-src/mechanist/WorldCommandRequest.java	123	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	126	member-reference	world	WORLD_RUNTIME context	if (game.world == null || !game.world.inBounds(x, y)) return "invalid teleport target";
-src/mechanist/WorldCommandRequest.java	126	member-reference	world	WORLD_RUNTIME context	if (game.world == null || !game.world.inBounds(x, y)) return "invalid teleport target";
-src/mechanist/WorldCommandRequest.java	127	member-reference	world	WORLD_RUNTIME context	if (!game.world.walkable(x, y)) return "teleport target is not walkable";
-src/mechanist/WorldCommandRequest.java	130	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	132	member-reference	playerX	WORLD_RUNTIME context	game.playerX = x;
-src/mechanist/WorldCommandRequest.java	133	member-reference	playerY	WORLD_RUNTIME context	game.playerY = y;
-src/mechanist/WorldCommandRequest.java	134	member-reference	lookX	WORLD_RUNTIME context	game.lookX = x;
-src/mechanist/WorldCommandRequest.java	135	member-reference	lookY	WORLD_RUNTIME context	game.lookY = y;
-src/mechanist/WorldCommandRequest.java	136	member-reference	clearPendingMovementInput	WORLD_RUNTIME context	game.clearPendingMovementInput("admin-teleport");
-src/mechanist/WorldCommandRequest.java	137	member-reference	markLocalDirtyRegion	WORLD_RUNTIME context	game.markLocalDirtyRegion("admin teleport", x, y, Math.max(6, game.visionRange() + 2), true, true, true, false);
-src/mechanist/WorldCommandRequest.java	137	member-reference	visionRange	WORLD_RUNTIME context	game.markLocalDirtyRegion("admin teleport", x, y, Math.max(6, game.visionRange() + 2), true, true, true, false);
-src/mechanist/WorldCommandRequest.java	138	member-reference	updateSensoryModel	WORLD_RUNTIME context	game.updateSensoryModel("admin teleport");
-src/mechanist/WorldCommandRequest.java	139	member-reference	logEvent	WORLD_RUNTIME context	game.logEvent("ADMIN: relocated through the local server authority to " + x + "," + y + ".");
-src/mechanist/WorldCommandRequest.java	147	type-reference	GamePanel	WORLD_RUNTIME context	public String rejectionReason(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	154	type-reference	GamePanel	WORLD_RUNTIME context	public void apply(GamePanel game) {
-src/mechanist/WorldCommandRequest.java	158	member-reference	inventory	INVENTORY_PERSIST / save context	for (int i = 0; i < safeCount; i++) game.inventory.add(item);
-src/mechanist/WorldCommandRequest.java	159	member-reference	logEvent	WORLD_RUNTIME context	game.logEvent("ADMIN: issued " + safeCount + " x " + item + " through the local server authority.");
+src/mechanist/WorldCommandRequest.java	6	type-reference	GamePanel	WORLD_RUNTIME context	* Commands now target WorldCommandRuntimeContext first.  The legacy GamePanel
+src/mechanist/WorldCommandRequest.java	15	type-reference	GamePanel	WORLD_RUNTIME context	default void apply(GamePanel game) { apply(WorldCommandRuntimeContexts.fromGamePanel(game)); }
+src/mechanist/WorldCommandRequest.java	30	type-reference	GamePanel	WORLD_RUNTIME context	default String rejectionReason(GamePanel game) { return rejectionReason(WorldCommandRuntimeContexts.fromGamePanel(game)); }
+src/mechanist/WorldCommandRuntimeContext.java	6	type-reference	GamePanel	WORLD_RUNTIME context	* This is the first practical retarget away from direct GamePanel command
+src/mechanist/WorldCommandRuntimeContext.java	7	type-reference	GamePanel	WORLD_RUNTIME context	* mutation.  The GamePanel adapter remains temporary; command records should
+src/mechanist/WorldCommandRuntimeContext.java	33	type-reference	GamePanel	WORLD_RUNTIME context	static WorldCommandRuntimeContext fromGamePanel(GamePanel game) {
+src/mechanist/WorldCommandRuntimeContext.java	34	type-reference	GamePanel	WORLD_RUNTIME context	return new GamePanelWorldCommandRuntimeContext(game);
+src/mechanist/WorldCommandRuntimeContext.java	38	type-reference	GamePanel	WORLD_RUNTIME context	final class GamePanelWorldCommandRuntimeContext implements WorldCommandRuntimeContext {
+src/mechanist/WorldCommandRuntimeContext.java	39	type-reference	GamePanel	WORLD_RUNTIME context	private final GamePanel game;
+src/mechanist/WorldCommandRuntimeContext.java	41	type-reference	GamePanel	WORLD_RUNTIME context	GamePanelWorldCommandRuntimeContext(GamePanel game) {
+src/mechanist/WorldCommandRuntimeContext.java	46	member-reference	world	WORLD_RUNTIME context	public World world() { return game == null ? null : game.world; }
+src/mechanist/WorldCommandRuntimeContext.java	47	member-reference	world	WORLD_RUNTIME context	public boolean inBounds(int x, int y) { return game != null && game.world != null && game.world.inBounds(x, y); }
+src/mechanist/WorldCommandRuntimeContext.java	47	member-reference	world	WORLD_RUNTIME context	public boolean inBounds(int x, int y) { return game != null && game.world != null && game.world.inBounds(x, y); }
+src/mechanist/WorldCommandRuntimeContext.java	48	member-reference	world	WORLD_RUNTIME context	public boolean walkable(int x, int y) { return game != null && game.world != null && game.world.walkable(x, y); }
+src/mechanist/WorldCommandRuntimeContext.java	48	member-reference	world	WORLD_RUNTIME context	public boolean walkable(int x, int y) { return game != null && game.world != null && game.world.walkable(x, y); }
+src/mechanist/WorldCommandRuntimeContext.java	49	member-reference	executePacedMovementBody	WORLD_RUNTIME context	public void movePlayer(int dx, int dy, String source) { if (game != null) game.executePacedMovementBody(dx, dy, source); }
+src/mechanist/WorldCommandRuntimeContext.java	52	member-reference	clearPendingMovementInput	WORLD_RUNTIME context	game.clearPendingMovementInput("wait-command");
+src/mechanist/WorldCommandRuntimeContext.java	53	member-reference	advanceTurnBody	WORLD_RUNTIME context	game.advanceTurnBody(line);
+src/mechanist/WorldCommandRuntimeContext.java	54	member-reference	settlePlayerMotionAfterNoMoveTurn	WORLD_RUNTIME context	game.settlePlayerMotionAfterNoMoveTurn("wait-command");
+src/mechanist/WorldCommandRuntimeContext.java	56	member-reference	settlePlayerMotionAfterNoMoveTurn	WORLD_RUNTIME context	public void settleAfterNoMove(String reason) { if (game != null) game.settlePlayerMotionAfterNoMoveTurn(reason); }
+src/mechanist/WorldCommandRuntimeContext.java	57	member-reference	clearPendingMovementInput	WORLD_RUNTIME context	public void clearPendingMovement(String reason) { if (game != null) game.clearPendingMovementInput(reason); }
+src/mechanist/WorldCommandRuntimeContext.java	58	member-reference	confirmInteractionBody	WORLD_RUNTIME context	public void confirmInteraction() { if (game != null) game.confirmInteractionBody(); }
+src/mechanist/WorldCommandRuntimeContext.java	59	member-reference	confirmCombatTargetBody	WORLD_RUNTIME context	public void confirmCombatTarget() { if (game != null) game.confirmCombatTargetBody(); }
+src/mechanist/WorldCommandRuntimeContext.java	60	member-reference	useSelectedInventoryItemBody	WORLD_RUNTIME context	public void useSelectedInventoryItem() { if (game != null) game.useSelectedInventoryItemBody(); }
+src/mechanist/WorldCommandRuntimeContext.java	61	member-reference	unequipSelectedEquipmentSlotBody	WORLD_RUNTIME context	public void unequipSelectedEquipmentSlot() { if (game != null) game.unequipSelectedEquipmentSlotBody(); }
+src/mechanist/WorldCommandRuntimeContext.java	62	member-reference	addImperialScript	WORLD_RUNTIME context	public void addImperialScript(int amount) { if (game != null) game.addImperialScript(amount); }
+src/mechanist/WorldCommandRuntimeContext.java	63	member-reference	logEvent	WORLD_RUNTIME context	public void logEvent(String line) { if (game != null) game.logEvent(line); }
+src/mechanist/WorldCommandRuntimeContext.java	64	member-reference	advanceTurnBody	WORLD_RUNTIME context	public void advanceTurn(String line) { if (game != null) game.advanceTurnBody(line); }
+src/mechanist/WorldCommandRuntimeContext.java	67	member-reference	playerX	WORLD_RUNTIME context	game.playerX = x;
+src/mechanist/WorldCommandRuntimeContext.java	68	member-reference	playerY	WORLD_RUNTIME context	game.playerY = y;
+src/mechanist/WorldCommandRuntimeContext.java	69	member-reference	lookX	WORLD_RUNTIME context	game.lookX = x;
+src/mechanist/WorldCommandRuntimeContext.java	70	member-reference	lookY	WORLD_RUNTIME context	game.lookY = y;
+src/mechanist/WorldCommandRuntimeContext.java	71	member-reference	clearPendingMovementInput	WORLD_RUNTIME context	game.clearPendingMovementInput("admin-teleport");
+src/mechanist/WorldCommandRuntimeContext.java	72	member-reference	markLocalDirtyRegion	WORLD_RUNTIME context	game.markLocalDirtyRegion(reason == null ? "admin teleport" : reason, x, y, Math.max(6, game.visionRange() + 2), true, true, true, false);
+src/mechanist/WorldCommandRuntimeContext.java	72	member-reference	visionRange	WORLD_RUNTIME context	game.markLocalDirtyRegion(reason == null ? "admin teleport" : reason, x, y, Math.max(6, game.visionRange() + 2), true, true, true, false);
+src/mechanist/WorldCommandRuntimeContext.java	73	member-reference	updateSensoryModel	WORLD_RUNTIME context	game.updateSensoryModel("admin teleport");
+src/mechanist/WorldCommandRuntimeContext.java	78	member-reference	inventory	INVENTORY_PERSIST / save context	for (int i = 0; i < safeCount; i++) game.inventory.add(item);
 src/mechanist/WorldSnapshot.java	21	type-reference	GamePanel	WORLD_RUNTIME context	static WorldSnapshot fromGame(long version, GamePanel game, SectorKey sector) {
 src/mechanist/WorldSnapshot.java	27	member-reference	world	WORLD_RUNTIME context	World w = game.world;
 src/mechanist/WorldSnapshot.java	29	member-reference	playerX	WORLD_RUNTIME context	int minX = Math.max(0, game.playerX - TILE_RADIUS);

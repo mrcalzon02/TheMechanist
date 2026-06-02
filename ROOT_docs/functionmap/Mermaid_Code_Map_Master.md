@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-06-01 22:09:43`
+Generated/evaluated: `2026-06-01 22:20:16`
 
 ## Top-Line Rule
 
@@ -10,7 +10,7 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 ## Counts
 
-- Java modules mapped: `390`
+- Java modules mapped: `391`
 - Unpositioned modules: `0`
 - Oversized mapped modules: `10`
 
@@ -24,13 +24,13 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 - `LOCALIZATION_TEXT`: `60` modules
 - `RUNTIME_OPTIONS`: `25` modules
 - `SERVER_AUTH`: `39` modules
-- `UI_INPUT`: `45` modules
+- `UI_INPUT`: `46` modules
 - `UI_RENDER`: `96` modules
 - `WORLD_GEN`: `31` modules
 
 ## Status Counts
 
-- `positioned`: `390` modules
+- `positioned`: `391` modules
 
 ## Explicit Override Rule
 
@@ -71,20 +71,20 @@ flowchart TD
     Z_UI_RENDER --> M_src_mechanist_JvmRuntimeProfileAuthority_java["src/mechanist/JvmRuntimeProfileAuthority.java<br/>26 funcs / 321 lines"]
     Z_UI_RENDER --> M_src_mechanist_GamePanelKeyController_java["src/mechanist/GamePanelKeyController.java<br/>20 funcs / 310 lines"]
     Z_UI_RENDER --> Z_UI_RENDER_OTHER["+ 84 smaller modules"]
-    ROOT --> Z_UI_INPUT["UI Input Navigation<br/>45 modules"]
+    ROOT --> Z_UI_INPUT["UI Input Navigation<br/>46 modules"]
     Z_UI_INPUT --> M_src_mechanist_SectorManager_java["src/mechanist/SectorManager.java<br/>59 funcs / 609 lines"]
     Z_UI_INPUT --> M_src_mechanist_AdminCommandDispatcher_java["src/mechanist/AdminCommandDispatcher.java<br/>34 funcs / 342 lines"]
     Z_UI_INPUT --> M_src_mechanist_HybridEncryptionManager_java["src/mechanist/HybridEncryptionManager.java<br/>16 funcs / 322 lines"]
     Z_UI_INPUT --> M_src_mechanist_SnapshotDeltaCompressor_java["src/mechanist/SnapshotDeltaCompressor.java<br/>39 funcs / 294 lines"]
     Z_UI_INPUT --> M_src_mechanist_GameplayConsoleCommandAuthority_java["src/mechanist/GameplayConsoleCommandAuthority.java<br/>36 funcs / 206 lines"]
     Z_UI_INPUT --> M_src_mechanist_input_KeyBindingManager_java["src/mechanist/input/KeyBindingManager.java<br/>20 funcs / 202 lines"]
-    Z_UI_INPUT --> M_src_mechanist_WorldCommandRequest_java["src/mechanist/WorldCommandRequest.java<br/>45 funcs / 170 lines"]
+    Z_UI_INPUT --> M_src_mechanist_WorldCommandRequest_java["src/mechanist/WorldCommandRequest.java<br/>47 funcs / 171 lines"]
     Z_UI_INPUT --> M_src_mechanist_CrashDeobfuscatorEngine_java["src/mechanist/CrashDeobfuscatorEngine.java<br/>14 funcs / 155 lines"]
     Z_UI_INPUT --> M_src_mechanist_PlayerBehaviorMonitor_java["src/mechanist/PlayerBehaviorMonitor.java<br/>13 funcs / 149 lines"]
     Z_UI_INPUT --> M_src_mechanist_GamepadInputEngine_java["src/mechanist/GamepadInputEngine.java<br/>13 funcs / 133 lines"]
     Z_UI_INPUT --> M_src_mechanist_OperationTargetRegistry_java["src/mechanist/OperationTargetRegistry.java<br/>2 funcs / 127 lines"]
     Z_UI_INPUT --> M_src_mechanist_EditorUndoRedoController_java["src/mechanist/EditorUndoRedoController.java<br/>11 funcs / 117 lines"]
-    Z_UI_INPUT --> Z_UI_INPUT_OTHER["+ 33 smaller modules"]
+    Z_UI_INPUT --> Z_UI_INPUT_OTHER["+ 34 smaller modules"]
     ROOT --> Z_RUNTIME_OPTIONS["Runtime Options<br/>25 modules"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_GameOptionsFramework_java["src/mechanist/GameOptionsFramework.java<br/>73 funcs / 712 lines"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_OptionsScreenPainter_java["src/mechanist/OptionsScreenPainter.java<br/>20 funcs / 232 lines"]

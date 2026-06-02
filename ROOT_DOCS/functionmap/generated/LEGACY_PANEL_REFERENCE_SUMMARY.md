@@ -1,11 +1,11 @@
 # Legacy Panel Reference Summary
 
-Generated: `2026-06-01 22:09:43`
+Generated: `2026-06-01 22:20:16`
 
 Status: active retirement ledger for the temporary `LegacyPanelContext.java` bridge.
 
-- Total references: `2342`
-- Files with references: `105`
+- Total references: `2327`
+- Files with references: `106`
 - Unique member references: `247`
 
 ## Top Files
@@ -19,7 +19,6 @@ Status: active retirement ledger for the temporary `LegacyPanelContext.java` bri
 - `src/mechanist/AccessibilityRuntimeOptionsSubsystem.java`: `65`
 - `src/mechanist/DisplayScaleOptionsSubsystem.java`: `57`
 - `src/mechanist/LayerF.java`: `55`
-- `src/mechanist/WorldCommandRequest.java`: `52`
 - `src/mechanist/WorldSnapshot.java`: `50`
 - `src/mechanist/MapViewportOptionsSubsystem.java`: `49`
 - `src/mechanist/KeyEarlyScreenController.java`: `47`
@@ -34,6 +33,7 @@ Status: active retirement ledger for the temporary `LegacyPanelContext.java` bri
 - `src/mechanist/LegacyPanelContextAdapters.java`: `39`
 - `src/mechanist/AdminCommandDispatcher.java`: `37`
 - `src/mechanist/MouseLateUiController.java`: `36`
+- `src/mechanist/WorldCommandRuntimeContext.java`: `34`
 - `src/mechanist/FactionServicesFramework.java`: `30`
 - `src/mechanist/LayerC.java`: `27`
 - `src/mechanist/LayerI.java`: `27`
@@ -45,8 +45,8 @@ Status: active retirement ledger for the temporary `LegacyPanelContext.java` bri
 
 - `options`: `262`
 - `repaint`: `108`
-- `world`: `103`
-- `logEvent`: `71`
+- `world`: `101`
+- `logEvent`: `69`
 - `screen`: `59`
 - `jvmRuntimeProfile`: `36`
 - `panelMode`: `35`
