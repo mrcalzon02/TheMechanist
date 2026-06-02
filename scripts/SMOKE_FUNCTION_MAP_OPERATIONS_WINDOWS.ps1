@@ -175,14 +175,14 @@ $compileExit = 0
 if ($SkipCompile) {
     Add-Gate 'WARN' 'compile_smoke' 'skipped' 'Compile smoke skipped by request.'
 } else {
-    $compileScript = Join-Path $root 'scripts\SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1'
+    $compileScript = Join-Path $root 'scripts\SMOKE_FUNCTION_COMPILE_DIAGNOSTIC_WINDOWS.ps1'
     if (Test-Path -LiteralPath $compileScript -PathType Leaf) {
         $args = @('-ExecutionPolicy', 'Bypass', '-File', $compileScript)
         if ($VerboseJava) { $args += '-VerboseJava' }
-        $compileExit = Run-ProcessCaptured 'Existing javac/Maven compile smoke' 'powershell' $args $compileRunLog $CommandTimeoutSeconds
-        if ($compileExit -eq 0) { Add-Gate 'INFO' 'compile_smoke' 'pass' 'Existing compile smoke completed successfully.' } else { Add-Gate 'ERROR' 'compile_smoke' 'fail' "Compile smoke failed with exit code $compileExit." }
+        $compileExit = Run-ProcessCaptured 'Function compile diagnostic smoke' 'powershell' $args $compileRunLog $CommandTimeoutSeconds
+        if ($compileExit -eq 0) { Add-Gate 'INFO' 'compile_smoke' 'pass' 'Function compile diagnostic completed successfully.' } else { Add-Gate 'ERROR' 'compile_smoke' 'fail' "Compile diagnostic failed with exit code $compileExit." }
     } else {
-        Add-Gate 'ERROR' 'compile_smoke_script' 'missing' 'scripts/SMOKE_SHARD8_DIAGNOSTIC_WINDOWS.ps1 not found.'
+        Add-Gate 'ERROR' 'compile_smoke_script' 'missing' 'scripts/SMOKE_FUNCTION_COMPILE_DIAGNOSTIC_WINDOWS.ps1 not found.'
         $compileExit = 998
     }
 }
