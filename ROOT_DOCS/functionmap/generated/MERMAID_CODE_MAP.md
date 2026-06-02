@@ -1,6 +1,6 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-06-01 16:51:33`
+Generated: `2026-06-01 17:03:34`
 
 ```mermaid
 flowchart TD
@@ -21,7 +21,7 @@ flowchart TD
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ConstructionGovernanceAuthority_java["src/mechanist/ConstructionGovernanceAuthority.java<br/>18 funcs / 300 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_BlueprintConstructionAuthority_java["src/mechanist/BlueprintConstructionAuthority.java<br/>27 funcs / 299 lines"]
     Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 48 smaller modules"]
-    ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>93 modules"]
+    ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>94 modules"]
     Z_UI_RENDER --> M_src_mechanist_FirstPerson3DFramework_java["src/mechanist/FirstPerson3DFramework.java<br/>85 funcs / 1042 lines"]
     Z_UI_RENDER --> M_src_mechanist_SimulationEditorSuite_java["src/mechanist/SimulationEditorSuite.java<br/>60 funcs / 824 lines"]
     Z_UI_RENDER --> M_src_mechanist_VisualJuiceFramework_java["src/mechanist/VisualJuiceFramework.java<br/>55 funcs / 593 lines"]
@@ -34,7 +34,7 @@ flowchart TD
     Z_UI_RENDER --> M_src_mechanist_EconomicLocalTopologyMetadataSurfaceAuthority_java["src/mechanist/EconomicLocalTopologyMetadataSurfaceAuthority.java<br/>21 funcs / 323 lines"]
     Z_UI_RENDER --> M_src_mechanist_JvmRuntimeProfileAuthority_java["src/mechanist/JvmRuntimeProfileAuthority.java<br/>26 funcs / 321 lines"]
     Z_UI_RENDER --> M_src_mechanist_GamePanelKeyController_java["src/mechanist/GamePanelKeyController.java<br/>20 funcs / 310 lines"]
-    Z_UI_RENDER --> Z_UI_RENDER_OTHER["+ 81 smaller modules"]
+    Z_UI_RENDER --> Z_UI_RENDER_OTHER["+ 82 smaller modules"]
     ROOT --> Z_UI_INPUT["UI Input Navigation<br/>45 modules"]
     Z_UI_INPUT --> M_src_mechanist_SectorManager_java["src/mechanist/SectorManager.java<br/>59 funcs / 609 lines"]
     Z_UI_INPUT --> M_src_mechanist_AdminCommandDispatcher_java["src/mechanist/AdminCommandDispatcher.java<br/>34 funcs / 342 lines"]
