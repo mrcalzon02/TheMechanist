@@ -1,11 +1,11 @@
 # Legacy Panel Reference Summary
 
-Generated: `2026-06-01 22:44:13`
+Generated: `2026-06-01 22:57:11`
 
 Status: active retirement ledger for the temporary `LegacyPanelContext.java` bridge.
 
-- Total references: `2327`
-- Files with references: `106`
+- Total references: `2328`
+- Files with references: `107`
 - Unique member references: `247`
 
 ## Top Files
