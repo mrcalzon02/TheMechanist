@@ -724,7 +724,7 @@ final class LegacyImageSurface {
 
     private BufferedImage generatedTitle() {
         BufferedImage img = new BufferedImage(760, 130, BufferedImage.TYPE_INT_ARGB);
-        java.awt.java.awt.Graphics2D g = img.createGraphics();
+        java.awt.Graphics2D g = img.createGraphics();
         g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(new java.awt.Color(20, 18, 14, 230));
         g.fillRoundRect(0, 0, img.getWidth(), img.getHeight(), 22, 22);
@@ -742,7 +742,7 @@ final class LegacyImageSurface {
 
     private BufferedImage generatedSubtitle() {
         BufferedImage img = new BufferedImage(500, 46, BufferedImage.TYPE_INT_ARGB);
-        java.awt.java.awt.Graphics2D g = img.createGraphics();
+        java.awt.Graphics2D g = img.createGraphics();
         g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
         g.setFont(new java.awt.Font("Monospaced", java.awt.Font.BOLD, 20));
         g.setColor(new java.awt.Color(170, 150, 105));
@@ -780,6 +780,7 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
 
 
 
