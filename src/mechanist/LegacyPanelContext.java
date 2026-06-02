@@ -236,12 +236,83 @@ class GamePanel extends LegacyPanelBridgeBase {
     Font uiFont = new Font("Monospaced", Font.BOLD, 16);
     Font asciiFont = new Font("Monospaced", Font.BOLD, 13);
 
-    GamePanel() {}
+    GamePanel() {
+        setOpaque(true);
+        setBackground(new java.awt.Color(18, 17, 14));
+        setFocusable(true);
+        logEvent("GamePanel compatibility bridge initialized.");
+    }
     GamePanel(RuntimeProfile runtimeProfile) {
+        this();
         if (runtimeProfile != null) logEvent("Runtime profile attached: " + runtimeProfile.compactLine());
     }
     GamePanel(JvmRuntimeProfileAuthority.RuntimeConfig runtimeProfile) {
+        this();
         if (runtimeProfile != null) this.jvmRuntimeProfile = runtimeProfile;
+    }
+
+    @Override
+    protected void paintComponent(java.awt.Graphics graphics) {
+        super.paintComponent(graphics);
+        java.awt.Graphics2D g = (java.awt.Graphics2D) graphics.create();
+        try {
+            int w = Math.max(1, getWidth());
+            int h = Math.max(1, getHeight());
+            g.setColor(new java.awt.Color(18, 17, 14));
+            g.fillRect(0, 0, w, h);
+            g.setColor(new java.awt.Color(72, 61, 38));
+            for (int x = 0; x < w; x += 32) g.drawLine(x, 0, x, h);
+            for (int y = 0; y < h; y += 32) g.drawLine(0, y, w, y);
+            try {
+                if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+                    new MainMenuSurfacePainter().paint(g, this);
+                    drawVisibleBootStatus(g, w, h);
+                    return;
+                }
+            } catch (Throwable t) {
+                drawBridgeException(g, w, h, t);
+                return;
+            }
+            drawVisibleBootStatus(g, w, h);
+        } finally {
+            g.dispose();
+        }
+    }
+
+    private void drawVisibleBootStatus(java.awt.Graphics2D g, int w, int h) {
+        g.setFont(titleFont.deriveFont(java.awt.Font.BOLD, Math.max(28f, Math.min(52f, h / 10f))));
+        g.setColor(new java.awt.Color(218, 198, 126));
+        center(g, "THE MECHANIST", w / 2, Math.max(78, h / 5));
+        g.setFont(uiFont);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        int y = Math.max(140, h / 5 + 54);
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        lines.add("Compatibility bridge boot surface active.");
+        lines.add("Screen: " + screen + "  Panel: " + panelMode + "  Turn: " + turn);
+        lines.add("Runtime: " + (jvmRuntimeProfile == null ? "none" : jvmRuntimeProfile.compactLine()));
+        lines.add("Events: " + eventLog.size() + "  Assets facade: " + (images == null ? "missing" : "ready"));
+        lines.add("This fallback confirms Swing is painting while the full client surface is reconnected.");
+        for (String line : lines) {
+            center(g, line, w / 2, y);
+            y += Math.max(22, g.getFontMetrics().getHeight() + 4);
+        }
+    }
+
+    private void drawBridgeException(java.awt.Graphics2D g, int w, int h, Throwable t) {
+        g.setColor(new java.awt.Color(36, 8, 8));
+        g.fillRect(0, 0, w, h);
+        g.setFont(uiFont);
+        g.setColor(new java.awt.Color(255, 180, 150));
+        int y = 48;
+        g.drawString("The Mechanist bridge renderer caught an exception:", 32, y);
+        y += 28;
+        g.drawString(t.getClass().getName() + ": " + String.valueOf(t.getMessage()), 32, y);
+        y += 28;
+        for (StackTraceElement element : t.getStackTrace()) {
+            if (y > h - 24) break;
+            g.drawString("  at " + element.toString(), 32, y);
+            y += 18;
+        }
     }
     void runGuarded(String tag, String reason, Runnable body) { if (body != null) body.run(); }
     void executePacedMovementBody(int dx, int dy, String source) { playerX += dx; playerY += dy; lookX = playerX; lookY = playerY; }
@@ -575,5 +646,6 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
 
 
