@@ -1,6 +1,6 @@
 # Legacy Panel Reference Summary
 
-Generated: `2026-06-01 21:59:47`
+Generated: `2026-06-01 22:09:43`
 
 Status: active retirement ledger for the temporary `LegacyPanelContext.java` bridge.
 
