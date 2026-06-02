@@ -237,6 +237,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     Font asciiFont = new Font("Monospaced", Font.BOLD, 13);
 
     GamePanel() {}
+    GamePanel(RuntimeProfile runtimeProfile) {
+        if (runtimeProfile != null) logEvent("Runtime profile attached: " + runtimeProfile.compactLine());
+    }
     GamePanel(JvmRuntimeProfileAuthority.RuntimeConfig runtimeProfile) {
         if (runtimeProfile != null) this.jvmRuntimeProfile = runtimeProfile;
     }
@@ -411,7 +414,6 @@ class GamePanel extends LegacyPanelBridgeBase {
     int securityStaffCount() { return 0; }
     boolean buttonIsModalInteractive(ButtonBox button) { return button != null; }
     void markZoneVisitedAndCheckFirstType() {
-        if (atlas != null && atlas.currentZoneType() != null) visitedZoneTypes.add(atlas.currentZoneType());
         if (atlas != null) visitedZoneInstances.add(atlas.sectorX + ":" + atlas.sectorY + ":" + atlas.floor + ":" + atlas.zoneX + ":" + atlas.zoneY + ":" + atlas.sewer);
     }
     boolean verifyItemOperationalParity(String context) { return true; }
@@ -573,3 +575,4 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
