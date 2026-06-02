@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.awt.Font;
+import java.awt.event.KeyEvent;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,8 +25,8 @@ class GamePanel extends JPanel {
     static final int TURNS_PER_HOUR = 100;
     static final int HOURS_PER_DAY = 24;
 
-    enum Screen { BOOT, MAIN, CHARACTER, GAME, OPTIONS, INVENTORY, INFO, MAP, PAUSE }
-    enum PanelMode { NONE, INVENTORY, CONTAINER, TRADE, LOOK, AUSPEX, CONSOLE, INFO }
+    enum Screen { BOOT, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
+    enum PanelMode { NONE, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING }
 
     World world;
     LegacyPanelAtlas atlas;
@@ -34,6 +35,9 @@ class GamePanel extends JPanel {
     UserProfileAuthority.Profile userProfile = UserProfileAuthority.detect();
     SinglePlayerSectorRuntimeBridge singlePlayerSectorBridge;
     LegacyPerformanceDiagnostics performanceDiagnostics = new LegacyPerformanceDiagnostics();
+    LegacyKeyboardInputBridge keyboardInputBridge = new LegacyKeyboardInputBridge();
+    LegacyMultiplayerMenu multiplayerMenu = new LegacyMultiplayerMenu();
+    LegacySoundSurface sounds = new LegacySoundSurface();
 
     final ArrayList<String> inventory = new ArrayList<>();
     final ArrayList<String> eventLog = new ArrayList<>();
@@ -41,17 +45,22 @@ class GamePanel extends JPanel {
     final ArrayList<String> baseStorage = new ArrayList<>();
     final ArrayList<Candidate> candidates = new ArrayList<>();
     final ArrayList<Object> factionRecruits = new ArrayList<>();
+    final ArrayList<Object> buttons = new ArrayList<>();
     final HashSet<String> visitedZoneTypes = new HashSet<>();
     final HashSet<String> visitedZoneInstances = new HashSet<>();
     final HashSet<String> unlockedKnowledges = new HashSet<>();
     final ArrayDeque<LogisticsRouteIntentAuthority.RouteIntentRecord> logisticsRouteIntentHistory = new ArrayDeque<>();
 
     Random rng = new Random(0);
+    long seed;
     int playerX;
     int playerY;
     int lookX;
     int lookY;
+    int baseX;
+    int baseY;
     boolean lookCursorActive;
+    boolean interactCursorActive;
     int turn;
     int worldTurn;
     int food;
@@ -70,15 +79,27 @@ class GamePanel extends JPanel {
     int runUnconsciousEvents;
     int candidateIndex;
     int claimedRoomId = -1;
+    int selectedButton;
+    int infopediaTab;
+    int lookStackIndex;
+    int lookStackScroll;
+    int jobIndex;
+    int jobDossierScroll;
+    int jobDossierTab;
     boolean baseClaimed;
     boolean characterNameEditActive;
-    Screen screen = Screen.MAIN;
+    boolean manualMovementPlanActive;
+    boolean buildPlacementActive;
+    Screen screen = Screen.MENU;
     PanelMode panelMode = PanelMode.NONE;
     String lastAccessibleNarration = "";
+    String activeScrollTag = "";
     long bootStartMillis = System.currentTimeMillis();
+    long lastInputMillis = System.currentTimeMillis();
     Font titleFont = new Font("Monospaced", Font.BOLD, 36);
     Font smallFont = new Font("Monospaced", Font.PLAIN, 14);
 
+    void runGuarded(String tag, String reason, Runnable body) { if (body != null) body.run(); }
     void executePacedMovementBody(int dx, int dy, String source) { playerX += dx; playerY += dy; lookX = playerX; lookY = playerY; }
     void clearPendingMovementInput(String reason) {}
     void advanceTurnBody(String line) { turn++; worldTurn++; if (line != null && !line.isBlank()) logEvent(line); }
@@ -99,15 +120,73 @@ class GamePanel extends JPanel {
     String facingLabel() { return "E"; }
     String activeMotionStateLabel() { return "stationary"; }
     void logEvent(String line) { if (line != null && !line.isBlank()) eventLog.add(line); }
+
+    void setScreen(Screen next) { screen = next == null ? Screen.MENU : next; }
+    void closePanel() { panelMode = PanelMode.NONE; screen = Screen.GAME; }
+    void closeKnowledgeScreen() { screen = Screen.GAME; }
+    void handleKnowledgeKeyPressed(int code) {}
+    void cancelManualMovementPlan(String reason) { manualMovementPlanActive = false; }
+    void rerollSectorAudit() {}
+    void cycleAuditZoneType(int delta) {}
+    void cycleAuditZoneDensity() {}
+    void cycleAuditOverlay() {}
+    void jumpAuditFinding(int delta) {}
+    void moveAuditCursor(int dx, int dy) {}
+    boolean isAssetInfopediaTab(int tab) { return false; }
+    void backspaceInfopediaAssetFilter() {}
+    void cycleInfopediaTab(int delta) {}
+    void moveInfopediaSelection(int delta) {}
+    boolean scrollActivePanel(int delta, boolean page) { return false; }
+    void cycleFireMode() {}
+    void throwSelectedExplosiveAtCursor() {}
+    void reloadCurrentRangedWeapon() {}
+    void confirmCombatTarget() { confirmCombatTargetBody(); }
+    void moveCombatCursor(int dx, int dy) { lookX += dx; lookY += dy; }
+    void confirmInteraction() { confirmInteractionBody(); }
+    void examineSelectedLookTarget() {}
+    void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; }
+    ArrayList<String> tileStackAt(int x, int y) { return new ArrayList<>(); }
+    void moveBuildCursor(int dx, int dy) {}
+    void confirmBuildPlacement() {}
+    void moveSelectedButton(int delta) { if (!buttons.isEmpty()) selectedButton = Math.floorMod(selectedButton + delta, buttons.size()); }
+    void activateSelectedButtonUniversal() {}
+    void cycleMovementMode() {}
+    void beginManualMovementPlan() { manualMovementPlanActive = true; }
+    void waitOneTurn() { advanceTurnBody("waits."); }
+    void beginInteractMode() { panelMode = PanelMode.INTERACT; screen = Screen.PANEL; }
+    void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = Screen.PANEL; }
+    void beginCombatTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
+    void beginExplosiveTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
+    void queueOrExecuteMovementInput(int dx, int dy) { executePacedMovementBody(dx, dy, "legacy-queue"); }
+    void sanityCheck(String phase) {}
+    void nudgeManualMovementPlan(int dx, int dy) { lookX += dx; lookY += dy; }
+    void confirmManualMovementPlan() { manualMovementPlanActive = false; }
+    void createNewInGameEditorEntry() {}
+    void inGameEditorUndo() {}
+    void inGameEditorRedo() {}
 }
 
 final class LegacyPanelAtlas {
+    HiveWorldDefinition hiveWorld;
     int sectorX;
     int sectorY;
     int floor;
     int zoneX;
     int zoneY;
     boolean sewer;
+}
+
+final class LegacyKeyboardInputBridge {
+    void keyPressed(KeyEvent event) {}
+}
+
+final class LegacyMultiplayerMenu {
+    boolean handleKeyPressed(int code) { return false; }
+    void endDirectEdit() {}
+}
+
+final class LegacySoundSurface {
+    void play(String key, GameOptions options) {}
 }
 
 final class LegacyPerformanceDiagnostics {
