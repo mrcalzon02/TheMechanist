@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-06-01 23:03:50`
+Generated/evaluated: `2026-06-01 23:14:31`
 
 ## Top-Line Rule
 
@@ -69,7 +69,7 @@ flowchart TD
     Z_UI_RENDER --> M_src_mechanist_FramePacingAndStressFramework_java["src/mechanist/FramePacingAndStressFramework.java<br/>29 funcs / 334 lines"]
     Z_UI_RENDER --> M_src_mechanist_EconomicLocalTopologyMetadataSurfaceAuthority_java["src/mechanist/EconomicLocalTopologyMetadataSurfaceAuthority.java<br/>21 funcs / 323 lines"]
     Z_UI_RENDER --> M_src_mechanist_JvmRuntimeProfileAuthority_java["src/mechanist/JvmRuntimeProfileAuthority.java<br/>26 funcs / 321 lines"]
-    Z_UI_RENDER --> M_src_mechanist_GamePanelKeyController_java["src/mechanist/GamePanelKeyController.java<br/>20 funcs / 310 lines"]
+    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>116 funcs / 319 lines"]
     Z_UI_RENDER --> Z_UI_RENDER_OTHER["+ 84 smaller modules"]
     ROOT --> Z_UI_INPUT["UI Input Navigation<br/>46 modules"]
     Z_UI_INPUT --> M_src_mechanist_SectorManager_java["src/mechanist/SectorManager.java<br/>59 funcs / 609 lines"]
