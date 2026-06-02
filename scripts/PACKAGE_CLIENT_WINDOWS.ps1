@@ -63,6 +63,24 @@ function Publish-LatestPackageAliases() {
     Copy-IfExists $packageLog (Join-Path $diagRoot 'LATEST_PACKAGE_LOG.txt')
 }
 
+function Resolve-CommandPath($name) {
+    $cmd = Get-Command $name -ErrorAction SilentlyContinue
+    if (-not $cmd) { return $null }
+    if ($cmd.Source) { return $cmd.Source }
+    return $cmd.Name
+}
+
+function Resolve-SiblingTool($knownToolPath, $siblingName) {
+    if (-not $knownToolPath) { return $null }
+    $knownToolDir = Split-Path -Parent $knownToolPath
+    if (-not $knownToolDir) { return $null }
+    foreach ($candidateName in @("$siblingName.exe", "$siblingName.cmd", $siblingName)) {
+        $candidate = Join-Path $knownToolDir $candidateName
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    return $null
+}
+
 "Client Package Run: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Package output: $outRoot" | Add-Content -LiteralPath $summary
@@ -70,12 +88,21 @@ function Publish-LatestPackageAliases() {
 "Max javac errors: $MaxErrors" | Add-Content -LiteralPath $summary
 
 Write-Section 'Tooling preflight'
-$hasJavac = [bool](Get-Command javac -ErrorAction SilentlyContinue)
-$hasJar = [bool](Get-Command jar -ErrorAction SilentlyContinue)
-if (-not $hasJavac) { 'ERROR: javac not found on PATH.' | Tee-Object -FilePath $compileLog; Publish-LatestPackageAliases; exit 127 }
-if (-not $hasJar) { 'ERROR: jar not found on PATH.' | Tee-Object -FilePath $packageLog; Publish-LatestPackageAliases; exit 127 }
-javac -version *>&1 | Tee-Object -FilePath $compileLog
-jar --version *>&1 | Tee-Object -FilePath $packageLog
+$javacExe = Resolve-CommandPath 'javac'
+$jarExe = Resolve-CommandPath 'jar'
+if ((-not $jarExe) -and $javacExe) { $jarExe = Resolve-SiblingTool $javacExe 'jar' }
+
+if (-not $javacExe) { 'ERROR: javac not found on PATH.' | Tee-Object -FilePath $compileLog; Publish-LatestPackageAliases; exit 127 }
+if (-not $jarExe) {
+    $msg = "ERROR: jar not found on PATH or beside javac. javac resolved to: $javacExe"
+    $msg | Tee-Object -FilePath $packageLog
+    Publish-LatestPackageAliases
+    exit 127
+}
+"javac command: $javacExe" | Add-Content -LiteralPath $summary
+"jar command: $jarExe" | Add-Content -LiteralPath $summary
+& $javacExe -version *>&1 | Tee-Object -FilePath $compileLog
+& $jarExe --version *>&1 | Tee-Object -FilePath $packageLog
 
 Write-Section 'Source inventory'
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName })
@@ -95,8 +122,8 @@ $javacArgs = @('-Xmaxerrs', ([string][Math]::Max(100, $MaxErrors)), '-encoding',
 Push-Location $root
 try {
     Write-Host ('Working directory: ' + (Get-Location)) | Tee-Object -FilePath $compileLog -Append
-    Write-Host ('javac ' + ($javacArgs -join ' ')) | Tee-Object -FilePath $compileLog -Append
-    & javac @javacArgs *>&1 | Tee-Object -FilePath $compileLog -Append
+    Write-Host ($javacExe + ' ' + ($javacArgs -join ' ')) | Tee-Object -FilePath $compileLog -Append
+    & $javacExe @javacArgs *>&1 | Tee-Object -FilePath $compileLog -Append
     $compileExit = $LASTEXITCODE
 } finally {
     Pop-Location
@@ -129,7 +156,7 @@ $jarPath = Join-Path $outRoot 'TheMechanist.jar'
 ) | Set-Content -LiteralPath $manifest
 Push-Location $classes
 try {
-    & jar cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
+    & $jarExe cfm $jarPath $manifest . *>&1 | Tee-Object -FilePath $packageLog -Append
     $jarExit = $LASTEXITCODE
 } finally {
     Pop-Location
