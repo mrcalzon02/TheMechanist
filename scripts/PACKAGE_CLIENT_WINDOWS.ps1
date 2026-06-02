@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
-$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd('\\', '/')
+$rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
 $rootPrefix = $rootFull + [System.IO.Path]::DirectorySeparatorChar
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $diagRoot = Join-Path $root 'diagnostics'
@@ -47,12 +47,19 @@ function Write-Utf8NoBomLines($path, $lines) {
 }
 
 function Copy-FilePreserveTree($sourceRoot, $destRoot, $fileInfo) {
-    $sourceFull = [System.IO.Path]::GetFullPath($fileInfo.FullName)
-    $rootFullLocal = [System.IO.Path]::GetFullPath($sourceRoot).TrimEnd('\\', '/') + [System.IO.Path]::DirectorySeparatorChar
-    $relative = if ($sourceFull.StartsWith($rootFullLocal, [System.StringComparison]::OrdinalIgnoreCase)) { $sourceFull.Substring($rootFullLocal.Length) } else { $fileInfo.Name }
-    $dest = Join-Path $destRoot $relative
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
-    Copy-Item -LiteralPath $fileInfo.FullName -Destination $dest -Force -ErrorAction Continue
+    $sourceFull = [System.IO.Path]::GetFullPath([string]$fileInfo.FullName)
+    $rootFullLocal = [System.IO.Path]::GetFullPath([string]$sourceRoot).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
+    $rootPrefixLocal = $rootFullLocal + [System.IO.Path]::DirectorySeparatorChar
+    if ($sourceFull.StartsWith($rootPrefixLocal, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relative = $sourceFull.Substring($rootPrefixLocal.Length)
+    } else {
+        $relative = [System.IO.Path]::GetFileName($sourceFull)
+    }
+    if ([System.IO.Path]::IsPathRooted($relative)) { $relative = [System.IO.Path]::GetFileName($relative) }
+    $dest = Join-Path -Path $destRoot -ChildPath $relative
+    $parent = Split-Path -Parent $dest
+    if (-not [string]::IsNullOrWhiteSpace($parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
+    Copy-Item -LiteralPath $sourceFull -Destination $dest -Force -ErrorAction Stop
 }
 
 function Copy-MergeIfExists($source, $dest) {
@@ -313,3 +320,4 @@ $classCount = @(Get-ChildItem -LiteralPath $classes -Recurse -Filter '*.class' -
 "CLIENT PACKAGE PASS: unfolded client updated at $outRoot with $classCount class files" | Tee-Object -FilePath $packageLog -Append
 Publish-LatestPackageAliases
 exit 0
+
