@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-06-01 22:20:16`
+Generated/evaluated: `2026-06-01 22:31:32`
 
 ## Top-Line Rule
 
@@ -12,7 +12,7 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 - Java modules mapped: `391`
 - Unpositioned modules: `0`
-- Oversized mapped modules: `10`
+- Oversized mapped modules: `11`
 
 ## Zone Counts
 
