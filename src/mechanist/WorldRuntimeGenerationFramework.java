@@ -131,13 +131,7 @@ class World {
     boolean[][] visitedZones = new boolean[3][3];
     World(long seed,int w,int h){this.seed=seed;this.w=w;this.h=h;this.r=new Random(seed);tiles=new char[w][h]; roomIds=new int[w][h]; noiseField=new int[w][h]; for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y]=-1;}
     void generate(){
-        WorldGenerationPipelineRunState state = new WorldGenerationPipelineRunState();
-        worldgenPhaseResetAndSeed(state);
-        worldgenPhasePlazaAndRoads(state);
-        worldgenPhaseRoomsAndFactionClaims(state);
-        worldgenPhaseRoadAdjacencyFixturesAndValidation(state);
-        worldgenPhaseBoundaryInterwallAndMetadata(state);
-        worldgenPhasePopulationEconomyAndFinalCompile(state);
+        ZoneGenerationManager.generate(this);
     }
 
     void worldgenPhaseResetAndSeed(WorldGenerationPipelineRunState state){
