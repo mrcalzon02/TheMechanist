@@ -241,6 +241,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         setBackground(new java.awt.Color(18, 17, 14));
         setFocusable(true);
         logEvent("GamePanel compatibility bridge initialized.");
+        installMainMenuInputBridge();
     }
     GamePanel(RuntimeProfile runtimeProfile) {
         this();
@@ -251,6 +252,85 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (runtimeProfile != null) this.jvmRuntimeProfile = runtimeProfile;
     }
 
+
+    void installMainMenuInputBridge() {
+        addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override public void mouseMoved(java.awt.event.MouseEvent e) {
+                mouseX = e.getX(); mouseY = e.getY();
+                if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+                    int idx = mainMenuRouteIndexAt(mouseX, mouseY);
+                    if (idx >= 0 && idx != selectedButton) { selectedButton = idx; repaint(); }
+                }
+            }
+        });
+        addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) return;
+                int idx = mainMenuRouteIndexAt(e.getX(), e.getY());
+                if (idx >= 0) { selectedButton = idx; activateMainMenuRouteIndex(idx); repaint(); requestFocusInWindow(); }
+            }
+        });
+        addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
+                if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) return;
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_UP || e.getKeyCode() == java.awt.event.KeyEvent.VK_W) { selectedButton = Math.floorMod(selectedButton - 1, mainMenuRouteLabels().size()); repaint(); return; }
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DOWN || e.getKeyCode() == java.awt.event.KeyEvent.VK_S) { selectedButton = Math.floorMod(selectedButton + 1, mainMenuRouteLabels().size()); repaint(); return; }
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER || e.getKeyCode() == java.awt.event.KeyEvent.VK_SPACE) { activateMainMenuRouteIndex(selectedButton); repaint(); return; }
+                int digit = e.getKeyCode() - java.awt.event.KeyEvent.VK_1;
+                if (digit >= 0 && digit < mainMenuRouteLabels().size()) { selectedButton = digit; activateMainMenuRouteIndex(digit); repaint(); }
+            }
+        });
+    }
+
+    java.util.List<String> mainMenuRouteLabels() {
+        return java.util.List.of("New Game", "Continue", "Load Game", "Options", "Knowledge", "Multiplayer", "Quit");
+    }
+
+    Rectangle mainMenuRouteRect(int index) {
+        Rectangle frame = mainMenuButtonFrameRect();
+        int buttonW = Math.max(220, frame.width - 88);
+        int buttonH = 36;
+        int gap = 10;
+        int top = Math.max(mainMenuTitleTop(Math.max(1, getHeight())) + 142, frame.y + 30);
+        int x = getWidth() / 2 - buttonW / 2;
+        return new Rectangle(x, top + index * (buttonH + gap), buttonW, buttonH);
+    }
+
+    int mainMenuRouteIndexAt(int x, int y) {
+        java.util.List<String> labels = mainMenuRouteLabels();
+        for (int i = 0; i < labels.size(); i++) if (mainMenuRouteRect(i).contains(x, y)) return i;
+        return -1;
+    }
+
+    void activateMainMenuRouteIndex(int index) {
+        java.util.List<String> labels = mainMenuRouteLabels();
+        if (labels.isEmpty()) return;
+        index = Math.floorMod(index, labels.size());
+        String route = labels.get(index);
+        logEvent("Main menu route selected: " + route);
+        switch (route) {
+            case "New Game" -> startPackagedClientNewGame();
+            case "Continue", "Load Game" -> { logEvent(route + " is visible; save/load bridge restoration is pending."); }
+            case "Options" -> setScreen(Screen.OPTIONS);
+            case "Knowledge" -> openKnowledgeMenu();
+            case "Multiplayer" -> setScreen(Screen.MULTIPLAYER);
+            case "Quit" -> requestApplicationExit("main menu quit route");
+            default -> logEvent("Unhandled main menu route: " + route);
+        }
+    }
+
+    void startPackagedClientNewGame() {
+        screen = Screen.GAME;
+        panelMode = PanelMode.NONE;
+        playerX = Math.max(1, playerX == 0 ? 8 : playerX);
+        playerY = Math.max(1, playerY == 0 ? 8 : playerY);
+        lookX = playerX;
+        lookY = playerY;
+        food = food == 0 ? MAX_FOOD_WATER : food;
+        water = water == 0 ? MAX_FOOD_WATER : water;
+        if (inventory.isEmpty()) inventory.add("Ration pack");
+        logEvent("New game bridge started from package client menu.");
+    }
     @Override
     protected void paintComponent(java.awt.Graphics graphics) {
         super.paintComponent(graphics);
@@ -665,9 +745,11 @@ final class LegacyImageSurface {
     BufferedImage getNpcPortraitFor(Object npc) { return get("portrait_" + (npc == null ? "unknown" : npc.getClass().getSimpleName())); }
 
     private BufferedImage loadByKey(String key) {
-        java.nio.file.Path indexed = findIndexedPackageAsset(key);
-        BufferedImage indexedImage = readImage(indexed);
-        if (indexedImage != null) return indexedImage;
+        if (!("title_mechanist_rebase".equalsIgnoreCase(key) || "title_mechanist".equalsIgnoreCase(key) || "subtitle_rebase".equalsIgnoreCase(key))) {
+            java.nio.file.Path indexed = findIndexedPackageAsset(key);
+            BufferedImage indexedImage = readImage(indexed);
+            if (indexedImage != null) return indexedImage;
+        }
         java.util.List<String> names = candidateNames(key);
         for (java.nio.file.Path root : assetRoots()) {
             for (String name : names) {
@@ -861,6 +943,8 @@ final class LegacyPanelProfile {
 final class LegacyGamepadInputEngine {
     String status() { return "not started"; }
 }
+
+
 
 
 

@@ -1,76 +1,86 @@
 package mechanist;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
+import java.awt.RenderingHints;
 
 final class MainMenuSurfacePainter implements ScreenPainter {
     @Override
     public void paint(Graphics2D g, GamePanel panel) {
-        int W = panel.getWidth();
-        int H = panel.getHeight();
-        
-        BufferedImage title = panel.images.get("title_mechanist_rebase");
-        if (title == null) title = panel.images.get("title_mechanist");
+        int W = Math.max(1, panel.getWidth());
+        int H = Math.max(1, panel.getHeight());
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setPaint(new GradientPaint(0, 0, new Color(16, 15, 12), 0, H, new Color(34, 28, 18)));
+        g.fillRect(0, 0, W, H);
+        drawBackdrop(g, W, H);
+
         int cx = W / 2;
-        int titleTop = panel.mainMenuTitleTop(H);
-        int drawnTitleBottom = titleTop + 112;
-        
-        if (title != null) {
-            Dimension titleSize = panel.mainMenuTitleDrawSize(title, W, H);
-            int tw = titleSize.width;
-            int th = titleSize.height;
-            g.drawImage(title, cx - tw / 2, titleTop, tw, th, null);
-            panel.stampUiFrameId(g, "I", "title-mechanist", cx - tw / 2, titleTop, tw, th);
-            drawnTitleBottom = titleTop + th;
-        } else {
-            g.setFont(panel.titleFont.deriveFont(Font.BOLD, Math.max(34f, Math.min(56f, H / 9f))));
-            g.setColor(new Color(200, 184, 132));
-            panel.center(g, "THE MECHANIST", cx, titleTop + 68);
-        }
-        
-        BufferedImage subtitle = panel.images.get("subtitle_rebase");
-        if (subtitle != null) {
-            Dimension subSize = panel.mainMenuSubtitleDrawSize(subtitle, W, H);
-            int sw = subSize.width;
-            int sh = subSize.height;
-            int sy = drawnTitleBottom + 3;
-            g.drawImage(subtitle, cx - sw / 2, sy, sw, sh, null);
-            panel.stampUiFrameId(g, "I", "subtitle", cx - sw / 2, sy, sw, sh);
-        }
-        
-        Rectangle buttonFrame = panel.mainMenuButtonFrameRect();
-        g.setColor(new Color(0, 0, 0, 172));
-        g.fillRoundRect(buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, 14, 14);
-        panel.drawSlicedFrame(g, buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, "inner");
-        panel.stampUiFrameId(g, "F", "main-menu-route-frame", buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height);
-        
+        int titleY = panel.mainMenuTitleTop(H) + 72;
+        g.setFont(panel.titleFont.deriveFont(Font.BOLD, Math.max(42f, Math.min(72f, H / 8f))));
+        FontMetrics titleFm = g.getFontMetrics();
+        String title = "THE MECHANIST";
+        g.setColor(new Color(45, 32, 14, 190));
+        g.drawString(title, cx - titleFm.stringWidth(title) / 2 + 3, titleY + 3);
+        g.setColor(new Color(231, 204, 132));
+        g.drawString(title, cx - titleFm.stringWidth(title) / 2, titleY);
+
+        g.setFont(panel.smallFont.deriveFont(Font.BOLD, 14f));
+        FontMetrics small = g.getFontMetrics();
+        String subtitle = "UNFOLDED CLIENT PACKAGE  ·  INDEXED 32PX ASSET RUNTIME";
+        g.setColor(new Color(172, 150, 102));
+        g.drawString(subtitle, cx - small.stringWidth(subtitle) / 2, titleY + 30);
+
+        Rectangle frame = panel.mainMenuButtonFrameRect();
+        frame = new Rectangle(frame.x, Math.max(titleY + 62, frame.y - 40), frame.width, Math.max(300, frame.height + 96));
+        g.setColor(new Color(0, 0, 0, 178));
+        g.fillRoundRect(frame.x, frame.y, frame.width, frame.height, 18, 18);
+        g.setColor(new Color(139, 106, 50));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(frame.x, frame.y, frame.width, frame.height, 18, 18);
+        panel.stampUiFrameId(g, "F", "main-menu-route-frame", frame.x, frame.y, frame.width, frame.height);
+
+        java.util.List<String> labels = panel.mainMenuRouteLabels();
+        for (int i = 0; i < labels.size(); i++) drawRouteButton(g, panel, labels.get(i), panel.mainMenuRouteRect(i), i == panel.selectedButton);
+
         java.util.List<String> shellLines = panel.launcherShell.displayLines(panel.launcherRuntime, panel.userProfile);
-        int panelW = Math.min(W - 220, 245);
-        int panelH = Math.max(22, Math.min(26, H / 24));
+        int panelW = Math.min(W - 220, 460);
+        int panelH = Math.max(28, Math.min(42, H / 18));
         int panelX = (W - panelW) / 2;
-        int panelY = H - panelH - 38;
-        
+        int panelY = H - panelH - 34;
         g.setColor(new Color(0, 0, 0, 150));
         g.fillRoundRect(panelX, panelY, panelW, panelH, 9, 9);
         g.setColor(new Color(130, 105, 55, 150));
         g.drawRoundRect(panelX, panelY, panelW, panelH, 9, 9);
-        panel.stampUiFrameId(g, "F", "launcher-runtime-compact", panelX, panelY, panelW, panelH);
-        
-        g.setFont(panel.smallFont.deriveFont(Math.max(7f, Math.min(8.5f, panel.smallFont.getSize2D() - 4f))));
+        g.setFont(panel.smallFont.deriveFont(Font.BOLD, 12f));
         FontMetrics fm = g.getFontMetrics();
-        int lineY = panelY + 14;
-        int maxLines = Math.max(1, (panelH - 8) / Math.max(10, fm.getHeight()));
-        
-        for (int i = 0; i < shellLines.size() && i < maxLines; i++) {
-            g.setColor(i == 0 ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_DIM));
-            panel.center(g, GuiLayoutApi.fitLabel(shellLines.get(i), fm, panelW - 20), cx, lineY);
-            lineY += Math.max(10, fm.getHeight());
-        }
-        g.setFont(panel.smallFont);
+        String line = shellLines.isEmpty() ? "LOCAL RUNTIME READY" : shellLines.get(0);
+        panel.center(g, GuiLayoutApi.fitLabel(line, fm, panelW - 24), cx, panelY + panelH / 2 + fm.getAscent() / 2 - 2);
+    }
+
+    private void drawBackdrop(Graphics2D g, int W, int H) {
+        g.setColor(new Color(75, 61, 35, 95));
+        for (int x = -H; x < W + H; x += 64) g.drawLine(x, H, x + H, 0);
+        g.setColor(new Color(180, 142, 64, 38));
+        for (int y = 0; y < H; y += 32) g.drawLine(0, y, W, y);
+    }
+
+    private void drawRouteButton(Graphics2D g, GamePanel panel, String label, Rectangle r, boolean selected) {
+        Color fill = selected ? new Color(88, 64, 25, 225) : new Color(24, 22, 18, 224);
+        Color edge = selected ? new Color(231, 204, 132) : new Color(119, 94, 48);
+        g.setColor(fill);
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 12, 12);
+        g.setColor(edge);
+        g.setStroke(new BasicStroke(selected ? 2.4f : 1.2f));
+        g.drawRoundRect(r.x, r.y, r.width, r.height, 12, 12);
+        g.setFont(panel.uiFont.deriveFont(Font.BOLD, selected ? 17f : 16f));
+        FontMetrics fm = g.getFontMetrics();
+        g.setColor(selected ? new Color(245, 226, 154) : new Color(209, 202, 176));
+        panel.center(g, label, r.x + r.width / 2, r.y + r.height / 2 + fm.getAscent() / 2 - 3);
+        panel.stampUiFrameId(g, "B", "main-menu-" + label.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]+", "-"), r.x, r.y, r.width, r.height);
     }
 }
