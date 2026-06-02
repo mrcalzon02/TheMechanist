@@ -114,6 +114,25 @@ class LegacyPanelBridgeBase extends JPanel {
     Rectangle multiplayerMenuPanelRect() { return new Rectangle(Math.max(20, getWidth()/2 - 320), 60, 640, Math.max(420, getHeight() - 120)); }
     Rectangle multiplayerContentRect(Rectangle main) { return new Rectangle(main.x + 24, main.y + 72, Math.max(1, main.width - 48), Math.max(1, main.height - 160)); }
     Rectangle multiplayerActionRect(Rectangle main) { return new Rectangle(main.x + 24, main.y + main.height - 72, Math.max(1, main.width - 48), 48); }
+    void drawPanelBox(Graphics2D g, int x, int y, int w, int h, String title) {
+        if (g == null) return;
+        g.drawRect(x, y, Math.max(1, w), Math.max(1, h));
+        if (title != null && !title.isBlank()) g.drawString(title, x + 12, y + 22);
+    }
+    void drawTextPanel(Graphics2D g, int x, int y, int w, int h, java.util.List<String> lines, boolean highlighted) {
+        drawPanelBox(g, x, y, w, h, null);
+        if (g == null || lines == null) return;
+        int yy = y + 22;
+        for (String line : lines) {
+            if (yy > y + h - 8) break;
+            drawUiTextLine(g, line, x + 12, yy);
+            yy += Math.max(12, g.getFontMetrics().getHeight());
+        }
+    }
+    void drawUiTextLine(Graphics2D g, String line, int x, int y) {
+        if (g != null && line != null) g.drawString(line, x, y);
+    }
+    Rectangle graphicsDropdownOuterRect() { return new Rectangle(Math.max(20, getWidth()/2 - 220), 96, 440, 260); }
 }
 
 final class LegacyLauncherRuntime {}
@@ -122,8 +141,9 @@ final class LegacyLauncherShell {
     java.util.List<String> displayLines(LegacyLauncherRuntime runtime, UserProfileAuthority.Profile profile) {
         ArrayList<String> out = new ArrayList<>();
         out.add("LOCAL RUNTIME READY");
-        out.add(profile == null ? "PROFILE: UNKNOWN" : "PROFILE: " + profile.name());
+        out.add(profile == null ? "PROFILE: UNKNOWN" : "PROFILE: " + profile.compactLabel());
         return out;
     }
 }
+
 

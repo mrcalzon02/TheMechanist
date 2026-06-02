@@ -58,7 +58,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<ButtonBox> buttons = new ArrayList<>();
     final LinkedHashMap<String, ContainerRecord> itemContainers = new LinkedHashMap<>();
     final LinkedHashMap<String, ItemInstance> itemInstances = new LinkedHashMap<>();
-    final HashSet<String> visitedZoneTypes = new HashSet<>();
+    final HashSet<ZoneType> visitedZoneTypes = new HashSet<>();
     final HashSet<String> visitedZoneInstances = new HashSet<>();
     final HashSet<String> unlockedKnowledges = new HashSet<>();
     final ArrayDeque<LogisticsRouteIntentAuthority.RouteIntentRecord> logisticsRouteIntentHistory = new ArrayDeque<>();
@@ -76,6 +76,55 @@ class GamePanel extends LegacyPanelBridgeBase {
     final HashMap<String, Boolean> consoleFlags = new HashMap<>();
     final HashMap<String, Float> consoleNumericFlags = new HashMap<>();
     final HashMap<String, String> consoleStringFlags = new HashMap<>();
+    WorldSetupSettings worldSetup = WorldSetupSettings.standard();
+    Clothing equippedClothing = Clothing.scavengerRags();
+    VisualLightingAuthority visualLighting = new VisualLightingAuthority();
+    LegacyGamepadInputEngine gamepadInputEngine = new LegacyGamepadInputEngine();
+    int optionsTab;
+    int stimulantStrain;
+    int nextItemInstanceSeq = 1;
+    int activePortableLightExpiresTurn;
+    int authorityFacilityInspectionCooldownUntilTurn;
+    int bankHeistAlarmCooldownUntilTurn;
+    int arbitesCaptureCooldownUntilTurn;
+    int arbitesInspectionCooldownUntilTurn;
+    String activePortableLightItem = "";
+    String lastPortableLightReport = "No portable light has been activated.";
+    String lastLogisticsDeliveryIntentReport = "No logistics delivery intent has been recorded.";
+    String lastLogisticsSourceReservationReport = "No logistics source reservation has been recorded.";
+    String lastLogisticsRouteIntentReport = "No logistics route intent has been recorded.";
+    String lastLogisticsRoutePreviewReport = "No logistics route preview has been recorded.";
+    String lastLogisticsHaulContractReport = "No manual haul contract has been recorded.";
+    String lastLogisticsHaulPreflightReport = "No manual haul preflight has been recorded.";
+    String lastLogisticsContractLifecycleReport = "No logistics contract lifecycle has been recorded.";
+    String lastPlayerNewsReport = "No player-facing news has been generated.";
+    String lastAuthorityFacilityInspectionReport = "No authority facility inspection has occurred.";
+    String lastBankReport = "No banking report has been generated.";
+    String lastBankHeistReport = "No bank heist report has been generated.";
+    String lastBankAlarmReport = "No bank alarm report has been generated.";
+    String lastBankLockboxContractReport = "No bank lockbox contract report has been generated.";
+    String lastCrimePunishmentReport = "No crime punishment report has been generated.";
+    String lastCustodyReportDetailed = "No custody report has been generated.";
+    String lastArbitesPatrolReport = "No Arbites patrol report has been generated.";
+    String lastItemLedgerAuditReport = "No item ledger audit has been generated.";
+    boolean activePortableLightWorn;
+    boolean combatCursorActive;
+    boolean[][] visibleTiles = new boolean[1][1];
+    boolean[][] rememberedTiles = new boolean[1][1];
+    final ArrayList<PortableLightInstance> portableLights = new ArrayList<>();
+    final ArrayList<FactionContract> factionContracts = new ArrayList<>();
+    final ArrayList<NpcFactionSite> npcFactionSites = new ArrayList<>();
+    final LinkedHashMap<String, Integer> loadedWeaponShots = new LinkedHashMap<>();
+    final LinkedHashMap<String, Integer> terrainIntegrity = new LinkedHashMap<>();
+    final LinkedHashMap<String, ItemProvenanceRecord> itemProvenance = new LinkedHashMap<>();
+    final LinkedHashMap<Faction, Integer> factionStanding = new LinkedHashMap<>();
+    final LinkedHashMap<Faction, Integer> temporaryHostileTurns = new LinkedHashMap<>();
+    final LinkedHashMap<Faction, Integer> factionMarketPressure = new LinkedHashMap<>();
+    final LinkedHashMap<String, Integer> bankBalances = new LinkedHashMap<>();
+    final LinkedHashMap<Integer, Integer> scavengeCooldownUntilTurn = new LinkedHashMap<>();
+    final HashSet<String> openBankAccounts = new HashSet<>();
+    final HashSet<String> lootedBankVaultIds = new HashSet<>();
+    final HashSet<String> disabledBankAlarmPanelIds = new HashSet<>();
 
     Random rng = new Random(0);
     long seed;
@@ -97,7 +146,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean eulaGateActive;
     boolean jvmRuntimeRestartPending;
     int turn;
-    int worldTurn;
+    long worldTurn;
     int food;
     int water;
     int sleepNeed;
@@ -281,6 +330,19 @@ class GamePanel extends LegacyPanelBridgeBase {
     void openKnowledgeMenu() { setScreen(Screen.KNOWLEDGE); }
     Rectangle graphicsDropdownInnerRect() { return new Rectangle(0, 0, Math.max(1, getWidth()), Math.max(1, getHeight())); }
     int scaled(int value) { return value; }
+    void clampInteractCursorToAdjacent() { lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX)); lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY)); }
+    void updatePendingInteractionSummary() { lastTargetingReport = "Interaction target " + lookX + "," + lookY; }
+    void auditItemLedgers(String reason) { lastItemLedgerAuditReport = "Item ledger audit: " + (reason == null ? "unspecified" : reason); }
+    void migrateLegacyPhysicalScript(String reason) {}
+    void rebuildItemContainersFromLegacyLists() { ensureContainer(CONTAINER_PLAYER_INVENTORY, "Player inventory"); ensureContainer(CONTAINER_BASE_STORAGE, "Base storage"); }
+    void repairLegacyListsFromContainersIfNeeded() {}
+    void initFactionState() {}
+    void seedNpcFactionProductionSites() {}
+    void configureBaseObject(BaseObject b) {}
+    int activePortableLightRadius() { return activePortableLightItem == null || activePortableLightItem.isBlank() ? 0 : 6; }
+    boolean sameWorldLocation(String worldKey) { return true; }
+    float portableLightIntensity(String itemName) { return 1.0f; }
+    int ambientLightLevelForWorld() { return 50; }
 
     boolean verifyItemOperationalParity(String context) { return true; }
     void purgePhysicalScriptInstances(String reason) {}
@@ -412,6 +474,10 @@ final class LegacyPerformanceDiagnostics {
 
 final class LegacyPanelProfile {
     String name = "none";
-}
+
+final class LegacyGamepadInputEngine {
+    String status() { return "not started"; }
+}}
+
 
 
