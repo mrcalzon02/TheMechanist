@@ -29,7 +29,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     static final String CONTAINER_MACHINE_INPUT_PREFIX = "machine-input-";
 
     enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
-    enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING }
+    enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING, SCAVENGE }
 
     World world;
     LegacyPanelAtlas atlas;
@@ -55,7 +55,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<String> baseStorage = new ArrayList<>();
     final ArrayList<Candidate> candidates = new ArrayList<>();
     final ArrayList<RecruitWorker> factionRecruits = new ArrayList<>();
-    final ArrayList<Object> buttons = new ArrayList<>();
+    final ArrayList<ButtonBox> buttons = new ArrayList<>();
     final LinkedHashMap<String, ContainerRecord> itemContainers = new LinkedHashMap<>();
     final LinkedHashMap<String, ItemInstance> itemInstances = new LinkedHashMap<>();
     final HashSet<String> visitedZoneTypes = new HashSet<>();
@@ -413,4 +413,5 @@ final class LegacyPerformanceDiagnostics {
 final class LegacyPanelProfile {
     String name = "none";
 }
+
 
