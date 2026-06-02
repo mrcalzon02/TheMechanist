@@ -1,6 +1,6 @@
 # Generated Mermaid Code Map
 
-Generated: `2026-06-01 15:44:11`
+Generated: `2026-06-01 16:51:33`
 
 ```mermaid
 flowchart TD
@@ -63,8 +63,8 @@ flowchart TD
     Z_RUNTIME_OPTIONS --> M_src_mechanist_modapi_SimulationModRuntime_java["src/mechanist/modapi/SimulationModRuntime.java<br/>11 funcs / 63 lines"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_ReflectiveNettyBindingService_java["src/mechanist/ReflectiveNettyBindingService.java<br/>6 funcs / 63 lines"]
     Z_RUNTIME_OPTIONS --> Z_RUNTIME_OPTIONS_OTHER["+ 13 smaller modules"]
-    ROOT --> Z_WORLD_GEN["World Generation Transition<br/>26 modules"]
-    Z_WORLD_GEN --> M_src_mechanist_WorldRuntimeGenerationFramework_java["src/mechanist/WorldRuntimeGenerationFramework.java<br/>357 funcs / 8169 lines"]
+    ROOT --> Z_WORLD_GEN["World Generation Transition<br/>31 modules"]
+    Z_WORLD_GEN --> M_src_mechanist_WorldRuntimeGenerationFramework_java["src/mechanist/WorldRuntimeGenerationFramework.java<br/>357 funcs / 8163 lines"]
     Z_WORLD_GEN --> M_src_mechanist_ZoneGenerationContext_java["src/mechanist/ZoneGenerationContext.java<br/>18 funcs / 396 lines"]
     Z_WORLD_GEN --> M_src_mechanist_RoomProfile_java["src/mechanist/RoomProfile.java<br/>31 funcs / 335 lines"]
     Z_WORLD_GEN --> M_src_mechanist_RoomFixtureInteractionAuthority_java["src/mechanist/RoomFixtureInteractionAuthority.java<br/>21 funcs / 313 lines"]
@@ -76,7 +76,7 @@ flowchart TD
     Z_WORLD_GEN --> M_src_mechanist_AbstractDistantZoneSimulation_java["src/mechanist/AbstractDistantZoneSimulation.java<br/>9 funcs / 140 lines"]
     Z_WORLD_GEN --> M_src_mechanist_ModContentPayload_java["src/mechanist/ModContentPayload.java<br/>2 funcs / 79 lines"]
     Z_WORLD_GEN --> M_src_mechanist_ZoneType_java["src/mechanist/ZoneType.java<br/>5 funcs / 67 lines"]
-    Z_WORLD_GEN --> Z_WORLD_GEN_OTHER["+ 14 smaller modules"]
+    Z_WORLD_GEN --> Z_WORLD_GEN_OTHER["+ 19 smaller modules"]
     ROOT --> Z_INVENTORY_PERSIST["Inventory Items Persistence<br/>16 modules"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ItemEconomyFramework_java["src/mechanist/ItemEconomyFramework.java<br/>71 funcs / 1327 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ContainerTradeFramework_java["src/mechanist/ContainerTradeFramework.java<br/>92 funcs / 802 lines"]
@@ -119,7 +119,7 @@ flowchart TD
     Z_COMBAT_SIM --> M_src_mechanist_WorldTurnManager_java["src/mechanist/WorldTurnManager.java<br/>8 funcs / 74 lines"]
     Z_COMBAT_SIM --> M_src_mechanist_ServerRuntimePaths_java["src/mechanist/ServerRuntimePaths.java<br/>18 funcs / 72 lines"]
     Z_COMBAT_SIM --> Z_COMBAT_SIM_OTHER["+ 9 smaller modules"]
-    ROOT --> Z_ASSET_REGISTRY["Asset Registry Art<br/>21 modules"]
+    ROOT --> Z_ASSET_REGISTRY["Asset Registry Art<br/>22 modules"]
     Z_ASSET_REGISTRY --> M_src_mechanist_InfrastructurePromotionRegistry_java["src/mechanist/InfrastructurePromotionRegistry.java<br/>11 funcs / 1001 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_TileDataCompilationAuthority_java["src/mechanist/TileDataCompilationAuthority.java<br/>46 funcs / 603 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_AssetIntegrationDisciplineAuthority_java["src/mechanist/AssetIntegrationDisciplineAuthority.java<br/>8 funcs / 518 lines"]
@@ -132,7 +132,7 @@ flowchart TD
     Z_ASSET_REGISTRY --> M_src_mechanist_PortraitSemanticAssetAuthority_java["src/mechanist/PortraitSemanticAssetAuthority.java<br/>17 funcs / 231 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_NameLockedProfilePortraitAuthority_java["src/mechanist/NameLockedProfilePortraitAuthority.java<br/>20 funcs / 192 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_AssetRegistryHardeningAuthority_java["src/mechanist/AssetRegistryHardeningAuthority.java<br/>7 funcs / 175 lines"]
-    Z_ASSET_REGISTRY --> Z_ASSET_REGISTRY_OTHER["+ 9 smaller modules"]
+    Z_ASSET_REGISTRY --> Z_ASSET_REGISTRY_OTHER["+ 10 smaller modules"]
     ROOT --> Z_SERVER_AUTH["Server Authority Launcher<br/>39 modules"]
     Z_SERVER_AUTH --> M_src_mechanist_server_admin_ServerAdminConsole_java["src/mechanist/server/admin/ServerAdminConsole.java<br/>14 funcs / 270 lines"]
     Z_SERVER_AUTH --> M_src_mechanist_NativeTcpRelayServer_java["src/mechanist/NativeTcpRelayServer.java<br/>14 funcs / 253 lines"]
