@@ -34,6 +34,44 @@ final class ZonePopulationTracker {
         return total;
     }
 
+    int total() {
+        int total = 0;
+        for (Integer value : population.values()) total += Math.max(0, value == null ? 0 : value);
+        return total;
+    }
+
+    boolean isEmpty() {
+        return total() <= 0;
+    }
+
+    void clear() {
+        population.clear();
+    }
+
+    LinkedHashMap<String, Integer> snapshot() {
+        LinkedHashMap<String, Integer> out = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> e : population.entrySet()) {
+            if (e.getKey() != null && e.getValue() != null && e.getValue() > 0) out.put(e.getKey(), e.getValue());
+        }
+        return out;
+    }
+
+    void restore(Map<String, Integer> saved) {
+        population.clear();
+        if (saved == null) return;
+        for (Map.Entry<String, Integer> e : saved.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null || e.getValue() <= 0) continue;
+            population.put(e.getKey(), e.getValue());
+        }
+    }
+
+    void mergeFrom(ZonePopulationTracker other) {
+        if (other == null) return;
+        for (Map.Entry<String, Integer> e : other.snapshot().entrySet()) {
+            population.put(e.getKey(), Math.max(0, population.getOrDefault(e.getKey(), 0)) + e.getValue());
+        }
+    }
+
     String summary(int locationKey) {
         String prefix = locationKey + ":";
         ArrayList<String> parts = new ArrayList<>();
