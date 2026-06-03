@@ -1,0 +1,14 @@
+{
+  "repo_root": "TheMechanist",
+  "total_tracked_files": 21746,
+  "java_files": 407,
+  "source_like_files": 674,
+  "full_index_chunks": 10,
+  "chunk_max_bytes": 200000,
+  "primary_maps": [
+    "ROOT_tools/repo_maps/java_file_index.txt",
+    "ROOT_tools/repo_maps/source_file_index.txt",
+    "ROOT_tools/repo_maps/repo_file_index_full.txt",
+    "ROOT_tools/repo_maps/chunks/repo_file_index_chunk_0001.txt"
+  ]
+}
