@@ -32,6 +32,7 @@ public class TheMechanist {
             AppIconAuthority.applyTo(frame);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             GamePanel panel = new GamePanel(runtimeProfile);
+            WorldStartFlowAuthority.install(panel);
             BootMenuFlowAuthority.startBootSequence(panel, "application-entry");
             frame.setContentPane(panel);
             DisplayDensityAuthority.refreshSwingTree(frame);
