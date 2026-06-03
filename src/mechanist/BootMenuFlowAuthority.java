@@ -11,8 +11,8 @@ import javax.swing.SwingUtilities;
  * direct state mutation on the render call stack.
  */
 final class BootMenuFlowAuthority {
-    static final String VERSION = "boot-menu-flow-authority-0.9.10ky";
-    static final long MIN_BOOT_MILLIS = 1400L;
+    static final String VERSION = "boot-menu-flow-authority-0.9.10la";
+    static final long MIN_BOOT_MILLIS = 3400L;
 
     private BootMenuFlowAuthority() {}
 
