@@ -51,7 +51,7 @@ final class KeyEarlyScreenController {
         if (panel.screen == GamePanel.Screen.BOOT) {
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
                 panel.sounds.play("button", panel.options);
-                panel.finishBootSequence("key");
+                BootMenuFlowAuthority.finishBootSequence(panel, "key");
             }
             return true;
         }
