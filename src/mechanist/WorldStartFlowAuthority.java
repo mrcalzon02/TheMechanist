@@ -10,13 +10,13 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.KeyboardFocusManager;
+import java.awt.KeyEventDispatcher;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyEventDispatcher;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -412,10 +412,8 @@ final class WorldStartFlowAuthority {
             if (c != null) for (var e : c.stats.entrySet()) stats.add(e.getKey() + " " + e.getValue());
             drawLines(g, stats, r.x + 26, portrait.y + portrait.height + 28, 320, muted());
             List<String> opts = List.of("Candidate", "Job", "Reroll Candidate", "Edit Name", "Start Run");
-            List<Rectangle> rows = optionRows(opts.size());
             for (int i = 0; i < opts.size(); i++) {
-                Rectangle row = rows.get(i);
-                row = new Rectangle(info.x, r.y + 372 + i * 42, info.width, 34);
+                Rectangle row = new Rectangle(info.x, r.y + 372 + i * 42, info.width, 34);
                 boolean selected = i == characterOption;
                 fillRow(g, row, selected);
                 drawText(g, (selected ? "> " : "  ") + opts.get(i), row.x + 12, row.y + 24, row.width - 24, selected ? highlight() : main());
