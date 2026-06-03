@@ -1,0 +1,12 @@
+PACKAGE_client is the exposed unfolded client directory.
+
+Expected important paths:
+  classes\                 Compiled Java classes
+  assets\                  Art/audio/data assets copied by merge, not destructive delete
+  settings\                Settings copied by merge when present
+  client\locale\ or locale\ Localization files copied by merge when present
+  RUN_THE_MECHANIST_CLIENT.bat
+  RUN_THE_MECHANIST_CLIENT.ps1
+
+The full source folder is not included by default.
+The jar artifact is optional and is not the primary package output.

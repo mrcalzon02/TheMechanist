@@ -69,6 +69,8 @@ class DebugLog {
     static void metric(String system, String s){ write("METRIC/" + system, s, false); }
     static void settings(String system, String s){ write("SETTINGS/" + system, s, false); }
 
+    static void error(String system, String message){ error(system, message, null); }
+
     static void error(String system, String message, Throwable t){
         synchronized(LOCK){
             String head = "[" + stamp() + "] ERROR/" + system + " " + message;
@@ -111,8 +113,3 @@ class DebugLog {
         }
     }
 }
-
-
-/* =========================================================
- * 0.9.07m — Noble Estate Stamp Foundation
- * ========================================================= */

@@ -1,0 +1,3 @@
+[12:46:28.691] INFO The Mechanist logging initialized. Single active log is logs/current.log; prior run rotated to logs/previous.log.
+[12:46:28.694] INFO The Mechanist booting.
+[12:46:28.746] WARN/APP_ICON No application icon images were loaded; using host default window icon.

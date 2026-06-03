@@ -1,0 +1,6 @@
+Boot/menu surface locator: 20260602_133546
+Repo root: C:\GITS\The Mechanist\TheMechanist
+JavaFiles: 392
+ClassCandidateRows: 28
+ContentHitRows: 66
+ScreenHitRows: 87

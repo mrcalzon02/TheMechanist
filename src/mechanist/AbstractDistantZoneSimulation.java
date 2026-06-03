@@ -7,7 +7,7 @@ import java.util.*;
  *
  * This is a conservative ledger layer.  It does not replace authoritative
  * in-zone tile/entity simulation; it records and advances cheap summaries for
- * zones outside the active player bubble so the game can imply a living hive
+ * zones outside the active player bubble so the game can imply a living arcology
  * without requiring every NPC, machine, room, and faction to think every turn.
  */
 class AbstractDistantZoneSimulation {

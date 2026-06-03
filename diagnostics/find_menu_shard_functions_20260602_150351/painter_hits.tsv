@@ -1,0 +1,21 @@
+file	line	text
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\BootSurfacePainter.java	11	final class BootSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\BootSurfacePainter.java	13	public void paint(Graphics2D g, GamePanel panel) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\IntroCrawlSurfacePainter.java	20	final class IntroCrawlSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\IntroCrawlSurfacePainter.java	37	public void paint(Graphics2D g, GamePanel panel) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	367	new BootSurfacePainter().paint(g, this);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	371	new IntroCrawlSurfacePainter().paint(g, this);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	375	new LoadingSurfacePainter().paint(g, this);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	379	new MainMenuSurfacePainter().paint(g, this);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	383	OptionsScreenPainter.paintShell(this, g);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	384	OptionsScreenPainter.paintBody(this, g);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	385	OptionsScreenPainter.paintGraphicsDropdownPopup(this, g);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LoadingSurfacePainter.java	11	final class LoadingSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LoadingSurfacePainter.java	13	public void paint(Graphics2D g, GamePanel panel) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MainMenuSurfacePainter.java	11	final class MainMenuSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MainMenuSurfacePainter.java	13	public void paint(Graphics2D g, GamePanel panel) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MultiplayerSurfacePainter.java	10	final class MultiplayerSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MultiplayerSurfacePainter.java	12	public void paint(Graphics2D g, GamePanel panel) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\OptionsScreenPainter.java	12	final class OptionsScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\OptionsScreenPainter.java	13	private OptionsScreenPainter() {}
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\ScreenPainter.java	9	void paint(Graphics2D g, GamePanel panel);

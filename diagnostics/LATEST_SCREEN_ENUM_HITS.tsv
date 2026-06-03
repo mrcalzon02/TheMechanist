@@ -1,0 +1,88 @@
+file	line	text
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AccessibilityRuntimeOptionsSubsystem.java	58	panel.logEvent("Accessibility narration updated for current screen.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AssetIntegrationDisciplineAuthority.java	21	static final String PUBLIC_PICT_SCREEN = "public-pict-screen";
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\BootSurfacePainter.java	6	* Stateless extracted rendering surface for the boot screen.
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\CharacterNameKeyController.java	9	if (panel.screen != GamePanel.Screen.CHARACTER || !panel.characterNameEditActive) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\FirstPerson3DFramework.java	201	return panel != null && panel.options != null && panel.options.doomModeEnabled && panel.screen == GamePanel.Screen.GAME && panel.world != null;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\FrontageFixtureInteractionAuthority.java	97	g.advanceTurn("watches a public pict/news screen.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	37	if (panel.screen == GamePanel.Screen.GAME && panel.manualMovementPlanActive) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	41	if (panel.screen == GamePanel.Screen.GAME) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	42	panel.setScreen(GamePanel.Screen.PAUSE);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	45	if (panel.screen == GamePanel.Screen.PANEL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	49	if (panel.screen == GamePanel.Screen.PAUSE) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	50	panel.setScreen(GamePanel.Screen.GAME);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	53	if (panel.screen == GamePanel.Screen.SECTOR_AUDIT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	54	panel.setScreen(GamePanel.Screen.MODS);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	57	if (panel.screen == GamePanel.Screen.KNOWLEDGE) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	61	if (panel.screen == GamePanel.Screen.MULTIPLAYER) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	63	panel.setScreen(GamePanel.Screen.MENU);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	66	if (panel.screen == GamePanel.Screen.MODS) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	67	panel.setScreen(GamePanel.Screen.MENU);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	70	panel.setScreen(GamePanel.Screen.MENU);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	75	if (panel.screen != GamePanel.Screen.KNOWLEDGE) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	81	if (panel.screen != GamePanel.Screen.SECTOR_AUDIT) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	100	if (panel.screen != GamePanel.Screen.PANEL || panel.panelMode != GamePanel.PanelMode.INFOPEDIA) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	120	if (panel.screen != GamePanel.Screen.PANEL) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	176	if (panel.screen != GamePanel.Screen.PANEL || panel.world == null || !panel.buildPlacementActive) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	190	boolean cursorSpecial = panel.screen == GamePanel.Screen.PANEL && (panel.panelMode == GamePanel.PanelMode.LOOK || panel.panelMode == GamePanel.PanelMode.COMBAT || panel.panelMode == GamePanel.PanelMode.INTERACT || panel.panelMode == GamePanel.PanelMode.INFOPEDIA || ((panel.panelMode == GamePanel.PanelMode.BUILD || panel.panelMode == GamePanel.PanelMode.WORKBENCH) && panel.buildPlacementActive));
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	191	if (panel.screen == GamePanel.Screen.GAME || cursorSpecial) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	199	if (panel.screen != GamePanel.Screen.CHARACTER) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	227	if (panel.screen != GamePanel.Screen.GAME || panel.world == null) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	267	if (panel.screen != GamePanel.Screen.EDITOR) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	284	if (panel.screen == GamePanel.Screen.MULTIPLAYER && panel.multiplayerMenu.handleKeyPressed(code)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	302	if ((panel.screen == GamePanel.Screen.PANEL || panel.screen == GamePanel.Screen.CHARACTER) && (code == KeyEvent.VK_UP || code == KeyEvent.VK_W)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	305	if ((panel.screen == GamePanel.Screen.PANEL || panel.screen == GamePanel.Screen.CHARACTER) && (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GameplayConsoleCommandAuthority.java	188	private static void refreshKnowledgeDebugState(GamePanel game, String reason) { if (game == null) return; game.logEvent("CONSOLE: " + reason + " -> knowledge credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + "."); DebugLog.audit("KNOWLEDGE_DEBUG_COMMAND", reason + " credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + " state=" + game.stateSummary()); if (game.screen == GamePanel.Screen.KNOWLEDGE) game.selectedKnowledgeNodeId = null; game.repaint(); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\InventoryPanelKeyController.java	9	if (panel.screen != GamePanel.Screen.PANEL || panel.panelMode != GamePanel.PanelMode.INVENTORY) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	14	if (code == KeyEvent.VK_F1 && (panel.screen == GamePanel.Screen.GAME || panel.screen == GamePanel.Screen.PANEL)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	18	if (code == KeyEvent.VK_Y && panel.screen != GamePanel.Screen.EDITOR) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	22	if (panel.screen == GamePanel.Screen.GAME && panel.firstPersonRenderViewport.handleKeyPressed(panel, code)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	30	if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	37	if (panel.screen == GamePanel.Screen.ZONE_SPLASH) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	44	if (panel.screen == GamePanel.Screen.CAPTURE) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	46	panel.setScreen(GamePanel.Screen.GAME);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	51	if (panel.screen == GamePanel.Screen.BOOT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	39	enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	212	Screen screen = Screen.MENU;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	260	if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	268	if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) return;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	275	if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) return;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	314	case "Options" -> setScreen(Screen.OPTIONS);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	316	case "Multiplayer" -> setScreen(Screen.MULTIPLAYER);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	323	screen = Screen.GAME;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	347	if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	351	if (screen == Screen.OPTIONS) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	357	if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.INVENTORY || screen == Screen.CHARACTER || screen == Screen.INFO || screen == Screen.MAP || screen == Screen.KNOWLEDGE) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	467	void setScreen(Screen next) { screen = next == null ? Screen.MENU : next; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	468	void closePanel() { panelMode = PanelMode.NONE; screen = Screen.GAME; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	469	void closeKnowledgeScreen() { screen = Screen.GAME; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	504	void beginInteractMode() { panelMode = PanelMode.INTERACT; screen = Screen.PANEL; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	505	void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = mode == PanelMode.CHARACTER ? Screen.CHARACTER : Screen.PANEL; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	506	void beginCombatTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	507	void beginExplosiveTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	535	void continueFromIntroCrawl() { setScreen(Screen.GAME); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	536	void continueFromZoneSplash() { setScreen(Screen.GAME); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	537	void finishBootSequence(String source) { setScreen(Screen.MENU); logEvent("Boot sequence finished by " + source + "."); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	540	void openKnowledgeMenu() { setScreen(Screen.KNOWLEDGE); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MapViewportOptionsSubsystem.java	16	if (panel.screen == GamePanel.Screen.SECTOR_AUDIT) return panel.auditWorld != null;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MapViewportOptionsSubsystem.java	17	return panel.world != null && (panel.screen == GamePanel.Screen.GAME ||
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MapViewportOptionsSubsystem.java	18	(panel.screen == GamePanel.Screen.PANEL &&
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	12	if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	20	if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	24	if (panel.screen == GamePanel.Screen.ZONE_SPLASH) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	30	if (panel.screen == GamePanel.Screen.EDITOR && (SwingUtilities.isLeftMouseButton(event) || SwingUtilities.isRightMouseButton(event)) && panel.handleInGameEditorGridPaint(mx, my, SwingUtilities.isRightMouseButton(event))) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	35	if (panel.screen == GamePanel.Screen.SECTOR_AUDIT && panel.auditWorld != null) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	49	if (panel.screen != GamePanel.Screen.SECTOR_AUDIT || !panel.auditZoneDropdownOpen) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseGamePanelController.java	11	if (panel.screen == GamePanel.Screen.GAME && panel.world != null && panel.firstPersonRenderViewport.handleMouseClicked(panel, event, mx, my)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseGamePanelController.java	16	if (panel.screen == GamePanel.Screen.PANEL && panel.world != null && (panel.panelMode == GamePanel.PanelMode.LOOK || panel.panelMode == GamePanel.PanelMode.COMBAT || panel.panelMode == GamePanel.PanelMode.INTERACT)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseGamePanelController.java	29	if (panel.screen != GamePanel.Screen.GAME || panel.world == null) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseLateUiController.java	7	if (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.INVENTORY && panel.handleInventoryStackPanelClick(mx, my)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseLateUiController.java	17	if (panel.screen == GamePanel.Screen.KNOWLEDGE && panel.handleKnowledgeTreeClick(mx, my)) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseLateUiController.java	38	if (panel.screen != GamePanel.Screen.CHARACTER) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\OptionsDropdownMouseController.java	7	if (panel.screen != GamePanel.Screen.OPTIONS || panel.graphicsDropdown < 0) return false;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\OptionsScreenPainter.java	110	if (panel.screen != GamePanel.Screen.OPTIONS || panel.graphicsDropdown < 0 || (panel.optionsTab != 0 && panel.optionsTab != 1 && panel.optionsTab != 4)) return;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\PublicServiceMediaAuthority.java	113	if (AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(c)) return pick(r, "Public pict/news screen", "INN pict display", "Civic bulletin pict screen") + " / " + zone;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\PublicServiceMediaAuthority.java	125	else if (AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN.equals(c)) service = "news-propaganda-broadcast";
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\UiModalButtonController.java	8	if (panel.screen == GamePanel.Screen.OPTIONS && panel.graphicsDropdown >= 0) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\UiModalButtonController.java	11	if (panel.screen == GamePanel.Screen.SECTOR_AUDIT && panel.auditZoneDropdownOpen) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\net\StreamSafeTextFields.java	31	field.setToolTipText("Server password. Hidden by default; reveal only when you are not streaming or sharing your screen.");

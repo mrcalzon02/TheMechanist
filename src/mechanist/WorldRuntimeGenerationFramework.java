@@ -32,7 +32,7 @@ class WorldAtlas {
         // slices up front can look like a hard freeze on older Linux test hardware. Generate
         // the insertion slice immediately and leave all other slices lazy through currentWorld().
         int generated = createSlice(sectorX, sectorY, zoneX, zoneY, floor, sewer);
-        DebugLog.audit("WORLD_ATLAS", "lazyScaffold=true generatedInsertionSlices=" + generated + " seed=" + seed + " hive=" + hiveWorld.hiveName + " start=floor4 zone2,2 sector1,1");
+        DebugLog.audit("WORLD_ATLAS", "lazyScaffold=true generatedInsertionSlices=" + generated + " seed=" + seed + " arcology=" + hiveWorld.hiveName + " start=floor4 zone2,2 sector1,1");
     }
     int createSlice(int sx,int sy,int zx,int zy,int fl,boolean sewerLayer){
         long s = seed ^ (sx*1000003L) ^ (sy*9176L) ^ (zx*131071L) ^ (zy*524287L) ^ (fl*8191L) ^ (sewerLayer?0xBEEFL:0xFACE);
@@ -127,39 +127,50 @@ class World {
     ZoneType zoneType = ZoneType.TRASH_WARREN;
     int sectorX = 1, sectorY = 1, zoneX = 1, zoneY = 1, floor = 1;
     boolean sewerLayer = false;
-    String hiveName = "Unnamed Hive", sectorName = "Unnamed Sector", zoneName = "Unnamed Zone", zoneHistory = "No compact history recorded.", zoneEpochHistory = "No faction-control epoch history recorded.", zoneFacilityHistory = "No facility establishment history recorded.", zoneProductionHistory = "No production output history recorded.", zoneStockMovementHistory = "No production distribution / stock movement history recorded.", zoneConflictLossHistory = "No conflict, loss, theft, or abandonment history recorded.", zoneMaterializedItemHistory = "No concrete historical item materialization ledger recorded.", zoneLaborAssignmentHistory = "No population work-assignment ledger recorded.";
+    String hiveName = "Unnamed Arcology", sectorName = "Unnamed Sector", zoneName = "Unnamed Zone", zoneHistory = "No compact history recorded.", zoneEpochHistory = "No faction-control epoch history recorded.", zoneFacilityHistory = "No facility establishment history recorded.", zoneProductionHistory = "No production output history recorded.", zoneStockMovementHistory = "No production distribution / stock movement history recorded.", zoneConflictLossHistory = "No conflict, loss, theft, or abandonment history recorded.", zoneMaterializedItemHistory = "No concrete historical item materialization ledger recorded.", zoneLaborAssignmentHistory = "No population work-assignment ledger recorded.";
     boolean[][] visitedZones = new boolean[3][3];
     World(long seed,int w,int h){this.seed=seed;this.w=w;this.h=h;this.r=new Random(seed);tiles=new char[w][h]; roomIds=new int[w][h]; noiseField=new int[w][h]; for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y]=-1;}
     void generate(){
+        ZoneGenerationManager.generate(this);
+    }
+
+    void worldgenPhaseResetAndSeed(WorldGenerationPipelineRunState state){
         // 0.9.10ji PLAZA-FIRST / ROAD-SECOND SECTOR SEED:
         // The plaza is the first physical claim placed in every zone. Roads then grow
         // from that central civic tile mass, while later rooms are bumped down the
         // generation queue and must respect both the plaza and road network.
-        int target = 0;
-        int attempts = 0;
+        state.target = 0;
+        state.attempts = 0;
+        state.repairs = 0;
+        state.widenedCorridors = 0;
+        state.doorwayObjectRepairs = 0;
         resetGenerationState(seed ^ 0x91010ADEL);
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) tiles[x][y]='#';
         SectorGenerationTraceAuthority.record(this, "RESET", "Plaza-first zone substrate filled before central anchor placement.");
         visitedZones[Math.max(0,Math.min(2,zoneX-1))][Math.max(0,Math.min(2,zoneY-1))] = true;
+    }
 
-        Rectangle centralPlaza = seedCentralPlazaAnchor();
-        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza placed before roads, rooms, fixtures, and transitions.", centralPlaza, false);
-        int plazaApron = seedCentralPlazaRoadApron(centralPlaza);
-        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza one-tile street apron cut before road placement apronTiles=" + plazaApron + ".", centralPlaza, false);
+    void worldgenPhasePlazaAndRoads(WorldGenerationPipelineRunState state){
+        state.centralPlaza = seedCentralPlazaAnchor();
+        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza placed before roads, rooms, fixtures, and transitions.", state.centralPlaza, false);
+        int plazaApron = seedCentralPlazaRoadApron(state.centralPlaza);
+        SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza one-tile street apron cut before road placement apronTiles=" + plazaApron + ".", state.centralPlaza, false);
 
         RoadGridIntegrationAuthority.Result roadGridResult = RoadGridIntegrationAuthority.apply(this, r);
-        int plazaStreetLinks = connectCentralPlazaToStreetGrid(centralPlaza);
+        int plazaStreetLinks = connectCentralPlazaToStreetGrid(state.centralPlaza);
         SectorGenerationTraceAuthority.record(this, "ROADS", "Core road grid placed after the central plaza anchor: " + roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
         DebugLog.audit("PLAZA_FIRST_ROAD_GRID", roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
 
-        decorateCentralPlaza(centralPlaza);
-        SectorGenerationTraceAuthority.record(this, "ASSET-SWEEP", "Central plaza decoration sweep completed after roads so plaza remains the sole first generation claim.", centralPlaza, false);
+        decorateCentralPlaza(state.centralPlaza);
+        SectorGenerationTraceAuthority.record(this, "ASSET-SWEEP", "Central plaza decoration sweep completed after roads so plaza remains the sole first generation claim.", state.centralPlaza, false);
+    }
 
-        target = roadFirstRoomTarget();
-        attempts = buildRoadFirstRoomLayout(target);
-        SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first room seed completed rooms=" + rooms.size() + " target=" + target + " attempts=" + attempts);
+    void worldgenPhaseRoomsAndFactionClaims(WorldGenerationPipelineRunState state){
+        state.target = roadFirstRoomTarget();
+        state.attempts = buildRoadFirstRoomLayout(state.target);
+        SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first room seed completed rooms=" + rooms.size() + " target=" + state.target + " attempts=" + state.attempts);
 
-        ensureRoomQuotaFromStreetBlocks(target);
+        ensureRoomQuotaFromStreetBlocks(state.target);
         applyFactionRoomManifest();
         SectorGenerationTraceAuthority.record(this, "MANIFEST", "Faction room manifest applied to road-first rooms.");
         markSpecialRooms();
@@ -177,7 +188,9 @@ class World {
         placeSpecialInReachableRoom(sewerLayer ? 'v' : 'S', 0.18, 0.20);
         placeSpecialInReachableRoom('E', 0.82, 0.20);
         stampFactionRepresentativeBarNearTransit();
+    }
 
+    void worldgenPhaseRoadAdjacencyFixturesAndValidation(WorldGenerationPipelineRunState state){
         RoadAdjacencyIntegrationAuthority.Result roadAdjacencyResult = RoadAdjacencyIntegrationAuthority.apply(this, r);
         SectorGenerationTraceAuthority.record(this, "ROADS", "Road-adjacent civic structures applied after room placement: " + roadAdjacencyResult.summary());
         DebugLog.audit("ROAD_ADJACENCY_FOUNDATION", roadAdjacencyResult.summary());
@@ -189,28 +202,31 @@ class World {
         DebugLog.audit("ROOM_FIXTURE_INTERACTIONS", roomFixtureResult.summary());
         validateSpecialTransitions();
         validateWorldgenSelfReport("POST_ROAD_FIRST_TRANSITION_STAMP");
-        int repairs = repairWorldgenValidationIssues("POST_ROAD_FIRST_TRANSITION_STAMP");
-        int widenedCorridors = widenOneTileCorridors("POST_REPAIR_TWO_WIDE_PREFERENCE");
-        if(widenedCorridors > 0) {
+        state.repairs = repairWorldgenValidationIssues("POST_ROAD_FIRST_TRANSITION_STAMP");
+        state.widenedCorridors = widenOneTileCorridors("POST_REPAIR_TWO_WIDE_PREFERENCE");
+        if(state.widenedCorridors > 0) {
             validateSpecialTransitions();
-            repairs += repairWorldgenValidationIssues("POST_CORRIDOR_WIDEN");
+            state.repairs += repairWorldgenValidationIssues("POST_CORRIDOR_WIDEN");
         }
-        if(repairs > 0 || widenedCorridors > 0) validateWorldgenSelfReport("POST_REPAIR");
+        if(state.repairs > 0 || state.widenedCorridors > 0) validateWorldgenSelfReport("POST_REPAIR");
         if(!allRoomsReachableStrict()) {
             DebugLog.warn("LEVELGEN_POST_VALIDATE", "Road-first validation still found detached content; preserving rooms for Zone Audit trace. seed="+seed+" zone="+zoneType.label);
         }
         validateWorldgenSelfReport("FINAL_PRE_POPULATE");
+    }
+
+    void worldgenPhaseBoundaryInterwallAndMetadata(WorldGenerationPipelineRunState state){
         applyBoundedOuterHiveWall();
-        SectorGenerationTraceAuthority.record(this, "BOUNDARY", "Bounded outer hive wall/interwall envelope applied.");
+        SectorGenerationTraceAuthority.record(this, "BOUNDARY", "Bounded outer arcology wall/interwall envelope applied.");
         int sectorDoorRepairs = stampRoadMaintenanceTransitionDoors();
         if(sectorDoorRepairs > 0) SectorGenerationTraceAuthority.record(this, "TRANSITIONS", "Road-end double doors stamped against the inner maintenance bulkhead, not map tile edges.");
         int boundaryRepairs = repairUnreachableRooms("POST_BOUNDARY_LAYER");
         if(boundaryRepairs > 0){
-            repairs += boundaryRepairs;
+            state.repairs += boundaryRepairs;
             validateWorldgenSelfReport("POST_BOUNDARY_REPAIR");
         }
         applyInterstitialHiveMass();
-        SectorGenerationTraceAuthority.record(this, "INTERWALL", "Interstitial hive mass and hidden features seeded after road-first room validation.");
+        SectorGenerationTraceAuthority.record(this, "INTERWALL", "Interstitial arcology mass and hidden features seeded after road-first room validation.");
         PersonnelPopulationApi.ensureLedgers(this, r);
         EnvironmentalHazardVisibilityApi.Result hazardResult = EnvironmentalHazardVisibilityApi.seed(this, r);
         DebugLog.audit("HAZARD_WARNING_OVERLAY", hazardResult.summary());
@@ -224,24 +240,31 @@ class World {
         DebugLog.audit("ECONOMIC_TOPOLOGY_MAP_INTEL_BRIDGE", mapIntelResult.summary());
         RetargetReadinessAuditAuthority.Result retargetResult = RetargetReadinessAuditAuthority.apply(this);
         DebugLog.audit("RETARGET_READINESS_AUDIT", retargetResult.summary());
-        DebugLog.audit("WORLDGEN_ACCEPTANCE", "status=" + (repairs>0 ? "REPAIRED" : "ACCEPTED") + " repairs="+repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        DebugLog.audit("WORLDGEN_ACCEPTANCE", "status=" + (state.repairs>0 ? "REPAIRED" : "ACCEPTED") + " repairs="+state.repairs+" rooms="+rooms.size()+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+    }
+
+    void worldgenPhasePopulationEconomyAndFinalCompile(WorldGenerationPipelineRunState state){
         populate();
         SectorGenerationTraceAuthority.record(this, "POPULATION", "Population, resident amenities, and ordinary entities seeded after road-first terrain/facility layout.");
-        int doorwayObjectRepairs = 0;
+        WorldEconomyInitializationAuthority.Result economyInit = WorldEconomyInitializationAuthority.apply(this, r);
+        DebugLog.audit("WORLD_ECONOMY_INITIALIZATION", economyInit.summary());
+        state.doorwayObjectRepairs = 0;
         for(int pass=0; pass<4; pass++){
             int fixed = sanitizeGeneratedObjectDoorAccess();
-            doorwayObjectRepairs += fixed;
+            state.doorwayObjectRepairs += fixed;
             if(fixed == 0) break;
         }
-        if(doorwayObjectRepairs > 0) DebugLog.audit("OBJECT_DOORWAY_CLEARANCE_REPAIR", "relocatedOrRemoved="+doorwayObjectRepairs+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
+        if(state.doorwayObjectRepairs > 0) DebugLog.audit("OBJECT_DOORWAY_CLEARANCE_REPAIR", "relocatedOrRemoved="+state.doorwayObjectRepairs+" zone="+zoneType.label+" layer="+layerText()+" seed="+seed);
         TileDataCompilationAuthority.Result tileCompileResult = TileDataCompilationAuthority.compile(this);
         SectorGenerationTraceAuthority.record(this, "TILE-COMPILE", "Tile descriptors compiled for renderer and audit view: " + tileCompileResult.summary());
         DebugLog.audit("TILE_DATA_COMPILE", tileCompileResult.summary());
-        DebugLog.log("Generated road-first world seed="+seed+" zone="+zoneType.label+" layer="+layerText()+" rooms="+rooms.size()+" attempts="+attempts+" roads=core-first");
+        DebugLog.log("Generated road-first world seed="+seed+" zone="+zoneType.label+" layer="+layerText()+" rooms="+rooms.size()+" attempts="+state.attempts+" roads=core-first");
     }
 
+
+
     void applyBoundedOuterHiveWall(){
-        // 0.8.79 BOUNDED OUTER HIVE WALL PASS:
+        // 0.8.79 BOUNDED OUTER ARCOLOGY WALL PASS:
         // After the normal zone body validates, bolt a high-wall maintenance layer onto
         // the exterior of the slice. This adds a maintenance room and rare abandoned
         // interwall rooms outside the ordinary room quota, lays an exterior maintenance
@@ -253,9 +276,9 @@ class World {
     }
 
     void applyInterstitialHiveMass(){
-        // 0.8.77 INTERSTITIAL HIVE MASS PASS:
+        // 0.8.77 INTERSTITIAL ARCOLOGY MASS PASS:
         // After rooms, corridors, transitions, validation, and repair are finished, convert deep unused wall
-        // mass into readable intra-hive infrastructure instead of leaving every solid cell as anonymous '#'.
+        // mass into readable intra-arcology infrastructure instead of leaving every solid cell as anonymous '#'.
         // One-tile bulkheads immediately bordering walkable space remain '#'; deeper solids become beams,
         // gantries, conveyor ways, pipe bundles, collapsed debris, and buried caches. This must run late so
         // generation/repair code can still use '#' as the carveable wall substrate.
@@ -994,7 +1017,7 @@ class World {
 
     Rectangle centralPlazaRect(){
         // 0.8.66 API sectioning: plaza sizing/centering belongs to the
-        // world-generation scale surface so large hive presets can change
+        // world-generation scale surface so large arcology presets can change
         // footprint without every room-placement helper learning new constants.
         return WorldGenerationApi.centralPlazaRect(w, h);
     }
@@ -1254,13 +1277,13 @@ class World {
     Faction dominantContinuityFactionForZone(){
         if(zoneType==ZoneType.MUTANT_SEWER_CAMP || zoneType==ZoneType.MUTANT_WARRENS) return Faction.MUTANT;
         if(zoneType==ZoneType.CULTIST_SEWER_CAMP) return Faction.CULTIST;
-        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.ARBITES;
+        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.CIVIC_WARDENS;
         if(zoneType==ZoneType.IMPERIAL_GUARD_BILLET) return Faction.IMPERIAL_GUARD;
-        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return Faction.MECHANICUS;
+        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return Faction.MECHANIST_COLLEGIA;
         if(zoneType==ZoneType.GANGER_TURF) return Faction.BANDIT;
         if(zoneType==ZoneType.SECTOR_GOVERNORS_MANSION || zoneType==ZoneType.NOBLE_SERVICE_SPINE) return Faction.NOBLE;
         if(zoneType==ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN;
-        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE) return Faction.ADMINISTRATUM;
+        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE) return Faction.CIVIC_LEDGER_OFFICE;
         if(zoneType==ZoneType.NEUTRAL_RAIL_DEPOT || zoneType==ZoneType.SUMP_MARKET) return Faction.HIVER;
         if(zoneType==ZoneType.HAB_STACK || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR) return Faction.HIVER;
         if(zoneType==ZoneType.SEWER_CONDUIT) return Faction.SCAVENGER;
@@ -1904,13 +1927,13 @@ class World {
     Faction plazaFactionForZone(){
         switch(zoneType){
             case GANGER_TURF: return Faction.BANDIT;
-            case ARBITES_PRECINCT_EDGE: return Faction.ARBITES;
+            case ARBITES_PRECINCT_EDGE: return Faction.CIVIC_WARDENS;
             case MECHANICUS_RELIC_DUCT:
-            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANICUS;
+            case MECHANICUS_FORGE_CLOISTER: return Faction.MECHANIST_COLLEGIA;
             case MUTANT_WARRENS:
             case MUTANT_SEWER_CAMP: return Faction.MUTANT;
             case CULTIST_SEWER_CAMP: return Faction.CULTIST;
-            case ADMINISTRATUM_ARCHIVE: return Faction.ADMINISTRATUM;
+            case ADMINISTRATUM_ARCHIVE: return Faction.CIVIC_LEDGER_OFFICE;
             case IMPERIAL_GUARD_BILLET: return Faction.IMPERIAL_GUARD;
             case NOBLE_SERVICE_SPINE: return Faction.NOBLE;
             default: return Faction.NONE;
@@ -1920,7 +1943,7 @@ class World {
     void decorateCentralPlaza(Rectangle plaza){
         char[] civic = {'T','q','b','h','n'};
         char[] gang = {'g','q','b','p','N'};
-        char[] arbites = {'A','q','b','n','N'};
+        char[] civicWardens = {'A','q','b','n','N'};
         char[] mech = {'N','R','Z','Y','J','P','F'};
         char[] sewerUtility = {'N','Z','Y','F','v','m','p'};
         char[] cult = {'c','c','o','b','p'};
@@ -1929,7 +1952,7 @@ class World {
         char[] pool = civic;
         if(sewerLayer || zoneType==ZoneType.SEWER_CONDUIT || zoneType==ZoneType.MUTANT_SEWER_CAMP || zoneType==ZoneType.CULTIST_SEWER_CAMP) pool = sewerUtility;
         else if(zoneType==ZoneType.GANGER_TURF) pool = gang;
-        else if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) pool = arbites;
+        else if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) pool = civicWardens;
         else if(zoneType==ZoneType.MECHANICUS_RELIC_DUCT || zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER) pool = mech;
         else if(zoneType==ZoneType.CULTIST_SEWER_CAMP) pool = cult;
         else if(zoneType==ZoneType.MUTANT_WARRENS || zoneType==ZoneType.MUTANT_SEWER_CAMP) pool = mutant;
@@ -2870,7 +2893,7 @@ class World {
         if (rooms.isEmpty()) return;
         char[] machines = {'Y','J','B','K','O','Z','P','F'};
         // Each generated zone has a chance to include one or more Martian emergency machine room features.
-        // Mechanicus and industrial-adjacent layers bias higher; sewer/cult/mutant layers bias lower but may contain derelict units.
+        // Mechanist Collegia and industrial-adjacent layers bias higher; sewer/cult/mutant layers bias lower but may contain derelict units.
         double bias = (zoneType == ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType == ZoneType.MECHANICUS_RELIC_DUCT) ? 0.55 : (sewerLayer ? 0.18 : 0.28);
         int placed = 0;
         for (int i=0; i<rooms.size() && placed<3; i++) {
@@ -2976,9 +2999,9 @@ class World {
             Faction[] gangs = {Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH,Faction.HIVER_BLOCK_AUREL,Faction.HIVER_BLOCK_MARROW,Faction.HIVER_BLOCK_SUMPLEDGER};
             return r.nextDouble()<0.45 ? gangs[r.nextInt(gangs.length)] : Faction.NONE;
         }
-        if (floor == 5) return r.nextDouble()<0.25 ? Faction.ADMINISTRATUM : Faction.NONE;
+        if (floor == 5) return r.nextDouble()<0.25 ? Faction.CIVIC_LEDGER_OFFICE : Faction.NONE;
         if (zoneType == ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN;
-        Faction[] upper = {Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY,Faction.ARBITES,Faction.IMPERIAL_GUARD,Faction.MECHANICUS_CLOISTER_RED,Faction.MECHANICUS_CLOISTER_RUST,Faction.MECHANICUS_CLOISTER_VOID};
+        Faction[] upper = {Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY,Faction.CIVIC_WARDENS,Faction.IMPERIAL_GUARD,Faction.MECHANICUS_CLOISTER_RED,Faction.MECHANICUS_CLOISTER_RUST,Faction.MECHANICUS_CLOISTER_VOID};
         return r.nextDouble()<0.55 ? upper[r.nextInt(upper.length)] : Faction.NONE;
     }
 
@@ -3117,14 +3140,14 @@ class World {
         if(roomId >= 0 && roomId < roomProfiles.size() && EcclesiarchyTempleApi.isTempleRoom(roomProfiles.get(roomId))) return Faction.MINISTORUM;
         if(zoneType==ZoneType.MUTANT_SEWER_CAMP || zoneType==ZoneType.MUTANT_WARRENS) return Faction.MUTANT;
         if(zoneType==ZoneType.CULTIST_SEWER_CAMP) return Faction.CULTIST;
-        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.ARBITES;
+        if(zoneType==ZoneType.ARBITES_PRECINCT_EDGE) return Faction.CIVIC_WARDENS;
         if(zoneType==ZoneType.IMPERIAL_GUARD_BILLET) return Faction.IMPERIAL_GUARD;
-        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return r.nextBoolean()?Faction.MECHANICUS_CLOISTER_RED:Faction.MECHANICUS;
+        if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT) return r.nextBoolean()?Faction.MECHANICUS_CLOISTER_RED:Faction.MECHANIST_COLLEGIA;
         if(zoneType==ZoneType.GANGER_TURF) { Faction[] gangs={Faction.GANGER_IRON_RATS,Faction.GANGER_BLACK_SUMP,Faction.GANGER_CANDLE_JACKS,Faction.GANGER_RED_GRIN,Faction.GANGER_CHAIN_SAINTS,Faction.GANGER_ASH_MARKET,Faction.GANGER_WIRE_WOLVES,Faction.GANGER_DROWNED_9TH}; return gangs[r.nextInt(gangs.length)]; }
         if(zoneType==ZoneType.SECTOR_GOVERNORS_MANSION) return Faction.NOBLE;
         if(zoneType==ZoneType.NOBLE_SERVICE_SPINE) { Faction[] nobles={Faction.NOBLE_HOUSE_VARN,Faction.NOBLE_HOUSE_KASTOR,Faction.NOBLE_HOUSE_MORVAIN,Faction.NOBLE_HOUSE_CYRA,Faction.NOBLE_HOUSE_DRAKE,Faction.NOBLE_HOUSE_TOLL,Faction.NOBLE_HOUSE_OSSUARY}; return nobles[r.nextInt(nobles.length)]; }
         if(zoneType==ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN;
-        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR || zoneType==ZoneType.SUMP_MARKET || zoneType==ZoneType.NEUTRAL_RAIL_DEPOT) return r.nextDouble()<0.18?Faction.ARBITES:Faction.ADMINISTRATUM;
+        if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR || zoneType==ZoneType.SUMP_MARKET || zoneType==ZoneType.NEUTRAL_RAIL_DEPOT) return r.nextDouble()<0.18?Faction.CIVIC_WARDENS:Faction.CIVIC_LEDGER_OFFICE;
         if(zoneType==ZoneType.HAB_STACK) return Faction.HIVER;
         if(zoneType==ZoneType.SEWER_CONDUIT) return r.nextDouble()<0.12?Faction.MUTANT:Faction.NONE;
         return roomFaction(roomId)==Faction.NONE?Faction.SCAVENGER:roomFaction(roomId);
@@ -3570,15 +3593,15 @@ class HivewallRoomCacheApi {
         if(rng == null) rng = new Random(0);
         ArrayList<String> out = new ArrayList<>();
         String low = ((rp==null||rp.name==null?"":rp.name) + " " + (rp==null||rp.descriptor==null?"":rp.descriptor)).toLowerCase(Locale.ROOT);
-        String[] maintenance = new String[]{"Sealed maintenance tool chest","Voidside water condenser flask","Collapsed hive salvage crate","Machine part","Sacred wire bundle","Tool bundle","Water purification tab","Filter mask"};
-        String[] danger = new String[]{"Interwall ration reserve crate","Forgotten flak bundle","Abandoned las-locker contents","Rogue automata service core","Sealed tech relic case","Wanted criminal stash roll","Cult-sealed reliquary packet","Collapsed hive salvage crate","Monoblade sliver","Data spike"};
+        String[] maintenance = new String[]{"Sealed maintenance tool chest","Voidside water condenser flask","Collapsed arcology salvage crate","Machine part","Sacred wire bundle","Tool bundle","Water purification tab","Filter mask"};
+        String[] danger = new String[]{"Interwall ration reserve crate","Forgotten flak bundle","Abandoned las-locker contents","Rogue automata service core","Sealed tech relic case","Wanted criminal stash roll","Cult-sealed reliquary packet","Collapsed arcology salvage crate","Monoblade sliver","Data spike"};
         String[] pool = low.contains("danger") ? danger : maintenance;
         int count = low.contains("danger") ? 4 + rng.nextInt(3) : 5 + rng.nextInt(3);
         for(int i=0; i<count; i++){
             String item = pool[Math.floorMod(rng.nextInt() + i, pool.length)];
             if(ItemCatalog.get(item) != null) out.add(item);
         }
-        if(out.isEmpty()) out.add("Collapsed hive salvage crate");
+        if(out.isEmpty()) out.add("Collapsed arcology salvage crate");
         return out;
     }
 
@@ -3600,10 +3623,10 @@ class HivewallRoomCacheApi {
     static String abandonmentReason(World w, Faction f, Random r){
         String epoch = compactHistorySnippet(w == null ? null : w.zoneEpochHistory);
         String facility = compactHistorySnippet(w == null ? null : w.zoneFacilityHistory);
-        if(f == Faction.ROGUE_MACHINE) return "Sealed after a Mechanicus service work went dark; " + facility + "; remembered in epoch: " + epoch + ".";
+        if(f == Faction.ROGUE_MACHINE) return "Sealed after a Mechanist Collegia service work went dark; " + facility + "; remembered in epoch: " + epoch + ".";
         if(f == Faction.CULTIST || f == Faction.HERETIC) return "Hidden devotional traffic colonized this interwall void after an occupation dispute; " + epoch + ".";
         if(f == Faction.BANDIT) return "A wanted criminal crew cut into old maintenance space and used facility stores as a refuge; " + facility + ".";
-        if(f == Faction.MUTANT) return "Collapsed hive structure opened a forgotten pocket later claimed by powerful mutants; " + epoch + ".";
+        if(f == Faction.MUTANT) return "Collapsed arcology structure opened a forgotten pocket later claimed by powerful mutants; " + epoch + ".";
         return "Abandoned during old maintenance collapse; " + epoch + "; " + facility + ".";
     }
 
@@ -3616,7 +3639,7 @@ class HivewallRoomCacheApi {
         p.populationPool = "sealed interwall threat pocket";
         p.upbringing = "Not drawn from ordinary barracks, creche, or rail population. Presence derives from abandoned hivewall/interwall access and prior faction-control history.";
         p.arrivalRoute = abandonmentReason(w, f, r);
-        p.backstory = (f == Faction.ROGUE_MACHINE ? "Rogue automata from abandoned Mechanicus service works" : f == Faction.BANDIT ? "Wanted murderer or criminal hiding in interwall void maintenance spaces" : f == Faction.MUTANT ? "Powerful mutant occupying a collapse pocket in the outer hivewall" : "Cultist or heretic sheltered in a sealed interwall chamber") + "; room=" + p.originRoom + "; route=" + p.arrivalRoute;
+        p.backstory = (f == Faction.ROGUE_MACHINE ? "Rogue automata from abandoned Mechanist Collegia service works" : f == Faction.BANDIT ? "Wanted murderer or criminal hiding in interwall void maintenance spaces" : f == Faction.MUTANT ? "Powerful mutant occupying a collapse pocket in the outer hivewall" : "Cultist or heretic sheltered in a sealed interwall chamber") + "; room=" + p.originRoom + "; route=" + p.arrivalRoute;
         npc.provenance = p;
     }
 
@@ -3836,7 +3859,7 @@ class BoundedOuterHiveWallApi {
             if(!canPlaceInterwallRoom(world, rect, true)) continue;
             int rid = carveAddedRoom(world, rect, new RoomProfile(
                 "Hivewall Maintenance Room",
-                "bolted-on high-wall service room attached after the normal zone was built; one door returns to the main hive, while left and right maintenance exits run into the exterior wall loop",
+                "bolted-on high-wall service room attached after the normal zone was built; one door returns to the main arcology, while left and right maintenance exits run into the exterior wall loop",
                 58, Faction.NONE,
                 new String[]{"machine parts","wire bundle","rusted tool","sealed water ration"},
                 new char[]{'N','q','b'}), Faction.NONE, true);
@@ -3864,7 +3887,7 @@ class BoundedOuterHiveWallApi {
             Faction f = dangerFaction(world, r, made);
             RoomProfile rp = new RoomProfile(
                 "Abandoned Interwall Danger Room",
-                "scrap-choked forgotten chamber between the active zone and the outer hive wall; old collapse dust, abandoned reserves, and something dangerous have been sealed here too long",
+                "scrap-choked forgotten chamber between the active zone and the outer arcology wall; old collapse dust, abandoned reserves, and something dangerous have been sealed here too long",
                 82, f,
                 new String[]{"forgotten weapon cache","old armor bundle","tech salvage","sealed reserve crate","wanted poster scrap"},
                 new char[]{'!','?','*','b'});
@@ -4154,11 +4177,11 @@ class InterstitialInfrastructureApi {
             "& gantry lattice — sealed catwalk/support lattice between constructed rooms",
             "^ conveyor way — solid buried production/material movement channel",
             "8 pipe and pressure vessel bundle — wet, hot, or chemical utility mass",
-            "0 cable conduit column — power/data/vox/cogitator routing spine",
-            "* collapsed debris pocket — rubble from older hive failures",
+            "0 cable conduit column — power/data/vox/logic Engine routing spine",
+            "* collapsed debris pocket — rubble from older arcology failures",
             "? buried cache pocket — forgotten tools, weapons, armor, technology, supplies, or reserves",
             "! dangerous buried reserve — cache/hazard candidate for breach or hivewall exploration",
-            "space void space — empty intrahive abyss outside a bounded hive-wall envelope"
+            "space void space — empty intrahive abyss outside a bounded arcology-wall envelope"
         };
     }
 }

@@ -1,0 +1,10 @@
+The Mechanist unfolded client package
+Built: 20260602_150559
+Primary layout: unfolded directory, not jar-first
+Classes: classes\mechanist\*.class
+Assets: assets\
+Package asset files: 2902
+Source files compiled: 392
+Launch: RUN_THE_MECHANIST_CLIENT.bat or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1
+Manual launch: java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist
+Note: PACKAGE_client is preserved by default. The src folder is removed unless -IncludeSourceMirror is supplied.

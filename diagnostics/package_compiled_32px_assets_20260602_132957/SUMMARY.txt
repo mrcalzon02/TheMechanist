@@ -1,0 +1,14 @@
+Compiled asset package copy run: 20260602_132957
+Repo root: C:\GITS\The Mechanist\TheMechanist
+Package root: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
+Compiled root: C:\GITS\The Mechanist\TheMechanist\ROOT_tools\atlas_asset_pipeline\compiled_assets
+Source folder: C:\GITS\The Mechanist\TheMechanist\ROOT_tools\atlas_asset_pipeline\compiled_assets\32px
+Source index: C:\GITS\The Mechanist\TheMechanist\ROOT_tools\atlas_asset_pipeline\compiled_assets\asset_content_index_256px.tsv
+Destination compiled root: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\compiled_assets\32px
+Resolution: 32
+IndexedRows: 2898
+CopiedAssets: 2898
+MissingAssets: 0
+CopiedBytes: 6398852
+FinalPackageAssetFiles: 2902
+Package index: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\indexes\asset_content_index_32px.tsv

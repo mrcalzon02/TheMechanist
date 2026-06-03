@@ -1,0 +1,84 @@
+{
+  "overrides": [
+    {
+      "match": "Automotive components.png",
+      "cols": 5,
+      "rows": 6,
+      "refine_boundaries": true,
+      "reason": "project-known automotive component atlas; five columns by six rows"
+    },
+    {
+      "match": "Knowledges/SKILLS.png",
+      "cols": 5,
+      "rows": 5,
+      "refine_boundaries": false,
+      "reason": "project-known 5x5 rondel icon sheet"
+    },
+    {
+      "match": "the_mechanist_skill_icons_rondels_transparent_320x320.png",
+      "cols": 5,
+      "rows": 5,
+      "refine_boundaries": false,
+      "reason": "project-known 5x5 rondel icon sheet"
+    },
+    {
+      "match": "Children's-Creche.png",
+      "cols": 5,
+      "rows": 5,
+      "refine_boundaries": true,
+      "reason": "project-known 5x5 atlas with variable internal tile footprints requiring per-cell scaling"
+    },
+    {
+      "match": "Noble Houses Defenses 2.png",
+      "row_cols": [5, 5, 5, 6, 6],
+      "refine_boundaries": true,
+      "reason": "project-known row-specific defense atlas; first three rows are 5-wide, bottom two rows are 6-wide"
+    },
+    {
+      "match": "Frameless_system_icons.png",
+      "cols": 5,
+      "rows": 5,
+      "x_edges": [9, 256, 503, 750, 997, 1244],
+      "y_edges": [9, 252, 489, 720, 951, 1189],
+      "refine_boundaries": false,
+      "reason": "framed 5x5 icon grid with unused bottom canvas excluded from slice bounds"
+    },
+    {
+      "match": "Military parts.png",
+      "cols": 5,
+      "rows": 6,
+      "refine_boundaries": true,
+      "reason": "project-known military object sheet; five columns by six rows"
+    },
+    {
+      "match": "trainstuff.png",
+      "cols": 5,
+      "rows": 5,
+      "refine_boundaries": true,
+      "reason": "project-known 5x5 atlas with variable internal tile footprints requiring per-cell scaling"
+    },
+    {
+      "match": "Objects/",
+      "cols": 5,
+      "rows": 5,
+      "refine_boundaries": true,
+      "reason": "object atlas family default: fixed 5x5 grid with dynamic per-cell content sizing"
+    }
+  ],
+  "review_refine_sources": [
+    "Implants/Assorted implants.png",
+    "Corridors/CorridorsB.png",
+    "Walls/Cultwalls.png",
+    "Doors/Doors-C.png",
+    "Doors/Doors-O.png",
+    "floors/Factory floors.png",
+    "Walls/fleshCult-Walls.png",
+    "ITEMS/Generic items.png",
+    "Walls/Noble-and-noble security-walls.png",
+    "Defenses/Noble Houses Defenses 2.png",
+    "Vehicles/Vehicles.png",
+    "Walls/walls1.png",
+    "Walls/walls2.png",
+    "ITEMS/WEAPONS-1.png"
+  ]
+}

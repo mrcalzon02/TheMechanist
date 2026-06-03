@@ -50,7 +50,7 @@ final class LauncherShellStateAuthority {
             profileLabel = "PROFILE: " + userProfile.displayName;
         }
         ArrayList<RouteDescriptor> out = new ArrayList<>();
-        out.add(new RouteDescriptor(Route.START, "START", "Prepare the local client/server boundary, then select or generate a hive world.", true));
+        out.add(new RouteDescriptor(Route.START, "START", "Prepare the local client/server boundary, then select or generate a arcology world.", true));
         out.add(new RouteDescriptor(Route.LOAD_AUTO, "LOAD", "Open manual saves and autosave slots.", true));
         out.add(new RouteDescriptor(Route.OPTIONS, "OPTIONS", "Open performance, input, graphics, and profile options.", true));
         out.add(new RouteDescriptor(Route.EXIT, "EXIT", "Exit The Mechanist.", true));

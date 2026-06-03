@@ -1,0 +1,210 @@
+git log --oneline -- src/mechanist/MainMenuSurfacePainter.java src/mechanist/LegacyPanelContext.java
+b78f30b5 Client media: compile ImageCache bridge and existing boot menu wiring
+a6c3c9de Client media: reconnect shard-mined boot intro menu media runtime
+e3f203a2 Client boot: reconnect existing boot intro menu surfaces
+5f91bf53 Client menu: restore package route menu surface
+69880746 Client package: fix indexed 32px asset resolver path
+e2826d72 Client package: resolve menu assets from package index
+7efaff66 Client package: compile boot surface and copy indexed 32px assets
+1ceaa828 Client package: copy indexed compiled 32px assets
+619dc8d3 Client package: rewire boot surfaces and generated core32 assets
+f400cf5a Client package: use generated core32 assets and refresh boot surface
+4852b1a1 Client package: copy real assets and enable image surface
+340bbb96 Client package: fix layout assets and visible boot fallback
+ba640252 Client package: fix layout assets and visible boot fallback
+236f0014 Client package: preserve unfolded client and apply bridge patch 3
+1719a0f5 Client package: apply bridge compatibility patch 3
+d7a5ecd5 Client package: apply bridge compatibility patch 2
+27dbb11f Client package: apply runtime bridge compatibility patch
+fa4f7301 Client package: apply UI bridge compatibility patch
+9302b0c5 Client package: apply bridge base and compile package
+35b21ab6 GamePanel retirement: add manual haul execution bridge surface
+242a9919 GamePanel retirement: patch latest focused bridge blockers
+1ec016e4 GamePanel retirement: patch first focused legacy bridge blockers
+251889bc GamePanel retirement: add logistics construction combat bridge fields
+263936be GamePanel retirement: widen legacy input and UI bridge surface
+d8df8b48 GamePanel retirement: expand legacy panel compatibility context
+6cf8b078 GamePanel retirement: add legacy panel context adapter
+d28e0277 game panel Whittling
+
+Recent diffs touching menu bridge files:
+
+commit b78f30b509049d23ace2d7bf4b428e571f85ffa9
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 14:58:09 2026 -0800
+
+    Client media: compile ImageCache bridge and existing boot menu wiring
+
+ src/mechanist/LegacyPanelContext.java | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+commit a6c3c9de8c5ccd4f10ddbf44664aeeb62a3bd4b6
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 14:47:32 2026 -0800
+
+    Client media: reconnect shard-mined boot intro menu media runtime
+
+ src/mechanist/LegacyPanelContext.java | 206 +++++++---------------------------
+ 1 file changed, 39 insertions(+), 167 deletions(-)
+
+commit e3f203a26f999715520c5a63c4712253ee870948
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 14:02:37 2026 -0800
+
+    Client boot: reconnect existing boot intro menu surfaces
+
+ src/mechanist/LegacyPanelContext.java     |  43 +++++++++--
+ src/mechanist/MainMenuSurfacePainter.java | 120 ++++++++++++++----------------
+ 2 files changed, 93 insertions(+), 70 deletions(-)
+
+commit 5f91bf53ee04e7fb9918047ebda863312b5b8cfa
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 13:30:34 2026 -0800
+
+    Client menu: restore package route menu surface
+
+ src/mechanist/LegacyPanelContext.java     |  90 +++++++++++++++++++++-
+ src/mechanist/MainMenuSurfacePainter.java | 122 ++++++++++++++++--------------
+ 2 files changed, 153 insertions(+), 59 deletions(-)
+
+commit 69880746c281b2d857acffa89fa7b7b28bba48a1
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 12:58:29 2026 -0800
+
+    Client package: fix indexed 32px asset resolver path
+
+ src/mechanist/LegacyPanelContext.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit e2826d72477b5f60ecda6ce2ca2fef170ca01c3b
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 12:51:25 2026 -0800
+
+    Client package: resolve menu assets from package index
+
+ src/mechanist/LegacyPanelContext.java | 123 ++++++++++++++++++++++++++++------
+ 1 file changed, 103 insertions(+), 20 deletions(-)
+
+commit 7efaff66c444330c121aebf46643971251c1bf11
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 12:43:17 2026 -0800
+
+    Client package: compile boot surface and copy indexed 32px assets
+
+ src/mechanist/LegacyPanelContext.java | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+commit 1ceaa8282fcd51de21cf3e2ecaed04f364259e54
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 12:40:27 2026 -0800
+
+    Client package: copy indexed compiled 32px assets
+
+ src/mechanist/LegacyPanelContext.java | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+commit 619dc8d3a7c5b16f5aca0fd225d2d4e087d7676d
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 12:21:17 2026 -0800
+
+    Client package: rewire boot surfaces and generated core32 assets
+
+ src/mechanist/LegacyPanelContext.java | 49 ++++++++++++++++++++++++++++++++---
+ 1 file changed, 45 insertions(+), 4 deletions(-)
+
+commit f400cf5a2c36fbe904e686e3418941dbd9200c53
+Merge: 4852b1a1 37c54d24
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 11:56:28 2026 -0800
+
+    Client package: use generated core32 assets and refresh boot surface
+
+commit 4852b1a1df49a943f33c32f687a1a2ed41cf4b4d
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 11:45:31 2026 -0800
+
+    Client package: copy real assets and enable image surface
+
+ src/mechanist/LegacyPanelContext.java | 103 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 99 insertions(+), 4 deletions(-)
+
+commit 340bbb96e3cf14627a88948e3a073acdbd641cfd
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 11:36:26 2026 -0800
+
+    Client package: fix layout assets and visible boot fallback
+
+ src/mechanist/LegacyPanelContext.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit ba640252f9d1288722ec454126fdfc5488b2ed7d
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 11:33:56 2026 -0800
+
+    Client package: fix layout assets and visible boot fallback
+
+ src/mechanist/LegacyPanelContext.java | 74 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 73 insertions(+), 1 deletion(-)
+
+commit 236f0014ce2d9d568734ff480b888ebe8637ca36
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 11:12:34 2026 -0800
+
+    Client package: preserve unfolded client and apply bridge patch 3
+
+ src/mechanist/LegacyPanelContext.java | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 1719a0f54a1b5db1d320bd5c2e0f2d85d5a1c563
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 11:05:39 2026 -0800
+
+    Client package: apply bridge compatibility patch 3
+
+ src/mechanist/LegacyPanelContext.java | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit d7a5ecd5b52964a725888c130a6c61c975a73c96
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 10:53:46 2026 -0800
+
+    Client package: apply bridge compatibility patch 2
+
+ src/mechanist/LegacyPanelContext.java | 114 ++++++++++++++++++++++++++++++----
+ 1 file changed, 103 insertions(+), 11 deletions(-)
+
+commit 27dbb11f90200f1f08509edb3805d953cbe5db1b
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 10:46:57 2026 -0800
+
+    Client package: apply runtime bridge compatibility patch
+
+ src/mechanist/LegacyPanelContext.java | 72 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 69 insertions(+), 3 deletions(-)
+
+commit fa4f73013c929cd039667816a9e9c2171cea6f1c
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 10:08:35 2026 -0800
+
+    Client package: apply UI bridge compatibility patch
+
+ src/mechanist/LegacyPanelContext.java | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+commit 9302b0c58eb8a0b26df762b09712891896349369
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 09:57:10 2026 -0800
+
+    Client package: apply bridge base and compile package
+
+ src/mechanist/LegacyPanelContext.java | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit 35b21ab660f50d0d3503e862399d581302ca13b0
+Author: mrcalzon02 <mrcalzon02@yahoo.com>
+Date:   Tue Jun 2 09:18:27 2026 -0800
+
+    GamePanel retirement: add manual haul execution bridge surface
+
+ src/mechanist/LegacyPanelContext.java | 44 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)

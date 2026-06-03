@@ -1,0 +1,161 @@
+{
+  "schema": "mechanist.deep_asset_descriptors.v1",
+  "notes": [
+    "Rules are merged into the generated asset content index.",
+    "Atlas rules add broad tags. Row and cell rules add more specific visual descriptors.",
+    "Cell keys use rXXcYY coordinates from compiled filenames."
+  ],
+  "atlas_rules": [
+    {
+      "group": "ITEMS",
+      "match": "WEAPONS-1",
+      "content_type": "weapon",
+      "description": "Handheld melee weapons and powered melee tools.",
+      "tags": ["weapon", "melee_weapon", "handheld", "equipment"],
+      "cells": {
+        "r01c01": {"description": "Powered axe with broad crescent blade.", "tags": ["axe", "power_axe", "bladed_weapon"]},
+        "r01c02": {"description": "Chain sword with toothed motorized blade.", "tags": ["chainsword", "sword", "bladed_weapon", "powered_weapon"]},
+        "r01c03": {"description": "Glowing blue energy sword.", "tags": ["sword", "power_sword", "energy_blade", "bladed_weapon"]},
+        "r01c04": {"description": "Powered axe with blue energy edge.", "tags": ["axe", "power_axe", "energy_weapon", "bladed_weapon"]},
+        "r01c05": {"description": "Heavy rectangular warhammer or powered hammer.", "tags": ["hammer", "warhammer", "blunt_weapon", "powered_weapon"]},
+        "r02c01": {"description": "Electrified shock baton or power maul.", "tags": ["baton", "shock_baton", "maul", "blunt_weapon", "energy_weapon"]},
+        "r02c02": {"description": "Simple sledgehammer or heavy hammer.", "tags": ["hammer", "sledgehammer", "blunt_weapon"]},
+        "r02c03": {"description": "Mechanical pickaxe or hooked power tool weapon.", "tags": ["pickaxe", "hooked_blade", "tool_weapon", "powered_weapon"]},
+        "r02c04": {"description": "Glowing blue straight sword.", "tags": ["sword", "power_sword", "energy_blade", "bladed_weapon"]},
+        "r02c05": {"description": "Single bit battle axe.", "tags": ["axe", "battle_axe", "bladed_weapon"]},
+        "r03c01": {"description": "Combat knife with serrated spine.", "tags": ["knife", "dagger", "serrated_blade", "bladed_weapon"]},
+        "r03c02": {"description": "Powered dagger or short blade with mechanical grip.", "tags": ["knife", "dagger", "power_dagger", "bladed_weapon"]},
+        "r03c03": {"description": "Green chemical or toxic dagger.", "tags": ["knife", "dagger", "toxic_blade", "chemical_weapon", "bladed_weapon"]},
+        "r03c04": {"description": "Ornate curved sword.", "tags": ["sword", "curved_sword", "ornate_weapon", "bladed_weapon"]},
+        "r03c05": {"description": "Entrenching shovel or spade weapon.", "tags": ["shovel", "spade", "tool_weapon"]},
+        "r04c01": {"description": "Long straight sword.", "tags": ["sword", "longsword", "bladed_weapon"]},
+        "r04c02": {"description": "Rapier or dueling sword with guard.", "tags": ["rapier", "dueling_sword", "sword", "bladed_weapon"]},
+        "r04c03": {"description": "Heavy rectangular hammer.", "tags": ["hammer", "maul", "blunt_weapon"]},
+        "r04c04": {"description": "Large powered hammer with skull casing.", "tags": ["hammer", "warhammer", "power_hammer", "blunt_weapon"]},
+        "r04c05": {"description": "Mechanized axe with circular blade head.", "tags": ["axe", "chain_axe", "powered_weapon", "bladed_weapon"]},
+        "r05c01": {"description": "Blue-edged power sword.", "tags": ["sword", "power_sword", "energy_blade", "bladed_weapon"]},
+        "r05c02": {"description": "Short power sword or energized combat knife.", "tags": ["short_sword", "knife", "energy_blade", "bladed_weapon"]},
+        "r05c03": {"description": "Broad straight sword.", "tags": ["sword", "broadsword", "bladed_weapon"]},
+        "r05c04": {"description": "Compact chainsaw or rotary cutting tool weapon.", "tags": ["chainsaw", "saw", "tool_weapon", "powered_weapon"]},
+        "r05c05": {"description": "Weapon maintenance kit with grenade, tools, and small parts.", "tags": ["weapon_kit", "toolkit", "grenade", "maintenance_tools"]}
+      }
+    },
+    {
+      "group": "ITEMS",
+      "match": "WEAPONS-2",
+      "content_type": "weapon",
+      "description": "Firearms, drills, pistols, rifles, and heavy ranged weapons.",
+      "tags": ["weapon", "ranged_weapon", "firearm", "equipment"],
+      "cells": {
+        "r01c01": {"description": "Two-handed clamp or powered cutter tool.", "tags": ["cutter", "clamp_tool", "tool_weapon", "powered_tool"]},
+        "r01c02": {"description": "Handheld drill weapon.", "tags": ["drill", "drill_weapon", "powered_tool"]},
+        "r01c03": {"description": "Ornate mace or powered staff head.", "tags": ["mace", "staff", "blunt_weapon", "powered_weapon"]},
+        "r01c04": {"description": "Compact assault rifle or carbine.", "tags": ["rifle", "carbine", "assault_rifle", "firearm"]},
+        "r01c05": {"description": "Needle pistol or syringe pistol.", "tags": ["pistol", "needle_pistol", "sidearm", "firearm"]},
+        "r02c01": {"description": "Large industrial pistol or flamer-like sidearm.", "tags": ["pistol", "heavy_pistol", "flamer", "sidearm"]},
+        "r02c02": {"description": "Compact pistol with green energy cell.", "tags": ["pistol", "energy_pistol", "sidearm"]},
+        "r02c03": {"description": "Bulky orange energy pistol.", "tags": ["pistol", "plasma_pistol", "energy_weapon", "sidearm"]},
+        "r02c04": {"description": "Blue energy pistol.", "tags": ["pistol", "energy_pistol", "sidearm"]},
+        "r02c05": {"description": "Compact submachine gun or machine pistol.", "tags": ["submachine_gun", "machine_pistol", "firearm"]},
+        "r03c01": {"description": "Spiked mace or shock maul.", "tags": ["mace", "spiked_mace", "maul", "blunt_weapon"]},
+        "r03c02": {"description": "Revolver sidearm.", "tags": ["revolver", "pistol", "sidearm", "firearm"]},
+        "r03c03": {"description": "Boxy carbine or autogun.", "tags": ["rifle", "carbine", "autogun", "firearm"]},
+        "r03c04": {"description": "Heavy automatic pistol or compact rifle.", "tags": ["pistol", "compact_rifle", "firearm"]},
+        "r03c05": {"description": "Blue energy rifle.", "tags": ["rifle", "energy_rifle", "firearm", "energy_weapon"]},
+        "r04c01": {"description": "Long rifle with bayonet or extended barrel.", "tags": ["rifle", "long_rifle", "bayonet", "firearm"]},
+        "r04c02": {"description": "Coil weapon or cable-fed launcher.", "tags": ["launcher", "coil_weapon", "heavy_weapon"]},
+        "r04c03": {"description": "Organic chemical gun or bio weapon.", "tags": ["bio_weapon", "chemical_weapon", "gun", "ranged_weapon"]},
+        "r04c04": {"description": "Heavy flamer-like firearm.", "tags": ["flamer", "heavy_pistol", "firearm", "heavy_weapon"]},
+        "r04c05": {"description": "Boxy assault rifle.", "tags": ["rifle", "assault_rifle", "firearm"]},
+        "r05c01": {"description": "Scoped long rifle.", "tags": ["rifle", "sniper_rifle", "scope", "firearm"]},
+        "r05c02": {"description": "Long blue-energy rifle.", "tags": ["rifle", "energy_rifle", "scope", "energy_weapon"]},
+        "r05c03": {"description": "Compact boxy firearm.", "tags": ["pistol", "compact_firearm", "sidearm"]},
+        "r05c04": {"description": "Heavy blue energy cannon.", "tags": ["energy_cannon", "heavy_weapon", "energy_weapon"]},
+        "r05c05": {"description": "Compact assault rifle.", "tags": ["rifle", "assault_rifle", "firearm"]}
+      }
+    },
+    {
+      "group": "ITEMS",
+      "match": "Weapons-3+Newspaper-armors",
+      "description": "Ranged weapons, newspaper prop, and armor or clothing equipment.",
+      "replace_derived_tags": true,
+      "tags": ["mixed_equipment_sheet", "equipment"],
+      "row_rules": {
+        "r01": {"content_type": "weapon", "description": "Long guns and compact firearms.", "tags": ["firearm", "rifle", "ranged_weapon"]},
+        "r02": {"content_type": "weapon", "description": "Heavy guns, launchers, and belt-fed firearms.", "tags": ["heavy_weapon", "firearm", "launcher"]},
+        "r03": {"content_type": "wearable", "description": "Newspaper prop and first row of clothing or armor suits.", "tags": ["paper", "document", "armor", "clothing"]},
+        "r04": {"content_type": "wearable", "description": "Armor and outfit sets.", "tags": ["armor", "clothing", "outfit"]},
+        "r05": {"content_type": "wearable", "description": "Armor and outfit sets.", "tags": ["armor", "clothing", "outfit"]}
+      },
+      "cells": {
+        "r01c01": {"description": "Pump shotgun or launcher-style long gun.", "content_type": "weapon", "tags": ["shotgun", "launcher", "firearm"]},
+        "r01c02": {"description": "Scoped rifle.", "content_type": "weapon", "tags": ["rifle", "sniper_rifle", "scope"]},
+        "r01c03": {"description": "Scoped assault rifle.", "content_type": "weapon", "tags": ["rifle", "assault_rifle", "scope"]},
+        "r01c04": {"description": "Wood-stock rifle.", "content_type": "weapon", "tags": ["rifle", "long_rifle", "wood_stock"]},
+        "r01c05": {"description": "Compact automatic rifle.", "content_type": "weapon", "tags": ["rifle", "carbine", "firearm"]},
+        "r02c01": {"description": "Belt-fed heavy firearm.", "content_type": "weapon", "tags": ["machine_gun", "belt_fed", "heavy_weapon"]},
+        "r02c02": {"description": "Cable-fed heavy gun or flamer.", "content_type": "weapon", "tags": ["flamer", "heavy_weapon", "cable_fed"]},
+        "r02c03": {"description": "Twin-barrel heavy weapon.", "content_type": "weapon", "tags": ["heavy_weapon", "twin_barrel", "launcher"]},
+        "r02c04": {"description": "Belt-fed compact heavy firearm.", "content_type": "weapon", "tags": ["machine_gun", "belt_fed", "heavy_weapon"]},
+        "r02c05": {"description": "Tube launcher or grenade launcher.", "content_type": "weapon", "tags": ["launcher", "grenade_launcher", "heavy_weapon"]},
+        "r03c01": {"description": "Folded newspaper or printed document.", "content_type": "document", "tags": ["newspaper", "paper", "document"]},
+        "r03c02": {"description": "Ragged hooded outfit or light armor.", "content_type": "wearable", "tags": ["clothing", "hooded_outfit", "light_armor"]},
+        "r03c03": {"description": "Heavy black armor suit with helmet.", "content_type": "wearable", "tags": ["armor", "heavy_armor", "helmet"]},
+        "r03c04": {"description": "Blue armored bodysuit.", "content_type": "wearable", "tags": ["armor", "body_armor", "blue_armor"]},
+        "r03c05": {"description": "Vest and shirt clothing set.", "content_type": "wearable", "tags": ["clothing", "vest", "civilian_outfit"]},
+        "r04c01": {"description": "Formal noble coat outfit.", "content_type": "wearable", "tags": ["clothing", "formalwear", "noble_outfit"]},
+        "r04c02": {"description": "Ragged tactical armor outfit.", "content_type": "wearable", "tags": ["armor", "tactical_armor", "ragged_outfit"]},
+        "r04c03": {"description": "Augmented armor with cables and equipment.", "content_type": "wearable", "tags": ["armor", "augmented_armor", "cable_harness"]},
+        "r04c04": {"description": "Red hooded tech-priest style robe armor.", "content_type": "wearable", "tags": ["robe", "hooded_outfit", "techwear", "armor"]},
+        "r04c05": {"description": "Dark coat outfit with book and blade accessories.", "content_type": "wearable", "tags": ["clothing", "coat", "accessories", "blade"]},
+        "r05c01": {"description": "Black formal suit.", "content_type": "wearable", "tags": ["clothing", "formalwear", "suit"]},
+        "r05c02": {"description": "Ragged cult-style robe outfit.", "content_type": "wearable", "tags": ["clothing", "robe", "ragged_outfit"]},
+        "r05c03": {"description": "Gas-mask hazard outfit.", "content_type": "wearable", "tags": ["clothing", "gas_mask", "hazard_suit"]},
+        "r05c04": {"description": "Decorated officer armor.", "content_type": "wearable", "tags": ["armor", "officer_uniform", "decorated_armor"]},
+        "r05c05": {"description": "Purple and silver heavy armor.", "content_type": "wearable", "tags": ["armor", "heavy_armor", "purple_armor"]}
+      }
+    },
+    {
+      "group": "ITEMS",
+      "match": "Automotive_components",
+      "content_type": "vehicle_part",
+      "description": "Automotive and vehicle components.",
+      "tags": ["vehicle_part", "automotive", "mechanical_part", "engine_part"]
+    },
+    {
+      "group": "Objects",
+      "match": "Military_parts",
+      "content_type": "military_prop",
+      "description": "Military equipment, parts, and battlefield props.",
+      "tags": ["military", "equipment", "weapon_part", "prop"]
+    },
+    {
+      "group": "Objects",
+      "match": "Paperwork",
+      "content_type": "document",
+      "description": "Paperwork, documents, books, notes, and office clutter.",
+      "tags": ["paper", "document", "book", "office_prop"]
+    },
+    {
+      "group": "Objects",
+      "match": "FakeLostRelics",
+      "content_type": "relic",
+      "description": "Relics, artifacts, ceremonial objects, and display pieces.",
+      "tags": ["relic", "artifact", "valuable", "display_object"]
+    },
+    {
+      "group": "Objects",
+      "match": "trainstuff",
+      "content_type": "rail_prop",
+      "description": "Train, rail, and station equipment props.",
+      "tags": ["train", "rail", "station", "transport_prop"]
+    },
+    {
+      "group": "Objects",
+      "match": "Children's-Creche",
+      "content_type": "civilian_prop",
+      "description": "Creche, child-care, and civilian nursery objects.",
+      "tags": ["creche", "child", "civilian", "nursery", "furniture"]
+    }
+  ]
+}

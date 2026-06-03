@@ -53,7 +53,7 @@ final class EconomicTopologyFramework {
         SUMP_MARKET_EXCHANGE("sump market exchange district"),
         CRIMINAL_PRODUCTION_TURF("criminal production and smuggling turf"),
         LAW_SECURITY_NODE("law and security node"),
-        MECHANICUS_RELIC_SERVICE("Mechanicus relic-service district"),
+        MECHANICUS_RELIC_SERVICE("Mechanist Collegia relic-service district"),
         BIOLOGICAL_EXILE_CAMP("biological exile survival camp"),
         CULT_RITUAL_HIDEOUT("cult ritual logistics hideout"),
         UTILITY_SEWER_SPINE("utility sewer spine"),
@@ -172,7 +172,7 @@ final class EconomicTopologyFramework {
         FactionDoctrine exact = doctrineByFaction(faction);
         if (exact != null) return exact;
         String n = faction.name();
-        if (n.contains("MECHANICUS")) return doctrineByFaction(Faction.MECHANICUS);
+        if (n.contains("MECHANIST COLLEGIA")) return doctrineByFaction(Faction.MECHANIST_COLLEGIA);
         if (n.contains("GANGER") || faction == Faction.BANDIT) return doctrineByFaction(Faction.BANDIT);
         if (n.contains("NOBLE") || faction == Faction.NOBLE) return doctrineByFaction(Faction.NOBLE);
         if (n.contains("HIVER") || faction == Faction.HIVER) return doctrineByFaction(Faction.HIVER);
@@ -298,12 +298,12 @@ final class EconomicTopologyFramework {
                 new PressureProfile(4, 5, 3, 7, 4, 1, 5, 9),
                 "A territorial criminal industry: hidden rooms, coercive trade, stolen stock, contraband craft, and violent access control.",
                 "This profile exposes black-market and security pressure without changing district geometry.");
-        put(m, ZoneType.ARBITES_PRECINCT_EDGE, ZonePurpose.LAW_SECURITY_NODE, Faction.ARBITES, InfrastructureAgeBand.MAINTAINED,
+        put(m, ZoneType.ARBITES_PRECINCT_EDGE, ZonePurpose.LAW_SECURITY_NODE, Faction.CIVIC_WARDENS, InfrastructureAgeBand.MAINTAINED,
                 new CirculationClass[]{CirculationClass.ADMINISTRATIVE_QUEUE_LINE, CirculationClass.PUBLIC_SERVICE_SPINE},
                 new PressureProfile(1, 4, 4, 9, 1, 2, 2, 1),
                 "A lawful choke node where queues, cells, evidence, surveillance, and controlled counters shape civilian movement.",
                 "Security and access systems can use this profile without creating a separate precinct economy.");
-        put(m, ZoneType.MECHANICUS_RELIC_DUCT, ZonePurpose.MECHANICUS_RELIC_SERVICE, Faction.MECHANICUS, InfrastructureAgeBand.INHERITED,
+        put(m, ZoneType.MECHANICUS_RELIC_DUCT, ZonePurpose.MECHANICUS_RELIC_SERVICE, Faction.MECHANIST_COLLEGIA, InfrastructureAgeBand.INHERITED,
                 new CirculationClass[]{CirculationClass.MAINTENANCE_TUNNEL, CirculationClass.INDUSTRIAL_SERVICE_LOOP},
                 new PressureProfile(7, 5, 3, 4, 5, 6, 6, 1),
                 "A machine-service layer where old hardware, inherited ducts, restricted relic equipment, and maintenance doctrine define the terrain.",
@@ -333,7 +333,7 @@ final class EconomicTopologyFramework {
                 new PressureProfile(4, 9, 4, 4, 4, 1, 3, 3),
                 "A cargo handling zone where platforms, freight cages, workrooms, and track adjacency make logistics the primary identity.",
                 "This profile marks the zone as a throughput amplifier and congestion risk.");
-        put(m, ZoneType.ADMINISTRATUM_ARCHIVE, ZonePurpose.ADMINISTRATIVE_CONTROL_ARCHIVE, Faction.ADMINISTRATUM, InfrastructureAgeBand.MAINTAINED,
+        put(m, ZoneType.ADMINISTRATUM_ARCHIVE, ZonePurpose.ADMINISTRATIVE_CONTROL_ARCHIVE, Faction.CIVIC_LEDGER_OFFICE, InfrastructureAgeBand.MAINTAINED,
                 new CirculationClass[]{CirculationClass.ADMINISTRATIVE_QUEUE_LINE, CirculationClass.PUBLIC_SERVICE_SPINE},
                 new PressureProfile(1, 5, 6, 5, 1, 2, 3, 1),
                 "A paperwork and records machine that converts labor and access into permits, queues, delays, and control.",
@@ -343,7 +343,7 @@ final class EconomicTopologyFramework {
                 new PressureProfile(4, 7, 6, 8, 3, 2, 2, 1),
                 "A military support base where bunks, rations, stores, armory control, medical support, and vehicle-side logistics justify the district.",
                 "This is the schema hook for turning military zones into industrial consumers rather than static barracks maps.");
-        put(m, ZoneType.MECHANICUS_FORGE_CLOISTER, ZonePurpose.FORGE_CLOISTER, Faction.MECHANICUS, InfrastructureAgeBand.MAINTAINED,
+        put(m, ZoneType.MECHANICUS_FORGE_CLOISTER, ZonePurpose.FORGE_CLOISTER, Faction.MECHANIST_COLLEGIA, InfrastructureAgeBand.MAINTAINED,
                 new CirculationClass[]{CirculationClass.INDUSTRIAL_SERVICE_LOOP, CirculationClass.FREIGHT_ARTERY, CirculationClass.MAINTENANCE_TUNNEL},
                 new PressureProfile(9, 7, 5, 5, 7, 7, 3, 1),
                 "A production cloister where metallurgy, machine maintenance, sanctified work cells, and cargo movement are the reason the rooms exist.",
@@ -382,7 +382,7 @@ final class EconomicTopologyFramework {
                 new String[]{"public corridors", "mixed rooms"}, new String[]{"service spines", "shared corridors"},
                 new CirculationClass[]{CirculationClass.PUBLIC_SERVICE_SPINE, CirculationClass.HAB_BRANCH_CORRIDOR},
                 new PressureProfile(2, 3, 3, 1, 2, 1, 3, 1)));
-        out.add(new FactionDoctrine(Faction.MECHANICUS, "Forge-cloister industrial doctrine", "dominates metallurgy, machine parts, maintenance rites, refining, and technical infrastructure",
+        out.add(new FactionDoctrine(Faction.MECHANIST_COLLEGIA, "Forge-cloister industrial doctrine", "dominates metallurgy, machine parts, maintenance rites, refining, and technical infrastructure",
                 new String[]{"ore", "fuel", "scrap", "chemicals", "skilled labor"}, new String[]{"machine parts", "tools", "processed materials", "maintenance service"},
                 new String[]{"forge cells", "machine chapels", "relay rooms", "refineries"}, new String[]{"industrial loops", "freight arteries", "maintenance tunnels"},
                 new CirculationClass[]{CirculationClass.INDUSTRIAL_SERVICE_LOOP, CirculationClass.FREIGHT_ARTERY, CirculationClass.MAINTENANCE_TUNNEL},
@@ -392,7 +392,7 @@ final class EconomicTopologyFramework {
                 new String[]{"barracks", "armories", "ration stores", "vehicle bays"}, new String[]{"barracks grids", "cargo corridors", "checkpoint lanes"},
                 new CirculationClass[]{CirculationClass.BARRACKS_ACCESS_GRID, CirculationClass.CARGO_CORRIDOR, CirculationClass.FREIGHT_ARTERY},
                 new PressureProfile(4, 8, 6, 9, 3, 2, 2, 1)));
-        out.add(new FactionDoctrine(Faction.ARBITES, "Precinct control doctrine", "turns corridors, counters, cells, and records into lawful choke points",
+        out.add(new FactionDoctrine(Faction.CIVIC_WARDENS, "Precinct control doctrine", "turns corridors, counters, cells, and records into lawful choke points",
                 new String[]{"paperwork", "evidence", "restraints", "armor", "rations"}, new String[]{"permission pressure", "detention", "lawful coercion"},
                 new String[]{"holding cells", "evidence rooms", "public counters", "watch posts"}, new String[]{"queue lines", "controlled doors", "security desks"},
                 new CirculationClass[]{CirculationClass.ADMINISTRATIVE_QUEUE_LINE, CirculationClass.PUBLIC_SERVICE_SPINE},
@@ -412,7 +412,7 @@ final class EconomicTopologyFramework {
                 new String[]{"stash rooms", "back shops", "ambush corridors", "drug kitchens"}, new String[]{"hidden bypasses", "maintenance tunnels", "false fronts"},
                 new CirculationClass[]{CirculationClass.HIDDEN_BYPASS, CirculationClass.MAINTENANCE_TUNNEL},
                 new PressureProfile(4, 5, 3, 7, 4, 1, 5, 10)));
-        out.add(new FactionDoctrine(Faction.ADMINISTRATUM, "Bureaucratic control doctrine", "converts queues, files, forms, stamped permissions, and clerical labor into access control",
+        out.add(new FactionDoctrine(Faction.CIVIC_LEDGER_OFFICE, "Bureaucratic control doctrine", "converts queues, files, forms, stamped permissions, and clerical labor into access control",
                 new String[]{"paper", "clerks", "ink", "security", "petitioners"}, new String[]{"permits", "records", "delays", "legal gates"},
                 new String[]{"archives", "counter halls", "file cages", "permit offices"}, new String[]{"queue lines", "public counters", "locked records stacks"},
                 new CirculationClass[]{CirculationClass.ADMINISTRATIVE_QUEUE_LINE, CirculationClass.PUBLIC_SERVICE_SPINE},

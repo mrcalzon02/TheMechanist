@@ -1,0 +1,36 @@
+file	line	text
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\FallbackProfileManagementAuthority.java	485	+ "Import uses a temporary staging directory, path-safety checks, a size cap, and atomic replacement where the OS supports it. "
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\HybridEncryptionManager.java	39	* symmetric keys or private keys. Only the intended recipient can unwrap the temporary AES key.
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\HybridEncryptionManager.java	79	public SecretKey generateTemporaryAesKey() throws SecureChatCryptoException {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\HybridEncryptionManager.java	103	SecretKey aesKey = generateTemporaryAesKey();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\HybridEncryptionManager.java	144	throw new SecureChatCryptoException("Temporary AES key encapsulation failed.", e);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\ItemEconomyFramework.java	368	add(m,"Phosphor bulb","organic portable light",4,"swamps, abandoned hydroponics, sewer fungal patches","wild organic glow bulb that can be carried or thrown before it fades","USE carries the live glow; DROP/THROW plants temporary light",false);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\ItemEconomyFramework.java	774	add(m,"Sealed work suit","clothing/void/sealed",20,"cargo ports, hazard bays, pressure-lock stores","sealed suit for bad air, worse fluids, and temporary faith in gaskets","USE equips as sealed protective suit",false);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelBridgeBase.java	10	* Inherited compatibility surface for the temporary GamePanel bridge.
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	12	* Temporary compile bridge for post-shard GamePanel retirement.
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	129	final EnumMap<Faction, Integer> temporaryHostileTurns = new EnumMap<>(Faction.class);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	243	logEvent("GamePanel compatibility bridge initialized.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	256	void installMainMenuInputBridge() {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	276	if (e.getKeyCode() == java.awt.event.KeyEvent.VK_UP || e.getKeyCode() == java.awt.event.KeyEvent.VK_W) { selectedButton = Math.floorMod(selectedButton - 1, mainMenuRouteLabels().size()); repaint(); return; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	277	if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DOWN || e.getKeyCode() == java.awt.event.KeyEvent.VK_S) { selectedButton = Math.floorMod(selectedButton + 1, mainMenuRouteLabels().size()); repaint(); return; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	280	if (digit >= 0 && digit < mainMenuRouteLabels().size()) { selectedButton = digit; activateMainMenuRouteIndex(digit); repaint(); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	285	java.util.List<String> mainMenuRouteLabels() {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	300	java.util.List<String> labels = mainMenuRouteLabels();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	306	java.util.List<String> labels = mainMenuRouteLabels();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	312	case "New Game" -> startPackagedClientNewGame();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	322	void startPackagedClientNewGame() {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	389	paintGameBridgeSurface(g, w, h);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	403	private void paintGameBridgeSurface(java.awt.Graphics2D g, int w, int h) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	441	lines.add("Compatibility bridge boot surface active.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContextAdapters.java	9	* interfaces without forcing the temporary bridge class itself to grow into a
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelRetargetContexts.java	6	* Narrow context interfaces for retiring the temporary GamePanel bridge.
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\PersistenceFramework.java	112	ArrayList<String> hostile = new ArrayList<>(); for (Map.Entry<Faction,Integer> e : g.temporaryHostileTurns.entrySet()) hostile.add(e.getKey().name()+":"+e.getValue()); put(p,"factions.hostile",encList(hostile));
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\PersistenceFramework.java	192	g.initFactionState(); readFactionMap(p.getProperty("factions.standing",""), g.factionStanding); readFactionMap(p.getProperty("factions.hostile",""), g.temporaryHostileTurns); readFactionMap(p.getProperty("factions.marketPressure",""), g.factionMarketPressure);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldCommandRuntimeContext.java	7	* mutation.  The GamePanel adapter remains temporary; command records should
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7525	* The caller should retain legacy behavior only as a temporary fallback and not
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7609	* caller a clear result: migrated commit succeeded, retry candidate, or temporary
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7626	boolean allowTemporaryLegacyFallback) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7640	allowTemporaryLegacyFallback,
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7641	!allowTemporaryLegacyFallback,
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7674	allowTemporaryLegacyFallback,
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\WorldRuntimeGenerationFramework.java	7675	!allowTemporaryLegacyFallback,

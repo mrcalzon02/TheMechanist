@@ -1,0 +1,3 @@
+﻿file	line	column	kind	message
+javac.exe : src\mechanist\LegacyPanelContext.java	727		error	package java.awt.java.awt does not exist
+src\mechanist\LegacyPanelContext.java	745		error	package java.awt.java.awt does not exist

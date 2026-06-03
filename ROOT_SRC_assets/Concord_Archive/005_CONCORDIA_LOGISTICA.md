@@ -66,7 +66,7 @@ caskets, and restricted distillate-adjacent compounds.
 - Civic Identity Ledger: binds persons to ration, housing, labor, tax, burial, and legal presence.
 - Emergency Continuity Bureau: assumes control when ordinary allocation becomes too slow for
 plague, siege, breach, mutiny, or court disaster.
-- Audit Inquisition Desk: investigates impossible numbers, noble theft, ghost workers, duplicate
+- Audit Scrutiny Desk: investigates impossible numbers, noble theft, ghost workers, duplicate
 citizens, counterfeit seals, and warehouses that exist only during inspection.
 - Obsolescence and Salvage Authority: decides what machines, districts, archives, and citizens may
 be dismantled for the survival of other systems.
@@ -721,7 +721,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -738,7 +738,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -755,7 +755,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -772,7 +772,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -789,7 +789,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -806,7 +806,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -823,7 +823,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -840,7 +840,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -857,7 +857,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -874,7 +874,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -891,7 +891,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -908,7 +908,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -925,7 +925,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -942,7 +942,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -959,7 +959,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -976,7 +976,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -993,7 +993,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -1010,7 +1010,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -1027,7 +1027,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It
@@ -1044,7 +1044,7 @@ the line now waits for ink. This is why old clerks become severe when novices mo
 The dead are present in the margins even when no Mortis seal appears.
 
 Misuse of the form can move resources, hide theft, erase citizens, save neighborhoods, or
-condemn them. The Audit Inquisition Desk treats every neat form as suspicious until disorder
+condemn them. The Audit Scrutiny Desk treats every neat form as suspicious until disorder
 confirms honesty. Criminals forge chaos poorly; nobles forge cleanliness very well.
 
 During crisis the form may be completed after the act. This does not absolve the actor. It

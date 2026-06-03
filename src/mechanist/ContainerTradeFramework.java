@@ -15,7 +15,7 @@ import java.util.List;
 class MapObjectState {
     String id, type, label, stockState; int x, y, cooldownUntilTurn, vendCount; char glyph;
     static MapObjectState vending(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type="vending";m.label="Vending machine "+glyph+" / "+z.label;m.stockState="seeded-stock";m.cooldownUntilTurn=0;m.vendCount=0;m.id="VM-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
-    static MapObjectState shrine(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type=(glyph=='H'?"heretical-shrine":"imperial-shrine");m.label=(glyph=='H'?"Heretical shrine":"Imperial shrine")+" / "+z.label;m.stockState="passive";m.id="SH-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
+    static MapObjectState shrine(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type=(glyph=='H'?"heretical-shrine":"concord-shrine");m.label=(glyph=='H'?"Heretical shrine":"Concord shrine")+" / "+z.label;m.stockState="passive";m.id="SH-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
     static MapObjectState shop(int x, int y, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='T';m.type="shop";m.label="Trader stock point / "+z.label;m.stockState="zone-appropriate-inventory";m.id="SHOP-"+Math.abs(Objects.hash(x,y,z.label)); return m; }
     static MapObjectState governor(int x, int y, ZoneType z, long seed){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='Q';m.type="sector-governor";m.label="Sector Governor audience dais / "+z.label;m.stockState=(Math.floorMod(seed ^ (x*31L) ^ (y*17L),100)<35?"seed-ticket-present":"seed-ticket-absent");m.id="GOV-"+Math.abs(Objects.hash(x,y,z.label,seed)); return m; }
     static MapObjectState emergencyMachine(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type="martian-emergency-machine";m.label="EMM "+glyph+" / "+z.label;m.stockState="locked-state-seeded; powered-state-persistent";m.id="EMM-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
@@ -23,7 +23,7 @@ class MapObjectState {
     static MapObjectState corpseObject(int x, int y, String id, String label, String containerId, Faction f, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='r';m.type="corpse-container";m.label=(label==null||label.isBlank()?"Corpse":label)+" / "+(f==null?"Unknown":f.label)+" / "+z.label;m.stockState=containerId==null?"":containerId;m.cooldownUntilTurn=0;m.vendCount=0;m.id=id; return m; }
     static MapObjectState thrownExplosive(int x, int y, String item, ZoneType z, int dueTurn, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='*';m.type="thrown-explosive";m.label="Thrown " + item + " / " + (z==null?"Unknown zone":z.label);m.stockState=(item==null?"Frag grenade":item)+";under="+(int)underlying;m.cooldownUntilTurn=dueTurn;m.vendCount=0;m.id="THROWN-EXP-"+Math.abs(Objects.hash(x,y,item,dueTurn)); return m; }
     static MapObjectState plantedExplosive(int x, int y, String item, ZoneType z, int armedTurn, char underlying, String owner){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='!';m.type="planted-explosive";m.label="Planted " + item + " / " + (owner==null?"unknown":owner) + " / " + (z==null?"Unknown zone":z.label);m.stockState=(item==null?"Tripwire mine":item)+";under="+(int)underlying;m.cooldownUntilTurn=armedTurn;m.vendCount=1;m.id="PLANTED-EXP-"+Math.abs(Objects.hash(x,y,item,armedTurn,owner)); return m; }
-    static MapObjectState newsVending(int x, int y, ZoneType z, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='1';m.type=AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER;m.label="Imperial News Network newspaper dispenser / "+(z==null?"Unknown zone":z.label);m.stockState="daily-paper;under="+(int)underlying;m.cooldownUntilTurn=0;m.vendCount=0;m.id="INN-VEND-"+Math.abs(Objects.hash(x,y,z==null?"zone":z.label)); return m; }
+    static MapObjectState newsVending(int x, int y, ZoneType z, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='1';m.type=AssetIntegrationDisciplineAuthority.INN_NEWSPAPER_DISPENSER;m.label="Concord News Network newspaper dispenser / "+(z==null?"Unknown zone":z.label);m.stockState="daily-paper;under="+(int)underlying;m.cooldownUntilTurn=0;m.vendCount=0;m.id="INN-VEND-"+Math.abs(Objects.hash(x,y,z==null?"zone":z.label)); return m; }
     static MapObjectState oldNewspaper(int x, int y, int issueDay, ZoneType z, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='o';m.type=AssetIntegrationDisciplineAuthority.DISCARDED_NEWSPRINT_SOURCE;m.label="Discarded INN newspaper / "+(z==null?"Unknown zone":z.label);m.stockState=Math.max(0,issueDay)+";under="+(int)underlying;m.cooldownUntilTurn=0;m.vendCount=0;m.id="INN-OLD-PAPER-"+Math.abs(Objects.hash(x,y,issueDay,z==null?"zone":z.label)); return m; }
     static MapObjectState broadcastDevice(int x, int y, String kind, ZoneType z, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='N';m.type="broadcast-device";String k=(kind==null||kind.isBlank()?"radio":kind);m.label="INN "+k+" receiver / "+(z==null?"Unknown zone":z.label);m.stockState=k+";under="+(int)underlying;m.cooldownUntilTurn=0;m.vendCount=0;m.id="INN-BCAST-"+Math.abs(Objects.hash(x,y,k,z==null?"zone":z.label)); return m; }
     static MapObjectState bankTerminal(int x, int y, BankProfile b, boolean branch, ZoneType z, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='$';m.type="bank-terminal";m.label=(branch?"Bank branch office":"Credit terminal kiosk")+" / "+(b==null?"Unknown Bank":b.label)+" / "+(z==null?"Unknown zone":z.label);m.stockState=(b==null?"sump-ledger-mutual":b.id)+";kind="+(branch?"branch":"atm")+";under="+(int)underlying;m.cooldownUntilTurn=0;m.vendCount=0;m.id="BANK-"+Math.abs(Objects.hash(x,y,b==null?"bank":b.id,branch,z==null?"zone":z.label)); return m; }
@@ -208,8 +208,8 @@ class FacilityLinkedRoomCacheApi {
                 (facility == null ? "" : facility.summary())).toLowerCase(Locale.ROOT);
         ArrayList<String> extras = new ArrayList<>();
         if (has(text,"guard","munition","barracks","drill","field mess")) add(extras,"Guard field ration tin","Guard drill manual","Guard flak vest","Guard entrenching tool","Guard lascarbine");
-        if (has(text,"mechanicus","forge","diagnostic","galley","chapel","cable")) add(extras,"Mechanicus calibration probe","Mechanicus nutrient ampoule","Mechanicus catechism strip","Sacred wire bundle","Machine oil vial","Mechanicus tool roll");
-        if (has(text,"arbites","evidence","holding","complaint","precinct")) add(extras,"Arbites restraint kit","Arbites casebook excerpt","Arbites riot visor","Arbites shock maul","Arbites suppression shells");
+        if (has(text,"mechanist Collegia","forge","diagnostic","galley","chapel","cable")) add(extras,"Mechanist Collegia calibration probe","Mechanist Collegia nutrient ampoule","Mechanist Collegia catechism strip","Sacred wire bundle","Machine oil vial","Mechanist Collegia tool roll");
+        if (has(text,"civic Wardens","evidence","holding","complaint","precinct")) add(extras,"Civic Wardens restraint kit","Civic Wardens casebook excerpt","Civic Wardens riot visor","Civic Wardens shock maul","Civic Wardens suppression shells");
         if (has(text,"noble","house","salon","dining","pantry","luxury")) add(extras,"Noble preserved delicacy","Noble etiquette card","Noble signet wax kit","Noble fur-lined coat","Noble dueling pistol");
         if (has(text,"rail","cargo","freight","depot","platform")) add(extras,"Rail cargo stencil kit","Warehouse inventory tag bundle","Rail worker hazard coat","Rail spike hammer","Cargo hook");
         if (has(text,"market","barter","storefront","pawn","sump")) add(extras,"Trade chit","Market scale set","Water bottle","Market vendor sash","Warehouse inventory tag bundle");
@@ -263,7 +263,7 @@ class FacilityLinkedRoomCacheApi {
         String inputs = "facility=" + facilityText + "; faction epochs=" + history + "; zone facility ledger=" + zoneFacility + "; production output ledger=" + production + "; stock movement ledger=" + movement + "; matched movement=" + matchedMovement + "; conflict/loss ledger=" + conflict + "; matched conflict=" + matchedConflict + "; historical item materialization ledger=" + materialized + "; matched materialized item=" + matchedMaterialized + "; labor assignment ledger=" + labor + "; matched labor=" + matchedLabor;
         String route = "stored by ordinary room cache under facility-history authority -> recoverable by scavenging";
         ItemProvenanceRecord pr = ItemProvenanceRecord.of(item, f, maker, w, turn, inputs, route);
-        pr.place = (w == null ? "unknown hive" : w.hiveName + " / " + w.sectorName + " / " + w.zoneName + " / " + (zt == null ? w.zoneType.label : zt.label)) + " / room #" + Math.max(0, roomId);
+        pr.place = (w == null ? "unknown arcology" : w.hiveName + " / " + w.sectorName + " / " + w.zoneName + " / " + (zt == null ? w.zoneType.label : zt.label)) + " / room #" + Math.max(0, roomId);
         String facilityId = facility == null || facility.id == null || facility.id.isBlank() ? "facility.unmatched" : facility.id;
         String outputRef = ProductionFacilityOutputSimulationApi.outputChainFor(w, facility);
         String movementRef = ProductionDistributionApi.movementChainFor(w, facility, rp);
@@ -334,7 +334,7 @@ class RoomLootApi {
     private static void addFood(ArrayList<String> out, ZoneType zt, String text) {
         if (zt == ZoneType.IMPERIAL_GUARD_BILLET) { add(out,"Guard field ration tin","Plain ration pack","Sealed cafeteria cutlery"); return; }
         if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) { add(out,"Noble preserved delicacy","Cheap lunch tin","Sealed cafeteria cutlery"); return; }
-        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) { add(out,"Mechanicus nutrient ampoule","Water purification tab","Sealed cafeteria cutlery"); return; }
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) { add(out,"Mechanist Collegia nutrient ampoule","Water purification tab","Sealed cafeteria cutlery"); return; }
         if (zt == ZoneType.SUMP_MARKET || zt == ZoneType.SEWER_CONDUIT || zt == ZoneType.MUTANT_SEWER_CAMP || zt == ZoneType.MUTANT_WARRENS) { add(out,"Sump fungus loaf","Tin of corpse-starch","Water purification tab"); return; }
         if (zt == ZoneType.CULTIST_SEWER_CAMP) { add(out,"Cult offering wafer","Tin of corpse-starch","Dirty canteen"); return; }
         add(out,"Cheap lunch tin","Emergency rations","Child creche snack pack");
@@ -343,12 +343,12 @@ class RoomLootApi {
     private static void addWater(ArrayList<String> out, ZoneType zt, String text) {
         if (zt == ZoneType.SUMP_MARKET || zt == ZoneType.SEWER_CONDUIT) add(out,"Water guild token","Filter canteen","Water purification tab","Sealed water ration");
         else if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) add(out,"Sealed water ration","Water bottle","Noble preserved delicacy");
-        else if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) add(out,"Water purification tab","Filter canteen","Mechanicus nutrient ampoule");
+        else if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) add(out,"Water purification tab","Filter canteen","Mechanist Collegia nutrient ampoule");
         else add(out,"Water bottle","Water ration","Sealed water ration","Dirty canteen");
     }
 
     private static void addParts(ArrayList<String> out, ZoneType zt, String text) {
-        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) add(out,"Mechanicus calibration probe","Servo-skull maintenance kit","Machine part","Sacred wire bundle","Machine oil vial");
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) add(out,"Mechanist Collegia calibration probe","Servo-skull maintenance kit","Machine part","Sacred wire bundle","Machine oil vial");
         else if (zt == ZoneType.TRAIN_SERVICE_YARD || zt == ZoneType.NEUTRAL_RAIL_DEPOT) add(out,"Rail cargo stencil kit","Cargo hook","Machine part","Wire bundle","Work gloves");
         else if (zt == ZoneType.TRASH_WARREN || zt == ZoneType.SUMP_MARKET || zt == ZoneType.GANGER_TURF) add(out,"Scrap recycler gasket set","Machine part","Wire bundle","Lockpicks","Market scale set");
         else add(out,"Machine part","Wire bundle","Tool bundle","Spare bolts");
@@ -378,7 +378,7 @@ class RoomLootApi {
         if (ItemCatalog.get(legacy) != null) return legacy;
         if (x.contains("guard ration") || x.contains("ration tin")) return "Guard field ration tin";
         if (x.contains("fine meal") || x.contains("spice") || x.contains("silver ration")) return "Noble preserved delicacy";
-        if (x.contains("nutrient") || x.contains("paste")) return "Mechanicus nutrient ampoule";
+        if (x.contains("nutrient") || x.contains("paste")) return "Mechanist Collegia nutrient ampoule";
         if (x.contains("fungus")) return "Sump fungus loaf";
         if (x.contains("cult") || x.contains("offering")) return "Cult offering wafer";
         if (x.contains("toy")) return "Creche lesson toy";
@@ -408,8 +408,8 @@ class RoomLootApi {
 
     private static String clothingFor(ZoneType zt){
         if (zt == ZoneType.IMPERIAL_GUARD_BILLET) return "Guard flak vest";
-        if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Arbites riot visor";
-        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Mechanicus rubberized apron";
+        if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens riot visor";
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Mechanist Collegia rubberized apron";
         if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) return "Noble fur-lined coat";
         if (zt == ZoneType.SUMP_MARKET) return "Market vendor sash";
         if (zt == ZoneType.CULTIST_SEWER_CAMP) return "Cult hooded wrap";
@@ -423,17 +423,17 @@ class RoomLootApi {
         if (zt == ZoneType.IMPERIAL_NEWS_NETWORK) return "Fresh INN newspaper";
         if (zt == ZoneType.IMPERIAL_NEWS_NETWORK) return "Fresh INN newspaper";
         if (zt == ZoneType.TRAIN_SERVICE_YARD || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return "Rail cargo stencil kit";
-        if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Arbites restraint kit";
+        if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens restraint kit";
         return "Warehouse inventory tag bundle";
     }
     private static String commerceGoodFor(ZoneType zt){
         if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) return "Noble signet wax kit";
-        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE) return "Administratum stamp matrix";
+        if (zt == ZoneType.ADMINISTRATUM_ARCHIVE) return "Civic Ledger Office stamp matrix";
         if (zt == ZoneType.SUMP_MARKET) return "Market scale set";
         if (zt == ZoneType.TRAIN_SERVICE_YARD || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return "Rail cargo stencil kit";
         return "Permit form";
     }
-    private static String medicalGoodFor(ZoneType zt){ return zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT ? "Mechanicus calibration probe" : (zt == ZoneType.IMPERIAL_GUARD_BILLET ? "Field dressings" : "Medkit"); }
+    private static String medicalGoodFor(ZoneType zt){ return zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT ? "Mechanist Collegia calibration probe" : (zt == ZoneType.IMPERIAL_GUARD_BILLET ? "Field dressings" : "Medkit"); }
     private static String labEquipmentFor(ZoneType zt, String text){
         String t = text == null ? "" : text.toLowerCase(Locale.ROOT);
         if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Calibrated assay shrine";
@@ -450,7 +450,7 @@ class RoomLootApi {
     private static String chemGoodFor(ZoneType zt){
         if (zt == ZoneType.IMPERIAL_GUARD_BILLET) return "Medi-Stimm";
         if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Black Badge";
-        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Cogitator Blue";
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Logic Engine Blue";
         if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) return "Pearl Obscura";
         if (zt == ZoneType.GANGER_TURF) return "Street Stimm";
         if (zt == ZoneType.CULTIST_SEWER_CAMP) return "Witchsalt";
@@ -460,14 +460,14 @@ class RoomLootApi {
     }
     private static String knowledgeGoodFor(ZoneType zt){
         if (zt == ZoneType.IMPERIAL_GUARD_BILLET) return "Guard drill manual";
-        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Mechanicus catechism strip";
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Mechanist Collegia catechism strip";
         if (zt == ZoneType.IMPERIAL_NEWS_NETWORK) return "Fresh INN newspaper";
-        if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Arbites casebook excerpt";
+        if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Civic Wardens casebook excerpt";
         if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) return "Noble etiquette card";
         return "Primer slate";
     }
     private static String weaponOrSecurityGoodFor(ZoneType zt){
-        if (zt == ZoneType.IMPERIAL_GUARD_BILLET) return "Lasgun";
+        if (zt == ZoneType.IMPERIAL_GUARD_BILLET) return "Light Rifle";
         if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Webber";
         if (zt == ZoneType.GANGER_TURF) return "Pipe shotgun";
         if (zt == ZoneType.CULTIST_SEWER_CAMP) return "Heretic nail flail";
@@ -495,11 +495,11 @@ class RoomLootApi {
         if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Arc capacitor pack";
         return "Stub cartridge box";
     }
-    private static String securityGoodFor(ZoneType zt){ return zt == ZoneType.ARBITES_PRECINCT_EDGE ? "Arbites restraint kit" : "Lockpicks"; }
+    private static String securityGoodFor(ZoneType zt){ return zt == ZoneType.ARBITES_PRECINCT_EDGE ? "Civic Wardens restraint kit" : "Lockpicks"; }
     private static String zoneGeneralGood(ZoneType zt){
         if (zt == ZoneType.IMPERIAL_GUARD_BILLET) return "Guard field ration tin";
         if (zt == ZoneType.ARBITES_PRECINCT_EDGE) return "Citation slate";
-        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Mechanicus calibration probe";
+        if (zt == ZoneType.MECHANICUS_FORGE_CLOISTER || zt == ZoneType.MECHANICUS_RELIC_DUCT) return "Mechanist Collegia calibration probe";
         if (zt == ZoneType.NOBLE_SERVICE_SPINE || zt == ZoneType.SECTOR_GOVERNORS_MANSION) return "Noble preserved delicacy";
         if (zt == ZoneType.SUMP_MARKET) return "Market scale set";
         if (zt == ZoneType.TRAIN_SERVICE_YARD || zt == ZoneType.NEUTRAL_RAIL_DEPOT) return "Rail cargo stencil kit";
@@ -523,20 +523,20 @@ class TraderStockExpansionApi {
             if(r.nextBoolean()) add(t,"Guard flak vest","armor",24,"surplus or semi-surplus flak protection.");
             if(r.nextInt(100)<35) add(t,"Las charge pack","ammo",9,"regulated energy ammunition stock.");
             if(r.nextInt(100)<18) add(t,"Frag grenade","weapon/explosive",22,"controlled munition with unpleasant room-clearing utility.");
-            if(r.nextInt(100)<20) add(t,"Lasgun","weapon/ranged",36,"regulated long-las family stock with quartermaster history.");
+            if(r.nextInt(100)<20) add(t,"Light Rifle","weapon/ranged",36,"regulated long-las family stock with quartermaster history.");
         } else if(z == ZoneType.ARBITES_PRECINCT_EDGE){
-            add(t,"Arbites restraint kit","security/tool",15,"restraints, seals, tags, and bad civic news.");
+            add(t,"Civic Wardens restraint kit","security/tool",15,"restraints, seals, tags, and bad civic news.");
             if(r.nextBoolean()) add(t,"Black Badge","chem/security-interrogation",24,"restricted alertness chem from evidence-adjacent channels.");
             if(r.nextInt(100)<18) add(t,"Interrogation dosing cradle","equipment/lab/security",70,"security dosing apparatus with paperwork or worse.");
-            add(t,"Arbites riot visor","armor",18,"protective visor with institutional scratches.");
-            if(r.nextInt(100)<30) add(t,"Arbites suppression shells","ammo/security",11,"controlled suppression ammunition.");
+            add(t,"Civic Wardens riot visor","armor",18,"protective visor with institutional scratches.");
+            if(r.nextInt(100)<30) add(t,"Civic Wardens suppression shells","ammo/security",11,"controlled suppression ammunition.");
             if(r.nextInt(100)<18) add(t,"Webber","weapon/security",64,"capture weapon with controlled-issue provenance.");
         } else if(z == ZoneType.MECHANICUS_FORGE_CLOISTER || z == ZoneType.MECHANICUS_RELIC_DUCT){
-            add(t,"Mechanicus calibration probe","tool",16,"diagnostic probe for machine and lock work.");
-            add(t,"Mechanicus nutrient ampoule","food/chemical",8,"nutrient dose from machine-cult stores.");
-            if(r.nextBoolean()) add(t,"Cogitator Blue","chem/labor-control",12,"logic-adept focus compound with machine-cult paperwork.");
-            if(r.nextInt(100)<22) add(t,"Calibrated assay shrine","equipment/lab/mechanicus",92,"Mechanicus chemical assay apparatus with power and maintenance demands.");
-            if(r.nextInt(100)<28) add(t,"Mechanicus arc prod","weapon/tool",32,"electrical tool with combat implications.");
+            add(t,"Mechanist Collegia calibration probe","tool",16,"diagnostic probe for machine and lock work.");
+            add(t,"Mechanist Collegia nutrient ampoule","food/chemical",8,"nutrient dose from machine-cult stores.");
+            if(r.nextBoolean()) add(t,"Logic Engine Blue","chem/labor-control",12,"logic-adept focus compound with machine-cult paperwork.");
+            if(r.nextInt(100)<22) add(t,"Calibrated assay shrine","equipment/lab/mechanist Collegia",92,"Mechanist Collegia chemical assay apparatus with power and maintenance demands.");
+            if(r.nextInt(100)<28) add(t,"Mechanist Collegia arc prod","weapon/tool",32,"electrical tool with combat implications.");
             if(r.nextInt(100)<14) add(t,"Arc Rifle","weapon/ranged",78,"rite-tagged arc weapon from forge custody.");
         } else if(z == ZoneType.NOBLE_SERVICE_SPINE || z == ZoneType.SECTOR_GOVERNORS_MANSION){
             add(t,"Noble preserved delicacy","food/luxury",28,"sealed luxury food for high-status trade.");
@@ -677,7 +677,7 @@ class TraderSupplyChainApi {
         if (text.contains("armory") || text.contains("weapon")) return "Stub rounds";
         if (text.contains("clinic") || text.contains("medical")) return "Bandage roll";
         if (text.contains("warehouse") || text.contains("cargo")) return "Warehouse inventory tag bundle";
-        if (text.contains("mechanicus")) return "Mechanicus calibration probe";
+        if (text.contains("mechanist Collegia")) return "Mechanist Collegia calibration probe";
         return "Trade chit";
     }
 
@@ -698,10 +698,10 @@ class TraderSession {
         t.archetype = npc == null ? "Trader" : npc.role;
         t.zoneLabel = zone == null ? "Unknown Zone" : zone.label;
         ZoneType z = zone == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : zone;
-        if (z == ZoneType.MECHANICUS_FORGE_CLOISTER || (npc != null && npc.faction.name().startsWith("MECHANICUS"))) {
+        if (z == ZoneType.MECHANICUS_FORGE_CLOISTER || (npc != null && npc.faction.name().startsWith("MECHANIST COLLEGIA"))) {
             t.offers.add(new TradeOffer("Machine part", "mechanical", 3, "usable in workbench fabrication and machine repair."));
             t.offers.add(new TradeOffer("Mechanical detritus", "mechanical", 2, "scrap-mouth parts and incomplete components."));
-            t.offers.add(new TradeOffer("Mechanicus tool roll", "tool", 8, "improves door, machine, and workbench checks."));
+            t.offers.add(new TradeOffer("Mechanist Collegia tool roll", "tool", 8, "improves door, machine, and workbench checks."));
             t.offers.add(new TradeOffer("Sacred wire bundle", "component", 5, "useful in electrical and EMM construction later."));
             t.offers.add(new TradeOffer("Data spike", "security", 18, "single-use electronic intrusion spike for vending hacks and electronic locks."));
         } else if (z == ZoneType.GANGER_TURF || (npc != null && (npc.faction == Faction.BANDIT || npc.faction.name().startsWith("GANGER")))) {

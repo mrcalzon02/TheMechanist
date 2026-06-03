@@ -1,0 +1,67 @@
+file	line	text
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AudioRuntimeFramework.java	29	put("intro_crawl_narration", "assets/sound/voice/new_world_intro_crawl_narration.wav");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AudioRuntimeFramework.java	131	File f = sounds.get("intro_crawl_narration");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AudioRuntimeFramework.java	132	if (f == null) { DebugLog.warn("AUDIO", "Intro crawl narration is unavailable; continuing with silent crawl."); return; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AudioRuntimeFramework.java	163	DebugLog.audit("INTRO_CRAWL_AUDIO", "Started narration file=" + f.getName() + " durationMs=" + (clip.getMicrosecondLength() / 1000L));
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AudioRuntimeFramework.java	166	DebugLog.error("INTRO_CRAWL_AUDIO", "Failed to play intro crawl narration from " + f, t);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\AudioRuntimeFramework.java	176	DebugLog.audit("INTRO_CRAWL_AUDIO", "Stopped narration: " + reason);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\BootSurfacePainter.java	11	final class BootSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\BootSurfacePainter.java	27	drawCentered(g, "boot sequence // " + (elapsed / 250L % 4 == 0 ? "." : elapsed / 250L % 4 == 1 ? ".." : elapsed / 250L % 4 == 2 ? "..." : "...."), w / 2, Math.max(120, h / 3 + 42));
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\CombatRuntimeFramework.java	160	l.add("Use LOAD SAVE below to open the save/load menu, then choose a manual slot, hourly autosave, or zone-transition autosave. Quit returns to the main menu.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\ContinuousGridMovementFramework.java	308	@Override protected void paintComponent(Graphics g) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\ContinuousGridMovementFramework.java	309	super.paintComponent(g);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	63	panel.setScreen(GamePanel.Screen.MENU);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	67	panel.setScreen(GamePanel.Screen.MENU);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\GamePanelKeyController.java	70	panel.setScreen(GamePanel.Screen.MENU);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\IntroCrawlSurfacePainter.java	14	* Extracted renderer for the intro crawl surface.
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\IntroCrawlSurfacePainter.java	20	final class IntroCrawlSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\IntroCrawlSurfacePainter.java	100	drawCentered(g, "Shard Mining Surface / Intro Crawl", w / 2, titleY + Math.max(26, title.getSize() / 2 + 16));
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\JvmRuntimeProfileAuthority.java	121	case LAUNCHER_MENU: return "Launcher/Main Menu";
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	30	if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	32	panel.continueFromIntroCrawl();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	37	if (panel.screen == GamePanel.Screen.ZONE_SPLASH) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	39	panel.continueFromZoneSplash();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	51	if (panel.screen == GamePanel.Screen.BOOT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\KeyEarlyScreenController.java	54	panel.finishBootSequence("key");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LauncherShellStateAuthority.java	96	out.add("Purpose: keep the main menu as a launcher-facing state shell instead of direct scattered button behavior.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	39	enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	212	Screen screen = Screen.MENU;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	260	if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	268	if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) return;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	275	if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) return;
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	310	logEvent("Main menu route selected: " + route);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	317	case "Quit" -> requestApplicationExit("main menu quit route");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	318	default -> logEvent("Unhandled main menu route: " + route);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	335	protected void paintComponent(java.awt.Graphics graphics) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	336	super.paintComponent(graphics);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	347	if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	467	void setScreen(Screen next) { screen = next == null ? Screen.MENU : next; }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	535	void continueFromIntroCrawl() { setScreen(Screen.GAME); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	536	void continueFromZoneSplash() { setScreen(Screen.GAME); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	537	void finishBootSequence(String source) { setScreen(Screen.MENU); logEvent("Boot sequence finished by " + source + "."); }
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	748	if (!("title_mechanist_rebase".equalsIgnoreCase(key) || "title_mechanist".equalsIgnoreCase(key) || "subtitle_rebase".equalsIgnoreCase(key))) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	760	if ("title_mechanist_rebase".equalsIgnoreCase(key) || "title_mechanist".equalsIgnoreCase(key)) return generatedTitle("THE MECHANIST", "PACKAGE ASSET FALLBACK");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	761	if ("subtitle_rebase".equalsIgnoreCase(key)) return generatedSubtitle("INDEXED 32PX ASSET PACKAGE ACTIVE");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\LoadingSurfacePainter.java	11	final class LoadingSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MainMenuSurfacePainter.java	12	final class MainMenuSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	171	load("title_mechanist", "assets/generated/the_mechanist_title.png");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	175	load("title_mechanist_rebase", artRootPath + "/source/Title/TITEL.png");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	176	load("subtitle_rebase", artRootPath + "/source/Title/Sub title.png");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	465	Path p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	467	p = Paths.get("packages", "client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	469	p = Paths.get("client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	472	p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MediaRuntimeFramework.java	483	DebugLog.error("INTRO_CRAWL_TEXT", "Failed to read " + p, t);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	12	if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	13	panel.continueFromIntroCrawl();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	20	if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	21	panel.continueFromIntroCrawl();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	24	if (panel.screen == GamePanel.Screen.ZONE_SPLASH) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MouseEarlyScreenController.java	25	panel.continueFromZoneSplash();
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MultiplayerConversionWarningDialog.java	20	static final String WARNING_TEXT = "WARNING: Converting this single-player world to a local multiplayer session will permanently change the save file architecture. The system will separate player data from world data to support incoming clients, and switch to multiplayer respawn logic. To convert this world back to a strictly turn-based single-player environment, you must exit to the main menu and restart the session.";
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\MultiplayerSurfacePainter.java	10	final class MultiplayerSurfacePainter implements ScreenPainter {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\OptionsScreenPainter.java	202	lines.add("Launcher/main menu, graphical client, thin network client, single-player combined, and headless server are separate profiles of the same program.");
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\SimulationEditorSuite.java	366	@Override protected void paintComponent(Graphics graphics) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\SimulationEditorSuite.java	367	super.paintComponent(graphics);
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\TreeCanvasPanel.java	143	@Override protected void paintComponent(Graphics graphics) {
+C:\GITS\The Mechanist\TheMechanist\src\mechanist\TreeCanvasPanel.java	144	super.paintComponent(graphics);
