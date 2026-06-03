@@ -1,0 +1,1158 @@
+{
+  "schema": "mechanist.audio_package_audit.v1",
+  "generated_utc": "2026-06-03T01:50:21+00:00",
+  "dry_run": false,
+  "package_client": "C:\\GITS\\The Mechanist\\TheMechanist\\PACKAGE_client",
+  "audio_file_count": 108,
+  "package_audio_file_count": 3,
+  "external_audio_file_count": 105,
+  "java_audio_reference_count": 35,
+  "missing_package_reference_count": 31,
+  "copied_all_audio_count": 0,
+  "audio_files": [
+    {
+      "path": "PACKAGE_client/assets/sound/core/ambient_alarm_far_01.wav",
+      "package_client": true,
+      "size_bytes": 55168,
+      "extension": ".wav",
+      "copy_candidate": false
+    },
+    {
+      "path": "PACKAGE_client/assets/sound/core/ambient_chime_01.wav",
+      "package_client": true,
+      "size_bytes": 48554,
+      "extension": ".wav",
+      "copy_candidate": false
+    },
+    {
+      "path": "PACKAGE_client/assets/sound/core/ambient_press_01.wav",
+      "package_client": true,
+      "size_bytes": 31796,
+      "extension": ".wav",
+      "copy_candidate": false
+    },
+    {
+      "path": "PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_alarm_far_01.wav",
+      "package_client": false,
+      "size_bytes": 55168,
+      "extension": ".wav",
+      "copy_candidate": true
+    },
+    {
+      "path": "PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_chime_01.wav",
+      "package_client": false,
+      "size_bytes": 48554,
+      "extension": ".wav",
+      "copy_candidate": true
+    },
+    {
+      "path": "PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_press_01.wav",
+      "package_client": false,
+      "size_bytes": 31796,
+      "extension": ".wav",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Chainblade ShrineGang1.mp3",
+      "package_client": false,
+      "size_bytes": 4612434,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Chainblade ShrineGang2.mp3",
+      "package_client": false,
+      "size_bytes": 3996408,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/False Seal RunTrain1.mp3",
+      "package_client": false,
+      "size_bytes": 4114531,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/False Seal RunTrain2.mp3",
+      "package_client": false,
+      "size_bytes": 1345538,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Ferrocrete LawEnforce1.mp3",
+      "package_client": false,
+      "size_bytes": 3885932,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Ferrocrete LawEnforce2.mp3",
+      "package_client": false,
+      "size_bytes": 3373518,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Grey Tile TriageMed1.mp3",
+      "package_client": false,
+      "size_bytes": 4930672,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Grey Tile TriageMed2.mp3",
+      "package_client": false,
+      "size_bytes": 3081601,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Iron PsalmMECH1.mp3",
+      "package_client": false,
+      "size_bytes": 3085577,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Iron PsalmMECH2.mp3",
+      "package_client": false,
+      "size_bytes": 7395029,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Lowerstack PulseCharaterSelect.mp3",
+      "package_client": false,
+      "size_bytes": 4911997,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Lowerstack Pulsecombat-1.mp3",
+      "package_client": false,
+      "size_bytes": 4137152,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Lowerstack Pulsecombat2.mp3",
+      "package_client": false,
+      "size_bytes": 3594951,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Lowerstack PulseMainmenu.mp3",
+      "package_client": false,
+      "size_bytes": 6740809,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/LowerstackPulseE.mp3",
+      "package_client": false,
+      "size_bytes": 5376254,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Mechanical MoonHer1.mp3",
+      "package_client": false,
+      "size_bytes": 4425453,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Mechanical MoonHer2.mp3",
+      "package_client": false,
+      "size_bytes": 5018975,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Palace of GoldP-3battle.mp3",
+      "package_client": false,
+      "size_bytes": 6791233,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Ration LinePDF1.mp3",
+      "package_client": false,
+      "size_bytes": 3156780,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Ration LinePDF2.mp3",
+      "package_client": false,
+      "size_bytes": 4546095,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Seal of AshAdmin1.mp3",
+      "package_client": false,
+      "size_bytes": 4064520,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Seal of AshAdmin2.mp3",
+      "package_client": false,
+      "size_bytes": 3627660,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Sump Dark ChoirSMut1.mp3",
+      "package_client": false,
+      "size_bytes": 5036131,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Sump Dark ChoirSMut2.mp3",
+      "package_client": false,
+      "size_bytes": 3149732,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Temple of MachineryMech3.mp3",
+      "package_client": false,
+      "size_bytes": 2759175,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Temple of MachineryMech4.mp3",
+      "package_client": false,
+      "size_bytes": 3493820,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet Over HivenNob2.mp3",
+      "package_client": false,
+      "size_bytes": 3899725,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet Over HiveNob1.mp3",
+      "package_client": false,
+      "size_bytes": 4370717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/Mechanist_Music_SRC_do_not_modify/Velvet RopesNob3.mp3",
+      "package_client": false,
+      "size_bytes": 6884669,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/A_car_engine_#4-1779775163346.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/A_mountain_of_collap_#3-1779775094194.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/A_simple_security_al_#1-1779774863188.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#1-1779775475631.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#2-1779775480189.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#3-1779775482933.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/A_cat's_meow,_short__#4-1779775485811.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#1-1779775450325.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#2-1779775454199.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#3-1779775457522.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Dog_bark_#4-1779775463068.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#1-1779775758544.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#2-1779775797912.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#3-1779775800794.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Animal sounds/Gargling_creature_no_#4-1779775802264.mp3",
+      "package_client": false,
+      "size_bytes": 12717,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Book flip.mp3",
+      "package_client": false,
+      "size_bytes": 12207,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Book snap.mp3",
+      "package_client": false,
+      "size_bytes": 10744,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Box close.mp3",
+      "package_client": false,
+      "size_bytes": 8556,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Cathonk.mp3",
+      "package_client": false,
+      "size_bytes": 8086,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Chainsaw_sounds_#2-1779775306406.mp3",
+      "package_client": false,
+      "size_bytes": 73197,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Chainsaw_strikes_met_#3-1779775359727.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Clak.mp3",
+      "package_client": false,
+      "size_bytes": 7928,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Clankingkeys.mp3",
+      "package_client": false,
+      "size_bytes": 104583,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Command-key.mp3",
+      "package_client": false,
+      "size_bytes": 7876,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Door close.mp3",
+      "package_client": false,
+      "size_bytes": 13978,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/door open.mp3",
+      "package_client": false,
+      "size_bytes": 18776,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Drawer.mp3",
+      "package_client": false,
+      "size_bytes": 17366,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Gas mask breathing.mp3",
+      "package_client": false,
+      "size_bytes": 87672,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Hammer_banging_on_a__#2-1779775124149.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Hollow metal.mp3",
+      "package_client": false,
+      "size_bytes": 8031,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Hollow_hallway_foots_#1-1779774967000.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Industrial_ambience,-1779774930869.mp3",
+      "package_client": false,
+      "size_bytes": 195022,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Kwap.mp3",
+      "package_client": false,
+      "size_bytes": 5267,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/lightsa&alarm-button.mp3",
+      "package_client": false,
+      "size_bytes": 14184,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine running.mp3",
+      "package_client": false,
+      "size_bytes": 104456,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine start.mp3",
+      "package_client": false,
+      "size_bytes": 198492,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machine wind down.mp3",
+      "package_client": false,
+      "size_bytes": 91780,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Machinery.mp3",
+      "package_client": false,
+      "size_bytes": 81395,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal drag.mp3",
+      "package_client": false,
+      "size_bytes": 29330,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal thwak.mp3",
+      "package_client": false,
+      "size_bytes": 6989,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal wonk.mp3",
+      "package_client": false,
+      "size_bytes": 6988,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/machine sounds/Metal wonk3.mp3",
+      "package_client": false,
+      "size_bytes": 9178,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/padded_hallway_foots_#2-1779775030644.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Pencil drag.mp3",
+      "package_client": false,
+      "size_bytes": 36614,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Pencil draw.mp3",
+      "package_client": false,
+      "size_bytes": 13559,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Pencil tap.mp3",
+      "package_client": false,
+      "size_bytes": 6440,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Purchase-Coins.mp3",
+      "package_client": false,
+      "size_bytes": 13254,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Quiet_Mouse_noises_#2-1779775529981.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Scratch crunch.mp3",
+      "package_client": false,
+      "size_bytes": 56317,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Shifting cloth.mp3",
+      "package_client": false,
+      "size_bytes": 40923,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Snap.mp3",
+      "package_client": false,
+      "size_bytes": 5372,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/The_steady_backgroun_#4-1779774908427.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Typing sounds.mp3",
+      "package_client": false,
+      "size_bytes": 113210,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#1-1779775413485.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#2-1779775421710.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#3-1779775426871.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Voice/Gas_mask_sounds_#4-1779775429322.mp3",
+      "package_client": false,
+      "size_bytes": 49581,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bash.mp3",
+      "package_client": false,
+      "size_bytes": 7773,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#1-1779775214720.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#2-1779775220509.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Bullet_impacts_with__#3-1779775224048.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/FLAME.mp3",
+      "package_client": false,
+      "size_bytes": 28390,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Granade.mp3",
+      "package_client": false,
+      "size_bytes": 24831,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Impact_sounds_laser_#2-1779775267671.mp3",
+      "package_client": false,
+      "size_bytes": 25389,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/LAS.mp3",
+      "package_client": false,
+      "size_bytes": 8016,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Lightning-crackle.mp3",
+      "package_client": false,
+      "size_bytes": 3888,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Plas.mp3",
+      "package_client": false,
+      "size_bytes": 5808,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/RELOAD.mp3",
+      "package_client": false,
+      "size_bytes": 8769,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Shot.mp3",
+      "package_client": false,
+      "size_bytes": 14568,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Slice.mp3",
+      "package_client": false,
+      "size_bytes": 5808,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Weapons/Thundering.mp3",
+      "package_client": false,
+      "size_bytes": 23353,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/effects/Whump.mp3",
+      "package_client": false,
+      "size_bytes": 5343,
+      "extension": ".mp3",
+      "copy_candidate": true
+    },
+    {
+      "path": "ROOT_SRC_assets/ROOT_Sounds/voice/new_world_intro_crawl_narration.mp3",
+      "package_client": false,
+      "size_bytes": 3249567,
+      "extension": ".mp3",
+      "copy_candidate": true
+    }
+  ],
+  "java_references": [
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 24,
+      "reference": "assets/sound/wav/tp_gui_button_press_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 25,
+      "reference": "assets/sound/wav/tp_gui_panel_open_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 26,
+      "reference": "assets/sound/wav/tp_gui_panel_close_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 27,
+      "reference": "assets/sound/wav/tp_gui_portrait_select_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 28,
+      "reference": "assets/sound/wav/tp_gui_tab_change_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 29,
+      "reference": "assets/sound/wav/typing_sounds.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 30,
+      "reference": "assets/sound/wav/machine_start.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 31,
+      "reference": "assets/sound/voice/new_world_intro_crawl_narration.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 32,
+      "reference": "assets/sound/effects/bash.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 33,
+      "reference": "assets/sound/effects/flame.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 34,
+      "reference": "assets/sound/effects/las.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 35,
+      "reference": "assets/sound/effects/lightning_crackle.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 36,
+      "reference": "assets/sound/effects/plas.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 37,
+      "reference": "assets/sound/effects/reload.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 38,
+      "reference": "assets/sound/effects/shot.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 39,
+      "reference": "assets/sound/effects/slice.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 40,
+      "reference": "assets/sound/effects/thundering.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 41,
+      "reference": "assets/sound/core/footstep_metal_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 42,
+      "reference": "assets/sound/core/footstep_grate_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 43,
+      "reference": "assets/sound/core/footstep_sludge_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 44,
+      "reference": "assets/sound/core/footstep_debris_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 45,
+      "reference": "assets/sound/core/ambient_machine_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 46,
+      "reference": "assets/sound/core/ambient_radio_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 47,
+      "reference": "assets/sound/core/ambient_tv_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 48,
+      "reference": "assets/sound/core/ambient_spark_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 49,
+      "reference": "assets/sound/core/ambient_pipe_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 50,
+      "reference": "assets/sound/core/ambient_vent_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 51,
+      "reference": "assets/sound/core/ambient_press_01.wav",
+      "exists_in_package": true,
+      "exists_in_repo": false,
+      "candidate_count": 2,
+      "candidates": "PACKAGE_client/assets/sound/core/ambient_press_01.wav;PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_press_01.wav",
+      "action": "ok",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 52,
+      "reference": "assets/sound/core/ambient_servo_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 53,
+      "reference": "assets/sound/core/ambient_drip_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 54,
+      "reference": "assets/sound/core/ambient_sludge_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 55,
+      "reference": "assets/sound/core/ambient_chime_01.wav",
+      "exists_in_package": true,
+      "exists_in_repo": false,
+      "candidate_count": 2,
+      "candidates": "PACKAGE_client/assets/sound/core/ambient_chime_01.wav;PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_chime_01.wav",
+      "action": "ok",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 56,
+      "reference": "assets/sound/core/ambient_alarm_far_01.wav",
+      "exists_in_package": true,
+      "exists_in_repo": false,
+      "candidate_count": 2,
+      "candidates": "PACKAGE_client/assets/sound/core/ambient_alarm_far_01.wav;PACKAGE_launcher/java/src/main/resources/assets/sound/core/ambient_alarm_far_01.wav",
+      "action": "ok",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/AudioRuntimeFramework.java",
+      "line": 57,
+      "reference": "assets/sound/core/ambient_door_servo_01.wav",
+      "exists_in_package": false,
+      "exists_in_repo": false,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "missing_from_package",
+      "copied_to": ""
+    },
+    {
+      "source_file": "src/mechanist/MediaRuntimeFramework.java",
+      "line": 75,
+      "reference": "*.wav",
+      "exists_in_package": true,
+      "exists_in_repo": true,
+      "candidate_count": 0,
+      "candidates": "",
+      "action": "ignored_glob_pattern",
+      "copied_to": ""
+    }
+  ],
+  "copied_all_audio": []
+}

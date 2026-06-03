@@ -4,13 +4,17 @@ import mechanist.assets.AssetManager;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 final class OptionsScreenPainter {
     private OptionsScreenPainter() {}
+
+    private static final String[] TAB_LABELS = {"Display", "Text/UI", "Audio", "Controls", "Graphics", "JVM", "Access", "QOL"};
 
     static final class Layout {
         final int width;
@@ -48,7 +52,7 @@ final class OptionsScreenPainter {
         int x = layout.panelX + 44;
         int y = layout.panelY + 108;
         int w = layout.panelW - 88;
-        int h = Math.max(116, Math.min(188, layout.panelH / 4));
+        int h = Math.max(180, Math.min(292, layout.panelH / 3));
         return new java.awt.Rectangle(x, y, w, h);
     }
 
@@ -81,12 +85,17 @@ final class OptionsScreenPainter {
 
     static void paintBody(GamePanel panel, Graphics2D g) {
         Layout layout = layout(panel);
+        java.awt.Rectangle controls = controlsBox(layout);
+        panel.buttons.clear();
+        buildOptionButtons(panel, controls);
+
         java.awt.Rectangle info = infoBox(layout);
         g.setFont(panel.smallFont);
         List<String> lines = linesForTab(panel);
         int h = panel.optionsTab == 4 ? Math.max(96, info.height - 72) : info.height;
         panel.drawTextPanel(g, info.x, info.y, info.width, h, lines, false);
         if (panel.optionsTab == 4) paintColorSwatches(panel, g, info);
+        drawOptionButtons(panel, g, false);
     }
 
     static void paintColorSwatches(GamePanel panel, Graphics2D g, java.awt.Rectangle info) {
@@ -107,13 +116,324 @@ final class OptionsScreenPainter {
     }
 
     static void paintGraphicsDropdownPopup(GamePanel panel, Graphics2D g) {
-        if (panel.screen != GamePanel.Screen.OPTIONS || panel.graphicsDropdown < 0 || (panel.optionsTab != 0 && panel.optionsTab != 1 && panel.optionsTab != 4)) return;
+        if (panel.screen != GamePanel.Screen.OPTIONS || panel.graphicsDropdown < 0 || (panel.optionsTab != 0 && panel.optionsTab != 1 && panel.optionsTab != 4 && panel.optionsTab != 6)) return;
         java.awt.Rectangle r = panel.graphicsDropdownOuterRect();
         if (r.width <= 0 || r.height <= 0) return;
         g.setColor(new Color(0, 0, 0, 218));
         g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
         panel.drawSlicedFrame(g, r.x, r.y, r.width, r.height, "inner");
         panel.stampUiFrameId(g, "F", "graphics-dropdown-popup", r.x, r.y, r.width, r.height);
+        drawOptionButtons(panel, g, true);
+    }
+
+    static void buildOptionButtons(GamePanel panel, Rectangle controls) {
+        int gap = Math.max(5, Math.min(8, controls.height / 28));
+        int tabH = Math.max(24, Math.min(30, controls.height / 7));
+        int tabY = controls.y + gap;
+        int tabW = Math.max(44, (controls.width - gap * (TAB_LABELS.length - 1)) / TAB_LABELS.length);
+        for (int i = 0; i < TAB_LABELS.length; i++) {
+            final int tab = i;
+            int x = controls.x + i * (tabW + gap);
+            int w = (i == TAB_LABELS.length - 1) ? Math.max(44, controls.x + controls.width - x) : tabW;
+            panel.buttons.add(new ButtonBox(TAB_LABELS[i], x, tabY, w, tabH, "Open the " + TAB_LABELS[i] + " options panel.", () -> selectOptionsTab(panel, tab)));
+        }
+
+        ArrayList<OptionCommand> commands = commandsForTab(panel);
+        int commandTop = tabY + tabH + gap + 4;
+        int commandBottom = controls.y + controls.height - gap;
+        int availableH = Math.max(1, commandBottom - commandTop);
+        int cols = controls.width < 680 ? 2 : (commands.size() > 9 ? 4 : 3);
+        int rows = Math.max(1, (commands.size() + cols - 1) / cols);
+        int rowH = Math.max(24, Math.min(32, (availableH - gap * Math.max(0, rows - 1)) / rows));
+        int commandW = Math.max(82, (controls.width - gap * (cols - 1)) / cols);
+        for (int i = 0; i < commands.size(); i++) {
+            OptionCommand command = commands.get(i);
+            int col = i % cols;
+            int row = i / cols;
+            int x = controls.x + col * (commandW + gap);
+            int y = commandTop + row * (rowH + gap);
+            int w = col == cols - 1 ? Math.max(82, controls.x + controls.width - x) : commandW;
+            panel.buttons.add(new ButtonBox(command.label, x, y, w, rowH, command.tip, command.action));
+        }
+
+        int firstDropdown = panel.buttons.size();
+        LayerD.addGraphicsDropdownButtons(panel, 0, 0, 0, 0);
+        clampSelectedButton(panel, firstDropdown);
+    }
+
+    static void drawOptionButtons(GamePanel panel, Graphics2D g, boolean dropdownOnly) {
+        Font buttonFont = panel.uiFont.deriveFont(Font.BOLD, Math.max(9f, Math.min(12.5f, panel.getHeight() / 62f)));
+        for (int i = 0; i < panel.buttons.size(); i++) {
+            ButtonBox button = panel.buttons.get(i);
+            boolean dropdown = LayerD.isGraphicsDropdownButton(panel, button);
+            if (dropdownOnly != dropdown) continue;
+            boolean selected = i == panel.selectedButton || (button != null && button.contains(panel.mouseX, panel.mouseY));
+            button.draw(g, buttonFont, selected, null, panel.options);
+        }
+    }
+
+    private static void clampSelectedButton(GamePanel panel, int firstDropdown) {
+        if (panel.buttons.isEmpty()) {
+            panel.selectedButton = 0;
+            return;
+        }
+        if (panel.selectedButton < 0 || panel.selectedButton >= panel.buttons.size()) panel.selectedButton = 0;
+        if (panel.graphicsDropdown >= 0) {
+            boolean selectedDropdown = LayerD.isGraphicsDropdownButton(panel, panel.buttons.get(panel.selectedButton));
+            if (!selectedDropdown && firstDropdown < panel.buttons.size()) panel.selectedButton = firstDropdown;
+        }
+    }
+
+    private static void selectOptionsTab(GamePanel panel, int tab) {
+        panel.optionsTab = Math.max(0, Math.min(TAB_LABELS.length - 1, tab));
+        panel.graphicsDropdown = -1;
+        panel.selectedButton = panel.optionsTab;
+        panel.sounds.play("tab", panel.options);
+        panel.repaint();
+    }
+
+    private static ArrayList<OptionCommand> commandsForTab(GamePanel panel) {
+        if (panel.optionsTab == 0) return displayCommands(panel);
+        if (panel.optionsTab == 1) return textCommands(panel);
+        if (panel.optionsTab == 2) return audioCommands(panel);
+        if (panel.optionsTab == 3) return controlsCommands(panel);
+        if (panel.optionsTab == 4) return graphicsCommands(panel);
+        if (panel.optionsTab == 5) return jvmCommands(panel);
+        if (panel.optionsTab == 6) return accessibilityCommands(panel);
+        return qolCommands(panel);
+    }
+
+    private static ArrayList<OptionCommand> displayCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("Mode: " + panel.options.windowModeLabel(), "Select windowed, borderless, or exclusive fullscreen.", () -> LayerD.toggleGraphicsDropdown(panel, 0)));
+        out.add(cmd("Resolution: " + panel.options.resolutionLabel(), "Select a detected or safe display mode.", () -> LayerD.toggleGraphicsDropdown(panel, 1)));
+        out.add(cmd("Apply Window", "Apply the pending window mode and resolution.", () -> LayerD.applyWindowMode(panel)));
+        out.add(cmd("Screensaver " + onOff(panel.options.screenSaver), "Toggle the in-game idle screensaver.", () -> {
+            panel.options.screenSaver = !panel.options.screenSaver;
+            saveFlag(panel, "Screensaver", panel.options.screenSaver);
+        }));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> textCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("Text -", "Reduce menu and body text scale.", () -> LayerI.changeFontScale(panel, -1)));
+        out.add(cmd("Text +", "Increase menu and body text scale.", () -> LayerI.changeFontScale(panel, 1)));
+        out.add(cmd("UI -", "Reduce interface chrome scale.", () -> LayerI.changeUiScale(panel, -1)));
+        out.add(cmd("UI +", "Increase interface chrome scale.", () -> LayerI.changeUiScale(panel, 1)));
+        out.add(cmd("Crispness: " + panel.options.renderQualityLabel(), "Select the Java2D text and render hint profile.", () -> LayerD.toggleGraphicsDropdown(panel, 5)));
+        out.add(cmd("Hover Help " + onOff(panel.options.hoverHelp), "Toggle floating hover help text.", () -> {
+            panel.options.hoverHelp = !panel.options.hoverHelp;
+            saveFlag(panel, "Hover help", panel.options.hoverHelp);
+        }));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> audioCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("SFX " + onOff(panel.options.soundEnabled), "Toggle sound effects.", () -> {
+            panel.options.soundEnabled = !panel.options.soundEnabled;
+            panel.options.save();
+            panel.logEvent("Sound effects " + onOff(panel.options.soundEnabled) + ".");
+            panel.repaint();
+        }));
+        out.add(cmd("SFX -", "Lower sound effects volume.", () -> LayerB.changeSfxVolume(panel, -5)));
+        out.add(cmd("SFX +", "Raise sound effects volume.", () -> LayerB.changeSfxVolume(panel, 5)));
+        out.add(cmd("Music " + onOff(panel.options.musicEnabled), "Toggle dynamic music.", () -> {
+            panel.options.musicEnabled = !panel.options.musicEnabled;
+            panel.options.save();
+            if (panel.options.musicEnabled) panel.sounds.requestMusic("MAIN_MENU", panel.options);
+            else panel.sounds.stopMusic("music disabled from options");
+            panel.logEvent("Music " + onOff(panel.options.musicEnabled) + ".");
+            panel.repaint();
+        }));
+        out.add(cmd("Music -", "Lower music volume.", () -> LayerB.changeMusicVolume(panel, -5)));
+        out.add(cmd("Music +", "Raise music volume.", () -> LayerB.changeMusicVolume(panel, 5)));
+        out.add(cmd("Voice " + onOff(panel.options.conversationSound), "Toggle voice and conversation sounds.", () -> {
+            panel.options.conversationSound = !panel.options.conversationSound;
+            saveFlag(panel, "Voice and conversation audio", panel.options.conversationSound);
+        }));
+        out.add(cmd("Voice -", "Lower voice and conversation volume.", () -> LayerB.changeConversationVolume(panel, -5)));
+        out.add(cmd("Voice +", "Raise voice and conversation volume.", () -> LayerB.changeConversationVolume(panel, 5)));
+        out.add(cmd("Boot " + onOff(panel.options.bootSound), "Toggle boot sound playback.", () -> {
+            panel.options.bootSound = !panel.options.bootSound;
+            saveFlag(panel, "Boot sound", panel.options.bootSound);
+        }));
+        out.add(cmd("Test SFX", "Play the menu button sound through the live audio bridge.", () -> {
+            panel.sounds.play("button", panel.options);
+            panel.logEvent("SFX test requested.");
+            panel.repaint();
+        }));
+        out.add(cmd("Menu Music", "Request the main menu music playlist.", () -> {
+            panel.sounds.requestMusic("MAIN_MENU", panel.options);
+            panel.logEvent("Main menu music requested.");
+            panel.repaint();
+        }));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> controlsCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("Keyboard/Mouse", "Show keyboard and mouse bindings.", () -> selectControlsTab(panel, 0)));
+        out.add(cmd("Xbox", "Show Xbox controller prompts.", () -> selectControlsTab(panel, 1)));
+        out.add(cmd("PlayStation", "Show PlayStation controller prompts.", () -> selectControlsTab(panel, 2)));
+        out.add(cmd("Steam Deck", "Show Steam Deck controller prompts.", () -> selectControlsTab(panel, 3)));
+        out.add(cmd("Generic Pad", "Show generic controller prompts.", () -> selectControlsTab(panel, 4)));
+        out.add(cmd("Pad Status", "Log the current controller runtime status.", () -> {
+            panel.logEvent(panel.gamepadInputEngine == null ? "Controller runtime is not started." : panel.gamepadInputEngine.status());
+            panel.repaint();
+        }));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> graphicsCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("Downscale: " + panel.options.downscaleLabel(), "Select internal render resolution scaling.", () -> LayerD.toggleGraphicsDropdown(panel, 3)));
+        out.add(cmd("FPS: " + panel.options.targetFpsLabel(), "Select target frame pacing.", () -> LayerD.toggleGraphicsDropdown(panel, 4)));
+        out.add(cmd("Quality: " + panel.options.renderQualityLabel(), "Select render quality.", () -> LayerD.toggleGraphicsDropdown(panel, 5)));
+        out.add(cmd("Lighting: " + panel.options.lightingFxLabel(), "Cycle visual lighting effects.", () -> LayerC.cycleLightingFx(panel)));
+        out.add(cmd("Frame Limit " + panel.options.frameLimitLabel(), "Toggle the frame limiter.", () -> LayerC.toggleFrameLimiter(panel)));
+        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> LayerC.toggleReducedMotion(panel)));
+        out.add(cmd("Diagnostics " + onOff(panel.options.diagnosticsOverlay), "Toggle the F3 performance overlay.", () -> AccessibilityRuntimeOptionsSubsystem.togglePerformanceDiagnostics(panel)));
+        out.add(cmd("Stress Test", "Toggle the render stress test overlay.", () -> LayerC.toggleRenderStressTest(panel)));
+        out.add(cmd("Map Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display size.", () -> LayerG.cycleMapTileSize(panel)));
+        out.add(cmd("Art: " + panel.options.artQualityLabel(), "Cycle bundled/generated art quality tier.", () -> LayerG.cycleArtQuality(panel)));
+        out.add(cmd("Payload Root", "Choose an external generated-art payload root.", () -> LayerG.chooseGeneratedAssetPayloadRoot(panel)));
+        out.add(cmd("Clear Payload", "Clear the external generated-art payload root.", () -> LayerG.clearGeneratedAssetPayloadRoot(panel)));
+        out.add(cmd("Palette: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset], "Select a color palette.", () -> LayerD.toggleGraphicsDropdown(panel, 2)));
+        out.add(cmd("Color Key: " + panel.options.colorTargetLabel(), "Cycle the color being edited.", () -> AccessibilityRuntimeOptionsSubsystem.cycleColorTarget(panel)));
+        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, -8)));
+        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, 8)));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> jvmCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("Runtime: " + panel.jvmRuntimeProfile.targetLabel(), "Cycle client/server/thin-client runtime profile.", () -> JvmRuntimeOptionsSubsystem.cycleJvmRuntimeProfile(panel)));
+        out.add(cmd("Heap -256", "Lower the saved JVM max heap profile.", () -> JvmRuntimeOptionsSubsystem.changeJvmMemory(panel, -256)));
+        out.add(cmd("Heap +256", "Raise the saved JVM max heap profile.", () -> JvmRuntimeOptionsSubsystem.changeJvmMemory(panel, 256)));
+        out.add(cmd("GC: " + panel.jvmRuntimeProfile.gc.label, "Cycle garbage collector profile.", () -> JvmRuntimeOptionsSubsystem.cycleJvmGarbageCollector(panel)));
+        out.add(cmd("Java2D: " + panel.jvmRuntimeProfile.pipelineLabel(), "Cycle Java2D pipeline profile.", () -> JvmRuntimeOptionsSubsystem.cycleJvmPipelineProfile(panel)));
+        out.add(cmd("String Dedup " + onOff(panel.jvmRuntimeProfile.stringDeduplication), "Toggle saved string deduplication.", () -> JvmRuntimeOptionsSubsystem.toggleJvmStringDeduplication(panel)));
+        out.add(cmd("Trans Blit " + onOff(panel.jvmRuntimeProfile.transparentAcceleration), "Toggle transparent blit acceleration.", () -> JvmRuntimeOptionsSubsystem.toggleJvmTransparentAcceleration(panel)));
+        out.add(cmd("No AA " + onOff(panel.jvmRuntimeProfile.disableVectorAntialiasing), "Toggle vector antialias suppression.", () -> JvmRuntimeOptionsSubsystem.toggleJvmNoAa(panel)));
+        out.add(cmd("Accept + Restart", "Restart the client with the saved JVM profile.", () -> JvmRuntimeOptionsSubsystem.acceptJvmSettingsAndRestart(panel)));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> accessibilityCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("CVD: " + AccessibilityCompatibilityAuthority.cvdLabel(panel.options.cvdModeIndex), "Cycle color vision correction.", () -> AccessibilityRuntimeOptionsSubsystem.cycleCvdMode(panel)));
+        out.add(cmd("High Contrast " + onOff(panel.options.highContrastText), "Toggle high contrast text containers.", () -> AccessibilityRuntimeOptionsSubsystem.toggleHighContrastText(panel)));
+        out.add(cmd("Instant Text " + onOff(panel.options.instantDialogueText), "Toggle instant conversation text.", () -> AccessibilityRuntimeOptionsSubsystem.toggleInstantDialogueText(panel)));
+        out.add(cmd("Shake -", "Reduce screen shake intensity.", () -> AccessibilityRuntimeOptionsSubsystem.adjustScreenShake(panel, -10)));
+        out.add(cmd("Shake +", "Increase screen shake intensity.", () -> AccessibilityRuntimeOptionsSubsystem.adjustScreenShake(panel, 10)));
+        out.add(cmd("Narrate Screen", "Push a screen narration event.", () -> AccessibilityRuntimeOptionsSubsystem.pushCurrentScreenNarration(panel)));
+        out.add(cmd("Subtitles " + onOff(panel.options.subtitlesEnabled), "Toggle subtitles.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSubtitles(panel.options))));
+        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> LayerC.toggleReducedMotion(panel)));
+        out.add(cmd("Palette", "Select an accessibility-friendly palette.", () -> LayerD.toggleGraphicsDropdown(panel, 2)));
+        out.add(cmd("Color Key", "Cycle the color being edited.", () -> AccessibilityRuntimeOptionsSubsystem.cycleColorTarget(panel)));
+        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, -8)));
+        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, 8)));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static ArrayList<OptionCommand> qolCommands(GamePanel panel) {
+        ArrayList<OptionCommand> out = new ArrayList<>();
+        out.add(cmd("Skip Logos " + onOff(panel.options.skipRepeatLogoSplashes), "Toggle repeat logo skipping.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSkipSplashes(panel.options))));
+        out.add(cmd("Auto Loot " + onOff(panel.options.autoLootEnabled), "Toggle auto-loot preference.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleAutoLoot(panel.options))));
+        out.add(cmd("Smart Storage " + onOff(panel.options.smartStorageFilters), "Toggle smart storage filters.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSmartStorage(panel.options))));
+        out.add(cmd("Proxy Craft " + onOff(panel.options.proxyCraftingFromLinkedStorage), "Toggle crafting from linked storage.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleProxyCrafting(panel.options))));
+        out.add(cmd("Output Route " + onOff(panel.options.machineOutputAutoRouting), "Toggle machine output auto-routing.", () -> {
+            panel.options.machineOutputAutoRouting = !panel.options.machineOutputAutoRouting;
+            saveFlag(panel, "Machine output auto-routing", panel.options.machineOutputAutoRouting);
+        }));
+        out.add(cmd("Build Repeat " + onOff(panel.options.holdToRepeatConstruction), "Toggle hold-to-repeat construction.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleHoldRepeatBuild(panel.options))));
+        out.add(cmd("Omni Ghost " + onOff(panel.options.omniDirectionalGhostBuild), "Toggle omni-directional ghost build.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleOmniGhostBuild(panel.options))));
+        out.add(cmd("Prod Warnings " + onOff(panel.options.productionBlockerWarnings), "Toggle production blocker warnings.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleProductionWarnings(panel.options))));
+        out.add(cmd("Scarcity " + onOff(panel.options.globalScarcityWarnings), "Toggle global scarcity alerts.", () -> {
+            panel.options.globalScarcityWarnings = !panel.options.globalScarcityWarnings;
+            saveFlag(panel, "Global scarcity alerts", panel.options.globalScarcityWarnings);
+        }));
+        out.add(cmd("Recipe Pins " + onOff(panel.options.recipeHudPinning), "Toggle recipe HUD pinning.", () -> {
+            panel.options.recipeHudPinning = !panel.options.recipeHudPinning;
+            saveFlag(panel, "Recipe HUD pinning", panel.options.recipeHudPinning);
+        }));
+        out.add(cmd("Favored Safe " + onOff(panel.options.favoredItemProtection), "Toggle favored-item protection.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleFavoredProtection(panel.options))));
+        out.add(cmd("Quality Warn " + onOff(panel.options.lowQualityPickupWarnings), "Toggle low-quality pickup warnings.", () -> {
+            panel.options.lowQualityPickupWarnings = !panel.options.lowQualityPickupWarnings;
+            saveFlag(panel, "Low-quality pickup warnings", panel.options.lowQualityPickupWarnings);
+        }));
+        out.add(cmd("Mixed Stacks " + onOff(panel.options.noMixedQualityStacking), "Toggle mixed-quality stack prevention.", () -> {
+            panel.options.noMixedQualityStacking = !panel.options.noMixedQualityStacking;
+            saveFlag(panel, "Mixed-quality stack prevention", panel.options.noMixedQualityStacking);
+        }));
+        out.add(cmd("Safety: " + GameplayQualityOfLifeAuthority.protectionLabel(panel.options.itemSafetyProfileIndex), "Cycle item safety profile.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.cycleItemSafetyProfile(panel.options))));
+        out.add(cmd("Market Alerts " + onOff(panel.options.economicDisruptionAlerts), "Toggle market disruption alerts.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleMarketAlerts(panel.options))));
+        out.add(cmd("Price Hints " + onOff(panel.options.localGlobalPriceHints), "Toggle local/global price hints.", () -> {
+            panel.options.localGlobalPriceHints = !panel.options.localGlobalPriceHints;
+            saveFlag(panel, "Local/global price hints", panel.options.localGlobalPriceHints);
+        }));
+        out.add(cmd("Death Alerts " + onOff(panel.options.namedDeathAlerts), "Toggle named death alerts.", () -> {
+            panel.options.namedDeathAlerts = !panel.options.namedDeathAlerts;
+            saveFlag(panel, "Named death alerts", panel.options.namedDeathAlerts);
+        }));
+        out.add(backCommand(panel));
+        return out;
+    }
+
+    private static void selectControlsTab(GamePanel panel, int tab) {
+        panel.controlsTab = Math.max(0, Math.min(4, tab));
+        panel.logEvent(ControlReferenceTextSubsystem.controlProfileTitle(panel.controlsTab));
+        panel.sounds.play("tab", panel.options);
+        panel.repaint();
+    }
+
+    private static void applyQoL(GamePanel panel, String message) {
+        panel.logEvent(message);
+        DebugLog.audit("GAMEPLAY_QOL_OPTIONS", GameplayQualityOfLifeAuthority.auditSummary(panel.options));
+        panel.repaint();
+    }
+
+    private static void saveFlag(GamePanel panel, String label, boolean enabled) {
+        panel.options.save();
+        panel.logEvent(label + " " + onOff(enabled) + ".");
+        panel.repaint();
+    }
+
+    private static OptionCommand backCommand(GamePanel panel) {
+        return cmd("Back", "Return to the main menu.", () -> {
+            panel.graphicsDropdown = -1;
+            panel.setScreen(GamePanel.Screen.MENU);
+            panel.repaint();
+        });
+    }
+
+    private static OptionCommand cmd(String label, String tip, Runnable action) {
+        return new OptionCommand(label, tip, action);
+    }
+
+    private static String onOff(boolean value) {
+        return value ? "ON" : "OFF";
+    }
+
+    private static final class OptionCommand {
+        final String label;
+        final String tip;
+        final Runnable action;
+
+        OptionCommand(String label, String tip, Runnable action) {
+            this.label = label;
+            this.tip = tip;
+            this.action = action;
+        }
     }
 
     static List<String> linesForTab(GamePanel panel) {

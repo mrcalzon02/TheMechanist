@@ -57,17 +57,30 @@ class LegacyPanelBridgeBase extends JPanel {
     int mainMenuTitleTop(int height) { return Math.max(24, height / 10); }
     Dimension mainMenuTitleDrawSize(BufferedImage img, int width, int height) {
         if (img == null) return new Dimension(Math.max(280, width / 2), 96);
-        int w = Math.max(160, Math.min(width - 80, img.getWidth()));
-        int h = Math.max(48, Math.min(height / 4, img.getHeight()));
-        return new Dimension(w, h);
+        return aspectFit(img, Math.max(160, width - 110), Math.max(48, height / 4));
     }
     Dimension mainMenuSubtitleDrawSize(BufferedImage img, int width, int height) {
         if (img == null) return new Dimension(Math.max(220, width / 3), 48);
-        int w = Math.max(120, Math.min(width - 120, img.getWidth()));
-        int h = Math.max(24, Math.min(height / 8, img.getHeight()));
+        return aspectFit(img, Math.max(120, width - 160), Math.max(24, height / 8));
+    }
+    private Dimension aspectFit(BufferedImage img, int maxW, int maxH) {
+        if (img == null || img.getWidth() <= 0 || img.getHeight() <= 0) return new Dimension(Math.max(1, maxW), Math.max(1, maxH));
+        double scale = Math.min(maxW / (double) img.getWidth(), maxH / (double) img.getHeight());
+        if (!Double.isFinite(scale) || scale <= 0) scale = 1.0;
+        int w = Math.max(1, (int)Math.round(img.getWidth() * scale));
+        int h = Math.max(1, (int)Math.round(img.getHeight() * scale));
         return new Dimension(w, h);
     }
-    Rectangle mainMenuButtonFrameRect() { return new Rectangle(Math.max(20, getWidth()/2 - 240), Math.max(160, getHeight()/2), 480, 220); }
+    Rectangle mainMenuButtonFrameRect() {
+        int count = 7;
+        if (this instanceof GamePanel g) count = Math.max(1, g.mainMenuRouteLabels().size());
+        int frameW = Math.max(320, Math.min(480, getWidth() - 64));
+        int y = Math.max(176, getHeight() / 2);
+        int maxH = Math.max(180, getHeight() - y - 46);
+        int neededH = 36 + count * 28 + Math.max(0, count - 1) * 6;
+        int frameH = Math.max(180, Math.min(neededH, maxH));
+        return new Rectangle(Math.max(20, getWidth() / 2 - frameW / 2), y, frameW, frameH);
+    }
     void stampUiFrameId(Graphics2D g, String kind, String id, int x, int y, int w, int h) {}
     void drawSlicedFrame(Graphics2D g, int x, int y, int w, int h, String style) { if (g != null) g.drawRect(x, y, Math.max(1, w), Math.max(1, h)); }
     void center(Graphics2D g, String text, int x, int y) {

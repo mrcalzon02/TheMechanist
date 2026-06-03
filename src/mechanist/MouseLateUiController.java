@@ -31,7 +31,7 @@ final class MouseLateUiController {
             }
         }
         panel.requestFocusInWindow();
-        return true;
+        return false;
     }
 
     static boolean handleCharacterNameClick(GamePanel panel, int mx, int my) {

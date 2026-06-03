@@ -70,7 +70,7 @@ Write-Host "Client source files: $($clientSources.Count)"
 Write-Host 'Client-only exclusion: src\mechanist\TheMechanistServer.java'
 
 Write-Step 'Compiling client classes'
-& $javac -encoding UTF-8 -d $ClientClasses "@$ClientSourcesFile"
+& $javac --release 17 -encoding UTF-8 -d $ClientClasses "@$ClientSourcesFile"
 if ($LASTEXITCODE -ne 0) { throw "Client javac failed with exit code $LASTEXITCODE" }
 
 Write-Step 'Writing client jar'
@@ -94,7 +94,7 @@ $serverSourcePaths | Set-Content -Path $ServerSourcesFile -Encoding UTF8
 Write-Host "Server source files: $($serverSourcePaths.Count)"
 
 Write-Step 'Compiling server classes'
-& $javac -encoding UTF-8 -d $ServerClasses "@$ServerSourcesFile"
+& $javac --release 17 -encoding UTF-8 -d $ServerClasses "@$ServerSourcesFile"
 if ($LASTEXITCODE -ne 0) { throw "Server javac failed with exit code $LASTEXITCODE" }
 
 Write-Step 'Writing server jar'

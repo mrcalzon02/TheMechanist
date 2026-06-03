@@ -61,7 +61,9 @@ function Copy-FilePreserveTree($sourceRoot, $destRoot, $fileInfo) {
 
 function Copy-MergeIfExists($source, $dest, $label) {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) {
-        "SKIP missing $label source: $source" | Tee-Object -FilePath $packageLog -Append
+        $message = "SKIP missing $label source: $source"
+        Write-Host $message
+        Add-Content -LiteralPath $packageLog -Value $message
         return 0
     }
     $sourceFull = [System.IO.Path]::GetFullPath([string]$source)
@@ -70,13 +72,17 @@ function Copy-MergeIfExists($source, $dest, $label) {
     $destNorm = $destFull.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
     if ($sourceNorm.Equals($destNorm, [System.StringComparison]::OrdinalIgnoreCase)) {
         $count = @(Get-ChildItem -LiteralPath $destFull -Recurse -File -Force -ErrorAction SilentlyContinue).Count
-        "PRESERVE $label already in package: $destFull ($count file(s))" | Tee-Object -FilePath $packageLog -Append
+        $message = "PRESERVE $label already in package: $destFull ($count file(s))"
+        Write-Host $message
+        Add-Content -LiteralPath $packageLog -Value $message
         return $count
     }
     New-Item -ItemType Directory -Force -Path $destFull | Out-Null
     $files = @(Get-ChildItem -LiteralPath $sourceFull -Recurse -File -Force -ErrorAction SilentlyContinue)
     foreach ($file in $files) { Copy-FilePreserveTree $sourceFull $destFull $file }
-    "MERGED $($files.Count) $label file(s): $sourceFull -> $destFull" | Tee-Object -FilePath $packageLog -Append
+    $message = "MERGED $($files.Count) $label file(s): $sourceFull -> $destFull"
+    Write-Host $message
+    Add-Content -LiteralPath $packageLog -Value $message
     return $files.Count
 }
 
@@ -104,11 +110,28 @@ function Resolve-JavaHomeTool($toolName) {
     return $null
 }
 
+function Resolve-InstalledJdkTool($toolName) {
+    $roots = @(
+        (Join-Path $env:ProgramFiles 'Java'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Java')
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_ -PathType Container) }
+    foreach ($rootDir in $roots) {
+        $candidate = Get-ChildItem -LiteralPath $rootDir -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name |
+            ForEach-Object { Join-Path (Join-Path $_.FullName 'bin') "$toolName.exe" } |
+            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+            Select-Object -First 1
+        if ($candidate) { return $candidate }
+    }
+    return $null
+}
+
 "Client Package Run: $stamp" | Set-Content -LiteralPath $summary
 "Repository root: $rootFull" | Add-Content -LiteralPath $summary
 "Package output: $outRoot" | Add-Content -LiteralPath $summary
 "Package mode: unfolded exposed client directory" | Add-Content -LiteralPath $summary
 "Classes output: $classes" | Add-Content -LiteralPath $summary
+"Java release target: 17" | Add-Content -LiteralPath $summary
 "Max javac errors: $MaxErrors" | Add-Content -LiteralPath $summary
 "CleanOutput: $CleanOutput" | Add-Content -LiteralPath $summary
 "CleanClasses: $CleanClasses" | Add-Content -LiteralPath $summary
@@ -156,7 +179,7 @@ Write-Section 'Compile client classes into unfolded package'
 $tempArgFile = Join-Path ([System.IO.Path]::GetTempPath()) "mechanist_package_javac_sources_$stamp.args"
 Write-Utf8NoBomLines $tempArgFile $javacArgLines
 $responseArg = '@' + $tempArgFile
-$javacArgs = @('-Xmaxerrs', ([string][Math]::Max(100, $MaxErrors)), '-encoding', 'UTF-8', '-d', $classes, $responseArg)
+$javacArgs = @('--release', '17', '-Xmaxerrs', ([string][Math]::Max(100, $MaxErrors)), '-encoding', 'UTF-8', '-d', $classes, $responseArg)
 Push-Location $root
 try {
     Write-Host ('Working directory: ' + (Get-Location)) | Tee-Object -FilePath $compileLog -Append
@@ -267,6 +290,7 @@ if ($BuildJar) {
     Write-Section 'Optional jar assembly'
     $jarExe = Resolve-CommandPath 'jar'
     if (-not $jarExe) { $jarExe = Resolve-JavaHomeTool 'jar' }
+    if (-not $jarExe) { $jarExe = Resolve-InstalledJdkTool 'jar' }
     if (-not $jarExe) { 'ERROR: jar not found for optional -BuildJar mode.' | Tee-Object -FilePath $packageLog -Append; Publish-LatestPackageAliases; exit 127 }
     $jarPath = Join-Path $outRoot 'TheMechanist.jar'
     Write-Utf8NoBomLines $manifest @('Manifest-Version: 1.0', 'Main-Class: mechanist.TheMechanist', 'Implementation-Title: The Mechanist', "Implementation-Version: $stamp", '')

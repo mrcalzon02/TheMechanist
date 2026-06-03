@@ -35,4 +35,20 @@ final class CharacterNameKeyController {
         }
         return true;
     }
+
+    static boolean handleCharacterNameEditTyped(GamePanel panel, char ch) {
+        if (panel.screen != GamePanel.Screen.CHARACTER || !panel.characterNameEditActive) return false;
+        if (Character.isISOControl(ch)) return false;
+        Candidate candidate = panel.candidates.isEmpty() ? null : panel.candidates.get(panel.candidateIndex);
+        if (candidate == null) return true;
+        if (candidate.name == null) candidate.name = "";
+        if (candidate.name.length() >= 32) return true;
+        if (Character.isLetterOrDigit(ch) || ch == ' ' || ch == '-' || ch == '\'') {
+            candidate.name = candidate.name + ch;
+            panel.refreshNameLockedCandidateState(candidate);
+            panel.repaint();
+            return true;
+        }
+        return true;
+    }
 }

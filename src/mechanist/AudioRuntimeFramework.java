@@ -14,10 +14,12 @@ import java.util.List;
 
 class SoundManager {
     final Map<String, File> sounds = new HashMap<>();
+    final Set<String> generatedCueKeys = new HashSet<>();
     final DynamicMusicManager music = new DynamicMusicManager();
     private final Object managedVoiceLock = new Object();
     private Clip introCrawlNarrationClip = null;
     private int introCrawlNarrationToken = 0;
+    private boolean missingMusicPackAudited = false;
     void load() {
         put("button", "assets/sound/wav/tp_gui_button_press_01.wav");
         put("panelOpen", "assets/sound/wav/tp_gui_panel_open_01.wav");
@@ -56,17 +58,19 @@ class SoundManager {
         File musicRoot = resolveMusicRoot();
         File musicManifest = resolveMusicManifest(musicRoot);
         music.load(musicRoot, musicManifest);
-        DebugLog.audit("AUDIO", "Loaded sound handles=" + sounds.size() + "; musicRoot=" + musicRoot.getPath() + "; musicManifest=" + (musicManifest == null ? "<none>" : musicManifest.getPath()) + "; dynamic music playlists=" + music.playlistSummary() + "; OGG originals preserved in assets/sound if present.");
+        DebugLog.audit("AUDIO", "Loaded sound handles=" + sounds.size() + "; generatedCueFallbacks=" + generatedCueKeys.size() + "; musicRoot=" + musicRoot.getPath() + "; musicManifest=" + (musicManifest == null ? "<none>" : musicManifest.getPath()) + "; dynamic music playlists=" + music.playlistSummary() + "; OGG originals preserved in assets/sound if present.");
     }
     void put(String key, String path) {
         File f = runtimeAssetFile(path);
         if (f.exists()) sounds.put(key, f);
-        else DebugLog.warn("AUDIO", "Missing sound file: " + path);
+        else generatedCueKeys.add(key);
     }
     File runtimeAssetFile(String path) {
         if (path != null && path.replace('\\', '/').startsWith("assets/")) {
             File packagedClientOwned = new File("packages/client", path);
             if (packagedClientOwned.exists()) return packagedClientOwned;
+            File packageClientOwned = new File("PACKAGE_client", path);
+            if (packageClientOwned.exists()) return packageClientOwned;
             File clientOwned = new File("client", path);
             if (clientOwned.exists()) return clientOwned;
         }
@@ -109,7 +113,7 @@ class SoundManager {
     }
     void play(String key, GameOptions opt) {
         if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
-        File f = sounds.get(key); if (f == null) return;
+        File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume); return; }
         new Thread(() -> {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 Clip clip = AudioSystem.getClip();
@@ -192,9 +196,9 @@ class SoundManager {
     void playDistantCue(String key, int distance, GameOptions opt) { playDistanceScaled(key, distance, opt, false); }
     void playDistanceScaled(String key, int distance, GameOptions opt, boolean quiet) {
         if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
-        File f = sounds.get(key); if (f == null) return;
         int base = quiet ? Math.min(opt.sfxVolume, 55) : Math.min(opt.sfxVolume, 42);
         int vol = Math.max(4, base - Math.max(0, distance) * (quiet ? 5 : 2));
+        File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, vol); return; }
         playWithVolume(key, f, vol);
     }
     void playWithVolume(String key, File f, int volumePercent) {
@@ -216,6 +220,67 @@ class SoundManager {
         play(weaponEffectKey(weapon, ranged), opt);
     }
     void playReloadEffect(GameOptions opt) { play("weapon_reload", opt); }
+    void playGeneratedCue(String key, GameOptions opt, int volumePercent) {
+        if (opt == null || !opt.soundEnabled || volumePercent <= 0) return;
+        String safeKey = key == null || key.isBlank() ? "cue" : key.replaceAll("[^A-Za-z0-9_-]+", "_");
+        new Thread(() -> {
+            AudioFormat format = new AudioFormat(44100f, 16, 1, true, false);
+            SourceDataLine line = null;
+            try {
+                byte[] data = generatedCueBytes(key, volumePercent, format);
+                line = AudioSystem.getSourceDataLine(format);
+                line.open(format);
+                line.start();
+                line.write(data, 0, data.length);
+                line.drain();
+            } catch (Throwable t) {
+                DebugLog.warn("AUDIO_PLAY", "Generated cue unavailable for " + safeKey + ": " + t.getMessage());
+            } finally {
+                if (line != null) {
+                    try { line.stop(); } catch (Throwable ignored) {}
+                    try { line.close(); } catch (Throwable ignored) {}
+                }
+            }
+        }, "generated-sound-" + safeKey).start();
+    }
+
+    byte[] generatedCueBytes(String key, int volumePercent, AudioFormat format) {
+        String k = key == null ? "" : key.toLowerCase(Locale.ROOT);
+        int sampleRate = Math.max(8000, (int)format.getSampleRate());
+        int ms = k.contains("boot") ? 420 : (k.contains("ambient") ? 300 : (k.contains("weapon") ? 180 : (k.contains("type") ? 55 : 95)));
+        int samples = Math.max(1, sampleRate * ms / 1000);
+        byte[] data = new byte[samples * 2];
+        double freq = generatedCueFrequency(k);
+        double pct = Math.max(0.01, Math.min(1.0, volumePercent / 100.0));
+        double gain = 0.28 * pct;
+        for (int i = 0; i < samples; i++) {
+            double t = i / (double) sampleRate;
+            double attack = Math.min(1.0, i / Math.max(1.0, sampleRate * 0.012));
+            double release = Math.min(1.0, (samples - i) / Math.max(1.0, sampleRate * 0.045));
+            double env = attack * release;
+            double wave = Math.sin(2.0 * Math.PI * freq * t);
+            if (k.contains("button") || k.contains("tab")) wave = 0.65 * wave + 0.35 * Math.sin(2.0 * Math.PI * (freq * 1.5) * t);
+            if (k.contains("weapon") || k.contains("ambient")) wave = 0.55 * wave + 0.45 * Math.sin(2.0 * Math.PI * (freq * 0.5) * t);
+            short value = (short)Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, (int)(wave * env * gain * Short.MAX_VALUE)));
+            data[i * 2] = (byte)(value & 0xFF);
+            data[i * 2 + 1] = (byte)((value >>> 8) & 0xFF);
+        }
+        return data;
+    }
+
+    double generatedCueFrequency(String key) {
+        if (key == null) return 440.0;
+        if (key.contains("boot")) return 92.0;
+        if (key.contains("panelopen")) return 330.0;
+        if (key.contains("panelclose")) return 196.0;
+        if (key.contains("tab")) return 520.0;
+        if (key.contains("type")) return 760.0;
+        if (key.contains("ambient")) return 120.0;
+        if (key.contains("weapon_las") || key.contains("lightning")) return 880.0;
+        if (key.contains("weapon")) return 160.0;
+        return 440.0;
+    }
+
     String weaponEffectKey(String weapon, boolean ranged) {
         String w = weapon == null ? "" : weapon.toLowerCase(Locale.ROOT);
         if (w.contains("flamer") || w.contains("flame") || w.contains("melta") || w.contains("inferno") || w.contains("promethium")) return "weapon_flame";
@@ -227,7 +292,16 @@ class SoundManager {
         if (ranged || w.contains("pistol") || w.contains("gun") || w.contains("rifle") || w.contains("bolter") || w.contains("stub") || w.contains("shot") || w.contains("revolver") || w.contains("stubber") || w.contains("webber") || w.contains("needle")) return "weapon_shot";
         return "weapon_bash";
     }
-    void requestMusic(String key, GameOptions opt) { music.request(key, opt); }
+    void requestMusic(String key, GameOptions opt) {
+        if (music.playlistSummary().isBlank()) {
+            if (!missingMusicPackAudited) {
+                DebugLog.audit("MUSIC", "No dynamic music playlist is packaged; music requests remain silent until assets/music/wav or an audiopack is installed.");
+                missingMusicPackAudited = true;
+            }
+            return;
+        }
+        music.request(key, opt);
+    }
     void setMusicVolume(GameOptions opt) { music.setVolume(opt); }
     void stopMusic() { music.stopAll("manual stop"); }
 }

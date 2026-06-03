@@ -109,5 +109,9 @@ final class MultiplayerSurfacePainter implements ScreenPainter {
         g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(9f, panel.smallFont.getSize2D() - 2f)));
         g.setColor(panel.optionColor(GameOptions.TEXT_HIGHLIGHT));
         panel.center(g, "CONNECTION COMMANDS", action.x + action.width / 2, action.y + 22);
+        g.setFont(panel.smallFont.deriveFont(Font.PLAIN, Math.max(9f, panel.smallFont.getSize2D() - 3f)));
+        g.setColor(panel.optionColor(GameOptions.TEXT_MAIN));
+        panel.center(g, "I/E Edit  Enter Join  H Host  F Save Favorite  G Join Favorite  Arrows Select  T Steam  Esc Back",
+                action.x + action.width / 2, action.y + 42);
     }
 }

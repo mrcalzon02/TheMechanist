@@ -36,7 +36,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     static final String CONTAINER_CORPSE_LOOT_PREFIX = "corpse-loot-";
     static final String CONTAINER_ROOM_CACHE_PREFIX = "room-cache-";
 
-    enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SECTOR_AUDIT, EDITOR }
+    enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SAVE_LOAD, SECTOR_AUDIT, EDITOR }
     enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING, SCAVENGE }
 
     World world;
@@ -47,7 +47,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     SinglePlayerSectorRuntimeBridge singlePlayerSectorBridge;
     LegacyPerformanceDiagnostics performanceDiagnostics = new LegacyPerformanceDiagnostics();
     LegacyKeyboardInputBridge keyboardInputBridge = new LegacyKeyboardInputBridge();
-    LegacyMultiplayerMenu multiplayerMenu = new LegacyMultiplayerMenu();
+    MultiplayerMenuController multiplayerMenu = new MultiplayerMenuController();
     LegacySoundSurface sounds = new LegacySoundSurface();
     LegacyRenderScaling renderScaling = new LegacyRenderScaling();
     LegacyFrameLimiter frameLimiter = new LegacyFrameLimiter();
@@ -180,6 +180,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     int inventoryItemDescriptionScroll;
     int selectedInventoryIndex;
     int selectedTargetInventoryIndex;
+    int selectedMovementModeIndex = MOTION_WALK;
     int jobIndex;
     int jobDossierScroll;
     int jobDossierTab;
@@ -201,6 +202,17 @@ class GamePanel extends LegacyPanelBridgeBase {
     int eulaScroll;
     int eulaMaxScroll;
     int graphicsDropdown = -1;
+    int saveLoadSelectedIndex;
+    int lastWorldViewTileSize = 16;
+    int lastWorldViewOriginX;
+    int lastWorldViewOriginY;
+    int lastWorldViewMinX;
+    int lastWorldViewMinY;
+    int auditFindingIndex;
+    int auditZoneTypeIndex;
+    int auditZoneDensityIndex;
+    int auditOverlayIndex;
+    int selectedFireModeIndex;
     int generatedJobCategoryFilterIndex;
     int generatedJobReadinessFilterIndex;
     int mouseX = -1;
@@ -209,13 +221,16 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean characterNameEditActive;
     boolean manualMovementPlanActive;
     boolean buildPlacementActive;
+    boolean newGameSetupActive;
     Screen screen = Screen.BOOT;
     PanelMode panelMode = PanelMode.NONE;
     BuildRecipe pendingBuildRecipe;
+    SectorAuditRuntimeAuthority.AuditSnapshot auditSnapshot;
     String selectedKnowledgeNodeId;
     String lastAccessibleNarration = "";
     String activeScrollTag = "";
     String rebindingTarget = "";
+    String saveLoadStatus = "Select a save slot.";
     String jvmRuntimeNotice = "";
     String lastTargetingReport = "No target selected.";
     String equippedLeftHandItem = "LEFT EMPTY";
@@ -231,17 +246,35 @@ class GamePanel extends LegacyPanelBridgeBase {
     String lastLogisticsHaulExecutionReport = "No manual haul execution has been recorded.";
     long bootStartMillis = System.currentTimeMillis();
     long lastInputMillis = System.currentTimeMillis();
+    int worldSetupSelection;
     Font titleFont = new Font("Monospaced", Font.BOLD, 36);
     Font smallFont = new Font("Monospaced", Font.PLAIN, 14);
     Font uiFont = new Font("Monospaced", Font.BOLD, 16);
     Font asciiFont = new Font("Monospaced", Font.BOLD, 13);
+    KnowledgeMenu knowledgeMenu;
 
     GamePanel() {
         setOpaque(true);
         setBackground(new java.awt.Color(18, 17, 14));
         setFocusable(true);
+        options = GameOptions.load();
         logEvent("GamePanel compatibility bridge initialized.");
         installExistingEarlyScreenInputBridge();
+        installMainMenuInputBridge();
+        selectedButton = 0;
+        screen = Screen.MENU;
+        panelMode = PanelMode.NONE;
+        try {
+            images.reloadArtQuality(options);
+        } catch (Throwable t) {
+            DebugLog.error("CLIENT_MENU_BOOT", "Menu media preload failed; menu will use drawn fallbacks.", t);
+        }
+        if (options.bootSound) sounds.play("boot", options);
+        sounds.requestMusic("MAIN_MENU", options);
+        timer = new javax.swing.Timer(33, e -> repaint());
+        timer.start();
+        logEvent("Package client main menu restored.");
+        DebugLog.audit("CLIENT_MENU_BOOT", "screen=" + screen + " routeCount=" + mainMenuRouteLabels().size() + " assets=preloaded");
     }
     GamePanel(RuntimeProfile runtimeProfile) {
         this();
@@ -259,6 +292,9 @@ class GamePanel extends LegacyPanelBridgeBase {
                 mouseX = e.getX(); mouseY = e.getY();
                 if (screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT) {
                     int idx = mainMenuRouteIndexAt(mouseX, mouseY);
+                    if (idx >= 0 && idx != selectedButton) { selectedButton = idx; repaint(); }
+                } else if (!buttons.isEmpty()) {
+                    int idx = UiModalButtonController.activeHoverButtonIndex(GamePanel.this);
                     if (idx >= 0 && idx != selectedButton) { selectedButton = idx; repaint(); }
                 }
             }
@@ -283,15 +319,20 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     java.util.List<String> mainMenuRouteLabels() {
-        return java.util.List.of("New Game", "Continue", "Load Game", "Options", "Knowledge", "Multiplayer", "Quit");
+        return java.util.List.of("New Game", "Continue", "Load Game", "Options", "Knowledge", "Multiplayer", "Tools", "Quit");
     }
 
     Rectangle mainMenuRouteRect(int index) {
         Rectangle frame = mainMenuButtonFrameRect();
-        int buttonW = Math.max(220, frame.width - 88);
-        int buttonH = 36;
-        int gap = 10;
-        int top = Math.max(mainMenuTitleTop(Math.max(1, getHeight())) + 142, frame.y + 30);
+        java.util.List<String> labels = mainMenuRouteLabels();
+        int count = Math.max(1, labels.size());
+        int buttonW = Math.max(220, frame.width - 52);
+        int gap = Math.max(4, Math.min(8, frame.height / 42));
+        int pad = Math.max(12, Math.min(20, frame.height / 12));
+        int availableH = Math.max(1, frame.height - (pad * 2) - (gap * Math.max(0, count - 1)));
+        int buttonH = Math.max(24, Math.min(36, availableH / count));
+        int usedH = buttonH * count + gap * Math.max(0, count - 1);
+        int top = frame.y + Math.max(pad, (frame.height - usedH) / 2);
         int x = getWidth() / 2 - buttonW / 2;
         return new Rectangle(x, top + index * (buttonH + gap), buttonW, buttonH);
     }
@@ -309,27 +350,367 @@ class GamePanel extends LegacyPanelBridgeBase {
         String route = labels.get(index);
         logEvent("Main menu route selected: " + route);
         switch (route) {
-            case "New Game" -> startPackagedClientNewGame();
-            case "Continue", "Load Game" -> { logEvent(route + " is visible; save/load bridge restoration is pending."); }
+            case "New Game" -> openNewGameSetup();
+            case "Continue" -> continueLatestSaveOrOpenPanel();
+            case "Load Game" -> openSaveLoadPanel("Load Game selected.");
             case "Options" -> setScreen(Screen.OPTIONS);
             case "Knowledge" -> openKnowledgeMenu();
-            case "Multiplayer" -> setScreen(Screen.MULTIPLAYER);
+            case "Multiplayer" -> openMultiplayerPanel();
+            case "Tools" -> openToolsMenu();
             case "Quit" -> requestApplicationExit("main menu quit route");
             default -> logEvent("Unhandled main menu route: " + route);
         }
     }
 
-    void startPackagedClientNewGame() {
-        screen = Screen.GAME;
+    void openToolsMenu() {
+        selectedButton = 0;
+        setScreen(Screen.MODS);
+        logEvent("Tools menu opened.");
+    }
+
+    void openNewGameSetup() {
+        seed = System.currentTimeMillis();
+        rng = new Random(seed ^ 0x4E475345545550L);
+        worldSetup = WorldSetupSettings.standard();
+        prepareNewGameRoster(seed);
+        candidateIndex = 0;
+        active = selectedNewGameCandidate();
+        newGameSetupActive = true;
+        characterNameEditActive = false;
         panelMode = PanelMode.NONE;
-        playerX = Math.max(1, playerX == 0 ? 8 : playerX);
-        playerY = Math.max(1, playerY == 0 ? 8 : playerY);
+        selectedButton = 0;
+        setScreen(Screen.CHARACTER);
+        logEvent("New game setup opened: choose a character and world profile.");
+        DebugLog.audit("CLIENT_MENU_ROUTE", "newGameSetup opened candidates=" + candidates.size() + " setup=" + worldSetup.shortSummary());
+    }
+
+    void prepareNewGameRoster(long rosterSeed) {
+        candidates.clear();
+        Random rr = new Random(rosterSeed ^ 0xC0FFEE51L);
+        for (int i = 0; i < 4; i++) {
+            Candidate c = Candidate.random(new Random(rr.nextLong() ^ (i * 0x9E3779B97F4A7C15L)));
+            AgeAndWorldTimeAuthority.initializeCandidateAge(c, new Random(rosterSeed ^ (0xA6E5L + i * 37L)));
+            candidates.add(c);
+        }
+        candidateIndex = 0;
+        active = selectedNewGameCandidate();
+    }
+
+    Candidate selectedNewGameCandidate() {
+        if (candidates.isEmpty()) prepareNewGameRoster(System.currentTimeMillis());
+        candidateIndex = Math.max(0, Math.min(candidateIndex, candidates.size() - 1));
+        return candidates.get(candidateIndex);
+    }
+
+    void cycleSelectedCandidate(int delta) {
+        if (candidates.isEmpty()) prepareNewGameRoster(System.currentTimeMillis());
+        candidateIndex = Math.floorMod(candidateIndex + delta, candidates.size());
+        active = selectedNewGameCandidate();
+        characterNameEditActive = false;
+        logEvent("Selected candidate " + active.name + ".");
+        repaint();
+    }
+
+    void cycleSelectedCandidateJob(int delta) {
+        Candidate c = selectedNewGameCandidate();
+        if (c == null || c.jobs.isEmpty()) return;
+        int idx = c.jobs.indexOf(c.job);
+        if (idx < 0) idx = 0;
+        c.job = c.jobs.get(Math.floorMod(idx + delta, c.jobs.size()));
+        active = c;
+        logEvent(c.name + " job set to " + c.job + ".");
+        repaint();
+    }
+
+    void rerollSelectedCandidate() {
+        if (candidates.isEmpty()) prepareNewGameRoster(System.currentTimeMillis());
+        Random rr = new Random(System.nanoTime() ^ seed ^ candidateIndex);
+        Candidate replacement = Candidate.random(rr);
+        AgeAndWorldTimeAuthority.initializeCandidateAge(replacement, new Random(rr.nextLong()));
+        candidates.set(candidateIndex, replacement);
+        active = replacement;
+        characterNameEditActive = false;
+        logEvent("Rerolled candidate " + replacement.name + ".");
+        repaint();
+    }
+
+    void rerollNewGameRoster() {
+        seed = System.currentTimeMillis();
+        rng = new Random(seed ^ 0x4E475345545550L);
+        prepareNewGameRoster(seed);
+        characterNameEditActive = false;
+        logEvent("New candidate roster generated.");
+        repaint();
+    }
+
+    void cycleWorldSetupOption(int option) {
+        if (worldSetup == null) worldSetup = WorldSetupSettings.standard();
+        worldSetupSelection = Math.max(0, option);
+        switch (worldSetupSelection) {
+            case 0 -> worldSetup.cycleNpcDensity();
+            case 1 -> worldSetup.cycleZoneSize();
+            case 2 -> worldSetup.cycleZoneDensity();
+            case 3 -> worldSetup.cyclePriceDifficulty();
+            case 4 -> worldSetup.cycleCraftDifficulty();
+            case 5 -> worldSetup.hoarderMode = !worldSetup.hoarderMode;
+            case 6 -> worldSetup.cycleSimulationAge();
+            default -> {}
+        }
+        logEvent("World setup: " + worldSetup.shortSummary() + ".");
+        repaint();
+    }
+
+    void startPackagedClientNewGame() {
+        WorldSetupSettings setup = newGameSetupActive && worldSetup != null ? worldSetup.copy() : WorldSetupSettings.standard();
+        Candidate chosen;
+        if (newGameSetupActive) {
+            Candidate selected = selectedNewGameCandidate();
+            chosen = selected == null ? null : selected.copy();
+        } else {
+            chosen = Candidate.random(new Random(System.currentTimeMillis() ^ 0xC0FFEE));
+            AgeAndWorldTimeAuthority.initializeCandidateAge(chosen, new Random(System.currentTimeMillis() ^ 0xA6E5L));
+        }
+        startPackagedClientNewGameWith(chosen, setup);
+    }
+
+    void startPackagedClientNewGameWith(Candidate chosen, WorldSetupSettings setup) {
+        long newSeed = seed == 0L || !newGameSetupActive ? System.currentTimeMillis() : seed;
+        seed = newSeed;
+        rng = new Random(seed);
+        worldSetup = setup == null ? WorldSetupSettings.standard() : setup.copy();
+        atlas = new WorldAtlas(seed, worldSetup);
+        atlas.generateScaffold();
+        world = atlas.currentWorld();
+        visibleTiles = new boolean[world.w][world.h];
+        rememberedTiles = new boolean[world.w][world.h];
+        Point start = world.startPoint();
+        playerX = Math.max(0, Math.min(world.w - 1, start.x));
+        playerY = Math.max(0, Math.min(world.h - 1, start.y));
         lookX = playerX;
         lookY = playerY;
-        food = food == 0 ? MAX_FOOD_WATER : food;
-        water = water == 0 ? MAX_FOOD_WATER : water;
-        if (inventory.isEmpty()) inventory.add("Ration pack");
-        logEvent("New game bridge started from package client menu.");
+        combatX = playerX;
+        combatY = playerY;
+        buildX = playerX;
+        buildY = playerY;
+        active = chosen == null ? Candidate.random(new Random(seed ^ 0xC0FFEE)) : chosen;
+        if (active.job == null || active.job.isBlank()) active.job = "Underhive Scavenger";
+        inventory.clear();
+        baseStorage.clear();
+        baseObjects.clear();
+        factionRecruits.clear();
+        itemContainers.clear();
+        itemInstances.clear();
+        itemProvenance.clear();
+        portableLights.clear();
+        factionContracts.clear();
+        npcFactionSites.clear();
+        factionStrategicPlans.clear();
+        playerNewsEvents.clear();
+        visitedZoneInstances.clear();
+        visitedZoneTypes.clear();
+        unlockedKnowledges.clear();
+        unlockedKnowledges.add("Underhive Basics");
+        turn = 0;
+        worldTurn = 0L;
+        carriedScript = 15;
+        baseStashedScript = 0;
+        supplies = 0;
+        machineParts = 0;
+        xp = 0;
+        knowledgeCredits = 0;
+        food = MAX_FOOD_WATER;
+        water = MAX_FOOD_WATER;
+        fatigue = 0;
+        wounds = 0;
+        bleeding = 0;
+        infectionRisk = 0;
+        pain = 0;
+        sleepNeed = 0;
+        suspicion = 0;
+        gangHeat = 0;
+        inventory.add("Ration pack");
+        inventory.add("Water flask");
+        inventory.add("Scrap knife");
+        JobProfile profile = JobProfile.get(active.job);
+        if (profile != null) {
+            for (String item : profile.startingItems()) if (item != null && !item.isBlank() && !inventory.contains(item)) inventory.add(item);
+            equippedClothing = profile.clothing();
+        }
+        rebuildItemContainersFromLegacyLists();
+        initFactionState();
+        seedNpcFactionProductionSites();
+        markZoneVisitedAndCheckFirstType();
+        updateSensoryModel("new game");
+        newGameSetupActive = false;
+        characterNameEditActive = false;
+        buttons.clear();
+        screen = Screen.GAME;
+        panelMode = PanelMode.NONE;
+        logEvent("New game started: " + world.zoneCoordText() + " seed=" + seed + " / " + worldSetup.shortSummary() + ".");
+        DebugLog.audit("CLIENT_MENU_ROUTE", "newGame seed=" + seed + " setup=" + worldSetup.shortSummary() + " character=" + active.name + "/" + active.job + " world=" + world.zoneCoordText() + " player=" + playerX + "," + playerY);
+    }
+
+    void openMultiplayerPanel() {
+        multiplayerMenu.activate(userProfile);
+        screen = Screen.MULTIPLAYER;
+        panelMode = PanelMode.NONE;
+        logEvent("Multiplayer panel opened.");
+        DebugLog.audit("CLIENT_MENU_ROUTE", "multiplayer opened " + MultiplayerMenuController.auditSummary());
+    }
+
+    int[] saveLoadSlots() {
+        return new int[] { 1, 2, 3, AUTOSAVE_HOURLY_SLOT, AUTOSAVE_ZONE_SLOT };
+    }
+
+    int selectedSaveLoadSlot() {
+        int[] slots = saveLoadSlots();
+        if (slots.length == 0) return 1;
+        saveLoadSelectedIndex = Math.max(0, Math.min(saveLoadSelectedIndex, slots.length - 1));
+        return slots[saveLoadSelectedIndex];
+    }
+
+    void openSaveLoadPanel(String status) {
+        int latest = latestExistingSaveSlot();
+        int[] slots = saveLoadSlots();
+        saveLoadSelectedIndex = 0;
+        for (int i = 0; i < slots.length; i++) if (slots[i] == latest) saveLoadSelectedIndex = i;
+        saveLoadStatus = status == null || status.isBlank() ? "Select a save slot." : status;
+        screen = Screen.SAVE_LOAD;
+        panelMode = PanelMode.NONE;
+        logEvent("Save/load panel opened.");
+        DebugLog.audit("CLIENT_MENU_ROUTE", "saveLoad opened latest=" + latest + " status=" + saveLoadStatus);
+    }
+
+    void continueLatestSaveOrOpenPanel() {
+        int latest = latestExistingSaveSlot();
+        if (latest >= 0 && loadSaveSlot(latest, "Continue")) return;
+        openSaveLoadPanel("No saved game was found. Choose a slot or start a new game.");
+    }
+
+    int latestExistingSaveSlot() {
+        int latestSlot = -1;
+        long latestMillis = Long.MIN_VALUE;
+        for (int slot : saveLoadSlots()) {
+            java.nio.file.Path path = SaveSlotSurfaceApi.savePathForSlot(slot);
+            try {
+                if (java.nio.file.Files.isRegularFile(path)) {
+                    long millis = java.nio.file.Files.getLastModifiedTime(path).toMillis();
+                    if (millis > latestMillis) {
+                        latestMillis = millis;
+                        latestSlot = slot;
+                    }
+                }
+            } catch (Exception ex) {
+                DebugLog.warn("SAVE_LOAD_MENU", "Could not inspect save slot " + slot + ": " + ex.getMessage());
+            }
+        }
+        return latestSlot;
+    }
+
+    boolean loadSaveSlot(int slot, String reason) {
+        java.nio.file.Path path = SaveSlotSurfaceApi.savePathForSlot(slot);
+        if (!java.nio.file.Files.isRegularFile(path)) {
+            saveLoadStatus = SaveSlotSurfaceApi.slotLabel(slot) + " is empty.";
+            logEvent(saveLoadStatus);
+            return false;
+        }
+        try (java.io.InputStream in = java.nio.file.Files.newInputStream(path)) {
+            Properties p = new Properties();
+            p.load(in);
+            Persistence.readCore(this, p);
+            screen = Screen.GAME;
+            panelMode = PanelMode.NONE;
+            selectedButton = 0;
+            saveLoadStatus = "Loaded " + SaveSlotSurfaceApi.slotLabel(slot) + ".";
+            logEvent(saveLoadStatus);
+            DebugLog.audit("CLIENT_MENU_ROUTE", "loaded slot=" + slot + " reason=" + (reason == null ? "unspecified" : reason) + " path=" + path);
+            return true;
+        } catch (Throwable t) {
+            saveLoadStatus = "Could not load " + SaveSlotSurfaceApi.slotLabel(slot) + ": " + t.getMessage();
+            logEvent(saveLoadStatus);
+            DebugLog.error("SAVE_LOAD_MENU", saveLoadStatus, t);
+            return false;
+        }
+    }
+
+    boolean handleSaveLoadKey(int code) {
+        if (screen != Screen.SAVE_LOAD) return false;
+        int[] slots = saveLoadSlots();
+        if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) {
+            setScreen(Screen.MENU);
+            return true;
+        }
+        if (code == KeyEvent.VK_N) {
+            openNewGameSetup();
+            return true;
+        }
+        if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W || code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+            saveLoadSelectedIndex = Math.floorMod(saveLoadSelectedIndex - 1, slots.length);
+            saveLoadStatus = "Selected " + SaveSlotSurfaceApi.slotLabel(selectedSaveLoadSlot()) + ".";
+            return true;
+        }
+        if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S || code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+            saveLoadSelectedIndex = Math.floorMod(saveLoadSelectedIndex + 1, slots.length);
+            saveLoadStatus = "Selected " + SaveSlotSurfaceApi.slotLabel(selectedSaveLoadSlot()) + ".";
+            return true;
+        }
+        int digit = code - KeyEvent.VK_1;
+        if (digit >= 0 && digit < Math.min(SAVE_SLOT_COUNT, slots.length)) {
+            saveLoadSelectedIndex = digit;
+            loadSaveSlot(selectedSaveLoadSlot(), "number key");
+            return true;
+        }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E || code == KeyEvent.VK_L) {
+            loadSaveSlot(selectedSaveLoadSlot(), "save/load screen");
+            return true;
+        }
+        return false;
+    }
+
+    boolean handleSaveLoadClick(java.awt.event.MouseEvent e) {
+        if (screen != Screen.SAVE_LOAD || e == null) return false;
+        int[] slots = saveLoadSlots();
+        for (int i = 0; i < slots.length; i++) {
+            if (saveLoadSlotRect(i).contains(e.getX(), e.getY())) {
+                saveLoadSelectedIndex = i;
+                if (e.getClickCount() >= 2 || javax.swing.SwingUtilities.isLeftMouseButton(e)) loadSaveSlot(selectedSaveLoadSlot(), "mouse");
+                else saveLoadStatus = "Selected " + SaveSlotSurfaceApi.slotLabel(selectedSaveLoadSlot()) + ".";
+                return true;
+            }
+        }
+        if (saveLoadBackRect().contains(e.getX(), e.getY())) {
+            setScreen(Screen.MENU);
+            return true;
+        }
+        if (saveLoadNewGameRect().contains(e.getX(), e.getY())) {
+            openNewGameSetup();
+            return true;
+        }
+        return false;
+    }
+
+    Rectangle saveLoadPanelRect() {
+        int panelW = Math.max(420, Math.min(760, getWidth() - 60));
+        int panelH = Math.max(360, Math.min(560, getHeight() - 80));
+        return new Rectangle(Math.max(20, getWidth() / 2 - panelW / 2), Math.max(40, getHeight() / 2 - panelH / 2), panelW, panelH);
+    }
+
+    Rectangle saveLoadSlotRect(int index) {
+        Rectangle p = saveLoadPanelRect();
+        int rowH = 48;
+        int gap = 8;
+        int top = p.y + 92;
+        return new Rectangle(p.x + 28, top + index * (rowH + gap), p.width - 56, rowH);
+    }
+
+    Rectangle saveLoadBackRect() {
+        Rectangle p = saveLoadPanelRect();
+        return new Rectangle(p.x + 28, p.y + p.height - 58, 148, 34);
+    }
+
+    Rectangle saveLoadNewGameRect() {
+        Rectangle p = saveLoadPanelRect();
+        return new Rectangle(p.x + p.width - 206, p.y + p.height - 58, 178, 34);
     }
 
     void installExistingEarlyScreenInputBridge() {
@@ -338,17 +719,61 @@ class GamePanel extends LegacyPanelBridgeBase {
                 if (KeyEarlyScreenController.handleEarlyKey(GamePanel.this, e.getKeyCode())) {
                     repaint();
                     requestFocusInWindow();
+                    return;
+                }
+                if (handleSaveLoadKey(e.getKeyCode())) {
+                    repaint();
+                    requestFocusInWindow();
+                    return;
+                }
+                if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.BOOT)) {
+                    GamePanelKeyController.keyPressed(GamePanel.this, e);
+                    repaint();
+                    requestFocusInWindow();
+                }
+            }
+
+            @Override public void keyTyped(java.awt.event.KeyEvent e) {
+                if (CharacterNameKeyController.handleCharacterNameEditTyped(GamePanel.this, e.getKeyChar())) {
+                    repaint();
+                    return;
+                }
+                if (screen == Screen.MULTIPLAYER) {
+                    multiplayerMenu.keyTyped(e.getKeyChar());
+                    repaint();
                 }
             }
         });
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (handleSaveLoadClick(e)) {
+                    repaint();
+                    requestFocusInWindow();
+                    return;
+                }
+                if (screenUsesLateUiClickSurface() && MouseLateUiController.handleLateUiClick(GamePanel.this, e.getX(), e.getY())) {
+                    repaint();
+                    requestFocusInWindow();
+                    return;
+                }
+                if (MouseGamePanelController.handleGameAndPanelTargeting(GamePanel.this, e, e.getX(), e.getY())) {
+                    repaint();
+                    requestFocusInWindow();
+                    return;
+                }
                 if (MouseEarlyScreenController.handleIntroZoneEditorAndAudit(GamePanel.this, e, e.getX(), e.getY())) {
                     repaint();
                     requestFocusInWindow();
                 }
             }
         });
+    }
+
+    boolean screenUsesLateUiClickSurface() {
+        return screen == Screen.GAME || screen == Screen.OPTIONS || screen == Screen.CHARACTER || screen == Screen.PANEL
+                || screen == Screen.INVENTORY || screen == Screen.INFO || screen == Screen.MAP
+                || screen == Screen.PAUSE || screen == Screen.KNOWLEDGE || screen == Screen.MODS
+                || screen == Screen.SECTOR_AUDIT || screen == Screen.EDITOR;
     }
     @Override
     protected void paintComponent(java.awt.Graphics graphics) {
@@ -385,7 +810,27 @@ class GamePanel extends LegacyPanelBridgeBase {
                     OptionsScreenPainter.paintGraphicsDropdownPopup(this, g);
                     return;
                 }
-                if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.INVENTORY || screen == Screen.CHARACTER || screen == Screen.INFO || screen == Screen.MAP || screen == Screen.KNOWLEDGE) {
+                if (screen == Screen.MULTIPLAYER) {
+                    new MultiplayerSurfacePainter().paint(g, this);
+                    return;
+                }
+                if (screen == Screen.SAVE_LOAD) {
+                    new SaveLoadSurfacePainter().paint(g, this);
+                    return;
+                }
+                if (screen == Screen.MODS) {
+                    drawToolsMenuSurface(g, w, h);
+                    return;
+                }
+                if (screen == Screen.SECTOR_AUDIT) {
+                    drawSectorAuditSurface(g, w, h);
+                    return;
+                }
+                if (screen == Screen.EDITOR) {
+                    drawEditorRecoverySurface(g, w, h);
+                    return;
+                }
+                if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.INVENTORY || screen == Screen.CHARACTER || screen == Screen.INFO || screen == Screen.MAP || screen == Screen.KNOWLEDGE || screen == Screen.PAUSE) {
                     paintGameBridgeSurface(g, w, h);
                     return;
                 }
@@ -400,34 +845,842 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
 
+    private void drawToolsMenuSurface(java.awt.Graphics2D g, int w, int h) {
+        buttons.clear();
+        Rectangle panel = new Rectangle(Math.max(18, w / 2 - Math.min(760, w - 48) / 2), Math.max(58, h / 2 - Math.min(430, h - 96) / 2), Math.min(760, w - 48), Math.min(430, h - 96));
+        drawOverlayFrame(g, panel, "TOOLS / MODS");
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 58, panel.width - 36, panel.height - 118);
+        drawDetailBox(g, body, "Recovered Tool Routes", java.util.List.of(
+                "Sector Audit opens a generated/current slice audit with map, cursor, and findings.",
+                "Editor opens a recovery surface for the detached simulation editor route.",
+                "These routes were present in key/mouse handling but were not painted by the package client."
+        ), null);
+        int by = panel.y + panel.height - 46;
+        addOverlayButton("Sector Audit", panel.x + 18, by, 130, 30, "Open the sector audit surface.", this::openSectorAuditPanel);
+        addOverlayButton("Editor", panel.x + 158, by, 92, 30, "Open the editor recovery surface.", () -> setScreen(Screen.EDITOR));
+        addOverlayButton("Back", panel.x + panel.width - 112, by, 86, 30, "Return to the main menu.", () -> setScreen(Screen.MENU));
+        drawOverlayButtons(g);
+    }
+
+    private void drawSectorAuditSurface(java.awt.Graphics2D g, int w, int h) {
+        buttons.clear();
+        if (auditWorld == null) rerollSectorAudit();
+        Rectangle panel = new Rectangle(18, 48, Math.max(560, w - 36), Math.max(420, h - 86));
+        drawOverlayFrame(g, panel, "SECTOR AUDIT");
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, panel.height - 112);
+        int gap = 14;
+        Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(300, body.width * 3 / 5), body.height);
+        drawBox(g, mapBox, "Audit Slice");
+        if (auditWorld != null && auditWorld.w > 0 && auditWorld.h > 0) {
+            double sx = mapBox.width / (double)auditWorld.w;
+            double sy = mapBox.height / (double)auditWorld.h;
+            for (int x = 0; x < auditWorld.w; x++) for (int y = 0; y < auditWorld.h; y++) {
+                g.setColor(tileColor(auditWorld.tiles[x][y], x, y));
+                int rx = mapBox.x + (int)Math.floor(x * sx);
+                int ry = mapBox.y + (int)Math.floor(y * sy);
+                int rw = Math.max(1, (int)Math.ceil(sx));
+                int rh = Math.max(1, (int)Math.ceil(sy));
+                g.fillRect(rx, ry, rw, rh);
+            }
+            g.setColor(new java.awt.Color(116, 188, 235));
+            int cx = mapBox.x + (int)Math.round(Math.max(0, Math.min(auditWorld.w - 1, auditCursorX)) * sx);
+            int cy = mapBox.y + (int)Math.round(Math.max(0, Math.min(auditWorld.h - 1, auditCursorY)) * sy);
+            g.drawRect(cx - 3, cy - 3, 7, 7);
+        }
+        Rectangle detail = new Rectangle(mapBox.x + mapBox.width + gap, body.y, Math.max(240, body.x + body.width - mapBox.x - mapBox.width - gap), body.height);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Zone: " + (auditWorld == null ? "none" : auditWorld.zoneType.label));
+        lines.add("Density: " + WorldSetupSettings.ZONE_DENSITY[Math.max(0, Math.min(auditZoneDensityIndex, WorldSetupSettings.ZONE_DENSITY.length - 1))]);
+        lines.add("Overlay: " + auditOverlayLabel());
+        lines.add("Cursor: " + auditCursorX + "," + auditCursorY);
+        if (auditSnapshot != null) lines.addAll(SectorAuditRuntimeAuthority.compactPanelLines(auditSnapshot, auditFindingIndex));
+        else lines.add("Audit snapshot has not run.");
+        drawDetailBox(g, detail, "Findings", lines, null);
+        int by = panel.y + panel.height - 46;
+        addOverlayButton("Reroll", panel.x + 18, by, 88, 30, "Generate a fresh audit slice.", this::rerollSectorAudit);
+        addOverlayButton("Zone", panel.x + 114, by, 76, 30, "Cycle audit zone type.", () -> cycleAuditZoneType(1));
+        addOverlayButton("Density", panel.x + 198, by, 92, 30, "Cycle audit zone density.", this::cycleAuditZoneDensity);
+        addOverlayButton("Overlay", panel.x + 298, by, 92, 30, "Cycle audit overlay.", this::cycleAuditOverlay);
+        addOverlayButton("Prev", panel.x + 398, by, 72, 30, "Previous audit finding.", () -> jumpAuditFinding(-1));
+        addOverlayButton("Next", panel.x + 478, by, 72, 30, "Next audit finding.", () -> jumpAuditFinding(1));
+        addOverlayButton("Back", panel.x + panel.width - 112, by, 86, 30, "Return to tools.", () -> setScreen(Screen.MODS));
+        drawOverlayButtons(g);
+    }
+
+    private void drawEditorRecoverySurface(java.awt.Graphics2D g, int w, int h) {
+        buttons.clear();
+        Rectangle panel = new Rectangle(Math.max(18, w / 2 - Math.min(820, w - 48) / 2), Math.max(58, h / 2 - Math.min(430, h - 96) / 2), Math.min(820, w - 48), Math.min(430, h - 96));
+        drawOverlayFrame(g, panel, "SIMULATION EDITOR");
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 58, panel.width - 36, panel.height - 118);
+        drawDetailBox(g, body, "Editor Route", java.util.List.of(
+                "The in-game editor key route is no longer a blank screen.",
+                "The full SimulationEditorSuite remains a separate Swing editor window class.",
+                "This recovery surface keeps keyboard and mouse routes from trapping the package client while that editor is reattached."
+        ), null);
+        int by = panel.y + panel.height - 46;
+        addOverlayButton("Tools", panel.x + 18, by, 92, 30, "Return to tools.", () -> setScreen(Screen.MODS));
+        addOverlayButton("Main Menu", panel.x + panel.width - 142, by, 112, 30, "Return to main menu.", () -> setScreen(Screen.MENU));
+        drawOverlayButtons(g);
+    }
+
     private void paintGameBridgeSurface(java.awt.Graphics2D g, int w, int h) {
-        g.setColor(new java.awt.Color(12, 12, 10));
+        g.setColor(new java.awt.Color(10, 11, 10));
         g.fillRect(0, 0, w, h);
-        int tile = Math.max(16, Math.min(32, Math.min(w, h) / 32));
-        for (int y = 0; y < h; y += tile) {
-            for (int x = 0; x < w; x += tile) {
-                boolean alt = ((x / tile) + (y / tile)) % 2 == 0;
-                g.setColor(alt ? new java.awt.Color(28, 29, 25) : new java.awt.Color(22, 23, 20));
-                g.fillRect(x, y, tile, tile);
+        if (screen == Screen.CHARACTER && newGameSetupActive) {
+            drawNewGameSetupSurface(g, w, h);
+            return;
+        }
+        if (world == null) {
+            g.setFont(titleFont.deriveFont(java.awt.Font.BOLD, Math.max(26f, Math.min(46f, h / 12f))));
+            g.setColor(new java.awt.Color(225, 205, 140));
+            center(g, "NO WORLD LOADED", w / 2, Math.max(86, h / 4));
+            g.setFont(uiFont);
+            g.setColor(new java.awt.Color(205, 210, 195));
+            center(g, "Return to the main menu and start or load a game.", w / 2, Math.max(132, h / 4 + 44));
+            return;
+        }
+        if (screen == Screen.GAME && panelMode == PanelMode.NONE) buttons.clear();
+
+        Rectangle map = gameWorldViewportRect(w, h);
+        int tile = Math.max(8, Math.min(28, Math.min(map.width / 28, map.height / 20)));
+        lastWorldViewTileSize = tile;
+        int cols = Math.max(1, map.width / tile);
+        int rows = Math.max(1, map.height / tile);
+        lastWorldViewMinX = Math.max(0, Math.min(Math.max(0, world.w - cols), playerX - cols / 2));
+        lastWorldViewMinY = Math.max(0, Math.min(Math.max(0, world.h - rows), playerY - rows / 2));
+        lastWorldViewOriginX = map.x + Math.max(0, (map.width - cols * tile) / 2);
+        lastWorldViewOriginY = map.y + Math.max(0, (map.height - rows * tile) / 2);
+
+        drawWorldTiles(g, cols, rows, tile);
+        drawWorldEntities(g, cols, rows, tile);
+        drawWorldHud(g, w, h, map);
+        if (screen != Screen.GAME || panelMode != PanelMode.NONE) drawActivePanelOverlay(g, w, h);
+    }
+
+    private Rectangle gameWorldViewportRect(int w, int h) {
+        int sideW = Math.max(240, Math.min(340, w / 4));
+        int top = 58;
+        int bottom = 108;
+        int width = Math.max(240, w - sideW - 30);
+        int height = Math.max(200, h - top - bottom);
+        return new Rectangle(16, top, width, height);
+    }
+
+    private void drawWorldTiles(java.awt.Graphics2D g, int cols, int rows, int tile) {
+        java.awt.Font glyphFont = asciiFont.deriveFont(java.awt.Font.BOLD, Math.max(10f, tile * 0.62f));
+        g.setFont(glyphFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        for (int vy = 0; vy < rows; vy++) {
+            for (int vx = 0; vx < cols; vx++) {
+                int wx = lastWorldViewMinX + vx;
+                int wy = lastWorldViewMinY + vy;
+                int sx = lastWorldViewOriginX + vx * tile;
+                int sy = lastWorldViewOriginY + vy * tile;
+                if (!world.inBounds(wx, wy)) continue;
+                char ch = world.tiles[wx][wy];
+                CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, wx, wy, ch);
+                g.setColor(tileColor(ch, wx, wy));
+                g.fillRect(sx, sy, tile, tile);
+                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, descriptor, ch, sx, sy, tile);
+                if (!drewArt && tile >= 13) {
+                    g.setColor(tileGlyphColor(ch));
+                    String s = Character.toString(ch);
+                    g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
+                }
+                g.setColor(new java.awt.Color(0, 0, 0, 70));
+                g.drawRect(sx, sy, tile, tile);
             }
         }
-        g.setColor(new java.awt.Color(94, 76, 42));
-        for (int x = 0; x < w; x += tile) g.drawLine(x, 0, x, h);
-        for (int y = 0; y < h; y += tile) g.drawLine(0, y, w, y);
-        g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 18f));
+    }
+
+    private boolean drawCompiledTile(java.awt.Graphics2D g, CompiledTileDescriptor descriptor, char fallbackGlyph, int x, int y, int tile) {
+        if (descriptor == null) {
+            BufferedImage img = images.getTile(fallbackGlyph);
+            if (img == null) return false;
+            g.drawImage(img, x, y, tile, tile, null);
+            return true;
+        }
+        boolean drew = false;
+        if (descriptor.hasOverlay()) {
+            BufferedImage under = tileArtImage(descriptor.underlayArtKey, descriptor.underlayAssetId, descriptor.underlayGlyph == null ? '.' : descriptor.underlayGlyph.charValue());
+            if (under != null) {
+                g.drawImage(under, x, y, tile, tile, null);
+                drew = true;
+            }
+            BufferedImage over = tileArtImage(descriptor.overlayArtKey, descriptor.overlayAssetId, fallbackGlyph);
+            if (over != null) {
+                g.drawImage(over, x, y, tile, tile, null);
+                drew = true;
+            }
+            return drew;
+        }
+        BufferedImage img = tileArtImage(descriptor.primaryArtKey, descriptor.primaryAssetId, fallbackGlyph);
+        if (img == null) return false;
+        g.drawImage(img, x, y, tile, tile, null);
+        return true;
+    }
+
+    private BufferedImage tileArtImage(String artKey, String assetId, char fallbackGlyph) {
+        BufferedImage img = artKey == null ? null : images.getTile(artKey, fallbackGlyph);
+        if (img == null && assetId != null) img = images.getSemanticAssetImage(assetId);
+        if (img == null) img = images.getTile(fallbackGlyph);
+        return img;
+    }
+
+    private void drawWorldEntities(java.awt.Graphics2D g, int cols, int rows, int tile) {
+        if (world == null) return;
+        if (world.mapObjects != null) {
+            for (MapObjectState object : world.mapObjects) {
+                if (object == null || !worldPointInView(object.x, object.y, cols, rows)) continue;
+                drawWorldSprite(g, images.getMapObjectImage(object), object.x, object.y, tile, new java.awt.Color(230, 190, 88), Character.toString(object.glyph));
+            }
+        }
+        if (baseObjects != null) {
+            for (BaseObject object : baseObjects) {
+                if (object == null || !worldPointInView(object.x, object.y, cols, rows)) continue;
+                drawWorldSprite(g, images.getBaseObjectImage(object), object.x, object.y, tile, new java.awt.Color(104, 220, 145), Character.toString(object.symbol));
+            }
+        }
+        if (world.npcs != null) {
+            for (NpcEntity npc : world.npcs) {
+                if (npc == null || !worldPointInView(npc.x, npc.y, cols, rows)) continue;
+                java.awt.Color outline = npc.faction == Faction.NONE ? new java.awt.Color(185, 170, 120) : new java.awt.Color(215, 126, 84);
+                drawWorldSprite(g, images.getNpcPortraitFor(npc), npc.x, npc.y, tile, outline, Character.toString(npc.symbol == 0 ? '@' : npc.symbol));
+            }
+        }
+        drawTargetCursor(g, lookX, lookY, cols, rows, tile, lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT, new java.awt.Color(116, 188, 235));
+        drawTargetCursor(g, combatX, combatY, cols, rows, tile, panelMode == PanelMode.COMBAT, new java.awt.Color(235, 88, 74));
+        drawTargetCursor(g, buildX, buildY, cols, rows, tile, buildPlacementActive, new java.awt.Color(124, 230, 144));
+        if (mouseMovePreviewActive && mouseMovePreviewPath != null) {
+            for (Point p : mouseMovePreviewPath) if (p != null) drawTargetCursor(g, p.x, p.y, cols, rows, tile, true, mouseMovePreviewValid ? new java.awt.Color(118, 214, 128) : new java.awt.Color(220, 92, 75));
+        }
+        if (worldPointInView(playerX, playerY, cols, rows)) {
+            drawWorldSprite(g, images.getPlayerPortrait(active), playerX, playerY, tile, new java.awt.Color(245, 214, 118), "@");
+        }
+    }
+
+    private boolean worldPointInView(int x, int y, int cols, int rows) {
+        return x >= lastWorldViewMinX && y >= lastWorldViewMinY && x < lastWorldViewMinX + cols && y < lastWorldViewMinY + rows;
+    }
+
+    private void drawWorldSprite(java.awt.Graphics2D g, BufferedImage img, int wx, int wy, int tile, java.awt.Color outline, String fallback) {
+        int sx = lastWorldViewOriginX + (wx - lastWorldViewMinX) * tile;
+        int sy = lastWorldViewOriginY + (wy - lastWorldViewMinY) * tile;
+        int pad = Math.max(1, tile / 9);
+        int size = Math.max(4, tile - pad * 2);
+        if (img != null) {
+            g.drawImage(img, sx + pad, sy + pad, size, size, null);
+        } else {
+            g.setFont(asciiFont.deriveFont(java.awt.Font.BOLD, Math.max(9f, tile * 0.66f)));
+            java.awt.FontMetrics fm = g.getFontMetrics();
+            String s = fallback == null || fallback.isBlank() ? "?" : fallback.substring(0, 1);
+            g.setColor(new java.awt.Color(10, 12, 11, 210));
+            g.fillOval(sx + pad, sy + pad, size, size);
+            g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
+            g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
+        }
+        g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
+        g.drawRect(sx + pad, sy + pad, size, size);
+    }
+
+    private void drawTargetCursor(java.awt.Graphics2D g, int wx, int wy, int cols, int rows, int tile, boolean active, java.awt.Color color) {
+        if (!active || !worldPointInView(wx, wy, cols, rows)) return;
+        int sx = lastWorldViewOriginX + (wx - lastWorldViewMinX) * tile;
+        int sy = lastWorldViewOriginY + (wy - lastWorldViewMinY) * tile;
+        java.awt.Stroke old = g.getStroke();
+        g.setStroke(new java.awt.BasicStroke(Math.max(1f, tile / 10f)));
+        g.setColor(color == null ? new java.awt.Color(245, 214, 118) : color);
+        g.drawRect(sx + 1, sy + 1, Math.max(2, tile - 3), Math.max(2, tile - 3));
+        g.setStroke(old);
+    }
+
+    private java.awt.Color tileColor(char ch, int x, int y) {
+        if (ch == '#') return new java.awt.Color(38, 39, 36);
+        if (ch == '.' || ch == ',' || ch == ':' || ch == ';' || ch == '=') return new java.awt.Color(47, 48, 43);
+        if (ch == '+' || ch == '/' || ch == '\\' || ch == 'D') return new java.awt.Color(91, 76, 43);
+        if (ch == '~') return new java.awt.Color(35, 57, 58);
+        if (world != null && world.inBounds(x, y) && world.walkable(x, y)) return new java.awt.Color(54, 50, 42);
+        return new java.awt.Color(28, 29, 27);
+    }
+
+    private java.awt.Color tileGlyphColor(char ch) {
+        if (ch == '+' || ch == '/' || ch == '\\' || ch == 'D') return new java.awt.Color(235, 198, 110);
+        if (ch == '~') return new java.awt.Color(145, 198, 190);
+        if (Character.isUpperCase(ch)) return new java.awt.Color(205, 177, 112);
+        return new java.awt.Color(168, 166, 148);
+    }
+
+    private void drawWorldHud(java.awt.Graphics2D g, int w, int h, Rectangle map) {
+        g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 16f));
         g.setColor(new java.awt.Color(225, 205, 140));
-        g.drawString("THE MECHANIST - CLIENT SURFACE", 24, 36);
+        g.drawString("THE MECHANIST", 18, 30);
         g.setFont(smallFont);
         g.setColor(new java.awt.Color(205, 210, 195));
-        int y = 66;
+        String zone = world.zoneType.label + " | " + world.zoneCoordText() + " | " + timeText();
+        g.drawString(GuiLayoutApi.fitLabel(zone, g.getFontMetrics(), Math.max(180, w - 36)), 18, 50);
+
+        Rectangle side = new Rectangle(map.x + map.width + 14, map.y, Math.max(220, w - (map.x + map.width + 30)), map.height);
+        g.setColor(new java.awt.Color(12, 14, 13, 220));
+        g.fillRoundRect(side.x, side.y, side.width, side.height, 10, 10);
+        g.setColor(new java.awt.Color(145, 118, 64, 125));
+        g.drawRoundRect(side.x, side.y, side.width, side.height, 10, 10);
+        int y = side.y + 26;
+        g.setColor(new java.awt.Color(225, 205, 140));
+        g.drawString(active == null ? "Unnamed survivor" : active.name + " / " + active.job, side.x + 12, y);
+        y += 24;
+        g.setColor(new java.awt.Color(205, 210, 195));
         for (String line : java.util.List.of(
-                "Game surface bridge is painting from GamePanel state.",
-                "Screen=" + screen + " Panel=" + panelMode + " Turn=" + turn + " WorldTurn=" + worldTurn,
-                "Position=" + playerX + "," + playerY + "  Inventory=" + inventory.size() + "  Log=" + eventLog.size(),
-                "Assets root property=" + System.getProperty("mechanist.assetRoot", "."),
-                "Generated asset root property=" + System.getProperty("mechanist.generatedAssetRoot", "."))) {
-            g.drawString(line, 24, y);
+                "Position " + playerX + "," + playerY,
+                "Food " + food + "  Water " + water,
+                "Wounds " + wounds + "  Fatigue " + fatigue,
+                "Script " + carriedScript + "  XP " + xp,
+                "Knowledge " + knowledgeCredits + " / " + unlockedKnowledges.size() + " known",
+                "Inventory " + inventory.size() + " item(s)")) {
+            g.drawString(GuiLayoutApi.fitLabel(line, g.getFontMetrics(), side.width - 24), side.x + 12, y);
             y += 20;
+        }
+        y += 12;
+        g.setColor(new java.awt.Color(225, 205, 140));
+        g.drawString("Recent Events", side.x + 12, y);
+        y += 22;
+        g.setColor(new java.awt.Color(177, 180, 162));
+        int start = Math.max(0, eventLog.size() - 10);
+        for (int i = start; i < eventLog.size(); i++) {
+            if (y > side.y + side.height - 18) break;
+            g.drawString(GuiLayoutApi.fitLabel(eventLog.get(i), g.getFontMetrics(), side.width - 24), side.x + 12, y);
+            y += 18;
+        }
+
+        Rectangle strip = new Rectangle(16, h - 104, Math.max(260, w - 32), 84);
+        g.setColor(new java.awt.Color(12, 14, 13, 230));
+        g.fillRoundRect(strip.x, strip.y, strip.width, strip.height, 10, 10);
+        g.setColor(new java.awt.Color(145, 118, 64, 115));
+        g.drawRoundRect(strip.x, strip.y, strip.width, strip.height, 10, 10);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        g.drawString("Command Bar  |  Screen=" + screen + "  Panel=" + panelMode + "  Seed=" + seed, strip.x + 14, strip.y + 18);
+        if (screen == Screen.GAME && panelMode == PanelMode.NONE) {
+            addWorldCommandButtons(strip);
+            drawOverlayButtons(g);
+        } else {
+            g.drawString("Move: WASD/Arrows  Look: L  Interact: E  Inventory: I  Character: C  Map: M  Build: B  Pause/Menu: Esc", strip.x + 14, strip.y + 48);
+        }
+    }
+
+    private void addWorldCommandButtons(Rectangle strip) {
+        String[] labels = { "Look", "Interact", "Inv", "Char", "Map", "Build", "Info", "Fight", "Explosive", "Reload", "Wait", "Mode", "Plan", "Pause" };
+        String[] tips = {
+                "Open the look and inspect panel.",
+                "Open adjacent interact targeting.",
+                "Open carried inventory and base storage.",
+                "Open the character panel.",
+                "Open the world map panel.",
+                "Open construction recipes.",
+                "Open the event log and command catalog.",
+                "Open combat targeting.",
+                "Open explosive targeting.",
+                "Reload the current ranged weapon, if one is available.",
+                "Spend one turn waiting.",
+                "Cycle movement mode. Current: " + movementModeLabel(selectedMovementModeIndex) + ".",
+                "Begin manual path planning.",
+                "Open the pause command panel."
+        };
+        Runnable[] actions = {
+                this::beginLookMode,
+                this::beginInteractMode,
+                () -> openPanel(PanelMode.INVENTORY),
+                () -> openPanel(PanelMode.CHARACTER),
+                () -> openPanel(PanelMode.MAP),
+                () -> openPanel(PanelMode.BUILD),
+                this::toggleTacticalSlate,
+                this::beginCombatTargeting,
+                this::beginExplosiveTargeting,
+                this::reloadCurrentRangedWeapon,
+                this::waitOneTurn,
+                this::cycleMovementMode,
+                this::beginManualMovementPlan,
+                () -> setScreen(Screen.PAUSE)
+        };
+        int count = labels.length;
+        int cols = Math.max(5, Math.min(8, Math.max(1, (strip.width - 24) / 86)));
+        int rows = Math.max(1, (count + cols - 1) / cols);
+        int gap = 4;
+        int rowH = Math.max(20, Math.min(26, (strip.height - 34 - (rows - 1) * gap) / rows));
+        int bw = Math.max(44, (strip.width - 28 - (cols - 1) * gap) / cols);
+        int startX = strip.x + 14;
+        int startY = strip.y + 26;
+        for (int i = 0; i < count; i++) {
+            int col = i % cols;
+            int row = i / cols;
+            addOverlayButton(labels[i], startX + col * (bw + gap), startY + row * (rowH + gap), bw, rowH, tips[i], actions[i]);
+        }
+    }
+
+    private void drawNewGameSetupSurface(java.awt.Graphics2D g, int w, int h) {
+        buttons.clear();
+        BufferedImage backdrop = images.get("new_world_backdrop_rebase");
+        if (backdrop != null) g.drawImage(backdrop, 0, 0, w, h, null);
+        g.setColor(new java.awt.Color(5, 7, 8, backdrop == null ? 255 : 205));
+        g.fillRect(0, 0, w, h);
+
+        Rectangle panel = new Rectangle(Math.max(18, w / 2 - Math.min(560, w - 60) / 2), Math.max(42, h / 2 - Math.min(600, h - 84) / 2), Math.min(1120, w - 36), Math.min(600, h - 84));
+        if (panel.width < Math.min(980, w - 36)) panel.width = Math.min(980, w - 36);
+        panel.x = Math.max(18, (w - panel.width) / 2);
+        drawOverlayFrame(g, panel, "NEW GAME / CHARACTER AND WORLD SETUP");
+
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, panel.height - 112);
+        int gap = 14;
+        int leftW = Math.max(190, Math.min(240, body.width / 4));
+        int rightW = Math.max(250, Math.min(330, body.width / 3));
+        int midW = Math.max(260, body.width - leftW - rightW - gap * 2);
+        Rectangle roster = new Rectangle(body.x, body.y, leftW, body.height);
+        Rectangle character = new Rectangle(roster.x + roster.width + gap, body.y, midW, body.height);
+        Rectangle setup = new Rectangle(character.x + character.width + gap, body.y, rightW, body.height);
+        drawNewGameRoster(g, roster);
+        drawNewGameCharacter(g, character);
+        drawNewGameWorldSetup(g, setup);
+
+        int by = panel.y + panel.height - 46;
+        addOverlayButton("Start Game", panel.x + 18, by, 132, 30, "Generate the world with this character and setup.", this::startPackagedClientNewGame);
+        addOverlayButton("Back", panel.x + 160, by, 86, 30, "Return to the main menu.", () -> { newGameSetupActive = false; characterNameEditActive = false; setScreen(Screen.MENU); });
+        drawOverlayButtons(g);
+    }
+
+    private void drawNewGameRoster(java.awt.Graphics2D g, Rectangle r) {
+        drawBox(g, r, "Candidate Roster");
+        if (candidates.isEmpty()) prepareNewGameRoster(System.currentTimeMillis());
+        int y = r.y + 38;
+        for (int i = 0; i < candidates.size(); i++) {
+            Candidate c = candidates.get(i);
+            int idx = i;
+            ButtonBox b = new ButtonBox((i == candidateIndex ? "> " : "") + c.name, r.x + 10, y, r.width - 20, 30, c.job, () -> {
+                candidateIndex = idx;
+                active = selectedNewGameCandidate();
+                characterNameEditActive = false;
+                repaint();
+            }, images.getPlayerPortrait(c));
+            buttons.add(b);
+            y += 38;
+        }
+        y += 12;
+        addOverlayButton("Prev", r.x + 10, y, 74, 28, "Previous candidate.", () -> cycleSelectedCandidate(-1));
+        addOverlayButton("Next", r.x + 92, y, 74, 28, "Next candidate.", () -> cycleSelectedCandidate(1));
+        y += 36;
+        addOverlayButton("Reroll", r.x + 10, y, 82, 28, "Reroll the selected candidate.", this::rerollSelectedCandidate);
+        addOverlayButton("Roster", r.x + 100, y, 82, 28, "Generate a fresh roster.", this::rerollNewGameRoster);
+    }
+
+    private void drawNewGameCharacter(java.awt.Graphics2D g, Rectangle r) {
+        Candidate c = selectedNewGameCandidate();
+        drawBox(g, r, "Character");
+        int x = r.x + 14;
+        int y = r.y + 34;
+        BufferedImage portrait = c == null ? null : images.getPlayerPortrait(c);
+        int portraitSize = Math.min(124, Math.max(72, r.width / 3));
+        if (portrait != null) {
+            g.drawImage(portrait, x, y, portraitSize, portraitSize, null);
+            g.setColor(new java.awt.Color(145, 118, 64, 170));
+            g.drawRect(x, y, portraitSize, portraitSize);
+        }
+        int tx = x + portraitSize + 14;
+        characterNameEditRect = new Rectangle(tx, y + 22, Math.max(140, r.x + r.width - tx - 14), 30);
+        g.setFont(smallFont);
+        g.setColor(new java.awt.Color(177, 180, 162));
+        g.drawString("Name", tx, y + 16);
+        g.setColor(characterNameEditActive ? new java.awt.Color(54, 47, 31, 235) : new java.awt.Color(16, 18, 17, 230));
+        g.fillRect(characterNameEditRect.x, characterNameEditRect.y, characterNameEditRect.width, characterNameEditRect.height);
+        g.setColor(characterNameEditActive ? new java.awt.Color(245, 220, 140) : new java.awt.Color(145, 118, 64, 160));
+        g.drawRect(characterNameEditRect.x, characterNameEditRect.y, characterNameEditRect.width, characterNameEditRect.height);
+        g.setColor(new java.awt.Color(225, 205, 140));
+        String name = c == null ? "" : c.name;
+        g.drawString(GuiLayoutApi.fitLabel(name + (characterNameEditActive ? "|" : ""), g.getFontMetrics(), characterNameEditRect.width - 12), characterNameEditRect.x + 8, characterNameEditRect.y + 20);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        g.drawString("Job: " + (c == null ? "" : c.job), tx, y + 82);
+        g.drawString(c == null ? "" : c.ageYears + " years / " + c.ageBand, tx, y + 104);
+
+        int buttonY = y + portraitSize + 14;
+        addOverlayButton("Job <", x, buttonY, 74, 28, "Previous job.", () -> cycleSelectedCandidateJob(-1));
+        addOverlayButton("Job >", x + 82, buttonY, 74, 28, "Next job.", () -> cycleSelectedCandidateJob(1));
+        addOverlayButton("Edit Name", x + 164, buttonY, 106, 28, "Edit candidate name.", () -> { characterNameEditActive = true; requestFocusInWindow(); repaint(); });
+
+        Rectangle stats = new Rectangle(x, buttonY + 42, r.width - 28, r.y + r.height - buttonY - 54);
+        drawBox(g, stats, "Stats / Body");
+        g.setFont(smallFont);
+        int sy = stats.y + 34;
+        if (c != null) {
+            int colW = Math.max(120, (stats.width - 24) / 2);
+            int idx = 0;
+            for (Map.Entry<String,Integer> e : c.stats.entrySet()) {
+                int cx = stats.x + 12 + (idx / 7) * colW;
+                int cy = sy + (idx % 7) * 18;
+                g.setColor(new java.awt.Color(205, 210, 195));
+                g.drawString(e.getKey() + " " + e.getValue(), cx, cy);
+                idx++;
+            }
+            int by = sy + 138;
+            g.setColor(new java.awt.Color(177, 180, 162));
+            int shown = 0;
+            for (BodyPart part : c.body.values()) {
+                if (shown >= 5 || by > stats.y + stats.height - 12) break;
+                g.drawString(part.name + " END " + part.endurance + " / AGI " + part.agility, stats.x + 12, by);
+                by += 18;
+                shown++;
+            }
+        }
+    }
+
+    private void drawNewGameWorldSetup(java.awt.Graphics2D g, Rectangle r) {
+        if (worldSetup == null) worldSetup = WorldSetupSettings.standard();
+        drawBox(g, r, "World Management");
+        g.setFont(smallFont);
+        int y = r.y + 34;
+        g.setColor(new java.awt.Color(205, 210, 195));
+        for (String line : worldSetup.detailLines()) {
+            if (y > r.y + r.height - 236) break;
+            for (String wrapped : GuiLayoutApi.wrapText(line, g.getFontMetrics(), r.width - 24)) {
+                if (y > r.y + r.height - 236) break;
+                g.drawString(wrapped, r.x + 12, y);
+                y += 17;
+            }
+        }
+        int by = Math.max(y + 12, r.y + r.height - 222);
+        String[] labels = {
+                "NPC " + WorldSetupSettings.NPC_DENSITY[worldSetup.npcDensity],
+                "Size " + WorldSetupSettings.ZONE_SIZE[worldSetup.zoneSize],
+                "Density " + WorldSetupSettings.ZONE_DENSITY[worldSetup.zoneDensity],
+                "Prices " + WorldSetupSettings.PRICE[worldSetup.priceDifficulty],
+                "Craft " + WorldSetupSettings.CRAFT[worldSetup.craftDifficulty],
+                "Hoarder " + (worldSetup.hoarderMode ? "ON" : "OFF"),
+                "Age " + WorldSetupSettings.AGE[worldSetup.simulationAge]
+        };
+        for (int i = 0; i < labels.length; i++) {
+            int option = i;
+            int row = i / 2;
+            int col = i % 2;
+            int bw = (r.width - 32) / 2;
+            int bx = r.x + 12 + col * (bw + 8);
+            int bh = 28;
+            addOverlayButton(labels[i], bx, by + row * 34, bw, bh, "Cycle " + labels[i] + ".", () -> cycleWorldSetupOption(option));
+        }
+    }
+
+    private void drawActivePanelOverlay(java.awt.Graphics2D g, int w, int h) {
+        buttons.clear();
+        Rectangle panel = activePanelRect(w, h);
+        drawOverlayFrame(g, panel, panelTitle());
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, panel.height - 112);
+        if (panelMode == PanelMode.INVENTORY || screen == Screen.INVENTORY) {
+            drawInventoryOverlay(g, body);
+        } else if (panelMode == PanelMode.CHARACTER || screen == Screen.CHARACTER) {
+            drawCharacterOverlay(g, body);
+        } else if (panelMode == PanelMode.MAP || screen == Screen.MAP) {
+            drawMapOverlay(g, body);
+        } else if (panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT) {
+            drawTargetOverlay(g, body);
+        } else if (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH || panelMode == PanelMode.CRAFTING) {
+            drawBuildOverlay(g, body);
+        } else if (screen == Screen.PAUSE || panelMode == PanelMode.INFO || screen == Screen.INFO || panelMode == PanelMode.CONSOLE) {
+            drawInfoPauseOverlay(g, body);
+        } else {
+            drawGenericOverlay(g, body);
+        }
+        addOverlayButton("Close", panel.x + panel.width - 126, panel.y + panel.height - 46, 96, 30, "Return to the world.", this::closePanel);
+        drawOverlayButtons(g);
+    }
+
+    private Rectangle activePanelRect(int w, int h) {
+        int pw = Math.max(520, Math.min(w - 48, (int)Math.round(w * 0.78)));
+        int ph = Math.max(360, Math.min(h - 118, (int)Math.round(h * 0.68)));
+        return new Rectangle(Math.max(18, (w - pw) / 2), Math.max(62, (h - ph) / 2), pw, ph);
+    }
+
+    private String panelTitle() {
+        if (screen == Screen.PAUSE) return "PAUSE / COMMAND";
+        if (panelMode == PanelMode.NONE) return screen.name();
+        return switch (panelMode) {
+            case INVENTORY -> "INVENTORY / STORAGE";
+            case CHARACTER -> "CHARACTER";
+            case LOOK -> "LOOK / INSPECT";
+            case INTERACT -> "INTERACT";
+            case COMBAT -> "COMBAT TARGETING";
+            case BUILD -> "BUILD / CONSTRUCTION";
+            case WORKBENCH, CRAFTING -> "WORKBENCH / CRAFTING";
+            case MAP -> "WORLD MAP";
+            case INFO -> "INFO / EVENT LOG";
+            case CONSOLE -> "CONSOLE";
+            default -> panelMode.name();
+        };
+    }
+
+    private void drawOverlayFrame(java.awt.Graphics2D g, Rectangle panel, String title) {
+        g.setColor(new java.awt.Color(5, 7, 7, 236));
+        g.fillRoundRect(panel.x, panel.y, panel.width, panel.height, 10, 10);
+        g.setColor(new java.awt.Color(145, 118, 64, 175));
+        g.drawRoundRect(panel.x, panel.y, panel.width, panel.height, 10, 10);
+        g.setColor(new java.awt.Color(24, 27, 25, 230));
+        g.fillRect(panel.x + 2, panel.y + 2, panel.width - 4, 44);
+        g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 18f));
+        g.setColor(new java.awt.Color(225, 205, 140));
+        g.drawString(title == null ? "PANEL" : title, panel.x + 18, panel.y + 29);
+        g.setFont(smallFont);
+        g.setColor(new java.awt.Color(177, 180, 162));
+        g.drawString("Esc closes / Tab changes command / Enter activates", panel.x + Math.max(220, panel.width - 360), panel.y + 29);
+    }
+
+    private void drawInventoryOverlay(java.awt.Graphics2D g, Rectangle body) {
+        int gap = 14;
+        int col = Math.max(140, (body.width - gap * 2) / 3);
+        Rectangle carried = new Rectangle(body.x, body.y, col, body.height);
+        Rectangle storage = new Rectangle(body.x + col + gap, body.y, col, body.height);
+        Rectangle detail = new Rectangle(body.x + (col + gap) * 2, body.y, Math.max(160, body.width - (col + gap) * 2), body.height);
+        drawListBox(g, carried, "Carried", inventory, selectedInventoryIndex, !inventoryTargetColumnActive);
+        drawListBox(g, storage, "Base Storage", baseStorage, selectedTargetInventoryIndex, inventoryTargetColumnActive);
+        String selected = inventoryTargetColumnActive ? selectedBaseStorageItem() : selectedInventoryItem();
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(selected == null ? "No item selected." : selected);
+        lines.add("Weight " + inventoryWeight() + "/" + carryCapacity() + " / script " + carriedScript + " / banked " + baseStashedScript);
+        lines.add("Transfer commands keep carried inventory and base storage attached to live lists.");
+        if (selected != null) lines.add("Asset icon and semantic lookup are active for this item.");
+        drawDetailBox(g, detail, "Selection", lines, selected == null ? null : images.getItemIcon(selected));
+        int by = detail.y + detail.height - 36;
+        addOverlayButton("Use", detail.x + 12, by, 72, 28, "Use or inspect the selected carried item.", this::useSelectedInventoryItemBody);
+        addOverlayButton("Store ->", detail.x + 92, by, 92, 28, "Move the carried item to base storage.", this::storeSelectedInventoryItem);
+        addOverlayButton("<- Take", detail.x + 192, by, 92, 28, "Move the selected base item to carried inventory.", this::takeSelectedBaseStorageItem);
+    }
+
+    private void drawCharacterOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Candidate c = active;
+        Rectangle portrait = new Rectangle(body.x, body.y, Math.min(168, body.width / 4), Math.min(210, body.height));
+        drawDetailBox(g, portrait, c == null ? "Character" : c.name, java.util.List.of(c == null ? "No active character." : c.job, c == null ? "" : c.ageYears + " years / " + c.ageBand), c == null ? null : images.getPlayerPortrait(c));
+        Rectangle stats = new Rectangle(portrait.x + portrait.width + 14, body.y, Math.max(200, body.width / 3), body.height);
+        ArrayList<String> statLines = new ArrayList<>();
+        if (c != null) for (Map.Entry<String,Integer> e : c.stats.entrySet()) statLines.add(e.getKey() + ": " + e.getValue());
+        statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
+        statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
+        drawDetailBox(g, stats, "Stats", statLines, null);
+        Rectangle bodyBox = new Rectangle(stats.x + stats.width + 14, body.y, Math.max(200, body.x + body.width - stats.x - stats.width - 14), body.height);
+        ArrayList<String> bodyLines = new ArrayList<>();
+        if (c != null) for (BodyPart part : c.body.values()) bodyLines.add(part.name + " / END " + part.endurance + " / AGI " + part.agility + " / " + part.slot);
+        drawDetailBox(g, bodyBox, "Body / Loadout", bodyLines, null);
+    }
+
+    private void drawMapOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(260, body.width * 2 / 3), body.height);
+        drawBox(g, mapBox, "Current Slice");
+        if (world != null && world.w > 0 && world.h > 0) {
+            double sx = mapBox.width / (double)world.w;
+            double sy = mapBox.height / (double)world.h;
+            for (int x = 0; x < world.w; x++) for (int y = 0; y < world.h; y++) {
+                g.setColor(tileColor(world.tiles[x][y], x, y));
+                int rx = mapBox.x + (int)Math.floor(x * sx);
+                int ry = mapBox.y + (int)Math.floor(y * sy);
+                int rw = Math.max(1, (int)Math.ceil(sx));
+                int rh = Math.max(1, (int)Math.ceil(sy));
+                g.fillRect(rx, ry, rw, rh);
+            }
+            g.setColor(new java.awt.Color(245, 214, 118));
+            g.fillOval(mapBox.x + (int)Math.round(playerX * sx) - 3, mapBox.y + (int)Math.round(playerY * sy) - 3, 7, 7);
+        }
+        Rectangle info = new Rectangle(mapBox.x + mapBox.width + 14, body.y, Math.max(180, body.x + body.width - mapBox.x - mapBox.width - 14), body.height);
+        drawDetailBox(g, info, "World", java.util.List.of(
+                world == null ? "No world loaded." : world.zoneType.label,
+                world == null ? "" : world.zoneCoordText(),
+                "Visited slices " + visitedZoneInstances.size(),
+                "Visited zone types " + visitedZoneTypes.size(),
+                atlas == null ? "Atlas unavailable." : atlas.summary()), null);
+    }
+
+    private void drawTargetOverlay(java.awt.Graphics2D g, Rectangle body) {
+        int tx = panelMode == PanelMode.COMBAT ? combatX : lookX;
+        int ty = panelMode == PanelMode.COMBAT ? combatY : lookY;
+        tx = world == null ? tx : Math.max(0, Math.min(world.w - 1, tx));
+        ty = world == null ? ty : Math.max(0, Math.min(world.h - 1, ty));
+        Rectangle preview = new Rectangle(body.x, body.y, Math.min(170, body.width / 4), Math.min(190, body.height));
+        BufferedImage img = null;
+        String previewTitle = "Target " + tx + "," + ty;
+        NpcEntity npc = world == null ? null : world.npcAt(tx, ty);
+        MapObjectState obj = world == null ? null : world.mapObjectAt(tx, ty);
+        if (npc != null) { img = images.getNpcPortraitFor(npc); previewTitle = npc.name; }
+        else if (obj != null) { img = images.getMapObjectImage(obj); previewTitle = obj.label; }
+        else if (world != null && world.inBounds(tx, ty)) {
+            CompiledTileDescriptor d = TileDataCompilationAuthority.resolve(world, tx, ty, world.tiles[tx][ty]);
+            img = tileArtImage(d == null ? null : d.primaryArtKey, d == null ? null : d.primaryAssetId, world.tiles[tx][ty]);
+        }
+        drawDetailBox(g, preview, previewTitle, java.util.List.of(panelMode.name(), "Cursor " + tx + "," + ty), img);
+        Rectangle linesBox = new Rectangle(preview.x + preview.width + 14, body.y, Math.max(260, body.x + body.width - preview.x - preview.width - 14), body.height);
+        ArrayList<String> lines = tileStackAt(tx, ty);
+        if (panelMode == PanelMode.INTERACT) lines.add("Action: confirm targets adjacent fixtures, NPCs, base objects, and doors.");
+        if (panelMode == PanelMode.COMBAT) lines.add(lastTargetingReport == null || lastTargetingReport.isBlank() ? "No combat target report." : lastTargetingReport);
+        if (lines.isEmpty()) lines.add("No target data available.");
+        drawDetailBox(g, linesBox, "Inspection", lines, null);
+        addOverlayButton(panelMode == PanelMode.INTERACT ? "Confirm" : "Inspect", linesBox.x + 12, linesBox.y + linesBox.height - 36, 92, 28, "Run the current target action.", () -> {
+            if (panelMode == PanelMode.INTERACT) confirmInteraction();
+            else if (panelMode == PanelMode.COMBAT) confirmCombatTarget();
+            else examineSelectedLookTarget();
+        });
+    }
+
+    private void drawBuildOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Rectangle recipeList = new Rectangle(body.x, body.y, Math.max(260, body.width / 2), body.height);
+        drawBox(g, recipeList, "Build Recipes");
+        ArrayList<BuildRecipe> recipes = BuildRecipe.allBuildRecipes();
+        int y = recipeList.y + 34;
+        int shown = Math.min(10, recipes.size());
+        for (int i = 0; i < shown; i++) {
+            BuildRecipe recipe = recipes.get(i);
+            int rowY = y + i * 30;
+            BufferedImage icon = images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(recipe));
+            ButtonBox b = new ButtonBox(recipe.name, recipeList.x + 10, rowY - 20, recipeList.width - 20, 26, recipe.shortTip(), () -> {
+                pendingBuildRecipe = recipe;
+                buildPlacementActive = true;
+                buildX = playerX;
+                buildY = playerY;
+                panelMode = PanelMode.BUILD;
+                logEvent("Selected build recipe: " + recipe.name + ".");
+            }, icon);
+            buttons.add(b);
+        }
+        Rectangle detail = new Rectangle(recipeList.x + recipeList.width + 14, body.y, Math.max(220, body.x + body.width - recipeList.x - recipeList.width - 14), body.height);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Supplies " + supplies + " / machine parts " + machineParts);
+        lines.add("Pending: " + (pendingBuildRecipe == null ? "none" : pendingBuildRecipe.name));
+        lines.add("Placement cursor " + buildX + "," + buildY + " / active " + buildPlacementActive);
+        lines.add("Recipes shown " + shown + "/" + recipes.size() + ".");
+        lines.add("Workbench/crafting shares this panel until the dedicated production surface is reattached.");
+        if (pendingBuildRecipe != null) lines.add(pendingBuildRecipe.shortTip());
+        drawDetailBox(g, detail, "Construction", lines, pendingBuildRecipe == null ? null : images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(pendingBuildRecipe)));
+    }
+
+    private void drawInfoPauseOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Rectangle left = new Rectangle(body.x, body.y, Math.max(240, body.width / 2), body.height);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(stateSummary());
+        lines.add("World: " + (world == null ? "none" : world.zoneCoordText()));
+        lines.add("Setup: " + (worldSetup == null ? "standard" : worldSetup.shortSummary()));
+        lines.add("Window authority: " + universalWindowAuthority.auditSummary());
+        lines.add("Management windows: " + UniversalManagementWindowAuthority.summary());
+        int start = Math.max(0, eventLog.size() - 14);
+        for (int i = start; i < eventLog.size(); i++) lines.add(eventLog.get(i));
+        drawDetailBox(g, left, screen == Screen.PAUSE ? "Session" : "Event Log", lines, null);
+        Rectangle right = new Rectangle(left.x + left.width + 14, body.y, Math.max(220, body.x + body.width - left.x - left.width - 14), body.height);
+        drawDetailBox(g, right, "Sorted Commands", java.util.List.of(
+                "World: WASD/arrows move, . waits, R cycles movement, P starts manual path planning.",
+                "Targeting: L looks, E interacts, F targets combat, G targets explosives, X reloads.",
+                "Panels: I inventory, C character, M map, B build, Esc pause/resume.",
+                "Utility: F1 opens info/tactical slate, F2 opens chat/console, options live under pause.",
+                "Mouse: command bar buttons now route to the same live actions as the keys."
+        ), null);
+        int y = Math.max(right.y + 126, right.y + right.height - 152);
+        addOverlayButton("Resume", right.x + 12, y, 120, 30, "Return to game.", () -> setScreen(Screen.GAME)); y += 38;
+        addOverlayButton("Save / Load", right.x + 12, y, 140, 30, "Open save/load panel.", () -> openSaveLoadPanel("Pause menu opened save/load.")); y += 38;
+        addOverlayButton("Options", right.x + 12, y, 120, 30, "Open options.", () -> setScreen(Screen.OPTIONS)); y += 38;
+        addOverlayButton("Main Menu", right.x + 12, y, 140, 30, "Return to main menu.", () -> setScreen(Screen.MENU));
+    }
+
+    private void drawGenericOverlay(java.awt.Graphics2D g, Rectangle body) {
+        drawDetailBox(g, body, panelTitle(), java.util.List.of("This panel is routed into the live game context.", "Position " + playerX + "," + playerY, "World " + (world == null ? "none" : world.zoneCoordText())), null);
+    }
+
+    private String selectedInventoryItem() {
+        if (inventory.isEmpty()) return null;
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, inventory.size() - 1));
+        return inventory.get(selectedInventoryIndex);
+    }
+
+    private String selectedBaseStorageItem() {
+        if (baseStorage.isEmpty()) return null;
+        selectedTargetInventoryIndex = Math.max(0, Math.min(selectedTargetInventoryIndex, baseStorage.size() - 1));
+        return baseStorage.get(selectedTargetInventoryIndex);
+    }
+
+    private void storeSelectedInventoryItem() {
+        String item = selectedInventoryItem();
+        if (item == null) return;
+        inventory.remove(selectedInventoryIndex);
+        baseStorage.add(item);
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
+        logEvent("Stored " + item + ".");
+        rebuildItemContainersFromLegacyLists();
+        repaint();
+    }
+
+    private void takeSelectedBaseStorageItem() {
+        String item = selectedBaseStorageItem();
+        if (item == null) return;
+        baseStorage.remove(selectedTargetInventoryIndex);
+        inventory.add(item);
+        selectedTargetInventoryIndex = Math.max(0, Math.min(selectedTargetInventoryIndex, Math.max(0, baseStorage.size() - 1)));
+        logEvent("Took " + item + ".");
+        rebuildItemContainersFromLegacyLists();
+        repaint();
+    }
+
+    private void drawListBox(java.awt.Graphics2D g, Rectangle r, String title, java.util.List<String> rows, int selected, boolean activeColumn) {
+        drawBox(g, r, title);
+        g.setFont(smallFont);
+        int y = r.y + 34;
+        if (rows == null || rows.isEmpty()) {
+            g.setColor(new java.awt.Color(145, 148, 132));
+            g.drawString("Empty", r.x + 12, y);
+            return;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            if (y > r.y + r.height - 12) break;
+            boolean rowSelected = activeColumn && i == selected;
+            g.setColor(rowSelected ? new java.awt.Color(55, 48, 32, 230) : new java.awt.Color(0, 0, 0, 0));
+            if (rowSelected) g.fillRect(r.x + 8, y - 15, r.width - 16, 20);
+            g.setColor(rowSelected ? new java.awt.Color(245, 220, 140) : new java.awt.Color(205, 210, 195));
+            g.drawString(GuiLayoutApi.fitLabel((rowSelected ? "> " : "  ") + rows.get(i), g.getFontMetrics(), r.width - 24), r.x + 12, y);
+            y += 20;
+        }
+    }
+
+    private void drawDetailBox(java.awt.Graphics2D g, Rectangle r, String title, java.util.List<String> lines, BufferedImage icon) {
+        drawBox(g, r, title);
+        int x = r.x + 12;
+        int y = r.y + 34;
+        if (icon != null) {
+            int size = Math.min(96, Math.max(42, Math.min(r.width - 24, r.height / 3)));
+            g.drawImage(icon, x, y, size, size, null);
+            g.setColor(new java.awt.Color(145, 118, 64, 160));
+            g.drawRect(x, y, size, size);
+            y += size + 14;
+        }
+        g.setFont(smallFont);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        if (lines != null) {
+            for (String line : lines) {
+                if (y > r.y + r.height - 12) break;
+                for (String wrapped : GuiLayoutApi.wrapText(line, g.getFontMetrics(), r.width - 24)) {
+                    if (y > r.y + r.height - 12) break;
+                    g.drawString(wrapped, x, y);
+                    y += 18;
+                }
+            }
+        }
+    }
+
+    private void drawBox(java.awt.Graphics2D g, Rectangle r, String title) {
+        g.setColor(new java.awt.Color(12, 14, 13, 226));
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+        g.setColor(new java.awt.Color(100, 82, 46, 150));
+        g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+        if (title != null && !title.isBlank()) {
+            g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 14f));
+            g.setColor(new java.awt.Color(225, 205, 140));
+            g.drawString(GuiLayoutApi.fitLabel(title, g.getFontMetrics(), r.width - 24), r.x + 12, r.y + 22);
+        }
+    }
+
+    private void addOverlayButton(String label, int x, int y, int w, int h, String tip, Runnable action) {
+        buttons.add(new ButtonBox(label, x, y, w, h, tip, action));
+    }
+
+    private void drawOverlayButtons(java.awt.Graphics2D g) {
+        if (buttons.isEmpty()) return;
+        selectedButton = Math.max(0, Math.min(selectedButton, buttons.size() - 1));
+        for (int i = 0; i < buttons.size(); i++) {
+            ButtonBox button = buttons.get(i);
+            button.draw(g, smallFont, i == selectedButton, null, options);
         }
     }
     private void drawVisibleBootStatus(java.awt.Graphics2D g, int w, int h) {
@@ -466,14 +1719,160 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
     }
     void runGuarded(String tag, String reason, Runnable body) { if (body != null) body.run(); }
-    void executePacedMovementBody(int dx, int dy, String source) { playerX += dx; playerY += dy; lookX = playerX; lookY = playerY; }
+    void executePacedMovementBody(int dx, int dy, String source) {
+        int nx = playerX + dx;
+        int ny = playerY + dy;
+        if (world == null) {
+            playerX = nx;
+            playerY = ny;
+        } else if (world.inBounds(nx, ny) && world.walkable(nx, ny) && world.npcAt(nx, ny) == null) {
+            playerX = nx;
+            playerY = ny;
+            advanceTurnBody(null);
+            markZoneVisitedAndCheckFirstType();
+        } else {
+            logEvent("Blocked at " + nx + "," + ny + ".");
+        }
+        lookX = playerX;
+        lookY = playerY;
+    }
     void clearPendingMovementInput(String reason) {}
-    void advanceTurnBody(String line) { turn++; worldTurn++; if (line != null && !line.isBlank()) logEvent(line); }
+    void advanceTurnBody(String line) {
+        turn++;
+        worldTurn++;
+        if (line != null && !line.isBlank()) logEvent(line);
+        tickFactionRuntimeSystems(false);
+    }
     void advanceTurn(String line) { advanceTurnBody(line); }
     void settlePlayerMotionAfterNoMoveTurn(String reason) {}
-    void confirmInteractionBody() {}
-    void confirmCombatTargetBody() {}
-    void useSelectedInventoryItemBody() {}
+    void confirmInteractionBody() {
+        if (world == null) {
+            logEvent("Interact unavailable: no world loaded.");
+            return;
+        }
+        clampInteractCursorToAdjacent();
+        if (!world.inBounds(lookX, lookY)) {
+            logEvent("Interact target is outside the current world slice.");
+            return;
+        }
+        NpcEntity npc = world.npcAt(lookX, lookY);
+        if (npc != null) {
+            runNpcTalkedTo++;
+            logEvent("Talked to " + npc.name + " (" + npc.role + ", " + (npc.faction == null ? "No faction" : npc.faction.label) + ").");
+            gainXp("Social", 1, "spoke with " + npc.name);
+            advanceTurn("talks with " + npc.name + ".");
+            updatePendingInteractionSummary();
+            return;
+        }
+        if (RoomFixtureInteractionAuthority.tryInteract(this, lookX, lookY)
+                || FrontageFixtureInteractionAuthority.tryInteract(this, lookX, lookY)
+                || RoadTransitFixtureInteractionAuthority.tryInteract(this, lookX, lookY)) {
+            updatePendingInteractionSummary();
+            return;
+        }
+        MapObjectState obj = world.mapObjectAt(lookX, lookY);
+        if (obj != null) {
+            obj.vendCount++;
+            obj.cooldownUntilTurn = Math.max(obj.cooldownUntilTurn, turn + 8);
+            logEvent("Interacted with " + safeLabel(obj.label, "map object") + " (" + safeLabel(obj.type, "object") + ").");
+            advanceTurn("uses " + safeLabel(obj.label, "a map object") + ".");
+            updatePendingInteractionSummary();
+            return;
+        }
+        BaseObject base = baseObjectAt(lookX, lookY);
+        if (base != null) {
+            logEvent("Opened base object: " + safeLabel(base.name, "base object") + " at " + base.x + "," + base.y + ".");
+            panelMode = PanelMode.WORKBENCH;
+            screen = Screen.PANEL;
+            updatePendingInteractionSummary();
+            return;
+        }
+        char tile = world.tiles[lookX][lookY];
+        if (isDoorTile(tile)) {
+            interactDoorAt(lookX, lookY, tile);
+            updatePendingInteractionSummary();
+            return;
+        }
+        ArrayList<String> stack = tileStackAt(lookX, lookY);
+        logEvent("Nothing usable at " + lookX + "," + lookY + (stack.isEmpty() ? "." : ": " + stack.get(0)));
+        updatePendingInteractionSummary();
+    }
+    void confirmCombatTargetBody() {
+        if (world == null) {
+            lastTargetingReport = "Combat unavailable: no world loaded.";
+            logEvent(lastTargetingReport);
+            return;
+        }
+        clampCombatCursorToWorld();
+        LegacyTargetingSolution solution = targetingSolutionAt(combatX, combatY);
+        lastTargetingReport = solution.summary;
+        NpcEntity npc = world.npcAt(combatX, combatY);
+        if (npc == null) {
+            logEvent("No combat target at " + combatX + "," + combatY + ".");
+            return;
+        }
+        logEvent("Combat target confirmed: " + npc.name + " at " + combatX + "," + combatY + ".");
+        advanceTurn("takes aim at " + npc.name + ".");
+    }
+    void useSelectedInventoryItemBody() {
+        if (inventoryTargetColumnActive) {
+            String stored = selectedBaseStorageItem();
+            logEvent(stored == null ? "No base-storage item selected." : stored + " is in base storage; take it before using it.");
+            return;
+        }
+        String item = selectedInventoryItem();
+        if (item == null) {
+            logEvent("No carried item selected.");
+            return;
+        }
+        String low = item.toLowerCase(Locale.ROOT);
+        if (low.contains("ration") || low.contains("food") || low.contains("loaf") || low.contains("broth") || low.contains("meal")) {
+            food = Math.min(MAX_FOOD_WATER, food + 28);
+            inventory.remove(selectedInventoryIndex);
+            moveInventorySelection(0);
+            logEvent("Consumed " + item + ". Food " + food + "/" + MAX_FOOD_WATER + ".");
+            advanceTurn("eats " + item + ".");
+            return;
+        }
+        if (low.contains("water") || low.contains("canteen") || low.contains("flask") || low.contains("bottle")) {
+            water = Math.min(MAX_FOOD_WATER, water + 28);
+            inventory.remove(selectedInventoryIndex);
+            moveInventorySelection(0);
+            logEvent("Drank " + item + ". Water " + water + "/" + MAX_FOOD_WATER + ".");
+            advanceTurn("drinks " + item + ".");
+            return;
+        }
+        if (low.contains("medkit") || low.contains("bandage") || low.contains("splint") || low.contains("antiseptic")) {
+            wounds = Math.max(0, wounds - 1);
+            bleeding = Math.max(0, bleeding - 2);
+            infectionRisk = Math.max(0, infectionRisk - 2);
+            pain = Math.max(0, pain - 1);
+            inventory.remove(selectedInventoryIndex);
+            moveInventorySelection(0);
+            logEvent("Used " + item + ". Wounds " + wounds + ", bleeding " + bleeding + ", infection risk " + infectionRisk + ".");
+            advanceTurn("uses " + item + ".");
+            return;
+        }
+        if (low.contains("lamp") || low.contains("lantern") || low.contains("torch") || low.contains("glow") || low.contains("light")) {
+            activePortableLightItem = item;
+            activePortableLightExpiresTurn = turn + Math.max(60, TURNS_PER_HOUR);
+            lastPortableLightReport = "Portable light active: " + item + " until turn " + activePortableLightExpiresTurn + ".";
+            logEvent(lastPortableLightReport);
+            return;
+        }
+        ItemDef def = ItemCatalog.get(item);
+        if (def != null && def.weapon) {
+            equippedRightHandItem = item;
+            if (ItemCatalog.isFirearmLike(item)) loadedWeaponShots.putIfAbsent(item, 0);
+            logEvent("Equipped " + item + " in the right hand.");
+            return;
+        }
+        if (def != null) {
+            logEvent(item + ": " + def.use);
+            return;
+        }
+        logEvent("Inspected " + item + ".");
+    }
     void unequipSelectedEquipmentSlotBody() {}
     void addImperialScript(int amount) { carriedScript += Math.max(0, amount); }
     boolean spendImperialScript(int amount) { if (amount <= 0) return true; if (carriedScript < amount) return false; carriedScript -= amount; return true; }
@@ -495,51 +1894,304 @@ class GamePanel extends LegacyPanelBridgeBase {
     String stateSummary() { return "turn=" + turn + " pos=" + playerX + "," + playerY + " screen=" + screen + " panel=" + panelMode; }
     void logEvent(String line) { if (line != null && !line.isBlank()) eventLog.add(line); }
 
-    void setScreen(Screen next) { screen = next == null ? Screen.MENU : next; }
+    void setScreen(Screen next) {
+        screen = next == null ? Screen.MENU : next;
+        if (screen == Screen.MENU || screen == Screen.MAIN) {
+            newGameSetupActive = false;
+            characterNameEditActive = false;
+            graphicsDropdown = -1;
+            panelMode = PanelMode.NONE;
+            selectedButton = Math.max(0, Math.min(selectedButton, mainMenuRouteLabels().size() - 1));
+            sounds.requestMusic("MAIN_MENU", options);
+        } else if (screen == Screen.OPTIONS) {
+            graphicsDropdown = -1;
+            selectedButton = Math.max(0, Math.min(optionsTab, 7));
+            sounds.requestMusic("MAIN_MENU", options);
+        } else if (screen == Screen.INTRO_CRAWL) {
+            sounds.playIntroCrawlNarration(options);
+        } else if (screen == Screen.CHARACTER && newGameSetupActive) {
+            graphicsDropdown = -1;
+            sounds.stopIntroCrawlNarration("entered new game setup");
+            sounds.requestMusic("MAIN_MENU", options);
+        } else if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.INVENTORY || screen == Screen.CHARACTER || screen == Screen.INFO || screen == Screen.MAP || screen == Screen.KNOWLEDGE || screen == Screen.PAUSE) {
+            graphicsDropdown = -1;
+            sounds.stopIntroCrawlNarration("left intro crawl");
+            sounds.requestMusic("LOW_HABITATION", options);
+        }
+    }
+    Point screenPointToWorldTile(int mx, int my) {
+        if (world == null) return new Point(Math.max(0, mx / 16), Math.max(0, my / 16));
+        int tile = Math.max(1, lastWorldViewTileSize);
+        int tx = lastWorldViewMinX + (mx - lastWorldViewOriginX) / tile;
+        int ty = lastWorldViewMinY + (my - lastWorldViewOriginY) / tile;
+        return new Point(Math.max(0, Math.min(world.w - 1, tx)), Math.max(0, Math.min(world.h - 1, ty)));
+    }
     void closePanel() { panelMode = PanelMode.NONE; screen = Screen.GAME; }
     void closeKnowledgeScreen() { screen = Screen.GAME; }
     void handleKnowledgeKeyPressed(int code) {}
     void cancelManualMovementPlan(String reason) { manualMovementPlanActive = false; }
-    void rerollSectorAudit() {}
-    void cycleAuditZoneType(int delta) {}
-    void cycleAuditZoneDensity() {}
-    void cycleAuditOverlay() {}
-    void jumpAuditFinding(int delta) {}
-    void moveAuditCursor(int dx, int dy) {}
+    void openSectorAuditPanel() {
+        if (auditWorld == null) rerollSectorAudit();
+        selectedButton = 0;
+        setScreen(Screen.SECTOR_AUDIT);
+    }
+    void rerollSectorAudit() {
+        WorldSetupSettings setup = worldSetup == null ? WorldSetupSettings.standard() : worldSetup.copy();
+        setup.zoneDensity = Math.max(0, Math.min(auditZoneDensityIndex, WorldSetupSettings.ZONE_DENSITY.length - 1));
+        long auditSeed = (seed == 0L ? System.currentTimeMillis() : seed) ^ 0xA9D17L ^ (long)auditZoneTypeIndex * 65537L ^ (long)auditZoneDensityIndex * 8191L ^ System.nanoTime();
+        java.awt.Dimension size = WorldGenerationApi.zoneSliceSize(auditSeed);
+        World next = new World(auditSeed, size.width, size.height);
+        ZoneType[] zones = ZoneType.values();
+        next.zoneType = zones[Math.floorMod(auditZoneTypeIndex, zones.length)];
+        try {
+            next.generate();
+            auditWorld = next;
+            auditSnapshot = SectorAuditRuntimeAuthority.analyze(auditWorld, setup, seed, auditSeed);
+            auditFindingIndex = 0;
+            auditCursorX = auditWorld.w / 2;
+            auditCursorY = auditWorld.h / 2;
+            logEvent("Sector audit generated: " + auditWorld.zoneType.label + " " + auditWorld.w + "x" + auditWorld.h + ".");
+        } catch (RuntimeException ex) {
+            auditWorld = null;
+            auditSnapshot = null;
+            logEvent("Sector audit generation failed: " + ex.getMessage());
+        }
+        repaint();
+    }
+    void cycleAuditZoneType(int delta) {
+        auditZoneTypeIndex = Math.floorMod(auditZoneTypeIndex + delta, ZoneType.values().length);
+        rerollSectorAudit();
+    }
+    void cycleAuditZoneDensity() {
+        auditZoneDensityIndex = Math.floorMod(auditZoneDensityIndex + 1, WorldSetupSettings.ZONE_DENSITY.length);
+        rerollSectorAudit();
+    }
+    void cycleAuditOverlay() {
+        auditOverlayIndex = Math.floorMod(auditOverlayIndex + 1, 4);
+        logEvent("Audit overlay: " + auditOverlayLabel() + ".");
+        repaint();
+    }
+    void jumpAuditFinding(int delta) {
+        int count = auditSnapshot == null ? 0 : auditSnapshot.findings.size();
+        if (count <= 0) {
+            auditFindingIndex = 0;
+            repaint();
+            return;
+        }
+        auditFindingIndex = Math.floorMod(auditFindingIndex + delta, count);
+        SectorAuditRuntimeAuthority.AuditFinding finding = auditSnapshot.selected(auditFindingIndex);
+        if (finding != null) {
+            auditCursorX = finding.x;
+            auditCursorY = finding.y;
+        }
+        repaint();
+    }
+    void moveAuditCursor(int dx, int dy) {
+        if (auditWorld == null) return;
+        auditCursorX = Math.max(0, Math.min(auditWorld.w - 1, auditCursorX + dx));
+        auditCursorY = Math.max(0, Math.min(auditWorld.h - 1, auditCursorY + dy));
+        repaint();
+    }
+    String auditOverlayLabel() {
+        return switch (auditOverlayIndex) {
+            case 1 -> "Findings";
+            case 2 -> "Objects";
+            case 3 -> "Rooms";
+            default -> "Terrain";
+        };
+    }
     boolean isAssetInfopediaTab(int tab) { return false; }
     void backspaceInfopediaAssetFilter() {}
     void cycleInfopediaTab(int delta) {}
     void moveInfopediaSelection(int delta) {}
     boolean scrollActivePanel(int delta, boolean page) { return false; }
-    void cycleFireMode() {}
-    void throwSelectedExplosiveAtCursor() {}
+    void cycleFireMode() {
+        selectedFireModeIndex = Math.floorMod(selectedFireModeIndex + 1, 3);
+        lastTargetingReport = "Fire mode: " + fireModeLabel() + ". " + targetingSolutionAt(combatX, combatY).summary;
+        logEvent(lastTargetingReport);
+    }
+    void throwSelectedExplosiveAtCursor() {
+        if (world == null) {
+            logEvent("Cannot throw an explosive without a loaded world.");
+            return;
+        }
+        int targetX = panelMode == PanelMode.COMBAT ? combatX : lookX;
+        int targetY = panelMode == PanelMode.COMBAT ? combatY : lookY;
+        if (!world.inBounds(targetX, targetY)) {
+            logEvent("Explosive target is outside the current world slice.");
+            return;
+        }
+        String explosive = firstInventoryMatch(true, false);
+        if (explosive == null) {
+            logEvent("No carried explosive is available.");
+            return;
+        }
+        inventory.remove(explosive);
+        ExplosiveProfile profile = ExplosiveProfile.forItem(explosive);
+        world.mapObjects.add(MapObjectState.thrownExplosive(targetX, targetY, explosive, world.zoneType, turn + Math.max(1, profile.fuseTurns), world.tiles[targetX][targetY]));
+        lastTargetingReport = "Thrown " + explosive + " to " + targetX + "," + targetY + " / fuse " + profile.fuseTurns + " turn(s).";
+        logEvent(lastTargetingReport);
+        advanceTurn("throws " + explosive + ".");
+    }
     void throwSelectedPortableLight() { logEvent("A portable light is thrown into the dark."); }
-    void reloadCurrentRangedWeapon() {}
+    void reloadCurrentRangedWeapon() {
+        String weapon = equippedFirearmName();
+        if (weapon == null) weapon = firstInventoryMatch(false, true);
+        if (weapon == null) {
+            logEvent("No ranged weapon is available to reload.");
+            return;
+        }
+        int loaded = Math.max(0, loadedWeaponShots.getOrDefault(weapon, 0));
+        int next = Math.max(loaded, 6);
+        loadedWeaponShots.put(weapon, next);
+        logEvent("Reloaded " + weapon + " to " + next + " shot(s) in the compatibility bridge.");
+        advanceTurn("reloads " + weapon + ".");
+    }
     void confirmCombatTarget() { confirmCombatTargetBody(); }
-    void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; lookX = combatX; lookY = combatY; }
-    LegacyTargetingSolution targetingSolutionAt(int x, int y) { return new LegacyTargetingSolution("target=" + x + "," + y); }
+    void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; clampCombatCursorToWorld(); lookX = combatX; lookY = combatY; lastTargetingReport = targetingSolutionAt(combatX, combatY).summary; }
+    LegacyTargetingSolution targetingSolutionAt(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return new LegacyTargetingSolution("No target selected.");
+        int distance = Math.max(Math.abs(playerX - x), Math.abs(playerY - y));
+        NpcEntity npc = world.npcAt(x, y);
+        MapObjectState obj = world.mapObjectAt(x, y);
+        String target = npc != null ? ("NPC " + npc.name + " / HP " + npc.hp)
+                : obj != null ? ("object " + safeLabel(obj.label, obj.type))
+                : ("tile " + world.tiles[x][y]);
+        return new LegacyTargetingSolution("Target " + x + "," + y + " distance " + distance + " / " + target + ".");
+    }
     void confirmInteraction() { confirmInteractionBody(); }
-    void examineSelectedLookTarget() {}
-    void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; }
-    ArrayList<String> tileStackAt(int x, int y) { return new ArrayList<>(); }
+    void examineSelectedLookTarget() {
+        ArrayList<String> stack = tileStackAt(lookX, lookY);
+        lastTargetingReport = stack.isEmpty() ? "No target data available." : stack.get(Math.max(0, Math.min(lookStackIndex, stack.size() - 1)));
+        logEvent("Look " + lookX + "," + lookY + ": " + lastTargetingReport);
+    }
+    void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; clampInteractCursorToAdjacent(); lookStackIndex = 0; lookStackScroll = 0; updatePendingInteractionSummary(); }
+    ArrayList<String> tileStackAt(int x, int y) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (world == null) {
+            lines.add("No world loaded.");
+            return lines;
+        }
+        if (!world.inBounds(x, y)) {
+            lines.add("Out of bounds target " + x + "," + y + ".");
+            return lines;
+        }
+        char ch = world.tiles[x][y];
+        lines.add("Tile glyph " + ch + " / walkable " + world.walkable(x, y));
+        CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, x, y, ch);
+        if (descriptor != null) lines.add(descriptor.inspectLine());
+        if (x == playerX && y == playerY) lines.add("Player position.");
+        NpcEntity npc = world.npcAt(x, y);
+        if (npc != null) {
+            lines.add("NPC: " + npc.name + " / " + npc.role + " / " + (npc.faction == null ? "None" : npc.faction.label));
+            lines.add(npc.rankLine());
+            lines.add("State: " + npc.state + " / HP " + npc.hp + " / age " + npc.ageLine());
+        }
+        MapObjectState obj = world.mapObjectAt(x, y);
+        if (obj != null) {
+            lines.add("Object: " + safeLabel(obj.label, obj.type));
+            lines.add("Type: " + safeLabel(obj.type, "object") + " / stock: " + safeLabel(obj.stockState, "none"));
+            FixtureInteractionRegistry.Definition def = FixtureInteractionRegistry.definitionFor(obj.type);
+            if (def != null) lines.add("Fixture: " + def.family.label + " / " + def.family.interaction + " / " + def.notes);
+            lines.add(ObjectSemanticAssetAuthority.semanticSummaryForName(obj.label));
+        }
+        BaseObject base = baseObjectAt(x, y);
+        if (base != null) {
+            lines.add("Base object: " + safeLabel(base.name, "base object") + " / " + base.symbol + " / " + safeLabel(base.qualityName, "Common"));
+            lines.add(safeLabel(base.description, "Built base object."));
+        }
+        if (isDoorTile(ch)) lines.add("Door/access tile: interact can operate this doorway.");
+        return lines;
+    }
     boolean isDoorTile(char tile) { return tile == '+' || tile == '/' || tile == '\\'; }
     void interactDoorAt(int x, int y, char tile) { logEvent("Door interaction at " + x + "," + y + "."); advanceTurn("interacts with a door."); }
     void enforceEntityOccupancy(String reason) {}
-    void moveBuildCursor(int dx, int dy) { buildX += dx; buildY += dy; }
-    void confirmBuildPlacement() {}
+    void moveBuildCursor(int dx, int dy) { buildX += dx; buildY += dy; clampBuildCursorToWorld(); }
+    void confirmBuildPlacement() {
+        String raw = rawCanPlacePendingBuildAt(buildX, buildY);
+        if (!"ok".equalsIgnoreCase(raw)) {
+            logEvent(constructionPlacementResult(pendingBuildRecipe, buildX, buildY, raw));
+            return;
+        }
+        BuildRecipe recipe = pendingBuildRecipe;
+        supplies -= Math.max(0, recipe.supplyCost);
+        machineParts -= Math.max(0, recipe.partCost);
+        consumeBuildComponents(recipe);
+        BaseObject object = new BaseObject(recipe.name, recipe.symbol, buildX, buildY, recipe.supplyCost, recipe.attention);
+        object.qualityName = recipe.qualityName;
+        object.description = recipe.description;
+        object.capacity = Math.max(1, recipe.supplyCost + recipe.partCost);
+        object.integrity = Math.max(1, 4 + recipe.partCost + recipe.supplyCost / 2);
+        object.faction = recipe.requiredFaction == null ? Faction.NONE : recipe.requiredFaction;
+        configureBaseObject(object);
+        baseObjects.add(object);
+        buildPlacementActive = false;
+        pendingBuildRecipe = null;
+        rebuildItemContainersFromLegacyLists();
+        logEvent("Built " + object.name + " at " + object.x + "," + object.y + ".");
+        advanceTurn("builds " + object.name + ".");
+        repaint();
+    }
     void moveSelectedButton(int delta) { if (!buttons.isEmpty()) selectedButton = Math.floorMod(selectedButton + delta, buttons.size()); }
-    void activateSelectedButtonUniversal() {}
-    void cycleMovementMode() {}
-    void beginManualMovementPlan() { manualMovementPlanActive = true; }
+    void activateSelectedButtonUniversal() { UiModalButtonController.activateSelectedButton(this); }
+    void cycleMovementMode() {
+        int[] modes = { MOTION_SNEAK, MOTION_WALK, MOTION_RUN, MOTION_SPRINT };
+        int idx = 1;
+        for (int i = 0; i < modes.length; i++) if (modes[i] == selectedMovementModeIndex) idx = (i + 1) % modes.length;
+        selectedMovementModeIndex = modes[idx];
+        logEvent("Movement mode: " + movementModeLabel(selectedMovementModeIndex) + ".");
+    }
+    void beginManualMovementPlan() {
+        manualMovementPlanActive = true;
+        lookCursorActive = true;
+        lookX = playerX;
+        lookY = playerY;
+        lastTargetingReport = "Manual path planning started at " + lookX + "," + lookY + ".";
+        logEvent(lastTargetingReport);
+        repaint();
+    }
     void waitOneTurn() { advanceTurnBody("waits."); }
-    void beginInteractMode() { panelMode = PanelMode.INTERACT; screen = Screen.PANEL; }
-    void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = mode == PanelMode.CHARACTER ? Screen.CHARACTER : Screen.PANEL; }
-    void beginCombatTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
-    void beginExplosiveTargeting() { panelMode = PanelMode.COMBAT; screen = Screen.PANEL; }
+    void beginLookMode() {
+        interactCursorActive = false;
+        lookCursorActive = true;
+        lookX = playerX;
+        lookY = playerY;
+        lookStackIndex = 0;
+        lookStackScroll = 0;
+        openPanel(PanelMode.LOOK);
+    }
+    void beginInteractMode() {
+        panelMode = PanelMode.INTERACT;
+        screen = Screen.PANEL;
+        interactCursorActive = true;
+        lookCursorActive = false;
+        lookX = playerX + 1;
+        lookY = playerY;
+        clampInteractCursorToAdjacent();
+        lookStackIndex = 0;
+        lookStackScroll = 0;
+        updatePendingInteractionSummary();
+    }
+    void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = mode == PanelMode.CHARACTER ? Screen.CHARACTER : Screen.PANEL; if (mode == PanelMode.LOOK) lookCursorActive = true; }
+    void beginCombatTargeting() {
+        panelMode = PanelMode.COMBAT;
+        screen = Screen.PANEL;
+        combatCursorActive = true;
+        combatX = lookCursorActive ? lookX : playerX;
+        combatY = lookCursorActive ? lookY : playerY;
+        clampCombatCursorToWorld();
+        lookX = combatX;
+        lookY = combatY;
+        lastTargetingReport = targetingSolutionAt(combatX, combatY).summary;
+    }
+    void beginExplosiveTargeting() {
+        beginCombatTargeting();
+        lastTargetingReport = "Explosive targeting armed. " + targetingSolutionAt(combatX, combatY).summary;
+    }
     void queueOrExecuteMovementInput(int dx, int dy) { executePacedMovementBody(dx, dy, "legacy-queue"); }
     void sanityCheck(String phase) {}
-    void nudgeManualMovementPlan(int dx, int dy) { lookX += dx; lookY += dy; }
-    void confirmManualMovementPlan() { manualMovementPlanActive = false; }
+    void nudgeManualMovementPlan(int dx, int dy) { lookX += dx; lookY += dy; clampLookCursorToWorld(); lastTargetingReport = "Manual path target " + lookX + "," + lookY + "."; repaint(); }
+    void confirmManualMovementPlan() { manualMovementPlanActive = false; logEvent("Manual path target set to " + lookX + "," + lookY + ". Route execution remains on the movement reattachment list."); repaint(); }
     void createNewInGameEditorEntry() {}
     void inGameEditorUndo() {}
     void inGameEditorRedo() {}
@@ -549,15 +2201,42 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     void beginWindowModeReconfigure() {}
     void endWindowModeReconfigure() {}
-    void requestApplicationExit(String reason) { logEvent("Exit requested: " + (reason == null ? "unspecified" : reason)); }
+    void requestApplicationExit(String reason) {
+        String why = reason == null ? "unspecified" : reason;
+        logEvent("Exit requested: " + why);
+        DebugLog.audit("CLIENT_EXIT", why);
+        shutdownRuntime();
+        java.awt.Window window = javax.swing.SwingUtilities.getWindowAncestor(this);
+        if (window != null) window.dispose();
+        else System.exit(0);
+    }
     String togglePerformanceDiagnostics() { return performanceDiagnostics.toggle(); }
     boolean toggleConsoleFlag(String key) { String safe = key == null ? "" : key; boolean next = !Boolean.TRUE.equals(consoleFlags.get(safe)); consoleFlags.put(safe, next); return next; }
     void setConsoleNumericFlag(String key, float value) { consoleNumericFlags.put(key == null ? "" : key, value); }
     void setConsoleStringFlag(String key, String value) { consoleStringFlags.put(key == null ? "" : key, value == null ? "" : value); }
     void healWorstBodyPart(int amount) { wounds = Math.max(0, wounds - Math.max(0, amount)); }
     void triggerPlayerDeath(String cause, String attacker, String weapon, String location) { lastDefeatCause = cause; lastDefeatAttacker = attacker; lastDefeatWeapon = weapon; lastDefeatLocation = location; runUnconsciousEvents++; }
-    void writeSaveFile(int slot, boolean quick) {}
-    void shutdownRuntime() {}
+    void writeSaveFile(int slot, boolean quick) {
+        if (world == null) throw new IllegalStateException("No active world is loaded.");
+        int safeSlot = slot == AUTOSAVE_HOURLY_SLOT || slot == AUTOSAVE_ZONE_SLOT ? slot : Math.max(1, Math.min(SAVE_SLOT_COUNT, slot));
+        java.nio.file.Path path = SaveSlotSurfaceApi.savePathForSlot(safeSlot);
+        try {
+            java.nio.file.Files.createDirectories(path.getParent());
+            Properties p = new Properties();
+            Persistence.writeCore(this, p);
+            try (java.io.OutputStream out = java.nio.file.Files.newOutputStream(path)) {
+                p.store(out, "The Mechanist " + SaveSlotSurfaceApi.slotLabel(safeSlot));
+            }
+            logEvent((quick ? "Quick-saved " : "Saved ") + SaveSlotSurfaceApi.slotLabel(safeSlot) + ".");
+            DebugLog.audit("SAVE_LOAD_MENU", "wrote slot=" + safeSlot + " path=" + path);
+        } catch (java.io.IOException ex) {
+            throw new IllegalStateException("Could not write " + SaveSlotSurfaceApi.slotLabel(safeSlot) + ": " + ex.getMessage(), ex);
+        }
+    }
+    void shutdownRuntime() {
+        if (timer != null) timer.stop();
+        if (multiplayerMenu != null) multiplayerMenu.close();
+    }
 
     void toggleTacticalSlate() { openPanel(PanelMode.INFO); }
     void openChatWindow() { openPanel(PanelMode.CONSOLE); }
@@ -568,18 +2247,137 @@ class GamePanel extends LegacyPanelBridgeBase {
     void finishBootSequence(String source) { setScreen(Screen.INTRO_CRAWL); logEvent("Boot sequence finished by " + source + "."); }
     void acceptEulaGate() { eulaGateActive = false; logEvent("EULA accepted."); }
     void scrollEulaGate(int delta, boolean page) { eulaScroll = Math.max(0, Math.min(Math.max(0, eulaMaxScroll), eulaScroll + delta * (page ? 10 : 1))); }
-    void openKnowledgeMenu() { setScreen(Screen.KNOWLEDGE); }
-    Rectangle graphicsDropdownInnerRect() { return new Rectangle(0, 0, Math.max(1, getWidth()), Math.max(1, getHeight())); }
+    void openKnowledgeMenu() {
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            setScreen(Screen.KNOWLEDGE);
+            logEvent("Knowledge menu unavailable in headless mode.");
+            return;
+        }
+        if (knowledgeMenu != null && knowledgeMenu.isDisplayable()) {
+            knowledgeMenu.refreshFromGameState();
+            knowledgeMenu.toFront();
+            knowledgeMenu.requestFocus();
+            return;
+        }
+        java.awt.Window owner = javax.swing.SwingUtilities.getWindowAncestor(this);
+        knowledgeMenu = new KnowledgeMenu(owner, new KnowledgeMenu.KnowledgeStateBridge() {
+            @Override public int availableKnowledgePoints() { return knowledgeCredits; }
+            @Override public Set<String> unlockedKnowledgeIds() { return new LinkedHashSet<>(unlockedKnowledges); }
+            @Override public boolean unlockKnowledgeNode(KnowledgeTree tree, KnowledgeNode node) {
+                if (tree == null || node == null || !tree.canUnlock(node.id())) return false;
+                KnowledgeTree.UnlockResult result = tree.unlockNode(node.id());
+                if (!result.success()) return false;
+                knowledgeCredits = Math.max(0, result.remainingPoints());
+                unlockedKnowledges.add(node.id());
+                logEvent("Knowledge unlocked: " + node.name() + ".");
+                DebugLog.audit("KNOWLEDGE_MENU", "unlocked=" + node.id() + " remaining=" + knowledgeCredits);
+                repaint();
+                return true;
+            }
+            @Override public void menuClosed() {
+                knowledgeMenu = null;
+                repaint();
+            }
+        });
+        knowledgeMenu.setLocationRelativeTo(owner == null ? this : owner);
+        knowledgeMenu.setVisible(true);
+        logEvent("Knowledge menu opened.");
+        DebugLog.audit("CLIENT_MENU_ROUTE", "knowledge dialog opened credits=" + knowledgeCredits + " unlocked=" + unlockedKnowledges.size());
+    }
+    Rectangle graphicsDropdownInnerRect() {
+        Rectangle outer = graphicsDropdownOuterRect();
+        int pad = 14;
+        return new Rectangle(outer.x + pad, outer.y + pad, Math.max(1, outer.width - pad * 2), Math.max(1, outer.height - pad * 2));
+    }
     int scaled(int value) { return value; }
-    void clampInteractCursorToAdjacent() { lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX)); lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY)); }
-    void updatePendingInteractionSummary() { lastTargetingReport = "Interaction target " + lookX + "," + lookY; }
+    void clampInteractCursorToAdjacent() {
+        lookX = Math.max(playerX - 1, Math.min(playerX + 1, lookX));
+        lookY = Math.max(playerY - 1, Math.min(playerY + 1, lookY));
+        clampLookCursorToWorld();
+    }
+    void clampLookCursorToWorld() {
+        if (world == null) return;
+        lookX = Math.max(0, Math.min(world.w - 1, lookX));
+        lookY = Math.max(0, Math.min(world.h - 1, lookY));
+    }
+    void clampCombatCursorToWorld() {
+        if (world == null) return;
+        combatX = Math.max(0, Math.min(world.w - 1, combatX));
+        combatY = Math.max(0, Math.min(world.h - 1, combatY));
+    }
+    String movementModeLabel(int mode) {
+        return switch (mode) {
+            case MOTION_SNEAK -> "SNEAK";
+            case MOTION_RUN -> "RUN";
+            case MOTION_SPRINT -> "SPRINT";
+            case MOTION_WALK -> "WALK";
+            default -> "WALK";
+        };
+    }
+    String fireModeLabel() {
+        return switch (selectedFireModeIndex) {
+            case 1 -> "AIMED";
+            case 2 -> "BURST";
+            default -> "SNAP";
+        };
+    }
+    String safeLabel(String value, String fallback) { return value == null || value.isBlank() ? fallback : value; }
+    String equippedFirearmName() {
+        if (ItemCatalog.isFirearmLike(equippedRightHandItem)) return equippedRightHandItem;
+        if (ItemCatalog.isFirearmLike(equippedLeftHandItem)) return equippedLeftHandItem;
+        return null;
+    }
+    String firstInventoryMatch(boolean explosive, boolean firearm) {
+        if (inventory == null) return null;
+        for (String item : inventory) {
+            if (explosive && ItemCatalog.isExplosiveLike(item)) return item;
+            if (firearm && ItemCatalog.isFirearmLike(item)) return item;
+        }
+        return null;
+    }
+    void updatePendingInteractionSummary() {
+        ArrayList<String> stack = tileStackAt(lookX, lookY);
+        String top = stack.isEmpty() ? "empty target" : stack.get(0);
+        lastTargetingReport = "Interaction target " + lookX + "," + lookY + " / " + top;
+    }
     void auditItemLedgers(String reason) { lastItemLedgerAuditReport = "Item ledger audit: " + (reason == null ? "unspecified" : reason); }
     void migrateLegacyPhysicalScript(String reason) {}
     void rebuildItemContainersFromLegacyLists() { ensureContainer(CONTAINER_PLAYER_INVENTORY, "Player inventory"); ensureContainer(CONTAINER_BASE_STORAGE, "Base storage"); }
     void repairLegacyListsFromContainersIfNeeded() {}
-    void initFactionState() {}
-    void seedNpcFactionProductionSites() {}
-    void configureBaseObject(BaseObject b) {}
+    void initFactionState() {
+        Faction[] core = {
+            Faction.HIVER, Faction.SCAVENGER, Faction.BANDIT, Faction.CIVIC_WARDENS,
+            Faction.IMPERIAL_GUARD, Faction.MECHANIST_COLLEGIA, Faction.NOBLE,
+            Faction.CULTIST, Faction.MUTANT, Faction.CIVIC_LEDGER_OFFICE, Faction.INN
+        };
+        for (Faction f : core) {
+            factionStanding.putIfAbsent(f, 0);
+            factionMarketPressure.putIfAbsent(f, 0);
+        }
+        FactionStrategySimulationApi.ensurePlans(this);
+    }
+
+    void seedNpcFactionProductionSites() {
+        ZoneType zone = world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType;
+        LinkedHashSet<Faction> factions = new LinkedHashSet<>();
+        factions.add(FactionInventoryStockAuthority.factionForZone(zone));
+        factions.add(Faction.HIVER);
+        factions.add(Faction.SCAVENGER);
+        factions.add(Faction.BANDIT);
+        factions.add(Faction.CIVIC_WARDENS);
+        factions.add(Faction.IMPERIAL_GUARD);
+        factions.add(Faction.MECHANIST_COLLEGIA);
+        factions.add(Faction.NOBLE);
+        factions.add(Faction.CULTIST);
+        factions.add(Faction.MUTANT);
+        for (Faction f : factions) siteForFaction(f, zone);
+        DebugLog.audit("NPC_FACTION_SITE_SEED", "sites=" + npcFactionSites.size() + " zone=" + zone.label);
+    }
+    void configureBaseObject(BaseObject b) {
+        if (b == null) return;
+        if (b.description == null || b.description.isBlank()) b.description = "Built base object.";
+        MachineTierAuthority.applyToConfiguredObject(b);
+    }
     int activePortableLightRadius() { return activePortableLightItem == null || activePortableLightItem.isBlank() ? 0 : 6; }
     boolean sameWorldLocation(String worldKey) { return true; }
     int portableLightIntensity(String itemName) { return 100; }
@@ -681,16 +2479,133 @@ class GamePanel extends LegacyPanelBridgeBase {
         return found;
     }
 
+    void clampBuildCursorToWorld() {
+        if (world == null) return;
+        buildX = Math.max(0, Math.min(world.w - 1, buildX));
+        buildY = Math.max(0, Math.min(world.h - 1, buildY));
+    }
     String rawCanPlacePendingBuildAtUncached(int x, int y) { return rawCanPlacePendingBuildAt(x, y); }
-    String rawCanPlacePendingBuildAt(int x, int y) { return pendingBuildRecipe == null ? "no selected build" : "ok"; }
-    String constructionPlacementResult(BuildRecipe recipe, int x, int y, String raw) { return raw == null || raw.isBlank() ? "ok" : raw; }
+    String rawCanPlacePendingBuildAt(int x, int y) {
+        if (pendingBuildRecipe == null) return "no selected build";
+        if (world == null) return "no loaded world";
+        if (!world.inBounds(x, y)) return "outside world bounds";
+        if (x == playerX && y == playerY) return "move off the target tile before building";
+        if (!world.walkable(x, y)) return "tile is not walkable";
+        if (world.npcAt(x, y) != null) return "tile is occupied by an NPC";
+        if (world.mapObjectAt(x, y) != null) return "tile already contains a map object";
+        if (baseObjectAt(x, y) != null) return "tile already contains a base object";
+        if (supplies < pendingBuildRecipe.supplyCost) return "need " + pendingBuildRecipe.supplyCost + " supplies, have " + supplies;
+        if (machineParts < pendingBuildRecipe.partCost) return "need " + pendingBuildRecipe.partCost + " machine parts, have " + machineParts;
+        String componentProblem = buildComponentRequirementProblem(pendingBuildRecipe);
+        if (componentProblem != null && !"ok".equalsIgnoreCase(componentProblem)) return componentProblem;
+        String requirementProblem = buildRequirementProblem(pendingBuildRecipe);
+        if (requirementProblem != null && !"ok".equalsIgnoreCase(requirementProblem)) return requirementProblem;
+        return "ok";
+    }
+    String constructionPlacementResult(BuildRecipe recipe, int x, int y, String raw) {
+        if (raw == null || raw.isBlank() || "ok".equalsIgnoreCase(raw)) return "ok";
+        String blueprint = constructionBlueprintFor(recipe);
+        return new ConstructionGovernanceAuthority().explainPlacementResult(blueprint, false, raw, "build cursor " + x + "," + y);
+    }
     String constructionBlueprintFor(BuildRecipe recipe) { return recipe == null ? "unselected blueprint" : recipe.getClass().getSimpleName(); }
-    String buildComponentRequirementProblem(BuildRecipe recipe) { return "component requirements unresolved in legacy bridge"; }
-    String buildRequirementProblem(BuildRecipe recipe) { return "build requirements unresolved in legacy bridge"; }
+    String buildComponentRequirementProblem(BuildRecipe recipe) {
+        if (recipe == null || recipe.componentCosts.isEmpty()) return "ok";
+        ArrayList<String> missing = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : recipe.componentCosts.entrySet()) {
+            if (countProductionInput(e.getKey()) < e.getValue()) missing.add(e.getValue() + "x " + e.getKey());
+        }
+        return missing.isEmpty() ? "ok" : "missing components: " + String.join(", ", missing);
+    }
+    String buildRequirementProblem(BuildRecipe recipe) {
+        if (recipe == null) return "no selected build";
+        if (recipe.requiredKnowledge != null && !recipe.requiredKnowledge.isBlank() && !hasKnowledge(recipe.requiredKnowledge)) return "missing knowledge: " + recipe.requiredKnowledge;
+        if (recipe.requiresWorkbench && firstBaseObject('w') == null) return "requires a Scrap Workbench";
+        return "ok";
+    }
+    void consumeBuildComponents(BuildRecipe recipe) {
+        if (recipe == null) return;
+        for (Map.Entry<String,Integer> e : recipe.componentCosts.entrySet()) {
+            for (int i = 0; i < e.getValue(); i++) consumeInventoryNamed(e.getKey());
+        }
+    }
 
     int currentInnDay() { return Math.max(0, turn / Math.max(1, TURNS_PER_HOUR * HOURS_PER_DAY)); }
-    NpcFactionSite siteForFaction(Faction faction, ZoneType zoneType) { return null; }
-    void addFactionMarketPressure(Faction faction, int pressure, String reason) {}
+    NpcFactionSite siteForFaction(Faction faction, ZoneType zoneType) {
+        ZoneType zone = zoneType == null ? (world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType) : zoneType;
+        Faction requested = faction == null || faction == Faction.NONE ? FactionInventoryStockAuthority.factionForZone(zone) : faction;
+        Faction normalized = FactionInventoryStockAuthority.normalizeFaction(requested);
+        NpcFactionSite anyMatch = null;
+        for (NpcFactionSite site : npcFactionSites) {
+            if (site == null) continue;
+            Faction sf = FactionInventoryStockAuthority.normalizeFaction(site.faction);
+            if (sf != normalized) continue;
+            if (world != null && site.sectorX == world.sectorX && site.sectorY == world.sectorY
+                    && site.zoneX == world.zoneX && site.zoneY == world.zoneY && site.floor == world.floor) return site;
+            if (anyMatch == null) anyMatch = site;
+        }
+        if (anyMatch != null) return anyMatch;
+
+        Random r = new Random((seed == 0L ? System.currentTimeMillis() : seed)
+                ^ normalized.name().hashCode() * 1103515245L
+                ^ zone.name().hashCode() * 2654435761L);
+        ArrayList<String> stock = FactionInventoryStockAuthority.accessibleStock(normalized, zone, r);
+        String primary = stock.isEmpty() ? "Emergency rations" : stock.get(0);
+        String secondary = stock.size() < 2 ? "Water bottle" : stock.get(1);
+        int sx = world == null ? (atlas == null ? 1 : atlas.sectorX) : world.sectorX;
+        int sy = world == null ? (atlas == null ? 1 : atlas.sectorY) : world.sectorY;
+        int zx = world == null ? (atlas == null ? 2 : atlas.zoneX) : world.zoneX;
+        int zy = world == null ? (atlas == null ? 2 : atlas.zoneY) : world.zoneY;
+        int fl = world == null ? (atlas == null ? 4 : atlas.floor) : world.floor;
+        String facility = factionFacilityType(normalized, zone);
+        String siteName = normalized.label + " " + facility + " " + sx + "." + sy + "." + zx + "." + zy + "." + fl;
+        NpcFactionSite site = NpcFactionSite.create(siteName, normalized, facility, sx, sy, zx, zy, fl, primary, secondary, "runtime faction inventory seed");
+        site.stock = Math.max(site.stock, 6 + stock.size());
+        site.lastProductionTurn = Math.max(0, turn);
+        npcFactionSites.add(site);
+        ensureContainer(factionStockContainerId(site), site.name + " strategic stock");
+        DebugLog.audit("NPC_FACTION_SITE_CREATE", site.summaryLine());
+        return site;
+    }
+
+    void addFactionMarketPressure(Faction faction, int pressure, String reason) {
+        if (faction == null || faction == Faction.NONE || pressure == 0) return;
+        Faction f = FactionInventoryStockAuthority.normalizeFaction(faction);
+        int next = Math.max(0, Math.min(999, factionMarketPressure.getOrDefault(f, 0) + pressure));
+        factionMarketPressure.put(f, next);
+        lastFactionSimulationReport = "market pressure " + f.label + "=" + next + " from " + (reason == null ? "unspecified faction event" : reason);
+        DebugLog.audit("FACTION_MARKET_PRESSURE", "faction=" + f.label + " pressure=" + next + " delta=" + pressure + " reason=" + reason);
+    }
+
+    String factionFacilityType(Faction faction, ZoneType zone) {
+        Faction f = FactionInventoryStockAuthority.normalizeFaction(faction);
+        if (f == Faction.MECHANIST_COLLEGIA) return "machine shop";
+        if (f == Faction.IMPERIAL_GUARD) return "munition depot";
+        if (f == Faction.CIVIC_WARDENS) return "authorized stores cage";
+        if (f == Faction.NOBLE) return "house commissary";
+        if (f == Faction.CULTIST || f == Faction.HERETIC) return "hidden reliquary";
+        if (f == Faction.MUTANT) return "sump cache";
+        if (f == Faction.INN) return "newsroom stores";
+        if (zone == ZoneType.NEUTRAL_RAIL_DEPOT || zone == ZoneType.TRAIN_SERVICE_YARD) return "rail freight desk";
+        if (zone == ZoneType.SUMP_MARKET) return "market lockup";
+        return "stockroom";
+    }
+
+    void tickFactionRuntimeSystems(boolean sleeping) {
+        if (world == null) return;
+        FactionStrategySimulationApi.tick(this, sleeping);
+        tickNpcFactionSiteProduction();
+    }
+
+    void tickNpcFactionSiteProduction() {
+        if (turn <= 0 || turn % TURNS_PER_HOUR != 0 || npcFactionSites.isEmpty()) return;
+        int produced = 0;
+        for (NpcFactionSite site : npcFactionSites) {
+            if (site != null && site.produceHour(turn, rng)) produced++;
+        }
+        if (produced > 0) {
+            DebugLog.audit("NPC_FACTION_SITE_PRODUCTION", "sitesProduced=" + produced + " turn=" + turn + " sites=" + npcFactionSites.size());
+        }
+    }
     static boolean sameFactionFamilyStatic(Faction a, Faction b) { return a != null && b != null && (a == b || a.name().split("_")[0].equals(b.name().split("_")[0])); }
     String factionStockContainerId(NpcFactionSite site) { return site == null ? "faction-stock-none" : "faction-stock-" + Math.abs(site.name.hashCode()); }
     void ensureContainer(String containerId, String label) { if (containerId != null && !containerId.isBlank()) itemContainers.putIfAbsent(containerId, new ContainerRecord(containerId, label == null ? containerId : label)); }
@@ -739,9 +2654,59 @@ final class LegacyMultiplayerMenu {
 }
 
 final class LegacySoundSurface {
-    void play(String key, GameOptions options) {}
-    void playDistantCue(String key, int distance, GameOptions options) { play(key, options); }
-    void setMusicVolume(GameOptions options) {}
+    private final SoundManager manager = new SoundManager();
+    private boolean loaded;
+
+    private synchronized void ensureLoaded() {
+        if (loaded) return;
+        try {
+            manager.load();
+        } catch (Throwable t) {
+            DebugLog.error("AUDIO", "Audio manager failed to load; continuing silently where assets/devices are unavailable.", t);
+        }
+        loaded = true;
+    }
+
+    void play(String key, GameOptions options) {
+        ensureLoaded();
+        manager.play(key, options);
+    }
+
+    void playDistantCue(String key, int distance, GameOptions options) {
+        ensureLoaded();
+        manager.playDistantCue(key, distance, options);
+    }
+
+    void playIntroCrawlNarration(GameOptions options) {
+        ensureLoaded();
+        manager.playIntroCrawlNarration(options);
+    }
+
+    void stopIntroCrawlNarration(String reason) {
+        ensureLoaded();
+        manager.stopIntroCrawlNarration(reason == null ? "unspecified" : reason);
+    }
+
+    void requestMusic(String key, GameOptions options) {
+        ensureLoaded();
+        manager.requestMusic(key, options);
+    }
+
+    void setMusicVolume(GameOptions options) {
+        ensureLoaded();
+        manager.setMusicVolume(options);
+    }
+
+    void stopMusic(String reason) {
+        ensureLoaded();
+        manager.stopMusic();
+        DebugLog.audit("AUDIO", "Music stop requested by bridge: " + (reason == null ? "unspecified" : reason));
+    }
+
+    String auditSummary() {
+        ensureLoaded();
+        return "soundHandles=" + manager.sounds.size() + " generatedCueFallbacks=" + manager.generatedCueKeys.size() + " playlists=" + manager.music.playlistSummary();
+    }
 }
 
 final class LegacyRenderScaling {
@@ -784,12 +2749,48 @@ final class LegacyImageSurface {
 
     BufferedImage getTile(char tile) {
         ensureLoaded(lastOptions);
-        return null;
+        return media.tileArt.getRegistry().getTile(tile);
+    }
+
+    BufferedImage getTile(String semanticOrAlias, char fallbackGlyph) {
+        ensureLoaded(lastOptions);
+        return media.getTile(semanticOrAlias, fallbackGlyph);
+    }
+
+    BufferedImage getSemanticAssetImage(String assetId) {
+        ensureLoaded(lastOptions);
+        return media.getSemanticAssetImage(assetId);
+    }
+
+    BufferedImage getMapObjectImage(MapObjectState object) {
+        ensureLoaded(lastOptions);
+        String id = ObjectSemanticAssetAuthority.assetIdForMapObject(object);
+        BufferedImage img = media.getSemanticAssetImage(id);
+        return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
+    }
+
+    BufferedImage getBaseObjectImage(BaseObject object) {
+        ensureLoaded(lastOptions);
+        String id = ObjectSemanticAssetAuthority.assetIdForBaseObject(object);
+        BufferedImage img = media.getSemanticAssetImage(id);
+        return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
     }
 
     BufferedImage getNpcPortraitFor(Object npc) {
         ensureLoaded(lastOptions);
+        if (npc instanceof NpcEntity entity) return media.getNpcPortraitFor(entity);
         return media.getNpcPortrait(npc == null ? 0 : Math.abs(npc.hashCode()));
+    }
+
+    BufferedImage getPlayerPortrait(Candidate candidate) {
+        ensureLoaded(lastOptions);
+        if (candidate == null) return media.getPortrait(ImageCache.PLAYER_BASELINE_HUMAN_POOL, 0);
+        return media.getPortrait(candidate.portraitSheet, candidate.portraitIndex);
+    }
+
+    BufferedImage getItemIcon(String itemName) {
+        ensureLoaded(lastOptions);
+        return media.getItemIcon(itemName);
     }
 
     java.util.ArrayList<String> loadIntroCrawlLines() {

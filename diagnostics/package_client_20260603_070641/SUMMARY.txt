@@ -1,0 +1,32 @@
+Client Package Run: 20260603_070641
+Repository root: C:\GITS\The Mechanist\TheMechanist
+Package output: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
+Package mode: unfolded exposed client directory
+Classes output: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\classes
+Java release target: 17
+Max javac errors: 200
+CleanOutput: False
+CleanClasses: True
+IncludeSourceMirror: False
+BuildJar: True
+
+==== Tooling preflight ====
+javac command: C:\Program Files\Common Files\Oracle\Java\javapath\javac.exe
+
+==== Prepare unfolded PACKAGE_client directory ====
+
+==== Source inventory ====
+Java source files: 393
+Source list: C:\GITS\The Mechanist\TheMechanist\diagnostics\package_client_20260603_070641\sources.txt
+
+==== Compile client classes into unfolded package ====
+CompileExit: 0
+
+==== Merge package assets and resources ====
+MergedResourceFiles: 5932
+PackageAssetFiles: 5930
+AssetInventory: C:\GITS\The Mechanist\TheMechanist\diagnostics\package_client_20260603_070641\asset_inventory.txt
+
+==== Optional jar assembly ====
+JarExit: 0
+ClassFiles: 1139

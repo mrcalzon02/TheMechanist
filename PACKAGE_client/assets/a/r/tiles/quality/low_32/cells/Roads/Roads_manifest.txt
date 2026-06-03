@@ -1,0 +1,2 @@
+n-s,e-w,r,i,S.png
+    Is a 5 by 5 roads and frontage assets index rows 2 3 and 4 are roads assets row 5 is sidewalks columns are variations Row one is N S arranged Road Tiles Row 2 is E West arranged road tiles row three is right hand turning north entry east exit turn tiles Row 4 is intersection tiles row 5 is all universal sidewalk tiles.

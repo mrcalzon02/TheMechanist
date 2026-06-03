@@ -45,6 +45,7 @@ final class MultiplayerMenuController implements AutoCloseable {
     String status() { return status; }
     boolean hasActiveHost() { return activeHost != null && activeHost.success(); }
     String activeHostLine() { return activeHost == null ? "No local host bound." : activeHost.compactLine(); }
+    void setStatus(String status) { this.status = status == null || status.isBlank() ? this.status : status; }
 
     void beginDirectEdit() { inputActive = true; status = "Editing direct server address. Examples: 192.168.1.10:25565 or [2001:db8::1]:25565."; }
     void endDirectEdit() { inputActive = false; }

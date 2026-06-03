@@ -42,7 +42,15 @@ final class GamePanelKeyController {
             panel.setScreen(GamePanel.Screen.PAUSE);
             return true;
         }
-        if (panel.screen == GamePanel.Screen.PANEL) {
+        if (panel.screen == GamePanel.Screen.CHARACTER && panel.newGameSetupActive) {
+            panel.newGameSetupActive = false;
+            panel.characterNameEditActive = false;
+            panel.setScreen(GamePanel.Screen.MENU);
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.PANEL || panel.screen == GamePanel.Screen.CHARACTER
+                || panel.screen == GamePanel.Screen.INVENTORY || panel.screen == GamePanel.Screen.MAP
+                || panel.screen == GamePanel.Screen.INFO) {
             panel.closePanel();
             return true;
         }
@@ -189,6 +197,8 @@ final class GamePanelKeyController {
     static boolean handleUniversalMenuKey(GamePanel panel, int code) {
         boolean cursorSpecial = panel.screen == GamePanel.Screen.PANEL && (panel.panelMode == GamePanel.PanelMode.LOOK || panel.panelMode == GamePanel.PanelMode.COMBAT || panel.panelMode == GamePanel.PanelMode.INTERACT || panel.panelMode == GamePanel.PanelMode.INFOPEDIA || ((panel.panelMode == GamePanel.PanelMode.BUILD || panel.panelMode == GamePanel.PanelMode.WORKBENCH) && panel.buildPlacementActive));
         if (panel.screen == GamePanel.Screen.GAME || cursorSpecial) return false;
+        if (panel.screen == GamePanel.Screen.CHARACTER && panel.newGameSetupActive
+                && (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_A || code == KeyEvent.VK_D)) return false;
         if (code == KeyEvent.VK_W || code == KeyEvent.VK_A || code == KeyEvent.VK_UP || code == KeyEvent.VK_LEFT) { panel.moveSelectedButton(-1); return true; }
         if (code == KeyEvent.VK_S || code == KeyEvent.VK_D || code == KeyEvent.VK_DOWN || code == KeyEvent.VK_RIGHT) { panel.moveSelectedButton(1); return true; }
         if (code == KeyEvent.VK_E || code == KeyEvent.VK_ENTER) { panel.activateSelectedButtonUniversal(); return true; }
@@ -200,16 +210,24 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_PAGE_UP) { panel.jobDossierScroll = Math.max(0, panel.jobDossierScroll - 3); panel.repaint(); return true; }
         if (code == KeyEvent.VK_PAGE_DOWN) { panel.jobDossierScroll += 3; panel.repaint(); return true; }
         if (panel.candidates.isEmpty()) return false;
+        if (panel.newGameSetupActive && code == KeyEvent.VK_R) { panel.rerollSelectedCandidate(); return true; }
+        if (panel.newGameSetupActive && code == KeyEvent.VK_N) { panel.rerollNewGameRoster(); return true; }
         if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
             panel.characterNameEditActive = false;
-            panel.candidateIndex = (panel.candidateIndex + panel.candidates.size() - 1) % panel.candidates.size();
-            resetCharacterDossier(panel);
+            if (panel.newGameSetupActive) panel.cycleSelectedCandidate(-1);
+            else {
+                panel.candidateIndex = (panel.candidateIndex + panel.candidates.size() - 1) % panel.candidates.size();
+                resetCharacterDossier(panel);
+            }
             return true;
         }
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
             panel.characterNameEditActive = false;
-            panel.candidateIndex = (panel.candidateIndex + 1) % panel.candidates.size();
-            resetCharacterDossier(panel);
+            if (panel.newGameSetupActive) panel.cycleSelectedCandidate(1);
+            else {
+                panel.candidateIndex = (panel.candidateIndex + 1) % panel.candidates.size();
+                resetCharacterDossier(panel);
+            }
             return true;
         }
         return false;
@@ -229,7 +247,7 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_R) { panel.cycleMovementMode(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_P) { panel.beginManualMovementPlan(); return true; }
         if (code == KeyEvent.VK_PERIOD || code == KeyEvent.VK_NUMPAD5) { panel.waitOneTurn(); panel.repaint(); return true; }
-        if (code == KeyEvent.VK_L) { panel.interactCursorActive = false; panel.lookX = panel.playerX; panel.lookY = panel.playerY; panel.lookCursorActive = true; panel.openPanel(GamePanel.PanelMode.LOOK); return true; }
+        if (code == KeyEvent.VK_L) { panel.beginLookMode(); return true; }
         if (code == KeyEvent.VK_E) { panel.beginInteractMode(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_I) { panel.openPanel(GamePanel.PanelMode.INVENTORY); return true; }
         if (code == KeyEvent.VK_F) { panel.beginCombatTargeting(); panel.repaint(); return true; }
@@ -281,7 +299,72 @@ final class GamePanelKeyController {
     }
 
     static boolean handleMultiplayerKey(GamePanel panel, int code) {
-        if (panel.screen == GamePanel.Screen.MULTIPLAYER && panel.multiplayerMenu.handleKeyPressed(code)) {
+        if (panel.screen != GamePanel.Screen.MULTIPLAYER) return false;
+        if (panel.multiplayerMenu.handleKeyPressed(code)) {
+            panel.repaint();
+            return true;
+        }
+        try {
+            if (code == KeyEvent.VK_I || code == KeyEvent.VK_E) {
+                panel.multiplayerMenu.beginDirectEdit();
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) {
+                panel.multiplayerMenu.cycleHistory(-1);
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) {
+                panel.multiplayerMenu.cycleHistory(1);
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) {
+                panel.multiplayerMenu.cycleFavorite(-1);
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) {
+                panel.multiplayerMenu.cycleFavorite(1);
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_J) {
+                NetworkPortAuthority.Endpoint endpoint = panel.multiplayerMenu.joinDirect();
+                panel.logEvent("Multiplayer direct endpoint prepared: " + endpoint.display() + ".");
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_F) {
+                panel.multiplayerMenu.addFavoriteFromDirect("Direct " + panel.multiplayerMenu.directInput());
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_G) {
+                NetworkPortAuthority.Endpoint endpoint = panel.multiplayerMenu.joinFavorite();
+                panel.logEvent("Multiplayer favorite endpoint prepared: " + endpoint.display() + ".");
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_H) {
+                if (panel.world == null) {
+                    panel.multiplayerMenu.setStatus("Load or start a world before hosting a local multiplayer session.");
+                } else {
+                    String worldName = panel.world.hiveName == null || panel.world.hiveName.isBlank() ? "The Mechanist World" : panel.world.hiveName;
+                    HostBindingResult result = panel.multiplayerMenu.hostFromWorld(panel.seed, worldName, "singleplayer-" + Math.abs(panel.seed), panel.worldSetup, 8);
+                    panel.logEvent("Multiplayer host route: " + result.compactLine());
+                }
+                panel.repaint();
+                return true;
+            }
+            if (code == KeyEvent.VK_T) {
+                panel.multiplayerMenu.joinViaSteamFriend();
+                panel.repaint();
+                return true;
+            }
+        } catch (RuntimeException ex) {
+            panel.multiplayerMenu.setStatus("Multiplayer command failed: " + ex.getMessage());
             panel.repaint();
             return true;
         }

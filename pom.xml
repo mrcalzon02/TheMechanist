@@ -61,19 +61,19 @@
         <sourceDirectory>${project.basedir}/src</sourceDirectory>
         <resources>
             <resource>
-                <directory>${project.basedir}/client/assets</directory>
+                <directory>${project.basedir}/PACKAGE_client/assets</directory>
                 <targetPath>assets</targetPath>
                 <includes><include>**/*</include></includes>
                 <filtering>false</filtering>
             </resource>
             <resource>
-                <directory>${project.basedir}/client/modding</directory>
+                <directory>${project.basedir}/PACKAGE_client/modding</directory>
                 <targetPath>modding</targetPath>
                 <includes><include>**/*</include></includes>
                 <filtering>false</filtering>
             </resource>
             <resource>
-                <directory>${project.basedir}/client</directory>
+                <directory>${project.basedir}/PACKAGE_client</directory>
                 <includes>
                     <include>EULA.md</include>
                     <include>README.md</include>
@@ -84,7 +84,7 @@
                 <filtering>false</filtering>
             </resource>
             <resource>
-                <directory>${project.basedir}/installer</directory>
+                <directory>${project.basedir}/PACKAGE_installer</directory>
                 <targetPath>installer</targetPath>
                 <includes>
                     <include>PACKAGING_PIPELINE.md</include>
