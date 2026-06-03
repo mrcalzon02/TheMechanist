@@ -1,8 +1,0 @@
-Generated core/package asset copy: 20260602_122117
-Repo root: C:\GITS\The Mechanist\TheMechanist
-Package root: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
-Tier: low_32
-CopiedFiles: 0
-CopiedBytes: 0
-FinalPackageAssetFiles: 0
-WARNING: no generated low_32/core_32/package_32 assets were found under canonical package roots.

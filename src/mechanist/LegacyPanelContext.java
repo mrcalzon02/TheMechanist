@@ -59,6 +59,7 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     final ArrayList<String> inventory = new ArrayList<>();
     final ArrayList<String> eventLog = new ArrayList<>();
+    final ArrayList<SectorGenerationTraceAuthority.Step> auditTraceSteps = new ArrayList<>();
     final ArrayList<BaseObject> baseObjects = new ArrayList<>();
     final ArrayList<String> baseStorage = new ArrayList<>();
     final ArrayList<Candidate> candidates = new ArrayList<>();
@@ -208,10 +209,19 @@ class GamePanel extends LegacyPanelBridgeBase {
     int lastWorldViewOriginY;
     int lastWorldViewMinX;
     int lastWorldViewMinY;
+    int lastAuditViewTileSize = 16;
+    int lastAuditViewOriginX;
+    int lastAuditViewOriginY;
+    int lastAuditViewMinX;
+    int lastAuditViewMinY;
+    int lastAuditViewCols = 1;
+    int lastAuditViewRows = 1;
     int auditFindingIndex;
     int auditZoneTypeIndex;
     int auditZoneDensityIndex;
     int auditOverlayIndex;
+    int auditTraceIndex;
+    int auditTraceStepMillis = 900;
     int selectedFireModeIndex;
     int generatedJobCategoryFilterIndex;
     int generatedJobReadinessFilterIndex;
@@ -222,6 +232,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean manualMovementPlanActive;
     boolean buildPlacementActive;
     boolean newGameSetupActive;
+    boolean auditTracePlaying;
     Screen screen = Screen.BOOT;
     PanelMode panelMode = PanelMode.NONE;
     BuildRecipe pendingBuildRecipe;
@@ -246,6 +257,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     String lastLogisticsHaulExecutionReport = "No manual haul execution has been recorded.";
     long bootStartMillis = System.currentTimeMillis();
     long lastInputMillis = System.currentTimeMillis();
+    long auditTraceStartedMillis;
     int worldSetupSelection;
     Font titleFont = new Font("Monospaced", Font.BOLD, 36);
     Font smallFont = new Font("Monospaced", Font.PLAIN, 14);
@@ -865,46 +877,188 @@ class GamePanel extends LegacyPanelBridgeBase {
     private void drawSectorAuditSurface(java.awt.Graphics2D g, int w, int h) {
         buttons.clear();
         if (auditWorld == null) rerollSectorAudit();
+        SectorGenerationTraceAuthority.Step step = currentAuditTraceStep();
+        World viewWorld = auditViewWorld(step);
         Rectangle panel = new Rectangle(18, 48, Math.max(560, w - 36), Math.max(420, h - 86));
         drawOverlayFrame(g, panel, "SECTOR AUDIT");
-        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, panel.height - 112);
+        int by1 = panel.y + panel.height - 80;
+        int by2 = panel.y + panel.height - 42;
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, Math.max(260, by1 - panel.y - 68));
         int gap = 14;
-        Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(300, body.width * 3 / 5), body.height);
-        drawBox(g, mapBox, "Audit Slice");
-        if (auditWorld != null && auditWorld.w > 0 && auditWorld.h > 0) {
-            double sx = mapBox.width / (double)auditWorld.w;
-            double sy = mapBox.height / (double)auditWorld.h;
-            for (int x = 0; x < auditWorld.w; x++) for (int y = 0; y < auditWorld.h; y++) {
-                g.setColor(tileColor(auditWorld.tiles[x][y], x, y));
-                int rx = mapBox.x + (int)Math.floor(x * sx);
-                int ry = mapBox.y + (int)Math.floor(y * sy);
-                int rw = Math.max(1, (int)Math.ceil(sx));
-                int rh = Math.max(1, (int)Math.ceil(sy));
-                g.fillRect(rx, ry, rw, rh);
-            }
-            g.setColor(new java.awt.Color(116, 188, 235));
-            int cx = mapBox.x + (int)Math.round(Math.max(0, Math.min(auditWorld.w - 1, auditCursorX)) * sx);
-            int cy = mapBox.y + (int)Math.round(Math.max(0, Math.min(auditWorld.h - 1, auditCursorY)) * sy);
-            g.drawRect(cx - 3, cy - 3, 7, 7);
-        }
+        int stepH = Math.max(96, Math.min(150, body.height / 4));
+        Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(300, body.width * 3 / 5), Math.max(220, body.height - stepH - gap));
+        Rectangle stepBox = new Rectangle(body.x, mapBox.y + mapBox.height + gap, mapBox.width, stepH);
+        drawAuditReplayMap(g, mapBox, viewWorld, step);
+        drawAuditStepBox(g, stepBox, step);
         Rectangle detail = new Rectangle(mapBox.x + mapBox.width + gap, body.y, Math.max(240, body.x + body.width - mapBox.x - mapBox.width - gap), body.height);
         ArrayList<String> lines = new ArrayList<>();
-        lines.add("Zone: " + (auditWorld == null ? "none" : auditWorld.zoneType.label));
+        lines.add("Zone: " + (viewWorld == null ? "none" : viewWorld.zoneType.label));
         lines.add("Density: " + WorldSetupSettings.ZONE_DENSITY[Math.max(0, Math.min(auditZoneDensityIndex, WorldSetupSettings.ZONE_DENSITY.length - 1))]);
         lines.add("Overlay: " + auditOverlayLabel());
         lines.add("Cursor: " + auditCursorX + "," + auditCursorY);
+        lines.add("Replay: " + (auditTracePlaying ? "playing" : "paused") + " | Step " + (auditTraceSteps.isEmpty() ? 0 : auditTraceIndex + 1) + "/" + auditTraceSteps.size());
         if (auditSnapshot != null) lines.addAll(SectorAuditRuntimeAuthority.compactPanelLines(auditSnapshot, auditFindingIndex));
         else lines.add("Audit snapshot has not run.");
         drawDetailBox(g, detail, "Findings", lines, null);
-        int by = panel.y + panel.height - 46;
-        addOverlayButton("Reroll", panel.x + 18, by, 88, 30, "Generate a fresh audit slice.", this::rerollSectorAudit);
-        addOverlayButton("Zone", panel.x + 114, by, 76, 30, "Cycle audit zone type.", () -> cycleAuditZoneType(1));
-        addOverlayButton("Density", panel.x + 198, by, 92, 30, "Cycle audit zone density.", this::cycleAuditZoneDensity);
-        addOverlayButton("Overlay", panel.x + 298, by, 92, 30, "Cycle audit overlay.", this::cycleAuditOverlay);
-        addOverlayButton("Prev", panel.x + 398, by, 72, 30, "Previous audit finding.", () -> jumpAuditFinding(-1));
-        addOverlayButton("Next", panel.x + 478, by, 72, 30, "Next audit finding.", () -> jumpAuditFinding(1));
-        addOverlayButton("Back", panel.x + panel.width - 112, by, 86, 30, "Return to tools.", () -> setScreen(Screen.MODS));
+        addOverlayButton("Reroll", panel.x + 18, by1, 78, 30, "Generate a fresh audit slice.", this::rerollSectorAudit);
+        addOverlayButton(auditTracePlaying ? "Pause" : "Play", panel.x + 104, by1, 72, 30, "Play or pause generation replay.", this::toggleAuditReplay);
+        addOverlayButton("Step", panel.x + 184, by1, 64, 30, "Advance one generation replay step.", () -> stepAuditReplay(1));
+        addOverlayButton("End", panel.x + 256, by1, 58, 30, "Jump to the completed generated zone.", this::finishAuditReplay);
+        addOverlayButton("Zone", panel.x + 18, by2, 66, 30, "Cycle audit zone type.", () -> cycleAuditZoneType(1));
+        addOverlayButton("Density", panel.x + 92, by2, 82, 30, "Cycle audit zone density.", this::cycleAuditZoneDensity);
+        addOverlayButton("Overlay", panel.x + 182, by2, 82, 30, "Cycle audit overlay.", this::cycleAuditOverlay);
+        addOverlayButton("Prev", panel.x + 272, by2, 58, 30, "Previous audit finding.", () -> jumpAuditFinding(-1));
+        addOverlayButton("Next", panel.x + 338, by2, 58, 30, "Next audit finding.", () -> jumpAuditFinding(1));
+        addOverlayButton("Back", panel.x + panel.width - 112, by2, 86, 30, "Return to tools.", () -> setScreen(Screen.MODS));
         drawOverlayButtons(g);
+    }
+
+    private void drawAuditReplayMap(java.awt.Graphics2D g, Rectangle mapBox, World viewWorld, SectorGenerationTraceAuthority.Step step) {
+        drawBox(g, mapBox, "Generation Replay");
+        if (viewWorld == null || viewWorld.w <= 0 || viewWorld.h <= 0) {
+            drawDetailBox(g, mapBox, "Generation Replay", java.util.List.of("No audit world is available."), null);
+            return;
+        }
+        int header = 30;
+        Rectangle grid = new Rectangle(mapBox.x + 10, mapBox.y + header, Math.max(1, mapBox.width - 20), Math.max(1, mapBox.height - header - 10));
+        int baseTile = options == null ? 24 : options.mapTilePixelSize();
+        int tile = Math.max(10, Math.min(32, baseTile));
+        int cols = Math.max(1, Math.min(viewWorld.w, grid.width / tile));
+        int rows = Math.max(1, Math.min(viewWorld.h, grid.height / tile));
+        int focusX = step == null ? auditCursorX : step.x;
+        int focusY = step == null ? auditCursorY : step.y;
+        lastAuditViewMinX = Math.max(0, Math.min(Math.max(0, viewWorld.w - cols), focusX - cols / 2));
+        lastAuditViewMinY = Math.max(0, Math.min(Math.max(0, viewWorld.h - rows), focusY - rows / 2));
+        lastAuditViewCols = cols;
+        lastAuditViewRows = rows;
+        lastAuditViewTileSize = tile;
+        lastAuditViewOriginX = grid.x + Math.max(0, (grid.width - cols * tile) / 2);
+        lastAuditViewOriginY = grid.y + Math.max(0, (grid.height - rows * tile) / 2);
+
+        java.awt.Font glyphFont = asciiFont.deriveFont(java.awt.Font.BOLD, Math.max(10f, tile * 0.62f));
+        g.setFont(glyphFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        for (int vy = 0; vy < rows; vy++) {
+            for (int vx = 0; vx < cols; vx++) {
+                int wx = lastAuditViewMinX + vx;
+                int wy = lastAuditViewMinY + vy;
+                int sx = lastAuditViewOriginX + vx * tile;
+                int sy = lastAuditViewOriginY + vy * tile;
+                if (!viewWorld.inBounds(wx, wy)) continue;
+                char ch = viewWorld.tiles[wx][wy];
+                CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(viewWorld, wx, wy, ch);
+                g.setColor(auditTileColor(viewWorld, ch, wx, wy));
+                g.fillRect(sx, sy, tile, tile);
+                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, descriptor, ch, sx, sy, tile);
+                if (!drewArt && tile >= 13) {
+                    g.setColor(tileGlyphColor(ch));
+                    String s = Character.toString(ch);
+                    g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
+                }
+                if (auditOverlayIndex == 3 && viewWorld.roomIds != null && viewWorld.roomIds[wx][wy] > 0) {
+                    g.setColor(new java.awt.Color(116, 188, 235, 42));
+                    g.fillRect(sx, sy, tile, tile);
+                }
+                g.setColor(new java.awt.Color(0, 0, 0, 70));
+                g.drawRect(sx, sy, tile, tile);
+            }
+        }
+        if (auditOverlayIndex == 1 && auditSnapshot != null) {
+            g.setColor(new java.awt.Color(245, 214, 118, 170));
+            for (SectorAuditRuntimeAuthority.AuditFinding finding : auditSnapshot.findings) {
+                if (finding == null || !auditPointInView(finding.x, finding.y)) continue;
+                int sx = lastAuditViewOriginX + (finding.x - lastAuditViewMinX) * tile;
+                int sy = lastAuditViewOriginY + (finding.y - lastAuditViewMinY) * tile;
+                g.drawRect(sx + 2, sy + 2, Math.max(2, tile - 5), Math.max(2, tile - 5));
+            }
+        }
+        if (auditOverlayIndex == 2 && viewWorld.mapObjects != null) {
+            g.setColor(new java.awt.Color(124, 230, 144, 185));
+            for (MapObjectState object : viewWorld.mapObjects) {
+                if (object == null || !auditPointInView(object.x, object.y)) continue;
+                int sx = lastAuditViewOriginX + (object.x - lastAuditViewMinX) * tile;
+                int sy = lastAuditViewOriginY + (object.y - lastAuditViewMinY) * tile;
+                g.fillOval(sx + Math.max(2, tile / 4), sy + Math.max(2, tile / 4), Math.max(3, tile / 2), Math.max(3, tile / 2));
+            }
+        }
+        drawAuditGhostAndCursor(g, step, tile);
+    }
+
+    private void drawAuditGhostAndCursor(java.awt.Graphics2D g, SectorGenerationTraceAuthority.Step step, int tile) {
+        java.awt.Stroke old = g.getStroke();
+        if (step != null && step.ghostRect != null) {
+            Rectangle ghost = step.ghostRect;
+            int gx1 = Math.max(ghost.x, lastAuditViewMinX);
+            int gy1 = Math.max(ghost.y, lastAuditViewMinY);
+            int gx2 = Math.min(ghost.x + ghost.width, lastAuditViewMinX + lastAuditViewCols);
+            int gy2 = Math.min(ghost.y + ghost.height, lastAuditViewMinY + lastAuditViewRows);
+            if (gx2 > gx1 && gy2 > gy1) {
+                int sx = lastAuditViewOriginX + (gx1 - lastAuditViewMinX) * tile;
+                int sy = lastAuditViewOriginY + (gy1 - lastAuditViewMinY) * tile;
+                int sw = Math.max(tile, (gx2 - gx1) * tile);
+                int sh = Math.max(tile, (gy2 - gy1) * tile);
+                g.setColor(step.rejected ? new java.awt.Color(230, 82, 68, 82) : new java.awt.Color(116, 188, 235, 70));
+                g.fillRect(sx, sy, sw, sh);
+                g.setStroke(new java.awt.BasicStroke(2f));
+                g.setColor(step.rejected ? new java.awt.Color(235, 88, 74) : new java.awt.Color(116, 188, 235));
+                g.drawRect(sx, sy, Math.max(1, sw - 1), Math.max(1, sh - 1));
+            }
+        }
+        if (auditPointInView(auditCursorX, auditCursorY)) {
+            int sx = lastAuditViewOriginX + (auditCursorX - lastAuditViewMinX) * tile;
+            int sy = lastAuditViewOriginY + (auditCursorY - lastAuditViewMinY) * tile;
+            g.setStroke(new java.awt.BasicStroke(Math.max(1f, tile / 10f)));
+            g.setColor(new java.awt.Color(245, 214, 118));
+            g.drawRect(sx + 1, sy + 1, Math.max(2, tile - 3), Math.max(2, tile - 3));
+        }
+        g.setStroke(old);
+    }
+
+    private void drawAuditStepBox(java.awt.Graphics2D g, Rectangle r, SectorGenerationTraceAuthority.Step step) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (step == null) {
+            lines.add("No generation trace captured for this audit slice.");
+            lines.add("Reroll will regenerate the zone with trace capture enabled.");
+        } else {
+            lines.add(step.line(auditTraceSteps.size()));
+            lines.add("Focus " + step.x + "," + step.y + (step.rejected ? " | rejected placement proposal" : ""));
+            if (step.ghostRect != null) lines.add("Proposal " + step.ghostRect.x + "," + step.ghostRect.y + " " + step.ghostRect.width + "x" + step.ghostRect.height);
+        }
+        drawDetailBox(g, r, "Generation Step", lines, null);
+    }
+
+    private SectorGenerationTraceAuthority.Step currentAuditTraceStep() {
+        if (auditTraceSteps.isEmpty()) return null;
+        if (auditTracePlaying) {
+            int millis = Math.max(120, auditTraceStepMillis);
+            long elapsed = Math.max(0L, System.currentTimeMillis() - auditTraceStartedMillis);
+            auditTraceIndex = Math.max(0, Math.min(auditTraceSteps.size() - 1, (int)(elapsed / millis)));
+            if (auditTraceIndex >= auditTraceSteps.size() - 1) auditTracePlaying = false;
+        }
+        auditTraceIndex = Math.max(0, Math.min(auditTraceIndex, auditTraceSteps.size() - 1));
+        SectorGenerationTraceAuthority.Step step = auditTraceSteps.get(auditTraceIndex);
+        if (step != null) {
+            auditCursorX = step.x;
+            auditCursorY = step.y;
+        }
+        return step;
+    }
+
+    private World auditViewWorld(SectorGenerationTraceAuthority.Step step) {
+        return step != null && step.world != null ? step.world : auditWorld;
+    }
+
+    private boolean auditPointInView(int x, int y) {
+        return x >= lastAuditViewMinX && y >= lastAuditViewMinY && x < lastAuditViewMinX + lastAuditViewCols && y < lastAuditViewMinY + lastAuditViewRows;
+    }
+
+    private java.awt.Color auditTileColor(World viewWorld, char ch, int x, int y) {
+        if (ch == '#') return new java.awt.Color(38, 39, 36);
+        if (ch == '.' || ch == ',' || ch == ':' || ch == ';' || ch == '=') return new java.awt.Color(47, 48, 43);
+        if (ch == '+' || ch == '/' || ch == '\\' || ch == 'D') return new java.awt.Color(91, 76, 43);
+        if (ch == '~') return new java.awt.Color(35, 57, 58);
+        if (viewWorld != null && viewWorld.inBounds(x, y) && viewWorld.walkable(x, y)) return new java.awt.Color(54, 50, 42);
+        return new java.awt.Color(28, 29, 27);
     }
 
     private void drawEditorRecoverySurface(java.awt.Graphics2D g, int w, int h) {
@@ -939,7 +1093,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             center(g, "Return to the main menu and start or load a game.", w / 2, Math.max(132, h / 4 + 44));
             return;
         }
-        if (screen == Screen.GAME && panelMode == PanelMode.NONE) buttons.clear();
+        if (isWorldCommandSurface()) buttons.clear();
 
         Rectangle map = gameWorldViewportRect(w, h);
         int tile = Math.max(8, Math.min(28, Math.min(map.width / 28, map.height / 20)));
@@ -954,16 +1108,43 @@ class GamePanel extends LegacyPanelBridgeBase {
         drawWorldTiles(g, cols, rows, tile);
         drawWorldEntities(g, cols, rows, tile);
         drawWorldHud(g, w, h, map);
-        if (screen != Screen.GAME || panelMode != PanelMode.NONE) drawActivePanelOverlay(g, w, h);
+        if ((screen != Screen.GAME || panelMode != PanelMode.NONE) && !isWorldInlineInteractionPanel()) drawActivePanelOverlay(g, w, h);
     }
 
     private Rectangle gameWorldViewportRect(int w, int h) {
-        int sideW = Math.max(240, Math.min(340, w / 4));
+        int sideW = worldCommandBarWidth(w);
         int top = 58;
-        int bottom = 108;
-        int width = Math.max(240, w - sideW - 30);
+        int bottom = worldDescriptorHeight(h) + 24;
+        int width = Math.max(240, w - sideW - 48);
         int height = Math.max(200, h - top - bottom);
         return new Rectangle(16, top, width, height);
+    }
+
+    private int worldCommandBarWidth(int w) {
+        return Math.max(132, Math.min(190, w / 6));
+    }
+
+    private int worldDescriptorHeight(int h) {
+        return Math.max(118, Math.min(168, h / 5));
+    }
+
+    private Rectangle worldCommandBarRect(int w, int h) {
+        int width = worldCommandBarWidth(w);
+        return new Rectangle(w - width - 16, 58, width, Math.max(220, h - 74));
+    }
+
+    private Rectangle worldDescriptorRect(int w, int h) {
+        int commandW = worldCommandBarWidth(w);
+        int height = worldDescriptorHeight(h);
+        return new Rectangle(16, h - height - 16, Math.max(260, w - commandW - 48), height);
+    }
+
+    private boolean isWorldInlineInteractionPanel() {
+        return screen == Screen.PANEL && (panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT);
+    }
+
+    private boolean isWorldCommandSurface() {
+        return screen == Screen.GAME || isWorldInlineInteractionPanel();
     }
 
     private void drawWorldTiles(java.awt.Graphics2D g, int cols, int rows, int tile) {
@@ -1119,55 +1300,84 @@ class GamePanel extends LegacyPanelBridgeBase {
         String zone = world.zoneType.label + " | " + world.zoneCoordText() + " | " + timeText();
         g.drawString(GuiLayoutApi.fitLabel(zone, g.getFontMetrics(), Math.max(180, w - 36)), 18, 50);
 
-        Rectangle side = new Rectangle(map.x + map.width + 14, map.y, Math.max(220, w - (map.x + map.width + 30)), map.height);
-        g.setColor(new java.awt.Color(12, 14, 13, 220));
-        g.fillRoundRect(side.x, side.y, side.width, side.height, 10, 10);
-        g.setColor(new java.awt.Color(145, 118, 64, 125));
-        g.drawRoundRect(side.x, side.y, side.width, side.height, 10, 10);
-        int y = side.y + 26;
-        g.setColor(new java.awt.Color(225, 205, 140));
-        g.drawString(active == null ? "Unnamed survivor" : active.name + " / " + active.job, side.x + 12, y);
-        y += 24;
-        g.setColor(new java.awt.Color(205, 210, 195));
-        for (String line : java.util.List.of(
-                "Position " + playerX + "," + playerY,
-                "Food " + food + "  Water " + water,
-                "Wounds " + wounds + "  Fatigue " + fatigue,
-                "Script " + carriedScript + "  XP " + xp,
-                "Knowledge " + knowledgeCredits + " / " + unlockedKnowledges.size() + " known",
-                "Inventory " + inventory.size() + " item(s)")) {
-            g.drawString(GuiLayoutApi.fitLabel(line, g.getFontMetrics(), side.width - 24), side.x + 12, y);
-            y += 20;
-        }
-        y += 12;
-        g.setColor(new java.awt.Color(225, 205, 140));
-        g.drawString("Recent Events", side.x + 12, y);
-        y += 22;
-        g.setColor(new java.awt.Color(177, 180, 162));
-        int start = Math.max(0, eventLog.size() - 10);
-        for (int i = start; i < eventLog.size(); i++) {
-            if (y > side.y + side.height - 18) break;
-            g.drawString(GuiLayoutApi.fitLabel(eventLog.get(i), g.getFontMetrics(), side.width - 24), side.x + 12, y);
-            y += 18;
+        Rectangle command = worldCommandBarRect(w, h);
+        drawBox(g, command, "Commands");
+        if (isWorldCommandSurface()) {
+            addWorldCommandButtons(command);
+        } else {
+            g.setFont(smallFont);
+            g.setColor(new java.awt.Color(205, 210, 195));
+            int y = command.y + 38;
+            for (String line : java.util.List.of("Esc returns to the world.", "Use the panel controls below.", "Movement: WASD or arrows.")) {
+                g.drawString(GuiLayoutApi.fitLabel(line, g.getFontMetrics(), command.width - 22), command.x + 11, y);
+                y += 18;
+            }
         }
 
-        Rectangle strip = new Rectangle(16, h - 104, Math.max(260, w - 32), 84);
-        g.setColor(new java.awt.Color(12, 14, 13, 230));
-        g.fillRoundRect(strip.x, strip.y, strip.width, strip.height, 10, 10);
-        g.setColor(new java.awt.Color(145, 118, 64, 115));
-        g.drawRoundRect(strip.x, strip.y, strip.width, strip.height, 10, 10);
-        g.setColor(new java.awt.Color(205, 210, 195));
-        g.drawString("Command Bar  |  Screen=" + screen + "  Panel=" + panelMode + "  Seed=" + seed, strip.x + 14, strip.y + 18);
-        if (screen == Screen.GAME && panelMode == PanelMode.NONE) {
-            addWorldCommandButtons(strip);
-            drawOverlayButtons(g);
+        drawWorldDescriptor(g, worldDescriptorRect(w, h));
+        if (isWorldCommandSurface()) drawOverlayButtons(g);
+    }
+
+    private void drawWorldDescriptor(java.awt.Graphics2D g, Rectangle r) {
+        String title = switch (panelMode) {
+            case LOOK -> "Look";
+            case INTERACT -> "Interact";
+            case COMBAT -> "Combat";
+            default -> "World";
+        };
+        drawBox(g, r, title);
+        int tx = panelMode == PanelMode.COMBAT ? combatX : ((lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT) ? lookX : playerX);
+        int ty = panelMode == PanelMode.COMBAT ? combatY : ((lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT) ? lookY : playerY);
+        if (world != null) {
+            tx = Math.max(0, Math.min(world.w - 1, tx));
+            ty = Math.max(0, Math.min(world.h - 1, ty));
+        }
+
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add((active == null ? "Unnamed survivor" : active.name + " / " + active.job)
+                + " | Pos " + playerX + "," + playerY
+                + " | Food " + food + " Water " + water
+                + " | Wounds " + wounds + " Fatigue " + fatigue);
+        if (world != null && world.inBounds(tx, ty)) {
+            lines.add("Target " + tx + "," + ty + " | " + (panelMode == PanelMode.COMBAT ? targetingSolutionAt(tx, ty).summary : "inspectable world cell"));
+            ArrayList<String> stack = tileStackAt(tx, ty);
+            for (int i = 0; i < Math.min(5, stack.size()); i++) lines.add(stack.get(i));
         } else {
-            g.drawString("Move: WASD/Arrows  Look: L  Interact: E  Inventory: I  Character: C  Map: M  Build: B  Pause/Menu: Esc", strip.x + 14, strip.y + 48);
+            lines.add("No valid target selected.");
+        }
+        if (lastTargetingReport != null && !lastTargetingReport.isBlank()) lines.add("Report: " + lastTargetingReport);
+        if (!eventLog.isEmpty()) lines.add("Recent: " + eventLog.get(eventLog.size() - 1));
+
+        int actionReserve = isWorldInlineInteractionPanel() ? Math.min(220, Math.max(118, r.width / 4)) : 0;
+        int textW = Math.max(120, r.width - 24 - actionReserve);
+        g.setFont(smallFont);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        int y = r.y + 34;
+        for (String line : lines) {
+            for (String wrapped : GuiLayoutApi.wrapText(line, g.getFontMetrics(), textW)) {
+                if (y > r.y + r.height - 14) break;
+                g.drawString(wrapped, r.x + 12, y);
+                y += 18;
+            }
+            if (y > r.y + r.height - 14) break;
+        }
+
+        if (isWorldInlineInteractionPanel()) {
+            int bx = r.x + r.width - actionReserve + 10;
+            int bw = Math.max(90, actionReserve - 22);
+            int by = r.y + r.height - 74;
+            String actionLabel = panelMode == PanelMode.INTERACT ? "Confirm" : panelMode == PanelMode.COMBAT ? "Fire" : "Inspect";
+            addOverlayButton(actionLabel, bx, by, bw, 30, "Run the selected target action.", () -> {
+                if (panelMode == PanelMode.INTERACT) confirmInteraction();
+                else if (panelMode == PanelMode.COMBAT) confirmCombatTarget();
+                else examineSelectedLookTarget();
+            });
+            addOverlayButton("Close", bx, by + 38, bw, 30, "Return to direct world control.", this::closePanel);
         }
     }
 
-    private void addWorldCommandButtons(Rectangle strip) {
-        String[] labels = { "Look", "Interact", "Inv", "Char", "Map", "Build", "Info", "Fight", "Explosive", "Reload", "Wait", "Mode", "Plan", "Pause" };
+    private void addWorldCommandButtons(Rectangle command) {
+        String[] labels = { "Look", "Use", "Inv", "Char", "Map", "Build", "Info", "Fight", "Bomb", "Load", "Wait", "Move", "Plan", "Pause" };
         String[] tips = {
                 "Open the look and inspect panel.",
                 "Open adjacent interact targeting.",
@@ -1201,18 +1411,108 @@ class GamePanel extends LegacyPanelBridgeBase {
                 () -> setScreen(Screen.PAUSE)
         };
         int count = labels.length;
-        int cols = Math.max(5, Math.min(8, Math.max(1, (strip.width - 24) / 86)));
+        int cols = command.width >= 148 ? 2 : 1;
         int rows = Math.max(1, (count + cols - 1) / cols);
-        int gap = 4;
-        int rowH = Math.max(20, Math.min(26, (strip.height - 34 - (rows - 1) * gap) / rows));
-        int bw = Math.max(44, (strip.width - 28 - (cols - 1) * gap) / cols);
-        int startX = strip.x + 14;
-        int startY = strip.y + 26;
+        int gap = 8;
+        int availableW = Math.max(42, command.width - 22 - (cols - 1) * gap);
+        int availableH = Math.max(42, command.height - 46 - (rows - 1) * gap);
+        int size = Math.max(38, Math.min(64, Math.min(availableW / cols, availableH / rows)));
+        int startX = command.x + (command.width - (cols * size + (cols - 1) * gap)) / 2;
+        int startY = command.y + 34;
         for (int i = 0; i < count; i++) {
             int col = i % cols;
             int row = i / cols;
-            addOverlayButton(labels[i], startX + col * (bw + gap), startY + row * (rowH + gap), bw, rowH, tips[i], actions[i]);
+            addOverlayButton(labels[i], startX + col * (size + gap), startY + row * (size + gap), size, size, tips[i], actions[i], worldCommandIcon(labels[i]));
         }
+    }
+
+    private BufferedImage worldCommandIcon(String key) {
+        return systemButtonIconForLabel(key);
+    }
+
+    void ensureButtonSystemIcon(ButtonBox button) {
+        if (button == null || button.icon != null) return;
+        button.icon = systemButtonIconForLabel(button.label);
+    }
+
+    BufferedImage systemButtonIconForLabel(String label) {
+        int[] cell = systemButtonCellForLabel(label);
+        return cell == null ? null : images.getCompiledSystemIcon(cell[0], cell[1], cell[2]);
+    }
+
+    private int[] systemButtonCellForLabel(String label) {
+        String key = normalizeButtonLabel(label);
+        if (key.isBlank()) return null;
+        if (key.contains("main menu")) return systemCell(3, 5, 5);
+        if (key.contains("save") && key.contains("load")) return systemCell(3, 5, 3);
+        if (key.contains("load")) return systemCell(3, 5, 3);
+        if (key.contains("save")) return systemCell(3, 5, 2);
+        if (key.contains("new game") || key.contains("start game") || key.startsWith("start") || key.contains("generate") || key.equals("play") || key.equals("resume") || key.equals("continue")) return systemCell(4, 1, 1);
+        if (key.equals("quit")) return systemCell(3, 5, 4);
+        if (key.equals("options") || key.equals("graphics") || key.equals("display") || key.equals("text/ui") || key.equals("jvm") || key.equals("qol") || key.equals("audio") || key.equals("controls") || key.equals("game") || key.equals("access") || key.contains("settings")) return systemCell(3, 5, 1);
+        if (key.contains("mode") || key.contains("quality") || key.contains("palette") || key.contains("color key") || key.contains("runtime") || key.contains("java2d") || key.contains("gc")) return systemCell(4, 5, 4);
+        if (key.contains("resolution") || key.contains("viewport") || key.contains("textures") || key.contains("downscale")) return systemCell(4, 4, 4);
+        if (key.endsWith("+") || key.contains(" +")) return systemCell(4, 2, 5);
+        if (key.endsWith("-") || key.contains(" -")) return systemCell(4, 3, 1);
+        if (key.contains("apply window") || key.contains("accept")) return systemCell(4, 2, 4);
+        if (key.contains("screensaver") || key.contains("boot") || key.contains("frame limit") || key.contains("reduced motion") || key.contains("string dedup") || key.contains("trans blit") || key.contains("no aa")) return systemCell(4, 2, 1);
+        if (key.contains("sfx") || key.contains("music") || key.contains("voice") || key.contains("audio")) return systemCell(4, 5, 3);
+        if (key.contains("keyboard") || key.contains("mouse") || key.contains("pad") || key.contains("xbox") || key.contains("playstation") || key.contains("steam deck")) return systemCell(4, 5, 2);
+        if (key.contains("fps") || key.contains("diagnostics") || key.contains("stress")) return systemCell(4, 5, 1);
+        if (key.contains("lighting")) return systemCell(4, 5, 3);
+        if (key.contains("payload root") || key.contains("clear payload")) return key.contains("clear") ? systemCell(4, 2, 3) : systemCell(4, 4, 1);
+        if (key.contains("heap")) return key.contains("+") ? systemCell(4, 2, 5) : systemCell(4, 3, 1);
+        if (key.contains("restart")) return systemCell(4, 2, 1);
+        if (key.equals("knowledge") || key.equals("knowledges") || key.equals("info")) return systemCell(3, 1, 4);
+        if (key.equals("multiplayer")) return systemCell(4, 5, 2);
+        if (key.equals("tools") || key.equals("editor")) return systemCell(4, 5, 4);
+        if (key.equals("sector audit") || key.equals("scan")) return systemCell(3, 2, 1);
+        if (key.equals("back") || key.equals("exit")) return systemCell(3, 3, 1);
+        if (key.equals("close")) return systemCell(2, 2, 4);
+        if (key.equals("confirm") || key.equals("apply") || key.equals("accept")) return systemCell(4, 2, 4);
+        if (key.equals("cancel")) return systemCell(4, 2, 3);
+        if (key.equals("reroll") || key.equals("refresh") || key.equals("reset")) return systemCell(4, 2, 2);
+        if (key.equals("play")) return systemCell(4, 1, 1);
+        if (key.equals("pause")) return systemCell(4, 1, 4);
+        if (key.equals("step")) return systemCell(4, 1, 2);
+        if (key.equals("end") || key.equals("stop")) return systemCell(4, 1, 5);
+        if (key.equals("prev") || key.endsWith("<") || key.contains("previous")) return systemCell(4, 3, 4);
+        if (key.equals("next") || key.endsWith(">")) return systemCell(4, 3, 5);
+        if (key.equals("zone") || key.equals("map") || key.equals("plan")) return systemCell(3, 1, 5);
+        if (key.equals("density")) return systemCell(4, 5, 1);
+        if (key.equals("overlay")) return systemCell(4, 5, 4);
+        if (key.equals("look") || key.equals("inspect") || key.equals("examine")) return systemCell(3, 2, 2);
+        if (key.equals("use") || key.equals("interact")) return systemCell(3, 2, 3);
+        if (key.equals("inv") || key.equals("inventory")) return systemCell(3, 1, 2);
+        if (key.equals("char") || key.equals("character") || key.contains("edit name")) return systemCell(3, 1, 3);
+        if (key.equals("build")) return systemCell(2, 1, 1);
+        if (key.equals("fight") || key.equals("attack")) return systemCell(3, 1, 1);
+        if (key.equals("bomb") || key.equals("hunt")) return systemCell(4, 4, 3);
+        if (key.equals("wait") || key.equals("sleep")) return systemCell(2, 4, 3);
+        if (key.equals("move") || key.equals("walk")) return systemCell(2, 2, 1);
+        if (key.equals("sneak")) return systemCell(2, 1, 3);
+        if (key.equals("run")) return systemCell(2, 2, 2);
+        if (key.equals("sprint")) return systemCell(3, 4, 3);
+        if (key.equals("roster") || key.equals("recruit")) return systemCell(2, 5, 2);
+        if (key.contains("store")) return systemCell(4, 4, 1);
+        if (key.contains("take")) return systemCell(4, 4, 2);
+        if (key.equals("open") || key.equals("enter")) return systemCell(3, 3, 2);
+        if (key.equals("lock")) return systemCell(3, 3, 4);
+        if (key.equals("unlock")) return systemCell(3, 3, 3);
+        return null;
+    }
+
+    private int[] systemCell(int sheet, int row, int col) {
+        return new int[] { sheet, row, col };
+    }
+
+    private String normalizeButtonLabel(String label) {
+        String s = label == null ? "" : label.trim();
+        while (s.startsWith(">")) s = s.substring(1).trim();
+        s = s.replaceAll("^\\d+\\.\\s*", "");
+        s = s.replace("->", " store").replace("<-", " take");
+        s = s.replaceAll("\\s+", " ").trim().toLowerCase(Locale.ROOT);
+        return s;
     }
 
     private void drawNewGameSetupSurface(java.awt.Graphics2D g, int w, int h) {
@@ -1672,7 +1972,11 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void addOverlayButton(String label, int x, int y, int w, int h, String tip, Runnable action) {
-        buttons.add(new ButtonBox(label, x, y, w, h, tip, action));
+        buttons.add(new ButtonBox(label, x, y, w, h, tip, action, systemButtonIconForLabel(label)));
+    }
+
+    private void addOverlayButton(String label, int x, int y, int w, int h, String tip, Runnable action, BufferedImage icon) {
+        buttons.add(new ButtonBox(label, x, y, w, h, tip, action, icon));
     }
 
     private void drawOverlayButtons(java.awt.Graphics2D g) {
@@ -1680,6 +1984,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         selectedButton = Math.max(0, Math.min(selectedButton, buttons.size() - 1));
         for (int i = 0; i < buttons.size(); i++) {
             ButtonBox button = buttons.get(i);
+            ensureButtonSystemIcon(button);
             button.draw(g, smallFont, i == selectedButton, null, options);
         }
     }
@@ -1926,6 +2231,16 @@ class GamePanel extends LegacyPanelBridgeBase {
         int ty = lastWorldViewMinY + (my - lastWorldViewOriginY) / tile;
         return new Point(Math.max(0, Math.min(world.w - 1, tx)), Math.max(0, Math.min(world.h - 1, ty)));
     }
+    Point screenPointToAuditTile(int mx, int my) {
+        if (auditWorld == null) return null;
+        int tile = Math.max(1, lastAuditViewTileSize);
+        int gx = mx - lastAuditViewOriginX;
+        int gy = my - lastAuditViewOriginY;
+        if (gx < 0 || gy < 0 || gx >= lastAuditViewCols * tile || gy >= lastAuditViewRows * tile) return null;
+        int tx = lastAuditViewMinX + gx / tile;
+        int ty = lastAuditViewMinY + gy / tile;
+        return new Point(Math.max(0, Math.min(auditWorld.w - 1, tx)), Math.max(0, Math.min(auditWorld.h - 1, ty)));
+    }
     void closePanel() { panelMode = PanelMode.NONE; screen = Screen.GAME; }
     void closeKnowledgeScreen() { screen = Screen.GAME; }
     void handleKnowledgeKeyPressed(int code) {}
@@ -1943,20 +2258,78 @@ class GamePanel extends LegacyPanelBridgeBase {
         World next = new World(auditSeed, size.width, size.height);
         ZoneType[] zones = ZoneType.values();
         next.zoneType = zones[Math.floorMod(auditZoneTypeIndex, zones.length)];
+        ArrayList<SectorGenerationTraceAuthority.Step> captured = new ArrayList<>();
         try {
-            next.generate();
+            SectorGenerationTraceAuthority.begin();
+            try {
+                next.generate();
+            } finally {
+                captured = SectorGenerationTraceAuthority.end();
+            }
             auditWorld = next;
+            auditTraceSteps.clear();
+            auditTraceSteps.addAll(captured);
             auditSnapshot = SectorAuditRuntimeAuthority.analyze(auditWorld, setup, seed, auditSeed);
             auditFindingIndex = 0;
-            auditCursorX = auditWorld.w / 2;
-            auditCursorY = auditWorld.h / 2;
-            logEvent("Sector audit generated: " + auditWorld.zoneType.label + " " + auditWorld.w + "x" + auditWorld.h + ".");
+            resetAuditReplay(!auditTraceSteps.isEmpty());
+            logEvent("Sector audit generated: " + auditWorld.zoneType.label + " " + auditWorld.w + "x" + auditWorld.h + " | replay steps " + auditTraceSteps.size() + ".");
         } catch (RuntimeException ex) {
+            if (SectorGenerationTraceAuthority.active()) captured = SectorGenerationTraceAuthority.end();
             auditWorld = null;
             auditSnapshot = null;
+            auditTraceSteps.clear();
+            auditTraceSteps.addAll(captured);
+            auditTracePlaying = false;
             logEvent("Sector audit generation failed: " + ex.getMessage());
         }
         repaint();
+    }
+
+    void resetAuditReplay(boolean playing) {
+        auditTraceIndex = 0;
+        auditTracePlaying = playing && !auditTraceSteps.isEmpty();
+        auditTraceStartedMillis = System.currentTimeMillis();
+        SectorGenerationTraceAuthority.Step step = auditTraceSteps.isEmpty() ? null : auditTraceSteps.get(0);
+        if (step != null) {
+            auditCursorX = step.x;
+            auditCursorY = step.y;
+        } else if (auditWorld != null) {
+            auditCursorX = auditWorld.w / 2;
+            auditCursorY = auditWorld.h / 2;
+        }
+    }
+
+    void toggleAuditReplay() {
+        if (auditTraceSteps.isEmpty()) return;
+        auditTracePlaying = !auditTracePlaying;
+        auditTraceStartedMillis = System.currentTimeMillis() - (long)Math.max(0, auditTraceIndex) * Math.max(120, auditTraceStepMillis);
+        repaint();
+    }
+
+    void stepAuditReplay(int delta) {
+        if (auditTraceSteps.isEmpty()) return;
+        auditTracePlaying = false;
+        auditTraceIndex = Math.max(0, Math.min(auditTraceSteps.size() - 1, auditTraceIndex + delta));
+        SectorGenerationTraceAuthority.Step step = auditTraceSteps.get(auditTraceIndex);
+        if (step != null) {
+            auditCursorX = step.x;
+            auditCursorY = step.y;
+        }
+        repaint();
+    }
+
+    void rewindAuditReplay() {
+        if (auditTraceSteps.isEmpty()) return;
+        auditTracePlaying = false;
+        auditTraceIndex = 0;
+        stepAuditReplay(0);
+    }
+
+    void finishAuditReplay() {
+        if (auditTraceSteps.isEmpty()) return;
+        auditTracePlaying = false;
+        auditTraceIndex = auditTraceSteps.size() - 1;
+        stepAuditReplay(0);
     }
     void cycleAuditZoneType(int delta) {
         auditZoneTypeIndex = Math.floorMod(auditZoneTypeIndex + delta, ZoneType.values().length);
@@ -1972,6 +2345,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         repaint();
     }
     void jumpAuditFinding(int delta) {
+        auditTracePlaying = false;
         int count = auditSnapshot == null ? 0 : auditSnapshot.findings.size();
         if (count <= 0) {
             auditFindingIndex = 0;
@@ -1988,6 +2362,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void moveAuditCursor(int dx, int dy) {
         if (auditWorld == null) return;
+        auditTracePlaying = false;
         auditCursorX = Math.max(0, Math.min(auditWorld.w - 1, auditCursorX + dx));
         auditCursorY = Math.max(0, Math.min(auditWorld.h - 1, auditCursorY + dy));
         repaint();
@@ -2158,6 +2533,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         lookY = playerY;
         lookStackIndex = 0;
         lookStackScroll = 0;
+        ArrayList<String> stack = tileStackAt(lookX, lookY);
+        lastTargetingReport = stack.isEmpty() ? "No target data available." : stack.get(0);
         openPanel(PanelMode.LOOK);
     }
     void beginInteractMode() {
@@ -2731,6 +3108,7 @@ final class LegacyFrameLimiterSnapshot {
 
 final class LegacyImageSurface {
     private final ImageCache media = new ImageCache();
+    private final HashMap<String, BufferedImage> compiledSystemIconCache = new HashMap<>();
     private boolean loaded;
     private GameOptions lastOptions;
 
@@ -2760,6 +3138,31 @@ final class LegacyImageSurface {
     BufferedImage getSemanticAssetImage(String assetId) {
         ensureLoaded(lastOptions);
         return media.getSemanticAssetImage(assetId);
+    }
+
+    BufferedImage getCompiledSystemIcon(int sheet, int row, int col) {
+        ensureLoaded(lastOptions);
+        String cacheKey = sheet + ":" + row + ":" + col;
+        if (compiledSystemIconCache.containsKey(cacheKey)) return compiledSystemIconCache.get(cacheKey);
+        LinkedHashSet<Integer> resolutions = new LinkedHashSet<>();
+        int propertyResolution = media.assetResolutionProperty();
+        if (propertyResolution > 0) resolutions.add(propertyResolution);
+        if (lastOptions != null) resolutions.add(lastOptions.artQualityResolution());
+        resolutions.add(32);
+        resolutions.add(64);
+        resolutions.add(128);
+        resolutions.add(256);
+        for (int resolution : resolutions) {
+            if (resolution <= 0) continue;
+            String filename = String.format(Locale.US, "FRAMEDSystem_%d_r%02dc%02d_%dpx.png", sheet, row, col, resolution);
+            BufferedImage img = readCompiledSystemIcon(resolution, filename);
+            if (img != null) {
+                compiledSystemIconCache.put(cacheKey, img);
+                return img;
+            }
+        }
+        compiledSystemIconCache.put(cacheKey, null);
+        return null;
     }
 
     BufferedImage getMapObjectImage(MapObjectState object) {
@@ -2815,6 +3218,26 @@ final class LegacyImageSurface {
         media.npcPortraitRanges.clear();
         media.portraitProfiles.clear();
         media.semanticAssetImageCache.clear();
+        compiledSystemIconCache.clear();
+    }
+
+    private BufferedImage readCompiledSystemIcon(int resolution, String filename) {
+        java.util.List<java.nio.file.Path> candidates = java.util.List.of(
+                java.nio.file.Paths.get("assets", "compiled_assets", resolution + "px", "SYSTEM", filename),
+                java.nio.file.Paths.get("PACKAGE_client", "assets", "compiled_assets", resolution + "px", "SYSTEM", filename),
+                java.nio.file.Paths.get("client", "assets", "compiled_assets", resolution + "px", "SYSTEM", filename),
+                java.nio.file.Paths.get("ROOT_tools", "atlas_asset_pipeline", "compiled_assets", resolution + "px", "SYSTEM", filename),
+                java.nio.file.Paths.get("assets", "graphics", "packages", "default_" + resolution, "SYSTEM", filename),
+                java.nio.file.Paths.get("PACKAGE_client", "assets", "graphics", "packages", "default_" + resolution, "SYSTEM", filename)
+        );
+        for (java.nio.file.Path path : candidates) {
+            try {
+                if (java.nio.file.Files.exists(path)) return javax.imageio.ImageIO.read(path.toFile());
+            } catch (Throwable t) {
+                DebugLog.error("SYSTEM_BUTTON_ICON", "Failed to load compiled system button icon " + path, t);
+            }
+        }
+        return null;
     }
 }
 

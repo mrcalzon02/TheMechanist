@@ -58,13 +58,62 @@ class AudioPackManager {
         } catch (Throwable t) {
             DebugLog.error("AUDIO_PACK", "Audio-pack prepare failed; falling back to bundled music if present.", t);
         }
-        String fallbackRoot = ArtPackManager.resolveBundledFallbackRoot(bundledFallbackRoot);
+        String fallbackRoot = resolveBundledMusicRoot(bundledFallbackRoot);
         if (Files.isDirectory(Paths.get(fallbackRoot))) {
             DebugLog.audit("AUDIO_PACK", "Using bundled music root=" + fallbackRoot);
             return fallbackRoot;
         }
         DebugLog.warn("AUDIO_PACK", "No external or bundled music pack found. Dynamic music will remain silent unless music assets are installed.");
         return fallbackRoot;
+    }
+
+    static String resolveBundledMusicRoot(String bundledFallbackRoot) {
+        LinkedHashSet<Path> candidates = new LinkedHashSet<>();
+        addMusicRootCandidate(candidates, bundledFallbackRoot);
+
+        String normalized = normalizeSlashes(bundledFallbackRoot);
+        if (normalized.startsWith("packages/client/")) {
+            addMusicRootCandidate(candidates, normalized.substring("packages/client/".length()));
+        }
+        if (normalized.startsWith("client/")) {
+            addMusicRootCandidate(candidates, normalized.substring("client/".length()));
+        }
+        if (normalized.startsWith("PACKAGE_client/")) {
+            addMusicRootCandidate(candidates, normalized.substring("PACKAGE_client/".length()));
+        }
+
+        addMusicRootCandidate(candidates, "assets/music/wav");
+        addMusicRootCandidate(candidates, "PACKAGE_client/assets/music/wav");
+        addMusicRootCandidate(candidates, "client/assets/music/wav");
+        addMusicRootCandidate(candidates, "packages/client/assets/music/wav");
+
+        for (Path candidate : candidates) {
+            if (hasDirectWavFiles(candidate)) {
+                return candidate.toAbsolutePath().normalize().toString();
+            }
+        }
+
+        File resolved = RuntimePathResolver.resolveAssetFile(bundledFallbackRoot);
+        return resolved.getPath();
+    }
+
+    private static void addMusicRootCandidate(LinkedHashSet<Path> candidates, String rawPath) {
+        if (rawPath == null || rawPath.isBlank()) return;
+        candidates.add(Paths.get(rawPath));
+        candidates.add(RuntimePathResolver.resolveAssetFile(rawPath).toPath());
+    }
+
+    private static boolean hasDirectWavFiles(Path root) {
+        if (root == null || !Files.isDirectory(root)) return false;
+        try (DirectoryStream<Path> wavs = Files.newDirectoryStream(root, "*.wav")) {
+            return wavs.iterator().hasNext();
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static String normalizeSlashes(String path) {
+        return path == null ? "" : path.replace('\\', '/').replaceAll("^/+", "");
     }
 
     static String findWavRoot(Path cacheDir) {
@@ -222,12 +271,58 @@ class ImageCache {
 
     void loadNameLockedProfilePortraits() {
         nameLockedProfilePortraits.clear();
+        int unavailable = 0;
+        int index = 0;
         for (NameLockedProfilePortraitAuthority.Entry e : NameLockedProfilePortraitAuthority.entries()) {
             BufferedImage img = read(e.assetPath);
+            if (img == null) img = readSpecialProfilePortrait(index);
             if (img != null) nameLockedProfilePortraits.put(e.key, img);
-            else DebugLog.warn("NAME_LOCKED_PROFILE_PORTRAIT", "missing asset for " + e.key + " path=" + e.assetPath);
+            else unavailable++;
+            index++;
         }
-        DebugLog.audit("NAME_LOCKED_PROFILE_PORTRAIT", NameLockedProfilePortraitAuthority.auditSummary() + " loaded=" + nameLockedProfilePortraits.size());
+        DebugLog.audit("NAME_LOCKED_PROFILE_PORTRAIT", NameLockedProfilePortraitAuthority.auditSummary()
+                + " loaded=" + nameLockedProfilePortraits.size()
+                + " unavailable=" + unavailable
+                + " status=" + (nameLockedProfilePortraits.isEmpty() ? "no-special-profile-cells-loaded" : "compiled-special-profile-cells"));
+    }
+
+    BufferedImage readSpecialProfilePortrait(int index) {
+        if (index < 0) return null;
+        int row = index / 5 + 1;
+        int col = index % 5 + 1;
+        LinkedHashSet<Integer> resolutions = new LinkedHashSet<>();
+        resolutions.add(assetResolutionProperty());
+        resolutions.add(resolutionForQualityTier(System.getProperty("mechanist.assetTier", System.getProperty("mechanist.graphicsTier", ""))));
+        resolutions.add(32);
+        resolutions.add(64);
+        resolutions.add(128);
+        resolutions.add(256);
+        for (int resolution : resolutions) {
+            if (resolution <= 0) continue;
+            String filename = String.format(Locale.US, "Specialprofiles_r%02dc%02d_%dpx.png", row, col, resolution);
+            BufferedImage img = read("assets/compiled_assets/" + resolution + "px/Protraits/" + filename);
+            if (img != null) return img;
+        }
+        return null;
+    }
+
+    int assetResolutionProperty() {
+        String raw = System.getProperty("mechanist.assetResolution", "");
+        try {
+            return Integer.parseInt(raw.trim().replaceAll("[^0-9]", ""));
+        } catch (Exception ignored) {
+            return 32;
+        }
+    }
+
+    int resolutionForQualityTier(String tier) {
+        String t = tier == null ? "" : tier.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        return switch (t) {
+            case "standard_64", "standard64", "64" -> 64;
+            case "intermediate_128", "intermediate128", "128" -> 128;
+            case "high_native", "native", "high", "256" -> 256;
+            default -> 32;
+        };
     }
 
     BufferedImage getNameLockedProfilePortrait(String key) {
@@ -325,7 +420,10 @@ class ImageCache {
 
     void inspectPortraitSheet(String label, String path, boolean playerAllowed) {
         BufferedImage img = read(path);
-        if (img == null) { DebugLog.audit("PORTRAIT_PROFILE", label + " missing path=" + path); return; }
+        if (img == null) {
+            DebugLog.audit("PORTRAIT_PROFILE", label + " status=optional-sheet-not-present path=" + path);
+            return;
+        }
         PortraitSheetProfile best = PortraitSheetProfile.infer(label, path, img.getWidth(), img.getHeight(), playerAllowed);
         portraitProfiles.add(best);
         DebugLog.audit("PORTRAIT_PROFILE", best.toAuditLine());
@@ -522,14 +620,21 @@ class ImageCache {
         BufferedImage cached = semanticAssetImageCache.get(id);
         if (cached != null) return cached;
         ImageIcon icon = AssetManager.getAsset(id);
-        if (icon == null || AssetManager.isMissingAssetIcon(icon)) return null;
-        BufferedImage img = imageIconToBufferedImage(icon);
+        BufferedImage img = null;
+        if (icon != null && !AssetManager.isMissingAssetIcon(icon)) {
+            img = imageIconToBufferedImage(icon);
+        }
+        if (img == null) {
+            img = tileArt.getRegistry().getSemantic(id);
+        }
         if (img != null) semanticAssetImageCache.put(id, img);
         return img;
     }
 
     BufferedImage getItemIcon(String itemName) {
         String assetId = ItemSemanticAssetAuthority.semanticAssetIdForItemName(itemName);
+        BufferedImage atlasSemantic = getSemanticAssetImage(assetId);
+        if (atlasSemantic != null) return atlasSemantic;
         AssetType expectedType = AssetManager.metadata(assetId).map(m -> m.type()).orElse(AssetType.ITEM_ICON);
         ImageIcon icon = AssetManager.getAsset(assetId, expectedType);
         BufferedImage semantic = imageIconToBufferedImage(icon);

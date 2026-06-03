@@ -16,7 +16,7 @@ final class GeneratedArtPayloadOptionsSubsystem {
         AssetManager.reloadGeneratedAssetRuntime();
         panel.images.reloadArtQuality(panel.options);
         panel.sounds.play("tab", panel.options);
-        panel.logEvent("Art quality cache now " + panel.options.artQualityLabel() + ". Generated semantic assets request tier " + panel.options.artQualityFolder() + "; external payload " + panel.options.generatedAssetPayloadRootShortLabel() + ".");
+        panel.logEvent("Texture package now " + panel.options.artQualityResolutionLabel() + ". Generated semantic assets request tier " + panel.options.artQualityFolder() + "; external payload " + panel.options.generatedAssetPayloadRootShortLabel() + ".");
         panel.repaint();
     }
 

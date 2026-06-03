@@ -26,7 +26,7 @@ public class LayerG {
         AssetManager.reloadGeneratedAssetRuntime();
         panel.images.reloadArtQuality(panel.options);
         panel.sounds.play("tab", panel.options);
-        panel.logEvent("Art quality cache now " + panel.options.artQualityLabel() + ".");
+        panel.logEvent("Texture package now " + panel.options.artQualityResolutionLabel() + " (" + panel.options.artQualityFolder() + ").");
         panel.repaint();
     }
 

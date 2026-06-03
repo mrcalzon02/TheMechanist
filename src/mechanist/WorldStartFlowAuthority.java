@@ -19,6 +19,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -489,7 +490,17 @@ final class WorldStartFlowAuthority {
             g.setColor(primary ? highlight() : new Color(145, 118, 64, 140));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             g.setColor(primary ? highlight() : main());
-            center(g, label, r.x + r.width / 2, r.y + 23);
+            BufferedImage icon = panel.systemButtonIconForLabel(label);
+            FontMetrics fm = g.getFontMetrics();
+            int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
+            int labelW = fm.stringWidth(label);
+            int groupW = labelW + (iconSize > 0 ? iconSize + 8 : 0);
+            int x = r.x + Math.max(8, (r.width - groupW) / 2);
+            if (icon != null) {
+                g.drawImage(icon, x, r.y + (r.height - iconSize) / 2, iconSize, iconSize, null);
+                x += iconSize + 8;
+            }
+            g.drawString(label, x, r.y + 23);
         }
 
         void drawFooter(Graphics2D g, String text) {

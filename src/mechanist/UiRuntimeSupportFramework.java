@@ -153,6 +153,17 @@ class ButtonBox {
             int innerH = Math.max(12, r.height - 10);
             g.setFont(useFont);
             FontMetrics fm=g.getFontMetrics();
+            boolean squareIconButton = icon != null && r.height >= 42 && r.width <= 96 && r.height <= r.width + 18;
+            if (squareIconButton) {
+                int iconSize = Math.max(18, Math.min(r.width - 6, r.height - 6));
+                int ix = r.x + (r.width - iconSize) / 2;
+                int iy = r.y + (r.height - iconSize) / 2;
+                g.drawImage(icon, ix, iy, iconSize, iconSize, null);
+                g.setColor(new Color(175,145,78, selected ? 210 : 130));
+                g.drawRect(ix, iy, iconSize, iconSize);
+                if(selected) { g.drawRect(r.x+2,r.y+2,Math.max(1,r.width-4),Math.max(1,r.height-4)); }
+                return;
+            }
             while ((fm.stringWidth(label == null ? "" : label) > innerW || fm.getHeight() > innerH) && useFont.getSize2D() > 6f) {
                 useFont = useFont.deriveFont(useFont.getSize2D() - 1f);
                 g.setFont(useFont);

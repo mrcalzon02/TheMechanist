@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
@@ -34,11 +35,10 @@ final class TileArtSystem {
         this.activeArtRoot = ArtPackManager.prepareAndResolveRoot(packDir, cacheDir, fallbackRoot);
         this.activeQualityTier = ArtPackManager.normalizeQualityFolder(targetQuality);
 
-        String cellsPathStr = ArtPackManager.resolveQualityCellsRoot(activeArtRoot, activeQualityTier);
-        Path cellsDir = Paths.get(cellsPathStr);
+        Path cellsDir = resolveTileCellsDirectory(activeArtRoot, activeQualityTier);
 
         if (!Files.isDirectory(cellsDir)) {
-            DebugLog.error("TILE_ART", "Cannot load tile art; cells directory missing: " + cellsPathStr);
+            DebugLog.error("TILE_ART", "Cannot load tile art; cells directory missing: " + cellsDir);
             return false;
         }
 
@@ -58,6 +58,66 @@ final class TileArtSystem {
 
         DebugLog.audit("TILE_ART", "Load cycle complete. Telemetry: " + registry.auditSummary());
         return !registry.isEmpty();
+    }
+
+    private Path resolveTileCellsDirectory(String artRoot, String qualityTier) {
+        Path compiled = resolveCompiledAssetRoot(qualityTier);
+        if (compiled != null) return compiled;
+        return Paths.get(ArtPackManager.resolveQualityCellsRoot(artRoot, qualityTier));
+    }
+
+    private Path resolveCompiledAssetRoot(String qualityTier) {
+        int resolution = resolutionForQualityTier(qualityTier);
+        String explicit = System.getProperty("mechanist.assetResolution", "").trim();
+        if (!explicit.isEmpty()) {
+            try {
+                int parsed = Integer.parseInt(explicit.replaceAll("[^0-9]", ""));
+                if (parsed > 0) resolution = parsed;
+            } catch (NumberFormatException ignored) {
+                // Keep the quality-tier resolution.
+            }
+        }
+
+        LinkedHashSet<Path> candidates = new LinkedHashSet<>();
+        addCompiledAssetCandidates(candidates, resolution);
+        if (resolution != 32) addCompiledAssetCandidates(candidates, 32);
+
+        for (Path candidate : candidates) {
+            if (hasDirectPngFiles(candidate)) {
+                return candidate.toAbsolutePath().normalize();
+            }
+        }
+        return null;
+    }
+
+    private void addCompiledAssetCandidates(LinkedHashSet<Path> candidates, int resolution) {
+        if (resolution <= 0) return;
+        String folder = "assets/compiled_assets/" + resolution + "px";
+        candidates.add(Paths.get(folder));
+        candidates.add(RuntimePathResolver.resolveAssetFile(folder).toPath());
+        candidates.add(Paths.get("PACKAGE_client", folder));
+        candidates.add(Paths.get("client", folder));
+        candidates.add(Paths.get("packages/client", folder));
+    }
+
+    private boolean hasDirectPngFiles(Path root) {
+        if (root == null || !Files.isDirectory(root)) return false;
+        try (Stream<Path> stream = Files.walk(root, 3)) {
+            return stream.anyMatch(path -> Files.isRegularFile(path)
+                    && path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".png"));
+        } catch (IOException ignored) {
+            return false;
+        }
+    }
+
+    private int resolutionForQualityTier(String qualityTier) {
+        String tier = ArtPackManager.normalizeQualityFolder(qualityTier);
+        return switch (tier) {
+            case "standard_64" -> 64;
+            case "intermediate_128" -> 128;
+            case "high_native" -> 256;
+            default -> 32;
+        };
     }
 
     private void loadSinglePngFile(Path file) {

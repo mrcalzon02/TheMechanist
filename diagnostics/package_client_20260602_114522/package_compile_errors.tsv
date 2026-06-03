@@ -1,4 +1,0 @@
-﻿file	line	column	kind	message
-javac.exe : src\mechanist\LegacyPanelContext.java	292		error	cannot find symbol
-src\mechanist\LegacyPanelContext.java	687		error	cannot find symbol
-src\mechanist\LegacyPanelContext.java	705		error	cannot find symbol

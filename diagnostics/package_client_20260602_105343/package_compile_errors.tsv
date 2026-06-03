@@ -1,4 +1,0 @@
-﻿file	line	column	kind	message
-javac.exe : C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	414		error	cannot find symbol
-C:\GITS\The Mechanist\TheMechanist\src\mechanist\LegacyPanelContext.java	414		error	cannot find symbol
-C:\GITS\The Mechanist\TheMechanist\src\mechanist\TheMechanist.java	34		error	incompatible types: RuntimeProfile cannot be converted to RuntimeConfig

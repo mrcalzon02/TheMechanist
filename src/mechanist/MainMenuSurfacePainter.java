@@ -72,8 +72,19 @@ final class MainMenuSurfacePainter implements ScreenPainter {
                 g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             }
             String label = (i + 1) + ". " + labels.get(i);
+            BufferedImage icon = panel.systemButtonIconForLabel(labels.get(i));
+            int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
+            int iconX = r.x + 10;
+            int textX = r.x + 14;
+            int textW = r.width - 28;
+            if (icon != null) {
+                int iconY = r.y + (r.height - iconSize) / 2;
+                g.drawImage(icon, iconX, iconY, iconSize, iconSize, null);
+                textX = iconX + iconSize + 9;
+                textW = Math.max(60, r.x + r.width - textX - 12);
+            }
             g.setColor(selected ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
-            g.drawString(GuiLayoutApi.fitLabel(label, routeFm, r.width - 28), r.x + 14, r.y + (r.height + routeFm.getAscent() - routeFm.getDescent()) / 2);
+            g.drawString(GuiLayoutApi.fitLabel(label, routeFm, textW), textX, r.y + (r.height + routeFm.getAscent() - routeFm.getDescent()) / 2);
         }
         
         java.util.List<String> shellLines = panel.launcherShell.displayLines(panel.launcherRuntime, panel.userProfile);

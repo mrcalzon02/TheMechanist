@@ -1,0 +1,33 @@
+# The Mechanist runtime music manifest
+# Format: music_key<TAB>relative_wav_file<TAB>purpose
+# Keys match the dynamic music hooks returned by GamePanel.desiredMusicContext().
+MAIN_MENU	Ashline_PulseMainmenu.wav	Main menu / options / loss screen loop
+CHARACTER_SELECT	Ashline_PulseCharacterSelect.wav	Character creation, knowledge, world selection, and new-game loading
+LOW_HABITATION	LowHabitationPulseE.wav	Default low-habitation exploration fallback
+COMBAT	Ashline_PulseCombat-1.wav	Ordinary combat pressure
+COMBAT	Ashline_PulseCombat2.wav	Ordinary combat pressure alternate
+GANG_TURF	Chainblade_ShrineGang1.wav	Gang turf pressure
+GANG_TURF	Chainblade_ShrineGang2.wav	Gang turf alternate
+TRAIN	False_Seal_RunTrain1.wav	Train service yard / rail depot ambience
+TRAIN	False_Seal_RunTrain2.wav	Train service yard alternate
+PUBLIC_ORDER	Ferrocrete_PublicOrder1.wav	Public order spaces
+PUBLIC_ORDER	Ferrocrete_PublicOrder2.wav	Public order alternate
+TRIAGE	Grey_Tile_Triage1.wav	Triage / infirmary spaces
+TRIAGE	Grey_Tile_Triage2.wav	Triage alternate
+ENGINE_HOUSE	Engine_Psalm1.wav	Engine house / relic duct spaces
+ENGINE_HOUSE	Engine_Psalm2.wav	Engine house alternate
+ENGINE_HOUSE	Temple_of_MachineryEngine3.wav	Temple of machinery ambience
+ENGINE_HOUSE	Temple_of_MachineryEngine4.wav	Temple of machinery alternate
+PROSCRIBED_CELL	Mechanical_MoonCell1.wav	Proscribed cell spaces
+PROSCRIBED_CELL	Mechanical_MoonCell2.wav	Proscribed cell alternate
+OUTCAST	Sump_Dark_ChoirOutcast1.wav	Outcast sewer camp / warrens
+OUTCAST	Sump_Dark_ChoirOutcast2.wav	Outcast alternate
+CHARTER_GUARD	Ration_LineCharter1.wav	Charter guard billet spaces
+CHARTER_GUARD	Ration_LineCharter2.wav	Charter guard alternate
+CIVIC_RECORDS	Seal_of_AshRecords1.wav	Civic records spaces
+CIVIC_RECORDS	Seal_of_AshRecords2.wav	Civic records alternate
+ESTATE	Velvet_Over_Estate1.wav	Estate service spine / high-class spaces
+ESTATE	Velvet_Over_Estate2.wav	Estate alternate
+ESTATE	Velvet_RopesEstate3.wav	Estate alternate two
+ESTATE_PALACE	Rust_CrownP-1.wav	Estate palace ambient loop
+ESTATE_BATTLE	Palace_of_GoldP-3battle.wav	Estate palace battle pressure

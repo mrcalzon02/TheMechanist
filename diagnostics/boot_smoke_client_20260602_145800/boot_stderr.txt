@@ -1,1 +1,0 @@
-[14:59:23.486] ERROR/TILE_ART Cannot load tile art; cells directory missing: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client\assets\a\r\tiles\cells

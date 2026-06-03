@@ -87,6 +87,15 @@ final class TileImageRegistry {
         }
     }
 
+    void bindAliasToFirstAvailableAlias(String targetAlias, String... sourceAliases) {
+        String target = normalizeAlias(targetAlias);
+        if (target == null || sourceAliases == null) return;
+        for (String sourceAlias : sourceAliases) {
+            BufferedImage image = getAlias(sourceAlias);
+            if (image != null) { byAlias.put(target, image); return; }
+        }
+    }
+
     void bindSemanticToAlias(String semanticId, String alias) {
         BufferedImage image = getAlias(alias);
         if (image != null) putSemantic(semanticId, image);

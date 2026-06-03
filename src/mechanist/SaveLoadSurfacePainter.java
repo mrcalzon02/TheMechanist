@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 final class SaveLoadSurfacePainter implements ScreenPainter {
     @Override
@@ -52,7 +53,17 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
         g.setColor(primary ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : new Color(145, 118, 64, 140));
         g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
         g.setColor(primary ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
-        panel.center(g, label, r.x + r.width / 2, r.y + 22);
+        BufferedImage icon = panel.systemButtonIconForLabel(label);
+        FontMetrics fm = g.getFontMetrics();
+        int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
+        int labelW = fm.stringWidth(label);
+        int groupW = labelW + (iconSize > 0 ? iconSize + 8 : 0);
+        int x = r.x + Math.max(8, (r.width - groupW) / 2);
+        if (icon != null) {
+            g.drawImage(icon, x, r.y + (r.height - iconSize) / 2, iconSize, iconSize, null);
+            x += iconSize + 8;
+        }
+        g.drawString(label, x, r.y + 22);
     }
 
     private static String safe(String text) {

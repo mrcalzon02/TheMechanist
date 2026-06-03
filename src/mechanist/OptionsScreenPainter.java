@@ -167,6 +167,7 @@ final class OptionsScreenPainter {
             ButtonBox button = panel.buttons.get(i);
             boolean dropdown = LayerD.isGraphicsDropdownButton(panel, button);
             if (dropdownOnly != dropdown) continue;
+            panel.ensureButtonSystemIcon(button);
             boolean selected = i == panel.selectedButton || (button != null && button.contains(panel.mouseX, panel.mouseY));
             button.draw(g, buttonFont, selected, null, panel.options);
         }
@@ -300,8 +301,8 @@ final class OptionsScreenPainter {
         out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> LayerC.toggleReducedMotion(panel)));
         out.add(cmd("Diagnostics " + onOff(panel.options.diagnosticsOverlay), "Toggle the F3 performance overlay.", () -> AccessibilityRuntimeOptionsSubsystem.togglePerformanceDiagnostics(panel)));
         out.add(cmd("Stress Test", "Toggle the render stress test overlay.", () -> LayerC.toggleRenderStressTest(panel)));
-        out.add(cmd("Map Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display size.", () -> LayerG.cycleMapTileSize(panel)));
-        out.add(cmd("Art: " + panel.options.artQualityLabel(), "Cycle bundled/generated art quality tier.", () -> LayerG.cycleArtQuality(panel)));
+        out.add(cmd("Viewport Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display footprint.", () -> LayerG.cycleMapTileSize(panel)));
+        out.add(cmd("Textures: " + panel.options.artQualityResolutionLabel(), "Cycle compiled texture package size.", () -> LayerG.cycleArtQuality(panel)));
         out.add(cmd("Payload Root", "Choose an external generated-art payload root.", () -> LayerG.chooseGeneratedAssetPayloadRoot(panel)));
         out.add(cmd("Clear Payload", "Clear the external generated-art payload root.", () -> LayerG.clearGeneratedAssetPayloadRoot(panel)));
         out.add(cmd("Palette: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset], "Select a color palette.", () -> LayerD.toggleGraphicsDropdown(panel, 2)));
@@ -497,7 +498,7 @@ final class OptionsScreenPainter {
         lines.add("Frame pacing: " + panel.frameLimiter.snapshot(panel.renderStressTest.active()).compactLine());
         lines.add("Imported Portrait Sheets: " + (panel.options.importedPortraits ? "ON" : "OFF"));
         lines.add("Tile Icon Rendering: " + (panel.options.tileIconRendering ? "ON" : "OFF"));
-        lines.add("Art Quality Cache: " + panel.options.artQualityLabel() + " / folder " + panel.options.artQualityFolder());
+        lines.add("Texture Package: " + panel.options.artQualityResolutionLabel() + " compiled assets / tier " + panel.options.artQualityFolder());
         lines.add("Generated Art Payload: " + panel.options.generatedAssetPayloadRootLabel());
         try {
             var runtime = AssetManager.generatedAssetRuntime();
@@ -505,7 +506,7 @@ final class OptionsScreenPainter {
         } catch (Throwable ignored) {
             lines.add("Generated Runtime: unavailable");
         }
-        lines.add("Map Tile Size: " + panel.options.mapTileSizeLabel() + " / " + panel.options.mapTilePixelSize() + "px before GUI scale");
+        lines.add("Viewport Tile Size: " + panel.options.mapTileSizeLabel() + " / " + panel.options.mapTilePixelSize() + "px screen footprint before GUI scale");
         lines.add("Render Scaling Profile: " + panel.renderScaling.profileLabel() + " / option downscale " + panel.renderScaling.downscaleLabel() + " / F10 cycles profiles.");
         lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset] + " / Editing " + panel.options.colorTargetLabel());
         return lines;

@@ -103,9 +103,10 @@ class GameOptions {
     int[] colors = Arrays.copyOf(PALETTES[0], PALETTES[0].length);
 
 
-    static final String[] ART_QUALITY_LABELS = {"LOW 32", "STANDARD 64", "INTERMEDIATE 128", "HIGH NATIVE"};
+    static final String[] ART_QUALITY_LABELS = {"32px textures", "64px textures", "128px textures", "Native textures"};
     static final String[] ART_QUALITY_FOLDERS = {"low_32", "standard_64", "intermediate_128", "high_native"};
-    static final String[] MAP_TILE_SIZE_LABELS = {"COMPACT 24", "NORMAL 28", "INTERMEDIATE 40", "HIGH 64"};
+    static final int[] ART_QUALITY_RESOLUTIONS = {32, 64, 128, 256};
+    static final String[] MAP_TILE_SIZE_LABELS = {"Compact", "Normal", "Large", "Huge"};
     static final int[] MAP_TILE_PIXEL_SIZES = {24, 28, 40, 64};
     static final String[] WORLD_ZOOM_LABELS = {"FAR 70%", "WIDE 85%", "NORMAL 100%", "CLOSE 125%", "INSPECT 150%", "MAX 200%"};
     static final int[] WORLD_ZOOM_PERCENTS = {70, 85, 100, 125, 150, 200};
@@ -124,6 +125,8 @@ class GameOptions {
 
     String artQualityLabel() { return ART_QUALITY_LABELS[Math.max(0, Math.min(ART_QUALITY_LABELS.length-1, artQualityIndex))]; }
     String artQualityFolder() { return ART_QUALITY_FOLDERS[Math.max(0, Math.min(ART_QUALITY_FOLDERS.length-1, artQualityIndex))]; }
+    int artQualityResolution() { return ART_QUALITY_RESOLUTIONS[Math.max(0, Math.min(ART_QUALITY_RESOLUTIONS.length-1, artQualityIndex))]; }
+    String artQualityResolutionLabel() { return artQualityResolution() + "px"; }
     String generatedAssetPayloadRoot() { return generatedAssetPayloadRoot == null ? "" : generatedAssetPayloadRoot.trim(); }
     boolean hasGeneratedAssetPayloadRoot() { return !generatedAssetPayloadRoot().isEmpty(); }
     String generatedAssetPayloadRootLabel() {
@@ -145,6 +148,7 @@ class GameOptions {
     void applyGeneratedAssetRuntimeProperties() {
         System.setProperty("mechanist.assetTier", artQualityFolder());
         System.setProperty("mechanist.graphicsTier", artQualityFolder());
+        System.setProperty("mechanist.assetResolution", Integer.toString(artQualityResolution()));
         String root = generatedAssetPayloadRoot();
         if (root.isEmpty()) {
             System.clearProperty("mechanist.generatedAssetRoot");

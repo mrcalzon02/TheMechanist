@@ -1,7 +1,0 @@
-Client Package Run: 20260602_095709
-Repository root: 
-Package output: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
-Build root: C:\GITS\The Mechanist\TheMechanist\build\package_client
-Max javac errors: 200
-
-==== Tooling preflight ====

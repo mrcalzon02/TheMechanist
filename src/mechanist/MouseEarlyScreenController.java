@@ -35,6 +35,7 @@ final class MouseEarlyScreenController {
         if (panel.screen == GamePanel.Screen.SECTOR_AUDIT && panel.auditWorld != null) {
             Point tile = panel.screenPointToAuditTile(mx, my);
             if (tile != null) {
+                panel.auditTracePlaying = false;
                 panel.auditCursorX = tile.x;
                 panel.auditCursorY = tile.y;
                 panel.repaint();
