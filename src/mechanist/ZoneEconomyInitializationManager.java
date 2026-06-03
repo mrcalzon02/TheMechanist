@@ -41,6 +41,6 @@ final class ZoneEconomyInitializationManager {
     private static String hiveKey(World world) {
         if (world == null) return "no-world";
         String hive = world.hiveName == null || world.hiveName.isBlank() ? "unnamed" : world.hiveName;
-        return hive + "|seed=" + world.seed;
+        return "hive=" + hive;
     }
 }
