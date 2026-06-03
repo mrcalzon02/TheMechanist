@@ -27,6 +27,41 @@ final class FactionPopulationTracker {
         return population.getOrDefault(FactionInventoryStockAuthority.normalizeFaction(faction), 0);
     }
 
+    int total() {
+        int total = 0;
+        for (Integer value : population.values()) total += Math.max(0, value == null ? 0 : value);
+        return total;
+    }
+
+    boolean isEmpty() {
+        return total() <= 0;
+    }
+
+    void clear() {
+        population.clear();
+    }
+
+    EnumMap<Faction, Integer> snapshot() {
+        EnumMap<Faction, Integer> out = new EnumMap<>(Faction.class);
+        for (Map.Entry<Faction, Integer> e : population.entrySet()) {
+            if (e.getKey() != null && e.getValue() != null && e.getValue() > 0) out.put(e.getKey(), e.getValue());
+        }
+        return out;
+    }
+
+    void restore(Map<Faction, Integer> saved) {
+        population.clear();
+        if (saved == null) return;
+        for (Map.Entry<Faction, Integer> e : saved.entrySet()) {
+            if (e.getKey() != null && e.getValue() != null && e.getValue() > 0) add(e.getKey(), e.getValue());
+        }
+    }
+
+    void mergeFrom(FactionPopulationTracker other) {
+        if (other == null) return;
+        for (Map.Entry<Faction, Integer> e : other.snapshot().entrySet()) add(e.getKey(), e.getValue());
+    }
+
     String summary() {
         ArrayList<String> parts = new ArrayList<>();
         for (Map.Entry<Faction, Integer> e : population.entrySet()) if (e.getValue() != null && e.getValue() > 0) parts.add(e.getKey().label + "=" + e.getValue());
