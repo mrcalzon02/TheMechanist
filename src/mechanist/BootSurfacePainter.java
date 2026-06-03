@@ -26,6 +26,8 @@ final class BootSurfacePainter implements ScreenPainter {
         g.setColor(new Color(130, 160, 130));
         drawCentered(g, "boot sequence // " + (elapsed / 250L % 4 == 0 ? "." : elapsed / 250L % 4 == 1 ? ".." : elapsed / 250L % 4 == 2 ? "..." : "...."), w / 2, Math.max(120, h / 3 + 42));
         drawCentered(g, "systems initializing", w / 2, Math.max(150, h / 3 + 70));
+        drawCentered(g, "press Enter / Space to skip", w / 2, Math.max(178, h / 3 + 98));
+        BootMenuFlowAuthority.maybeAdvanceFromBootPaint(panel, elapsed);
     }
 
     private void drawCentered(Graphics2D g, String text, int x, int y) {
