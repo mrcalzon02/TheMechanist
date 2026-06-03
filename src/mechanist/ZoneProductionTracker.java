@@ -32,6 +32,63 @@ final class ZoneProductionTracker {
         return byItem == null ? new ArrayList<>() : new ArrayList<>(byItem.values());
     }
 
+    int signalCount() {
+        int total = 0;
+        for (LinkedHashMap<String, ProductionNeedBalance> byItem : balances.values()) if (byItem != null) total += byItem.size();
+        return total;
+    }
+
+    boolean isEmpty() {
+        return signalCount() <= 0;
+    }
+
+    void clear() {
+        balances.clear();
+    }
+
+    LinkedHashMap<String, LinkedHashMap<String, ProductionNeedBalance>> snapshot() {
+        LinkedHashMap<String, LinkedHashMap<String, ProductionNeedBalance>> out = new LinkedHashMap<>();
+        for (Map.Entry<String, LinkedHashMap<String, ProductionNeedBalance>> zoneEntry : balances.entrySet()) {
+            LinkedHashMap<String, ProductionNeedBalance> byItem = new LinkedHashMap<>();
+            if (zoneEntry.getValue() != null) {
+                for (Map.Entry<String, ProductionNeedBalance> e : zoneEntry.getValue().entrySet()) {
+                    if (e.getKey() != null && e.getValue() != null && e.getValue().hasSignal()) byItem.put(e.getKey(), e.getValue().copy());
+                }
+            }
+            if (!byItem.isEmpty()) out.put(zoneEntry.getKey(), byItem);
+        }
+        return out;
+    }
+
+    void restore(Map<String, ? extends Map<String, ProductionNeedBalance>> saved) {
+        balances.clear();
+        if (saved == null) return;
+        for (Map.Entry<String, ? extends Map<String, ProductionNeedBalance>> zoneEntry : saved.entrySet()) {
+            if (zoneEntry.getKey() == null || zoneEntry.getValue() == null) continue;
+            LinkedHashMap<String, ProductionNeedBalance> byItem = balances.computeIfAbsent(zoneEntry.getKey(), ignored -> new LinkedHashMap<>());
+            for (Map.Entry<String, ProductionNeedBalance> e : zoneEntry.getValue().entrySet()) {
+                ProductionNeedBalance source = e.getValue();
+                if (source == null || e.getKey() == null) continue;
+                ProductionNeedBalance copy = source.copy();
+                byItem.put(e.getKey(), copy);
+            }
+        }
+    }
+
+    void mergeFrom(ZoneProductionTracker other) {
+        if (other == null) return;
+        for (Map.Entry<String, LinkedHashMap<String, ProductionNeedBalance>> zoneEntry : other.snapshot().entrySet()) {
+            LinkedHashMap<String, ProductionNeedBalance> byItem = balances.computeIfAbsent(zoneEntry.getKey(), ignored -> new LinkedHashMap<>());
+            for (Map.Entry<String, ProductionNeedBalance> e : zoneEntry.getValue().entrySet()) {
+                ProductionNeedBalance source = e.getValue();
+                ProductionNeedBalance target = byItem.computeIfAbsent(e.getKey(), ignored -> new ProductionNeedBalance(source.faction, source.item));
+                target.produced += Math.max(0, source.produced);
+                target.internalNeed += Math.max(0, source.internalNeed);
+                target.externalDemand += Math.max(0, source.externalDemand);
+            }
+        }
+    }
+
     String summary(int locationKey, Faction faction) {
         ArrayList<String> parts = new ArrayList<>();
         for (ProductionNeedBalance b : balances(locationKey, faction)) parts.add(b.summary());
