@@ -61,10 +61,42 @@ final class GlyphBinder {
     static void applyDefaultEngineBindings(TileImageRegistry registry) {
         if (registry == null) return;
 
+        bindGlyphToFirstAvailableAlias(registry, '#',
+                "bulkhead_walls_doors_r03c03_32px", "bulkhead_bulkhead_walls_doors_r03c03_32px", "bulkhead walls doors r03c03 32px",
+                "bulkhead_walls_doors_r03c02_32px", "bulkhead_bulkhead_walls_doors_r03c02_32px", "wall", "bulkhead");
+        bindGlyphToFirstAvailableAlias(registry, '.',
+                "corridors_r03c03_32px", "corridors_corridors_r03c03_32px", "floor", "corridor", "corridors");
+        bindGlyphToFirstAvailableAlias(registry, ',',
+                "corridors_r03c02_32px", "corridors_corridors_r03c02_32px", "floor", "corridor", "corridors");
+        bindGlyphToFirstAvailableAlias(registry, ':',
+                "corridorsb_r03c03_32px", "corridors_corridorsb_r03c03_32px", "corridor", "corridors");
+        bindGlyphToFirstAvailableAlias(registry, ';',
+                "roads_r03c03_32px", "roads_roads_r03c03_32px", "road", "roads", "corridors_r03c03_32px");
+        bindGlyphToFirstAvailableAlias(registry, '_',
+                "roads_r03c02_32px", "roads_roads_r03c02_32px", "sidewalk", "roads", "corridors_r03c02_32px");
+        bindGlyphToFirstAvailableAlias(registry, '+',
+                "bulkhead_walls_doors_r03c04_32px", "bulkhead_bulkhead_walls_doors_r03c04_32px", "door", "bulkhead");
+        bindGlyphToFirstAvailableAlias(registry, 'D',
+                "bulkhead_walls_doors_r03c04_32px", "bulkhead_bulkhead_walls_doors_r03c04_32px", "door", "bulkhead");
+        bindGlyphToFirstAvailableAlias(registry, '/',
+                "bulkhead_walls_doors_open_r03c04_32px", "bulkhead_bulkhead_walls_doors_open_r03c04_32px", "door_open", "bulkhead");
+        bindGlyphToFirstAvailableAlias(registry, '\\',
+                "bulkhead_walls_doors_open_r03c02_32px", "bulkhead_bulkhead_walls_doors_open_r03c02_32px", "door_open", "bulkhead");
+        bindGlyphToFirstAvailableAlias(registry, '~',
+                "corridorsb_r04c03_32px", "corridors_corridorsb_r04c03_32px", "water", "sewer", "corridors");
+        bindGlyphToFirstAvailableAlias(registry, '=',
+                "defenses_r03c03_32px", "defenses_defenses_r03c03_32px", "defense", "corridors_r03c03_32px");
+        bindGlyphToFirstAvailableAlias(registry, 'E',
+                "defenses_r03c04_32px", "defenses_defenses_r03c04_32px", "terminal", "defense");
+        bindGlyphToFirstAvailableAlias(registry, 'S',
+                "objects_r03c03_32px", "objects_objects_r03c03_32px", "object", "objects");
+        bindGlyphToFirstAvailableAlias(registry, 'v',
+                "objects_r03c02_32px", "objects_objects_r03c02_32px", "object", "objects");
+
         // Register default corridor rendering rules
         markCorridorArtUsesNorthSouth(registry, '|');
         markCorridorArtUsesNorthSouth(registry, '║');
-        
-        // Semantic map linkages can be declared or loaded dynamically here
+
+        DebugLog.audit("GLYPH_BINDER", "Applied generated-tile alias bindings: " + registry.auditSummary());
     }
 }
