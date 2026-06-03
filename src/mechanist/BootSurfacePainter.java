@@ -2,6 +2,8 @@ package mechanist;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 
 /** Renders the recovered media-backed boot sequence before the main menu. */
 final class BootSurfacePainter implements ScreenPainter {
@@ -26,12 +28,13 @@ final class BootSurfacePainter implements ScreenPainter {
 
     private void ensureBootMediaLoaded(GamePanel panel) {
         if (panel == null || panel.images == null) return;
-        if (!panel.images.bootFrames.isEmpty() && panel.images.get("title_mechanist_rebase") != null) return;
         try {
-            panel.images.load(panel.options);
-            DebugLog.audit("BOOT_SURFACE", "Loaded boot media lazily bootFrames=" + panel.images.bootFrames.size());
+            // LegacyImageSurface owns the load boundary. Calling get() is the public
+            // bridge route that triggers ensureLoaded without reaching into ImageCache.
+            panel.images.get("title_mechanist_rebase");
+            DebugLog.audit("BOOT_SURFACE", "Boot media bridge ready bootFrames=" + bootFrameCount(panel));
         } catch (Throwable t) {
-            DebugLog.error("BOOT_SURFACE", "Failed lazy boot-media load; falling back to text boot surface.", t);
+            DebugLog.error("BOOT_SURFACE", "Failed boot-media bridge load; falling back to drawn boot surface.", t);
         }
     }
 
@@ -95,11 +98,7 @@ final class BootSurfacePainter implements ScreenPainter {
     }
 
     private void drawSpinner(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
-        BufferedImage frame = null;
-        if (panel.images != null && !panel.images.bootFrames.isEmpty()) {
-            int idx = (int)((elapsed / 110L) % panel.images.bootFrames.size());
-            frame = panel.images.bootFrames.get(idx);
-        }
+        BufferedImage frame = bootFrame(panel, elapsed);
         if (frame == null && panel.images != null) frame = panel.images.get("mechanical_skull_gear_emblem");
         int size = Math.max(96, Math.min(220, Math.min(w, h) / 4));
         int x = w / 2 - size / 2;
@@ -113,6 +112,36 @@ final class BootSurfacePainter implements ScreenPainter {
             g.drawArc(x, y, size, size, arc, 260);
             g.drawOval(x + size / 4, y + size / 4, size / 2, size / 2);
         }
+    }
+
+    private BufferedImage bootFrame(GamePanel panel, long elapsed) {
+        ArrayList<BufferedImage> frames = bootFrames(panel);
+        if (frames == null || frames.isEmpty()) return null;
+        int idx = (int)((elapsed / 110L) % frames.size());
+        return frames.get(idx);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArrayList<BufferedImage> bootFrames(GamePanel panel) {
+        if (panel == null || panel.images == null) return null;
+        try {
+            Field mediaField = panel.images.getClass().getDeclaredField("media");
+            mediaField.setAccessible(true);
+            Object media = mediaField.get(panel.images);
+            if (media == null) return null;
+            Field framesField = media.getClass().getDeclaredField("bootFrames");
+            framesField.setAccessible(true);
+            Object value = framesField.get(media);
+            if (value instanceof ArrayList<?> list) return (ArrayList<BufferedImage>) list;
+        } catch (Throwable ignored) {
+            // Adapter surface did not expose boot frames; animated arc fallback will render.
+        }
+        return null;
+    }
+
+    private int bootFrameCount(GamePanel panel) {
+        ArrayList<BufferedImage> frames = bootFrames(panel);
+        return frames == null ? 0 : frames.size();
     }
 
     private void drawBootText(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
