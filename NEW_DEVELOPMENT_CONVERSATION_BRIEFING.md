@@ -117,3 +117,46 @@ We are not building these features from scratch; we are performing **System Reco
 | **Faction Gen** | Unlinked | Restore call-sequence from generation engine to faction database. |
 
 ---
+## Procedural Generation & Population Logistics: Remediation Scope
+
+To finalize the restoration of our architecture, we must address the logic governing zone generation and population dynamics. This is a transition from a generic, static environment to a dynamic, faction-driven ecosystem. Like the previous tasks, these systems are essentially "re-connections" of logic that were previously abstracted or are currently failing to call their assigned data packages.
+
+---
+
+### 1. Architectural Scaling: The "Age-Tier" Asset Library
+
+We are moving away from monolithic room templates toward a modular, "Technology Age" (AA) scaling system. This requires a refactor of our room-generation stamps to support standardized sizing across all factions.
+
+* **Standardized Stamp Library:** Develop a library of small, medium, and large variants for all core functional rooms (e.g., Barracks, Kitchens, Creches).
+* **Faction-Specific Implementation:** Ensure the generation engine calls the appropriate faction-tier asset library rather than generic templates. Each faction will require its own "Age" logic for its specific room aesthetic.
+
+### 2. Population Dynamics & Logistics Hook
+
+We need to finalize the integration of the "Beds = Capacity" logic. This hooks population growth directly to physical infrastructure.
+
+* **Capacity Constraint Logic:** The faction population cap must be dynamically calculated based on the total active, un-damaged bed count.
+* **Growth/Import Mechanisms:**
+* **Natural Growth:** Linked to the existence and functionality of **Children’s Creches**.
+* **Reinforcement Pulls:** Linked to external import events; the system must query current bed capacity to determine if incoming reinforcements can be safely "housed."
+
+
+* **System Integration:** These population hooks must be re-bound to the faction database to prevent desync between actual personnel and structural capacity.
+
+### 3. Rendering Pipeline Correction
+
+We are currently defaulting to fallback typeface/placeholders for our UI assets. This is a configuration error within the asset pipeline.
+
+* **Rendering Audit:** The rendering engine must be re-configured to prioritize the **Client Package Art** directory over the system's global fallback.
+* **Asset Resolution:** We need to ensure that the rendering manifest correctly maps the visual assets for the current faction/technology age to the draw call.
+
+---
+
+### Implementation Roadmap
+
+| Focus Area | Task | Dependency |
+| --- | --- | --- |
+| **Zone Generation** | Implement AA-Tier Room Variants | Faction Asset Database |
+| **Population Logic** | Link Bed Count to Population Cap | Faction Database & Room Registry |
+| **Rendering** | Overhaul Asset Mapping/Prioritization | Client Package/Resource Loader |
+
+---
