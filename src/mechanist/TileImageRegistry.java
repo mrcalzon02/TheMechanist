@@ -38,7 +38,7 @@ final class TileImageRegistry {
     int glyphCount() { return byGlyph.size(); }
     int aliasCount() { return byAlias.size(); }
     int semanticCount() { return bySemantic.size(); }
-    int loadedCount() { return byGlyph.size(); }
+    int loadedCount() { return byGlyph.size() + byAlias.size() + bySemantic.size(); }
 
     void putGlyph(char glyph, BufferedImage image) { if (image != null) byGlyph.put(glyph, image); }
 
@@ -116,8 +116,11 @@ final class TileImageRegistry {
 
     private static String normalizeAlias(String alias) {
         if (alias == null) return null;
-        String key = alias.trim();
-        return key.isEmpty() ? null : key.toLowerCase(Locale.ROOT);
+        String key = alias.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("^_+", "")
+                .replaceAll("_+$", "");
+        return key.isEmpty() ? null : key;
     }
 
     private static String normalizeSemanticId(String semanticId) {
