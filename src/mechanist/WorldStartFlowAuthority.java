@@ -1,10 +1,8 @@
 package mechanist;
 
 import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -85,6 +83,7 @@ final class WorldStartFlowAuthority {
         boolean nameEditing;
         boolean seedEditing;
         String seedDraft = "";
+        String pendingWorldDeleteKey = "";
         WorldAtlas previewAtlas;
         World previewWorld;
         String previewKey = "";
@@ -103,14 +102,16 @@ final class WorldStartFlowAuthority {
 
         void openWorldPicker(String reason) {
             worlds = WorldSaveInfo.listExistingWorlds();
-            worldIndex = 0;
+            worldIndex = Math.max(0, Math.min(worldIndex, Math.max(0, worlds.size())));
             worldGenerationOption = 0;
             characterOption = 0;
             nameEditing = false;
             seedEditing = false;
+            pendingWorldDeleteKey = "";
+            clearPreviewCache();
             status = worlds.isEmpty()
                     ? "No generated arcology worlds found. Generate a new world to continue."
-                    : "Select an existing generated world, or choose Generate New World.";
+                    : "Select an existing generated world, inspect its spawn preview, or choose Generate New World.";
             stage = Stage.WORLD_PICKER;
             setVisible(true);
             panel.screen = GamePanel.Screen.MENU;
@@ -126,6 +127,7 @@ final class WorldStartFlowAuthority {
             setVisible(false);
             nameEditing = false;
             seedEditing = false;
+            pendingWorldDeleteKey = "";
             panel.newGameSetupActive = false;
             panel.characterNameEditActive = false;
             panel.screen = GamePanel.Screen.MENU;
@@ -141,6 +143,7 @@ final class WorldStartFlowAuthority {
             worldGenerationOption = 0;
             seedEditing = false;
             seedDraft = Long.toString(panel.seed);
+            pendingWorldDeleteKey = "";
             clearPreviewCache();
             status = "Configure and generate a new arcology world. This stage does not pick the character.";
             stage = Stage.WORLD_GENERATION;
@@ -188,6 +191,7 @@ final class WorldStartFlowAuthority {
             panel.characterNameEditActive = false;
             nameEditing = false;
             seedEditing = false;
+            pendingWorldDeleteKey = "";
             characterOption = 0;
             stage = Stage.CHARACTER_CREATION;
             panel.screen = GamePanel.Screen.CHARACTER;
@@ -206,6 +210,7 @@ final class WorldStartFlowAuthority {
             setVisible(false);
             nameEditing = false;
             seedEditing = false;
+            pendingWorldDeleteKey = "";
             panel.characterNameEditActive = false;
             panel.startPackagedClientNewGameWith(chosen, setup);
             repaintPanel();
@@ -259,8 +264,9 @@ final class WorldStartFlowAuthority {
             int rows = worlds.size() + 1;
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) { closeToMainMenu(); return true; }
             if (code == KeyEvent.VK_N || code == KeyEvent.VK_G) { openWorldGeneration(); return true; }
-            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { worldIndex = Math.floorMod(worldIndex - 1, Math.max(1, rows)); return true; }
-            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { worldIndex = Math.floorMod(worldIndex + 1, Math.max(1, rows)); return true; }
+            if (code == KeyEvent.VK_DELETE || code == KeyEvent.VK_BACK_SPACE || code == KeyEvent.VK_D) { requestDeleteSelectedWorld("key"); return true; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { worldIndex = Math.floorMod(worldIndex - 1, Math.max(1, rows)); pendingWorldDeleteKey = ""; return true; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { worldIndex = Math.floorMod(worldIndex + 1, Math.max(1, rows)); pendingWorldDeleteKey = ""; return true; }
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E) {
                 if (worldIndex >= worlds.size()) openWorldGeneration(); else acceptExistingWorld();
                 return true;
@@ -385,14 +391,107 @@ final class WorldStartFlowAuthority {
             panel.active = c;
         }
 
+        void requestDeleteSelectedWorld(String reason) {
+            if (worldIndex < 0 || worldIndex >= worlds.size()) {
+                status = "Select an existing world to delete. The Generate New row is not a world file.";
+                pendingWorldDeleteKey = "";
+                return;
+            }
+            WorldSaveInfo info = worlds.get(worldIndex);
+            String key = info.seed + ":" + safe(info.hiveName);
+            if (!key.equals(pendingWorldDeleteKey)) {
+                pendingWorldDeleteKey = key;
+                status = "Confirm delete " + safe(info.hiveName) + ": press Delete/D again or click Delete World again.";
+                return;
+            }
+            java.nio.file.Path path = findWorldDefinitionFile(info);
+            if (path == null) {
+                status = "Could not locate a world definition file for " + safe(info.hiveName) + ".";
+                pendingWorldDeleteKey = "";
+                DebugLog.warn("WORLD_START_FLOW", status);
+                return;
+            }
+            try {
+                java.nio.file.Files.deleteIfExists(path);
+                status = "Deleted world " + safe(info.hiveName) + ".";
+                panel.logEvent(status);
+                DebugLog.audit("WORLD_START_FLOW", "deleted world reason=" + safe(reason) + " path=" + path);
+                worlds = WorldSaveInfo.listExistingWorlds();
+                worldIndex = Math.max(0, Math.min(worldIndex, Math.max(0, worlds.size())));
+                pendingWorldDeleteKey = "";
+                clearPreviewCache();
+            } catch (Throwable t) {
+                status = "Could not delete " + safe(info.hiveName) + ": " + t.getMessage();
+                pendingWorldDeleteKey = "";
+                DebugLog.error("WORLD_START_FLOW", status, t);
+            }
+        }
+
+        java.nio.file.Path findWorldDefinitionFile(WorldSaveInfo info) {
+            java.nio.file.Path direct = reflectivePath(info);
+            if (direct != null && java.nio.file.Files.isRegularFile(direct)) return direct;
+            java.nio.file.Path dir;
+            try { dir = java.nio.file.Path.of(String.valueOf(CampaignWorldApi.worldDir())); }
+            catch (Throwable t) { return null; }
+            if (!java.nio.file.Files.isDirectory(dir)) return null;
+            String seedText = Long.toString(info.seed);
+            String nameText = safe(info.hiveName);
+            java.nio.file.Path best = null;
+            int bestScore = 0;
+            try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(dir)) {
+                for (java.nio.file.Path path : stream.filter(java.nio.file.Files::isRegularFile).toList()) {
+                    int score = 0;
+                    String file = path.getFileName() == null ? "" : path.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+                    if (file.endsWith(".mechworld") || file.endsWith(".properties") || file.endsWith(".txt")) score++;
+                    try {
+                        String text = java.nio.file.Files.readString(path);
+                        if (text.contains(seedText)) score += 4;
+                        if (!nameText.isBlank() && text.contains(nameText)) score += 3;
+                        if (info.settings != null && text.contains(info.settings.encode())) score += 2;
+                    } catch (Throwable ignored) {}
+                    if (score > bestScore) { bestScore = score; best = path; }
+                }
+            } catch (Throwable t) {
+                DebugLog.warn("WORLD_START_FLOW", "Could not scan world directory for delete: " + t.getMessage());
+            }
+            return bestScore >= 4 ? best : null;
+        }
+
+        java.nio.file.Path reflectivePath(WorldSaveInfo info) {
+            if (info == null) return null;
+            for (String name : List.of("path", "file", "worldFile", "sourcePath", "definitionPath")) {
+                try {
+                    java.lang.reflect.Field f = info.getClass().getDeclaredField(name);
+                    f.setAccessible(true);
+                    java.nio.file.Path p = pathFromObject(f.get(info));
+                    if (p != null) return p;
+                } catch (Throwable ignored) {}
+                try {
+                    java.lang.reflect.Method m = info.getClass().getDeclaredMethod(name);
+                    m.setAccessible(true);
+                    java.nio.file.Path p = pathFromObject(m.invoke(info));
+                    if (p != null) return p;
+                } catch (Throwable ignored) {}
+            }
+            return null;
+        }
+
+        java.nio.file.Path pathFromObject(Object value) {
+            if (value instanceof java.nio.file.Path p) return p;
+            if (value instanceof java.io.File f) return f.toPath();
+            if (value instanceof CharSequence s && !s.toString().isBlank()) return java.nio.file.Path.of(s.toString());
+            return null;
+        }
+
         void handleMouse(MouseEvent e) {
             if (stage == Stage.CLOSED || e == null) return;
             Point p = e.getPoint();
             if (stage == Stage.WORLD_PICKER) {
-                List<Rectangle> rows = worldPickerRows();
-                for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { worldIndex = i; if (i >= worlds.size()) openWorldGeneration(); else acceptExistingWorld(); e.consume(); return; }
                 if (buttonRect(0).contains(p)) { openWorldGeneration(); e.consume(); return; }
                 if (buttonRect(1).contains(p)) { closeToMainMenu(); e.consume(); return; }
+                if (buttonRect(2).contains(p)) { requestDeleteSelectedWorld("mouse"); e.consume(); repaintPanel(); return; }
+                List<Rectangle> rows = worldPickerRows();
+                for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { worldIndex = i; pendingWorldDeleteKey = ""; if (i >= worlds.size() && e.getClickCount() >= 2) openWorldGeneration(); else if (i < worlds.size() && e.getClickCount() >= 2) acceptExistingWorld(); e.consume(); repaintPanel(); return; }
             } else if (stage == Stage.WORLD_GENERATION) {
                 if (seedEditRect().contains(p)) { beginSeedEdit(); e.consume(); repaintPanel(); return; }
                 List<Rectangle> rows = worldGenerationRows();
@@ -430,7 +529,7 @@ final class WorldStartFlowAuthority {
 
         void paintWorldPicker(Graphics2D g, Rectangle r) {
             drawText(g, "Generated world definitions are read from: " + CampaignWorldApi.worldDir(), r.x + 24, r.y + 64, r.width - 48, muted());
-            drawText(g, status, r.x + 24, r.y + 92, r.width - 48, main());
+            drawText(g, status, r.x + 24, r.y + 94, r.width - 48, main());
             List<Rectangle> rows = worldPickerRows();
             for (int i = 0; i < rows.size(); i++) {
                 Rectangle row = rows.get(i);
@@ -439,15 +538,17 @@ final class WorldStartFlowAuthority {
                 String label = i < worlds.size() ? worlds.get(i).summaryLine() : "+ Generate New World";
                 drawText(g, (selected ? "> " : "  ") + label, row.x + 12, row.y + 28, row.width - 24, selected ? highlight() : main());
             }
+            drawWorldManagerPreview(g, worldManagerPreviewRect());
             drawButton(g, buttonRect(0), "Generate New", true);
             drawButton(g, buttonRect(1), "Back", false);
-            drawFooter(g, "Enter selects. N/G generates a new world. Esc returns to main menu.");
+            drawDangerButton(g, buttonRect(2), "Delete World");
+            drawFooter(g, "Enter opens selected. Double-click row opens. N/G generates. Delete/D deletes selected world. Esc returns.");
         }
 
         void paintWorldGeneration(Graphics2D g, Rectangle r) {
             if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
             drawText(g, "World Generation Options", r.x + 24, r.y + 64, r.width - 48, highlight());
-            drawText(g, panel.worldSetup.shortSummary(), r.x + 24, r.y + 92, r.width - 48, main());
+            drawText(g, panel.worldSetup.shortSummary(), r.x + 24, r.y + 94, r.width - 48, main());
             drawSeedEditor(g);
 
             ArrayList<String> lines = panel.worldSetup.detailLines();
@@ -467,7 +568,7 @@ final class WorldStartFlowAuthority {
         void paintCharacterCreation(Graphics2D g, Rectangle r) {
             Candidate c = panel.selectedNewGameCandidate();
             drawText(g, "Character Generation", r.x + 24, r.y + 64, r.width - 48, highlight());
-            drawText(g, status, r.x + 24, r.y + 92, r.width - 48, main());
+            drawText(g, status, r.x + 24, r.y + 94, r.width - 48, main());
             Rectangle portrait = new Rectangle(r.x + 26, r.y + 122, 180, 180);
             g.setColor(new Color(12, 14, 13, 230));
             g.fillRoundRect(portrait.x, portrait.y, portrait.width, portrait.height, 8, 8);
@@ -521,17 +622,38 @@ final class WorldStartFlowAuthority {
             drawText(g, text, seed.x + 10, seed.y + 24, seed.width - 20, seedEditing ? highlight() : main());
         }
 
+        void drawWorldManagerPreview(Graphics2D g, Rectangle r) {
+            WorldSaveInfo info = selectedWorldInfo();
+            if (info != null) ensurePreviewFor(info.seed, info.settings == null ? WorldSetupSettings.standard() : info.settings.copy(), "existing:" + info.seed + ":" + safe(info.hiveName), safe(info.hiveName) + " / seed " + info.seed);
+            else {
+                long seed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed;
+                WorldSetupSettings setup = panel.worldSetup == null ? WorldSetupSettings.standard() : panel.worldSetup.copy();
+                ensurePreviewFor(seed, setup, "new:" + seed + ":" + setup.encode(), "Generate New World / seed " + seed);
+            }
+            drawSpawnPreviewBody(g, r, info == null ? "Preview: Generate New World" : "Selected World Spawn Preview");
+        }
+
+        WorldSaveInfo selectedWorldInfo() {
+            return worldIndex >= 0 && worldIndex < worlds.size() ? worlds.get(worldIndex) : null;
+        }
+
         void drawSpawnPreview(Graphics2D g, Rectangle r) {
-            ensurePreviewWorld();
+            if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
+            long safeSeed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed;
+            ensurePreviewFor(safeSeed, panel.worldSetup.copy(), "generation:" + safeSeed + ":" + panel.worldSetup.encode(), "Generated hive / seed " + safeSeed);
+            drawSpawnPreviewBody(g, r, "Spawn Sector Preview");
+        }
+
+        void drawSpawnPreviewBody(Graphics2D g, Rectangle r, String title) {
             g.setColor(new Color(12, 14, 13, 230));
             g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
             g.setColor(new Color(145, 118, 64, 170));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 10, 10);
-            drawText(g, "Spawn Sector Preview", r.x + 14, r.y + 28, r.width - 28, highlight());
-            drawText(g, previewStatus, r.x + 14, r.y + 52, r.width - 28, muted());
+            drawText(g, title, r.x + 14, r.y + 28, r.width - 28, highlight());
+            drawText(g, previewStatus, r.x + 14, r.y + 54, r.width - 28, muted());
             if (previewWorld == null) return;
 
-            Rectangle map = new Rectangle(r.x + 14, r.y + 72, r.width - 28, Math.max(120, r.height - 116));
+            Rectangle map = new Rectangle(r.x + 14, r.y + 78, r.width - 28, Math.max(120, r.height - 122));
             g.setColor(new Color(4, 5, 5, 238));
             g.fillRect(map.x, map.y, map.width, map.height);
             Point spawn = previewWorld.startPoint();
@@ -569,19 +691,17 @@ final class WorldStartFlowAuthority {
             drawText(g, "Spawn " + spawn.x + "," + spawn.y + " / " + previewWorld.zoneType.label, r.x + 14, r.y + r.height - 28, r.width - 28, main());
         }
 
-        void ensurePreviewWorld() {
-            if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
-            long safeSeed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed;
-            String key = safeSeed + ":" + panel.worldSetup.encode();
+        void ensurePreviewFor(long seed, WorldSetupSettings setup, String key, String label) {
+            WorldSetupSettings safeSetup = setup == null ? WorldSetupSettings.standard() : setup;
             if (key.equals(previewKey) && previewWorld != null) return;
             try {
-                WorldAtlas atlas = new WorldAtlas(safeSeed, panel.worldSetup.copy());
+                WorldAtlas atlas = new WorldAtlas(seed, safeSetup.copy());
                 atlas.generateScaffold();
                 previewAtlas = atlas;
                 previewWorld = atlas.currentWorld();
                 previewKey = key;
-                String name = atlas.hiveWorld == null ? "generated hive" : atlas.hiveWorld.hiveName;
-                previewStatus = name + " / seed " + safeSeed;
+                String name = label == null || label.isBlank() ? (atlas.hiveWorld == null ? "generated hive" : atlas.hiveWorld.hiveName) : label;
+                previewStatus = name;
             } catch (Throwable t) {
                 previewAtlas = null;
                 previewWorld = null;
@@ -611,11 +731,24 @@ final class WorldStartFlowAuthority {
             Rectangle p = panelRect(getWidth(), getHeight());
             ArrayList<Rectangle> rows = new ArrayList<>();
             int count = Math.max(1, worlds.size() + 1);
-            int top = p.y + 122;
+            int top = p.y + 130;
             int rowH = 42;
-            int max = Math.min(count, Math.max(1, (p.height - 220) / (rowH + 8)));
-            for (int i = 0; i < max; i++) rows.add(new Rectangle(p.x + 24, top + i * (rowH + 8), p.width - 48, rowH));
+            int max = Math.min(count, Math.max(1, (p.height - 228) / (rowH + 8)));
+            for (int i = 0; i < max; i++) rows.add(new Rectangle(p.x + 24, top + i * (rowH + 8), worldPickerListWidth(p), rowH));
             return rows;
+        }
+
+        int worldPickerListWidth(Rectangle p) {
+            int previewW = Math.max(300, Math.min(430, p.width / 3));
+            return Math.max(280, p.width - 72 - previewW - 22);
+        }
+
+        Rectangle worldManagerPreviewRect() {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            int leftW = worldPickerListWidth(p);
+            int x = p.x + 24 + leftW + 22;
+            int w = Math.max(300, p.x + p.width - 28 - x);
+            return new Rectangle(x, p.y + 130, w, Math.max(300, p.height - 220));
         }
 
         List<Rectangle> worldGenerationRows() {
@@ -657,6 +790,7 @@ final class WorldStartFlowAuthority {
 
         Rectangle buttonRect(int index) {
             Rectangle p = panelRect(getWidth(), getHeight());
+            if (index == 2) return new Rectangle(p.x + 28, p.y + p.height - 58, 146, 34);
             int bw = index == 0 ? 178 : 120;
             int gap = 16;
             int x = index == 0 ? p.x + p.width - bw - 28 : p.x + p.width - bw - 28 - 178 - gap;
@@ -665,7 +799,7 @@ final class WorldStartFlowAuthority {
 
         String title() {
             return switch (stage) {
-                case WORLD_PICKER -> "WORLD SELECTION";
+                case WORLD_PICKER -> "WORLD MANAGEMENT";
                 case WORLD_GENERATION -> "NEW WORLD GENERATION";
                 case CHARACTER_CREATION -> "CHARACTER GENERATION";
                 default -> "START FLOW";
@@ -691,14 +825,22 @@ final class WorldStartFlowAuthority {
         }
 
         void drawButton(Graphics2D g, Rectangle r, String label, boolean primary) {
-            g.setColor(primary ? new Color(76, 62, 32, 232) : new Color(16, 18, 16, 224));
+            drawButtonWithColor(g, r, label, primary ? new Color(76, 62, 32, 232) : new Color(16, 18, 16, 224), primary ? highlight() : main(), primary ? highlight() : new Color(145, 118, 64, 140));
+        }
+
+        void drawDangerButton(Graphics2D g, Rectangle r, String label) {
+            drawButtonWithColor(g, r, label, new Color(58, 18, 14, 232), new Color(236, 168, 142), new Color(192, 74, 58, 180));
+        }
+
+        void drawButtonWithColor(Graphics2D g, Rectangle r, String label, Color fill, Color text, Color border) {
+            g.setColor(fill);
             g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
-            g.setColor(primary ? highlight() : new Color(145, 118, 64, 140));
+            g.setColor(border);
             g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
-            g.setColor(primary ? highlight() : main());
+            g.setColor(text);
             BufferedImage icon = panel.systemButtonIconForLabel(label);
             FontMetrics fm = g.getFontMetrics();
-            int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
+            int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 6, 30));
             int labelW = fm.stringWidth(label);
             int groupW = labelW + (iconSize > 0 ? iconSize + 8 : 0);
             int x = r.x + Math.max(8, (r.width - groupW) / 2);
@@ -718,21 +860,43 @@ final class WorldStartFlowAuthority {
 
         void drawText(Graphics2D g, String text, int x, int y, int width, Color color) {
             g.setFont(panel.smallFont);
-            g.setColor(color);
             FontMetrics fm = g.getFontMetrics();
-            drawBackedText(g, GuiLayoutApi.fitLabel(text == null ? "" : text, fm, width), x, y, false);
+            List<String> lines = GuiLayoutApi.wrapText(text == null ? "" : text, fm, Math.max(8, width));
+            drawWrappedTextBlock(g, lines, x, y, width, color, false);
         }
 
         void drawLines(Graphics2D g, List<String> lines, int x, int y, int width, Color color) {
             g.setFont(panel.smallFont);
-            g.setColor(color);
+            ArrayList<String> wrapped = new ArrayList<>();
             FontMetrics fm = g.getFontMetrics();
-            int yy = y;
-            if (lines == null) return;
-            for (String line : lines) {
-                drawBackedText(g, GuiLayoutApi.fitLabel(line == null ? "" : line, fm, width), x, yy, false);
-                yy += Math.max(18, fm.getHeight() + 3);
+            if (lines != null) for (String line : lines) wrapped.addAll(GuiLayoutApi.wrapText(line == null ? "" : line, fm, Math.max(8, width)));
+            drawWrappedTextBlock(g, wrapped, x, y, width, color, false);
+        }
+
+        void drawWrappedTextBlock(Graphics2D g, List<String> lines, int x, int firstBaseline, int width, Color color, boolean centered) {
+            if (g == null || lines == null || lines.isEmpty()) return;
+            FontMetrics fm = g.getFontMetrics();
+            int lineH = Math.max(15, fm.getHeight() + 2);
+            int maxW = 0;
+            for (String line : lines) maxW = Math.max(maxW, fm.stringWidth(line == null ? "" : line));
+            int bx = centered ? x - maxW / 2 - 7 : x - 7;
+            int by = firstBaseline - fm.getAscent() - 5;
+            int bw = Math.max(12, Math.min(Math.max(width, maxW), maxW) + 14);
+            int bh = lineH * lines.size() + 8;
+            Color old = g.getColor();
+            g.setColor(new Color(0, 0, 0, 118));
+            g.fillRoundRect(bx, by, bw, bh, 8, 8);
+            g.setColor(new Color(128, 105, 58, 88));
+            g.drawRoundRect(bx, by, bw, bh, 8, 8);
+            g.setColor(color == null ? old : color);
+            int yy = firstBaseline;
+            for (String raw : lines) {
+                String line = raw == null ? "" : raw;
+                int tx = centered ? x - fm.stringWidth(line) / 2 : x;
+                g.drawString(line, tx, yy);
+                yy += lineH;
             }
+            g.setColor(old);
         }
 
         void drawAsciiPortrait(Graphics2D g, Candidate c, Rectangle r) {
@@ -749,7 +913,7 @@ final class WorldStartFlowAuthority {
         void center(Graphics2D g, String text, int x, int y) {
             FontMetrics fm = g.getFontMetrics();
             String s = text == null ? "" : text;
-            drawBackedText(g, s, x - fm.stringWidth(s) / 2, y, true);
+            drawWrappedTextBlock(g, List.of(s), x, y, fm.stringWidth(s), g.getColor(), true);
         }
 
         void drawBackedText(Graphics2D g, String text, int x, int y, boolean centered) {
@@ -757,12 +921,12 @@ final class WorldStartFlowAuthority {
             FontMetrics fm = g.getFontMetrics();
             int tw = fm.stringWidth(text);
             int th = fm.getHeight();
-            int bx = centered ? x - 5 : x - 5;
+            int bx = x - 5;
             int by = y - fm.getAscent() - 3;
             Color old = g.getColor();
-            g.setColor(new Color(0, 0, 0, 176));
+            g.setColor(new Color(0, 0, 0, 104));
             g.fillRoundRect(bx, by, tw + 10, th + 5, 7, 7);
-            g.setColor(new Color(128, 105, 58, 120));
+            g.setColor(new Color(128, 105, 58, 76));
             g.drawRoundRect(bx, by, tw + 10, th + 5, 7, 7);
             g.setColor(old);
             g.drawString(text, x, y);
