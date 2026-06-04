@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.LinearGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,13 +26,12 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
     private static final Color MUTED_GREEN = new Color(116, 132, 96);
     private static final Color RULE_COLOR = new Color(92, 86, 58, 150);
 
-    private static final String TITLE = "THE MECHANIST";
-    private static final String[] CRAWL_PARAGRAPHS = {
-            "A sanctioned machine-city wakes beneath a failing Concord.",
-            "Every corridor records debt. Every room remembers ownership. Every useful device waits to be reclaimed by someone with tools, patience, or authority.",
-            "You are not entering a clean frontier. You are entering a ledger of steel, ration cards, forgotten warrants, blocked passages, bad light, salvage rights, and people who have learned to survive inside systems that were never built for mercy.",
-            "The machines will run. The question is who they will run for."
-    };
+    private static final String TITLE = "NEW WORLD INSERTION";
+    private static final List<String> FALLBACK_CRAWL = List.of(
+            "The arcology opens beneath you.",
+            "Its machines are waiting.",
+            "Its debts are not asleep."
+    );
 
     @Override
     public void paint(Graphics2D g, GamePanel panel) {
@@ -97,7 +97,8 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
 
         g.setFont(subtitle.deriveFont(Font.BOLD, Math.max(11f, subtitle.getSize2D())));
         g.setColor(MUTED_GREEN);
-        drawCentered(g, "Shard Mining Surface / Intro Crawl", w / 2, titleY + Math.max(26, title.getSize() / 2 + 16));
+        String operator = panel.active == null ? "Unnamed operator" : panel.active.name + " // " + panel.active.job;
+        drawCentered(g, operator, w / 2, titleY + Math.max(26, title.getSize() / 2 + 16));
 
         int ruleY = titleY + Math.max(44, title.getSize() + 18);
         int ruleWidth = Math.max(180, Math.min(620, w - 96));
@@ -114,12 +115,12 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         int lineHeight = Math.max(18, fm.getHeight() + 4);
         int paragraphGap = Math.max(10, lineHeight / 2);
         int driftRange = Math.max(1, h + 260);
-        int drift = (int)((elapsed / 55L) % driftRange);
+        int drift = (int)((elapsed / 18L) % driftRange);
         int y = Math.max(h / 3, h - drift + 84);
         int bottomLimit = Math.max(80, h - 82);
 
         g.setColor(BODY_GOLD);
-        for (String paragraph : CRAWL_PARAGRAPHS) {
+        for (String paragraph : introCrawlParagraphs(panel)) {
             List<String> lines = GuiLayoutApi.wrapText(paragraph, fm, maxWidth);
             for (String line : lines) {
                 if (y > Math.max(0, h / 4) && y < bottomLimit) {
@@ -133,13 +134,24 @@ final class IntroCrawlSurfacePainter implements ScreenPainter {
         }
     }
 
+    private List<String> introCrawlParagraphs(GamePanel panel) {
+        ArrayList<String> loaded = new ArrayList<>();
+        try {
+            if (panel != null && panel.images != null) loaded.addAll(panel.images.loadIntroCrawlLines());
+        } catch (Throwable t) {
+            DebugLog.warn("INTRO_CRAWL", "Could not load authored intro crawl text; using fallback: " + t.getMessage());
+        }
+        loaded.removeIf(line -> line == null || line.isBlank());
+        return loaded.isEmpty() ? FALLBACK_CRAWL : loaded;
+    }
+
     private void paintPrompt(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         Font body = panel.smallFont == null ? new Font("Monospaced", Font.PLAIN, 15) : panel.smallFont;
         boolean bright = ((elapsed / 650L) % 2L) == 0L;
         Color prompt = bright ? new Color(150, 164, 116) : new Color(86, 96, 72);
         g.setColor(prompt);
         g.setFont(body.deriveFont(Font.BOLD, Math.max(11f, body.getSize2D())));
-        drawCentered(g, "Press any key to continue", w / 2, h - 58);
+        drawCentered(g, "Enter / Space / Esc to continue", w / 2, h - 58);
     }
 
     private int fadeAlpha(int y, int h) {
