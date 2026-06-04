@@ -34,16 +34,24 @@ final class BootMenuFlowAuthority {
 
     static void finishBootSequence(GamePanel panel, String reason) {
         if (panel == null || panel.screen != GamePanel.Screen.BOOT) return;
+        String safeReason = safe(reason);
         try {
-            panel.finishBootSequence(safe(reason));
+            panel.setScreen(GamePanel.Screen.MENU);
+            panel.panelMode = GamePanel.PanelMode.NONE;
+            panel.selectedButton = 0;
+            panel.newGameSetupActive = false;
+            panel.characterNameEditActive = false;
+            panel.graphicsDropdown = -1;
+            panel.logEvent("Boot sequence finished: " + safeReason + ".");
+            DebugLog.audit("BOOT_MENU_FLOW", "finish authority=" + VERSION + " reason=" + safeReason + " screen=" + panel.screen);
+            panel.repaint();
+            panel.requestFocusInWindow();
         } catch (Throwable t) {
-            // The compatibility bridge still owns the legacy method.  If it ever
-            // fails during a shard transition, do not trap the user on BOOT.
             panel.screen = GamePanel.Screen.MENU;
             panel.panelMode = GamePanel.PanelMode.NONE;
             panel.selectedButton = 0;
             panel.logEvent("Boot sequence recovered to main menu after handoff failure.");
-            DebugLog.error("BOOT_MENU_FLOW", "Legacy boot finish failed; forced MENU fallback.", t);
+            DebugLog.error("BOOT_MENU_FLOW", "Boot finish failed; recovered to MENU.", t);
         }
     }
 
