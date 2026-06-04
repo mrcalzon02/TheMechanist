@@ -21,6 +21,7 @@ final class MouseEarlyScreenController {
             panel.continueFromIntroCrawl();
             return true;
         }
+        if (SaveLoadSurfacePainter.handleDeleteClick(panel, mx, my)) return true;
         if (panel.screen == GamePanel.Screen.ZONE_SPLASH) {
             panel.continueFromZoneSplash();
             panel.repaint();
