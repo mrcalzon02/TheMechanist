@@ -1,69 +1,18 @@
 package mechanist;
 
+/** @deprecated Use AccessibilityVisualOptionsRuntime. */
+@Deprecated
 public class LayerF {
     public LayerF() {}
 
-    static void togglePerformanceDiagnostics(GamePanel panel) {
-        String line = panel.performanceDiagnostics.toggle();
-        panel.options.diagnosticsOverlay = panel.performanceDiagnostics.visible();
-        panel.options.save();
-        panel.logEvent(line);
-        DebugLog.audit("PERFORMANCE_DIAGNOSTICS", panel.performanceDiagnostics.auditSummary());
-        panel.repaint();
-    }
-
-    static void cycleCvdMode(GamePanel panel) {
-        panel.options.cvdModeIndex = (panel.options.cvdModeIndex + 1) % AccessibilityCompatibilityAuthority.CvdMode.values().length;
-        panel.options.save();
-        panel.logEvent("Color vision correction: " + AccessibilityCompatibilityAuthority.cvdLabel(panel.options.cvdModeIndex) + ".");
-        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(panel.options));
-        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(panel.userProfile));
-        panel.repaint();
-    }
-
-    static void toggleHighContrastText(GamePanel panel) {
-        panel.options.highContrastText = !panel.options.highContrastText;
-        panel.options.save();
-        panel.logEvent("High contrast text containers " + (panel.options.highContrastText ? "enabled" : "disabled") + ".");
-        DebugLog.audit("ACCESSIBILITY_COMPATIBILITY", AccessibilityCompatibilityAuthority.auditSummary(panel.options));
-        DebugLog.audit("FALLBACK_PROFILE", FallbackProfileManagementAuthority.auditSummary(panel.userProfile));
-        panel.repaint();
-    }
-
-    static void toggleInstantDialogueText(GamePanel panel) {
-        panel.options.instantDialogueText = !panel.options.instantDialogueText;
-        panel.options.save();
-        panel.logEvent("Instant conversation text " + (panel.options.instantDialogueText ? "enabled" : "disabled") + ".");
-        panel.repaint();
-    }
-
-    static void adjustScreenShake(GamePanel panel, int delta) {
-        panel.options.screenShakePercent = Math.max(0, Math.min(100, panel.options.screenShakePercent + delta));
-        panel.options.save();
-        panel.logEvent("Screen shake intensity now " + panel.options.screenShakePercent + "%.");
-        panel.repaint();
-    }
-
-    static void pushCurrentScreenNarration(GamePanel panel) {
-        AccessibilityRuntimeOptionsSubsystem.pushCurrentScreenNarration(panel);
-    }
-
-    static void cycleColorTarget(GamePanel panel) {
-        panel.logEvent(OptionsBoundaryAuthority.cycleColorTarget(panel.options));
-        panel.repaint();
-    }
-
-    static void cycleColorPreset(GamePanel panel) {
-        panel.logEvent(OptionsBoundaryAuthority.cycleColorPreset(panel.options));
-        panel.repaint();
-    }
-
-    static void adjustSelectedColor(GamePanel panel, int delta) {
-        panel.logEvent(OptionsBoundaryAuthority.adjustSelectedColor(panel.options, delta));
-        panel.repaint();
-    }
-
-    static java.awt.Color optionColor(GamePanel panel, int key) {
-        return OptionsBoundaryAuthority.optionColor(panel.options, key);
-    }
+    static void togglePerformanceDiagnostics(GamePanel panel) { AccessibilityVisualOptionsRuntime.togglePerformanceDiagnostics(panel); }
+    static void cycleCvdMode(GamePanel panel) { AccessibilityVisualOptionsRuntime.cycleCvdMode(panel); }
+    static void toggleHighContrastText(GamePanel panel) { AccessibilityVisualOptionsRuntime.toggleHighContrastText(panel); }
+    static void toggleInstantDialogueText(GamePanel panel) { AccessibilityVisualOptionsRuntime.toggleInstantDialogueText(panel); }
+    static void adjustScreenShake(GamePanel panel, int delta) { AccessibilityVisualOptionsRuntime.adjustScreenShake(panel, delta); }
+    static void pushCurrentScreenNarration(GamePanel panel) { AccessibilityVisualOptionsRuntime.pushCurrentScreenNarration(panel); }
+    static void cycleColorTarget(GamePanel panel) { AccessibilityVisualOptionsRuntime.cycleColorTarget(panel); }
+    static void cycleColorPreset(GamePanel panel) { AccessibilityVisualOptionsRuntime.cycleColorPreset(panel); }
+    static void adjustSelectedColor(GamePanel panel, int delta) { AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, delta); }
+    static java.awt.Color optionColor(GamePanel panel, int key) { return AccessibilityVisualOptionsRuntime.optionColor(panel, key); }
 }
