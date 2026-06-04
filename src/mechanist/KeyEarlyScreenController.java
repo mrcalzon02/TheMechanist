@@ -7,6 +7,7 @@ final class KeyEarlyScreenController {
 
     static boolean handleEarlyKey(GamePanel panel, int code) {
         if (handleEulaGate(panel, code)) return true;
+        if (SaveLoadSurfacePainter.handleDeleteKey(panel, code)) return true;
         if (code == KeyEvent.VK_F3) {
             panel.togglePerformanceDiagnostics();
             return true;
