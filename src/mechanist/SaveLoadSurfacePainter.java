@@ -16,15 +16,17 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
         g.fillRoundRect(box.x, box.y, box.width, box.height, 14, 14);
         panel.drawSlicedFrame(g, box.x, box.y, box.width, box.height, "inner");
         panel.stampUiFrameId(g, "F", "save-load-menu", box.x, box.y, box.width, box.height);
+        MenuTextAuthority.drawMenuReference(g, panel, box, "M002", "menu.save_load.title", "World Management");
 
         g.setFont(panel.titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, box.height / 12f))));
         g.setColor(panel.optionColor(GameOptions.TEXT_HIGHLIGHT));
-        panel.center(g, "WORLD MANAGEMENT", box.x + box.width / 2, box.y + 44);
+        panel.center(g, MenuTextAuthority.text("menu.save_load.title", "WORLD MANAGEMENT"), box.x + box.width / 2, box.y + 44);
 
         g.setFont(panel.smallFont);
         FontMetrics fm = g.getFontMetrics();
         g.setColor(panel.optionColor(GameOptions.TEXT_MAIN));
-        panel.center(g, safe(panel.saveLoadStatus), box.x + box.width / 2, box.y + 72);
+        MenuTextAuthority.drawWrappedBlock(g, panel, "", safe(panel.saveLoadStatus),
+                new Rectangle(box.x + 34, box.y + 58, box.width - 68, 42), panel.optionColor(GameOptions.TEXT_MAIN));
 
         int[] slots = panel.saveLoadSlots();
         for (int i = 0; i < slots.length; i++) {
@@ -40,13 +42,14 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
             g.drawString(GuiLayoutApi.fitLabel(label, fm, Math.max(120, row.width - 18)), row.x + 10, row.y + 29);
         }
 
-        drawButton(g, panel, panel.saveLoadBackRect(), "Back", false);
+        drawButton(g, panel, panel.saveLoadBackRect(), MenuTextAuthority.text("menu.world_manager.button.back", "Back"), false);
         drawDangerButton(g, panel, deleteSelectedSlotRect(panel), "Delete Slot");
         drawButton(g, panel, panel.saveLoadNewGameRect(), "New Game", true);
 
         g.setColor(panel.optionColor(GameOptions.TEXT_DIM));
-        panel.center(g, "Enter loads selected slot. Delete/D deletes selected slot. N starts a new game. Esc returns.",
-                box.x + box.width / 2, box.y + box.height - 78);
+        MenuTextAuthority.drawWrappedBlock(g, panel, "menu.save_load.footer",
+                "Enter loads selected slot. Delete/D deletes selected slot. N starts a new game. Esc returns.",
+                new Rectangle(box.x + 34, box.y + box.height - 98, box.width - 68, 44), panel.optionColor(GameOptions.TEXT_DIM));
     }
 
     static Rectangle deleteSelectedSlotRect(GamePanel panel) {
