@@ -9,6 +9,17 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
 final class MainMenuSurfacePainter implements ScreenPainter {
+    private static final String[] ROUTE_KEYS = {
+            "menu.main.route.new_game",
+            "menu.main.route.continue",
+            "menu.main.route.load_game",
+            "menu.main.route.options",
+            "menu.main.route.tools",
+            "menu.main.route.knowledge",
+            "menu.main.route.multiplayer",
+            "menu.main.route.exit"
+    };
+
     @Override
     public void paint(Graphics2D g, GamePanel panel) {
         int W = panel.getWidth();
@@ -37,7 +48,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         } else {
             g.setFont(panel.titleFont.deriveFont(Font.BOLD, Math.max(34f, Math.min(56f, H / 9f))));
             g.setColor(new Color(200, 184, 132));
-            panel.center(g, "THE MECHANIST", cx, titleTop + 68);
+            panel.center(g, MenuTextAuthority.text("menu.main.title", "THE MECHANIST"), cx, titleTop + 68);
         }
         
         BufferedImage subtitle = panel.images.get("subtitle_rebase");
@@ -55,6 +66,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         g.fillRoundRect(buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, 14, 14);
         panel.drawSlicedFrame(g, buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, "inner");
         panel.stampUiFrameId(g, "F", "main-menu-route-frame", buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height);
+        MenuTextAuthority.drawMenuReference(g, panel, buttonFrame, "M001", "menu.main.title", "Main Menu");
 
         java.util.List<String> labels = panel.mainMenuRouteLabels();
         g.setFont(panel.uiFont.deriveFont(Font.BOLD, Math.max(13f, Math.min(17f, H / 42f))));
@@ -71,8 +83,9 @@ final class MainMenuSurfacePainter implements ScreenPainter {
                 g.setColor(selected ? new Color(220, 190, 92, 230) : new Color(112, 95, 54, 190));
                 g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             }
-            String label = labels.get(i);
-            BufferedImage icon = panel.systemButtonIconForLabel(labels.get(i));
+            String fallbackLabel = labels.get(i);
+            String label = MenuTextAuthority.text(i < ROUTE_KEYS.length ? ROUTE_KEYS[i] : "", fallbackLabel);
+            BufferedImage icon = panel.systemButtonIconForLabel(fallbackLabel);
             int iconSize = icon == null ? 0 : Math.max(27, Math.min((int)Math.round(r.height * 1.18), 42));
             int iconX = r.x + 8;
             int textX = r.x + 14;
