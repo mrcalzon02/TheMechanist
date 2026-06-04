@@ -83,6 +83,12 @@ final class WorldStartFlowAuthority {
         int characterOption;
         String status = "";
         boolean nameEditing;
+        boolean seedEditing;
+        String seedDraft = "";
+        WorldAtlas previewAtlas;
+        World previewWorld;
+        String previewKey = "";
+        String previewStatus = "";
 
         WorldStartFlowOverlay(GamePanel panel) {
             this.panel = panel;
@@ -101,6 +107,7 @@ final class WorldStartFlowAuthority {
             worldGenerationOption = 0;
             characterOption = 0;
             nameEditing = false;
+            seedEditing = false;
             status = worlds.isEmpty()
                     ? "No generated arcology worlds found. Generate a new world to continue."
                     : "Select an existing generated world, or choose Generate New World.";
@@ -118,6 +125,7 @@ final class WorldStartFlowAuthority {
             stage = Stage.CLOSED;
             setVisible(false);
             nameEditing = false;
+            seedEditing = false;
             panel.newGameSetupActive = false;
             panel.characterNameEditActive = false;
             panel.screen = GamePanel.Screen.MENU;
@@ -131,6 +139,9 @@ final class WorldStartFlowAuthority {
             panel.rng = new Random(panel.seed ^ 0x4E475345545550L);
             panel.worldSetup = WorldSetupSettings.standard();
             worldGenerationOption = 0;
+            seedEditing = false;
+            seedDraft = Long.toString(panel.seed);
+            clearPreviewCache();
             status = "Configure and generate a new arcology world. This stage does not pick the character.";
             stage = Stage.WORLD_GENERATION;
             panel.newGameSetupActive = false;
@@ -144,7 +155,6 @@ final class WorldStartFlowAuthority {
         void acceptGeneratedWorld() {
             if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
             panel.seed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed;
-            // Create/save the generated world definition now, then character creation uses that world.
             panel.atlas = new WorldAtlas(panel.seed, panel.worldSetup.copy());
             panel.atlas.generateScaffold();
             panel.world = null;
@@ -177,6 +187,7 @@ final class WorldStartFlowAuthority {
             panel.newGameSetupActive = true;
             panel.characterNameEditActive = false;
             nameEditing = false;
+            seedEditing = false;
             characterOption = 0;
             stage = Stage.CHARACTER_CREATION;
             panel.screen = GamePanel.Screen.CHARACTER;
@@ -194,6 +205,7 @@ final class WorldStartFlowAuthority {
             stage = Stage.CLOSED;
             setVisible(false);
             nameEditing = false;
+            seedEditing = false;
             panel.characterNameEditActive = false;
             panel.startPackagedClientNewGameWith(chosen, setup);
             repaintPanel();
@@ -216,6 +228,11 @@ final class WorldStartFlowAuthority {
             }
             if (stage == Stage.CLOSED) return false;
             if (e.getID() == KeyEvent.KEY_TYPED) {
+                if (stage == Stage.WORLD_GENERATION && seedEditing) {
+                    appendSeedChar(e.getKeyChar());
+                    e.consume();
+                    return true;
+                }
                 if (stage == Stage.CHARACTER_CREATION && nameEditing) {
                     char ch = e.getKeyChar();
                     if (!Character.isISOControl(ch)) appendNameChar(ch);
@@ -252,11 +269,21 @@ final class WorldStartFlowAuthority {
         }
 
         boolean handleWorldGenerationKey(int code) {
+            if (seedEditing) return handleSeedEditKey(code);
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) { openWorldPicker("back from world generation"); return true; }
             if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { worldGenerationOption = Math.floorMod(worldGenerationOption - 1, 7); return true; }
             if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { worldGenerationOption = Math.floorMod(worldGenerationOption + 1, 7); return true; }
+            if (code == KeyEvent.VK_E) { beginSeedEdit(); return true; }
+            if (code == KeyEvent.VK_R) { randomizeSeed(); return true; }
             if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A || code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { cycleWorldSetupSelected(); return true; }
             if (code == KeyEvent.VK_G) { acceptGeneratedWorld(); return true; }
+            return true;
+        }
+
+        boolean handleSeedEditKey(int code) {
+            if (code == KeyEvent.VK_ENTER) { applySeedDraft(); return true; }
+            if (code == KeyEvent.VK_ESCAPE) { cancelSeedEdit(); return true; }
+            if (code == KeyEvent.VK_BACK_SPACE || code == KeyEvent.VK_DELETE) { backspaceSeed(); return true; }
             return true;
         }
 
@@ -281,6 +308,58 @@ final class WorldStartFlowAuthority {
             if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
             panel.worldSetupSelection = worldGenerationOption;
             panel.cycleWorldSetupOption(worldGenerationOption);
+            clearPreviewCache();
+        }
+
+        void beginSeedEdit() {
+            seedEditing = true;
+            seedDraft = Long.toString(panel.seed == 0L ? System.currentTimeMillis() : panel.seed);
+            status = "Editing world seed. Type digits, Backspace, Enter to apply, Esc to cancel.";
+            requestFocusInWindow();
+        }
+
+        void appendSeedChar(char ch) {
+            if (Character.isISOControl(ch)) return;
+            if (ch == '-' && seedDraft.isEmpty()) { seedDraft = "-"; return; }
+            if (!Character.isDigit(ch)) return;
+            if (seedDraft.length() < 18) seedDraft += ch;
+        }
+
+        void backspaceSeed() {
+            if (!seedDraft.isEmpty()) seedDraft = seedDraft.substring(0, seedDraft.length() - 1);
+        }
+
+        void applySeedDraft() {
+            String text = seedDraft == null ? "" : seedDraft.trim();
+            if (text.isBlank() || text.equals("-")) {
+                status = "Seed cannot be blank. Type a number or press Esc to cancel.";
+                return;
+            }
+            try {
+                panel.seed = Long.parseLong(text);
+                panel.rng = new Random(panel.seed ^ 0x4E475345545550L);
+                seedEditing = false;
+                status = "World seed set to " + panel.seed + ".";
+                clearPreviewCache();
+                DebugLog.audit("WORLD_START_FLOW", "seed edited seed=" + panel.seed);
+            } catch (NumberFormatException ex) {
+                status = "Seed is too large for a signed 64-bit value.";
+            }
+        }
+
+        void cancelSeedEdit() {
+            seedEditing = false;
+            seedDraft = Long.toString(panel.seed == 0L ? System.currentTimeMillis() : panel.seed);
+            status = "Seed edit cancelled.";
+        }
+
+        void randomizeSeed() {
+            panel.seed = System.currentTimeMillis();
+            panel.rng = new Random(panel.seed ^ 0x4E475345545550L);
+            seedDraft = Long.toString(panel.seed);
+            seedEditing = false;
+            status = "Randomized world seed: " + panel.seed + ".";
+            clearPreviewCache();
         }
 
         void beginNameEdit() {
@@ -315,7 +394,8 @@ final class WorldStartFlowAuthority {
                 if (buttonRect(0).contains(p)) { openWorldGeneration(); e.consume(); return; }
                 if (buttonRect(1).contains(p)) { closeToMainMenu(); e.consume(); return; }
             } else if (stage == Stage.WORLD_GENERATION) {
-                List<Rectangle> rows = optionRows(7);
+                if (seedEditRect().contains(p)) { beginSeedEdit(); e.consume(); repaintPanel(); return; }
+                List<Rectangle> rows = worldGenerationRows();
                 for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { worldGenerationOption = i; cycleWorldSetupSelected(); e.consume(); return; }
                 if (buttonRect(0).contains(p)) { acceptGeneratedWorld(); e.consume(); return; }
                 if (buttonRect(1).contains(p)) { openWorldPicker("mouse back"); e.consume(); return; }
@@ -368,17 +448,20 @@ final class WorldStartFlowAuthority {
             if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
             drawText(g, "World Generation Options", r.x + 24, r.y + 64, r.width - 48, highlight());
             drawText(g, panel.worldSetup.shortSummary(), r.x + 24, r.y + 92, r.width - 48, main());
+            drawSeedEditor(g);
+
             ArrayList<String> lines = panel.worldSetup.detailLines();
-            List<Rectangle> rows = optionRows(lines.size());
+            List<Rectangle> rows = worldGenerationRows();
             for (int i = 0; i < lines.size() && i < rows.size(); i++) {
                 Rectangle row = rows.get(i);
                 boolean selected = i == worldGenerationOption;
                 fillRow(g, row, selected);
                 drawText(g, (selected ? "> " : "  ") + lines.get(i), row.x + 12, row.y + 27, row.width - 24, selected ? highlight() : main());
             }
+            drawSpawnPreview(g, spawnPreviewRect());
             drawButton(g, buttonRect(0), "Generate World", true);
             drawButton(g, buttonRect(1), "Back", false);
-            drawFooter(g, "Up/Down chooses an option. Left/Right/Enter cycles. G generates and opens character creation.");
+            drawFooter(g, "Up/Down chooses options. Left/Right cycles. Click seed or E edits. R rerolls seed. G generates.");
         }
 
         void paintCharacterCreation(Graphics2D g, Rectangle r) {
@@ -425,6 +508,105 @@ final class WorldStartFlowAuthority {
             drawFooter(g, "Left/Right changes candidate/job. R rerolls. E edits name. G starts run. Esc returns to world picker.");
         }
 
+        void drawSeedEditor(Graphics2D g) {
+            Rectangle seed = seedEditRect();
+            g.setFont(panel.smallFont);
+            g.setColor(muted());
+            drawBackedText(g, "Seed", seed.x, seed.y - 8, false);
+            g.setColor(seedEditing ? new Color(54, 47, 31, 238) : new Color(16, 18, 16, 224));
+            g.fillRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8);
+            g.setColor(seedEditing ? highlight() : new Color(145, 118, 64, 140));
+            g.drawRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8);
+            String text = seedEditing ? seedDraft + "_" : Long.toString(panel.seed);
+            drawText(g, text, seed.x + 10, seed.y + 24, seed.width - 20, seedEditing ? highlight() : main());
+        }
+
+        void drawSpawnPreview(Graphics2D g, Rectangle r) {
+            ensurePreviewWorld();
+            g.setColor(new Color(12, 14, 13, 230));
+            g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
+            g.setColor(new Color(145, 118, 64, 170));
+            g.drawRoundRect(r.x, r.y, r.width, r.height, 10, 10);
+            drawText(g, "Spawn Sector Preview", r.x + 14, r.y + 28, r.width - 28, highlight());
+            drawText(g, previewStatus, r.x + 14, r.y + 52, r.width - 28, muted());
+            if (previewWorld == null) return;
+
+            Rectangle map = new Rectangle(r.x + 14, r.y + 72, r.width - 28, Math.max(120, r.height - 116));
+            g.setColor(new Color(4, 5, 5, 238));
+            g.fillRect(map.x, map.y, map.width, map.height);
+            Point spawn = previewWorld.startPoint();
+            int cols = Math.max(8, Math.min(previewWorld.w, 32));
+            int rows = Math.max(8, Math.min(previewWorld.h, 24));
+            int tile = Math.max(3, Math.min(map.width / cols, map.height / rows));
+            int drawW = tile * cols;
+            int drawH = tile * rows;
+            int ox = map.x + Math.max(0, (map.width - drawW) / 2);
+            int oy = map.y + Math.max(0, (map.height - drawH) / 2);
+            int minX = Math.max(0, Math.min(Math.max(0, previewWorld.w - cols), spawn.x - cols / 2));
+            int minY = Math.max(0, Math.min(Math.max(0, previewWorld.h - rows), spawn.y - rows / 2));
+            for (int y = 0; y < rows; y++) {
+                for (int x = 0; x < cols; x++) {
+                    int wx = minX + x;
+                    int wy = minY + y;
+                    if (!previewWorld.inBounds(wx, wy)) continue;
+                    char ch = previewWorld.tiles[wx][wy];
+                    g.setColor(previewTileColor(ch));
+                    g.fillRect(ox + x * tile, oy + y * tile, tile, tile);
+                }
+            }
+            if (previewWorld.inBounds(spawn.x, spawn.y)) {
+                int sx = ox + (spawn.x - minX) * tile;
+                int sy = oy + (spawn.y - minY) * tile;
+                if (sx >= ox && sy >= oy && sx < ox + drawW && sy < oy + drawH) {
+                    g.setColor(new Color(245, 214, 118));
+                    g.setStroke(new BasicStroke(Math.max(1f, tile / 4f)));
+                    g.drawRect(sx, sy, Math.max(2, tile - 1), Math.max(2, tile - 1));
+                }
+            }
+            g.setColor(new Color(0, 0, 0, 90));
+            for (int y = oy; y < oy + drawH; y += Math.max(1, tile)) g.drawLine(ox, y, ox + drawW, y);
+            for (int x = ox; x < ox + drawW; x += Math.max(1, tile)) g.drawLine(x, oy, x, oy + drawH);
+            drawText(g, "Spawn " + spawn.x + "," + spawn.y + " / " + previewWorld.zoneType.label, r.x + 14, r.y + r.height - 28, r.width - 28, main());
+        }
+
+        void ensurePreviewWorld() {
+            if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
+            long safeSeed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed;
+            String key = safeSeed + ":" + panel.worldSetup.encode();
+            if (key.equals(previewKey) && previewWorld != null) return;
+            try {
+                WorldAtlas atlas = new WorldAtlas(safeSeed, panel.worldSetup.copy());
+                atlas.generateScaffold();
+                previewAtlas = atlas;
+                previewWorld = atlas.currentWorld();
+                previewKey = key;
+                String name = atlas.hiveWorld == null ? "generated hive" : atlas.hiveWorld.hiveName;
+                previewStatus = name + " / seed " + safeSeed;
+            } catch (Throwable t) {
+                previewAtlas = null;
+                previewWorld = null;
+                previewKey = key;
+                previewStatus = "Preview unavailable: " + t.getMessage();
+                DebugLog.warn("WORLD_START_FLOW", previewStatus);
+            }
+        }
+
+        void clearPreviewCache() {
+            previewAtlas = null;
+            previewWorld = null;
+            previewKey = "";
+            previewStatus = "";
+        }
+
+        Color previewTileColor(char ch) {
+            if (ch == '#') return new Color(38, 39, 36);
+            if (ch == '.' || ch == ',' || ch == ':' || ch == ';' || ch == '=') return new Color(47, 48, 43);
+            if (ch == '+' || ch == '/' || ch == '\\' || ch == 'D') return new Color(91, 76, 43);
+            if (ch == '~') return new Color(35, 57, 58);
+            if (Character.isUpperCase(ch)) return new Color(72, 58, 36);
+            return new Color(28, 29, 27);
+        }
+
         List<Rectangle> worldPickerRows() {
             Rectangle p = panelRect(getWidth(), getHeight());
             ArrayList<Rectangle> rows = new ArrayList<>();
@@ -436,12 +618,35 @@ final class WorldStartFlowAuthority {
             return rows;
         }
 
+        List<Rectangle> worldGenerationRows() {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            ArrayList<Rectangle> rows = new ArrayList<>();
+            int top = p.y + 166;
+            int width = Math.max(300, Math.min(540, p.width - 420));
+            for (int i = 0; i < 7; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, width, 34));
+            return rows;
+        }
+
         List<Rectangle> optionRows(int count) {
             Rectangle p = panelRect(getWidth(), getHeight());
             ArrayList<Rectangle> rows = new ArrayList<>();
             int top = p.y + 124;
             for (int i = 0; i < count; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, p.width - 48, 34));
             return rows;
+        }
+
+        Rectangle seedEditRect() {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            int width = Math.max(300, Math.min(540, p.width - 420));
+            return new Rectangle(p.x + 24, p.y + 118, width, 34);
+        }
+
+        Rectangle spawnPreviewRect() {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            int leftW = Math.max(300, Math.min(540, p.width - 420));
+            int x = p.x + 24 + leftW + 24;
+            int w = Math.max(300, p.x + p.width - 28 - x);
+            return new Rectangle(x, p.y + 118, w, Math.max(320, p.height - 206));
         }
 
         Rectangle panelRect(int w, int h) {
