@@ -566,6 +566,7 @@ final class WorldStartFlowAuthority {
             drawCharacterRoster(g, characterRosterRect());
             drawCharacterSheet(g, characterSheetRect(), c);
             drawJobDossier(g, characterDossierRect(), c);
+            drawCharacterRangeBar(g, characterRangeBarRect());
             drawButton(g, buttonRect(0), "Start Run", true);
             drawButton(g, buttonRect(1), "Back", false);
             drawFooter(g, MenuTextAuthority.text("menu.character_generation.footer", "Left/Right cycles candidate or job. J/K cycles jobs. R rerolls. E edits name. G starts run. Esc returns."));
@@ -609,8 +610,9 @@ final class WorldStartFlowAuthority {
             drawCompactLine(g, "Age " + c.ageYears + " years / " + safe(c.ageBand), nameX, metaY + 18, nameW, muted());
 
             int statsY = Math.max(portraitRect.y + portraitRect.height + 16, metaY + 38);
-            Rectangle stats = new Rectangle(r.x + 12, statsY, r.width - 24, Math.max(80, r.y + r.height - statsY - 12));
-            drawSubPanel(g, stats, "Stats / Ranges");
+            int statsH = Math.max(124, Math.min(156, r.y + r.height - statsY - 12));
+            Rectangle stats = new Rectangle(r.x + 12, statsY, r.width - 24, statsH);
+            drawSubPanel(g, stats, "Stats");
             drawStatRanges(g, c, stats);
         }
 
@@ -691,29 +693,55 @@ final class WorldStartFlowAuthority {
 
         void drawStatRanges(Graphics2D g, Candidate c, Rectangle r) {
             if (c == null) return;
-            int count = Math.max(1, c.stats.size());
-            int cols = r.width >= 620 ? 3 : (r.width >= 360 ? 2 : 1);
-            int rows = (int)Math.ceil(count / (double)cols);
-            int colW = Math.max(92, (r.width - 24 - (cols - 1) * 10) / cols);
-            int rowH = Math.max(15, Math.min(19, (r.height - 58) / Math.max(1, rows)));
-            int idx = 0;
-            for (Map.Entry<String, Integer> entry : c.stats.entrySet()) {
-                int col = idx / rows;
-                int row = idx % rows;
-                int x = r.x + 12 + col * (colW + 10);
-                int y = r.y + 34 + row * rowH;
-                String key = entry.getKey();
-                String text = key + " " + entry.getValue() + " (" + Candidate.statRangeText(key) + ") - " + statExplanation(key);
-                drawCompactLine(g, text, x, y, colW, main());
-                idx++;
+            ArrayList<Map.Entry<String, Integer>> entries = new ArrayList<>(c.stats.entrySet());
+            int count = Math.max(1, entries.size());
+            int rows = count <= 6 ? 1 : 2;
+            int cols = Math.max(1, (int)Math.ceil(count / (double)rows));
+            int gap = 6;
+            int x0 = r.x + 12;
+            int y0 = r.y + 34;
+            int availableW = Math.max(1, r.width - 24);
+            int availableH = Math.max(1, r.height - 46);
+            int cellW = Math.max(48, (availableW - Math.max(0, cols - 1) * gap) / cols);
+            int cellH = Math.max(40, (availableH - Math.max(0, rows - 1) * gap) / rows);
+            for (int idx = 0; idx < entries.size(); idx++) {
+                Map.Entry<String, Integer> entry = entries.get(idx);
+                int row = idx / cols;
+                int col = idx % cols;
+                Rectangle cell = new Rectangle(x0 + col * (cellW + gap), y0 + row * (cellH + gap), cellW, cellH);
+                drawStatCell(g, cell, entry.getKey(), entry.getValue());
             }
-            int noteY = r.y + r.height - 14;
-            drawFitted(g, "Body parts start END/AGI 1-2. Job bonuses apply after selection.", r.x + 12, noteY, r.width - 24, muted());
+        }
+
+        void drawStatCell(Graphics2D g, Rectangle r, String key, int value) {
+            g.setColor(new Color(9, 11, 10, 220));
+            g.fillRoundRect(r.x, r.y, r.width, r.height, 7, 7);
+            g.setColor(new Color(145, 118, 64, 120));
+            g.drawRoundRect(r.x, r.y, r.width, r.height, 7, 7);
+            int pad = Math.max(5, Math.min(8, r.width / 12));
+            drawFitted(g, key + " " + value, r.x + pad, r.y + 17, r.width - pad * 2, highlight());
+            drawFitted(g, statExplanation(key), r.x + pad, r.y + 35, r.width - pad * 2, main());
+        }
+
+        void drawCharacterRangeBar(Graphics2D g, Rectangle r) {
+            drawSubPanel(g, r, null);
+            int gap = 12;
+            int colW = Math.max(120, (r.width - 24 - gap) / 2);
+            int leftX = r.x + 12;
+            int rightX = leftX + colW + gap;
+            int baseline = r.y + 24;
+            drawCompactLine(g, "Stat ranges: Strength through Hearing roll " + Candidate.statRangeText("Strength") + " before job changes.", leftX, baseline, colW, muted());
+            drawCompactLine(g, "Body END/AGI start 1-2; job requirements validate now; bonuses apply after selection.", rightX, baseline, Math.max(80, r.x + r.width - rightX - 12), muted());
         }
 
         Rectangle characterBodyRect() {
             Rectangle p = panelRect(getWidth(), getHeight());
-            return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(300, p.height - 206));
+            return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(260, p.height - 250));
+        }
+
+        Rectangle characterRangeBarRect() {
+            Rectangle body = characterBodyRect();
+            return new Rectangle(body.x, body.y + body.height + 10, body.width, 34);
         }
 
         Rectangle characterRosterRect() {
@@ -818,18 +846,18 @@ final class WorldStartFlowAuthority {
 
         String statExplanation(String key) {
             return switch (key == null ? "" : key) {
-                case "Strength" -> "carry, force, heavy labor";
-                case "Agility" -> "movement, dodge, balance";
-                case "Endurance" -> "wounds, fatigue, toxins";
-                case "Intellect" -> "research, logic, systems";
-                case "Mechanics" -> "repair, crafting, machines";
-                case "Firearms" -> "aim, reload, ranged fire";
-                case "Melee" -> "close combat and grapples";
-                case "Nerve" -> "fear, pain, suppression";
-                case "Charm" -> "talking, barter, deception";
-                case "Faith" -> "rites, resolve, authority";
-                case "Vision" -> "sight checks and spotting";
-                case "Hearing" -> "sound checks and tracking";
+                case "Strength" -> "carry / force / labor";
+                case "Agility" -> "move / dodge / balance";
+                case "Endurance" -> "wounds / fatigue / toxins";
+                case "Intellect" -> "research / logic / systems";
+                case "Mechanics" -> "repair / craft / machines";
+                case "Firearms" -> "aim / reload / ranged";
+                case "Melee" -> "close combat / grapples";
+                case "Nerve" -> "fear / pain / suppression";
+                case "Charm" -> "talk / barter / deception";
+                case "Faith" -> "rites / resolve / authority";
+                case "Vision" -> "sight / spotting";
+                case "Hearing" -> "sound / tracking";
                 default -> "general checks";
             };
         }
