@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
 final class SaveLoadSurfacePainter implements ScreenPainter {
@@ -18,7 +19,7 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
 
         g.setFont(panel.titleFont.deriveFont(Font.BOLD, Math.max(24f, Math.min(38f, box.height / 12f))));
         g.setColor(panel.optionColor(GameOptions.TEXT_HIGHLIGHT));
-        panel.center(g, "SAVE / LOAD", box.x + box.width / 2, box.y + 44);
+        panel.center(g, "WORLD MANAGEMENT", box.x + box.width / 2, box.y + 44);
 
         g.setFont(panel.smallFont);
         FontMetrics fm = g.getFontMetrics();
@@ -40,11 +41,62 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
         }
 
         drawButton(g, panel, panel.saveLoadBackRect(), "Back", false);
+        drawDangerButton(g, panel, deleteSelectedSlotRect(panel), "Delete Slot");
         drawButton(g, panel, panel.saveLoadNewGameRect(), "New Game", true);
 
         g.setColor(panel.optionColor(GameOptions.TEXT_DIM));
-        panel.center(g, "Enter loads selected slot. N starts a new game. Esc returns to the main menu.",
+        panel.center(g, "Enter loads selected slot. Delete/D deletes selected slot. N starts a new game. Esc returns.",
                 box.x + box.width / 2, box.y + box.height - 78);
+    }
+
+    static Rectangle deleteSelectedSlotRect(GamePanel panel) {
+        Rectangle p = panel.saveLoadPanelRect();
+        return new Rectangle(p.x + p.width / 2 - 78, p.y + p.height - 58, 156, 34);
+    }
+
+    static boolean handleDeleteClick(GamePanel panel, int mx, int my) {
+        if (panel == null || panel.screen != GamePanel.Screen.SAVE_LOAD) return false;
+        if (!deleteSelectedSlotRect(panel).contains(mx, my)) return false;
+        requestDeleteSelectedSlot(panel, "mouse");
+        panel.repaint();
+        panel.requestFocusInWindow();
+        return true;
+    }
+
+    static boolean handleDeleteKey(GamePanel panel, int code) {
+        if (panel == null || panel.screen != GamePanel.Screen.SAVE_LOAD) return false;
+        if (code != KeyEvent.VK_DELETE && code != KeyEvent.VK_BACK_SPACE && code != KeyEvent.VK_D) return false;
+        requestDeleteSelectedSlot(panel, "key");
+        panel.repaint();
+        panel.requestFocusInWindow();
+        return true;
+    }
+
+    private static void requestDeleteSelectedSlot(GamePanel panel, String reason) {
+        int slot = panel.selectedSaveLoadSlot();
+        java.nio.file.Path path = SaveSlotSurfaceApi.savePathForSlot(slot);
+        String label = SaveSlotSurfaceApi.slotLabel(slot);
+        if (!java.nio.file.Files.isRegularFile(path)) {
+            panel.saveLoadStatus = label + " is already empty.";
+            panel.logEvent(panel.saveLoadStatus);
+            return;
+        }
+        String confirm = "Confirm delete " + label + ": press Delete/D again.";
+        if (!confirm.equals(panel.saveLoadStatus)) {
+            panel.saveLoadStatus = confirm;
+            panel.logEvent(panel.saveLoadStatus);
+            return;
+        }
+        try {
+            java.nio.file.Files.deleteIfExists(path);
+            panel.saveLoadStatus = "Deleted " + label + ".";
+            panel.logEvent(panel.saveLoadStatus);
+            DebugLog.audit("SAVE_LOAD_MENU", "deleted slot=" + slot + " reason=" + (reason == null ? "unspecified" : reason) + " path=" + path);
+        } catch (Throwable t) {
+            panel.saveLoadStatus = "Could not delete " + label + ": " + t.getMessage();
+            panel.logEvent(panel.saveLoadStatus);
+            DebugLog.error("SAVE_LOAD_MENU", panel.saveLoadStatus, t);
+        }
     }
 
     private static void drawButton(Graphics2D g, GamePanel panel, Rectangle r, String label, boolean primary) {
@@ -53,6 +105,19 @@ final class SaveLoadSurfacePainter implements ScreenPainter {
         g.setColor(primary ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : new Color(145, 118, 64, 140));
         g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
         g.setColor(primary ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
+        drawButtonLabel(g, panel, r, label);
+    }
+
+    private static void drawDangerButton(Graphics2D g, GamePanel panel, Rectangle r, String label) {
+        g.setColor(new Color(58, 18, 14, 232));
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+        g.setColor(new Color(192, 74, 58, 180));
+        g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+        g.setColor(new Color(236, 168, 142));
+        drawButtonLabel(g, panel, r, label);
+    }
+
+    private static void drawButtonLabel(Graphics2D g, GamePanel panel, Rectangle r, String label) {
         BufferedImage icon = panel.systemButtonIconForLabel(label);
         FontMetrics fm = g.getFontMetrics();
         int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
