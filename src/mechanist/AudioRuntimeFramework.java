@@ -118,12 +118,7 @@ class SoundManager {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 Clip clip = AudioSystem.getClip();
                 clip.open(ais);
-                if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-                    FloatControl gain = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
-                    int vol = ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume;
-                    float pct = Math.max(0.01f, Math.min(1.0f, vol / 100f));
-                    gain.setValue((float)(20.0 * Math.log10(pct)));
-                }
+                setClipGain(clip, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume);
                 clip.addLineListener(ev -> { if (ev.getType() == LineEvent.Type.STOP) clip.close(); });
                 clip.start();
             } catch (Throwable t) { DebugLog.error("AUDIO_PLAY", "Failed to play " + key + " from " + f, t); }
@@ -145,13 +140,7 @@ class SoundManager {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 clip = AudioSystem.getClip();
                 clip.open(ais);
-                if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-                    FloatControl gain = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
-                    float pct = Math.max(0.01f, Math.min(1.0f, opt.conversationVolume / 100f));
-                    float db = (float)(20.0 * Math.log10(pct));
-                    db = Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), db));
-                    gain.setValue(db);
-                }
+                setClipGain(clip, Math.min(opt.conversationVolume, 55));
                 synchronized (managedVoiceLock) {
                     if (token != introCrawlNarrationToken) { try { clip.close(); } catch(Throwable ignored){} return; }
                     introCrawlNarrationClip = clip;
@@ -164,7 +153,7 @@ class SoundManager {
                     }
                 });
                 clip.start();
-                DebugLog.audit("INTRO_CRAWL_AUDIO", "Started narration file=" + f.getName() + " durationMs=" + (clip.getMicrosecondLength() / 1000L));
+                DebugLog.audit("INTRO_CRAWL_AUDIO", "Started narration file=" + f.getName() + " durationMs=" + (clip.getMicrosecondLength() / 1000L) + " volume=" + Math.min(opt.conversationVolume, 55));
             } catch (Throwable t) {
                 if (clip != null) { try { clip.close(); } catch(Throwable ignored){} }
                 DebugLog.error("INTRO_CRAWL_AUDIO", "Failed to play intro crawl narration from " + f, t);
@@ -206,11 +195,7 @@ class SoundManager {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 Clip clip = AudioSystem.getClip();
                 clip.open(ais);
-                if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
-                    FloatControl gain = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
-                    float pct = Math.max(0.01f, Math.min(1.0f, volumePercent / 100f));
-                    gain.setValue((float)(20.0 * Math.log10(pct)));
-                }
+                setClipGain(clip, volumePercent);
                 clip.addLineListener(ev -> { if (ev.getType() == LineEvent.Type.STOP) clip.close(); });
                 clip.start();
             } catch (Throwable t) { DebugLog.error("AUDIO_PLAY", "Failed to play scaled " + key + " from " + f, t); }
@@ -252,7 +237,7 @@ class SoundManager {
         byte[] data = new byte[samples * 2];
         double freq = generatedCueFrequency(k);
         double pct = Math.max(0.01, Math.min(1.0, volumePercent / 100.0));
-        double gain = 0.28 * pct;
+        double gain = 0.16 * pct;
         for (int i = 0; i < samples; i++) {
             double t = i / (double) sampleRate;
             double attack = Math.min(1.0, i / Math.max(1.0, sampleRate * 0.012));
@@ -266,6 +251,18 @@ class SoundManager {
             data[i * 2 + 1] = (byte)((value >>> 8) & 0xFF);
         }
         return data;
+    }
+
+    void setClipGain(Clip clip, int volumePercent) {
+        try {
+            if (clip != null && clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                FloatControl gain = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
+                float pct = Math.max(0.01f, Math.min(1.0f, volumePercent / 100f));
+                float db = (float)(20.0 * Math.log10(pct));
+                db = Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), db));
+                gain.setValue(db);
+            }
+        } catch (Throwable ignored) {}
     }
 
     double generatedCueFrequency(String key) {
@@ -494,5 +491,3 @@ class DynamicMusicManager {
         } catch(Throwable ignored) {}
     }
 }
-
-
