@@ -71,16 +71,16 @@ final class MainMenuSurfacePainter implements ScreenPainter {
                 g.setColor(selected ? new Color(220, 190, 92, 230) : new Color(112, 95, 54, 190));
                 g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
             }
-            String label = (i + 1) + ". " + labels.get(i);
+            String label = labels.get(i);
             BufferedImage icon = panel.systemButtonIconForLabel(labels.get(i));
-            int iconSize = icon == null ? 0 : Math.max(18, Math.min(r.height - 8, 28));
-            int iconX = r.x + 10;
+            int iconSize = icon == null ? 0 : Math.max(27, Math.min((int)Math.round(r.height * 1.18), 42));
+            int iconX = r.x + 8;
             int textX = r.x + 14;
             int textW = r.width - 28;
             if (icon != null) {
                 int iconY = r.y + (r.height - iconSize) / 2;
                 g.drawImage(icon, iconX, iconY, iconSize, iconSize, null);
-                textX = iconX + iconSize + 9;
+                textX = iconX + iconSize + 11;
                 textW = Math.max(60, r.x + r.width - textX - 12);
             }
             g.setColor(selected ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
