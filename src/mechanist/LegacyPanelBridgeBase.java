@@ -86,14 +86,11 @@ class LegacyPanelBridgeBase extends JPanel {
     void center(Graphics2D g, String text, int x, int y) {
         if (g == null || text == null) return;
         FontMetrics fm = g.getFontMetrics();
-        g.drawString(text, x - fm.stringWidth(text) / 2, y);
+        drawUiTextLine(g, text, x - fm.stringWidth(text) / 2, y);
     }
     Color optionColor(int key) {
-        return switch (key) {
-            case GameOptions.TEXT_HIGHLIGHT -> new Color(225, 208, 140);
-            case GameOptions.TEXT_DIM -> new Color(130, 130, 120);
-            default -> new Color(205, 210, 195);
-        };
+        if (this instanceof GamePanel g) return OptionsBoundaryAuthority.optionColor(g.options, key);
+        return OptionsBoundaryAuthority.optionColor(null, key);
     }
 
     Rectangle uiLayout() { return new Rectangle(0, 0, Math.max(1, getWidth()), Math.max(1, getHeight())); }
@@ -129,8 +126,14 @@ class LegacyPanelBridgeBase extends JPanel {
     Rectangle multiplayerActionRect(Rectangle main) { return new Rectangle(main.x + 24, main.y + main.height - 72, Math.max(1, main.width - 48), 48); }
     void drawPanelBox(Graphics2D g, int x, int y, int w, int h, String title) {
         if (g == null) return;
-        g.drawRect(x, y, Math.max(1, w), Math.max(1, h));
-        if (title != null && !title.isBlank()) g.drawString(title, x + 12, y + 22);
+        g.setColor(new Color(0, 0, 0, 218));
+        g.fillRoundRect(x, y, Math.max(1, w), Math.max(1, h), 10, 10);
+        g.setColor(new Color(130, 105, 55, 150));
+        g.drawRoundRect(x, y, Math.max(1, w), Math.max(1, h), 10, 10);
+        if (title != null && !title.isBlank()) {
+            g.setColor(optionColor(GameOptions.TEXT_TITLE));
+            drawUiTextLine(g, title, x + 12, y + 22);
+        }
     }
     void drawTextPanel(Graphics2D g, int x, int y, int w, int h, java.util.List<String> lines, boolean highlighted) {
         drawPanelBox(g, x, y, w, h, null);
@@ -138,12 +141,13 @@ class LegacyPanelBridgeBase extends JPanel {
         int yy = y + 22;
         for (String line : lines) {
             if (yy > y + h - 8) break;
+            g.setColor(optionColor(highlighted ? GameOptions.TEXT_HIGHLIGHT : GameOptions.TEXT_MAIN));
             drawUiTextLine(g, line, x + 12, yy);
             yy += Math.max(12, g.getFontMetrics().getHeight());
         }
     }
     void drawUiTextLine(Graphics2D g, String line, int x, int y) {
-        if (g != null && line != null) g.drawString(line, x, y);
+        UiTextSurfacePainter.drawUiTextLine(g, line, x, y);
     }
     Rectangle graphicsDropdownOuterRect() { return new Rectangle(Math.max(20, getWidth()/2 - 220), 96, 440, 260); }
 }

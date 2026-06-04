@@ -162,6 +162,7 @@ final class WorldStartFlowAuthority {
             panel.seed = info.seed;
             panel.worldSetup = info.settings == null ? WorldSetupSettings.standard() : info.settings.copy();
             panel.atlas = new WorldAtlas(panel.seed, panel.worldSetup.copy());
+            panel.atlas.generateScaffold();
             panel.world = null;
             openCharacterCreation(panel.seed, panel.worldSetup.copy(), "existing world " + info.hiveName);
         }
@@ -500,7 +501,7 @@ final class WorldStartFlowAuthority {
                 g.drawImage(icon, x, r.y + (r.height - iconSize) / 2, iconSize, iconSize, null);
                 x += iconSize + 8;
             }
-            g.drawString(label, x, r.y + 23);
+            drawBackedText(g, label, x, r.y + 23, false);
         }
 
         void drawFooter(Graphics2D g, String text) {
@@ -514,7 +515,7 @@ final class WorldStartFlowAuthority {
             g.setFont(panel.smallFont);
             g.setColor(color);
             FontMetrics fm = g.getFontMetrics();
-            g.drawString(GuiLayoutApi.fitLabel(text == null ? "" : text, fm, width), x, y);
+            drawBackedText(g, GuiLayoutApi.fitLabel(text == null ? "" : text, fm, width), x, y, false);
         }
 
         void drawLines(Graphics2D g, List<String> lines, int x, int y, int width, Color color) {
@@ -524,7 +525,7 @@ final class WorldStartFlowAuthority {
             int yy = y;
             if (lines == null) return;
             for (String line : lines) {
-                g.drawString(GuiLayoutApi.fitLabel(line == null ? "" : line, fm, width), x, yy);
+                drawBackedText(g, GuiLayoutApi.fitLabel(line == null ? "" : line, fm, width), x, yy, false);
                 yy += Math.max(18, fm.getHeight() + 3);
             }
         }
@@ -543,7 +544,23 @@ final class WorldStartFlowAuthority {
         void center(Graphics2D g, String text, int x, int y) {
             FontMetrics fm = g.getFontMetrics();
             String s = text == null ? "" : text;
-            g.drawString(s, x - fm.stringWidth(s) / 2, y);
+            drawBackedText(g, s, x - fm.stringWidth(s) / 2, y, true);
+        }
+
+        void drawBackedText(Graphics2D g, String text, int x, int y, boolean centered) {
+            if (g == null || text == null || text.isBlank()) return;
+            FontMetrics fm = g.getFontMetrics();
+            int tw = fm.stringWidth(text);
+            int th = fm.getHeight();
+            int bx = centered ? x - 5 : x - 5;
+            int by = y - fm.getAscent() - 3;
+            Color old = g.getColor();
+            g.setColor(new Color(0, 0, 0, 176));
+            g.fillRoundRect(bx, by, tw + 10, th + 5, 7, 7);
+            g.setColor(new Color(128, 105, 58, 120));
+            g.drawRoundRect(bx, by, tw + 10, th + 5, 7, 7);
+            g.setColor(old);
+            g.drawString(text, x, y);
         }
 
         void repaintPanel() {

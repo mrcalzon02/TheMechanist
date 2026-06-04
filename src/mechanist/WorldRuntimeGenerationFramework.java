@@ -402,7 +402,8 @@ class World {
         ArrayList<Point> anchors = roadFirstStreetAnchors();
         if(anchors.isEmpty()) return 0;
         Collections.shuffle(anchors, r);
-        Dimension size = roadFirstRoomSize(spec, salt);
+        FactionRoomLayoutAuthority.LayoutPlan layoutPlan = FactionRoomLayoutAuthority.planFor(spec, salt, r);
+        Dimension size = layoutPlan.size();
         int attempts = 0;
         for(Point street: anchors){
             if(attempts++ > 96) break;
@@ -432,7 +433,10 @@ class World {
                     continue;
                 }
                 stampRoomPurposeFeatures(rr, spec);
-                SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first " + spec.kind + " room " + before + " placed from street frontage.", rr, false);
+                FactionRoomLayoutAuthority.applyInteriorLayout(this, before, rr, spec, layoutPlan);
+                RoomProfile profile = before < roomProfiles.size() ? roomProfiles.get(before) : null;
+                if(profile != null) profile.featureText = FactionRoomLayoutAuthority.decorateFeatureText(profile.featureText, layoutPlan);
+                SectorGenerationTraceAuthority.record(this, "ROOM", "Road-first " + spec.kind + " room " + before + " placed from street frontage. " + layoutPlan.summary(), rr, false);
                 return attempts;
             }
         }
@@ -495,19 +499,7 @@ class World {
     }
 
     Dimension roadFirstRoomSize(StampedRoomSpec spec, int salt){
-        String k = spec.kind == null ? "" : spec.kind;
-        int rw=5, rh=5;
-        if(k.contains("CAFETERIA") || k.contains("WAREHOUSE") || k.contains("FOOD_STORE")){ rw=8; rh=5; }
-        else if(k.contains("BARRACKS") || k.contains("DORMITORY")){ rw=7; rh=5; }
-        else if(k.contains("APARTMENT") || k.contains("DAYCARE")){ rw=5; rh=5; }
-        else if(k.contains("SECURITY") || k.contains("TRAINING")){ rw=7; rh=4; }
-        else if(k.contains("LIBRARY") || k.contains("LEARNING")){ rw=6; rh=5; }
-        else if(k.contains("CLINIC") || k.contains("SANITATION")){ rw=5; rh=4; }
-        else if(k.contains("MACHINERY") || k.contains("WORKSHOP") || k.contains("LOGISTICS")){ rw=7; rh=5; }
-        if((salt & 1) == 1){ int t=rw; rw=rh; rh=t; }
-        rw = Math.max(4, Math.min(10, rw + r.nextInt(2)));
-        rh = Math.max(4, Math.min(8, rh + r.nextInt(2)));
-        return new Dimension(rw, rh);
+        return FactionRoomLayoutAuthority.planFor(spec, salt, r).size();
     }
 
     Rectangle roadFirstRoomRectFromStreet(Point street, int[] dir, int rw, int rh){

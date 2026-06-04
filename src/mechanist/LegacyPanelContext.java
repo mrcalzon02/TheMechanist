@@ -120,6 +120,16 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean combatCursorActive;
     boolean[][] visibleTiles = new boolean[1][1];
     boolean[][] rememberedTiles = new boolean[1][1];
+    int[][] lightLevels = new int[1][1];
+    World sensoryWorldRef;
+    int sensoryTurn = Integer.MIN_VALUE;
+    int sensoryPlayerX = Integer.MIN_VALUE;
+    int sensoryPlayerY = Integer.MIN_VALUE;
+    int sensoryLightRevision = Integer.MIN_VALUE;
+    int sensoryNoiseRevision = Integer.MIN_VALUE;
+    int sensoryVisionRevision = Integer.MIN_VALUE;
+    int sensoryPortableSignature = Integer.MIN_VALUE;
+    String lastSensoryModelReport = "No visual sensory model has been rebuilt.";
     final ArrayList<PortableLightInstance> portableLights = new ArrayList<>();
     final ArrayList<FactionContract> factionContracts = new ArrayList<>();
     final ArrayList<NpcFactionSite> npcFactionSites = new ArrayList<>();
@@ -175,6 +185,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     int claimedRoomId = -1;
     int selectedButton;
     int infopediaTab;
+    int infopediaSelectionIndex;
+    int infopediaListScroll;
+    int infopediaDetailScroll;
     int controlsTab;
     int lookStackIndex;
     int lookStackScroll;
@@ -234,12 +247,16 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean newGameSetupActive;
     boolean auditTracePlaying;
     Screen screen = Screen.BOOT;
+    Screen optionsReturnScreen = Screen.MENU;
     PanelMode panelMode = PanelMode.NONE;
+    PanelMode optionsReturnPanelMode = PanelMode.NONE;
     BuildRecipe pendingBuildRecipe;
+    CraftingRecipe selectedCraftingRecipe;
     SectorAuditRuntimeAuthority.AuditSnapshot auditSnapshot;
     String selectedKnowledgeNodeId;
     String lastAccessibleNarration = "";
     String activeScrollTag = "";
+    String infopediaAssetFilter = "";
     String rebindingTarget = "";
     String saveLoadStatus = "Select a save slot.";
     String jvmRuntimeNotice = "";
@@ -331,7 +348,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     java.util.List<String> mainMenuRouteLabels() {
-        return java.util.List.of("New Game", "Continue", "Load Game", "Options", "Knowledge", "Multiplayer", "Tools", "Quit");
+        return java.util.List.of("New Game", "Continue", "Load Game", "Options", "InfoPedia", "Multiplayer", "Tools", "Quit");
     }
 
     Rectangle mainMenuRouteRect(int index) {
@@ -365,8 +382,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             case "New Game" -> openNewGameSetup();
             case "Continue" -> continueLatestSaveOrOpenPanel();
             case "Load Game" -> openSaveLoadPanel("Load Game selected.");
-            case "Options" -> setScreen(Screen.OPTIONS);
-            case "Knowledge" -> openKnowledgeMenu();
+            case "Options" -> openOptionsScreen("main menu route");
+            case "InfoPedia" -> openInfopediaPanel("main menu route");
             case "Multiplayer" -> openMultiplayerPanel();
             case "Tools" -> openToolsMenu();
             case "Quit" -> requestApplicationExit("main menu quit route");
@@ -380,7 +397,38 @@ class GamePanel extends LegacyPanelBridgeBase {
         logEvent("Tools menu opened.");
     }
 
+    void openOptionsScreen(String reason) {
+        if (screen != Screen.OPTIONS) {
+            optionsReturnScreen = (screen == null || screen == Screen.BOOT || screen == Screen.MAIN) ? Screen.MENU : screen;
+            optionsReturnPanelMode = panelMode == null ? PanelMode.NONE : panelMode;
+            if (WorldStartFlowAuthority.isActive(this)) {
+                optionsReturnScreen = Screen.MENU;
+                optionsReturnPanelMode = PanelMode.NONE;
+            }
+        }
+        graphicsDropdown = -1;
+        setScreen(Screen.OPTIONS);
+        DebugLog.audit("CLIENT_MENU_ROUTE", "options opened reason=" + (reason == null ? "unspecified" : reason) + " return=" + optionsReturnScreen + "/" + optionsReturnPanelMode);
+    }
+
+    void closeOptionsScreen() {
+        graphicsDropdown = -1;
+        Screen target = optionsReturnScreen == null ? Screen.MENU : optionsReturnScreen;
+        PanelMode targetPanel = optionsReturnPanelMode == null ? PanelMode.NONE : optionsReturnPanelMode;
+        if (world == null && target != Screen.MENU && target != Screen.MAIN && target != Screen.SAVE_LOAD && target != Screen.MODS) {
+            target = Screen.MENU;
+            targetPanel = PanelMode.NONE;
+        }
+        setScreen(target);
+        if (target == Screen.PANEL) panelMode = targetPanel;
+        repaint();
+        DebugLog.audit("CLIENT_MENU_ROUTE", "options closed return=" + target + "/" + panelMode);
+    }
+
     void openNewGameSetup() {
+        WorldStartFlowAuthority.install(this);
+        WorldStartFlowAuthority.openWorldPicker(this, "new game route");
+        if (WorldStartFlowAuthority.isActive(this)) return;
         seed = System.currentTimeMillis();
         rng = new Random(seed ^ 0x4E475345545550L);
         worldSetup = WorldSetupSettings.standard();
@@ -392,8 +440,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         panelMode = PanelMode.NONE;
         selectedButton = 0;
         setScreen(Screen.CHARACTER);
-        logEvent("New game setup opened: choose a character and world profile.");
-        DebugLog.audit("CLIENT_MENU_ROUTE", "newGameSetup opened candidates=" + candidates.size() + " setup=" + worldSetup.shortSummary());
+        logEvent("Legacy new game setup opened: choose a character and world profile.");
+        DebugLog.audit("CLIENT_MENU_ROUTE", "legacyNewGameSetup opened candidates=" + candidates.size() + " setup=" + worldSetup.shortSummary());
     }
 
     void prepareNewGameRoster(long rosterSeed) {
@@ -486,15 +534,22 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     void startPackagedClientNewGameWith(Candidate chosen, WorldSetupSettings setup) {
-        long newSeed = seed == 0L || !newGameSetupActive ? System.currentTimeMillis() : seed;
+        long newSeed = seed == 0L || (!newGameSetupActive && atlas == null) ? System.currentTimeMillis() : seed;
         seed = newSeed;
         rng = new Random(seed);
         worldSetup = setup == null ? WorldSetupSettings.standard() : setup.copy();
-        atlas = new WorldAtlas(seed, worldSetup);
-        atlas.generateScaffold();
+        WorldAtlas preparedAtlas = atlas;
+        boolean reusedPreparedWorld = preparedAtlasMatches(preparedAtlas, seed, worldSetup);
+        if (!reusedPreparedWorld) {
+            preparedAtlas = new WorldAtlas(seed, worldSetup);
+            preparedAtlas.generateScaffold();
+        }
+        atlas = preparedAtlas;
         world = atlas.currentWorld();
         visibleTiles = new boolean[world.w][world.h];
         rememberedTiles = new boolean[world.w][world.h];
+        lightLevels = new int[world.w][world.h];
+        sensoryWorldRef = null;
         Point start = world.startPoint();
         playerX = Math.max(0, Math.min(world.w - 1, start.x));
         playerY = Math.max(0, Math.min(world.h - 1, start.y));
@@ -559,7 +614,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         screen = Screen.GAME;
         panelMode = PanelMode.NONE;
         logEvent("New game started: " + world.zoneCoordText() + " seed=" + seed + " / " + worldSetup.shortSummary() + ".");
-        DebugLog.audit("CLIENT_MENU_ROUTE", "newGame seed=" + seed + " setup=" + worldSetup.shortSummary() + " character=" + active.name + "/" + active.job + " world=" + world.zoneCoordText() + " player=" + playerX + "," + playerY);
+        DebugLog.audit("CLIENT_MENU_ROUTE", "newGame seed=" + seed + " setup=" + worldSetup.shortSummary() + " reusedPreparedWorld=" + reusedPreparedWorld + " character=" + active.name + "/" + active.job + " world=" + world.zoneCoordText() + " player=" + playerX + "," + playerY);
+    }
+
+    boolean preparedAtlasMatches(WorldAtlas preparedAtlas, long requestedSeed, WorldSetupSettings requestedSetup) {
+        if (preparedAtlas == null || preparedAtlas.hiveWorld == null) return false;
+        if (preparedAtlas.seed != requestedSeed) return false;
+        WorldSetupSettings safeSetup = requestedSetup == null ? WorldSetupSettings.standard() : requestedSetup;
+        return preparedAtlas.hiveWorld.settings().encode().equals(safeSetup.encode());
     }
 
     void openMultiplayerPanel() {
@@ -752,6 +814,10 @@ class GamePanel extends LegacyPanelBridgeBase {
                 }
                 if (screen == Screen.MULTIPLAYER) {
                     multiplayerMenu.keyTyped(e.getKeyChar());
+                    repaint();
+                    return;
+                }
+                if (handleInfopediaTyped(e.getKeyChar())) {
                     repaint();
                 }
             }
@@ -1080,11 +1146,15 @@ class GamePanel extends LegacyPanelBridgeBase {
     private void paintGameBridgeSurface(java.awt.Graphics2D g, int w, int h) {
         g.setColor(new java.awt.Color(10, 11, 10));
         g.fillRect(0, 0, w, h);
-        if (screen == Screen.CHARACTER && newGameSetupActive) {
-            drawNewGameSetupSurface(g, w, h);
+        if (WorldStartFlowAuthority.isActive(this)) {
+            new MainMenuSurfacePainter().paint(g, this);
             return;
         }
         if (world == null) {
+            if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA) {
+                drawActivePanelOverlay(g, w, h);
+                return;
+            }
             g.setFont(titleFont.deriveFont(java.awt.Font.BOLD, Math.max(26f, Math.min(46f, h / 12f))));
             g.setColor(new java.awt.Color(225, 205, 140));
             center(g, "NO WORLD LOADED", w / 2, Math.max(86, h / 4));
@@ -1105,7 +1175,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         lastWorldViewOriginX = map.x + Math.max(0, (map.width - cols * tile) / 2);
         lastWorldViewOriginY = map.y + Math.max(0, (map.height - rows * tile) / 2);
 
+        ensureSensoryModelCurrent("world render");
         drawWorldTiles(g, cols, rows, tile);
+        visualLighting.render(this, g, lastWorldViewMinX, lastWorldViewMinY, cols, rows, lastWorldViewOriginX, lastWorldViewOriginY, tile, tile);
         drawWorldEntities(g, cols, rows, tile);
         drawWorldHud(g, w, h, map);
         if ((screen != Screen.GAME || panelMode != PanelMode.NONE) && !isWorldInlineInteractionPanel()) drawActivePanelOverlay(g, w, h);
@@ -1158,6 +1230,10 @@ class GamePanel extends LegacyPanelBridgeBase {
                 int sx = lastWorldViewOriginX + vx * tile;
                 int sy = lastWorldViewOriginY + vy * tile;
                 if (!world.inBounds(wx, wy)) continue;
+                if (!isRemembered(wx, wy)) {
+                    drawUnseenWorldTile(g, sx, sy, tile);
+                    continue;
+                }
                 char ch = world.tiles[wx][wy];
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, wx, wy, ch);
                 g.setColor(tileColor(ch, wx, wy));
@@ -1168,9 +1244,31 @@ class GamePanel extends LegacyPanelBridgeBase {
                     String s = Character.toString(ch);
                     g.drawString(s, sx + (tile - fm.stringWidth(s)) / 2, sy + (tile + fm.getAscent() - fm.getDescent()) / 2);
                 }
+                drawWorldLightMask(g, wx, wy, sx, sy, tile);
                 g.setColor(new java.awt.Color(0, 0, 0, 70));
                 g.drawRect(sx, sy, tile, tile);
             }
+        }
+    }
+
+    private void drawUnseenWorldTile(java.awt.Graphics2D g, int sx, int sy, int tile) {
+        g.setColor(new java.awt.Color(2, 3, 3));
+        g.fillRect(sx, sy, tile, tile);
+        g.setColor(new java.awt.Color(12, 14, 13, 120));
+        g.drawRect(sx, sy, tile, tile);
+    }
+
+    private void drawWorldLightMask(java.awt.Graphics2D g, int wx, int wy, int sx, int sy, int tile) {
+        if (!isVisible(wx, wy)) {
+            g.setColor(new java.awt.Color(0, 0, 0, 176));
+            g.fillRect(sx, sy, tile, tile);
+            return;
+        }
+        int light = lightLevelAt(wx, wy);
+        int alpha = Math.max(0, Math.min(188, 180 - light * 2));
+        if (alpha > 0) {
+            g.setColor(new java.awt.Color(0, 0, 0, alpha));
+            g.fillRect(sx, sy, tile, tile);
         }
     }
 
@@ -1213,18 +1311,21 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (world.mapObjects != null) {
             for (MapObjectState object : world.mapObjects) {
                 if (object == null || !worldPointInView(object.x, object.y, cols, rows)) continue;
+                if (!isVisible(object.x, object.y)) continue;
                 drawWorldSprite(g, images.getMapObjectImage(object), object.x, object.y, tile, new java.awt.Color(230, 190, 88), Character.toString(object.glyph));
             }
         }
         if (baseObjects != null) {
             for (BaseObject object : baseObjects) {
                 if (object == null || !worldPointInView(object.x, object.y, cols, rows)) continue;
+                if (!isVisible(object.x, object.y)) continue;
                 drawWorldSprite(g, images.getBaseObjectImage(object), object.x, object.y, tile, new java.awt.Color(104, 220, 145), Character.toString(object.symbol));
             }
         }
         if (world.npcs != null) {
             for (NpcEntity npc : world.npcs) {
                 if (npc == null || !worldPointInView(npc.x, npc.y, cols, rows)) continue;
+                if (!isVisible(npc.x, npc.y)) continue;
                 java.awt.Color outline = npc.faction == Faction.NONE ? new java.awt.Color(185, 170, 120) : new java.awt.Color(215, 126, 84);
                 drawWorldSprite(g, images.getNpcPortraitFor(npc), npc.x, npc.y, tile, outline, Character.toString(npc.symbol == 0 ? '@' : npc.symbol));
             }
@@ -1294,11 +1395,11 @@ class GamePanel extends LegacyPanelBridgeBase {
     private void drawWorldHud(java.awt.Graphics2D g, int w, int h, Rectangle map) {
         g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 16f));
         g.setColor(new java.awt.Color(225, 205, 140));
-        g.drawString("THE MECHANIST", 18, 30);
+        drawUiTextLine(g, "THE MECHANIST", 18, 30);
         g.setFont(smallFont);
         g.setColor(new java.awt.Color(205, 210, 195));
         String zone = world.zoneType.label + " | " + world.zoneCoordText() + " | " + timeText();
-        g.drawString(GuiLayoutApi.fitLabel(zone, g.getFontMetrics(), Math.max(180, w - 36)), 18, 50);
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(zone, g.getFontMetrics(), Math.max(180, w - 36)), 18, 50);
 
         Rectangle command = worldCommandBarRect(w, h);
         drawBox(g, command, "Commands");
@@ -1309,7 +1410,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             g.setColor(new java.awt.Color(205, 210, 195));
             int y = command.y + 38;
             for (String line : java.util.List.of("Esc returns to the world.", "Use the panel controls below.", "Movement: WASD or arrows.")) {
-                g.drawString(GuiLayoutApi.fitLabel(line, g.getFontMetrics(), command.width - 22), command.x + 11, y);
+                drawUiTextLine(g, GuiLayoutApi.fitLabel(line, g.getFontMetrics(), command.width - 22), command.x + 11, y);
                 y += 18;
             }
         }
@@ -1356,7 +1457,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         for (String line : lines) {
             for (String wrapped : GuiLayoutApi.wrapText(line, g.getFontMetrics(), textW)) {
                 if (y > r.y + r.height - 14) break;
-                g.drawString(wrapped, r.x + 12, y);
+                drawUiTextLine(g, wrapped, r.x + 12, y);
                 y += 18;
             }
             if (y > r.y + r.height - 14) break;
@@ -1377,14 +1478,17 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void addWorldCommandButtons(Rectangle command) {
-        String[] labels = { "Look", "Use", "Inv", "Char", "Map", "Build", "Info", "Fight", "Bomb", "Load", "Wait", "Move", "Plan", "Pause" };
+        String[] labels = { "Look", "Use", "Inv", "Char", "Map", "Auspex", "Build", "Craft", "Scav", "Info", "Fight", "Bomb", "Load", "Wait", "Move", "Plan", "Pause" };
         String[] tips = {
                 "Open the look and inspect panel.",
                 "Open adjacent interact targeting.",
                 "Open carried inventory and base storage.",
                 "Open the character panel.",
                 "Open the world map panel.",
+                "Open sensory and local signal readouts.",
                 "Open construction recipes.",
+                "Open crafting and workbench recipes.",
+                "Open the nearby scavenge/search panel.",
                 "Open the event log and command catalog.",
                 "Open combat targeting.",
                 "Open explosive targeting.",
@@ -1400,7 +1504,10 @@ class GamePanel extends LegacyPanelBridgeBase {
                 () -> openPanel(PanelMode.INVENTORY),
                 () -> openPanel(PanelMode.CHARACTER),
                 () -> openPanel(PanelMode.MAP),
+                this::openAuspexPanel,
                 () -> openPanel(PanelMode.BUILD),
+                this::openCraftingPanel,
+                this::openScavengePanel,
                 this::toggleTacticalSlate,
                 this::beginCombatTargeting,
                 this::beginExplosiveTargeting,
@@ -1413,10 +1520,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         int count = labels.length;
         int cols = command.width >= 148 ? 2 : 1;
         int rows = Math.max(1, (count + cols - 1) / cols);
-        int gap = 8;
+        int gap = rows > 7 ? 6 : 8;
         int availableW = Math.max(42, command.width - 22 - (cols - 1) * gap);
         int availableH = Math.max(42, command.height - 46 - (rows - 1) * gap);
-        int size = Math.max(38, Math.min(64, Math.min(availableW / cols, availableH / rows)));
+        int size = Math.max(30, Math.min(64, Math.min(availableW / cols, availableH / rows)));
         int startX = command.x + (command.width - (cols * size + (cols - 1) * gap)) / 2;
         int startY = command.y + 34;
         for (int i = 0; i < count; i++) {
@@ -1463,10 +1570,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (key.contains("payload root") || key.contains("clear payload")) return key.contains("clear") ? systemCell(4, 2, 3) : systemCell(4, 4, 1);
         if (key.contains("heap")) return key.contains("+") ? systemCell(4, 2, 5) : systemCell(4, 3, 1);
         if (key.contains("restart")) return systemCell(4, 2, 1);
-        if (key.equals("knowledge") || key.equals("knowledges") || key.equals("info")) return systemCell(3, 1, 4);
+        if (key.equals("infopedia") || key.equals("info pedia") || key.equals("info")) return systemCell(3, 2, 2);
+        if (key.equals("knowledge") || key.equals("knowledges")) return systemCell(3, 1, 4);
         if (key.equals("multiplayer")) return systemCell(4, 5, 2);
         if (key.equals("tools") || key.equals("editor")) return systemCell(4, 5, 4);
-        if (key.equals("sector audit") || key.equals("scan")) return systemCell(3, 2, 1);
+        if (key.equals("sector audit") || key.equals("scan") || key.equals("auspex")) return systemCell(3, 2, 1);
         if (key.equals("back") || key.equals("exit")) return systemCell(3, 3, 1);
         if (key.equals("close")) return systemCell(2, 2, 4);
         if (key.equals("confirm") || key.equals("apply") || key.equals("accept")) return systemCell(4, 2, 4);
@@ -1486,6 +1594,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (key.equals("inv") || key.equals("inventory")) return systemCell(3, 1, 2);
         if (key.equals("char") || key.equals("character") || key.contains("edit name")) return systemCell(3, 1, 3);
         if (key.equals("build")) return systemCell(2, 1, 1);
+        if (key.equals("craft") || key.equals("crafting") || key.equals("workbench")) return systemCell(2, 1, 2);
+        if (key.equals("scav") || key.equals("scavenge") || key.equals("search")) return systemCell(2, 4, 2);
         if (key.equals("fight") || key.equals("attack")) return systemCell(3, 1, 1);
         if (key.equals("bomb") || key.equals("hunt")) return systemCell(4, 4, 3);
         if (key.equals("wait") || key.equals("sleep")) return systemCell(2, 4, 3);
@@ -1585,17 +1695,17 @@ class GamePanel extends LegacyPanelBridgeBase {
         characterNameEditRect = new Rectangle(tx, y + 22, Math.max(140, r.x + r.width - tx - 14), 30);
         g.setFont(smallFont);
         g.setColor(new java.awt.Color(177, 180, 162));
-        g.drawString("Name", tx, y + 16);
+        drawUiTextLine(g, "Name", tx, y + 16);
         g.setColor(characterNameEditActive ? new java.awt.Color(54, 47, 31, 235) : new java.awt.Color(16, 18, 17, 230));
         g.fillRect(characterNameEditRect.x, characterNameEditRect.y, characterNameEditRect.width, characterNameEditRect.height);
         g.setColor(characterNameEditActive ? new java.awt.Color(245, 220, 140) : new java.awt.Color(145, 118, 64, 160));
         g.drawRect(characterNameEditRect.x, characterNameEditRect.y, characterNameEditRect.width, characterNameEditRect.height);
         g.setColor(new java.awt.Color(225, 205, 140));
         String name = c == null ? "" : c.name;
-        g.drawString(GuiLayoutApi.fitLabel(name + (characterNameEditActive ? "|" : ""), g.getFontMetrics(), characterNameEditRect.width - 12), characterNameEditRect.x + 8, characterNameEditRect.y + 20);
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(name + (characterNameEditActive ? "|" : ""), g.getFontMetrics(), characterNameEditRect.width - 12), characterNameEditRect.x + 8, characterNameEditRect.y + 20);
         g.setColor(new java.awt.Color(205, 210, 195));
-        g.drawString("Job: " + (c == null ? "" : c.job), tx, y + 82);
-        g.drawString(c == null ? "" : c.ageYears + " years / " + c.ageBand, tx, y + 104);
+        drawUiTextLine(g, "Job: " + (c == null ? "" : c.job), tx, y + 82);
+        drawUiTextLine(g, c == null ? "" : c.ageYears + " years / " + c.ageBand, tx, y + 104);
 
         int buttonY = y + portraitSize + 14;
         addOverlayButton("Job <", x, buttonY, 74, 28, "Previous job.", () -> cycleSelectedCandidateJob(-1));
@@ -1613,7 +1723,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 int cx = stats.x + 12 + (idx / 7) * colW;
                 int cy = sy + (idx % 7) * 18;
                 g.setColor(new java.awt.Color(205, 210, 195));
-                g.drawString(e.getKey() + " " + e.getValue(), cx, cy);
+                drawUiTextLine(g, e.getKey() + " " + e.getValue(), cx, cy);
                 idx++;
             }
             int by = sy + 138;
@@ -1621,7 +1731,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             int shown = 0;
             for (BodyPart part : c.body.values()) {
                 if (shown >= 5 || by > stats.y + stats.height - 12) break;
-                g.drawString(part.name + " END " + part.endurance + " / AGI " + part.agility, stats.x + 12, by);
+                drawUiTextLine(g, part.name + " END " + part.endurance + " / AGI " + part.agility, stats.x + 12, by);
                 by += 18;
                 shown++;
             }
@@ -1638,7 +1748,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             if (y > r.y + r.height - 236) break;
             for (String wrapped : GuiLayoutApi.wrapText(line, g.getFontMetrics(), r.width - 24)) {
                 if (y > r.y + r.height - 236) break;
-                g.drawString(wrapped, r.x + 12, y);
+                drawUiTextLine(g, wrapped, r.x + 12, y);
                 y += 17;
             }
         }
@@ -1676,8 +1786,16 @@ class GamePanel extends LegacyPanelBridgeBase {
             drawMapOverlay(g, body);
         } else if (panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT) {
             drawTargetOverlay(g, body);
-        } else if (panelMode == PanelMode.BUILD || panelMode == PanelMode.WORKBENCH || panelMode == PanelMode.CRAFTING) {
+        } else if (panelMode == PanelMode.BUILD) {
             drawBuildOverlay(g, body);
+        } else if (panelMode == PanelMode.WORKBENCH || panelMode == PanelMode.CRAFTING) {
+            drawCraftingOverlay(g, body);
+        } else if (panelMode == PanelMode.AUSPEX) {
+            drawAuspexOverlay(g, body);
+        } else if (panelMode == PanelMode.SCAVENGE) {
+            drawScavengeOverlay(g, body);
+        } else if (panelMode == PanelMode.INFOPEDIA) {
+            drawInfopediaOverlay(g, body);
         } else if (screen == Screen.PAUSE || panelMode == PanelMode.INFO || screen == Screen.INFO || panelMode == PanelMode.CONSOLE) {
             drawInfoPauseOverlay(g, body);
         } else {
@@ -1704,7 +1822,10 @@ class GamePanel extends LegacyPanelBridgeBase {
             case COMBAT -> "COMBAT TARGETING";
             case BUILD -> "BUILD / CONSTRUCTION";
             case WORKBENCH, CRAFTING -> "WORKBENCH / CRAFTING";
+            case AUSPEX -> "AUSPEX / LOCAL SIGNALS";
+            case SCAVENGE -> "SCAVENGE / SEARCH";
             case MAP -> "WORLD MAP";
+            case INFOPEDIA -> "INFOPEDIA / SEMANTIC ASSET INDEX";
             case INFO -> "INFO / EVENT LOG";
             case CONSOLE -> "CONSOLE";
             default -> panelMode.name();
@@ -1720,10 +1841,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         g.fillRect(panel.x + 2, panel.y + 2, panel.width - 4, 44);
         g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 18f));
         g.setColor(new java.awt.Color(225, 205, 140));
-        g.drawString(title == null ? "PANEL" : title, panel.x + 18, panel.y + 29);
+        drawUiTextLine(g, title == null ? "PANEL" : title, panel.x + 18, panel.y + 29);
         g.setFont(smallFont);
         g.setColor(new java.awt.Color(177, 180, 162));
-        g.drawString("Esc closes / Tab changes command / Enter activates", panel.x + Math.max(220, panel.width - 360), panel.y + 29);
+        drawUiTextLine(g, "Esc closes / Tab changes command / Enter activates", panel.x + Math.max(220, panel.width - 360), panel.y + 29);
     }
 
     private void drawInventoryOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -1845,9 +1966,113 @@ class GamePanel extends LegacyPanelBridgeBase {
         lines.add("Pending: " + (pendingBuildRecipe == null ? "none" : pendingBuildRecipe.name));
         lines.add("Placement cursor " + buildX + "," + buildY + " / active " + buildPlacementActive);
         lines.add("Recipes shown " + shown + "/" + recipes.size() + ".");
-        lines.add("Workbench/crafting shares this panel until the dedicated production surface is reattached.");
         if (pendingBuildRecipe != null) lines.add(pendingBuildRecipe.shortTip());
         drawDetailBox(g, detail, "Construction", lines, pendingBuildRecipe == null ? null : images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(pendingBuildRecipe)));
+    }
+
+    private void drawCraftingOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Rectangle recipeList = new Rectangle(body.x, body.y, Math.max(280, body.width / 2), body.height);
+        drawBox(g, recipeList, "Craft Recipes");
+        ArrayList<CraftingRecipe> all = CraftingRecipe.all();
+        ArrayList<CraftingRecipe> visible = new ArrayList<>();
+        for (CraftingRecipe recipe : all) if (recipe.visibleTo(this)) visible.add(recipe);
+        if (visible.isEmpty()) visible.add(CraftingRecipe.noKnownRecipes());
+        selectedCraftingRecipe = visibleCraftingRecipeMatching(visible, selectedCraftingRecipe);
+        int shown = Math.min(10, visible.size());
+        int y = recipeList.y + 34;
+        for (int i = 0; i < shown; i++) {
+            CraftingRecipe recipe = visible.get(i);
+            int rowY = y + i * 30;
+            BufferedImage icon = images.getItemIcon(recipe.outputBaseItem);
+            ButtonBox b = new ButtonBox(recipe.name, recipeList.x + 10, rowY - 20, recipeList.width - 20, 26,
+                    recipe.shortStatus(this), () -> {
+                        selectedCraftingRecipe = recipe;
+                        panelMode = PanelMode.CRAFTING;
+                        logEvent("Selected craft recipe: " + recipe.name + ".");
+                    }, icon);
+            buttons.add(b);
+        }
+
+        Rectangle detail = new Rectangle(recipeList.x + recipeList.width + 14, body.y, Math.max(240, body.x + body.width - recipeList.x - recipeList.width - 14), body.height);
+        CraftingRecipe recipe = selectedCraftingRecipe;
+        ArrayList<String> lines = new ArrayList<>();
+        if (recipe == null) {
+            lines.add("No crafting recipe selected.");
+        } else {
+            BaseObject machine = recipe.requiredMachine(this);
+            lines.add(recipe.shortStatus(this));
+            lines.add("Machine: " + (machine == null ? recipe.machineName() + " unavailable" : machine.name + " / " + machine.qualityName));
+            lines.add("Supplies " + supplies + " / machine parts " + machineParts + " / fatigue " + fatigue + ".");
+            lines.addAll(recipe.detailLines());
+        }
+        drawDetailBox(g, detail, "Crafting", lines, recipe == null ? null : images.getItemIcon(recipe.outputBaseItem));
+        int by = detail.y + detail.height - 36;
+        addOverlayButton("Craft", detail.x + 12, by, 92, 28, "Craft the selected recipe if inputs and machine are valid.", this::craftSelectedRecipe);
+        addOverlayButton("Build", detail.x + 112, by, 86, 28, "Open construction recipes.", () -> openPanel(PanelMode.BUILD));
+        addOverlayButton("InfoPedia", detail.x + 206, by, 112, 28, "Open the global asset encyclopedia.", () -> openInfopediaPanel("crafting panel"));
+    }
+
+    private void drawAuspexOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Rectangle left = new Rectangle(body.x, body.y, Math.max(280, body.width / 2), body.height);
+        ArrayList<String> scan = new ArrayList<>();
+        scan.add(stateSummary());
+        scan.add("World: " + (world == null ? "none" : world.zoneType.label + " / " + world.zoneCoordText()));
+        scan.add(world == null ? "No compiled tile descriptors available." : world.compiledTileDescriptorSummary);
+        scan.add(lastSensoryModelReport);
+        scan.add(world == null ? "No sensory model available." : world.lightNoiseSummary);
+        scan.add(world == null ? "No hearing field available." : world.hearingFieldSummary);
+        scan.add(world == null ? "No hazard overlay available." : world.hazardVisibilitySummary);
+        scan.add(world == null ? "No trap interaction metadata available." : world.trapInteractionSummary);
+        drawDetailBox(g, left, "Local Readout", scan, null);
+
+        Rectangle right = new Rectangle(left.x + left.width + 14, body.y, Math.max(240, body.x + body.width - left.x - left.width - 14), body.height);
+        ArrayList<String> signals = new ArrayList<>();
+        signals.add("NPCs in slice: " + (world == null || world.npcs == null ? 0 : world.npcs.size()));
+        signals.add("Map objects in slice: " + (world == null || world.mapObjects == null ? 0 : world.mapObjects.size()));
+        signals.add("Light sources: " + (world == null || world.lightSources == null ? 0 : world.lightSources.size()));
+        signals.add("Noise sources: " + (world == null || world.noiseSources == null ? 0 : world.noiseSources.size()));
+        signals.add("Hazard warnings: " + (world == null || world.hazardWarnings == null ? 0 : world.hazardWarnings.size()));
+        signals.add("Current target: " + lastTargetingReport);
+        for (MapObjectState target : nearbyScavengeTargets(5)) {
+            signals.add("Nearby searchable: " + WasteNewsprintScavengeAuthority.shortLabel(target) + " at " + target.x + "," + target.y);
+            if (signals.size() >= 11) break;
+        }
+        drawDetailBox(g, right, "Signals", signals, null);
+        int by = right.y + right.height - 36;
+        addOverlayButton("Refresh", right.x + 12, by, 92, 28, "Refresh sensory metadata.", () -> { updateSensoryModel("auspex panel"); logEvent("Auspex sensory model refresh requested."); repaint(); });
+        addOverlayButton("Map", right.x + 110, by, 72, 28, "Open world map.", () -> openPanel(PanelMode.MAP));
+        addOverlayButton("Scav", right.x + 190, by, 80, 28, "Open nearby scavenge search.", this::openScavengePanel);
+    }
+
+    private void drawScavengeOverlay(java.awt.Graphics2D g, Rectangle body) {
+        Rectangle left = new Rectangle(body.x, body.y, Math.max(280, body.width / 2), body.height);
+        ArrayList<MapObjectState> targets = nearbyScavengeTargets(6);
+        ArrayList<String> rows = new ArrayList<>();
+        if (targets.isEmpty()) {
+            rows.add("No searchable public refuse/newsprint fixtures within local range.");
+            rows.add("Use Look or Interact to inspect adjacent fixtures directly.");
+        } else {
+            for (MapObjectState target : targets) {
+                int d = Math.abs(target.x - playerX) + Math.abs(target.y - playerY);
+                rows.add(WasteNewsprintScavengeAuthority.shortLabel(target) + " | " + target.x + "," + target.y + " | d" + d + " | chance " + WasteNewsprintScavengeAuthority.searchChance(this, target) + "%");
+                if (rows.size() >= 12) break;
+            }
+        }
+        drawDetailBox(g, left, "Nearby Searchables", rows, targets.isEmpty() ? null : images.getMapObjectImage(targets.get(0)));
+
+        Rectangle right = new Rectangle(left.x + left.width + 14, body.y, Math.max(240, body.x + body.width - left.x - left.width - 14), body.height);
+        MapObjectState nearest = nearestScavengeTarget(1);
+        ArrayList<String> detail = new ArrayList<>();
+        detail.add("Inventory load " + inventoryWeight() + "/" + carryCapacity() + ".");
+        detail.add("Adjacent target: " + (nearest == null ? "none" : WasteNewsprintScavengeAuthority.shortLabel(nearest) + " at " + nearest.x + "," + nearest.y));
+        detail.add("Search action reuses the live frontage fixture scavenge system.");
+        detail.add("Cooldown and provenance are preserved by the underlying interaction authority.");
+        if (!targets.isEmpty() && nearest == null) detail.add("Move closer to search: nearest is range " + (Math.abs(targets.get(0).x - playerX) + Math.abs(targets.get(0).y - playerY)) + ".");
+        drawDetailBox(g, right, "Search", detail, nearest == null ? null : images.getMapObjectImage(nearest));
+        int by = right.y + right.height - 36;
+        addOverlayButton("Search", right.x + 12, by, 92, 28, "Search the nearest adjacent scavenge fixture.", this::searchNearestScavengeTarget);
+        addOverlayButton("Look", right.x + 110, by, 72, 28, "Open look targeting.", this::beginLookMode);
+        addOverlayButton("Use", right.x + 190, by, 72, 28, "Open interact targeting.", this::beginInteractMode);
     }
 
     private void drawInfoPauseOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -1865,15 +2090,75 @@ class GamePanel extends LegacyPanelBridgeBase {
         drawDetailBox(g, right, "Sorted Commands", java.util.List.of(
                 "World: WASD/arrows move, . waits, R cycles movement, P starts manual path planning.",
                 "Targeting: L looks, E interacts, F targets combat, G targets explosives, X reloads.",
-                "Panels: I inventory, C character, M map, B build, Esc pause/resume.",
-                "Utility: F1 opens info/tactical slate, F2 opens chat/console, options live under pause.",
+                "Panels: I inventory, C character, M map, B build, F5 crafting, F6 scavenge, Esc pause/resume.",
+                "Utility: F1 opens info/tactical slate, F2/Y opens chat/console, F4 opens Auspex, options live under pause.",
                 "Mouse: command bar buttons now route to the same live actions as the keys."
         ), null);
         int y = Math.max(right.y + 126, right.y + right.height - 152);
         addOverlayButton("Resume", right.x + 12, y, 120, 30, "Return to game.", () -> setScreen(Screen.GAME)); y += 38;
         addOverlayButton("Save / Load", right.x + 12, y, 140, 30, "Open save/load panel.", () -> openSaveLoadPanel("Pause menu opened save/load.")); y += 38;
-        addOverlayButton("Options", right.x + 12, y, 120, 30, "Open options.", () -> setScreen(Screen.OPTIONS)); y += 38;
+        addOverlayButton("Options", right.x + 12, y, 120, 30, "Open options.", () -> openOptionsScreen("pause menu")); y += 38;
         addOverlayButton("Main Menu", right.x + 12, y, 140, 30, "Return to main menu.", () -> setScreen(Screen.MENU));
+    }
+
+    private void drawInfopediaOverlay(java.awt.Graphics2D g, Rectangle body) {
+        mechanist.assets.AssetType selectedType = selectedInfopediaAssetType();
+        java.util.List<String> entries = currentInfopediaEntries(selectedType);
+        syncInfopediaViewport(entries, body.height);
+
+        Rectangle controls = new Rectangle(body.x, body.y, body.width, 56);
+        drawBox(g, controls, "InfoPedia Scope");
+        g.setFont(smallFont);
+        g.setColor(new java.awt.Color(205, 210, 195));
+        String filter = infopediaAssetFilter == null || infopediaAssetFilter.isBlank() ? "<none>" : infopediaAssetFilter;
+        String focus = "infopedia-asset-filter".equals(activeScrollTag) ? " / typing filter" : "";
+        drawUiTextLine(g, GuiLayoutApi.fitLabel("Type: " + SemanticAssetInfopediaAuthority.typeLabel(selectedType) + " / Filter: " + filter + focus, g.getFontMetrics(), controls.width - 300), controls.x + 12, controls.y + 42);
+        int bx = Math.max(controls.x + controls.width - 280, controls.x + 12);
+        addOverlayButton("Type <", bx, controls.y + 16, 64, 28, "Previous InfoPedia type.", () -> cycleInfopediaTab(-1));
+        addOverlayButton("Type >", bx + 72, controls.y + 16, 64, 28, "Next InfoPedia type.", () -> cycleInfopediaTab(1));
+        addOverlayButton("Filter", bx + 144, controls.y + 16, 64, 28, "Focus InfoPedia search filter.", () -> { activeScrollTag = "infopedia-asset-filter"; repaint(); });
+        addOverlayButton("Clear", bx + 216, controls.y + 16, 58, 28, "Clear InfoPedia search filter.", () -> { infopediaAssetFilter = ""; infopediaSelectionIndex = 0; infopediaListScroll = 0; infopediaDetailScroll = 0; activeScrollTag = "infopedia-list"; repaint(); });
+
+        int gap = 14;
+        Rectangle list = new Rectangle(body.x, body.y + 68, Math.max(250, body.width / 2 - gap), body.height - 68);
+        Rectangle detail = new Rectangle(list.x + list.width + gap, list.y, Math.max(260, body.x + body.width - list.x - list.width - gap), list.height);
+        int maxRows = Math.max(1, (list.height - 42) / 20);
+        int start = Math.max(0, Math.min(infopediaListScroll, Math.max(0, entries.size() - 1)));
+        int end = Math.min(entries.size(), start + maxRows);
+        java.util.List<String> visible = entries.isEmpty() ? java.util.List.of("No InfoPedia entries are available.") : new ArrayList<>(entries.subList(start, end));
+        drawListBox(g, list, "Entries", visible, Math.max(0, infopediaSelectionIndex - start), true);
+
+        String selected = entries.isEmpty() ? "" : entries.get(Math.max(0, Math.min(infopediaSelectionIndex, entries.size() - 1)));
+        java.util.List<String> detailLines = SemanticAssetInfopediaAuthority.detailLines(mechanist.assets.AssetManager.registry(), selected, selectedType, infopediaAssetFilter);
+        java.util.List<String> scrolled = infopediaDetailScroll <= 0 ? detailLines : detailLines.subList(Math.min(infopediaDetailScroll, detailLines.size()), detailLines.size());
+        String assetId = SemanticAssetInfopediaAuthority.assetIdFromEntry(selected).orElse("");
+        BufferedImage icon = assetId.isBlank() ? null : images.getSemanticAssetImage(assetId);
+        drawDetailBox(g, detail, "Entry Detail", scrolled, icon);
+    }
+
+    private mechanist.assets.AssetType selectedInfopediaAssetType() {
+        mechanist.assets.AssetType[] types = SemanticAssetInfopediaAuthority.browseTypes();
+        if (infopediaTab <= 0 || types.length == 0) return null;
+        return types[Math.floorMod(infopediaTab - 1, types.length)];
+    }
+
+    private java.util.List<String> currentInfopediaEntries(mechanist.assets.AssetType selectedType) {
+        return SemanticAssetInfopediaAuthority.entries(mechanist.assets.AssetManager.registry(), selectedType, infopediaAssetFilter);
+    }
+
+    private void syncInfopediaViewport(java.util.List<String> entries, int bodyHeight) {
+        int count = entries == null ? 0 : entries.size();
+        if (count <= 0) {
+            infopediaSelectionIndex = 0;
+            infopediaListScroll = 0;
+            infopediaDetailScroll = 0;
+            return;
+        }
+        infopediaSelectionIndex = Math.max(0, Math.min(infopediaSelectionIndex, count - 1));
+        int maxRows = Math.max(1, (Math.max(120, bodyHeight - 68) - 42) / 20);
+        if (infopediaSelectionIndex < infopediaListScroll) infopediaListScroll = infopediaSelectionIndex;
+        if (infopediaSelectionIndex >= infopediaListScroll + maxRows) infopediaListScroll = infopediaSelectionIndex - maxRows + 1;
+        infopediaListScroll = Math.max(0, Math.min(infopediaListScroll, Math.max(0, count - maxRows)));
     }
 
     private void drawGenericOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -1920,7 +2205,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         int y = r.y + 34;
         if (rows == null || rows.isEmpty()) {
             g.setColor(new java.awt.Color(145, 148, 132));
-            g.drawString("Empty", r.x + 12, y);
+            drawUiTextLine(g, "Empty", r.x + 12, y);
             return;
         }
         for (int i = 0; i < rows.size(); i++) {
@@ -1929,7 +2214,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             g.setColor(rowSelected ? new java.awt.Color(55, 48, 32, 230) : new java.awt.Color(0, 0, 0, 0));
             if (rowSelected) g.fillRect(r.x + 8, y - 15, r.width - 16, 20);
             g.setColor(rowSelected ? new java.awt.Color(245, 220, 140) : new java.awt.Color(205, 210, 195));
-            g.drawString(GuiLayoutApi.fitLabel((rowSelected ? "> " : "  ") + rows.get(i), g.getFontMetrics(), r.width - 24), r.x + 12, y);
+            drawUiTextLine(g, GuiLayoutApi.fitLabel((rowSelected ? "> " : "  ") + rows.get(i), g.getFontMetrics(), r.width - 24), r.x + 12, y);
             y += 20;
         }
     }
@@ -1952,7 +2237,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 if (y > r.y + r.height - 12) break;
                 for (String wrapped : GuiLayoutApi.wrapText(line, g.getFontMetrics(), r.width - 24)) {
                     if (y > r.y + r.height - 12) break;
-                    g.drawString(wrapped, x, y);
+                    drawUiTextLine(g, wrapped, x, y);
                     y += 18;
                 }
             }
@@ -1967,7 +2252,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (title != null && !title.isBlank()) {
             g.setFont(uiFont.deriveFont(java.awt.Font.BOLD, 14f));
             g.setColor(new java.awt.Color(225, 205, 140));
-            g.drawString(GuiLayoutApi.fitLabel(title, g.getFontMetrics(), r.width - 24), r.x + 12, r.y + 22);
+            drawUiTextLine(g, GuiLayoutApi.fitLabel(title, g.getFontMetrics(), r.width - 24), r.x + 12, r.y + 22);
         }
     }
 
@@ -2158,11 +2443,16 @@ class GamePanel extends LegacyPanelBridgeBase {
             advanceTurn("uses " + item + ".");
             return;
         }
-        if (low.contains("lamp") || low.contains("lantern") || low.contains("torch") || low.contains("glow") || low.contains("light")) {
+        PortableLightProfile portableProfile = PortableLightProfile.profile(item);
+        if (portableProfile != null || low.contains("lamp") || low.contains("lantern") || low.contains("torch") || low.contains("glow") || low.contains("light")) {
             activePortableLightItem = item;
-            activePortableLightExpiresTurn = turn + Math.max(60, TURNS_PER_HOUR);
-            lastPortableLightReport = "Portable light active: " + item + " until turn " + activePortableLightExpiresTurn + ".";
+            activePortableLightWorn = portableProfile != null && portableProfile.wearable;
+            activePortableLightExpiresTurn = turn + (portableProfile == null ? Math.max(60, TURNS_PER_HOUR) : portableProfile.remainingDuration(turn, item, 0));
+            lastPortableLightReport = "Portable light active: " + item + " radius " + activePortableLightRadius() + " until turn " + activePortableLightExpiresTurn + ".";
             logEvent(lastPortableLightReport);
+            markLocalDirtyRegion("portable light activated", playerX, playerY, activePortableLightRadius() + 2, true, false, false, false);
+            updateSensoryModel("portable light activated");
+            repaint();
             return;
         }
         ItemDef def = ItemCatalog.get(item);
@@ -2181,12 +2471,192 @@ class GamePanel extends LegacyPanelBridgeBase {
     void unequipSelectedEquipmentSlotBody() {}
     void addImperialScript(int amount) { carriedScript += Math.max(0, amount); }
     boolean spendImperialScript(int amount) { if (amount <= 0) return true; if (carriedScript < amount) return false; carriedScript -= amount; return true; }
-    void markLocalDirtyRegion(String reason, int x, int y, int radius, boolean tiles, boolean npcs, boolean objects, boolean full) {}
-    void updateSensoryModel(String reason) {}
+    void markLocalDirtyRegion(String reason, int x, int y, int radius, boolean tiles, boolean npcs, boolean objects, boolean full) {
+        if (world == null) return;
+        int r = Math.max(1, radius);
+        if (tiles || objects || full) world.dirtyLightRevision++;
+        if (npcs || objects || tiles || full) world.dirtyVisionRevision++;
+        if (objects || full) world.dirtyNoiseRevision++;
+        if (full) world.dirtyHazardRevision++;
+        lastSensoryModelReport = "Dirty sensory region " + x + "," + y + " r" + r + " reason=" + (reason == null ? "unspecified" : reason) + ".";
+    }
+    void ensureSensoryModelCurrent(String reason) {
+        if (world == null) return;
+        int portableSignature = portableLightSignature();
+        boolean badArrays = lightLevels == null || lightLevels.length != world.w || lightLevels[0].length != world.h
+                || visibleTiles == null || visibleTiles.length != world.w || visibleTiles[0].length != world.h
+                || rememberedTiles == null || rememberedTiles.length != world.w || rememberedTiles[0].length != world.h;
+        if (badArrays || sensoryWorldRef != world || sensoryTurn != turn || sensoryPlayerX != playerX || sensoryPlayerY != playerY
+                || sensoryLightRevision != world.dirtyLightRevision || sensoryVisionRevision != world.dirtyVisionRevision
+                || sensoryNoiseRevision != world.dirtyNoiseRevision
+                || sensoryPortableSignature != portableSignature) {
+            updateSensoryModel(reason);
+        }
+    }
+    void updateSensoryModel(String reason) {
+        if (world == null) return;
+        ensureSensoryArrays();
+        purgeExpiredPortableLights();
+        if (world.noiseFieldTurn != turn || world.dirtyNoiseRevision != sensoryNoiseRevision) {
+            NoiseHearingFieldApi.rebuild(world, turn);
+        }
+        rebuildLightLevels();
+        rebuildVisionFields();
+        sensoryWorldRef = world;
+        sensoryTurn = turn;
+        sensoryPlayerX = playerX;
+        sensoryPlayerY = playerY;
+        sensoryLightRevision = world.dirtyLightRevision;
+        sensoryNoiseRevision = world.dirtyNoiseRevision;
+        sensoryVisionRevision = world.dirtyVisionRevision;
+        sensoryPortableSignature = portableLightSignature();
+        lastSensoryModelReport = "visualSensory reason=" + (reason == null ? "unspecified" : reason)
+                + " visible=" + visibleTileCount()
+                + " remembered=" + rememberedTileCount()
+                + " peakLight=" + peakLightLevel()
+                + " ambient=" + ambientLightLevelForWorld()
+                + " visionRange=" + visionRange() + ".";
+    }
     void refreshNameLockedCandidateState(Candidate candidate) {}
-    int visionRange() { return 8; }
-    boolean isVisible(int x, int y) { return true; }
-    boolean isRemembered(int x, int y) { return true; }
+    int visionRange() {
+        int statBoost = Math.max(0, stat("Vision", active == null ? 8 : active.stats.getOrDefault("Vision", 8))) / 3;
+        int lightBoost = activePortableLightRadius() > 0 ? 2 : 0;
+        return Math.max(4, Math.min(14, 6 + statBoost + lightBoost));
+    }
+    boolean isVisible(int x, int y) { return world != null && x >= 0 && y >= 0 && x < visibleTiles.length && y < visibleTiles[0].length && visibleTiles[x][y]; }
+    boolean isRemembered(int x, int y) { return world != null && x >= 0 && y >= 0 && x < rememberedTiles.length && y < rememberedTiles[0].length && rememberedTiles[x][y]; }
+    int lightLevelAt(int x, int y) { return world == null || x < 0 || y < 0 || x >= lightLevels.length || y >= lightLevels[0].length ? 0 : Math.max(0, Math.min(100, lightLevels[x][y])); }
+    private void ensureSensoryArrays() {
+        if (world == null) return;
+        if (lightLevels == null || lightLevels.length != world.w || lightLevels[0].length != world.h) lightLevels = new int[world.w][world.h];
+        if (visibleTiles == null || visibleTiles.length != world.w || visibleTiles[0].length != world.h) visibleTiles = new boolean[world.w][world.h];
+        if (rememberedTiles == null || rememberedTiles.length != world.w || rememberedTiles[0].length != world.h) rememberedTiles = new boolean[world.w][world.h];
+    }
+    private void rebuildLightLevels() {
+        int ambient = ambientLightLevelForWorld();
+        for (int x = 0; x < world.w; x++) Arrays.fill(lightLevels[x], ambient);
+        if (world.lightSources != null) {
+            for (ZoneLightSourceRecord light : world.lightSources) {
+                if (light == null || !light.on || !light.powered || !world.inBounds(light.x, light.y)) continue;
+                int intensity = Math.max(1, light.intensity);
+                if (light.flicker && Math.floorMod(turn + light.phase, Math.max(2, light.flickerPeriod)) == 0) intensity = Math.max(1, intensity / 3);
+                applyBandedLight(light.x, light.y, Math.max(1, light.radius), intensity);
+            }
+        }
+        if (activePortableLightRadius() > 0) applyBandedLight(playerX, playerY, activePortableLightRadius(), portableLightIntensity(activePortableLightItem));
+        if (portableLights != null) {
+            for (PortableLightInstance light : portableLights) {
+                if (light == null || light.expiresTurn <= turn || !sameWorldLocation(light.worldKey)) continue;
+                applyBandedLight(light.x, light.y, Math.max(1, light.radius), portableLightIntensity(light.itemName));
+            }
+        }
+    }
+    private void applyBandedLight(int sx, int sy, int radius, int intensity) {
+        if (world == null || !world.inBounds(sx, sy)) return;
+        int r = Math.max(1, radius);
+        int base = Math.max(1, Math.min(100, intensity));
+        for (int x = Math.max(0, sx - r); x <= Math.min(world.w - 1, sx + r); x++) {
+            for (int y = Math.max(0, sy - r); y <= Math.min(world.h - 1, sy + r); y++) {
+                double distance = Math.hypot(x - sx, y - sy);
+                if (distance > r + 0.35) continue;
+                if (!lineOfLightCanReach(sx, sy, x, y)) continue;
+                double norm = Math.max(0.0, Math.min(1.0, distance / Math.max(1.0, r)));
+                int band = Math.max(0, Math.min(4, (int)Math.floor(norm * 5.0)));
+                double bandFactor = switch (band) {
+                    case 0 -> 1.00;
+                    case 1 -> 0.74;
+                    case 2 -> 0.50;
+                    case 3 -> 0.29;
+                    default -> 0.14;
+                };
+                if (!(x == sx && y == sy) && blocksLightTile(x, y)) bandFactor *= 0.78;
+                int add = Math.max(1, (int)Math.round(base * bandFactor));
+                lightLevels[x][y] = Math.max(lightLevels[x][y], Math.min(100, lightLevels[x][y] + add));
+            }
+        }
+    }
+    private void rebuildVisionFields() {
+        for (int x = 0; x < world.w; x++) Arrays.fill(visibleTiles[x], false);
+        int range = visionRange();
+        int threshold = litVisionThreshold();
+        int minX = Math.max(0, playerX - range);
+        int maxX = Math.min(world.w - 1, playerX + range);
+        int minY = Math.max(0, playerY - range);
+        int maxY = Math.min(world.h - 1, playerY + range);
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                double distance = Math.hypot(x - playerX, y - playerY);
+                if (distance > range + 0.15) continue;
+                if (!hasLineOfSight(playerX, playerY, x, y)) continue;
+                boolean lit = lightLevelAt(x, y) >= threshold || distance <= 1.05 || (x == playerX && y == playerY);
+                if (!lit) continue;
+                visibleTiles[x][y] = true;
+                rememberedTiles[x][y] = true;
+            }
+        }
+        if (world.inBounds(playerX, playerY)) {
+            visibleTiles[playerX][playerY] = true;
+            rememberedTiles[playerX][playerY] = true;
+            lightLevels[playerX][playerY] = Math.max(lightLevels[playerX][playerY], 18);
+        }
+    }
+    private int litVisionThreshold() { return activePortableLightRadius() > 0 ? 8 : 11; }
+    private boolean lineOfLightCanReach(int sx, int sy, int tx, int ty) { return traceLightLine(sx, sy, tx, ty, true); }
+    private boolean traceLightLine(int x0, int y0, int x1, int y1, boolean allowBlockedTarget) {
+        if (world == null || !world.inBounds(x0, y0) || !world.inBounds(x1, y1)) return false;
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0;
+        int y = y0;
+        while (true) {
+            if (!(x == x0 && y == y0) && blocksLightTile(x, y)) return allowBlockedTarget && x == x1 && y == y1;
+            if (x == x1 && y == y1) return true;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x += sx; }
+            if (e2 < dx) { err += dx; y += sy; }
+            if (!world.inBounds(x, y)) return false;
+        }
+    }
+    private boolean blocksLightTile(int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return true;
+        char ch = world.tiles[x][y];
+        if (isDoorTile(ch)) return true;
+        if (ch == '#' || ch == 'D' || ch == 'H' || ch == 'W' || ch == 'X' || ch == '|' || ch == 'L' || ch == 'V') return true;
+        if (InterstitialInfrastructureApi.isInterstitialSolid(ch)) return true;
+        return !world.walkable(x, y) && ch != '~';
+    }
+    private int visibleTileCount() {
+        int n = 0;
+        if (visibleTiles != null) for (int x = 0; x < visibleTiles.length; x++) for (int y = 0; y < visibleTiles[x].length; y++) if (visibleTiles[x][y]) n++;
+        return n;
+    }
+    private int rememberedTileCount() {
+        int n = 0;
+        if (rememberedTiles != null) for (int x = 0; x < rememberedTiles.length; x++) for (int y = 0; y < rememberedTiles[x].length; y++) if (rememberedTiles[x][y]) n++;
+        return n;
+    }
+    private int peakLightLevel() {
+        int peak = 0;
+        if (lightLevels != null) for (int x = 0; x < lightLevels.length; x++) for (int y = 0; y < lightLevels[x].length; y++) peak = Math.max(peak, lightLevels[x][y]);
+        return peak;
+    }
+    private int portableLightSignature() {
+        int h = Objects.hash(activePortableLightItem, activePortableLightExpiresTurn, activePortableLightWorn);
+        if (portableLights != null) {
+            for (PortableLightInstance light : portableLights) {
+                if (light == null) continue;
+                h = 31 * h + Objects.hash(light.itemName, light.x, light.y, light.radius, light.expiresTurn, light.worldKey);
+            }
+        }
+        return h;
+    }
+    private void purgeExpiredPortableLights() {
+        if (portableLights == null || portableLights.isEmpty()) return;
+        portableLights.removeIf(light -> light == null || light.expiresTurn <= turn);
+    }
     int countMoney() { return Math.max(0, carriedScript); }
     int totalBankedCash() { return Math.max(0, baseStashedScript); }
     int inventoryWeight() { return inventory == null ? 0 : inventory.size(); }
@@ -2241,7 +2711,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         int ty = lastAuditViewMinY + gy / tile;
         return new Point(Math.max(0, Math.min(auditWorld.w - 1, tx)), Math.max(0, Math.min(auditWorld.h - 1, ty)));
     }
-    void closePanel() { panelMode = PanelMode.NONE; screen = Screen.GAME; }
+    void closePanel() { panelMode = PanelMode.NONE; screen = world == null ? Screen.MENU : Screen.GAME; }
     void closeKnowledgeScreen() { screen = Screen.GAME; }
     void handleKnowledgeKeyPressed(int code) {}
     void cancelManualMovementPlan(String reason) { manualMovementPlanActive = false; }
@@ -2375,11 +2845,50 @@ class GamePanel extends LegacyPanelBridgeBase {
             default -> "Terrain";
         };
     }
-    boolean isAssetInfopediaTab(int tab) { return false; }
-    void backspaceInfopediaAssetFilter() {}
-    void cycleInfopediaTab(int delta) {}
-    void moveInfopediaSelection(int delta) {}
-    boolean scrollActivePanel(int delta, boolean page) { return false; }
+    boolean isAssetInfopediaTab(int tab) { return screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA; }
+    void backspaceInfopediaAssetFilter() {
+        if (infopediaAssetFilter != null && !infopediaAssetFilter.isEmpty()) {
+            infopediaAssetFilter = infopediaAssetFilter.substring(0, infopediaAssetFilter.length() - 1);
+            infopediaSelectionIndex = 0;
+            infopediaListScroll = 0;
+            infopediaDetailScroll = 0;
+            repaint();
+        }
+    }
+    void cycleInfopediaTab(int delta) {
+        int tabCount = SemanticAssetInfopediaAuthority.browseTypes().length + 1;
+        infopediaTab = Math.floorMod(infopediaTab + delta, Math.max(1, tabCount));
+        infopediaSelectionIndex = 0;
+        infopediaListScroll = 0;
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+    void moveInfopediaSelection(int delta) {
+        java.util.List<String> entries = currentInfopediaEntries(selectedInfopediaAssetType());
+        int count = entries == null ? 0 : entries.size();
+        if (count <= 0) {
+            infopediaSelectionIndex = 0;
+        } else {
+            infopediaSelectionIndex = Math.max(0, Math.min(count - 1, infopediaSelectionIndex + delta));
+        }
+        infopediaDetailScroll = 0;
+        activeScrollTag = "infopedia-list";
+        repaint();
+    }
+    boolean scrollActivePanel(int delta, boolean page) {
+        if (screen == Screen.PANEL && panelMode == PanelMode.INFOPEDIA) {
+            int step = Math.max(1, page ? 8 : 1);
+            if ("infopedia-detail".equals(activeScrollTag)) {
+                infopediaDetailScroll = Math.max(0, infopediaDetailScroll + delta * step);
+            } else {
+                moveInfopediaSelection(delta * step);
+            }
+            repaint();
+            return true;
+        }
+        return false;
+    }
     void cycleFireMode() {
         selectedFireModeIndex = Math.floorMod(selectedFireModeIndex + 1, 3);
         lastTargetingReport = "Fire mode: " + fireModeLabel() + ". " + targetingSolutionAt(combatX, combatY).summary;
@@ -2408,7 +2917,40 @@ class GamePanel extends LegacyPanelBridgeBase {
         logEvent(lastTargetingReport);
         advanceTurn("throws " + explosive + ".");
     }
-    void throwSelectedPortableLight() { logEvent("A portable light is thrown into the dark."); }
+    void throwSelectedPortableLight() {
+        if (world == null) {
+            logEvent("Cannot throw a portable light without a loaded world.");
+            return;
+        }
+        String item = selectedInventoryItem();
+        PortableLightProfile profile = PortableLightProfile.profile(item);
+        if (item == null || profile == null) {
+            logEvent("Select a carried portable light before throwing one.");
+            return;
+        }
+        int targetX = lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT ? lookX : playerX;
+        int targetY = lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT ? lookY : playerY;
+        if (panelMode == PanelMode.COMBAT) { targetX = combatX; targetY = combatY; }
+        targetX = Math.max(0, Math.min(world.w - 1, targetX));
+        targetY = Math.max(0, Math.min(world.h - 1, targetY));
+        int distance = Math.abs(targetX - playerX) + Math.abs(targetY - playerY);
+        if (distance > Math.max(1, profile.throwRange) || !hasLineOfSight(playerX, playerY, targetX, targetY)) {
+            targetX = playerX;
+            targetY = playerY;
+        }
+        inventory.remove(selectedInventoryIndex);
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
+        portableLights.add(new PortableLightInstance(item, targetX, targetY, profile.radius, turn + profile.remainingDuration(turn, item, 0), currentWorldKey(), "thrown"));
+        activePortableLightItem = "";
+        activePortableLightExpiresTurn = 0;
+        activePortableLightWorn = false;
+        lastPortableLightReport = "Thrown portable light: " + item + " at " + targetX + "," + targetY + " radius " + profile.radius + ".";
+        logEvent(lastPortableLightReport);
+        markLocalDirtyRegion("portable light thrown", targetX, targetY, profile.radius + 2, true, false, true, false);
+        updateSensoryModel("portable light thrown");
+        advanceTurn("throws " + item + ".");
+        repaint();
+    }
     void reloadCurrentRangedWeapon() {
         String weapon = equippedFirearmName();
         if (weapon == null) weapon = firstInventoryMatch(false, true);
@@ -2617,6 +3159,122 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     void toggleTacticalSlate() { openPanel(PanelMode.INFO); }
     void openChatWindow() { openPanel(PanelMode.CONSOLE); }
+    void openAuspexPanel() {
+        openPanel(PanelMode.AUSPEX);
+        updateSensoryModel("auspex opened");
+        logEvent("Auspex panel opened.");
+        repaint();
+    }
+    void openCraftingPanel() {
+        selectedCraftingRecipe = selectedCraftingRecipe == null ? firstVisibleCraftingRecipe() : selectedCraftingRecipe;
+        openPanel(PanelMode.CRAFTING);
+        logEvent("Crafting panel opened.");
+        repaint();
+    }
+    void openScavengePanel() {
+        openPanel(PanelMode.SCAVENGE);
+        logEvent("Scavenge panel opened.");
+        repaint();
+    }
+    private CraftingRecipe firstVisibleCraftingRecipe() {
+        for (CraftingRecipe recipe : CraftingRecipe.all()) if (recipe.visibleTo(this)) return recipe;
+        return CraftingRecipe.noKnownRecipes();
+    }
+    private CraftingRecipe visibleCraftingRecipeMatching(ArrayList<CraftingRecipe> visible, CraftingRecipe previous) {
+        if (visible == null || visible.isEmpty()) return CraftingRecipe.noKnownRecipes();
+        if (previous != null && previous.name != null) {
+            for (CraftingRecipe recipe : visible) if (previous.name.equals(recipe.name)) return recipe;
+        }
+        return visible.get(0);
+    }
+    private void craftSelectedRecipe() {
+        CraftingRecipe recipe = selectedCraftingRecipe == null ? firstVisibleCraftingRecipe() : selectedCraftingRecipe;
+        if (recipe == null || recipe.disabled) {
+            logEvent("Crafting unavailable: no real recipe is selected.");
+            repaint();
+            return;
+        }
+        BaseObject machine = recipe.requiredMachine(this);
+        String problem = recipe.blockingProblemForMachine(this, machine);
+        if (problem != null) {
+            logEvent("Cannot craft " + recipe.name + ": " + problem);
+            repaint();
+            return;
+        }
+        recipe.consumeInputs(this);
+        String quality = cappedProductionQuality(machine, recipe.requiredKnowledge);
+        ProductionRecipe production = ProductionRecipe.create(recipe.outputBaseItem, recipe.faction, quality, recipe.requiredKnowledge, recipe.machineName());
+        String output = production.outputItemName();
+        int count = Math.max(1, recipe.outputCount);
+        String worker = active == null ? "player" : active.name;
+        for (int i = 0; i < count; i++) {
+            addInventoryItem(output, ItemProvenanceRecord.produced(production, machine, world, turn, worker));
+        }
+        if (machine != null && recipe.machineWear > 0) machine.integrity = Math.max(0, machine.integrity - recipe.machineWear);
+        fatigue = Math.min(MAX_FOOD_WATER, fatigue + ControlledProductionJobAuthority.manualFatigueCost(this, machine, recipe));
+        int turns = ControlledProductionJobAuthority.manualTurnCost(this, machine, recipe);
+        turn += Math.max(0, turns - 1);
+        worldTurn += Math.max(0, turns - 1);
+        gainXp(recipe.xpSkill, recipe.xpGain, "crafted " + recipe.name);
+        rebuildItemContainersFromLegacyLists();
+        logEvent("Crafted " + count + "x " + output + " from " + recipe.name + ".");
+        advanceTurn("crafts " + recipe.name + ".");
+        repaint();
+    }
+    private ArrayList<MapObjectState> nearbyScavengeTargets(int radius) {
+        ArrayList<MapObjectState> out = new ArrayList<>();
+        if (world == null || world.mapObjects == null) return out;
+        int max = Math.max(0, radius);
+        for (MapObjectState object : world.mapObjects) {
+            if (object == null || !WasteNewsprintScavengeAuthority.isSearchableContainer(object.type)) continue;
+            int distance = Math.abs(object.x - playerX) + Math.abs(object.y - playerY);
+            if (distance <= max) out.add(object);
+        }
+        out.sort(Comparator.comparingInt((MapObjectState object) -> Math.abs(object.x - playerX) + Math.abs(object.y - playerY))
+                .thenComparing(object -> safeLabel(object.label, object.type)));
+        return out;
+    }
+    private MapObjectState nearestScavengeTarget(int radius) {
+        ArrayList<MapObjectState> targets = nearbyScavengeTargets(radius);
+        return targets.isEmpty() ? null : targets.get(0);
+    }
+    private void searchNearestScavengeTarget() {
+        MapObjectState target = nearestScavengeTarget(1);
+        if (target == null) {
+            logEvent("No adjacent searchable refuse/newsprint fixture is in reach.");
+            repaint();
+            return;
+        }
+        lookX = target.x;
+        lookY = target.y;
+        if (!FrontageFixtureInteractionAuthority.tryInteract(this, target.x, target.y)) {
+            logEvent("Scavenge target did not accept the live frontage interaction route: " + WasteNewsprintScavengeAuthority.shortLabel(target) + ".");
+        }
+        updatePendingInteractionSummary();
+        repaint();
+    }
+    void openInfopediaPanel(String reason) {
+        panelMode = PanelMode.INFOPEDIA;
+        screen = Screen.PANEL;
+        activeScrollTag = "infopedia-list";
+        selectedButton = 0;
+        sounds.stopIntroCrawlNarration("opened infopedia");
+        sounds.requestMusic(world == null ? "MAIN_MENU" : "LOW_HABITATION", options);
+        logEvent("InfoPedia opened" + (reason == null || reason.isBlank() ? "." : ": " + reason + "."));
+        DebugLog.audit("CLIENT_MENU_ROUTE", "infopedia panel opened reason=" + (reason == null ? "unspecified" : reason) + " tab=" + infopediaTab);
+        repaint();
+    }
+    boolean handleInfopediaTyped(char ch) {
+        if (screen != Screen.PANEL || panelMode != PanelMode.INFOPEDIA || !"infopedia-asset-filter".equals(activeScrollTag)) return false;
+        if (Character.isISOControl(ch)) return false;
+        if (infopediaAssetFilter == null) infopediaAssetFilter = "";
+        if (infopediaAssetFilter.length() >= 80) return true;
+        infopediaAssetFilter += ch;
+        infopediaSelectionIndex = 0;
+        infopediaListScroll = 0;
+        infopediaDetailScroll = 0;
+        return true;
+    }
     boolean worldZoomControlActive() { return true; }
     void changeWorldZoom(int delta, String source) { logEvent("World zoom changed by " + delta + " via " + source + "."); }
     void continueFromIntroCrawl() { setScreen(Screen.MENU); logEvent("Intro crawl completed."); }
@@ -2755,12 +3413,39 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (b.description == null || b.description.isBlank()) b.description = "Built base object.";
         MachineTierAuthority.applyToConfiguredObject(b);
     }
-    int activePortableLightRadius() { return activePortableLightItem == null || activePortableLightItem.isBlank() ? 0 : 6; }
-    boolean sameWorldLocation(String worldKey) { return true; }
-    int portableLightIntensity(String itemName) { return 100; }
-    int ambientLightLevelForWorld() { return 50; }
+    int activePortableLightRadius() {
+        if (activePortableLightItem == null || activePortableLightItem.isBlank() || activePortableLightExpiresTurn <= turn) return 0;
+        PortableLightProfile profile = PortableLightProfile.profile(activePortableLightItem);
+        return profile == null ? 4 : Math.max(1, profile.radius);
+    }
+    boolean sameWorldLocation(String worldKey) {
+        return worldKey == null || worldKey.isBlank() || worldKey.equals(currentWorldKey());
+    }
+    String currentWorldKey() {
+        return world == null ? "" : world.zoneCoordText();
+    }
+    int portableLightIntensity(String itemName) {
+        PortableLightProfile profile = PortableLightProfile.profile(itemName);
+        if (profile == null) return 62;
+        String key = profile.name.toLowerCase(Locale.ROOT);
+        if (key.contains("flashlight") || key.contains("helmet")) return 86;
+        if (key.contains("lantern") || key.contains("swamp")) return 72;
+        if (key.contains("glow") || key.contains("phosphor")) return 58;
+        if (key.contains("stub")) return 44;
+        return 66;
+    }
+    int ambientLightLevelForWorld() {
+        if (world == null || world.zoneType == null) return 4;
+        String z = world.zoneType.name();
+        if (world.sewerLayer || z.contains("SEWER") || z.contains("SUMP")) return 2;
+        if (z.contains("NOBLE") || z.contains("GOVERNOR")) return 13;
+        if (z.contains("CIVILIAN") || z.contains("ADMINISTRATUM") || z.contains("NEWS") || z.contains("ARBITES")) return 10;
+        if (z.contains("MECHANICUS") || z.contains("FORGE") || z.contains("GUARD")) return 8;
+        if (z.contains("GANGER") || z.contains("TRASH") || z.contains("MUTANT")) return 4;
+        return 6;
+    }
 
-    boolean hasLineOfSight(int x0, int y0, int x1, int y1) { return true; }
+    boolean hasLineOfSight(int x0, int y0, int x1, int y1) { return traceLightLine(x0, y0, x1, y1, true); }
     boolean hasKnowledge(String knowledge) { return knowledge == null || knowledge.isBlank() || unlockedKnowledges.contains(knowledge); }
     BaseObject requiredMachineFor(CraftingRecipe recipe) {
         if (recipe == null) return null;
@@ -2776,7 +3461,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     String cappedProductionQuality(BaseObject machine, String requiredKnowledge) { return machine == null || machine.qualityName == null || machine.qualityName.isBlank() ? "Common" : machine.qualityName; }
     int availableRecruitLabor() { return Math.max(0, factionRecruits.size()); }
-    int stat(String statName, int fallback) { return Math.max(0, fallback); }
+    int stat(String statName, int fallback) {
+        if (active != null && active.stats != null && statName != null) return Math.max(0, active.stats.getOrDefault(statName, fallback));
+        return Math.max(0, fallback);
+    }
     void rememberItemProvenance(String item, ItemProvenanceRecord record) {
         if (item == null || item.isBlank() || record == null) return;
         ArrayDeque<ItemProvenanceRecord> q = itemProvenance.computeIfAbsent(item, k -> new ArrayDeque<>());

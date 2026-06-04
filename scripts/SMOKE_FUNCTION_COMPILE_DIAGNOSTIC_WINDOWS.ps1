@@ -32,12 +32,12 @@ function Run-Captured($name, $scriptBlock, $logPath) {
     Write-Section $name
     Add-Content -LiteralPath $summary -Value "Log: $logPath"
     try {
-        & $scriptBlock *>&1 | Tee-Object -FilePath $logPath
+        & $scriptBlock *>&1 | Tee-Object -FilePath $logPath | Out-Host
         $code = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 0 }
         Add-Content -LiteralPath $summary -Value "ExitCode: $code"
         return $code
     } catch {
-        $_ | Out-String | Tee-Object -FilePath $logPath
+        $_ | Out-String | Tee-Object -FilePath $logPath | Out-Host
         Add-Content -LiteralPath $summary -Value "Exception: $($_.Exception.Message)"
         return 999
     }

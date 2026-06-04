@@ -11,7 +11,7 @@ final class UiTextSurfacePainter {
     private UiTextSurfacePainter() {}
 
     static void drawUiTextLine(Graphics2D g, String text, int x, int y) {
-        if (text == null) return;
+        if (g == null || text == null) return;
         FontMetrics fm = g.getFontMetrics();
         int tw = fm.stringWidth(text);
         int th = fm.getHeight();
@@ -20,8 +20,24 @@ final class UiTextSurfacePainter {
         g.fillRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
         g.setColor(new Color(128, 105, 58, 135));
         g.drawRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
-        g.setColor(old);
+        g.setColor(contrastRatio(old, Color.BLACK) < 3.0 ? new Color(224, 226, 208) : old);
         g.drawString(text, x, y);
+    }
+
+    private static double contrastRatio(Color a, Color b) {
+        double la = luminance(a) + 0.05;
+        double lb = luminance(b) + 0.05;
+        return Math.max(la, lb) / Math.min(la, lb);
+    }
+
+    private static double luminance(Color color) {
+        if (color == null) return 0.0;
+        return channel(color.getRed()) * 0.2126 + channel(color.getGreen()) * 0.7152 + channel(color.getBlue()) * 0.0722;
+    }
+
+    private static double channel(int value) {
+        double c = Math.max(0, Math.min(255, value)) / 255.0;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     }
 
     static void center(Graphics2D g, String text, int x, int y) {

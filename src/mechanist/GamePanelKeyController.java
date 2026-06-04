@@ -42,6 +42,10 @@ final class GamePanelKeyController {
             panel.setScreen(GamePanel.Screen.PAUSE);
             return true;
         }
+        if (panel.screen == GamePanel.Screen.OPTIONS) {
+            panel.closeOptionsScreen();
+            return true;
+        }
         if (panel.screen == GamePanel.Screen.CHARACTER && panel.newGameSetupActive) {
             panel.newGameSetupActive = false;
             panel.characterNameEditActive = false;

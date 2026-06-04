@@ -255,7 +255,8 @@ final class FirstPersonRenderViewport {
         rasterizeFloorAndCeiling(panel, world, w, h, horizon, fov);
         DoomFogSettings fogSettings = DoomFogSettings.fromOptions(panel.options);
         boolean radialFog = fogSettings.mode() == DoomFogMode.RADIAL_DISTANCE;
-        prepareWallLightScratch(world);
+        panel.ensureSensoryModelCurrent("first-person render");
+        prepareWallLightScratch(panel, world);
         double yaw = camera.yawRadians();
         double scale = 1.0 / Math.tan(fov / 2.0);
         double aspect = (double) w / Math.max(1.0, h);
@@ -322,8 +323,13 @@ final class FirstPersonRenderViewport {
                         color = sampleImageArgb(ceilingTex, u, v, 0xFF08090B);
                     }
                 } else color = 0xFF000000;
-                double shade = floorSide ? Math.max(0.22, Math.min(1.0, 1.35 / Math.sqrt(Math.max(0.35, rowDistance))))
-                                         : Math.max(0.12, Math.min(0.55, 0.85 / Math.sqrt(Math.max(0.45, rowDistance))));
+                double shade = floorSide ? Math.max(0.18, Math.min(1.0, 1.35 / Math.sqrt(Math.max(0.35, rowDistance))))
+                                         : Math.max(0.10, Math.min(0.55, 0.85 / Math.sqrt(Math.max(0.45, rowDistance))));
+                if (world.inBounds(tx, ty)) {
+                    double localLight = panel.lightLevelAt(tx, ty) / 100.0;
+                    shade = Math.max(0.04, Math.min(1.0, shade * (0.30 + localLight * 1.15)));
+                    if (!panel.isVisible(tx, ty)) shade *= 0.34;
+                }
                 pixels[row + x] = darken(color | 0xFF000000, shade);
                 worldX += stepX;
                 worldY += stepY;
@@ -341,7 +347,7 @@ final class FirstPersonRenderViewport {
         return 0xFF000000 | (argb & 0x00FFFFFF);
     }
 
-    private void prepareWallLightScratch(World world) {
+    private void prepareWallLightScratch(GamePanel panel, World world) {
         if (world == null) return;
         int need = Math.max(1, world.w * world.h);
         if (wallLightScratch.length < need || wallLightScratchW != world.w || wallLightScratchH != world.h) {
@@ -351,10 +357,11 @@ final class FirstPersonRenderViewport {
         } else {
             java.util.Arrays.fill(wallLightScratch, 0, need, false);
         }
-        for (MapObjectState o : world.mapObjects) {
-            if (o == null || o.glyph != '*') continue;
-            if (!world.inBounds(o.x, o.y) || world.walkable(o.x, o.y)) continue;
-            wallLightScratch[o.y * world.w + o.x] = true;
+        for (int x = 0; x < world.w; x++) {
+            for (int y = 0; y < world.h; y++) {
+                if (world.walkable(x, y)) continue;
+                if (panel != null && panel.lightLevelAt(x, y) >= 34) wallLightScratch[y * world.w + x] = true;
+            }
         }
     }
 
@@ -888,19 +895,19 @@ final class LightDecayEngine {
     private final double quadraticFactor = 0.055;
 
     double brightness(double cameraX, double cameraZ, double surfaceX, double surfaceZ, GamePanel panel, long now) {
+        if (panel != null && panel.world != null) {
+            int tx = (int)Math.floor(surfaceX);
+            int ty = (int)Math.floor(surfaceZ);
+            panel.ensureSensoryModelCurrent("first-person light sample");
+            double field = panel.lightLevelAt(tx, ty) / 100.0;
+            double sight = panel.isVisible(tx, ty) ? 1.0 : 0.34;
+            double cameraFalloff = 1.0 / (1.0 + linearFactor * Math.max(0.0, (surfaceX - cameraX) * (surfaceX - cameraX) + (surfaceZ - cameraZ) * (surfaceZ - cameraZ)) * 0.35);
+            return Math.max(0.08, Math.min(1.0, (0.10 + field * 1.05) * sight + cameraFalloff * 0.06));
+        }
         double dx = surfaceX - cameraX;
         double dz = surfaceZ - cameraZ;
         double d2 = dx * dx + dz * dz;
         double b = 1.0 / (1.0 + linearFactor * d2 * 0.35 + quadraticFactor * d2);
-        if (panel != null && panel.world != null) {
-            for (MapObjectState o : panel.world.mapObjects) {
-                if (o == null || o.glyph != '*') continue;
-                double pdx = (o.x + 0.5) - surfaceX;
-                double pdz = (o.y + 0.5) - surfaceZ;
-                double pd2 = pdx * pdx + pdz * pdz;
-                b += 0.55 / (1.0 + pd2 * 2.2);
-            }
-        }
         return Math.max(0.12, Math.min(1.0, b));
     }
 }

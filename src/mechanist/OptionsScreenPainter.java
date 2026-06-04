@@ -73,7 +73,7 @@ final class OptionsScreenPainter {
         panel.drawPanelBox(g, layout.panelX, layout.panelY, layout.panelW, layout.panelH, "OPTIONS");
         g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(10f, Math.min(14f, layout.height / 64f))));
         g.setColor(LayerF.optionColor(panel, GameOptions.TEXT_TITLE));
-        g.drawString("OPTIONS", layout.panelX + 18, layout.panelY + 26);
+        panel.drawUiTextLine(g, "OPTIONS", layout.panelX + 18, layout.panelY + 26);
         java.awt.Rectangle sub = subtitleBox(layout);
         panel.drawTextPanel(g, sub.x, sub.y, sub.width, sub.height, Collections.singletonList(subtitle(panel.optionsTab)), true);
         java.awt.Rectangle controls = controlsBox(layout);
@@ -410,11 +410,7 @@ final class OptionsScreenPainter {
     }
 
     private static OptionCommand backCommand(GamePanel panel) {
-        return cmd("Back", "Return to the main menu.", () -> {
-            panel.graphicsDropdown = -1;
-            panel.setScreen(GamePanel.Screen.MENU);
-            panel.repaint();
-        });
+        return cmd("Back", "Return to the previous menu.", panel::closeOptionsScreen);
     }
 
     private static OptionCommand cmd(String label, String tip, Runnable action) {

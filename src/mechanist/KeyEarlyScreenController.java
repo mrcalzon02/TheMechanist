@@ -15,6 +15,22 @@ final class KeyEarlyScreenController {
             panel.toggleTacticalSlate();
             return true;
         }
+        if (code == KeyEvent.VK_F2 && panel.screen != GamePanel.Screen.EDITOR) {
+            panel.openChatWindow();
+            return true;
+        }
+        if (code == KeyEvent.VK_F4 && (panel.screen == GamePanel.Screen.GAME || panel.screen == GamePanel.Screen.PANEL)) {
+            panel.openAuspexPanel();
+            return true;
+        }
+        if (code == KeyEvent.VK_F5 && (panel.screen == GamePanel.Screen.GAME || panel.screen == GamePanel.Screen.PANEL)) {
+            panel.openCraftingPanel();
+            return true;
+        }
+        if (code == KeyEvent.VK_F6 && (panel.screen == GamePanel.Screen.GAME || panel.screen == GamePanel.Screen.PANEL)) {
+            panel.openScavengePanel();
+            return true;
+        }
         if (code == KeyEvent.VK_Y && panel.screen != GamePanel.Screen.EDITOR) {
             panel.openChatWindow();
             return true;

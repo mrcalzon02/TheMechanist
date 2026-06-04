@@ -469,7 +469,45 @@ class OptionsBoundaryAuthority {
     }
 
     static Color optionColor(GameOptions options, int key) {
-        return new Color(options == null ? 0xDCCD91 : options.colorValue(key));
+        Color raw = new Color(options == null ? 0xDCCD91 : options.colorValue(key));
+        if (key == GameOptions.BACKGROUND) return raw;
+        Color background = new Color(options == null ? GameOptions.PALETTES[0][GameOptions.BACKGROUND] : options.colorValue(GameOptions.BACKGROUND));
+        double minimum = key == GameOptions.TEXT_DIM ? 3.0 : 4.5;
+        if (contrastRatio(raw, background) >= minimum) return raw;
+        return fallbackReadableColor(key, background);
+    }
+
+    private static Color fallbackReadableColor(int key, Color background) {
+        boolean darkBackground = luminance(background) < 0.38;
+        if (!darkBackground) {
+            return switch (key) {
+                case GameOptions.TEXT_TITLE -> new Color(30, 26, 18);
+                case GameOptions.TEXT_DIM -> new Color(72, 70, 62);
+                case GameOptions.TEXT_HIGHLIGHT -> new Color(96, 58, 0);
+                default -> new Color(24, 24, 22);
+            };
+        }
+        return switch (key) {
+            case GameOptions.TEXT_TITLE -> new Color(245, 232, 170);
+            case GameOptions.TEXT_DIM -> new Color(172, 176, 156);
+            case GameOptions.TEXT_HIGHLIGHT -> new Color(255, 218, 92);
+            default -> new Color(224, 226, 208);
+        };
+    }
+
+    private static double contrastRatio(Color a, Color b) {
+        double la = luminance(a) + 0.05;
+        double lb = luminance(b) + 0.05;
+        return Math.max(la, lb) / Math.min(la, lb);
+    }
+
+    private static double luminance(Color color) {
+        return channel(color.getRed()) * 0.2126 + channel(color.getGreen()) * 0.7152 + channel(color.getBlue()) * 0.0722;
+    }
+
+    private static double channel(int value) {
+        double c = Math.max(0, Math.min(255, value)) / 255.0;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     }
 
     static String setTargetFpsIndex(GameOptions options, int idx) {
