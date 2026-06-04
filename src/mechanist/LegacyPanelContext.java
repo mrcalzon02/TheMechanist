@@ -35,6 +35,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     static final String CONTAINER_CONTRACT_OBJECT_PREFIX = "contract-object-";
     static final String CONTAINER_CORPSE_LOOT_PREFIX = "corpse-loot-";
     static final String CONTAINER_ROOM_CACHE_PREFIX = "room-cache-";
+    static final int INFOPEDIA_TAB_ROW_HEIGHT = 28;
+    static final int INFOPEDIA_TAB_GAP = 6;
+    static final int INFOPEDIA_ROW_HEIGHT = 22;
 
     enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SAVE_LOAD, SECTOR_AUDIT, EDITOR }
     enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING, SCAVENGE }
@@ -81,6 +84,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<FactionStrategicPlan> factionStrategicPlans = new ArrayList<>();
     final ArrayList<PlayerNewsEvent> playerNewsEvents = new ArrayList<>();
     final ArrayList<Point> mouseMovePreviewPath = new ArrayList<>();
+    final ArrayList<Point> manualMovementPlanPath = new ArrayList<>();
     final HashMap<Integer, String> innDailyIssues = new HashMap<>();
     final HashMap<String, Boolean> consoleFlags = new HashMap<>();
     final HashMap<String, Float> consoleNumericFlags = new HashMap<>();
@@ -129,6 +133,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     int sensoryNoiseRevision = Integer.MIN_VALUE;
     int sensoryVisionRevision = Integer.MIN_VALUE;
     int sensoryPortableSignature = Integer.MIN_VALUE;
+    int sensoryFacingDx = Integer.MIN_VALUE;
+    int sensoryFacingDy = Integer.MIN_VALUE;
     String lastSensoryModelReport = "No visual sensory model has been rebuilt.";
     final ArrayList<PortableLightInstance> portableLights = new ArrayList<>();
     final ArrayList<FactionContract> factionContracts = new ArrayList<>();
@@ -191,10 +197,23 @@ class GamePanel extends LegacyPanelBridgeBase {
     int controlsTab;
     int lookStackIndex;
     int lookStackScroll;
+    int lookFocusX = Integer.MIN_VALUE;
+    int lookFocusY = Integer.MIN_VALUE;
+    int lookFocusDepth;
     int inventoryItemDescriptionScroll;
     int selectedInventoryIndex;
     int selectedTargetInventoryIndex;
     int selectedMovementModeIndex = MOTION_WALK;
+    int mouseMovePreviewTargetX;
+    int mouseMovePreviewTargetY;
+    int facingDx = 1;
+    int facingDy = 0;
+    int playerMotionFromX;
+    int playerMotionFromY;
+    int playerMotionToX;
+    int playerMotionToY;
+    int playerMotionDurationMillis;
+    long playerMotionStartedMillis;
     int jobIndex;
     int jobDossierScroll;
     int jobDossierTab;
@@ -447,13 +466,14 @@ class GamePanel extends LegacyPanelBridgeBase {
     void prepareNewGameRoster(long rosterSeed) {
         candidates.clear();
         Random rr = new Random(rosterSeed ^ 0xC0FFEE51L);
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 8; i++) {
             Candidate c = Candidate.random(new Random(rr.nextLong() ^ (i * 0x9E3779B97F4A7C15L)));
             AgeAndWorldTimeAuthority.initializeCandidateAge(c, new Random(rosterSeed ^ (0xA6E5L + i * 37L)));
             candidates.add(c);
         }
         candidateIndex = 0;
         active = selectedNewGameCandidate();
+        DebugLog.audit("CHARACTER_CREATION", "prepared roster " + CharacterCreationAuditApi.audit(candidates).toLogBlock());
     }
 
     Candidate selectedNewGameCandidate() {
@@ -1330,15 +1350,12 @@ class GamePanel extends LegacyPanelBridgeBase {
                 drawWorldSprite(g, images.getNpcPortraitFor(npc), npc.x, npc.y, tile, outline, Character.toString(npc.symbol == 0 ? '@' : npc.symbol));
             }
         }
+        drawFacingVisionConeOverlay(g, cols, rows, tile);
+        drawMovementPlannerOverlay(g, cols, rows, tile);
         drawTargetCursor(g, lookX, lookY, cols, rows, tile, lookCursorActive || panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT, new java.awt.Color(116, 188, 235));
         drawTargetCursor(g, combatX, combatY, cols, rows, tile, panelMode == PanelMode.COMBAT, new java.awt.Color(235, 88, 74));
         drawTargetCursor(g, buildX, buildY, cols, rows, tile, buildPlacementActive, new java.awt.Color(124, 230, 144));
-        if (mouseMovePreviewActive && mouseMovePreviewPath != null) {
-            for (Point p : mouseMovePreviewPath) if (p != null) drawTargetCursor(g, p.x, p.y, cols, rows, tile, true, mouseMovePreviewValid ? new java.awt.Color(118, 214, 128) : new java.awt.Color(220, 92, 75));
-        }
-        if (worldPointInView(playerX, playerY, cols, rows)) {
-            drawWorldSprite(g, images.getPlayerPortrait(active), playerX, playerY, tile, new java.awt.Color(245, 214, 118), "@");
-        }
+        drawPlayerWorldSprite(g, cols, rows, tile);
     }
 
     private boolean worldPointInView(int x, int y, int cols, int rows) {
@@ -1346,10 +1363,16 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void drawWorldSprite(java.awt.Graphics2D g, BufferedImage img, int wx, int wy, int tile, java.awt.Color outline, String fallback) {
-        int sx = lastWorldViewOriginX + (wx - lastWorldViewMinX) * tile;
-        int sy = lastWorldViewOriginY + (wy - lastWorldViewMinY) * tile;
+        drawWorldSpriteAt(g, img, wx, wy, tile, outline, fallback, 1.0f);
+    }
+
+    private void drawWorldSpriteAt(java.awt.Graphics2D g, BufferedImage img, double wx, double wy, int tile, java.awt.Color outline, String fallback, float alpha) {
+        int sx = (int)Math.round(lastWorldViewOriginX + (wx - lastWorldViewMinX) * tile);
+        int sy = (int)Math.round(lastWorldViewOriginY + (wy - lastWorldViewMinY) * tile);
         int pad = Math.max(1, tile / 9);
         int size = Math.max(4, tile - pad * 2);
+        java.awt.Composite oldComposite = g.getComposite();
+        if (alpha < 0.999f) g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, Math.max(0.05f, Math.min(1f, alpha))));
         if (img != null) {
             g.drawImage(img, sx + pad, sy + pad, size, size, null);
         } else {
@@ -1363,6 +1386,16 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         g.setColor(outline == null ? new java.awt.Color(230, 190, 88) : outline);
         g.drawRect(sx + pad, sy + pad, size, size);
+        if (alpha < 0.999f) g.setComposite(oldComposite);
+    }
+
+    private void drawPlayerWorldSprite(java.awt.Graphics2D g, int cols, int rows, int tile) {
+        double rx = playerRenderWorldX();
+        double ry = playerRenderWorldY();
+        int cellX = (int)Math.floor(rx + 0.5);
+        int cellY = (int)Math.floor(ry + 0.5);
+        if (!worldPointInView(playerX, playerY, cols, rows) && !worldPointInView(cellX, cellY, cols, rows)) return;
+        drawWorldSpriteAt(g, images.getPlayerPortrait(active), rx, ry, tile, new java.awt.Color(245, 214, 118), "@", 1.0f);
     }
 
     private void drawTargetCursor(java.awt.Graphics2D g, int wx, int wy, int cols, int rows, int tile, boolean active, java.awt.Color color) {
@@ -1374,6 +1407,111 @@ class GamePanel extends LegacyPanelBridgeBase {
         g.setColor(color == null ? new java.awt.Color(245, 214, 118) : color);
         g.drawRect(sx + 1, sy + 1, Math.max(2, tile - 3), Math.max(2, tile - 3));
         g.setStroke(old);
+    }
+
+    private void drawFacingVisionConeOverlay(java.awt.Graphics2D g, int cols, int rows, int tile) {
+        if (world == null) return;
+        int range = visionRange();
+        java.awt.Color fill = new java.awt.Color(86, 148, 178, 32);
+        java.awt.Color edge = new java.awt.Color(140, 210, 236, 54);
+        for (int y = Math.max(0, lastWorldViewMinY); y < Math.min(world.h, lastWorldViewMinY + rows); y++) {
+            for (int x = Math.max(0, lastWorldViewMinX); x < Math.min(world.w, lastWorldViewMinX + cols); x++) {
+                if ((x == playerX && y == playerY) || !isVisible(x, y) || !withinFacingVisionCone(x, y, range)) continue;
+                int sx = lastWorldViewOriginX + (x - lastWorldViewMinX) * tile;
+                int sy = lastWorldViewOriginY + (y - lastWorldViewMinY) * tile;
+                g.setColor(fill);
+                g.fillRect(sx + 1, sy + 1, Math.max(1, tile - 2), Math.max(1, tile - 2));
+                g.setColor(edge);
+                g.drawRect(sx + 2, sy + 2, Math.max(1, tile - 5), Math.max(1, tile - 5));
+            }
+        }
+    }
+
+    private void drawMovementPlannerOverlay(java.awt.Graphics2D g, int cols, int rows, int tile) {
+        if (world == null) return;
+        boolean planning = manualMovementPlanActive || mouseMovePreviewActive;
+        if (planning) drawMovementRangeOverlay(g, cols, rows, tile);
+        if (manualMovementPlanActive) {
+            drawMovementPathOverlay(g, manualMovementPlanPath, lookX, lookY, true, cols, rows, tile);
+        }
+        if (mouseMovePreviewActive && mouseMovePreviewPath != null) {
+            drawMovementPathOverlay(g, mouseMovePreviewPath, mouseMovePreviewTargetX, mouseMovePreviewTargetY, mouseMovePreviewValid, cols, rows, tile);
+        }
+    }
+
+    private void drawMovementRangeOverlay(java.awt.Graphics2D g, int cols, int rows, int tile) {
+        boolean[][] reachable = reachableMovementTiles(movementModeRange());
+        if (reachable == null) return;
+        java.awt.Color fill = movementModeColor(28);
+        java.awt.Color edge = movementModeColor(82);
+        for (int y = Math.max(0, lastWorldViewMinY); y < Math.min(world.h, lastWorldViewMinY + rows); y++) {
+            for (int x = Math.max(0, lastWorldViewMinX); x < Math.min(world.w, lastWorldViewMinX + cols); x++) {
+                if (!reachable[x][y] || (x == playerX && y == playerY)) continue;
+                int sx = lastWorldViewOriginX + (x - lastWorldViewMinX) * tile;
+                int sy = lastWorldViewOriginY + (y - lastWorldViewMinY) * tile;
+                g.setColor(fill);
+                g.fillRect(sx + 2, sy + 2, Math.max(1, tile - 4), Math.max(1, tile - 4));
+                g.setColor(edge);
+                g.drawRect(sx + 3, sy + 3, Math.max(1, tile - 7), Math.max(1, tile - 7));
+            }
+        }
+    }
+
+    private void drawMovementPathOverlay(java.awt.Graphics2D g, java.util.List<Point> path, int targetX, int targetY, boolean usable, int cols, int rows, int tile) {
+        if (path == null || path.isEmpty()) return;
+        java.awt.Color pathColor = usable ? movementModeColor(210) : new java.awt.Color(222, 82, 72, 210);
+        java.awt.Color endpointColor = movementPathReaches(path, targetX, targetY) ? pathColor : new java.awt.Color(240, 196, 82, 210);
+        java.awt.Stroke oldStroke = g.getStroke();
+        g.setStroke(new java.awt.BasicStroke(Math.max(2f, tile / 7f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+        int prevX = worldTileCenterScreenX(playerX, tile);
+        int prevY = worldTileCenterScreenY(playerY, tile);
+        for (Point p : path) {
+            if (p == null) continue;
+            int cx = worldTileCenterScreenX(p.x, tile);
+            int cy = worldTileCenterScreenY(p.y, tile);
+            g.setColor(pathColor);
+            g.drawLine(prevX, prevY, cx, cy);
+            g.fillOval(cx - Math.max(2, tile / 8), cy - Math.max(2, tile / 8), Math.max(4, tile / 4), Math.max(4, tile / 4));
+            prevX = cx;
+            prevY = cy;
+        }
+        g.setStroke(oldStroke);
+        Point end = path.get(path.size() - 1);
+        if (end != null && worldPointInView(end.x, end.y, cols, rows)) {
+            drawWorldSpriteAt(g, images.getPlayerPortrait(active), end.x, end.y, tile, endpointColor, "@", 0.46f);
+            drawTargetCursor(g, end.x, end.y, cols, rows, tile, true, endpointColor);
+        }
+    }
+
+    private int worldTileCenterScreenX(int wx, int tile) {
+        return lastWorldViewOriginX + (wx - lastWorldViewMinX) * tile + tile / 2;
+    }
+
+    private int worldTileCenterScreenY(int wy, int tile) {
+        return lastWorldViewOriginY + (wy - lastWorldViewMinY) * tile + tile / 2;
+    }
+
+    private double playerRenderWorldX() {
+        double t = playerMotionProgress();
+        if (t >= 1.0) return playerX;
+        return playerMotionFromX + (playerMotionToX - playerMotionFromX) * smoothStep(t);
+    }
+
+    private double playerRenderWorldY() {
+        double t = playerMotionProgress();
+        if (t >= 1.0) return playerY;
+        return playerMotionFromY + (playerMotionToY - playerMotionFromY) * smoothStep(t);
+    }
+
+    private double playerMotionProgress() {
+        if (playerMotionDurationMillis <= 0 || playerMotionStartedMillis <= 0) return 1.0;
+        long elapsed = System.currentTimeMillis() - playerMotionStartedMillis;
+        return Math.max(0.0, Math.min(1.0, elapsed / (double)Math.max(1, playerMotionDurationMillis)));
+    }
+
+    private double smoothStep(double t) {
+        double c = Math.max(0.0, Math.min(1.0, t));
+        return c * c * (3.0 - 2.0 * c);
     }
 
     private java.awt.Color tileColor(char ch, int x, int y) {
@@ -1439,6 +1577,10 @@ class GamePanel extends LegacyPanelBridgeBase {
                 + " | Pos " + playerX + "," + playerY
                 + " | Food " + food + " Water " + water
                 + " | Wounds " + wounds + " Fatigue " + fatigue);
+        lines.add("Movement " + movementModeLabel(selectedMovementModeIndex)
+                + " / range " + movementModeRange()
+                + " / facing " + facingLabel()
+                + " / " + activeMotionStateLabel() + ".");
         if (world != null && world.inBounds(tx, ty)) {
             lines.add("Target " + tx + "," + ty + " | " + (panelMode == PanelMode.COMBAT ? targetingSolutionAt(tx, ty).summary : "inspectable world cell"));
             ArrayList<String> stack = tileStackAt(tx, ty);
@@ -2104,36 +2246,213 @@ class GamePanel extends LegacyPanelBridgeBase {
     private void drawInfopediaOverlay(java.awt.Graphics2D g, Rectangle body) {
         mechanist.assets.AssetType selectedType = selectedInfopediaAssetType();
         java.util.List<String> entries = currentInfopediaEntries(selectedType);
-        syncInfopediaViewport(entries, body.height);
 
-        Rectangle controls = new Rectangle(body.x, body.y, body.width, 56);
-        drawBox(g, controls, "InfoPedia Scope");
+        g.setFont(smallFont);
+        Rectangle controls = new Rectangle(body.x, body.y, body.width, infopediaControlsHeight(g.getFontMetrics(), body.width));
+        drawBox(g, controls, "InfoPedia Categories");
+        int tabsBottom = addInfopediaTabButtons(g, controls);
         g.setFont(smallFont);
         g.setColor(new java.awt.Color(205, 210, 195));
         String filter = infopediaAssetFilter == null || infopediaAssetFilter.isBlank() ? "<none>" : infopediaAssetFilter;
         String focus = "infopedia-asset-filter".equals(activeScrollTag) ? " / typing filter" : "";
-        drawUiTextLine(g, GuiLayoutApi.fitLabel("Type: " + SemanticAssetInfopediaAuthority.typeLabel(selectedType) + " / Filter: " + filter + focus, g.getFontMetrics(), controls.width - 300), controls.x + 12, controls.y + 42);
-        int bx = Math.max(controls.x + controls.width - 280, controls.x + 12);
-        addOverlayButton("Type <", bx, controls.y + 16, 64, 28, "Previous InfoPedia type.", () -> cycleInfopediaTab(-1));
-        addOverlayButton("Type >", bx + 72, controls.y + 16, 64, 28, "Next InfoPedia type.", () -> cycleInfopediaTab(1));
-        addOverlayButton("Filter", bx + 144, controls.y + 16, 64, 28, "Focus InfoPedia search filter.", () -> { activeScrollTag = "infopedia-asset-filter"; repaint(); });
-        addOverlayButton("Clear", bx + 216, controls.y + 16, 58, 28, "Clear InfoPedia search filter.", () -> { infopediaAssetFilter = ""; infopediaSelectionIndex = 0; infopediaListScroll = 0; infopediaDetailScroll = 0; activeScrollTag = "infopedia-list"; repaint(); });
+        int filterY = Math.min(controls.y + controls.height - 14, tabsBottom + 26);
+        int bx = Math.max(controls.x + controls.width - 136, controls.x + 12);
+        drawInfopediaTextLine(g, GuiLayoutApi.fitLabel("Selected: " + SemanticAssetInfopediaAuthority.typeLabel(selectedType) + " / Filter: " + filter + focus, g.getFontMetrics(), Math.max(80, bx - controls.x - 24)), controls.x + 12, filterY, Math.max(80, bx - controls.x - 24), new java.awt.Color(205, 210, 195), false);
+        addOverlayButton("Filter", bx, filterY - 22, 64, 28, "Focus InfoPedia search filter.", () -> { activeScrollTag = "infopedia-asset-filter"; repaint(); });
+        addOverlayButton("Clear", bx + 72, filterY - 22, 58, 28, "Clear InfoPedia search filter.", () -> { infopediaAssetFilter = ""; infopediaSelectionIndex = 0; infopediaListScroll = 0; infopediaDetailScroll = 0; activeScrollTag = "infopedia-list"; repaint(); });
 
         int gap = 14;
-        Rectangle list = new Rectangle(body.x, body.y + 68, Math.max(250, body.width / 2 - gap), body.height - 68);
+        int contentTop = controls.y + controls.height + 12;
+        Rectangle list = new Rectangle(body.x, contentTop, Math.max(250, body.width / 2 - gap), Math.max(120, body.y + body.height - contentTop));
         Rectangle detail = new Rectangle(list.x + list.width + gap, list.y, Math.max(260, body.x + body.width - list.x - list.width - gap), list.height);
-        int maxRows = Math.max(1, (list.height - 42) / 20);
+        syncInfopediaViewport(entries, list.height);
+        int maxRows = infopediaMaxRows(list.height);
         int start = Math.max(0, Math.min(infopediaListScroll, Math.max(0, entries.size() - 1)));
         int end = Math.min(entries.size(), start + maxRows);
         java.util.List<String> visible = entries.isEmpty() ? java.util.List.of("No InfoPedia entries are available.") : new ArrayList<>(entries.subList(start, end));
-        drawListBox(g, list, "Entries", visible, Math.max(0, infopediaSelectionIndex - start), true);
+        drawInfopediaListBox(g, list, "Entries", visible, Math.max(0, infopediaSelectionIndex - start), true);
 
         String selected = entries.isEmpty() ? "" : entries.get(Math.max(0, Math.min(infopediaSelectionIndex, entries.size() - 1)));
         java.util.List<String> detailLines = SemanticAssetInfopediaAuthority.detailLines(mechanist.assets.AssetManager.registry(), selected, selectedType, infopediaAssetFilter);
         java.util.List<String> scrolled = infopediaDetailScroll <= 0 ? detailLines : detailLines.subList(Math.min(infopediaDetailScroll, detailLines.size()), detailLines.size());
         String assetId = SemanticAssetInfopediaAuthority.assetIdFromEntry(selected).orElse("");
         BufferedImage icon = assetId.isBlank() ? null : images.getSemanticAssetImage(assetId);
-        drawDetailBox(g, detail, "Entry Detail", scrolled, icon);
+        drawInfopediaDetailBox(g, detail, "Entry Detail", scrolled, icon);
+    }
+
+    private int infopediaControlsHeight(java.awt.FontMetrics fm, int width) {
+        int rows = infopediaTabRows(fm, width);
+        return 34 + rows * INFOPEDIA_TAB_ROW_HEIGHT + Math.max(0, rows - 1) * INFOPEDIA_TAB_GAP + 42;
+    }
+
+    private int infopediaTabRows(java.awt.FontMetrics fm, int width) {
+        int usable = Math.max(120, width - 24);
+        int x = 0;
+        int rows = 1;
+        for (String label : infopediaTabLabels()) {
+            int tabW = infopediaTabWidth(fm, label);
+            if (x > 0 && x + tabW > usable) {
+                rows++;
+                x = 0;
+            }
+            x += tabW + INFOPEDIA_TAB_GAP;
+        }
+        return rows;
+    }
+
+    private java.util.List<String> infopediaTabLabels() {
+        java.util.ArrayList<String> labels = new java.util.ArrayList<>();
+        labels.add("All");
+        for (mechanist.assets.AssetType type : SemanticAssetInfopediaAuthority.browseTypes()) labels.add(SemanticAssetInfopediaAuthority.typeLabel(type));
+        return labels;
+    }
+
+    private int infopediaTabWidth(java.awt.FontMetrics fm, String label) {
+        return Math.max(64, Math.min(140, fm.stringWidth(label == null ? "" : label) + 24));
+    }
+
+    private int addInfopediaTabButtons(java.awt.Graphics2D g, Rectangle controls) {
+        g.setFont(smallFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        java.util.List<String> labels = infopediaTabLabels();
+        int x = controls.x + 12;
+        int y = controls.y + 34;
+        int startX = x;
+        int maxX = controls.x + controls.width - 12;
+        for (int i = 0; i < labels.size(); i++) {
+            String label = labels.get(i);
+            int tabW = infopediaTabWidth(fm, label);
+            if (x > startX && x + tabW > maxX) {
+                x = startX;
+                y += INFOPEDIA_TAB_ROW_HEIGHT + INFOPEDIA_TAB_GAP;
+            }
+            final int tab = i;
+            boolean selected = tab == Math.max(0, Math.min(infopediaTab, labels.size() - 1));
+            String drawLabel = (selected ? "> " : "") + GuiLayoutApi.fitLabel(label, fm, Math.max(24, tabW - 18));
+            addOverlayButton(drawLabel, x, y, tabW, INFOPEDIA_TAB_ROW_HEIGHT, "Show InfoPedia category: " + label + ".", () -> setInfopediaTab(tab));
+            x += tabW + INFOPEDIA_TAB_GAP;
+        }
+        return y + INFOPEDIA_TAB_ROW_HEIGHT;
+    }
+
+    private int infopediaMaxRows(int listHeight) {
+        return Math.max(1, (Math.max(80, listHeight) - 42) / INFOPEDIA_ROW_HEIGHT);
+    }
+
+    private void drawInfopediaListBox(java.awt.Graphics2D g, Rectangle r, String title, java.util.List<String> rows, int selected, boolean activeColumn) {
+        drawBox(g, r, title);
+        g.setFont(smallFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        int y = r.y + 34;
+        if (rows == null || rows.isEmpty()) {
+            drawInfopediaTextLine(g, "Empty", r.x + 12, y, r.width - 24, new java.awt.Color(145, 148, 132), false);
+            return;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            if (y > r.y + r.height - Math.max(8, fm.getDescent())) break;
+            boolean rowSelected = activeColumn && i == selected;
+            if (rowSelected) {
+                g.setColor(new java.awt.Color(55, 48, 32, 210));
+                g.fillRoundRect(r.x + 8, y - fm.getAscent() - 4, r.width - 16, Math.max(14, fm.getHeight() + 6), 6, 6);
+            }
+            String text = GuiLayoutApi.fitLabel((rowSelected ? "> " : "  ") + rows.get(i), fm, r.width - 24);
+            drawInfopediaTextLine(g, text, r.x + 12, y, r.width - 24, rowSelected ? new java.awt.Color(245, 220, 140) : new java.awt.Color(205, 210, 195), rowSelected);
+            y += INFOPEDIA_ROW_HEIGHT;
+        }
+    }
+
+    private void drawInfopediaDetailBox(java.awt.Graphics2D g, Rectangle r, String title, java.util.List<String> lines, BufferedImage icon) {
+        drawBox(g, r, title);
+        int previewW = Math.max(118, Math.min(180, r.width / 3));
+        Rectangle preview = new Rectangle(r.x + r.width - previewW - 12, r.y + 34, previewW, Math.max(128, Math.min(r.height - 46, 230)));
+        int x = r.x + 12;
+        int y = r.y + 34;
+        int textW = Math.max(120, preview.x - x - 14);
+        drawInfopediaIconPreview(g, preview, lines, icon);
+        g.setFont(smallFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        java.awt.Shape oldClip = g.getClip();
+        g.setClip(r.x + 8, r.y + 28, Math.max(1, preview.x - r.x - 16), Math.max(1, r.height - 36));
+        if (lines != null) {
+            for (String line : lines) {
+                if (y > r.y + r.height - Math.max(8, fm.getDescent())) break;
+                if (line == null || line.isBlank()) {
+                    y += Math.max(8, INFOPEDIA_ROW_HEIGHT / 2);
+                    continue;
+                }
+                for (String wrapped : GuiLayoutApi.wrapText(line, fm, textW)) {
+                    if (y > r.y + r.height - Math.max(8, fm.getDescent())) break;
+                    drawInfopediaTextLine(g, wrapped, x, y, textW, new java.awt.Color(205, 210, 195), false);
+                    y += INFOPEDIA_ROW_HEIGHT;
+                }
+            }
+        }
+        g.setClip(oldClip);
+    }
+
+    private void drawInfopediaIconPreview(java.awt.Graphics2D g, Rectangle r, java.util.List<String> lines, BufferedImage icon) {
+        g.setColor(new java.awt.Color(8, 10, 9, 226));
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+        g.setColor(new java.awt.Color(145, 118, 64, 150));
+        g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+        g.setFont(smallFont.deriveFont(java.awt.Font.BOLD));
+        drawInfopediaTextLine(g, "Visual Preview", r.x + 10, r.y + 21, r.width - 20, new java.awt.Color(245, 220, 140), true);
+        int imageTop = r.y + 34;
+        int imageH = Math.max(48, Math.min(r.width - 20, r.height - 96));
+        int imageW = Math.max(48, r.width - 20);
+        Rectangle box = new Rectangle(r.x + 10, imageTop, imageW, imageH);
+        g.setColor(new java.awt.Color(0, 0, 0, 150));
+        g.fillRect(box.x, box.y, box.width, box.height);
+        g.setColor(new java.awt.Color(145, 118, 64, 120));
+        g.drawRect(box.x, box.y, box.width, box.height);
+        if (icon != null) {
+            int drawW = Math.max(1, box.width - 12);
+            int drawH = Math.max(1, icon.getHeight() * drawW / Math.max(1, icon.getWidth()));
+            if (drawH > box.height - 12) {
+                drawH = Math.max(1, box.height - 12);
+                drawW = Math.max(1, icon.getWidth() * drawH / Math.max(1, icon.getHeight()));
+            }
+            int ix = box.x + (box.width - drawW) / 2;
+            int iy = box.y + (box.height - drawH) / 2;
+            Object oldHint = g.getRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION);
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g.drawImage(icon, ix, iy, drawW, drawH, null);
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, oldHint == null ? java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR : oldHint);
+        } else {
+            drawInfopediaTextLine(g, "No icon mapped", box.x + 8, box.y + box.height / 2 + 5, box.width - 16, new java.awt.Color(145, 148, 132), false);
+        }
+        int y = box.y + box.height + 20;
+        if (lines != null) {
+            int drawn = 0;
+            for (String line : lines) {
+                if (line == null || line.isBlank()) continue;
+                drawInfopediaTextLine(g, line, r.x + 10, y, r.width - 20, drawn == 0 ? new java.awt.Color(245, 220, 140) : new java.awt.Color(205, 210, 195), drawn == 0);
+                y += INFOPEDIA_ROW_HEIGHT;
+                drawn++;
+                if (drawn >= 3 || y > r.y + r.height - 8) break;
+            }
+        }
+    }
+
+    private void drawInfopediaTextLine(java.awt.Graphics2D g, String text, int x, int baseline, int maxWidth, java.awt.Color color, boolean strong) {
+        if (g == null || text == null) return;
+        java.awt.Font oldFont = g.getFont();
+        if (strong) g.setFont(oldFont.deriveFont(java.awt.Font.BOLD));
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        String fitted = GuiLayoutApi.fitLabel(text, fm, Math.max(8, maxWidth));
+        int tw = fm.stringWidth(fitted);
+        int bh = Math.max(10, fm.getHeight() + 3);
+        int bx = x - 4;
+        int by = baseline - fm.getAscent() - 2;
+        java.awt.Color old = g.getColor();
+        g.setColor(new java.awt.Color(0, 0, 0, strong ? 178 : 142));
+        g.fillRoundRect(bx, by, Math.min(Math.max(10, tw + 8), Math.max(10, maxWidth + 8)), bh, 6, 6);
+        g.setColor(new java.awt.Color(128, 105, 58, strong ? 148 : 92));
+        g.drawRoundRect(bx, by, Math.min(Math.max(10, tw + 8), Math.max(10, maxWidth + 8)), bh, 6, 6);
+        g.setColor(color == null ? new java.awt.Color(205, 210, 195) : color);
+        g.drawString(fitted, x, baseline);
+        g.setColor(old);
+        g.setFont(oldFont);
     }
 
     private mechanist.assets.AssetType selectedInfopediaAssetType() {
@@ -2146,7 +2465,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         return SemanticAssetInfopediaAuthority.entries(mechanist.assets.AssetManager.registry(), selectedType, infopediaAssetFilter);
     }
 
-    private void syncInfopediaViewport(java.util.List<String> entries, int bodyHeight) {
+    private void syncInfopediaViewport(java.util.List<String> entries, int listHeight) {
         int count = entries == null ? 0 : entries.size();
         if (count <= 0) {
             infopediaSelectionIndex = 0;
@@ -2155,7 +2474,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             return;
         }
         infopediaSelectionIndex = Math.max(0, Math.min(infopediaSelectionIndex, count - 1));
-        int maxRows = Math.max(1, (Math.max(120, bodyHeight - 68) - 42) / 20);
+        int maxRows = infopediaMaxRows(listHeight);
         if (infopediaSelectionIndex < infopediaListScroll) infopediaListScroll = infopediaSelectionIndex;
         if (infopediaSelectionIndex >= infopediaListScroll + maxRows) infopediaListScroll = infopediaSelectionIndex - maxRows + 1;
         infopediaListScroll = Math.max(0, Math.min(infopediaListScroll, Math.max(0, count - maxRows)));
@@ -2310,12 +2629,15 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void runGuarded(String tag, String reason, Runnable body) { if (body != null) body.run(); }
     void executePacedMovementBody(int dx, int dy, String source) {
+        setFacingFromDelta(dx, dy, source);
         int nx = playerX + dx;
         int ny = playerY + dy;
         if (world == null) {
+            startPlayerMotionTween(playerX, playerY, nx, ny, 1, source);
             playerX = nx;
             playerY = ny;
         } else if (world.inBounds(nx, ny) && world.walkable(nx, ny) && world.npcAt(nx, ny) == null) {
+            startPlayerMotionTween(playerX, playerY, nx, ny, 1, source);
             playerX = nx;
             playerY = ny;
             advanceTurnBody(null);
@@ -2325,6 +2647,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         lookX = playerX;
         lookY = playerY;
+        lookCursorActive = false;
+        interactCursorActive = false;
+        ProgressiveLookAuthority.reset(this, "movement");
+        refreshSensoryFacingState("movement");
     }
     void clearPendingMovementInput(String reason) {}
     void advanceTurnBody(String line) {
@@ -2345,6 +2671,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             logEvent("Interact target is outside the current world slice.");
             return;
         }
+        setFacingToward(lookX, lookY, "interaction facing");
         NpcEntity npc = world.npcAt(lookX, lookY);
         if (npc != null) {
             runNpcTalkedTo++;
@@ -2394,6 +2721,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             return;
         }
         clampCombatCursorToWorld();
+        setFacingToward(combatX, combatY, "combat target");
         LegacyTargetingSolution solution = targetingSolutionAt(combatX, combatY);
         lastTargetingReport = solution.summary;
         NpcEntity npc = world.npcAt(combatX, combatY);
@@ -2487,6 +2815,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 || visibleTiles == null || visibleTiles.length != world.w || visibleTiles[0].length != world.h
                 || rememberedTiles == null || rememberedTiles.length != world.w || rememberedTiles[0].length != world.h;
         if (badArrays || sensoryWorldRef != world || sensoryTurn != turn || sensoryPlayerX != playerX || sensoryPlayerY != playerY
+                || sensoryFacingDx != facingDx || sensoryFacingDy != facingDy
                 || sensoryLightRevision != world.dirtyLightRevision || sensoryVisionRevision != world.dirtyVisionRevision
                 || sensoryNoiseRevision != world.dirtyNoiseRevision
                 || sensoryPortableSignature != portableSignature) {
@@ -2506,6 +2835,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         sensoryTurn = turn;
         sensoryPlayerX = playerX;
         sensoryPlayerY = playerY;
+        sensoryFacingDx = facingDx;
+        sensoryFacingDy = facingDy;
         sensoryLightRevision = world.dirtyLightRevision;
         sensoryNoiseRevision = world.dirtyNoiseRevision;
         sensoryVisionRevision = world.dirtyVisionRevision;
@@ -2515,13 +2846,12 @@ class GamePanel extends LegacyPanelBridgeBase {
                 + " remembered=" + rememberedTileCount()
                 + " peakLight=" + peakLightLevel()
                 + " ambient=" + ambientLightLevelForWorld()
-                + " visionRange=" + visionRange() + ".";
+                + " visionRange=" + visionRange()
+                + " projection=" + DirectionalVisionAuthority.summary(this) + ".";
     }
     void refreshNameLockedCandidateState(Candidate candidate) {}
     int visionRange() {
-        int statBoost = Math.max(0, stat("Vision", active == null ? 8 : active.stats.getOrDefault("Vision", 8))) / 3;
-        int lightBoost = activePortableLightRadius() > 0 ? 2 : 0;
-        return Math.max(4, Math.min(14, 6 + statBoost + lightBoost));
+        return DirectionalVisionAuthority.range(this);
     }
     boolean isVisible(int x, int y) { return world != null && x >= 0 && y >= 0 && x < visibleTiles.length && y < visibleTiles[0].length && visibleTiles[x][y]; }
     boolean isRemembered(int x, int y) { return world != null && x >= 0 && y >= 0 && x < rememberedTiles.length && y < rememberedTiles[0].length && rememberedTiles[x][y]; }
@@ -2549,6 +2879,9 @@ class GamePanel extends LegacyPanelBridgeBase {
                 if (light == null || light.expiresTurn <= turn || !sameWorldLocation(light.worldKey)) continue;
                 applyBandedLight(light.x, light.y, Math.max(1, light.radius), portableLightIntensity(light.itemName));
             }
+        }
+        for (WorldLightEmitterAuthority.Emitter emitter : WorldLightEmitterAuthority.gameplayEmitters(this)) {
+            applyBandedLight(emitter.x, emitter.y, emitter.radius, emitter.intensity);
         }
     }
     private void applyBandedLight(int sx, int sy, int radius, int intensity) {
@@ -2586,7 +2919,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 double distance = Math.hypot(x - playerX, y - playerY);
-                if (distance > range + 0.15) continue;
+                if (!withinFacingVisionCone(x, y, range)) continue;
                 if (!hasLineOfSight(playerX, playerY, x, y)) continue;
                 boolean lit = lightLevelAt(x, y) >= threshold || distance <= 1.05 || (x == playerX && y == playerY);
                 if (!lit) continue;
@@ -2663,8 +2996,16 @@ class GamePanel extends LegacyPanelBridgeBase {
     int carryCapacity() { return 40 + Math.max(0, supplies / 5); }
     void addInventoryItem(String item, ItemProvenanceRecord provenance) { if (item != null && !item.isBlank()) inventory.add(item); }
     void gainXp(String skill, int amount, String reason) { xp += Math.max(0, amount); }
-    String facingLabel() { return "E"; }
-    String activeMotionStateLabel() { return "stationary"; }
+    String facingLabel() {
+        if (facingDy < 0) return "N";
+        if (facingDy > 0) return "S";
+        if (facingDx < 0) return "W";
+        return "E";
+    }
+    String activeMotionStateLabel() {
+        if (!playerMotionAnimating()) return "stationary";
+        return "moving " + movementModeLabel(selectedMovementModeIndex).toLowerCase(Locale.ROOT);
+    }
     String timeText() { return "day " + Math.max(0, turn / Math.max(1, TURNS_PER_HOUR * HOURS_PER_DAY)) + " hour " + Math.max(0, (turn / Math.max(1, TURNS_PER_HOUR)) % HOURS_PER_DAY); }
     String stateSummary() { return "turn=" + turn + " pos=" + playerX + "," + playerY + " screen=" + screen + " panel=" + panelMode; }
     void logEvent(String line) { if (line != null && !line.isBlank()) eventLog.add(line); }
@@ -2714,7 +3055,13 @@ class GamePanel extends LegacyPanelBridgeBase {
     void closePanel() { panelMode = PanelMode.NONE; screen = world == null ? Screen.MENU : Screen.GAME; }
     void closeKnowledgeScreen() { screen = Screen.GAME; }
     void handleKnowledgeKeyPressed(int code) {}
-    void cancelManualMovementPlan(String reason) { manualMovementPlanActive = false; }
+    void cancelManualMovementPlan(String reason) {
+        manualMovementPlanActive = false;
+        manualMovementPlanPath.clear();
+        lookCursorActive = false;
+        lastTargetingReport = "Manual movement plan canceled" + (reason == null || reason.isBlank() ? "." : ": " + reason + ".");
+        repaint();
+    }
     void openSectorAuditPanel() {
         if (auditWorld == null) rerollSectorAudit();
         selectedButton = 0;
@@ -2857,7 +3204,11 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void cycleInfopediaTab(int delta) {
         int tabCount = SemanticAssetInfopediaAuthority.browseTypes().length + 1;
-        infopediaTab = Math.floorMod(infopediaTab + delta, Math.max(1, tabCount));
+        setInfopediaTab(Math.floorMod(infopediaTab + delta, Math.max(1, tabCount)));
+    }
+    void setInfopediaTab(int tab) {
+        int tabCount = SemanticAssetInfopediaAuthority.browseTypes().length + 1;
+        infopediaTab = Math.max(0, Math.min(Math.max(0, tabCount - 1), tab));
         infopediaSelectionIndex = 0;
         infopediaListScroll = 0;
         infopediaDetailScroll = 0;
@@ -2905,6 +3256,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             logEvent("Explosive target is outside the current world slice.");
             return;
         }
+        setFacingToward(targetX, targetY, "explosive target");
         String explosive = firstInventoryMatch(true, false);
         if (explosive == null) {
             logEvent("No carried explosive is available.");
@@ -2938,6 +3290,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             targetX = playerX;
             targetY = playerY;
         }
+        setFacingToward(targetX, targetY, "portable light throw");
         inventory.remove(selectedInventoryIndex);
         selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
         portableLights.add(new PortableLightInstance(item, targetX, targetY, profile.radius, turn + profile.remainingDuration(turn, item, 0), currentWorldKey(), "thrown"));
@@ -2965,7 +3318,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         advanceTurn("reloads " + weapon + ".");
     }
     void confirmCombatTarget() { confirmCombatTargetBody(); }
-    void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; clampCombatCursorToWorld(); lookX = combatX; lookY = combatY; lastTargetingReport = targetingSolutionAt(combatX, combatY).summary; }
+    void moveCombatCursor(int dx, int dy) { combatX += dx; combatY += dy; clampCombatCursorToWorld(); lookX = combatX; lookY = combatY; setFacingToward(combatX, combatY, "combat cursor"); lastTargetingReport = targetingSolutionAt(combatX, combatY).summary; }
     LegacyTargetingSolution targetingSolutionAt(int x, int y) {
         if (world == null || !world.inBounds(x, y)) return new LegacyTargetingSolution("No target selected.");
         int distance = Math.max(Math.abs(playerX - x), Math.abs(playerY - y));
@@ -2978,47 +3331,15 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void confirmInteraction() { confirmInteractionBody(); }
     void examineSelectedLookTarget() {
-        ArrayList<String> stack = tileStackAt(lookX, lookY);
+        setFacingToward(lookX, lookY, "look target");
+        int depth = ProgressiveLookAuthority.advance(this, lookX, lookY);
+        ArrayList<String> stack = ProgressiveLookAuthority.tileStackAt(this, lookX, lookY, depth);
         lastTargetingReport = stack.isEmpty() ? "No target data available." : stack.get(Math.max(0, Math.min(lookStackIndex, stack.size() - 1)));
         logEvent("Look " + lookX + "," + lookY + ": " + lastTargetingReport);
     }
-    void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; clampInteractCursorToAdjacent(); lookStackIndex = 0; lookStackScroll = 0; updatePendingInteractionSummary(); }
+    void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; clampInteractCursorToAdjacent(); setFacingToward(lookX, lookY, "interact cursor"); lookStackIndex = 0; lookStackScroll = 0; ProgressiveLookAuthority.reset(this, "interact cursor moved"); updatePendingInteractionSummary(); }
     ArrayList<String> tileStackAt(int x, int y) {
-        ArrayList<String> lines = new ArrayList<>();
-        if (world == null) {
-            lines.add("No world loaded.");
-            return lines;
-        }
-        if (!world.inBounds(x, y)) {
-            lines.add("Out of bounds target " + x + "," + y + ".");
-            return lines;
-        }
-        char ch = world.tiles[x][y];
-        lines.add("Tile glyph " + ch + " / walkable " + world.walkable(x, y));
-        CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, x, y, ch);
-        if (descriptor != null) lines.add(descriptor.inspectLine());
-        if (x == playerX && y == playerY) lines.add("Player position.");
-        NpcEntity npc = world.npcAt(x, y);
-        if (npc != null) {
-            lines.add("NPC: " + npc.name + " / " + npc.role + " / " + (npc.faction == null ? "None" : npc.faction.label));
-            lines.add(npc.rankLine());
-            lines.add("State: " + npc.state + " / HP " + npc.hp + " / age " + npc.ageLine());
-        }
-        MapObjectState obj = world.mapObjectAt(x, y);
-        if (obj != null) {
-            lines.add("Object: " + safeLabel(obj.label, obj.type));
-            lines.add("Type: " + safeLabel(obj.type, "object") + " / stock: " + safeLabel(obj.stockState, "none"));
-            FixtureInteractionRegistry.Definition def = FixtureInteractionRegistry.definitionFor(obj.type);
-            if (def != null) lines.add("Fixture: " + def.family.label + " / " + def.family.interaction + " / " + def.notes);
-            lines.add(ObjectSemanticAssetAuthority.semanticSummaryForName(obj.label));
-        }
-        BaseObject base = baseObjectAt(x, y);
-        if (base != null) {
-            lines.add("Base object: " + safeLabel(base.name, "base object") + " / " + base.symbol + " / " + safeLabel(base.qualityName, "Common"));
-            lines.add(safeLabel(base.description, "Built base object."));
-        }
-        if (isDoorTile(ch)) lines.add("Door/access tile: interact can operate this doorway.");
-        return lines;
+        return ProgressiveLookAuthority.tileStackAt(this, x, y);
     }
     boolean isDoorTile(char tile) { return tile == '+' || tile == '/' || tile == '\\'; }
     void interactDoorAt(int x, int y, char tile) { logEvent("Door interaction at " + x + "," + y + "."); advanceTurn("interacts with a door."); }
@@ -3056,14 +3377,20 @@ class GamePanel extends LegacyPanelBridgeBase {
         int idx = 1;
         for (int i = 0; i < modes.length; i++) if (modes[i] == selectedMovementModeIndex) idx = (i + 1) % modes.length;
         selectedMovementModeIndex = modes[idx];
-        logEvent("Movement mode: " + movementModeLabel(selectedMovementModeIndex) + ".");
+        if (manualMovementPlanActive) refreshManualMovementPlanPath("movement mode changed");
+        if (mouseMovePreviewActive) {
+            updateMouseMovementPreviewTo(mouseMovePreviewTargetX, mouseMovePreviewTargetY);
+        }
+        logEvent("Movement mode: " + movementModeLabel(selectedMovementModeIndex) + " / range " + movementModeRange() + ".");
+        repaint();
     }
     void beginManualMovementPlan() {
         manualMovementPlanActive = true;
         lookCursorActive = true;
         lookX = playerX;
         lookY = playerY;
-        lastTargetingReport = "Manual path planning started at " + lookX + "," + lookY + ".";
+        manualMovementPlanPath.clear();
+        lastTargetingReport = "Manual path planning started at " + lookX + "," + lookY + " with " + movementModeLabel(selectedMovementModeIndex) + " range " + movementModeRange() + ".";
         logEvent(lastTargetingReport);
         repaint();
     }
@@ -3075,6 +3402,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         lookY = playerY;
         lookStackIndex = 0;
         lookStackScroll = 0;
+        ProgressiveLookAuthority.reset(this, "look mode opened");
         ArrayList<String> stack = tileStackAt(lookX, lookY);
         lastTargetingReport = stack.isEmpty() ? "No target data available." : stack.get(0);
         openPanel(PanelMode.LOOK);
@@ -3089,6 +3417,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         clampInteractCursorToAdjacent();
         lookStackIndex = 0;
         lookStackScroll = 0;
+        ProgressiveLookAuthority.reset(this, "interact mode opened");
         updatePendingInteractionSummary();
     }
     void openPanel(PanelMode mode) { panelMode = mode == null ? PanelMode.NONE : mode; screen = mode == PanelMode.CHARACTER ? Screen.CHARACTER : Screen.PANEL; if (mode == PanelMode.LOOK) lookCursorActive = true; }
@@ -3101,16 +3430,238 @@ class GamePanel extends LegacyPanelBridgeBase {
         clampCombatCursorToWorld();
         lookX = combatX;
         lookY = combatY;
+        ProgressiveLookAuthority.reset(this, "combat targeting opened");
         lastTargetingReport = targetingSolutionAt(combatX, combatY).summary;
     }
     void beginExplosiveTargeting() {
         beginCombatTargeting();
         lastTargetingReport = "Explosive targeting armed. " + targetingSolutionAt(combatX, combatY).summary;
     }
-    void queueOrExecuteMovementInput(int dx, int dy) { executePacedMovementBody(dx, dy, "legacy-queue"); }
+    void queueOrExecuteMovementInput(int dx, int dy) {
+        if (dx == 0 && dy == 0) return;
+        setFacingFromDelta(dx, dy, "movement input");
+        if (movementModeRange() <= 1) {
+            executePacedMovementBody(dx, dy, "direct-" + movementModeLabel(selectedMovementModeIndex).toLowerCase(Locale.ROOT));
+            return;
+        }
+        beginDirectionalMovementPlan(dx, dy);
+    }
     void sanityCheck(String phase) {}
-    void nudgeManualMovementPlan(int dx, int dy) { lookX += dx; lookY += dy; clampLookCursorToWorld(); lastTargetingReport = "Manual path target " + lookX + "," + lookY + "."; repaint(); }
-    void confirmManualMovementPlan() { manualMovementPlanActive = false; logEvent("Manual path target set to " + lookX + "," + lookY + ". Route execution remains on the movement reattachment list."); repaint(); }
+    void nudgeManualMovementPlan(int dx, int dy) {
+        lookX += dx;
+        lookY += dy;
+        clampLookCursorToWorld();
+        refreshManualMovementPlanPath("manual nudge");
+        repaint();
+    }
+    void confirmManualMovementPlan() {
+        refreshManualMovementPlanPath("manual confirm");
+        if (manualMovementPlanPath.isEmpty()) {
+            manualMovementPlanActive = false;
+            lookCursorActive = false;
+            logEvent("Manual movement plan has no reachable route to " + lookX + "," + lookY + ".");
+            repaint();
+            return;
+        }
+        executeMovementPath(manualMovementPlanPath, "manual plan");
+        manualMovementPlanActive = false;
+        manualMovementPlanPath.clear();
+        repaint();
+    }
+
+    private void beginDirectionalMovementPlan(int dx, int dy) {
+        manualMovementPlanActive = true;
+        lookCursorActive = true;
+        int range = movementModeRange();
+        lookX = playerX + Integer.signum(dx) * range;
+        lookY = playerY + Integer.signum(dy) * range;
+        clampLookCursorToWorld();
+        refreshManualMovementPlanPath("directional movement input");
+        if (manualMovementPlanPath.isEmpty()) {
+            logEvent("No " + movementModeLabel(selectedMovementModeIndex) + " route is available in that direction.");
+        } else {
+            Point end = manualMovementPlanPath.get(manualMovementPlanPath.size() - 1);
+            lastTargetingReport = movementModeLabel(selectedMovementModeIndex) + " plan: " + manualMovementPlanPath.size() + " tile(s), ghost at " + end.x + "," + end.y + ".";
+            logEvent(lastTargetingReport);
+        }
+        repaint();
+    }
+
+    private void refreshManualMovementPlanPath(String source) {
+        manualMovementPlanPath.clear();
+        if (!manualMovementPlanActive || world == null) return;
+        manualMovementPlanPath.addAll(buildMovementPathTo(lookX, lookY, movementModeRange()));
+        if (manualMovementPlanPath.isEmpty()) {
+            lastTargetingReport = "No reachable " + movementModeLabel(selectedMovementModeIndex) + " route to " + lookX + "," + lookY + ".";
+            return;
+        }
+        Point end = manualMovementPlanPath.get(manualMovementPlanPath.size() - 1);
+        boolean exact = end.x == lookX && end.y == lookY;
+        lastTargetingReport = (exact ? "Route" : "Partial route")
+                + " to " + lookX + "," + lookY
+                + " / " + manualMovementPlanPath.size() + " tile(s)"
+                + " / mode " + movementModeLabel(selectedMovementModeIndex)
+                + " range " + movementModeRange()
+                + (exact ? "." : " / endpoint " + end.x + "," + end.y + ".");
+    }
+
+    void clearMouseMovementPreview(String reason) {
+        mouseMovePreviewActive = false;
+        mouseMovePreviewValid = false;
+        mouseMovePreviewPath.clear();
+        mouseMovePreviewTargetX = playerX;
+        mouseMovePreviewTargetY = playerY;
+        repaint();
+    }
+
+    void updateMouseMovementPreviewTo(int x, int y) {
+        mouseMovePreviewActive = true;
+        mouseMovePreviewPath.clear();
+        if (world == null) {
+            mouseMovePreviewValid = false;
+            return;
+        }
+        int tx = Math.max(0, Math.min(world.w - 1, x));
+        int ty = Math.max(0, Math.min(world.h - 1, y));
+        mouseMovePreviewTargetX = tx;
+        mouseMovePreviewTargetY = ty;
+        mouseMovePreviewPath.addAll(buildMovementPathTo(tx, ty, movementModeRange()));
+        mouseMovePreviewValid = !mouseMovePreviewPath.isEmpty();
+        if (mouseMovePreviewPath.isEmpty()) {
+            lastTargetingReport = "No reachable mouse movement preview to " + tx + "," + ty + ".";
+        } else {
+            Point end = mouseMovePreviewPath.get(mouseMovePreviewPath.size() - 1);
+            boolean exact = end.x == tx && end.y == ty;
+            lastTargetingReport = (exact ? "Mouse movement route" : "Mouse movement partial route")
+                    + " / " + movementModeLabel(selectedMovementModeIndex)
+                    + " / " + mouseMovePreviewPath.size() + " tile(s)"
+                    + " / endpoint " + end.x + "," + end.y + ".";
+        }
+    }
+
+    void executeMouseMovementPreview() {
+        if (!mouseMovePreviewActive) return;
+        ArrayList<Point> route = new ArrayList<>(mouseMovePreviewPath);
+        if (route.isEmpty()) {
+            logEvent("Mouse movement preview has no reachable route.");
+            clearMouseMovementPreview("empty mouse route");
+            return;
+        }
+        executeMovementPath(route, "mouse movement preview");
+        clearMouseMovementPreview("executed mouse movement preview");
+    }
+
+    private boolean executeMovementPath(java.util.List<Point> route, String source) {
+        if (world == null || route == null || route.isEmpty()) return false;
+        ArrayList<Point> cleanRoute = new ArrayList<>();
+        for (Point p : route) {
+            if (p == null || !world.inBounds(p.x, p.y)) break;
+            if (!movementCanEnter(p.x, p.y)) break;
+            cleanRoute.add(new Point(p.x, p.y));
+        }
+        if (cleanRoute.isEmpty()) {
+            logEvent("Movement route blocked before the first step.");
+            return false;
+        }
+        Point first = cleanRoute.get(0);
+        Point end = cleanRoute.get(cleanRoute.size() - 1);
+        setFacingFromDelta(first.x - playerX, first.y - playerY, source);
+        int fromX = playerX;
+        int fromY = playerY;
+        startPlayerMotionTween(fromX, fromY, end.x, end.y, cleanRoute.size(), source);
+        playerX = end.x;
+        playerY = end.y;
+        lookX = playerX;
+        lookY = playerY;
+        lookCursorActive = false;
+        interactCursorActive = false;
+        ProgressiveLookAuthority.reset(this, "movement route");
+        fatigue = Math.min(MAX_FOOD_WATER, fatigue + movementFatigueCost(cleanRoute.size()));
+        advanceTurnBody((active == null ? "player" : active.name)
+                + " moves " + cleanRoute.size() + " tile(s) by " + movementModeLabel(selectedMovementModeIndex).toLowerCase(Locale.ROOT) + ".");
+        markZoneVisitedAndCheckFirstType();
+        refreshSensoryFacingState("movement route");
+        return true;
+    }
+
+    private ArrayList<Point> buildMovementPathTo(int targetX, int targetY, int maxSteps) {
+        return MovementPlanningAuthority.buildPathTo(this, targetX, targetY, maxSteps);
+    }
+
+    private boolean[][] reachableMovementTiles(int maxSteps) {
+        return MovementPlanningAuthority.reachableTiles(this, maxSteps);
+    }
+
+    private boolean movementCanEnter(int x, int y) {
+        return MovementPlanningAuthority.canEnter(this, x, y);
+    }
+
+    private boolean movementPathReaches(java.util.List<Point> path, int targetX, int targetY) {
+        return MovementPlanningAuthority.pathReaches(path, targetX, targetY);
+    }
+
+    private int movementModeRange() {
+        return MovementPlanningAuthority.rangeForMode(selectedMovementModeIndex);
+    }
+
+    private int movementFatigueCost(int steps) {
+        return MovementPlanningAuthority.fatigueCost(selectedMovementModeIndex, steps);
+    }
+
+    private java.awt.Color movementModeColor(int alpha) {
+        return MovementPlanningAuthority.modeColor(selectedMovementModeIndex, alpha);
+    }
+
+    private void setFacingFromDelta(int dx, int dy, String source) {
+        if (dx == 0 && dy == 0) return;
+        int ndx = Math.abs(dx) >= Math.abs(dy) ? Integer.signum(dx) : 0;
+        int ndy = Math.abs(dy) > Math.abs(dx) ? Integer.signum(dy) : 0;
+        if (ndx == 0 && ndy == 0) return;
+        if (facingDx == ndx && facingDy == ndy) return;
+        facingDx = ndx;
+        facingDy = ndy;
+        refreshSensoryFacingState(source == null ? "facing changed" : source);
+    }
+
+    void setFacingToward(int tx, int ty, String source) {
+        setFacingFromDelta(tx - playerX, ty - playerY, source);
+    }
+
+    private void refreshSensoryFacingState(String reason) {
+        sensoryFacingDx = Integer.MIN_VALUE;
+        sensoryFacingDy = Integer.MIN_VALUE;
+        if (world != null) world.dirtyVisionRevision++;
+    }
+
+    private void startPlayerMotionTween(int fromX, int fromY, int toX, int toY, int steps, String source) {
+        playerMotionFromX = fromX;
+        playerMotionFromY = fromY;
+        playerMotionToX = toX;
+        playerMotionToY = toY;
+        playerMotionStartedMillis = System.currentTimeMillis();
+        playerMotionDurationMillis = Math.max(90, Math.min(620, 95 * Math.max(1, steps)));
+    }
+
+    private boolean playerMotionAnimating() {
+        return playerMotionDurationMillis > 0 && playerMotionStartedMillis > 0
+                && System.currentTimeMillis() - playerMotionStartedMillis < playerMotionDurationMillis;
+    }
+
+    private boolean withinFacingVisionCone(int x, int y, int range) {
+        int dx = x - playerX;
+        int dy = y - playerY;
+        if (dx == 0 && dy == 0) return true;
+        return DirectionalVisionAuthority.contains(this, x, y, range);
+    }
+
+    private void invalidateMovementPlans(String reason) {
+        if (manualMovementPlanActive) refreshManualMovementPlanPath(reason);
+        if (mouseMovePreviewActive) {
+            mouseMovePreviewActive = false;
+            mouseMovePreviewValid = false;
+            mouseMovePreviewPath.clear();
+        }
+    }
     void createNewInGameEditorEntry() {}
     void inGameEditorUndo() {}
     void inGameEditorRedo() {}
@@ -3275,8 +3826,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         infopediaDetailScroll = 0;
         return true;
     }
-    boolean worldZoomControlActive() { return true; }
-    void changeWorldZoom(int delta, String source) { logEvent("World zoom changed by " + delta + " via " + source + "."); }
+    boolean worldZoomControlActive() { return MapViewportOptionsSubsystem.worldZoomControlActive(this); }
+    void changeWorldZoom(int delta, String source) { MapViewportOptionsSubsystem.changeWorldZoom(this, delta, source); }
     void continueFromIntroCrawl() { setScreen(Screen.MENU); logEvent("Intro crawl completed."); }
     void continueFromZoneSplash() { setScreen(Screen.GAME); }
     void finishBootSequence(String source) { setScreen(Screen.INTRO_CRAWL); logEvent("Boot sequence finished by " + source + "."); }

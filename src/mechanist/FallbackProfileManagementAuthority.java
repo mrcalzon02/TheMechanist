@@ -416,11 +416,28 @@ final class FallbackProfileManagementAuthority {
 
         private BufferedImage readNameLockedPortrait(NameLockedProfilePortraitAuthority.Entry e) {
             try {
-                if (e == null || e.assetPath == null || e.assetPath.isBlank()) return null;
-                Path p = Paths.get(e.assetPath);
-                if (!Files.isRegularFile(p)) return null;
-                return ImageIO.read(p.toFile());
+                if (e == null) return null;
+                if (e.assetPath != null && !e.assetPath.isBlank()) {
+                    Path p = Paths.get(e.assetPath);
+                    if (Files.isRegularFile(p)) return ImageIO.read(p.toFile());
+                }
+                int idx = NameLockedProfilePortraitAuthority.entries().indexOf(e);
+                if (idx < 0) return null;
+                Path p = defaultSpecialProfilePath(idx);
+                return p == null ? null : ImageIO.read(p.toFile());
             } catch (Throwable ignored) { return null; }
+        }
+
+        private Path defaultSpecialProfilePath(int idx) {
+            if (idx < 0) return null;
+            int row = idx / 5 + 1;
+            int col = idx % 5 + 1;
+            String file = String.format(Locale.ROOT, "Specialprofiles_r%02dc%02d_32px.png", row, col);
+            for (Path root : defaultProfilePackageRoots()) {
+                Path p = root.resolve(file);
+                if (Files.isRegularFile(p)) return p;
+            }
+            return null;
         }
 
         private Path standardPortraitPath(int idx) {
@@ -431,6 +448,11 @@ final class FallbackProfileManagementAuthority {
 
         private ArrayList<Path> standardPortraitFiles() {
             ArrayList<Path> files = new ArrayList<>();
+            for (Path root : defaultProfilePackageRoots()) collectNamedPortraits(root, "Humans8x8", files);
+            if (!files.isEmpty()) {
+                files.sort(Comparator.comparing(path -> path.toString().toLowerCase(Locale.ROOT)));
+                return files;
+            }
             Path root = Paths.get("assets", "a", "r", "tiles", "quality", "low_32", "cells", "Protraits");
             String[] preferredHumanBuckets = {
                     "human_profiles", "humans", "human", "baseline_human", "base_human",
@@ -450,6 +472,28 @@ final class FallbackProfileManagementAuthority {
             });
             files.sort(Comparator.comparing(path -> path.toString().toLowerCase(Locale.ROOT)));
             return files;
+        }
+
+        private List<Path> defaultProfilePackageRoots() {
+            return List.of(
+                    Paths.get("assets", "graphics", "packages", "default_32", "Protraits"),
+                    Paths.get("PACKAGE_client", "assets", "graphics", "packages", "default_32", "Protraits"),
+                    Paths.get("packages", "client", "assets", "graphics", "packages", "default_32", "Protraits"),
+                    Paths.get("client", "assets", "graphics", "packages", "default_32", "Protraits")
+            );
+        }
+
+        private void collectNamedPortraits(Path dir, String prefix, ArrayList<Path> out) {
+            if (dir == null || out == null || prefix == null || prefix.isBlank() || !Files.isDirectory(dir)) return;
+            String normalizedPrefix = prefix.toLowerCase(Locale.ROOT);
+            try (java.util.stream.Stream<Path> stream = Files.list(dir)) {
+                stream.filter(p -> Files.isRegularFile(p) && p.getFileName() != null)
+                        .filter(p -> {
+                            String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
+                            return name.endsWith(".png") && name.startsWith(normalizedPrefix);
+                        })
+                        .forEach(out::add);
+            } catch (Throwable ignored) {}
         }
 
         private void collectStandardPortraits(Path dir, ArrayList<Path> out) {

@@ -67,19 +67,19 @@ final class ClientPackageLaunchAuthority {
         for (String arg : args) command.add(arg);
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(runtimeRoot.toFile());
-        pb.inheritIO();
+        if (!isWindows()) pb.inheritIO();
         Process process = pb.start();
-        return process.waitFor();
+        return isWindows() ? 0 : process.waitFor();
     }
 
     private static String javaBinary() {
         String javaHome = System.getProperty("java.home");
         if (javaHome != null && !javaHome.isBlank()) {
-            String exe = isWindows() ? "java.exe" : "java";
+            String exe = isWindows() ? "javaw.exe" : "java";
             File candidate = Paths.get(javaHome, "bin", exe).toFile();
             if (candidate.isFile()) return candidate.getAbsolutePath();
         }
-        return isWindows() ? "java.exe" : "java";
+        return isWindows() ? "javaw.exe" : "java";
     }
 
     private static boolean isWindows() {

@@ -169,8 +169,10 @@ final class GamePanelKeyController {
                 panel.lookCursorActive = true;
                 panel.lookX = Math.max(0, Math.min(panel.world.w - 1, panel.lookX + dx));
                 panel.lookY = Math.max(0, Math.min(panel.world.h - 1, panel.lookY + dy));
+                panel.setFacingToward(panel.lookX, panel.lookY, "look cursor");
                 panel.lookStackIndex = 0;
                 panel.lookStackScroll = 0;
+                ProgressiveLookAuthority.reset(panel, "look cursor moved");
             }
             panel.repaint();
             return true;

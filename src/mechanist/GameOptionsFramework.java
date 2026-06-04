@@ -652,8 +652,29 @@ class DisplayResolutionAuthority {
 }
 
 class WindowModeSurfaceAuthority {
-    private static int mode(GameOptions options) {
+    private static int requestedMode(GameOptions options) {
         return options == null ? 1 : Math.max(0, Math.min(2, options.windowMode));
+    }
+
+    private static boolean trueExclusiveFullscreenAllowed() {
+        return Boolean.getBoolean("mechanist.allowExclusiveFullscreen");
+    }
+
+    private static int mode(GameOptions options) {
+        int requested = requestedMode(options);
+        return requested == 2 && !trueExclusiveFullscreenAllowed() ? 1 : requested;
+    }
+
+    private static String modeLabel(int mode) {
+        return switch (Math.max(0, Math.min(2, mode))) {
+            case 1 -> "Borderless Windowed";
+            case 2 -> "Exclusive Fullscreen";
+            default -> "Windowed";
+        };
+    }
+
+    private static boolean exclusiveDowngraded(GameOptions options) {
+        return requestedMode(options) == 2 && mode(options) != 2;
     }
 
     private static int[] resolution(GameOptions options) {
@@ -686,6 +707,7 @@ class WindowModeSurfaceAuthority {
                 f.setLocationRelativeTo(null);
             }
             DebugLog.audit("WINDOW_STARTUP", "initialMode=" + (options == null ? "Borderless Windowed" : options.windowModeLabel())
+                    + (exclusiveDowngraded(options) ? " appliedMode=Borderless Windowed screenshotSafe=true" : "")
                     + " resolution=" + (options == null ? "1366 x 768" : options.resolutionLabel())
                     + " undecorated=" + (m == 1 || m == 2));
         } catch (Throwable t) {
@@ -700,7 +722,10 @@ class WindowModeSurfaceAuthority {
 
     static void activateInitialFrame(JFrame f, GameOptions options) {
         if (f == null) return;
-        if (mode(options) != 2) return;
+        if (mode(options) != 2) {
+            if (exclusiveDowngraded(options)) DebugLog.audit("WINDOW_STARTUP", "exclusiveFullscreenSkipped=screenshot-safe-borderless");
+            return;
+        }
         try {
             GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
             gd.setFullScreenWindow(f);
@@ -737,7 +762,9 @@ class WindowModeSurfaceAuthority {
                 f.setVisible(true);
             }
             owner.requestFocusInWindow();
-            return "Applied " + options.windowModeLabel() + " at " + options.resolutionLabel() + ".";
+            String applied = modeLabel(m);
+            if (exclusiveDowngraded(options)) return "Applied " + applied + " at " + options.resolutionLabel() + " (screenshot-safe; true exclusive fullscreen is disabled).";
+            return "Applied " + applied + " at " + options.resolutionLabel() + ".";
         } catch (Throwable t) {
             DebugLog.error("GRAPHICS_OPTIONS", "Failed to apply window mode/resolution", t);
             try { f.setUndecorated(false); f.setVisible(true); } catch (Throwable ignored) {}

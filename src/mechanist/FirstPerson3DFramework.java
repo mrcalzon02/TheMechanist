@@ -155,6 +155,7 @@ final class FirstPersonRenderViewport {
         LogicalTile tile = state.logicalTile();
         if (panel.world != null && panel.world.inBounds(tile.x(), tile.y()) && panel.world.walkable(tile.x(), tile.y()) && panel.world.npcAt(tile.x(), tile.y()) == null) {
             if (tile.x() != panel.playerX || tile.y() != panel.playerY) {
+                panel.setFacingToward(tile.x(), tile.y(), "doom-continuous-grid-motion");
                 panel.playerX = tile.x();
                 panel.playerY = tile.y();
                 panel.lookX = panel.playerX;

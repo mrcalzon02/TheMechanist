@@ -405,8 +405,8 @@ public final class MechanistLauncherApp {
 
     private static String javaCommand() {
         Path javaHome = Path.of(System.getProperty("java.home", ""));
-        Path candidate = javaHome.resolve("bin").resolve(isWindows() ? "java.exe" : "java");
-        return Files.isRegularFile(candidate) ? candidate.toString() : "java";
+        Path candidate = javaHome.resolve("bin").resolve(isWindows() ? "javaw.exe" : "java");
+        return Files.isRegularFile(candidate) ? candidate.toString() : (isWindows() ? "javaw.exe" : "java");
     }
 
     private static boolean isWindows() {

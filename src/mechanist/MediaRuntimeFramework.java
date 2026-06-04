@@ -182,7 +182,7 @@ class ImageCache {
     final ArrayList<BufferedImage> bootFrames = new ArrayList<>();
     final ArrayList<BufferedImage> portraitSheets = new ArrayList<>();
     final ArrayList<BufferedImage> playerHumanPortraitCells = new ArrayList<>();
-    private BufferedImage generatedPlayerHumanFallbackPortrait;
+    private final Map<Integer, BufferedImage> generatedPlayerHumanFallbackPortraits = new HashMap<>();
     final ArrayList<BufferedImage> npcPortraitCells = new ArrayList<>();
     final LinkedHashMap<String, BufferedImage> nameLockedProfilePortraits = new LinkedHashMap<>();
     final LinkedHashMap<String,int[]> npcPortraitRanges = new LinkedHashMap<>();
@@ -209,6 +209,54 @@ class ImageCache {
         // Fallback only: the red gear is no longer the intended spinner.
         BufferedImage emblem = read(base + "rough-assets/source_sheets_cleaned/medallion_spin_sheet.png");
         if (emblem != null && bootFrames.isEmpty()) cache.put("mechanical_skull_gear_emblem", emblem);
+        if (importedPortraitsEnabled(options)) loadImportedPortraitSheets();
+        load("title_mechanist", "assets/generated/the_mechanist_title.png");
+        String artQuality = options == null ? "low_32" : options.artQualityFolder();
+        tileArt.loadTileArt("packages/client/assets/artpacks", "cache/artpacks", "packages/client/assets/a/r", artQuality);
+        artRootPath = tileArt.getActiveArtRoot();
+        loadFirst("title_mechanist_rebase",
+                artRootPath + "/source/Title/TITLE.png",
+                artRootPath + "/source/Title/TITEL.png",
+                "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/Title/TITLE.png");
+        loadFirst("subtitle_rebase",
+                artRootPath + "/source/Title/Subtitle.png",
+                artRootPath + "/source/Title/Sub title.png",
+                "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/Title/Subtitle.png");
+        load("new_world_backdrop_rebase", artRootPath + "/source/Background/Backdrop.png");
+        load("clouds_slow_rebase", artRootPath + "/source/Background/CLOUDS1slow.png");
+        load("clouds_fast_rebase", artRootPath + "/source/Background/Clouds2fast.png");
+        String portraitQuality = options == null ? "low_32" : options.artQualityFolder();
+        loadPortraitCellTree(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
+        if (!loadDefaultProfilePortraitCells()) {
+            loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
+        }
+        // Button authority: use the imported Tech Priests GUI controls folder.
+        load("button_normal", base + "controls/normal/03_rect_button_off.png");
+        load("button_hover", base + "controls/normal/04_rect_button_on.png");
+        load("button_disabled", base + "controls/disabled/03_rect_button_off.png");
+        load("button_round_normal", base + "controls/normal/01_round_button_off.png");
+        load("button_round_hover", base + "controls/normal/02_round_button_on.png");
+        if (importedPortraitsEnabled(options)) loadPortraitCells("assets/imported_tech_priests/graphics/gui/portraits/cells_0560");
+        loadNameLockedProfilePortraits();
+        if (importedPortraitsEnabled(options)) inspectImportedPortraitSheets();
+        else DebugLog.audit("PORTRAIT_PROFILE", "imported portrait sheets disabled by options.");
+        DebugLog.audit("ASSETS", "Loaded GUI frame slices=" + cache.size() + " bootFrames=" + bootFrames.size() + " portraitSheets=" + portraitSheets.size() + " playerHumanPortraitCells=" + playerHumanPortraitCells.size() + " npcPortraitCells=" + npcPortraitCells.size() + " tileArt=" + tileArt.getRegistry().loadedCount());
+    }
+
+    void load(String key, String path) { BufferedImage img = read(path); if (img != null) cache.put(key, img); }
+    void loadFirst(String key, String... paths) {
+        if (key == null || paths == null) return;
+        for (String path : paths) {
+            BufferedImage img = read(path);
+            if (img != null) {
+                cache.put(key, img);
+                return;
+            }
+        }
+    }
+    void loadPortraitSheet(String path) { BufferedImage img = read(path); if (img != null) portraitSheets.add(img); }
+    boolean importedPortraitsEnabled(GameOptions options) { return options == null || options.importedPortraits; }
+    void loadImportedPortraitSheets() {
         loadPortraitSheet("assets/imported_tech_priests/graphics/lean/gui/tech_priest_augmented_portrait_sheet_a__lean50.png");
         loadPortraitSheet("assets/imported_tech_priests/graphics/lean/gui/baseline_human_portrait_sheet__lean50.png");
         loadPortraitSheet("assets/imported_tech_priests/graphics/lean/gui/alternative_human_augmented_portrait_sheet_c__lean50.png");
@@ -217,35 +265,13 @@ class ImageCache {
         loadPortraitSheet("assets/imported_tech_priests/graphics/gui/portraits/baseline_human_portrait_sheet.png");
         loadPortraitSheet("assets/imported_tech_priests/graphics/gui/portraits/alternative_human_augmented_portrait_sheet_c.png");
         loadPortraitSheet("assets/imported_tech_priests/graphics/gui/portraits/planetary_magos_portrait_sheet_a.png");
-        load("title_mechanist", "assets/generated/the_mechanist_title.png");
-        String artQuality = options == null ? "low_32" : options.artQualityFolder();
-        tileArt.loadTileArt("packages/client/assets/artpacks", "cache/artpacks", "packages/client/assets/a/r", artQuality);
-        artRootPath = tileArt.getActiveArtRoot();
-        load("title_mechanist_rebase", artRootPath + "/source/Title/TITEL.png");
-        load("subtitle_rebase", artRootPath + "/source/Title/Sub title.png");
-        load("new_world_backdrop_rebase", artRootPath + "/source/Background/Backdrop.png");
-        load("clouds_slow_rebase", artRootPath + "/source/Background/CLOUDS1slow.png");
-        load("clouds_fast_rebase", artRootPath + "/source/Background/Clouds2fast.png");
-        String portraitQuality = options == null ? "low_32" : options.artQualityFolder();
-        loadPortraitCellTree(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
-        loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
-        // Button authority: use the imported Tech Priests GUI controls folder.
-        load("button_normal", base + "controls/normal/03_rect_button_off.png");
-        load("button_hover", base + "controls/normal/04_rect_button_on.png");
-        load("button_disabled", base + "controls/disabled/03_rect_button_off.png");
-        load("button_round_normal", base + "controls/normal/01_round_button_off.png");
-        load("button_round_hover", base + "controls/normal/02_round_button_on.png");
-        loadPortraitCells("assets/imported_tech_priests/graphics/gui/portraits/cells_0560");
-        loadNameLockedProfilePortraits();
+    }
+    void inspectImportedPortraitSheets() {
         inspectPortraitSheet("PLAYER_BASELINE_ONLY", "assets/imported_tech_priests/graphics/gui/portraits/baseline_human_portrait_sheet.png", true);
         inspectPortraitSheet("NPC_ALT_AUGMENTED_C_DIAGNOSTIC", "assets/imported_tech_priests/graphics/gui/portraits/alternative_human_augmented_portrait_sheet_c.png", false);
         inspectPortraitSheet("NPC_PLANETARY_MAGOS_DIAGNOSTIC", "assets/imported_tech_priests/graphics/gui/portraits/planetary_magos_portrait_sheet_a.png", false);
         inspectPortraitSheet("NPC_TECH_PRIEST_AUGMENTED_DIAGNOSTIC", "assets/imported_tech_priests/graphics/gui/portraits/tech_priest_augmented_portrait_sheet_a.png", false);
-        DebugLog.audit("ASSETS", "Loaded GUI frame slices=" + cache.size() + " bootFrames=" + bootFrames.size() + " portraitSheets=" + portraitSheets.size() + " playerHumanPortraitCells=" + playerHumanPortraitCells.size() + " npcPortraitCells=" + npcPortraitCells.size() + " tileArt=" + tileArt.getRegistry().loadedCount());
     }
-
-    void load(String key, String path) { BufferedImage img = read(path); if (img != null) cache.put(key, img); }
-    void loadPortraitSheet(String path) { BufferedImage img = read(path); if (img != null) portraitSheets.add(img); }
     void loadPortraitCells(String dirPath) {
         File dir = new File(dirPath);
         File[] files = dir.exists() ? dir.listFiles((d,n) -> n.toLowerCase(Locale.US).endsWith(".png")) : null;
@@ -267,6 +293,51 @@ class ImageCache {
             }
         }
         DebugLog.audit("PORTRAIT_AUTHORITY", "PLAYER_POOL=baseline-human-only count=" + playerHumanPortraitCells.size() + "; NPC_POOL=non-baseline count=" + npcPortraitCells.size());
+    }
+
+    boolean loadDefaultProfilePortraitCells() {
+        int before = playerHumanPortraitCells.size();
+        LinkedHashSet<File> roots = new LinkedHashSet<>();
+        addExistingRoot(roots, "assets/graphics/packages/default_32/Protraits");
+        addExistingRoot(roots, "PACKAGE_client/assets/graphics/packages/default_32/Protraits");
+        addExistingRoot(roots, "packages/client/assets/graphics/packages/default_32/Protraits");
+        addExistingRoot(roots, "client/assets/graphics/packages/default_32/Protraits");
+        int loaded = 0;
+        for (File root : roots) loaded += addPortraitFamilyToPlayerPool(root, "Humans8x8");
+        boolean ok = playerHumanPortraitCells.size() > before;
+        DebugLog.audit("PLAYER_HUMAN_PORTRAIT_POOL", "defaultPackageHumans8x8Loaded=" + ok + " added=" + loaded + " count=" + playerHumanPortraitCells.size());
+        return ok;
+    }
+
+    void addExistingRoot(LinkedHashSet<File> roots, String path) {
+        if (roots == null || path == null || path.isBlank()) return;
+        File f = new File(path);
+        if (!f.isDirectory()) return;
+        try { roots.add(f.getCanonicalFile()); }
+        catch (IOException ignored) { roots.add(f.getAbsoluteFile()); }
+    }
+
+    int addPortraitFamilyToPlayerPool(File dir, String prefix) {
+        if (dir == null || !dir.isDirectory() || prefix == null || prefix.isBlank()) return 0;
+        String normalizedPrefix = prefix.toLowerCase(Locale.ROOT);
+        File[] files = dir.listFiles((d, n) -> n != null
+                && n.toLowerCase(Locale.ROOT).endsWith(".png")
+                && n.toLowerCase(Locale.ROOT).startsWith(normalizedPrefix));
+        if (files == null || files.length == 0) return 0;
+        Arrays.sort(files, Comparator.comparing(File::getName));
+        int loaded = 0;
+        for (File f : files) {
+            try {
+                BufferedImage img = ImageIO.read(f);
+                if (img != null) {
+                    playerHumanPortraitCells.add(img);
+                    loaded++;
+                }
+            } catch (Exception ex) {
+                DebugLog.error("PLAYER_HUMAN_PORTRAIT_LOAD", "failed loading default package portrait " + f.getPath(), ex);
+            }
+        }
+        return loaded;
     }
 
     void loadNameLockedProfilePortraits() {
@@ -300,6 +371,8 @@ class ImageCache {
         for (int resolution : resolutions) {
             if (resolution <= 0) continue;
             String filename = String.format(Locale.US, "Specialprofiles_r%02dc%02d_%dpx.png", row, col, resolution);
+            BufferedImage packaged = read("assets/graphics/packages/default_" + resolution + "/Protraits/" + filename);
+            if (packaged != null) return packaged;
             BufferedImage img = read("assets/compiled_assets/" + resolution + "px/Protraits/" + filename);
             if (img != null) return img;
         }
@@ -436,10 +509,20 @@ class ImageCache {
         npcPortraitCells.clear();
         npcPortraitRanges.clear();
         playerHumanPortraitCells.clear();
+        portraitSheets.clear();
+        portraitProfiles.clear();
         String portraitQuality = options == null ? "low_32" : options.artQualityFolder();
         loadPortraitCellTree(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
-        loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
-        loadPortraitCells("assets/imported_tech_priests/graphics/gui/portraits/cells_0560");
+        if (!loadDefaultProfilePortraitCells()) {
+            loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
+        }
+        if (importedPortraitsEnabled(options)) {
+            loadImportedPortraitSheets();
+            loadPortraitCells("assets/imported_tech_priests/graphics/gui/portraits/cells_0560");
+            inspectImportedPortraitSheets();
+        } else {
+            DebugLog.audit("PORTRAIT_PROFILE", "imported portrait sheets disabled by options.");
+        }
         loadNameLockedProfilePortraits();
         DebugLog.audit("ART_QUALITY", "Reloaded art cache root=" + artRootPath + " quality=" + (options == null ? "low_32" : options.artQualityFolder()) + " tileGlyphs=" + tileArt.getRegistry().loadedCount() + " semantic=" + tileArt.getRegistry().semanticCount() + " npcPortraitCells=" + npcPortraitCells.size() + " nameLockedProfilePortraits=" + nameLockedProfilePortraits.size());
     }
@@ -449,26 +532,62 @@ class ImageCache {
         if (!playerHumanPortraitCells.isEmpty()) return playerHumanPortraitCells.get(Math.floorMod(portraitIndex, playerHumanPortraitCells.size()));
         BufferedImage legacy = getLegacyPlayerHumanPortrait(portraitIndex);
         if (legacy != null) return legacy;
-        return generatedPlayerHumanFallbackPortrait();
+        return generatedPlayerHumanFallbackPortrait(portraitIndex);
     }
 
     BufferedImage generatedPlayerHumanFallbackPortrait() {
-        if (generatedPlayerHumanFallbackPortrait != null) return generatedPlayerHumanFallbackPortrait;
+        return generatedPlayerHumanFallbackPortrait(0);
+    }
+
+    BufferedImage generatedPlayerHumanFallbackPortrait(int portraitIndex) {
+        int variant = Math.floorMod(portraitIndex, 64);
+        BufferedImage cached = generatedPlayerHumanFallbackPortraits.get(variant);
+        if (cached != null) return cached;
         BufferedImage img = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
         try {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(new Color(18, 20, 18, 255));
+            Color[] backs = { new Color(18, 20, 18), new Color(22, 20, 17), new Color(15, 19, 22), new Color(23, 17, 19) };
+            Color[] skin = { new Color(104, 78, 55), new Color(132, 92, 64), new Color(164, 120, 82), new Color(184, 150, 109), new Color(91, 71, 58) };
+            Color[] coats = { new Color(86, 74, 47), new Color(72, 67, 62), new Color(83, 55, 45), new Color(45, 70, 66), new Color(94, 82, 58) };
+            Color[] hair = { new Color(34, 29, 23), new Color(68, 53, 38), new Color(105, 89, 64), new Color(52, 54, 53), new Color(18, 18, 17) };
+            Color back = backs[variant % backs.length];
+            Color face = skin[(variant / 2) % skin.length];
+            Color coat = coats[(variant / 5) % coats.length];
+            Color hairTone = hair[(variant / 7) % hair.length];
+            int headW = 38 + (variant % 4) * 2;
+            int headH = 43 + ((variant / 3) % 4) * 2;
+            int headX = 64 - headW / 2 + ((variant % 3) - 1) * 2;
+            int headY = 22 + ((variant / 11) % 3);
+            g.setColor(back);
             g.fillRect(0, 0, 128, 128);
-            g.setColor(new Color(70, 62, 42));
-            g.fillOval(42, 20, 44, 44);
-            g.setColor(new Color(115, 95, 58));
-            g.fillRect(32, 70, 64, 44);
+            g.setColor(new Color(0, 0, 0, 72));
+            g.fillOval(31, 102, 66, 12);
+            g.setColor(coat.darker());
+            g.fillRoundRect(30, 72, 68, 42, 10, 10);
+            g.setColor(coat);
+            g.fillPolygon(new int[]{44, 84, 100, 28}, new int[]{70, 70, 116, 116}, 4);
+            g.setColor(face.darker());
+            g.fillRect(56, 59, 16, 16);
+            g.setColor(face);
+            g.fillOval(headX, headY, headW, headH);
+            g.setColor(hairTone);
+            if ((variant & 1) == 0) g.fillArc(headX - 2, headY - 6, headW + 4, headH / 2 + 12, 0, 180);
+            else g.fillRoundRect(headX + 4, headY - 4, headW - 8, 12, 8, 8);
+            g.setColor(new Color(30, 25, 20, 220));
+            int eyeY = headY + headH / 2;
+            g.fillOval(headX + headW / 3 - 4, eyeY, 4, 3);
+            g.fillOval(headX + (headW * 2) / 3, eyeY, 4, 3);
             g.setColor(new Color(210, 185, 105));
-            g.drawOval(42, 20, 44, 44);
-            g.drawRect(32, 70, 64, 44);
+            g.drawOval(headX, headY, headW, headH);
+            g.drawRoundRect(30, 72, 68, 42, 10, 10);
+            if ((variant & 4) != 0) {
+                g.setColor(new Color(175, 170, 154));
+                g.drawLine(headX + headW / 2, headY + 8, headX + headW / 2 + 8, headY + headH - 8);
+                g.drawLine(headX + headW / 2 + 8, headY + headH - 8, headX + headW / 2 + 16, headY + headH - 2);
+            }
         } finally { g.dispose(); }
-        generatedPlayerHumanFallbackPortrait = img;
+        generatedPlayerHumanFallbackPortraits.put(variant, img);
         return img;
     }
 
@@ -556,7 +675,7 @@ class ImageCache {
         // may draw from the name_locked partition.
         int[] neutral = firstPortraitRangeContaining("administratum");
         if (neutral != null && neutral[1] > neutral[0] && !npcPortraitCells.isEmpty()) return npcPortraitCells.get(neutral[0] + Math.floorMod(portraitIndex, neutral[1]-neutral[0]));
-        return generatedPlayerHumanFallbackPortrait();
+        return generatedPlayerHumanFallbackPortrait(portraitIndex);
     }
         ArrayList<String> loadIntroCrawlLines() {
         ArrayList<String> lines = new ArrayList<>();
@@ -592,6 +711,8 @@ class ImageCache {
         try {
             File f = new File(path);
             if (!f.exists() && path != null && path.replace('\\', '/').startsWith("assets/")) {
+                File packageClientOwned = new File("PACKAGE_client", path);
+                if (packageClientOwned.exists()) f = packageClientOwned;
                 File packagedClientOwned = new File("packages/client", path);
                 if (packagedClientOwned.exists()) f = packagedClientOwned;
                 File clientOwned = new File("client", path);

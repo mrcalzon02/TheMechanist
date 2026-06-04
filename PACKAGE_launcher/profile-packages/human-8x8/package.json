@@ -9,7 +9,14 @@
     "required_existing_asset_hint": "8X8 Source",
     "do_not_generate_replacement_art": true,
     "do_not_copy_full_client_portrait_catalog": true,
-    "exact_asset_path_status": "pending-source-tree-location-audit"
+    "exact_asset_path_status": "resolved",
+    "exact_asset_path": "assets/graphics/packages/default_32/Protraits/Humans8x8_r01c01_32px.png..Humans8x8_r08c08_32px.png"
+  },
+  "asset_payload": {
+    "root": "assets",
+    "filename_pattern": "Humans8x8_r%02dc%02d_32px.png",
+    "included_png_files": 64,
+    "source_package_path": "PACKAGE_client/assets/graphics/packages/default_32/Protraits"
   },
   "grid": {
     "columns": 8,

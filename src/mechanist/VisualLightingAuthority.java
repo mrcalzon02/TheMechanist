@@ -111,6 +111,10 @@ final class VisualLightingAuthority {
                 out.add(new LightSample(z.x - camX, z.y - camY, z.color(), intensity01(z.intensity), Math.max(1, z.radius), kind, stableSeed(z.id, z.x, z.y) + z.phase * 37));
             }
         }
+        for (WorldLightEmitterAuthority.Emitter emitter : WorldLightEmitterAuthority.viewportEmitters(game, camX, camY, cols, rows)) {
+            FlickerKind kind = emitter.flicker && allowFlicker ? FlickerKind.TORCH : FlickerKind.STEADY;
+            out.add(new LightSample(emitter.x - camX, emitter.y - camY, emitter.color, intensity01(emitter.intensity), emitter.radius, kind, stableSeed(emitter.id, emitter.x, emitter.y)));
+        }
         return out;
     }
 

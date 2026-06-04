@@ -1,6 +1,7 @@
 package mechanist;
 
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -12,6 +13,7 @@ import java.awt.KeyEventDispatcher;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
@@ -20,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -72,11 +75,25 @@ final class WorldStartFlowAuthority {
 
     static final class WorldStartFlowOverlay extends JComponent implements KeyEventDispatcher {
         static final String CLIENT_PROPERTY = "mechanist.worldStartFlowOverlay";
+        static final int CHARACTER_ACTION_COUNT = 8;
+        static final int WORLD_PICKER_ROW_HEIGHT = 88;
+        static final int WORLD_PICKER_ROW_GAP = 10;
+        static final String[] CHARACTER_ACTION_LABELS = {
+                "Candidate <",
+                "Candidate >",
+                "Job <",
+                "Job >",
+                "Reroll",
+                "New Roster",
+                "Edit Name",
+                "Start Run"
+        };
 
         final GamePanel panel;
         Stage stage = Stage.CLOSED;
         ArrayList<WorldSaveInfo> worlds = new ArrayList<>();
         int worldIndex;
+        int worldPickerScroll;
         int worldGenerationOption;
         int characterOption;
         String status = "";
@@ -86,8 +103,28 @@ final class WorldStartFlowAuthority {
         String pendingWorldDeleteKey = "";
         WorldAtlas previewAtlas;
         World previewWorld;
+        BufferedImage previewOverviewImage;
         String previewKey = "";
+        String previewRequestedKey = "";
         String previewStatus = "";
+        long previewRequestSerial;
+        boolean previewWorkerRunning;
+        PreviewRequest pendingPreviewRequest;
+
+        static final class PreviewRequest {
+            final long seed;
+            final WorldSetupSettings setup;
+            final String key;
+            final String label;
+            final long serial;
+            PreviewRequest(long seed, WorldSetupSettings setup, String key, String label, long serial) {
+                this.seed = seed;
+                this.setup = setup;
+                this.key = key;
+                this.label = label;
+                this.serial = serial;
+            }
+        }
 
         WorldStartFlowOverlay(GamePanel panel) {
             this.panel = panel;
@@ -98,11 +135,18 @@ final class WorldStartFlowAuthority {
                 @Override public void mousePressed(MouseEvent e) { if (stage != Stage.CLOSED) e.consume(); }
                 @Override public void mouseReleased(MouseEvent e) { if (stage != Stage.CLOSED) e.consume(); }
             });
+            addMouseWheelListener(e -> {
+                if (stage != Stage.WORLD_PICKER) return;
+                scrollWorldPicker(e.getWheelRotation());
+                e.consume();
+                repaintPanel();
+            });
         }
 
         void openWorldPicker(String reason) {
             worlds = WorldSaveInfo.listExistingWorlds();
-            worldIndex = Math.max(0, Math.min(worldIndex, Math.max(0, worlds.size())));
+            worldIndex = worlds.isEmpty() ? 0 : Math.max(0, Math.min(worldIndex, worlds.size() - 1));
+            clampWorldPickerSelection();
             worldGenerationOption = 0;
             characterOption = 0;
             nameEditing = false;
@@ -204,7 +248,11 @@ final class WorldStartFlowAuthority {
 
         void startRun() {
             Candidate chosen = panel.selectedNewGameCandidate();
-            if (chosen != null) chosen = chosen.copy();
+            if (chosen != null) {
+                chosen.name = CharacterCreationAuthority.sanitizePlayerName(chosen.name, panel.rng);
+                panel.refreshNameLockedCandidateState(chosen);
+                chosen = chosen.copy();
+            }
             WorldSetupSettings setup = panel.worldSetup == null ? WorldSetupSettings.standard() : panel.worldSetup.copy();
             stage = Stage.CLOSED;
             setVisible(false);
@@ -265,8 +313,12 @@ final class WorldStartFlowAuthority {
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) { closeToMainMenu(); return true; }
             if (code == KeyEvent.VK_N || code == KeyEvent.VK_G) { openWorldGeneration(); return true; }
             if (code == KeyEvent.VK_DELETE || code == KeyEvent.VK_BACK_SPACE || code == KeyEvent.VK_D) { requestDeleteSelectedWorld("key"); return true; }
-            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { worldIndex = Math.floorMod(worldIndex - 1, Math.max(1, rows)); pendingWorldDeleteKey = ""; return true; }
-            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { worldIndex = Math.floorMod(worldIndex + 1, Math.max(1, rows)); pendingWorldDeleteKey = ""; return true; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { worldIndex = Math.floorMod(worldIndex - 1, Math.max(1, rows)); pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); return true; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { worldIndex = Math.floorMod(worldIndex + 1, Math.max(1, rows)); pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); return true; }
+            if (code == KeyEvent.VK_PAGE_UP) { worldIndex = Math.max(0, worldIndex - worldPickerVisibleCapacity(panelRect(getWidth(), getHeight()))); pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); return true; }
+            if (code == KeyEvent.VK_PAGE_DOWN) { worldIndex = Math.min(Math.max(0, rows - 1), worldIndex + worldPickerVisibleCapacity(panelRect(getWidth(), getHeight()))); pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); return true; }
+            if (code == KeyEvent.VK_HOME) { worldIndex = 0; pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); return true; }
+            if (code == KeyEvent.VK_END) { worldIndex = Math.max(0, rows - 1); pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); return true; }
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_E) {
                 if (worldIndex >= worlds.size()) openWorldGeneration(); else acceptExistingWorld();
                 return true;
@@ -295,18 +347,22 @@ final class WorldStartFlowAuthority {
 
         boolean handleCharacterKey(int code) {
             if (nameEditing) {
-                if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) { nameEditing = false; panel.characterNameEditActive = false; return true; }
+                if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_ESCAPE) { finishNameEdit(); return true; }
                 if (code == KeyEvent.VK_BACK_SPACE) { backspaceName(); return true; }
+                if (code == KeyEvent.VK_DELETE) { clearName(); return true; }
                 return true;
             }
             if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_Q) { openWorldPicker("back from character generation"); return true; }
-            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { characterOption = Math.floorMod(characterOption - 1, 5); return true; }
-            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { characterOption = Math.floorMod(characterOption + 1, 5); return true; }
-            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { if (characterOption == 0) panel.cycleSelectedCandidate(-1); else if (characterOption == 1) panel.cycleSelectedCandidateJob(-1); return true; }
-            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { if (characterOption == 0) panel.cycleSelectedCandidate(1); else if (characterOption == 1) panel.cycleSelectedCandidateJob(1); return true; }
+            if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) { characterOption = Math.floorMod(characterOption - 1, CHARACTER_ACTION_COUNT); return true; }
+            if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) { characterOption = Math.floorMod(characterOption + 1, CHARACTER_ACTION_COUNT); return true; }
+            if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_A) { if (characterOption == 2 || characterOption == 3) panel.cycleSelectedCandidateJob(-1); else panel.cycleSelectedCandidate(-1); return true; }
+            if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) { if (characterOption == 2 || characterOption == 3) panel.cycleSelectedCandidateJob(1); else panel.cycleSelectedCandidate(1); return true; }
+            if (code == KeyEvent.VK_J) { panel.cycleSelectedCandidateJob(1); return true; }
+            if (code == KeyEvent.VK_K) { panel.cycleSelectedCandidateJob(-1); return true; }
             if (code == KeyEvent.VK_R) { panel.rerollSelectedCandidate(); return true; }
             if (code == KeyEvent.VK_E || code == KeyEvent.VK_N) { beginNameEdit(); return true; }
-            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_G) { if (characterOption == 4 || code == KeyEvent.VK_G) startRun(); else if (characterOption == 2) panel.rerollSelectedCandidate(); else if (characterOption == 3) beginNameEdit(); return true; }
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { triggerCharacterAction(characterOption); return true; }
+            if (code == KeyEvent.VK_G) { startRun(); return true; }
             return true;
         }
 
@@ -348,9 +404,24 @@ final class WorldStartFlowAuthority {
 
         void cancelSeedEdit() { seedEditing = false; seedDraft = Long.toString(panel.seed == 0L ? System.currentTimeMillis() : panel.seed); status = "Seed edit cancelled."; }
         void randomizeSeed() { panel.seed = System.currentTimeMillis(); panel.rng = new Random(panel.seed ^ 0x4E475345545550L); seedDraft = Long.toString(panel.seed); seedEditing = false; status = "Randomized world seed: " + panel.seed + "."; clearPreviewCache(); }
-        void beginNameEdit() { Candidate c = panel.selectedNewGameCandidate(); if (c == null) return; nameEditing = true; panel.characterNameEditActive = true; status = "Editing name. Type, Backspace, then Enter to accept."; }
-        void appendNameChar(char ch) { Candidate c = panel.selectedNewGameCandidate(); if (c == null || ch == '\n' || ch == '\r') return; String next = (c.name == null ? "" : c.name) + ch; if (next.length() <= CharacterCreationAuthority.MAX_PLAYER_NAME_LENGTH) c.name = next; panel.active = c; }
-        void backspaceName() { Candidate c = panel.selectedNewGameCandidate(); if (c == null || c.name == null || c.name.isEmpty()) return; c.name = c.name.substring(0, c.name.length() - 1); panel.active = c; }
+        void beginNameEdit() { Candidate c = panel.selectedNewGameCandidate(); if (c == null) return; nameEditing = true; panel.characterNameEditActive = true; status = "Editing name. Type, Backspace, Delete to clear, Enter to accept."; requestFocusInWindow(); }
+        void finishNameEdit() { Candidate c = panel.selectedNewGameCandidate(); if (c != null) { c.name = CharacterCreationAuthority.sanitizePlayerName(c.name, panel.rng); panel.refreshNameLockedCandidateState(c); panel.active = c; } nameEditing = false; panel.characterNameEditActive = false; status = "Name accepted."; }
+        void appendNameChar(char ch) { Candidate c = panel.selectedNewGameCandidate(); if (c == null || ch == '\n' || ch == '\r') return; if (!CharacterCreationAuthority.acceptNameChar(ch) && !Character.isDigit(ch)) return; String next = (c.name == null ? "" : c.name) + ch; if (next.length() <= CharacterCreationAuthority.MAX_PLAYER_NAME_LENGTH) { c.name = next; panel.refreshNameLockedCandidateState(c); } panel.active = c; }
+        void backspaceName() { Candidate c = panel.selectedNewGameCandidate(); if (c == null || c.name == null || c.name.isEmpty()) return; c.name = c.name.substring(0, c.name.length() - 1); panel.refreshNameLockedCandidateState(c); panel.active = c; }
+        void clearName() { Candidate c = panel.selectedNewGameCandidate(); if (c == null) return; c.name = ""; panel.refreshNameLockedCandidateState(c); panel.active = c; }
+        void triggerCharacterAction(int action) {
+            switch (Math.floorMod(action, CHARACTER_ACTION_COUNT)) {
+                case 0 -> panel.cycleSelectedCandidate(-1);
+                case 1 -> panel.cycleSelectedCandidate(1);
+                case 2 -> panel.cycleSelectedCandidateJob(-1);
+                case 3 -> panel.cycleSelectedCandidateJob(1);
+                case 4 -> panel.rerollSelectedCandidate();
+                case 5 -> panel.rerollNewGameRoster();
+                case 6 -> beginNameEdit();
+                case 7 -> startRun();
+                default -> {}
+            }
+        }
 
         void requestDeleteSelectedWorld(String reason) {
             if (worldIndex < 0 || worldIndex >= worlds.size()) { status = "Select an existing world to delete. The Generate New row is not a world file."; pendingWorldDeleteKey = ""; return; }
@@ -365,15 +436,17 @@ final class WorldStartFlowAuthority {
                 panel.logEvent(status);
                 DebugLog.audit("WORLD_START_FLOW", "deleted world reason=" + safe(reason) + " path=" + path);
                 worlds = WorldSaveInfo.listExistingWorlds();
-                worldIndex = Math.max(0, Math.min(worldIndex, Math.max(0, worlds.size())));
+                worldIndex = worlds.isEmpty() ? 0 : Math.max(0, Math.min(worldIndex, worlds.size() - 1));
+                clampWorldPickerSelection();
                 pendingWorldDeleteKey = "";
                 clearPreviewCache();
             } catch (Throwable t) { status = "Could not delete " + safe(info.hiveName) + ": " + t.getMessage(); pendingWorldDeleteKey = ""; DebugLog.error("WORLD_START_FLOW", status, t); }
         }
 
         java.nio.file.Path findWorldDefinitionFile(WorldSaveInfo info) {
+            if (info != null && info.path != null && java.nio.file.Files.isRegularFile(info.path) && isWorldDefinitionPath(info.path)) return info.path;
             java.nio.file.Path direct = reflectivePath(info);
-            if (direct != null && java.nio.file.Files.isRegularFile(direct)) return direct;
+            if (direct != null && java.nio.file.Files.isRegularFile(direct) && isWorldDefinitionPath(direct)) return direct;
             java.nio.file.Path dir;
             try { dir = java.nio.file.Path.of(String.valueOf(CampaignWorldApi.worldDir())); } catch (Throwable t) { return null; }
             if (!java.nio.file.Files.isDirectory(dir)) return null;
@@ -390,7 +463,16 @@ final class WorldStartFlowAuthority {
                     if (score > bestScore) { bestScore = score; best = path; }
                 }
             } catch (Throwable t) { DebugLog.warn("WORLD_START_FLOW", "Could not scan world directory for delete: " + t.getMessage()); }
-            return bestScore >= 4 ? best : null;
+            return bestScore >= 4 && best != null && isWorldDefinitionPath(best) ? best : null;
+        }
+
+        boolean isWorldDefinitionPath(java.nio.file.Path path) {
+            try {
+                java.nio.file.Path dir = CampaignWorldApi.worldDir().toAbsolutePath().normalize();
+                java.nio.file.Path full = path.toAbsolutePath().normalize();
+                String name = full.getFileName() == null ? "" : full.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+                return full.startsWith(dir) && name.endsWith(".mechworld");
+            } catch (Throwable ignored) { return false; }
         }
 
         java.nio.file.Path reflectivePath(WorldSaveInfo info) {
@@ -412,7 +494,7 @@ final class WorldStartFlowAuthority {
                 if (buttonRect(1).contains(p)) { closeToMainMenu(); e.consume(); return; }
                 if (buttonRect(2).contains(p)) { requestDeleteSelectedWorld("mouse"); e.consume(); repaintPanel(); return; }
                 List<Rectangle> rows = worldPickerRows();
-                for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { worldIndex = i; pendingWorldDeleteKey = ""; if (i >= worlds.size() && e.getClickCount() >= 2) openWorldGeneration(); else if (i < worlds.size() && e.getClickCount() >= 2) acceptExistingWorld(); e.consume(); repaintPanel(); return; }
+                for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { int actual = worldPickerScroll + i; worldIndex = actual; pendingWorldDeleteKey = ""; ensureWorldPickerSelectionVisible(); if (actual >= worlds.size() && e.getClickCount() >= 2) openWorldGeneration(); else if (actual < worlds.size() && e.getClickCount() >= 2) acceptExistingWorld(); e.consume(); repaintPanel(); return; }
             } else if (stage == Stage.WORLD_GENERATION) {
                 if (seedEditRect().contains(p)) { beginSeedEdit(); e.consume(); repaintPanel(); return; }
                 List<Rectangle> rows = worldGenerationRows();
@@ -420,8 +502,11 @@ final class WorldStartFlowAuthority {
                 if (buttonRect(0).contains(p)) { acceptGeneratedWorld(); e.consume(); return; }
                 if (buttonRect(1).contains(p)) { openWorldPicker("mouse back"); e.consume(); return; }
             } else if (stage == Stage.CHARACTER_CREATION) {
-                List<Rectangle> rows = optionRows(5);
-                for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { characterOption = i; if (i == 0) panel.cycleSelectedCandidate(1); else if (i == 1) panel.cycleSelectedCandidateJob(1); else if (i == 2) panel.rerollSelectedCandidate(); else if (i == 3) beginNameEdit(); else startRun(); e.consume(); return; }
+                if (panel.characterNameEditRect.contains(p)) { beginNameEdit(); e.consume(); repaintPanel(); return; }
+                List<Rectangle> rosterRows = characterRosterRows();
+                for (int i = 0; i < rosterRows.size(); i++) if (rosterRows.get(i).contains(p)) { panel.candidateIndex = i; panel.active = panel.selectedNewGameCandidate(); panel.characterNameEditActive = false; nameEditing = false; status = "Selected candidate " + safe(panel.active == null ? "" : panel.active.name) + "."; e.consume(); repaintPanel(); return; }
+                List<Rectangle> rows = characterActionRows();
+                for (int i = 0; i < rows.size(); i++) if (rows.get(i).contains(p)) { characterOption = i; triggerCharacterAction(i); e.consume(); repaintPanel(); return; }
                 if (buttonRect(0).contains(p)) { startRun(); e.consume(); return; }
                 if (buttonRect(1).contains(p)) { openWorldPicker("mouse back"); e.consume(); return; }
             }
@@ -450,7 +535,8 @@ final class WorldStartFlowAuthority {
             drawText(g, MenuTextAuthority.text("menu.world_manager.path", "Generated world definitions are read from: {0}").replace("{0}", String.valueOf(CampaignWorldApi.worldDir())), r.x + 24, r.y + 64, r.width - 48, muted());
             drawText(g, status, r.x + 24, r.y + 94, r.width - 48, main());
             List<Rectangle> rows = worldPickerRows();
-            for (int i = 0; i < rows.size(); i++) { Rectangle row = rows.get(i); boolean selected = i == worldIndex; fillRow(g, row, selected); String label = i < worlds.size() ? worlds.get(i).summaryLine() : "+ " + MenuTextAuthority.text("menu.world_manager.button.generate", "Generate New World"); drawText(g, (selected ? "> " : "  ") + label, row.x + 12, row.y + 28, row.width - 24, selected ? highlight() : main()); }
+            for (int i = 0; i < rows.size(); i++) { int actual = worldPickerScroll + i; drawWorldPickerTile(g, rows.get(i), actual, actual == worldIndex); }
+            drawWorldPickerScrollBar(g);
             drawWorldManagerPreview(g, worldManagerPreviewRect());
             drawButton(g, buttonRect(0), MenuTextAuthority.text("menu.world_manager.button.generate", "Generate New"), true);
             drawButton(g, buttonRect(1), MenuTextAuthority.text("menu.world_manager.button.back", "Back"), false);
@@ -475,45 +561,485 @@ final class WorldStartFlowAuthority {
         void paintCharacterCreation(Graphics2D g, Rectangle r) {
             Candidate c = panel.selectedNewGameCandidate();
             drawText(g, "Character Generation", r.x + 24, r.y + 64, r.width - 48, highlight());
-            drawText(g, status, r.x + 24, r.y + 94, r.width - 48, main());
-            Rectangle portrait = new Rectangle(r.x + 26, r.y + 122, 180, 180);
-            g.setColor(new Color(12, 14, 13, 230)); g.fillRoundRect(portrait.x, portrait.y, portrait.width, portrait.height, 8, 8); g.setColor(new Color(145, 118, 64, 170)); g.drawRoundRect(portrait.x, portrait.y, portrait.width, portrait.height, 8, 8);
-            if (c != null) { java.awt.image.BufferedImage img = panel.images.getPlayerPortrait(c); if (img != null) g.drawImage(img, portrait.x + 10, portrait.y + 10, portrait.width - 20, portrait.height - 20, null); else drawAsciiPortrait(g, c, portrait); }
-            Rectangle info = new Rectangle(portrait.x + portrait.width + 24, portrait.y, r.x + r.width - portrait.x - portrait.width - 50, 230);
-            ArrayList<String> detail = new ArrayList<>();
-            if (c != null) { detail.add("Name: " + safe(c.name) + (nameEditing ? " _" : "")); detail.add("Job: " + safe(c.job)); JobProfile profile = JobProfile.get(c.job); if (profile != null) { detail.add("Identity: " + profile.shortIdentity()); detail.add("Bonus: " + profile.bonusText()); detail.add("Penalty: " + profile.penaltyText()); detail.add("Requirements: " + profile.requirementText() + " / missing " + profile.missingText(c)); } detail.add("Age: " + c.ageBand + " " + c.ageYears + " years"); }
-            drawLines(g, detail, info.x, info.y, info.width, main());
-            ArrayList<String> stats = new ArrayList<>(); if (c != null) for (var e : c.stats.entrySet()) stats.add(e.getKey() + " " + e.getValue()); drawLines(g, stats, r.x + 26, portrait.y + portrait.height + 28, 320, muted());
-            List<String> opts = List.of("Candidate", "Job", "Reroll Candidate", "Edit Name", "Start Run");
-            for (int i = 0; i < opts.size(); i++) { Rectangle row = new Rectangle(info.x, r.y + 372 + i * 42, info.width, 34); boolean selected = i == characterOption; fillRow(g, row, selected); drawText(g, (selected ? "> " : "  ") + opts.get(i), row.x + 12, row.y + 24, row.width - 24, selected ? highlight() : main()); }
-            drawButton(g, buttonRect(0), "Start Run", true); drawButton(g, buttonRect(1), "Back", false); drawFooter(g, MenuTextAuthority.text("menu.character_generation.footer", "Left/Right changes candidate/job. R rerolls. E edits name. G starts run. Esc returns to world picker."));
+            CharacterCreationAudit audit = CharacterCreationAuditApi.audit(panel.candidates);
+            drawText(g, status + " / " + audit.summaryLine(), r.x + 24, r.y + 94, r.width - 48, main());
+            drawCharacterRoster(g, characterRosterRect());
+            drawCharacterSheet(g, characterSheetRect(), c);
+            drawJobDossier(g, characterDossierRect(), c);
+            drawButton(g, buttonRect(0), "Start Run", true);
+            drawButton(g, buttonRect(1), "Back", false);
+            drawFooter(g, MenuTextAuthority.text("menu.character_generation.footer", "Left/Right cycles candidate or job. J/K cycles jobs. R rerolls. E edits name. G starts run. Esc returns."));
+        }
+
+        void drawCharacterRoster(Graphics2D g, Rectangle r) {
+            drawSubPanel(g, r, "Candidates");
+            if (panel.candidates.isEmpty()) panel.prepareNewGameRoster(System.currentTimeMillis());
+            List<Rectangle> rows = characterRosterRows();
+            for (int i = 0; i < rows.size() && i < panel.candidates.size(); i++) {
+                Rectangle row = rows.get(i);
+                boolean selected = i == panel.candidateIndex;
+                fillRow(g, row, selected);
+                String label = (selected ? "> " : "") + (i + 1);
+                drawFitted(g, label, row.x + 12, row.y + row.height / 2 + 5, row.width - 24, selected ? highlight() : main());
+            }
+        }
+
+        void drawCharacterSheet(Graphics2D g, Rectangle r, Candidate c) {
+            drawSubPanel(g, r, "Candidate");
+            if (c == null) {
+                panel.characterNameEditRect = new Rectangle(0, 0, 1, 1);
+                drawText(g, "No character candidates are available.", r.x + 12, r.y + 38, r.width - 24, main());
+                return;
+            }
+            int portraitSize = Math.max(88, Math.min(128, Math.min(r.width - 24, r.height / 3)));
+            Rectangle portraitRect = new Rectangle(r.x + 12, r.y + 34, portraitSize, portraitSize);
+            drawPortraitFrame(g, c, portraitRect);
+
+            int nameX = portraitRect.x + portraitRect.width + 14;
+            int nameY = portraitRect.y + 22;
+            if (nameX + 150 > r.x + r.width - 12) {
+                nameX = r.x + 12;
+                nameY = portraitRect.y + portraitRect.height + 24;
+            }
+            int nameW = Math.max(120, r.x + r.width - nameX - 12);
+            panel.characterNameEditRect = new Rectangle(nameX, nameY, nameW, 30);
+            drawNameEditor(g, c);
+            int metaY = panel.characterNameEditRect.y + 50;
+            drawCompactLine(g, "Candidate " + (panel.candidateIndex + 1) + "/" + Math.max(1, panel.candidates.size()) + " / Portrait " + c.portraitIndex, nameX, metaY, nameW, muted());
+            drawCompactLine(g, "Age " + c.ageYears + " years / " + safe(c.ageBand), nameX, metaY + 18, nameW, muted());
+
+            int statsY = Math.max(portraitRect.y + portraitRect.height + 16, metaY + 38);
+            Rectangle stats = new Rectangle(r.x + 12, statsY, r.width - 24, Math.max(80, r.y + r.height - statsY - 12));
+            drawSubPanel(g, stats, "Stats / Ranges");
+            drawStatRanges(g, c, stats);
+        }
+
+        void drawJobDossier(Graphics2D g, Rectangle r, Candidate c) {
+            drawSubPanel(g, r, "Job Dossier");
+            Rectangle actionTop = characterActionRows().isEmpty() ? new Rectangle(r.x, r.y + r.height, 1, 1) : characterActionRows().get(0);
+            int detailY = r.y + 34;
+            ArrayList<String> lines = new ArrayList<>();
+            if (c == null) {
+                lines.add("No selected candidate.");
+            } else {
+                JobProfile profile = JobProfile.get(c.job);
+                int jobIdx = c.jobs.indexOf(c.job);
+                lines.add("Job " + (jobIdx < 0 ? 1 : jobIdx + 1) + "/" + Math.max(1, c.jobs.size()) + ": " + safe(c.job));
+                if (profile != null) {
+                    boolean valid = profile.meets(c);
+                    Rectangle validity = new Rectangle(r.x + 12, detailY, r.width - 24, valid ? 42 : 58);
+                    drawJobValidity(g, validity, valid, profile.missingText(c));
+                    detailY += validity.height + 8;
+                    lines.add("Faction: " + profile.faction.label);
+                    lines.add("Clothing: " + profile.clothingName + " / disguise " + profile.disguiseBase + " / defense " + profile.clothingDefense);
+                    lines.add("Requirements: " + profile.requirementText());
+                    lines.add("Bonuses: " + profile.bonusText());
+                    lines.add("Penalties: " + profile.penaltyText());
+                    lines.add("Starting kit: " + joinLimited(profile.startingItems(), 4));
+                    lines.add("Profile: " + profile.description);
+                }
+            }
+            Rectangle details = new Rectangle(r.x + 12, detailY, r.width - 24, Math.max(60, actionTop.y - detailY - 8));
+            drawLinesClipped(g, lines, details, main());
+            drawCharacterActions(g);
+        }
+
+        void drawJobValidity(Graphics2D g, Rectangle r, boolean valid, String missing) {
+            Color fill = valid ? new Color(18, 46, 28, 230) : new Color(66, 22, 16, 235);
+            Color border = valid ? new Color(90, 172, 108, 190) : new Color(224, 92, 66, 210);
+            Color text = valid ? new Color(170, 232, 176) : new Color(255, 184, 150);
+            g.setColor(fill);
+            g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+            g.setColor(border);
+            g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+            drawFitted(g, valid ? "JOB VALID" : "INVALID JOB", r.x + 10, r.y + 18, r.width - 20, text);
+            drawFitted(g, valid ? "Requirements met." : "Missing: " + safe(missing), r.x + 10, r.y + 36, r.width - 20, text);
+        }
+
+        void drawCharacterActions(Graphics2D g) {
+            List<Rectangle> rows = characterActionRows();
+            g.setFont(panel.smallFont);
+            for (int i = 0; i < rows.size() && i < CHARACTER_ACTION_LABELS.length; i++) {
+                Rectangle row = rows.get(i);
+                boolean selected = i == characterOption;
+                fillRow(g, row, selected);
+                drawFitted(g, (selected ? "> " : "") + CHARACTER_ACTION_LABELS[i], row.x + 9, row.y + 19, row.width - 18, selected ? highlight() : main());
+            }
+        }
+
+        void drawPortraitFrame(Graphics2D g, Candidate c, Rectangle r) {
+            g.setColor(new Color(12, 14, 13, 230));
+            g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+            g.setColor(new Color(145, 118, 64, 170));
+            g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
+            BufferedImage img = panel.images.getPlayerPortrait(c);
+            if (img != null) g.drawImage(img, r.x + 8, r.y + 8, r.width - 16, r.height - 16, null);
+            else drawAsciiPortrait(g, c, r);
+        }
+
+        void drawNameEditor(Graphics2D g, Candidate c) {
+            Rectangle name = panel.characterNameEditRect;
+            g.setFont(panel.smallFont);
+            g.setColor(muted());
+            drawBackedText(g, "Name", name.x, name.y - 8, false);
+            g.setColor(nameEditing ? new Color(54, 47, 31, 238) : new Color(16, 18, 16, 224));
+            g.fillRoundRect(name.x, name.y, name.width, name.height, 8, 8);
+            g.setColor(nameEditing ? highlight() : new Color(145, 118, 64, 140));
+            g.drawRoundRect(name.x, name.y, name.width, name.height, 8, 8);
+            drawFitted(g, (c.name == null ? "" : c.name) + (nameEditing ? "|" : ""), name.x + 8, name.y + 21, name.width - 16, nameEditing ? highlight() : main());
+        }
+
+        void drawStatRanges(Graphics2D g, Candidate c, Rectangle r) {
+            if (c == null) return;
+            int count = Math.max(1, c.stats.size());
+            int cols = r.width >= 620 ? 3 : (r.width >= 360 ? 2 : 1);
+            int rows = (int)Math.ceil(count / (double)cols);
+            int colW = Math.max(92, (r.width - 24 - (cols - 1) * 10) / cols);
+            int rowH = Math.max(15, Math.min(19, (r.height - 58) / Math.max(1, rows)));
+            int idx = 0;
+            for (Map.Entry<String, Integer> entry : c.stats.entrySet()) {
+                int col = idx / rows;
+                int row = idx % rows;
+                int x = r.x + 12 + col * (colW + 10);
+                int y = r.y + 34 + row * rowH;
+                String key = entry.getKey();
+                String text = key + " " + entry.getValue() + " (" + Candidate.statRangeText(key) + ") - " + statExplanation(key);
+                drawCompactLine(g, text, x, y, colW, main());
+                idx++;
+            }
+            int noteY = r.y + r.height - 14;
+            drawFitted(g, "Body parts start END/AGI 1-2. Job bonuses apply after selection.", r.x + 12, noteY, r.width - 24, muted());
+        }
+
+        Rectangle characterBodyRect() {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(300, p.height - 206));
+        }
+
+        Rectangle characterRosterRect() {
+            Rectangle body = characterBodyRect();
+            int leftW = Math.max(84, Math.min(118, body.width / 10));
+            return new Rectangle(body.x, body.y, leftW, body.height);
+        }
+
+        Rectangle characterDossierRect() {
+            Rectangle body = characterBodyRect();
+            int gap = 14;
+            int leftW = characterRosterRect().width;
+            int rightW = Math.max(300, Math.min(380, body.width / 3));
+            int midW = body.width - leftW - rightW - gap * 2;
+            if (midW < 440) rightW = Math.max(260, rightW - (440 - midW));
+            return new Rectangle(body.x + body.width - rightW, body.y, rightW, body.height);
+        }
+
+        Rectangle characterSheetRect() {
+            Rectangle body = characterBodyRect();
+            Rectangle roster = characterRosterRect();
+            Rectangle dossier = characterDossierRect();
+            int gap = 14;
+            int x = roster.x + roster.width + gap;
+            int w = Math.max(190, dossier.x - x - gap);
+            return new Rectangle(x, body.y, w, body.height);
+        }
+
+        List<Rectangle> characterRosterRows() {
+            Rectangle r = characterRosterRect();
+            ArrayList<Rectangle> rows = new ArrayList<>();
+            int count = panel == null || panel.candidates == null ? 0 : panel.candidates.size();
+            if (count <= 0) return rows;
+            int top = r.y + 36;
+            int available = Math.max(24, r.height - 48);
+            int gap = 5;
+            int rowH = Math.max(24, Math.min(34, (available - Math.max(0, count - 1) * gap) / count));
+            for (int i = 0; i < count; i++) {
+                int y = top + i * (rowH + gap);
+                if (y + rowH > r.y + r.height - 8) break;
+                rows.add(new Rectangle(r.x + 10, y, r.width - 20, rowH));
+            }
+            return rows;
+        }
+
+        List<Rectangle> characterActionRows() {
+            Rectangle r = characterDossierRect();
+            ArrayList<Rectangle> rows = new ArrayList<>();
+            int cols = 2;
+            int rowH = 28;
+            int gap = 6;
+            int gridRows = (int)Math.ceil(CHARACTER_ACTION_COUNT / (double)cols);
+            int gridH = gridRows * rowH + Math.max(0, gridRows - 1) * gap;
+            int top = r.y + r.height - gridH - 10;
+            int colW = Math.max(88, (r.width - 24 - gap) / cols);
+            for (int i = 0; i < CHARACTER_ACTION_COUNT; i++) {
+                int row = i / cols;
+                int col = i % cols;
+                rows.add(new Rectangle(r.x + 12 + col * (colW + gap), top + row * (rowH + gap), colW, rowH));
+            }
+            return rows;
+        }
+
+        void drawSubPanel(Graphics2D g, Rectangle r, String title) {
+            g.setColor(new Color(12, 14, 13, 230));
+            g.fillRoundRect(r.x, r.y, r.width, r.height, 9, 9);
+            g.setColor(new Color(145, 118, 64, 150));
+            g.drawRoundRect(r.x, r.y, r.width, r.height, 9, 9);
+            if (title != null && !title.isBlank()) {
+                g.setFont(panel.smallFont.deriveFont(Font.BOLD));
+                g.setColor(highlight());
+                drawBackedText(g, title, r.x + 12, r.y + 22, false);
+            }
+        }
+
+        void drawLinesClipped(Graphics2D g, List<String> lines, Rectangle area, Color color) {
+            java.awt.Shape oldClip = g.getClip();
+            g.clip(area);
+            drawLines(g, lines, area.x, area.y + 16, area.width, color);
+            g.setClip(oldClip);
+        }
+
+        void drawCompactLine(Graphics2D g, String text, int x, int baseline, int width, Color color) {
+            g.setFont(panel.smallFont);
+            FontMetrics fm = g.getFontMetrics();
+            int h = Math.max(15, fm.getHeight() + 1);
+            Color old = g.getColor();
+            g.setColor(new Color(0, 0, 0, 96));
+            g.fillRoundRect(x - 4, baseline - fm.getAscent() - 3, Math.max(20, width + 8), h + 4, 6, 6);
+            g.setColor(color == null ? old : color);
+            g.drawString(GuiLayoutApi.fitLabel(text == null ? "" : text, fm, Math.max(8, width)), x, baseline);
+            g.setColor(old);
+        }
+
+        void drawFitted(Graphics2D g, String text, int x, int baseline, int width, Color color) {
+            g.setFont(panel.smallFont);
+            Color old = g.getColor();
+            g.setColor(color == null ? old : color);
+            g.drawString(GuiLayoutApi.fitLabel(text == null ? "" : text, g.getFontMetrics(), Math.max(8, width)), x, baseline);
+            g.setColor(old);
+        }
+
+        String statExplanation(String key) {
+            return switch (key == null ? "" : key) {
+                case "Strength" -> "carry, force, heavy labor";
+                case "Agility" -> "movement, dodge, balance";
+                case "Endurance" -> "wounds, fatigue, toxins";
+                case "Intellect" -> "research, logic, systems";
+                case "Mechanics" -> "repair, crafting, machines";
+                case "Firearms" -> "aim, reload, ranged fire";
+                case "Melee" -> "close combat and grapples";
+                case "Nerve" -> "fear, pain, suppression";
+                case "Charm" -> "talking, barter, deception";
+                case "Faith" -> "rites, resolve, authority";
+                case "Vision" -> "sight checks and spotting";
+                case "Hearing" -> "sound checks and tracking";
+                default -> "general checks";
+            };
+        }
+
+        String joinLimited(List<String> values, int limit) {
+            if (values == null || values.isEmpty()) return "none";
+            ArrayList<String> out = new ArrayList<>();
+            for (String value : values) {
+                if (value == null || value.isBlank()) continue;
+                if (out.size() >= limit) break;
+                out.add(value);
+            }
+            int extra = Math.max(0, values.size() - out.size());
+            return String.join(", ", out) + (extra > 0 ? " +" + extra : "");
         }
 
         void drawSeedEditor(Graphics2D g) { Rectangle seed = seedEditRect(); g.setFont(panel.smallFont); g.setColor(muted()); drawBackedText(g, MenuTextAuthority.text("menu.world_generation.seed", "Seed"), seed.x, seed.y - 8, false); g.setColor(seedEditing ? new Color(54, 47, 31, 238) : new Color(16, 18, 16, 224)); g.fillRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8); g.setColor(seedEditing ? highlight() : new Color(145, 118, 64, 140)); g.drawRoundRect(seed.x, seed.y, seed.width, seed.height, 8, 8); String text = seedEditing ? seedDraft + "_" : Long.toString(panel.seed); drawText(g, text, seed.x + 10, seed.y + 24, seed.width - 20, seedEditing ? highlight() : main()); }
 
-        void drawWorldManagerPreview(Graphics2D g, Rectangle r) { WorldSaveInfo info = selectedWorldInfo(); if (info != null) ensurePreviewFor(info.seed, info.settings == null ? WorldSetupSettings.standard() : info.settings.copy(), "existing:" + info.seed + ":" + safe(info.hiveName), safe(info.hiveName) + " / seed " + info.seed); else { long seed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed; WorldSetupSettings setup = panel.worldSetup == null ? WorldSetupSettings.standard() : panel.worldSetup.copy(); ensurePreviewFor(seed, setup, "new:" + seed + ":" + setup.encode(), "Generate New World / seed " + seed); } drawSpawnPreviewBody(g, r, info == null ? MenuTextAuthority.text("menu.world_manager.preview.new", "Preview: Generate New World") : MenuTextAuthority.text("menu.world_manager.preview.selected", "Selected World Spawn Preview")); }
+        void drawWorldManagerPreview(Graphics2D g, Rectangle r) { WorldSaveInfo info = selectedWorldInfo(); if (info != null) requestPreviewFor(info.seed, info.settings == null ? WorldSetupSettings.standard() : info.settings.copy(), "existing:" + info.seed + ":" + safe(info.hiveName), safe(info.hiveName) + " / seed " + info.seed); else { long seed = ensureDraftSeed(); WorldSetupSettings setup = panel.worldSetup == null ? WorldSetupSettings.standard() : panel.worldSetup.copy(); requestPreviewFor(seed, setup, "new:" + seed + ":" + setup.encode(), "Generate New World / seed " + seed); } drawSpawnPreviewBody(g, r, info == null ? MenuTextAuthority.text("menu.world_manager.preview.new", "Preview: Generate New World") : MenuTextAuthority.text("menu.world_manager.preview.selected", "Selected World Spawn Preview")); }
         WorldSaveInfo selectedWorldInfo() { return worldIndex >= 0 && worldIndex < worlds.size() ? worlds.get(worldIndex) : null; }
-        void drawSpawnPreview(Graphics2D g, Rectangle r) { if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard(); long safeSeed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed; ensurePreviewFor(safeSeed, panel.worldSetup.copy(), "generation:" + safeSeed + ":" + panel.worldSetup.encode(), "Generated hive / seed " + safeSeed); drawSpawnPreviewBody(g, r, MenuTextAuthority.text("menu.world_generation.preview", "Spawn Sector Preview")); }
+        void drawSpawnPreview(Graphics2D g, Rectangle r) { if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard(); long safeSeed = ensureDraftSeed(); requestPreviewFor(safeSeed, panel.worldSetup.copy(), "generation:" + safeSeed + ":" + panel.worldSetup.encode(), "Generated hive / seed " + safeSeed); drawSpawnPreviewBody(g, r, MenuTextAuthority.text("menu.world_generation.preview", "Spawn Sector Preview")); }
 
         void drawSpawnPreviewBody(Graphics2D g, Rectangle r, String title) {
             g.setColor(new Color(12, 14, 13, 230)); g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10); g.setColor(new Color(145, 118, 64, 170)); g.drawRoundRect(r.x, r.y, r.width, r.height, 10, 10); drawText(g, title, r.x + 14, r.y + 28, r.width - 28, highlight()); drawText(g, previewStatus, r.x + 14, r.y + 54, r.width - 28, muted()); if (previewWorld == null) return;
-            Rectangle map = new Rectangle(r.x + 14, r.y + 78, r.width - 28, Math.max(120, r.height - 122)); g.setColor(new Color(4, 5, 5, 238)); g.fillRect(map.x, map.y, map.width, map.height); Point spawn = previewWorld.startPoint(); int cols = Math.max(8, Math.min(previewWorld.w, 32)); int rows = Math.max(8, Math.min(previewWorld.h, 24)); int tile = Math.max(3, Math.min(map.width / cols, map.height / rows)); int drawW = tile * cols; int drawH = tile * rows; int ox = map.x + Math.max(0, (map.width - drawW) / 2); int oy = map.y + Math.max(0, (map.height - drawH) / 2); int minX = Math.max(0, Math.min(Math.max(0, previewWorld.w - cols), spawn.x - cols / 2)); int minY = Math.max(0, Math.min(Math.max(0, previewWorld.h - rows), spawn.y - rows / 2));
-            for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++) { int wx = minX + x; int wy = minY + y; if (!previewWorld.inBounds(wx, wy)) continue; char ch = previewWorld.tiles[wx][wy]; g.setColor(previewTileColor(ch)); g.fillRect(ox + x * tile, oy + y * tile, tile, tile); }
-            if (previewWorld.inBounds(spawn.x, spawn.y)) { int sx = ox + (spawn.x - minX) * tile; int sy = oy + (spawn.y - minY) * tile; if (sx >= ox && sy >= oy && sx < ox + drawW && sy < oy + drawH) { g.setColor(new Color(245, 214, 118)); g.setStroke(new BasicStroke(Math.max(1f, tile / 4f))); g.drawRect(sx, sy, Math.max(2, tile - 1), Math.max(2, tile - 1)); } }
-            g.setColor(new Color(0, 0, 0, 90)); for (int y = oy; y < oy + drawH; y += Math.max(1, tile)) g.drawLine(ox, y, ox + drawW, y); for (int x = ox; x < ox + drawW; x += Math.max(1, tile)) g.drawLine(x, oy, x, oy + drawH); drawText(g, "Spawn " + spawn.x + "," + spawn.y + " / " + previewWorld.zoneType.label, r.x + 14, r.y + r.height - 28, r.width - 28, main());
+            Rectangle map = new Rectangle(r.x + 14, r.y + 78, r.width - 28, Math.max(120, r.height - 122)); g.setColor(new Color(4, 5, 5, 238)); g.fillRect(map.x, map.y, map.width, map.height); Point spawn = previewWorld.startPoint();
+            BufferedImage image = previewOverviewImage;
+            if (image != null) {
+                int drawW = map.width;
+                int drawH = Math.max(1, image.getHeight() * map.width / Math.max(1, image.getWidth()));
+                if (drawH > map.height) {
+                    drawH = map.height;
+                    drawW = Math.max(1, image.getWidth() * map.height / Math.max(1, image.getHeight()));
+                }
+                int ox = map.x + Math.max(0, (map.width - drawW) / 2);
+                int oy = map.y + Math.max(0, (map.height - drawH) / 2);
+                Object oldHint = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                g.drawImage(image, ox, oy, drawW, drawH, null);
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, oldHint == null ? RenderingHints.VALUE_INTERPOLATION_BILINEAR : oldHint);
+                if (previewWorld.inBounds(spawn.x, spawn.y)) {
+                    int sx = ox + (int)Math.round((spawn.x + 0.5) * drawW / Math.max(1.0, previewWorld.w));
+                    int sy = oy + (int)Math.round((spawn.y + 0.5) * drawH / Math.max(1.0, previewWorld.h));
+                    int mark = Math.max(4, Math.min(14, Math.min(drawW, drawH) / 28));
+                    g.setColor(new Color(245, 214, 118));
+                    g.setStroke(new BasicStroke(Math.max(1f, mark / 3f)));
+                    g.drawRect(sx - mark / 2, sy - mark / 2, mark, mark);
+                }
+            }
+            drawText(g, "Full zone " + previewWorld.w + "x" + previewWorld.h + " / spawn " + spawn.x + "," + spawn.y + " / " + previewWorld.zoneType.label, r.x + 14, r.y + r.height - 28, r.width - 28, main());
         }
 
-        void ensurePreviewFor(long seed, WorldSetupSettings setup, String key, String label) { WorldSetupSettings safeSetup = setup == null ? WorldSetupSettings.standard() : setup; if (key.equals(previewKey) && previewWorld != null) return; try { WorldAtlas atlas = new WorldAtlas(seed, safeSetup.copy()); atlas.generateScaffold(); previewAtlas = atlas; previewWorld = atlas.currentWorld(); previewKey = key; String name = label == null || label.isBlank() ? (atlas.hiveWorld == null ? "generated hive" : atlas.hiveWorld.hiveName) : label; previewStatus = name; } catch (Throwable t) { previewAtlas = null; previewWorld = null; previewKey = key; previewStatus = "Preview unavailable: " + t.getMessage(); DebugLog.warn("WORLD_START_FLOW", previewStatus); } }
-        void clearPreviewCache() { previewAtlas = null; previewWorld = null; previewKey = ""; previewStatus = ""; }
+        void requestPreviewFor(long seed, WorldSetupSettings setup, String key, String label) {
+            WorldSetupSettings safeSetup = setup == null ? WorldSetupSettings.standard() : setup.copy();
+            String safeKey = key == null ? "preview:" + seed + ":" + safeSetup.encode() : key;
+            if (safeKey.equals(previewKey)) return;
+            if (safeKey.equals(previewRequestedKey) && previewWorkerRunning) return;
+            if (pendingPreviewRequest != null && safeKey.equals(pendingPreviewRequest.key)) return;
+            previewRequestedKey = safeKey;
+            long request = ++previewRequestSerial;
+            PreviewRequest previewRequest = new PreviewRequest(seed, safeSetup.copy(), safeKey, label, request);
+            if (previewWorkerRunning) {
+                pendingPreviewRequest = previewRequest;
+                previewStatus = "Loading preview...";
+                return;
+            }
+            startPreviewWorker(previewRequest);
+        }
+
+        void startPreviewWorker(PreviewRequest previewRequest) {
+            if (previewRequest == null) return;
+            previewWorkerRunning = true;
+            previewAtlas = null;
+            previewWorld = null;
+            previewOverviewImage = null;
+            previewStatus = "Loading preview...";
+            Thread worker = new Thread(() -> {
+                WorldAtlas generatedAtlas = null;
+                World generatedWorld = null;
+                BufferedImage generatedImage = null;
+                String generatedStatus;
+                try {
+                    generatedAtlas = new WorldAtlas(previewRequest.seed, previewRequest.setup.copy());
+                    generatedAtlas.generateScaffold();
+                    generatedWorld = generatedAtlas.currentWorld();
+                    generatedImage = buildPreviewOverviewImage(generatedWorld);
+                    generatedStatus = previewRequest.label == null || previewRequest.label.isBlank() ? (generatedAtlas.hiveWorld == null ? "generated hive" : generatedAtlas.hiveWorld.hiveName) : previewRequest.label;
+                } catch (Throwable t) {
+                    generatedStatus = "Preview unavailable: " + t.getMessage();
+                    DebugLog.warn("WORLD_START_FLOW", generatedStatus);
+                }
+                WorldAtlas finalAtlas = generatedAtlas;
+                World finalWorld = generatedWorld;
+                BufferedImage finalImage = generatedImage;
+                String finalStatus = generatedStatus;
+                SwingUtilities.invokeLater(() -> {
+                    boolean current = previewRequest.serial == previewRequestSerial && previewRequest.key.equals(previewRequestedKey);
+                    previewWorkerRunning = false;
+                    if (current) {
+                        previewAtlas = finalAtlas;
+                        previewWorld = finalWorld;
+                        previewOverviewImage = finalImage;
+                        previewKey = previewRequest.key;
+                        previewStatus = finalStatus;
+                    }
+                    PreviewRequest pending = pendingPreviewRequest;
+                    pendingPreviewRequest = null;
+                    if (pending != null && !pending.key.equals(previewKey)) startPreviewWorker(pending);
+                    repaintPanel();
+                });
+            }, "mechanist-world-preview-" + previewRequest.serial);
+            worker.setDaemon(true);
+            worker.setPriority(Math.max(Thread.MIN_PRIORITY, Thread.NORM_PRIORITY - 2));
+            worker.start();
+        }
+        BufferedImage buildPreviewOverviewImage(World world) {
+            if (world == null || world.w <= 0 || world.h <= 0) return null;
+            BufferedImage image = new BufferedImage(world.w, world.h, BufferedImage.TYPE_INT_ARGB);
+            for (int y = 0; y < world.h; y++) {
+                for (int x = 0; x < world.w; x++) {
+                    image.setRGB(x, y, previewTileColor(world.tiles[x][y]).getRGB());
+                }
+            }
+            return image;
+        }
+        void clearPreviewCache() { previewRequestSerial++; pendingPreviewRequest = null; previewAtlas = null; previewWorld = null; previewOverviewImage = null; previewKey = ""; previewRequestedKey = ""; previewStatus = ""; }
         Color previewTileColor(char ch) { if (ch == '#') return new Color(38, 39, 36); if (ch == '.' || ch == ',' || ch == ':' || ch == ';' || ch == '=') return new Color(47, 48, 43); if (ch == '+' || ch == '/' || ch == '\\' || ch == 'D') return new Color(91, 76, 43); if (ch == '~') return new Color(35, 57, 58); if (Character.isUpperCase(ch)) return new Color(72, 58, 36); return new Color(28, 29, 27); }
-        List<Rectangle> worldPickerRows() { Rectangle p = panelRect(getWidth(), getHeight()); ArrayList<Rectangle> rows = new ArrayList<>(); int count = Math.max(1, worlds.size() + 1); int top = p.y + 130; int rowH = 42; int max = Math.min(count, Math.max(1, (p.height - 228) / (rowH + 8))); for (int i = 0; i < max; i++) rows.add(new Rectangle(p.x + 24, top + i * (rowH + 8), worldPickerListWidth(p), rowH)); return rows; }
+        List<Rectangle> worldPickerRows() {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            clampWorldPickerScroll(p);
+            ArrayList<Rectangle> rows = new ArrayList<>();
+            int count = worlds.size() + 1;
+            int max = Math.min(count - worldPickerScroll, worldPickerVisibleCapacity(p));
+            int top = worldPickerListTop(p);
+            for (int i = 0; i < max; i++) rows.add(new Rectangle(p.x + 24, top + i * (WORLD_PICKER_ROW_HEIGHT + WORLD_PICKER_ROW_GAP), worldPickerListWidth(p), WORLD_PICKER_ROW_HEIGHT));
+            return rows;
+        }
+        int worldPickerListTop(Rectangle p) { return p.y + 130; }
+        int worldPickerListBottom(Rectangle p) { return p.y + p.height - 112; }
+        int worldPickerVisibleCapacity(Rectangle p) { int available = Math.max(WORLD_PICKER_ROW_HEIGHT, worldPickerListBottom(p) - worldPickerListTop(p)); return Math.max(1, Math.min(worlds.size() + 1, (available + WORLD_PICKER_ROW_GAP) / (WORLD_PICKER_ROW_HEIGHT + WORLD_PICKER_ROW_GAP))); }
+        void clampWorldPickerSelection() { int count = Math.max(1, worlds.size() + 1); worldIndex = Math.max(0, Math.min(worldIndex, count - 1)); ensureWorldPickerSelectionVisible(); }
+        void ensureWorldPickerSelectionVisible() { Rectangle p = panelRect(getWidth(), getHeight()); int visible = worldPickerVisibleCapacity(p); if (worldIndex < worldPickerScroll) worldPickerScroll = worldIndex; if (worldIndex >= worldPickerScroll + visible) worldPickerScroll = worldIndex - visible + 1; clampWorldPickerScroll(p); }
+        void clampWorldPickerScroll(Rectangle p) { int visible = worldPickerVisibleCapacity(p); int maxScroll = Math.max(0, worlds.size() + 1 - visible); worldPickerScroll = Math.max(0, Math.min(worldPickerScroll, maxScroll)); }
+        void scrollWorldPicker(int wheelRotation) { Rectangle p = panelRect(getWidth(), getHeight()); clampWorldPickerScroll(p); int maxScroll = Math.max(0, worlds.size() + 1 - worldPickerVisibleCapacity(p)); int step = wheelRotation == 0 ? 0 : (wheelRotation > 0 ? 1 : -1); worldPickerScroll = Math.max(0, Math.min(maxScroll, worldPickerScroll + step * Math.max(1, Math.abs(wheelRotation)))); pendingWorldDeleteKey = ""; }
+        void drawWorldPickerTile(Graphics2D g, Rectangle row, int rowIndex, boolean selected) {
+            fillRow(g, row, selected);
+            Shape oldClip = g.getClip();
+            g.clip(row);
+            Color text = selected ? highlight() : main();
+            int x = row.x + 14;
+            int y = row.y + 24;
+            int width = row.width - 28;
+            if (rowIndex < worlds.size()) {
+                WorldSaveInfo info = worlds.get(rowIndex);
+                drawPlainWrapped(g, (selected ? "> " : "") + safe(info.hiveName), x, y, width, 1, text, true);
+                drawPlainWrapped(g, "[" + safe(info.worldId) + "] seed " + info.seed, x, y + 20, width, 1, muted(), false);
+                drawPlainWrapped(g, info.settings.shortSummary(), x, y + 40, width, 1, text, false);
+                drawPlainWrapped(g, "Progress " + safe(info.progress), x, y + 60, width, 1, muted(), false);
+            } else {
+                drawPlainWrapped(g, (selected ? "> " : "") + "+ " + MenuTextAuthority.text("menu.world_manager.button.generate", "Generate New World"), x, y, width, 1, highlight(), true);
+                drawPlainWrapped(g, "Open the dedicated world generation options before character creation.", x, y + 28, width, 2, text, false);
+            }
+            g.setClip(oldClip);
+        }
+        void drawWorldPickerScrollBar(Graphics2D g) {
+            Rectangle p = panelRect(getWidth(), getHeight());
+            int count = worlds.size() + 1;
+            int visible = worldPickerVisibleCapacity(p);
+            if (count <= visible) return;
+            int x = p.x + 24 + worldPickerListWidth(p) - 8;
+            int y = worldPickerListTop(p);
+            int h = Math.max(40, visible * WORLD_PICKER_ROW_HEIGHT + Math.max(0, visible - 1) * WORLD_PICKER_ROW_GAP);
+            g.setColor(new Color(0, 0, 0, 150));
+            g.fillRoundRect(x, y, 6, h, 6, 6);
+            int thumbH = Math.max(24, h * visible / count);
+            int maxScroll = Math.max(1, count - visible);
+            int thumbY = y + (h - thumbH) * worldPickerScroll / maxScroll;
+            g.setColor(new Color(180, 145, 70, 210));
+            g.fillRoundRect(x, thumbY, 6, thumbH, 6, 6);
+        }
+        void drawPlainWrapped(Graphics2D g, String text, int x, int y, int width, int maxLines, Color color, boolean bold) {
+            Font oldFont = g.getFont();
+            g.setFont(bold ? panel.smallFont.deriveFont(Font.BOLD) : panel.smallFont);
+            FontMetrics fm = g.getFontMetrics();
+            List<String> lines = GuiLayoutApi.wrapText(text == null ? "" : text, fm, Math.max(8, width));
+            int lineH = Math.max(15, fm.getHeight() + 1);
+            g.setColor(color == null ? main() : color);
+            for (int i = 0; i < Math.min(maxLines, lines.size()); i++) {
+                String line = lines.get(i);
+                if (i == maxLines - 1 && lines.size() > maxLines) line = fitText(fm, line + "...", width);
+                else line = fitText(fm, line, width);
+                g.drawString(line, x, y + i * lineH);
+            }
+            g.setFont(oldFont);
+        }
+        String fitText(FontMetrics fm, String text, int width) {
+            String value = text == null ? "" : text;
+            if (fm.stringWidth(value) <= width) return value;
+            String suffix = "...";
+            int end = value.length();
+            while (end > 0 && fm.stringWidth(value.substring(0, end) + suffix) > width) end--;
+            return end <= 0 ? suffix : value.substring(0, end) + suffix;
+        }
+        long ensureDraftSeed() { if (panel.seed == 0L) { panel.seed = System.currentTimeMillis(); panel.rng = new Random(panel.seed ^ 0x4E475345545550L); seedDraft = Long.toString(panel.seed); } return panel.seed; }
         int worldPickerListWidth(Rectangle p) { int previewW = Math.max(300, Math.min(430, p.width / 3)); return Math.max(280, p.width - 72 - previewW - 22); }
         Rectangle worldManagerPreviewRect() { Rectangle p = panelRect(getWidth(), getHeight()); int leftW = worldPickerListWidth(p); int x = p.x + 24 + leftW + 22; int w = Math.max(300, p.x + p.width - 28 - x); return new Rectangle(x, p.y + 130, w, Math.max(300, p.height - 220)); }
         List<Rectangle> worldGenerationRows() { Rectangle p = panelRect(getWidth(), getHeight()); ArrayList<Rectangle> rows = new ArrayList<>(); int top = p.y + 166; int width = Math.max(300, Math.min(540, p.width - 420)); for (int i = 0; i < 7; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, width, 34)); return rows; }
         List<Rectangle> optionRows(int count) { Rectangle p = panelRect(getWidth(), getHeight()); ArrayList<Rectangle> rows = new ArrayList<>(); int top = p.y + 124; for (int i = 0; i < count; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, p.width - 48, 34)); return rows; }
         Rectangle seedEditRect() { Rectangle p = panelRect(getWidth(), getHeight()); int width = Math.max(300, Math.min(540, p.width - 420)); return new Rectangle(p.x + 24, p.y + 118, width, 34); }
         Rectangle spawnPreviewRect() { Rectangle p = panelRect(getWidth(), getHeight()); int leftW = Math.max(300, Math.min(540, p.width - 420)); int x = p.x + 24 + leftW + 24; int w = Math.max(300, p.x + p.width - 28 - x); return new Rectangle(x, p.y + 118, w, Math.max(320, p.height - 206)); }
-        Rectangle panelRect(int w, int h) { int pw = Math.max(720, Math.min(1060, w - 72)); int ph = Math.max(540, Math.min(720, h - 72)); return new Rectangle(Math.max(20, w / 2 - pw / 2), Math.max(28, h / 2 - ph / 2), pw, ph); }
+        Rectangle panelRect(int w, int h) { int minW = stage == Stage.CHARACTER_CREATION ? 900 : 720; int maxW = stage == Stage.CHARACTER_CREATION ? 1320 : 1060; int margin = stage == Stage.CHARACTER_CREATION ? 48 : 72; int pw = Math.max(minW, Math.min(maxW, w - margin)); int ph = Math.max(540, Math.min(720, h - 72)); return new Rectangle(Math.max(20, w / 2 - pw / 2), Math.max(28, h / 2 - ph / 2), pw, ph); }
         Rectangle buttonRect(int index) { Rectangle p = panelRect(getWidth(), getHeight()); if (index == 2) return new Rectangle(p.x + 28, p.y + p.height - 58, 146, 34); int bw = index == 0 ? 178 : 120; int gap = 16; int x = index == 0 ? p.x + p.width - bw - 28 : p.x + p.width - bw - 28 - 178 - gap; return new Rectangle(x, p.y + p.height - 58, bw, 34); }
         String title() { return MenuTextAuthority.text(titleKey(), switch (stage) { case WORLD_PICKER -> "WORLD MANAGEMENT"; case WORLD_GENERATION -> "NEW WORLD GENERATION"; case CHARACTER_CREATION -> "CHARACTER GENERATION"; default -> "START FLOW"; }); }
         String titleKey() { return switch (stage) { case WORLD_PICKER -> "menu.world_manager.title"; case WORLD_GENERATION -> "menu.world_generation.title"; case CHARACTER_CREATION -> "menu.character_generation.title"; default -> ""; }; }

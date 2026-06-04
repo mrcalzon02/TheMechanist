@@ -5,8 +5,9 @@ Expected important paths:
   assets\                  Art/audio/data assets copied by merge, not destructive delete
   settings\                Settings copied by merge when present
   client\locale\ or locale\ Localization files copied by merge when present
-  RUN_THE_MECHANIST_CLIENT.bat
+  RUN_THE_MECHANIST_CLIENT.vbs     Primary no-console launcher
   RUN_THE_MECHANIST_CLIENT.ps1
+  RUN_THE_MECHANIST_CLIENT_DIAGNOSTIC.bat  Console launcher for diagnostics only
 
 The full source folder is not included by default.
 The jar artifact is optional and is not the primary package output.

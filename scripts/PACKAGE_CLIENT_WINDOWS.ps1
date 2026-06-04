@@ -166,6 +166,12 @@ if ((Test-Path -LiteralPath $staleSrc) -and (-not $IncludeSourceMirror)) {
 if ((Test-Path -LiteralPath (Join-Path $outRoot 'TheMechanist.jar')) -and (-not $BuildJar)) {
     Remove-Item -LiteralPath (Join-Path $outRoot 'TheMechanist.jar') -Force -ErrorAction Continue
 }
+foreach ($staleLauncher in @('RUN_THE_MECHANIST_CLIENT.bat')) {
+    $staleLauncherPath = Join-Path $outRoot $staleLauncher
+    if (Test-Path -LiteralPath $staleLauncherPath) {
+        Remove-Item -LiteralPath $staleLauncherPath -Force -ErrorAction Continue
+    }
+}
 
 Write-Section 'Source inventory'
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -Filter '*.java' | Sort-Object FullName | ForEach-Object { $_.FullName })
@@ -219,6 +225,31 @@ if (-not $SkipAssetCopy) {
     $totalCopied += Copy-MergeIfExists (Join-Path $root 'client\locale') (Join-Path $outRoot 'client\locale') 'client-locale'
     $totalCopied += Copy-MergeIfExists (Join-Path $root 'locale') (Join-Path $outRoot 'locale') 'locale'
     $totalCopied += Copy-MergeIfExists (Join-Path $root 'PACKAGE_client\assets') (Join-Path $outRoot 'assets') 'existing-package-assets'
+    $titleSource = Join-Path $root 'ROOT_SRC_assets\Mechanist_art_SRC_do_not_MODIFY\Mechanist art\Title'
+    $titleDest = Join-Path $assetDest 'a\r\source\Title'
+    if (Test-Path -LiteralPath $titleSource -PathType Container) {
+        New-Item -ItemType Directory -Force -Path $titleDest | Out-Null
+        $titleCopies = @(
+            @{ Source = 'TITLE.png'; Dest = 'TITLE.png' },
+            @{ Source = 'TITLE.png'; Dest = 'TITEL.png' },
+            @{ Source = 'Subtitle.png'; Dest = 'Subtitle.png' },
+            @{ Source = 'Subtitle.png'; Dest = 'Sub title.png' }
+        )
+        foreach ($copy in $titleCopies) {
+            $src = Join-Path $titleSource $copy.Source
+            if (Test-Path -LiteralPath $src -PathType Leaf) {
+                Copy-Item -LiteralPath $src -Destination (Join-Path $titleDest $copy.Dest) -Force -ErrorAction Stop
+                $totalCopied++
+            }
+        }
+        $message = "MERGED source-title-art aliases: $titleSource -> $titleDest"
+        Write-Host $message
+        Add-Content -LiteralPath $packageLog -Value $message
+    } else {
+        $message = "SKIP missing source-title-art source: $titleSource"
+        Write-Host $message
+        Add-Content -LiteralPath $packageLog -Value $message
+    }
 }
 if ($IncludeSourceMirror) { $totalCopied += Copy-MergeIfExists (Join-Path $root 'src') (Join-Path $outRoot 'src') 'source-mirror' }
 
@@ -235,7 +266,26 @@ $packageAssetCount = @(Get-ChildItem -LiteralPath $assetRoot -Recurse -File -For
 "PackageAssetFiles: $packageAssetCount" | Add-Content -LiteralPath $summary
 "AssetInventory: $assetInventory" | Add-Content -LiteralPath $summary
 
-$runBat = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.bat'
+$runVbs = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.vbs'
+@(
+    'Option Explicit',
+    'Dim shell, fso, root, javaw, cmd',
+    'Set shell = CreateObject("WScript.Shell")',
+    'Set fso = CreateObject("Scripting.FileSystemObject")',
+    'root = fso.GetParentFolderName(WScript.ScriptFullName)',
+    'shell.CurrentDirectory = root',
+    'javaw = shell.ExpandEnvironmentStrings("%JAVA_HOME%")',
+    'If Len(javaw) > 0 And InStr(javaw, "%JAVA_HOME%") = 0 Then',
+    '  javaw = fso.BuildPath(javaw, "bin\javaw.exe")',
+    '  If Not fso.FileExists(javaw) Then javaw = "javaw.exe"',
+    'Else',
+    '  javaw = "javaw.exe"',
+    'End If',
+    'cmd = """" & javaw & """ -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp ""classes;."" mechanist.TheMechanist"',
+    'shell.Run cmd, 0, False'
+) | Set-Content -LiteralPath $runVbs
+
+$runBat = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT_DIAGNOSTIC.bat'
 @(
     '@echo off',
     'setlocal',
@@ -243,7 +293,7 @@ $runBat = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.bat'
     'java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist',
     'set MECH_EXIT=%ERRORLEVEL%',
     'echo.',
-    'echo The Mechanist client exited with code %MECH_EXIT%.',
+    'echo The Mechanist diagnostic client exited with code %MECH_EXIT%.',
     'pause',
     'exit /b %MECH_EXIT%'
 ) | Set-Content -LiteralPath $runBat
@@ -252,8 +302,10 @@ $runPs1 = Join-Path $outRoot 'RUN_THE_MECHANIST_CLIENT.ps1'
 @(
     '$ErrorActionPreference = "Stop"',
     'Set-Location -LiteralPath $PSScriptRoot',
-    '& java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist',
-    'exit $LASTEXITCODE'
+    '$javaw = if ($env:JAVA_HOME -and (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME "bin\javaw.exe"))) { Join-Path $env:JAVA_HOME "bin\javaw.exe" } else { "javaw.exe" }',
+    '$argsList = @("-Dmechanist.assetRoot=.", "-Dmechanist.generatedAssetRoot=.", "-Dmechanist.assetTier=low_32", "-Dmechanist.assetResolution=32", "-cp", "classes;.", "mechanist.TheMechanist")',
+    'Start-Process -FilePath $javaw -ArgumentList $argsList -WorkingDirectory $PSScriptRoot -WindowStyle Hidden',
+    'exit 0'
 ) | Set-Content -LiteralPath $runPs1
 
 $pkgManifest = Join-Path $outRoot 'PACKAGE_MANIFEST.txt'
@@ -265,8 +317,9 @@ $pkgManifest = Join-Path $outRoot 'PACKAGE_MANIFEST.txt'
     'Assets: assets\',
     "Package asset files: $packageAssetCount",
     "Source files compiled: $($sources.Count)",
-    'Launch: RUN_THE_MECHANIST_CLIENT.bat or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1',
-    'Manual launch: java -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist',
+    'Launch: RUN_THE_MECHANIST_CLIENT.vbs (no console window) or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1',
+    'Diagnostic launch: RUN_THE_MECHANIST_CLIENT_DIAGNOSTIC.bat',
+    'Manual launch: javaw -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist',
     'Note: PACKAGE_client is preserved by default. The src folder is removed unless -IncludeSourceMirror is supplied.'
 ) | Set-Content -LiteralPath $pkgManifest
 
@@ -279,8 +332,9 @@ $layout = Join-Path $outRoot 'PACKAGE_LAYOUT.txt'
     '  assets\                  Art/audio/data assets copied by merge, not destructive delete',
     '  settings\                Settings copied by merge when present',
     '  client\locale\ or locale\ Localization files copied by merge when present',
-    '  RUN_THE_MECHANIST_CLIENT.bat',
+    '  RUN_THE_MECHANIST_CLIENT.vbs     Primary no-console launcher',
     '  RUN_THE_MECHANIST_CLIENT.ps1',
+    '  RUN_THE_MECHANIST_CLIENT_DIAGNOSTIC.bat  Console launcher for diagnostics only',
     '',
     'The full source folder is not included by default.',
     'The jar artifact is optional and is not the primary package output.'

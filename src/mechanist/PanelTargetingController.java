@@ -12,10 +12,13 @@ final class PanelTargetingController {
             panel.lookStackIndex = 0;
             panel.lookStackScroll = 0;
             panel.activeScrollTag = "look-stack";
+            panel.setFacingToward(panel.lookX, panel.lookY, "mouse look cursor");
+            ProgressiveLookAuthority.reset(panel, "mouse look cursor moved");
         } else if (panel.panelMode == GamePanel.PanelMode.COMBAT) {
             panel.combatCursorActive = true;
             panel.combatX = tx;
             panel.combatY = ty;
+            panel.setFacingToward(panel.combatX, panel.combatY, "mouse combat cursor");
             panel.lastTargetingReport = panel.targetingSolutionAt(tx, ty).summary;
         } else if (panel.panelMode == GamePanel.PanelMode.INTERACT) {
             panel.interactCursorActive = true;
@@ -23,6 +26,8 @@ final class PanelTargetingController {
             panel.lookY = ty;
             panel.clampInteractCursorToAdjacent();
             panel.lookStackIndex = 0;
+            panel.setFacingToward(panel.lookX, panel.lookY, "mouse interact cursor");
+            ProgressiveLookAuthority.reset(panel, "mouse interact cursor moved");
             panel.updatePendingInteractionSummary();
         }
         DebugLog.audit("MOUSE_TARGETING", "panel=" + panel.panelMode + " tile=" + tx + "," + ty + " source=virtual-map");

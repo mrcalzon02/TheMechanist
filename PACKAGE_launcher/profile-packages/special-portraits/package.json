@@ -12,7 +12,8 @@
     "do_not_generate_replacement_art": true,
     "do_not_copy_full_client_portrait_catalog": true,
     "do_not_use_real_person_likeness_without_clearance": true,
-    "exact_asset_path_status": "pending-source-tree-location-audit"
+    "exact_asset_path_status": "resolved",
+    "exact_asset_path": "assets/graphics/packages/default_32/Protraits/Specialprofiles_r01c01_32px.png..Specialprofiles_r05c05_32px.png"
   },
   "privacy_policy": {
     "local_only": true,
@@ -24,7 +25,19 @@
     "fallback_if_no_match": "launcher-human-8x8-v1",
     "client_may_replace_after_verified_full_asset_catalog": true
   },
-  "entries": [],
+  "asset_payload": {
+    "root": "assets",
+    "filename_pattern": "Specialprofiles_r%02dc%02d_32px.png",
+    "included_png_files": 25,
+    "source_package_path": "PACKAGE_client/assets/graphics/packages/default_32/Protraits"
+  },
+  "entries": [
+    "special-profile-00", "special-profile-01", "special-profile-02", "special-profile-03", "special-profile-04",
+    "special-profile-05", "special-profile-06", "special-profile-07", "special-profile-08", "special-profile-09",
+    "special-profile-10", "special-profile-11", "special-profile-12", "special-profile-13", "special-profile-14",
+    "special-profile-15", "special-profile-16", "special-profile-17", "special-profile-18", "special-profile-19",
+    "special-profile-20", "special-profile-21", "special-profile-22", "special-profile-23", "special-profile-24"
+  ],
   "notes": [
     "This package replaces legacy celebrity-facing wording with publish-safe special/name-lock terminology.",
     "Do not ship real-person likeness mappings unless rights, license, parody, or original-character clearance is documented.",

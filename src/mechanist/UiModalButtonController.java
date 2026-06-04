@@ -6,7 +6,7 @@ final class UiModalButtonController {
     static boolean buttonIsModalInteractive(GamePanel panel, ButtonBox button) {
         if (button == null) return false;
         if (panel.screen == GamePanel.Screen.OPTIONS && panel.graphicsDropdown >= 0) {
-            return LayerD.isGraphicsDropdownButton(panel, button);
+            return GraphicsDropdownOptionsRuntime.isGraphicsDropdownButton(panel, button);
         }
         if (panel.screen == GamePanel.Screen.SECTOR_AUDIT && panel.auditZoneDropdownOpen) {
             return panel.isZoneAuditDropdownButton(button) || (button.label != null && button.label.startsWith("ZONE:"));

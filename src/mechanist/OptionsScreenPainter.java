@@ -67,12 +67,12 @@ final class OptionsScreenPainter {
 
     static void paintShell(GamePanel panel, Graphics2D g) {
         Layout layout = layout(panel);
-        g.setColor(LayerF.optionColor(panel, GameOptions.BACKGROUND));
+        g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.BACKGROUND));
         g.fillRect(0, 0, layout.width, layout.height);
         panel.drawSlicedFrame(g, 20, 20, layout.width - 40, layout.height - 40, "outer");
         panel.drawPanelBox(g, layout.panelX, layout.panelY, layout.panelW, layout.panelH, "OPTIONS");
         g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(10f, Math.min(14f, layout.height / 64f))));
-        g.setColor(LayerF.optionColor(panel, GameOptions.TEXT_TITLE));
+        g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_TITLE));
         panel.drawUiTextLine(g, "OPTIONS", layout.panelX + 18, layout.panelY + 26);
         java.awt.Rectangle sub = subtitleBox(layout);
         panel.drawTextPanel(g, sub.x, sub.y, sub.width, sub.height, Collections.singletonList(subtitle(panel.optionsTab)), true);
@@ -105,7 +105,7 @@ final class OptionsScreenPainter {
             int px = sx + i * Math.max(128, (info.width - 36) / GameOptions.COLOR_KEYS.length);
             g.setColor(new Color(panel.options.colorValue(i)));
             g.fillRect(px, swatchY, 28, 18);
-            g.setColor(i == panel.options.colorTarget ? LayerF.optionColor(panel, GameOptions.TEXT_HIGHLIGHT) : LayerF.optionColor(panel, GameOptions.TEXT_MAIN));
+            g.setColor(i == panel.options.colorTarget ? AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_HIGHLIGHT) : AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_MAIN));
             g.drawRect(px, swatchY, 28, 18);
             g.setFont(panel.smallFont);
             for (String line : TextSurfaceApi.wrap(GameOptions.COLOR_KEYS[i], 11)) {
@@ -157,7 +157,7 @@ final class OptionsScreenPainter {
         }
 
         int firstDropdown = panel.buttons.size();
-        LayerD.addGraphicsDropdownButtons(panel, 0, 0, 0, 0);
+        GraphicsDropdownOptionsRuntime.addGraphicsDropdownButtons(panel, 0, 0, 0, 0);
         clampSelectedButton(panel, firstDropdown);
     }
 
@@ -165,7 +165,7 @@ final class OptionsScreenPainter {
         Font buttonFont = panel.uiFont.deriveFont(Font.BOLD, Math.max(9f, Math.min(12.5f, panel.getHeight() / 62f)));
         for (int i = 0; i < panel.buttons.size(); i++) {
             ButtonBox button = panel.buttons.get(i);
-            boolean dropdown = LayerD.isGraphicsDropdownButton(panel, button);
+            boolean dropdown = GraphicsDropdownOptionsRuntime.isGraphicsDropdownButton(panel, button);
             if (dropdownOnly != dropdown) continue;
             panel.ensureButtonSystemIcon(button);
             boolean selected = i == panel.selectedButton || (button != null && button.contains(panel.mouseX, panel.mouseY));
@@ -180,7 +180,7 @@ final class OptionsScreenPainter {
         }
         if (panel.selectedButton < 0 || panel.selectedButton >= panel.buttons.size()) panel.selectedButton = 0;
         if (panel.graphicsDropdown >= 0) {
-            boolean selectedDropdown = LayerD.isGraphicsDropdownButton(panel, panel.buttons.get(panel.selectedButton));
+            boolean selectedDropdown = GraphicsDropdownOptionsRuntime.isGraphicsDropdownButton(panel, panel.buttons.get(panel.selectedButton));
             if (!selectedDropdown && firstDropdown < panel.buttons.size()) panel.selectedButton = firstDropdown;
         }
     }
@@ -206,9 +206,9 @@ final class OptionsScreenPainter {
 
     private static ArrayList<OptionCommand> displayCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("Mode: " + panel.options.windowModeLabel(), "Select windowed, borderless, or exclusive fullscreen.", () -> LayerD.toggleGraphicsDropdown(panel, 0)));
-        out.add(cmd("Resolution: " + panel.options.resolutionLabel(), "Select a detected or safe display mode.", () -> LayerD.toggleGraphicsDropdown(panel, 1)));
-        out.add(cmd("Apply Window", "Apply the pending window mode and resolution.", () -> LayerD.applyWindowMode(panel)));
+        out.add(cmd("Mode: " + panel.options.windowModeLabel(), "Select windowed, borderless, or exclusive fullscreen.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 0)));
+        out.add(cmd("Resolution: " + panel.options.resolutionLabel(), "Select a detected or safe display mode.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 1)));
+        out.add(cmd("Apply Window", "Apply the pending window mode and resolution.", () -> GraphicsDropdownOptionsRuntime.applyWindowMode(panel)));
         out.add(cmd("Screensaver " + onOff(panel.options.screenSaver), "Toggle the in-game idle screensaver.", () -> {
             panel.options.screenSaver = !panel.options.screenSaver;
             saveFlag(panel, "Screensaver", panel.options.screenSaver);
@@ -219,11 +219,11 @@ final class OptionsScreenPainter {
 
     private static ArrayList<OptionCommand> textCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("Text -", "Reduce menu and body text scale.", () -> LayerI.changeFontScale(panel, -1)));
-        out.add(cmd("Text +", "Increase menu and body text scale.", () -> LayerI.changeFontScale(panel, 1)));
-        out.add(cmd("UI -", "Reduce interface chrome scale.", () -> LayerI.changeUiScale(panel, -1)));
-        out.add(cmd("UI +", "Increase interface chrome scale.", () -> LayerI.changeUiScale(panel, 1)));
-        out.add(cmd("Crispness: " + panel.options.renderQualityLabel(), "Select the Java2D text and render hint profile.", () -> LayerD.toggleGraphicsDropdown(panel, 5)));
+        out.add(cmd("Text -", "Reduce menu and body text scale.", () -> DisplayScaleOptionsRuntime.changeFontScale(panel, -1)));
+        out.add(cmd("Text +", "Increase menu and body text scale.", () -> DisplayScaleOptionsRuntime.changeFontScale(panel, 1)));
+        out.add(cmd("UI -", "Reduce interface chrome scale.", () -> DisplayScaleOptionsRuntime.changeUiScale(panel, -1)));
+        out.add(cmd("UI +", "Increase interface chrome scale.", () -> DisplayScaleOptionsRuntime.changeUiScale(panel, 1)));
+        out.add(cmd("Crispness: " + panel.options.renderQualityLabel(), "Select the Java2D text and render hint profile.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 5)));
         out.add(cmd("Hover Help " + onOff(panel.options.hoverHelp), "Toggle floating hover help text.", () -> {
             panel.options.hoverHelp = !panel.options.hoverHelp;
             saveFlag(panel, "Hover help", panel.options.hoverHelp);
@@ -240,8 +240,8 @@ final class OptionsScreenPainter {
             panel.logEvent("Sound effects " + onOff(panel.options.soundEnabled) + ".");
             panel.repaint();
         }));
-        out.add(cmd("SFX -", "Lower sound effects volume.", () -> LayerB.changeSfxVolume(panel, -5)));
-        out.add(cmd("SFX +", "Raise sound effects volume.", () -> LayerB.changeSfxVolume(panel, 5)));
+        out.add(cmd("SFX -", "Lower sound effects volume.", () -> AudioVolumeOptionsRuntime.changeSfxVolume(panel, -5)));
+        out.add(cmd("SFX +", "Raise sound effects volume.", () -> AudioVolumeOptionsRuntime.changeSfxVolume(panel, 5)));
         out.add(cmd("Music " + onOff(panel.options.musicEnabled), "Toggle dynamic music.", () -> {
             panel.options.musicEnabled = !panel.options.musicEnabled;
             panel.options.save();
@@ -250,14 +250,14 @@ final class OptionsScreenPainter {
             panel.logEvent("Music " + onOff(panel.options.musicEnabled) + ".");
             panel.repaint();
         }));
-        out.add(cmd("Music -", "Lower music volume.", () -> LayerB.changeMusicVolume(panel, -5)));
-        out.add(cmd("Music +", "Raise music volume.", () -> LayerB.changeMusicVolume(panel, 5)));
+        out.add(cmd("Music -", "Lower music volume.", () -> AudioVolumeOptionsRuntime.changeMusicVolume(panel, -5)));
+        out.add(cmd("Music +", "Raise music volume.", () -> AudioVolumeOptionsRuntime.changeMusicVolume(panel, 5)));
         out.add(cmd("Voice " + onOff(panel.options.conversationSound), "Toggle voice and conversation sounds.", () -> {
             panel.options.conversationSound = !panel.options.conversationSound;
             saveFlag(panel, "Voice and conversation audio", panel.options.conversationSound);
         }));
-        out.add(cmd("Voice -", "Lower voice and conversation volume.", () -> LayerB.changeConversationVolume(panel, -5)));
-        out.add(cmd("Voice +", "Raise voice and conversation volume.", () -> LayerB.changeConversationVolume(panel, 5)));
+        out.add(cmd("Voice -", "Lower voice and conversation volume.", () -> AudioVolumeOptionsRuntime.changeConversationVolume(panel, -5)));
+        out.add(cmd("Voice +", "Raise voice and conversation volume.", () -> AudioVolumeOptionsRuntime.changeConversationVolume(panel, 5)));
         out.add(cmd("Boot " + onOff(panel.options.bootSound), "Toggle boot sound playback.", () -> {
             panel.options.bootSound = !panel.options.bootSound;
             saveFlag(panel, "Boot sound", panel.options.bootSound);
@@ -293,22 +293,35 @@ final class OptionsScreenPainter {
 
     private static ArrayList<OptionCommand> graphicsCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("Downscale: " + panel.options.downscaleLabel(), "Select internal render resolution scaling.", () -> LayerD.toggleGraphicsDropdown(panel, 3)));
-        out.add(cmd("FPS: " + panel.options.targetFpsLabel(), "Select target frame pacing.", () -> LayerD.toggleGraphicsDropdown(panel, 4)));
-        out.add(cmd("Quality: " + panel.options.renderQualityLabel(), "Select render quality.", () -> LayerD.toggleGraphicsDropdown(panel, 5)));
-        out.add(cmd("Lighting: " + panel.options.lightingFxLabel(), "Cycle visual lighting effects.", () -> LayerC.cycleLightingFx(panel)));
-        out.add(cmd("Frame Limit " + panel.options.frameLimitLabel(), "Toggle the frame limiter.", () -> LayerC.toggleFrameLimiter(panel)));
-        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> LayerC.toggleReducedMotion(panel)));
-        out.add(cmd("Diagnostics " + onOff(panel.options.diagnosticsOverlay), "Toggle the F3 performance overlay.", () -> AccessibilityRuntimeOptionsSubsystem.togglePerformanceDiagnostics(panel)));
-        out.add(cmd("Stress Test", "Toggle the render stress test overlay.", () -> LayerC.toggleRenderStressTest(panel)));
-        out.add(cmd("Viewport Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display footprint.", () -> LayerG.cycleMapTileSize(panel)));
-        out.add(cmd("Textures: " + panel.options.artQualityResolutionLabel(), "Cycle compiled texture package size.", () -> LayerG.cycleArtQuality(panel)));
-        out.add(cmd("Payload Root", "Choose an external generated-art payload root.", () -> LayerG.chooseGeneratedAssetPayloadRoot(panel)));
-        out.add(cmd("Clear Payload", "Clear the external generated-art payload root.", () -> LayerG.clearGeneratedAssetPayloadRoot(panel)));
-        out.add(cmd("Palette: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset], "Select a color palette.", () -> LayerD.toggleGraphicsDropdown(panel, 2)));
-        out.add(cmd("Color Key: " + panel.options.colorTargetLabel(), "Cycle the color being edited.", () -> AccessibilityRuntimeOptionsSubsystem.cycleColorTarget(panel)));
-        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, -8)));
-        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, 8)));
+        out.add(cmd("Downscale: " + panel.options.downscaleLabel(), "Select internal render resolution scaling.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 3)));
+        out.add(cmd("FPS: " + panel.options.targetFpsLabel(), "Select target frame pacing.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 4)));
+        out.add(cmd("Quality: " + panel.options.renderQualityLabel(), "Select render quality.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 5)));
+        out.add(cmd("Lighting: " + panel.options.lightingFxLabel(), "Cycle visual lighting effects.", () -> DisplayPerformanceOptionsRuntime.cycleLightingFx(panel)));
+        out.add(cmd("Frame Limit " + panel.options.frameLimitLabel(), "Toggle the frame limiter.", () -> DisplayPerformanceOptionsRuntime.toggleFrameLimiter(panel)));
+        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> DisplayPerformanceOptionsRuntime.toggleReducedMotion(panel)));
+        out.add(cmd("Diagnostics " + onOff(panel.options.diagnosticsOverlay), "Toggle the F3 performance overlay.", () -> AccessibilityVisualOptionsRuntime.togglePerformanceDiagnostics(panel)));
+        out.add(cmd("Stress Test", "Toggle the render stress test overlay.", () -> DisplayPerformanceOptionsRuntime.toggleRenderStressTest(panel)));
+        out.add(cmd("Viewport Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display footprint.", () -> ViewportAssetOptionsRuntime.cycleMapTileSize(panel)));
+        out.add(cmd("World Zoom -", "Zoom the tactical world viewport out.", () -> ViewportAssetOptionsRuntime.changeWorldZoom(panel, -1, "Options")));
+        out.add(cmd("World Zoom +", "Zoom the tactical world viewport in.", () -> ViewportAssetOptionsRuntime.changeWorldZoom(panel, 1, "Options")));
+        out.add(cmd("Tile Icons " + onOff(panel.options.tileIconRendering), "Toggle compiled tile icon rendering.", () -> {
+            panel.options.tileIconRendering = !panel.options.tileIconRendering;
+            saveFlag(panel, "Tile icon rendering", panel.options.tileIconRendering);
+        }));
+        out.add(cmd("Portraits " + onOff(panel.options.importedPortraits), "Toggle optional imported portrait sheet loading.", () -> {
+            panel.options.importedPortraits = !panel.options.importedPortraits;
+            panel.options.save();
+            panel.images.reloadArtQuality(panel.options);
+            panel.logEvent("Imported portrait sheets " + onOff(panel.options.importedPortraits) + ".");
+            panel.repaint();
+        }));
+        out.add(cmd("Textures: " + panel.options.artQualityResolutionLabel(), "Cycle compiled texture package size.", () -> ViewportAssetOptionsRuntime.cycleArtQuality(panel)));
+        out.add(cmd("Payload Root", "Choose an external generated-art payload root.", () -> ViewportAssetOptionsRuntime.chooseGeneratedAssetPayloadRoot(panel)));
+        out.add(cmd("Clear Payload", "Clear the external generated-art payload root.", () -> ViewportAssetOptionsRuntime.clearGeneratedAssetPayloadRoot(panel)));
+        out.add(cmd("Palette: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset], "Select a color palette.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 2)));
+        out.add(cmd("Color Key: " + panel.options.colorTargetLabel(), "Cycle the color being edited.", () -> AccessibilityVisualOptionsRuntime.cycleColorTarget(panel)));
+        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, -8)));
+        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, 8)));
         out.add(backCommand(panel));
         return out;
     }
@@ -330,18 +343,18 @@ final class OptionsScreenPainter {
 
     private static ArrayList<OptionCommand> accessibilityCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("CVD: " + AccessibilityCompatibilityAuthority.cvdLabel(panel.options.cvdModeIndex), "Cycle color vision correction.", () -> AccessibilityRuntimeOptionsSubsystem.cycleCvdMode(panel)));
-        out.add(cmd("High Contrast " + onOff(panel.options.highContrastText), "Toggle high contrast text containers.", () -> AccessibilityRuntimeOptionsSubsystem.toggleHighContrastText(panel)));
-        out.add(cmd("Instant Text " + onOff(panel.options.instantDialogueText), "Toggle instant conversation text.", () -> AccessibilityRuntimeOptionsSubsystem.toggleInstantDialogueText(panel)));
-        out.add(cmd("Shake -", "Reduce screen shake intensity.", () -> AccessibilityRuntimeOptionsSubsystem.adjustScreenShake(panel, -10)));
-        out.add(cmd("Shake +", "Increase screen shake intensity.", () -> AccessibilityRuntimeOptionsSubsystem.adjustScreenShake(panel, 10)));
-        out.add(cmd("Narrate Screen", "Push a screen narration event.", () -> AccessibilityRuntimeOptionsSubsystem.pushCurrentScreenNarration(panel)));
+        out.add(cmd("CVD: " + AccessibilityCompatibilityAuthority.cvdLabel(panel.options.cvdModeIndex), "Cycle color vision correction.", () -> AccessibilityVisualOptionsRuntime.cycleCvdMode(panel)));
+        out.add(cmd("High Contrast " + onOff(panel.options.highContrastText), "Toggle high contrast text containers.", () -> AccessibilityVisualOptionsRuntime.toggleHighContrastText(panel)));
+        out.add(cmd("Instant Text " + onOff(panel.options.instantDialogueText), "Toggle instant conversation text.", () -> AccessibilityVisualOptionsRuntime.toggleInstantDialogueText(panel)));
+        out.add(cmd("Shake -", "Reduce screen shake intensity.", () -> AccessibilityVisualOptionsRuntime.adjustScreenShake(panel, -10)));
+        out.add(cmd("Shake +", "Increase screen shake intensity.", () -> AccessibilityVisualOptionsRuntime.adjustScreenShake(panel, 10)));
+        out.add(cmd("Narrate Screen", "Push a screen narration event.", () -> AccessibilityVisualOptionsRuntime.pushCurrentScreenNarration(panel)));
         out.add(cmd("Subtitles " + onOff(panel.options.subtitlesEnabled), "Toggle subtitles.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSubtitles(panel.options))));
-        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> LayerC.toggleReducedMotion(panel)));
-        out.add(cmd("Palette", "Select an accessibility-friendly palette.", () -> LayerD.toggleGraphicsDropdown(panel, 2)));
-        out.add(cmd("Color Key", "Cycle the color being edited.", () -> AccessibilityRuntimeOptionsSubsystem.cycleColorTarget(panel)));
-        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, -8)));
-        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityRuntimeOptionsSubsystem.adjustSelectedColor(panel, 8)));
+        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> DisplayPerformanceOptionsRuntime.toggleReducedMotion(panel)));
+        out.add(cmd("Palette", "Select an accessibility-friendly palette.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 2)));
+        out.add(cmd("Color Key", "Cycle the color being edited.", () -> AccessibilityVisualOptionsRuntime.cycleColorTarget(panel)));
+        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, -8)));
+        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, 8)));
         out.add(backCommand(panel));
         return out;
     }
@@ -386,6 +399,10 @@ final class OptionsScreenPainter {
             panel.options.namedDeathAlerts = !panel.options.namedDeathAlerts;
             saveFlag(panel, "Named death alerts", panel.options.namedDeathAlerts);
         }));
+        out.add(cmd("Doom Mode " + onOff(panel.options.doomModeEnabled), "Toggle the experimental first-person renderer.", () -> DoomQualityOfLifeOptionsRuntime.requestDoomModeToggle(panel)));
+        out.add(cmd("Doom FOV -", "Narrow the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, -5)));
+        out.add(cmd("Doom FOV +", "Widen the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, 5)));
+        out.add(cmd("Doom Fog: " + panel.options.doomFogModeLabel(), "Cycle first-person fog distance mode.", () -> DoomQualityOfLifeOptionsRuntime.cycleDoomFogMode(panel)));
         out.add(backCommand(panel));
         return out;
     }
@@ -500,9 +517,10 @@ final class OptionsScreenPainter {
             var runtime = AssetManager.generatedAssetRuntime();
             lines.add("Generated Runtime: " + (runtime.runtimeManifestPresent() && runtime.tierManifestPresent() ? "ready" : "partial") + " / payload roots " + runtime.generatedPayloadRoots().size());
         } catch (Throwable ignored) {
-            lines.add("Generated Runtime: unavailable");
+        lines.add("Generated Runtime: unavailable");
         }
         lines.add("Viewport Tile Size: " + panel.options.mapTileSizeLabel() + " / " + panel.options.mapTilePixelSize() + "px screen footprint before GUI scale");
+        lines.add("Viewport Zoom: " + panel.options.worldZoomLabel() + " / Home and End adjust active world views.");
         lines.add("Render Scaling Profile: " + panel.renderScaling.profileLabel() + " / option downscale " + panel.renderScaling.downscaleLabel() + " / F10 cycles profiles.");
         lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset] + " / Editing " + panel.options.colorTargetLabel());
         return lines;

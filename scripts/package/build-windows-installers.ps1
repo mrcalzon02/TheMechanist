@@ -34,6 +34,15 @@ $LauncherJar = Join-Path $LauncherPackageDir "MechanistLauncher.jar"
 $ClientAssetDir = Join-Path $ClientPackageDir "assets"
 $LauncherProfileSourceDir = Join-Path $ProjectRoot "launcher\profile-packages"
 $LauncherAssetStager = Join-Path $ProjectRoot "tools\launcher\stage_launcher_profile_assets.py"
+$PackagedLauncherJavaDir = Join-Path $ProjectRoot "PACKAGE_launcher\java"
+$PackagedLauncherProfileSourceDir = Join-Path $ProjectRoot "PACKAGE_launcher\profile-packages"
+if (-not (Test-Path -LiteralPath $LauncherJavaDir -PathType Container) -and (Test-Path -LiteralPath $PackagedLauncherJavaDir -PathType Container)) {
+    $LauncherJavaDir = $PackagedLauncherJavaDir
+}
+if (-not (Test-Path -LiteralPath $LauncherProfileSourceDir -PathType Container) -and (Test-Path -LiteralPath $PackagedLauncherProfileSourceDir -PathType Container)) {
+    $LauncherProfileSourceDir = $PackagedLauncherProfileSourceDir
+}
+$LauncherJarSource = Join-Path $LauncherJavaDir "target\mechanist-launcher-0.1.0.jar"
 $LwjglVersion = "3.4.1"
 $RequiredLwjglFiles = @(
     "lwjgl-$LwjglVersion.jar",
@@ -73,9 +82,30 @@ function Stage-RuntimeDependencies {
 
 function Stage-LauncherProfilePackages {
     if (-not (Test-Path -LiteralPath $LauncherProfileSourceDir -PathType Container)) { throw "Missing launcher profile package source directory: $LauncherProfileSourceDir" }
-    Require-Command python
-    if (-not (Test-Path -LiteralPath $LauncherAssetStager -PathType Leaf)) { throw "Missing launcher asset staging helper: $LauncherAssetStager" }
-    & python $LauncherAssetStager --project-root $ProjectRoot --asset-root client/assets --launcher-package-root launcher/profile-packages --allow-missing
+    $portraitSourceCandidates = @(
+        (Join-Path $ProjectRoot "PACKAGE_client\assets\graphics\packages\default_32\Protraits"),
+        (Join-Path $ProjectRoot "client\assets\graphics\packages\default_32\Protraits"),
+        (Join-Path $ProjectRoot "packages\client\assets\graphics\packages\default_32\Protraits")
+    )
+    $portraitSource = $null
+    foreach ($candidate in $portraitSourceCandidates) {
+        if (Test-Path -LiteralPath $candidate -PathType Container) { $portraitSource = $candidate; break }
+    }
+    if ($portraitSource -ne $null) {
+        $humanDest = Join-Path $LauncherProfileSourceDir "human-8x8\assets"
+        $specialDest = Join-Path $LauncherProfileSourceDir "special-portraits\assets"
+        New-Item -ItemType Directory -Force -Path $humanDest, $specialDest | Out-Null
+        $humans = @(Get-ChildItem -LiteralPath $portraitSource -File -Filter "Humans8x8_*.png" -ErrorAction SilentlyContinue)
+        $specials = @(Get-ChildItem -LiteralPath $portraitSource -File -Filter "Specialprofiles_*.png" -ErrorAction SilentlyContinue)
+        foreach ($file in $humans) { Copy-Item -LiteralPath $file.FullName -Destination $humanDest -Force }
+        foreach ($file in $specials) { Copy-Item -LiteralPath $file.FullName -Destination $specialDest -Force }
+        Write-Host "Launcher profile portrait payload staged: humans=$($humans.Count) specials=$($specials.Count) from $portraitSource"
+    } elseif (Test-Path -LiteralPath $LauncherAssetStager -PathType Leaf) {
+        Require-Command python
+        & python $LauncherAssetStager --project-root $ProjectRoot --asset-root client/assets --launcher-package-root $LauncherProfileSourceDir --allow-missing
+    } else {
+        Write-Warning "Launcher profile portrait payload source was not found; profile package manifests will be copied without PNG payload refresh."
+    }
     $dest = Join-Path $LauncherPackageDir "profile-packages"
     Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $LauncherPackageDir | Out-Null

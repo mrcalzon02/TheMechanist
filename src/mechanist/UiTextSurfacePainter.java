@@ -61,7 +61,7 @@ final class UiTextSurfacePainter {
                 g.setFont(oldFont);
                 return;
             }
-            g.setColor(LayerF.optionColor(panel, GameOptions.TEXT_MAIN));
+            g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_MAIN));
             if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy);
             else g.drawString(line, x, yy);
             yy += lineH;
@@ -81,7 +81,7 @@ final class UiTextSurfacePainter {
         int yy = y + Math.max(fm.getAscent(), (h - totalH) / 2 + fm.getAscent());
         for (String line : lines) {
             if (yy > y + h) break;
-            g.setColor(LayerF.optionColor(panel, GameOptions.TEXT_MAIN));
+            g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_MAIN));
             center(g, line, x + w / 2, yy);
             yy += lineH;
         }
@@ -104,7 +104,7 @@ final class UiTextSurfacePainter {
                 g.setClip(oldClip);
                 return;
             }
-            g.setColor(LayerF.optionColor(panel, GameOptions.TEXT_MAIN));
+            g.setColor(AccessibilityVisualOptionsRuntime.optionColor(panel, GameOptions.TEXT_MAIN));
             if (centered) g.drawString(line, x + (w - fm.stringWidth(line)) / 2, yy);
             else g.drawString(line, x + 14, yy);
             yy += fm.getHeight();
