@@ -14,63 +14,10 @@ import java.util.List;
  * containers, vehicles, pets, occupancy, and placement reservations.
  */
 final class ZoneTileState {
-    enum BaseTileType {
-        VOID,
-        FLOOR,
-        WALL,
-        ROAD,
-        SIDEWALK,
-        DOOR,
-        WATER,
-        SEWER,
-        STAIRS,
-        ELEVATOR,
-        MANHOLE,
-        DRAIN,
-        UNKNOWN
-    }
-
-    enum SpaceType {
-        UNASSIGNED,
-        ROOM,
-        CORRIDOR,
-        ROAD_NETWORK,
-        CENTRAL_PLAZA,
-        TRANSITION_ROOM,
-        PARKING_LOT,
-        UTILITY_SPACE,
-        SEWER_NETWORK,
-        EXTERIOR_EDGE
-    }
-
-    enum TileFlag {
-        BLOCKS_MOVEMENT,
-        BLOCKS_ROOM_PLACEMENT,
-        RESERVED,
-        ROAD_INFRASTRUCTURE,
-        DOOR_BUFFER,
-        TRANSITION_ANCHOR,
-        VERTICAL_TRANSITION,
-        HAS_LIGHT,
-        HAS_OBJECT,
-        HAS_CONTAINER,
-        HAS_ENTITY,
-        HAS_PET,
-        HAS_VEHICLE,
-        FACTION_CONTROLLED,
-        NEUTRAL,
-        LEGACY_IMPORTED
-    }
-
-    enum LightKind {
-        NONE,
-        AMBIENT,
-        STREET_LIGHT,
-        ROOM_LIGHT,
-        WARNING_LIGHT,
-        EMERGENCY_LIGHT,
-        MACHINE_GLOW
-    }
+    enum BaseTileType { VOID, FLOOR, WALL, ROAD, SIDEWALK, DOOR, WATER, SEWER, STAIRS, ELEVATOR, MANHOLE, DRAIN, UNKNOWN }
+    enum SpaceType { UNASSIGNED, ROOM, CORRIDOR, ROAD_NETWORK, CENTRAL_PLAZA, TRANSITION_ROOM, PARKING_LOT, UTILITY_SPACE, SEWER_NETWORK, EXTERIOR_EDGE }
+    enum TileFlag { BLOCKS_MOVEMENT, BLOCKS_ROOM_PLACEMENT, RESERVED, ROAD_INFRASTRUCTURE, DOOR_BUFFER, TRANSITION_ANCHOR, VERTICAL_TRANSITION, HAS_LIGHT, HAS_OBJECT, HAS_CONTAINER, HAS_ENTITY, HAS_PET, HAS_VEHICLE, FACTION_CONTROLLED, NEUTRAL, LEGACY_IMPORTED }
+    enum LightKind { NONE, AMBIENT, STREET_LIGHT, ROOM_LIGHT, WARNING_LIGHT, EMERGENCY_LIGHT, MACHINE_GLOW }
 
     static final class PlacedObjectRef {
         final String objectId;
@@ -78,7 +25,6 @@ final class ZoneTileState {
         final String label;
         final boolean blocksMovement;
         final boolean container;
-
         PlacedObjectRef(String objectId, String typeKey, String label, boolean blocksMovement, boolean container) {
             this.objectId = safe(objectId);
             this.typeKey = safe(typeKey);
@@ -92,7 +38,6 @@ final class ZoneTileState {
         final LightKind kind;
         final int intensityPercent;
         final String sourceId;
-
         LightState(LightKind kind, int intensityPercent, String sourceId) {
             this.kind = kind == null ? LightKind.NONE : kind;
             this.intensityPercent = Math.max(0, Math.min(100, intensityPercent));
@@ -117,10 +62,7 @@ final class ZoneTileState {
     private final ArrayList<PlacedObjectRef> objects = new ArrayList<>();
     private final ArrayList<LightState> lights = new ArrayList<>();
 
-    ZoneTileState() {
-        this(BaseTileType.VOID, ' ');
-    }
-
+    ZoneTileState() { this(BaseTileType.VOID, ' '); }
     ZoneTileState(BaseTileType baseType, char legacyGlyph) {
         this.baseType = baseType == null ? BaseTileType.UNKNOWN : baseType;
         this.spaceType = SpaceType.UNASSIGNED;
@@ -175,105 +117,21 @@ final class ZoneTileState {
     List<LightState> lights() { return Collections.unmodifiableList(lights); }
     EnumSet<TileFlag> flags() { return flags.clone(); }
 
-    ZoneTileState setBaseType(BaseTileType baseType, char legacyGlyph) {
-        this.baseType = baseType == null ? BaseTileType.UNKNOWN : baseType;
-        this.legacyGlyph = legacyGlyph;
-        return this;
-    }
-
-    ZoneTileState setSpaceType(SpaceType spaceType) {
-        this.spaceType = spaceType == null ? SpaceType.UNASSIGNED : spaceType;
-        return this;
-    }
-
-    ZoneTileState setOwnerFaction(Faction ownerFaction) {
-        this.ownerFaction = ownerFaction == null ? Faction.NONE : ownerFaction;
-        if (this.ownerFaction == Faction.NONE) flags.add(TileFlag.NEUTRAL); else flags.add(TileFlag.FACTION_CONTROLLED);
-        return this;
-    }
-
-    ZoneTileState markRoom(String roomId, Faction faction) {
-        this.roomId = safe(roomId);
-        this.spaceType = SpaceType.ROOM;
-        setOwnerFaction(faction);
-        return this;
-    }
-
-    ZoneTileState markCorridor(String corridorId) {
-        this.corridorId = safe(corridorId);
-        this.spaceType = SpaceType.CORRIDOR;
-        return this;
-    }
-
-    ZoneTileState markRoad(String roadNetworkId) {
-        this.roadNetworkId = safe(roadNetworkId);
-        this.spaceType = SpaceType.ROAD_NETWORK;
-        this.baseType = BaseTileType.ROAD;
-        this.legacyGlyph = 'R';
-        flags.add(TileFlag.ROAD_INFRASTRUCTURE);
-        flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT);
-        return this;
-    }
-
-    ZoneTileState markTransition(String transitionId, boolean vertical) {
-        this.transitionId = safe(transitionId);
-        flags.add(TileFlag.TRANSITION_ANCHOR);
-        flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT);
-        if (vertical) {
-            this.verticalTransitionId = safe(transitionId);
-            flags.add(TileFlag.VERTICAL_TRANSITION);
-        }
-        return this;
-    }
-
-    ZoneTileState reserve(String label) {
-        this.reservationLabel = safe(label);
-        flags.add(TileFlag.RESERVED);
-        flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT);
-        return this;
-    }
-
-    ZoneTileState addFlag(TileFlag flag) {
-        if (flag != null) flags.add(flag);
-        return this;
-    }
-
-    ZoneTileState removeFlag(TileFlag flag) {
-        if (flag != null) flags.remove(flag);
-        return this;
-    }
-
-    ZoneTileState addObject(String objectId, String typeKey, String label, boolean blocksMovement, boolean container) {
-        objects.add(new PlacedObjectRef(objectId, typeKey, label, blocksMovement, container));
-        flags.add(TileFlag.HAS_OBJECT);
-        if (container) flags.add(TileFlag.HAS_CONTAINER);
-        if (blocksMovement) flags.add(TileFlag.BLOCKS_MOVEMENT);
-        return this;
-    }
-
-    ZoneTileState addLight(LightKind kind, int intensityPercent, String sourceId) {
-        lights.add(new LightState(kind, intensityPercent, sourceId));
-        if (kind != null && kind != LightKind.NONE && intensityPercent > 0) flags.add(TileFlag.HAS_LIGHT);
-        return this;
-    }
-
-    ZoneTileState setOccupantEntityId(String occupantEntityId) {
-        this.occupantEntityId = safe(occupantEntityId);
-        if (!this.occupantEntityId.isBlank()) flags.add(TileFlag.HAS_ENTITY); else flags.remove(TileFlag.HAS_ENTITY);
-        return this;
-    }
-
-    ZoneTileState setPetEntityId(String petEntityId) {
-        this.petEntityId = safe(petEntityId);
-        if (!this.petEntityId.isBlank()) flags.add(TileFlag.HAS_PET); else flags.remove(TileFlag.HAS_PET);
-        return this;
-    }
-
-    ZoneTileState setVehicleId(String vehicleId) {
-        this.vehicleId = safe(vehicleId);
-        if (!this.vehicleId.isBlank()) flags.add(TileFlag.HAS_VEHICLE); else flags.remove(TileFlag.HAS_VEHICLE);
-        return this;
-    }
+    ZoneTileState setBaseType(BaseTileType baseType, char legacyGlyph) { this.baseType = baseType == null ? BaseTileType.UNKNOWN : baseType; this.legacyGlyph = legacyGlyph; return this; }
+    ZoneTileState setSpaceType(SpaceType spaceType) { this.spaceType = spaceType == null ? SpaceType.UNASSIGNED : spaceType; return this; }
+    ZoneTileState setOwnerFaction(Faction ownerFaction) { this.ownerFaction = ownerFaction == null ? Faction.NONE : ownerFaction; if (this.ownerFaction == Faction.NONE) flags.add(TileFlag.NEUTRAL); else flags.add(TileFlag.FACTION_CONTROLLED); return this; }
+    ZoneTileState markRoom(String roomId, Faction faction) { this.roomId = safe(roomId); this.spaceType = SpaceType.ROOM; setOwnerFaction(faction); return this; }
+    ZoneTileState markCorridor(String corridorId) { this.corridorId = safe(corridorId); this.spaceType = SpaceType.CORRIDOR; return this; }
+    ZoneTileState markRoad(String roadNetworkId) { this.roadNetworkId = safe(roadNetworkId); this.spaceType = SpaceType.ROAD_NETWORK; this.baseType = BaseTileType.ROAD; this.legacyGlyph = 'R'; flags.add(TileFlag.ROAD_INFRASTRUCTURE); flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT); return this; }
+    ZoneTileState markTransition(String transitionId, boolean vertical) { this.transitionId = safe(transitionId); flags.add(TileFlag.TRANSITION_ANCHOR); flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT); if (vertical) { this.verticalTransitionId = safe(transitionId); flags.add(TileFlag.VERTICAL_TRANSITION); } return this; }
+    ZoneTileState reserve(String label) { this.reservationLabel = safe(label); flags.add(TileFlag.RESERVED); flags.add(TileFlag.BLOCKS_ROOM_PLACEMENT); return this; }
+    ZoneTileState addFlag(TileFlag flag) { if (flag != null) flags.add(flag); return this; }
+    ZoneTileState removeFlag(TileFlag flag) { if (flag != null) flags.remove(flag); return this; }
+    ZoneTileState addObject(String objectId, String typeKey, String label, boolean blocksMovement, boolean container) { objects.add(new PlacedObjectRef(objectId, typeKey, label, blocksMovement, container)); flags.add(TileFlag.HAS_OBJECT); if (container) flags.add(TileFlag.HAS_CONTAINER); if (blocksMovement) flags.add(TileFlag.BLOCKS_MOVEMENT); return this; }
+    ZoneTileState addLight(LightKind kind, int intensityPercent, String sourceId) { lights.add(new LightState(kind, intensityPercent, sourceId)); if (kind != null && kind != LightKind.NONE && intensityPercent > 0) flags.add(TileFlag.HAS_LIGHT); return this; }
+    ZoneTileState setOccupantEntityId(String occupantEntityId) { this.occupantEntityId = safe(occupantEntityId); if (!this.occupantEntityId.isBlank()) flags.add(TileFlag.HAS_ENTITY); else flags.remove(TileFlag.HAS_ENTITY); return this; }
+    ZoneTileState setPetEntityId(String petEntityId) { this.petEntityId = safe(petEntityId); if (!this.petEntityId.isBlank()) flags.add(TileFlag.HAS_PET); else flags.remove(TileFlag.HAS_PET); return this; }
+    ZoneTileState setVehicleId(String vehicleId) { this.vehicleId = safe(vehicleId); if (!this.vehicleId.isBlank()) flags.add(TileFlag.HAS_VEHICLE); else flags.remove(TileFlag.HAS_VEHICLE); return this; }
 
     boolean blocksRoomPlacement() {
         return flags.contains(TileFlag.BLOCKS_ROOM_PLACEMENT)
@@ -281,10 +139,8 @@ final class ZoneTileState {
                 || spaceType == SpaceType.ROAD_NETWORK
                 || spaceType == SpaceType.CENTRAL_PLAZA
                 || spaceType == SpaceType.TRANSITION_ROOM
-                || spaceType == SpaceType.SEW ER_NETWORK;
+                || spaceType == SpaceType.SEWER_NETWORK;
     }
 
-    private static String safe(String text) {
-        return text == null ? "" : text.trim();
-    }
+    private static String safe(String text) { return text == null ? "" : text.trim(); }
 }
