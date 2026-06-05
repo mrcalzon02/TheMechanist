@@ -113,6 +113,13 @@ final class GameplayQualityOfLifeAuthority {
         return "doom mode fog set to " + options.doomFogModeLabel() + ".";
     }
 
+    static String cycleSinglePlayerTickMode(GameOptions options) {
+        if (options == null) return "single-player time mode unchanged: options unavailable.";
+        options.singlePlayerTickModeIndex = Math.floorMod(options.singlePlayerTickModeIndex + 1, GameOptions.SINGLE_PLAYER_TICK_MODE_LABELS.length);
+        options.save();
+        return "single-player time mode set to " + options.singlePlayerTickModeLabel() + ".";
+    }
+
     static java.util.List<String> optionLines(GameOptions options) {
         if (options == null) return java.util.List.of("Quality-of-life defaults unavailable until options load.");
         java.util.ArrayList<String> lines = new java.util.ArrayList<>();
@@ -123,6 +130,7 @@ final class GameplayQualityOfLifeAuthority {
         lines.add("Production intelligence: blocker warnings " + onOff(options.productionBlockerWarnings) + "; global scarcity alerts " + onOff(options.globalScarcityWarnings) + "; recipe pinning " + onOff(options.recipeHudPinning) + ".");
         lines.add("Item safety: favored protection " + onOff(options.favoredItemProtection) + "; low-quality pickup warnings " + onOff(options.lowQualityPickupWarnings) + "; no mixed-quality stacking " + onOff(options.noMixedQualityStacking) + "; profile " + protectionLabel(options.itemSafetyProfileIndex) + ".");
         lines.add("Faction safety: under-attack supply lock " + onOff(options.underAttackSupplyLock) + "; safe worker priorities " + onOff(options.safeWorkerPriorities) + "; named death alerts " + onOff(options.namedDeathAlerts) + ".");
+        lines.add("Single-player simulation clock: " + options.singlePlayerTickModeLabel() + ".");
         lines.add("Experimental rendering: doom mode " + onOff(options.doomModeEnabled) + "; FOV " + Math.max(60, Math.min(110, options.doomModeFovDegrees)) + " degrees; fog " + options.doomFogModeLabel() + "; LWJGL dependency " + LwjglRenderBackendProbe.statusLine() + ".");
         lines.add("Market intelligence: economic disruption alerts " + onOff(options.economicDisruptionAlerts) + "; local/global price hints " + onOff(options.localGlobalPriceHints) + ".");
         lines.addAll(BlueprintConstructionAuthority.optionLines(options));
@@ -139,6 +147,7 @@ final class GameplayQualityOfLifeAuthority {
                 + " productionWarnings=" + options.productionBlockerWarnings
                 + " itemSafety=" + protectionLabel(options.itemSafetyProfileIndex)
                 + " marketAlerts=" + options.economicDisruptionAlerts
+                + " singlePlayerTickMode=" + options.singlePlayerTickModeLabel()
                 + " doomMode=" + options.doomModeEnabled
                 + " doomFov=" + options.doomModeFovDegrees
                 + " doomFog=" + options.doomFogModeLabel()

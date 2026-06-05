@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * Developer-facing tile reference ledger for the Infopedia. It lists the compact
  * glyph, compiled descriptor family, renderer alias, and allowed art variants so
- * Sector Audit can verify which tile/room/wall families are resolving to which
+ * Zone Audit can verify which tile/room/wall families are resolving to which
  * icons without relying on hidden loader state or a pile of debug filler text.
  */
 final class TileInfopediaAuthority {

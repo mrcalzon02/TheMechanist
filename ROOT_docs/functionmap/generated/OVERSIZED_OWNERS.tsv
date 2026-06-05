@@ -4,10 +4,10 @@ src/mechanist/FactionServicesFramework.java	69820	943	oversized_java_owner
 src/mechanist/FirstPerson3DFramework.java	55656	1050	oversized_java_owner
 src/mechanist/InfrastructurePromotionRegistry.java	62143	1001	oversized_java_owner
 src/mechanist/ItemEconomyFramework.java	225851	1327	oversized_java_owner
-src/mechanist/LegacyPanelContext.java	287779	5280	oversized_java_owner
+src/mechanist/LegacyPanelContext.java	290150	5326	oversized_java_owner
 src/mechanist/PopulationPersonnelFramework.java	83891	1264	oversized_java_owner
 src/mechanist/ProductionAuthorityFramework.java	344937	3105	oversized_java_owner
-src/mechanist/SimulationEditorSuite.java	45909	824	oversized_java_owner
+src/mechanist/SimulationEditorSuite.java	47459	838	oversized_java_owner
 src/mechanist/WorldRuntimeGenerationFramework.java	404969	8279	oversized_java_owner
 src/mechanist/WorldSimulationFramework.java	134885	1802	oversized_java_owner
 src/mechanist/WorldStartFlowAuthority.java	75275	1093	oversized_java_owner

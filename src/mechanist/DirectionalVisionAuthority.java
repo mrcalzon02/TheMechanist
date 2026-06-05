@@ -18,9 +18,14 @@ final class DirectionalVisionAuthority {
 
     static boolean contains(GamePanel game, int x, int y, int range) {
         if (game == null) return false;
-        int dx = x - game.playerX;
-        int dy = y - game.playerY;
-        if (dx == 0 && dy == 0) return true;
+        return containsAt(game, x, y, range, game.playerX, game.playerY);
+    }
+
+    static boolean containsAt(GamePanel game, int x, int y, int range, double originX, double originY) {
+        if (game == null) return false;
+        double dx = x - originX;
+        double dy = y - originY;
+        if (Math.hypot(dx, dy) <= 0.35) return true;
         double distance = Math.hypot(dx, dy);
         if (distance <= 1.05) return true;
 

@@ -119,6 +119,8 @@ final class FirstPersonRenderViewport {
                 }
                 return false;
             }
+            case KeyEvent.VK_Q, KeyEvent.VK_TAB -> { panel.cycleEquippedWeaponHand(); return true; }
+            case KeyEvent.VK_X -> { panel.reloadCurrentRangedWeapon(); return true; }
             case KeyEvent.VK_OPEN_BRACKET -> { panel.options.doomModeFovDegrees = Math.max(60, panel.options.doomModeFovDegrees - 5); panel.options.save(); return true; }
             case KeyEvent.VK_CLOSE_BRACKET -> { panel.options.doomModeFovDegrees = Math.min(110, panel.options.doomModeFovDegrees + 5); panel.options.save(); return true; }
             default -> { return false; }
@@ -164,7 +166,7 @@ final class FirstPersonRenderViewport {
                 panel.interactCursorActive = false;
                 panel.enforceEntityOccupancy("doom-continuous-grid-motion");
             }
-            camera.setPosition(state.posX(), 0.58, state.posY());
+            camera.setPosition(state.posX(), cameraHeightFor(panel), state.posY());
             lastPlayerX = panel.playerX;
             lastPlayerY = panel.playerY;
         }
@@ -218,9 +220,14 @@ final class FirstPersonRenderViewport {
 
     private void syncCameraToPlayer(GamePanel panel) {
         ensureContinuousPlayerSynced(panel);
-        camera.setPosition(continuousPlayer.posX(), 0.58, continuousPlayer.posY());
+        camera.setPosition(continuousPlayer.posX(), cameraHeightFor(panel), continuousPlayer.posY());
         lastPlayerX = panel.playerX;
         lastPlayerY = panel.playerY;
+    }
+
+    private double cameraHeightFor(GamePanel panel) {
+        if (panel != null && panel.selectedMovementModeIndex == GamePanel.MOTION_SNEAK) return 0.42;
+        return 0.58;
     }
 
     private void ensureContinuousPlayerSynced(GamePanel panel) {

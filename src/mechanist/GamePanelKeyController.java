@@ -20,7 +20,7 @@ final class GamePanelKeyController {
         if (handleKnowledgeScreenKey(panel, code)) return;
         if (handleEditorKey(panel, event, code)) return;
         if (handleMultiplayerKey(panel, code)) return;
-        if (handleSectorAuditKey(panel, code)) return;
+        if (handleZoneAuditKey(panel, code)) return;
         if (handleInfopediaPanelKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
         if (handleUniversalMenuKey(panel, code)) return;
@@ -89,7 +89,7 @@ final class GamePanelKeyController {
         return true;
     }
 
-    static boolean handleSectorAuditKey(GamePanel panel, int code) {
+    static boolean handleZoneAuditKey(GamePanel panel, int code) {
         if (panel.screen != GamePanel.Screen.SECTOR_AUDIT) return false;
         if (code == KeyEvent.VK_R) { panel.rerollSectorAudit(); return true; }
         if (code == KeyEvent.VK_T) { panel.cycleAuditZoneType(1); return true; }
@@ -147,6 +147,7 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
         if (code == KeyEvent.VK_F) { panel.cycleFireMode(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_Q || code == KeyEvent.VK_TAB) { panel.cycleEquippedWeaponHand(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_G) { panel.throwSelectedExplosiveAtCursor(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_X) { panel.reloadCurrentRangedWeapon(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { panel.confirmCombatTarget(); panel.repaint(); return true; }

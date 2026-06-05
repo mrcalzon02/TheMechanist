@@ -16,6 +16,7 @@ final class VisualLightingAuthority {
     static final String VERSION = "0.9.10jh";
 
     enum FlickerKind { STEADY, TORCH, NEON }
+    enum FalloffKind { TIGHT, STANDARD, BROAD, STREET }
 
     static final class LightSample {
         final int gridX, gridY;
@@ -23,14 +24,16 @@ final class VisualLightingAuthority {
         final float baseIntensity;
         final float radius;
         final FlickerKind flicker;
+        final FalloffKind falloff;
         final int seed;
-        LightSample(int gridX, int gridY, Color color, float baseIntensity, float radius, FlickerKind flicker, int seed) {
+        LightSample(int gridX, int gridY, Color color, float baseIntensity, float radius, FlickerKind flicker, FalloffKind falloff, int seed) {
             this.gridX = gridX;
             this.gridY = gridY;
             this.color = color == null ? new Color(230, 190, 110) : color;
             this.baseIntensity = Math.max(0.0f, baseIntensity);
             this.radius = Math.max(1.0f, radius);
             this.flicker = flicker == null ? FlickerKind.STEADY : flicker;
+            this.falloff = falloff == null ? FalloffKind.STANDARD : falloff;
             this.seed = seed;
         }
     }
@@ -94,26 +97,26 @@ final class VisualLightingAuthority {
     private List<LightSample> collectLights(GamePanel game, int camX, int camY, int cols, int rows, boolean allowFlicker) {
         ArrayList<LightSample> out = new ArrayList<>();
         int r = game.activePortableLightRadius();
-        if (r > 0) out.add(new LightSample(game.playerX - camX, game.playerY - camY, new Color(255,230,150), 1.10f, r, FlickerKind.STEADY, stableSeed("active-portable", game.playerX, game.playerY)));
+        if (r > 0) out.add(new LightSample(game.playerX - camX, game.playerY - camY, new Color(255,230,150), 1.10f, r, FlickerKind.STEADY, FalloffKind.STANDARD, stableSeed("active-portable", game.playerX, game.playerY)));
         for (PortableLightInstance l : game.portableLights) {
             if (l == null || l.expiresTurn <= game.turn || !game.sameWorldLocation(l.worldKey)) continue;
             if (!nearViewport(l.x, l.y, camX, camY, cols, rows, Math.max(1, l.radius))) continue;
             PortableLightProfile p = PortableLightProfile.profile(l.itemName);
             int rr = p == null ? l.radius : p.radius;
             out.add(new LightSample(l.x - camX, l.y - camY, colorForPortable(l.itemName), intensity01(game.portableLightIntensity(l.itemName)), rr,
-                    allowFlicker && itemLooksFlickery(l.itemName) ? FlickerKind.TORCH : FlickerKind.STEADY, stableSeed(l.itemName, l.x, l.y)));
+                    allowFlicker && itemLooksFlickery(l.itemName) ? FlickerKind.TORCH : FlickerKind.STEADY, falloffForPortable(l.itemName), stableSeed(l.itemName, l.x, l.y)));
         }
         if (game.world.lightSources != null) {
             for (ZoneLightSourceRecord z : game.world.lightSources) {
                 if (z == null || !z.on || !z.powered) continue;
                 if (!nearViewport(z.x, z.y, camX, camY, cols, rows, Math.max(1, z.radius))) continue;
                 FlickerKind kind = !allowFlicker || !z.flicker ? FlickerKind.STEADY : flickerKindFor(z);
-                out.add(new LightSample(z.x - camX, z.y - camY, z.color(), intensity01(z.intensity), Math.max(1, z.radius), kind, stableSeed(z.id, z.x, z.y) + z.phase * 37));
+                out.add(new LightSample(z.x - camX, z.y - camY, z.color(), intensity01(z.intensity), Math.max(1, z.radius), kind, falloffForZone(z), stableSeed(z.id, z.x, z.y) + z.phase * 37));
             }
         }
         for (WorldLightEmitterAuthority.Emitter emitter : WorldLightEmitterAuthority.viewportEmitters(game, camX, camY, cols, rows)) {
             FlickerKind kind = emitter.flicker && allowFlicker ? FlickerKind.TORCH : FlickerKind.STEADY;
-            out.add(new LightSample(emitter.x - camX, emitter.y - camY, emitter.color, intensity01(emitter.intensity), emitter.radius, kind, stableSeed(emitter.id, emitter.x, emitter.y)));
+            out.add(new LightSample(emitter.x - camX, emitter.y - camY, emitter.color, intensity01(emitter.intensity), emitter.radius, kind, FalloffKind.TIGHT, stableSeed(emitter.id, emitter.x, emitter.y)));
         }
         return out;
     }
@@ -154,17 +157,55 @@ final class VisualLightingAuthority {
                     float dist = (float)Math.sqrt(dx * dx + dy * dy);
                     if (dist > light.radius + 0.001f) continue;
                     float norm = Math.max(0.0f, Math.min(1.0f, dist / Math.max(1.0f, light.radius)));
-                    float smooth = norm * norm * (3.0f - 2.0f * norm);
-                    float attenuation = Math.max(0.0f, (1.0f - smooth) * 0.82f + 0.22f / (1.0f + 2.5f * norm * norm));
+                    float attenuation = attenuationFor(light.falloff, norm);
                     float brightness = dynamic * attenuation;
                     if (brightness > 0.014f) blendLight(x, y, light.color, brightness);
                 }
             }
         }
+        softenVisibleLightBetweenTiles(game, camX, camY);
         if (mode >= 2) {
             extractBrightSpots(150);
             boxBlur(bloomPixels, blurScratch, gridWidth, gridHeight, 1);
         }
+    }
+
+    private static float attenuationFor(FalloffKind falloff, float norm) {
+        float clamped = Math.max(0.0f, Math.min(1.0f, norm));
+        float smooth = clamped * clamped * (3.0f - 2.0f * clamped);
+        return switch (falloff) {
+            case TIGHT -> Math.max(0.0f, (1.0f - smooth) * 0.72f + 0.16f / (1.0f + 4.2f * clamped * clamped));
+            case BROAD -> Math.max(0.0f, (1.0f - smooth) * 0.92f + 0.30f / (1.0f + 1.35f * clamped * clamped));
+            case STREET -> Math.max(0.0f, (1.0f - smooth) * 0.78f + 0.34f / (1.0f + 1.1f * clamped * clamped));
+            default -> Math.max(0.0f, (1.0f - smooth) * 0.82f + 0.22f / (1.0f + 2.5f * clamped * clamped));
+        };
+    }
+
+    private void softenVisibleLightBetweenTiles(GamePanel game, int camX, int camY) {
+        if (gridWidth <= 0 || gridHeight <= 0 || lightMapPixels == null || blurScratch == null) return;
+        System.arraycopy(lightMapPixels, 0, blurScratch, 0, lightMapPixels.length);
+        for (int y = 0; y < gridHeight; y++) {
+            for (int x = 0; x < gridWidth; x++) {
+                int wx = camX + x;
+                int wy = camY + y;
+                if (!game.world.inBounds(wx, wy) || !game.isVisible(wx, wy)) continue;
+                int a = 0, r = 0, g = 0, b = 0, count = 0;
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        int xx = x + dx;
+                        int yy = y + dy;
+                        int nwx = camX + xx;
+                        int nwy = camY + yy;
+                        if (xx < 0 || yy < 0 || xx >= gridWidth || yy >= gridHeight || !game.world.inBounds(nwx, nwy) || !game.isVisible(nwx, nwy)) continue;
+                        int p = lightMapPixels[xx + yy * gridWidth];
+                        int weight = dx == 0 && dy == 0 ? 4 : 1;
+                        a += ((p >>> 24) & 0xFF) * weight; r += ((p >>> 16) & 0xFF) * weight; g += ((p >>> 8) & 0xFF) * weight; b += (p & 0xFF) * weight; count += weight;
+                    }
+                }
+                if (count > 0) blurScratch[x + y * gridWidth] = ((a / count) << 24) | ((r / count) << 16) | ((g / count) << 8) | (b / count);
+            }
+        }
+        System.arraycopy(blurScratch, 0, lightMapPixels, 0, lightMapPixels.length);
     }
 
     private float visualModifier(LightSample light, long now, boolean animate) {
@@ -244,6 +285,21 @@ final class VisualLightingAuthority {
         return s.contains("lantern") || s.contains("torch") || s.contains("phosphor") || s.contains("glow");
     }
 
+    private static FalloffKind falloffForPortable(String item) {
+        String s = item == null ? "" : item.toLowerCase(Locale.ROOT);
+        if (s.contains("flashlight") || s.contains("helmet") || s.contains("electrician")) return FalloffKind.TIGHT;
+        if (s.contains("lantern") || s.contains("swamp")) return FalloffKind.BROAD;
+        return FalloffKind.STANDARD;
+    }
+
+    private static FalloffKind falloffForZone(ZoneLightSourceRecord z) {
+        String s = ((z == null || z.profile == null ? "" : z.profile) + " " + (z == null || z.colorName == null ? "" : z.colorName)).toLowerCase(Locale.ROOT);
+        if (s.contains("street")) return FalloffKind.STREET;
+        if (s.contains("sump") || s.contains("sewer") || s.contains("lower")) return FalloffKind.BROAD;
+        if (s.contains("terminal") || s.contains("fixture room")) return FalloffKind.TIGHT;
+        return FalloffKind.STANDARD;
+    }
+
     private static Color colorForPortable(String item) {
         String s = item == null ? "" : item.toLowerCase(Locale.ROOT);
         if (s.contains("flashlight") || s.contains("helmet")) return new Color(235, 245, 210);
@@ -267,7 +323,7 @@ final class VisualLightingAuthority {
         int mode = options == null ? 0 : Math.max(0, Math.min(GameOptions.LIGHTING_FX_LABELS.length - 1, options.lightingFxIndex));
         lines.add("Visual lighting authority " + VERSION + ".");
         lines.add("Gameplay light remains turn-stable; combat and vision use the existing lightLevelAt cache.");
-        lines.add("Visual light is render-only, clipped to the map pane, and line-of-sight blocked so wall illumination does not leak deeper than the struck wall tile.");
+        lines.add("Visual light is render-only, clipped to the map pane, line-of-sight blocked, profile-aware, and softened between neighboring visible tiles.");
         lines.add("Current graphics lighting mode: " + GameOptions.LIGHTING_FX_LABELS[mode] + ".");
         lines.add("Bloom is low-resolution grid based and composited over the map pane without mutating world state.");
         lines.add("Reduced motion disables live flicker animation while preserving static lighting density.");

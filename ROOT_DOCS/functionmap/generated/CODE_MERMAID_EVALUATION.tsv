@@ -5,10 +5,10 @@ WARN	src/mechanist/FirstPerson3DFramework.java	M_src_mechanist_FirstPerson3DFram
 WARN	src/mechanist/GameOptionsFramework.java	M_src_mechanist_GameOptionsFramework_java	RUNTIME_OPTIONS	positioned	Oversized mapped module: 83 funcs / 781 lines / 51030 bytes
 WARN	src/mechanist/InfrastructurePromotionRegistry.java	M_src_mechanist_InfrastructurePromotionRegistry_java	ASSET_REGISTRY	positioned	Oversized mapped module: 11 funcs / 1001 lines / 61142 bytes
 WARN	src/mechanist/ItemEconomyFramework.java	M_src_mechanist_ItemEconomyFramework_java	INVENTORY_PERSIST	positioned	Oversized mapped module: 71 funcs / 1327 lines / 224524 bytes
-WARN	src/mechanist/LegacyPanelContext.java	M_src_mechanist_LegacyPanelContext_java	UI_RENDER	positioned	Oversized mapped module: 463 funcs / 5280 lines / 284191 bytes
+WARN	src/mechanist/LegacyPanelContext.java	M_src_mechanist_LegacyPanelContext_java	UI_RENDER	positioned	Oversized mapped module: 469 funcs / 5326 lines / 286611 bytes
 WARN	src/mechanist/PopulationPersonnelFramework.java	M_src_mechanist_PopulationPersonnelFramework_java	COMBAT_SIM	positioned	Oversized mapped module: 122 funcs / 1264 lines / 82637 bytes
 WARN	src/mechanist/ProductionAuthorityFramework.java	M_src_mechanist_ProductionAuthorityFramework_java	FIXTURE_MACHINE	positioned	Oversized mapped module: 314 funcs / 3105 lines / 341832 bytes
-WARN	src/mechanist/SimulationEditorSuite.java	M_src_mechanist_SimulationEditorSuite_java	UI_RENDER	positioned	Oversized mapped module: 60 funcs / 824 lines / 45085 bytes
+WARN	src/mechanist/SimulationEditorSuite.java	M_src_mechanist_SimulationEditorSuite_java	UI_RENDER	positioned	Oversized mapped module: 66 funcs / 838 lines / 46678 bytes
 WARN	src/mechanist/WorldRuntimeGenerationFramework.java	M_src_mechanist_WorldRuntimeGenerationFramework_java	WORLD_GEN	positioned	Oversized mapped module: 372 funcs / 8279 lines / 396905 bytes
 WARN	src/mechanist/WorldSimulationFramework.java	M_src_mechanist_WorldSimulationFramework_java	COMBAT_SIM	positioned	Oversized mapped module: 204 funcs / 1802 lines / 133093 bytes
 WARN	src/mechanist/WorldStartFlowAuthority.java	M_src_mechanist_WorldStartFlowAuthority_java	UI_RENDER	positioned	Oversized mapped module: 115 funcs / 1093 lines / 74863 bytes

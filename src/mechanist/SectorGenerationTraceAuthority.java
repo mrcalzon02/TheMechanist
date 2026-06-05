@@ -4,7 +4,7 @@ import java.awt.*;
 import java.util.*;
 
 /**
- * One-shot world-generation trace recorder used by Sector Audit.
+ * One-shot world-generation trace recorder used by Zone Audit.
  *
  * It does not change authoritative world generation. It takes lightweight tile/room
  * snapshots while generation runs, then the audit surface can replay those snapshots

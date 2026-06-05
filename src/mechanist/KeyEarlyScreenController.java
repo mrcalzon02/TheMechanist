@@ -40,8 +40,9 @@ final class KeyEarlyScreenController {
             panel.repaint();
             return true;
         }
-        if (panel.worldZoomControlActive() && (code == KeyEvent.VK_HOME || code == KeyEvent.VK_END)) {
-            panel.changeWorldZoom(code == KeyEvent.VK_HOME ? 1 : -1, code == KeyEvent.VK_HOME ? "HOME" : "END");
+        if (panel.worldZoomControlActive() && (code == KeyEvent.VK_HOME || code == KeyEvent.VK_END || code == KeyEvent.VK_EQUALS || code == KeyEvent.VK_PLUS || code == KeyEvent.VK_ADD || code == KeyEvent.VK_MINUS || code == KeyEvent.VK_SUBTRACT)) {
+            boolean zoomIn = code == KeyEvent.VK_HOME || code == KeyEvent.VK_EQUALS || code == KeyEvent.VK_PLUS || code == KeyEvent.VK_ADD;
+            panel.changeWorldZoom(zoomIn ? 1 : -1, KeyEvent.getKeyText(code));
             return true;
         }
         if (panel.screen == GamePanel.Screen.INTRO_CRAWL) {

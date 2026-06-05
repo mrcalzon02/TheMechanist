@@ -95,6 +95,7 @@ class GameOptions {
     boolean standaloneBlueprintSandbox = true;
     boolean blueprintCaptureTool = true;
     boolean materialSubstitutionPrompts = true;
+    int singlePlayerTickModeIndex = 0; // 0 turn based, 1 passive constant ticking.
     boolean doomModeEnabled = false;
     int doomModeFovDegrees = 80;
     int doomFogModeIndex = 0; // 0 linear Z-depth, 1 radial Euclidean distance.
@@ -116,6 +117,7 @@ class GameOptions {
     static final int[] TARGET_FPS_VALUES = {30, 60, 120, 0};
     static final String[] RENDER_QUALITY_LABELS = {"PERFORMANCE", "BALANCED", "CRISP TEXT"};
     static final String[] LIGHTING_FX_LABELS = {"OFF", "STATIC LIGHTMAP", "FLICKER + BLOOM"};
+    static final String[] SINGLE_PLAYER_TICK_MODE_LABELS = {"TURN BASED", "PASSIVE TICKING"};
     static final String[] DOOM_FOG_MODE_LABELS = {"LINEAR", "RADIAL"};
     static final int COMPACT_DEFAULT_FONT_SCALE = 75;
     static final int COMPACT_DEFAULT_UI_SCALE = 90;
@@ -170,6 +172,8 @@ class GameOptions {
     String frameLimitLabel() { return isFrameLimited && targetFpsValue() > 0 ? "ON" : "OFF"; }
     String renderQualityLabel() { return RENDER_QUALITY_LABELS[Math.max(0, Math.min(RENDER_QUALITY_LABELS.length-1, renderQualityIndex))]; }
     String lightingFxLabel() { return LIGHTING_FX_LABELS[Math.max(0, Math.min(LIGHTING_FX_LABELS.length-1, lightingFxIndex))]; }
+    String singlePlayerTickModeLabel() { return SINGLE_PLAYER_TICK_MODE_LABELS[Math.max(0, Math.min(SINGLE_PLAYER_TICK_MODE_LABELS.length-1, singlePlayerTickModeIndex))]; }
+    boolean passiveSinglePlayerTicking() { return singlePlayerTickModeIndex == 1; }
     String doomFogModeLabel() { return DOOM_FOG_MODE_LABELS[Math.max(0, Math.min(DOOM_FOG_MODE_LABELS.length-1, doomFogModeIndex))]; }
 
     static Path settingsPath() { return Paths.get("settings", "options.properties"); }
@@ -249,6 +253,7 @@ class GameOptions {
                 o.standaloneBlueprintSandbox = Boolean.parseBoolean(pr.getProperty("standaloneBlueprintSandbox", String.valueOf(o.standaloneBlueprintSandbox)));
                 o.blueprintCaptureTool = Boolean.parseBoolean(pr.getProperty("blueprintCaptureTool", String.valueOf(o.blueprintCaptureTool)));
                 o.materialSubstitutionPrompts = Boolean.parseBoolean(pr.getProperty("materialSubstitutionPrompts", String.valueOf(o.materialSubstitutionPrompts)));
+                o.singlePlayerTickModeIndex = Math.max(0, Math.min(SINGLE_PLAYER_TICK_MODE_LABELS.length-1, Integer.parseInt(pr.getProperty("singlePlayerTickModeIndex", String.valueOf(o.singlePlayerTickModeIndex)))));
                 o.doomModeEnabled = Boolean.parseBoolean(pr.getProperty("doomModeEnabled", String.valueOf(o.doomModeEnabled)));
                 o.doomModeFovDegrees = Math.max(60, Math.min(110, Integer.parseInt(pr.getProperty("doomModeFovDegrees", String.valueOf(o.doomModeFovDegrees)))));
                 o.doomFogModeIndex = Math.max(0, Math.min(DOOM_FOG_MODE_LABELS.length-1, Integer.parseInt(pr.getProperty("doomFogModeIndex", String.valueOf(o.doomFogModeIndex)))));
@@ -337,6 +342,7 @@ class GameOptions {
             pr.setProperty("standaloneBlueprintSandbox", String.valueOf(standaloneBlueprintSandbox));
             pr.setProperty("blueprintCaptureTool", String.valueOf(blueprintCaptureTool));
             pr.setProperty("materialSubstitutionPrompts", String.valueOf(materialSubstitutionPrompts));
+            pr.setProperty("singlePlayerTickModeIndex", String.valueOf(Math.max(0, Math.min(SINGLE_PLAYER_TICK_MODE_LABELS.length-1, singlePlayerTickModeIndex))));
             pr.setProperty("doomModeEnabled", String.valueOf(doomModeEnabled));
             pr.setProperty("doomModeFovDegrees", String.valueOf(Math.max(60, Math.min(110, doomModeFovDegrees))));
             pr.setProperty("doomFogModeIndex", String.valueOf(Math.max(0, Math.min(DOOM_FOG_MODE_LABELS.length-1, doomFogModeIndex))));
@@ -358,6 +364,7 @@ class GameOptions {
                " cvdMode=" + AccessibilityCompatibilityAuthority.cvdLabel(cvdModeIndex) + " highContrastText=" + highContrastText + " instantDialogueText=" + instantDialogueText + " screenShake=" + screenShakePercent + "%" +
                " " + GameplayQualityOfLifeAuthority.auditSummary(this) +
                " constructionEditor=" + BlueprintConstructionAuthority.auditSummary() +
+               " singlePlayerTickMode=" + singlePlayerTickModeLabel() +
                " doomMode=" + doomModeEnabled + " doomFov=" + doomModeFovDegrees + " doomFog=" + doomFogModeLabel() +
                " colorPreset=" + PALETTE_NAMES[Math.max(0, Math.min(PALETTE_NAMES.length-1, colorPreset))] +
                " colorTarget=" + colorTargetLabel();

@@ -210,7 +210,7 @@ class LightingNoiseMetadataApi {
         final String color, label;
         ZoneLightingProfile(String label, int roomChance, int corridorChance, int radiusMin, int radiusMax, int intensityMin, int intensityMax, int spacing, int switchChance, int flickerChance, int powerChance, String color){ this.label=label;this.roomChance=roomChance;this.corridorChance=corridorChance;this.radiusMin=radiusMin;this.radiusMax=radiusMax;this.intensityMin=intensityMin;this.intensityMax=intensityMax;this.spacing=spacing;this.switchChance=switchChance;this.flickerChance=flickerChance;this.powerChance=powerChance;this.color=color; }
     }
-    static class Result { int lights, switches, noises; String profile="unknown"; String summary(){ return "lights="+lights+" switches="+switches+" noises="+noises+" profile="+profile; } }
+    static class Result { int lights, streetLights, switches, noises; String profile="unknown"; String summary(){ return "lights="+lights+" streetLights="+streetLights+" switches="+switches+" noises="+noises+" profile="+profile; } }
     static Result seed(World w, Random r){
         Result res = new Result(); if(w==null) return res; if(r==null) r = new Random(w.seed ^ 0x5107E);
         w.lightSources.clear(); w.noiseSources.clear();
@@ -223,7 +223,7 @@ class LightingNoiseMetadataApi {
             Point pt = candidateInRoom(w, rr, r, placed, p.spacing);
             if(pt == null) continue;
             ZoneLightSourceRecord l = makeLight(w,p,pt.x,pt.y,i,r,"room");
-            addLight(w,l,placed); res.lights++;
+            if (addLight(w,l,placed)) res.lights++;
             if(r.nextInt(100) < p.switchChance) { Point sw = nearbySwitchPoint(w, rr, pt, r); if(sw != null){ char under=w.tiles[sw.x][sw.y]; w.tiles[sw.x][sw.y]='a'; w.mapObjects.add(MapObjectState.lightSwitch(sw.x,sw.y,l.groupId,w.zoneType,under)); l.switchControlled=true; res.switches++; } }
         }
         int corridorTrials = Math.max(8, (w.w*w.h)/80);
@@ -234,8 +234,10 @@ class LightingNoiseMetadataApi {
             if(ch == RoadGridIntegrationAuthority.ROAD_LANE) continue;
             if(r.nextInt(100) >= p.corridorChance) continue;
             if(!farEnough(x,y,placed,p.spacing)) continue;
-            ZoneLightSourceRecord l = makeLight(w,p,x,y,-1,r,"corridor"); addLight(w,l,placed); res.lights++;
+            ZoneLightSourceRecord l = makeLight(w,p,x,y,-1,r,"corridor"); if (addLight(w,l,placed)) res.lights++;
         }
+        res.streetLights = seedStreetLights(w, r, p, placed);
+        res.lights += res.streetLights;
         seedNoise(w,r,res);
         w.lightNoiseSummary = res.summary();
         return res;
@@ -259,14 +261,43 @@ class LightingNoiseMetadataApi {
         String id = "ZL-"+Math.abs(Objects.hash(w.seed,x,y,roomId,kind,p.label));
         return new ZoneLightSourceRecord(id, kind+" "+p.label, x,y,roomId,radius,intensity,p.color,true,powered,flicker,period,r.nextInt(Math.max(2,period)),false,group);
     }
-    static void addLight(World w, ZoneLightSourceRecord l, ArrayList<Point> placed){
-        if(w==null || l==null || !w.inBounds(l.x,l.y)) return;
+    static boolean addLight(World w, ZoneLightSourceRecord l, ArrayList<Point> placed){
+        if(w==null || l==null || !w.inBounds(l.x,l.y)) return false;
         Point landing = lightFixtureLandingSpot(w, l.x, l.y, placed);
-        if(landing == null) return;
+        if(landing == null) return false;
         l.x = landing.x; l.y = landing.y;
         char under = w.tiles[l.x][l.y];
         w.lightSources.add(l); placed.add(new Point(l.x,l.y));
         if(under != 'o' && under != 'a' && canPlaceLightFixtureOn(w,l.x,l.y)) { w.tiles[l.x][l.y]='o'; w.mapObjects.add(MapObjectState.lightFixture(l,w.zoneType,under)); }
+        return true;
+    }
+
+    static int seedStreetLights(World w, Random r, ZoneLightingProfile p, ArrayList<Point> placed) {
+        if (w == null || p == null) return 0;
+        int made = 0;
+        int spacing = Math.max(4, p.spacing + 1);
+        int chance = Math.max(42, Math.min(86, p.corridorChance + 18));
+        for (int y = 1; y < w.h - 1; y++) {
+            for (int x = 1; x < w.w - 1; x++) {
+                if (w.tiles[x][y] != RoadGridIntegrationAuthority.SIDEWALK) continue;
+                if (!sidewalkTouchesRoadLane(w, x, y)) continue;
+                if (!farEnough(x, y, placed, spacing)) continue;
+                if (Math.floorMod(Objects.hash(w.seed, x / spacing, y / spacing, p.label), 100) >= chance) continue;
+                ZoneLightSourceRecord l = makeLight(w, p, x, y, -1, r, "streetlight");
+                l.profile = "streetlight " + p.label;
+                l.radius = Math.max(l.radius, Math.min(8, p.radiusMax + 1));
+                l.intensity = Math.max(l.intensity, Math.min(96, p.intensityMax + 8));
+                l.flicker = p.flickerChance > 18 && r.nextInt(100) < Math.max(8, p.flickerChance / 2);
+                if (addLight(w, l, placed)) made++;
+            }
+        }
+        return made;
+    }
+
+    static boolean sidewalkTouchesRoadLane(World w, int x, int y) {
+        int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1}};
+        for (int[] d : dirs) if (w.inBounds(x + d[0], y + d[1]) && w.tiles[x + d[0]][y + d[1]] == RoadGridIntegrationAuthority.ROAD_LANE) return true;
+        return false;
     }
 
     static Point lightFixtureLandingSpot(World w, int sx, int sy, ArrayList<Point> placed) {

@@ -304,6 +304,10 @@ final class OptionsScreenPainter {
         out.add(cmd("Viewport Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display footprint.", () -> ViewportAssetOptionsRuntime.cycleMapTileSize(panel)));
         out.add(cmd("World Zoom -", "Zoom the tactical world viewport out.", () -> ViewportAssetOptionsRuntime.changeWorldZoom(panel, -1, "Options")));
         out.add(cmd("World Zoom +", "Zoom the tactical world viewport in.", () -> ViewportAssetOptionsRuntime.changeWorldZoom(panel, 1, "Options")));
+        out.add(cmd("Doom Mode " + onOff(panel.options.doomModeEnabled), "Toggle the experimental first-person renderer.", () -> DoomQualityOfLifeOptionsRuntime.requestDoomModeToggle(panel)));
+        out.add(cmd("Doom FOV -", "Narrow the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, -5)));
+        out.add(cmd("Doom FOV +", "Widen the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, 5)));
+        out.add(cmd("Doom Fog: " + panel.options.doomFogModeLabel(), "Cycle first-person fog distance mode.", () -> DoomQualityOfLifeOptionsRuntime.cycleDoomFogMode(panel)));
         out.add(cmd("Tile Icons " + onOff(panel.options.tileIconRendering), "Toggle compiled tile icon rendering.", () -> {
             panel.options.tileIconRendering = !panel.options.tileIconRendering;
             saveFlag(panel, "Tile icon rendering", panel.options.tileIconRendering);
@@ -395,6 +399,7 @@ final class OptionsScreenPainter {
             panel.options.localGlobalPriceHints = !panel.options.localGlobalPriceHints;
             saveFlag(panel, "Local/global price hints", panel.options.localGlobalPriceHints);
         }));
+        out.add(cmd("Solo Time: " + panel.options.singlePlayerTickModeLabel(), "Cycle single-player world simulation between turn-locked and passive ticking.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.cycleSinglePlayerTickMode(panel.options))));
         out.add(cmd("Death Alerts " + onOff(panel.options.namedDeathAlerts), "Toggle named death alerts.", () -> {
             panel.options.namedDeathAlerts = !panel.options.namedDeathAlerts;
             saveFlag(panel, "Named death alerts", panel.options.namedDeathAlerts);

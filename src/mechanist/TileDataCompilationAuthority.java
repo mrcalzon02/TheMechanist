@@ -381,7 +381,7 @@ final class TileDataCompilationAuthority {
         boolean ns = roadLane(w, x, y - 1) && roadLane(w, x, y + 1);
         // Sidewalks remain sidewalks for ordinary road shoulders. The only promoted
         // case is the tile trapped between opposed true road lanes at a crossing/median,
-        // where leaving a sidewalk glyph creates the broken road gap seen in Sector Audit.
+        // where leaving a sidewalk glyph creates the broken road gap seen in Zone Audit.
         return ew || ns;
     }
 

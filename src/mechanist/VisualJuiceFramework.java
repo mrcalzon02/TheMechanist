@@ -57,13 +57,18 @@ final class VisualJuiceFramework {
     }
 }
 
-record PlayerState(double currentHealth, double maxHealth, String equippedLeftWeaponName,
-                   String equippedRightWeaponName, int currentPortraitFrame) {
+record PlayerState(double currentHealth, double maxHealth, int food, int water, int fatigue,
+                   String equippedLeftWeaponName, String equippedRightWeaponName,
+                   int activeWeaponHandIndex, int currentPortraitFrame, BufferedImage portraitImage) {
     PlayerState {
         maxHealth = Math.max(1.0, maxHealth);
         currentHealth = Math.max(0.0, Math.min(currentHealth, maxHealth));
+        food = Math.max(0, Math.min(100, food));
+        water = Math.max(0, Math.min(100, water));
+        fatigue = Math.max(0, Math.min(100, fatigue));
         equippedLeftWeaponName = equippedLeftWeaponName == null || equippedLeftWeaponName.isBlank() ? "LEFT EMPTY" : equippedLeftWeaponName;
         equippedRightWeaponName = equippedRightWeaponName == null || equippedRightWeaponName.isBlank() ? "RIGHT EMPTY" : equippedRightWeaponName;
+        activeWeaponHandIndex = activeWeaponHandIndex == 0 ? 0 : 1;
         currentPortraitFrame = Math.max(0, currentPortraitFrame);
     }
 
@@ -85,7 +90,12 @@ record PlayerState(double currentHealth, double maxHealth, String equippedLeftWe
         String left = panel == null ? "LEFT EMPTY" : panel.equippedLeftHandItem;
         String right = panel == null ? "RIGHT EMPTY" : panel.equippedRightHandItem;
         int frame = panel == null ? 0 : (int)((panel.turn / 10L) & 3L);
-        return new PlayerState(current, max, left, right, frame);
+        BufferedImage portrait = panel == null || panel.images == null || panel.active == null ? null : panel.images.getPlayerPortrait(panel.active);
+        return new PlayerState(current, max,
+                panel == null ? 0 : panel.food,
+                panel == null ? 0 : panel.water,
+                panel == null ? 0 : panel.fatigue,
+                left, right, panel == null ? 1 : panel.activeWeaponHandIndex, frame, portrait);
     }
 }
 
@@ -126,20 +136,24 @@ final class GameHudOverlay {
         int portraitY = y + (panelH - portraitH) / 2;
         g2d.setColor(portrait);
         g2d.fillRect(portraitX, portraitY, portraitW, portraitH);
+        if (state.portraitImage() != null) {
+            g2d.drawImage(state.portraitImage(), portraitX + 3, portraitY + 3, portraitW - 6, portraitH - 6, null);
+        } else {
+            g2d.setColor(portraitEye);
+            int eyeY = portraitY + portraitH / 3 + (state.currentPortraitFrame() % 2);
+            g2d.fillRect(portraitX + portraitW / 4, eyeY, 8, 5);
+            g2d.fillRect(portraitX + portraitW - portraitW / 4 - 8, eyeY, 8, 5);
+            g2d.setColor(text);
+            drawCentered(g2d, "PORTRAIT", portraitX + portraitW / 2, portraitY + portraitH - 10);
+        }
         g2d.setColor(border);
         g2d.drawRect(portraitX, portraitY, portraitW, portraitH);
-        g2d.setColor(portraitEye);
-        int eyeY = portraitY + portraitH / 3 + (state.currentPortraitFrame() % 2);
-        g2d.fillRect(portraitX + portraitW / 4, eyeY, 8, 5);
-        g2d.fillRect(portraitX + portraitW - portraitW / 4 - 8, eyeY, 8, 5);
-        g2d.setColor(text);
-        drawCentered(g2d, "PORTRAIT", portraitX + portraitW / 2, portraitY + portraitH - 10);
 
         int slotW = Math.max(150, Math.min(230, width / 5));
         int slotH = Math.max(54, panelH - 28);
         int slotY = y + 14;
-        renderWeaponSlot(g2d, 10, slotY, slotW, slotH, "EQUIPPED LEFT WEAPON", state.equippedLeftWeaponName());
-        renderWeaponSlot(g2d, width - slotW - 10, slotY, slotW, slotH, "EQUIPPED RIGHT WEAPON", state.equippedRightWeaponName());
+        renderWeaponSlot(g2d, 10, slotY, slotW, slotH, "EQUIPPED LEFT WEAPON", state.equippedLeftWeaponName(), state.activeWeaponHandIndex() == 0);
+        renderWeaponSlot(g2d, width - slotW - 10, slotY, slotW, slotH, "EQUIPPED RIGHT WEAPON", state.equippedRightWeaponName(), state.activeWeaponHandIndex() == 1);
 
         int barX = Math.max(172, portraitX - 286);
         int barY = y + 22;
@@ -148,18 +162,29 @@ final class GameHudOverlay {
         g2d.setFont(smallFont);
         g2d.setColor(text);
         g2d.drawString("ENDURANCE " + Math.round(state.currentHealth()) + " / " + Math.round(state.maxHealth()), barX, barY + 45);
+        int vitalX = portraitX + portraitW + 18;
+        int vitalW = Math.max(150, Math.min(240, width - vitalX - slotW - 28));
+        if (vitalW >= 120) {
+            renderMiniBar(g2d, vitalX, y + 18, vitalW, "FOOD", state.food() / 100.0, new Color(96, 176, 82, 235));
+            renderMiniBar(g2d, vitalX, y + 40, vitalW, "WATER", state.water() / 100.0, new Color(82, 154, 214, 235));
+            renderMiniBar(g2d, vitalX, y + 62, vitalW, "FATIGUE", 1.0 - state.fatigue() / 100.0, new Color(218, 178, 72, 235));
+        }
     }
 
-    private void renderWeaponSlot(Graphics2D g2d, int x, int y, int w, int h, String title, String item) {
+    private void renderWeaponSlot(Graphics2D g2d, int x, int y, int w, int h, String title, String item, boolean active) {
         g2d.setColor(slotBg);
         g2d.fillRect(x, y, w, h);
-        g2d.setColor(border);
+        g2d.setColor(active ? new Color(245, 214, 118, 245) : border);
         g2d.drawRect(x, y, w, h);
-        g2d.setColor(slotInner);
+        if (active) {
+            g2d.setColor(new Color(245, 214, 118, 34));
+            g2d.fillRect(x + 2, y + 2, w - 4, h - 4);
+        }
+        g2d.setColor(active ? new Color(245, 214, 118, 210) : slotInner);
         g2d.drawRect(x + 4, y + 4, w - 8, h - 8);
         g2d.setFont(smallFont);
-        g2d.setColor(slotTitle);
-        g2d.drawString(title, x + 8, y + 16);
+        g2d.setColor(active ? new Color(255, 236, 154, 245) : slotTitle);
+        g2d.drawString((active ? "ACTIVE " : "") + title, x + 8, y + 16);
         g2d.setFont(hudFont);
         g2d.setColor(text);
         String label = item == null || item.isBlank() ? "EMPTY" : item;
@@ -186,6 +211,20 @@ final class GameHudOverlay {
         }
         g2d.setColor(border);
         g2d.drawRect(x - 3, y - 3, SEGMENTS * segW + (SEGMENTS - 1) * gap + 6, h + 6);
+    }
+
+    private void renderMiniBar(Graphics2D g2d, int x, int y, int w, String label, double ratio, Color fill) {
+        int labelW = 56;
+        int barW = Math.max(24, w - labelW);
+        g2d.setFont(smallFont);
+        g2d.setColor(text);
+        g2d.drawString(label, x, y + 10);
+        g2d.setColor(empty);
+        g2d.fillRect(x + labelW, y, barW, 12);
+        g2d.setColor(fill == null ? segmentGlow : fill);
+        g2d.fillRect(x + labelW, y, (int)Math.round(barW * Math.max(0.0, Math.min(1.0, ratio))), 12);
+        g2d.setColor(border);
+        g2d.drawRect(x + labelW, y, barW, 12);
     }
 
     private Color colorForRatio(double ratio) {
