@@ -33,6 +33,7 @@ final class UiModalButtonController {
             return;
         }
         panel.sounds.play("button", panel.options);
+        if (MenuNavigationRuntime.interceptMainMenuButton(panel, button, "keyboard/button selection")) return;
         panel.runGuarded("BUTTON", "activate selected button " + button.label, button.action);
     }
 }
