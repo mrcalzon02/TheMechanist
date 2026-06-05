@@ -29,6 +29,7 @@ import java.util.Optional;
  */
 public final class AssetRegistry {
     public static final String DEFAULT_REGISTRY = "assets/indexes/semantic_asset_registry.tsv";
+    public static final String EXTENSION_REGISTRY = "semantic_asset_registry.tsv";
 
     private final Path projectRoot;
     private final Path registryFile;
@@ -49,14 +50,20 @@ public final class AssetRegistry {
     public static AssetRegistry loadDefault(Path projectRoot) throws IOException {
         Path root = projectRoot == null ? Paths.get("").toAbsolutePath().normalize() : projectRoot.toAbsolutePath().normalize();
         Path registry = root.resolve(DEFAULT_REGISTRY);
+        AssetRegistry base;
         if (Files.isRegularFile(registry)) {
-            return loadFromTsv(registry, root);
+            base = loadFromTsv(registry, root);
+        } else {
+            Optional<Path> compiledIndex = firstExistingCompiledIndex(root);
+            if (compiledIndex.isPresent()) {
+                base = loadFromCompiledContentIndex(compiledIndex.orElseThrow(), root);
+            } else {
+                base = loadFromTsv(registry, root);
+            }
         }
-        Optional<Path> compiledIndex = firstExistingCompiledIndex(root);
-        if (compiledIndex.isPresent()) {
-            return loadFromCompiledContentIndex(compiledIndex.orElseThrow(), root);
-        }
-        return loadFromTsv(registry, root);
+        Map<String, AssetMetadata> merged = new LinkedHashMap<>(base.byId);
+        mergeExtensionRegistries(root, merged);
+        return new AssetRegistry(root, base.registryFile, merged);
     }
 
     public static AssetRegistry loadFromTsv(Path registryFile, Path projectRoot) throws IOException {
@@ -64,6 +71,11 @@ public final class AssetRegistry {
         Path root = projectRoot == null ? registryFile.toAbsolutePath().normalize().getParent() : projectRoot.toAbsolutePath().normalize();
         Map<String, AssetMetadata> entries = new LinkedHashMap<>();
 
+        readTsvInto(registryFile, root, entries, null);
+        return new AssetRegistry(root, registryFile, entries);
+    }
+
+    private static void readTsvInto(Path registryFile, Path root, Map<String, AssetMetadata> entries, Path extensionPackageRoot) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(registryFile, StandardCharsets.UTF_8)) {
             String line;
             int lineNo = 0;
@@ -89,19 +101,21 @@ public final class AssetRegistry {
                             parts[4]
                     );
                 } catch (RuntimeException ex) {
-                    throw new IOException("Invalid semantic asset registry row at line " + lineNo + ": " + ex.getMessage(), ex);
+                    throw new IOException("Invalid semantic asset registry row in " + registryFile + " at line " + lineNo + ": " + ex.getMessage(), ex);
+                }
+                if (extensionPackageRoot != null) {
+                    validateExtensionPath(extensionPackageRoot, metadata, registryFile, lineNo);
                 }
                 AssetMetadata duplicate = entries.putIfAbsent(metadata.id(), metadata);
                 if (duplicate != null) {
                     throw new IOException("Duplicate semantic asset ID " + metadata.id()
+                            + " in " + registryFile
                             + " at line " + lineNo
                             + "; first path=" + duplicate.pathOrUri()
                             + "; duplicate path=" + metadata.pathOrUri());
                 }
             }
         }
-
-        return new AssetRegistry(root, registryFile, entries);
     }
 
     public static AssetRegistry loadFromCompiledContentIndex(Path indexFile, Path projectRoot) throws IOException {
@@ -276,6 +290,50 @@ public final class AssetRegistry {
             }
         }
         return Optional.empty();
+    }
+
+    private static void mergeExtensionRegistries(Path root, Map<String, AssetMetadata> entries) throws IOException {
+        for (Path extension : extensionRegistryFiles(root)) {
+            readTsvInto(extension, root, entries, extension.getParent());
+        }
+    }
+
+    public static List<Path> extensionRegistryFiles(Path projectRoot) throws IOException {
+        Path root = projectRoot == null ? Paths.get("").toAbsolutePath().normalize() : projectRoot.toAbsolutePath().normalize();
+        List<Path> extensionRoots = List.of(
+                root.resolve("PACKAGE_client/assets/artpacks").normalize(),
+                root.resolve("PACKAGE_launcher/profile-packages").normalize()
+        );
+        ArrayList<Path> out = new ArrayList<>();
+        for (Path extensionRoot : extensionRoots) {
+            if (!Files.isDirectory(extensionRoot)) continue;
+            try (var stream = Files.list(extensionRoot)) {
+                stream.filter(Files::isDirectory)
+                        .map(path -> path.resolve(EXTENSION_REGISTRY).normalize())
+                        .filter(Files::isRegularFile)
+                        .sorted()
+                        .forEach(out::add);
+            }
+        }
+        return out.stream().sorted().toList();
+    }
+
+    private static void validateExtensionPath(Path packageRoot, AssetMetadata metadata, Path registryFile, int lineNo) throws IOException {
+        String value = metadata.pathOrUri();
+        if (value.startsWith("classpath:") || looksLikeUri(value)) {
+            throw new IOException("External semantic asset path must be package-local in " + registryFile + " at line " + lineNo + ": " + value);
+        }
+        Path raw;
+        try {
+            raw = Paths.get(value);
+        } catch (InvalidPathException ex) {
+            throw new IOException("Invalid external semantic asset path in " + registryFile + " at line " + lineNo + ": " + value, ex);
+        }
+        Path resolved = (raw.isAbsolute() ? raw : packageRoot.resolve(raw)).toAbsolutePath().normalize();
+        Path packageFull = packageRoot.toAbsolutePath().normalize();
+        if (!resolved.startsWith(packageFull)) {
+            throw new IOException("External semantic asset path escapes package root in " + registryFile + " at line " + lineNo + ": " + value);
+        }
     }
 
     private static Path compiledAssetRootFor(Path indexFile) {

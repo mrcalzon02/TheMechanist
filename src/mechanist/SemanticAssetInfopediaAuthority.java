@@ -23,6 +23,7 @@ public final class SemanticAssetInfopediaAuthority {
     public static final String VERSION = "0.9.10ju-stage2-semantic-asset-infopedia";
 
     private static final Pattern ID_PREFIX = Pattern.compile("^[A-Z0-9]{3,4}-[A-Z0-9]{3,4}\\b");
+    private static final String MECHANIC_PREFIX = "MECHANIC - ";
 
     private static final AssetType[] BROWSE_TYPES = {
             AssetType.PORTRAIT,
@@ -59,6 +60,13 @@ public final class SemanticAssetInfopediaAuthority {
         List<AssetMetadata> source = selectedType == null ? safe.all() : safe.byType(selectedType);
         String q = filter == null ? "" : filter.trim();
         int added = 0;
+        if (selectedType == null) {
+            for (MechanicEntry entry : mechanicEntries()) {
+                if (!entry.matchesFilter(q)) continue;
+                out.add(formatMechanicEntry(entry));
+                added++;
+            }
+        }
         for (AssetMetadata metadata : source) {
             if (!metadata.matchesFilter(q)) continue;
             out.add(formatEntry(metadata));
@@ -91,6 +99,10 @@ public final class SemanticAssetInfopediaAuthority {
     public static List<String> detailLines(AssetRegistry registry, String entry, AssetType selectedType, String filter) {
         List<String> lines = new ArrayList<>();
         AssetRegistry safe = registry == null ? AssetRegistry.empty() : registry;
+        Optional<MechanicEntry> mechanic = mechanicForEntry(entry);
+        if (mechanic.isPresent()) {
+            return mechanicDetailLines(mechanic.get());
+        }
         Optional<AssetMetadata> metadata = metadataForEntry(safe, entry);
         if (metadata.isEmpty()) {
             lines.add(entry == null || entry.isBlank() ? "Semantic Asset Index" : entry);
@@ -131,5 +143,117 @@ public final class SemanticAssetInfopediaAuthority {
         }
         lines.add("Migration note: callers should eventually reference this art with AssetManager.getAsset(\"" + m.id() + "\") instead of direct file-path loading. This row is now inspectable from the game-owned InfoPedia before renderer migration begins.");
         return lines;
+    }
+
+    static List<String> mechanicEntryRows(String filter) {
+        ArrayList<String> rows = new ArrayList<>();
+        String q = filter == null ? "" : filter.trim();
+        for (MechanicEntry entry : mechanicEntries()) {
+            if (entry.matchesFilter(q)) rows.add(formatMechanicEntry(entry));
+        }
+        return rows;
+    }
+
+    static List<String> mechanicDetailLinesByKey(String key) {
+        return mechanicEntries().stream()
+                .filter(e -> e.key().equalsIgnoreCase(key == null ? "" : key.trim()))
+                .findFirst()
+                .map(SemanticAssetInfopediaAuthority::mechanicDetailLines)
+                .orElseGet(() -> List.of("Mechanic reference", "No matching mechanic entry is registered yet."));
+    }
+
+    private static List<MechanicEntry> mechanicEntries() {
+        return List.of(
+                new MechanicEntry("look-examine", "Look and Examine", "Inspection",
+                        "Look gives immediate surface facts. Examine spends attention on the selected visible target and deepens the read without exposing hidden records.",
+                        List.of(
+                                ControlReferenceTextSubsystem.contextPromptLine("Look", 0, InputAction.EXAMINE, InputAction.CANCEL, "Examine the selected visible target or back out."),
+                                "Readable boundary: surface observations first; repeated examination can add intent, state, equipment, condition, and context.",
+                                "Guard: Milestone02LookExamineReadabilitySmoke checks depth wording, route/examine sanitization, and prompt coverage."
+                        )),
+                new MechanicEntry("movement-planning", "Movement Planning", "Movement",
+                        "Movement planning lets the player place a ghost target, preview or understand the route, and receive clear refusal text before committing.",
+                        List.of(
+                                ControlReferenceTextSubsystem.contextPromptLine("Movement planning", 0, InputAction.CONFIRM, InputAction.CANCEL, "Confirm the ghost target, nudge it, or cancel safely."),
+                                "Readable outcomes: Movement target selected, Partial route, Destination occupied, Path blocked, Cannot reach from here, or outside the current area.",
+                                "Guard: Milestone02MovementPlanningReadabilitySmoke checks selected, partial, occupied, blocked, out-of-area, and unreachable routes."
+                        )),
+                new MechanicEntry("context-prompts", "Context Prompts", "Controls",
+                        "Context prompts show the current action names and active keyboard/controller bindings for the panel the player is using.",
+                        contextPromptInfopediaLines()),
+                new MechanicEntry("menu-uniformity", "Menu Uniformity", "Menus",
+                        "Menu uniformity keeps ordinary game menus aligned around purpose, back behavior, panes, prompts, disabled-state explanations, and transfer rules.",
+                        menuUniformityInfopediaLines())
+        );
+    }
+
+    private static List<String> contextPromptInfopediaLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Prompt source: ControlReferenceTextSubsystem composes context prompts from shared action labels and binding prompts.");
+        lines.add("Keyboard/mouse users see keyboard prompts directly; controller views include controller text plus keyboard fallback for recovery.");
+        lines.addAll(ControlReferenceTextSubsystem.contextPromptLines(4, ControlReferenceTextSubsystem.defaultContextPrompts()));
+        lines.add("Guard: Milestone02ContextPromptReadabilitySmoke checks major-panel coverage and leak-free keyboard/controller prompt variants.");
+        return lines;
+    }
+
+    private static List<String> menuUniformityInfopediaLines() {
+        UniversalWindowAuthority authority = new UniversalWindowAuthority();
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(authority.playerFacingSummary());
+        lines.addAll(authority.playerFacingMenuAuditLines());
+        lines.add("Guard: Milestone02MenuUniformityReadabilitySmoke checks major-window coverage and leak-free menu audit wording.");
+        return lines;
+    }
+
+    private static String formatMechanicEntry(MechanicEntry entry) {
+        return MECHANIC_PREFIX + entry.title() + " [" + entry.category() + "]";
+    }
+
+    private static Optional<MechanicEntry> mechanicForEntry(String row) {
+        if (row == null) return Optional.empty();
+        String value = row.trim();
+        if (!value.startsWith(MECHANIC_PREFIX)) return Optional.empty();
+        String title = value.substring(MECHANIC_PREFIX.length());
+        int bracket = title.lastIndexOf(" [");
+        if (bracket >= 0) title = title.substring(0, bracket);
+        String wanted = title.trim();
+        return mechanicEntries().stream()
+                .filter(e -> e.title().equalsIgnoreCase(wanted) || e.key().equalsIgnoreCase(wanted))
+                .findFirst();
+    }
+
+    private static List<String> mechanicDetailLines(MechanicEntry entry) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(entry.title());
+        lines.add("Reference: " + entry.key().replace('-', ' '));
+        lines.add("Category: " + entry.category());
+        lines.add("");
+        lines.add("Purpose:");
+        lines.add(PlayerFacingText.sanitize(entry.summary()));
+        lines.add("");
+        lines.add("Player-facing rules:");
+        for (String line : entry.lines()) {
+            lines.add(PlayerFacingText.sanitize(line));
+        }
+        lines.add("");
+        lines.add("Related entries: Look and Examine; Movement Planning; Context Prompts.");
+        return lines;
+    }
+
+    private record MechanicEntry(String key, String title, String category, String summary, List<String> lines) {
+        boolean matchesFilter(String filter) {
+            if (filter == null || filter.isBlank()) return true;
+            String q = filter.toLowerCase(Locale.ROOT);
+            if (key.toLowerCase(Locale.ROOT).contains(q)
+                    || title.toLowerCase(Locale.ROOT).contains(q)
+                    || category.toLowerCase(Locale.ROOT).contains(q)
+                    || summary.toLowerCase(Locale.ROOT).contains(q)) {
+                return true;
+            }
+            for (String line : lines) {
+                if (line != null && line.toLowerCase(Locale.ROOT).contains(q)) return true;
+            }
+            return false;
+        }
     }
 }

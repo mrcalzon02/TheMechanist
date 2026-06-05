@@ -4184,7 +4184,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (manualMovementPlanPath.isEmpty()) {
             manualMovementPlanActive = false;
             lookCursorActive = false;
-            logEvent("Manual movement plan has no reachable route to " + lookX + "," + lookY + ".");
+            logEvent(lastTargetingReport);
             repaint();
             return;
         }
@@ -4216,18 +4216,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         manualMovementPlanPath.clear();
         if (!manualMovementPlanActive || world == null) return;
         manualMovementPlanPath.addAll(buildMovementPathTo(lookX, lookY, movementModeRange()));
-        if (manualMovementPlanPath.isEmpty()) {
-            lastTargetingReport = "No reachable " + movementModeLabel(selectedMovementModeIndex) + " route to " + lookX + "," + lookY + ".";
-            return;
-        }
-        Point end = manualMovementPlanPath.get(manualMovementPlanPath.size() - 1);
-        boolean exact = end.x == lookX && end.y == lookY;
-        lastTargetingReport = (exact ? "Route" : "Partial route")
-                + " to " + lookX + "," + lookY
-                + " / " + manualMovementPlanPath.size() + " tile(s)"
-                + " / mode " + movementModeLabel(selectedMovementModeIndex)
-                + " range " + movementModeRange()
-                + (exact ? "." : " / endpoint " + end.x + "," + end.y + ".");
+        MovementPlanningAuthority.MovementPlanReadout readout = MovementPlanningAuthority.describePlan(
+                this, lookX, lookY, movementModeRange(), movementModeLabel(selectedMovementModeIndex));
+        lastTargetingReport = readout.summary();
     }
 
     void clearMouseMovementPreview(String reason) {

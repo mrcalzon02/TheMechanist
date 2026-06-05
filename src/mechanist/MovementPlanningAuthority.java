@@ -5,6 +5,7 @@ import java.awt.Point;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Movement planning rules for the game panel. Keeps pathfinding and movement
@@ -12,6 +13,8 @@ import java.util.Arrays;
  */
 final class MovementPlanningAuthority {
     private MovementPlanningAuthority() {}
+
+    record MovementPlanReadout(boolean reachable, boolean exact, String summary) { }
 
     static ArrayList<Point> buildPathTo(GamePanel game, int targetX, int targetY, int maxSteps) {
         ArrayList<Point> out = new ArrayList<>();
@@ -117,6 +120,51 @@ final class MovementPlanningAuthority {
         return end != null && end.x == targetX && end.y == targetY;
     }
 
+    static MovementPlanReadout describePlan(GamePanel game, int targetX, int targetY, int maxSteps, String modeLabel) {
+        if (game == null || game.world == null) {
+            return new MovementPlanReadout(false, false, PlayerFacingText.denial(PlayerFacingDenialText.Context.MOVEMENT, "No world is loaded."));
+        }
+        boolean inBounds = game.world.inBounds(targetX, targetY);
+        boolean walkable = inBounds && game.world.walkable(targetX, targetY);
+        boolean occupied = inBounds && game.world.npcAt(targetX, targetY) != null
+                && !(targetX == game.playerX && targetY == game.playerY);
+        ArrayList<Point> path = buildPathTo(game, targetX, targetY, maxSteps);
+        return describePlan(modeLabel, maxSteps, targetX, targetY, path, inBounds, walkable, occupied);
+    }
+
+    static MovementPlanReadout describePlan(String modeLabel, int maxSteps, int targetX, int targetY,
+                                            List<Point> path, boolean targetInBounds,
+                                            boolean targetWalkable, boolean targetOccupied) {
+        String mode = modeLabel == null || modeLabel.isBlank() ? "Movement" : PlayerFacingText.sanitize(modeLabel);
+        int range = Math.max(0, maxSteps);
+        if (!targetInBounds) {
+            return denied("Destination is outside the current area.");
+        }
+        if (targetOccupied) {
+            return denied("Destination occupied.");
+        }
+        if (!targetWalkable) {
+            return denied("Path blocked.");
+        }
+        if (path == null || path.isEmpty()) {
+            return denied("Cannot reach from here.");
+        }
+        Point end = path.get(path.size() - 1);
+        boolean exact = end != null && end.x == targetX && end.y == targetY;
+        int steps = path.size();
+        if (!exact) {
+            return new MovementPlanReadout(true, false, PlayerFacingText.inspectionRoute(
+                    "Partial route",
+                    mode + " can move " + steps + " step(s) toward the target, ending near " + readableCoord(end)
+                            + ". Too far for one movement chain; range " + range + "."
+            ));
+        }
+        return new MovementPlanReadout(true, true, PlayerFacingText.actionTravel(
+                "Movement target selected",
+                mode + " route reaches " + readableCoord(end) + " in " + steps + " step(s); range " + range + "."
+        ));
+    }
+
     static int rangeForMode(int mode) {
         return switch (mode) {
             case GamePanel.MOTION_RUN -> 4;
@@ -151,5 +199,14 @@ final class MovementPlanningAuthority {
         long dx = x - tx;
         long dy = y - ty;
         return dx * dx + dy * dy;
+    }
+
+    private static MovementPlanReadout denied(String reason) {
+        return new MovementPlanReadout(false, false, PlayerFacingText.denial(PlayerFacingDenialText.Context.MOVEMENT, reason));
+    }
+
+    private static String readableCoord(Point point) {
+        if (point == null) return "the current position";
+        return "tile " + point.x + "," + point.y;
     }
 }

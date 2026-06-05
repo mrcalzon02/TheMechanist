@@ -345,6 +345,10 @@ Completion definition — what should have just been completed when Stage 10 is 
 - Duplicate or invalid IDs are rejected clearly.
 - Asset acquisition, integrity verification, and registry loading remain separate from live world simulation.
 
+Current implementation note:
+
+- Stage 10 begins with controlled package-local TSV extension loading. Art-pack/profile-package roots may provide `semantic_asset_registry.tsv` with the same five columns as the core registry. Duplicate IDs, invalid rows, URI/classpath paths, and paths that escape the package root are rejected before the registry is installed.
+
 Immediate next action after Stage 10:
 
 - Reassess Phase 2 exit criteria and decide whether the asset migration can be considered broadly complete.

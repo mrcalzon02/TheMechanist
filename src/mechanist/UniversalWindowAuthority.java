@@ -210,6 +210,31 @@ final class UniversalWindowAuthority {
         return sb.toString();
     }
 
+    List<String> playerFacingMenuAuditLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Menu uniformity audit");
+        lines.add("Shared rule: every ordinary menu should explain its purpose, close/back behavior, main panes, prompt expectations, and blocked-action reasons.");
+        for (WindowSpec spec : specs.values()) {
+            lines.add(playerFacingLine(spec));
+        }
+        lines.add("Transfer rule: inventory-moving menus should share source, target, quantity, capacity, permission, quest/evidence protection, and clear failure wording.");
+        lines.add("Prompt rule: menu prompts should use action names and the current keyboard/controller binding source.");
+        return lines;
+    }
+
+    String playerFacingSummary() {
+        int transferReady = 0;
+        int searchReady = 0;
+        int progressReady = 0;
+        for (WindowSpec spec : specs.values()) {
+            if (spec.supportsInventoryTransfer) transferReady++;
+            if (spec.supportsSearchOrFilter) searchReady++;
+            if (spec.supportsProgressBars) progressReady++;
+        }
+        return "Menu audit covers " + specs.size() + " window definitions; transfer-ready " + transferReady
+                + ", searchable/filterable " + searchReady + ", progress-aware " + progressReady + ".";
+    }
+
     String auditSummary() {
         EnumMap<LifecycleState, Integer> byState = new EnumMap<>(LifecycleState.class);
         int transferReady = 0;
@@ -230,5 +255,29 @@ final class UniversalWindowAuthority {
 
     private static String clean(String text, String fallback) {
         return text == null || text.isBlank() ? fallback : text.trim();
+    }
+
+    private static String playerFacingLine(WindowSpec spec) {
+        if (spec == null) return "Unknown menu: no definition recorded.";
+        ArrayList<String> features = new ArrayList<>();
+        if (spec.supportsTooltips) features.add("tooltips");
+        if (spec.supportsScrolling) features.add("scrolling");
+        if (spec.supportsTabs) features.add("tabs");
+        if (spec.supportsSearchOrFilter) features.add("search/filter");
+        if (spec.supportsInventoryTransfer) features.add("item transfer");
+        if (spec.supportsProgressBars) features.add("progress");
+        String featureText = features.isEmpty() ? "basic menu controls" : String.join(", ", features);
+        return PlayerFacingText.sanitize(spec.title + ": " + readableEscape(spec.escapeBehavior)
+                + "; supports " + featureText + "; " + spec.migrationNotes);
+    }
+
+    private static String readableEscape(EscapeBehavior behavior) {
+        return switch (behavior == null ? EscapeBehavior.CLOSE_WINDOW : behavior) {
+            case BACK_TO_PARENT -> "Back returns to the parent menu";
+            case CLEAR_CURSOR -> "Back clears active placement or cursor state";
+            case RETURN_TO_GAME -> "Back returns to the game";
+            case DISABLED_WHILE_BLOCKING -> "Back is disabled while the blocking choice is active";
+            case CLOSE_WINDOW -> "Back closes the menu";
+        };
     }
 }

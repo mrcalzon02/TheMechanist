@@ -49,7 +49,7 @@ Required support libraries such as LWJGL, platform native LWJGL jars, controller
 When Maven or private dependency authentication is unavailable, use the local Gate 4 seed builder to verify the manifest package chain from source:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\packaging\stage_local_package_seed.ps1 -Version gate4-local
+powershell -ExecutionPolicy Bypass -File .\ROOT_tools\packaging\stage_local_package_seed.ps1 -Version gate4-local
 ```
 
 The builder compiles client/server and launcher sources with `javac --release 17`, creates executable client, server, and launcher jars, stages them under `build/local-package-seed/`, writes the platform runtime manifest, and scans the staged jars for Java 17 classfile compatibility. Add `-IncludeAssets` when the local check needs a copied `packages/client/assets` tree.

@@ -69,11 +69,19 @@ final class PlayerFacingText {
         return PlayerFacingInspectionText.item(itemName, detail);
     }
 
+    static String inspectionRoute(String routeName, String detail) {
+        return PlayerFacingInspectionText.route(routeName, detail);
+    }
+
     static String actionInventory(String action, String detail) {
         return PlayerFacingActionText.inventory(action, detail);
     }
 
     static String actionTravel(String action, String detail) {
         return PlayerFacingActionText.travel(action, detail);
+    }
+
+    static String actionExamine(String action, String detail) {
+        return PlayerFacingActionText.interaction(action, detail);
     }
 }

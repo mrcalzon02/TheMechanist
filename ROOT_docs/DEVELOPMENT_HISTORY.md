@@ -387,3 +387,59 @@ Added `ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv` as the user-ordered discovery ind
 Added `ROOT_tools/update-repository-file-manifest.ps1` to regenerate the index whenever a file is added, removed, renamed, moved, or replaced. Standards now record this as a discovery-only exception, not a runtime asset composition layer.
 
 Verification: generated the manifest with 980 indexed file rows; imported the TSV successfully; confirmed it reports 407 binary files and includes `PACKAGE_client/assets/` and `ROOT_SRC_assets/` image/audio entries.
+
+## Milestone 00 - Governance Package Alignment Resume
+
+Resumed `MILESTONE_00_GOVERNANCE_PACKAGE_AND_INDEX.md` by repairing the early-gate handoff surface instead of starting broad simulation work. Contract display now uses the player-facing Civic Wardens contract label expected by the Gate 3 smoke and avoids the raw "zone entry" phrasing in ordinary contract summaries.
+
+Restored the documented offline Gate 4 package-seed path under the current `ROOT_tools/` layout with `ROOT_tools/packaging/stage_local_package_seed.ps1` and added `ROOT_tools/build/verify_java17_classfiles.ps1` as the Java 17 classfile scanner named by the standards. Package pipeline and Phase Z context references now point to the `ROOT_tools/` path. The new package-seed builder no longer depends on `jar` being exposed separately on PATH; it creates jar-format archives through PowerShell/.NET after compiling with `javac --release 17`.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; launcher package sources and `PackageInstallServiceSmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone00-resume` passed, producing `build/local-package-seed` and scanning 2408 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 407 Java modules and 0 unpositioned modules; `ROOT_tools/update-repository-file-manifest.ps1` regenerated the repository manifest with 35676 indexed file rows; `git diff --check` passed with line-ending warnings only. Full native Windows/Linux installer builds, remote artifact acquisition, signing/trust metadata, and manual GUI launch were not tested.
+
+## Milestone 01 - Stage 10 Asset-Pack Registry Extension Slice
+
+Started Milestone 01 Stage 10 by allowing controlled package-local semantic asset registry extensions. `AssetRegistry.loadDefault` now merges `semantic_asset_registry.tsv` files from `PACKAGE_client/assets/artpacks/*/` and `PACKAGE_launcher/profile-packages/*/` after the core registry or compiled asset index loads.
+
+Extension rows use the same five-column core registry format and pass the same ID/type/name/description validation. Duplicate IDs are rejected clearly, URI/classpath references are rejected for external entries, and extension asset paths must stay inside their owning package root. This keeps asset-pack registry loading in the acquisition/package boundary and prevents live world simulation from accepting loose path hacks.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `SemanticAssetRegistryExtensionSmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; launcher package sources and `PackageInstallServiceSmoke` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone01-stage10` passed, producing `build/local-package-seed` and scanning 2410 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 408 Java modules and 0 unpositioned modules. Full native Windows/Linux installer builds, remote artifact acquisition, signing/trust metadata, real external mod loading, and manual GUI launch were not tested.
+
+## Milestone 02 - Look, Examine, and Prompt Readability Guard Slice
+
+Resumed Milestone 02 by hardening the progressive Look/Examine output path. `ProgressiveLookAuthority` now formats observation depth, passable/blocked surface reads, NPC labels, fixture labels, and base-object work reads in compact player-facing language instead of exposing raw glyph/walkable phrasing or implementation-shaped descriptor output.
+
+Added `Milestone02LookExamineReadabilitySmoke` and wired it into `Gate3PlayerFacingTextSmokeSuite`. The smoke checks Look/Examine depth copy, tile-surface readability, route/examine facade sanitization, and player-facing prompt coverage for every `InputAction`, giving the milestone a repeatable guard before deeper UI, Infopedia, and control-profile work.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Milestone02LookExamineReadabilitySmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; launcher package sources and `PackageInstallServiceSmoke` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone02-look-examine-readability` passed, producing `build/local-package-seed` and scanning 2412 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 409 Java modules and 0 unpositioned modules; `ROOT_tools/update-repository-file-manifest.ps1` regenerated the repository manifest with 35682 indexed file rows. Full native Windows/Linux installer builds, signing/trust metadata, and manual GUI launch were not tested.
+
+## Milestone 02 - Movement Planning Readability Guard Slice
+
+Continued Milestone 02 by moving manual movement-plan feedback into `MovementPlanningAuthority`. The authority now returns a reusable player-facing readout for selected routes, partial routes, occupied destinations, blocked paths, unreachable targets, and out-of-area targets so movement panels and later vehicle planning can share one refusal/preview grammar.
+
+Manual movement confirmation now logs the shared readout instead of a coordinate-heavy fallback when no route is available. `Milestone02MovementPlanningReadabilitySmoke` checks the main route and refusal cases without booting a generated world, and the smoke is wired into `Gate3PlayerFacingTextSmokeSuite`.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Milestone02MovementPlanningReadabilitySmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; launcher package sources and `PackageInstallServiceSmoke` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone02-movement-readability` passed, producing `build/local-package-seed` and scanning 2416 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 410 Java modules and 0 unpositioned modules. Full native Windows/Linux installer builds, signing/trust metadata, and manual GUI launch were not tested.
+
+## Milestone 02 - Context Prompt Readability Guard Slice
+
+Continued Milestone 02 input-readability work by adding a shared context-prompt composer to `ControlReferenceTextSubsystem`. The controls reference now exposes example prompt lines for Look, Interact, Movement planning, Inventory, Trade, Build, Map, and Save/Load using the same action labels and keyboard/controller prompt sources as the binding reference.
+
+Added `Milestone02ContextPromptReadabilitySmoke` and wired it into `Gate3PlayerFacingTextSmokeSuite`. The smoke checks keyboard and controller prompt variants, major-panel coverage, safe recovery prompts, and sanitizer behavior so future panel prompt work can reuse one compact grammar instead of scattering hardcoded key help.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Milestone02ContextPromptReadabilitySmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; launcher package sources and `PackageInstallServiceSmoke` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone02-context-prompts` passed, producing `build/local-package-seed` and scanning 2420 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 411 Java modules and 0 unpositioned modules. Full native Windows/Linux installer builds, signing/trust metadata, and manual GUI launch were not tested.
+
+## Milestone 02 - Infopedia Mechanics Readability Guard Slice
+
+Continued Milestone 02 Phase 18 coverage by adding first-class mechanic reference rows to the game-owned Infopedia bridge when the all-assets tab is active. The bridge now exposes compact entries for Look and Examine, Movement Planning, and Context Prompts alongside semantic assets, with detail lines that reuse the shared prompt language and name the smoke guards protecting each mechanic.
+
+Added `Milestone02InfopediaMechanicsReadabilitySmoke` and wired it into `Gate3PlayerFacingTextSmokeSuite`. The smoke checks row/filter coverage, detail-page routing, context-prompt reuse, and leak-free player-facing mechanic text so the Infopedia can keep growing without becoming detached glossary filler.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Milestone02InfopediaMechanicsReadabilitySmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; launcher package sources and `PackageInstallServiceSmoke` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone02-infopedia-mechanics` passed, producing `build/local-package-seed` and scanning 2424 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 412 Java modules and 0 unpositioned modules. Full native Windows/Linux installer builds, signing/trust metadata, and manual GUI launch were not tested.
+
+## Milestone 02 - Menu Uniformity Readability Guard Slice
+
+Continued Milestone 02 Phase 4.26 and Phase 18 menu-uniformity work by adding player-facing menu audit lines to `UniversalWindowAuthority`. The universal window specs now produce compact readable rows for purpose, back behavior, feature support, transfer expectations, prompt expectations, and migration notes without exposing enum names or compact debug fields.
+
+Added a `Menu Uniformity` Infopedia mechanic entry backed by the universal window audit, plus `Milestone02MenuUniformityReadabilitySmoke` in the Gate 3 suite. The smoke checks major-window coverage, transfer/prompt rules, Infopedia detail routing, and leak-free wording so future menu work can be audited against one shared grammar.
+
+Verification: full recursive `src` compile passed with `javac --release 17`; `Milestone02MenuUniformityReadabilitySmoke` passed; `Gate3PlayerFacingTextSmokeSuite` passed; launcher package sources and `PackageInstallServiceSmoke` passed; `ROOT_tools/packaging/stage_local_package_seed.ps1 -Version milestone02-menu-uniformity` passed, producing `build/local-package-seed` and scanning 2426 classfiles with highest major version 61; function and Mermaid maps were regenerated with `python scripts\BUILD_FUNCTION_MAP.py --apply` and `python scripts\BUILD_MERMAID_CODE_MAP.py --apply`, reporting 413 Java modules and 0 unpositioned modules. Full native Windows/Linux installer builds, signing/trust metadata, and manual GUI launch were not tested.

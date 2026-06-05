@@ -53,10 +53,10 @@ final class ProgressiveLookAuthority {
         }
         int d = Math.max(0, Math.min(MAX_DEPTH, depth));
         char ch = game.world.tiles[x][y];
-        lines.add("Observation depth " + d + "/" + MAX_DEPTH + (d < MAX_DEPTH ? " - look again for more." : " - full local read."));
-        lines.add("Tile glyph " + ch + " / walkable " + game.world.walkable(x, y));
+        lines.add(observationDepthLine(d));
+        lines.add(tileSurfaceLine(game.world.walkable(x, y), ch));
         CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(game.world, x, y, ch);
-        if (descriptor != null && d >= 1) lines.add(descriptor.inspectLine());
+        if (descriptor != null && d >= 1) lines.add(tileDescriptorLine(descriptor));
         if (x == game.playerX && y == game.playerY) lines.add("Player position.");
 
         NpcEntity npc = game.world.npcAt(x, y);
@@ -69,15 +69,43 @@ final class ProgressiveLookAuthority {
         if (base != null) addBaseObjectLines(game, lines, base, d);
 
         if (game.isDoorTile(ch)) {
-            lines.add("Door/access tile: interact can operate this doorway.");
+            lines.add("Door or access point: interact can operate this doorway.");
             if (d >= 1) lines.add("Door light: local threshold emitter active; wall-blocked lighting should strike the door/bulkhead but not leak beyond it.");
         }
         return lines;
     }
 
+    static String observationDepthLine(int depth) {
+        int d = Math.max(0, Math.min(MAX_DEPTH, depth));
+        return "Observation " + d + "/" + MAX_DEPTH + (d < MAX_DEPTH
+                ? ": look again for a clearer read."
+                : ": close local examination complete.");
+    }
+
+    static String tileSurfaceLine(boolean walkable, char tile) {
+        String movement = walkable ? "passable" : "blocked";
+        return PlayerFacingText.inspectionTile(tileFamilyLabel(tile), "Surface appears " + movement + ".");
+    }
+
+    static String tileDescriptorLine(CompiledTileDescriptor descriptor) {
+        if (descriptor == null) return PlayerFacingText.inspectionTile("", "");
+        StringBuilder detail = new StringBuilder();
+        detail.append(descriptor.semanticTag == null || descriptor.semanticTag.isBlank()
+                ? familyLabel(descriptor.family)
+                : readableToken(descriptor.semanticTag));
+        if (descriptor.isDoor) detail.append("; access point");
+        else if (descriptor.isFixture) detail.append("; fixture");
+        else if (descriptor.isRoad) detail.append("; road surface");
+        else if (descriptor.isSidewalk) detail.append("; walkway");
+        else if (descriptor.isCorridor) detail.append("; corridor");
+        else if (descriptor.isWall) detail.append("; solid boundary");
+        if (descriptor.hasOverlay()) detail.append("; layered detail");
+        return PlayerFacingText.inspectionTile(tileFamilyLabel(descriptor.sourceGlyph), detail.toString());
+    }
+
     private static void addNpcLines(GamePanel game, ArrayList<String> lines, NpcEntity npc, int depth) {
-        lines.add("Figure: " + safe(npc.name, "unknown") + " / " + safe(npc.role, "unknown role") + ".");
-        if (depth >= 1) lines.add("Faction read: " + (npc.faction == null ? "None" : npc.faction.label) + " / symbol " + (npc.symbol == 0 ? '@' : npc.symbol) + ".");
+        lines.add(PlayerFacingText.inspectionActor(safe(npc.name, "unknown figure"), safe(npc.role, "unknown role")));
+        if (depth >= 1) lines.add("Faction read: " + (npc.faction == null ? "unknown" : npc.faction.label) + ".");
         if (depth >= 2) lines.add(npc.rankLine());
         if (depth >= 2) lines.add(intentLine(game, npc));
         if (depth >= 3) lines.add("State: " + safe(npc.state, "unknown") + " / HP " + npc.hp + " / age " + npc.ageLine() + ".");
@@ -88,13 +116,13 @@ final class ProgressiveLookAuthority {
             if (npc.equippedArmor != null && !npc.equippedArmor.isBlank()) loadout.add(npc.equippedArmor);
             if (npc.equippedExplosive != null && !npc.equippedExplosive.isBlank()) loadout.add(npc.equippedExplosive);
             lines.add("Visible kit: " + (loadout.isEmpty() ? "no obvious weapons or armor" : String.join(", ", loadout)) + ".");
-            if (npc.provenance != null) lines.add("Personnel source: " + npc.provenance.populationPool + " / " + npc.provenance.upbringing + ".");
+            if (npc.provenance != null) lines.add("Personnel background: " + npc.provenance.populationPool + "; " + npc.provenance.upbringing + ".");
         }
     }
 
     private static void addObjectLines(GamePanel game, ArrayList<String> lines, MapObjectState obj, int depth) {
-        lines.add("Object: " + game.safeLabel(obj.label, obj.type) + ".");
-        if (depth >= 1) lines.add("Type: " + game.safeLabel(obj.type, "object") + " / stock: " + game.safeLabel(obj.stockState, "none") + ".");
+        lines.add(PlayerFacingText.inspectionFixture(game.safeLabel(obj.label, obj.type), "nearby object"));
+        if (depth >= 1) lines.add("Object read: " + game.safeLabel(obj.type, "object") + "; stock appears " + game.safeLabel(obj.stockState, "none") + ".");
         if (depth >= 2) {
             FixtureInteractionRegistry.Definition def = FixtureInteractionRegistry.definitionFor(obj.type);
             if (def != null) lines.add("Fixture: " + def.family.label + " / " + def.family.interaction + " / " + def.notes);
@@ -103,11 +131,11 @@ final class ProgressiveLookAuthority {
     }
 
     private static void addBaseObjectLines(GamePanel game, ArrayList<String> lines, BaseObject base, int depth) {
-        lines.add("Base object: " + game.safeLabel(base.name, "base object") + ".");
-        if (depth >= 1) lines.add("Build read: " + base.symbol + " / " + game.safeLabel(base.qualityName, "Common") + " quality.");
+        lines.add(PlayerFacingText.inspectionFixture(game.safeLabel(base.name, "base object"), "built fixture"));
+        if (depth >= 1) lines.add("Build read: " + game.safeLabel(base.qualityName, "Common") + " quality.");
         if (depth >= 2) lines.add(game.safeLabel(base.description, "Built base object."));
         if (depth >= 3) lines.add("Integrity/capacity: " + base.integrity + " / " + base.capacity + ".");
-        if (depth >= 4) lines.add("Faction/work: " + (base.faction == null ? "None" : base.faction.label) + " / recipe " + game.safeLabel(base.assignedRecipe, "unassigned") + " / worker " + game.safeLabel(base.assignedWorker, "unassigned") + ".");
+        if (depth >= 4) lines.add("Faction/work: " + (base.faction == null ? "none" : base.faction.label) + "; assignment " + game.safeLabel(base.assignedRecipe, "unassigned") + "; worker " + game.safeLabel(base.assignedWorker, "unassigned") + ".");
     }
 
     private static String intentLine(GamePanel game, NpcEntity npc) {
@@ -123,5 +151,29 @@ final class ProgressiveLookAuthority {
 
     private static String safe(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String tileFamilyLabel(char tile) {
+        return switch (tile) {
+            case '#', 'L', 'X', 'V', 'D', '|', '1', '2', '3', '4', '5', 'I', 'H' -> "Barrier";
+            case '/', '+', '=' -> "Access way";
+            case '.', ',', ':', ';' -> "Floor";
+            case '~' -> "Hazardous surface";
+            case 'r' -> "Road";
+            case 's' -> "Walkway";
+            case 'T', 'b', 'q', 'c', 'u', 'N' -> "Fixture";
+            default -> "Area";
+        };
+    }
+
+    private static String familyLabel(String value) {
+        if (value == null || value.isBlank()) return "local surface";
+        return readableToken(value);
+    }
+
+    private static String readableToken(String value) {
+        if (value == null || value.isBlank()) return "unknown";
+        String cleaned = value.replace('_', ' ').replace('-', ' ').trim().toLowerCase(Locale.ROOT);
+        return PlayerFacingText.sanitize(cleaned);
     }
 }

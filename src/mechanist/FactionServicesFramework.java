@@ -827,9 +827,13 @@ class FactionContract {
         return prefix + tags[r.nextInt(tags.length)];
     }
 
-    String shortLine(){ return displayType() + " for " + faction.label + " pays " + payout + " script" + (spawned ? "; target located" : "; awaiting zone entry"); }
-    String longLine(){ return faction.label + " " + displayType() + ": " + displayDescription() + " Location: " + displayLocation() + ". Reward " + payout + " script, rep +" + repReward + "."; }
+    String shortLine(){ return displayType() + " for " + displayFactionName() + " pays " + payout + " script" + (spawned ? "; target confirmed" : "; route pending"); }
+    String longLine(){ return displayFactionName() + " " + displayType() + ": " + displayDescription() + " Location: " + displayLocation() + ". Reward " + payout + " script, rep +" + repReward + "."; }
     String displayType(){ if ("LOCKBOX".equals(type)) return "lockbox contract"; if ("FETCH".equals(type)) return "fetch contract"; return "bounty contract"; }
+    String displayFactionName(){
+        if (faction == Faction.CIVIC_WARDENS || faction == Faction.ARBITES) return "Adeptus Civic Wardens";
+        return faction == null ? "local faction" : faction.label;
+    }
     String displayDescription(){
         if (description == null || description.isBlank()) return "Contract details pending.";
         String publicItem = publicRequiredItem();

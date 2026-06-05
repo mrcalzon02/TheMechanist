@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Stable subsystem for keyboard/controller reference text.
@@ -8,6 +9,8 @@ import java.util.ArrayList;
 final class ControlReferenceTextSubsystem {
     private ControlReferenceTextSubsystem() {
     }
+
+    record ContextPrompt(String context, InputAction primary, InputAction secondary, String detail) { }
 
     static ArrayList<String> controlsReferenceLines(GamePanel panel) {
         ArrayList<String> lines = new ArrayList<>();
@@ -21,7 +24,44 @@ final class ControlReferenceTextSubsystem {
         }
         lines.add("Context overlap: E examines while the Look panel is open and interacts from the game surface; A/Cross confirms in menus and examines/interacts only where that panel owns the prompt.");
         lines.add("Safe fallback: Escape/B/Circle backs out, and keyboard movement remains available if a controller is missing or reconnecting.");
+        lines.add("Context prompt examples:");
+        lines.addAll(contextPromptLines(panel.controlsTab, defaultContextPrompts()));
         if (panel.rebindingTarget != null && !panel.rebindingTarget.isEmpty()) lines.add(panel.rebindingTarget);
+        return lines;
+    }
+
+    static ArrayList<ContextPrompt> defaultContextPrompts() {
+        ArrayList<ContextPrompt> prompts = new ArrayList<>();
+        prompts.add(new ContextPrompt("Look", InputAction.EXAMINE, InputAction.CANCEL, "Examine the selected visible target or back out."));
+        prompts.add(new ContextPrompt("Interact", InputAction.INTERACT, InputAction.CANCEL, "Use the selected adjacent target or back out."));
+        prompts.add(new ContextPrompt("Movement planning", InputAction.CONFIRM, InputAction.CANCEL, "Confirm the ghost target, nudge it, or cancel safely."));
+        prompts.add(new ContextPrompt("Inventory", InputAction.INVENTORY, InputAction.CANCEL, "Review carried items and return to the game."));
+        prompts.add(new ContextPrompt("Trade", InputAction.CONFIRM, InputAction.CANCEL, "Choose a trade action or leave the offer list."));
+        prompts.add(new ContextPrompt("Build", InputAction.BUILD, InputAction.CANCEL, "Open build tools, choose placement, or back out."));
+        prompts.add(new ContextPrompt("Map", InputAction.MAP, InputAction.CANCEL, "Review route guidance and return to the game."));
+        prompts.add(new ContextPrompt("Save/Load", InputAction.CONFIRM, InputAction.CANCEL, "Choose a slot or back out without changing saves."));
+        return prompts;
+    }
+
+    static String contextPromptLine(String context, int controlsTab, InputAction primary, InputAction secondary, String detail) {
+        String safeContext = safePromptPart(context, "Prompt");
+        String safeDetail = safePromptPart(detail, "");
+        String primaryPart = actionPromptPart(controlsTab, primary);
+        String secondaryPart = secondary == null ? "" : actionPromptPart(controlsTab, secondary);
+        StringBuilder out = new StringBuilder(safeContext).append(": ");
+        out.append(primaryPart);
+        if (!secondaryPart.isBlank()) out.append(" | ").append(secondaryPart);
+        if (!safeDetail.isBlank()) out.append(" - ").append(safeDetail);
+        return PlayerFacingText.sanitize(out.toString());
+    }
+
+    static ArrayList<String> contextPromptLines(int controlsTab, List<ContextPrompt> prompts) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (prompts == null || prompts.isEmpty()) return lines;
+        for (ContextPrompt prompt : prompts) {
+            if (prompt == null) continue;
+            lines.add(contextPromptLine(prompt.context(), controlsTab, prompt.primary(), prompt.secondary(), prompt.detail()));
+        }
         return lines;
     }
 
@@ -188,5 +228,25 @@ final class ControlReferenceTextSubsystem {
             case PLAN_MOVE: return "Generic: right stick down";
             default: return "Generic: keyboard fallback";
         }
+    }
+
+    private static String actionPromptPart(int controlsTab, InputAction action) {
+        if (action == null) return "Action: unavailable";
+        String label = inputActionLabel(action);
+        String keyboard = keyboardPromptFor(action);
+        String controller = controllerPromptFor(controlsTab, action);
+        if (controlsTab <= 0) return label + " [" + keyboard + "]";
+        return label + " [" + controller + "; " + keyboard + "]";
+    }
+
+    private static String safePromptPart(String text, String fallback) {
+        String cleaned = PlayerFacingText.sanitize(text)
+                .replace(':', ' ')
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .replace('\t', ' ')
+                .trim();
+        if (cleaned.isBlank() || "No readable details are available yet.".equals(cleaned)) return fallback;
+        return cleaned;
     }
 }

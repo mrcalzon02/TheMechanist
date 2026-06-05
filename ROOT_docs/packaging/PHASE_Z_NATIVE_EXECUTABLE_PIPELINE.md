@@ -12,30 +12,32 @@ Installer -> Launcher executable -> Game menu executable -> Client -> Local/inte
 
 The scripts in this phase intentionally produce app-image / portable outputs before installer outputs. This follows the project standard that bundled runtime behavior must be testable before a setup wizard is trusted.
 
-## Current outputs
+## Planned outputs
 
 Windows packaging scripts:
 
 ```text
-tools/packaging/windows/build_launcher_app_image.ps1
-tools/packaging/windows/build_game_app_image.ps1
-tools/packaging/windows/build_server_app_image.ps1
-tools/packaging/windows/build_launcher_installer_exe.ps1
+ROOT_tools/packaging/windows/build_launcher_app_image.ps1
+ROOT_tools/packaging/windows/build_game_app_image.ps1
+ROOT_tools/packaging/windows/build_server_app_image.ps1
+ROOT_tools/packaging/windows/build_launcher_installer_exe.ps1
 ```
 
 Release/verification utilities:
 
 ```text
-tools/packaging/scan_java17_classfiles.py
-tools/packaging/generate_release_manifest.py
+ROOT_tools/build/verify_java17_classfiles.ps1
+ROOT_tools/packaging/generate_release_manifest.py
 ```
+
+This phase document is future packaging context, not the active Gate 4 local package-seed path. The current offline Gate 4 helper is `ROOT_tools/packaging/stage_local_package_seed.ps1`.
 
 ## Launcher app-image
 
 Run from repository root or directly from its folder:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/packaging/windows/build_launcher_app_image.ps1
+powershell -ExecutionPolicy Bypass -File ROOT_tools/packaging/windows/build_launcher_app_image.ps1
 ```
 
 Expected output:
@@ -51,7 +53,7 @@ This builds the Java 17 Swing launcher module and packages it with `jpackage --t
 Run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/packaging/windows/build_game_app_image.ps1
+powershell -ExecutionPolicy Bypass -File ROOT_tools/packaging/windows/build_game_app_image.ps1
 ```
 
 Expected output:
@@ -67,7 +69,7 @@ This builds the main Maven project, chooses obfuscated jars when available, fall
 Run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/packaging/windows/build_server_app_image.ps1
+powershell -ExecutionPolicy Bypass -File ROOT_tools/packaging/windows/build_server_app_image.ps1
 ```
 
 Expected output:
@@ -83,7 +85,7 @@ This creates a bundled executable image for the internal/headless server entrypo
 Run only after the launcher app-image has been smoke-tested:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools/packaging/windows/build_launcher_installer_exe.ps1
+powershell -ExecutionPolicy Bypass -File ROOT_tools/packaging/windows/build_launcher_installer_exe.ps1
 ```
 
 Expected output:
@@ -99,7 +101,7 @@ Windows installer generation requires the WiX Toolset on PATH. The script detect
 After producing app-images or installers, generate a manifest:
 
 ```powershell
-python tools/packaging/generate_release_manifest.py `
+python ROOT_tools/packaging/generate_release_manifest.py `
   --repo-root . `
   --output dist/native/windows/release-manifest.json `
   --channel dev `
@@ -117,7 +119,7 @@ Java 17 classfile major version is 61. No shipped class may exceed that.
 Manual scan example:
 
 ```powershell
-python tools/packaging/scan_java17_classfiles.py target/TheMechanist-all.jar target/TheMechanistServer-all.jar launcher/java/target/mechanist-launcher-0.1.0.jar
+powershell -ExecutionPolicy Bypass -File ROOT_tools/build/verify_java17_classfiles.ps1 target/TheMechanist-all.jar target/TheMechanistServer-all.jar PACKAGE_launcher/java/target/mechanist-launcher-0.1.0.jar
 ```
 
 ## Current limitations
