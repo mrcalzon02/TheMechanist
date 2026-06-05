@@ -70,6 +70,23 @@ It provides:
 - placement-blocking checks
 - conversion to `ZonePlacementValidator`
 
+### `StructuredZoneGridRuntime`
+
+`src/mechanist/StructuredZoneGridRuntime.java`
+
+Attaches structured `ZoneTileGrid` instances to recovered legacy `World` objects without requiring a risky edit to the recovered `World` class itself.
+
+It provides:
+
+- lazy grid creation from a world's legacy `tiles` field
+- explicit structured grid attachment
+- grid rebuild from the current world tiles
+- sync back to legacy `tiles`
+- `GamePanel` convenience access
+- `ZonePlacementValidator` creation from the attached grid
+
+This is intentionally a compatibility layer. It lets generator passes begin using structured tile state while legacy `World` and renderer paths continue to use `char[][]` until they are migrated.
+
 ## Compatibility rule
 
 The structured grid does not replace legacy rendering immediately.
@@ -78,9 +95,11 @@ The intended migration path is:
 
 ```text
 legacy char[][] generation
+  -> StructuredZoneGridRuntime.gridForWorld(world)
   -> ZoneTileGrid.fromLegacyTiles(...)
   -> structured generator passes modify ZoneTileState
-  -> ZoneTileGrid.toLegacyGlyphs() for current render compatibility
+  -> StructuredZoneGridRuntime.syncLegacyTiles(world)
+  -> legacy renderer reads char[][] until migrated
 ```
 
 Later, the richer renderer/simulation can read directly from `ZoneTileGrid`.
@@ -115,5 +134,7 @@ The next generator pass should attach this foundation to actual zone generation:
 ## Design notes
 
 The grid is deliberately package-private and lightweight so it can be introduced without changing the public API or rendering architecture.
+
+`StructuredZoneGridRuntime` uses weak world references so detached worlds can be garbage-collected. It should be replaced with a real `World.structuredGrid` field once the recovered `World` source is available for direct, safe editing.
 
 This pass is a foundation only. It does not yet rewrite room generation, road generation, sewer generation, or rendering.
