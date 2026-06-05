@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Shape;
+import java.util.ArrayList;
 import java.util.List;
 
 final class UiTextSurfacePainter {
@@ -13,15 +14,43 @@ final class UiTextSurfacePainter {
     static void drawUiTextLine(Graphics2D g, String text, int x, int y) {
         if (g == null || text == null) return;
         FontMetrics fm = g.getFontMetrics();
-        int tw = fm.stringWidth(text);
-        int th = fm.getHeight();
         Color old = g.getColor();
-        g.setColor(new Color(0, 0, 0, 196));
-        g.fillRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
-        g.setColor(new Color(128, 105, 58, 135));
-        g.drawRoundRect(x - 5, y - fm.getAscent() - 3, tw + 10, th + 5, 7, 7);
-        g.setColor(contrastRatio(old, Color.BLACK) < 3.0 ? new Color(224, 226, 208) : old);
+        Color readable = contrastRatio(old, Color.BLACK) < 3.0 ? new Color(224, 226, 208) : old;
+        g.setColor(new Color(0, 0, 0, 150));
+        g.drawString(text, x + 1, y + 1);
+        g.setColor(readable);
         g.drawString(text, x, y);
+        g.setColor(old);
+    }
+
+    static int drawBackedLineStack(Graphics2D g, List<String> lines, int x, int y, int maxWidth, int maxHeight, Color color) {
+        if (g == null || lines == null || lines.isEmpty() || maxWidth <= 4 || maxHeight <= 4) return 0;
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = Math.max(fm.getHeight() + 2, 16);
+        ArrayList<String> visible = new ArrayList<>();
+        for (String source : lines) {
+            for (String wrapped : GuiLayoutApi.wrapText(source == null ? "" : source, fm, Math.max(8, maxWidth - 16))) {
+                if ((visible.size() + 1) * lineH + 10 > maxHeight) break;
+                visible.add(wrapped);
+            }
+            if ((visible.size() + 1) * lineH + 10 > maxHeight) break;
+        }
+        if (visible.isEmpty()) return 0;
+        int blockH = visible.size() * lineH + 10;
+        int blockW = Math.max(24, maxWidth);
+        Color old = g.getColor();
+        g.setColor(new Color(0, 0, 0, 186));
+        g.fillRoundRect(x, y, blockW, blockH, 9, 9);
+        g.setColor(new Color(128, 105, 58, 116));
+        g.drawRoundRect(x, y, blockW, blockH, 9, 9);
+        g.setColor(color == null ? old : color);
+        int yy = y + fm.getAscent() + 5;
+        for (String line : visible) {
+            g.drawString(line, x + 8, yy);
+            yy += lineH;
+        }
+        g.setColor(old);
+        return blockH;
     }
 
     private static double contrastRatio(Color a, Color b) {
