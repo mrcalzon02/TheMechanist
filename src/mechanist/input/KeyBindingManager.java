@@ -25,6 +25,9 @@ public final class KeyBindingManager {
     private final EnumMap<InputDevice, LinkedHashMap<String, KeyBind>> profiles = new EnumMap<>(InputDevice.class);
     private final EnumMap<InputDevice, LinkedHashMap<String, KeyBind>> defaultProfiles = new EnumMap<>(InputDevice.class);
     private final EnumMap<InputDevice, LinkedHashMap<String, KeyBind>> lastGoodProfiles = new EnumMap<>(InputDevice.class);
+    private ControllerTuningProfile controllerTuning = ControllerTuningProfile.defaults();
+    private final ControllerTuningProfile defaultControllerTuning = ControllerTuningProfile.defaults();
+    private ControllerTuningProfile lastGoodControllerTuning = ControllerTuningProfile.defaults();
     private final Map<String, Boolean> actionStates = Collections.synchronizedMap(new LinkedHashMap<>());
     private final PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
@@ -58,6 +61,22 @@ public final class KeyBindingManager {
                 .filter(bind -> bind.token().equals(token))
                 .map(KeyBind::commandId)
                 .findFirst();
+    }
+
+    public synchronized ControllerTuningProfile getControllerTuningProfile() {
+        return controllerTuning;
+    }
+
+    public synchronized RebindResult updateControllerTuningProfile(ControllerTuningProfile profile) {
+        Objects.requireNonNull(profile, "profile");
+        lastGoodControllerTuning = controllerTuning;
+        controllerTuning = profile;
+        changes.firePropertyChange("controllerTuning", null, controllerTuning);
+        return RebindResult.accepted("Updated controller tuning profile.");
+    }
+
+    public synchronized double applyControllerAxisTuning(String axisName, double rawValue) {
+        return controllerTuning.applyAxis(axisName, rawValue);
     }
 
     public synchronized RebindResult rebind(InputDevice device, String commandId, InputToken newToken, DuplicatePolicy duplicatePolicy) {
@@ -101,6 +120,11 @@ public final class KeyBindingManager {
         Objects.requireNonNull(device, "device");
         lastGoodProfiles.put(device, copyProfile(profiles.get(device)));
         profiles.put(device, copyProfile(defaultProfiles.get(device)));
+        if (device == InputDevice.GENERIC_CONTROLLER) {
+            lastGoodControllerTuning = controllerTuning;
+            controllerTuning = defaultControllerTuning;
+            changes.firePropertyChange("controllerTuning", null, controllerTuning);
+        }
         changes.firePropertyChange("bindings", null, device);
         return RebindResult.accepted("Reset " + device.displayName() + " bindings to defaults.");
     }
@@ -110,6 +134,9 @@ public final class KeyBindingManager {
             lastGoodProfiles.put(device, copyProfile(profiles.get(device)));
             profiles.put(device, copyProfile(defaultProfiles.get(device)));
         }
+        lastGoodControllerTuning = controllerTuning;
+        controllerTuning = defaultControllerTuning;
+        changes.firePropertyChange("controllerTuning", null, controllerTuning);
         changes.firePropertyChange("bindings", null, null);
         return RebindResult.accepted("Reset all bindings to defaults.");
     }
@@ -123,6 +150,12 @@ public final class KeyBindingManager {
         LinkedHashMap<String, KeyBind> current = copyProfile(profiles.get(device));
         profiles.put(device, copyProfile(lastGood));
         lastGoodProfiles.put(device, current);
+        if (device == InputDevice.GENERIC_CONTROLLER) {
+            ControllerTuningProfile currentTuning = controllerTuning;
+            controllerTuning = lastGoodControllerTuning;
+            lastGoodControllerTuning = currentTuning;
+            changes.firePropertyChange("controllerTuning", null, controllerTuning);
+        }
         changes.firePropertyChange("bindings", null, device);
         return RebindResult.accepted("Restored last working " + device.displayName() + " bindings.");
     }
@@ -135,6 +168,10 @@ public final class KeyBindingManager {
             profiles.put(device, copyProfile(lastGood));
             lastGoodProfiles.put(device, current);
         }
+        ControllerTuningProfile currentTuning = controllerTuning;
+        controllerTuning = lastGoodControllerTuning;
+        lastGoodControllerTuning = currentTuning;
+        changes.firePropertyChange("controllerTuning", null, controllerTuning);
         changes.firePropertyChange("bindings", null, null);
         return RebindResult.accepted("Restored last working bindings for all input families.");
     }
@@ -148,6 +185,7 @@ public final class KeyBindingManager {
                 out.setProperty(storageKey(device, bind.commandId()), bind.token().storageValue());
             }
         }
+        writeControllerTuningProperties(out, controllerTuning);
         return out;
     }
 
@@ -155,6 +193,12 @@ public final class KeyBindingManager {
         Objects.requireNonNull(source, "source");
         EnumMap<InputDevice, LinkedHashMap<String, KeyBind>> candidate = new EnumMap<>(InputDevice.class);
         for (var device : InputDevice.values()) candidate.put(device, copyProfile(profiles.get(device)));
+        ControllerTuningProfile candidateTuning;
+        try {
+            candidateTuning = readControllerTuningProperties(source, controllerTuning);
+        } catch (RuntimeException ex) {
+            return RebindResult.rejected("Saved controller tuning profile is malformed: " + ex.getMessage());
+        }
 
         for (var device : InputDevice.values()) {
             var profile = candidate.get(device);
@@ -184,6 +228,9 @@ public final class KeyBindingManager {
             lastGoodProfiles.put(device, copyProfile(profiles.get(device)));
             profiles.put(device, copyProfile(candidate.get(device)));
         }
+        lastGoodControllerTuning = controllerTuning;
+        controllerTuning = candidateTuning;
+        changes.firePropertyChange("controllerTuning", null, controllerTuning);
         changes.firePropertyChange("bindings", null, null);
         return RebindResult.accepted("Imported saved keybinding profile.");
     }
@@ -325,6 +372,49 @@ public final class KeyBindingManager {
         return "binding." + device.name() + "." + commandId;
     }
 
+    private static String controllerTuningKey(String field) {
+        return "controller.GENERIC_CONTROLLER." + field;
+    }
+
+    private static void writeControllerTuningProperties(Properties out, ControllerTuningProfile profile) {
+        out.setProperty(controllerTuningKey("deadzone"), Double.toString(profile.deadzone()));
+        out.setProperty(controllerTuningKey("sensitivity"), Double.toString(profile.sensitivity()));
+        out.setProperty(controllerTuningKey("invert_x"), Boolean.toString(profile.invertXAxis()));
+        out.setProperty(controllerTuningKey("invert_y"), Boolean.toString(profile.invertYAxis()));
+        out.setProperty(controllerTuningKey("hold_ms"), Integer.toString(profile.holdMillis()));
+        out.setProperty(controllerTuningKey("tap_ms"), Integer.toString(profile.tapMillis()));
+    }
+
+    private static ControllerTuningProfile readControllerTuningProperties(Properties source, ControllerTuningProfile fallback) {
+        double deadzone = parseDouble(source, controllerTuningKey("deadzone"), fallback.deadzone());
+        double sensitivity = parseDouble(source, controllerTuningKey("sensitivity"), fallback.sensitivity());
+        boolean invertX = parseBoolean(source, controllerTuningKey("invert_x"), fallback.invertXAxis());
+        boolean invertY = parseBoolean(source, controllerTuningKey("invert_y"), fallback.invertYAxis());
+        int holdMs = parseInt(source, controllerTuningKey("hold_ms"), fallback.holdMillis());
+        int tapMs = parseInt(source, controllerTuningKey("tap_ms"), fallback.tapMillis());
+        return new ControllerTuningProfile(deadzone, sensitivity, invertX, invertY, holdMs, tapMs);
+    }
+
+    private static double parseDouble(Properties source, String key, double fallback) {
+        String value = source.getProperty(key);
+        if (value == null || value.isBlank()) return fallback;
+        return Double.parseDouble(value.trim());
+    }
+
+    private static int parseInt(Properties source, String key, int fallback) {
+        String value = source.getProperty(key);
+        if (value == null || value.isBlank()) return fallback;
+        return Integer.parseInt(value.trim());
+    }
+
+    private static boolean parseBoolean(Properties source, String key, boolean fallback) {
+        String value = source.getProperty(key);
+        if (value == null || value.isBlank()) return fallback;
+        if ("true".equalsIgnoreCase(value.trim())) return true;
+        if ("false".equalsIgnoreCase(value.trim())) return false;
+        throw new IllegalArgumentException(key + " must be true or false");
+    }
+
     private static String missingRequiredCommand(EnumMap<InputDevice, LinkedHashMap<String, KeyBind>> candidate) {
         for (var device : InputDevice.values()) {
             var defaults = INSTANCE.defaultProfiles.get(device);
@@ -362,6 +452,53 @@ public final class KeyBindingManager {
     }
 
     public enum DuplicatePolicy { REJECT, SWAP }
+
+    public record ControllerTuningProfile(double deadzone, double sensitivity, boolean invertXAxis, boolean invertYAxis,
+                                          int holdMillis, int tapMillis) {
+        public ControllerTuningProfile {
+            if (!Double.isFinite(deadzone) || deadzone < 0.0 || deadzone > 0.95) {
+                throw new IllegalArgumentException("deadzone must be between 0.0 and 0.95");
+            }
+            if (!Double.isFinite(sensitivity) || sensitivity < 0.25 || sensitivity > 3.0) {
+                throw new IllegalArgumentException("sensitivity must be between 0.25 and 3.0");
+            }
+            if (holdMillis < 150 || holdMillis > 1500) {
+                throw new IllegalArgumentException("hold threshold must be 150-1500 ms");
+            }
+            if (tapMillis < 50 || tapMillis > 700) {
+                throw new IllegalArgumentException("tap threshold must be 50-700 ms");
+            }
+            if (tapMillis >= holdMillis) {
+                throw new IllegalArgumentException("tap threshold must stay below hold threshold");
+            }
+        }
+
+        public static ControllerTuningProfile defaults() {
+            return new ControllerTuningProfile(0.25, 1.0, false, false, 450, 180);
+        }
+
+        public double applyAxis(String axisName, double rawValue) {
+            if (!Double.isFinite(rawValue)) return 0.0;
+            double clamped = Math.max(-1.0, Math.min(1.0, rawValue));
+            double magnitude = Math.abs(clamped);
+            if (magnitude <= deadzone) return 0.0;
+            double scaled = ((magnitude - deadzone) / (1.0 - deadzone)) * sensitivity;
+            double signed = Math.copySign(Math.min(1.0, scaled), clamped);
+            String axis = axisName == null ? "" : axisName.toLowerCase(Locale.ROOT);
+            if ((axis.contains("x") && invertXAxis) || (axis.contains("y") && invertYAxis)) {
+                signed = -signed;
+            }
+            return signed;
+        }
+
+        public String playerFacingSummary() {
+            String x = invertXAxis ? "horizontal inverted" : "horizontal normal";
+            String y = invertYAxis ? "vertical inverted" : "vertical normal";
+            return String.format(Locale.ROOT,
+                    "Controller tuning: deadzone %.0f%%, sensitivity %.0f%%, axes %s and %s, hold %d ms, tap %d ms.",
+                    deadzone * 100.0, sensitivity * 100.0, x, y, holdMillis, tapMillis);
+        }
+    }
 
     public record RebindResult(boolean accepted, String message, KeyBind updated, KeyBind swapped) {
         static RebindResult accepted(KeyBind updated, KeyBind swapped, String conflictMessage) {
