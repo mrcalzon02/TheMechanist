@@ -1,5 +1,7 @@
 package mechanist;
 
+import mechanist.input.KeyBindingManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +37,11 @@ final class InputRebindingAuditAuthority {
         int required = 0;
         for (InputAction action : InputAction.values()) if (ControlReferenceTextSubsystem.requiredInputAction(action)) required++;
         return "Input audit covers " + InputAction.values().length + " actions, " + required
-                + " recovery-critical actions, keyboard defaults, controller prompts, conflict notes, and safe fallback behavior.";
+                + " recovery-critical actions, keyboard defaults, controller prompts, conflict notes, controller tuning, and safe fallback behavior.";
+    }
+
+    static String controllerTuningSummary() {
+        return PlayerFacingText.sanitize(KeyBindingManager.getInstance().getControllerTuningProfile().playerFacingSummary());
     }
 
     static List<ActionAudit> auditRows(int controlsTab) {
@@ -61,8 +67,10 @@ final class InputRebindingAuditAuthority {
         ArrayList<String> lines = new ArrayList<>();
         lines.add(playerFacingSummary());
         lines.add("Profile source: current in-game controls tab with keyboard fallback; saved custom-profile export and import are validated before replacing the working profile.");
+        lines.add(controllerTuningSummary());
+        lines.add("Controller tuning behavior: deadzone, axis sensitivity, horizontal/vertical inversion, and tap/hold thresholds are saved with the profile and rejected if malformed.");
         lines.add("Reset behavior: Reset to defaults and keep keyboard fallback available before accepting any saved custom profile.");
-        lines.add("Last-good behavior: profile imports keep the previous usable controls until the saved set passes required-action checks.");
+        lines.add("Last-good behavior: profile imports keep the previous usable controls until bindings and controller tuning pass required-action checks.");
         lines.add("Conflict rule: warn when two actions compete inside the same context; allow harmless overlaps only when the owning panel decides which action is active.");
         for (ActionAudit row : auditRows(controlsTab)) lines.add(row.playerFacingLine());
         return lines;
@@ -74,12 +82,14 @@ final class InputRebindingAuditAuthority {
         lines.add("Audit source: InputRebindingAuditAuthority composes rows from shared action labels and prompt definitions.");
         lines.add("Keyboard and mouse defaults remain visible even in controller views so the player has a recovery path.");
         lines.add("Live recovery: the keybinding manager keeps default bindings, stores the previous working profile before changes, can restore last-good bindings, and can reset one tab or all input families.");
-        lines.add("Current limitation: full controller tuning for deadzones, sensitivity, axis inversion, and hold/tap behavior still needs later implementation.");
+        lines.add(controllerTuningSummary());
+        lines.add("Implemented controller tuning: saved profiles now include deadzone, sensitivity, horizontal/vertical inversion, and tap/hold thresholds with validation before replacing the working profile.");
+        lines.add("Current limitation: controller hardware disconnect/reconnect detection and per-controller glyph asset selection still need later implementation.");
         List<String> audit = playerFacingAuditLines(4);
-        lines.addAll(audit.subList(1, Math.min(9, audit.size())));
+        lines.addAll(audit.subList(1, Math.min(10, audit.size())));
         lines.add("Guard: Milestone02InputRebindingAuditSmoke checks action coverage, required recovery actions, conflict notes, and leak-free Infopedia detail.");
         lines.add("Guard: Milestone02InputConflictRecoverySmoke checks duplicate conflicts, last-good restore, required-action preservation, and reset-to-default behavior.");
-        lines.add("Guard: Milestone02InputProfilePersistenceSmoke checks saved profile export, import, prompt refresh, and corrupt-profile rejection.");
+        lines.add("Guard: Milestone02InputProfilePersistenceSmoke checks saved profile export, import, prompt refresh, controller tuning, and corrupt-profile rejection.");
         return lines;
     }
 
