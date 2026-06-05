@@ -14,6 +14,7 @@ class WorldAtlas {
         WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings.copy();
         WorldGenerationApi.setActiveSettings(use);
         this.hiveWorld=CampaignWorldApi.loadOrCreate(seed, use);
+        WorldGenerationApi.setActiveSettings(this.hiveWorld.settings());
         int batches = Math.max(1, use.simulationBatches());
         for(int i=0;i<batches;i++){
             WorldHistoryApi.advanceFactionControlEpochs(this.hiveWorld, WorldHistoryApi.DEFAULT_BATCH);
@@ -36,8 +37,11 @@ class WorldAtlas {
     }
     int createSlice(int sx,int sy,int zx,int zy,int fl,boolean sewerLayer){
         long s = seed ^ (sx*1000003L) ^ (sy*9176L) ^ (zx*131071L) ^ (zy*524287L) ^ (fl*8191L) ^ (sewerLayer?0xBEEFL:0xFACE);
-        Dimension sliceSize = WorldGenerationApi.zoneSliceSize(s);
+        WorldSetupSettings sliceSettings = hiveWorld == null ? WorldGenerationApi.settings() : hiveWorld.settings();
+        WorldGenerationApi.setActiveSettings(sliceSettings);
+        Dimension sliceSize = WorldGenerationApi.zoneSliceSize(s, sliceSettings);
         World w = new World(s, sliceSize.width, sliceSize.height);
+        w.configureGenerationSettings(sliceSettings);
         w.sectorX=sx; w.sectorY=sy; w.zoneX=zx; w.zoneY=zy; w.floor=fl; w.sewerLayer=sewerLayer;
         w.hiveName = hiveWorld.hiveName; w.sectorName = hiveWorld.sectorName(sx, sy); w.zoneName = hiveWorld.zoneName(sx, sy, zx, zy, fl, sewerLayer); w.zoneHistory = hiveWorld.historyLine(sx, sy, zx, zy, fl, sewerLayer); w.zoneEpochHistory = WorldHistoryApi.ensureZoneEpoch(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneFacilityHistory = ZoneFacilityHistoryApi.ensureZoneFacilities(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneProductionHistory = ProductionFacilityOutputSimulationApi.ensureZoneProduction(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneStockMovementHistory = ProductionDistributionApi.ensureZoneStockMovements(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneConflictLossHistory = HistoricalConflictLossApi.ensureZoneConflictLoss(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneMaterializedItemHistory = HistoricalItemMaterializationApi.ensureZoneMaterializedItems(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer)); w.zoneLaborAssignmentHistory = PopulationWorkAssignmentApi.ensureZoneLaborAssignments(hiveWorld, hiveWorld.zoneKey(sx, sy, zx, zy, fl, sewerLayer));
         w.zoneType = zoneTypeForSlice(zx, zy, fl, sewerLayer);
@@ -89,6 +93,9 @@ class WorldAtlas {
 
 class World {
     long seed; int w,h; char[][] tiles; CompiledTileDescriptor[][] compiledTileDescriptors; String compiledTileDescriptorSummary = "Tile descriptor compilation has not run."; int[][] roomIds; Random r; ArrayList<Rectangle> rooms = new ArrayList<>();
+    WorldSetupSettings generationSettings = WorldSetupSettings.standard();
+    WorldGenerationScaleProfile generationScaleProfile = WorldGenerationApi.scaleProfileFor(WorldSetupSettings.standard());
+    RoadGridIntegrationAuthority.Result roadGridGenerationResult = null;
     ArrayList<NpcEntity> npcs = new ArrayList<>();
     ArrayList<PersonnelReplacementRequest> replacementQueue = new ArrayList<>();
     ArrayList<RoomPopulationLedger> roomPopulationLedgers = new ArrayList<>();
@@ -130,6 +137,20 @@ class World {
     String hiveName = "Unnamed Arcology", sectorName = "Unnamed Sector", zoneName = "Unnamed Zone", zoneHistory = "No compact history recorded.", zoneEpochHistory = "No faction-control epoch history recorded.", zoneFacilityHistory = "No facility establishment history recorded.", zoneProductionHistory = "No production output history recorded.", zoneStockMovementHistory = "No production distribution / stock movement history recorded.", zoneConflictLossHistory = "No conflict, loss, theft, or abandonment history recorded.", zoneMaterializedItemHistory = "No concrete historical item materialization ledger recorded.", zoneLaborAssignmentHistory = "No population work-assignment ledger recorded.";
     boolean[][] visitedZones = new boolean[3][3];
     World(long seed,int w,int h){this.seed=seed;this.w=w;this.h=h;this.r=new Random(seed);tiles=new char[w][h]; roomIds=new int[w][h]; noiseField=new int[w][h]; for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y]=-1;}
+    void configureGenerationSettings(WorldSetupSettings settings){
+        generationSettings = settings == null ? WorldSetupSettings.standard() : settings.copy();
+        generationScaleProfile = WorldGenerationApi.scaleProfileFor(generationSettings);
+    }
+    WorldSetupSettings generationSettings(){
+        if(generationSettings == null) generationSettings = WorldSetupSettings.standard();
+        return generationSettings;
+    }
+    WorldGenerationScaleProfile generationScale(){
+        if(generationScaleProfile == null) generationScaleProfile = WorldGenerationApi.scaleProfileFor(generationSettings());
+        return generationScaleProfile;
+    }
+    double npcDensityMultiplier(){ return generationSettings().npcDensityMultiplier(); }
+    int zoneSizeSetting(){ return Math.max(0, Math.min(WorldSetupSettings.ZONE_SIZE.length - 1, generationSettings().zoneSize)); }
     void generate(){
         ZoneGenerationManager.generate(this);
     }
@@ -157,6 +178,7 @@ class World {
         SectorGenerationTraceAuthority.record(this, "PLAZA", "Central plaza one-tile street apron cut before road placement apronTiles=" + plazaApron + ".", state.centralPlaza, false);
 
         RoadGridIntegrationAuthority.Result roadGridResult = RoadGridIntegrationAuthority.apply(this, r);
+        roadGridGenerationResult = roadGridResult;
         int plazaStreetLinks = connectCentralPlazaToStreetGrid(state.centralPlaza);
         SectorGenerationTraceAuthority.record(this, "ROADS", "Core road grid placed after the central plaza anchor: " + roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
         DebugLog.audit("PLAZA_FIRST_ROAD_GRID", roadGridResult.summary() + " plazaStreetLinks=" + plazaStreetLinks);
@@ -289,7 +311,7 @@ class World {
 
     void resetGenerationState(long effectiveSeed){
         this.r = new Random(effectiveSeed);
-        rooms.clear(); npcs.clear(); replacementQueue.clear(); roomPopulationLedgers.clear(); mapObjects.clear(); lightSources.clear(); noiseSources.clear(); hazardWarnings.clear(); trapRecords.clear(); noiseFieldTurn = -1; dirtyLightRevision++; dirtyNoiseRevision++; dirtyVisionRevision++; dirtyHazardRevision++; hearingFieldSummary = "No cached noise/hearing field generated."; lightNoiseSummary = "No light/noise metadata generated."; hazardVisibilitySummary = "No hazard warning overlays generated."; trapInteractionSummary = "No trap / booby-trap interaction metadata generated."; economicTopologyGenerationSummary = "Economic topology generation bias has not been applied."; economicTopologyGenerationNotes.clear(); localTopologyMetadataSurface = null; localTopologyMetadataSummary = "Local topology metadata surface has not been cached."; localTopologyMetadataNotes.clear(); economicTopologyReportingOverlaySurface = null; economicTopologyReportingOverlaySummary = "Economic topology reporting overlay has not been built."; economicTopologyReportingOverlayNotes.clear(); economicTopologyMapIntelBridgeSurface = null; economicTopologyMapIntelBridgeSummary = "Economic topology map/intel bridge has not been built."; economicTopologyMapIntelBridgeNotes.clear(); roomProfiles.clear(); roomFactions.clear(); roomSpecials.clear();
+        rooms.clear(); npcs.clear(); replacementQueue.clear(); roomPopulationLedgers.clear(); mapObjects.clear(); lightSources.clear(); noiseSources.clear(); hazardWarnings.clear(); trapRecords.clear(); roadGridGenerationResult = null; noiseFieldTurn = -1; dirtyLightRevision++; dirtyNoiseRevision++; dirtyVisionRevision++; dirtyHazardRevision++; hearingFieldSummary = "No cached noise/hearing field generated."; lightNoiseSummary = "No light/noise metadata generated."; hazardVisibilitySummary = "No hazard warning overlays generated."; trapInteractionSummary = "No trap / booby-trap interaction metadata generated."; economicTopologyGenerationSummary = "Economic topology generation bias has not been applied."; economicTopologyGenerationNotes.clear(); localTopologyMetadataSurface = null; localTopologyMetadataSummary = "Local topology metadata surface has not been cached."; localTopologyMetadataNotes.clear(); economicTopologyReportingOverlaySurface = null; economicTopologyReportingOverlaySummary = "Economic topology reporting overlay has not been built."; economicTopologyReportingOverlayNotes.clear(); economicTopologyMapIntelBridgeSurface = null; economicTopologyMapIntelBridgeSummary = "Economic topology map/intel bridge has not been built."; economicTopologyMapIntelBridgeNotes.clear(); roomProfiles.clear(); roomFactions.clear(); roomSpecials.clear();
         for(int x=0;x<w;x++) for(int y=0;y<h;y++) roomIds[x][y] = -1;
     }
 
@@ -348,14 +370,52 @@ class World {
     }
 
     int roadFirstRoomTarget(){
-        int base = WorldGenerationApi.clampRoomTarget(targetRoomCount());
+        int base = WorldGenerationApi.clampRoomTarget(targetRoomCount(), generationScale());
         int boosted = base * 2;
         boosted += Math.max(10, base / 3);
         if(zoneType == ZoneType.NEUTRAL_CIVILIAN_FLOOR || zoneType == ZoneType.HAB_STACK) boosted += 12;
         if(zoneType == ZoneType.SUMP_MARKET || zoneType == ZoneType.NEUTRAL_RAIL_DEPOT) boosted += 10;
         if(zoneType == ZoneType.IMPERIAL_GUARD_BILLET || zoneType == ZoneType.ADMINISTRATUM_ARCHIVE) boosted += 8;
-        int mapLimit = Math.max(48, (w * h) / 150);
-        return Math.max(48, Math.min(Math.max(56, mapLimit), boosted));
+        int zoneSize = zoneSizeSetting();
+        int roadSegments = roadGridGenerationResult == null ? estimatedRoadSegmentCount() : Math.max(1, roadGridGenerationResult.horizontalSpines + roadGridGenerationResult.verticalSpines);
+        int frontageAnchors = roadFirstStreetAnchors().size();
+        int frontageBudget = frontageAnchors / Math.max(12, 20 - zoneSize * 2);
+        int segmentBudget = base + roadSegments * (8 + zoneSize * 3);
+        int minimumBySize = new int[]{54, 72, 104, 138}[zoneSize];
+        int mapLimit = Math.max(minimumBySize, (w * h) / (165 - zoneSize * 12));
+        int roadAwareTarget = Math.max(boosted, Math.max(frontageBudget, segmentBudget));
+        int target = Math.max(minimumBySize, Math.min(mapLimit, roadAwareTarget));
+        DebugLog.audit("ROAD_FIRST_ROOM_TARGET", "zone="+zoneType.label+" target="+target+" base="+base+" map="+w+"x"+h+" profile="+generationScale().label+" roadSegments="+roadSegments+" frontageAnchors="+frontageAnchors+" frontageBudget="+frontageBudget+" segmentBudget="+segmentBudget+" mapLimit="+mapLimit);
+        return target;
+    }
+
+    int estimatedRoadSegmentCount(){
+        int rows = 0, cols = 0;
+        for(int y=1; y<h-1; y++){
+            int run = 0;
+            boolean counted = false;
+            for(int x=1; x<w-1; x++){
+                if(tiles[x][y] == RoadGridIntegrationAuthority.ROAD_LANE || tiles[x][y] == RoadGridIntegrationAuthority.SIDEWALK) {
+                    run++;
+                    if(!counted && run >= 14){ rows++; counted = true; }
+                } else {
+                    run = 0;
+                }
+            }
+        }
+        for(int x=1; x<w-1; x++){
+            int run = 0;
+            boolean counted = false;
+            for(int y=1; y<h-1; y++){
+                if(tiles[x][y] == RoadGridIntegrationAuthority.ROAD_LANE || tiles[x][y] == RoadGridIntegrationAuthority.SIDEWALK) {
+                    run++;
+                    if(!counted && run >= 14){ cols++; counted = true; }
+                } else {
+                    run = 0;
+                }
+            }
+        }
+        return Math.max(1, (rows + cols) / Math.max(1, RoadGridIntegrationAuthority.STREET_WIDTH));
     }
 
     int buildRoadFirstRoomLayout(int target){
@@ -666,11 +726,11 @@ class World {
         // 0.8.66 API sectioning: room-count policy is now delegated to the
         // world-generation scale surface. The current profile intentionally preserves
         // the 0.8.61 dense-zone numbers as the minimum reserved scaling tier.
-        return WorldGenerationApi.targetRoomCount(zoneType, r);
+        return WorldGenerationApi.targetRoomCount(zoneType, r, generationScale(), generationSettings());
     }
 
     int buildCentralPlazaLayout(int target){
-        target = WorldGenerationApi.clampRoomTarget(target);
+        target = WorldGenerationApi.clampRoomTarget(target, generationScale());
         Rectangle plaza = centralPlazaRect();
         carve(plaza);
         rooms.add(plaza);
@@ -720,7 +780,7 @@ class World {
         // thrown exception; it was an unbounded-feeling generation churn. This fallback no
         // longer reuses the same organic branch proposer. It builds a deterministic connected
         // plaza lattice directly, then carves controlled corridors from the plaza to each room.
-        target = WorldGenerationApi.clampRoomTarget(target);
+        target = WorldGenerationApi.clampRoomTarget(target, generationScale());
         Rectangle plaza = centralPlazaRect();
         carve(plaza); rooms.add(plaza);
         SectorGenerationTraceAuthority.record(this, "ROOM", "Fallback central plaza carved as room 0.", plaza, false);
@@ -797,7 +857,7 @@ class World {
         return out;
     }
 
-    int safeRoomEdgeMargin(){ return Math.max(20, Math.min(48, WorldGenerationApi.currentScale().edgeMargin)); }
+    int safeRoomEdgeMargin(){ return Math.max(20, Math.min(48, generationScale().edgeMargin)); }
     int clampRoomX(int x, int rw){ int m=safeRoomEdgeMargin(); return Math.max(m, Math.min(Math.max(m, w-rw-m), x)); }
     int clampRoomY(int y, int rh){ int m=safeRoomEdgeMargin(); return Math.max(m, Math.min(Math.max(m, h-rh-m), y)); }
 
@@ -1011,7 +1071,7 @@ class World {
         // 0.8.66 API sectioning: plaza sizing/centering belongs to the
         // world-generation scale surface so large arcology presets can change
         // footprint without every room-placement helper learning new constants.
-        return WorldGenerationApi.centralPlazaRect(w, h);
+        return WorldGenerationApi.centralPlazaRect(w, h, generationScale());
     }
 
 
@@ -2187,7 +2247,7 @@ class World {
     void carve(Rectangle rr){ int id=rooms.size(); RoomProfile rp = RoomProfile.forZone(zoneType, r); roomProfiles.add(rp); roomFactions.add(Faction.NONE); roomSpecials.add(Boolean.FALSE); char floorChar = zoneType.floorGlyph(r); for(int x=rr.x;x<rr.x+rr.width;x++) for(int y=rr.y;y<rr.y+rr.height;y++){ roomIds[x][y]=id; boolean wall = (x==rr.x || y==rr.y || x==rr.x+rr.width-1 || y==rr.y+rr.height-1); tiles[x][y]= wall ? '#' : floorChar; } }
 
     void buildGuaranteedRoomLattice(int target){
-        target = WorldGenerationApi.clampRoomTarget(target);
+        target = WorldGenerationApi.clampRoomTarget(target, generationScale());
         int cols = 6;
         int rows = 5;
         int m = safeRoomEdgeMargin();
@@ -3007,7 +3067,7 @@ class World {
                 npcs.add(profileNoble);
                 DebugLog.audit("NAME_LOCKED_PROFILE_NOBLE", "seeded=" + profileNoble.name + " key=" + profileNoble.nameLockedProfileKey + " zone=" + zoneType.label + " room=" + i);
             }
-            double density = (roomSpecials.size() > i && roomSpecials.get(i) ? 0.92 : 0.66) * WorldGenerationApi.settings().npcDensityMultiplier();
+            double density = (roomSpecials.size() > i && roomSpecials.get(i) ? 0.92 : 0.66) * npcDensityMultiplier();
             density = Math.max(0.05, Math.min(0.98, density));
             if(r.nextDouble()<density){
                 Rectangle rr=rooms.get(i);
@@ -3081,7 +3141,7 @@ class World {
         if(zoneType==ZoneType.SUMP_MARKET || zoneType==ZoneType.NEUTRAL_RAIL_DEPOT) base += 16;
         if(zoneType==ZoneType.ADMINISTRATUM_ARCHIVE || zoneType==ZoneType.IMPERIAL_NEWS_NETWORK) base += 10;
         if(zoneType==ZoneType.NOBLE_SERVICE_SPINE || zoneType==ZoneType.IMPERIAL_GUARD_BILLET) base += Math.max(0, floor - 5);
-        base = (int)Math.round(base * WorldGenerationApi.settings().npcDensityMultiplier());
+        base = (int)Math.round(base * npcDensityMultiplier());
         base *= 2;
         return Math.max(8, Math.min(192, base));
     }
@@ -4241,7 +4301,11 @@ class WorldGenerationApi {
     static WorldSetupSettings activeSettings = WorldSetupSettings.standard();
     static void setActiveSettings(WorldSetupSettings s){ activeSettings = (s == null ? WorldSetupSettings.standard() : s.copy()); }
     static WorldSetupSettings settings(){ return activeSettings == null ? WorldSetupSettings.standard() : activeSettings; }
-    static WorldGenerationScaleProfile currentScale(){ return settings().scaleProfile(CURRENT_MINIMUM_SCALE); }
+    static WorldGenerationScaleProfile currentScale(){ return scaleProfileFor(settings()); }
+    static WorldGenerationScaleProfile scaleProfileFor(WorldSetupSettings settings){
+        WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings.copy();
+        return use.scaleProfile(CURRENT_MINIMUM_SCALE);
+    }
 
     static int clampWorldgenWeight(int weight){ return Math.max(MIN_WORLDGEN_WEIGHT, Math.min(MAX_WORLDGEN_WEIGHT, weight)); }
     static int minWorldgenWeightForZoneSize(int zoneSize){
@@ -4261,7 +4325,11 @@ class WorldGenerationApi {
     }
 
     static Dimension zoneSliceSize(long sliceSeed){
-        WorldGenerationScaleProfile p = currentScale();
+        return zoneSliceSize(sliceSeed, settings());
+    }
+
+    static Dimension zoneSliceSize(long sliceSeed, WorldSetupSettings settings){
+        WorldGenerationScaleProfile p = scaleProfileFor(settings);
         int minW = Math.max(96, p.minWidth);
         int maxW = Math.max(minW, p.maxWidth);
         int minH = Math.max(72, p.minHeight);
@@ -4272,22 +4340,36 @@ class WorldGenerationApi {
     }
 
     static int clampRoomTarget(int value){
-        WorldGenerationScaleProfile p = currentScale();
+        return clampRoomTarget(value, currentScale());
+    }
+
+    static int clampRoomTarget(int value, WorldGenerationScaleProfile p){
+        if(p == null) p = currentScale();
         return Math.max(p.minRooms, Math.min(p.maxRooms, value));
     }
 
     static int targetRoomCount(ZoneType zoneType, Random r){
-        WorldGenerationScaleProfile p = currentScale();
+        return targetRoomCount(zoneType, r, currentScale(), settings());
+    }
+
+    static int targetRoomCount(ZoneType zoneType, Random r, WorldGenerationScaleProfile p, WorldSetupSettings settings){
+        if(r == null) r = new Random();
+        if(p == null) p = currentScale();
+        WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings;
         int base = p.minRooms + r.nextInt(Math.max(1, p.maxRooms - p.minRooms + 1));
         if(zoneType==ZoneType.SECTOR_GOVERNORS_MANSION || zoneType==ZoneType.NEUTRAL_RAIL_DEPOT || zoneType==ZoneType.TRAIN_SERVICE_YARD) base = Math.max(base, Math.max(p.minRooms, p.maxRooms - 4) + r.nextInt(Math.min(5, Math.max(1, p.maxRooms - Math.max(p.minRooms, p.maxRooms - 4) + 1))));
         if(zoneType==ZoneType.HAB_STACK || zoneType==ZoneType.NEUTRAL_CIVILIAN_FLOOR || zoneType==ZoneType.SUMP_MARKET) base = Math.max(base, Math.max(p.minRooms, p.maxRooms - 6) + r.nextInt(Math.min(7, Math.max(1, p.maxRooms - Math.max(p.minRooms, p.maxRooms - 6) + 1))));
         if(zoneType==ZoneType.MECHANICUS_FORGE_CLOISTER || zoneType==ZoneType.MECHANICUS_RELIC_DUCT || zoneType==ZoneType.IMPERIAL_GUARD_BILLET) base = Math.max(base, Math.max(p.minRooms, p.maxRooms - 7) + r.nextInt(Math.min(7, Math.max(1, p.maxRooms - Math.max(p.minRooms, p.maxRooms - 7) + 1))));
-        base = (int)Math.round(base * settings().zoneDensityMultiplier());
-        return clampRoomTarget(base);
+        base = (int)Math.round(base * use.zoneDensityMultiplier());
+        return clampRoomTarget(base, p);
     }
 
     static Rectangle centralPlazaRect(int width, int height){
-        WorldGenerationScaleProfile p = currentScale();
+        return centralPlazaRect(width, height, currentScale());
+    }
+
+    static Rectangle centralPlazaRect(int width, int height, WorldGenerationScaleProfile p){
+        if(p == null) p = currentScale();
         int pw = Math.min(p.plazaPreferredSize, Math.max(p.plazaMinSize, width-p.edgeMargin));
         int ph = Math.min(p.plazaPreferredSize, Math.max(p.plazaMinSize, height-p.edgeMargin));
         return new Rectangle(Math.max(2, width/2 - pw/2), Math.max(2, height/2 - ph/2), pw, ph);

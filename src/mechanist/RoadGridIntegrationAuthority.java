@@ -26,10 +26,12 @@ final class RoadGridIntegrationAuthority {
         int vehicleStagingMarkers;
         int sidewalkRoadPromotions;
         int roadIntersectionCandidates;
+        int distributedSpinePairs;
         String layer = "road-grid terrain integration";
         String summary(){
             return "layer=" + layer + " streets=" + (horizontalSpines + verticalSpines) +
                     " horizontal=" + horizontalSpines + " vertical=" + verticalSpines +
+                    " distributedPairs=" + distributedSpinePairs +
                     " roadTiles=" + roadTiles + " sidewalkTiles=" + sidewalkTiles +
                     " sidewalkRoadPromotions=" + sidewalkRoadPromotions +
                     " roadIntersectionCandidates=" + roadIntersectionCandidates +
@@ -74,13 +76,51 @@ final class RoadGridIntegrationAuthority {
         res.horizontalSpines += carveHorizontalStreet(w, cy, 1, w.w - 2, res);
         res.verticalSpines += carveVerticalStreet(w, cx, 1, w.h - 2, res);
 
-        // One offset ring gives rooms street frontage without fragmenting the zone
-        // into random corridor-first scratches.
-        if(cx - xOff > 5) res.verticalSpines += carveVerticalStreet(w, cx - xOff, 2, w.h - 3, res);
-        if(cx + xOff < w.w - 6) res.verticalSpines += carveVerticalStreet(w, cx + xOff, 2, w.h - 3, res);
-        if(cy - yOff > 5) res.horizontalSpines += carveHorizontalStreet(w, cy - yOff, 2, w.w - 3, res);
-        if(cy + yOff < w.h - 6) res.horizontalSpines += carveHorizontalStreet(w, cy + yOff, 2, w.w - 3, res);
+        ArrayList<Integer> verticalCenters = new ArrayList<>();
+        ArrayList<Integer> horizontalCenters = new ArrayList<>();
+        verticalCenters.add(cx);
+        horizontalCenters.add(cy);
+
+        // Larger configured zone sizes need materially more road frontage before
+        // rooms are stamped. Keep one plaza-adjacent ring, then distribute additional
+        // spine pairs toward the slice edges so road-first room placement has enough
+        // valid street segments to satisfy the larger room minima.
+        int verticalPairs = roadSpinePairCount(w.w, 120, 70);
+        int horizontalPairs = roadSpinePairCount(w.h, 96, 56);
+        addSpinePair(w, res, verticalCenters, cx, Math.max(12, xOff), true);
+        addSpinePair(w, res, horizontalCenters, cy, Math.max(12, yOff), false);
+        int xStep = Math.max(Math.max(16, xOff), (w.w - 16) / Math.max(3, verticalPairs * 2 + 1));
+        int yStep = Math.max(Math.max(16, yOff), (w.h - 16) / Math.max(3, horizontalPairs * 2 + 1));
+        for(int i=2; i<=verticalPairs; i++) addSpinePair(w, res, verticalCenters, cx, i * xStep, true);
+        for(int i=2; i<=horizontalPairs; i++) addSpinePair(w, res, horizontalCenters, cy, i * yStep, false);
         normalizeStreetCrossings(w, res);
+    }
+
+    static int roadSpinePairCount(int dimension, int baseline, int perPair){
+        int extra = Math.max(0, dimension - baseline);
+        return Math.max(1, Math.min(4, 1 + extra / Math.max(32, perPair)));
+    }
+
+    static void addSpinePair(World w, Result res, ArrayList<Integer> centers, int center, int offset, boolean vertical){
+        if(w == null || res == null || centers == null || offset <= 0) return;
+        int lo = center - offset;
+        int hi = center + offset;
+        int added = 0;
+        if(vertical){
+            if(addDistinctCenter(centers, lo, w.w)) { res.verticalSpines += carveVerticalStreet(w, lo, 2, w.h - 3, res); added++; }
+            if(addDistinctCenter(centers, hi, w.w)) { res.verticalSpines += carveVerticalStreet(w, hi, 2, w.h - 3, res); added++; }
+        } else {
+            if(addDistinctCenter(centers, lo, w.h)) { res.horizontalSpines += carveHorizontalStreet(w, lo, 2, w.w - 3, res); added++; }
+            if(addDistinctCenter(centers, hi, w.h)) { res.horizontalSpines += carveHorizontalStreet(w, hi, 2, w.w - 3, res); added++; }
+        }
+        if(added > 0) res.distributedSpinePairs++;
+    }
+
+    static boolean addDistinctCenter(ArrayList<Integer> centers, int value, int limit){
+        if(value < 5 || value > limit - 6) return false;
+        for(Integer existing: centers) if(existing != null && Math.abs(existing - value) < STREET_WIDTH + 4) return false;
+        centers.add(value);
+        return true;
     }
 
     static int carveHorizontalStreet(World w, int centerY, int x0, int x1, Result res){

@@ -38,10 +38,12 @@ class WorldSetupSettings {
         int maxH = Math.max(minH + 8, (int)Math.round(base.maxHeight * maxScale));
         double density = zoneDensityMultiplier();
         double roomPressure = 0.92 + ((minWeight + maxWeight) * 0.5 - WorldGenerationApi.MIN_WORLDGEN_WEIGHT) / (double)(WorldGenerationApi.MAX_WORLDGEN_WEIGHT - WorldGenerationApi.MIN_WORLDGEN_WEIGHT) * 0.34;
+        double sizeRoomPressure = new double[]{0.95, 1.16, 1.55, 2.05}[z];
+        double roomScale = density * roomPressure * sizeRoomPressure;
         return new WorldGenerationScaleProfile("setup." + ZONE_SIZE[z].toLowerCase(Locale.ROOT), ZONE_SIZE[z] + " / " + ZONE_DENSITY[Math.max(0, Math.min(zoneDensity,3))],
             minW, maxW, minH, maxH,
-            Math.max(10, (int)Math.round(base.minRooms * density * roomPressure)), Math.max(14, (int)Math.round(base.maxRooms * density * roomPressure)), Math.max(12, (int)Math.round(base.defaultRoomTarget * density * roomPressure)),
-            base.plazaMinSize, base.plazaPreferredSize, base.edgeMargin, "Runtime world setup profile: " + shortSummary() + " | worldgen weight band " + minWeight + "-" + maxWeight + " drives variance/density, not raw edge tiles");
+            Math.max(10, (int)Math.round(base.minRooms * roomScale)), Math.max(14, (int)Math.round(base.maxRooms * roomScale)), Math.max(12, (int)Math.round(base.defaultRoomTarget * roomScale)),
+            base.plazaMinSize, base.plazaPreferredSize, base.edgeMargin, "Runtime world setup profile: " + shortSummary() + " | worldgen weight band " + minWeight + "-" + maxWeight + " drives variance/density, road frontage, and room minima, not raw edge tiles");
     }
     String shortSummary(){ return "NPC " + NPC_DENSITY[npcDensity] + ", size " + ZONE_SIZE[zoneSize] + ", density " + ZONE_DENSITY[zoneDensity] + ", prices " + PRICE[priceDifficulty] + ", craft " + CRAFT[craftDifficulty] + ", " + (hoarderMode?"Hoarder":"Carry limits") + ", age " + AGE[simulationAge]; }
     ArrayList<String> detailLines(){ ArrayList<String> l = new ArrayList<>(); l.add("NPC density: " + NPC_DENSITY[npcDensity] + "  x" + String.format(Locale.US,"%.2f", npcDensityMultiplier())); l.add("Zone size: " + ZONE_SIZE[zoneSize] + " (worldgen weight " + WorldGenerationApi.worldgenWeightBandLabel(zoneSize) + "; dimensions derived, not raw 500+ edges)"); l.add("Zone density: " + ZONE_DENSITY[zoneDensity] + "  x" + String.format(Locale.US,"%.2f", zoneDensityMultiplier())); l.add("World price difficulty: " + PRICE[priceDifficulty] + "  x" + String.format(Locale.US,"%.2f", priceMultiplier())); l.add("Crafting recipe difficulty: " + CRAFT[craftDifficulty] + "  x" + String.format(Locale.US,"%.2f", craftMultiplier())); l.add("Hoarder mode: " + (hoarderMode ? "ON — unlimited personal inventory" : "OFF — Strength/Endurance carry limit")); l.add("Simulation age: " + AGE[simulationAge] + "  history batches " + simulationBatches()); return l; }
