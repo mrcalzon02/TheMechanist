@@ -54,14 +54,14 @@ class LegacyPanelBridgeBase extends JPanel {
     }
     ArrayList<BaseObject> staffableStations() { return recruitOperableMachines(); }
 
-    int mainMenuTitleTop(int height) { return Math.max(24, height / 10); }
+    int mainMenuTitleTop(int height) { return Math.max(18, height / 14); }
     Dimension mainMenuTitleDrawSize(BufferedImage img, int width, int height) {
-        if (img == null) return new Dimension(Math.max(280, width / 2), 96);
-        return aspectFit(img, Math.max(160, width - 110), Math.max(48, height / 4));
+        if (img == null) return new Dimension(Math.max(405, width * 2 / 3), 140);
+        return aspectFit(img, Math.max(240, width - 56), Math.max(80, height / 3));
     }
     Dimension mainMenuSubtitleDrawSize(BufferedImage img, int width, int height) {
-        if (img == null) return new Dimension(Math.max(220, width / 3), 48);
-        return aspectFit(img, Math.max(120, width - 160), Math.max(24, height / 8));
+        if (img == null) return new Dimension(Math.max(430, width / 2), 70);
+        return aspectFit(img, Math.max(260, width - 72), Math.max(40, height / 7));
     }
     private Dimension aspectFit(BufferedImage img, int maxW, int maxH) {
         if (img == null || img.getWidth() <= 0 || img.getHeight() <= 0) return new Dimension(Math.max(1, maxW), Math.max(1, maxH));
@@ -74,11 +74,11 @@ class LegacyPanelBridgeBase extends JPanel {
     Rectangle mainMenuButtonFrameRect() {
         int count = 7;
         if (this instanceof GamePanel g) count = Math.max(1, g.mainMenuRouteLabels().size());
-        int frameW = Math.max(320, Math.min(480, getWidth() - 64));
-        int y = Math.max(176, getHeight() / 2);
+        int frameW = Math.max(432, Math.min(650, getWidth() - 64));
+        int y = Math.max(206, (int)Math.round(getHeight() * 0.56));
         int maxH = Math.max(180, getHeight() - y - 46);
-        int neededH = 36 + count * 28 + Math.max(0, count - 1) * 6;
-        int frameH = Math.max(180, Math.min(neededH, maxH));
+        int neededH = 42 + count * 38 + Math.max(0, count - 1) * 8;
+        int frameH = Math.max(245, Math.min(neededH, maxH));
         return new Rectangle(Math.max(20, getWidth() / 2 - frameW / 2), y, frameW, frameH);
     }
     void stampUiFrameId(Graphics2D g, String kind, String id, int x, int y, int w, int h) {}

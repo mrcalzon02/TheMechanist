@@ -180,6 +180,7 @@ final class RoomFixtureInteractionAuthority {
         MapObjectState m = g.world.mapObjectAt(tx, ty);
         if (m == null || m.type == null) return false;
         String type = AssetIntegrationDisciplineAuthority.canonicalType(m.type);
+        if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true;
         if (MedicaeFixtureAuthority.isFamilyType(type)) { interactMedicae(g, m); return true; }
         if (LabChemicalFixtureAuthority.isFamilyType(type)) { interactLab(g, m); return true; }
         if (IndustrialForgeFixtureAuthority.isFamilyType(type)) { interactForge(g, m); return true; }

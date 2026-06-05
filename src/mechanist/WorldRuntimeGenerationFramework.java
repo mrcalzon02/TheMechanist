@@ -3266,15 +3266,57 @@ class World {
     }
 
     Point findNeedProvider(int x, int y, String need){
-        Point best=null; int bd=999999;
+        String normalizedNeed = need == null ? "" : need.trim().toLowerCase(Locale.ROOT);
+        Point best = nearestNeedMapObject(x, y, normalizedNeed);
+        int bd = best == null ? 999999 : Math.abs(best.x-x)+Math.abs(best.y-y);
         for(int ix=0; ix<w; ix++) for(int iy=0; iy<h; iy++){
-            char t=tiles[ix][iy]; boolean ok=false;
-            if("food".equals(need)) ok = (t=='T' || t=='1' || t=='2' || t=='3' || t=='b' || t=='h' || t=='n');
-            else if("water".equals(need)) ok = (t=='T' || t=='1' || t=='Y' || t=='B' || t=='S' || t=='v');
-            else if("sleep".equals(need)) ok = (t=='b' || t=='h' || t=='n');
-            if(ok && walkableAdjacentOrSame(ix,iy)) { int d=Math.abs(ix-x)+Math.abs(iy-y); if(d<bd){bd=d; best=new Point(ix,iy);} }
+            char t=tiles[ix][iy];
+            if(tileMatchesNeed(t, normalizedNeed) && walkableAdjacentOrSame(ix,iy)) {
+                int d=Math.abs(ix-x)+Math.abs(iy-y);
+                if(d<bd){bd=d; best=new Point(ix,iy);}
+            }
         }
         return best;
+    }
+
+    Point nearestNeedMapObject(int x, int y, String need) {
+        if(mapObjects == null || mapObjects.isEmpty()) return null;
+        Point best = null;
+        int bd = 999999;
+        for(MapObjectState m : mapObjects) {
+            if(m == null || !inBounds(m.x, m.y) || !mapObjectMatchesNeed(m, need) || !walkableAdjacentOrSame(m.x, m.y)) continue;
+            int d = Math.abs(m.x-x)+Math.abs(m.y-y);
+            if(d < bd) { bd = d; best = new Point(m.x, m.y); }
+        }
+        return best;
+    }
+
+    boolean mapObjectMatchesNeed(MapObjectState m, String need) {
+        if(m == null || need == null) return false;
+        String text = ((m.type == null ? "" : m.type) + " " + (m.label == null ? "" : m.label) + " " + (m.stockState == null ? "" : m.stockState)).toLowerCase(Locale.ROOT);
+        if("food".equals(need)) return containsAny(text, "vending", "food", "ration", "mess", "shop", "bar", "kitchen");
+        if("water".equals(need)) return containsAny(text, "water", "vending", "shop", "bar", "mess");
+        if("sleep".equals(need)) return containsAny(text, "cot", "bed", "barracks", "dorm", "hab", "rest");
+        if("safety".equals(need)) return containsAny(text, "light", "security", "guard", "precinct", "alarm", "bank", "sanctuary", "shrine", "governor");
+        if("entertainment".equals(need)) return containsAny(text, "bar", "broadcast", "radio", "shrine", "newspaper", "shop", "vending", "journal");
+        if("news".equals(need)) return containsAny(text, "news", "newspaper", "broadcast", "radio", "journal", "notice", "concord news");
+        return false;
+    }
+
+    boolean tileMatchesNeed(char t, String need) {
+        if("food".equals(need)) return t=='T' || t=='1' || t=='2' || t=='3' || t=='b' || t=='h' || t=='n' || t=='u' || t=='t' || t=='Y' || t=='m';
+        if("water".equals(need)) return t=='T' || t=='1' || t=='Y' || t=='B' || t=='S' || t=='v' || t=='u' || t=='e';
+        if("sleep".equals(need)) return t=='b' || t=='h' || t=='n' || t=='c';
+        if("safety".equals(need)) return t=='A' || t=='M' || t=='S' || t=='Q' || t=='a' || t=='L' || t=='o';
+        if("entertainment".equals(need)) return t=='T' || t=='N' || t=='1' || t=='2' || t=='3' || t=='o' || t=='H' || t=='C';
+        if("news".equals(need)) return t=='N' || t=='1' || t=='o' || t=='T' || t=='Q';
+        return false;
+    }
+
+    boolean containsAny(String text, String... needles) {
+        if(text == null || needles == null) return false;
+        for(String needle : needles) if(needle != null && !needle.isBlank() && text.contains(needle)) return true;
+        return false;
     }
 
     NpcEntity npcAt(int x,int y){ for(NpcEntity n:npcs) if(n.x==x && n.y==y) return n; return null; }

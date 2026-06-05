@@ -147,11 +147,11 @@ Population provenance and demographic change help explain current room use, lead
 
 ### Phase 11.9 - Production plan success/failure pass
 
-Faction production schemes should consume item/facility provenance. Outcomes include gained workshops, lost machines, expanded supply chains, shortages, surplus, scavenging decline, narcotics production, luxury stores, off-world goods, lost/contaminated batches, ammunition/weapon supply, failed machine maintenance, and production targets written into journals/ledgers.
+Faction production schemes should consume item/facility provenance and produce concrete economy mutations rather than only narrative notes. Outcomes include gained workshops, lost machines, expanded supply chains, shortages, surplus, scavenging decline, narcotics production, luxury stores, off-world goods, lost/contaminated batches, ammunition/weapon supply, failed machine maintenance, and production targets written into journals/ledgers. Active scheme effects may steal goods from arrival supply convoys, divert warehouse stock, sabotage machinery, damage supplies, contaminate or substitute raw materials, force quality drops, create temporary inefficiencies, or trigger quality/efficiency recovery when repair, security, or counter-intelligence succeeds.
 
 Exit criteria:
 
-Production history affects facilities, markets, item provenance, visible scars, intelligence value, and quest generation.
+Production history affects facilities, markets, item provenance, visible scars, intelligence value, quest generation, production quality, machine reliability, and economy ledger state.
 
 ### Phase 11.10 - Vehicle deployment and loss-history pass
 

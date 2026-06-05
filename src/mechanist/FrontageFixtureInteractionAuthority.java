@@ -35,13 +35,13 @@ final class FrontageFixtureInteractionAuthority {
             case AssetIntegrationDisciplineAuthority.PUBLIC_TRASH_BIN: interactScavengeContainer(g, m); return true;
             case AssetIntegrationDisciplineAuthority.PUBLIC_WASTE_RECEPTACLE: interactScavengeContainer(g, m); return true;
             case AssetIntegrationDisciplineAuthority.PUBLIC_SMALL_BIN_CLUSTER: interactScavengeContainer(g, m); return true;
-            case AssetIntegrationDisciplineAuthority.PUBLIC_RATION_BENCH: interactBench(g, m); return true;
-            case AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN: interactPictScreen(g, m); return true;
-            case AssetIntegrationDisciplineAuthority.CHEAP_RADIO: interactRadio(g, m); return true;
-            case AssetIntegrationDisciplineAuthority.PUBLIC_INFO_KIOSK: interactInfoKiosk(g, m); return true;
-            case AssetIntegrationDisciplineAuthority.PUBLIC_SERVICE_COUNTER: interactServiceCounter(g, m); return true;
+            case AssetIntegrationDisciplineAuthority.PUBLIC_RATION_BENCH: if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true; interactBench(g, m); return true;
+            case AssetIntegrationDisciplineAuthority.PUBLIC_PICT_SCREEN: if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true; interactPictScreen(g, m); return true;
+            case AssetIntegrationDisciplineAuthority.CHEAP_RADIO: if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true; interactRadio(g, m); return true;
+            case AssetIntegrationDisciplineAuthority.PUBLIC_INFO_KIOSK: if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true; interactInfoKiosk(g, m); return true;
+            case AssetIntegrationDisciplineAuthority.PUBLIC_SERVICE_COUNTER: if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true; interactServiceCounter(g, m); return true;
             case AssetIntegrationDisciplineAuthority.MEDICAE_FRONTAGE: interactMedicaeFrontage(g, m); return true;
-            case AssetIntegrationDisciplineAuthority.BAR_FRONTAGE: interactBarFrontage(g, m); return true;
+            case AssetIntegrationDisciplineAuthority.BAR_FRONTAGE: if (NeedSupplyInteractionAuthority.tryUse(g, m)) return true; interactBarFrontage(g, m); return true;
             default: return false;
         }
     }

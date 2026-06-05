@@ -40,7 +40,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     static final int INFOPEDIA_ROW_HEIGHT = 22;
 
     enum Screen { BOOT, INTRO_CRAWL, ZONE_SPLASH, CAPTURE, MENU, MAIN, CHARACTER, GAME, PANEL, OPTIONS, INVENTORY, INFO, MAP, PAUSE, MODS, KNOWLEDGE, MULTIPLAYER, SAVE_LOAD, SECTOR_AUDIT, EDITOR }
-    enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING, SCAVENGE }
+    enum PanelMode { NONE, CHARACTER, INVENTORY, CONTAINER, TRADE, DIALOGUE, OBJECT, LOOK, INTERACT, COMBAT, AUSPEX, CONSOLE, INFO, INFOPEDIA, BUILD, WORKBENCH, MAP, CRAFTING, SCAVENGE }
 
     World world;
     WorldAtlas atlas;
@@ -92,6 +92,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     WorldSetupSettings worldSetup = WorldSetupSettings.standard();
     Clothing equippedClothing = Clothing.scavengerRags();
     VisualLightingAuthority visualLighting = new VisualLightingAuthority();
+    NpcTurnBudgetScheduler npcTurnBudgetScheduler = new NpcTurnBudgetScheduler();
+    AbstractDistantZoneSimulation abstractDistantZoneSimulation = new AbstractDistantZoneSimulation();
     LegacyGamepadInputEngine gamepadInputEngine = new LegacyGamepadInputEngine();
     int optionsTab;
     int stimulantStrain;
@@ -136,6 +138,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     int sensoryFacingDx = Integer.MIN_VALUE;
     int sensoryFacingDy = Integer.MIN_VALUE;
     String lastSensoryModelReport = "No visual sensory model has been rebuilt.";
+    String lastNpcRuntimeReport = "No NPC needs/duty runtime tick has run.";
+    String lastAbstractDistantZoneReport = "No abstract distant-zone simulation tick has run.";
+    String lastEconomyRuntimeReport = "No persistent economy runtime tick has run.";
     final ArrayList<PortableLightInstance> portableLights = new ArrayList<>();
     final ArrayList<FactionContract> factionContracts = new ArrayList<>();
     final ArrayList<NpcFactionSite> npcFactionSites = new ArrayList<>();
@@ -203,6 +208,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     int inventoryItemDescriptionScroll;
     int selectedInventoryIndex;
     int selectedTargetInventoryIndex;
+    int selectedTradeOfferIndex;
+    int selectedContainerItemIndex;
     int selectedMovementModeIndex = MOTION_WALK;
     int mouseMovePreviewTargetX;
     int mouseMovePreviewTargetY;
@@ -276,6 +283,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     String lastAccessibleNarration = "";
     String activeScrollTag = "";
     String infopediaAssetFilter = "";
+    String activeInteractionTitle = "";
+    String activeInteractionKind = "";
+    String activeInteractionContainerId = "";
     String rebindingTarget = "";
     String saveLoadStatus = "Select a save slot.";
     String jvmRuntimeNotice = "";
@@ -300,6 +310,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     Font uiFont = new Font("Monospaced", Font.BOLD, 16);
     Font asciiFont = new Font("Monospaced", Font.BOLD, 13);
     KnowledgeMenu knowledgeMenu;
+    NpcEntity activeInteractionNpc;
+    MapObjectState activeInteractionObject;
+    BaseObject activeInteractionBaseObject;
+    TraderSession activeTraderSession;
 
     GamePanel() {
         setOpaque(true);
@@ -374,11 +388,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         Rectangle frame = mainMenuButtonFrameRect();
         java.util.List<String> labels = mainMenuRouteLabels();
         int count = Math.max(1, labels.size());
-        int buttonW = Math.max(220, frame.width - 52);
-        int gap = Math.max(4, Math.min(8, frame.height / 42));
-        int pad = Math.max(12, Math.min(20, frame.height / 12));
+        int buttonW = Math.max(300, frame.width - 58);
+        int gap = Math.max(7, Math.min(11, frame.height / 38));
+        int pad = Math.max(16, Math.min(24, frame.height / 13));
         int availableH = Math.max(1, frame.height - (pad * 2) - (gap * Math.max(0, count - 1)));
-        int buttonH = Math.max(24, Math.min(36, availableH / count));
+        int buttonH = Math.max(26, Math.min(48, availableH / count));
         int usedH = buttonH * count + gap * Math.max(0, count - 1);
         int top = frame.y + Math.max(pad, (frame.height - usedH) / 2);
         int x = getWidth() / 2 - buttonW / 2;
@@ -1926,6 +1940,14 @@ class GamePanel extends LegacyPanelBridgeBase {
             drawCharacterOverlay(g, body);
         } else if (panelMode == PanelMode.MAP || screen == Screen.MAP) {
             drawMapOverlay(g, body);
+        } else if (panelMode == PanelMode.TRADE) {
+            drawTradeOverlay(g, body);
+        } else if (panelMode == PanelMode.CONTAINER) {
+            drawContainerOverlay(g, body);
+        } else if (panelMode == PanelMode.DIALOGUE) {
+            drawDialogueOverlay(g, body);
+        } else if (panelMode == PanelMode.OBJECT) {
+            drawObjectInteractionOverlay(g, body);
         } else if (panelMode == PanelMode.LOOK || panelMode == PanelMode.INTERACT || panelMode == PanelMode.COMBAT) {
             drawTargetOverlay(g, body);
         } else if (panelMode == PanelMode.BUILD) {
@@ -1959,6 +1981,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         return switch (panelMode) {
             case INVENTORY -> "INVENTORY / STORAGE";
             case CHARACTER -> "CHARACTER";
+            case TRADE -> "TRADE / STORE";
+            case CONTAINER -> "CONTAINER / TRANSFER";
+            case DIALOGUE -> "CONVERSATION";
+            case OBJECT -> "OBJECT INTERACTION";
             case LOOK -> "LOOK / INSPECT";
             case INTERACT -> "INTERACT";
             case COMBAT -> "COMBAT TARGETING";
@@ -2263,21 +2289,27 @@ class GamePanel extends LegacyPanelBridgeBase {
 
         int gap = 14;
         int contentTop = controls.y + controls.height + 12;
-        Rectangle list = new Rectangle(body.x, contentTop, Math.max(250, body.width / 2 - gap), Math.max(120, body.y + body.height - contentTop));
-        Rectangle detail = new Rectangle(list.x + list.width + gap, list.y, Math.max(260, body.x + body.width - list.x - list.width - gap), list.height);
+        int contentH = Math.max(120, body.y + body.height - contentTop);
+        int rightW = Math.max(330, Math.min(520, body.width / 3));
+        Rectangle rightColumn = new Rectangle(body.x + body.width - rightW, contentTop, rightW, contentH);
+        int previewH = Math.max(156, Math.min(250, rightColumn.height / 3));
+        Rectangle preview = new Rectangle(rightColumn.x, rightColumn.y + rightColumn.height - previewH, rightColumn.width, previewH);
+        Rectangle list = new Rectangle(rightColumn.x, rightColumn.y, rightColumn.width, Math.max(120, preview.y - rightColumn.y - 12));
+        Rectangle detail = new Rectangle(body.x, contentTop, Math.max(180, rightColumn.x - body.x - gap), contentH);
         syncInfopediaViewport(entries, list.height);
         int maxRows = infopediaMaxRows(list.height);
         int start = Math.max(0, Math.min(infopediaListScroll, Math.max(0, entries.size() - 1)));
         int end = Math.min(entries.size(), start + maxRows);
         java.util.List<String> visible = entries.isEmpty() ? java.util.List.of("No InfoPedia entries are available.") : new ArrayList<>(entries.subList(start, end));
-        drawInfopediaListBox(g, list, "Entries", visible, Math.max(0, infopediaSelectionIndex - start), true);
 
         String selected = entries.isEmpty() ? "" : entries.get(Math.max(0, Math.min(infopediaSelectionIndex, entries.size() - 1)));
         java.util.List<String> detailLines = SemanticAssetInfopediaAuthority.detailLines(mechanist.assets.AssetManager.registry(), selected, selectedType, infopediaAssetFilter);
         java.util.List<String> scrolled = infopediaDetailScroll <= 0 ? detailLines : detailLines.subList(Math.min(infopediaDetailScroll, detailLines.size()), detailLines.size());
         String assetId = SemanticAssetInfopediaAuthority.assetIdFromEntry(selected).orElse("");
         BufferedImage icon = assetId.isBlank() ? null : images.getSemanticAssetImage(assetId);
-        drawInfopediaDetailBox(g, detail, "Entry Detail", scrolled, icon);
+        drawInfopediaDetailBox(g, detail, "Entry Detail", scrolled);
+        drawInfopediaListBox(g, list, "Assets In Current Tab", visible, Math.max(0, infopediaSelectionIndex - start), true);
+        drawInfopediaIconPreview(g, preview, detailLines, icon);
     }
 
     private int infopediaControlsHeight(java.awt.FontMetrics fm, int width) {
@@ -2361,18 +2393,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
     }
 
-    private void drawInfopediaDetailBox(java.awt.Graphics2D g, Rectangle r, String title, java.util.List<String> lines, BufferedImage icon) {
+    private void drawInfopediaDetailBox(java.awt.Graphics2D g, Rectangle r, String title, java.util.List<String> lines) {
         drawBox(g, r, title);
-        int previewW = Math.max(118, Math.min(180, r.width / 3));
-        Rectangle preview = new Rectangle(r.x + r.width - previewW - 12, r.y + 34, previewW, Math.max(128, Math.min(r.height - 46, 230)));
         int x = r.x + 12;
         int y = r.y + 34;
-        int textW = Math.max(120, preview.x - x - 14);
-        drawInfopediaIconPreview(g, preview, lines, icon);
+        int textW = Math.max(120, r.width - 24);
         g.setFont(smallFont);
         java.awt.FontMetrics fm = g.getFontMetrics();
         java.awt.Shape oldClip = g.getClip();
-        g.setClip(r.x + 8, r.y + 28, Math.max(1, preview.x - r.x - 16), Math.max(1, r.height - 36));
+        g.setClip(r.x + 8, r.y + 28, Math.max(1, r.width - 16), Math.max(1, r.height - 36));
         if (lines != null) {
             for (String line : lines) {
                 if (y > r.y + r.height - Math.max(8, fm.getDescent())) break;
@@ -2440,15 +2469,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (strong) g.setFont(oldFont.deriveFont(java.awt.Font.BOLD));
         java.awt.FontMetrics fm = g.getFontMetrics();
         String fitted = GuiLayoutApi.fitLabel(text, fm, Math.max(8, maxWidth));
-        int tw = fm.stringWidth(fitted);
-        int bh = Math.max(10, fm.getHeight() + 3);
-        int bx = x - 4;
-        int by = baseline - fm.getAscent() - 2;
         java.awt.Color old = g.getColor();
-        g.setColor(new java.awt.Color(0, 0, 0, strong ? 178 : 142));
-        g.fillRoundRect(bx, by, Math.min(Math.max(10, tw + 8), Math.max(10, maxWidth + 8)), bh, 6, 6);
-        g.setColor(new java.awt.Color(128, 105, 58, strong ? 148 : 92));
-        g.drawRoundRect(bx, by, Math.min(Math.max(10, tw + 8), Math.max(10, maxWidth + 8)), bh, 6, 6);
         g.setColor(color == null ? new java.awt.Color(205, 210, 195) : color);
         g.drawString(fitted, x, baseline);
         g.setColor(old);
@@ -2482,6 +2503,682 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void drawGenericOverlay(java.awt.Graphics2D g, Rectangle body) {
         drawDetailBox(g, body, panelTitle(), java.util.List.of("This panel is routed into the live game context.", "Position " + playerX + "," + playerY, "World " + (world == null ? "none" : world.zoneCoordText())), null);
+    }
+
+    private void drawDialogueOverlay(java.awt.Graphics2D g, Rectangle body) {
+        NpcEntity npc = activeInteractionNpc;
+        int gap = 14;
+        Rectangle portrait = new Rectangle(body.x, body.y, Math.max(190, Math.min(250, body.width / 3)), body.height);
+        drawDetailBox(g, portrait, npc == null ? "No Entity" : safeLabel(npc.name, "Entity"), npcInteractionLines(npc), npc == null ? null : images.getNpcPortraitFor(npc));
+        Rectangle actions = new Rectangle(portrait.x + portrait.width + gap, body.y, Math.max(260, body.x + body.width - portrait.x - portrait.width - gap), body.height);
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null) {
+            lines.add("No active entity is attached to this conversation surface.");
+        } else if (npc.isAnimalActor()) {
+            lines.add(npc.isPetActor() ? "Pet interaction surface." : "Animal interaction surface.");
+            lines.add(npc.animalLine());
+            lines.add("Use the options below to handle animal-specific interaction instead of routing it through humanoid dialogue.");
+        } else {
+            lines.add("Conversation surface for " + safeLabel(npc.role, "local actor") + ".");
+            lines.add("Faction: " + (npc.faction == null ? "No faction" : npc.faction.label) + ".");
+            lines.add(npc.rankLine());
+            if (npc.isTrader()) lines.add("Trade access is available from this actor.");
+        }
+        drawDetailBox(g, actions, npc != null && npc.isAnimalActor() ? "Animal Options" : "Conversation Options", lines, null);
+        int by = actions.y + actions.height - 36;
+        if (npc != null && npc.isAnimalActor()) {
+            addOverlayButton("Pet", actions.x + 12, by, 72, 28, "Interact with the pet or animal.", this::petActiveAnimal);
+            addOverlayButton("Look", actions.x + 92, by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
+        } else {
+            addOverlayButton("Talk", actions.x + 12, by, 82, 28, "Talk to this entity.", this::talkToActiveNpc);
+            if (npc != null && npc.isTrader()) addOverlayButton("Trade", actions.x + 102, by, 92, 28, "Open this trader's store panel.", () -> openTradeForNpc(npc));
+            addOverlayButton("Look", actions.x + (npc != null && npc.isTrader() ? 202 : 102), by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
+        }
+    }
+
+    private void drawTradeOverlay(java.awt.Graphics2D g, Rectangle body) {
+        TraderSession t = activeTraderSession;
+        int gap = 14;
+        int offerW = Math.max(300, Math.min(440, body.width / 2));
+        Rectangle offers = new Rectangle(body.x, body.y, offerW, body.height);
+        Rectangle right = new Rectangle(offers.x + offers.width + gap, body.y, Math.max(260, body.x + body.width - offers.x - offers.width - gap), body.height);
+        drawBox(g, offers, t == null ? "Store" : safeLabel(t.name, "Store"));
+        g.setFont(smallFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        int rowH = 30;
+        int shown = Math.max(1, (offers.height - 48) / rowH);
+        int count = t == null || t.offers == null ? 0 : t.offers.size();
+        selectedTradeOfferIndex = count <= 0 ? 0 : Math.max(0, Math.min(selectedTradeOfferIndex, count - 1));
+        int start = count <= shown ? 0 : Math.max(0, Math.min(selectedTradeOfferIndex - shown + 1, count - shown));
+        int y = offers.y + 34;
+        if (count <= 0) {
+            g.setColor(new java.awt.Color(145, 148, 132));
+            drawUiTextLine(g, "No accessible stock.", offers.x + 12, y);
+        } else {
+            for (int i = start; i < Math.min(count, start + shown); i++) {
+                TradeOffer offer = t.offers.get(i);
+                int rowY = y + (i - start) * rowH;
+                int price = t.buyPrice(offer);
+                int idx = i;
+                String label = (idx == selectedTradeOfferIndex ? "> " : "") + offer.name + " / " + price + " script";
+                buttons.add(new ButtonBox(GuiLayoutApi.fitLabel(label, fm, offers.width - 28), offers.x + 10, rowY - 20, offers.width - 20, 26,
+                        "Select " + offer.name + ".", () -> { selectedTradeOfferIndex = idx; repaint(); }, images.getItemIcon(offer.name)));
+            }
+        }
+
+        TradeOffer selected = selectedTradeOffer();
+        ArrayList<String> detail = new ArrayList<>();
+        detail.add("Carried script " + carriedScript + " / inventory " + inventoryWeight() + "/" + carryCapacity() + ".");
+        if (t != null) {
+            detail.add("Archetype: " + safeLabel(t.archetype, "store") + " / " + safeLabel(t.zoneLabel, world == null ? "unknown zone" : world.zoneType.label) + ".");
+            if (t.supplyChainSummary != null && !t.supplyChainSummary.isBlank()) detail.add(t.supplyChainSummary);
+        }
+        if (selected == null) detail.add("Select an offer to inspect or buy.");
+        else detail.add(selected.displayLine(t.buyPrice(selected)));
+        String carried = selectedInventoryItem();
+        detail.add(carried == null ? "No carried item selected for selling." : "Sell selected carried item: " + carried + " / " + (t == null ? 0 : t.sellPrice(carried)) + " script.");
+        drawDetailBox(g, right, "Offer Detail", detail, selected == null ? null : images.getItemIcon(selected.name));
+        int by = right.y + right.height - 36;
+        addOverlayButton("Buy", right.x + 12, by, 72, 28, "Buy the selected offer.", this::buySelectedTradeOffer);
+        addOverlayButton("Sell", right.x + 92, by, 72, 28, "Sell the selected carried item.", this::sellSelectedInventoryItemToTrader);
+        addOverlayButton("Inventory", right.x + 172, by, 112, 28, "Open carried inventory.", () -> openPanel(PanelMode.INVENTORY));
+    }
+
+    private void drawContainerOverlay(java.awt.Graphics2D g, Rectangle body) {
+        ensureActiveContainerReady();
+        int gap = 14;
+        int leftW = Math.max(280, Math.min(420, body.width / 2));
+        Rectangle container = new Rectangle(body.x, body.y, leftW, body.height);
+        Rectangle detail = new Rectangle(container.x + container.width + gap, body.y, Math.max(260, body.x + body.width - container.x - container.width - gap), body.height);
+        ContainerRecord c = itemContainers.get(activeInteractionContainerId);
+        drawBox(g, container, c == null ? "Container" : safeLabel(c.label, "Container"));
+        java.util.List<ItemInstance> items = activeContainerItems();
+        g.setFont(smallFont);
+        java.awt.FontMetrics fm = g.getFontMetrics();
+        int rowH = 30;
+        int shown = Math.max(1, (container.height - 48) / rowH);
+        selectedContainerItemIndex = items.isEmpty() ? 0 : Math.max(0, Math.min(selectedContainerItemIndex, items.size() - 1));
+        int start = items.size() <= shown ? 0 : Math.max(0, Math.min(selectedContainerItemIndex - shown + 1, items.size() - shown));
+        int y = container.y + 34;
+        if (items.isEmpty()) {
+            g.setColor(new java.awt.Color(145, 148, 132));
+            drawUiTextLine(g, "Empty", container.x + 12, y);
+        } else {
+            for (int i = start; i < Math.min(items.size(), start + shown); i++) {
+                ItemInstance inst = items.get(i);
+                int rowY = y + (i - start) * rowH;
+                int idx = i;
+                String label = (idx == selectedContainerItemIndex ? "> " : "") + inst.displayName;
+                buttons.add(new ButtonBox(GuiLayoutApi.fitLabel(label, fm, container.width - 28), container.x + 10, rowY - 20, container.width - 20, 26,
+                        "Select " + inst.displayName + ".", () -> { selectedContainerItemIndex = idx; repaint(); }, images.getItemIcon(inst.displayName)));
+            }
+        }
+        ItemInstance selected = selectedContainerItem();
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Source: " + safeLabel(activeInteractionTitle, c == null ? "container" : c.label) + ".");
+        lines.add("Container id: " + safeLabel(activeInteractionContainerId, "none") + ".");
+        lines.add("Carried inventory " + inventoryWeight() + "/" + carryCapacity() + ".");
+        if (selected == null) lines.add("No container item selected.");
+        else {
+            lines.add("Selected: " + selected.displayName + ".");
+            lines.add(selected.provenance == null ? "Origin: untraced item instance." : selected.provenance.summary());
+        }
+        String carried = selectedInventoryItem();
+        lines.add(carried == null ? "No carried item selected for putting into this container." : "Ready to put carried item: " + carried + ".");
+        drawDetailBox(g, detail, "Transfer", lines, selected == null ? interactionObjectImage() : images.getItemIcon(selected.displayName));
+        int by = detail.y + detail.height - 36;
+        addOverlayButton("Take", detail.x + 12, by, 74, 28, "Take the selected container item.", this::takeSelectedContainerItem);
+        addOverlayButton("Put", detail.x + 94, by, 64, 28, "Put the selected carried item into this container.", this::putSelectedInventoryItemIntoContainer);
+        addOverlayButton("Inventory", detail.x + 166, by, 112, 28, "Open carried inventory.", () -> openPanel(PanelMode.INVENTORY));
+    }
+
+    private void drawObjectInteractionOverlay(java.awt.Graphics2D g, Rectangle body) {
+        MapObjectState obj = activeInteractionObject;
+        BaseObject base = activeInteractionBaseObject;
+        int gap = 14;
+        Rectangle preview = new Rectangle(body.x, body.y, Math.max(220, Math.min(300, body.width / 3)), body.height);
+        drawDetailBox(g, preview, activeInteractionTitleOrDefault(), objectInteractionLines(), interactionObjectImage());
+        Rectangle actions = new Rectangle(preview.x + preview.width + gap, body.y, Math.max(260, body.x + body.width - preview.x - preview.width - gap), body.height);
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Interaction type: " + safeLabel(activeInteractionKind, "object") + ".");
+        if (obj != null) {
+            lines.add("Map object at " + obj.x + "," + obj.y + " / " + safeLabel(obj.type, "object") + ".");
+            lines.add("Stock/state: " + safeLabel(obj.stockState, "none") + ".");
+        }
+        if (base != null) {
+            lines.add("Base object at " + base.x + "," + base.y + " / " + safeLabel(base.qualityName, "Common") + ".");
+            lines.add(base.businessReturnLine(this));
+        }
+        lines.add("Use the action buttons below; this target is no longer routed to the dead generic placeholder.");
+        drawDetailBox(g, actions, "Actions", lines, null);
+        int by = actions.y + actions.height - 36;
+        int x = actions.x + 12;
+        if (obj != null && isTradeObject(obj)) {
+            addOverlayButton("Trade", x, by, 84, 28, "Open this store or vending stock.", () -> openTradeForObject(obj)); x += 92;
+        }
+        if (obj != null && isContainerObject(obj)) {
+            addOverlayButton("Open", x, by, 74, 28, "Open this object's container.", () -> openContainerForObject(obj)); x += 82;
+        }
+        if (base != null || (obj != null && isMachineObject(obj))) {
+            addOverlayButton("Operate", x, by, 94, 28, "Operate or inspect this machine.", this::operateActiveInteractionObject); x += 102;
+            addOverlayButton("Craft", x, by, 78, 28, "Open crafting/workbench recipes.", () -> openPanel(PanelMode.CRAFTING)); x += 86;
+        } else {
+            addOverlayButton("Use", x, by, 70, 28, "Use or inspect this object.", this::operateActiveInteractionObject); x += 78;
+        }
+        addOverlayButton("Look", x, by, 72, 28, "Inspect this target in look mode.", this::lookAtActiveInteractionTarget);
+    }
+
+    private ArrayList<String> npcInteractionLines(NpcEntity npc) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (npc == null) {
+            lines.add("No NPC/entity target is active.");
+            return lines;
+        }
+        lines.add(safeLabel(npc.role, "Entity") + " / " + (npc.faction == null ? "No faction" : npc.faction.label) + ".");
+        lines.add("State: " + safeLabel(npc.state, "unrecorded") + " / HP " + npc.hp + " / " + npc.ageLine() + ".");
+        if (npc.isAnimalActor()) lines.add(npc.animalLine());
+        else {
+            lines.add(npc.rankLine());
+            lines.add("Equipment: " + safeLabel(npc.equippedRangedWeapon, "no ranged weapon") + " / " + safeLabel(npc.equippedMeleeWeapon, "no melee weapon") + " / " + safeLabel(npc.equippedArmor, "no armor") + ".");
+        }
+        lines.add(npc.originSummary());
+        return lines;
+    }
+
+    private ArrayList<String> objectInteractionLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        MapObjectState obj = activeInteractionObject;
+        BaseObject base = activeInteractionBaseObject;
+        if (obj != null) {
+            lines.add(safeLabel(obj.label, "Map object") + ".");
+            lines.add("Type: " + safeLabel(obj.type, "object") + " / glyph " + obj.glyph + ".");
+            lines.add("Uses: " + obj.vendCount + " / cooldown until turn " + obj.cooldownUntilTurn + ".");
+            lines.add("State: " + safeLabel(obj.stockState, "none") + ".");
+        }
+        if (base != null) {
+            lines.add(safeLabel(base.name, "Base object") + " / " + safeLabel(base.description, "built base object") + ".");
+            lines.add("Quality: " + safeLabel(base.qualityName, "Common") + " / integrity " + base.integrity + " / capacity " + base.capacity + ".");
+            lines.add("Business: " + (base.isBusinessAsset() ? base.businessName() : "not a public business surface") + ".");
+        }
+        if (lines.isEmpty()) lines.add("No active object target.");
+        return lines;
+    }
+
+    private BufferedImage interactionObjectImage() {
+        if (activeInteractionObject != null) return images.getMapObjectImage(activeInteractionObject);
+        if (activeInteractionBaseObject != null) return images.getBaseObjectImage(activeInteractionBaseObject);
+        return null;
+    }
+
+    private String activeInteractionTitleOrDefault() {
+        if (activeInteractionTitle != null && !activeInteractionTitle.isBlank()) return activeInteractionTitle;
+        if (activeInteractionObject != null) return safeLabel(activeInteractionObject.label, "Object");
+        if (activeInteractionBaseObject != null) return safeLabel(activeInteractionBaseObject.name, "Base object");
+        return "Interaction";
+    }
+
+    private void clearActiveInteractionState() {
+        activeInteractionTitle = "";
+        activeInteractionKind = "";
+        activeInteractionContainerId = "";
+        activeInteractionNpc = null;
+        activeInteractionObject = null;
+        activeInteractionBaseObject = null;
+        activeTraderSession = null;
+        selectedTradeOfferIndex = 0;
+        selectedContainerItemIndex = 0;
+    }
+
+    private void openDialogueForNpc(NpcEntity npc) {
+        clearActiveInteractionState();
+        activeInteractionNpc = npc;
+        activeInteractionTitle = npc == null ? "Conversation" : safeLabel(npc.name, "Entity");
+        activeInteractionKind = npc != null && npc.isAnimalActor() ? (npc.isPetActor() ? "pet" : "animal") : "conversation";
+        panelMode = PanelMode.DIALOGUE;
+        screen = Screen.PANEL;
+        selectedButton = 0;
+        logEvent((npc == null ? "Conversation" : "Opened interaction with " + npc.name) + ".");
+        DebugLog.audit("INTERACTION_ROUTE", "npc=" + (npc == null ? "none" : npc.id) + " kind=" + activeInteractionKind);
+        repaint();
+    }
+
+    private void openObjectPanelFor(MapObjectState obj, String kind) {
+        clearActiveInteractionState();
+        activeInteractionObject = obj;
+        activeInteractionTitle = obj == null ? "Object" : safeLabel(obj.label, "Object");
+        activeInteractionKind = kind == null || kind.isBlank() ? "object" : kind;
+        panelMode = PanelMode.OBJECT;
+        screen = Screen.PANEL;
+        selectedButton = 0;
+        DebugLog.audit("INTERACTION_ROUTE", "object=" + (obj == null ? "none" : obj.summary()) + " kind=" + activeInteractionKind);
+        repaint();
+    }
+
+    private void openObjectPanelFor(BaseObject base) {
+        clearActiveInteractionState();
+        activeInteractionBaseObject = base;
+        activeInteractionTitle = base == null ? "Base object" : safeLabel(base.name, "Base object");
+        activeInteractionKind = "base-machine";
+        panelMode = PanelMode.OBJECT;
+        screen = Screen.PANEL;
+        selectedButton = 0;
+        repaint();
+    }
+
+    private void openTradeForNpc(NpcEntity npc) {
+        clearActiveInteractionState();
+        activeInteractionNpc = npc;
+        activeInteractionTitle = npc == null ? "Trader" : safeLabel(npc.name, "Trader");
+        activeInteractionKind = "npc-trade";
+        activeTraderSession = buildTraderSession(npc, null);
+        panelMode = PanelMode.TRADE;
+        screen = Screen.PANEL;
+        selectedButton = 0;
+        logEvent("Opened trade with " + activeInteractionTitle + ".");
+        DebugLog.audit("INTERACTION_ROUTE", "tradeNpc=" + (npc == null ? "none" : npc.id) + " offers=" + (activeTraderSession == null ? 0 : activeTraderSession.offers.size()));
+        repaint();
+    }
+
+    private void openTradeForObject(MapObjectState obj) {
+        clearActiveInteractionState();
+        activeInteractionObject = obj;
+        activeInteractionTitle = obj == null ? "Store" : safeLabel(obj.label, "Store");
+        activeInteractionKind = "object-trade";
+        activeTraderSession = buildObjectTradeSession(obj);
+        panelMode = PanelMode.TRADE;
+        screen = Screen.PANEL;
+        selectedButton = 0;
+        logEvent("Opened store panel: " + activeInteractionTitle + ".");
+        DebugLog.audit("INTERACTION_ROUTE", "tradeObject=" + (obj == null ? "none" : obj.summary()) + " offers=" + (activeTraderSession == null ? 0 : activeTraderSession.offers.size()));
+        repaint();
+    }
+
+    private void openContainerForObject(MapObjectState obj) {
+        clearActiveInteractionState();
+        activeInteractionObject = obj;
+        activeInteractionTitle = obj == null ? "Container" : safeLabel(obj.label, "Container");
+        activeInteractionKind = "object-container";
+        activeInteractionContainerId = containerIdForInteractionObject(obj);
+        ensureObjectContainerSeeded(obj, activeInteractionContainerId);
+        panelMode = PanelMode.CONTAINER;
+        screen = Screen.PANEL;
+        selectedButton = 0;
+        logEvent("Opened container: " + activeInteractionTitle + ".");
+        DebugLog.audit("INTERACTION_ROUTE", "containerObject=" + (obj == null ? "none" : obj.summary()) + " cid=" + activeInteractionContainerId + " items=" + containerItemCount(activeInteractionContainerId));
+        repaint();
+    }
+
+    private TraderSession buildTraderSession(NpcEntity npc, MapObjectState source) {
+        ZoneType zone = world == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : world.zoneType;
+        Random r = interactionRandom("trade", npc == null ? null : npc.id, source == null ? null : source.id);
+        TraderSession t = TraderSession.forNpc(npc, zone, r);
+        TraderTradeActionAuthority.populateAccessibleFactionStock(t, npc, zone, r);
+        Faction f = npc == null ? FactionInventoryStockAuthority.factionForZone(zone) : npc.faction;
+        NpcFactionSite site = siteForFaction(f, zone);
+        TraderTradeActionAuthority.attachNpcSiteStock(t, site, r, world, turn);
+        t.applySupplyChainStock(world, turn, r);
+        if (source != null) {
+            t.name = safeLabel(source.label, "Store");
+            t.archetype = safeLabel(source.type, "Store");
+        }
+        return t;
+    }
+
+    private TraderSession buildObjectTradeSession(MapObjectState obj) {
+        if (obj != null && isVendingObject(obj)) {
+            if (!LimitedVendingStockAuthority.hasStock(obj)) LimitedVendingStockAuthority.seedMachineStock(obj, world == null ? null : world.zoneType, interactionRandom("vending-seed", obj.id));
+            TraderSession t = new TraderSession();
+            t.name = safeLabel(obj.label, "Vending machine");
+            t.archetype = "Vending machine";
+            t.zoneLabel = world == null ? "Unknown Zone" : world.zoneType.label;
+            t.markupPct = 12;
+            t.supplyChainSummary = "Limited vending stock: " + LimitedVendingStockAuthority.remaining(obj) + " vend(s) remaining.";
+            for (String item : LimitedVendingStockAuthority.items(obj)) {
+                t.offers.add(new TradeOffer(item, categoryForTradeItem(item), Math.max(1, ItemCatalog.priceFor(item)), "limited-stock vending machine item."));
+            }
+            return t;
+        }
+        return buildTraderSession(null, obj);
+    }
+
+    private String categoryForTradeItem(String item) {
+        ItemDef d = ItemCatalog.get(item);
+        return d == null || d.category == null || d.category.isBlank() ? "stock" : d.category;
+    }
+
+    private Random interactionRandom(String salt, String a) {
+        return interactionRandom(salt, a, null);
+    }
+
+    private Random interactionRandom(String salt, String a, String b) {
+        long base = seed == 0L ? 0x5EEDL : seed;
+        return new Random(base ^ (long)turn * 65537L ^ Objects.hash(salt, a, b, playerX, playerY));
+    }
+
+    private TradeOffer selectedTradeOffer() {
+        if (activeTraderSession == null || activeTraderSession.offers == null || activeTraderSession.offers.isEmpty()) return null;
+        selectedTradeOfferIndex = Math.max(0, Math.min(selectedTradeOfferIndex, activeTraderSession.offers.size() - 1));
+        return activeTraderSession.offers.get(selectedTradeOfferIndex);
+    }
+
+    private void buySelectedTradeOffer() {
+        TradeOffer offer = selectedTradeOffer();
+        if (offer == null || activeTraderSession == null) {
+            logEvent("No trade offer selected.");
+            return;
+        }
+        if (inventoryWeight() + 1 > carryCapacity()) {
+            logEvent("Cannot buy " + offer.name + ": carrying load is full.");
+            return;
+        }
+        if (activeInteractionObject != null && isVendingObject(activeInteractionObject) && LimitedVendingStockAuthority.remaining(activeInteractionObject) <= 0) {
+            logEvent("Cannot buy " + offer.name + ": this vending machine is out of stock.");
+            return;
+        }
+        int price = activeTraderSession.buyPrice(offer);
+        if (!spendImperialScript(price)) {
+            logEvent("Cannot buy " + offer.name + ": need " + price + " script, have " + carriedScript + ".");
+            return;
+        }
+        if (activeInteractionObject != null && isVendingObject(activeInteractionObject)) {
+            int rem = Math.max(0, LimitedVendingStockAuthority.remaining(activeInteractionObject) - 1);
+            activeInteractionObject.stockState = MapObjectState.setStockFlag(activeInteractionObject.stockState, "remaining", String.valueOf(rem));
+            activeInteractionObject.stockState = MapObjectState.setStockFlag(activeInteractionObject.stockState, "lastVend", offer.name.replace(' ', '_'));
+            activeInteractionObject.vendCount++;
+            activeTraderSession.supplyChainSummary = "Limited vending stock: " + rem + " vend(s) remaining.";
+        }
+        ItemProvenanceRecord pr = offer.provenance == null
+                ? ItemProvenanceRecord.trade(offer.name, activeInteractionNpc == null ? FactionInventoryStockAuthority.factionForZone(world == null ? null : world.zoneType) : activeInteractionNpc.faction, activeTraderSession.name, world, turn, "bought by player through interaction trade panel")
+                : ItemProvenanceRecord.transferred(offer.provenance, offer.name, world, turn, "sold to player by " + activeTraderSession.name);
+        addInventoryItem(offer.name, pr);
+        rememberItemProvenance(offer.name, pr);
+        rebuildItemContainersFromLegacyLists();
+        gainXp("Commerce", 1, "bought " + offer.name);
+        logEvent("Bought " + offer.name + " for " + price + " script from " + safeLabel(activeTraderSession.name, "store") + ".");
+        advanceTurn("buys " + offer.name + ".");
+        repaint();
+    }
+
+    private void sellSelectedInventoryItemToTrader() {
+        if (activeTraderSession == null) {
+            logEvent("No active trader is available.");
+            return;
+        }
+        String item = selectedInventoryItem();
+        if (item == null) {
+            logEvent("No carried item selected to sell.");
+            return;
+        }
+        int price = activeTraderSession.sellPrice(item);
+        inventory.remove(selectedInventoryIndex);
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
+        addImperialScript(price);
+        ItemProvenanceRecord pr = takeProvenanceForItem(item);
+        if (pr != null) rememberItemProvenance(item, ItemProvenanceRecord.transferred(pr, item, world, turn, "sold by player to " + safeLabel(activeTraderSession.name, "trader")));
+        rebuildItemContainersFromLegacyLists();
+        gainXp("Commerce", 1, "sold " + item);
+        logEvent("Sold " + item + " for " + price + " script to " + safeLabel(activeTraderSession.name, "trader") + ".");
+        advanceTurn("sells " + item + ".");
+        repaint();
+    }
+
+    private void ensureActiveContainerReady() {
+        if (activeInteractionContainerId == null || activeInteractionContainerId.isBlank()) {
+            activeInteractionContainerId = activeInteractionObject == null ? CONTAINER_BASE_STORAGE : containerIdForInteractionObject(activeInteractionObject);
+        }
+        ensureObjectContainerSeeded(activeInteractionObject, activeInteractionContainerId);
+    }
+
+    private java.util.List<ItemInstance> activeContainerItems() {
+        ensureActiveContainerReady();
+        ArrayList<ItemInstance> out = new ArrayList<>();
+        ContainerRecord c = itemContainers.get(activeInteractionContainerId);
+        if (c == null) return out;
+        for (String id : c.itemInstanceIds) {
+            ItemInstance inst = itemInstances.get(id);
+            if (inst != null) out.add(inst);
+        }
+        return out;
+    }
+
+    private ItemInstance selectedContainerItem() {
+        java.util.List<ItemInstance> items = activeContainerItems();
+        if (items.isEmpty()) return null;
+        selectedContainerItemIndex = Math.max(0, Math.min(selectedContainerItemIndex, items.size() - 1));
+        return items.get(selectedContainerItemIndex);
+    }
+
+    private void takeSelectedContainerItem() {
+        ItemInstance inst = selectedContainerItem();
+        if (inst == null) {
+            logEvent("No container item selected.");
+            return;
+        }
+        if (inventoryWeight() + 1 > carryCapacity()) {
+            logEvent("Cannot take " + inst.displayName + ": carrying load is full.");
+            return;
+        }
+        ItemInstance moved = transferContainerItemByName(activeInteractionContainerId, null, inst.displayName, CONTAINER_PLAYER_INVENTORY, "Player inventory", inventory, "player took from interaction container");
+        if (moved == null) {
+            logEvent("Could not take " + inst.displayName + " from this container.");
+            return;
+        }
+        selectedContainerItemIndex = Math.max(0, Math.min(selectedContainerItemIndex, Math.max(0, activeContainerItems().size() - 1)));
+        rememberItemProvenance(moved.displayName, moved.provenance);
+        logEvent("Took " + moved.displayName + " from " + activeInteractionTitleOrDefault() + ".");
+        advanceTurn("takes " + moved.displayName + ".");
+        repaint();
+    }
+
+    private void putSelectedInventoryItemIntoContainer() {
+        String item = selectedInventoryItem();
+        if (item == null) {
+            logEvent("No carried item selected to put away.");
+            return;
+        }
+        ensureActiveContainerReady();
+        ItemInstance moved = transferContainerItemByName(CONTAINER_PLAYER_INVENTORY, inventory, item, activeInteractionContainerId, activeInteractionTitleOrDefault(), null, "player put into interaction container");
+        if (moved == null) {
+            logEvent("Could not put " + item + " into " + activeInteractionTitleOrDefault() + ".");
+            return;
+        }
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
+        logEvent("Put " + moved.displayName + " into " + activeInteractionTitleOrDefault() + ".");
+        advanceTurn("puts " + moved.displayName + " away.");
+        repaint();
+    }
+
+    private String containerIdForInteractionObject(MapObjectState obj) {
+        if (obj == null) return CONTAINER_BASE_STORAGE;
+        String type = canonicalObjectType(obj);
+        if (type.contains("corpse")) {
+            String cid = obj.stockState == null || obj.stockState.isBlank() ? "" : obj.stockState.trim();
+            return cid.isBlank() ? CONTAINER_CORPSE_LOOT_PREFIX + safeObjectId(obj) : cid;
+        }
+        if (type.contains("contract")) return CONTAINER_CONTRACT_OBJECT_PREFIX + safeObjectId(obj);
+        if (type.contains("vault")) return "bank-vault-" + safeObjectId(obj);
+        return persistentContainerIdForObject(obj);
+    }
+
+    private void ensureObjectContainerSeeded(MapObjectState obj, String containerId) {
+        if (containerId == null || containerId.isBlank()) return;
+        ensureContainer(containerId, obj == null ? containerId : safeLabel(obj.label, containerId));
+        if (containerItemCount(containerId) > 0 || obj == null) return;
+        String type = canonicalObjectType(obj);
+        if (type.contains("contract")) {
+            String item = MapObjectState.itemNameFromStock(obj.stockState);
+            if (item != null && !item.isBlank()) addItemToContainerResult(containerId, safeLabel(obj.label, containerId), item, ItemProvenanceRecord.found(item, world, turn, safeLabel(obj.label, "contract object")), obj, "seed contract object container");
+        } else if (type.contains("vault")) {
+            addItemToContainerResult(containerId, safeLabel(obj.label, containerId), "Sealed bank lockbox", ItemProvenanceRecord.found("Sealed bank lockbox", world, turn, safeLabel(obj.label, "bank vault")), obj, "seed bank vault container");
+        }
+    }
+
+    private void talkToActiveNpc() {
+        NpcEntity npc = activeInteractionNpc;
+        if (npc == null) {
+            logEvent("No entity is available to talk to.");
+            return;
+        }
+        runNpcTalkedTo++;
+        logEvent("Talked to " + npc.name + " (" + safeLabel(npc.role, "local actor") + ", " + (npc.faction == null ? "No faction" : npc.faction.label) + ").");
+        if (npc.isFactionRepresentative()) logEvent("Faction representative interface is active; contract/reputation submenu remains attached to this actor.");
+        gainXp("Social", 1, "spoke with " + npc.name);
+        advanceTurn("talks with " + npc.name + ".");
+        repaint();
+    }
+
+    private void petActiveAnimal() {
+        NpcEntity npc = activeInteractionNpc;
+        if (npc == null || !npc.isAnimalActor()) {
+            logEvent("No pet or animal is selected.");
+            return;
+        }
+        npc.state = npc.isPetActor() ? "Petted" : "Calmed";
+        logEvent((npc.isPetActor() ? "Pet" : "Animal") + " interaction: " + npc.animalLine() + ".");
+        gainXp("Animal Handling", 1, "interacted with " + npc.name);
+        advanceTurn("interacts with " + npc.name + ".");
+        repaint();
+    }
+
+    private void operateActiveInteractionObject() {
+        MapObjectState obj = activeInteractionObject;
+        BaseObject base = activeInteractionBaseObject;
+        if (base != null) {
+            logEvent("Opened " + safeLabel(base.name, "base object") + " operation surface.");
+            panelMode = PanelMode.WORKBENCH;
+            screen = Screen.PANEL;
+            repaint();
+            return;
+        }
+        if (obj == null) {
+            logEvent("No object is selected.");
+            return;
+        }
+        if (NeedSupplyInteractionAuthority.tryUse(this, obj)) {
+            repaint();
+            return;
+        }
+        String type = canonicalObjectType(obj);
+        if (type.equals("light-switch")) {
+            toggleLightSwitch(obj);
+            return;
+        }
+        if (type.equals("broadcast-device") || type.contains("newspaper") || type.contains("inn")) {
+            String report = ImperialNewsNetworkApi.broadcastBulletin(this, "interaction-object/" + safeLabel(obj.type, "broadcast"), interactionRandom("broadcast", obj.id));
+            lastBroadcastReport = report;
+            lastInnNewsIssue = report;
+            logEvent("BROADCAST OBJECT: " + report);
+            gainXp("Investigation", 1, "used broadcast object");
+        } else if (type.equals("bank-terminal")) {
+            openBankAccounts.add(MapObjectState.itemNameFromStock(obj.stockState));
+            lastBankReport = "Bank terminal used at " + obj.x + "," + obj.y + " / " + safeLabel(obj.label, "bank terminal") + ".";
+            logEvent(lastBankReport);
+            gainXp("Commerce", 1, "used bank terminal");
+        } else if (type.equals("bank-alarm-panel")) {
+            obj.stockState = MapObjectState.setStockFlag(obj.stockState, "disabled", "true");
+            obj.stockState = MapObjectState.setStockFlag(obj.stockState, "armed", "false");
+            lastBankAlarmReport = "Bank alarm panel disabled at " + obj.x + "," + obj.y + ".";
+            logEvent(lastBankAlarmReport);
+            gainXp("Security", 1, "disabled bank alarm panel");
+        } else if (type.equals("bank-vault")) {
+            if (hasInventoryLike("Bank manager keycard", "Secure vault key", "Data spike")) {
+                obj.stockState = MapObjectState.setStockFlag(obj.stockState, "locked", "false");
+                obj.stockState = MapObjectState.setStockFlag(obj.stockState, "open", "true");
+                openContainerForObject(obj);
+                return;
+            }
+            logEvent("Bank vault remains locked. It wants a keycard, vault key, or data spike.");
+        } else if (type.contains("explosive")) {
+            obj.stockState = MapObjectState.setStockFlag(obj.stockState, "armed", "false");
+            logEvent("Disarmed " + safeLabel(obj.label, "explosive object") + ".");
+            gainXp("Security", 1, "disarmed explosive object");
+        } else if (isMachineObject(obj)) {
+            obj.vendCount++;
+            obj.cooldownUntilTurn = Math.max(obj.cooldownUntilTurn, turn + 8);
+            logEvent("Operated " + safeLabel(obj.label, "machine") + ". This machine is attached to the interaction/options surface; use Craft for recipes or Inventory for inserted items.");
+            gainXp("Mechanics", 1, "operated " + safeLabel(obj.type, "machine"));
+        } else {
+            obj.vendCount++;
+            logEvent("Inspected " + safeLabel(obj.label, "object") + " (" + safeLabel(obj.type, "object") + ").");
+        }
+        advanceTurn("uses " + safeLabel(obj.label, "an object") + ".");
+        repaint();
+    }
+
+    private void toggleLightSwitch(MapObjectState obj) {
+        String group = MapObjectState.stockValue(obj.stockState, "group");
+        boolean oldOn = !"false".equalsIgnoreCase(MapObjectState.stockValue(obj.stockState, "on"));
+        boolean next = !oldOn;
+        obj.stockState = MapObjectState.setStockFlag(obj.stockState, "on", String.valueOf(next));
+        int changed = 0;
+        if (world != null && world.lightSources != null) {
+            for (ZoneLightSourceRecord light : world.lightSources) {
+                if (light == null) continue;
+                if (group == null || group.isBlank() || group.equals(light.groupId)) {
+                    light.on = next;
+                    changed++;
+                }
+            }
+        }
+        markLocalDirtyRegion("light switch toggled", obj.x, obj.y, 10, true, false, true, false);
+        updateSensoryModel("light switch toggled");
+        logEvent("Light switch toggled " + (next ? "on" : "off") + " for group " + safeLabel(group, "local") + " (" + changed + " light source(s)).");
+        advanceTurn("toggles a light switch.");
+        repaint();
+    }
+
+    private void lookAtActiveInteractionTarget() {
+        if (activeInteractionNpc != null) {
+            lookX = activeInteractionNpc.x;
+            lookY = activeInteractionNpc.y;
+        } else if (activeInteractionObject != null) {
+            lookX = activeInteractionObject.x;
+            lookY = activeInteractionObject.y;
+        } else if (activeInteractionBaseObject != null) {
+            lookX = activeInteractionBaseObject.x;
+            lookY = activeInteractionBaseObject.y;
+        }
+        beginLookMode();
+    }
+
+    private boolean isTradeObject(MapObjectState obj) {
+        String type = canonicalObjectType(obj);
+        return type.equals("shop") || type.equals("vending") || type.contains("store") || type.contains("trade") || type.contains("counter");
+    }
+
+    private boolean isVendingObject(MapObjectState obj) {
+        String type = canonicalObjectType(obj);
+        return type.equals("vending") || type.contains("vending");
+    }
+
+    private boolean isContainerObject(MapObjectState obj) {
+        String type = canonicalObjectType(obj);
+        return type.contains("corpse") || type.contains("contract") || type.contains("container") || type.contains("vault");
+    }
+
+    private boolean isMachineObject(MapObjectState obj) {
+        String type = canonicalObjectType(obj);
+        return type.contains("machine") || type.contains("fixture") || type.contains("forge") || type.contains("lab")
+                || type.contains("terminal") || type.contains("switch") || type.contains("broadcast") || type.contains("bank")
+                || type.contains("light") || type.contains("alarm");
+    }
+
+    private String canonicalObjectType(MapObjectState obj) {
+        if (obj == null || obj.type == null) return "";
+        return AssetIntegrationDisciplineAuthority.canonicalType(obj.type).toLowerCase(Locale.ROOT);
+    }
+
+    private String safeObjectId(MapObjectState obj) {
+        String id = obj == null ? "" : obj.id;
+        if (id == null || id.isBlank()) id = String.valueOf(Objects.hash(obj == null ? 0 : obj.x, obj == null ? 0 : obj.y, obj == null ? "" : obj.type));
+        return id.replaceAll("[^A-Za-z0-9_.-]", "_");
+    }
+
+    private boolean hasInventoryLike(String... names) {
+        if (names == null) return false;
+        for (String item : inventory) for (String name : names) if (ItemQuality.namesMatch(item, name)) return true;
+        for (String item : baseStorage) for (String name : names) if (ItemQuality.namesMatch(item, name)) return true;
+        return false;
     }
 
     private String selectedInventoryItem() {
@@ -2658,6 +3355,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         worldTurn++;
         if (line != null && !line.isBlank()) logEvent(line);
         tickFactionRuntimeSystems(false);
+        tickPopulationEconomyRuntimeSystems(false);
     }
     void advanceTurn(String line) { advanceTurnBody(line); }
     void settlePlayerMotionAfterNoMoveTurn(String reason) {}
@@ -2674,10 +3372,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         setFacingToward(lookX, lookY, "interaction facing");
         NpcEntity npc = world.npcAt(lookX, lookY);
         if (npc != null) {
-            runNpcTalkedTo++;
-            logEvent("Talked to " + npc.name + " (" + npc.role + ", " + (npc.faction == null ? "No faction" : npc.faction.label) + ").");
-            gainXp("Social", 1, "spoke with " + npc.name);
-            advanceTurn("talks with " + npc.name + ".");
+            if (npc.isTrader()) openTradeForNpc(npc);
+            else openDialogueForNpc(npc);
             updatePendingInteractionSummary();
             return;
         }
@@ -2689,18 +3385,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         MapObjectState obj = world.mapObjectAt(lookX, lookY);
         if (obj != null) {
-            obj.vendCount++;
-            obj.cooldownUntilTurn = Math.max(obj.cooldownUntilTurn, turn + 8);
-            logEvent("Interacted with " + safeLabel(obj.label, "map object") + " (" + safeLabel(obj.type, "object") + ").");
-            advanceTurn("uses " + safeLabel(obj.label, "a map object") + ".");
+            if (isTradeObject(obj)) openTradeForObject(obj);
+            else if (isContainerObject(obj)) openContainerForObject(obj);
+            else openObjectPanelFor(obj, isMachineObject(obj) ? "machine/object" : "object");
             updatePendingInteractionSummary();
             return;
         }
         BaseObject base = baseObjectAt(lookX, lookY);
         if (base != null) {
-            logEvent("Opened base object: " + safeLabel(base.name, "base object") + " at " + base.x + "," + base.y + ".");
-            panelMode = PanelMode.WORKBENCH;
-            screen = Screen.PANEL;
+            openObjectPanelFor(base);
             updatePendingInteractionSummary();
             return;
         }
@@ -3341,8 +4034,40 @@ class GamePanel extends LegacyPanelBridgeBase {
     ArrayList<String> tileStackAt(int x, int y) {
         return ProgressiveLookAuthority.tileStackAt(this, x, y);
     }
-    boolean isDoorTile(char tile) { return tile == '+' || tile == '/' || tile == '\\'; }
-    void interactDoorAt(int x, int y, char tile) { logEvent("Door interaction at " + x + "," + y + "."); advanceTurn("interacts with a door."); }
+    boolean isDoorTile(char tile) { return TileDataCompilationAuthority.isDoorGlyph(tile); }
+    void interactDoorAt(int x, int y, char tile) {
+        if (world == null || !world.inBounds(x, y)) return;
+        String label = switch (tile) {
+            case '/' -> "open archway";
+            case '|' -> "hinged scrap door";
+            case 'L' -> "locked door";
+            case 'X' -> "security door";
+            case 'V' -> "vent panel";
+            case 'D' -> "maintenance bulkhead";
+            default -> "door";
+        };
+        if (tile == '/') {
+            logEvent("Passed the " + label + " at " + x + "," + y + ".");
+            advanceTurn("checks an open doorway.");
+            return;
+        }
+        boolean opens = tile == '|'
+                || (tile == 'L' && (hasInventoryLike("Lockpicks", "Tool bundle", "Mechanist Collegia tool roll", "Secure vault key") || stat("Agility", 5) + stat("Mechanics", 5) >= 14))
+                || (tile == 'X' && (hasInventoryLike("Data spike", "Bank manager keycard", "Secure vault key") || stat("Intellect", 5) + stat("Mechanics", 5) >= 16))
+                || (tile == 'V' && (hasInventoryLike("Tool bundle", "Mechanist Collegia tool roll") || stat("Mechanics", 5) >= 8))
+                || (tile == 'D' && (hasInventoryLike("Tool bundle", "Mechanist Collegia tool roll", "Data spike") || stat("Strength", 5) + stat("Mechanics", 5) >= 15));
+        if (opens) {
+            world.tiles[x][y] = '/';
+            markLocalDirtyRegion("door opened", x, y, 6, true, false, false, false);
+            updateSensoryModel("door opened");
+            logEvent("Opened " + label + " at " + x + "," + y + ".");
+            advanceTurn("opens a door.");
+        } else {
+            logEvent("Could not open " + label + " at " + x + "," + y + ". It needs tools, credentials, or a better check.");
+            advanceTurn("works at a sealed door.");
+        }
+        repaint();
+    }
     void enforceEntityOccupancy(String reason) {}
     void moveBuildCursor(int dx, int dy) { buildX += dx; buildY += dy; clampBuildCursorToWorld(); }
     void confirmBuildPlacement() {
@@ -4210,6 +4935,37 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (world == null) return;
         FactionStrategySimulationApi.tick(this, sleeping);
         tickNpcFactionSiteProduction();
+    }
+
+    void tickPopulationEconomyRuntimeSystems(boolean sleeping) {
+        if (world == null) return;
+        EconomyRuntimeState economy = ZoneEconomyInitializationManager.stateFor(world);
+        int locationKey = WorldEconomyInitializationAuthority.locationKey(world);
+        if (!economy.isInitialized(locationKey)) {
+            WorldEconomyInitializationAuthority.Result init = WorldEconomyInitializationAuthority.apply(world, rng, economy);
+            lastEconomyRuntimeReport = init.summary();
+        }
+        EconomyRuntimeState.ExpansionTickResult expansion = ZoneEconomyInitializationManager.slowGameplayExpansionTick(world, worldTurn, rng);
+        if (expansion.applied()) {
+            lastEconomyRuntimeReport = expansion.summary();
+            DebugLog.audit("ECONOMY_RUNTIME_TICK", expansion.summary());
+        } else if (lastEconomyRuntimeReport == null || lastEconomyRuntimeReport.startsWith("No persistent economy")) {
+            lastEconomyRuntimeReport = ZoneEconomyInitializationManager.summary(world);
+        }
+
+        NpcNeedsDutyRuntimeAuthority.TickResult npcTick = NpcNeedsDutyRuntimeAuthority.tick(this, sleeping);
+        lastNpcRuntimeReport = npcTick.summary();
+        if (npcTurnBudgetScheduler.shouldAudit(turn)) {
+            DebugLog.audit("NPC_NEEDS_DUTY_TICK", lastNpcRuntimeReport);
+        }
+
+        int abstractBudget = Math.max(1, npcTick.deferredBudget);
+        if (sleeping) abstractBudget += 4;
+        AbstractDistantZoneSimulation.TickResult abstractTick = abstractDistantZoneSimulation.spend(world, playerX, playerY, turn, abstractBudget);
+        lastAbstractDistantZoneReport = abstractTick.summary;
+        if (abstractDistantZoneSimulation.shouldAudit(turn)) {
+            DebugLog.audit("ABSTRACT_DISTANT_ZONE_TICK", "budget=" + abstractBudget + " " + abstractTick.summary);
+        }
     }
 
     void tickNpcFactionSiteProduction() {

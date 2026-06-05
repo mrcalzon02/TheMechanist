@@ -216,6 +216,7 @@ if (-not $SkipAssetCopy) {
     $assetDest = Join-Path $outRoot 'assets'
     $assetSources = @(
         (Join-Path $root 'assets'),
+        (Join-Path $root 'packages\client\assets'),
         (Join-Path $root 'client\assets'),
         (Join-Path $root 'resources\assets'),
         (Join-Path $root 'src\main\resources\assets')
@@ -331,7 +332,8 @@ $layout = Join-Path $outRoot 'PACKAGE_LAYOUT.txt'
     '  classes\                 Compiled Java classes',
     '  assets\                  Art/audio/data assets copied by merge, not destructive delete',
     '  settings\                Settings copied by merge when present',
-    '  client\locale\ or locale\ Localization files copied by merge when present',
+    '  assets\lang\             Menu/interface language files copied from packages\client\assets when present',
+    '  client\locale\ or locale\ Legacy localization files copied by merge when present',
     '  RUN_THE_MECHANIST_CLIENT.vbs     Primary no-console launcher',
     '  RUN_THE_MECHANIST_CLIENT.ps1',
     '  RUN_THE_MECHANIST_CLIENT_DIAGNOSTIC.bat  Console launcher for diagnostics only',

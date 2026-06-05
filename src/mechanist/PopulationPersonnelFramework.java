@@ -1085,9 +1085,11 @@ class NpcEntity {
         if (needTarget != null) {
             int d = Math.abs(x-needTarget.x)+Math.abs(y-needTarget.y);
             if (d <= 1) {
-                if (hunger > 0) hunger = Math.max(0, hunger - 4);
-                if (thirst > 0) thirst = Math.max(0, thirst - 4);
-                if (sleepDebt > 0 && needTargetKind.equals("sleep")) sleepDebt = Math.max(0, sleepDebt - 5);
+                if (!NeedSupplyInteractionAuthority.applyNpcNeedAtProvider(w, this, needTargetKind)) {
+                    if (hunger > 0) hunger = Math.max(0, hunger - 4);
+                    if (thirst > 0) thirst = Math.max(0, thirst - 4);
+                    if (sleepDebt > 0 && needTargetKind.equals("sleep")) sleepDebt = Math.max(0, sleepDebt - 5);
+                }
                 if (hunger < 10 && thirst < 10 && sleepDebt < 15) { state = "Idle"; needTarget = null; needTargetKind = "none"; }
                 return;
             }

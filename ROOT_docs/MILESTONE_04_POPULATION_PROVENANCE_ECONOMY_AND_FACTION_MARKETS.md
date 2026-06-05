@@ -567,7 +567,11 @@ Deferred ledgers should track:
 - Supplier reliability.
 - Route safety.
 - Shipment pressure.
+- Warehouse and stockpile vulnerability.
 - Raw material availability.
+- Machine and production-line reliability.
+- Product quality drift.
+- Production inefficiency or waste.
 - Import/export capacity.
 - Rival interference.
 - Leadership competence.
@@ -608,11 +612,17 @@ Outputs may include:
 - Shipment arrived.
 - Shipment delayed.
 - Shipment lost/intercepted.
+- Arrival supply convoy raided or diverted.
+- Warehouse stock stolen, spoiled, burned, seized, or hidden.
+- Machinery sabotaged, damaged, repaired, or temporarily degraded.
+- Raw material stores contaminated, wasted, adulterated, or substituted.
 - Reinforcements available.
 - Reinforcements delayed.
 - Reinforcement opportunity expired.
 - Raw material supply improved.
 - Shortage worsened.
+- Product quality improved or dropped.
+- Production efficiency improved or degraded.
 - Price moved.
 - Faction strength changed.
 - Faction influence changed.

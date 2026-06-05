@@ -55,11 +55,6 @@ public final class SemanticAssetInfopediaAuthority {
     public static List<String> entries(AssetRegistry registry, AssetType selectedType, String filter) {
         List<String> out = new ArrayList<>();
         AssetRegistry safe = registry == null ? AssetRegistry.empty() : registry;
-        out.add("Asset Index Overview");
-        out.add("Registry Audit Summary");
-        out.add("Type Filter: " + typeLabel(selectedType));
-        out.add("Search Filter: " + (filter == null || filter.isBlank() ? "<none>" : filter.trim()));
-        out.add("-- ASSET ENTRIES --");
 
         List<AssetMetadata> source = selectedType == null ? safe.all() : safe.byType(selectedType);
         String q = filter == null ? "" : filter.trim();

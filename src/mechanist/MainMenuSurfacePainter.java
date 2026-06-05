@@ -14,9 +14,9 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             "menu.main.route.continue",
             "menu.main.route.load_game",
             "menu.main.route.options",
-            "menu.main.route.tools",
-            "menu.main.route.knowledge",
+            "menu.main.route.infopedia",
             "menu.main.route.multiplayer",
+            "menu.main.route.tools",
             "menu.main.route.exit"
     };
 
@@ -37,6 +37,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         int cx = W / 2;
         int titleTop = panel.mainMenuTitleTop(H);
         int drawnTitleBottom = titleTop + 112;
+        Rectangle buttonFrame = panel.mainMenuButtonFrameRect();
         
         if (title != null) {
             Dimension titleSize = panel.mainMenuTitleDrawSize(title, W, H);
@@ -56,12 +57,17 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             Dimension subSize = panel.mainMenuSubtitleDrawSize(subtitle, W, H);
             int sw = subSize.width;
             int sh = subSize.height;
+            int minSubtitleW = Math.max(buttonFrame.width, Math.min(W - 48, buttonFrame.width));
+            if (sw < minSubtitleW && subtitle.getWidth() > 0) {
+                sw = Math.min(W - 48, minSubtitleW);
+                sh = Math.max(1, (int)Math.round(subtitle.getHeight() * (sw / (double) subtitle.getWidth())));
+            }
+            sh = Math.min(sh, Math.max(40, H / 7));
             int sy = drawnTitleBottom + 3;
             g.drawImage(subtitle, cx - sw / 2, sy, sw, sh, null);
             panel.stampUiFrameId(g, "I", "subtitle", cx - sw / 2, sy, sw, sh);
         }
         
-        Rectangle buttonFrame = panel.mainMenuButtonFrameRect();
         g.setColor(new Color(0, 0, 0, 172));
         g.fillRoundRect(buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, 14, 14);
         panel.drawSlicedFrame(g, buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, "inner");
@@ -69,7 +75,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         MenuTextAuthority.drawMenuReference(g, panel, buttonFrame, "M001", "menu.main.title", "Main Menu");
 
         java.util.List<String> labels = panel.mainMenuRouteLabels();
-        g.setFont(panel.uiFont.deriveFont(Font.BOLD, Math.max(13f, Math.min(17f, H / 42f))));
+        g.setFont(panel.uiFont.deriveFont(Font.BOLD, Math.max(17f, Math.min(23f, H / 32f))));
         FontMetrics routeFm = g.getFontMetrics();
         for (int i = 0; i < labels.size(); i++) {
             Rectangle r = panel.mainMenuRouteRect(i);
@@ -86,15 +92,15 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             String fallbackLabel = labels.get(i);
             String label = MenuTextAuthority.text(i < ROUTE_KEYS.length ? ROUTE_KEYS[i] : "", fallbackLabel);
             BufferedImage icon = panel.systemButtonIconForLabel(fallbackLabel);
-            int iconSize = icon == null ? 0 : Math.max(27, Math.min((int)Math.round(r.height * 1.18), 42));
-            int iconX = r.x + 8;
-            int textX = r.x + 14;
-            int textW = r.width - 28;
+            int iconSize = icon == null ? 0 : Math.max(36, Math.min((int)Math.round(r.height * 1.16), 57));
+            int iconX = r.x + 12;
+            int textX = r.x + 18;
+            int textW = r.width - 36;
             if (icon != null) {
                 int iconY = r.y + (r.height - iconSize) / 2;
                 g.drawImage(icon, iconX, iconY, iconSize, iconSize, null);
-                textX = iconX + iconSize + 11;
-                textW = Math.max(60, r.x + r.width - textX - 12);
+                textX = iconX + iconSize + 15;
+                textW = Math.max(80, r.x + r.width - textX - 16);
             }
             g.setColor(selected ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
             g.drawString(GuiLayoutApi.fitLabel(label, routeFm, textW), textX, r.y + (r.height + routeFm.getAscent() - routeFm.getDescent()) / 2);

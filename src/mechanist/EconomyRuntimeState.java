@@ -51,7 +51,7 @@ final class EconomyRuntimeState {
     ExpansionTickResult slowExpansionTick(long tickId, World world, Faction faction, Random rng) {
         if (world == null) return new ExpansionTickResult(false, 0, 0, 0, 0, "no world supplied");
         long safeTick = Math.max(0L, tickId);
-        if (lastExpansionTick != Long.MIN_VALUE && safeTick - lastExpansionTick < 120L) {
+        if (lastExpansionTick != Long.MIN_VALUE && safeTick >= lastExpansionTick && safeTick - lastExpansionTick < 120L) {
             return new ExpansionTickResult(false, 0, 0, 0, 0, "slow economy expansion tick gated previous=" + lastExpansionTick + " current=" + safeTick);
         }
         lastExpansionTick = safeTick;

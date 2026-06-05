@@ -48,7 +48,15 @@ public final class AssetRegistry {
 
     public static AssetRegistry loadDefault(Path projectRoot) throws IOException {
         Path root = projectRoot == null ? Paths.get("").toAbsolutePath().normalize() : projectRoot.toAbsolutePath().normalize();
-        return loadFromTsv(root.resolve(DEFAULT_REGISTRY), root);
+        Path registry = root.resolve(DEFAULT_REGISTRY);
+        if (Files.isRegularFile(registry)) {
+            return loadFromTsv(registry, root);
+        }
+        Optional<Path> compiledIndex = firstExistingCompiledIndex(root);
+        if (compiledIndex.isPresent()) {
+            return loadFromCompiledContentIndex(compiledIndex.orElseThrow(), root);
+        }
+        return loadFromTsv(registry, root);
     }
 
     public static AssetRegistry loadFromTsv(Path registryFile, Path projectRoot) throws IOException {
@@ -94,6 +102,55 @@ public final class AssetRegistry {
         }
 
         return new AssetRegistry(root, registryFile, entries);
+    }
+
+    public static AssetRegistry loadFromCompiledContentIndex(Path indexFile, Path projectRoot) throws IOException {
+        Objects.requireNonNull(indexFile, "indexFile cannot be null");
+        Path root = projectRoot == null ? indexFile.toAbsolutePath().normalize().getParent() : projectRoot.toAbsolutePath().normalize();
+        Path index = indexFile.toAbsolutePath().normalize();
+        Path assetRoot = compiledAssetRootFor(index);
+        Map<String, AssetMetadata> entries = new LinkedHashMap<>();
+        EnumMap<AssetType, Integer> counters = new EnumMap<>(AssetType.class);
+
+        try (BufferedReader reader = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
+            String header = reader.readLine();
+            if (header == null) {
+                return new AssetRegistry(root, index, entries);
+            }
+            Map<String, Integer> columns = columns(header);
+            String line;
+            int lineNo = 1;
+            while ((line = reader.readLine()) != null) {
+                lineNo++;
+                if (line.isBlank() || line.stripLeading().startsWith("#")) {
+                    continue;
+                }
+                String[] parts = line.split("\t", -1);
+                String sourceId = value(parts, columns, "asset_id");
+                String relativePath = value(parts, columns, "path");
+                if (sourceId.isBlank() || relativePath.isBlank()) {
+                    continue;
+                }
+                String category = value(parts, columns, "category");
+                String sourceGroup = value(parts, columns, "source_group");
+                String sourceAtlas = value(parts, columns, "source_atlas");
+                String contentType = value(parts, columns, "content_type");
+                String tags = value(parts, columns, "content_tags");
+                String description = value(parts, columns, "description");
+                AssetType type = compiledAssetType(category, sourceGroup, sourceAtlas, contentType, tags);
+                String id = syntheticId(type, counters);
+                String path = metadataPath(root, assetRoot.resolve(relativePath.replace('\\', '/')).normalize());
+                String name = compiledAssetName(sourceAtlas, sourceId, value(parts, columns, "row"), value(parts, columns, "col"));
+                String semantic = compiledAssetDescription(description, category, sourceGroup, sourceAtlas, tags);
+                try {
+                    entries.put(id, new AssetMetadata(id, path, name, type, semantic));
+                } catch (RuntimeException ex) {
+                    throw new IOException("Invalid compiled asset index row at line " + lineNo + ": " + ex.getMessage(), ex);
+                }
+            }
+        }
+
+        return new AssetRegistry(root, index, entries);
     }
 
     public Path projectRoot() {
@@ -201,6 +258,136 @@ public final class AssetRegistry {
                     .toList());
         }
         return Collections.unmodifiableMap(frozen);
+    }
+
+    private static Optional<Path> firstExistingCompiledIndex(Path root) {
+        List<String> candidates = List.of(
+                "assets/indexes/asset_content_index_32px.tsv",
+                "assets/indexes/asset_content_index_256px.tsv",
+                "PACKAGE_client/assets/indexes/asset_content_index_32px.tsv",
+                "PACKAGE_client/assets/indexes/asset_content_index_256px.tsv",
+                "ROOT_tools/atlas_asset_pipeline/compiled_assets/asset_content_index_32px.tsv",
+                "ROOT_tools/atlas_asset_pipeline/compiled_assets/asset_content_index_256px.tsv"
+        );
+        for (String candidate : candidates) {
+            Path path = root.resolve(candidate).normalize();
+            if (Files.isRegularFile(path)) {
+                return Optional.of(path);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Path compiledAssetRootFor(Path indexFile) {
+        Path parent = indexFile.getParent();
+        if (parent != null && parent.getFileName() != null && "indexes".equalsIgnoreCase(parent.getFileName().toString())) {
+            Path assets = parent.getParent();
+            if (assets != null) {
+                return assets.resolve("compiled_assets").normalize();
+            }
+        }
+        return parent == null ? Paths.get("").toAbsolutePath().normalize() : parent.normalize();
+    }
+
+    private static Map<String, Integer> columns(String header) {
+        LinkedHashMap<String, Integer> out = new LinkedHashMap<>();
+        String[] names = header == null ? new String[0] : header.split("\t", -1);
+        for (int i = 0; i < names.length; i++) {
+            out.put(names[i].trim().toLowerCase(Locale.ROOT), i);
+        }
+        return out;
+    }
+
+    private static String value(String[] parts, Map<String, Integer> columns, String column) {
+        Integer index = columns.get(column);
+        if (index == null || index < 0 || index >= parts.length) {
+            return "";
+        }
+        return parts[index] == null ? "" : parts[index].trim();
+    }
+
+    private static String metadataPath(Path root, Path assetPath) {
+        try {
+            return root.relativize(assetPath).toString().replace('\\', '/');
+        } catch (IllegalArgumentException ex) {
+            return assetPath.toString().replace('\\', '/');
+        }
+    }
+
+    private static AssetType compiledAssetType(String category, String sourceGroup, String sourceAtlas, String contentType, String tags) {
+        String text = (category + " " + sourceGroup + " " + sourceAtlas + " " + contentType + " " + tags).toLowerCase(Locale.ROOT);
+        if (containsAny(text, "portrait", "protrait", "profile", "human", "cultist", "ganger", "noble", "servitor", "clerk", "cleric")) return AssetType.PORTRAIT;
+        if (containsAny(text, "corpse", "decay", "dead")) return AssetType.CORPSE_DECAY;
+        if (containsAny(text, "weapon", "weapons", "ammo", "firearm", "blade")) return AssetType.WEAPON_ICON;
+        if (containsAny(text, "armor", "armors", "clothing", "helmet")) return AssetType.ARMOR_ICON;
+        if (containsAny(text, "system", "ui", "interface", "rondel", "knowledge", "skill", "icon")) return AssetType.UI_ICON;
+        if (containsAny(text, "road", "street", "vehicle_path")) return AssetType.ROAD_TILE;
+        if (containsAny(text, "sidewalk", "pavement")) return AssetType.SIDEWALK_TILE;
+        if (containsAny(text, "corridor", "walkway")) return AssetType.CORRIDOR_TILE;
+        if (containsAny(text, "floor", "floors", "ground", "void")) return AssetType.FLOOR_TILE;
+        if (containsAny(text, "wall", "walls", "bulkhead")) return AssetType.WALL_TILE;
+        if (containsAny(text, "machine", "machinery", "vehicle", "automotive", "vending", "emergency_machines")) return AssetType.MACHINE;
+        if (containsAny(text, "door", "defense", "fixture", "counter", "table", "station")) return AssetType.FIXTURE;
+        if (containsAny(text, "item", "items", "implant", "drug", "narcotic", "reagent", "goods", "loot", "relic", "journal", "paper")) return AssetType.ITEM_ICON;
+        if (containsAny(text, "object", "objects", "decor", "furniture", "prop")) return AssetType.OBJECT;
+        return AssetType.OBJECT;
+    }
+
+    private static boolean containsAny(String text, String... needles) {
+        if (text == null || text.isBlank()) return false;
+        for (String needle : needles) {
+            if (needle != null && !needle.isBlank() && text.contains(needle)) return true;
+        }
+        return false;
+    }
+
+    private static String syntheticId(AssetType type, EnumMap<AssetType, Integer> counters) {
+        AssetType safe = type == null ? AssetType.UNKNOWN : type;
+        int next = counters.getOrDefault(safe, 0) + 1;
+        counters.put(safe, next);
+        return prefixFor(safe) + "-" + String.format(Locale.ROOT, "%04d", next);
+    }
+
+    private static String prefixFor(AssetType type) {
+        return switch (type == null ? AssetType.UNKNOWN : type) {
+            case PORTRAIT -> "POR";
+            case WALL_TILE -> "WAL";
+            case FLOOR_TILE -> "FLO";
+            case ROAD_TILE -> "ROA";
+            case SIDEWALK_TILE -> "SID";
+            case CORRIDOR_TILE -> "COR";
+            case OBJECT -> "OBJ";
+            case MACHINE -> "MAC";
+            case FIXTURE -> "FIX";
+            case ITEM_ICON -> "ITE";
+            case WEAPON_ICON -> "WEA";
+            case ARMOR_ICON -> "ARM";
+            case UI_ICON -> "UIX";
+            case CORPSE_DECAY -> "DEC";
+            case INTERNAL -> "INT";
+            case UNKNOWN -> "UNK";
+        };
+    }
+
+    private static String compiledAssetName(String sourceAtlas, String sourceId, String row, String col) {
+        String base = !sourceAtlas.isBlank() ? sourceAtlas : sourceId;
+        base = base == null || base.isBlank() ? "Compiled asset" : base.replace('_', ' ').replace('-', ' ').trim();
+        if (!row.isBlank() && !col.isBlank()) {
+            return base + " r" + row + "c" + col;
+        }
+        return base;
+    }
+
+    private static String compiledAssetDescription(String description, String category, String sourceGroup, String sourceAtlas, String tags) {
+        if (description != null && !description.isBlank()) {
+            return description.trim();
+        }
+        StringBuilder out = new StringBuilder();
+        out.append("Compiled ").append(category == null || category.isBlank() ? "asset" : category.trim()).append(" asset");
+        if (sourceGroup != null && !sourceGroup.isBlank()) out.append(" from ").append(sourceGroup.trim());
+        if (sourceAtlas != null && !sourceAtlas.isBlank()) out.append(" / ").append(sourceAtlas.trim());
+        if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
+        return out.toString();
     }
 
     private static boolean looksLikeUri(String value) {
