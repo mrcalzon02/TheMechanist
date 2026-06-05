@@ -170,20 +170,28 @@ public final class SemanticAssetInfopediaAuthority {
                                 ControlReferenceTextSubsystem.contextPromptLine("Look", 0, InputAction.EXAMINE, InputAction.CANCEL, "Examine the selected visible target or back out."),
                                 "Readable boundary: surface observations first; repeated examination can add intent, state, equipment, condition, and context.",
                                 "Guard: Milestone02LookExamineReadabilitySmoke checks depth wording, route/examine sanitization, and prompt coverage."
-                        )),
+                        ),
+                        List.of("movement-planning", "context-prompts")),
                 new MechanicEntry("movement-planning", "Movement Planning", "Movement",
                         "Movement planning lets the player place a ghost target, preview or understand the route, and receive clear refusal text before committing.",
                         List.of(
                                 ControlReferenceTextSubsystem.contextPromptLine("Movement planning", 0, InputAction.CONFIRM, InputAction.CANCEL, "Confirm the ghost target, nudge it, or cancel safely."),
                                 "Readable outcomes: Movement target selected, Partial route, Destination occupied, Path blocked, Cannot reach from here, or outside the current area.",
                                 "Guard: Milestone02MovementPlanningReadabilitySmoke checks selected, partial, occupied, blocked, out-of-area, and unreachable routes."
-                        )),
+                        ),
+                        List.of("look-examine", "context-prompts", "menu-uniformity")),
                 new MechanicEntry("context-prompts", "Context Prompts", "Controls",
                         "Context prompts show the current action names and active keyboard/controller bindings for the panel the player is using.",
-                        contextPromptInfopediaLines()),
+                        contextPromptInfopediaLines(),
+                        List.of("look-examine", "movement-planning", "menu-uniformity")),
                 new MechanicEntry("menu-uniformity", "Menu Uniformity", "Menus",
                         "Menu uniformity keeps ordinary game menus aligned around purpose, back behavior, panes, prompts, disabled-state explanations, and transfer rules.",
-                        menuUniformityInfopediaLines())
+                        menuUniformityInfopediaLines(),
+                        List.of("context-prompts", "movement-planning", "input-rebinding-audit")),
+                new MechanicEntry("input-rebinding-audit", "Input Rebinding Audit", "Controls",
+                        "Input rebinding audit rows expose action labels, contexts, default bindings, controller prompts, conflict notes, required recovery actions, and current-profile readiness.",
+                        InputRebindingAuditAuthority.infopediaLines(),
+                        List.of("context-prompts", "movement-planning", "menu-uniformity"))
         );
     }
 
@@ -236,11 +244,51 @@ public final class SemanticAssetInfopediaAuthority {
             lines.add(PlayerFacingText.sanitize(line));
         }
         lines.add("");
-        lines.add("Related entries: Look and Examine; Movement Planning; Context Prompts.");
+        List<String> related = relatedEntryRowsFor(entry);
+        lines.add("Related entries:");
+        if (related.isEmpty()) lines.add("None registered yet.");
+        else lines.addAll(related);
         return lines;
     }
 
-    private record MechanicEntry(String key, String title, String category, String summary, List<String> lines) {
+    static List<String> relatedRowsForEntry(AssetRegistry registry, String row, AssetType selectedType) {
+        Optional<MechanicEntry> mechanic = mechanicForEntry(row);
+        if (mechanic.isPresent()) return relatedEntryRowsFor(mechanic.get());
+        Optional<AssetMetadata> metadata = metadataForEntry(registry, row);
+        if (metadata.isEmpty()) return List.of();
+        AssetMetadata m = metadata.get();
+        ArrayList<String> related = new ArrayList<>();
+        AssetRegistry safe = registry == null ? AssetRegistry.empty() : registry;
+        for (AssetMetadata candidate : safe.byType(m.type())) {
+            if (candidate.id().equals(m.id())) continue;
+            related.add(formatEntry(candidate));
+            if (related.size() >= 3) break;
+        }
+        return List.copyOf(related);
+    }
+
+    static Optional<String> firstRelatedRowForEntry(AssetRegistry registry, String row, AssetType selectedType) {
+        List<String> rows = relatedRowsForEntry(registry, row, selectedType);
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
+    }
+
+    private static List<String> relatedEntryRowsFor(MechanicEntry entry) {
+        ArrayList<String> rows = new ArrayList<>();
+        if (entry == null) return rows;
+        for (String key : entry.relatedKeys()) {
+            mechanicByKey(key).map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+        }
+        return List.copyOf(rows);
+    }
+
+    private static Optional<MechanicEntry> mechanicByKey(String key) {
+        String wanted = key == null ? "" : key.trim();
+        return mechanicEntries().stream()
+                .filter(e -> e.key().equalsIgnoreCase(wanted))
+                .findFirst();
+    }
+
+    private record MechanicEntry(String key, String title, String category, String summary, List<String> lines, List<String> relatedKeys) {
         boolean matchesFilter(String filter) {
             if (filter == null || filter.isBlank()) return true;
             String q = filter.toLowerCase(Locale.ROOT);

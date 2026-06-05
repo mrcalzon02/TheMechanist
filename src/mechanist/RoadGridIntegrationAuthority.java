@@ -14,6 +14,7 @@ final class RoadGridIntegrationAuthority {
     static final String VERSION = "0.9.10je";
     static final char ROAD_LANE = ';';
     static final char SIDEWALK = '_';
+    static final char PARKING_SPACE = '\'';
     static final int STREET_WIDTH = 4;
 
     static final class Result {
@@ -21,23 +22,28 @@ final class RoadGridIntegrationAuthority {
         int verticalSpines;
         int roadTiles;
         int sidewalkTiles;
+        int parkingTiles;
         int skippedRooms;
         int preservedSpecials;
         int vehicleStagingMarkers;
         int sidewalkRoadPromotions;
+        int roadIntersectionTiles;
         int roadIntersectionCandidates;
+        int curbParkingRuns;
         int distributedSpinePairs;
         String layer = "road-grid terrain integration";
         String summary(){
             return "layer=" + layer + " streets=" + (horizontalSpines + verticalSpines) +
                     " horizontal=" + horizontalSpines + " vertical=" + verticalSpines +
                     " distributedPairs=" + distributedSpinePairs +
-                    " roadTiles=" + roadTiles + " sidewalkTiles=" + sidewalkTiles +
+                    " roadTiles=" + roadTiles + " sidewalkTiles=" + sidewalkTiles + " parkingTiles=" + parkingTiles +
                     " sidewalkRoadPromotions=" + sidewalkRoadPromotions +
+                    " roadIntersectionTiles=" + roadIntersectionTiles +
                     " roadIntersectionCandidates=" + roadIntersectionCandidates +
+                    " curbParkingRuns=" + curbParkingRuns +
                     " skippedRooms=" + skippedRooms + " preservedSpecials=" + preservedSpecials +
                     " vehicleStagingMarkers=" + vehicleStagingMarkers +
-                    " rule=four-wide streets preserve sidewalk identity; only true road lanes count as intersections; street painting refuses room envelopes";
+                    " rule=roads use atlas rows by type, crossings stamp four-by-four intersection footprints, and rare curb sections widen to sidewalk-parking-lane-lane-sidewalk";
         }
     }
 
@@ -93,6 +99,8 @@ final class RoadGridIntegrationAuthority {
         int yStep = Math.max(Math.max(16, yOff), (w.h - 16) / Math.max(3, horizontalPairs * 2 + 1));
         for(int i=2; i<=verticalPairs; i++) addSpinePair(w, res, verticalCenters, cx, i * xStep, true);
         for(int i=2; i<=horizontalPairs; i++) addSpinePair(w, res, horizontalCenters, cy, i * yStep, false);
+        stampIntersectionFootprints(w, res, verticalCenters, horizontalCenters);
+        seedCurbParkingShoulders(w, r, res, verticalCenters, horizontalCenters);
         normalizeStreetCrossings(w, res);
     }
 
@@ -153,6 +161,108 @@ final class RoadGridIntegrationAuthority {
         return touched ? 1 : 0;
     }
 
+    static void stampIntersectionFootprints(World w, Result res, ArrayList<Integer> verticalCenters, ArrayList<Integer> horizontalCenters){
+        if(w == null || res == null || verticalCenters == null || horizontalCenters == null) return;
+        for(Integer cx: verticalCenters) for(Integer cy: horizontalCenters){
+            if(cx == null || cy == null) continue;
+            for(int x=cx-2; x<=cx+1; x++) for(int y=cy-2; y<=cy+1; y++){
+                if(!w.inBounds(x,y) || roomEnvelopeContains(w, x, y, 0)) continue;
+                if(w.tiles[x][y] == ROAD_LANE) {
+                    res.roadIntersectionTiles++;
+                    continue;
+                }
+                if(paintStreetTile(w, x, y, ROAD_LANE, res)) res.roadIntersectionTiles++;
+            }
+        }
+    }
+
+    static void seedCurbParkingShoulders(World w, Random r, Result res, ArrayList<Integer> verticalCenters, ArrayList<Integer> horizontalCenters){
+        if(w == null || r == null || res == null) return;
+        if(horizontalCenters != null) {
+            for(Integer cy: horizontalCenters) {
+                if(cy == null || r.nextInt(100) >= 45) continue;
+                res.curbParkingRuns += seedHorizontalCurbParking(w, r, res, cy, verticalCenters);
+            }
+        }
+        if(verticalCenters != null) {
+            for(Integer cx: verticalCenters) {
+                if(cx == null || r.nextInt(100) >= 45) continue;
+                res.curbParkingRuns += seedVerticalCurbParking(w, r, res, cx, horizontalCenters);
+            }
+        }
+    }
+
+    static int seedHorizontalCurbParking(World w, Random r, Result res, int centerY, ArrayList<Integer> crossingCenters){
+        int made = 0;
+        int attempts = Math.max(1, w.w / 48);
+        for(int a=0; a<attempts; a++){
+            boolean northSide = r.nextBoolean();
+            int parkingY = centerY + (northSide ? -2 : 1);
+            int outerSidewalkY = centerY + (northSide ? -3 : 2);
+            int len = 4 + r.nextInt(7);
+            int start = 3 + r.nextInt(Math.max(1, w.w - len - 6));
+            if(carveHorizontalParkingRun(w, res, start, parkingY, outerSidewalkY, len, crossingCenters)) made++;
+        }
+        return made;
+    }
+
+    static int seedVerticalCurbParking(World w, Random r, Result res, int centerX, ArrayList<Integer> crossingCenters){
+        int made = 0;
+        int attempts = Math.max(1, w.h / 48);
+        for(int a=0; a<attempts; a++){
+            boolean westSide = r.nextBoolean();
+            int parkingX = centerX + (westSide ? -2 : 1);
+            int outerSidewalkX = centerX + (westSide ? -3 : 2);
+            int len = 4 + r.nextInt(7);
+            int start = 3 + r.nextInt(Math.max(1, w.h - len - 6));
+            if(carveVerticalParkingRun(w, res, parkingX, outerSidewalkX, start, len, crossingCenters)) made++;
+        }
+        return made;
+    }
+
+    static boolean carveHorizontalParkingRun(World w, Result res, int startX, int parkingY, int sidewalkY, int len, ArrayList<Integer> crossingCenters){
+        if(parkingY < 1 || sidewalkY < 1 || parkingY >= w.h - 1 || sidewalkY >= w.h - 1) return false;
+        for(int x=startX; x<startX+len; x++){
+            if(nearAnyCenter(x, crossingCenters, 3) || !canPaintParkingCell(w, x, parkingY) || !canPaintOuterSidewalk(w, x, sidewalkY)) return false;
+        }
+        for(int x=startX; x<startX+len; x++){
+            paintStreetTile(w, x, parkingY, PARKING_SPACE, res);
+            paintStreetTile(w, x, sidewalkY, SIDEWALK, res);
+        }
+        return true;
+    }
+
+    static boolean carveVerticalParkingRun(World w, Result res, int parkingX, int sidewalkX, int startY, int len, ArrayList<Integer> crossingCenters){
+        if(parkingX < 1 || sidewalkX < 1 || parkingX >= w.w - 1 || sidewalkX >= w.w - 1) return false;
+        for(int y=startY; y<startY+len; y++){
+            if(nearAnyCenter(y, crossingCenters, 3) || !canPaintParkingCell(w, parkingX, y) || !canPaintOuterSidewalk(w, sidewalkX, y)) return false;
+        }
+        for(int y=startY; y<startY+len; y++){
+            paintStreetTile(w, parkingX, y, PARKING_SPACE, res);
+            paintStreetTile(w, sidewalkX, y, SIDEWALK, res);
+        }
+        return true;
+    }
+
+    static boolean nearAnyCenter(int value, ArrayList<Integer> centers, int radius){
+        if(centers == null) return false;
+        for(Integer center: centers) if(center != null && Math.abs(value - center) <= radius) return true;
+        return false;
+    }
+
+    static boolean canPaintParkingCell(World w, int x, int y){
+        if(w == null || !w.inBounds(x,y) || roomEnvelopeContains(w, x, y, 0)) return false;
+        char old = w.tiles[x][y];
+        return old == SIDEWALK || old == PARKING_SPACE;
+    }
+
+    static boolean canPaintOuterSidewalk(World w, int x, int y){
+        if(w == null || !w.inBounds(x,y) || roomEnvelopeContains(w, x, y, 0)) return false;
+        char old = w.tiles[x][y];
+        if(old == ' ' || InterstitialInfrastructureApi.isInterstitialSolid(old)) return false;
+        return old == '#' || old == '.' || old == SIDEWALK || old == PARKING_SPACE || w.isCorridorGlyph(old);
+    }
+
 
     static void normalizeStreetCrossings(World w, Result res){
         if(w == null || w.tiles == null) return;
@@ -195,6 +305,10 @@ final class RoadGridIntegrationAuthority {
         return w != null && w.inBounds(x,y) && w.tiles[x][y] == SIDEWALK && !roomEnvelopeContains(w, x, y, 0);
     }
 
+    static boolean isParkingSpace(World w, int x, int y){
+        return w != null && w.inBounds(x,y) && w.tiles[x][y] == PARKING_SPACE && !roomEnvelopeContains(w, x, y, 0);
+    }
+
     static boolean roomEnvelopeContains(World w, int x, int y, int pad){
         if(w == null || !w.inBounds(x,y)) return false;
         if(w.roomIds != null && w.roomIds[x][y] >= 0) return true;
@@ -215,10 +329,12 @@ final class RoadGridIntegrationAuthority {
             res.preservedSpecials++; return false;
         }
         if(old == ' ' || InterstitialInfrastructureApi.isInterstitialSolid(old)) return false;
-        if(old != '#' && !w.isCorridorGlyph(old) && old != '.' && old != ROAD_LANE && old != SIDEWALK) return false;
+        if(old != '#' && !w.isCorridorGlyph(old) && old != '.' && old != ROAD_LANE && old != SIDEWALK && old != PARKING_SPACE) return false;
         if(old == glyph) return false;
         w.tiles[x][y] = glyph;
-        if(glyph == ROAD_LANE) res.roadTiles++; else res.sidewalkTiles++;
+        if(glyph == ROAD_LANE) res.roadTiles++;
+        else if(glyph == PARKING_SPACE) res.parkingTiles++;
+        else res.sidewalkTiles++;
         return true;
     }
 

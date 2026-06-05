@@ -119,11 +119,28 @@ public final class KeybindingRemappingPanel extends JPanel implements PropertyCh
         }
         add(tabs, BorderLayout.CENTER);
 
+        var footer = new JPanel(new BorderLayout(6, 6));
+        var recoveryButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        var resetDevice = new JButton("Reset Tab");
+        resetDevice.setToolTipText("Reset the current input family to its default bindings.");
+        resetDevice.addActionListener(e -> applyManagerResult(manager.resetDeviceToDefaults(selectedDevice())));
+        recoveryButtons.add(resetDevice);
+        var restoreDevice = new JButton("Restore Last Good");
+        restoreDevice.setToolTipText("Restore the previous working bindings for the current input family.");
+        restoreDevice.addActionListener(e -> applyManagerResult(manager.restoreLastGoodProfile(selectedDevice())));
+        recoveryButtons.add(restoreDevice);
+        var resetAll = new JButton("Reset All");
+        resetAll.setToolTipText("Reset keyboard, mouse, and controller bindings to defaults.");
+        resetAll.addActionListener(e -> applyManagerResult(manager.resetAllToDefaults()));
+        recoveryButtons.add(resetAll);
+        footer.add(recoveryButtons, BorderLayout.NORTH);
+
         statusLabel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(80, 80, 80)),
                 BorderFactory.createEmptyBorder(8, 4, 2, 4)
         ));
-        add(statusLabel, BorderLayout.SOUTH);
+        footer.add(statusLabel, BorderLayout.SOUTH);
+        add(footer, BorderLayout.SOUTH);
     }
 
     private JPanel buildDevicePanel(InputDevice device) {
@@ -302,6 +319,24 @@ public final class KeybindingRemappingPanel extends JPanel implements PropertyCh
         } else {
             statusLabel.setForeground(LISTENING_FOREGROUND);
             listeningState.button.setForeground(LISTENING_FOREGROUND);
+        }
+    }
+
+    private InputDevice selectedDevice() {
+        int index = tabs.getSelectedIndex();
+        InputDevice[] devices = InputDevice.values();
+        if (index < 0 || index >= devices.length) return InputDevice.KEYBOARD;
+        return devices[index];
+    }
+
+    private void applyManagerResult(KeyBindingManager.RebindResult result) {
+        stopListening();
+        refreshAllRows();
+        if (result != null && result.accepted()) {
+            statusLabel.setForeground(new Color(90, 180, 90));
+            statusLabel.setText(result.message());
+        } else {
+            showWarning(result == null ? "Binding recovery action failed." : result.message());
         }
     }
 

@@ -15,6 +15,7 @@ final class TileDataCompilationAuthority {
     static final String VERSION = "0.9.10jq";
     static final char ROAD_LANE = RoadGridIntegrationAuthority.ROAD_LANE;
     static final char SIDEWALK = RoadGridIntegrationAuthority.SIDEWALK;
+    static final char PARKING_SPACE = RoadGridIntegrationAuthority.PARKING_SPACE;
 
     static final class Result {
         int total;
@@ -70,7 +71,7 @@ final class TileDataCompilationAuthority {
 
     static CompiledTileDescriptor resolveFresh(World w, int x, int y, char glyph) {
         if (isWallGlyph(glyph)) return wallDescriptor(w, glyph, x, y);
-        if (glyph == ROAD_LANE || glyph == SIDEWALK) return roadDescriptor(w, x, y, glyph);
+        if (glyph == ROAD_LANE || glyph == SIDEWALK || glyph == PARKING_SPACE) return roadDescriptor(w, x, y, glyph);
         if (isDoorGlyph(glyph)) return doorDescriptor(glyph);
         if (isFloorGlyph(glyph)) return floorDescriptor(w, x, y, glyph);
         if (isCorridorGlyph(glyph)) return corridorDescriptor(w, x, y, glyph);
@@ -169,18 +170,21 @@ final class TileDataCompilationAuthority {
     }
 
     static CompiledTileDescriptor roadDescriptor(World w, int x, int y, char glyph) {
+        boolean parking = glyph == PARKING_SPACE;
         boolean originalSidewalk = glyph == SIDEWALK;
         boolean promotedCrossing = originalSidewalk && sidewalkPromotesToRoad(w, x, y);
         boolean sidewalk = originalSidewalk && !promotedCrossing;
-        String shape = sidewalk ? "sidewalk" : roadShape(w, x, y);
+        String shape = parking ? "parking" : (sidewalk ? "sidewalk" : roadShape(w, x, y));
         int variant = roadVariantForShape(w, shape);
         String art = roadArtKeyForShape(shape, variant);
-        return new CompiledTileDescriptor(glyph, "road", promotedCrossing ? "underhive_street_crossing" : "underhive_street", shape, variant,
-                art, null, null, null, null, false, true, sidewalk, false, false, false,
+        String family = parking ? "underhive_curb_parking" : (promotedCrossing ? "underhive_street_crossing" : "underhive_street");
+        return new CompiledTileDescriptor(glyph, "road", family, shape, variant,
+                art, null, null, null, parking ? "curb_parking_space" : null, false, true, sidewalk, false, false, false,
                 "tile.road/" + shape + "/v" + variant + (promotedCrossing ? "/promoted_sidewalk_crossing" : ""));
     }
 
     static String roadShape(World w, int x, int y) {
+        if (intersectionFootprint(w, x, y)) return "intersection";
         boolean west = roadLane(w, x - 1, y) || sidewalkPromotesToRoad(w, x - 1, y);
         boolean east = roadLane(w, x + 1, y) || sidewalkPromotesToRoad(w, x + 1, y);
         boolean north = roadLane(w, x, y - 1) || sidewalkPromotesToRoad(w, x, y - 1);
@@ -210,7 +214,6 @@ final class TileDataCompilationAuthority {
 
     static int roadVariantForShape(World w, String shape) {
         if (shape == null) return 1;
-        if (shape.startsWith("corner_") || shape.startsWith("end_")) return 1;
         return mapRoadVariant(w);
     }
 
@@ -224,7 +227,8 @@ final class TileDataCompilationAuthority {
 
     static String roadArtKeyForShape(String shape, int variant) {
         if (shape == null || shape.isBlank()) return "road_north_south_v1";
-        if (shape.startsWith("corner_") || shape.startsWith("end_")) return "road_" + shape;
+        if (shape.startsWith("corner_") || shape.startsWith("end_")) return "road_round_v" + Math.max(1, Math.min(5, variant));
+        if ("parking".equals(shape)) return "road_parking_v" + Math.max(1, Math.min(5, variant));
         return "road_" + shape + "_v" + Math.max(1, Math.min(5, variant));
     }
 
@@ -363,6 +367,10 @@ final class TileDataCompilationAuthority {
         return w != null && w.inBounds(x, y) && w.tiles[x][y] == SIDEWALK && w.roomIds[x][y] < 0;
     }
 
+    static boolean parking(World w, int x, int y) {
+        return w != null && w.inBounds(x, y) && w.tiles[x][y] == PARKING_SPACE && w.roomIds[x][y] < 0;
+    }
+
     static boolean roadLike(World w, int x, int y) {
         // 0.9.10fs: road connectivity means a true carriageway/lane only. Sidewalks
         // are street-family art but must not contribute to road-shape resolution;
@@ -371,7 +379,20 @@ final class TileDataCompilationAuthority {
     }
 
     static boolean streetEdge(World w, int x, int y) {
-        return roadLane(w, x, y) || sidewalk(w, x, y);
+        return roadLane(w, x, y) || sidewalk(w, x, y) || parking(w, x, y);
+    }
+
+    static boolean intersectionFootprint(World w, int x, int y) {
+        if (!roadLane(w, x, y)) return false;
+        return maxContiguousRoadRun(w, x, y, 1, 0) >= 4 && maxContiguousRoadRun(w, x, y, 0, 1) >= 4;
+    }
+
+    static int maxContiguousRoadRun(World w, int x, int y, int dx, int dy) {
+        if (!roadLane(w, x, y)) return 0;
+        int n = 1;
+        for(int step=1; step<=3 && roadLane(w, x + dx * step, y + dy * step); step++) n++;
+        for(int step=1; step<=3 && roadLane(w, x - dx * step, y - dy * step); step++) n++;
+        return n;
     }
 
     static boolean sidewalkPromotesToRoad(World w, int x, int y) {
@@ -411,6 +432,8 @@ final class TileDataCompilationAuthority {
         if (w.zoneType == ZoneType.GANGER_TURF || f == Faction.BANDIT || (f != null && f.name().startsWith("GANGER"))) return '`';
         boolean sidewalkNeighbor = sidewalk(w, x - 1, y) || sidewalk(w, x + 1, y) || sidewalk(w, x, y - 1) || sidewalk(w, x, y + 1);
         if (sidewalkNeighbor) return SIDEWALK;
+        boolean parkingNeighbor = parking(w, x - 1, y) || parking(w, x + 1, y) || parking(w, x, y - 1) || parking(w, x, y + 1);
+        if (parkingNeighbor) return PARKING_SPACE;
         boolean roadNeighbor = roadLane(w, x - 1, y) || roadLane(w, x + 1, y) || roadLane(w, x, y - 1) || roadLane(w, x, y + 1);
         if (roadNeighbor) return ROAD_LANE;
         if (corridorLike(w, x - 1, y) || corridorLike(w, x + 1, y) || corridorLike(w, x, y - 1) || corridorLike(w, x, y + 1)) {

@@ -2431,6 +2431,30 @@ class GamePanel extends LegacyPanelBridgeBase {
         drawInfopediaDetailBox(g, detail, "Entry Detail", scrolled);
         drawInfopediaListBox(g, list, "Assets In Current Tab", visible, Math.max(0, infopediaSelectionIndex - start), true);
         drawInfopediaIconPreview(g, preview, detailLines, icon);
+        if (SemanticAssetInfopediaAuthority.firstRelatedRowForEntry(mechanist.assets.AssetManager.registry(), selected, selectedType).isPresent()) {
+            addOverlayButton("Related", preview.x + 10, preview.y + preview.height - 36, 86, 28, "Open the first related InfoPedia entry.", () -> openFirstRelatedInfopediaEntry(selected, selectedType));
+        }
+    }
+
+    private void openFirstRelatedInfopediaEntry(String selected, mechanist.assets.AssetType selectedType) {
+        java.util.Optional<String> related = SemanticAssetInfopediaAuthority.firstRelatedRowForEntry(mechanist.assets.AssetManager.registry(), selected, selectedType);
+        if (related.isEmpty()) return;
+        String target = related.get();
+        infopediaAssetFilter = "";
+        if (target.startsWith("MECHANIC - ")) infopediaTab = 0;
+        java.util.List<String> entries = currentInfopediaEntries(selectedInfopediaAssetType());
+        for (int i = 0; i < entries.size(); i++) {
+            if (target.equals(entries.get(i))) {
+                infopediaSelectionIndex = i;
+                infopediaDetailScroll = 0;
+                infopediaListScroll = Math.max(0, i - 2);
+                activeScrollTag = "infopedia-list";
+                repaint();
+                return;
+            }
+        }
+        logEvent("Related InfoPedia entry is not visible in the current category.");
+        repaint();
     }
 
     private int infopediaControlsHeight(java.awt.FontMetrics fm, int width) {

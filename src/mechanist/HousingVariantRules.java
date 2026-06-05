@@ -201,15 +201,15 @@ final class HousingVariantRules {
         }
         if (profile.assets().contains(PersonalWealthPropertyRules.PersonalAsset.VALUABLES_CACHE)) {
             objects.add(HousingObjectCategory.STRONGBOX);
-            containers.add(profile.wealthTier.rank >= PersonalWealthPropertyRules.WealthTier.NOBLE.rank ? ContainerKind.NOBLE_TRUNK : ContainerKind.STRONGBOX);
+            containers.add(profile.tier.rank >= PersonalWealthPropertyRules.WealthTier.NOBLE.rank ? ContainerKind.NOBLE_TRUNK : ContainerKind.STRONGBOX);
         }
         applyFactionObjects(style, objects, containers);
-        int[] size = minimumSizeFor(kind, profile.wealthTier);
-        return new HousingVariant(faction, style, kind, profile.wealthTier, profile.housingType,
+        int[] size = minimumSizeFor(kind, profile.tier);
+        return new HousingVariant(faction, style, kind, profile.tier, profile.housingType,
                 objects, containers, dressing, belongings, size[0], size[1], profile.mayOwnPet,
                 profile.mayOwnPersonalVehicle, profile.mayHavePrivateStorage,
-                isSecuredStyle(style) || profile.wealthTier.rank >= PersonalWealthPropertyRules.WealthTier.NOBLE.rank,
-                labelFor(style, kind, profile.wealthTier));
+                isSecuredStyle(style) || profile.tier.rank >= PersonalWealthPropertyRules.WealthTier.NOBLE.rank,
+                labelFor(style, kind, profile.tier));
     }
 
     static HousingLoadoutPlan loadoutFor(Faction faction, PersonalWealthPropertyRules.WealthProfile profile, long seed) {

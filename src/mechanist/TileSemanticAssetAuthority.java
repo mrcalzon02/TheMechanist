@@ -112,6 +112,7 @@ final class TileSemanticAssetAuthority {
         bind("road_north_south", "ROAD-N01");
         bind("road_east_west", "ROAD-E01");
         bind("road_sidewalk", "SIDE-A01");
+        bind("road_parking", "PRK-0101");
         for (int col = 1; col <= 5; col++) {
             bind("road_north_south_v" + col, col == 1 ? "ROAD-N01" : "ROD-01" + two(col));
             bind("tile_road_north_south_v" + col, col == 1 ? "ROAD-N01" : "ROD-01" + two(col));
@@ -121,10 +122,13 @@ final class TileSemanticAssetAuthority {
             bind("tile_road_intersection_v" + col, "ROD-04" + two(col));
             bind("road_sidewalk_v" + col, col == 1 ? "SIDE-A01" : "ROD-05" + two(col));
             bind("tile_road_sidewalk_v" + col, col == 1 ? "SIDE-A01" : "ROD-05" + two(col));
+            bind("road_parking_v" + col, "PRK-01" + two(col));
+            bind("tile_road_parking_v" + col, "PRK-01" + two(col));
         }
         bind("road_intersection", "ROD-0401");
         bind("tile_road_intersection", "ROD-0401");
         bind("tile_road_sidewalk", "SIDE-A01");
+        bind("tile_road_parking", "PRK-0101");
         bind("road_corner_west_north", "ROD-0301");
         bind("road_corner_west_south", "ROD-0302");
         bind("road_corner_east_north", "ROD-0303");

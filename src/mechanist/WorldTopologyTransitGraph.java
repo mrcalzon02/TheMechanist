@@ -230,7 +230,7 @@ final class WorldTopologyTransitGraph {
         return purpose == RoutePurpose.EMERGENCY_RESPONSE && edge.purpose() == RoutePurpose.NPC_TRAVEL;
     }
 
-    static void connectBoth(ArrayList<TransitEdge> edges, NodeId a, NodeId b, RoutePurpose purpose, int cost, String label) {
+    static void connectBoth(List<TransitEdge> edges, NodeId a, NodeId b, RoutePurpose purpose, int cost, String label) {
         edges.add(new TransitEdge(a, b, purpose, cost, label));
         edges.add(new TransitEdge(b, a, purpose, cost, label + "-return"));
     }

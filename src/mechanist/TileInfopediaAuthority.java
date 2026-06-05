@@ -88,6 +88,8 @@ final class TileInfopediaAuthority {
                 "Base layer: road.", "Allowed variants: road_intersection_v1 through v5.", "Only true road-lane continuity on both axes may produce an intersection."));
         add(new Entry("Road / Sidewalk", "ROADS", '_', "tile.road/sidewalk/v1-5", "street shoulders and pedestrian edges", variants("road_sidewalk_v", 5),
                 "Base layer: road family, sidewalk flag true.", "Allowed variants: road_sidewalk_v1 through v5.", "Sidewalks do not count as ordinary road-neighbor connectors."));
+        add(new Entry("Road / Curb Parking", "ROADS", '\'', "tile.road/parking/v1-5", "rare short curbside parking shoulders between sidewalk and road lane", variants("road_parking_v", 5),
+                "Base layer: road family, semantic tag curb_parking_space.", "Allowed variants: road_parking_v1 through v5.", "Placed sporadically as sidewalk-parking-lane-lane-sidewalk or its mirrored side."));
         add(new Entry("Road / Corner West-North", "ROADS", ';', "tile.road/corner_west_north/v1", "direction-aware rounded street corner", new String[]{"road_corner_west_north"},
                 "Base layer: road.", "Direction-specific corner alias; not a random row-3 road variant."));
         add(new Entry("Road / Corner West-South", "ROADS", ';', "tile.road/corner_west_south/v1", "direction-aware rounded street corner", new String[]{"road_corner_west_south"},

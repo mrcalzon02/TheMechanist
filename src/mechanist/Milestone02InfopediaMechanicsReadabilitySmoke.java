@@ -19,6 +19,14 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
 
         List<String> detailFromRow = SemanticAssetInfopediaAuthority.detailLines(null, rows.get(0), null, "");
         requireContains(detailFromRow, "Reference:", "mechanic detail reference");
+        requireContains(detailFromRow, "MECHANIC - Movement Planning", "mechanic related entry row");
+        List<String> relatedRows = SemanticAssetInfopediaAuthority.relatedRowsForEntry(null, rows.get(0), null);
+        requireContains(relatedRows, "Movement Planning", "structured related row");
+        String firstRelated = SemanticAssetInfopediaAuthority.firstRelatedRowForEntry(null, rows.get(0), null)
+                .orElseThrow(() -> new AssertionError("Expected first related mechanic row"));
+        if (!firstRelated.startsWith("MECHANIC - ")) {
+            throw new AssertionError("Related mechanic row should be navigable: " + firstRelated);
+        }
         for (String line : detailFromRow) rejectLeaks(line, "mechanic detail from row");
     }
 

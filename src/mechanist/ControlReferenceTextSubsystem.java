@@ -1,5 +1,8 @@
 package mechanist;
 
+import mechanist.input.InputDevice;
+import mechanist.input.KeyBindingManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,6 +129,11 @@ final class ControlReferenceTextSubsystem {
     }
 
     static String keyboardPromptFor(InputAction action) {
+        String dynamic = dynamicPrompt(InputDevice.KEYBOARD, action, "Keyboard");
+        if (!dynamic.isBlank()) {
+            if (action == InputAction.EXAMINE) return dynamic + " while looking";
+            return dynamic;
+        }
         switch (action) {
             case MOVE_UP: return "Keyboard: W / Up";
             case MOVE_DOWN: return "Keyboard: S / Down";
@@ -214,6 +222,8 @@ final class ControlReferenceTextSubsystem {
     }
 
     static String genericPromptFor(InputAction action) {
+        String dynamic = dynamicPrompt(InputDevice.GENERIC_CONTROLLER, action, "Generic");
+        if (!dynamic.isBlank()) return dynamic;
         switch (action) {
             case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Generic: left stick / D-pad";
             case CONFIRM: case INTERACT: case EXAMINE: return "Generic: south face";
@@ -237,6 +247,42 @@ final class ControlReferenceTextSubsystem {
         String controller = controllerPromptFor(controlsTab, action);
         if (controlsTab <= 0) return label + " [" + keyboard + "]";
         return label + " [" + controller + "; " + keyboard + "]";
+    }
+
+    static String commandIdFor(InputAction action) {
+        if (action == null) return "";
+        return switch (action) {
+            case MOVE_UP -> "move.up";
+            case MOVE_DOWN -> "move.down";
+            case MOVE_LEFT -> "move.left";
+            case MOVE_RIGHT -> "move.right";
+            case CONFIRM -> "confirm";
+            case CANCEL -> "cancel";
+            case WAIT -> "wait";
+            case INTERACT -> "interact";
+            case EXAMINE -> "examine";
+            case INVENTORY -> "inventory";
+            case CHARACTER -> "character";
+            case BUILD -> "build";
+            case SENSES -> "senses";
+            case PLAN_MOVE -> "plan.move";
+            case PAUSE -> "pause";
+            case LOOK -> "look";
+            case MAP -> "map";
+            case ZOOM_IN -> "zoom.in";
+            case ZOOM_OUT -> "zoom.out";
+            case ATTACK -> "attack";
+            case RELOAD -> "reload";
+        };
+    }
+
+    private static String dynamicPrompt(InputDevice device, InputAction action, String prefix) {
+        String commandId = commandIdFor(action);
+        if (commandId.isBlank()) return "";
+        return KeyBindingManager.getInstance()
+                .getBinding(device, commandId)
+                .map(bind -> prefix + ": " + bind.token().displayName())
+                .orElse("");
     }
 
     private static String safePromptPart(String text, String fallback) {

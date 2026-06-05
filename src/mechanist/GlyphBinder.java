@@ -124,15 +124,17 @@ final class GlyphBinder {
             bindAtlasCell(registry, "wall_noble_bulkhead_v" + v, "noble_and_noble_security_walls", 3, v);
             bindAtlasCell(registry, "wall_sewer_bulkhead_v" + v, "sewerwalls", 3, v);
 
-            bindAtlasCell(registry, "road_north_south_v" + v, "n_s_e_w_r_i_s", v, 1);
-            bindAtlasCell(registry, "road_east_west_v" + v, "n_s_e_w_r_i_s", v, 2);
-            bindAtlasCell(registry, "road_round_v" + v, "n_s_e_w_r_i_s", v, 3);
-            bindAtlasCell(registry, "road_intersection_v" + v, "n_s_e_w_r_i_s", v, 4);
-            bindAtlasCell(registry, "road_sidewalk_v" + v, "n_s_e_w_r_i_s", v, 5);
-            bindAtlasCell(registry, "tile_road_north_south_v" + v, "n_s_e_w_r_i_s", v, 1);
-            bindAtlasCell(registry, "tile_road_east_west_v" + v, "n_s_e_w_r_i_s", v, 2);
-            bindAtlasCell(registry, "tile_road_intersection_v" + v, "n_s_e_w_r_i_s", v, 4);
-            bindAtlasCell(registry, "tile_road_sidewalk_v" + v, "n_s_e_w_r_i_s", v, 5);
+            bindAtlasCell(registry, "road_north_south_v" + v, "n_s_e_w_r_i_s", 1, v);
+            bindAtlasCell(registry, "road_east_west_v" + v, "n_s_e_w_r_i_s", 2, v);
+            bindAtlasCell(registry, "road_round_v" + v, "n_s_e_w_r_i_s", 3, v);
+            bindAtlasCell(registry, "road_intersection_v" + v, "n_s_e_w_r_i_s", 4, v);
+            bindAtlasCell(registry, "road_sidewalk_v" + v, "n_s_e_w_r_i_s", 5, v);
+            bindAtlasCell(registry, "road_parking_v" + v, "road_infrastructure", 2, v < 5 ? Math.max(3, v) : 5);
+            bindAtlasCell(registry, "tile_road_north_south_v" + v, "n_s_e_w_r_i_s", 1, v);
+            bindAtlasCell(registry, "tile_road_east_west_v" + v, "n_s_e_w_r_i_s", 2, v);
+            bindAtlasCell(registry, "tile_road_intersection_v" + v, "n_s_e_w_r_i_s", 4, v);
+            bindAtlasCell(registry, "tile_road_sidewalk_v" + v, "n_s_e_w_r_i_s", 5, v);
+            bindAtlasCell(registry, "tile_road_parking_v" + v, "road_infrastructure", 2, v < 5 ? Math.max(3, v) : 5);
         }
 
         bindAliasToFirstAvailableAlias(registry, "floor_bare_underhive", "floor_bare_underhive_v1");
@@ -166,8 +168,10 @@ final class GlyphBinder {
         bindAliasToFirstAvailableAlias(registry, "road_east_west", "road_east_west_v1");
         bindAliasToFirstAvailableAlias(registry, "road_intersection", "road_intersection_v1");
         bindAliasToFirstAvailableAlias(registry, "road_sidewalk", "road_sidewalk_v1");
+        bindAliasToFirstAvailableAlias(registry, "road_parking", "road_parking_v1");
         bindAliasToFirstAvailableAlias(registry, "tile_road_intersection", "road_intersection_v1");
         bindAliasToFirstAvailableAlias(registry, "tile_road_sidewalk", "road_sidewalk_v1");
+        bindAliasToFirstAvailableAlias(registry, "tile_road_parking", "road_parking_v1");
         bindAliasToFirstAvailableAlias(registry, "road_corner_west_north", "road_round_v1");
         bindAliasToFirstAvailableAlias(registry, "road_corner_west_south", "road_round_v1");
         bindAliasToFirstAvailableAlias(registry, "road_corner_east_north", "road_round_v1");
@@ -267,6 +271,7 @@ final class GlyphBinder {
             bindSemantic(registry, "ROD-03" + two(v), "road_round_v" + v);
             bindSemantic(registry, "ROD-04" + two(v), "road_intersection_v" + v);
             bindSemantic(registry, "ROD-05" + two(v), "road_sidewalk_v" + v);
+            bindSemantic(registry, "PRK-01" + two(v), "road_parking_v" + v);
         }
 
         bindSemantic(registry, "ROAD-N01", "road_north_south");
