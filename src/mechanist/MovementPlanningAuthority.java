@@ -5,6 +5,7 @@ import java.awt.Point;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -16,6 +17,7 @@ final class MovementPlanningAuthority {
 
     record MovementPlanReadout(boolean reachable, boolean exact, String summary) { }
     record OccupiedTileRoutingReadout(boolean hardBlocked, boolean pushSqueezeEligible, String debugSummary) { }
+    record StandableTileSearchResult(boolean found, int x, int y, int radiusUsed, String summary) { }
 
     static ArrayList<Point> buildPathTo(GamePanel game, int targetX, int targetY, int maxSteps) {
         ArrayList<Point> out = new ArrayList<>();
@@ -130,6 +132,39 @@ final class MovementPlanningAuthority {
         return !readout.hardBlocked();
     }
 
+    static StandableTileSearchResult nearestStandableTile(ZoneTileState[][] tiles, int startX, int startY, int startRadius, int maxRadius) {
+        if (tiles == null || tiles.length == 0) {
+            return new StandableTileSearchResult(false, startX, startY, 0, "No tile grid is available.");
+        }
+        if (isStandableWithExit(tiles, startX, startY)) {
+            return new StandableTileSearchResult(false, startX, startY, 0, "Current tile is already standable and has an exit.");
+        }
+        int first = Math.max(1, startRadius);
+        int last = Math.max(first, maxRadius);
+        for (int radius = first; radius <= last; radius++) {
+            ArrayList<Point> candidates = standableCandidatesAtRadius(tiles, startX, startY, radius);
+            if (!candidates.isEmpty()) {
+                Point selected = candidates.get(0);
+                return new StandableTileSearchResult(true, selected.x, selected.y, radius,
+                        "Nearest standable tile selected at " + selected.x + "," + selected.y + " using radius " + radius + ".");
+            }
+        }
+        return new StandableTileSearchResult(false, startX, startY, last, "No standable tile found in search radius.");
+    }
+
+    static boolean standableZoneTile(ZoneTileState[][] tiles, int x, int y) {
+        return inZoneTileBounds(tiles, x, y)
+                && tiles[x][y] != null
+                && !tiles[x][y].hasFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT)
+                && !tiles[x][y].hasSlot(ZoneTileState.TileSlot.ENTITY)
+                && !tiles[x][y].hasSlot(ZoneTileState.TileSlot.PET)
+                && !tiles[x][y].hasSlot(ZoneTileState.TileSlot.VEHICLE);
+    }
+
+    static String movementRecoveryAuditSummary() {
+        return "movementRecoverySearch=nearestStandableTile search=expandingRadius requires=walkable+unoccupied+adjacentExit mutation=callerAppliesResult";
+    }
+
     static boolean pathReaches(java.util.List<Point> path, int targetX, int targetY) {
         if (path == null || path.isEmpty()) return false;
         Point end = path.get(path.size() - 1);
@@ -220,6 +255,44 @@ final class MovementPlanningAuthority {
             case GamePanel.MOTION_WALK -> new Color(118, 214, 224, a);
             default -> new Color(118, 214, 224, a);
         };
+    }
+
+    private static ArrayList<Point> standableCandidatesAtRadius(ZoneTileState[][] tiles, int sx, int sy, int radius) {
+        ArrayList<Point> candidates = new ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
+                int x = sx + dx;
+                int y = sy + dy;
+                if (isStandableWithExit(tiles, x, y)) candidates.add(new Point(x, y));
+            }
+        }
+        candidates.sort(Comparator
+                .comparingLong((Point p) -> targetScore(p.x, p.y, sx, sy))
+                .thenComparingInt(p -> stableCoordinateTieBreak(sx, sy, p.x, p.y))
+                .thenComparingInt(p -> p.x)
+                .thenComparingInt(p -> p.y));
+        return candidates;
+    }
+
+    private static boolean isStandableWithExit(ZoneTileState[][] tiles, int x, int y) {
+        if (!standableZoneTile(tiles, x, y)) return false;
+        int[][] dirs = { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+        for (int[] d : dirs) if (standableZoneTile(tiles, x + d[0], y + d[1])) return true;
+        return false;
+    }
+
+    private static boolean inZoneTileBounds(ZoneTileState[][] tiles, int x, int y) {
+        return x >= 0 && y >= 0 && tiles != null && x < tiles.length && tiles[x] != null && y < tiles[x].length;
+    }
+
+    private static int stableCoordinateTieBreak(int sx, int sy, int x, int y) {
+        int h = 17;
+        h = 31 * h + sx;
+        h = 31 * h + sy;
+        h = 31 * h + x;
+        h = 31 * h + y;
+        return h & 0x7fffffff;
     }
 
     private static long targetScore(int x, int y, int tx, int ty) {
