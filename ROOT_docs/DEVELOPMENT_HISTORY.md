@@ -97,3 +97,11 @@ Updated `scripts/BUILD_MERMAID_CODE_MAP.py` so future local Mermaid regeneration
 Attempted to update `ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv` with a connector-limited regeneration marker, but that write was blocked. The manifest was therefore left untouched rather than corrupting a generated checksum ledger with fabricated filesystem sizes, modified times, or SHA-256 values. `ROOT_docs/functionmap/Mermaid_Code_Map_Master.md` and the generated Mermaid ledgers were also not regenerated because the connector cannot run `py -3 scripts/BUILD_MERMAID_CODE_MAP.py --apply` over the full local tree.
 
 Verification: documentation and script updates were committed through the GitHub connector only. Required local follow-up remains: run `ROOT_tools/update-repository-file-manifest.ps1`, run `py -3 scripts/BUILD_MERMAID_CODE_MAP.py --apply`, compile Java 17 with UTF-8 source encoding, run Gate 3 and touched movement/input smokes, rebuild jars/package seed, run the Java 17 classfile scan, and update this history with the real local verification results.
+
+## Repository Storage Governance Cleanup Slice
+
+Unified repository storage doctrine around `ROOT_docs/`, `ROOT_tools/`, `ROOT_build/`, `ROOT_SRC_assets/`, and the owning `PACKAGE_*` trees. Updated `ROOT_docs/DOCUMENTATION_STANDARDS.md` and `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md` so active documentation no longer points at root `docs/` or ad-hoc tooling/build locations.
+
+Moved the active handoff briefing into `ROOT_docs/NEW_DEVELOPMENT_CONVERSATION_BRIEFING.md`, removed the old root-level handoff copy, added `ROOT_tools/functionmap/BUILD_MERMAID_CODE_MAP.py` as the canonical Mermaid generator entry point, established `ROOT_build/README_ROOT_BUILD.md`, and removed the empty stale `ROOT_tools/repo_file_index.txt` artifact.
+
+Verification: connector-only repository cleanup. Local manifest regeneration, Mermaid regeneration, Java compile, smoke tests, package seed build, classfile scan, zip integrity, native package checks, and manual GUI launch were not run. Required local follow-up: run `ROOT_tools/update-repository-file-manifest.ps1`, run `py -3 ROOT_tools/functionmap/BUILD_MERMAID_CODE_MAP.py --apply`, then rerun Java 17 validation.
