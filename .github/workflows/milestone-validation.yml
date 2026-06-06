@@ -1,11 +1,26 @@
 name: Milestone Validation and Smoke
 
+run-name: Milestone validation for ${{ github.ref_name }} at ${{ github.sha }}
+
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      validation_note:
+        description: Optional note for the manual validation run
+        required: false
+        default: manual milestone validation
+
+permissions:
+  contents: read
+
+env:
+  VALIDATION_PROFILE: milestone-validation-reactivated-2026-06-05
 
 jobs:
   validate:
@@ -23,12 +38,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Announce validation profile
+        shell: pwsh
+        run: |
+          Write-Host "Validation profile: $env:VALIDATION_PROFILE"
+          Write-Host "Manual note: ${{ github.event.inputs.validation_note }}"
+          Write-Host "Repository: ${{ github.repository }}"
+          Write-Host "Ref: ${{ github.ref }}"
+
       - name: Compile main source tree
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path "build\ci\classes" | Out-Null
-          $sources = Get-ChildItem -LiteralPath "src" -Recurse -File -Filter "*.java"
+          $sources = @(Get-ChildItem -LiteralPath "src" -Recurse -File -Filter "*.java")
           if (-not $sources -or $sources.Count -eq 0) { throw "No Java sources found under src" }
           $sources | ForEach-Object { '"' + ($_.FullName -replace '\\','/') + '"' } | Set-Content -LiteralPath "build\ci\sources.arg" -Encoding ASCII
           javac --release 17 -d "build\ci\classes" "@build\ci\sources.arg"
@@ -54,6 +77,18 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           & "ROOT_tools\packaging\stage_local_package_seed.ps1" -Version "ci-milestone-validation"
+
+      - name: Write validation summary
+        if: always()
+        shell: pwsh
+        run: |
+          "## Milestone validation" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "- Profile: $env:VALIDATION_PROFILE" >> $env:GITHUB_STEP_SUMMARY
+          "- Java: Temurin 17" >> $env:GITHUB_STEP_SUMMARY
+          "- Compile target: src -> build/ci/classes" >> $env:GITHUB_STEP_SUMMARY
+          "- Smoke entry point: mechanist.Gate3PlayerFacingTextSmokeSuite" >> $env:GITHUB_STEP_SUMMARY
+          "- Package seed path: ROOT_tools/packaging/stage_local_package_seed.ps1" >> $env:GITHUB_STEP_SUMMARY
 
       - name: Upload local package seed manifest
         if: always()
