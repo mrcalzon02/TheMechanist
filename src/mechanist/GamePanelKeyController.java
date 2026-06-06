@@ -273,7 +273,7 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
         if (code == KeyEvent.VK_W) dy = -1;
         if (code == KeyEvent.VK_S) dy = 1;
-        if (dx != 0 || dy != 0) panel.queueOrExecuteMovementInput(dx, dy);
+        if (dx != 0 || dy != 0) MovementExecutionAuthority.executeStep(panel, dx, dy, "keyboard movement", true);
         panel.repaint();
         panel.sanityCheck("KEY_END");
         return dx != 0 || dy != 0;
