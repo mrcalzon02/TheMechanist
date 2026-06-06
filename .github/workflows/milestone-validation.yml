@@ -1,0 +1,64 @@
+name: Milestone Validation and Smoke
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Java 17 compile, smoke tests, and package seed
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Compile main source tree
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path "build\ci\classes" | Out-Null
+          $sources = Get-ChildItem -LiteralPath "src" -Recurse -File -Filter "*.java"
+          if (-not $sources -or $sources.Count -eq 0) { throw "No Java sources found under src" }
+          $sources | ForEach-Object { '"' + ($_.FullName -replace '\\','/') + '"' } | Set-Content -LiteralPath "build\ci\sources.arg" -Encoding ASCII
+          javac --release 17 -d "build\ci\classes" "@build\ci\sources.arg"
+
+      - name: Run player-facing and milestone smoke tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $classes = "build\ci\classes"
+          $smokes = @(
+            "mechanist.Gate3PlayerFacingTextSmokeSuite",
+            "mechanist.SimulationToolSuiteRecoverySmoke",
+            "mechanist.LightingFalloffStreetLightSmoke",
+            "mechanist.RoadTemplateRulesSmoke"
+          )
+          foreach ($smoke in $smokes) {
+            Write-Host "Running $smoke"
+            java -cp $classes $smoke
+          }
+
+      - name: Stage local package seed and scan Java 17 classfiles
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          & "ROOT_tools\packaging\stage_local_package_seed.ps1" -Version "ci-milestone-validation"
+
+      - name: Upload local package seed manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-package-seed-manifests
+          path: build/local-package-seed/manifests
+          if-no-files-found: ignore
