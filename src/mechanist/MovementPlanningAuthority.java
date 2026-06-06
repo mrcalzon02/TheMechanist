@@ -15,6 +15,7 @@ final class MovementPlanningAuthority {
     private MovementPlanningAuthority() {}
 
     record MovementPlanReadout(boolean reachable, boolean exact, String summary) { }
+    record OccupiedTileRoutingReadout(boolean hardBlocked, boolean pushSqueezeEligible, String debugSummary) { }
 
     static ArrayList<Point> buildPathTo(GamePanel game, int targetX, int targetY, int maxSteps) {
         ArrayList<Point> out = new ArrayList<>();
@@ -114,6 +115,21 @@ final class MovementPlanningAuthority {
                 && ((x == game.playerX && y == game.playerY) || game.world.npcAt(x, y) == null);
     }
 
+    static OccupiedTileRoutingReadout occupiedTileRoutingForPlanning(boolean inBounds, boolean walkable, boolean occupied, boolean actorLayerPushSqueezeAvailable) {
+        if (!inBounds) return new OccupiedTileRoutingReadout(true, false, "Destination is outside the current area.");
+        if (!walkable) return new OccupiedTileRoutingReadout(true, false, "Destination is not walkable.");
+        if (!occupied) return new OccupiedTileRoutingReadout(false, false, "Destination is open.");
+        if (actorLayerPushSqueezeAvailable) {
+            return new OccupiedTileRoutingReadout(false, true, "Destination occupied; route through actor-layer push/squeeze resolver before final movement commit.");
+        }
+        return new OccupiedTileRoutingReadout(true, false, "Destination occupied and no actor-layer push/squeeze resolver is available.");
+    }
+
+    static boolean canEnterForMovementCommit(boolean inBounds, boolean walkable, boolean occupied, boolean actorLayerPushSqueezeAvailable) {
+        OccupiedTileRoutingReadout readout = occupiedTileRoutingForPlanning(inBounds, walkable, occupied, actorLayerPushSqueezeAvailable);
+        return !readout.hardBlocked();
+    }
+
     static boolean pathReaches(java.util.List<Point> path, int targetX, int targetY) {
         if (path == null || path.isEmpty()) return false;
         Point end = path.get(path.size() - 1);
@@ -135,16 +151,27 @@ final class MovementPlanningAuthority {
     static MovementPlanReadout describePlan(String modeLabel, int maxSteps, int targetX, int targetY,
                                             List<Point> path, boolean targetInBounds,
                                             boolean targetWalkable, boolean targetOccupied) {
+        return describePlan(modeLabel, maxSteps, targetX, targetY, path, targetInBounds, targetWalkable, targetOccupied, false);
+    }
+
+    static MovementPlanReadout describePlan(String modeLabel, int maxSteps, int targetX, int targetY,
+                                            List<Point> path, boolean targetInBounds,
+                                            boolean targetWalkable, boolean targetOccupied,
+                                            boolean actorLayerPushSqueezeAvailable) {
         String mode = modeLabel == null || modeLabel.isBlank() ? "Movement" : PlayerFacingText.sanitize(modeLabel);
         int range = Math.max(0, maxSteps);
-        if (!targetInBounds) {
-            return denied("Destination is outside the current area.");
-        }
-        if (targetOccupied) {
+        OccupiedTileRoutingReadout occupiedRouting = occupiedTileRoutingForPlanning(targetInBounds, targetWalkable, targetOccupied, actorLayerPushSqueezeAvailable);
+        if (occupiedRouting.hardBlocked()) {
+            if (!targetInBounds) return denied("Destination is outside the current area.");
+            if (!targetWalkable) return denied("Path blocked.");
             return denied("Destination occupied.");
         }
-        if (!targetWalkable) {
-            return denied("Path blocked.");
+        if (targetOccupied && occupiedRouting.pushSqueezeEligible()) {
+            return new MovementPlanReadout(true, true, PlayerFacingText.actionTravel(
+                    "Movement target selected",
+                    mode + " route targets tile " + targetX + "," + targetY
+                            + "; occupied tile will be resolved by shove/squeeze before final movement commit."
+            ));
         }
         if (path == null || path.isEmpty()) {
             return denied("Cannot reach from here.");
