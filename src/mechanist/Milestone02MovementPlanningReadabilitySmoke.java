@@ -71,6 +71,11 @@ final class Milestone02MovementPlanningReadabilitySmoke {
         require(!(recovery.x() == 5 && recovery.y() == 3), "occupied candidate should not be selected");
         requireContains(recovery.summary(), "Nearest standable tile selected", "recovery destination summary");
         requireContains(MovementPlanningAuthority.movementRecoveryAuditSummary(), "expandingRadius", "recovery audit summary");
+        requireContains(MovementPlanningAuthority.movementRecoveryAuditSummary(), "runtimeBridge=applyNearestStandableRecovery", "runtime bridge audit summary");
+
+        MovementPlanningAuthority.MovementRecoveryApplicationResult nullRecovery = MovementPlanningAuthority.applyNearestStandableRecovery(null, 1, 2);
+        require(!nullRecovery.applied(), "null game recovery should fail safely");
+        requireContains(nullRecovery.summary(), "No world is loaded", "null game recovery summary");
 
         ZoneTileState[][] noCandidate = floorGrid(3, 3);
         for (int x = 0; x < noCandidate.length; x++) {
