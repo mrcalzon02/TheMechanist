@@ -8,14 +8,23 @@ The project is now in a platform-architecture era rather than a loose prototype 
 
 ## Source-of-truth doctrine
 
-There are four durable development documents in `docs/`:
+The durable development-document root is `ROOT_docs/`.
 
-1. `MASTER_DEVELOPMENT_PLAN.md` — phase roadmap and current target sequence.
-2. `STANDARDS_AND_PRACTICES.md` — durable rules that prevent regressions.
-3. `DEVELOPMENT_HISTORY.md` — completed work and build notes.
-4. `MASTER_GOVERNANCE_REVISION_II.md` — doctrine and architectural boundaries.
+Standing development documents, governance, standards, milestone plans, generated ledgers, history, and architecture records belong under `ROOT_docs/`. Historical references to a root `docs/` directory mean `ROOT_docs/` unless explicitly describing an archived legacy path.
 
-No other standing development documents belong in `docs/` unless explicitly requested by the user. Notes, audit files, architecture addenda, and pass summaries must be folded into the appropriate durable document or deleted.
+The durable tool root is `ROOT_tools/`. Durable scripts, auditors, scanners, indexers, generator tools, packaging helpers, classfile scanners, and maintenance commands belong under `ROOT_tools/`.
+
+The durable build-operations root is `ROOT_build/`. Checked-in build orchestration, build definitions, and durable build helper entry points belong there unless they are package-owned under `PACKAGE_*` or general maintenance tools under `ROOT_tools/`.
+
+The current primary durable documents include:
+
+1. `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md` — phase roadmap and current target sequence.
+2. `ROOT_docs/STANDARDS_AND_PRACTICES.md` — durable rules that prevent regressions.
+3. `ROOT_docs/DOCUMENTATION_STANDARDS.md` — repository storage, documentation, tooling, build, generated-ledger, and purgation rules.
+4. `ROOT_docs/DEVELOPMENT_HISTORY.md` — completed work and build notes.
+5. `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md` — doctrine and architectural boundaries.
+
+No other standing development documents belong at repository root or in ad-hoc top-level folders unless explicitly requested by the user. Notes, audit files, architecture addenda, and pass summaries must be folded into the appropriate durable document, moved to `ROOT_docs/archive/`, regenerated from tools, or deleted.
 
 ## Runtime separation doctrine
 
@@ -75,22 +84,19 @@ External mod sources, hot-loading, source acquisition, and multiplayer-compatibl
 
 ## Closing directive
 
-When development begins, consult the master plan, standards, governance, and history in that order. Do not mistake a note, asset index, screenshot, README entry, or planned feature for implemented code. Do not create a new document when an existing durable file is the correct place for the information.
+When development begins, consult the master plan, standards, governance, and history in that order. Do not mistake a note, asset index, screenshot, README entry, or planned feature for implemented code. Do not create a new document when an existing durable file is the correct place for the information. Do not create new ad-hoc root folders for docs, tools, build outputs, diagnostics, or scratch material when `ROOT_docs/`, `ROOT_tools/`, `ROOT_build/`, `ROOT_SRC_assets/`, or an owning `PACKAGE_*` tree is the correct home.
 
 Phase 4 governance note: input corrections must be authority-based. When rendered map geometry and mouse targeting disagree, the repair belongs in a shared map viewport transform authority, not in hardcoded per-resolution offsets. Command-surface containment must also be authority-based: a button belongs to its owning command surface because of the active screen/panel, not because a stale coordinate happened to intersect a frame. Ordinary player-facing surfaces should not explain development phase numbers; those belong in the durable documents and developer-only tooling.
 
 Phase 4 efficiency note: repeated presentation work should be cached through named authorities with bounded memory, visible audit metrics, and no change to gameplay authority. Per-frame optimizations must not invent alternate tile, portrait, item, or input meanings.
 
-
 ## Server/runtime separation doctrine — 0.9.10gm
 
 The launcher/client/server line must preserve physical save separation as well as authority separation: server and single-player save files must not share path authority. Client-facing countdown indicators for gated action time are presentation of server state, not an independent client timer.
 
-
 ## Persistence authority doctrine — 0.9.10gn
 
 Generated world-definition ledgers are world-file authority, not save-slot filler. Save slots resume a run and current mutable slice; `.mechworld` files own generated world identity/provenance/history. New persistence work must measure and catalog payload contents before claiming efficiency, and must prefer references over duplicated ledgers where a durable owning file already exists.
-
 
 ## Persistence governance — world continuity and character authority
 
@@ -108,7 +114,6 @@ A player-founded faction must be capable of continuing as a world organization w
 
 A player-founded faction does not cease to exist when its founding player is absent. Its autonomous progress belongs to the world, not to the character slot. Production, trade, defense, morale, stock, risk, and public continuity outcomes must remain tied to the faction/world ledger so the server world can continue without requiring a specific player save to be loaded.
 
-
 ## Player/NPC Command Parity Doctrine
 
 Player-founded factions use two command structures: one for players and one for NPC personnel. These structures remain separate for identity, persistence, and UI purposes, but they share the same command-tier scale. A rank-N player can command the same NPC tier that a rank-N NPC can command. The founder is a unique tier-0 authority and is not a recruited-player rank. This prevents multiplayer recruits from becoming equivalent to the faction founder while still giving them clear operational control over NPC personnel at their assigned tier.
@@ -117,11 +122,9 @@ Player-founded factions use two command structures: one for players and one for 
 
 The project treats accessibility and compatibility as engine-level presentation infrastructure, not as optional cosmetic afterthoughts. The custom Java2D canvas must expose readable text density, color-vision accommodations, reduced motion, and narration hooks where feasible, while preserving deterministic gameplay authority on the server/world side.
 
-
 ## Profile identity and migration governance
 
 The profile layer is not the character layer and not the world layer. Local profiles may carry operator configuration, settings, accessibility, JVM/runtime preferences, portrait selection, and migration metadata. They must not silently absorb world state, character inventory, faction ownership, or server state.
-
 
 ## Project re-evaluation doctrine
 
