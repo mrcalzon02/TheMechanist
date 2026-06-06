@@ -45,6 +45,7 @@ jobs:
           Write-Host "Manual note: ${{ github.event.inputs.validation_note }}"
           Write-Host "Repository: ${{ github.repository }}"
           Write-Host "Ref: ${{ github.ref }}"
+          Write-Host "Java source encoding: UTF-8"
 
       - name: Compile main source tree
         shell: pwsh
@@ -54,7 +55,7 @@ jobs:
           $sources = @(Get-ChildItem -LiteralPath "src" -Recurse -File -Filter "*.java")
           if (-not $sources -or $sources.Count -eq 0) { throw "No Java sources found under src" }
           $sources | ForEach-Object { '"' + ($_.FullName -replace '\\','/') + '"' } | Set-Content -LiteralPath "build\ci\sources.arg" -Encoding ASCII
-          javac --release 17 -d "build\ci\classes" "@build\ci\sources.arg"
+          javac -encoding UTF-8 --release 17 -d "build\ci\classes" "@build\ci\sources.arg"
 
       - name: Run player-facing and milestone smoke tests
         shell: pwsh
@@ -86,6 +87,7 @@ jobs:
           "" >> $env:GITHUB_STEP_SUMMARY
           "- Profile: $env:VALIDATION_PROFILE" >> $env:GITHUB_STEP_SUMMARY
           "- Java: Temurin 17" >> $env:GITHUB_STEP_SUMMARY
+          "- Java source encoding: UTF-8" >> $env:GITHUB_STEP_SUMMARY
           "- Compile target: src -> build/ci/classes" >> $env:GITHUB_STEP_SUMMARY
           "- Smoke entry point: mechanist.Gate3PlayerFacingTextSmokeSuite" >> $env:GITHUB_STEP_SUMMARY
           "- Package seed path: ROOT_tools/packaging/stage_local_package_seed.ps1" >> $env:GITHUB_STEP_SUMMARY
