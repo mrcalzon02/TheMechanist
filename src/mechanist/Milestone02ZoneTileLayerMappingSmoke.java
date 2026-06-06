@@ -26,7 +26,7 @@ final class Milestone02ZoneTileLayerMappingSmoke {
         require(corridorAudit.layerCounts().containsKey(ZoneTileLayerMappingAuditAuthority.TileLayer.STRUCTURE), "corridor audit should count structure layer");
 
         ZoneTileState entityTile = ZoneTileState.fromLegacyGlyph('.')
-                .markRoom("room-c", Faction.LOCAL_GANG)
+                .markRoom("room-c", Faction.BANDIT)
                 .setOccupantEntityId("npc-77")
                 .setPetEntityId("pet-11")
                 .setVehicleId("cart-3");
