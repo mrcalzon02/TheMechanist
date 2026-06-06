@@ -105,3 +105,11 @@ Unified repository storage doctrine around `ROOT_docs/`, `ROOT_tools/`, `ROOT_bu
 Moved the active handoff briefing into `ROOT_docs/NEW_DEVELOPMENT_CONVERSATION_BRIEFING.md`, removed the old root-level handoff copy, added `ROOT_tools/functionmap/BUILD_MERMAID_CODE_MAP.py` as the canonical Mermaid generator entry point, established `ROOT_build/README_ROOT_BUILD.md`, and removed the empty stale `ROOT_tools/repo_file_index.txt` artifact.
 
 Verification: connector-only repository cleanup. Local manifest regeneration, Mermaid regeneration, Java compile, smoke tests, package seed build, classfile scan, zip integrity, native package checks, and manual GUI launch were not run. Required local follow-up: run `ROOT_tools/update-repository-file-manifest.ps1`, run `py -3 ROOT_tools/functionmap/BUILD_MERMAID_CODE_MAP.py --apply`, then rerun Java 17 validation.
+
+## Milestone 02 - Runtime Movement Recovery Bridge Slice
+
+Evaluated current milestone progress against Milestone 02 and continued the player-movement safety lane. `MovementPlanningAuthority` now has `MovementRecoveryApplicationResult` and `applyNearestStandableRecovery(...)`, which builds a temporary `ZoneTileState` snapshot from the legacy world, marks NPC actor occupancy, selects the nearest standable recovery destination using the existing expanding-radius search, applies the destination to player position/motion state when a valid destination exists, and records an event/targeting report.
+
+Expanded `Milestone02MovementPlanningReadabilitySmoke` to verify the runtime bridge audit marker and the null-world failsafe path. This does not yet wire a visible pause-menu button into `LegacyPanelContext`; it creates the safe authority method that the pause menu can call without duplicating movement-recovery rules in the Swing surface.
+
+Verification: source and history changes were committed through the connector. Local Java 17 compile, Gate 3 smoke execution, package seed build, classfile scan, manifest regeneration, Mermaid regeneration, native package checks, and manual GUI launch were not run here.
