@@ -83,8 +83,8 @@ $launcherArgFile = Join-Path $classesRoot "launcher-sources.arg"
 Write-ArgFile $clientArgFile @(Get-ChildItem -Recurse -File (Join-Path $root "src") -Filter *.java)
 Write-ArgFile $launcherArgFile @(Get-ChildItem -Recurse -File (Join-Path $root "PACKAGE_launcher\java\src\main\java") -Filter *.java)
 
-javac --release 17 -d $clientClasses "@$clientArgFile"
-javac --release 17 -d $launcherClasses "@$launcherArgFile"
+javac -encoding UTF-8 --release 17 -d $clientClasses "@$clientArgFile"
+javac -encoding UTF-8 --release 17 -d $launcherClasses "@$launcherArgFile"
 
 $clientJar = Join-Path $clientDir "TheMechanist.jar"
 $serverJar = Join-Path $serverDir "TheMechanistServer.jar"
