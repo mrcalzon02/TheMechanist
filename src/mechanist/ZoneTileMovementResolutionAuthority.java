@@ -40,8 +40,8 @@ final class ZoneTileMovementResolutionAuthority {
             return new Resolution(List.copyOf(outcomes.values()), List.copyOf(debug), true, "No movement intents to resolve.");
         }
 
-        HashMap<String, String> occupantByPosition = occupiedActors(tiles);
-        HashMap<String, String> positionByActor = actorPositions(occupantByPosition);
+        Map<String, String> occupantByPosition = occupiedActors(tiles);
+        Map<String, String> positionByActor = actorPositions(occupantByPosition);
         ArrayList<MoveIntent> ordered = orderedIntents(intents);
         boolean failsafe = false;
 
@@ -102,8 +102,8 @@ final class ZoneTileMovementResolutionAuthority {
     }
 
     private static MoveAttempt tryMoveOrPush(String actorId, int fromX, int fromY, int toX, int toY, int dx, int dy,
-                                             ZoneTileState[][] tiles, HashMap<String, String> occupantByPosition,
-                                             HashMap<String, String> positionByActor, LinkedHashMap<String, MoveOutcome> outcomes,
+                                             ZoneTileState[][] tiles, Map<String, String> occupantByPosition,
+                                             Map<String, String> positionByActor, LinkedHashMap<String, MoveOutcome> outcomes,
                                              ArrayList<String> debug, ArrayList<String> pushStack, int depth) {
         if (depth > Math.max(8, tiles.length * 4)) return new MoveAttempt(false, "Failsafe stopped excessive push-chain recursion.");
         if (!canStandOn(tiles, toX, toY)) return new MoveAttempt(false, "Destination blocks movement.");
@@ -129,7 +129,7 @@ final class ZoneTileMovementResolutionAuthority {
     }
 
     private static int[] findReliefTile(String actorId, int x, int y, int dx, int dy, ZoneTileState[][] tiles,
-                                        HashMap<String, String> occupantByPosition, ArrayList<String> pushStack,
+                                        Map<String, String> occupantByPosition, ArrayList<String> pushStack,
                                         ArrayList<String> debug) {
         int[][] candidates = reliefDirections(dx, dy);
         for (int[] candidate : candidates) {
@@ -153,7 +153,7 @@ final class ZoneTileMovementResolutionAuthority {
     }
 
     private static void moveActor(String actorId, int fromX, int fromY, int toX, int toY,
-                                  HashMap<String, String> occupantByPosition, HashMap<String, String> positionByActor) {
+                                  Map<String, String> occupantByPosition, Map<String, String> positionByActor) {
         occupantByPosition.remove(key(fromX, fromY));
         occupantByPosition.put(key(toX, toY), actorId);
         positionByActor.put(actorId, key(toX, toY));
@@ -190,7 +190,7 @@ final class ZoneTileMovementResolutionAuthority {
         return occupied;
     }
 
-    private static HashMap<String, String> actorPositions(Map<String, String> occupantByPosition) {
+    private static Map<String, String> actorPositions(Map<String, String> occupantByPosition) {
         HashMap<String, String> positions = new HashMap<>();
         for (Map.Entry<String, String> entry : occupantByPosition.entrySet()) positions.put(entry.getValue(), entry.getKey());
         return positions;
