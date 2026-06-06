@@ -30,6 +30,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02ControllerConnectionSmoke.main(args);
         Milestone02ControllerGlyphPromptSmoke.main(args);
         Milestone02ZoneTileSlotStateSmoke.main(args);
+        Milestone02ZoneTileLayerMappingSmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 
