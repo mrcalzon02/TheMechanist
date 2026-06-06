@@ -1,6 +1,5 @@
 package mechanist;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -114,7 +113,6 @@ final class MovementExecutionAuthority {
         game.manualMovementPlanPath.clear();
         game.mouseMovePreviewPath.clear();
         game.advanceTurnBody(null);
-        game.markZoneVisitedAndCheckFirstType();
         ProgressiveLookAuthority.reset(game, source == null || source.isBlank() ? "movement execution" : source);
     }
 
