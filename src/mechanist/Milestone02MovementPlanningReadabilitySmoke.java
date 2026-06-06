@@ -3,7 +3,7 @@ package mechanist;
 import java.awt.Point;
 import java.util.List;
 
-/** Smoke for Milestone 02 movement planning refusal and route-summary language. */
+/** Smoke for Milestone 02 movement planning refusal, route-summary language, and safe-tile recovery search. */
 final class Milestone02MovementPlanningReadabilitySmoke {
     public static void main(String[] args) {
         MovementPlanningAuthority.MovementPlanReadout selected = MovementPlanningAuthority.describePlan(
@@ -23,9 +23,21 @@ final class Milestone02MovementPlanningReadabilitySmoke {
 
         MovementPlanningAuthority.MovementPlanReadout occupied = MovementPlanningAuthority.describePlan(
                 "Sprint", 7, 4, 4, List.of(), true, true, true);
-        require(!occupied.reachable(), "occupied destination should be refused");
+        require(!occupied.reachable(), "occupied destination should be refused without resolver");
         requireContains(occupied.summary(), "Destination occupied", "occupied destination reason");
         rejectLeaks(occupied.summary(), "occupied destination");
+
+        MovementPlanningAuthority.MovementPlanReadout occupiedPushSqueeze = MovementPlanningAuthority.describePlan(
+                "Sprint", 7, 4, 4, List.of(), true, true, true, true);
+        require(occupiedPushSqueeze.reachable(), "occupied destination should be routeable with push/squeeze resolver");
+        require(occupiedPushSqueeze.exact(), "occupied push/squeeze destination should be exact pending commit resolution");
+        requireContains(occupiedPushSqueeze.summary(), "shove/squeeze", "occupied push/squeeze routing text");
+        rejectLeaks(occupiedPushSqueeze.summary(), "occupied push/squeeze destination");
+
+        MovementPlanningAuthority.OccupiedTileRoutingReadout pushRouting = MovementPlanningAuthority.occupiedTileRoutingForPlanning(true, true, true, true);
+        require(!pushRouting.hardBlocked(), "push/squeeze route should not hard block occupied tile");
+        require(pushRouting.pushSqueezeEligible(), "push/squeeze route should be eligible");
+        require(MovementPlanningAuthority.canEnterForMovementCommit(true, true, true, true), "movement commit bridge should allow resolver-backed occupied entry");
 
         MovementPlanningAuthority.MovementPlanReadout blocked = MovementPlanningAuthority.describePlan(
                 "Sneak", 1, 1, 1, List.of(), true, false, false);
@@ -42,6 +54,50 @@ final class Milestone02MovementPlanningReadabilitySmoke {
         require(!unreachable.reachable(), "empty path should be refused");
         requireContains(unreachable.summary(), "Cannot reach from here", "unreachable destination reason");
         rejectContains(unreachable.summary(), "targetZoneKey", "movement denial should not expose raw route keys");
+
+        ZoneTileState[][] alreadySafe = floorGrid(3, 3);
+        MovementPlanningAuthority.StandableTileSearchResult noRecovery = MovementPlanningAuthority.nearestStandableTile(alreadySafe, 1, 1, 1, 4);
+        require(!noRecovery.found(), "safe current tile should not require recovery destination");
+        requireContains(noRecovery.summary(), "already standable", "safe current tile summary");
+
+        ZoneTileState[][] trapped = floorGrid(7, 7);
+        trapped[3][3].addFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
+        blockRing(trapped, 3, 3, 1);
+        trapped[5][3].setOccupantEntityId("npc-blocker");
+        MovementPlanningAuthority.StandableTileSearchResult recovery = MovementPlanningAuthority.nearestStandableTile(trapped, 3, 3, 1, 4);
+        require(recovery.found(), "blocked current tile should find nearby standable recovery tile");
+        require(recovery.radiusUsed() >= 2, "recovery search should expand past blocked first ring");
+        require(MovementPlanningAuthority.standableZoneTile(trapped, recovery.x(), recovery.y()), "recovery destination should be standable");
+        require(!(recovery.x() == 5 && recovery.y() == 3), "occupied candidate should not be selected");
+        requireContains(recovery.summary(), "Nearest standable tile selected", "recovery destination summary");
+        requireContains(MovementPlanningAuthority.movementRecoveryAuditSummary(), "expandingRadius", "recovery audit summary");
+
+        ZoneTileState[][] noCandidate = floorGrid(3, 3);
+        for (int x = 0; x < noCandidate.length; x++) {
+            for (int y = 0; y < noCandidate[x].length; y++) noCandidate[x][y].addFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
+        }
+        MovementPlanningAuthority.StandableTileSearchResult failed = MovementPlanningAuthority.nearestStandableTile(noCandidate, 1, 1, 1, 2);
+        require(!failed.found(), "fully blocked grid should not find recovery destination");
+        requireContains(failed.summary(), "No standable tile found", "failed recovery summary");
+    }
+
+    private static ZoneTileState[][] floorGrid(int w, int h) {
+        ZoneTileState[][] tiles = new ZoneTileState[w][h];
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) tiles[x][y] = ZoneTileState.fromLegacyGlyph('.');
+        }
+        return tiles;
+    }
+
+    private static void blockRing(ZoneTileState[][] tiles, int cx, int cy, int radius) {
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                if (Math.max(Math.abs(dx), Math.abs(dy)) != radius) continue;
+                int x = cx + dx;
+                int y = cy + dy;
+                if (x >= 0 && y >= 0 && x < tiles.length && y < tiles[x].length) tiles[x][y].addFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
+            }
+        }
     }
 
     private static void require(boolean condition, String message) {
