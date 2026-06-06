@@ -10,23 +10,31 @@ import mechanist.input.KeyBindingManager;
  * and stick inputs into abstract actions through the current controller profile.
  */
 final class GenericControllerSchema {
-    static final String VERSION = "0.9.10jz";
+    static final String VERSION = "0.9.10ka";
     private static final float DIGITAL_AXIS_THRESHOLD = 0.55f;
+    private final ControllerTapHoldTracker southFaceTracker = new ControllerTapHoldTracker();
 
     void apply(GamepadControllerSnapshot pad, InputRegistry registry) {
+        apply(pad, registry, System.currentTimeMillis());
+    }
+
+    void apply(GamepadControllerSnapshot pad, InputRegistry registry, long nowMs) {
         if (pad == null || !pad.connected) {
             registry.clearSource(InputSource.GAMEPAD);
+            southFaceTracker.clear();
             return;
         }
 
         KeyBindingManager manager = KeyBindingManager.getInstance();
+        KeyBindingManager.ControllerTuningProfile tuning = manager.getControllerTuningProfile();
         double leftX = manager.applyControllerAxisTuning("left_stick_x", pad.leftX);
         double leftY = manager.applyControllerAxisTuning("left_stick_y", pad.leftY);
         double rightX = manager.applyControllerAxisTuning("right_stick_x", pad.rightX);
         double rightY = manager.applyControllerAxisTuning("right_stick_y", pad.rightY);
+        ControllerTapHoldTracker.TapHoldRead southFaceRead = southFaceTracker.update(pad.a, nowMs, tuning);
 
         for (InputAction action : InputAction.values()) {
-            registry.setDigital(InputSource.GAMEPAD, action, boundActionActive(action, pad, manager, leftX, leftY, rightX, rightY));
+            registry.setDigital(InputSource.GAMEPAD, action, boundActionActive(action, pad, manager, leftX, leftY, rightX, rightY, southFaceRead));
             registry.setAnalog(InputSource.GAMEPAD, action, 0.0f);
         }
 
@@ -50,22 +58,24 @@ final class GenericControllerSchema {
     }
 
     private static boolean boundActionActive(InputAction action, GamepadControllerSnapshot pad, KeyBindingManager manager,
-                                             double leftX, double leftY, double rightX, double rightY) {
+                                             double leftX, double leftY, double rightX, double rightY,
+                                             ControllerTapHoldTracker.TapHoldRead southFaceRead) {
         String commandId = ControlReferenceTextSubsystem.commandIdFor(action);
         if (commandId == null || commandId.isBlank()) return false;
         return manager.getBinding(InputDevice.GENERIC_CONTROLLER, commandId)
                 .map(KeyBind::token)
-                .map(token -> tokenActive(token, pad, leftX, leftY, rightX, rightY))
+                .map(token -> tokenActive(action, token, pad, leftX, leftY, rightX, rightY, southFaceRead))
                 .orElse(false);
     }
 
-    private static boolean tokenActive(InputToken token, GamepadControllerSnapshot pad,
-                                       double leftX, double leftY, double rightX, double rightY) {
+    private static boolean tokenActive(InputAction action, InputToken token, GamepadControllerSnapshot pad,
+                                       double leftX, double leftY, double rightX, double rightY,
+                                       ControllerTapHoldTracker.TapHoldRead southFaceRead) {
         if (token == null || token.device() != InputDevice.GENERIC_CONTROLLER) return false;
         String code = token.code();
         if (code == null) return false;
+        if ("PAD_BUTTON_0".equals(code)) return southFaceActionActive(action, southFaceRead);
         return switch (code) {
-            case "PAD_BUTTON_0" -> pad.a;
             case "PAD_BUTTON_1" -> pad.b;
             case "PAD_BUTTON_2" -> pad.x;
             case "PAD_BUTTON_3" -> pad.y;
@@ -78,6 +88,15 @@ final class GenericControllerSchema {
             case "PAD_HAT_LEFT" -> pad.dpadLeft;
             case "PAD_HAT_RIGHT" -> pad.dpadRight;
             default -> axisTokenActive(code, leftX, leftY, rightX, rightY);
+        };
+    }
+
+    private static boolean southFaceActionActive(InputAction action, ControllerTapHoldTracker.TapHoldRead read) {
+        if (read == null) return false;
+        return switch (action) {
+            case INTERACT -> read.holdActive();
+            case CONFIRM, EXAMINE -> read.tapReleased();
+            default -> read.pressed();
         };
     }
 
@@ -117,6 +136,7 @@ final class GenericControllerSchema {
         return "genericControllerSchema version=" + VERSION
                 + " digitalAxisThreshold=" + DIGITAL_AXIS_THRESHOLD
                 + " maps=currentGenericControllerBindings+dpadCompanionStick"
-                + " tuning=deadzone+sensitivity+axisInversion fallback=generic";
+                + " tuning=deadzone+sensitivity+axisInversion+tapHold fallback=generic"
+                + " tapHold=" + ControllerTapHoldTracker.auditSummary();
     }
 }
