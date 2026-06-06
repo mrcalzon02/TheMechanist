@@ -2,17 +2,18 @@ package mechanist;
 
 import javax.swing.SwingUtilities;
 import java.lang.reflect.*;
-import java.util.Locale;
 
 /** Background polling engine. Uses reflection so javac builds still pass without Jamepad on the classpath. */
 final class GamepadInputEngine implements Runnable {
-    static final String VERSION = "0.9.10et";
+    static final String VERSION = "0.9.10kb";
     private static final int POLL_SLEEP_MS = 16;
 
     private final InputRegistry registry;
     private final GenericControllerSchema schema = new GenericControllerSchema();
+    private final ControllerConnectionStateTracker connectionTracker = new ControllerConnectionStateTracker();
     private volatile boolean running = true;
     private volatile String status = "not started";
+    private volatile String playerFacingConnectionNotice = "No controller detected. Keyboard and mouse fallback remain active.";
     private OptionalJamepadBackend backend;
 
     GamepadInputEngine(InputRegistry registry) {
@@ -23,13 +24,18 @@ final class GamepadInputEngine implements Runnable {
         backend = new OptionalJamepadBackend();
         if (!backend.init()) {
             status = "Jamepad not available; keyboard remains active; add Maven/JitPack dependency for hardware polling.";
+            playerFacingConnectionNotice = "No controller driver is available. Keyboard and mouse fallback remain active.";
             registry.clearSource(InputSource.GAMEPAD);
+            connectionTracker.clear();
             return;
         }
         status = "Jamepad initialized; polling controllers.";
         try {
             while (running) {
                 GamepadControllerSnapshot snapshot = backend.pollFirstConnected();
+                ControllerConnectionStateTracker.ConnectionRead connection = connectionTracker.update(snapshot, System.currentTimeMillis());
+                playerFacingConnectionNotice = connection.playerFacingNotice();
+                if (connection.transition()) status = connection.playerFacingNotice();
                 SwingUtilities.invokeLater(() -> schema.apply(snapshot, registry));
                 try { Thread.sleep(POLL_SLEEP_MS); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
             }
@@ -37,6 +43,7 @@ final class GamepadInputEngine implements Runnable {
             registry.clearSource(InputSource.GAMEPAD);
             backend.shutdown();
             status = "stopped";
+            playerFacingConnectionNotice = "Controller polling stopped. Keyboard and mouse fallback remain active.";
         }
     }
 
@@ -46,8 +53,18 @@ final class GamepadInputEngine implements Runnable {
 
     String status() { return status; }
 
+    String playerFacingConnectionNotice() { return playerFacingConnectionNotice; }
+
+    ControllerConnectionStateTracker.ConnectionRead inspectConnection(GamepadControllerSnapshot snapshot, long nowMs) {
+        ControllerConnectionStateTracker.ConnectionRead read = connectionTracker.update(snapshot, nowMs);
+        playerFacingConnectionNotice = read.playerFacingNotice();
+        return read;
+    }
+
     static String auditSummary() {
-        return "gamepadInputEngine version=" + VERSION + " thread=background pollingHz=~60 swingUpdates=invokeLater optionalJamepad=reflection gracefulStop=true";
+        return "gamepadInputEngine version=" + VERSION
+                + " thread=background pollingHz=~60 swingUpdates=invokeLater optionalJamepad=reflection gracefulStop=true"
+                + " connectionNotices=" + ControllerConnectionStateTracker.auditSummary();
     }
 
     private static final class OptionalJamepadBackend {
