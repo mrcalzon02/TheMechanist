@@ -18,6 +18,7 @@ final class MovementPlanningAuthority {
     record MovementPlanReadout(boolean reachable, boolean exact, String summary) { }
     record OccupiedTileRoutingReadout(boolean hardBlocked, boolean pushSqueezeEligible, String debugSummary) { }
     record StandableTileSearchResult(boolean found, int x, int y, int radiusUsed, String summary) { }
+    record MovementRecoveryApplicationResult(boolean applied, int fromX, int fromY, int toX, int toY, String summary) { }
 
     static ArrayList<Point> buildPathTo(GamePanel game, int targetX, int targetY, int maxSteps) {
         ArrayList<Point> out = new ArrayList<>();
@@ -152,6 +153,44 @@ final class MovementPlanningAuthority {
         return new StandableTileSearchResult(false, startX, startY, last, "No standable tile found in search radius.");
     }
 
+    static MovementRecoveryApplicationResult applyNearestStandableRecovery(GamePanel game, int startRadius, int maxRadius) {
+        if (game == null || game.world == null) {
+            return new MovementRecoveryApplicationResult(false, 0, 0, 0, 0, "No world is loaded for movement recovery.");
+        }
+        int fromX = game.playerX;
+        int fromY = game.playerY;
+        ZoneTileState[][] snapshot = legacyWorldTileStateSnapshot(game);
+        StandableTileSearchResult search = nearestStandableTile(snapshot, fromX, fromY, startRadius, maxRadius);
+        if (!search.found()) {
+            String message = "Movement recovery did not move the player: " + search.summary();
+            game.lastTargetingReport = message;
+            game.logEvent(message);
+            return new MovementRecoveryApplicationResult(false, fromX, fromY, fromX, fromY, message);
+        }
+        game.playerX = search.x();
+        game.playerY = search.y();
+        game.playerMotionFromX = search.x();
+        game.playerMotionFromY = search.y();
+        game.playerMotionToX = search.x();
+        game.playerMotionToY = search.y();
+        game.playerMotionDurationMillis = 0;
+        game.playerMotionStartedMillis = 0L;
+        game.manualMovementPlanActive = false;
+        game.mouseMovePreviewActive = false;
+        game.manualMovementPlanPath.clear();
+        game.mouseMovePreviewPath.clear();
+        if (game.world.inBounds(game.playerX, game.playerY)) {
+            game.lookX = game.playerX;
+            game.lookY = game.playerY;
+            game.combatX = game.playerX;
+            game.combatY = game.playerY;
+        }
+        String message = "Movement recovery moved the player from " + fromX + "," + fromY + " to " + search.x() + "," + search.y() + ".";
+        game.lastTargetingReport = message;
+        game.logEvent(message);
+        return new MovementRecoveryApplicationResult(true, fromX, fromY, search.x(), search.y(), message);
+    }
+
     static boolean standableZoneTile(ZoneTileState[][] tiles, int x, int y) {
         return inZoneTileBounds(tiles, x, y)
                 && tiles[x][y] != null
@@ -162,7 +201,7 @@ final class MovementPlanningAuthority {
     }
 
     static String movementRecoveryAuditSummary() {
-        return "movementRecoverySearch=nearestStandableTile search=expandingRadius requires=walkable+unoccupied+adjacentExit mutation=callerAppliesResult";
+        return "movementRecoverySearch=nearestStandableTile search=expandingRadius requires=walkable+unoccupied+adjacentExit mutation=callerAppliesResult runtimeBridge=applyNearestStandableRecovery";
     }
 
     static boolean pathReaches(java.util.List<Point> path, int targetX, int targetY) {
@@ -255,6 +294,32 @@ final class MovementPlanningAuthority {
             case GamePanel.MOTION_WALK -> new Color(118, 214, 224, a);
             default -> new Color(118, 214, 224, a);
         };
+    }
+
+    private static ZoneTileState[][] legacyWorldTileStateSnapshot(GamePanel game) {
+        if (game == null || game.world == null || game.world.w <= 0 || game.world.h <= 0) return new ZoneTileState[0][0];
+        ZoneTileState[][] tiles = new ZoneTileState[game.world.w][game.world.h];
+        for (int x = 0; x < game.world.w; x++) {
+            for (int y = 0; y < game.world.h; y++) {
+                char glyph = ' ';
+                if (game.world.tiles != null && x < game.world.tiles.length && game.world.tiles[x] != null && y < game.world.tiles[x].length) {
+                    glyph = game.world.tiles[x][y];
+                }
+                ZoneTileState state = ZoneTileState.fromLegacyGlyph(glyph);
+                if (!game.world.inBounds(x, y) || !game.world.walkable(x, y)) state.addFlag(ZoneTileState.TileFlag.BLOCKS_MOVEMENT);
+                tiles[x][y] = state;
+            }
+        }
+        if (game.world.npcs != null) {
+            int i = 0;
+            for (NpcEntity npc : game.world.npcs) {
+                if (npc != null && game.world.inBounds(npc.x, npc.y) && !(npc.x == game.playerX && npc.y == game.playerY)) {
+                    tiles[npc.x][npc.y].setOccupantEntityId("npc-" + i + "-" + npc.x + "-" + npc.y);
+                }
+                i++;
+            }
+        }
+        return tiles;
     }
 
     private static ArrayList<Point> standableCandidatesAtRadius(ZoneTileState[][] tiles, int sx, int sy, int radius) {
