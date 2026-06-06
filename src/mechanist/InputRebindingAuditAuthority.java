@@ -13,7 +13,7 @@ import java.util.List;
  * fallback text so controls can be inspected through Infopedia and smokes.
  */
 final class InputRebindingAuditAuthority {
-    static final String VERSION = "0.9.10jy-input-audit";
+    static final String VERSION = "0.9.10kc-input-audit";
 
     private InputRebindingAuditAuthority() { }
 
@@ -37,7 +37,7 @@ final class InputRebindingAuditAuthority {
         int required = 0;
         for (InputAction action : InputAction.values()) if (ControlReferenceTextSubsystem.requiredInputAction(action)) required++;
         return "Input audit covers " + InputAction.values().length + " actions, " + required
-                + " recovery-critical actions, keyboard defaults, controller prompts, conflict notes, controller tuning, and safe fallback behavior.";
+                + " recovery-critical actions, keyboard defaults, controller prompts, conflict notes, controller tuning, glyph fallback, and safe fallback behavior.";
     }
 
     static String controllerTuningSummary() {
@@ -69,6 +69,7 @@ final class InputRebindingAuditAuthority {
         lines.add("Profile source: current in-game controls tab with keyboard fallback; saved custom-profile export and import are validated before replacing the working profile.");
         lines.add(controllerTuningSummary());
         lines.add("Controller tuning behavior: deadzone, axis sensitivity, horizontal/vertical inversion, and tap/hold thresholds are saved with the profile and rejected if malformed.");
+        lines.add("Controller prompt behavior: readable controller button names are shown now, with explicit text fallback until packaged glyph art exists.");
         lines.add("Reset behavior: Reset to defaults and keep keyboard fallback available before accepting any saved custom profile.");
         lines.add("Last-good behavior: profile imports keep the previous usable controls until bindings and controller tuning pass required-action checks.");
         lines.add("Conflict rule: warn when two actions compete inside the same context; allow harmless overlaps only when the owning panel decides which action is active.");
@@ -84,12 +85,16 @@ final class InputRebindingAuditAuthority {
         lines.add("Live recovery: the keybinding manager keeps default bindings, stores the previous working profile before changes, can restore last-good bindings, and can reset one tab or all input families.");
         lines.add(controllerTuningSummary());
         lines.add("Implemented controller tuning: saved profiles now include deadzone, sensitivity, horizontal/vertical inversion, and tap/hold thresholds with validation before replacing the working profile.");
-        lines.add("Current limitation: controller hardware disconnect/reconnect detection and per-controller glyph asset selection still need later implementation.");
+        lines.add("Implemented controller connection notices: controller connect, reconnect, and disconnect transitions keep keyboard and mouse fallback visible.");
+        lines.add("Implemented controller prompt fallback: readable text prompts remain active while packaged controller glyph art is unavailable.");
+        lines.add("Current limitation: per-controller glyph artwork selection still needs asset packaging and renderer integration.");
+        lines.addAll(ControllerGlyphPromptAuthority.auditLines(4).subList(0, 2));
         List<String> audit = playerFacingAuditLines(4);
         lines.addAll(audit.subList(1, Math.min(10, audit.size())));
         lines.add("Guard: Milestone02InputRebindingAuditSmoke checks action coverage, required recovery actions, conflict notes, and leak-free Infopedia detail.");
         lines.add("Guard: Milestone02InputConflictRecoverySmoke checks duplicate conflicts, last-good restore, required-action preservation, and reset-to-default behavior.");
         lines.add("Guard: Milestone02InputProfilePersistenceSmoke checks saved profile export, import, prompt refresh, controller tuning, and corrupt-profile rejection.");
+        lines.add("Guard: Milestone02ControllerGlyphPromptSmoke checks controller text fallback, keyboard/mouse recovery wording, and glyph-readiness audit text.");
         return lines;
     }
 
