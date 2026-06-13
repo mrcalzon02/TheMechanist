@@ -525,7 +525,7 @@ final class OptionsScreenPainter {
         lines.add("Generated Runtime: unavailable");
         }
         lines.add("Viewport Tile Size: " + panel.options.mapTileSizeLabel() + " / " + panel.options.mapTilePixelSize() + "px screen footprint before GUI scale");
-        lines.add("Viewport Zoom: " + panel.options.worldZoomLabel() + " / Home and End adjust active world views.");
+        lines.add("Viewport Zoom: " + panel.options.worldZoomLabel() + " / +/- or mouse wheel adjust active 2D world views.");
         lines.add("Render Scaling Profile: " + panel.renderScaling.profileLabel() + " / option downscale " + panel.renderScaling.downscaleLabel() + " / F10 cycles profiles.");
         lines.add("Color Preset: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset] + " / Editing " + panel.options.colorTargetLabel());
         return lines;

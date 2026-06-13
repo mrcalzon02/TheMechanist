@@ -41,13 +41,16 @@ final class FirstPersonRenderViewport {
     private boolean[] wallLightScratch = new boolean[0];
     private int wallLightScratchW = -1, wallLightScratchH = -1;
     private boolean continuousMovementInitialized = false;
+    private boolean sprintHeld = false;
+    private boolean crouchHeld = false;
+    private int movementModeBeforeHold = GamePanel.MOTION_WALK;
     private String lastStatus = "doom mode dormant";
 
     boolean isUnlocked(GameOptions options) { return options != null && options.doomModeEnabled; }
 
     String statusLine(GameOptions options) {
         return isUnlocked(options)
-                ? "doom mode ON / Java2D raster backend / FOV " + Math.max(60, Math.min(110, options.doomModeFovDegrees)) + "° / fog " + options.doomFogModeLabel()
+                ? "doom mode ON / Java2D raster backend / FOV " + Math.max(60, Math.min(110, options.doomModeFovDegrees)) + " deg / fog " + options.doomFogModeLabel()
                 : "doom mode OFF / renderer locked";
     }
 
@@ -63,42 +66,19 @@ final class FirstPersonRenderViewport {
     boolean handleMouseClicked(GamePanel panel, MouseEvent e, int virtualX, int virtualY) {
         if (!active(panel) || e == null) return false;
         if (SwingUtilities.isRightMouseButton(e)) {
-            RaycastHit hit = raycaster.cast(panel.world, camera, Math.toRadians(panel.options.doomModeFovDegrees), 3.0, true);
-            if (hit.hit() && hit.kind() == RaycastHitKind.ENTITY) {
-                panel.logEvent("doom mode attack ray intersects " + hit.label() + " at " + hit.tileX() + "," + hit.tileY() + ".");
-                panel.beginCombatTargeting();
-                panel.combatX = hit.tileX();
-                panel.combatY = hit.tileY();
-                panel.lastTargetingReport = panel.targetingSolutionAt(hit.tileX(), hit.tileY()).summary;
+            DoomRayTarget target = acquireTarget(panel);
+            if (aimWeaponAtTarget(panel, target)) {
                 cameraJuice.applyWeaponRecoil();
                 glitchEffect.trigger(System.currentTimeMillis(), 95L);
                 panel.repaint();
                 return true;
             }
-            if (hit.hit() && hit.kind() == RaycastHitKind.DOOR) {
-                InteractionRequestRecord request = new InteractionRequestRecord(panel.userProfile == null ? "local" : panel.userProfile.identifier, hit.tileX(), hit.tileY(), System.currentTimeMillis(), hit.distance());
-                if (panel.world != null && panel.world.inBounds(request.tileX(), request.tileY()) && panel.isDoorTile(panel.world.tiles[request.tileX()][request.tileY()])) {
-                    panel.interactDoorAt(request.tileX(), request.tileY(), panel.world.tiles[request.tileX()][request.tileY()]);
-                    particles.spawnDoorImpact(hit.impactX(), hit.impactZ(), hit.normalX(), hit.normalZ(), System.currentTimeMillis());
-                    cameraJuice.applyWeaponRecoil();
-                    glitchEffect.trigger(System.currentTimeMillis(), 120L);
-                    panel.repaint();
-                    return true;
-                }
-            }
-            panel.logEvent("doom mode attack ray found no valid target in the forward sightline.");
+            panel.logEvent(target.weaponHint());
             return true;
         }
         if (SwingUtilities.isLeftMouseButton(e)) {
-            RaycastHit hit = raycaster.cast(panel.world, camera, Math.toRadians(panel.options.doomModeFovDegrees), 3.0, true);
-            if (hit.hit() && hit.kind() == RaycastHitKind.DOOR && panel.world != null && panel.world.inBounds(hit.tileX(), hit.tileY())) {
-                panel.interactDoorAt(hit.tileX(), hit.tileY(), panel.world.tiles[hit.tileX()][hit.tileY()]);
-                particles.spawnDoorImpact(hit.impactX(), hit.impactZ(), hit.normalX(), hit.normalZ(), System.currentTimeMillis());
-                cameraJuice.applyWeaponRecoil();
-                glitchEffect.trigger(System.currentTimeMillis(), 120L);
-                panel.repaint();
-                return true;
-            }
+            interactWithTarget(panel, acquireTarget(panel));
+            return true;
         }
         return false;
     }
@@ -111,13 +91,14 @@ final class FirstPersonRenderViewport {
             case KeyEvent.VK_S, KeyEvent.VK_DOWN -> { continuousPlayer.setBackward(true); return true; }
             case KeyEvent.VK_A, KeyEvent.VK_LEFT -> { continuousPlayer.setStrafeLeft(true); return true; }
             case KeyEvent.VK_D, KeyEvent.VK_RIGHT -> { continuousPlayer.setStrafeRight(true); return true; }
-            case KeyEvent.VK_E, KeyEvent.VK_SPACE -> {
-                RaycastHit hit = raycaster.cast(panel.world, camera, Math.toRadians(panel.options.doomModeFovDegrees), 3.0, true);
-                if (hit.hit() && hit.kind() == RaycastHitKind.DOOR && panel.world != null && panel.world.inBounds(hit.tileX(), hit.tileY())) {
-                    panel.interactDoorAt(hit.tileX(), hit.tileY(), panel.world.tiles[hit.tileX()][hit.tileY()]);
-                    return true;
-                }
-                return false;
+            case KeyEvent.VK_SHIFT -> { setMovementModifier(panel, true, true); return true; }
+            case KeyEvent.VK_CONTROL, KeyEvent.VK_C -> { setMovementModifier(panel, false, true); return true; }
+            case KeyEvent.VK_L -> { lookAtTarget(panel, acquireTarget(panel)); return true; }
+            case KeyEvent.VK_E, KeyEvent.VK_SPACE -> { interactWithTarget(panel, acquireTarget(panel)); return true; }
+            case KeyEvent.VK_F -> {
+                DoomRayTarget target = acquireTarget(panel);
+                if (!aimWeaponAtTarget(panel, target)) panel.logEvent(target.weaponHint());
+                return true;
             }
             case KeyEvent.VK_Q, KeyEvent.VK_TAB -> { panel.cycleEquippedWeaponHand(); return true; }
             case KeyEvent.VK_X -> { panel.reloadCurrentRangedWeapon(); return true; }
@@ -134,6 +115,8 @@ final class FirstPersonRenderViewport {
             case KeyEvent.VK_S, KeyEvent.VK_DOWN -> { continuousPlayer.setBackward(false); yield true; }
             case KeyEvent.VK_A, KeyEvent.VK_LEFT -> { continuousPlayer.setStrafeLeft(false); yield true; }
             case KeyEvent.VK_D, KeyEvent.VK_RIGHT -> { continuousPlayer.setStrafeRight(false); yield true; }
+            case KeyEvent.VK_SHIFT -> { setMovementModifier(panel, true, false); yield true; }
+            case KeyEvent.VK_CONTROL, KeyEvent.VK_C -> { setMovementModifier(panel, false, false); yield true; }
             default -> false;
         };
     }
@@ -142,15 +125,20 @@ final class FirstPersonRenderViewport {
         if (!active(panel)) {
             mouseInput.release(panel);
             continuousPlayer.setMovementIntent(false, false, false, false);
+            if (panel != null && (sprintHeld || crouchHeld)) panel.selectedMovementModeIndex = movementModeBeforeHold;
+            sprintHeld = false;
+            crouchHeld = false;
             continuousMovementInitialized = false;
             lastContinuousMotionNanos = System.nanoTime();
             return;
         }
         mouseInput.ensureLock(panel);
         ensureContinuousPlayerSynced(panel);
+        applyMovementModeTuning(panel);
         long now = System.nanoTime();
         double dt = Math.max(0.0, Math.min(0.10, (now - lastContinuousMotionNanos) / 1_000_000_000.0));
         lastContinuousMotionNanos = now;
+        if (mouseInput.lookIdleSeconds(now) >= 0.85) camera.driftTowardCardinal(dt);
         continuousPlayer.setLookAngleRadians(camera.yawRadians());
         ContinuousPlayerState state = continuousPlayer.update(new MechanistContinuousCollisionGrid(panel.world, panel.playerX, panel.playerY), dt);
         if (state.velocityX() * state.velocityX() + state.velocityY() * state.velocityY() > 0.000625) cameraJuice.noteMovementImpulse();
@@ -230,6 +218,37 @@ final class FirstPersonRenderViewport {
         return 0.58;
     }
 
+    private void setMovementModifier(GamePanel panel, boolean sprint, boolean held) {
+        if (held && !sprintHeld && !crouchHeld) movementModeBeforeHold = panel.selectedMovementModeIndex;
+        if (sprint) sprintHeld = held;
+        else crouchHeld = held;
+        panel.selectedMovementModeIndex = heldMovementMode(movementModeBeforeHold, sprintHeld, crouchHeld);
+        if (panel.world != null) {
+            panel.world.dirtyVisionRevision++;
+            panel.world.dirtyNoiseRevision++;
+        }
+    }
+
+    private void applyMovementModeTuning(GamePanel panel) {
+        MotionTuning tuning = motionTuningForMode(panel.selectedMovementModeIndex);
+        continuousPlayer.setMotionTuning(tuning.maxSpeed(), tuning.acceleration(), tuning.damping());
+    }
+
+    static int heldMovementMode(int baseMode, boolean sprintHeld, boolean crouchHeld) {
+        if (crouchHeld) return GamePanel.MOTION_SNEAK;
+        if (sprintHeld) return GamePanel.MOTION_SPRINT;
+        return baseMode;
+    }
+
+    static MotionTuning motionTuningForMode(int mode) {
+        return switch (mode) {
+            case GamePanel.MOTION_SNEAK -> new MotionTuning(1.35, 8.5, 11.0);
+            case GamePanel.MOTION_RUN -> new MotionTuning(4.15, 21.0, 8.0);
+            case GamePanel.MOTION_SPRINT -> new MotionTuning(5.65, 27.0, 7.0);
+            default -> new MotionTuning(3.10, 18.0, 9.0);
+        };
+    }
+
     private void ensureContinuousPlayerSynced(GamePanel panel) {
         if (panel == null || panel.world == null) return;
         LogicalTile current = continuousPlayer.currentLogicalTile();
@@ -237,7 +256,7 @@ final class FirstPersonRenderViewport {
         if (!continuousMovementInitialized || tileMismatch) {
             continuousPlayer.snapToTileCenter(panel.playerX, panel.playerY);
             continuousPlayer.setRadius(0.28);
-            continuousPlayer.setMotionTuning(3.10, 18.0, 9.0);
+            applyMovementModeTuning(panel);
             continuousPlayer.setLookAngleRadians(camera.yawRadians());
             continuousMovementInitialized = true;
             lastContinuousMotionNanos = System.nanoTime();
@@ -469,13 +488,11 @@ final class FirstPersonRenderViewport {
     }
 
     private void renderHud(Graphics2D g, GamePanel panel, int w, int h) {
-        int cx = w / 2, cy = h / 2;
-        g.setColor(new Color(245, 220, 110, 170));
-        g.drawLine(cx - 10, cy, cx - 3, cy);
-        g.drawLine(cx + 3, cy, cx + 10, cy);
-        g.drawLine(cx, cy - 10, cx, cy - 3);
-        g.drawLine(cx, cy + 3, cx, cy + 10);
-        RaycastHit hit = raycaster.cast(panel.world, camera, Math.toRadians(panel.options.doomModeFovDegrees), 3.0, true);
+        Point center = DoomRayTarget.reticleCenter(w, h);
+        int cx = center.x, cy = center.y;
+        DoomRayTarget targetSolution = acquireTarget(panel);
+        renderTargetReticle(g, targetSolution, cx, cy);
+        RaycastHit hit = targetSolution.hit();
         String target = hit.hit() ? hit.kind() + " " + hit.label() + " " + hit.tileX() + "," + hit.tileY() + " d=" + formatDistance2(hit.distance()) : "no ray target";
         LogicalTile tile = continuousPlayer.currentLogicalTile();
         lastStatus = statusLine(panel.options) + " / tile " + tile.label() + " / " + target + " / LWJGL: " + LwjglRenderBackendProbe.statusLine();
@@ -483,9 +500,75 @@ final class FirstPersonRenderViewport {
         FontMetrics fm = g.getFontMetrics();
         int boxW = Math.min(w - 32, Math.max(360, fm.stringWidth(lastStatus) + 20));
         g.setColor(new Color(0, 0, 0, 160));
-        g.fillRoundRect(16, h - 48, boxW, 28, 8, 8);
+        g.fillRoundRect(16, 16, boxW, 28, 8, 8);
         g.setColor(new Color(232, 210, 132));
-        g.drawString(lastStatus, 26, h - 29);
+        g.drawString(lastStatus, 26, 35);
+        renderTurnCountdown(g, panel, w);
+    }
+
+    private void renderTurnCountdown(Graphics2D g, GamePanel panel, int width) {
+        String countdown = panel.passiveTurnCountdownLabel(System.currentTimeMillis())
+                + " / MOVE " + panel.movementModeLabel(panel.selectedMovementModeIndex);
+        g.setFont(new Font("Monospaced", Font.BOLD, 13));
+        int tw = g.getFontMetrics().stringWidth(countdown);
+        int x = Math.max(16, width - tw - 28);
+        g.setColor(new Color(0, 0, 0, 175));
+        g.fillRoundRect(x - 8, 50, tw + 16, 28, 8, 8);
+        g.setColor(panel.options != null && panel.options.passiveSinglePlayerTicking()
+                ? new Color(245, 214, 118) : new Color(145, 154, 148));
+        g.drawString(countdown, x, 69);
+    }
+
+    private DoomRayTarget acquireTarget(GamePanel panel) {
+        RaycastHit hit = raycaster.cast(panel.world, camera, Math.toRadians(panel.options.doomModeFovDegrees), DoomRayTarget.MAX_RANGE, true);
+        return DoomRayTarget.from(hit);
+    }
+
+    private void lookAtTarget(GamePanel panel, DoomRayTarget target) {
+        if (!target.hasTarget()) { panel.logEvent(target.lookHint()); return; }
+        panel.lookX = target.hit().tileX();
+        panel.lookY = target.hit().tileY();
+        panel.lookCursorActive = true;
+        panel.examineSelectedLookTarget();
+    }
+
+    private void interactWithTarget(GamePanel panel, DoomRayTarget target) {
+        if (!target.interactable()) { panel.logEvent(target.interactionHint()); return; }
+        panel.lookX = target.hit().tileX();
+        panel.lookY = target.hit().tileY();
+        panel.interactCursorActive = true;
+        panel.confirmInteraction();
+    }
+
+    private boolean aimWeaponAtTarget(GamePanel panel, DoomRayTarget target) {
+        if (!target.weaponTarget()) return false;
+        panel.combatX = target.hit().tileX();
+        panel.combatY = target.hit().tileY();
+        panel.lookX = panel.combatX;
+        panel.lookY = panel.combatY;
+        panel.lastTargetingReport = panel.targetingSolutionAt(panel.combatX, panel.combatY).summary;
+        panel.logEvent("Weapon aim locked through the center reticle: " + target.label() + ".");
+        return true;
+    }
+
+    private void renderTargetReticle(Graphics2D g, DoomRayTarget target, int cx, int cy) {
+        Color color = target.reticleColor();
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillOval(cx - 3, cy - 3, 7, 7);
+        g.setColor(color);
+        g.fillOval(cx - 1, cy - 1, 3, 3);
+        g.drawLine(cx - 15, cy, cx - 5, cy);
+        g.drawLine(cx + 5, cy, cx + 15, cy);
+        g.drawLine(cx, cy - 15, cx, cy - 5);
+        g.drawLine(cx, cy + 5, cx, cy + 15);
+        g.drawRect(cx - 20, cy - 20, 40, 40);
+        g.setFont(new Font("Monospaced", Font.BOLD, 11));
+        String label = target.reticleLabel();
+        int tw = g.getFontMetrics().stringWidth(label);
+        g.setColor(new Color(0, 0, 0, 165));
+        g.fillRoundRect(cx - tw / 2 - 6, cy + 27, tw + 12, 18, 6, 6);
+        g.setColor(color);
+        g.drawString(label, cx - tw / 2, cy + 40);
     }
 
     ScreenPoint project(double wx, double wy, double wz, double fov, int w, int h) {
@@ -519,6 +602,42 @@ record Vec3(double x, double y, double z) {
 record ScreenPoint(int x, int y, boolean visible, double depth) {}
 record RenderableSprite(double x, double y, double z, char glyph, String label, int color, boolean entity, BufferedImage image) {}
 record InteractionRequestRecord(String sessionId, int tileX, int tileY, long clientTimestampMillis, double distance) {}
+record MotionTuning(double maxSpeed, double acceleration, double damping) {}
+
+record DoomRayTarget(RaycastHit hit, boolean interactable, boolean weaponTarget, String label,
+                     String lookHint, String interactionHint, String weaponHint) {
+    static final double MAX_RANGE = 8.0;
+    static final double INTERACTION_RANGE = 1.65;
+
+    static DoomRayTarget from(RaycastHit hit) {
+        RaycastHit safe = hit == null ? RaycastHit.none() : hit;
+        boolean has = safe.hit();
+        boolean interact = has && safe.distance() <= INTERACTION_RANGE
+                && (safe.kind() == RaycastHitKind.ENTITY || safe.kind() == RaycastHitKind.DOOR || safe.kind() == RaycastHitKind.OBJECT);
+        boolean weapon = has && safe.kind() == RaycastHitKind.ENTITY;
+        String label = has ? safe.kind().name().toLowerCase(Locale.ROOT) + " " + safe.label() : "clear sightline";
+        String look = has ? "Look target: " + label + "." : "Look found no target in the center sightline.";
+        String use = interact ? "Interact with " + label + "." : has ? "Target is not usable from this range." : "No interaction target in the center sightline.";
+        String weaponHint = weapon ? "Aim at " + label + "." : "No valid weapon target in the center sightline.";
+        return new DoomRayTarget(safe, interact, weapon, label, look, use, weaponHint);
+    }
+
+    boolean hasTarget() { return hit != null && hit.hit(); }
+    String reticleLabel() {
+        if (!hasTarget()) return "L LOOK / E USE / F AIM";
+        String action = weaponTarget ? "F AIM" : interactable ? "E USE" : "L LOOK";
+        return action + " / " + label;
+    }
+    Color reticleColor() {
+        if (weaponTarget) return new Color(235, 82, 68, 235);
+        if (interactable) return new Color(124, 230, 144, 235);
+        if (hasTarget()) return new Color(116, 188, 235, 235);
+        return new Color(245, 220, 110, 190);
+    }
+    static Point reticleCenter(int width, int height) {
+        return new Point(Math.max(0, width) / 2, Math.max(0, height) / 2);
+    }
+}
 
 enum RaycastHitKind { NONE, WALL, DOOR, ENTITY, OBJECT }
 
@@ -528,6 +647,9 @@ record RaycastHit(boolean hit, RaycastHitKind kind, int tileX, int tileY, char t
 }
 
 final class FirstPersonCamera {
+    private static final double CARDINAL_STEP = Math.PI / 2.0;
+    private static final double YAW_DRIFT_RATE = Math.toRadians(20.0);
+    private static final double PITCH_DRIFT_RATE = Math.toRadians(14.0);
     private double baseX = 0.5, baseY = 0.58, baseZ = 0.5;
     private double yaw = 0.0, pitch = 0.0;
     private double lookX = 1.0, lookY = 0.0, lookZ = 0.0;
@@ -543,14 +665,38 @@ final class FirstPersonCamera {
         viewPitch = Math.max(Math.toRadians(-60), Math.min(Math.toRadians(60), pitch + s.pitchOffsetRadians()));
     }
     void addYawPitch(double dyaw, double dpitch) {
-        yaw += dyaw;
+        yaw = normalizeAngle(yaw + dyaw);
         pitch = Math.max(Math.toRadians(-55), Math.min(Math.toRadians(55), pitch + dpitch));
+        updateLookVector();
+    }
+    void driftTowardCardinal(double dtSeconds) {
+        double dt = Math.max(0.0, Math.min(0.10, dtSeconds));
+        if (dt <= 0.0) return;
+        double targetYaw = Math.rint(yaw / CARDINAL_STEP) * CARDINAL_STEP;
+        double yawDelta = normalizeAngle(targetYaw - yaw);
+        yaw = normalizeAngle(yaw + clamp(yawDelta, -YAW_DRIFT_RATE * dt, YAW_DRIFT_RATE * dt));
+        pitch += clamp(-pitch, -PITCH_DRIFT_RATE * dt, PITCH_DRIFT_RATE * dt);
+        if (Math.abs(yawDelta) < Math.toRadians(0.08)) yaw = normalizeAngle(targetYaw);
+        if (Math.abs(pitch) < Math.toRadians(0.08)) pitch = 0.0;
+        updateLookVector();
+    }
+    double nearestCardinalYawRadians() {
+        return normalizeAngle(Math.rint(yaw / CARDINAL_STEP) * CARDINAL_STEP);
+    }
+    private void updateLookVector() {
         double cp = Math.cos(pitch);
         lookX = Math.cos(yaw) * cp;
         lookY = Math.sin(pitch);
         lookZ = Math.sin(yaw) * cp;
         applyVisualOffsets(new CameraJuiceState(0,0,0));
     }
+    private static double normalizeAngle(double angle) {
+        double a = angle % (Math.PI * 2.0);
+        if (a <= -Math.PI) a += Math.PI * 2.0;
+        if (a > Math.PI) a -= Math.PI * 2.0;
+        return a;
+    }
+    private static double clamp(double value, double min, double max) { return Math.max(min, Math.min(max, value)); }
     double x() { return viewX; } double y() { return viewY; } double z() { return viewZ; }
     double baseX() { return baseX; } double baseY() { return baseY; } double baseZ() { return baseZ; }
     double yawRadians() { return yaw; } double pitchRadians() { return viewPitch; }
@@ -564,6 +710,7 @@ final class FirstPersonMouseInput {
     private Robot robot;
     private boolean recentering = false;
     private boolean cursorHidden = false;
+    private long lastLookInputNanos = System.nanoTime();
 
     void ensureLock(GamePanel panel) {
         if (panel == null || !panel.isShowing()) return;
@@ -578,6 +725,7 @@ final class FirstPersonMouseInput {
     void release(GamePanel panel) {
         centered = false;
         recentering = false;
+        lastLookInputNanos = System.nanoTime();
         if (panel != null && cursorHidden) {
             panel.setCursor(Cursor.getDefaultCursor());
             cursorHidden = false;
@@ -600,8 +748,15 @@ final class FirstPersonMouseInput {
         lastX = x;
         lastY = y;
         if (Math.abs(dx) > viewportW / 3 || Math.abs(dy) > viewportH / 3) { centerMouse(panel); return; }
-        if (dx != 0 || dy != 0) camera.addYawPitch(dx * sensitivity, -dy * sensitivity);
+        if (dx != 0 || dy != 0) {
+            lastLookInputNanos = System.nanoTime();
+            camera.addYawPitch(dx * sensitivity, -dy * sensitivity);
+        }
         centerMouse(panel);
+    }
+
+    double lookIdleSeconds(long nowNanos) {
+        return Math.max(0.0, (nowNanos - lastLookInputNanos) / 1_000_000_000.0);
     }
 
     private void centerMouse(GamePanel panel) {
@@ -632,8 +787,10 @@ final class ViewportRaycaster {
         if (world == null || camera == null) return RaycastHit.none();
         if (includeEntities) {
             RaycastHit entity = findEntityAlongRay(world, camera, maxDistance);
+            RaycastHit object = findObjectAlongRay(world, camera, maxDistance);
+            RaycastHit actorOrObject = nearer(entity, object);
             RaycastHit tile = cast(world, camera.x(), camera.z(), Math.atan2(camera.lookZ(), camera.lookX()), maxDistance, true);
-            if (entity.hit() && (!tile.hit() || entity.distance() <= tile.distance() + 0.15)) return entity;
+            if (actorOrObject.hit() && (!tile.hit() || actorOrObject.distance() <= tile.distance() + 0.15)) return actorOrObject;
             return tile;
         }
         return cast(world, camera.x(), camera.z(), Math.atan2(camera.lookZ(), camera.lookX()), maxDistance, true);
@@ -724,6 +881,38 @@ final class ViewportRaycaster {
             }
         }
         return out;
+    }
+
+    private RaycastHit findObjectAlongRay(World world, FirstPersonCamera camera, double maxDistance) {
+        if (world.mapObjects == null) return RaycastHit.none();
+        double lx = camera.lookX(); double lz = camera.lookZ();
+        double best = maxDistance + 1.0;
+        RaycastHit out = RaycastHit.none();
+        for (MapObjectState object : world.mapObjects) {
+            if (object == null) continue;
+            double cx = object.x + 0.5, cz = object.y + 0.5;
+            double vx = cx - camera.x(), vz = cz - camera.z();
+            double along = vx * lx + vz * lz;
+            if (along < 0.05 || along > maxDistance) continue;
+            double px = camera.x() + lx * along;
+            double pz = camera.z() + lz * along;
+            double offX = cx - px;
+            double offZ = cz - pz;
+            if (offX * offX + offZ * offZ <= 0.1156 && along < best) {
+                best = along;
+                String label = object.label == null || object.label.isBlank() ? "object" : object.label;
+                out = new RaycastHit(true, RaycastHitKind.OBJECT, object.x, object.y,
+                        world.inBounds(object.x, object.y) ? world.tiles[object.x][object.y] : '?',
+                        along, cx, cz, -lx, -lz, 0, label);
+            }
+        }
+        return out;
+    }
+
+    private RaycastHit nearer(RaycastHit a, RaycastHit b) {
+        if (a == null || !a.hit()) return b == null ? RaycastHit.none() : b;
+        if (b == null || !b.hit()) return a;
+        return a.distance() <= b.distance() ? a : b;
     }
 
     private boolean isDoor(char c) { return c == '/' || c == '|' || c == 'L' || c == 'X' || c == 'V' || c == 'Z'; }

@@ -12,6 +12,100 @@ Earlier pre-milestone development remains archived at:
 
 Use this file for new completed work from this reset onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `ROOT_docs/MILESTONE_INDEX.md`.
 
+## Milestone 02 - Doom Viewport, Shared HUD, and Entity Facing Restoration Slice
+
+Restored the live experimental Doom control mode by reconnecting `GamePanel` to the existing `FirstPersonRenderViewport` instead of the inert legacy stub. The active renderer now owns first-person painting, mouse look, continuous movement updates, movement-key release, ray-target clicks, and control-mode return to the normal 2D surface. Its diagnostic strip now renders above the shared HUD instead of underneath it.
+
+The shared Doom HUD continues to use current body endurance, food, water, fatigue-derived energy, equipped left/right weapons, active hand, and player portrait state. Survival bars now expose their exact numeric values, and the active weapon remains visibly identified.
+
+Added `FacingIndicatorAuthority` and integrated its small frame-joined cardinal triangle into the visible player and NPC world-sprite path. NPC movement, including actor-layer push/squeeze displacement, now persists facing direction through `NpcEntity.moveTo(...)`. Added `Milestone02DoomHudFacingSmoke` and wired it into the Gate 3 suite.
+
+Verification: Java 17 full-source compile, focused Doom/HUD/facing smoke, and the complete Gate 3 player-facing smoke suite. Manual GUI launch and visual playthrough were not run in this pass.
+
+## Milestone 02 - Cardinal Camera Drift and Shared 2D Zoom Repair Slice
+
+Added a mouse-idle grace period to the Doom camera, followed by slow yaw drift toward the nearest cardinal heading and pitch drift toward a level view. Fresh mouse motion immediately suspends settling, preserving direct first-person camera control.
+
+Reattached saved viewport zoom percentages to both the standard 2D game viewport and Zone Auditor tile renderers through `MapViewportOptionsSubsystem.scaledTileSize(...)`. Mouse wheel and `+/-` now adjust both active 2D views, while Doom mode ignores 2D zoom and Zone Auditor retains Home/End for replay navigation.
+
+Verification: Java 17 full-source compile, expanded Doom/HUD/facing/zoom smoke, and the complete Gate 3 player-facing smoke suite. Manual GUI launch and visual feel tuning were not run in this pass.
+
+## Milestone 02 - Doom Center-Ray Targeting and Trade Preview Slice
+
+Promoted the Doom crosshair from a decorative mark into the shared center-ray targeting solution. The exact viewport center now reports target kind and action, changes color for look/use/weapon targets, and drives keyboard and mouse Look, Interact, and weapon-aim commands without opening the old 2D targeting panel. Ray targeting now includes visible map objects in addition to entities, doors, and blocking world geometry, with interaction range enforced separately from look and aim range.
+
+Continued Phase 4.18 trade readability by adding `TradeReadabilityAuthority`. The live offer detail pane now previews vendor identity, price, affordability, remaining script, quality band, legality/restriction risk, carrying-capacity result, and provenance where known before purchase.
+
+Verification: Java 17 full-source compile, expanded Doom targeting smoke, new trade readability smoke, and the complete Gate 3 player-facing smoke suite. Manual GUI aiming and trade-panel playthrough were not run in this pass.
+
+## Milestone 02 - Doom Idle Centering, Movement Holds, Auto-Turn Clock, and Inventory Detail Slice
+
+Extended Doom viewpoint settling to continuous player position: when no movement input is held, velocity damps and the player slowly slides toward the exact center of the current logical tile without crossing collision boundaries.
+
+Added standard hold-based first-person movement modifiers. Holding Shift temporarily selects Sprint with higher continuous speed and acceleration. Holding Ctrl or C temporarily selects Sneak/crouch with reduced speed and a lower camera height. Releasing the modifier restores the prior movement mode, including when Doom mode is exited while a modifier remains held.
+
+The Doom HUD now shows the live 2.6-second passive auto-turn countdown. Passive timing initialization was repaired so enabling or entering the mode begins with a full interval instead of immediately advancing a turn; turn-based or inactive states show that automatic turns are paused.
+
+Continued Phase 4.19 inventory readability with InventoryReadabilityAuthority. The live inventory detail pane now reports quality, category, honest condition-record availability, legality/restriction state, equipped hand, transfer consequence, carried load, use summary, and provenance when known.
+
+Verification: Java 17 full-source compile, expanded Doom movement/countdown smoke, new inventory readability smoke, and the complete Gate 3 player-facing smoke suite. Manual GUI movement feel and countdown observation were not run in this pass.
+
+## Milestone 02 - Pause Menu Movement Recovery Slice
+
+Added a visible `Unstuck` action to the pause command panel. The action routes through `PauseMovementRecoveryAuthority` into `MovementPlanningAuthority.applyNearestStandableRecovery(...)`, preserves the paused screen, reports the request and success or failure through the event log and targeting report, and refreshes movement cursors, visited-zone state, dirty-region state, sensory state, and progressive-look state after a successful relocation.
+
+Added `Milestone02PauseMovementRecoverySmoke` and wired it into `Gate3PlayerFacingTextSmokeSuite`. The smoke covers the player-facing label and tooltip, the shared recovery bridge, visible feedback requirements, no-silent-teleport audit contract, and safe failure without a loaded world.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
+## Milestone 02 - Movement Debug Overlay Slice
+
+Added `MovementDebugOverlayAuthority` as a per-session trace for the latest movement attempt. Unified movement execution now records the destination, whether actor occupancy was encountered, whether push/squeeze displaced another actor, and the accepted or rejected execution result. Pause-menu recovery records whether relocation was applied and its destination.
+
+The pause/session panel now exposes the latest movement destination, occupancy result, push/squeeze result, recovery result, and execution result for smoke testing and validation. Added `Milestone02MovementDebugOverlaySmoke` and wired it into the Gate 3 suite.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
+## Milestone 02 - Quest Objective Guidance Overlay Slice
+
+Added QuestObjectiveGuidanceAuthority as a rendering-neutral contract for exact, approximate, rumored, hidden, unsafe, and nearest-transition guidance without taking ownership of quest progression. The map panel now lists active objective guidance, exact visible current-slice targets receive a slow pulsing marker, unsafe targets use warning color, and rumored or hidden objectives deliberately withhold exact coordinates and direction.
+
+Added Milestone02QuestObjectiveGuidanceSmoke and wired it into the Gate 3 suite. No placeholder quests are created when the runtime has no active quest records; later quest systems can publish guidance records into the shared player-facing list.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
+## Milestone 02 - Pet Interaction Feedback Slice
+
+Added PetInteractionFeedbackAuthority and replaced the generic animal Pet action with species-aware companion feedback: dog-like pets receive Head Pat, cat-like pets receive Scritch, mouse/rat pets receive Nose Boop, and other pets receive gentle affection. Hostile, injured, sleeping, restrained, and non-companion animals now provide compact in-world denial reasons instead of silently changing state.
+
+Added Milestone02PetInteractionFeedbackSmoke and wired it into the Gate 3 suite. Successful affection still uses the existing Animal Handling XP and turn paths; denied interactions do not consume a turn.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
+## Milestone 02 - Action Denial Guidance Slice
+
+Added ActionDenialGuidanceAuthority for access, blueprint, construction, interaction, and movement refusal text. Live construction placement now keeps detailed governance diagnostics in the audit authority while ordinary UI receives a sanitized domain reason and one practical resolution path. Construction blueprint labels no longer expose Java class names.
+
+Added Milestone02ActionDenialGuidanceSmoke and wired it into the Gate 3 suite. Coverage verifies occupied-tile, missing-knowledge, and locked-access guidance while rejecting class-name and context diagnostic leakage.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
+## Milestone 02 - Live Menu Grammar Coverage Slice
+
+Expanded UniversalWindowAuthority coverage to include the live character, container transfer, object interaction, targeting, crafting, Auspex, scavenge, pause, and console surfaces. Common panel opening and closing now updates the shared runtime lifecycle state, and direct dialogue, object, trade, and container entry points report their real focus context.
+
+Expanded Milestone02MenuUniformityReadabilitySmoke to verify the added high-traffic menu definitions and open/focus/close lifecycle behavior. This remains an incremental wrapper migration rather than a broad visual rewrite.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
+## Milestone 02 - Conversation Relationship and Service Context Slice
+
+Added ConversationReadabilityAuthority and connected it to the live dialogue panel. Conversations now show a readable faction relationship band, available service category, and known standing or hostility consequence. Faction representatives explicitly state when no quest offer is listed instead of implying a functional quest submenu, while traders identify available stock access.
+
+Added Milestone02ConversationReadabilitySmoke and wired it into the Gate 3 suite. Coverage includes trusted, hated, and active-hostility states plus the no-placeholder-quest boundary.
+
+Verification: Java 17 full-source compile and the Gate 3 player-facing smoke suite.
+
 ## Active Ledger Reset - 2026-06-05
 
 The previous active development history was archived and this fresh ledger was started to keep continuing milestone work reviewable.

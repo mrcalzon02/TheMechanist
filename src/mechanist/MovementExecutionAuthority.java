@@ -1,9 +1,11 @@
 package mechanist;
 
+import java.awt.Point;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Unified one-step movement execution bridge.
+ * Unified player movement execution bridge.
  *
  * This authority exists to stop preview, planning, and final movement commit from
  * drifting into separate rule sets. It can resolve against a structured
@@ -54,43 +56,86 @@ final class MovementExecutionAuthority {
         int toY = fromY + dy;
         if (dx == 0 && dy == 0) return failed(false, fromX, fromY, fromX, fromY, "No movement direction supplied.", "zero-delta");
 
+        return executePath(game, List.of(new Point(toX, toY)), source, allowActorResolver, false);
+    }
+
+    static MovementExecutionResult executePlannedPath(GamePanel game, List<Point> route, String source) {
+        return executePath(game, route, source, true, true);
+    }
+
+    private static MovementExecutionResult executePath(GamePanel game, List<Point> route, String source,
+                                                       boolean allowActorResolver, boolean chargeMovementModeCost) {
+        if (game == null || game.world == null) return failed(false, 0, 0, 0, 0, "No world is loaded.", "missing-world");
+        int fromX = game.playerX;
+        int fromY = game.playerY;
+        if (route == null || route.isEmpty()) return failed(false, fromX, fromY, fromX, fromY, "No movement route supplied.", "empty-route");
+
         ZoneTileState[][] snapshot = legacyWorldTileStateSnapshot(game);
-        MovementExecutionResult preview = resolveActorStepOnTiles(snapshot, PLAYER_ACTOR_ID, fromX, fromY, toX, toY, allowActorResolver);
-        if (!preview.success()) {
-            String message = "Movement blocked: " + preview.reason();
-            game.lastTargetingReport = message;
-            game.logEvent(message);
-            return new MovementExecutionResult(false, false, fromX, fromY, fromX, fromY, message, preview.debugSummary());
-        }
+        int currentX = fromX;
+        int currentY = fromY;
+        ZoneTileMovementResolutionAuthority.Resolution finalResolution = null;
+        ArrayList<String> debug = new ArrayList<>();
+        boolean occupiedEncountered = false;
+        boolean pushSqueezeUsed = false;
+        int steps = 0;
+        for (Point destination : route) {
+            if (destination == null) break;
+            int dx = destination.x - currentX;
+            int dy = destination.y - currentY;
+            if (Math.abs(dx) + Math.abs(dy) != 1) {
+                MovementDebugOverlayAuthority.recordExecution(game, destination.x, destination.y, false, false, false,
+                        "route contains a non-adjacent step");
+                return blockedRoute(game, fromX, fromY, "Movement route contains a non-adjacent step.", "invalid-step " + currentX + "," + currentY + "->" + destination.x + "," + destination.y);
+            }
+            boolean occupied = inBounds(snapshot, destination.x, destination.y)
+                    && snapshot[destination.x][destination.y].hasSlot(ZoneTileState.TileSlot.ENTITY);
+            occupiedEncountered |= occupied;
+            MovementExecutionResult preview = resolveActorStepOnTiles(snapshot, PLAYER_ACTOR_ID,
+                    currentX, currentY, destination.x, destination.y, allowActorResolver);
+            if (!preview.success()) {
+                MovementDebugOverlayAuthority.recordExecution(game, destination.x, destination.y, occupied, false, false, preview.reason());
+                return blockedRoute(game, fromX, fromY, preview.reason(), preview.debugSummary());
+            }
 
-        ZoneTileMovementResolutionAuthority.Resolution resolution = ZoneTileMovementResolutionAuthority.resolve(
-                snapshot,
-                List.of(new ZoneTileMovementResolutionAuthority.MoveIntent(PLAYER_ACTOR_ID, fromX, fromY, toX, toY, 100))
-        );
-        ZoneTileMovementResolutionAuthority.MoveOutcome playerOutcome = resolution.outcomeFor(PLAYER_ACTOR_ID);
-        if (playerOutcome == null || !playerOutcome.moved()) {
-            String message = playerOutcome == null ? "Movement resolver returned no player outcome." : playerOutcome.reason();
-            game.lastTargetingReport = "Movement blocked: " + message;
-            game.logEvent(game.lastTargetingReport);
-            return new MovementExecutionResult(false, false, fromX, fromY, fromX, fromY, game.lastTargetingReport, resolution.summary());
+            finalResolution = ZoneTileMovementResolutionAuthority.resolve(snapshot,
+                    List.of(new ZoneTileMovementResolutionAuthority.MoveIntent(
+                            PLAYER_ACTOR_ID, currentX, currentY, destination.x, destination.y, 100)));
+            ZoneTileMovementResolutionAuthority.MoveOutcome playerOutcome = finalResolution.outcomeFor(PLAYER_ACTOR_ID);
+            if (playerOutcome == null || !playerOutcome.moved()) {
+                String reason = playerOutcome == null ? "Movement resolver returned no player outcome." : playerOutcome.reason();
+                MovementDebugOverlayAuthority.recordExecution(game, destination.x, destination.y, occupied, false, false, reason);
+                return blockedRoute(game, fromX, fromY, reason, finalResolution.summary());
+            }
+            pushSqueezeUsed |= occupied && finalResolution.outcomes().stream()
+                    .anyMatch(outcome -> outcome != null && outcome.moved() && !PLAYER_ACTOR_ID.equals(outcome.actorId()));
+            applyOutcomesToSnapshot(snapshot, finalResolution.outcomes());
+            debug.add(finalResolution.summary());
+            currentX = playerOutcome.finalX();
+            currentY = playerOutcome.finalY();
+            steps++;
         }
+        if (steps == 0 || finalResolution == null) return blockedRoute(game, fromX, fromY, "Movement route has no usable steps.", "empty-clean-route");
 
-        applyNpcOutcomes(game, resolution.outcomes());
-        applyPlayerOutcome(game, fromX, fromY, playerOutcome.finalX(), playerOutcome.finalY(), source);
-        String message = "Movement executed through unified authority to " + playerOutcome.finalX() + "," + playerOutcome.finalY() + ".";
+        applyNpcOutcomes(game, finalResolution.outcomes());
+        applyPlayerOutcome(game, fromX, fromY, currentX, currentY, steps, source);
+        if (chargeMovementModeCost) game.fatigue = Math.min(GamePanel.MAX_FOOD_WATER,
+                game.fatigue + MovementPlanningAuthority.fatigueCost(game.selectedMovementModeIndex, steps));
+        String message = "Movement executed through unified authority to " + currentX + "," + currentY + " in " + steps + " step(s).";
         game.lastTargetingReport = message;
         game.logEvent(message);
-        return new MovementExecutionResult(true, true, fromX, fromY, playerOutcome.finalX(), playerOutcome.finalY(), message, resolution.summary());
+        MovementDebugOverlayAuthority.recordExecution(game, currentX, currentY, occupiedEncountered, pushSqueezeUsed, true, message);
+        return new MovementExecutionResult(true, true, fromX, fromY, currentX, currentY, message, String.join(" | ", debug));
     }
 
     static String auditSummary() {
         return "movementExecutionAuthority version=" + VERSION
                 + " chain=planning+actorLayerResolver+singleCommit"
                 + " applies=player+npcActorOutcomes"
+                + " paths=keyboard+mouse+manual+controller+queued+scripted"
                 + " legacyGlyph=bridgeOnly";
     }
 
-    private static void applyPlayerOutcome(GamePanel game, int fromX, int fromY, int toX, int toY, String source) {
+    private static void applyPlayerOutcome(GamePanel game, int fromX, int fromY, int toX, int toY, int steps, String source) {
         game.facingDx = Integer.compare(toX, fromX);
         game.facingDy = Integer.compare(toY, fromY);
         if (game.facingDx == 0 && game.facingDy == 0) game.facingDx = 1;
@@ -98,7 +143,9 @@ final class MovementExecutionAuthority {
         game.playerMotionFromY = fromY;
         game.playerMotionToX = toX;
         game.playerMotionToY = toY;
-        game.playerMotionDurationMillis = 1;
+        int perStep = game.options != null && game.options.reducedMotion ? 120 : 420;
+        int cap = game.options != null && game.options.reducedMotion ? 420 : 1800;
+        game.playerMotionDurationMillis = Math.max(120, Math.min(cap, perStep * Math.max(1, steps)));
         game.playerMotionStartedMillis = System.currentTimeMillis();
         game.playerX = toX;
         game.playerY = toY;
@@ -116,6 +163,25 @@ final class MovementExecutionAuthority {
         ProgressiveLookAuthority.reset(game, source == null || source.isBlank() ? "movement execution" : source);
     }
 
+    private static void applyOutcomesToSnapshot(ZoneTileState[][] tiles, List<ZoneTileMovementResolutionAuthority.MoveOutcome> outcomes) {
+        for (ZoneTileState[] column : tiles) {
+            if (column == null) continue;
+            for (ZoneTileState tile : column) if (tile != null) tile.setOccupantEntityId("");
+        }
+        for (ZoneTileMovementResolutionAuthority.MoveOutcome outcome : outcomes) {
+            if (outcome != null && inBounds(tiles, outcome.finalX(), outcome.finalY())) {
+                tiles[outcome.finalX()][outcome.finalY()].setOccupantEntityId(outcome.actorId());
+            }
+        }
+    }
+
+    private static MovementExecutionResult blockedRoute(GamePanel game, int fromX, int fromY, String reason, String debug) {
+        String message = "Movement blocked: " + PlayerFacingText.sanitize(reason);
+        game.lastTargetingReport = message;
+        game.logEvent(message);
+        return new MovementExecutionResult(false, false, fromX, fromY, fromX, fromY, message, PlayerFacingText.sanitize(debug));
+    }
+
     private static void applyNpcOutcomes(GamePanel game, List<ZoneTileMovementResolutionAuthority.MoveOutcome> outcomes) {
         if (game == null || game.world == null || game.world.npcs == null || outcomes == null) return;
         for (ZoneTileMovementResolutionAuthority.MoveOutcome outcome : outcomes) {
@@ -124,8 +190,7 @@ final class MovementExecutionAuthority {
             if (idx >= 0 && idx < game.world.npcs.size()) {
                 NpcEntity npc = game.world.npcs.get(idx);
                 if (npc != null) {
-                    npc.x = outcome.finalX();
-                    npc.y = outcome.finalY();
+                    npc.moveTo(outcome.finalX(), outcome.finalY());
                 }
             }
         }

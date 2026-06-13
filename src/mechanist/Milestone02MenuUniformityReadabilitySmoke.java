@@ -12,12 +12,24 @@ final class Milestone02MenuUniformityReadabilitySmoke {
         requireContains(lines, "Construction", "construction menu audit");
         requireContains(lines, "Infopedia", "infopedia menu audit");
         requireContains(lines, "Save / Load", "save/load menu audit");
+        requireContains(lines, "Character", "character menu audit");
+        requireContains(lines, "Container Transfer", "container menu audit");
+        requireContains(lines, "Targeting", "targeting menu audit");
+        requireContains(lines, "Crafting", "crafting menu audit");
+        requireContains(lines, "Pause / Command", "pause menu audit");
         requireContains(lines, "Transfer rule", "shared transfer rule");
         requireContains(lines, "Prompt rule", "shared prompt rule");
 
         String summary = authority.playerFacingSummary();
         requireContains(summary, "Menu audit covers", "menu summary");
         rejectLeaks(summary, "menu summary");
+
+        UniversalWindowAuthority.RuntimeWindowState opened = authority.open("container", 12, "smoke transfer");
+        require(opened != null && opened.state == UniversalWindowAuthority.LifecycleState.FOCUSED,
+                "opening a registered menu should focus its runtime state");
+        authority.close("container", 13, "smoke close");
+        require(authority.state("container").state == UniversalWindowAuthority.LifecycleState.CLOSED,
+                "closing a registered menu should close its runtime state");
 
         for (String line : lines) {
             rejectLeaks(line, "menu audit line");
@@ -50,6 +62,10 @@ final class Milestone02MenuUniformityReadabilitySmoke {
 
     private static void rejectContains(String text, String forbidden, String label) {
         if (text != null && text.contains(forbidden)) throw new AssertionError(label + ": " + text);
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
     }
 
     private static void rejectLeaks(String text, String label) {

@@ -46,7 +46,7 @@ final class GamePanelWorldCommandRuntimeContext implements WorldCommandRuntimeCo
     public World world() { return game == null ? null : game.world; }
     public boolean inBounds(int x, int y) { return game != null && game.world != null && game.world.inBounds(x, y); }
     public boolean walkable(int x, int y) { return game != null && game.world != null && game.world.walkable(x, y); }
-    public void movePlayer(int dx, int dy, String source) { if (game != null) game.executePacedMovementBody(dx, dy, source); }
+    public void movePlayer(int dx, int dy, String source) { if (game != null) MovementExecutionAuthority.executeStep(game, dx, dy, source, true); }
     public void waitOneTurn(String line) {
         if (game == null) return;
         game.clearPendingMovementInput("wait-command");

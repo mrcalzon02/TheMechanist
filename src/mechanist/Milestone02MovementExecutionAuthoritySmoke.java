@@ -9,6 +9,13 @@ final class Milestone02MovementExecutionAuthoritySmoke {
         testBlockedTileRejection();
         requireContains(MovementExecutionAuthority.auditSummary(), "chain=planning+actorLayerResolver+singleCommit", "execution audit chain");
         requireContains(MovementExecutionAuthority.auditSummary(), "applies=player+npcActorOutcomes", "execution audit application");
+        requireContains(MovementExecutionAuthority.auditSummary(), "paths=keyboard+mouse+manual+controller+queued+scripted", "execution path coverage");
+        requireContains(MovementExecutionAuditAuthority.milestoneSummary(), "actor-layer-runtime-routing=active", "runtime routing audit");
+        for (MovementExecutionAuditAuthority.MovementRouteAudit audit : MovementExecutionAuditAuthority.currentAuditSnapshot()) {
+            if (audit.channel() != MovementExecutionAuditAuthority.MovementChannel.RECOVERY) {
+                require(audit.usesActorLayerResolution(), "runtime channel should use actor-layer resolution: " + audit);
+            }
+        }
     }
 
     private static void testOpenTileResolution() {

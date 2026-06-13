@@ -177,6 +177,9 @@ final class MovementPlanningAuthority {
         game.playerMotionStartedMillis = 0L;
         game.manualMovementPlanActive = false;
         game.mouseMovePreviewActive = false;
+        game.lookCursorActive = false;
+        game.interactCursorActive = false;
+        game.combatCursorActive = false;
         game.manualMovementPlanPath.clear();
         game.mouseMovePreviewPath.clear();
         if (game.world.inBounds(game.playerX, game.playerY)) {
@@ -188,6 +191,11 @@ final class MovementPlanningAuthority {
         String message = "Movement recovery moved the player from " + fromX + "," + fromY + " to " + search.x() + "," + search.y() + ".";
         game.lastTargetingReport = message;
         game.logEvent(message);
+        game.markZoneVisitedAndCheckFirstType();
+        game.markLocalDirtyRegion("pause movement recovery", game.playerX, game.playerY,
+                Math.max(6, game.visionRange() + 2), true, true, true, false);
+        game.updateSensoryModel("pause movement recovery");
+        ProgressiveLookAuthority.reset(game, "pause movement recovery");
         return new MovementRecoveryApplicationResult(true, fromX, fromY, search.x(), search.y(), message);
     }
 

@@ -67,15 +67,15 @@ final class ZoneTileState {
     private SpaceType spaceType;
     private Faction ownerFaction;
     private char legacyGlyph;
-    private String roomId;
-    private String corridorId;
-    private String roadNetworkId;
-    private String transitionId;
-    private String verticalTransitionId;
-    private String occupantEntityId;
-    private String petEntityId;
-    private String vehicleId;
-    private String reservationLabel;
+    private String roomId = "";
+    private String corridorId = "";
+    private String roadNetworkId = "";
+    private String transitionId = "";
+    private String verticalTransitionId = "";
+    private String occupantEntityId = "";
+    private String petEntityId = "";
+    private String vehicleId = "";
+    private String reservationLabel = "";
     private final EnumSet<TileFlag> flags = EnumSet.noneOf(TileFlag.class);
     private final ArrayList<PlacedObjectRef> objects = new ArrayList<>();
     private final ArrayList<LightState> lights = new ArrayList<>();
@@ -166,7 +166,7 @@ final class ZoneTileState {
     ZoneTileState addObject(String objectId, String typeKey, String label, boolean blocksMovement, boolean container) { objects.add(new PlacedObjectRef(objectId, typeKey, label, blocksMovement, container)); addSlot(container ? TileSlot.CONTAINER : TileSlot.FIXTURE, objectId, typeKey, label, blocksMovement); flags.add(TileFlag.HAS_OBJECT); if (container) flags.add(TileFlag.HAS_CONTAINER); if (blocksMovement) flags.add(TileFlag.BLOCKS_MOVEMENT); return this; }
     ZoneTileState addLooseItem(String itemId, String typeKey, String label) { addSlot(TileSlot.LOOSE_ITEM, itemId, typeKey, label, false); flags.add(TileFlag.HAS_ITEM); return this; }
     ZoneTileState addLight(LightKind kind, int intensityPercent, String sourceId) { lights.add(new LightState(kind, intensityPercent, sourceId)); if (kind != null && kind != LightKind.NONE && intensityPercent > 0) { flags.add(TileFlag.HAS_LIGHT); addSlot(TileSlot.LIGHT, sourceId, kind.name(), kind.name().toLowerCase().replace('_', ' '), false); } return this; }
-    ZoneTileState setOccupantEntityId(String occupantEntityId) { this.occupantEntityId = safe(occupantEntityId); if (!this.occupantEntityId.isBlank()) { flags.add(TileFlag.HAS_ENTITY); replaceSingleSlot(TileSlot.ENTITY, this.occupantEntityId, "entity", this.occupantEntityId, true); } else { flags.remove(TileFlag.HAS_ENTITY); clearSlot(TileSlot.ENTITY); } return this; }
+    ZoneTileState setOccupantEntityId(String occupantEntityId) { this.occupantEntityId = safe(occupantEntityId); if (!this.occupantEntityId.isBlank()) { flags.add(TileFlag.HAS_ENTITY); replaceSingleSlot(TileSlot.ENTITY, this.occupantEntityId, "entity", this.occupantEntityId, false); } else { flags.remove(TileFlag.HAS_ENTITY); clearSlot(TileSlot.ENTITY); } return this; }
     ZoneTileState setPetEntityId(String petEntityId) { this.petEntityId = safe(petEntityId); if (!this.petEntityId.isBlank()) { flags.add(TileFlag.HAS_PET); replaceSingleSlot(TileSlot.PET, this.petEntityId, "pet", this.petEntityId, true); } else { flags.remove(TileFlag.HAS_PET); clearSlot(TileSlot.PET); } return this; }
     ZoneTileState setVehicleId(String vehicleId) { this.vehicleId = safe(vehicleId); if (!this.vehicleId.isBlank()) { flags.add(TileFlag.HAS_VEHICLE); replaceSingleSlot(TileSlot.VEHICLE, this.vehicleId, "vehicle", this.vehicleId, true); } else { flags.remove(TileFlag.HAS_VEHICLE); clearSlot(TileSlot.VEHICLE); } return this; }
 

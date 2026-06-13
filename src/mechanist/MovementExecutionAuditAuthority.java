@@ -28,23 +28,18 @@ final class MovementExecutionAuditAuthority {
 
     static List<MovementRouteAudit> currentAuditSnapshot() {
         ArrayList<MovementRouteAudit> audits = new ArrayList<>();
-        audits.add(new MovementRouteAudit(MovementChannel.KEYBOARD, true, false, false,
-                "Requires execution-path verification."));
-        audits.add(new MovementRouteAudit(MovementChannel.MOUSE_PATH, true, false, false,
-                "Requires execution-path verification."));
-        audits.add(new MovementRouteAudit(MovementChannel.CONTROLLER, true, false, false,
-                "Requires execution-path verification."));
-        audits.add(new MovementRouteAudit(MovementChannel.QUEUED_PATH, true, false, false,
-                "Requires execution-path verification."));
-        audits.add(new MovementRouteAudit(MovementChannel.SCRIPTED, false, false, false,
-                "Legacy routing not yet audited."));
+        audits.add(new MovementRouteAudit(MovementChannel.KEYBOARD, true, true, false, "Unified execution authority."));
+        audits.add(new MovementRouteAudit(MovementChannel.MOUSE_PATH, true, true, false, "Unified planned-path authority."));
+        audits.add(new MovementRouteAudit(MovementChannel.CONTROLLER, true, true, false, "Unified input adapter authority."));
+        audits.add(new MovementRouteAudit(MovementChannel.QUEUED_PATH, true, true, false, "Unified planned-path authority."));
+        audits.add(new MovementRouteAudit(MovementChannel.SCRIPTED, true, true, false, "Unified command-context authority."));
         audits.add(new MovementRouteAudit(MovementChannel.RECOVERY, true, false, true,
                 "Runtime recovery bridge installed."));
         return audits;
     }
 
     static String milestoneSummary() {
-        return "movement-unification-audit active channels=6 recovery-bridge=installed actor-layer-runtime-routing=pending";
+        return "movement-unification-audit active channels=6 recovery-bridge=installed actor-layer-runtime-routing=active";
     }
 
     private MovementExecutionAuditAuthority() {}

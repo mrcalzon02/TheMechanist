@@ -221,7 +221,30 @@ final class ContinuousGridPlayer {
         if (!movedX && !movedY && !isPositionClear(world, posX, posY)) {
             resolveOutOfSolid(world);
         }
+        if (wishLen <= 1.0e-9) recenterTowardCurrentTile(world, dt, 1.15);
         return state();
+    }
+
+    private void recenterTowardCurrentTile(ContinuousCollisionGrid world, double dt, double unitsPerSecond) {
+        int tileX = (int)Math.floor(posX);
+        int tileY = (int)Math.floor(posY);
+        double targetX = tileX + 0.5;
+        double targetY = tileY + 0.5;
+        double dx = targetX - posX;
+        double dy = targetY - posY;
+        double distance = Math.hypot(dx, dy);
+        if (distance <= 0.0005) {
+            posX = targetX;
+            posY = targetY;
+            return;
+        }
+        double step = Math.min(distance, Math.max(0.0, unitsPerSecond) * dt);
+        double nextX = posX + dx / distance * step;
+        double nextY = posY + dy / distance * step;
+        if (isPositionClear(world, nextX, nextY)) {
+            posX = nextX;
+            posY = nextY;
+        }
     }
 
     boolean isPositionClear(ContinuousCollisionGrid world, double centerX, double centerY) {
@@ -273,6 +296,7 @@ final class ContinuousGridPlayer {
     double velocityY() { return velocityY; }
     double lookAngleRadians() { return lookAngleRadians; }
     double radius() { return radius; }
+    boolean hasMovementIntent() { return forward || backward || strafeLeft || strafeRight; }
 
     private double normalizeAngle(double a) {
         double twoPi = Math.PI * 2.0;

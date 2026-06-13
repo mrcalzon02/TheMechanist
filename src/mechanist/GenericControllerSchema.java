@@ -60,6 +60,7 @@ final class GenericControllerSchema {
     private static boolean boundActionActive(InputAction action, GamepadControllerSnapshot pad, KeyBindingManager manager,
                                              double leftX, double leftY, double rightX, double rightY,
                                              ControllerTapHoldTracker.TapHoldRead southFaceRead) {
+        if (action == InputAction.INTERACT && southFaceRead != null && southFaceRead.holdActive()) return true;
         String commandId = ControlReferenceTextSubsystem.commandIdFor(action);
         if (commandId == null || commandId.isBlank()) return false;
         return manager.getBinding(InputDevice.GENERIC_CONTROLLER, commandId)

@@ -56,8 +56,8 @@ public record InputToken(InputDevice device, String code, String displayName) {
     public static InputToken controllerAxis(String axisName, int direction) {
         var axis = normalize(axisName);
         var sign = direction < 0 ? "NEG" : "POS";
-        var displaySign = direction < 0 ? "-" : "+";
-        return new InputToken(InputDevice.GENERIC_CONTROLLER, "PAD_AXIS_" + axis + "_" + sign, pretty(axis) + " " + displaySign);
+        return new InputToken(InputDevice.GENERIC_CONTROLLER, "PAD_AXIS_" + axis + "_" + sign,
+                controllerAxisDisplay(axis, direction));
     }
 
     public String storageValue() {
@@ -99,5 +99,13 @@ public record InputToken(InputDevice device, String code, String displayName) {
             result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
         }
         return result.toString();
+    }
+
+    private static String controllerAxisDisplay(String axis, int direction) {
+        var lower = axis.toLowerCase(Locale.ROOT);
+        var stick = lower.startsWith("right") ? "right stick" : (lower.startsWith("left") ? "left stick" : pretty(axis).toLowerCase(Locale.ROOT));
+        if (lower.endsWith("_x") || lower.endsWith("x")) return stick + (direction < 0 ? " left" : " right");
+        if (lower.endsWith("_y") || lower.endsWith("y")) return stick + (direction < 0 ? " up" : " down");
+        return stick + (direction < 0 ? " negative" : " positive");
     }
 }

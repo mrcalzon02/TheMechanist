@@ -165,9 +165,9 @@ final class GameHudOverlay {
         int vitalX = portraitX + portraitW + 18;
         int vitalW = Math.max(150, Math.min(240, width - vitalX - slotW - 28));
         if (vitalW >= 120) {
-            renderMiniBar(g2d, vitalX, y + 18, vitalW, "FOOD", state.food() / 100.0, new Color(96, 176, 82, 235));
-            renderMiniBar(g2d, vitalX, y + 40, vitalW, "WATER", state.water() / 100.0, new Color(82, 154, 214, 235));
-            renderMiniBar(g2d, vitalX, y + 62, vitalW, "FATIGUE", 1.0 - state.fatigue() / 100.0, new Color(218, 178, 72, 235));
+            renderMiniBar(g2d, vitalX, y + 18, vitalW, "FOOD", state.food(), state.food() / 100.0, new Color(96, 176, 82, 235));
+            renderMiniBar(g2d, vitalX, y + 40, vitalW, "WATER", state.water(), state.water() / 100.0, new Color(82, 154, 214, 235));
+            renderMiniBar(g2d, vitalX, y + 62, vitalW, "ENERGY", 100 - state.fatigue(), 1.0 - state.fatigue() / 100.0, new Color(218, 178, 72, 235));
         }
     }
 
@@ -189,7 +189,7 @@ final class GameHudOverlay {
         g2d.setColor(text);
         String label = item == null || item.isBlank() ? "EMPTY" : item;
         FontMetrics fm = g2d.getFontMetrics();
-        while (label.length() > 5 && fm.stringWidth(label) > w - 18) label = label.substring(0, label.length() - 2) + "…";
+        while (label.length() > 5 && fm.stringWidth(label) > w - 18) label = label.substring(0, label.length() - 4) + "...";
         g2d.drawString(label, x + 8, y + h - 17);
     }
 
@@ -213,12 +213,13 @@ final class GameHudOverlay {
         g2d.drawRect(x - 3, y - 3, SEGMENTS * segW + (SEGMENTS - 1) * gap + 6, h + 6);
     }
 
-    private void renderMiniBar(Graphics2D g2d, int x, int y, int w, String label, double ratio, Color fill) {
-        int labelW = 56;
+    private void renderMiniBar(Graphics2D g2d, int x, int y, int w, String label, int value, double ratio, Color fill) {
+        String readout = label + " " + Math.max(0, Math.min(100, value));
+        int labelW = Math.max(64, g2d.getFontMetrics(smallFont).stringWidth(readout) + 8);
         int barW = Math.max(24, w - labelW);
         g2d.setFont(smallFont);
         g2d.setColor(text);
-        g2d.drawString(label, x, y + 10);
+        g2d.drawString(readout, x, y + 10);
         g2d.setColor(empty);
         g2d.fillRect(x + labelW, y, barW, 12);
         g2d.setColor(fill == null ? segmentGlow : fill);

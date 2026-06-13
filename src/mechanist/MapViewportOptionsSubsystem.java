@@ -13,7 +13,9 @@ final class MapViewportOptionsSubsystem {
     }
 
     static boolean worldZoomControlActive(GamePanel panel) {
+        if (panel == null || panel.options == null) return false;
         if (panel.screen == GamePanel.Screen.SECTOR_AUDIT) return panel.auditWorld != null;
+        if (panel.screen == GamePanel.Screen.GAME && panel.options.doomModeEnabled) return false;
         return panel.world != null && (panel.screen == GamePanel.Screen.GAME ||
                 (panel.screen == GamePanel.Screen.PANEL &&
                         (panel.panelMode == GamePanel.PanelMode.LOOK ||
@@ -36,5 +38,13 @@ final class MapViewportOptionsSubsystem {
             panel.logEvent("Viewport zoom already at " + panel.options.worldZoomLabel() + ".");
         }
         panel.repaint();
+    }
+
+    static int scaledTileSize(int baseTileSize, GameOptions options, int minimum, int maximum) {
+        int min = Math.max(1, minimum);
+        int max = Math.max(min, maximum);
+        int percent = options == null ? 100 : options.worldZoomPercent();
+        int scaled = (int)Math.round(Math.max(1, baseTileSize) * percent / 100.0);
+        return Math.max(min, Math.min(max, scaled));
     }
 }

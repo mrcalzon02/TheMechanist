@@ -699,6 +699,7 @@ class NpcEntity {
     Faction faction;
     char symbol;
     int x, y, homeX, homeY, portraitIndex;
+    int facingDx = 1, facingDy = 0;
     int idleBias;
     int hp = 12;
     boolean hostileBarked = false;
@@ -1065,7 +1066,11 @@ class NpcEntity {
     }
 
     void moveTo(int nx, int ny) {
-        if (nx != x || ny != y) activeMotionStateIndex = selectedMovementModeIndex;
+        if (nx != x || ny != y) {
+            activeMotionStateIndex = selectedMovementModeIndex;
+            facingDx = Integer.compare(nx, x);
+            facingDy = Integer.compare(ny, y);
+        }
         x = nx; y = ny;
     }
 

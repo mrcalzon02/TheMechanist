@@ -19,6 +19,12 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02LookExamineReadabilitySmoke.main(args);
         Milestone02MovementPlanningReadabilitySmoke.main(args);
         Milestone02MovementExecutionAuthoritySmoke.main(args);
+        Milestone02PauseMovementRecoverySmoke.main(args);
+        Milestone02MovementDebugOverlaySmoke.main(args);
+        Milestone02QuestObjectiveGuidanceSmoke.main(args);
+        Milestone02PetInteractionFeedbackSmoke.main(args);
+        Milestone02ActionDenialGuidanceSmoke.main(args);
+        Milestone02ConversationReadabilitySmoke.main(args);
         Milestone02ContextPromptReadabilitySmoke.main(args);
         Milestone02InfopediaMechanicsReadabilitySmoke.main(args);
         Milestone02MenuUniformityReadabilitySmoke.main(args);
@@ -33,6 +39,9 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02ZoneTileSlotStateSmoke.main(args);
         Milestone02ZoneTileLayerMappingSmoke.main(args);
         Milestone02ZoneTilePushSqueezeMovementSmoke.main(args);
+        Milestone02DoomHudFacingSmoke.main(args);
+        Milestone02TradeReadabilitySmoke.main(args);
+        Milestone02InventoryReadabilitySmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 

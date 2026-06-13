@@ -14,13 +14,22 @@ final class UniversalWindowAuthority {
 
     enum WindowKind {
         INVENTORY,
+        CHARACTER,
+        CONTAINER,
+        OBJECT_INTERACTION,
+        TARGETING,
         MACHINE_OPERATION,
+        CRAFTING,
         CONSTRUCTION,
         DIALOGUE,
         FACTION,
         MAP,
+        AUSPEX,
+        SCAVENGE,
         INFOPEDIA,
         TRADE,
+        PAUSE,
+        CONSOLE,
         OPTIONS,
         SAVE_LOAD,
         EDITOR_HELD,
@@ -120,8 +129,18 @@ final class UniversalWindowAuthority {
     private void registerDefaults() {
         register(new WindowSpec(WindowKind.INVENTORY, "inventory", "Inventory", EscapeBehavior.RETURN_TO_GAME, true, true, true, true, false, true, true,
                 "Migrate carried inventory, base storage, trade shelves, corpse loot, and room caches to one shared transfer language."));
+        register(new WindowSpec(WindowKind.CHARACTER, "character", "Character", EscapeBehavior.RETURN_TO_GAME, true, true, true, false, false, false, true,
+                "Keep identity, condition, loadout, and progression in stable readable sections."));
+        register(new WindowSpec(WindowKind.CONTAINER, "container", "Container Transfer", EscapeBehavior.BACK_TO_PARENT, true, true, false, true, false, true, true,
+                "Preserve a stable player inventory anchor and explain capacity, ownership, and transfer failures."));
+        register(new WindowSpec(WindowKind.OBJECT_INTERACTION, "object", "Object Interaction", EscapeBehavior.BACK_TO_PARENT, true, true, false, false, false, false, true,
+                "Show object identity, available actions, blocked reasons, and a clear return route."));
+        register(new WindowSpec(WindowKind.TARGETING, "targeting", "Targeting", EscapeBehavior.CLEAR_CURSOR, true, true, false, false, false, false, false,
+                "Look, interact, and combat targeting share cursor, confirmation, cancellation, and feedback grammar."));
         register(new WindowSpec(WindowKind.MACHINE_OPERATION, "machine_operations", "Machine Operations", EscapeBehavior.BACK_TO_PARENT, true, true, true, true, true, true, true,
                 "Expose MachineOperationQueue records through shared progress bars and state labels instead of bespoke machine panels."));
+        register(new WindowSpec(WindowKind.CRAFTING, "crafting", "Crafting", EscapeBehavior.RETURN_TO_GAME, true, true, true, false, true, true, true,
+                "Recipes, inputs, machine requirements, quality expectations, and blockers use one detail grammar."));
         register(new WindowSpec(WindowKind.CONSTRUCTION, "construction", "Construction", EscapeBehavior.CLEAR_CURSOR, true, true, true, false, true, true, false,
                 "Unify build placement, blueprint validation, room metadata, cost summaries, and error messages."));
         register(new WindowSpec(WindowKind.DIALOGUE, "dialogue", "Dialogue", EscapeBehavior.BACK_TO_PARENT, true, true, false, false, false, false, true,
@@ -130,10 +149,18 @@ final class UniversalWindowAuthority {
                 "Faction standings, contracts, staffing, and sub-faction summaries should share one ledger surface."));
         register(new WindowSpec(WindowKind.MAP, "map", "Map", EscapeBehavior.RETURN_TO_GAME, true, true, true, false, false, true, true,
                 "Zone, sector, road, infrastructure, and multi-sector views should reuse common tabs and filters."));
+        register(new WindowSpec(WindowKind.AUSPEX, "auspex", "Auspex", EscapeBehavior.RETURN_TO_GAME, true, true, false, false, false, false, true,
+                "Local signals and sensory reports remain compact and link back to map or inspection surfaces."));
+        register(new WindowSpec(WindowKind.SCAVENGE, "scavenge", "Scavenge", EscapeBehavior.RETURN_TO_GAME, true, true, false, false, false, true, true,
+                "Nearby searchable targets expose distance, availability, and honest search restrictions."));
         register(new WindowSpec(WindowKind.INFOPEDIA, "infopedia", "Infopedia", EscapeBehavior.RETURN_TO_GAME, true, true, true, false, false, true, true,
                 "Knowledge, hints, searched guidance, and tutorial references should eventually share a searchable help authority."));
         register(new WindowSpec(WindowKind.TRADE, "trade", "Trade", EscapeBehavior.BACK_TO_PARENT, true, true, true, true, false, true, true,
                 "Vendor, faction stock, player storage, and market panels should use shared transfer and price display rules."));
+        register(new WindowSpec(WindowKind.PAUSE, "pause", "Pause / Command", EscapeBehavior.RETURN_TO_GAME, true, true, false, false, false, false, true,
+                "Session actions, recovery, options, save/load, and main-menu return remain visibly grouped."));
+        register(new WindowSpec(WindowKind.CONSOLE, "console", "Console", EscapeBehavior.RETURN_TO_GAME, true, true, false, false, false, true, true,
+                "Developer-facing commands remain visually distinct from ordinary player actions and preserve a clear close route."));
         register(new WindowSpec(WindowKind.OPTIONS, "options", "Options", EscapeBehavior.BACK_TO_PARENT, true, true, true, false, false, false, true,
                 "Display, sound, controls, and graphics settings should retain consistent tab/back behavior."));
         register(new WindowSpec(WindowKind.SAVE_LOAD, "save_load", "Save / Load", EscapeBehavior.BACK_TO_PARENT, true, true, true, false, true, false, true,

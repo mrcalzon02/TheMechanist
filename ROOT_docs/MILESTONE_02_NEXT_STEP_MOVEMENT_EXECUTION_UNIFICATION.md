@@ -19,7 +19,11 @@ A destination that previews as reachable must not later be rejected by a differe
 
 ## Required next implementation slices
 
+Current checkpoint: Slices 1 through 4 are implemented and smoke-covered. Movement execution unification is ready for milestone review.
+
 ### Slice 1
+
+Status: complete.
 
 Locate every runtime player-movement commit path.
 
@@ -33,6 +37,8 @@ Create an audit documenting:
 
 ### Slice 2
 
+Status: complete.
+
 Route occupied-tile movement attempts through the actor-layer resolver.
 
 Legacy direct occupancy checks should become a thin bridge into:
@@ -40,6 +46,8 @@ Legacy direct occupancy checks should become a thin bridge into:
 `ZoneTileMovementResolutionAuthority`
 
 ### Slice 3
+
+Status: complete.
 
 Pause menu recovery button.
 
@@ -53,6 +61,8 @@ The button should:
 - leave an audit trail in the event log
 
 ### Slice 4
+
+Status: complete.
 
 Movement debug overlay.
 

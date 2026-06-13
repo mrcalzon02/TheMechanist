@@ -183,8 +183,9 @@ final class ZoneTileMovementResolutionAuthority {
             if (column == null) continue;
             for (int y = 0; y < column.length; y++) {
                 ZoneTileState tile = column[y];
-                if (tile == null || tile.occupantEntityId().isBlank()) continue;
-                occupied.put(key(x, y), tile.occupantEntityId());
+                String occupantId = tile == null ? "" : tile.occupantEntityId();
+                if (occupantId == null || occupantId.isBlank()) continue;
+                occupied.put(key(x, y), occupantId);
             }
         }
         return occupied;
