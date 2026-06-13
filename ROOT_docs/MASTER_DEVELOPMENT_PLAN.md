@@ -13,7 +13,7 @@ Before any development pass, read these documents in order:
 3. `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md` - long-term architecture doctrine and boundary discipline.
 4. `ROOT_docs/DEVELOPMENT_HISTORY.md` - active milestone-era completion log; older history is archived under `ROOT_docs/archive/`.
 5. `ROOT_docs/MILESTONE_INDEX.md` - ordered milestone navigation for detailed phase-group targets.
-6. `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md` - source/archive map for older topical milestone files.
+6. `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md` - source/archive map for older topical source material.
 
 The Standards file remains hard release law. The Governance file remains design ethos and architectural boundary law. This master plan controls movement and handoff order.
 
@@ -33,10 +33,17 @@ Current checkpoint: **Phase 4 publish-safe client containment and package/handof
 
 The active target remains to make the Swing client playable, readable, and safe to publish while preserving the server-authoritative world lane already introduced through prior 0.9.10 server/persistence work. The sector manager, internal-server single-writer lane, immutable `WorldSnapshot` publishing, and separate single-player/server save namespaces are treated as bridged unless explicitly reopened.
 
+Current implementation truth: the first Codex/runtime-support handoff has already occurred. The active lane is now **Milestone 02 / Gate 3 player-facing readability, Doom viewport/control usability, movement safety, targeting, menu grammar, conversation readability, and validation surfaces**. Treat the old "before first implementation handoff" language as superseded by the active `DEVELOPMENT_HISTORY.md` ledger.
+
+Recent Milestone 02 completion state includes: live Doom viewport reconnection, shared HUD/facing restoration, cardinal camera drift and shared 2D zoom repair, center-ray targeting, trade preview, Doom idle centering, movement holds, auto-turn countdown, inventory detail, visible pause-menu Unstuck recovery, movement debug overlay, quest objective guidance, pet interaction feedback, action-denial guidance, live menu grammar coverage, conversation relationship/service context, controller glyph prompt fallback/mode work, Java source-encoding validation repair, zone tile slot state, zone room/corridor/entity layer mapping, actor-layer push/squeeze movement resolution, nearest standable recovery search, and runtime movement recovery bridge.
+
+The current next handoff should continue from the newest `DEVELOPMENT_HISTORY.md` entry and the current Milestone 02 owner file, not from the pre-handoff recommendation block. Favor the smallest compile-safe, smoke-testable slice that improves player-facing comprehension or safety without opening broad worldgen or simulation expansion.
+
 ### Allowed now
 
 - Phase 0 governance and build hygiene.
 - Phase 4 UI, input, rendering, accessibility, display, graphics, options, and presentation containment.
+- Milestone 02 player-facing readability, control, Doom viewport, Look/Examine, targeting, movement safety, Infopedia, menu, conversation, and validation surfaces.
 - Documentation cleanup that improves handoff clarity, updates stale path references to the implemented `ROOT_*` and `PACKAGE_*` structure, and does not invent new document sprawl.
 - Packaging and publish-safe hygiene for the installer -> thin launcher -> client/server execution path.
 - Narrow authority extraction when touching a UI/input/render/package subsystem.
@@ -91,6 +98,8 @@ Required outcomes:
 - Mouse, keyboard, and future gamepad targeting consume shared viewport/targeting transforms.
 - Look, interaction, combat, inventory, build, transition, dossier, and options surfaces avoid raw IDs and placeholder strings.
 - Presentation layers do not mask the gameplay state they describe.
+- Player-facing movement and recovery surfaces report honest visible success/failure feedback instead of silent relocation or hidden rejection.
+- Doom viewport, shared HUD, crosshair/center-ray targeting, zoom, menu, conversation, trade, inventory, quest, pet, and action-denial surfaces remain governed by narrow authorities and covered by Gate 3 smokes when touched.
 
 Done when: Phase 4 presentation work remains player-readable, old-machine viable, and authority-based.
 
@@ -178,24 +187,31 @@ A valid handoff includes:
 - Documentation update targets.
 - Honest limitation notes.
 
-### Recommended first Codex handoff
+### Current Codex handoff target
 
-The safest first handoff after this cleanup is documentation/package alignment rather than simulation expansion:
+The old "recommended first Codex handoff" has been completed and superseded. The current handoff target is continuation of **Milestone 02 / Gate 3** from the latest active `DEVELOPMENT_HISTORY.md` entry.
 
-1. Read `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md`, `ROOT_docs/STANDARDS_AND_PRACTICES.md`, `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md`, `ROOT_docs/DEVELOPMENT_HISTORY.md`, `ROOT_docs/MILESTONE_INDEX.md`, and `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md`.
-2. Verify `MILESTONE_00` through `MILESTONE_10` exist.
-3. Verify legacy topical milestone files are not treated as primary entry points.
-4. Verify bootstrap/package docs and scripts still reflect `PACKAGE_installer/` -> `PACKAGE_launcher/` -> `PACKAGE_client/` and the packaged server payload.
-5. Verify thin launcher and installer do not depend on the full client/server payload or full project tree before package manifest acquisition.
-6. Report exact files touched, exact verification run, and anything not tested.
+Required first reads for the next pass:
 
-After that, the first runtime-support slice should be one of:
+1. `ROOT_docs/NEW_DEVELOPMENT_CONVERSATION_BRIEFING.md`
+2. `ROOT_docs/MASTER_DEVELOPMENT_PLAN.md`
+3. `ROOT_docs/STANDARDS_AND_PRACTICES.md`
+4. `ROOT_docs/DOCUMENTATION_STANDARDS.md`
+5. `ROOT_docs/MASTER_GOVERNANCE_REVISION_II.md`
+6. `ROOT_docs/DEVELOPMENT_HISTORY.md`
+7. `ROOT_docs/MILESTONE_INDEX.md`
+8. `ROOT_docs/LEGACY_MILESTONE_SOURCE_MAP.md`
+9. `ROOT_docs/MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md`
+10. Any focused source files named by the latest active history entry or the touched smoke suite.
 
-- Milestone 01: asset/semantic audit support needed by later worldgen.
-- Milestone 02: UI/readability support for player-facing inspection, controls, movement, Look/Examine groundwork, and Infopedia reference hygiene.
-- Milestone 10: persistence ownership and save/load boundary support required before large systems write durable state.
+Current preferred next-work shape:
 
-Do not begin Milestone 09 worldgen expansion as the first Codex runtime task. It depends on assets, readability, provenance, parity, vehicle, scheme, medical/body, world-event, and persistence foundations.
+- Continue Milestone 02 player-facing readability and control/movement safety.
+- Prefer exact authority-backed UI/feedback improvements over broad rewrites.
+- Keep every pass compile-safe and smoke-testable through the Gate 3 suite.
+- Update `DEVELOPMENT_HISTORY.md` after each completed pass.
+- Regenerate repository manifest and Mermaid/function-map ledgers locally when file movement or Java remapping occurs; do not fabricate connector-only generated data.
+- Do not begin Milestone 09 worldgen expansion until the readability, asset, provenance, parity, vehicle, scheme, medical/body, world-event, and persistence foundations it consumes are ready.
 
 ## Reviewed constraints from Standards and Governance
 
@@ -214,9 +230,9 @@ This cleanup was prepared against these standing constraints:
 
 ## Current handoff status
 
-Milestone consolidation is complete enough for Codex handoff preparation.
+Milestone consolidation and first Codex/runtime-support handoff preparation are complete. The project is no longer waiting to select its first implementation task.
 
-Completed handoff-prep state:
+Completed baseline state:
 
 - `MILESTONE_00` through `MILESTONE_10` exist.
 - `MILESTONE_INDEX.md` points to the ordered sequence.
@@ -224,12 +240,14 @@ Completed handoff-prep state:
 - This master plan points to `MILESTONE_INDEX.md` instead of duplicating large milestone detail.
 - Obsolete candidate/topical roadmap duplication has been removed from this master plan.
 - Legacy topical milestone files are preserved as source/archive material pending final cleanup approval.
+- Active Milestone 02 implementation has already advanced through multiple player-facing control, movement, readability, menu, conversation, targeting, and validation slices recorded in `DEVELOPMENT_HISTORY.md`.
 
-Remaining before first implementation handoff:
+Current next-work status:
 
-- Optionally add a short entry to `DEVELOPMENT_HISTORY.md` noting milestone consolidation, source-map cleanup, and master-plan refresh.
-- Optionally move legacy topical files into an archive folder after user approval and verification that no unique requirements remain only in legacy files.
-- Select the first narrow Codex task.
+- Continue from the latest `DEVELOPMENT_HISTORY.md` entry, not from the old first-handoff recommendation.
+- Keep the active lane on Milestone 02 / Gate 3 unless the user explicitly reorders the checkpoint.
+- Treat visible player-facing safety and comprehension as the near-term priority: movement feedback, targeting clarity, menu grammar, conversation/trade/inventory readability, Doom control usability, and validation coverage.
+- Required local verification after connector-only or Codex code changes remains: Java 17 UTF-8 compile, Gate 3 and touched smokes, package seed build when packaging paths are touched, Java 17 classfile scan, manifest regeneration after file movement, Mermaid/function-map regeneration after Java remapping, and honest notes for anything not manually GUI-tested.
 
 ## Anti-drift directive
 
