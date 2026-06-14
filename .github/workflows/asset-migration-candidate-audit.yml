@@ -1,0 +1,190 @@
+name: Asset Migration Candidate Audit
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/asset-migration-candidate-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Compile candidate auditor
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ROOT_build/asset-candidate-audit
+          mkdir -p ROOT_build/asset-candidate-audit/classes ROOT_build/asset-candidate-audit/src/mechanist
+          cat > ROOT_build/asset-candidate-audit/src/mechanist/AssetMigrationCandidateAudit.java <<'JAVA'
+          package mechanist;
+
+          import mechanist.assets.AssetManager;
+          import mechanist.assets.AssetMetadata;
+          import mechanist.assets.AssetRegistry;
+          import mechanist.assets.AssetType;
+
+          import java.util.ArrayList;
+          import java.util.Comparator;
+          import java.util.EnumMap;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.Map;
+          import java.util.Set;
+
+          public final class AssetMigrationCandidateAudit {
+              private static final Map<SemanticRenderAssetResolver.RenderIntent, List<String>> TOKENS =
+                      new EnumMap<>(SemanticRenderAssetResolver.RenderIntent.class);
+              private static final Map<SemanticRenderAssetResolver.RenderIntent, List<String>> NEGATIVE =
+                      new EnumMap<>(SemanticRenderAssetResolver.RenderIntent.class);
+
+              static {
+                  tokens(SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED,
+                          "door", "bulkhead", "hatch", "closed", "shut", "sealed", "entry");
+                  negative(SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED,
+                          "open", "archway", "floor", "icon", "inventory");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE,
+                          "streetlight", "street light", "lamp post", "street lamp", "light pole", "lamppost", "exterior lamp");
+                  negative(SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE,
+                          "item icon", "inventory", "flashlight", "torch", "weapon");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR,
+                          "floor", "bare", "plain", "underhive", "panel", "deck", "tile");
+                  negative(SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR,
+                          "sewer", "market", "medical", "noble", "religious", "shrine", "industrial", "wall", "door");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.GENERIC_WALL,
+                          "wall", "bulkhead", "plain", "generic", "underhive", "panel");
+                  negative(SemanticRenderAssetResolver.RenderIntent.GENERIC_WALL,
+                          "sewer", "market", "medical", "noble", "religious", "industrial", "floor", "door");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR,
+                          "habitation", "hab", "apartment", "residential", "domestic", "housing", "quarters", "tenement", "floor");
+                  negative(SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR,
+                          "sewer", "market", "industrial", "wall", "door");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.HABITATION_WALL,
+                          "habitation", "hab", "apartment", "residential", "domestic", "housing", "quarters", "tenement", "wall");
+                  negative(SemanticRenderAssetResolver.RenderIntent.HABITATION_WALL,
+                          "sewer", "market", "industrial", "floor", "door");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR,
+                          "market", "bazaar", "commercial", "retail", "shop", "stall", "trading", "floor");
+                  negative(SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR,
+                          "machine shop", "workshop", "industrial", "wall", "door", "item icon");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.MARKET_WALL,
+                          "market", "bazaar", "commercial", "retail", "shop", "stall", "trading", "wall");
+                  negative(SemanticRenderAssetResolver.RenderIntent.MARKET_WALL,
+                          "machine shop", "workshop", "industrial", "floor", "door", "item icon");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.NOBLE_FLOOR,
+                          "noble", "luxury", "estate", "manor", "palace", "opulent", "upper hive", "floor");
+                  negative(SemanticRenderAssetResolver.RenderIntent.NOBLE_FLOOR,
+                          "sewer", "slum", "wall", "door");
+                  tokens(SemanticRenderAssetResolver.RenderIntent.SLUM_FLOOR,
+                          "slum", "shanty", "tenement", "scrap", "trash", "ganger", "underhive", "rough", "floor");
+                  negative(SemanticRenderAssetResolver.RenderIntent.SLUM_FLOOR,
+                          "noble", "luxury", "wall", "door");
+              }
+
+              public static void main(String[] args) {
+                  AssetRegistry registry = AssetManager.registry();
+                  System.out.println("REGISTRY=" + registry.size());
+                  for (SemanticRenderAssetResolver.RenderIntent intent : SemanticRenderAssetResolver.RenderIntent.values()) {
+                      SemanticRenderAssetResolver.Resolution current = SemanticRenderAssetResolver.resolve(registry, intent);
+                      if (current.found()) {
+                          System.out.println("RESOLVED|" + intent + "|" + compact(current.asset));
+                      }
+                  }
+                  for (SemanticRenderAssetResolver.RenderIntent intent : TOKENS.keySet()) {
+                      if (SemanticRenderAssetResolver.resolve(registry, intent).found()) continue;
+                      System.out.println("CANDIDATES_BEGIN|" + intent);
+                      candidates(registry, intent).stream().limit(8).forEach(candidate ->
+                              System.out.println("CANDIDATE|" + intent + "|score=" + candidate.score + "|" + compact(candidate.asset)));
+                      System.out.println("CANDIDATES_END|" + intent);
+                  }
+              }
+
+              private static List<Candidate> candidates(AssetRegistry registry,
+                                                        SemanticRenderAssetResolver.RenderIntent intent) {
+                  ArrayList<Candidate> out = new ArrayList<>();
+                  for (AssetMetadata asset : registry.all()) {
+                      int score = score(asset, intent);
+                      if (score > 0) out.add(new Candidate(asset, score));
+                  }
+                  out.sort(Comparator.comparingInt((Candidate c) -> c.score).reversed()
+                          .thenComparing(c -> c.asset.name(), String.CASE_INSENSITIVE_ORDER)
+                          .thenComparing(c -> c.asset.id()));
+                  return out;
+              }
+
+              private static int score(AssetMetadata asset,
+                                       SemanticRenderAssetResolver.RenderIntent intent) {
+                  String h = normalize(asset.id() + " " + asset.name() + " " + asset.pathOrUri()
+                          + " " + asset.type().displayName() + " " + asset.semanticDescription());
+                  int score = expectedType(asset.type(), intent) ? 8 : -8;
+                  for (String token : TOKENS.getOrDefault(intent, List.of())) {
+                      String n = normalize(token);
+                      if (h.contains(n)) score += n.contains(" ") ? 7 : 3;
+                  }
+                  for (String token : NEGATIVE.getOrDefault(intent, List.of())) {
+                      if (h.contains(normalize(token))) score -= 9;
+                  }
+                  String intentPhrase = normalize(intent.name().replace('_', ' '));
+                  if (h.contains(intentPhrase)) score += 12;
+                  return score;
+              }
+
+              private static boolean expectedType(AssetType type,
+                                                  SemanticRenderAssetResolver.RenderIntent intent) {
+                  return switch (intent) {
+                      case DOOR_CLOSED -> Set.of(AssetType.WALL_TILE, AssetType.FLOOR_TILE,
+                              AssetType.CORRIDOR_TILE, AssetType.FIXTURE, AssetType.OBJECT).contains(type);
+                      case STREETLIGHT_FIXTURE -> Set.of(AssetType.FIXTURE, AssetType.OBJECT,
+                              AssetType.MACHINE).contains(type);
+                      case GENERIC_FLOOR, HABITATION_FLOOR, MARKET_FLOOR, NOBLE_FLOOR, SLUM_FLOOR ->
+                              Set.of(AssetType.FLOOR_TILE, AssetType.ROAD_TILE,
+                                      AssetType.SIDEWALK_TILE, AssetType.CORRIDOR_TILE).contains(type);
+                      case GENERIC_WALL, HABITATION_WALL, MARKET_WALL -> type == AssetType.WALL_TILE;
+                      default -> false;
+                  };
+              }
+
+              private static String compact(AssetMetadata asset) {
+                  return asset.id() + "|" + asset.type() + "|" + clean(asset.name(), 70)
+                          + "|" + clean(asset.pathOrUri(), 100) + "|" + clean(asset.semanticDescription(), 120);
+              }
+
+              private static String clean(String value, int limit) {
+                  String safe = value == null ? "" : value.replace('|', '/').replace('\n', ' ').replace('\r', ' ').trim();
+                  return safe.length() <= limit ? safe : safe.substring(0, limit);
+              }
+
+              private static String normalize(String value) {
+                  return (value == null ? "" : value).toLowerCase(Locale.ROOT)
+                          .replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " ").trim();
+              }
+
+              private static void tokens(SemanticRenderAssetResolver.RenderIntent intent, String... values) {
+                  TOKENS.put(intent, List.of(values));
+              }
+
+              private static void negative(SemanticRenderAssetResolver.RenderIntent intent, String... values) {
+                  NEGATIVE.put(intent, List.of(values));
+              }
+
+              private record Candidate(AssetMetadata asset, int score) {}
+              private AssetMigrationCandidateAudit() {}
+          }
+          JAVA
+          find src -name '*.java' -print > ROOT_build/asset-candidate-audit/sources.txt
+          echo ROOT_build/asset-candidate-audit/src/mechanist/AssetMigrationCandidateAudit.java >> ROOT_build/asset-candidate-audit/sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/asset-candidate-audit/classes @ROOT_build/asset-candidate-audit/sources.txt
+
+      - name: Print early migration candidates
+        shell: bash
+        run: |
+          java -Dmechanist.assetRoot="$PWD" -cp ROOT_build/asset-candidate-audit/classes mechanist.AssetMigrationCandidateAudit
