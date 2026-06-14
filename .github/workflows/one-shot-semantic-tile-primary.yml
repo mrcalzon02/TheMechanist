@@ -1,0 +1,77 @@
+name: One Shot Semantic Tile Primary
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-semantic-tile-primary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prefer semantic tile IDs in the live renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/mechanist/LegacyPanelContext.java')
+          text = path.read_text(encoding='utf-8')
+          old = '''    private BufferedImage tileArtImage(String artKey, String assetId, char fallbackGlyph) {
+                  BufferedImage img = artKey == null ? null : images.getTile(artKey, fallbackGlyph);
+                  if (img == null && assetId != null) img = images.getSemanticAssetImage(assetId);
+                  if (img == null) img = images.getTile(fallbackGlyph);
+                  return img;
+              }
+          '''
+          new = '''    private BufferedImage tileArtImage(String artKey, String assetId, char fallbackGlyph) {
+                  BufferedImage img = assetId == null ? null : images.getSemanticAssetImage(assetId);
+                  if (img == null && artKey != null) img = images.getTile(artKey, fallbackGlyph);
+                  if (img == null) img = images.getTile(fallbackGlyph);
+                  return img;
+              }
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one tileArtImage block, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Compile and run focused semantic smokes
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ROOT_build/semantic-tile-primary
+          mkdir -p ROOT_build/semantic-tile-primary/classes
+          find src -name '*.java' -print > ROOT_build/semantic-tile-primary/sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-tile-primary/classes @ROOT_build/semantic-tile-primary/sources.txt
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/semantic-tile-primary/classes mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/semantic-tile-primary/classes mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Commit directly to main and remove temporary branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/one-shot-semantic-tile-primary.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/mechanist/LegacyPanelContext.java .github/workflows/one-shot-semantic-tile-primary.yml
+          git commit -m 'Prefer semantic tile assets in live renderer'
+          git push origin HEAD:main
+          git push origin --delete asset-migration-audit-run 2>/dev/null || true
+          git push origin --delete asset-migration-audit-run-2 2>/dev/null || true
