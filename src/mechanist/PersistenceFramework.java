@@ -154,12 +154,13 @@ class Persistence {
         String version = p.getProperty("save.version", "unknown");
         if (!VERSION.equals(version)) DebugLog.warn("SAVE_VERSION", "Loading save version " + version + " with runtime " + VERSION + ". Migration uses compatibility defaults.");
         g.seed = getLong(p,"run.seed",System.currentTimeMillis());
+        g.worldSetup = WorldSetupSettings.decode(p.getProperty("run.worldSetup", WorldSetupSettings.standard().encode()));
         long atlasSeed = getLong(p,"atlas.seed",g.seed);
-        g.atlas = new WorldAtlas(atlasSeed);
-        g.atlas.generateScaffold();
+        g.atlas = WorldAtlas.loadSavedRun(atlasSeed, g.worldSetup);
         g.atlas.sectorX = clamp(getInt(p,"atlas.sx",1),1,3); g.atlas.sectorY = clamp(getInt(p,"atlas.sy",1),1,3);
         g.atlas.zoneX = clamp(getInt(p,"atlas.zx",2),1,3); g.atlas.zoneY = clamp(getInt(p,"atlas.zy",2),1,3);
         g.atlas.floor = clamp(getInt(p,"atlas.floor",4),1,10); g.atlas.sewer = Boolean.parseBoolean(p.getProperty("atlas.sewer","false"));
+        g.atlas.generateScaffold();
         g.world = g.atlas.currentWorld();
         g.visibleTiles = new boolean[g.world.w][g.world.h];
         g.rememberedTiles = new boolean[g.world.w][g.world.h];

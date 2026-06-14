@@ -69,6 +69,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     final ArrayList<Candidate> candidates = new ArrayList<>();
     final ArrayList<RecruitWorker> factionRecruits = new ArrayList<>();
     final ArrayList<ButtonBox> buttons = new ArrayList<>();
+    final EditorEventBus inGameEditorEvents = new EditorEventBus();
+    final EditorUndoRedoController inGameEditorHistory = new EditorUndoRedoController(inGameEditorEvents);
+    final SimulationEditorRepository inGameEditorRepository = new SimulationEditorRepository();
+    final ModDeploymentManager inGameModDeployment = new ModDeploymentManager(inGameEditorEvents);
     final LinkedHashMap<String, ContainerRecord> itemContainers = new LinkedHashMap<>();
     final LinkedHashMap<String, ItemInstance> itemInstances = new LinkedHashMap<>();
     final HashSet<ZoneType> visitedZoneTypes = new HashSet<>();
@@ -91,6 +95,12 @@ class GamePanel extends LegacyPanelBridgeBase {
     final HashMap<String, Float> consoleNumericFlags = new HashMap<>();
     final HashMap<String, String> consoleStringFlags = new HashMap<>();
     WorldSetupSettings worldSetup = WorldSetupSettings.standard();
+    String inGameEditorName = SimulationToolSuiteRegistry.fallbackEditor();
+    String inGameEditorStatus = "Live project defaults loaded; edits will be exported as a mod package.";
+    int inGameEditorEntityIndex;
+    int inGameEditorPropertyIndex;
+    boolean inGameEditorTextEditActive;
+    String inGameEditorTextBuffer = "";
     Clothing equippedClothing = Clothing.scavengerRags();
     VisualLightingAuthority visualLighting = new VisualLightingAuthority();
     NpcTurnBudgetScheduler npcTurnBudgetScheduler = new NpcTurnBudgetScheduler();
@@ -604,7 +614,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         WorldAtlas preparedAtlas = atlas;
         boolean reusedPreparedWorld = preparedAtlasMatches(preparedAtlas, seed, worldSetup);
         if (!reusedPreparedWorld) {
-            preparedAtlas = new WorldAtlas(seed, worldSetup);
+            preparedAtlas = WorldAtlas.createNew(seed, worldSetup);
             preparedAtlas.generateScaffold();
         }
         atlas = preparedAtlas;
@@ -873,6 +883,10 @@ class GamePanel extends LegacyPanelBridgeBase {
             }
 
             @Override public void keyTyped(java.awt.event.KeyEvent e) {
+                if (handleInGameEditorTyped(e.getKeyChar())) {
+                    repaint();
+                    return;
+                }
                 if (CharacterNameKeyController.handleCharacterNameEditTyped(GamePanel.this, e.getKeyChar())) {
                     repaint();
                     return;
@@ -1001,18 +1015,34 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void drawToolsMenuSurface(java.awt.Graphics2D g, int w, int h) {
         buttons.clear();
-        Rectangle panel = new Rectangle(Math.max(18, w / 2 - Math.min(760, w - 48) / 2), Math.max(58, h / 2 - Math.min(430, h - 96) / 2), Math.min(760, w - 48), Math.min(430, h - 96));
-        drawOverlayFrame(g, panel, "TOOLS / MODS");
-        Rectangle body = new Rectangle(panel.x + 18, panel.y + 58, panel.width - 36, panel.height - 118);
-        drawDetailBox(g, body, "Recovered Tool Routes", java.util.List.of(
-                "Zone Auditor opens a generated/current zone slice audit with map, cursor, and findings.",
-                "Editor opens a recovery surface for the detached simulation editor route.",
-                "These routes were present in key/mouse handling but were not painted by the package client."
+        Rectangle panel = new Rectangle(18, 48, Math.max(640, w - 36), Math.max(460, h - 86));
+        drawOverlayFrame(g, panel, "TOOLS / EDITORS");
+        Rectangle intro = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, 76);
+        drawDetailBox(g, intro, "Live Project Tooling", java.util.List.of(
+                "Each editor opens against current project defaults. Changes remain isolated from base data.",
+                "Save Mod writes the selected editor records to a randomized package under PACKAGE_client/mods."
         ), null);
-        int by = panel.y + panel.height - 46;
-        addOverlayButton("Zone Auditor", panel.x + 18, by, 138, 30, "Open the zone auditor surface.", this::openSectorAuditPanel);
-        addOverlayButton("Editor", panel.x + 166, by, 92, 30, "Open the editor recovery surface.", () -> setScreen(Screen.EDITOR));
-        addOverlayButton("Back", panel.x + panel.width - 112, by, 86, 30, "Return to the main menu.", () -> setScreen(Screen.MENU));
+        int gridTop = intro.y + intro.height + 12;
+        int gridBottom = panel.y + panel.height - 54;
+        int cols = panel.width >= 1080 ? 3 : 2;
+        int gap = 10;
+        int rows = (SimulationToolSuiteRegistry.specs().size() + 1 + cols - 1) / cols;
+        int buttonW = Math.max(180, (panel.width - 36 - gap * (cols - 1)) / cols);
+        int buttonH = Math.max(30, Math.min(42, (gridBottom - gridTop - gap * Math.max(0, rows - 1)) / Math.max(1, rows)));
+        int index = 0;
+        addOverlayButton("Zone Audit", panel.x + 18, gridTop, buttonW, buttonH, "Open the generated/current zone audit and replay surface.", this::openSectorAuditPanel);
+        index++;
+        for (SimulationToolSuiteRegistry.ToolSpec spec : SimulationToolSuiteRegistry.specs()) {
+            int col = index % cols;
+            int row = index / cols;
+            int bx = panel.x + 18 + col * (buttonW + gap);
+            int by = gridTop + row * (buttonH + gap);
+            addOverlayButton(spec.editorName(), bx, by, buttonW, buttonH, spec.purpose(), () -> openInGameEditor(spec.editorName()));
+            index++;
+        }
+        addOverlayButton("Mod Packaging Editor", panel.x + panel.width - buttonW - 18, gridBottom - buttonH, buttonW, buttonH,
+                "Open mod scope and package controls.", () -> openInGameEditor(SimulationToolSuiteRegistry.MOD_PACKAGING_EDITOR));
+        addOverlayButton("Back", panel.x + 18, panel.y + panel.height - 42, 110, 30, "Return to the main menu.", () -> setScreen(Screen.MENU));
         drawOverlayButtons(g);
     }
 
@@ -1023,16 +1053,16 @@ class GamePanel extends LegacyPanelBridgeBase {
         World viewWorld = auditViewWorld(step);
         Rectangle panel = new Rectangle(18, 48, Math.max(560, w - 36), Math.max(420, h - 86));
         drawOverlayFrame(g, panel, "ZONE AUDIT");
-        int by1 = panel.y + panel.height - 80;
-        int by2 = panel.y + panel.height - 42;
-        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, Math.max(260, by1 - panel.y - 68));
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, panel.width - 36, panel.height - 72);
         int gap = 14;
+        int commandW = Math.max(224, Math.min(286, panel.width / 5));
+        Rectangle content = new Rectangle(body.x, body.y, Math.max(300, body.width - commandW - gap), body.height);
+        Rectangle command = new Rectangle(content.x + content.width + gap, body.y, commandW, body.height);
         int stepH = Math.max(96, Math.min(150, body.height / 4));
-        Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(300, body.width * 3 / 5), Math.max(220, body.height - stepH - gap));
+        Rectangle mapBox = new Rectangle(content.x, content.y, content.width, Math.max(220, content.height - stepH - gap));
         Rectangle stepBox = new Rectangle(body.x, mapBox.y + mapBox.height + gap, mapBox.width, stepH);
         drawAuditReplayMap(g, mapBox, viewWorld, step);
         drawAuditStepBox(g, stepBox, step);
-        Rectangle detail = new Rectangle(mapBox.x + mapBox.width + gap, body.y, Math.max(240, body.x + body.width - mapBox.x - mapBox.width - gap), body.height);
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Zone: " + (viewWorld == null ? "none" : viewWorld.zoneType.label));
         lines.add("Density: " + WorldSetupSettings.ZONE_DENSITY[Math.max(0, Math.min(auditZoneDensityIndex, WorldSetupSettings.ZONE_DENSITY.length - 1))]);
@@ -1041,17 +1071,17 @@ class GamePanel extends LegacyPanelBridgeBase {
         lines.add("Replay: " + (auditTracePlaying ? "playing" : "paused") + " | Step " + (auditTraceSteps.isEmpty() ? 0 : auditTraceIndex + 1) + "/" + auditTraceSteps.size());
         if (auditSnapshot != null) lines.addAll(SectorAuditRuntimeAuthority.compactPanelLines(auditSnapshot, auditFindingIndex));
         else lines.add("Audit snapshot has not run.");
-        drawDetailBox(g, detail, "Findings", lines, null);
-        addOverlayButton("Reroll", panel.x + 18, by1, 78, 30, "Generate a fresh audit slice.", this::rerollSectorAudit);
-        addOverlayButton(auditTracePlaying ? "Pause" : "Auto Replay", panel.x + 104, by1, 112, 30, "Toggle automatic generation replay.", this::toggleAuditReplay);
-        addOverlayButton("Step +", panel.x + 224, by1, 72, 30, "Click to advance one generation replay step.", () -> stepAuditReplay(1));
-        addOverlayButton("End", panel.x + 304, by1, 58, 30, "Jump to the completed generated zone.", this::finishAuditReplay);
-        addOverlayButton("Zone", panel.x + 18, by2, 66, 30, "Cycle audit zone type.", () -> cycleAuditZoneType(1));
-        addOverlayButton("Density", panel.x + 92, by2, 82, 30, "Cycle audit zone density.", this::cycleAuditZoneDensity);
-        addOverlayButton("Overlay", panel.x + 182, by2, 82, 30, "Cycle audit overlay.", this::cycleAuditOverlay);
-        addOverlayButton("Prev", panel.x + 272, by2, 58, 30, "Previous audit finding.", () -> jumpAuditFinding(-1));
-        addOverlayButton("Next", panel.x + 338, by2, 58, 30, "Next audit finding.", () -> jumpAuditFinding(1));
-        addOverlayButton("Back", panel.x + panel.width - 112, by2, 86, 30, "Return to tools.", () -> setScreen(Screen.MODS));
+        int findingH = Math.max(150, Math.min(230, command.height * 2 / 5));
+        drawDetailBox(g, new Rectangle(command.x, command.y, command.width, findingH), "Findings", lines, null);
+        String[] labels = {"Reroll Zone", auditTracePlaying ? "Pause Replay" : "Play Replay", "Next Replay Step", "Finish Replay", "Choose Zone Type", "Cycle Density", "Cycle Overlay", "Previous Finding", "Next Finding", "Return to Tools"};
+        Runnable[] actions = {this::rerollSectorAudit, this::toggleAuditReplay, () -> stepAuditReplay(1), this::finishAuditReplay,
+                () -> cycleAuditZoneType(1), this::cycleAuditZoneDensity, this::cycleAuditOverlay, () -> jumpAuditFinding(-1), () -> jumpAuditFinding(1), () -> setScreen(Screen.MODS)};
+        int buttonTop = command.y + findingH + 10;
+        int buttonGap = 6;
+        int buttonH = Math.max(28, Math.min(38, (command.y + command.height - buttonTop - buttonGap * (labels.length - 1)) / labels.length));
+        for (int i = 0; i < labels.length; i++) {
+            addOverlayButton(labels[i], command.x + 8, buttonTop + i * (buttonH + buttonGap), command.width - 16, buttonH, labels[i], actions[i]);
+        }
         drawOverlayButtons(g);
     }
 
@@ -1282,21 +1312,194 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void drawEditorRecoverySurface(java.awt.Graphics2D g, int w, int h) {
         buttons.clear();
-        Rectangle panel = new Rectangle(Math.max(18, w / 2 - Math.min(820, w - 48) / 2), Math.max(58, h / 2 - Math.min(430, h - 96) / 2), Math.min(820, w - 48), Math.min(430, h - 96));
-        drawOverlayFrame(g, panel, "SIMULATION EDITOR");
-        Rectangle body = new Rectangle(panel.x + 18, panel.y + 58, panel.width - 36, panel.height - 118);
-        java.util.ArrayList<String> lines = new java.util.ArrayList<>();
-        lines.add("The in-game editor route is attached to the development tool-suite registry.");
-        lines.add("Recovered editors are listed first in their original setup path; new setup UIs follow through the same repository.");
-        for (SimulationToolSuiteRegistry.ToolSpec spec : SimulationToolSuiteRegistry.specs()) {
-            String state = spec.recovered() ? "Recovered" : "New";
-            lines.add(state + ": " + spec.editorName() + " - " + spec.purpose());
+        Rectangle panel = new Rectangle(18, 48, Math.max(660, w - 36), Math.max(460, h - 86));
+        drawOverlayFrame(g, panel, inGameEditorName.toUpperCase(Locale.ROOT));
+        int commandW = Math.max(220, Math.min(286, panel.width / 5));
+        Rectangle command = new Rectangle(panel.x + panel.width - commandW - 18, panel.y + 54, commandW, panel.height - 72);
+        Rectangle body = new Rectangle(panel.x + 18, panel.y + 54, command.x - panel.x - 32, panel.height - 72);
+        SimulationEditorRepository.EditableEntity entity = currentInGameEditorEntity();
+        java.util.ArrayList<String> entityLines = new java.util.ArrayList<>();
+        java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorRepository.entities(inGameEditorName);
+        if (SimulationToolSuiteRegistry.MOD_PACKAGING_EDITOR.equals(inGameEditorName)) {
+            SimulationEditorRepository.ModMetadata metadata = inGameEditorRepository.metadata();
+            entityLines.add("Package: " + metadata.name());
+            entityLines.add("Version: " + metadata.version());
+            entityLines.add("Author: " + metadata.author());
+            entityLines.add("Selected records: " + inGameEditorRepository.selectedEntities().size());
+            entityLines.add("Default destination: PACKAGE_client/mods");
+            entityLines.add("Save Mod creates a new randomized archive unless metadata is edited.");
+        } else {
+            entityLines.add("Source: current project defaults (read-through seed)");
+            entityLines.add("Base files: read-only from this screen; edits: isolated mod overlay");
+            entityLines.add("Record " + (entities.isEmpty() ? 0 : inGameEditorEntityIndex + 1) + "/" + entities.size());
+            if (entity != null) {
+                SimulationEditorRepository.EntityRef ref = currentInGameEditorRef();
+                entityLines.add("Name: " + entity.name());
+                entityLines.add("ID: " + entity.id());
+                entityLines.add("Included in mod: " + (inGameEditorRepository.selected(ref) ? "YES" : "NO"));
+            }
         }
-        drawDetailBox(g, body, "Tool Suite Registry", lines, null);
-        int by = panel.y + panel.height - 46;
-        addOverlayButton("Tools", panel.x + 18, by, 92, 30, "Return to tools.", () -> setScreen(Screen.MODS));
-        addOverlayButton("Main Menu", panel.x + panel.width - 142, by, 112, 30, "Return to main menu.", () -> setScreen(Screen.MENU));
+        int summaryH = Math.max(130, body.height / 3);
+        drawDetailBox(g, new Rectangle(body.x, body.y, body.width, summaryH), "Current Record", entityLines, null);
+        java.util.ArrayList<String> propertyLines = new java.util.ArrayList<>();
+        String property = currentInGameEditorProperty();
+        Object value = entity == null || property == null ? null : entity.properties().get(property);
+        if (entity == null) propertyLines.add("No record selected.");
+        else {
+            propertyLines.add("Property: " + (property == null ? "none" : property));
+            propertyLines.add("Value: " + (inGameEditorTextEditActive ? inGameEditorTextBuffer + "|" : String.valueOf(value)));
+            propertyLines.add("Type: " + (value == null ? "text" : value.getClass().getSimpleName()));
+            propertyLines.add("Use Previous/Next Value for booleans, numbers, and registered choices.");
+            propertyLines.add("Edit Text accepts typing; Enter commits and Escape cancels.");
+        }
+        propertyLines.add("");
+        propertyLines.add("Status: " + inGameEditorStatus);
+        propertyLines.add("History: " + inGameEditorHistory.compactState());
+        drawDetailBox(g, new Rectangle(body.x, body.y + summaryH + 12, body.width, body.height - summaryH - 12), "Editable Property", propertyLines, null);
+
+        String[] labels = {"Previous Record", "Next Record", "Previous Property", "Next Property", "Previous Value", "Next Value", "Edit Text Value", "New Record", "Include / Exclude", "Undo", "Redo", "Save Mod Package", "Return to Tools"};
+        Runnable[] actions = {() -> cycleInGameEditorEntity(-1), () -> cycleInGameEditorEntity(1), () -> cycleInGameEditorProperty(-1), () -> cycleInGameEditorProperty(1),
+                () -> adjustInGameEditorValue(-1), () -> adjustInGameEditorValue(1), this::beginInGameEditorTextEdit, this::createNewInGameEditorEntry,
+                this::toggleCurrentInGameEditorScope, this::inGameEditorUndo, this::inGameEditorRedo, this::saveInGameEditorModPackage, () -> setScreen(Screen.MODS)};
+        int gap = 6;
+        int buttonH = Math.max(27, Math.min(38, (command.height - gap * (labels.length - 1)) / labels.length));
+        for (int i = 0; i < labels.length; i++) addOverlayButton(labels[i], command.x + 8, command.y + i * (buttonH + gap), command.width - 16, buttonH, labels[i], actions[i]);
         drawOverlayButtons(g);
+    }
+
+    void openInGameEditor(String editorName) {
+        inGameEditorName = SimulationToolSuiteRegistry.isKnownEditor(editorName) || SimulationToolSuiteRegistry.MOD_PACKAGING_EDITOR.equals(editorName)
+                ? editorName : SimulationToolSuiteRegistry.fallbackEditor();
+        inGameEditorEntityIndex = 0;
+        inGameEditorPropertyIndex = 0;
+        inGameEditorTextEditActive = false;
+        inGameEditorStatus = "Opened " + inGameEditorName + " against current project defaults.";
+        setScreen(Screen.EDITOR);
+    }
+
+    private SimulationEditorRepository.EditableEntity currentInGameEditorEntity() {
+        java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorRepository.entities(inGameEditorName);
+        if (entities.isEmpty()) return null;
+        inGameEditorEntityIndex = Math.floorMod(inGameEditorEntityIndex, entities.size());
+        return entities.get(inGameEditorEntityIndex);
+    }
+
+    private SimulationEditorRepository.EntityRef currentInGameEditorRef() {
+        SimulationEditorRepository.EditableEntity entity = currentInGameEditorEntity();
+        return entity == null ? null : new SimulationEditorRepository.EntityRef(inGameEditorName, entity.id());
+    }
+
+    private String currentInGameEditorProperty() {
+        SimulationEditorRepository.EditableEntity entity = currentInGameEditorEntity();
+        if (entity == null || entity.properties().isEmpty()) return null;
+        java.util.ArrayList<String> names = new java.util.ArrayList<>(entity.properties().keySet());
+        inGameEditorPropertyIndex = Math.floorMod(inGameEditorPropertyIndex, names.size());
+        return names.get(inGameEditorPropertyIndex);
+    }
+
+    private void cycleInGameEditorEntity(int delta) {
+        inGameEditorEntityIndex += delta;
+        inGameEditorPropertyIndex = 0;
+        inGameEditorTextEditActive = false;
+        repaint();
+    }
+
+    private void cycleInGameEditorProperty(int delta) {
+        inGameEditorPropertyIndex += delta;
+        inGameEditorTextEditActive = false;
+        repaint();
+    }
+
+    private void adjustInGameEditorValue(int delta) {
+        SimulationEditorRepository.EntityRef ref = currentInGameEditorRef();
+        SimulationEditorRepository.EditableEntity entity = currentInGameEditorEntity();
+        String property = currentInGameEditorProperty();
+        if (ref == null || entity == null || property == null) return;
+        Object oldValue = entity.properties().get(property);
+        Object next = oldValue;
+        java.util.List<String> choices = SimulationToolSuiteRegistry.linkOptionsFor(inGameEditorName, inGameEditorRepository).get(property);
+        if (choices != null && !choices.isEmpty()) {
+            int current = Math.max(0, choices.indexOf(String.valueOf(oldValue)));
+            next = choices.get(Math.floorMod(current + delta, choices.size()));
+        } else if (oldValue instanceof Boolean b) next = !b;
+        else if (oldValue instanceof Integer n) next = n + delta;
+        else if (oldValue instanceof Long n) next = n + delta;
+        else if (oldValue instanceof Double n) next = Math.max(0.0, n + delta * 0.1);
+        else {
+            inGameEditorStatus = "This text property has no registered choices; use Edit Text Value.";
+            repaint();
+            return;
+        }
+        inGameEditorHistory.execute(new EditorCommand.PropertyChange(inGameEditorRepository, ref, property, oldValue, next, inGameEditorEvents));
+        inGameEditorRepository.setSelected(ref, true);
+        inGameEditorStatus = "Changed " + property + " to " + next + ".";
+        repaint();
+    }
+
+    private void beginInGameEditorTextEdit() {
+        SimulationEditorRepository.EditableEntity entity = currentInGameEditorEntity();
+        String property = currentInGameEditorProperty();
+        if (entity == null || property == null) return;
+        inGameEditorTextBuffer = String.valueOf(entity.properties().getOrDefault(property, ""));
+        inGameEditorTextEditActive = true;
+        inGameEditorStatus = "Editing " + property + "; Enter commits, Escape cancels.";
+        requestFocusInWindow();
+        repaint();
+    }
+
+    boolean handleInGameEditorTyped(char ch) {
+        if (screen != Screen.EDITOR || !inGameEditorTextEditActive) return false;
+        if (!Character.isISOControl(ch)) inGameEditorTextBuffer += ch;
+        repaint();
+        return true;
+    }
+
+    boolean handleInGameEditorTextKey(int code) {
+        if (screen != Screen.EDITOR || !inGameEditorTextEditActive) return false;
+        if (code == KeyEvent.VK_ESCAPE) {
+            inGameEditorTextEditActive = false;
+            inGameEditorStatus = "Text edit cancelled.";
+        } else if (code == KeyEvent.VK_BACK_SPACE) {
+            if (!inGameEditorTextBuffer.isEmpty()) inGameEditorTextBuffer = inGameEditorTextBuffer.substring(0, inGameEditorTextBuffer.length() - 1);
+        } else if (code == KeyEvent.VK_ENTER) {
+            SimulationEditorRepository.EntityRef ref = currentInGameEditorRef();
+            SimulationEditorRepository.EditableEntity entity = currentInGameEditorEntity();
+            String property = currentInGameEditorProperty();
+            if (ref != null && entity != null && property != null) {
+                Object oldValue = entity.properties().get(property);
+                inGameEditorHistory.execute(new EditorCommand.PropertyChange(inGameEditorRepository, ref, property, oldValue, inGameEditorTextBuffer, inGameEditorEvents));
+                inGameEditorRepository.setSelected(ref, true);
+                inGameEditorStatus = "Committed text value for " + property + ".";
+            }
+            inGameEditorTextEditActive = false;
+        }
+        repaint();
+        return true;
+    }
+
+    private void toggleCurrentInGameEditorScope() {
+        SimulationEditorRepository.EntityRef ref = currentInGameEditorRef();
+        if (ref == null) return;
+        boolean old = inGameEditorRepository.selected(ref);
+        inGameEditorHistory.execute(new EditorCommand.ToggleProjectSelection(inGameEditorRepository, ref, old, !old, inGameEditorEvents));
+        inGameEditorStatus = (!old ? "Included " : "Excluded ") + ref.entityId() + " in mod scope.";
+        repaint();
+    }
+
+    private void saveInGameEditorModPackage() {
+        try {
+            java.nio.file.Path dir = java.nio.file.Path.of("PACKAGE_client", "mods");
+            java.nio.file.Files.createDirectories(dir);
+            SimulationEditorRepository.ModMetadata metadata = inGameEditorRepository.metadata();
+            java.nio.file.Path output = dir.resolve(SimulationEditorRepository.slug(metadata.name()) + "-" + SimulationEditorRepository.randomId() + ".zip");
+            ModDeploymentManager.DeploymentRequest request = new ModDeploymentManager.DeploymentRequest(metadata, inGameEditorRepository.selectedEntities(), output, false,
+                    ModDeploymentManager.SteamPublicationMode.CREATE_NEW_ITEM, 0L, 0L, null, "Saved from the in-game Mechanist editor.");
+            ModDeploymentManager.DeploymentResult result = inGameModDeployment.deploy(request, ModDeploymentManager.ProgressSink.ignored());
+            inGameEditorStatus = result.summary();
+        } catch (Exception ex) {
+            inGameEditorStatus = "Mod save failed: " + ex.getMessage();
+        }
+        repaint();
     }
 
     private void paintGameBridgeSurface(java.awt.Graphics2D g, int w, int h) {
@@ -4109,7 +4312,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     int countMoney() { return Math.max(0, carriedScript); }
     int totalBankedCash() { return Math.max(0, baseStashedScript); }
     int inventoryWeight() { return inventory == null ? 0 : inventory.size(); }
-    int carryCapacity() { return 40 + Math.max(0, supplies / 5); }
+    int carryCapacity() {
+        return WorldGenerationSettingsAuthority.playerCarryCapacity(supplies, WorldGenerationSettingsAuthority.forGame(this));
+    }
     void addInventoryItem(String item, ItemProvenanceRecord provenance) { if (item != null && !item.isBlank()) inventory.add(item); }
     void gainXp(String skill, int amount, String reason) { xp += Math.max(0, amount); }
     String facingLabel() {
@@ -4886,9 +5091,25 @@ class GamePanel extends LegacyPanelBridgeBase {
             mouseMovePreviewPath.clear();
         }
     }
-    void createNewInGameEditorEntry() {}
-    void inGameEditorUndo() {}
-    void inGameEditorRedo() {}
+    void createNewInGameEditorEntry() {
+        if (SimulationToolSuiteRegistry.MOD_PACKAGING_EDITOR.equals(inGameEditorName)) {
+            inGameEditorStatus = "Choose an editor before creating a record.";
+            repaint();
+            return;
+        }
+        SimulationEditorRepository.EditableEntity entity = inGameEditorRepository.createBlankEntity(inGameEditorName);
+        inGameEditorRepository.removeEntity(new SimulationEditorRepository.EntityRef(inGameEditorName, entity.id()));
+        inGameEditorHistory.execute(new EditorCommand.CreateEntity(inGameEditorRepository, inGameEditorName, entity, inGameEditorEvents));
+        java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorRepository.entities(inGameEditorName);
+        inGameEditorEntityIndex = Math.max(0, entities.size() - 1);
+        inGameEditorPropertyIndex = 0;
+        SimulationEditorRepository.EntityRef ref = new SimulationEditorRepository.EntityRef(inGameEditorName, entity.id());
+        inGameEditorRepository.setSelected(ref, true);
+        inGameEditorStatus = "Created mod-scoped record " + entity.id() + ".";
+        repaint();
+    }
+    void inGameEditorUndo() { inGameEditorHistory.undo(); inGameEditorStatus = "Undo applied. " + inGameEditorHistory.compactState(); repaint(); }
+    void inGameEditorRedo() { inGameEditorHistory.redo(); inGameEditorStatus = "Redo applied. " + inGameEditorHistory.compactState(); repaint(); }
 
     void moveInventorySelection(int delta) { if (!inventory.isEmpty()) selectedInventoryIndex = Math.floorMod(selectedInventoryIndex + delta, inventory.size()); inventoryItemDescriptionScroll = 0; }
     void moveTargetInventorySelection(int delta) { if (!baseStorage.isEmpty()) selectedTargetInventoryIndex = Math.floorMod(selectedTargetInventoryIndex + delta, baseStorage.size()); inventoryItemDescriptionScroll = 0; }

@@ -82,10 +82,10 @@ final class RoadInfrastructureTileRules {
             this.westDoor = westDoor;
         }
 
-        boolean n() { return northRoad || northDoor; }
-        boolean s() { return southRoad || southDoor; }
-        boolean e() { return eastRoad || eastDoor; }
-        boolean w() { return westRoad || westDoor; }
+        boolean n() { return northRoad; }
+        boolean s() { return southRoad; }
+        boolean e() { return eastRoad; }
+        boolean w() { return westRoad; }
         int connectionCount() { return (n() ? 1 : 0) + (s() ? 1 : 0) + (e() ? 1 : 0) + (w() ? 1 : 0); }
         boolean hasSidewalk() { return northSidewalk || southSidewalk || eastSidewalk || westSidewalk; }
     }
@@ -123,7 +123,7 @@ final class RoadInfrastructureTileRules {
         return SpecialPurpose.UNKNOWN;
     }
 
-    static boolean doorsCountAsRoads() { return true; }
+    static boolean doorsCountAsRoads() { return false; }
     static boolean intersectionRequiresMoreThanTwoRoads() { return true; }
     static boolean rightTurnAllowedForNonDoorTerminal() { return true; }
     static boolean isTransitionRoadPurpose(SpecialPurpose purpose) { return purpose == SpecialPurpose.ROAD || purpose == SpecialPurpose.TOLL_GATE || purpose == SpecialPurpose.SEWER_MANHOLE || purpose == SpecialPurpose.LIGHT_COMMERCIAL_LOADING_DOCK || purpose == SpecialPurpose.INDUSTRIAL_LOADING_DOCK; }

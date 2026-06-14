@@ -597,8 +597,8 @@ class CraftingRecipe {
         String cap = machine == null ? "no machine" : "cap " + g.cappedProductionQuality(machine, this);
         return (problem == null ? "READY" : "LOCKED: " + problem) + " | " + cap + " | inputs " + inputSummary();
     }
-    int effectiveSuppliesCost(){ return Math.max(0, (int)Math.ceil(suppliesCost * WorldGenerationApi.settings().craftMultiplier())); }
-    int effectiveMachinePartsCost(){ return Math.max(0, (int)Math.ceil(machinePartsCost * WorldGenerationApi.settings().craftMultiplier())); }
+    int effectiveSuppliesCost(){ return WorldGenerationSettingsAuthority.adjustedCraftCost(suppliesCost, WorldGenerationSettingsAuthority.active()); }
+    int effectiveMachinePartsCost(){ return WorldGenerationSettingsAuthority.adjustedCraftCost(machinePartsCost, WorldGenerationSettingsAuthority.active()); }
     String inputSummary() {
         ArrayList<String> bits = new ArrayList<>();
         int sCost = effectiveSuppliesCost(), pCost = effectiveMachinePartsCost();

@@ -431,6 +431,7 @@ class PersonnelPopulationApi {
         Faction f = faction == null || faction == Faction.NONE ? (ledger == null ? Faction.NONE : ledger.faction) : faction;
         NpcEntity n = NpcEntity.create(f, w==null?ZoneType.NEUTRAL_CIVILIAN_FLOOR:w.zoneType, x, y, r==null?new Random():r);
         attachProvenance(n, w, roomId, ledger, "initial staffed resident", r);
+        NpcPortraitSelectionAuthority.assignForSpawn(n, w);
         if(ledger != null) { ledger.assigned++; ledger.available = Math.max(0, ledger.available - 1); }
         return n;
     }

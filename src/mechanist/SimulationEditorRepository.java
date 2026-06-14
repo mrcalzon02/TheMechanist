@@ -18,7 +18,8 @@ final class SimulationEditorRepository {
     private final Map<String, List<EditableEntity>> entitiesByEditor = new LinkedHashMap<>();
     private final Set<EntityRef> selectedForModScope = new LinkedHashSet<>();
 
-    private String modName = "Mechanist Local Mod";
+    private final String generatedPackageId = randomId();
+    private String modName = "Mechanist Local Mod " + generatedPackageId;
     private String modVersion = "0.1.0";
     private String modAuthor = System.getProperty("user.name", "local-author");
     private String modDescription = "A local Mechanist editor export.";
@@ -56,9 +57,9 @@ final class SimulationEditorRepository {
 
     synchronized EditableEntity createBlankEntity(String editorName) {
         String editor = SimulationToolSuiteRegistry.isKnownEditor(editorName) ? editorName : SimulationToolSuiteRegistry.fallbackEditor();
-        int next = entitiesByEditor.getOrDefault(editor, List.of()).size() + 1;
         String slug = slug(editor.replace(" Editor", ""));
-        EditableEntity entity = entity(slug + "-new-" + next, "New " + editor.replace(" Editor", "") + " " + next, defaultPropertiesFor(editor));
+        String id = randomId();
+        EditableEntity entity = entity(slug + "-" + id, "New " + editor.replace(" Editor", "") + " " + id, defaultPropertiesFor(editor));
         addEntity(editor, entity);
         return entity.copy();
     }
@@ -139,7 +140,7 @@ final class SimulationEditorRepository {
     synchronized String auditLine() {
         int total = 0;
         for (List<EditableEntity> list : entitiesByEditor.values()) total += list.size();
-        return "editors=" + entitiesByEditor.size() + " entities=" + total + " selected=" + selectedForModScope.size() + " mod=" + modName + " version=" + modVersion;
+        return "editors=" + entitiesByEditor.size() + " entities=" + total + " selected=" + selectedForModScope.size() + " mod=" + modName + " packageId=" + generatedPackageId + " version=" + modVersion;
     }
 
     private EditableEntity internalEntity(EntityRef ref) {
@@ -189,6 +190,10 @@ final class SimulationEditorRepository {
         String slug = raw.replaceAll("[^a-z0-9._-]+", "-").replaceAll("-+", "-");
         slug = slug.replaceAll("^-|-$", "");
         return slug.isBlank() ? "mechanist-mod-" + UUID.randomUUID() : slug;
+    }
+
+    static String randomId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase(Locale.ROOT);
     }
 
     record EntityRef(String editorName, String entityId) { }

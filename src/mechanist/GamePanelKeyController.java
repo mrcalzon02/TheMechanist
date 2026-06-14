@@ -294,6 +294,7 @@ final class GamePanelKeyController {
 
     static boolean handleEditorKey(GamePanel panel, KeyEvent event, int code) {
         if (panel.screen != GamePanel.Screen.EDITOR) return false;
+        if (panel.handleInGameEditorTextKey(code)) return true;
         if (code == KeyEvent.VK_N) {
             panel.createNewInGameEditorEntry();
             return true;

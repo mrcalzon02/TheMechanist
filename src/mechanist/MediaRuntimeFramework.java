@@ -642,8 +642,23 @@ class ImageCache {
         if (f == Faction.HERETIC) return firstPortraitRangeContaining("heretics", "cultists");
         if (fn.startsWith("ganger") || f == Faction.BANDIT) return firstPortraitRangeContaining("gangers");
         if (fn.startsWith("noble") || f == Faction.NOBLE) return firstPortraitRangeContaining("nobles");
-        if (fn.startsWith("hiver") || f == Faction.HIVER || f == Faction.SCAVENGER || f == Faction.NONE) return firstPortraitRangeContaining("administratum", "gangers");
-        return firstPortraitRangeContaining("administratum", "nobles", "gangers");
+        if (fn.startsWith("hiver") || f == Faction.HIVER || f == Faction.SCAVENGER || f == Faction.NONE) {
+            return selectedPortraitRange(npc, "administratum", "gangers", "servants_butlers_and_chefs");
+        }
+        return selectedPortraitRange(npc, "administratum", "nobles", "gangers");
+    }
+
+    int[] selectedPortraitRange(NpcEntity npc, String... keys) {
+        java.util.ArrayList<int[]> available = new java.util.ArrayList<>();
+        if (keys != null) {
+            for (String key : keys) {
+                int[] range = firstPortraitRangeContaining(key);
+                if (range != null && range[1] > range[0]) available.add(range);
+            }
+        }
+        if (available.isEmpty()) return null;
+        int selector = npc == null ? 0 : npc.portraitIndex / 7;
+        return available.get(Math.floorMod(selector, available.size()));
     }
 
     int[] firstPortraitRangeContaining(String... keys) {

@@ -1,6 +1,6 @@
 {
   "schema": "client_runtime_graphics_repair.v1",
-  "time": "2026-06-03T00:44:32.624804+00:00",
+  "time": "2026-06-14T06:57:14.922047+00:00",
   "source_art_root": "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art",
   "copied": 3022,
   "checks": [
@@ -55,16 +55,16 @@
       "bytes": 968365
     },
     {
-      "source": "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/Title/Sub title.png",
-      "destination": "PACKAGE_client/assets/a/r/source/Title/Sub title.png",
+      "source": "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/Title/Subtitle.png",
+      "destination": "PACKAGE_client/assets/a/r/source/Title/Subtitle.png",
       "note": "title",
-      "bytes": 1779411
+      "bytes": 3863059
     },
     {
-      "source": "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/Title/TITEL.png",
-      "destination": "PACKAGE_client/assets/a/r/source/Title/TITEL.png",
+      "source": "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/Title/TITLE.png",
+      "destination": "PACKAGE_client/assets/a/r/source/Title/TITLE.png",
       "note": "title",
-      "bytes": 1941195
+      "bytes": 1619165
     },
     {
       "source": "ROOT_SRC_assets/Mechanist_art_SRC_do_not_MODIFY/Mechanist art/TILES/BULKHEAD/Bulkhead walls+doors-open.png",

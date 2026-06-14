@@ -210,6 +210,8 @@ final class SimulationToolSuiteRegistry {
         out.put("includedInformation", spec == null ? "general structured data" : spec.purpose());
         out.put("featureCapabilities", spec == null ? "basic table edits,mod export" : spec.capabilities());
         out.put("externalModCommit", true);
+        out.put("sourceMode", "live project defaults; edits are isolated to mod scope");
+        out.put("sourcePointer", spec == null ? "current project registry" : spec.recoveredFrom());
         out.putAll(props);
         return out;
     }

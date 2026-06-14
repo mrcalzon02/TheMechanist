@@ -4,18 +4,31 @@ import java.awt.*;
 import java.util.*;
 
 class WorldAtlas {
+    private enum DefinitionMode { LOAD_OR_CREATE, CREATE_NEW, TRANSIENT_PREVIEW, LOAD_SAVED_RUN }
+
     final long seed;
     final HiveWorldDefinition hiveWorld;
+    final boolean persistWorldDefinition;
     final World[][][][][] slices = new World[3][3][3][3][20]; // sector x/y, zone x/y, layer index 0..19; even=floor, odd=sewer
     int sectorX=1, sectorY=1, zoneX=2, zoneY=2, floor=4; boolean sewer=false;
-    WorldAtlas(long seed){ this(seed, WorldSetupSettings.standard()); }
-    WorldAtlas(long seed, WorldSetupSettings settings){
+    WorldAtlas(long seed){ this(seed, WorldSetupSettings.standard(), DefinitionMode.LOAD_OR_CREATE); }
+    WorldAtlas(long seed, WorldSetupSettings settings){ this(seed, settings, DefinitionMode.LOAD_OR_CREATE); }
+    static WorldAtlas createNew(long seed, WorldSetupSettings settings){ return new WorldAtlas(seed, settings, DefinitionMode.CREATE_NEW); }
+    static WorldAtlas loadExisting(long seed, WorldSetupSettings fallbackSettings){ return new WorldAtlas(seed, fallbackSettings, DefinitionMode.LOAD_OR_CREATE); }
+    static WorldAtlas loadSavedRun(long seed, WorldSetupSettings savedSettings){ return new WorldAtlas(seed, savedSettings, DefinitionMode.LOAD_SAVED_RUN); }
+    static WorldAtlas preview(long seed, WorldSetupSettings settings){ return new WorldAtlas(seed, settings, DefinitionMode.TRANSIENT_PREVIEW); }
+    private WorldAtlas(long seed, WorldSetupSettings settings, DefinitionMode mode){
         this.seed=seed;
         WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings.copy();
-        WorldGenerationApi.setActiveSettings(use);
-        this.hiveWorld=CampaignWorldApi.loadOrCreate(seed, use);
-        WorldGenerationApi.setActiveSettings(this.hiveWorld.settings());
-        int batches = Math.max(1, use.simulationBatches());
+        if(mode != DefinitionMode.TRANSIENT_PREVIEW) WorldGenerationApi.setActiveSettings(use);
+        this.hiveWorld = switch(mode) {
+            case CREATE_NEW, TRANSIENT_PREVIEW -> CampaignWorldApi.createDefinition(seed, use);
+            case LOAD_SAVED_RUN -> CampaignWorldApi.loadForSavedRun(seed, use);
+            case LOAD_OR_CREATE -> CampaignWorldApi.loadOrCreate(seed, use);
+        };
+        this.persistWorldDefinition = mode != DefinitionMode.TRANSIENT_PREVIEW;
+        if(mode != DefinitionMode.TRANSIENT_PREVIEW) WorldGenerationApi.setActiveSettings(this.hiveWorld.settings());
+        int batches = Math.max(1, this.hiveWorld.settings().simulationBatches());
         for(int i=0;i<batches;i++){
             WorldHistoryApi.advanceFactionControlEpochs(this.hiveWorld, WorldHistoryApi.DEFAULT_BATCH);
             ZoneFacilityHistoryApi.advanceFacilityHistory(this.hiveWorld, ZoneFacilityHistoryApi.DEFAULT_BATCH);
@@ -25,7 +38,7 @@ class WorldAtlas {
             HistoricalItemMaterializationApi.advanceHistoricalItemMaterialization(this.hiveWorld, HistoricalItemMaterializationApi.DEFAULT_BATCH);
             PopulationWorkAssignmentApi.advanceLaborAssignments(this.hiveWorld, PopulationWorkAssignmentApi.DEFAULT_BATCH);
         }
-        CampaignWorldApi.saveWorldDefinition(this.hiveWorld);
+        if(persistWorldDefinition) CampaignWorldApi.saveWorldDefinition(this.hiveWorld);
     }
     void generateScaffold(){
         // 0.8.19: Do not synchronously pregenerate the entire 3x3x3x3x10x2 atlas during
@@ -38,7 +51,7 @@ class WorldAtlas {
     int createSlice(int sx,int sy,int zx,int zy,int fl,boolean sewerLayer){
         long s = seed ^ (sx*1000003L) ^ (sy*9176L) ^ (zx*131071L) ^ (zy*524287L) ^ (fl*8191L) ^ (sewerLayer?0xBEEFL:0xFACE);
         WorldSetupSettings sliceSettings = hiveWorld == null ? WorldGenerationApi.settings() : hiveWorld.settings();
-        WorldGenerationApi.setActiveSettings(sliceSettings);
+        if(persistWorldDefinition) WorldGenerationApi.setActiveSettings(sliceSettings);
         Dimension sliceSize = WorldGenerationApi.zoneSliceSize(s, sliceSettings);
         World w = new World(s, sliceSize.width, sliceSize.height);
         w.configureGenerationSettings(sliceSettings);
@@ -49,7 +62,7 @@ class WorldAtlas {
         w.generate();
         slices[sx-1][sy-1][zx-1][zy-1][(fl-1)*2+(sewerLayer?1:0)] = w;
         WorldGenerationProgressApi.markSliceGenerated(hiveWorld, 1);
-        CampaignWorldApi.saveWorldDefinition(hiveWorld);
+        if(persistWorldDefinition) CampaignWorldApi.saveWorldDefinition(hiveWorld);
         DebugLog.audit("WORLDGEN_PROGRESS", String.join(" | ", WorldGenerationProgressApi.progressLines(hiveWorld)));
         return 1;
     }
@@ -4190,7 +4203,11 @@ class InterstitialInfrastructureApi {
             if(dx==0 && dy==0) continue;
             int nx=x+dx, ny=y+dy;
             if(!world.inBounds(nx,ny)) return true;
-            if(world.roomIds[nx][ny] >= 0) return true;
+            // A room-owned wall is already the authoritative one-tile shell. Keeping
+            // the non-room solid immediately outside it as another '#' rendered a
+            // second bulkhead layer. Only preserve outside wall identity when it is
+            // sealing an exposed room opening/floor rather than backing an existing wall.
+            if(world.roomIds[nx][ny] >= 0 && world.tiles[nx][ny] != '#') return true;
             char t = world.tiles[nx][ny];
             if(t != '#' && !isInterstitialSolid(t)) return true;
         }

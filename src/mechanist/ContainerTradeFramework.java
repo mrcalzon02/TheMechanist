@@ -780,10 +780,10 @@ class TraderSession {
         if (roll < 100) return 6;
         return 7;
     }
-    int buyPrice(TradeOffer o) { int p = ItemCatalog.priceFor(o.name); if (p <= 1 && ItemCatalog.get(o.name) == null) p = o.basePrice; p = (int)Math.ceil(p * (100 + markupPct - discountPct) / 100.0 * WorldGenerationApi.settings().priceMultiplier()); return Math.max(1, p); }
+    int buyPrice(TradeOffer o) { int p = ItemCatalog.priceFor(o.name); if (p <= 1 && ItemCatalog.get(o.name) == null) p = o.basePrice; return WorldGenerationSettingsAuthority.adjustedBuyPrice(p, markupPct, discountPct, WorldGenerationSettingsAuthority.active()); }
     int sellPrice(String item) {
         int v = ItemCatalog.priceFor(item);
-        return Math.max(1, (int)Math.floor(v * (100 - markupPct/2) / 100.0 / Math.max(0.75, WorldGenerationApi.settings().priceMultiplier())));
+        return WorldGenerationSettingsAuthority.adjustedSellPrice(v, markupPct, WorldGenerationSettingsAuthority.active());
     }
     String rumor(ZoneType z, Random r) {
         String[] generic = {"Doors remember who forces them.", "A quiet corridor is often waiting for witnesses.", "The lower sewers have started praying back.", "If a room has guards, it has ledgers or loot."};

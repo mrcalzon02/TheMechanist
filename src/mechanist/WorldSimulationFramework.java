@@ -1781,9 +1781,22 @@ class CampaignWorldApi {
         }catch(IOException ex){ DebugLog.error("CAMPAIGN_WORLD_SAVE", "Failed to save generated arcology world definition.", ex); }
     }
     static HiveWorldDefinition loadOrCreate(long seed){ return loadOrCreate(seed, WorldSetupSettings.standard()); }
-    static HiveWorldDefinition loadOrCreate(long seed, WorldSetupSettings settings){
+    static HiveWorldDefinition createDefinition(long seed, WorldSetupSettings settings){
         HiveWorldDefinition d = new HiveWorldDefinition(seed);
-        if(settings != null) d.applySettings(settings);
+        d.applySettings(settings == null ? WorldSetupSettings.standard() : settings);
+        return d;
+    }
+    static HiveWorldDefinition loadForSavedRun(long seed, WorldSetupSettings savedSettings){
+        HiveWorldDefinition d = loadOrCreate(seed, savedSettings);
+        WorldSetupSettings use = savedSettings == null ? WorldSetupSettings.standard() : savedSettings;
+        if(!d.settings().encode().equals(use.encode())){
+            DebugLog.warn("CAMPAIGN_WORLD_LOAD", "Saved run setup overrides mismatched world definition for seed=" + seed + " world=" + d.settings().encode() + " run=" + use.encode());
+            d.applySettings(use);
+        }
+        return d;
+    }
+    static HiveWorldDefinition loadOrCreate(long seed, WorldSetupSettings settings){
+        HiveWorldDefinition d = createDefinition(seed, settings);
         Path f = worldFile(d);
         if(Files.exists(f)){
             try{

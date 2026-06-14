@@ -202,7 +202,7 @@ final class WorldStartFlowAuthority {
         void acceptGeneratedWorld() {
             if (panel.worldSetup == null) panel.worldSetup = WorldSetupSettings.standard();
             panel.seed = panel.seed == 0L ? System.currentTimeMillis() : panel.seed;
-            panel.atlas = new WorldAtlas(panel.seed, panel.worldSetup.copy());
+            panel.atlas = WorldAtlas.createNew(panel.seed, panel.worldSetup.copy());
             panel.atlas.generateScaffold();
             panel.world = null;
             openCharacterCreation(panel.seed, panel.worldSetup.copy(), "generated world " + panel.atlas.hiveWorld.hiveName);
@@ -218,7 +218,7 @@ final class WorldStartFlowAuthority {
             WorldSaveInfo info = worlds.get(worldIndex);
             panel.seed = info.seed;
             panel.worldSetup = info.settings == null ? WorldSetupSettings.standard() : info.settings.copy();
-            panel.atlas = new WorldAtlas(panel.seed, panel.worldSetup.copy());
+            panel.atlas = WorldAtlas.loadExisting(panel.seed, panel.worldSetup.copy());
             panel.atlas.generateScaffold();
             panel.world = null;
             openCharacterCreation(panel.seed, panel.worldSetup.copy(), "existing world " + info.hiveName);
@@ -939,7 +939,7 @@ final class WorldStartFlowAuthority {
                 BufferedImage generatedImage = null;
                 String generatedStatus;
                 try {
-                    generatedAtlas = new WorldAtlas(previewRequest.seed, previewRequest.setup.copy());
+                    generatedAtlas = WorldAtlas.preview(previewRequest.seed, previewRequest.setup.copy());
                     generatedAtlas.generateScaffold();
                     generatedWorld = generatedAtlas.currentWorld();
                     generatedImage = buildPreviewOverviewImage(generatedWorld);
