@@ -8,21 +8,48 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-/** Coverage/audit surface for the Phase 4.16 semantic rendering migration. */
+/**
+ * Coverage/audit surface for the Phase 4.16 semantic rendering migration.
+ *
+ * The existing AssetRegistry remains the source of truth. This authority groups
+ * renderer intents into migration families and reports exactly which indexed
+ * meanings are available or missing before a live renderer path is converted.
+ */
 final class SemanticAssetMigrationCoverageAuthority {
     static final String VERSION = "semantic-asset-migration-coverage-0.1";
 
-    enum Family { ZONE_TILE, ROOM_TILE, INFRASTRUCTURE, DOOR, FURNITURE, CONTAINER, ITEM }
+    enum Family {
+        ZONE_TILE,
+        ROOM_TILE,
+        INFRASTRUCTURE,
+        DOOR,
+        FURNITURE,
+        CONTAINER,
+        ITEM
+    }
 
-    record Entry(Family family, SemanticRenderAssetResolver.RenderIntent intent, String assetId,
-                 String assetName, boolean available, String reason) {}
+    record Entry(
+            Family family,
+            SemanticRenderAssetResolver.RenderIntent intent,
+            String assetId,
+            String assetName,
+            boolean available,
+            String reason
+    ) {}
 
-    record Report(int total, int available, int missing,
-                  Map<Family, Integer> availableByFamily,
-                  Map<Family, Integer> missingByFamily,
-                  List<Entry> entries) {
+    record Report(
+            int total,
+            int available,
+            int missing,
+            Map<Family, Integer> availableByFamily,
+            Map<Family, Integer> missingByFamily,
+            List<Entry> entries
+    ) {
         boolean complete() { return missing == 0; }
-        String summary() { return "semanticAssetCoverage version=" + VERSION + " total=" + total + " available=" + available + " missing=" + missing; }
+        String summary() {
+            return "semanticAssetCoverage version=" + VERSION + " total=" + total
+                    + " available=" + available + " missing=" + missing;
+        }
     }
 
     private SemanticAssetMigrationCoverageAuthority() {}
@@ -34,6 +61,7 @@ final class SemanticAssetMigrationCoverageAuthority {
         EnumMap<Family, Integer> missingByFamily = new EnumMap<>(Family.class);
         int available = 0;
         int missing = 0;
+
         for (SemanticRenderAssetResolver.RenderIntent intent : SemanticRenderAssetResolver.RenderIntent.values()) {
             Family family = familyOf(intent);
             SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(safe, intent);
@@ -48,11 +76,14 @@ final class SemanticAssetMigrationCoverageAuthority {
                 missingByFamily.merge(family, 1, Integer::sum);
             }
         }
+
         for (Family family : Family.values()) {
             availableByFamily.putIfAbsent(family, 0);
             missingByFamily.putIfAbsent(family, 0);
         }
-        return new Report(entries.size(), available, missing, Map.copyOf(availableByFamily), Map.copyOf(missingByFamily), List.copyOf(entries));
+
+        return new Report(entries.size(), available, missing,
+                Map.copyOf(availableByFamily), Map.copyOf(missingByFamily), List.copyOf(entries));
     }
 
     static List<String> auditLines(AssetRegistry registry) {
