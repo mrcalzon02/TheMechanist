@@ -610,7 +610,7 @@ final class WorldStartFlowAuthority {
             drawCompactLine(g, "Age " + c.ageYears + " years / " + safe(c.ageBand), nameX, metaY + 18, nameW, muted());
 
             int statsY = Math.max(portraitRect.y + portraitRect.height + 16, metaY + 38);
-            int statsH = Math.max(124, Math.min(156, r.y + r.height - statsY - 12));
+            int statsH = Math.max(216, Math.min(256, r.y + r.height - statsY - 12));
             Rectangle stats = new Rectangle(r.x + 12, statsY, r.width - 24, statsH);
             drawSubPanel(g, stats, "Stats");
             drawStatRanges(g, c, stats);
@@ -703,7 +703,7 @@ final class WorldStartFlowAuthority {
             int availableW = Math.max(1, r.width - 24);
             int availableH = Math.max(1, r.height - 46);
             int cellW = Math.max(48, (availableW - Math.max(0, cols - 1) * gap) / cols);
-            int cellH = Math.max(40, (availableH - Math.max(0, rows - 1) * gap) / rows);
+            int cellH = Math.max(44, (availableH - Math.max(0, rows - 1) * gap) / rows);
             for (int idx = 0; idx < entries.size(); idx++) {
                 Map.Entry<String, Integer> entry = entries.get(idx);
                 int row = idx / cols;
@@ -720,7 +720,7 @@ final class WorldStartFlowAuthority {
             g.drawRoundRect(r.x, r.y, r.width, r.height, 7, 7);
             int pad = Math.max(5, Math.min(8, r.width / 12));
             drawFitted(g, key + " " + value, r.x + pad, r.y + 17, r.width - pad * 2, highlight());
-            drawFitted(g, statExplanation(key), r.x + pad, r.y + 35, r.width - pad * 2, main());
+            drawFitted(g, statExplanation(key), r.x + pad, r.y + 37, r.width - pad * 2, main());
         }
 
         void drawCharacterRangeBar(Graphics2D g, Rectangle r) {
@@ -736,7 +736,7 @@ final class WorldStartFlowAuthority {
 
         Rectangle characterBodyRect() {
             Rectangle p = panelRect(getWidth(), getHeight());
-            return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(260, p.height - 250));
+            return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(300, p.height - 230));
         }
 
         Rectangle characterRangeBarRect() {
@@ -1067,7 +1067,7 @@ final class WorldStartFlowAuthority {
         List<Rectangle> optionRows(int count) { Rectangle p = panelRect(getWidth(), getHeight()); ArrayList<Rectangle> rows = new ArrayList<>(); int top = p.y + 124; for (int i = 0; i < count; i++) rows.add(new Rectangle(p.x + 24, top + i * 42, p.width - 48, 34)); return rows; }
         Rectangle seedEditRect() { Rectangle p = panelRect(getWidth(), getHeight()); int width = Math.max(300, Math.min(540, p.width - 420)); return new Rectangle(p.x + 24, p.y + 118, width, 34); }
         Rectangle spawnPreviewRect() { Rectangle p = panelRect(getWidth(), getHeight()); int leftW = Math.max(300, Math.min(540, p.width - 420)); int x = p.x + 24 + leftW + 24; int w = Math.max(300, p.x + p.width - 28 - x); return new Rectangle(x, p.y + 118, w, Math.max(320, p.height - 206)); }
-        Rectangle panelRect(int w, int h) { int minW = stage == Stage.CHARACTER_CREATION ? 900 : 720; int maxW = stage == Stage.CHARACTER_CREATION ? 1320 : 1060; int margin = stage == Stage.CHARACTER_CREATION ? 48 : 72; int pw = Math.max(minW, Math.min(maxW, w - margin)); int ph = Math.max(540, Math.min(720, h - 72)); return new Rectangle(Math.max(20, w / 2 - pw / 2), Math.max(28, h / 2 - ph / 2), pw, ph); }
+        Rectangle panelRect(int w, int h) { int minW = stage == Stage.CHARACTER_CREATION ? 900 : 720; int maxW = stage == Stage.CHARACTER_CREATION ? 1320 : 1060; int margin = stage == Stage.CHARACTER_CREATION ? 48 : 72; int pw = Math.max(minW, Math.min(maxW, w - margin)); int ph = Math.max(stage == Stage.CHARACTER_CREATION ? 620 : 540, Math.min(stage == Stage.CHARACTER_CREATION ? 760 : 720, h - 72)); return new Rectangle(Math.max(20, w / 2 - pw / 2), Math.max(28, h / 2 - ph / 2), pw, ph); }
         Rectangle buttonRect(int index) { Rectangle p = panelRect(getWidth(), getHeight()); if (index == 2) return new Rectangle(p.x + 28, p.y + p.height - 58, 146, 34); int bw = index == 0 ? 178 : 120; int gap = 16; int x = index == 0 ? p.x + p.width - bw - 28 : p.x + p.width - bw - 28 - 178 - gap; return new Rectangle(x, p.y + p.height - 58, bw, 34); }
         String title() { return MenuTextAuthority.text(titleKey(), switch (stage) { case WORLD_PICKER -> "WORLD MANAGEMENT"; case WORLD_GENERATION -> "NEW WORLD GENERATION"; case CHARACTER_CREATION -> "CHARACTER GENERATION"; default -> "START FLOW"; }); }
         String titleKey() { return switch (stage) { case WORLD_PICKER -> "menu.world_manager.title"; case WORLD_GENERATION -> "menu.world_generation.title"; case CHARACTER_CREATION -> "menu.character_generation.title"; default -> ""; }; }
