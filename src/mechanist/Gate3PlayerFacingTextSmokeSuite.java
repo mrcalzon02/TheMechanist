@@ -59,6 +59,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02ContractObjectiveReadabilitySmoke.main(args);
         Milestone02TransferWorkflowConsistencySmoke.main(args);
         Milestone02LivePanelPromptSmoke.main(args);
+        Milestone02RenderAssetBindingDoctrineSmoke.main(args);
         Milestone03ProductionQualityTraceSmoke.main(args);
         Milestone03QualityProvenanceSmoke.main(args);
         Milestone03ProductionOutcomeForecastSmoke.main(args);
