@@ -1,0 +1,104 @@
+name: Run Character Equipment And Medical Tabs V2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/run-character-equipment-medical-tabs-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Run implementation migration
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          workflow = Path('.github/workflows/one-shot-character-equipment-medical-tabs.yml')
+          lines = workflow.read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(lines) if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'PY')
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines[start:end]) + '\n'
+          old = """lambda m: m.group(1) + '\\n        CharacterEquipmentAndMedicalAuthority.writeState('
+                                + m.group(2) + '.equippedWearableSlots, ' + m.group(2)
+                                + '.installedBodyModifications);',"""
+          new = """lambda m: m.group(1) + '\\n        CharacterEquipmentAndMedicalAuthority.writeState('
+                                + m.group(3) + ', ' + m.group(2) + '.equippedWearableSlots, '
+                                + m.group(2) + '.installedBodyModifications);',"""
+          if old not in script:
+              raise SystemExit('Persistence write migration segment was not found')
+          script = script.replace(old, new, 1)
+          script = script.replace('return new Clothing(safe, null, 0,', 'return new Clothing(safe, Faction.NONE, 0,')
+          Path('/tmp/character_equipment_medical_impl.py').write_text(script, encoding='utf-8')
+          PY
+          python /tmp/character_equipment_medical_impl.py
+
+      - name: Ensure authority support methods exist
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          path = Path('src/mechanist/CharacterEquipmentAndMedicalAuthority.java')
+          text = path.read_text(encoding='utf-8')
+          if 'import java.util.Properties;' not in text:
+              text = text.replace('import java.util.Map;\n', 'import java.util.Map;\nimport java.util.Properties;\n')
+          if 'static int carryCapacityBonus' not in text:
+              marker = '    private static boolean contains(String value, String... needles) {'
+              if marker not in text:
+                  raise SystemExit('Character equipment helper insertion marker missing')
+              encoded = 'ICAgIHN0YXRpYyBpbnQgY2FycnlDYXBhY2l0eUJvbnVzKE1hcDxFcXVpcG1lbnRTbG90LCBTdHJpbmc+IGV4dHJhU2xvdHMpIHsKICAgICAgICBpZiAoZXh0cmFTbG90cyA9PSBudWxsKSByZXR1cm4gMDsKICAgICAgICBTdHJpbmcgYmFja3BhY2sgPSBzYWZlKGV4dHJhU2xvdHMuZ2V0KEVxdWlwbWVudFNsb3QuQkFDS1BBQ0spKS50b0xvd2VyQ2FzZShMb2NhbGUuUk9PVCk7CiAgICAgICAgaWYgKGJhY2twYWNrLmVxdWFscygiZW1wdHkiKSkgcmV0dXJuIDA7CiAgICAgICAgaWYgKGNvbnRhaW5zKGJhY2twYWNrLCAiZXhwZWRpdGlvbiIsICJoZWF2eSIsICJmcmFtZSBwYWNrIikpIHJldHVybiAxMjsKICAgICAgICBpZiAoY29udGFpbnMoYmFja3BhY2ssICJydWNrc2FjayIsICJoYXZlcnNhY2siKSkgcmV0dXJuIDEwOwogICAgICAgIGlmIChjb250YWlucyhiYWNrcGFjaywgImJhY2twYWNrIikpIHJldHVybiA4OwogICAgICAgIGlmIChjb250YWlucyhiYWNrcGFjaywgInNhdGNoZWwiKSkgcmV0dXJuIDQ7CiAgICAgICAgcmV0dXJuIDY7CiAgICB9CgogICAgc3RhdGljIHZvaWQgaW5zdGFsbE1lZGljYWxSZWNvcmQoTWFwPFN0cmluZywgU3RyaW5nPiBpbnN0YWxsZWQsIFN0cmluZyBib2R5UGFydE5hbWUsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBNZWRpY2FsTGF5ZXIgbGF5ZXIsIFN0cmluZyBpbnN0YWxsZWROYW1lKSB7CiAgICAgICAgaWYgKGluc3RhbGxlZCA9PSBudWxsKSByZXR1cm47CiAgICAgICAgTWVkaWNhbFNsb3RLZXkga2V5ID0gbmV3IE1lZGljYWxTbG90S2V5KGJvZHlQYXJ0TmFtZSwgbGF5ZXIpOwogICAgICAgIGlmIChpbnN0YWxsZWROYW1lID09IG51bGwgfHwgaW5zdGFsbGVkTmFtZS5pc0JsYW5rKCkpIGluc3RhbGxlZC5yZW1vdmUoa2V5LnN0b3JhZ2VLZXkoKSk7CiAgICAgICAgZWxzZSBpbnN0YWxsZWQucHV0KGtleS5zdG9yYWdlS2V5KCksIGluc3RhbGxlZE5hbWUpOwogICAgfQoKICAgIHN0YXRpYyBTdHJpbmcgbWVkaWNhbFJlY29yZChNYXA8U3RyaW5nLCBTdHJpbmc+IGluc3RhbGxlZCwgU3RyaW5nIGJvZHlQYXJ0TmFtZSwgTWVkaWNhbExheWVyIGxheWVyKSB7CiAgICAgICAgaWYgKGluc3RhbGxlZCA9PSBudWxsKSByZXR1cm4gIkVtcHR5IjsKICAgICAgICByZXR1cm4gc2FmZShpbnN0YWxsZWQuZ2V0KG5ldyBNZWRpY2FsU2xvdEtleShib2R5UGFydE5hbWUsIGxheWVyKS5zdG9yYWdlS2V5KCkpKTsKICAgIH0KCiAgICBzdGF0aWMgdm9pZCB3cml0ZVN0YXRlKFByb3BlcnRpZXMgcHJvcGVydGllcywgTWFwPEVxdWlwbWVudFNsb3QsIFN0cmluZz4gZXF1aXBtZW50LAogICAgICAgICAgICAgICAgICAgICAgICAgICBNYXA8U3RyaW5nLCBTdHJpbmc+IG1lZGljYWwpIHsKICAgICAgICBpZiAocHJvcGVydGllcyA9PSBudWxsKSByZXR1cm47CiAgICAgICAgaWYgKGVxdWlwbWVudCAhPSBudWxsKSB7CiAgICAgICAgICAgIGZvciAoTWFwLkVudHJ5PEVxdWlwbWVudFNsb3QsIFN0cmluZz4gZW50cnkgOiBlcXVpcG1lbnQuZW50cnlTZXQoKSkgewogICAgICAgICAgICAgICAgaWYgKGVudHJ5LmdldEtleSgpID09IG51bGwgfHwgZW50cnkuZ2V0VmFsdWUoKSA9PSBudWxsIHx8IGVudHJ5LmdldFZhbHVlKCkuaXNCbGFuaygpKSBjb250aW51ZTsKICAgICAgICAgICAgICAgIHByb3BlcnRpZXMuc2V0UHJvcGVydHkoImNoYXJhY3Rlci5lcXVpcG1lbnQuIiArIGVudHJ5LmdldEtleSgpLm5hbWUoKSwgZW50cnkuZ2V0VmFsdWUoKSk7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAgaWYgKG1lZGljYWwgIT0gbnVsbCkgewogICAgICAgICAgICBpbnQgaW5kZXggPSAwOwogICAgICAgICAgICBmb3IgKE1hcC5FbnRyeTxTdHJpbmcsIFN0cmluZz4gZW50cnkgOiBtZWRpY2FsLmVudHJ5U2V0KCkpIHsKICAgICAgICAgICAgICAgIGlmIChlbnRyeS5nZXRLZXkoKSA9PSBudWxsIHx8IGVudHJ5LmdldEtleSgpLmlzQmxhbmsoKQogICAgICAgICAgICAgICAgICAgICAgICB8fCBlbnRyeS5nZXRWYWx1ZSgpID09IG51bGwgfHwgZW50cnkuZ2V0VmFsdWUoKS5pc0JsYW5rKCkpIGNvbnRpbnVlOwogICAgICAgICAgICAgICAgcHJvcGVydGllcy5zZXRQcm9wZXJ0eSgiY2hhcmFjdGVyLm1lZGljYWwuIiArIGluZGV4ICsgIi5rZXkiLCBlbnRyeS5nZXRLZXkoKSk7CiAgICAgICAgICAgICAgICBwcm9wZXJ0aWVzLnNldFByb3BlcnR5KCJjaGFyYWN0ZXIubWVkaWNhbC4iICsgaW5kZXggKyAiLnZhbHVlIiwgZW50cnkuZ2V0VmFsdWUoKSk7CiAgICAgICAgICAgICAgICBpbmRleCsrOwogICAgICAgICAgICB9CiAgICAgICAgICAgIHByb3BlcnRpZXMuc2V0UHJvcGVydHkoImNoYXJhY3Rlci5tZWRpY2FsLmNvdW50IiwgSW50ZWdlci50b1N0cmluZyhpbmRleCkpOwogICAgICAgIH0KICAgIH0KCiAgICBzdGF0aWMgdm9pZCByZWFkU3RhdGUoUHJvcGVydGllcyBwcm9wZXJ0aWVzLCBNYXA8RXF1aXBtZW50U2xvdCwgU3RyaW5nPiBlcXVpcG1lbnQsCiAgICAgICAgICAgICAgICAgICAgICAgICAgTWFwPFN0cmluZywgU3RyaW5nPiBtZWRpY2FsKSB7CiAgICAgICAgaWYgKHByb3BlcnRpZXMgPT0gbnVsbCkgcmV0dXJuOwogICAgICAgIGlmIChlcXVpcG1lbnQgIT0gbnVsbCkgewogICAgICAgICAgICBlcXVpcG1lbnQuY2xlYXIoKTsKICAgICAgICAgICAgZm9yIChFcXVpcG1lbnRTbG90IHNsb3QgOiBFcXVpcG1lbnRTbG90LnZhbHVlcygpKSB7CiAgICAgICAgICAgICAgICBpZiAoc2xvdCA9PSBFcXVpcG1lbnRTbG90LkxFRlRfSEFORCB8fCBzbG90ID09IEVxdWlwbWVudFNsb3QuUklHSFRfSEFORAogICAgICAgICAgICAgICAgICAgICAgICB8fCBzbG90ID09IEVxdWlwbWVudFNsb3QuQ0xPVEhFUykgY29udGludWU7CiAgICAgICAgICAgICAgICBTdHJpbmcgdmFsdWUgPSBwcm9wZXJ0aWVzLmdldFByb3BlcnR5KCJjaGFyYWN0ZXIuZXF1aXBtZW50LiIgKyBzbG90Lm5hbWUoKSk7CiAgICAgICAgICAgICAgICBpZiAodmFsdWUgIT0gbnVsbCAmJiAhdmFsdWUuaXNCbGFuaygpKSBlcXVpcG1lbnQucHV0KHNsb3QsIHZhbHVlKTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgICAgICBpZiAobWVkaWNhbCAhPSBudWxsKSB7CiAgICAgICAgICAgIG1lZGljYWwuY2xlYXIoKTsKICAgICAgICAgICAgaW50IGNvdW50OwogICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgY291bnQgPSBNYXRoLm1heCgwLCBJbnRlZ2VyLnBhcnNlSW50KHByb3BlcnRpZXMuZ2V0UHJvcGVydHkoImNoYXJhY3Rlci5tZWRpY2FsLmNvdW50IiwgIjAiKSkpOwogICAgICAgICAgICB9IGNhdGNoIChOdW1iZXJGb3JtYXRFeGNlcHRpb24gaWdub3JlZCkgewogICAgICAgICAgICAgICAgY291bnQgPSAwOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGZvciAoaW50IGkgPSAwOyBpIDwgY291bnQ7IGkrKykgewogICAgICAgICAgICAgICAgU3RyaW5nIGtleSA9IHByb3BlcnRpZXMuZ2V0UHJvcGVydHkoImNoYXJhY3Rlci5tZWRpY2FsLiIgKyBpICsgIi5rZXkiKTsKICAgICAgICAgICAgICAgIFN0cmluZyB2YWx1ZSA9IHByb3BlcnRpZXMuZ2V0UHJvcGVydHkoImNoYXJhY3Rlci5tZWRpY2FsLiIgKyBpICsgIi52YWx1ZSIpOwogICAgICAgICAgICAgICAgaWYgKGtleSAhPSBudWxsICYmICFrZXkuaXNCbGFuaygpICYmIHZhbHVlICE9IG51bGwgJiYgIXZhbHVlLmlzQmxhbmsoKSkgbWVkaWNhbC5wdXQoa2V5LCB2YWx1ZSk7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cgo='
+              methods = base64.b64decode(encoded).decode('utf-8')
+              text = text.replace(marker, methods + marker, 1)
+          path.write_text(text, encoding='utf-8', newline='')
+          PY
+
+      - name: Compile Java 17 UTF-8
+        shell: bash
+        run: |
+          rm -rf ROOT_build/character-equipment-medical-classes
+          mkdir -p ROOT_build/character-equipment-medical-classes
+          find src -name '*.java' -print > character-equipment-medical-sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/character-equipment-medical-classes @character-equipment-medical-sources.txt
+
+      - name: Run focused and Gate 3 verification
+        shell: bash
+        run: |
+          java -cp ROOT_build/character-equipment-medical-classes mechanist.Milestone02CharacterEquipmentMedicalSmoke
+          java -cp ROOT_build/character-equipment-medical-classes mechanist.Milestone02CharacterEquipmentScreenIntegrationSmoke
+          java -cp ROOT_build/character-equipment-medical-classes mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Remove migration workflows and build output
+        shell: bash
+        run: |
+          rm -f .github/workflows/run-character-equipment-medical-tabs-v2.yml
+          rm -f .github/workflows/run-character-equipment-medical-tabs-on-push.yml
+          rm -f .github/workflows/one-shot-character-equipment-medical-tabs.yml
+          rm -f .github/workflows/one-shot-market-floor-semantic-fix.yml
+          rm -f .github/workflows/one-shot-religious-item-semantic-fix.yml
+          rm -f .github/workflows/one-shot-door-semantic-fix.yml
+          rm -f character-equipment-medical-sources.txt
+          rm -rf ROOT_build/character-equipment-medical-classes
+
+      - name: Commit verified character tabs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Expand character equipment and medical body tabs'
+          git push
