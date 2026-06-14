@@ -1,0 +1,31 @@
+name: Monitor Market Floor Semantic Fix
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/monitor-market-floor-semantic-fix.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check latest resolver repair workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          json=$(curl -sS \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/one-shot-market-floor-semantic-fix.yml/runs?event=workflow_dispatch&per_page=1")
+          id=$(echo "$json" | jq -r '.workflow_runs[0].id // empty')
+          status=$(echo "$json" | jq -r '.workflow_runs[0].status // empty')
+          conclusion=$(echo "$json" | jq -r '.workflow_runs[0].conclusion // empty')
+          echo "run=$id status=$status conclusion=$conclusion"
+          test "$status" = "completed"
+          test "$conclusion" = "success"
