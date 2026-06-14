@@ -42,9 +42,17 @@ final class MultiplayerMenuController implements AutoCloseable {
     int favoriteIndex() { return favoriteIndex; }
     boolean inputActive() { return inputActive; }
     String directInput() { return directInput; }
+    void setDirectInput(String value) {
+        if (value == null) return;
+        String clean = value.trim();
+        if (clean.length() > 96) clean = clean.substring(0, 96);
+        directInput = clean;
+        inputActive = false;
+        status = clean.isBlank() ? "Direct server address cleared." : "Direct server address updated and hidden.";
+    }
     String status() { return status; }
     boolean hasActiveHost() { return activeHost != null && activeHost.success(); }
-    String activeHostLine() { return activeHost == null ? "No local host bound." : activeHost.compactLine(); }
+    String activeHostLine() { return activeHost == null ? "No local host bound." : "Local host active; binding details hidden."; }
     void setStatus(String status) { this.status = status == null || status.isBlank() ? this.status : status; }
 
     void beginDirectEdit() { inputActive = true; status = "Editing direct server address. Examples: 192.168.1.10:25565 or [2001:db8::1]:25565."; }
@@ -73,7 +81,7 @@ final class MultiplayerMenuController implements AutoCloseable {
         if (history.isEmpty()) { status = "No recent server history yet."; return; }
         historyIndex = Math.floorMod(historyIndex + delta, history.size());
         directInput = history.get(historyIndex).endpoint();
-        status = "Selected recent server: " + directInput;
+        status = "Selected recent server: " + MultiplayerPrivacyAuthority.redactEndpoint(directInput) + ".";
     }
 
     void cycleFavorite(int delta) {
@@ -81,13 +89,13 @@ final class MultiplayerMenuController implements AutoCloseable {
         favoriteIndex = Math.floorMod(favoriteIndex + delta, favorites.size());
         FavoriteServer fav = favorites.get(favoriteIndex);
         directInput = fav.endpoint();
-        status = "Selected favorite: " + fav.name() + " / " + fav.endpoint();
+        status = "Selected favorite: " + MultiplayerPrivacyAuthority.redactLabeledEndpoint(fav.name(), fav.endpoint()) + ".";
     }
 
     NetworkPortAuthority.Endpoint joinDirect() {
         NetworkPortAuthority.Endpoint endpoint = NetworkPortAuthority.parseEndpoint(directInput);
         remember(endpoint.display(), "Direct server");
-        status = "Prepared direct join endpoint " + endpoint.display() + ". Transport handoff will use encrypted chat/session packets when the client connector opens.";
+        status = "Prepared direct join endpoint " + MultiplayerPrivacyAuthority.redactEndpoint(endpoint.display()) + ". Transport handoff will use encrypted chat/session packets when the client connector opens.";
         save();
         return endpoint;
     }
@@ -100,7 +108,7 @@ final class MultiplayerMenuController implements AutoCloseable {
         favorites.add(0, new FavoriteServer(id, cleanName, endpoint.host(), endpoint.port(), endpoint.display(), false, Instant.now().toString()));
         while (favorites.size() > MAX_FAVORITES) favorites.remove(favorites.size() - 1);
         favoriteIndex = 0;
-        status = "Saved favorite: " + cleanName + " / " + endpoint.display();
+        status = "Saved favorite: " + MultiplayerPrivacyAuthority.redactLabeledEndpoint(cleanName, endpoint.display()) + ".";
         save();
     }
 
@@ -112,7 +120,7 @@ final class MultiplayerMenuController implements AutoCloseable {
         FavoriteServer fav = favorites.get(Math.max(0, Math.min(favoriteIndex, favorites.size() - 1)));
         directInput = fav.endpoint();
         remember(fav.endpoint(), fav.name());
-        status = "Prepared favorite join endpoint " + fav.name() + " / " + fav.endpoint() + ".";
+        status = "Prepared favorite join endpoint " + MultiplayerPrivacyAuthority.redactLabeledEndpoint(fav.name(), fav.endpoint()) + ".";
         save();
         return NetworkPortAuthority.parseEndpoint(fav.endpoint());
     }
@@ -132,7 +140,8 @@ final class MultiplayerMenuController implements AutoCloseable {
         boolean preferSteam = SteamNetworkingBridge.detect().steamLaunchEnvironment();
         ServerConfig config = MultiplayerHostBindingService.configFromWorld(seed, worldName, worldId, settings, maxPlayers, port, preferSteam);
         activeHost = MultiplayerHostBindingService.bind(config);
-        status = activeHost.compactLine();
+        status = activeHost.success() ? "Local multiplayer host active; local and public binding details are hidden."
+                : "Local multiplayer host failed to bind; see private diagnostics for details.";
         save();
         return activeHost;
     }
@@ -230,7 +239,7 @@ final class MultiplayerMenuController implements AutoCloseable {
             label = label == null || label.isBlank() ? "Server" : label.trim();
             lastJoinedIso = lastJoinedIso == null || lastJoinedIso.isBlank() ? Instant.now().toString() : lastJoinedIso.trim();
         }
-        String shortLine() { return label + " / " + endpoint; }
+        String shortLine() { return MultiplayerPrivacyAuthority.redactLabeledEndpoint(label, endpoint); }
     }
 
     record FavoriteServer(String id, String name, String host, int port, String endpoint, boolean steamLobby, String createdIso) {
@@ -243,6 +252,6 @@ final class MultiplayerMenuController implements AutoCloseable {
             endpoint = ep.display();
             createdIso = createdIso == null || createdIso.isBlank() ? Instant.now().toString() : createdIso.trim();
         }
-        String shortLine() { return name + " / " + endpoint + (steamLobby ? " / STEAM" : ""); }
+        String shortLine() { return MultiplayerPrivacyAuthority.redactLabeledEndpoint(name, endpoint) + (steamLobby ? " / STEAM" : ""); }
     }
 }

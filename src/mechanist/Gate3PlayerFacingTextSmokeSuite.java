@@ -18,6 +18,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Gate3PresentationAuditSmoke.main(args);
         Milestone02LookExamineReadabilitySmoke.main(args);
         Milestone02MovementPlanningReadabilitySmoke.main(args);
+        Milestone02MovementPlanningDefinitionAuditSmoke.main(args);
+        Milestone02MovementPlanningFocusResetSmoke.main(args);
         Milestone02MovementExecutionAuthoritySmoke.main(args);
         Milestone02PauseMovementRecoverySmoke.main(args);
         Milestone02MovementDebugOverlaySmoke.main(args);
@@ -27,7 +29,9 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02ConversationReadabilitySmoke.main(args);
         Milestone02ContextPromptReadabilitySmoke.main(args);
         Milestone02InfopediaMechanicsReadabilitySmoke.main(args);
+        Milestone02InfopediaHotLinkSmoke.main(args);
         Milestone02MenuUniformityReadabilitySmoke.main(args);
+        Milestone02MenuDefinitionAuditSmoke.main(args);
         Milestone02InputRebindingAuditSmoke.main(args);
         Milestone02InputConflictRecoverySmoke.main(args);
         Milestone02CurrentBindingPromptSmoke.main(args);
@@ -42,6 +46,30 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02DoomHudFacingSmoke.main(args);
         Milestone02TradeReadabilitySmoke.main(args);
         Milestone02InventoryReadabilitySmoke.main(args);
+        Milestone02ContainerReadabilitySmoke.main(args);
+        Milestone02FactionRosterReadabilitySmoke.main(args);
+        Milestone02ProductionReadabilitySmoke.main(args);
+        Milestone02ConstructionReadabilitySmoke.main(args);
+        Milestone02ConstructionCategorySmoke.main(args);
+        Milestone02BodyConditionReadabilitySmoke.main(args);
+        Milestone02MedicalTreatmentReadabilitySmoke.main(args);
+        Milestone02EntityIdentityReadabilitySmoke.main(args);
+        Milestone02ExpansionHeatReadabilitySmoke.main(args);
+        Milestone02InteractionApproachSmoke.main(args);
+        Milestone02ContractObjectiveReadabilitySmoke.main(args);
+        Milestone02TransferWorkflowConsistencySmoke.main(args);
+        Milestone02LivePanelPromptSmoke.main(args);
+        Milestone03ProductionQualityTraceSmoke.main(args);
+        Milestone03QualityProvenanceSmoke.main(args);
+        Milestone03ProductionOutcomeForecastSmoke.main(args);
+        Milestone03MachineConditionProductionSmoke.main(args);
+        Milestone03MachineRepairWorkflowSmoke.main(args);
+        Milestone03ProductionOperatorSkillSmoke.main(args);
+        Milestone03ProductionMaterialQualitySmoke.main(args);
+        Milestone03ProductionWorkerQualitySmoke.main(args);
+        Milestone03MachineKnowledgeSourceSmoke.main(args);
+        Milestone03ProductionBatchProvenanceSmoke.main(args);
+        OptionsSwingComponentSmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }
 

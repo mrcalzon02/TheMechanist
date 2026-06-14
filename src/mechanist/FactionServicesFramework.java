@@ -896,6 +896,7 @@ class BaseObject {
     String qualityName = "Common";
     String assignedRecipe = "";
     String assignedWorker = "";
+    String machineKnowledge = "";
     int productionQueueTarget = 1;
     int productionQueueRemaining = 0;
     boolean underConstruction = false;
@@ -936,7 +937,7 @@ class BaseObject {
             default: return "uses general service accounting until a specific return profile is assigned.";
         }
     }
-    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+(assignedRecipe==null?"":assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress; }
+    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+(assignedRecipe==null?"":assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge); }
 }
 
 

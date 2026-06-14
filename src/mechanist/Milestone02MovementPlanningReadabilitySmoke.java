@@ -84,6 +84,23 @@ final class Milestone02MovementPlanningReadabilitySmoke {
         MovementPlanningAuthority.StandableTileSearchResult failed = MovementPlanningAuthority.nearestStandableTile(noCandidate, 1, 1, 1, 2);
         require(!failed.found(), "fully blocked grid should not find recovery destination");
         requireContains(failed.summary(), "No standable tile found", "failed recovery summary");
+
+        World hazardWorld = new World(7L, 5, 5);
+        hazardWorld.hazardWarnings.add(new EnvironmentalHazardRecord("test-hazard", "thermal hazard", "Steam wash",
+                "visible steam", 2, 1, -1, 58, 0));
+        hazardWorld.hazardWarnings.add(new EnvironmentalHazardRecord("test-hazard-2", "shorted wires", "Live wires",
+                "visible sparks", 3, 1, -1, 34, 0));
+        MovementPlanningAuthority.HazardRouteReadout hazardRoute = MovementPlanningAuthority.inspectRouteHazards(
+                hazardWorld, List.of(new Point(1, 1), new Point(2, 1), new Point(3, 1)));
+        require(hazardRoute.hazardous(), "route crossing recorded hazards should be marked hazardous");
+        require(hazardRoute.hazardousTiles() == 2, "hazard route should count hazardous tiles once each");
+        requireContains(hazardRoute.summary(), "Steam wash (severe)", "highest route hazard");
+        requireContains(hazardRoute.summary(), "Movement remains available", "hazard warning must not imply automatic refusal");
+        rejectLeaks(hazardRoute.summary(), "hazard route warning");
+        require(MovementPlanningAuthority.requiresHazardConfirmation(hazardWorld, 2, 1),
+                "direct movement should require confirmation for a recorded hazard tile");
+        require(!MovementPlanningAuthority.requiresHazardConfirmation(hazardWorld, 1, 1),
+                "direct movement should remain immediate for an ordinary tile");
     }
 
     private static ZoneTileState[][] floorGrid(int w, int h) {

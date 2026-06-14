@@ -11,9 +11,7 @@ final class MenuNavigationRuntime {
         panel.lookCursorActive = false;
         panel.interactCursorActive = false;
         panel.combatCursorActive = false;
-        panel.manualMovementPlanActive = false;
-        panel.mouseMovePreviewActive = false;
-        panel.mouseMovePreviewValid = false;
+        MovementPlanningFocusResetAuthority.reset(panel, "main menu");
         panel.buildPlacementActive = false;
         panel.characterNameEditActive = false;
         panel.activeScrollTag = "";

@@ -558,7 +558,7 @@ class CraftingRecipe {
     }
     CraftingRecipe input(String item, int count) { itemInputs.put(item, count); return this; }
     static CraftingRecipe noKnownRecipes() { CraftingRecipe r = new CraftingRecipe("No known craft recipes", "Vended scrap", Faction.NONE, null, ' ', 0,0,0,0,0,0,0,"Knowledge", "Unlock production knowledge to reveal real recipes here."); r.disabled = true; return r; }
-    boolean visibleTo(GamePanel g) { return disabled || requiredKnowledge == null || requiredKnowledge.isBlank() || g.hasKnowledge(requiredKnowledge); }
+    boolean visibleTo(GamePanel g) { return disabled || g == null || g.hasProductionKnowledge(this, requiredMachine(g)); }
     BaseObject requiredMachine(GamePanel g) { return g.requiredMachineFor(this); }
     String machineName() { if (machineSymbol == ' ') return "Scrap Workbench"; if (machineSymbol == 'w') return "Scrap Workbench"; if (machineSymbol == 'e') return "EMM Atmospheric Condenser"; if (machineSymbol == 'f') return "EMM Micro Forge"; if (machineSymbol == 'l') return "EMM Micro Lab"; if (machineSymbol == 'x') return "Security Cogitator Node"; return "machine '" + machineSymbol + "'"; }
     String machineLabel() { return machineName(); }
@@ -568,15 +568,16 @@ class CraftingRecipe {
     String assignmentProblem(GamePanel g, BaseObject machine) {
         if (disabled) return "no real recipe is selected.";
         if (machine == null) return "no machine selected.";
-        if (requiredKnowledge != null && !requiredKnowledge.isBlank() && !g.hasKnowledge(requiredKnowledge)) return "requires knowledge: " + requiredKnowledge + ".";
+        if (!g.hasProductionKnowledge(this, machine)) return "requires knowledge: " + requiredKnowledge + ".";
         if (machineSymbol != ' ' && machineSymbol != machine.symbol) return "requires " + machineName() + ".";
         return null;
     }
     String blockingProblemForMachine(GamePanel g, BaseObject machine) {
         if (disabled) return "no real recipe is selected.";
-        if (requiredKnowledge != null && !requiredKnowledge.isBlank() && !g.hasKnowledge(requiredKnowledge)) return "requires knowledge: " + requiredKnowledge + ".";
+        if (!g.hasProductionKnowledge(this, machine)) return "requires knowledge: " + requiredKnowledge + ".";
         if (machine == null) return "requires built " + machineName() + ".";
         if (machineSymbol != ' ' && machineSymbol != machine.symbol) return "requires " + machineName() + ".";
+        if (!MachineConditionProductionAuthority.evaluate(machine).operational()) return "requires repair: " + machine.name + " is broken.";
         int needSupplies = effectiveSuppliesCost();
         int needParts = effectiveMachinePartsCost();
         if (g.supplies < needSupplies) return "needs " + needSupplies + " supplies; available " + g.supplies + ".";
@@ -593,7 +594,7 @@ class CraftingRecipe {
         if (disabled) return "no unlocked recipes";
         String problem = blockingProblem(g);
         BaseObject machine = requiredMachine(g);
-        String cap = machine == null ? "no machine" : "cap " + g.cappedProductionQuality(machine, requiredKnowledge);
+        String cap = machine == null ? "no machine" : "cap " + g.cappedProductionQuality(machine, this);
         return (problem == null ? "READY" : "LOCKED: " + problem) + " | " + cap + " | inputs " + inputSummary();
     }
     int effectiveSuppliesCost(){ return Math.max(0, (int)Math.ceil(suppliesCost * WorldGenerationApi.settings().craftMultiplier())); }
@@ -3089,7 +3090,18 @@ class ProductionRecipe {
     int qualityTier() { return ItemQuality.tierIndex(qualityName + " " + baseItem); }
     int outputCharges() { return Math.max(1, (int)Math.round(ItemQuality.CHARGES[qualityTier()] * profile.chargeBias * profile.efficiencyBias * 3.0)); }
     int estimatedValue() { ItemDef d = ItemCatalog.get(baseItem); int base = d == null ? 2 : d.basePrice; return Math.max(1, (int)Math.round(ItemQuality.priced(base, qualityName + " " + baseItem) * profile.valueBias * Math.max(0.50, profile.prestigeBias))); }
-    int estimatedDefectPercent() { return Math.max(1, (int)Math.round(10.0 * profile.defectBias / Math.max(0.25, profile.reliabilityBias))); }
+    int estimatedDefectPercent() {
+        QualityAuthorityProfile quality = QualityAuthorityApi.profile(qualityName);
+        return Math.max(1, (int)Math.round(10.0 * profile.defectBias * quality.defectMultiplier
+                / Math.max(0.25, profile.reliabilityBias * quality.reliabilityMultiplier)));
+    }
+    int estimatedDefectPercent(BaseObject machine) {
+        return Math.min(99, estimatedDefectPercent()
+                + MachineConditionProductionAuthority.evaluate(machine).defectRiskAdd());
+    }
+    int estimatedDefectPercent(BaseObject machine, int operatorAdjustment) {
+        return Math.max(1, Math.min(99, estimatedDefectPercent(machine) + operatorAdjustment));
+    }
     String summary() { return machineName + " makes " + outputItemName() + " using " + knowledgeName + " [value~" + estimatedValue() + ", charges~" + outputCharges() + ", defectRisk~" + estimatedDefectPercent() + "%]"; }
     String auditLine() { return "recipe=" + baseItem + " faction=" + faction + " quality=" + qualityName + " knowledge=" + knowledgeName + " machine=" + machineName + " output=" + outputItemName(); }
     static ArrayList<String> sampleLines() {

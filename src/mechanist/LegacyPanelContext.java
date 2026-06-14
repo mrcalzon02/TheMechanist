@@ -174,6 +174,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean interactCursorActive;
     boolean mouseMovePreviewActive;
     boolean mouseMovePreviewValid;
+    boolean mouseMovePreviewHazardous;
     boolean inventoryTargetColumnActive;
     boolean eulaGateActive;
     boolean jvmRuntimeRestartPending;
@@ -271,6 +272,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean baseClaimed;
     boolean characterNameEditActive;
     boolean manualMovementPlanActive;
+    boolean manualMovementPlanHazardous;
     boolean buildPlacementActive;
     boolean newGameSetupActive;
     boolean auditTracePlaying;
@@ -279,6 +281,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     PanelMode panelMode = PanelMode.NONE;
     PanelMode optionsReturnPanelMode = PanelMode.NONE;
     BuildRecipe pendingBuildRecipe;
+    int buildRecipePage;
+    int buildRecipeCategoryIndex;
     CraftingRecipe selectedCraftingRecipe;
     SectorAuditRuntimeAuthority.AuditSnapshot auditSnapshot;
     String selectedKnowledgeNodeId;
@@ -703,6 +707,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     void openSaveLoadPanel(String status) {
+        MovementPlanningFocusResetAuthority.reset(this, "save/load menu");
         int latest = latestExistingSaveSlot();
         int[] slots = saveLoadSlots();
         saveLoadSelectedIndex = 0;
@@ -751,6 +756,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             Properties p = new Properties();
             p.load(in);
             Persistence.readCore(this, p);
+            MovementPlanningFocusResetAuthority.reset(this, "loaded game");
             screen = Screen.GAME;
             panelMode = PanelMode.NONE;
             selectedButton = 0;
@@ -1599,10 +1605,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         boolean planning = manualMovementPlanActive || mouseMovePreviewActive;
         if (planning) drawMovementRangeOverlay(g, cols, rows, tile);
         if (manualMovementPlanActive) {
-            drawMovementPathOverlay(g, manualMovementPlanPath, lookX, lookY, true, cols, rows, tile);
+            drawMovementPathOverlay(g, manualMovementPlanPath, lookX, lookY, true, manualMovementPlanHazardous, cols, rows, tile);
         }
         if (mouseMovePreviewActive && mouseMovePreviewPath != null) {
-            drawMovementPathOverlay(g, mouseMovePreviewPath, mouseMovePreviewTargetX, mouseMovePreviewTargetY, mouseMovePreviewValid, cols, rows, tile);
+            drawMovementPathOverlay(g, mouseMovePreviewPath, mouseMovePreviewTargetX, mouseMovePreviewTargetY,
+                    mouseMovePreviewValid, mouseMovePreviewHazardous, cols, rows, tile);
         }
     }
 
@@ -1624,9 +1631,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
     }
 
-    private void drawMovementPathOverlay(java.awt.Graphics2D g, java.util.List<Point> path, int targetX, int targetY, boolean usable, int cols, int rows, int tile) {
+    private void drawMovementPathOverlay(java.awt.Graphics2D g, java.util.List<Point> path, int targetX, int targetY,
+                                         boolean usable, boolean hazardous, int cols, int rows, int tile) {
         if (path == null || path.isEmpty()) return;
-        java.awt.Color pathColor = usable ? movementModeColor(210) : new java.awt.Color(222, 82, 72, 210);
+        java.awt.Color pathColor = !usable ? new java.awt.Color(222, 82, 72, 210)
+                : hazardous ? new java.awt.Color(245, 184, 76, 220) : movementModeColor(210);
         java.awt.Color endpointColor = movementPathReaches(path, targetX, targetY) ? pathColor : new java.awt.Color(240, 196, 82, 210);
         java.awt.Stroke oldStroke = g.getStroke();
         g.setStroke(new java.awt.BasicStroke(Math.max(2f, tile / 7f), java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
@@ -2165,7 +2174,32 @@ class GamePanel extends LegacyPanelBridgeBase {
         drawUiTextLine(g, title == null ? "PANEL" : title, panel.x + 18, panel.y + 29);
         g.setFont(smallFont);
         g.setColor(new java.awt.Color(177, 180, 162));
-        drawUiTextLine(g, "Esc closes / Tab changes command / Enter activates", panel.x + Math.max(220, panel.width - 360), panel.y + 29);
+        String prompt = ControlReferenceTextSubsystem.livePanelPrompt(activePanelPromptContext(), controlsTab);
+        drawUiTextLine(g, GuiLayoutApi.fitLabel(prompt, g.getFontMetrics(), Math.max(220, panel.width - 250)),
+                panel.x + 230, panel.y + 29);
+    }
+
+    private String activePanelPromptContext() {
+        if (manualMovementPlanActive) return "Movement planning";
+        if (screen == Screen.PAUSE) return "Pause";
+        return switch (panelMode) {
+            case INVENTORY -> "Inventory";
+            case CHARACTER -> "Character";
+            case TRADE -> "Trade";
+            case CONTAINER -> "Container";
+            case DIALOGUE -> "Conversation";
+            case OBJECT -> "Object";
+            case LOOK -> "Look";
+            case INTERACT -> "Interact";
+            case COMBAT -> "Combat";
+            case BUILD -> "Build";
+            case WORKBENCH, CRAFTING -> "Crafting";
+            case AUSPEX -> "Auspex";
+            case SCAVENGE -> "Scavenge";
+            case MAP -> "Map";
+            case INFOPEDIA -> "Infopedia";
+            default -> "Panel";
+        };
     }
 
     private void drawInventoryOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2182,6 +2216,8 @@ class GamePanel extends LegacyPanelBridgeBase {
                 selected != null && ItemQuality.namesMatch(selected, equippedLeftHandItem),
                 selected != null && ItemQuality.namesMatch(selected, equippedRightHandItem),
                 inventoryWeight(), carryCapacity(), peekProvenanceForItem(selected)));
+        lines.addAll(InventoryReadabilityAuthority.stackLines(selected,
+                inventoryTargetColumnActive ? baseStorage : inventory));
         lines.add("Weight " + inventoryWeight() + "/" + carryCapacity() + " / script " + carriedScript + " / banked " + baseStashedScript);
         lines.add("Equipped L/R: " + safeLabel(equippedLeftHandItem, "LEFT EMPTY") + " / " + safeLabel(equippedRightHandItem, "RIGHT EMPTY"));
         drawDetailBox(g, detail, "Selection", lines, selected == null ? null : images.getItemIcon(selected));
@@ -2192,6 +2228,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         by += 34;
         addOverlayButton("Store ->", detail.x + 12, by, 92, 28, "Move the carried item to base storage.", this::storeSelectedInventoryItem);
         addOverlayButton("<- Take", detail.x + 112, by, 92, 28, "Move the selected base item to carried inventory.", this::takeSelectedBaseStorageItem);
+        addOverlayButton("Item Info", detail.x + 212, by, 88, 28, "Open the Inventory and Equipment mechanic reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "inventory-equipment", "inventory equipment reference"));
     }
 
     private void drawCharacterOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2204,16 +2242,27 @@ class GamePanel extends LegacyPanelBridgeBase {
         statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
         statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
         drawDetailBox(g, stats, "Stats", statLines, null);
-        Rectangle bodyBox = new Rectangle(stats.x + stats.width + 14, body.y, Math.max(200, body.x + body.width - stats.x - stats.width - 14), body.height);
-        ArrayList<String> bodyLines = new ArrayList<>();
-        if (c != null) for (BodyPart part : c.body.values()) bodyLines.add(part.name + " / END " + part.endurance + " / AGI " + part.agility + " / " + part.slot);
-        bodyLines.add("Left hand: " + safeLabel(equippedLeftHandItem, "LEFT EMPTY"));
-        bodyLines.add("Right hand: " + safeLabel(equippedRightHandItem, "RIGHT EMPTY"));
-        bodyLines.add("Clothing: " + (equippedClothing == null ? "none" : equippedClothing.name));
+        Rectangle rightColumn = new Rectangle(stats.x + stats.width + 14, body.y, Math.max(200, body.x + body.width - stats.x - stats.width - 14), body.height);
+        int rightGap = 12;
+        int loadoutHeight = Math.max(190, rightColumn.height / 2);
+        Rectangle bodyBox = new Rectangle(rightColumn.x, rightColumn.y, rightColumn.width, loadoutHeight);
+        Rectangle rosterBox = new Rectangle(rightColumn.x, bodyBox.y + bodyBox.height + rightGap,
+                rightColumn.width, Math.max(100, rightColumn.height - bodyBox.height - rightGap));
+        ArrayList<String> bodyLines = new ArrayList<>(BodyConditionReadabilityAuthority.summary(c, wounds, bleeding,
+                infectionRisk, pain, fatigue, sleepNeed, food, water, equippedClothing,
+                equippedLeftHandItem, equippedRightHandItem));
+        bodyLines.addAll(MedicalTreatmentReadabilityAuthority.summary(inventory, wounds, bleeding, infectionRisk, pain));
         drawDetailBox(g, bodyBox, "Body / Loadout", bodyLines, null);
         int by = bodyBox.y + bodyBox.height - 36;
         addOverlayButton("Unequip L", bodyBox.x + 12, by, 96, 28, "Clear left-hand equipment.", () -> unequipEquipmentSlot(0));
         addOverlayButton("Unequip R", bodyBox.x + 116, by, 96, 28, "Clear right-hand equipment.", () -> unequipEquipmentSlot(1));
+        addOverlayButton("Health Info", bodyBox.x + 220, by, 96, 28, "Open the Body Condition mechanic reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character health reference"));
+        drawDetailBox(g, rosterBox, "Faction Members",
+                FactionRosterReadabilityAuthority.summary(this, Math.max(1, (rosterBox.height - 82) / 18)), null);
+        addOverlayButton("Personnel Info", rosterBox.x + 12, rosterBox.y + rosterBox.height - 36, 112, 28,
+                "Open the faction personnel and staffing reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "faction-personnel", "character personnel reference"));
     }
 
     private void drawMapOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2259,7 +2308,11 @@ class GamePanel extends LegacyPanelBridgeBase {
             mapInfo.add(QuestObjectiveGuidanceAuthority.describe(objective, playerX, playerY, System.currentTimeMillis()).summary());
             if (mapInfo.size() >= 11) break;
         }
+        mapInfo.addAll(ContractObjectiveReadabilityAuthority.summary(factionContracts, inventory, baseStorage, 2));
         drawDetailBox(g, info, "World / Objectives", mapInfo, null);
+        addOverlayButton("Contract Info", info.x + 12, info.y + info.height - 36, 112, 28,
+                "Open the Contract Objectives and Evidence mechanic reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "contract-evidence", "map contract reference"));
     }
 
     private void drawTargetOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2299,12 +2352,18 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void drawBuildOverlay(java.awt.Graphics2D g, Rectangle body) {
         Rectangle recipeList = new Rectangle(body.x, body.y, Math.max(260, body.width / 2), body.height);
-        drawBox(g, recipeList, "Build Recipes");
-        ArrayList<BuildRecipe> recipes = BuildRecipe.allBuildRecipes();
+        String category = ConstructionCategoryAuthority.categoryName(buildRecipeCategoryIndex);
+        drawBox(g, recipeList, "Build Recipes / " + category);
+        ArrayList<BuildRecipe> allRecipes = BuildRecipe.allBuildRecipes();
+        ArrayList<BuildRecipe> recipes = ConstructionCategoryAuthority.filtered(allRecipes, buildRecipeCategoryIndex);
+        int pageSize = 10;
+        int pageCount = Math.max(1, (recipes.size() + pageSize - 1) / pageSize);
+        buildRecipePage = Math.max(0, Math.min(pageCount - 1, buildRecipePage));
+        int first = buildRecipePage * pageSize;
         int y = recipeList.y + 34;
-        int shown = Math.min(10, recipes.size());
+        int shown = Math.min(pageSize, Math.max(0, recipes.size() - first));
         for (int i = 0; i < shown; i++) {
-            BuildRecipe recipe = recipes.get(i);
+            BuildRecipe recipe = recipes.get(first + i);
             int rowY = y + i * 30;
             BufferedImage icon = images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(recipe));
             ButtonBox b = new ButtonBox(recipe.name, recipeList.x + 10, rowY - 20, recipeList.width - 20, 26, recipe.shortTip(), () -> {
@@ -2319,12 +2378,25 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         Rectangle detail = new Rectangle(recipeList.x + recipeList.width + 14, body.y, Math.max(220, body.x + body.width - recipeList.x - recipeList.width - 14), body.height);
         ArrayList<String> lines = new ArrayList<>();
-        lines.add("Supplies " + supplies + " / machine parts " + machineParts);
-        lines.add("Pending: " + (pendingBuildRecipe == null ? "none" : pendingBuildRecipe.name));
-        lines.add("Placement cursor " + buildX + "," + buildY + " / active " + buildPlacementActive);
-        lines.add("Recipes shown " + shown + "/" + recipes.size() + ".");
-        if (pendingBuildRecipe != null) lines.add(pendingBuildRecipe.shortTip());
+        lines.add("Category: " + category + " / " + recipes.size() + " blueprint(s); catalog total " + allRecipes.size() + ".");
+        lines.add("Blueprint page " + (buildRecipePage + 1) + "/" + pageCount + "; showing "
+                + (shown == 0 ? 0 : first + 1) + "-" + (first + shown) + ".");
+        lines.addAll(ConstructionReadabilityAuthority.detailLines(this, pendingBuildRecipe, buildX, buildY));
         drawDetailBox(g, detail, "Construction", lines, pendingBuildRecipe == null ? null : images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(pendingBuildRecipe)));
+        int by = detail.y + detail.height - 36;
+        addOverlayButton("Category", detail.x + 12, by, 96, 28, "Cycle to the next blueprint category.", () -> {
+            buildRecipeCategoryIndex = ConstructionCategoryAuthority.nextCategory(buildRecipeCategoryIndex, 1);
+            buildRecipePage = 0;
+            repaint();
+        });
+        addOverlayButton("Previous", detail.x + 116, by, 96, 28, "Show the previous blueprint page.", () -> {
+            buildRecipePage = Math.max(0, buildRecipePage - 1);
+            repaint();
+        });
+        addOverlayButton("Next", detail.x + 220, by, 82, 28, "Show the next blueprint page.", () -> {
+            buildRecipePage = Math.min(pageCount - 1, buildRecipePage + 1);
+            repaint();
+        });
     }
 
     private void drawCraftingOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2356,17 +2428,16 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (recipe == null) {
             lines.add("No crafting recipe selected.");
         } else {
-            BaseObject machine = recipe.requiredMachine(this);
-            lines.add(recipe.shortStatus(this));
-            lines.add("Machine: " + (machine == null ? recipe.machineName() + " unavailable" : machine.name + " / " + machine.qualityName));
-            lines.add("Supplies " + supplies + " / machine parts " + machineParts + " / fatigue " + fatigue + ".");
-            lines.addAll(recipe.detailLines());
+            lines.addAll(ProductionReadabilityAuthority.detailLines(this, recipe));
         }
         drawDetailBox(g, detail, "Crafting", lines, recipe == null ? null : images.getItemIcon(recipe.outputBaseItem));
         int by = detail.y + detail.height - 36;
         addOverlayButton("Craft", detail.x + 12, by, 92, 28, "Craft the selected recipe if inputs and machine are valid.", this::craftSelectedRecipe);
         addOverlayButton("Build", detail.x + 112, by, 86, 28, "Open construction recipes.", () -> openPanel(PanelMode.BUILD));
-        addOverlayButton("InfoPedia", detail.x + 206, by, 112, 28, "Open the global asset encyclopedia.", () -> openInfopediaPanel("crafting panel"));
+        addOverlayButton("Production Info", detail.x + 206, by, 112, 28, "Open the Production Forecast mechanic reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "production-forecast", "crafting production reference"));
+        addOverlayButton("Teach Machine", detail.x + 326, by, 112, 28, "Install the selected recipe doctrine in its required machine.",
+                this::teachSelectedRecipeToMachine);
     }
 
     private void drawAuspexOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2390,6 +2461,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         signals.add("Noise sources: " + (world == null || world.noiseSources == null ? 0 : world.noiseSources.size()));
         signals.add("Hazard warnings: " + (world == null || world.hazardWarnings == null ? 0 : world.hazardWarnings.size()));
         signals.add("Current target: " + lastTargetingReport);
+        signals.addAll(ExpansionHeatReadabilityAuthority.summary(suspicion, gangHeat, baseObjects));
         for (MapObjectState target : nearbyScavengeTargets(5)) {
             signals.add("Nearby searchable: " + WasteNewsprintScavengeAuthority.shortLabel(target) + " at " + target.x + "," + target.y);
             if (signals.size() >= 11) break;
@@ -2399,6 +2471,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         addOverlayButton("Refresh", right.x + 12, by, 92, 28, "Refresh sensory metadata.", () -> { updateSensoryModel("auspex panel"); logEvent("Auspex sensory model refresh requested."); repaint(); });
         addOverlayButton("Map", right.x + 110, by, 72, 28, "Open world map.", () -> openPanel(PanelMode.MAP));
         addOverlayButton("Scav", right.x + 190, by, 80, 28, "Open nearby scavenge search.", this::openScavengePanel);
+        addOverlayButton("Heat Info", left.x + 12, left.y + left.height - 36, 92, 28,
+                "Open the Expansion Heat mechanic reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "expansion-heat", "auspex heat reference"));
     }
 
     private void drawScavengeOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -2439,6 +2514,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         lines.add("World: " + (world == null ? "none" : world.zoneCoordText()));
         lines.add("Setup: " + (worldSetup == null ? "standard" : worldSetup.shortSummary()));
         lines.add("Window authority: " + universalWindowAuthority.auditSummary());
+        lines.add(MenuDefinitionAuditAuthority.summary(universalWindowAuthority));
+        lines.add(InputRebindingAuditAuthority.playerFacingSummary());
         lines.add("Management windows: " + UniversalManagementWindowAuthority.summary());
         lines.addAll(MovementDebugOverlayAuthority.overlayLines(this));
         int start = Math.max(0, eventLog.size() - 14);
@@ -2454,9 +2531,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         ), null);
         int y = Math.max(right.y + 126, right.y + right.height - 190);
         addOverlayButton("Resume", right.x + 12, y, 120, 30, "Return to game.", () -> setScreen(Screen.GAME)); y += 38;
+        addOverlayButton("Menus", right.x + right.width - 88, y - 38, 76, 30, "Open the structured menu definition audit.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "menu-uniformity", "tactical slate menu audit"));
         addOverlayButton(PauseMovementRecoveryAuthority.BUTTON_LABEL, right.x + 12, y, 120, 30,
                 PauseMovementRecoveryAuthority.BUTTON_TIP, () -> PauseMovementRecoveryAuthority.recoverFromPause(this)); y += 38;
+        addOverlayButton("Move", right.x + right.width - 88, y - 38, 76, 30, "Open the movement planning definition audit.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "movement-planning", "tactical slate movement audit"));
         addOverlayButton("Save / Load", right.x + 12, y, 140, 30, "Open save/load panel.", () -> openSaveLoadPanel("Pause menu opened save/load.")); y += 38;
+        addOverlayButton("Input", right.x + right.width - 68, y - 38, 56, 30, "Open the live input rebinding audit.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "input-rebinding-audit", "tactical slate input audit"));
         addOverlayButton("Options", right.x + 12, y, 120, 30, "Open options.", () -> openOptionsScreen("pause menu")); y += 38;
         addOverlayButton("Main Menu", right.x + 12, y, 140, 30, "Return to main menu.", () -> setScreen(Screen.MENU));
     }
@@ -2749,10 +2832,13 @@ class GamePanel extends LegacyPanelBridgeBase {
             PetInteractionFeedbackAuthority.PetInteractionReadout petReadout = PetInteractionFeedbackAuthority.describe(npc);
             addOverlayButton(petReadout.actionLabel(), actions.x + 12, by, 96, 28, petReadout.feedback(), this::petActiveAnimal);
             addOverlayButton("Look", actions.x + 116, by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
+            addOverlayButton("Approach", actions.x + 196, by, 92, 28, "Plan movement to a reachable adjacent tile.", () -> approachActiveInteractionTarget(npc.x, npc.y, npc.name));
         } else {
             addOverlayButton("Talk", actions.x + 12, by, 82, 28, "Talk to this entity.", this::talkToActiveNpc);
             if (npc != null && npc.isTrader()) addOverlayButton("Trade", actions.x + 102, by, 92, 28, "Open this trader's store panel.", () -> openTradeForNpc(npc));
             addOverlayButton("Look", actions.x + (npc != null && npc.isTrader() ? 202 : 102), by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
+            if (npc != null) addOverlayButton("Approach", actions.x + (npc.isTrader() ? 282 : 182), by, 92, 28,
+                    "Plan movement to a reachable adjacent tile.", () -> approachActiveInteractionTarget(npc.x, npc.y, npc.name));
         }
     }
 
@@ -2791,12 +2877,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         detail.add("Carried script " + carriedScript + " / inventory " + inventoryWeight() + "/" + carryCapacity() + ".");
         if (t != null) {
             detail.add("Archetype: " + safeLabel(t.archetype, "store") + " / " + safeLabel(t.zoneLabel, world == null ? "unknown zone" : world.zoneType.label) + ".");
-            if (t.supplyChainSummary != null && !t.supplyChainSummary.isBlank()) detail.add(t.supplyChainSummary);
+            Faction marketFaction = activeInteractionNpc == null ? FactionInventoryStockAuthority.factionForZone(world == null ? null : world.zoneType) : activeInteractionNpc.faction;
+            detail.addAll(TradeReadabilityAuthority.marketContext(t,
+                    marketFaction == null ? "local independent trade" : marketFaction.label,
+                    marketFaction == null ? 0 : factionStanding.getOrDefault(marketFaction, 0)));
         }
         detail.addAll(TradeReadabilityAuthority.offerPreview(t, selected, carriedScript, inventoryWeight(), carryCapacity()));
         if (selected != null) detail.add(selected.displayLine(t.buyPrice(selected)));
         String carried = selectedInventoryItem();
-        detail.add(carried == null ? "No carried item selected for selling." : "Sell selected carried item: " + carried + " / " + (t == null ? 0 : t.sellPrice(carried)) + " script.");
+        detail.addAll(TradeReadabilityAuthority.salePreview(carried, t == null || carried == null ? 0 : t.sellPrice(carried)));
         drawDetailBox(g, right, "Offer Detail", detail, selected == null ? null : images.getItemIcon(selected.name));
         int by = right.y + right.height - 36;
         addOverlayButton("Buy", right.x + 12, by, 72, 28, "Buy the selected offer.", this::buySelectedTradeOffer);
@@ -2835,16 +2924,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         ItemInstance selected = selectedContainerItem();
         ArrayList<String> lines = new ArrayList<>();
-        lines.add("Source: " + safeLabel(activeInteractionTitle, c == null ? "container" : c.label) + ".");
-        lines.add("Container id: " + safeLabel(activeInteractionContainerId, "none") + ".");
-        lines.add("Carried inventory " + inventoryWeight() + "/" + carryCapacity() + ".");
-        if (selected == null) lines.add("No container item selected.");
-        else {
-            lines.add("Selected: " + selected.displayName + ".");
-            lines.add(selected.provenance == null ? "Origin: untraced item instance." : selected.provenance.summary());
-        }
         String carried = selectedInventoryItem();
-        lines.add(carried == null ? "No carried item selected for putting into this container." : "Ready to put carried item: " + carried + ".");
+        lines.addAll(ContainerReadabilityAuthority.transferPreview(
+                safeLabel(activeInteractionTitle, c == null ? "container" : c.label),
+                items.size(), selected, carried, inventoryWeight(), carryCapacity()));
         drawDetailBox(g, detail, "Transfer", lines, selected == null ? interactionObjectImage() : images.getItemIcon(selected.displayName));
         int by = detail.y + detail.height - 36;
         addOverlayButton("Take", detail.x + 12, by, 74, 28, "Take the selected container item.", this::takeSelectedContainerItem);
@@ -2868,6 +2951,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (base != null) {
             lines.add("Base object at " + base.x + "," + base.y + " / " + safeLabel(base.qualityName, "Common") + ".");
             lines.add(base.businessReturnLine(this));
+            lines.addAll(MachineRepairAuthority.detailLines(base, machineParts));
         }
         lines.add("Use the action buttons below; this target is no longer routed to the dead generic placeholder.");
         drawDetailBox(g, actions, "Actions", lines, null);
@@ -2882,27 +2966,22 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (base != null || (obj != null && isMachineObject(obj))) {
             addOverlayButton("Operate", x, by, 94, 28, "Operate or inspect this machine.", this::operateActiveInteractionObject); x += 102;
             addOverlayButton("Craft", x, by, 78, 28, "Open crafting/workbench recipes.", () -> openPanel(PanelMode.CRAFTING)); x += 86;
+            if (base != null) {
+                addOverlayButton("Repair", x, by, 82, 28, "Spend one machine part to restore this owned machine toward serviceable condition.",
+                        this::repairActiveBaseMachine); x += 90;
+            }
         } else {
             addOverlayButton("Use", x, by, 70, 28, "Use or inspect this object.", this::operateActiveInteractionObject); x += 78;
         }
         addOverlayButton("Look", x, by, 72, 28, "Inspect this target in look mode.", this::lookAtActiveInteractionTarget);
+        int targetX = obj != null ? obj.x : base == null ? playerX : base.x;
+        int targetY = obj != null ? obj.y : base == null ? playerY : base.y;
+        addOverlayButton("Approach", x + 80, by, 92, 28, "Plan movement to a reachable adjacent tile.",
+                () -> approachActiveInteractionTarget(targetX, targetY, activeInteractionTitleOrDefault()));
     }
 
     private ArrayList<String> npcInteractionLines(NpcEntity npc) {
-        ArrayList<String> lines = new ArrayList<>();
-        if (npc == null) {
-            lines.add("No NPC/entity target is active.");
-            return lines;
-        }
-        lines.add(safeLabel(npc.role, "Entity") + " / " + (npc.faction == null ? "No faction" : npc.faction.label) + ".");
-        lines.add("State: " + safeLabel(npc.state, "unrecorded") + " / HP " + npc.hp + " / " + npc.ageLine() + ".");
-        if (npc.isAnimalActor()) lines.add(npc.animalLine());
-        else {
-            lines.add(npc.rankLine());
-            lines.add("Equipment: " + safeLabel(npc.equippedRangedWeapon, "no ranged weapon") + " / " + safeLabel(npc.equippedMeleeWeapon, "no melee weapon") + " / " + safeLabel(npc.equippedArmor, "no armor") + ".");
-        }
-        lines.add(npc.originSummary());
-        return lines;
+        return new ArrayList<>(EntityIdentityReadabilityAuthority.summary(npc));
     }
 
     private ArrayList<String> objectInteractionLines() {
@@ -2947,6 +3026,34 @@ class GamePanel extends LegacyPanelBridgeBase {
         activeTraderSession = null;
         selectedTradeOfferIndex = 0;
         selectedContainerItemIndex = 0;
+    }
+
+    private void repairActiveBaseMachine() {
+        BaseObject machine = activeInteractionBaseObject;
+        MachineRepairAuthority.RepairPreview preview = MachineRepairAuthority.preview(machine, machineParts);
+        if (!preview.available()) {
+            logEvent(preview.summary());
+            repaint();
+            return;
+        }
+        machineParts = Math.max(0, machineParts - preview.partCost());
+        machine.integrity = preview.projectedIntegrity();
+        logEvent("Repaired " + safeLabel(machine.name, "machine") + ". " + preview.summary()
+                + " Machine parts remaining " + machineParts + ".");
+        advanceTurn("repairs " + safeLabel(machine.name, "a machine") + ".");
+    }
+
+    private void teachSelectedRecipeToMachine() {
+        CraftingRecipe recipe = selectedCraftingRecipe;
+        if (recipe == null) {
+            logEvent("Machine teaching failed: no crafting recipe selected.");
+            repaint();
+            return;
+        }
+        BaseObject machine = recipe.requiredMachine(this);
+        String result = ProductionKnowledgeSourceAuthority.install(this, machine, recipe.requiredKnowledge);
+        logEvent(result);
+        repaint();
     }
 
     private void openDialogueForNpc(NpcEntity npc) {
@@ -3133,6 +3240,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         String item = selectedInventoryItem();
         if (item == null) {
             logEvent("No carried item selected to sell.");
+            return;
+        }
+        if (!TradeReadabilityAuthority.saleAllowed(item)) {
+            logEvent("Cannot sell " + item + ": mission, evidence, or intelligence items require a dedicated hand-in or explicit release flow.");
+            repaint();
             return;
         }
         int price = activeTraderSession.sellPrice(item);
@@ -4077,6 +4189,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     void handleKnowledgeKeyPressed(int code) {}
     void cancelManualMovementPlan(String reason) {
         manualMovementPlanActive = false;
+        manualMovementPlanHazardous = false;
         manualMovementPlanPath.clear();
         lookCursorActive = false;
         lastTargetingReport = "Manual movement plan canceled" + (reason == null || reason.isBlank() ? "." : ": " + reason + ".");
@@ -4452,12 +4565,38 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void beginManualMovementPlan() {
         manualMovementPlanActive = true;
+        manualMovementPlanHazardous = false;
         lookCursorActive = true;
         lookX = playerX;
         lookY = playerY;
         manualMovementPlanPath.clear();
         lastTargetingReport = "Manual path planning started at " + lookX + "," + lookY + " with " + movementModeLabel(selectedMovementModeIndex) + " range " + movementModeRange() + ".";
         logEvent(lastTargetingReport);
+        repaint();
+    }
+    void approachActiveInteractionTarget(int targetX, int targetY, String label) {
+        InteractionApproachAuthority.ApproachPlan approach = InteractionApproachAuthority.plan(this, targetX, targetY, label);
+        lastTargetingReport = approach.message();
+        logEvent(lastTargetingReport);
+        if (!approach.available() || approach.path().isEmpty()) {
+            repaint();
+            return;
+        }
+        manualMovementPlanActive = true;
+        MovementPlanningAuthority.HazardRouteReadout approachHazards = MovementPlanningAuthority.inspectRouteHazards(world, approach.path());
+        manualMovementPlanHazardous = approachHazards.hazardous();
+        if (approachHazards.hazardous()) {
+            lastTargetingReport = approach.message() + " " + approachHazards.summary();
+            logEvent(approachHazards.summary());
+        }
+        lookCursorActive = true;
+        interactCursorActive = false;
+        lookX = approach.x();
+        lookY = approach.y();
+        manualMovementPlanPath.clear();
+        manualMovementPlanPath.addAll(approach.path());
+        panelMode = PanelMode.NONE;
+        screen = Screen.GAME;
         repaint();
     }
     void waitOneTurn() { advanceTurnBody("waits."); }
@@ -4537,6 +4676,18 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (dx == 0 && dy == 0) return;
         setFacingFromDelta(dx, dy, "movement input");
         if (movementModeRange() <= 1) {
+            int targetX = playerX + dx;
+            int targetY = playerY + dy;
+            if (movementCanEnter(targetX, targetY) && MovementPlanningAuthority.requiresHazardConfirmation(world, targetX, targetY)) {
+                manualMovementPlanActive = true;
+                lookCursorActive = true;
+                lookX = targetX;
+                lookY = targetY;
+                refreshManualMovementPlanPath("hazardous direct movement");
+                logEvent("Hazardous step held for confirmation. " + lastTargetingReport);
+                repaint();
+                return;
+            }
             MovementExecutionAuthority.executeStep(this, dx, dy,
                     "direct-" + movementModeLabel(selectedMovementModeIndex).toLowerCase(Locale.ROOT), true);
             return;
@@ -4555,6 +4706,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         refreshManualMovementPlanPath("manual confirm");
         if (manualMovementPlanPath.isEmpty()) {
             manualMovementPlanActive = false;
+            manualMovementPlanHazardous = false;
             lookCursorActive = false;
             logEvent(lastTargetingReport);
             repaint();
@@ -4562,12 +4714,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         executeMovementPath(manualMovementPlanPath, "manual plan");
         manualMovementPlanActive = false;
+        manualMovementPlanHazardous = false;
         manualMovementPlanPath.clear();
         repaint();
     }
 
     private void beginDirectionalMovementPlan(int dx, int dy) {
         manualMovementPlanActive = true;
+        manualMovementPlanHazardous = false;
         lookCursorActive = true;
         int range = movementModeRange();
         lookX = playerX + Integer.signum(dx) * range;
@@ -4577,8 +4731,6 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (manualMovementPlanPath.isEmpty()) {
             logEvent("No " + movementModeLabel(selectedMovementModeIndex) + " route is available in that direction.");
         } else {
-            Point end = manualMovementPlanPath.get(manualMovementPlanPath.size() - 1);
-            lastTargetingReport = movementModeLabel(selectedMovementModeIndex) + " plan: " + manualMovementPlanPath.size() + " tile(s), ghost at " + end.x + "," + end.y + ".";
             logEvent(lastTargetingReport);
         }
         repaint();
@@ -4588,6 +4740,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         manualMovementPlanPath.clear();
         if (!manualMovementPlanActive || world == null) return;
         manualMovementPlanPath.addAll(buildMovementPathTo(lookX, lookY, movementModeRange()));
+        MovementPlanningAuthority.HazardRouteReadout hazards = MovementPlanningAuthority.inspectRouteHazards(world, manualMovementPlanPath);
+        manualMovementPlanHazardous = hazards.hazardous();
         MovementPlanningAuthority.MovementPlanReadout readout = MovementPlanningAuthority.describePlan(
                 this, lookX, lookY, movementModeRange(), movementModeLabel(selectedMovementModeIndex));
         lastTargetingReport = readout.summary();
@@ -4596,6 +4750,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     void clearMouseMovementPreview(String reason) {
         mouseMovePreviewActive = false;
         mouseMovePreviewValid = false;
+        mouseMovePreviewHazardous = false;
         mouseMovePreviewPath.clear();
         mouseMovePreviewTargetX = playerX;
         mouseMovePreviewTargetY = playerY;
@@ -4604,6 +4759,7 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     void updateMouseMovementPreviewTo(int x, int y) {
         mouseMovePreviewActive = true;
+        mouseMovePreviewHazardous = false;
         mouseMovePreviewPath.clear();
         if (world == null) {
             mouseMovePreviewValid = false;
@@ -4615,6 +4771,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         mouseMovePreviewTargetY = ty;
         mouseMovePreviewPath.addAll(buildMovementPathTo(tx, ty, movementModeRange()));
         mouseMovePreviewValid = !mouseMovePreviewPath.isEmpty();
+        MovementPlanningAuthority.HazardRouteReadout hazards = MovementPlanningAuthority.inspectRouteHazards(world, mouseMovePreviewPath);
+        mouseMovePreviewHazardous = hazards.hazardous();
         if (mouseMovePreviewPath.isEmpty()) {
             lastTargetingReport = "No reachable mouse movement preview to " + tx + "," + ty + ".";
         } else {
@@ -4623,7 +4781,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             lastTargetingReport = (exact ? "Mouse movement route" : "Mouse movement partial route")
                     + " / " + movementModeLabel(selectedMovementModeIndex)
                     + " / " + mouseMovePreviewPath.size() + " tile(s)"
-                    + " / endpoint " + end.x + "," + end.y + ".";
+                    + " / endpoint " + end.x + "," + end.y + "."
+                    + (hazards.hazardous() ? " " + hazards.summary() : "");
         }
     }
 
@@ -4817,14 +4976,24 @@ class GamePanel extends LegacyPanelBridgeBase {
             repaint();
             return;
         }
+        ProductionMaterialQualityAuthority.MaterialQuality materialQuality = ProductionMaterialQualityAuthority.evaluate(this, recipe);
+        int materialTier = materialQuality.active() && materialQuality.complete() ? materialQuality.limitingTier() : -1;
+        ProductionKnowledgeSourceAuthority.KnowledgeSource knowledgeSource = ProductionKnowledgeSourceAuthority.evaluate(
+                this, machine, recipe.requiredKnowledge);
+        ProductionQualityTraceAuthority.QualityTrace qualityTrace = ProductionQualityTraceAuthority.evaluate(
+                knowledgeSource.effectiveKnowledge(), recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier);
+        ProductionOperatorSkillAuthority.OperatorSkill operatorSkill = ProductionOperatorSkillAuthority.evaluate(this, recipe.xpSkill);
         recipe.consumeInputs(this);
-        String quality = cappedProductionQuality(machine, recipe.requiredKnowledge);
+        String quality = qualityTrace.outputQuality();
         ProductionRecipe production = ProductionRecipe.create(recipe.outputBaseItem, recipe.faction, quality, recipe.requiredKnowledge, recipe.machineName());
         String output = production.outputItemName();
         int count = Math.max(1, recipe.outputCount);
         String worker = active == null ? "player" : active.name;
+        ProductionBatchAuthority.BatchDisposition batch = ProductionBatchAuthority.assess(
+                production, machine, operatorSkill, rng, turn);
         for (int i = 0; i < count; i++) {
-            addInventoryItem(output, ItemProvenanceRecord.produced(production, machine, world, turn, worker));
+            addInventoryItem(output, ItemProvenanceRecord.produced(
+                    production, machine, world, turn, worker, qualityTrace, operatorSkill, knowledgeSource, batch));
         }
         if (machine != null && recipe.machineWear > 0) machine.integrity = Math.max(0, machine.integrity - recipe.machineWear);
         fatigue = Math.min(MAX_FOOD_WATER, fatigue + ControlledProductionJobAuthority.manualFatigueCost(this, machine, recipe));
@@ -4834,6 +5003,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         gainXp(recipe.xpSkill, recipe.xpGain, "crafted " + recipe.name);
         rebuildItemContainersFromLegacyLists();
         logEvent("Crafted " + count + "x " + output + " from " + recipe.name + ".");
+        logEvent(batch.lines().get(0) + " " + batch.lines().get(1));
         advanceTurn("crafts " + recipe.name + ".");
         repaint();
     }
@@ -5174,6 +5344,9 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     boolean hasLineOfSight(int x0, int y0, int x1, int y1) { return traceLightLine(x0, y0, x1, y1, true); }
     boolean hasKnowledge(String knowledge) { return knowledge == null || knowledge.isBlank() || unlockedKnowledges.contains(knowledge); }
+    boolean hasProductionKnowledge(CraftingRecipe recipe, BaseObject machine) {
+        return recipe == null || ProductionKnowledgeSourceAuthority.evaluate(this, machine, recipe.requiredKnowledge).available();
+    }
     BaseObject requiredMachineFor(CraftingRecipe recipe) {
         if (recipe == null) return null;
         char symbol = recipe.machineSymbol == ' ' ? 'w' : recipe.machineSymbol;
@@ -5186,7 +5359,19 @@ class GamePanel extends LegacyPanelBridgeBase {
         for (Iterator<String> it = inventory.iterator(); it.hasNext();) if (ItemQuality.namesMatch(it.next(), item)) { it.remove(); return; }
         for (Iterator<String> it = baseStorage.iterator(); it.hasNext();) if (ItemQuality.namesMatch(it.next(), item)) { it.remove(); return; }
     }
-    String cappedProductionQuality(BaseObject machine, String requiredKnowledge) { return machine == null || machine.qualityName == null || machine.qualityName.isBlank() ? "Common" : machine.qualityName; }
+    String cappedProductionQuality(BaseObject machine, String requiredKnowledge) {
+        return ProductionQualityTraceAuthority.evaluate(unlockedKnowledges, requiredKnowledge,
+                machine == null ? "Common" : machine.qualityName).outputQuality();
+    }
+    String cappedProductionQuality(BaseObject machine, CraftingRecipe recipe) {
+        ProductionMaterialQualityAuthority.MaterialQuality materials = ProductionMaterialQualityAuthority.evaluate(this, recipe);
+        int materialTier = materials.active() && materials.complete() ? materials.limitingTier() : -1;
+        ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge = ProductionKnowledgeSourceAuthority.evaluate(
+                this, machine, recipe == null ? null : recipe.requiredKnowledge);
+        return ProductionQualityTraceAuthority.evaluate(knowledge.effectiveKnowledge(),
+                recipe == null ? null : recipe.requiredKnowledge,
+                machine == null ? "Common" : machine.qualityName, materialTier).outputQuality();
+    }
     int availableRecruitLabor() { return Math.max(0, factionRecruits.size()); }
     int stat(String statName, int fallback) {
         if (active != null && active.stats != null && statName != null) return Math.max(0, active.stats.getOrDefault(statName, fallback));

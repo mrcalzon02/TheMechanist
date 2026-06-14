@@ -1,10 +1,11 @@
 package mechanist.net;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
+import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
@@ -16,11 +17,12 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class MultiplayerJoinPanel extends JPanel {
-    private final JTextField serverAddress = new JTextField("127.0.0.1", 24);
+    private final JPasswordField serverAddress = new JPasswordField("127.0.0.1", 24);
     private final JSpinner port = new JSpinner(new SpinnerNumberModel(25500, 1, 65535, 1));
     private final JTextField playerName = new JTextField("", 24);
     private final JPasswordField password = new JPasswordField("", 24);
-    private final JCheckBox streamSafe = new JCheckBox("Stream safe address display", true);
+    private final JRadioButton streamSafeOn = new JRadioButton("Stream safe: On", true);
+    private final JRadioButton streamSafeOff = new JRadioButton("Off", false);
     private final JLabel status = new JLabel("Enter server details. Address/password fields are protected for streaming by default.");
 
     public MultiplayerJoinPanel(Consumer<MultiplayerJoinRequest> onJoin) {
@@ -45,7 +47,13 @@ public final class MultiplayerJoinPanel extends JPanel {
         p.add(serverAddress, g);
         g.gridx = 2;
         g.weightx = 0;
-        p.add(streamSafe, g);
+        JPanel privacy = new JPanel();
+        ButtonGroup privacyGroup = new ButtonGroup();
+        privacyGroup.add(streamSafeOn);
+        privacyGroup.add(streamSafeOff);
+        privacy.add(streamSafeOn);
+        privacy.add(streamSafeOff);
+        p.add(privacy, g);
 
         g.gridx = 0;
         g.gridy++;
@@ -71,7 +79,8 @@ public final class MultiplayerJoinPanel extends JPanel {
         p.add(StreamSafeTextFields.passwordField("", password), g);
         g.gridwidth = 1;
 
-        streamSafe.addActionListener(e -> updateStreamSafeVisual());
+        streamSafeOn.addActionListener(e -> updateStreamSafeVisual());
+        streamSafeOff.addActionListener(e -> updateStreamSafeVisual());
         updateStreamSafeVisual();
         return p;
     }
@@ -91,23 +100,11 @@ public final class MultiplayerJoinPanel extends JPanel {
     }
 
     public MultiplayerJoinRequest request() {
-        return new MultiplayerJoinRequest(realAddress(), (Integer) port.getValue(), playerName.getText(), password.getPassword(), streamSafe.isSelected());
-    }
-
-    private String realAddress() {
-        Object stored = serverAddress.getClientProperty("mechanist.realAddress");
-        return stored == null ? serverAddress.getText() : String.valueOf(stored);
+        return new MultiplayerJoinRequest(new String(serverAddress.getPassword()), (Integer) port.getValue(), playerName.getText(), password.getPassword(), streamSafeOn.isSelected());
     }
 
     private void updateStreamSafeVisual() {
-        if (streamSafe.isSelected()) {
-            serverAddress.putClientProperty("mechanist.realAddress", serverAddress.getText());
-            serverAddress.setText(StreamSafeTextFields.redactAddress(String.valueOf(serverAddress.getClientProperty("mechanist.realAddress"))));
-            serverAddress.setEditable(false);
-        } else {
-            Object stored = serverAddress.getClientProperty("mechanist.realAddress");
-            if (stored != null) serverAddress.setText(String.valueOf(stored));
-            serverAddress.setEditable(true);
-        }
+        serverAddress.setEchoChar(streamSafeOn.isSelected() ? '\u2022' : (char) 0);
+        serverAddress.setEditable(true);
     }
 }

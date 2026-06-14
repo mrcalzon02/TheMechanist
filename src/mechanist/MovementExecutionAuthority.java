@@ -156,7 +156,9 @@ final class MovementExecutionAuthority {
         game.lookCursorActive = false;
         game.interactCursorActive = false;
         game.manualMovementPlanActive = false;
+        game.manualMovementPlanHazardous = false;
         game.mouseMovePreviewActive = false;
+        game.mouseMovePreviewHazardous = false;
         game.manualMovementPlanPath.clear();
         game.mouseMovePreviewPath.clear();
         game.advanceTurnBody(null);

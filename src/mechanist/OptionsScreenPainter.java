@@ -209,59 +209,64 @@ final class OptionsScreenPainter {
         out.add(cmd("Mode: " + panel.options.windowModeLabel(), "Select windowed, borderless, or exclusive fullscreen.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 0)));
         out.add(cmd("Resolution: " + panel.options.resolutionLabel(), "Select a detected or safe display mode.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 1)));
         out.add(cmd("Apply Window", "Apply the pending window mode and resolution.", () -> GraphicsDropdownOptionsRuntime.applyWindowMode(panel)));
-        out.add(cmd("Screensaver " + onOff(panel.options.screenSaver), "Toggle the in-game idle screensaver.", () -> {
+        out.add(cmd("Screensaver " + onOff(panel.options.screenSaver), "Choose whether the idle screensaver is enabled.", () -> radio(panel, "Screensaver", panel.options.screenSaver, () -> {
             panel.options.screenSaver = !panel.options.screenSaver;
             saveFlag(panel, "Screensaver", panel.options.screenSaver);
-        }));
+        })));
         out.add(backCommand(panel));
         return out;
     }
 
     private static ArrayList<OptionCommand> textCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("Text -", "Reduce menu and body text scale.", () -> DisplayScaleOptionsRuntime.changeFontScale(panel, -1)));
-        out.add(cmd("Text +", "Increase menu and body text scale.", () -> DisplayScaleOptionsRuntime.changeFontScale(panel, 1)));
-        out.add(cmd("UI -", "Reduce interface chrome scale.", () -> DisplayScaleOptionsRuntime.changeUiScale(panel, -1)));
-        out.add(cmd("UI +", "Increase interface chrome scale.", () -> DisplayScaleOptionsRuntime.changeUiScale(panel, 1)));
+        out.add(cmd("Text Scale: " + panel.options.fontScale + "%", "Adjust menu and body text with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Text Scale", panel.options.fontScale, 50, 200, 5, "%",
+                        value -> DisplayScaleOptionsRuntime.changeFontScale(panel, (value - panel.options.fontScale) / 5))));
+        out.add(cmd("UI Scale: " + panel.options.uiScale + "%", "Adjust interface chrome with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "UI Scale", panel.options.uiScale, 50, 200, 5, "%",
+                        value -> DisplayScaleOptionsRuntime.changeUiScale(panel, (value - panel.options.uiScale) / 5))));
         out.add(cmd("Crispness: " + panel.options.renderQualityLabel(), "Select the Java2D text and render hint profile.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 5)));
-        out.add(cmd("Hover Help " + onOff(panel.options.hoverHelp), "Toggle floating hover help text.", () -> {
+        out.add(cmd("Hover Help " + onOff(panel.options.hoverHelp), "Choose whether floating hover help is enabled.", () -> radio(panel, "Hover Help", panel.options.hoverHelp, () -> {
             panel.options.hoverHelp = !panel.options.hoverHelp;
             saveFlag(panel, "Hover help", panel.options.hoverHelp);
-        }));
+        })));
         out.add(backCommand(panel));
         return out;
     }
 
     private static ArrayList<OptionCommand> audioCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("SFX " + onOff(panel.options.soundEnabled), "Toggle sound effects.", () -> {
+        out.add(cmd("SFX " + onOff(panel.options.soundEnabled), "Choose whether sound effects are enabled.", () -> radio(panel, "Sound Effects", panel.options.soundEnabled, () -> {
             panel.options.soundEnabled = !panel.options.soundEnabled;
             panel.options.save();
             panel.logEvent("Sound effects " + onOff(panel.options.soundEnabled) + ".");
             panel.repaint();
-        }));
-        out.add(cmd("SFX -", "Lower sound effects volume.", () -> AudioVolumeOptionsRuntime.changeSfxVolume(panel, -5)));
-        out.add(cmd("SFX +", "Raise sound effects volume.", () -> AudioVolumeOptionsRuntime.changeSfxVolume(panel, 5)));
-        out.add(cmd("Music " + onOff(panel.options.musicEnabled), "Toggle dynamic music.", () -> {
+        })));
+        out.add(cmd("SFX Volume: " + panel.options.sfxVolume + "%", "Adjust sound effects volume with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Sound Effects Volume", panel.options.sfxVolume, 0, 100, 5, "%",
+                        value -> panel.logEvent(OptionsBoundaryAuthority.changeSfxVolume(panel.options, value - panel.options.sfxVolume)))));
+        out.add(cmd("Music " + onOff(panel.options.musicEnabled), "Choose whether dynamic music is enabled.", () -> radio(panel, "Dynamic Music", panel.options.musicEnabled, () -> {
             panel.options.musicEnabled = !panel.options.musicEnabled;
             panel.options.save();
             if (panel.options.musicEnabled) panel.sounds.requestMusic("MAIN_MENU", panel.options);
             else panel.sounds.stopMusic("music disabled from options");
             panel.logEvent("Music " + onOff(panel.options.musicEnabled) + ".");
             panel.repaint();
-        }));
-        out.add(cmd("Music -", "Lower music volume.", () -> AudioVolumeOptionsRuntime.changeMusicVolume(panel, -5)));
-        out.add(cmd("Music +", "Raise music volume.", () -> AudioVolumeOptionsRuntime.changeMusicVolume(panel, 5)));
-        out.add(cmd("Voice " + onOff(panel.options.conversationSound), "Toggle voice and conversation sounds.", () -> {
+        })));
+        out.add(cmd("Music Volume: " + panel.options.musicVolume + "%", "Adjust music volume with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Music Volume", panel.options.musicVolume, 0, 100, 5, "%",
+                        value -> panel.logEvent(OptionsBoundaryAuthority.changeMusicVolume(panel.options, value - panel.options.musicVolume)))));
+        out.add(cmd("Voice " + onOff(panel.options.conversationSound), "Choose whether voice and conversation sounds are enabled.", () -> radio(panel, "Voice and Conversation Audio", panel.options.conversationSound, () -> {
             panel.options.conversationSound = !panel.options.conversationSound;
             saveFlag(panel, "Voice and conversation audio", panel.options.conversationSound);
-        }));
-        out.add(cmd("Voice -", "Lower voice and conversation volume.", () -> AudioVolumeOptionsRuntime.changeConversationVolume(panel, -5)));
-        out.add(cmd("Voice +", "Raise voice and conversation volume.", () -> AudioVolumeOptionsRuntime.changeConversationVolume(panel, 5)));
-        out.add(cmd("Boot " + onOff(panel.options.bootSound), "Toggle boot sound playback.", () -> {
+        })));
+        out.add(cmd("Voice Volume: " + panel.options.conversationVolume + "%", "Adjust voice volume with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Voice Volume", panel.options.conversationVolume, 0, 100, 5, "%",
+                        value -> panel.logEvent(OptionsBoundaryAuthority.changeConversationVolume(panel.options, value - panel.options.conversationVolume)))));
+        out.add(cmd("Boot " + onOff(panel.options.bootSound), "Choose whether boot sound playback is enabled.", () -> radio(panel, "Boot Sound", panel.options.bootSound, () -> {
             panel.options.bootSound = !panel.options.bootSound;
             saveFlag(panel, "Boot sound", panel.options.bootSound);
-        }));
+        })));
         out.add(cmd("Test SFX", "Play the menu button sound through the live audio bridge.", () -> {
             panel.sounds.play("button", panel.options);
             panel.logEvent("SFX test requested.");
@@ -297,35 +302,41 @@ final class OptionsScreenPainter {
         out.add(cmd("FPS: " + panel.options.targetFpsLabel(), "Select target frame pacing.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 4)));
         out.add(cmd("Quality: " + panel.options.renderQualityLabel(), "Select render quality.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 5)));
         out.add(cmd("Lighting: " + panel.options.lightingFxLabel(), "Cycle visual lighting effects.", () -> DisplayPerformanceOptionsRuntime.cycleLightingFx(panel)));
-        out.add(cmd("Frame Limit " + panel.options.frameLimitLabel(), "Toggle the frame limiter.", () -> DisplayPerformanceOptionsRuntime.toggleFrameLimiter(panel)));
-        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> DisplayPerformanceOptionsRuntime.toggleReducedMotion(panel)));
-        out.add(cmd("Diagnostics " + onOff(panel.options.diagnosticsOverlay), "Toggle the F3 performance overlay.", () -> AccessibilityVisualOptionsRuntime.togglePerformanceDiagnostics(panel)));
+        out.add(boolCmd(panel, "Frame Limit", panel.options.isFrameLimited, "Choose whether frame pacing is limited.", () -> DisplayPerformanceOptionsRuntime.toggleFrameLimiter(panel)));
+        out.add(boolCmd(panel, "Reduced Motion", panel.options.reducedMotion, "Choose reduced-motion behavior.", () -> DisplayPerformanceOptionsRuntime.toggleReducedMotion(panel)));
+        out.add(boolCmd(panel, "Diagnostics", panel.options.diagnosticsOverlay, "Choose whether the F3 performance overlay is enabled.", () -> AccessibilityVisualOptionsRuntime.togglePerformanceDiagnostics(panel)));
         out.add(cmd("Stress Test", "Toggle the render stress test overlay.", () -> DisplayPerformanceOptionsRuntime.toggleRenderStressTest(panel)));
         out.add(cmd("Viewport Tile: " + panel.options.mapTileSizeLabel(), "Cycle map tile display footprint.", () -> ViewportAssetOptionsRuntime.cycleMapTileSize(panel)));
-        out.add(cmd("World Zoom -", "Zoom the tactical world viewport out.", () -> ViewportAssetOptionsRuntime.changeWorldZoom(panel, -1, "Options")));
-        out.add(cmd("World Zoom +", "Zoom the tactical world viewport in.", () -> ViewportAssetOptionsRuntime.changeWorldZoom(panel, 1, "Options")));
-        out.add(cmd("Doom Mode " + onOff(panel.options.doomModeEnabled), "Toggle the experimental first-person renderer.", () -> DoomQualityOfLifeOptionsRuntime.requestDoomModeToggle(panel)));
-        out.add(cmd("Doom FOV -", "Narrow the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, -5)));
-        out.add(cmd("Doom FOV +", "Widen the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, 5)));
+        out.add(cmd("World Zoom: " + panel.options.worldZoomPercent() + "%", "Adjust tactical viewport zoom with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "World Zoom", panel.options.worldZoomIndex, 0,
+                        GameOptions.WORLD_ZOOM_LABELS.length - 1, 1, "", value -> {
+                            int delta = value - panel.options.worldZoomIndex;
+                            if (delta != 0) ViewportAssetOptionsRuntime.changeWorldZoom(panel, delta, "Options slider");
+                        })));
+        out.add(boolCmd(panel, "Doom Mode", panel.options.doomModeEnabled, "Choose whether the first-person renderer is enabled.", () -> DoomQualityOfLifeOptionsRuntime.requestDoomModeToggle(panel)));
+        out.add(cmd("Doom FOV: " + panel.options.doomModeFovDegrees, "Adjust first-person field of view with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Doom Mode Field of View", panel.options.doomModeFovDegrees,
+                        50, 120, 5, " degrees", value -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel,
+                                value - panel.options.doomModeFovDegrees))));
         out.add(cmd("Doom Fog: " + panel.options.doomFogModeLabel(), "Cycle first-person fog distance mode.", () -> DoomQualityOfLifeOptionsRuntime.cycleDoomFogMode(panel)));
-        out.add(cmd("Tile Icons " + onOff(panel.options.tileIconRendering), "Toggle compiled tile icon rendering.", () -> {
+        out.add(cmd("Tile Icons " + onOff(panel.options.tileIconRendering), "Choose whether compiled tile icons are enabled.", () -> radio(panel, "Tile Icon Rendering", panel.options.tileIconRendering, () -> {
             panel.options.tileIconRendering = !panel.options.tileIconRendering;
             saveFlag(panel, "Tile icon rendering", panel.options.tileIconRendering);
-        }));
-        out.add(cmd("Portraits " + onOff(panel.options.importedPortraits), "Toggle optional imported portrait sheet loading.", () -> {
+        })));
+        out.add(cmd("Portraits " + onOff(panel.options.importedPortraits), "Choose whether imported portrait sheets are loaded.", () -> radio(panel, "Imported Portraits", panel.options.importedPortraits, () -> {
             panel.options.importedPortraits = !panel.options.importedPortraits;
             panel.options.save();
             panel.images.reloadArtQuality(panel.options);
             panel.logEvent("Imported portrait sheets " + onOff(panel.options.importedPortraits) + ".");
             panel.repaint();
-        }));
+        })));
         out.add(cmd("Textures: " + panel.options.artQualityResolutionLabel(), "Cycle compiled texture package size.", () -> ViewportAssetOptionsRuntime.cycleArtQuality(panel)));
         out.add(cmd("Payload Root", "Choose an external generated-art payload root.", () -> ViewportAssetOptionsRuntime.chooseGeneratedAssetPayloadRoot(panel)));
         out.add(cmd("Clear Payload", "Clear the external generated-art payload root.", () -> ViewportAssetOptionsRuntime.clearGeneratedAssetPayloadRoot(panel)));
         out.add(cmd("Palette: " + GameOptions.PALETTE_NAMES[panel.options.colorPreset], "Select a color palette.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 2)));
         out.add(cmd("Color Key: " + panel.options.colorTargetLabel(), "Cycle the color being edited.", () -> AccessibilityVisualOptionsRuntime.cycleColorTarget(panel)));
-        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, -8)));
-        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, 8)));
+        out.add(cmd("Choose Color...", "Open the Java color chooser for the selected text or panel color.",
+                () -> SwingOptionsEditorAuthority.editColor(panel)));
         out.add(backCommand(panel));
         return out;
     }
@@ -333,13 +344,15 @@ final class OptionsScreenPainter {
     private static ArrayList<OptionCommand> jvmCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
         out.add(cmd("Runtime: " + panel.jvmRuntimeProfile.targetLabel(), "Cycle client/server/thin-client runtime profile.", () -> JvmRuntimeOptionsSubsystem.cycleJvmRuntimeProfile(panel)));
-        out.add(cmd("Heap -256", "Lower the saved JVM max heap profile.", () -> JvmRuntimeOptionsSubsystem.changeJvmMemory(panel, -256)));
-        out.add(cmd("Heap +256", "Raise the saved JVM max heap profile.", () -> JvmRuntimeOptionsSubsystem.changeJvmMemory(panel, 256)));
+        out.add(cmd("Heap: " + panel.jvmRuntimeProfile.maxRamMb + " MB", "Adjust the saved JVM maximum heap with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "JVM Maximum Heap", panel.jvmRuntimeProfile.maxRamMb,
+                        1024, 16384, 256, " MB", value -> JvmRuntimeOptionsSubsystem.changeJvmMemory(panel,
+                                value - panel.jvmRuntimeProfile.maxRamMb))));
         out.add(cmd("GC: " + panel.jvmRuntimeProfile.gc.label, "Cycle garbage collector profile.", () -> JvmRuntimeOptionsSubsystem.cycleJvmGarbageCollector(panel)));
         out.add(cmd("Java2D: " + panel.jvmRuntimeProfile.pipelineLabel(), "Cycle Java2D pipeline profile.", () -> JvmRuntimeOptionsSubsystem.cycleJvmPipelineProfile(panel)));
-        out.add(cmd("String Dedup " + onOff(panel.jvmRuntimeProfile.stringDeduplication), "Toggle saved string deduplication.", () -> JvmRuntimeOptionsSubsystem.toggleJvmStringDeduplication(panel)));
-        out.add(cmd("Trans Blit " + onOff(panel.jvmRuntimeProfile.transparentAcceleration), "Toggle transparent blit acceleration.", () -> JvmRuntimeOptionsSubsystem.toggleJvmTransparentAcceleration(panel)));
-        out.add(cmd("No AA " + onOff(panel.jvmRuntimeProfile.disableVectorAntialiasing), "Toggle vector antialias suppression.", () -> JvmRuntimeOptionsSubsystem.toggleJvmNoAa(panel)));
+        out.add(boolCmd(panel, "String Dedup", panel.jvmRuntimeProfile.stringDeduplication, "Choose saved string deduplication.", () -> JvmRuntimeOptionsSubsystem.toggleJvmStringDeduplication(panel)));
+        out.add(boolCmd(panel, "Trans Blit", panel.jvmRuntimeProfile.transparentAcceleration, "Choose transparent blit acceleration.", () -> JvmRuntimeOptionsSubsystem.toggleJvmTransparentAcceleration(panel)));
+        out.add(boolCmd(panel, "No AA", panel.jvmRuntimeProfile.disableVectorAntialiasing, "Choose vector antialias suppression.", () -> JvmRuntimeOptionsSubsystem.toggleJvmNoAa(panel)));
         out.add(cmd("Accept + Restart", "Restart the client with the saved JVM profile.", () -> JvmRuntimeOptionsSubsystem.acceptJvmSettingsAndRestart(panel)));
         out.add(backCommand(panel));
         return out;
@@ -348,65 +361,69 @@ final class OptionsScreenPainter {
     private static ArrayList<OptionCommand> accessibilityCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
         out.add(cmd("CVD: " + AccessibilityCompatibilityAuthority.cvdLabel(panel.options.cvdModeIndex), "Cycle color vision correction.", () -> AccessibilityVisualOptionsRuntime.cycleCvdMode(panel)));
-        out.add(cmd("High Contrast " + onOff(panel.options.highContrastText), "Toggle high contrast text containers.", () -> AccessibilityVisualOptionsRuntime.toggleHighContrastText(panel)));
-        out.add(cmd("Instant Text " + onOff(panel.options.instantDialogueText), "Toggle instant conversation text.", () -> AccessibilityVisualOptionsRuntime.toggleInstantDialogueText(panel)));
-        out.add(cmd("Shake -", "Reduce screen shake intensity.", () -> AccessibilityVisualOptionsRuntime.adjustScreenShake(panel, -10)));
-        out.add(cmd("Shake +", "Increase screen shake intensity.", () -> AccessibilityVisualOptionsRuntime.adjustScreenShake(panel, 10)));
+        out.add(boolCmd(panel, "High Contrast", panel.options.highContrastText, "Choose high contrast text containers.", () -> AccessibilityVisualOptionsRuntime.toggleHighContrastText(panel)));
+        out.add(boolCmd(panel, "Instant Text", panel.options.instantDialogueText, "Choose instant conversation text.", () -> AccessibilityVisualOptionsRuntime.toggleInstantDialogueText(panel)));
+        out.add(cmd("Screen Shake: " + panel.options.screenShakePercent + "%", "Adjust screen shake with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Screen Shake", panel.options.screenShakePercent,
+                        0, 100, 10, "%", value -> AccessibilityVisualOptionsRuntime.adjustScreenShake(panel,
+                                value - panel.options.screenShakePercent))));
         out.add(cmd("Narrate Screen", "Push a screen narration event.", () -> AccessibilityVisualOptionsRuntime.pushCurrentScreenNarration(panel)));
-        out.add(cmd("Subtitles " + onOff(panel.options.subtitlesEnabled), "Toggle subtitles.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSubtitles(panel.options))));
-        out.add(cmd("Reduced Motion " + onOff(panel.options.reducedMotion), "Toggle reduced motion.", () -> DisplayPerformanceOptionsRuntime.toggleReducedMotion(panel)));
+        out.add(boolCmd(panel, "Subtitles", panel.options.subtitlesEnabled, "Choose subtitle display.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSubtitles(panel.options))));
+        out.add(boolCmd(panel, "Reduced Motion", panel.options.reducedMotion, "Choose reduced-motion behavior.", () -> DisplayPerformanceOptionsRuntime.toggleReducedMotion(panel)));
         out.add(cmd("Palette", "Select an accessibility-friendly palette.", () -> GraphicsDropdownOptionsRuntime.toggleGraphicsDropdown(panel, 2)));
         out.add(cmd("Color Key", "Cycle the color being edited.", () -> AccessibilityVisualOptionsRuntime.cycleColorTarget(panel)));
-        out.add(cmd("Color -", "Darken the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, -8)));
-        out.add(cmd("Color +", "Brighten the selected option color.", () -> AccessibilityVisualOptionsRuntime.adjustSelectedColor(panel, 8)));
+        out.add(cmd("Choose Color...", "Open the Java color chooser for the selected text or panel color.",
+                () -> SwingOptionsEditorAuthority.editColor(panel)));
         out.add(backCommand(panel));
         return out;
     }
 
     private static ArrayList<OptionCommand> qolCommands(GamePanel panel) {
         ArrayList<OptionCommand> out = new ArrayList<>();
-        out.add(cmd("Skip Logos " + onOff(panel.options.skipRepeatLogoSplashes), "Toggle repeat logo skipping.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSkipSplashes(panel.options))));
-        out.add(cmd("Auto Loot " + onOff(panel.options.autoLootEnabled), "Toggle auto-loot preference.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleAutoLoot(panel.options))));
-        out.add(cmd("Smart Storage " + onOff(panel.options.smartStorageFilters), "Toggle smart storage filters.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSmartStorage(panel.options))));
-        out.add(cmd("Proxy Craft " + onOff(panel.options.proxyCraftingFromLinkedStorage), "Toggle crafting from linked storage.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleProxyCrafting(panel.options))));
-        out.add(cmd("Output Route " + onOff(panel.options.machineOutputAutoRouting), "Toggle machine output auto-routing.", () -> {
+        out.add(boolCmd(panel, "Skip Logos", panel.options.skipRepeatLogoSplashes, "Choose repeat logo skipping.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSkipSplashes(panel.options))));
+        out.add(boolCmd(panel, "Auto Loot", panel.options.autoLootEnabled, "Choose auto-loot preference.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleAutoLoot(panel.options))));
+        out.add(boolCmd(panel, "Smart Storage", panel.options.smartStorageFilters, "Choose smart storage filters.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleSmartStorage(panel.options))));
+        out.add(boolCmd(panel, "Proxy Craft", panel.options.proxyCraftingFromLinkedStorage, "Choose crafting from linked storage.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleProxyCrafting(panel.options))));
+        out.add(boolCmd(panel, "Output Route", panel.options.machineOutputAutoRouting, "Choose machine output auto-routing.", () -> {
             panel.options.machineOutputAutoRouting = !panel.options.machineOutputAutoRouting;
             saveFlag(panel, "Machine output auto-routing", panel.options.machineOutputAutoRouting);
         }));
-        out.add(cmd("Build Repeat " + onOff(panel.options.holdToRepeatConstruction), "Toggle hold-to-repeat construction.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleHoldRepeatBuild(panel.options))));
-        out.add(cmd("Omni Ghost " + onOff(panel.options.omniDirectionalGhostBuild), "Toggle omni-directional ghost build.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleOmniGhostBuild(panel.options))));
-        out.add(cmd("Prod Warnings " + onOff(panel.options.productionBlockerWarnings), "Toggle production blocker warnings.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleProductionWarnings(panel.options))));
-        out.add(cmd("Scarcity " + onOff(panel.options.globalScarcityWarnings), "Toggle global scarcity alerts.", () -> {
+        out.add(boolCmd(panel, "Build Repeat", panel.options.holdToRepeatConstruction, "Choose hold-to-repeat construction.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleHoldRepeatBuild(panel.options))));
+        out.add(boolCmd(panel, "Omni Ghost", panel.options.omniDirectionalGhostBuild, "Choose omni-directional ghost build.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleOmniGhostBuild(panel.options))));
+        out.add(boolCmd(panel, "Prod Warnings", panel.options.productionBlockerWarnings, "Choose production blocker warnings.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleProductionWarnings(panel.options))));
+        out.add(boolCmd(panel, "Scarcity", panel.options.globalScarcityWarnings, "Choose global scarcity alerts.", () -> {
             panel.options.globalScarcityWarnings = !panel.options.globalScarcityWarnings;
             saveFlag(panel, "Global scarcity alerts", panel.options.globalScarcityWarnings);
         }));
-        out.add(cmd("Recipe Pins " + onOff(panel.options.recipeHudPinning), "Toggle recipe HUD pinning.", () -> {
+        out.add(boolCmd(panel, "Recipe Pins", panel.options.recipeHudPinning, "Choose recipe HUD pinning.", () -> {
             panel.options.recipeHudPinning = !panel.options.recipeHudPinning;
             saveFlag(panel, "Recipe HUD pinning", panel.options.recipeHudPinning);
         }));
-        out.add(cmd("Favored Safe " + onOff(panel.options.favoredItemProtection), "Toggle favored-item protection.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleFavoredProtection(panel.options))));
-        out.add(cmd("Quality Warn " + onOff(panel.options.lowQualityPickupWarnings), "Toggle low-quality pickup warnings.", () -> {
+        out.add(boolCmd(panel, "Favored Safe", panel.options.favoredItemProtection, "Choose favored-item protection.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleFavoredProtection(panel.options))));
+        out.add(boolCmd(panel, "Quality Warn", panel.options.lowQualityPickupWarnings, "Choose low-quality pickup warnings.", () -> {
             panel.options.lowQualityPickupWarnings = !panel.options.lowQualityPickupWarnings;
             saveFlag(panel, "Low-quality pickup warnings", panel.options.lowQualityPickupWarnings);
         }));
-        out.add(cmd("Mixed Stacks " + onOff(panel.options.noMixedQualityStacking), "Toggle mixed-quality stack prevention.", () -> {
+        out.add(boolCmd(panel, "Mixed Stacks", panel.options.noMixedQualityStacking, "Choose mixed-quality stack prevention.", () -> {
             panel.options.noMixedQualityStacking = !panel.options.noMixedQualityStacking;
             saveFlag(panel, "Mixed-quality stack prevention", panel.options.noMixedQualityStacking);
         }));
         out.add(cmd("Safety: " + GameplayQualityOfLifeAuthority.protectionLabel(panel.options.itemSafetyProfileIndex), "Cycle item safety profile.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.cycleItemSafetyProfile(panel.options))));
-        out.add(cmd("Market Alerts " + onOff(panel.options.economicDisruptionAlerts), "Toggle market disruption alerts.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleMarketAlerts(panel.options))));
-        out.add(cmd("Price Hints " + onOff(panel.options.localGlobalPriceHints), "Toggle local/global price hints.", () -> {
+        out.add(boolCmd(panel, "Market Alerts", panel.options.economicDisruptionAlerts, "Choose market disruption alerts.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.toggleMarketAlerts(panel.options))));
+        out.add(boolCmd(panel, "Price Hints", panel.options.localGlobalPriceHints, "Choose local/global price hints.", () -> {
             panel.options.localGlobalPriceHints = !panel.options.localGlobalPriceHints;
             saveFlag(panel, "Local/global price hints", panel.options.localGlobalPriceHints);
         }));
         out.add(cmd("Solo Time: " + panel.options.singlePlayerTickModeLabel(), "Cycle single-player world simulation between turn-locked and passive ticking.", () -> applyQoL(panel, GameplayQualityOfLifeAuthority.cycleSinglePlayerTickMode(panel.options))));
-        out.add(cmd("Death Alerts " + onOff(panel.options.namedDeathAlerts), "Toggle named death alerts.", () -> {
+        out.add(boolCmd(panel, "Death Alerts", panel.options.namedDeathAlerts, "Choose named death alerts.", () -> {
             panel.options.namedDeathAlerts = !panel.options.namedDeathAlerts;
             saveFlag(panel, "Named death alerts", panel.options.namedDeathAlerts);
         }));
-        out.add(cmd("Doom Mode " + onOff(panel.options.doomModeEnabled), "Toggle the experimental first-person renderer.", () -> DoomQualityOfLifeOptionsRuntime.requestDoomModeToggle(panel)));
-        out.add(cmd("Doom FOV -", "Narrow the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, -5)));
-        out.add(cmd("Doom FOV +", "Widen the experimental first-person field of view.", () -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel, 5)));
+        out.add(boolCmd(panel, "Doom Mode", panel.options.doomModeEnabled, "Choose whether the first-person renderer is enabled.", () -> DoomQualityOfLifeOptionsRuntime.requestDoomModeToggle(panel)));
+        out.add(cmd("Doom FOV: " + panel.options.doomModeFovDegrees, "Adjust first-person field of view with a slider.",
+                () -> SwingOptionsEditorAuthority.editInt(panel, "Doom Mode Field of View", panel.options.doomModeFovDegrees,
+                        50, 120, 5, " degrees", value -> DoomQualityOfLifeOptionsRuntime.changeDoomFov(panel,
+                                value - panel.options.doomModeFovDegrees))));
         out.add(cmd("Doom Fog: " + panel.options.doomFogModeLabel(), "Cycle first-person fog distance mode.", () -> DoomQualityOfLifeOptionsRuntime.cycleDoomFogMode(panel)));
         out.add(backCommand(panel));
         return out;
@@ -417,6 +434,15 @@ final class OptionsScreenPainter {
         panel.logEvent(ControlReferenceTextSubsystem.controlProfileTitle(panel.controlsTab));
         panel.sounds.play("tab", panel.options);
         panel.repaint();
+    }
+
+    private static void radio(GamePanel panel, String title, boolean current, Runnable toggle) {
+        SwingOptionsEditorAuthority.editBoolean(panel, title, current, toggle);
+    }
+
+    private static OptionCommand boolCmd(GamePanel panel, String label, boolean current, String tip, Runnable toggle) {
+        return cmd(label + " " + onOff(current), tip,
+                () -> SwingOptionsEditorAuthority.editBoolean(panel, label, current, toggle));
     }
 
     private static void applyQoL(GamePanel panel, String message) {

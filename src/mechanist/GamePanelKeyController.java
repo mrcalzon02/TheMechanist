@@ -317,7 +317,7 @@ final class GamePanelKeyController {
         }
         try {
             if (code == KeyEvent.VK_I || code == KeyEvent.VK_E) {
-                panel.multiplayerMenu.beginDirectEdit();
+                MultiplayerPrivacyAuthority.promptDirectAddress(panel);
                 panel.repaint();
                 return true;
             }
@@ -343,18 +343,18 @@ final class GamePanelKeyController {
             }
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_J) {
                 NetworkPortAuthority.Endpoint endpoint = panel.multiplayerMenu.joinDirect();
-                panel.logEvent("Multiplayer direct endpoint prepared: " + endpoint.display() + ".");
+                panel.logEvent("Multiplayer direct endpoint prepared: " + MultiplayerPrivacyAuthority.redactEndpoint(endpoint.display()) + ".");
                 panel.repaint();
                 return true;
             }
             if (code == KeyEvent.VK_F) {
-                panel.multiplayerMenu.addFavoriteFromDirect("Direct " + panel.multiplayerMenu.directInput());
+                panel.multiplayerMenu.addFavoriteFromDirect("Direct server");
                 panel.repaint();
                 return true;
             }
             if (code == KeyEvent.VK_G) {
                 NetworkPortAuthority.Endpoint endpoint = panel.multiplayerMenu.joinFavorite();
-                panel.logEvent("Multiplayer favorite endpoint prepared: " + endpoint.display() + ".");
+                panel.logEvent("Multiplayer favorite endpoint prepared: " + MultiplayerPrivacyAuthority.redactEndpoint(endpoint.display()) + ".");
                 panel.repaint();
                 return true;
             }
@@ -364,7 +364,8 @@ final class GamePanelKeyController {
                 } else {
                     String worldName = panel.world.hiveName == null || panel.world.hiveName.isBlank() ? "The Mechanist World" : panel.world.hiveName;
                     HostBindingResult result = panel.multiplayerMenu.hostFromWorld(panel.seed, worldName, "singleplayer-" + Math.abs(panel.seed), panel.worldSetup, 8);
-                    panel.logEvent("Multiplayer host route: " + result.compactLine());
+                    panel.logEvent(result.success() ? "Multiplayer host route active; binding details hidden."
+                            : "Multiplayer host route failed; see private diagnostics.");
                 }
                 panel.repaint();
                 return true;

@@ -108,7 +108,7 @@ final class ProgressiveLookAuthority {
         if (depth >= 1) lines.add("Faction read: " + (npc.faction == null ? "unknown" : npc.faction.label) + ".");
         if (depth >= 2) lines.add(npc.rankLine());
         if (depth >= 2) lines.add(intentLine(game, npc));
-        if (depth >= 3) lines.add("State: " + safe(npc.state, "unknown") + " / HP " + npc.hp + " / age " + npc.ageLine() + ".");
+        if (depth >= 3) lines.add("Visible condition: " + EntityIdentityReadabilityAuthority.conditionBand(npc.hp) + " / age " + npc.ageLine() + ".");
         if (depth >= 4) {
             ArrayList<String> loadout = new ArrayList<>();
             if (npc.equippedMeleeWeapon != null && !npc.equippedMeleeWeapon.isBlank()) loadout.add(npc.equippedMeleeWeapon);

@@ -1,10 +1,17 @@
 package mechanist;
 
+import mechanist.input.InputDevice;
+import mechanist.input.InputToken;
+import mechanist.input.KeyBindingManager;
+
+import java.awt.event.KeyEvent;
 import java.util.List;
 
 /** Smoke for Milestone 02 input rebinding audit/readiness wording. */
 final class Milestone02InputRebindingAuditSmoke {
     public static void main(String[] args) {
+        KeyBindingManager manager = KeyBindingManager.getInstance();
+        manager.resetAllToDefaults();
         List<InputRebindingAuditAuthority.ActionAudit> rows = InputRebindingAuditAuthority.auditRows(4);
         if (rows.size() != InputAction.values().length) {
             throw new AssertionError("Input audit should cover every action.");
@@ -20,6 +27,15 @@ final class Milestone02InputRebindingAuditSmoke {
         requireContains(lines, "Cancel / back", "cancel action row");
         requireContains(lines, "Keyboard:", "keyboard fallback");
         requireContains(lines, "Generic:", "controller prompt");
+        requireContains(lines, "Baseline default:", "baseline default label");
+        requireContains(lines, "Current keyboard:", "current keyboard label");
+
+        manager.rebind(InputDevice.KEYBOARD, "confirm", InputToken.keyboard(KeyEvent.VK_U, 0),
+                KeyBindingManager.DuplicatePolicy.REJECT);
+        List<String> rebound = InputRebindingAuditAuthority.playerFacingAuditLines(4);
+        requireContains(rebound, "Baseline default: Keyboard: Enter / Space", "confirm baseline after rebind");
+        requireContains(rebound, "Current keyboard: Keyboard: U", "live confirm binding after rebind");
+        manager.resetAllToDefaults();
 
         for (String line : lines) {
             rejectLeaks(line, "input audit line");
@@ -39,6 +55,7 @@ final class Milestone02InputRebindingAuditSmoke {
 
         List<String> related = SemanticAssetInfopediaAuthority.relatedRowsForEntry(null, "MECHANIC - Input Rebinding Audit [Controls]", null);
         requireContains(related, "Context Prompts", "input audit related context prompts");
+        manager.resetAllToDefaults();
     }
 
     private static void requireContains(List<String> lines, String expected, String label) {

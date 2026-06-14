@@ -9,6 +9,16 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
         requireContains(rows, "Look and Examine", "Look/Examine mechanic row");
         requireContains(rows, "Movement Planning", "movement mechanic row");
         requireContains(rows, "Context Prompts", "context prompt mechanic row");
+        requireContains(rows, "Body Condition", "body condition mechanic row");
+        requireContains(rows, "Medical Treatment Readiness", "medical mechanic row");
+        requireContains(rows, "Inventory and Equipment", "inventory mechanic row");
+        requireContains(rows, "Production Forecast", "production mechanic row");
+        requireContains(rows, "Construction Blueprints", "construction mechanic row");
+        requireContains(rows, "Expansion Heat", "expansion heat mechanic row");
+        requireContains(rows, "Interaction Approach Planning", "approach mechanic row");
+        requireContains(rows, "Contract Objectives and Evidence", "contract mechanic row");
+        requireContains(rows, "Transfer Workflows", "transfer mechanic row");
+        requireContains(rows, "Faction Personnel and Staffing", "faction personnel mechanic row");
 
         List<String> filtered = SemanticAssetInfopediaAuthority.mechanicEntryRows("ghost");
         requireContains(filtered, "Movement Planning", "movement filter row");
@@ -16,6 +26,27 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
         checkDetail("look-examine", "Examine the selected visible target", "Milestone02LookExamineReadabilitySmoke");
         checkDetail("movement-planning", "Movement target selected", "Milestone02MovementPlanningReadabilitySmoke");
         checkDetail("context-prompts", "Generic:", "Milestone02ContextPromptReadabilitySmoke");
+        checkDetail("body-condition", "immediate danger", "Milestone02BodyConditionReadabilitySmoke");
+        checkDetail("medical-treatment", "explicit treatment command", "Milestone02MedicalTreatmentReadabilitySmoke");
+        checkDetail("inventory-equipment", "one selected unit at a time", "Milestone02InventoryReadabilitySmoke");
+        checkDetail("production-forecast", "queued machine job", "Milestone02ProductionReadabilitySmoke");
+        checkDetail("production-forecast", "quality-sensitive defect risk", "Milestone03ProductionOutcomeForecastSmoke");
+        checkDetail("production-forecast", "one machine part and one turn", "Milestone03MachineRepairWorkflowSmoke");
+        checkDetail("production-forecast", "Manual operator skill", "Milestone03ProductionOperatorSkillSmoke");
+        checkDetail("production-forecast", "matching carried units first", "Milestone03ProductionMaterialQualitySmoke");
+        checkDetail("production-forecast", "manual Craft remains player-operated", "Milestone03ProductionWorkerQualitySmoke");
+        checkDetail("production-forecast", "Teach Machine", "Milestone03MachineKnowledgeSourceSmoke");
+        checkDetail("production-forecast", "one batch ID", "Milestone03ProductionBatchProvenanceSmoke");
+        checkDetail("construction-blueprints", "complete catalog", "Milestone02ConstructionCategorySmoke");
+        checkDetail("expansion-heat", "attention bands", "Milestone02ExpansionHeatReadabilitySmoke");
+        checkDetail("interaction-approach", "never moves", "Milestone02InteractionApproachSmoke");
+        checkDetail("contract-evidence", "carried, stored at base, or missing", "Milestone02ContractObjectiveReadabilitySmoke");
+        checkDetail("transfer-workflows", "one item at a time", "Milestone02TransferWorkflowConsistencySmoke");
+        checkDetail("faction-personnel", "separate tracks", "Milestone02FactionRosterReadabilitySmoke");
+
+        List<String> healthFiltered = SemanticAssetInfopediaAuthority.mechanicEntryRows("bleeding");
+        requireContains(healthFiltered, "Body Condition", "body condition filter row");
+        requireContains(healthFiltered, "Medical Treatment Readiness", "medical filter row");
 
         List<String> detailFromRow = SemanticAssetInfopediaAuthority.detailLines(null, rows.get(0), null, "");
         requireContains(detailFromRow, "Reference:", "mechanic detail reference");

@@ -10,7 +10,7 @@ import java.util.*;
  * windows can converge without duplicated rules or heavy runtime overhead.
  */
 final class UniversalWindowAuthority {
-    static final String VERSION = "0.9.08s";
+    static final String VERSION = "0.9.08t";
 
     enum WindowKind {
         INVENTORY,
@@ -139,10 +139,10 @@ final class UniversalWindowAuthority {
                 "Look, interact, and combat targeting share cursor, confirmation, cancellation, and feedback grammar."));
         register(new WindowSpec(WindowKind.MACHINE_OPERATION, "machine_operations", "Machine Operations", EscapeBehavior.BACK_TO_PARENT, true, true, true, true, true, true, true,
                 "Expose MachineOperationQueue records through shared progress bars and state labels instead of bespoke machine panels."));
-        register(new WindowSpec(WindowKind.CRAFTING, "crafting", "Crafting", EscapeBehavior.RETURN_TO_GAME, true, true, true, false, true, true, true,
-                "Recipes, inputs, machine requirements, quality expectations, and blockers use one detail grammar."));
-        register(new WindowSpec(WindowKind.CONSTRUCTION, "construction", "Construction", EscapeBehavior.CLEAR_CURSOR, true, true, true, false, true, true, false,
-                "Unify build placement, blueprint validation, room metadata, cost summaries, and error messages."));
+        register(new WindowSpec(WindowKind.CRAFTING, "crafting", "Crafting", EscapeBehavior.RETURN_TO_GAME, true, true, false, false, false, true, true,
+                "Recipe selection now forecasts inputs, output quality/count, machine wear, manual time/fatigue, blockers, and carried-inventory delivery; queued machine jobs remain a separate surface."));
+        register(new WindowSpec(WindowKind.CONSTRUCTION, "construction", "Construction", EscapeBehavior.CLEAR_CURSOR, true, true, false, false, false, true, false,
+                "Category-scoped blueprint pages expose the full catalog with live material, requirement, and cursor-placement feedback."));
         register(new WindowSpec(WindowKind.DIALOGUE, "dialogue", "Dialogue", EscapeBehavior.BACK_TO_PARENT, true, true, false, false, false, false, true,
                 "NPC conversation, faction representatives, quest offers, and tutorial guidance should use shared branching and return rules."));
         register(new WindowSpec(WindowKind.FACTION, "faction", "Faction Ledger", EscapeBehavior.RETURN_TO_GAME, true, true, true, false, true, true, true,

@@ -110,6 +110,17 @@ class ItemProvenanceRecord {
     String route = "direct acquisition";
     String chain = "";
     String unitId = "untracked-unit";
+    String outputQuality = "";
+    String knowledgeSource = "";
+    String knowledgeProvider = "";
+    String batchId = "";
+    String defectState = "";
+    String machineQuality = "";
+    String machineCondition = "";
+    String operatorSkill = "";
+    String operatorSkillBand = "";
+    String materialQuality = "";
+    String qualityLimiter = "";
     int turnMade = 0;
 
     static ItemProvenanceRecord of(String item, Faction faction, String maker, World w, int turn, String inputs, String route) {
@@ -126,11 +137,54 @@ class ItemProvenanceRecord {
         return r;
     }
     static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker) {
+        return produced(pr, machine, w, turn, worker, null);
+    }
+    static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker,
+                                         ProductionQualityTraceAuthority.QualityTrace qualityTrace) {
+        return produced(pr, machine, w, turn, worker, qualityTrace, null);
+    }
+    static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker,
+                                         ProductionQualityTraceAuthority.QualityTrace qualityTrace,
+                                         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill) {
+        return produced(pr, machine, w, turn, worker, qualityTrace, operatorSkill, null);
+    }
+    static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker,
+                                         ProductionQualityTraceAuthority.QualityTrace qualityTrace,
+                                         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill,
+                                         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge) {
+        return produced(pr, machine, w, turn, worker, qualityTrace, operatorSkill, knowledge, null);
+    }
+    static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker,
+                                         ProductionQualityTraceAuthority.QualityTrace qualityTrace,
+                                         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill,
+                                         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge,
+                                         ProductionBatchAuthority.BatchDisposition batch) {
         String item = pr == null ? "Unknown product" : pr.outputItemName();
         Faction f = pr == null ? Faction.NONE : pr.faction;
         String m = (machine == null ? "manual workbench" : machine.name) + " operated by " + (worker == null ? "unknown worker" : worker);
         String inputs = pr == null ? "unknown recipe inputs" : "recipe knowledge=" + pr.knowledgeName + "; machine=" + pr.machineName + "; faction pattern=" + pr.profile.label;
-        return of(item, f, m, w, turn, inputs, "produced into player/faction stock");
+        ItemProvenanceRecord r = of(item, f, m, w, turn, inputs, "produced into player/faction stock");
+        if (pr != null) {
+            r.outputQuality = pr.qualityName == null ? "" : pr.qualityName;
+            r.knowledgeSource = pr.knowledgeName == null ? "" : pr.knowledgeName;
+            r.machineQuality = machine == null || machine.qualityName == null ? "Common" : machine.qualityName;
+            r.machineCondition = MachineConditionProductionAuthority.evaluate(machine).label();
+        }
+        if (qualityTrace != null) {
+            r.outputQuality = qualityTrace.outputQuality();
+            r.qualityLimiter = qualityTrace.limiterLabel();
+            r.materialQuality = qualityTrace.materialTier() < 0 ? "open" : QualityAuthorityApi.qualityName(qualityTrace.materialTier());
+        }
+        if (operatorSkill != null) {
+            r.operatorSkill = operatorSkill.recipeSkill() + " via " + operatorSkill.coreStat() + " " + operatorSkill.value();
+            r.operatorSkillBand = operatorSkill.band();
+        }
+        if (knowledge != null) r.knowledgeProvider = knowledge.sourceLabel();
+        if (batch != null) {
+            r.batchId = batch.batchId();
+            r.defectState = batch.defectState();
+        }
+        return r;
     }
     static ItemProvenanceRecord producedByFixture(String item, Faction faction, String fixture, World w, int turn, String inputs, String route) { return of(item, faction, fixture, w, turn, inputs, route); }
     static ItemProvenanceRecord transferred(ItemProvenanceRecord prior, String item, World w, int turn, String route) {
@@ -140,6 +194,17 @@ class ItemProvenanceRecord {
         r.place = prior.place;
         r.turnMade = prior.turnMade;
         r.unitId = prior.unitId == null || prior.unitId.isBlank() ? r.unitId : prior.unitId;
+        r.outputQuality = prior.outputQuality;
+        r.knowledgeSource = prior.knowledgeSource;
+        r.knowledgeProvider = prior.knowledgeProvider;
+        r.batchId = prior.batchId;
+        r.defectState = prior.defectState;
+        r.machineQuality = prior.machineQuality;
+        r.machineCondition = prior.machineCondition;
+        r.operatorSkill = prior.operatorSkill;
+        r.operatorSkillBand = prior.operatorSkillBand;
+        r.materialQuality = prior.materialQuality;
+        r.qualityLimiter = prior.qualityLimiter;
         String priorChain = prior.chain == null || prior.chain.isBlank() ? (prior.maker + " -> " + prior.route) : prior.chain;
         r.chain = priorChain + " -> " + r.route;
         return r;
@@ -152,14 +217,40 @@ class ItemProvenanceRecord {
         String c = chain == null || chain.isBlank() ? maker + " -> " + route : chain;
         return unitId + " " + c;
     }
+    ArrayList<String> qualityContextLines() {
+        ArrayList<String> lines = new ArrayList<>();
+        if (!outputQuality.isBlank()) lines.add("Production quality: " + outputQuality + ".");
+        if (!knowledgeSource.isBlank()) lines.add("Knowledge source: " + knowledgeSource + ".");
+        if (!knowledgeProvider.isBlank()) lines.add("Knowledge provider: " + knowledgeProvider + ".");
+        if (!batchId.isBlank()) lines.add("Production batch: " + batchId + ".");
+        if (!defectState.isBlank()) lines.add("Batch inspection: " + defectState + ".");
+        if (!machineQuality.isBlank()) lines.add("Producing machine quality: " + machineQuality + ".");
+        if (!machineCondition.isBlank()) lines.add("Producing machine condition: " + machineCondition + ".");
+        if (!operatorSkill.isBlank()) lines.add("Producing operator skill: " + operatorSkill + ".");
+        if (!operatorSkillBand.isBlank()) lines.add("Producing operator band: " + operatorSkillBand + ".");
+        if (!materialQuality.isBlank()) lines.add("Consumed material quality cap: " + materialQuality + ".");
+        if (!qualityLimiter.isBlank()) lines.add("Recorded quality limiter: " + qualityLimiter + ".");
+        return lines;
+    }
     String summary() { return "Origin: " + itemName + " | unit=" + unitId + " | maker=" + maker + " | faction=" + makerFaction + " | place=" + place + " | inputs=" + inputs + " | route=" + route + " | chain=" + shortChain() + " | turn=" + turnMade + "."; }
-    String encode() { return enc(itemName)+"~"+enc(makerFaction)+"~"+enc(maker)+"~"+enc(place)+"~"+enc(inputs)+"~"+enc(route)+"~"+turnMade+"~"+enc(chain)+"~"+enc(unitId); }
+    String encode() { return enc(itemName)+"~"+enc(makerFaction)+"~"+enc(maker)+"~"+enc(place)+"~"+enc(inputs)+"~"+enc(route)+"~"+turnMade+"~"+enc(chain)+"~"+enc(unitId)+"~"+enc(outputQuality)+"~"+enc(knowledgeSource)+"~"+enc(machineQuality)+"~"+enc(qualityLimiter)+"~"+enc(machineCondition)+"~"+enc(operatorSkill)+"~"+enc(operatorSkillBand)+"~"+enc(materialQuality)+"~"+enc(knowledgeProvider)+"~"+enc(batchId)+"~"+enc(defectState); }
     static ItemProvenanceRecord decode(String line) {
         try {
-            String[] a = line.split("~",9); if (a.length < 7) return null;
+            String[] a = line.split("~",20); if (a.length < 7) return null;
             ItemProvenanceRecord r = new ItemProvenanceRecord(); r.itemName=dec(a[0]); r.makerFaction=dec(a[1]); r.maker=dec(a[2]); r.place=dec(a[3]); r.inputs=dec(a[4]); r.route=dec(a[5]); r.turnMade=Integer.parseInt(a[6]);
             if (a.length >= 8) r.chain=dec(a[7]); else r.chain=r.maker + " -> " + r.route;
             if (a.length >= 9) r.unitId=dec(a[8]); else r.unitId="LEGACY-" + Math.abs(Objects.hash(r.itemName, r.maker, r.place, r.turnMade));
+            if (a.length >= 10) r.outputQuality=dec(a[9]);
+            if (a.length >= 11) r.knowledgeSource=dec(a[10]);
+            if (a.length >= 12) r.machineQuality=dec(a[11]);
+            if (a.length >= 13) r.qualityLimiter=dec(a[12]);
+            if (a.length >= 14) r.machineCondition=dec(a[13]);
+            if (a.length >= 15) r.operatorSkill=dec(a[14]);
+            if (a.length >= 16) r.operatorSkillBand=dec(a[15]);
+            if (a.length >= 17) r.materialQuality=dec(a[16]);
+            if (a.length >= 18) r.knowledgeProvider=dec(a[17]);
+            if (a.length >= 19) r.batchId=dec(a[18]);
+            if (a.length >= 20) r.defectState=dec(a[19]);
             return r;
         } catch(Exception ex) { return null; }
     }

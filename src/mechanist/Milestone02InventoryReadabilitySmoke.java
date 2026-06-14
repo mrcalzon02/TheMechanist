@@ -18,8 +18,16 @@ final class Milestone02InventoryReadabilitySmoke {
         requireContains(stored, "carried inventory", "take consequence");
         requireContains(stored, "no separate damage", "condition honesty");
 
+        List<String> stack = InventoryReadabilityAuthority.stackLines("Fine Autopistol",
+                List.of("Fine Autopistol", "Common Autopistol", "Fine Autopistol", "Medkit"));
+        requireContains(stack, "2 exact selection", "exact selected quality count");
+        requireContains(stack, "3 in the same item family", "mixed-quality family count");
+        requireContains(stack, "2 quality grades", "quality grade count");
+        requireContains(stack, "one selected unit at a time", "single-unit action scope");
+
         for (String line : carried) rejectLeaks(line);
         for (String line : stored) rejectLeaks(line);
+        for (String line : stack) rejectLeaks(line);
     }
 
     private static void requireContains(List<String> lines, String expected, String label) {

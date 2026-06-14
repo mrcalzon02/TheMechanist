@@ -808,6 +808,7 @@ class NpcEntity {
 
     String rankLine() {
         ensureRankIdentity(new Random(numericId == 0 ? Objects.hash(name, faction) : numericId));
+        if (factionRank >= Integer.MIN_VALUE) return "Rank " + factionRank + " - " + factionRankTitle + " / " + factionRankScope;
         return "Rank " + factionRank + " — " + factionRankTitle + " / " + factionRankScope;
     }
 

@@ -45,7 +45,7 @@ final class MultiplayerSurfacePainter implements ScreenPainter {
         g.setColor(panel.optionColor(GameOptions.TEXT_HIGHLIGHT));
         g.drawString("Direct address:", leftX, y); y += fm.getHeight() + 4;
         
-        String direct = (panel.multiplayerMenu.inputActive() ? "> " : "  ") + panel.multiplayerMenu.directInput() + (panel.multiplayerMenu.inputActive() && (System.currentTimeMillis() / 450) % 2 == 0 ? "_" : "");
+        String direct = "  " + MultiplayerPrivacyAuthority.redactEndpoint(panel.multiplayerMenu.directInput());
         g.setColor(new Color(18, 22, 20, 230));
         g.fillRoundRect(leftX, y - fm.getAscent() - 5, textW, fm.getHeight() + 12, 8, 8);
         g.setColor(panel.multiplayerMenu.inputActive() ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
@@ -103,7 +103,7 @@ final class MultiplayerSurfacePainter implements ScreenPainter {
             yy += fm.getHeight(); 
         }
         g.setColor(panel.multiplayerMenu.hasActiveHost() ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_DIM));
-        g.drawString(GuiLayoutApi.fitLabel(panel.multiplayerMenu.activeHostLine(), fm, Math.max(220, textW - 18)), leftX + 9, statusY + 50);
+        g.drawString(panel.multiplayerMenu.hasActiveHost() ? "Local host active; binding details hidden." : "No local host bound.", leftX + 9, statusY + 50);
         g.setClip(oldClip);
 
         g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(9f, panel.smallFont.getSize2D() - 2f)));
@@ -111,7 +111,7 @@ final class MultiplayerSurfacePainter implements ScreenPainter {
         panel.center(g, "CONNECTION COMMANDS", action.x + action.width / 2, action.y + 22);
         g.setFont(panel.smallFont.deriveFont(Font.PLAIN, Math.max(9f, panel.smallFont.getSize2D() - 3f)));
         g.setColor(panel.optionColor(GameOptions.TEXT_MAIN));
-        panel.center(g, "I/E Edit  Enter Join  H Host  F Save Favorite  G Join Favorite  Arrows Select  T Steam  Esc Back",
+        panel.center(g, "I/E Secure Address  Enter Join  H Host  F Save Favorite  G Join Favorite  Arrows Select  T Steam  Esc Back",
                 action.x + action.width / 2, action.y + 42);
     }
 }

@@ -16,6 +16,8 @@ final class Milestone02MenuUniformityReadabilitySmoke {
         requireContains(lines, "Container Transfer", "container menu audit");
         requireContains(lines, "Targeting", "targeting menu audit");
         requireContains(lines, "Crafting", "crafting menu audit");
+        requireContains(lines, "Category-scoped blueprint pages", "construction category contract");
+        requireContains(lines, "queued machine jobs remain a separate surface", "crafting queue honesty contract");
         requireContains(lines, "Pause / Command", "pause menu audit");
         requireContains(lines, "Transfer rule", "shared transfer rule");
         requireContains(lines, "Prompt rule", "shared prompt rule");
@@ -38,6 +40,13 @@ final class Milestone02MenuUniformityReadabilitySmoke {
             rejectContains(line, "WindowKind", "menu audit should not expose enum type");
             rejectContains(line, "supportsInventoryTransfer", "menu audit should not expose field names");
         }
+
+        UniversalWindowAuthority.WindowSpec crafting = authority.state("crafting").spec;
+        UniversalWindowAuthority.WindowSpec construction = authority.state("construction").spec;
+        require(!crafting.supportsTabs && !crafting.supportsProgressBars,
+                "crafting audit must not claim tabs or progress bars before they exist");
+        require(!construction.supportsTabs && !construction.supportsProgressBars && construction.supportsSearchOrFilter,
+                "construction audit should claim category filtering without fictional tabs or progress bars");
 
         List<String> menuEntry = SemanticAssetInfopediaAuthority.mechanicEntryRows("uniformity");
         requireContains(menuEntry, "Menu Uniformity", "menu uniformity mechanic row");

@@ -17,14 +17,16 @@ final class InputRebindingAuditAuthority {
 
     private InputRebindingAuditAuthority() { }
 
-    record ActionAudit(InputAction action, String label, String context, String keyboard, String controller,
+    record ActionAudit(InputAction action, String label, String context, String defaultKeyboard,
+                       String currentKeyboard, String defaultController, String currentController,
                        boolean required, boolean rebindable, String conflictNote, String recoveryNote) {
         String playerFacingLine() {
             StringBuilder out = new StringBuilder(label)
                     .append(" | Context: ").append(context)
-                    .append(" | Default: ").append(keyboard)
-                    .append(" | Controller: ").append(controller)
-                    .append(" | Current profile: default mapping");
+                    .append(" | Baseline default: ").append(defaultKeyboard)
+                    .append(" / ").append(defaultController)
+                    .append(" | Current keyboard: ").append(currentKeyboard)
+                    .append(" | Current controller view: ").append(currentController);
             if (required) out.append(" | Required recovery action");
             out.append(" | ").append(rebindable ? "Rebindable with conflict review" : "Locked for recovery");
             if (!conflictNote.isBlank()) out.append(" | Conflict: ").append(conflictNote);
@@ -52,7 +54,9 @@ final class InputRebindingAuditAuthority {
                     action,
                     ControlReferenceTextSubsystem.inputActionLabel(action),
                     ControlReferenceTextSubsystem.inputActionContext(action),
+                    ControlReferenceTextSubsystem.defaultKeyboardPromptFor(action),
                     ControlReferenceTextSubsystem.keyboardPromptFor(action),
+                    ControlReferenceTextSubsystem.defaultControllerPromptFor(controlsTab, action),
                     ControlReferenceTextSubsystem.controllerPromptFor(controlsTab, action),
                     required,
                     !required || action == InputAction.MOVE_UP || action == InputAction.MOVE_DOWN || action == InputAction.MOVE_LEFT || action == InputAction.MOVE_RIGHT,

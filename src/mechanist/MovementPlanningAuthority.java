@@ -16,6 +16,7 @@ final class MovementPlanningAuthority {
     private MovementPlanningAuthority() {}
 
     record MovementPlanReadout(boolean reachable, boolean exact, String summary) { }
+    record HazardRouteReadout(boolean hazardous, int hazardousTiles, int highestSeverity, String summary) { }
     record OccupiedTileRoutingReadout(boolean hardBlocked, boolean pushSqueezeEligible, String debugSummary) { }
     record StandableTileSearchResult(boolean found, int x, int y, int radiusUsed, String summary) { }
     record MovementRecoveryApplicationResult(boolean applied, int fromX, int fromY, int toX, int toY, String summary) { }
@@ -176,7 +177,9 @@ final class MovementPlanningAuthority {
         game.playerMotionDurationMillis = 0;
         game.playerMotionStartedMillis = 0L;
         game.manualMovementPlanActive = false;
+        game.manualMovementPlanHazardous = false;
         game.mouseMovePreviewActive = false;
+        game.mouseMovePreviewHazardous = false;
         game.lookCursorActive = false;
         game.interactCursorActive = false;
         game.combatCursorActive = false;
@@ -227,7 +230,44 @@ final class MovementPlanningAuthority {
         boolean occupied = inBounds && game.world.npcAt(targetX, targetY) != null
                 && !(targetX == game.playerX && targetY == game.playerY);
         ArrayList<Point> path = buildPathTo(game, targetX, targetY, maxSteps);
-        return describePlan(modeLabel, maxSteps, targetX, targetY, path, inBounds, walkable, occupied);
+        MovementPlanReadout plan = describePlan(modeLabel, maxSteps, targetX, targetY, path, inBounds, walkable, occupied);
+        if (!plan.reachable()) return plan;
+        HazardRouteReadout hazards = inspectRouteHazards(game.world, path);
+        if (!hazards.hazardous()) return plan;
+        return new MovementPlanReadout(plan.reachable(), plan.exact(), plan.summary() + " " + hazards.summary());
+    }
+
+    static HazardRouteReadout inspectRouteHazards(World world, List<Point> path) {
+        if (world == null || world.hazardWarnings == null || world.hazardWarnings.isEmpty() || path == null || path.isEmpty()) {
+            return new HazardRouteReadout(false, 0, 0, "No recorded hazards cross this route.");
+        }
+        int tiles = 0;
+        int highest = 0;
+        String highestLabel = "hazard";
+        for (Point point : path) {
+            if (point == null) continue;
+            EnvironmentalHazardRecord strongest = null;
+            for (EnvironmentalHazardRecord hazard : world.hazardWarnings) {
+                if (hazard == null || hazard.x != point.x || hazard.y != point.y) continue;
+                if (strongest == null || hazard.severity > strongest.severity) strongest = hazard;
+            }
+            if (strongest == null) continue;
+            tiles++;
+            if (strongest.severity > highest) {
+                highest = strongest.severity;
+                highestLabel = strongest.label == null || strongest.label.isBlank() ? "hazard" : strongest.label;
+            }
+        }
+        if (tiles == 0) return new HazardRouteReadout(false, 0, 0, "No recorded hazards cross this route.");
+        String severity = highest >= 75 ? "extreme" : highest >= 50 ? "severe" : highest >= 30 ? "dangerous" : "suspect";
+        String summary = "Hazard warning: route crosses " + tiles + " hazardous tile" + (tiles == 1 ? "" : "s")
+                + "; highest concern is " + PlayerFacingText.sanitize(highestLabel) + " (" + severity
+                + "). Movement remains available; confirm only if intended.";
+        return new HazardRouteReadout(true, tiles, highest, summary);
+    }
+
+    static boolean requiresHazardConfirmation(World world, int x, int y) {
+        return inspectRouteHazards(world, List.of(new Point(x, y))).hazardous();
     }
 
     static MovementPlanReadout describePlan(String modeLabel, int maxSteps, int targetX, int targetY,

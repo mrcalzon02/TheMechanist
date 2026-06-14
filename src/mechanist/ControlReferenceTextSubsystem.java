@@ -68,6 +68,23 @@ final class ControlReferenceTextSubsystem {
         return lines;
     }
 
+    static String livePanelPrompt(String context, int controlsTab) {
+        String key = context == null ? "Panel" : context;
+        InputAction primary = switch (key) {
+            case "Look" -> InputAction.EXAMINE;
+            case "Interact" -> InputAction.INTERACT;
+            case "Inventory" -> InputAction.INVENTORY;
+            case "Build" -> InputAction.BUILD;
+            case "Map" -> InputAction.MAP;
+            case "Character" -> InputAction.CHARACTER;
+            case "Auspex" -> InputAction.SENSES;
+            case "Combat" -> InputAction.ATTACK;
+            case "Movement planning", "Trade", "Container", "Conversation", "Object", "Crafting", "Scavenge", "Infopedia", "Pause", "Panel" -> InputAction.CONFIRM;
+            default -> InputAction.CONFIRM;
+        };
+        return contextPromptLine(key, controlsTab, primary, InputAction.CANCEL, "");
+    }
+
     static String controlProfileTitle(int controlsTab) {
         switch (controlsTab) {
             case 1: return "XBOX CONTROL REFERENCE";
@@ -134,6 +151,10 @@ final class ControlReferenceTextSubsystem {
             if (action == InputAction.EXAMINE) return dynamic + " while looking";
             return dynamic;
         }
+        return defaultKeyboardPromptFor(action);
+    }
+
+    static String defaultKeyboardPromptFor(InputAction action) {
         switch (action) {
             case MOVE_UP: return "Keyboard: W / Up";
             case MOVE_DOWN: return "Keyboard: S / Down";
@@ -224,6 +245,20 @@ final class ControlReferenceTextSubsystem {
     static String genericPromptFor(InputAction action) {
         String dynamic = dynamicPrompt(InputDevice.GENERIC_CONTROLLER, action, "Generic");
         if (!dynamic.isBlank()) return dynamic;
+        return defaultGenericPromptFor(action);
+    }
+
+    static String defaultControllerPromptFor(int controlsTab, InputAction action) {
+        return switch (controlsTab) {
+            case 1 -> xboxPromptFor(action);
+            case 2 -> playstationPromptFor(action);
+            case 3 -> steamPromptFor(action);
+            case 4 -> defaultGenericPromptFor(action);
+            default -> "Controller: see controller tabs";
+        };
+    }
+
+    private static String defaultGenericPromptFor(InputAction action) {
         switch (action) {
             case MOVE_UP: case MOVE_DOWN: case MOVE_LEFT: case MOVE_RIGHT: return "Generic: left stick / D-pad";
             case CONFIRM: case INTERACT: case EXAMINE: return "Generic: south face";
