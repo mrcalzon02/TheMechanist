@@ -125,8 +125,8 @@ final class SemanticRenderAssetResolver {
             case INDUSTRIAL_WALL -> isWall(asset) && themed(haystack, "industrial", "factory", "machine shop", "workshop") && !themed(haystack, "sewer");
             case HABITATION_FLOOR -> isFloor(asset) && themed(haystack, "habitation", "hab", "apartment", "residential") && !themed(haystack, "sewer");
             case HABITATION_WALL -> isWall(asset) && themed(haystack, "habitation", "hab", "apartment", "residential") && !themed(haystack, "sewer");
-            case MARKET_FLOOR -> isFloor(asset) && themed(haystack, "market", "bazaar", "shop", "commercial") && !themed(haystack, "sewer");
-            case MARKET_WALL -> isWall(asset) && themed(haystack, "market", "bazaar", "shop", "commercial") && !themed(haystack, "sewer");
+            case MARKET_FLOOR -> isFloor(asset) && themed(haystack, "market", "bazaar", "commercial", "retail") && !themed(haystack, "sewer");
+            case MARKET_WALL -> isWall(asset) && themed(haystack, "market", "bazaar", "commercial", "retail") && !themed(haystack, "sewer");
             case MEDICAL_FLOOR -> isFloor(asset) && themed(haystack, "medical", "clinic", "hospital", "surgery") && !themed(haystack, "sewer");
             case SECURITY_FLOOR -> isFloor(asset) && themed(haystack, "security", "checkpoint", "prison", "brig") && !themed(haystack, "sewer");
             case ADMINISTRATIVE_FLOOR -> isFloor(asset) && themed(haystack, "administrative", "office", "records", "bureau") && !themed(haystack, "sewer");
