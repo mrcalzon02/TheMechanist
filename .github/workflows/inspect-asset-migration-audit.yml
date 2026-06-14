@@ -14,7 +14,7 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Print concise audit findings
+      - name: Print focused audit findings
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -26,9 +26,21 @@ jobs:
             -o logs.zip
           mkdir logs
           unzip -q logs.zip -d logs
+          runtime=$(find logs -type f -iname '*actual-registry audit*.txt' | head -1)
+          paths=$(find logs -type f -iname '*Audit live semantic call paths*.txt' | head -1)
+          echo "RUNTIME_LOG=$runtime"
+          echo "PATH_LOG=$paths"
           echo '=== ACTUAL REGISTRY COVERAGE ==='
-          grep -RihE 'ASSET_REGISTRY_SIZE=|SEMANTIC_REPORT=|SEMANTIC_COMPLETE=|FAMILY=|MISSING=|ALIAS_MAPPING_COUNT=|RESOLVER_VERSION=' logs | sed -E 's/^.*Z //' | sort -u
-          echo '=== LIVE CALLS AND LEGACY PATHS ==='
-          grep -RihE 'LIVE RESOLVER CALLS|COMPILED DESCRIPTOR LOCATION|LEGACY RENDER LOOKUPS|TILE ART IMAGE METHOD|TILE SEMANTIC FALLBACK METHOD|src/mechanist/.*(SemanticRenderAssetResolver|CompiledTileDescriptor|primaryAssetId|overlayAssetId|underlayAssetId|images\.getTile|images\.getItemIcon|getSemanticAssetImage|tileArtImage)' logs | sed -E 's/^.*Z //' | tail -260
-          echo '=== WORKFLOW AND RECENT COMMIT CLEANUP ==='
-          grep -RihE 'SEMANTIC WORKFLOWS STILL PRESENT|RECENT SEMANTIC COMMITS|\.github/workflows/.*(semantic|asset-migration)|^[0-9a-f]{7,40} .*semantic|^[0-9a-f]{7,40} .*asset migration' logs | sed -E 's/^.*Z //' | tail -120
+          grep -E 'Z (ASSET_REGISTRY_SIZE=|SEMANTIC_REPORT=|SEMANTIC_COMPLETE=|FAMILY=|MISSING=|ALIAS_MAPPING_COUNT=|RESOLVER_VERSION=)' "$runtime" | sed -E 's/^.*Z //'
+          echo '=== LIVE RESOLVER CALLS ==='
+          sed -n '/=== LIVE RESOLVER CALLS ===/,/=== COMPILED DESCRIPTOR LOCATION AND ASSET IDS ===/p' "$paths" | sed -E 's/^.*Z //' | tail -120
+          echo '=== COMPILED DESCRIPTOR AND ASSET IDS ==='
+          sed -n '/=== COMPILED DESCRIPTOR LOCATION AND ASSET IDS ===/,/=== LEGACY RENDER LOOKUPS ===/p' "$paths" | sed -E 's/^.*Z //' | tail -180
+          echo '=== LEGACY RENDER LOOKUPS ==='
+          sed -n '/=== LEGACY RENDER LOOKUPS ===/,/=== TILE ART IMAGE METHOD ===/p' "$paths" | sed -E 's/^.*Z //' | tail -180
+          echo '=== TILE ART IMAGE METHOD ==='
+          sed -n '/=== TILE ART IMAGE METHOD ===/,/=== TILE SEMANTIC FALLBACK METHOD ===/p' "$paths" | sed -E 's/^.*Z //' | tail -100
+          echo '=== TILE SEMANTIC FALLBACK METHOD ==='
+          sed -n '/=== TILE SEMANTIC FALLBACK METHOD ===/,/=== SEMANTIC WORKFLOWS STILL PRESENT ===/p' "$paths" | sed -E 's/^.*Z //' | tail -120
+          echo '=== WORKFLOWS AND RECENT COMMITS ==='
+          sed -n '/=== SEMANTIC WORKFLOWS STILL PRESENT ===/,$p' "$paths" | sed -E 's/^.*Z //' | tail -120
