@@ -39,11 +39,7 @@ final class WorldTopologyContract {
 
         static SectorSize fromTiles(int tiles) {
             for (SectorSize size : values()) if (size.tiles == tiles) return size;
-            if (tiles <= 500) return COMPACT_500;
-            if (tiles >= 1000) return ULTRA_HUGE_1000;
-            int rounded = Math.max(500, Math.min(1000, Math.round(tiles / 100.0f) * 100));
-            for (SectorSize size : values()) if (size.tiles == rounded) return size;
-            return STANDARD_600;
+            throw new IllegalArgumentException("Unsupported fixed sector size " + tiles + "; allowed values are 500, 600, 700, 800, 900, 1000.");
         }
 
         String displayLabel() { return label + " (" + tiles + " x " + tiles + ")"; }

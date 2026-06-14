@@ -13,34 +13,35 @@ final class WorldGenerationSetupPersistenceSmoke {
         Path storage = Path.of("build", "worldgen-setup-smoke-" + System.nanoTime()).toAbsolutePath();
         System.setProperty(GameStorageManager.OVERRIDE_PROPERTY, storage.toString());
         try {
+            verifyAllFixedSquareDimensions();
             long seed = 867530912345L;
-            WorldSetupSettings sprawling = WorldSetupSettings.standard();
-            sprawling.zoneSize = 3;
-            sprawling.zoneDensity = 3;
+            WorldSetupSettings selected = WorldSetupSettings.standard();
+            selected.zoneSize = 0;
+            selected.zoneDensity = 0;
 
             WorldSetupSettings activeBeforePreview = WorldSetupSettings.standard();
             activeBeforePreview.priceDifficulty = 2;
             WorldGenerationApi.setActiveSettings(activeBeforePreview);
-            WorldAtlas preview = WorldAtlas.preview(seed, sprawling);
+            WorldAtlas preview = WorldAtlas.preview(seed, selected);
             preview.generateScaffold();
-            require(preview.hiveWorld.settings().zoneSize == 3, "preview must use selected zone size");
+            require(preview.hiveWorld.settings().zoneSize == 0, "preview must use selected zone size");
             require(!Files.exists(CampaignWorldApi.worldFile(preview.hiveWorld)), "preview must not write a .mechworld file");
             require(WorldGenerationApi.settings().encode().equals(activeBeforePreview.encode()), "preview must not mutate process-wide active settings");
-            requireWorldMatches(preview.currentWorld(), sprawling, "preview");
+            requireWorldMatches(preview.currentWorld(), selected, "preview");
 
             HiveWorldDefinition stale = CampaignWorldApi.createDefinition(seed, WorldSetupSettings.standard());
             CampaignWorldApi.saveWorldDefinition(stale);
             require(Files.exists(CampaignWorldApi.worldFile(stale)), "stale world fixture should exist");
 
-            WorldAtlas created = WorldAtlas.createNew(seed, sprawling);
+            WorldAtlas created = WorldAtlas.createNew(seed, selected);
             created.generateScaffold();
-            require(created.hiveWorld.settings().zoneSize == 3, "new-world creation must replace stale setup for the selected seed");
-            requireWorldMatches(created.currentWorld(), sprawling, "new world");
+            require(created.hiveWorld.settings().zoneSize == 0, "new-world creation must replace stale setup for the selected seed");
+            requireWorldMatches(created.currentWorld(), selected, "new world");
             Properties stored = load(CampaignWorldApi.worldFile(created.hiveWorld));
-            require(sprawling.encode().equals(stored.getProperty("worlddef.setup")), "new-world file must store selected setup");
+            require(selected.encode().equals(stored.getProperty("worlddef.setup")), "new-world file must store selected setup");
 
             WorldAtlas existing = WorldAtlas.loadExisting(seed, WorldSetupSettings.standard());
-            require(existing.hiveWorld.settings().zoneSize == 3, "existing-world load must trust its stored setup");
+            require(existing.hiveWorld.settings().zoneSize == 0, "existing-world load must trust its stored setup");
 
             WorldSetupSettings compactSavedRun = WorldSetupSettings.standard();
             compactSavedRun.zoneSize = 0;
@@ -57,6 +58,25 @@ final class WorldGenerationSetupPersistenceSmoke {
                 }
             }
         }
+    }
+
+    private static void verifyAllFixedSquareDimensions() {
+        long[] seeds = {1L, 867530912345L, Long.MAX_VALUE, -992211L};
+        for (int index = 0; index < WorldSetupSettings.ZONE_SIZE_TILES.length; index++) {
+            WorldSetupSettings settings = WorldSetupSettings.standard();
+            settings.zoneSize = index;
+            int edge = WorldSetupSettings.ZONE_SIZE_TILES[index];
+            require(WorldTopologySettingsBridge.fixedSectorSize(settings).tiles == edge, "topology bridge mismatch for " + edge);
+            for (long seed : seeds) {
+                Dimension actual = WorldGenerationApi.zoneSliceSize(seed, settings);
+                require(actual.width == edge && actual.height == edge,
+                        "size " + edge + " changed for seed " + seed + ": " + actual.width + "x" + actual.height);
+            }
+        }
+        boolean rejected = false;
+        try { WorldTopologyContract.SectorSize.fromTiles(750); }
+        catch (IllegalArgumentException expected) { rejected = true; }
+        require(rejected, "non-option size 750 must be rejected, not rounded");
     }
 
     private static Properties load(Path file) throws Exception {

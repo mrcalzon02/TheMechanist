@@ -32,6 +32,8 @@ final class ProductionBatchAuthority {
         return new BatchDisposition(id, risk, roll, state, List.of(
                 "Batch identity: " + id + ".",
                 "Batch inspection: " + state + " (roll " + roll + " against " + risk + "% risk).",
-                "Effect boundary: the disposition is recorded provenance; item statistics are not yet reduced by a flagged defect."));
+                defective
+                        ? "Effect: ordinary traders apply a 40% resale penalty; item statistics remain unchanged."
+                        : "Effect: passed inspection carries no batch appraisal penalty."));
     }
 }

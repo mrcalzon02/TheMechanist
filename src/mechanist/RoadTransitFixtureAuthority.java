@@ -6,9 +6,8 @@ import java.util.*;
  * Road/transit fixture authority.
  *
  * Owns passive road-adjacent fixtures, parking markers, taxi booths, and parked
- * vehicle records. The records are readable service/inspection surfaces only;
- * movement, ownership, fuel, storage, collision, recall, and combat remain
- * outside this asset-promotion bucket.
+ * vehicle records. Ownership and commerce metadata are live; movement, fuel,
+ * storage, collision, recall, and combat remain outside this authority.
  */
 final class RoadTransitFixtureAuthority {
     static final String VERSION = "0.9.10ai";
@@ -39,6 +38,7 @@ final class RoadTransitFixtureAuthority {
                 AssetIntegrationDisciplineAuthority.TAXI_BOOTH.equals(t) ||
                 AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER.equals(t) ||
                 AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t) ||
+                VehicleEconomyFrontageAuthority.isCommerceType(t) ||
                 isVehicleType(t);
     }
 
@@ -63,6 +63,7 @@ final class RoadTransitFixtureAuthority {
         if (AssetIntegrationDisciplineAuthority.PARK_OPEN_SPACE.equals(t)) return "feature_park_planter";
         if (AssetIntegrationDisciplineAuthority.TAXI_BOOTH.equals(t)) return "feature_public_info_column";
         if (AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t)) return "entity_car";
+        if (VehicleEconomyFrontageAuthority.isCommerceType(t)) return "feature_public_service_counter";
         return null;
     }
 
@@ -145,6 +146,7 @@ final class RoadTransitFixtureAuthority {
         if (AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER.equals(t)) return "PARKING MARKER: a vehicle set-down bay with readable access metadata and no live storage, fueling, ownership, or driving behavior attached.";
         if (AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t)) return "VEHICLE STAGING POINT: a passive roadside vehicle marker used to keep the street readable without spawning a movable vehicle entity.";
         if (isVehicleType(t)) return vehicleInspectionLine(m, t);
+        if (VehicleEconomyFrontageAuthority.isCommerceType(t)) return "VEHICLE SERVICE FRONTAGE: " + (m == null ? "service metadata unavailable" : m.label) + ".";
         return "ROAD TRANSIT FIXTURE: passive transit metadata surface.";
     }
 
@@ -154,7 +156,13 @@ final class RoadTransitFixtureAuthority {
         String seats = value(stock, "seats");
         String cargo = value(stock, "cargo");
         String label = m == null || m.label == null ? labelForType(type, null, null) : m.label.split(" / ")[0];
-        return "PARKED VEHICLE: " + label + ". Profile: armor=" + empty(armor, "unlisted") + ", seats=" + empty(seats, "unlisted") + (cargo.isBlank() ? "" : ", cargo=" + cargo) + ". It is an inspected parked fixture, not an active driven vehicle.";
+        String owner = value(stock, "ownerFaction");
+        String ownership = value(stock, "ownership");
+        String role = value(stock, "vehicleRole");
+        return "PARKED VEHICLE: " + label + ". Profile: armor=" + empty(armor, "unlisted") + ", seats=" + empty(seats, "unlisted") +
+                (cargo.isBlank() ? "" : ", cargo=" + cargo) + ", owner=" + empty(owner, "unassigned") +
+                ", ownership=" + empty(ownership, "unassigned") + ", role=" + empty(role, "general") +
+                ". Ownership hooks are live; driving remains reserved for the vehicle runtime.";
     }
 
     static String actionVerb(String type) {

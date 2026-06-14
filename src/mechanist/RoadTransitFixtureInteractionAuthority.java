@@ -12,7 +12,10 @@ final class RoadTransitFixtureInteractionAuthority {
         if (g == null || g.world == null) return false;
         MapObjectState m = g.world.mapObjectAt(tx, ty);
         if (m == null || !RoadTransitFixtureAuthority.isRoadTransitType(m.type)) return false;
-        g.logEvent(RoadTransitFixtureAuthority.inspectionLine(m));
+        String line = VehicleEconomyFrontageAuthority.isCommerceType(m.type)
+                ? VehicleEconomyFrontageAuthority.interaction(g, m)
+                : RoadTransitFixtureAuthority.inspectionLine(m);
+        g.logEvent(line);
         g.gainXp("Navigation", 1, "inspected road/transit fixture");
         m.vendCount++;
         m.cooldownUntilTurn = g.turn + FixtureInteractionRegistry.cooldownFor(m.type, 24);

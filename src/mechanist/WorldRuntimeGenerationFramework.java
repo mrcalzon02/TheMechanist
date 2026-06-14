@@ -394,8 +394,8 @@ class World {
         int frontageAnchors = roadFirstStreetAnchors().size();
         int frontageBudget = frontageAnchors / Math.max(12, 20 - zoneSize * 2);
         int segmentBudget = base + roadSegments * (8 + zoneSize * 3);
-        int minimumBySize = new int[]{54, 72, 104, 138}[zoneSize];
-        int mapLimit = Math.max(minimumBySize, (w * h) / (165 - zoneSize * 12));
+        int minimumBySize = new int[]{54, 72, 104, 138, 176, 220}[zoneSize];
+        int mapLimit = Math.max(minimumBySize, (w * h) / Math.max(80, 165 - zoneSize * 12));
         int roadAwareTarget = Math.max(boosted, Math.max(frontageBudget, segmentBudget));
         int target = Math.max(minimumBySize, Math.min(mapLimit, roadAwareTarget));
         DebugLog.audit("ROAD_FIRST_ROOM_TARGET", "zone="+zoneType.label+" target="+target+" base="+base+" map="+w+"x"+h+" profile="+generationScale().label+" roadSegments="+roadSegments+" frontageAnchors="+frontageAnchors+" frontageBudget="+frontageBudget+" segmentBudget="+segmentBudget+" mapLimit="+mapLimit);
@@ -4300,16 +4300,15 @@ class InterstitialInfrastructureApi {
 class WorldGenerationApi {
     private WorldGenerationApi() {}
 
-    // 0.9.10ft: 500-1000 is the clamped world-generation weight / variance budget,
-    // not a raw width/height edge clamp. Keep slice dimensions human-sized and let
-    // this band drive scale variance, room quotas, and spacing pressure.
+    // The six values from 500 through 1000 are literal square edge lengths.
+    // They are retained under the older weight-named methods for source compatibility.
     static final int MIN_WORLDGEN_WEIGHT = 500;
     static final int MAX_WORLDGEN_WEIGHT = 1000;
 
     static final WorldGenerationScaleProfile CURRENT_MINIMUM_SCALE = new WorldGenerationScaleProfile(
         "current.weighted", "Current Weighted Slice", 150, 190, 100, 132,
         18, 34, 27, 10, 17, 10,
-        "Current weighted-zone scale profile: zone-size settings select a 500-1000 worldgen weight band; dimensions are derived from that band and are not raw 500+ tile edges."
+        "Base room/plaza policy. World setup replaces dimensions with the selected exact fixed-square edge."
     );
 
     // Owns world-generation policy that should not remain mixed into gameplay state.
@@ -4326,15 +4325,14 @@ class WorldGenerationApi {
 
     static int clampWorldgenWeight(int weight){ return Math.max(MIN_WORLDGEN_WEIGHT, Math.min(MAX_WORLDGEN_WEIGHT, weight)); }
     static int minWorldgenWeightForZoneSize(int zoneSize){
-        int[] bands = {500, 600, 720, 850};
-        return bands[Math.max(0, Math.min(3, zoneSize))];
+        return WorldSetupSettings.ZONE_SIZE_TILES[Math.max(0, Math.min(WorldSetupSettings.ZONE_SIZE_TILES.length - 1, zoneSize))];
     }
     static int maxWorldgenWeightForZoneSize(int zoneSize){
-        int[] bands = {620, 760, 900, 1000};
-        return bands[Math.max(0, Math.min(3, zoneSize))];
+        return minWorldgenWeightForZoneSize(zoneSize);
     }
     static String worldgenWeightBandLabel(int zoneSize){
-        return minWorldgenWeightForZoneSize(zoneSize) + "-" + maxWorldgenWeightForZoneSize(zoneSize);
+        int edge = minWorldgenWeightForZoneSize(zoneSize);
+        return edge + " x " + edge + " fixed square";
     }
     static double dimensionScaleForWorldgenWeight(int weight){
         int w = clampWorldgenWeight(weight);
@@ -4346,14 +4344,9 @@ class WorldGenerationApi {
     }
 
     static Dimension zoneSliceSize(long sliceSeed, WorldSetupSettings settings){
-        WorldGenerationScaleProfile p = scaleProfileFor(settings);
-        int minW = Math.max(96, p.minWidth);
-        int maxW = Math.max(minW, p.maxWidth);
-        int minH = Math.max(72, p.minHeight);
-        int maxH = Math.max(minH, p.maxHeight);
-        int w = minW + Math.floorMod((int)(sliceSeed>>4), Math.max(1, maxW - minW + 1));
-        int h = minH + Math.floorMod((int)(sliceSeed>>9), Math.max(1, maxH - minH + 1));
-        return new Dimension(w, h);
+        WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings;
+        int edge = use.zoneSizeTiles();
+        return new Dimension(edge, edge);
     }
 
     static int clampRoomTarget(int value){

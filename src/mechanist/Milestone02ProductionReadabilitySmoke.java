@@ -30,7 +30,7 @@ final class Milestone02ProductionReadabilitySmoke {
         requireContains(lines, "Outcome estimate", "value, charge, and defect forecast");
         requireContains(lines, "defect risk about", "defect estimate");
         requireContains(lines, "one inspection disposition", "batch inspection rule");
-        requireContains(lines, "does not yet reduce item statistics", "defect simulation boundary");
+        requireContains(lines, "40% ordinary-trader resale penalty", "defect appraisal consequence");
         List<String> machineLines = ProductionReadabilityAuthority.machineContext(machine, 2, 1, 4);
         requireContains(machineLines, "Hest Var", "assigned worker");
         requireContains(machineLines, "manual Craft remains player-operated", "manual worker boundary");

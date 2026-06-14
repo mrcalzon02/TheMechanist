@@ -37,6 +37,9 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
         checkDetail("production-forecast", "manual Craft remains player-operated", "Milestone03ProductionWorkerQualitySmoke");
         checkDetail("production-forecast", "Teach Machine", "Milestone03MachineKnowledgeSourceSmoke");
         checkDetail("production-forecast", "one batch ID", "Milestone03ProductionBatchProvenanceSmoke");
+        checkDetail("production-forecast", "serviceable production stations", "Milestone03ProductionFacilityQualitySmoke");
+        checkDetail("production-forecast", "40% ordinary-trader resale penalty", "Milestone03ProductionDefectAppraisalSmoke");
+        checkDetail("production-forecast", "equipped fabrication or repair tool", "Milestone03ProductionToolQualitySmoke");
         checkDetail("construction-blueprints", "complete catalog", "Milestone02ConstructionCategorySmoke");
         checkDetail("expansion-heat", "attention bands", "Milestone02ExpansionHeatReadabilitySmoke");
         checkDetail("interaction-approach", "never moves", "Milestone02InteractionApproachSmoke");

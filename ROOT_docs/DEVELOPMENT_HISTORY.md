@@ -535,3 +535,27 @@ Hardened multiplayer privacy with `MultiplayerPrivacyAuthority`. The live custom
 Added `OptionsSwingComponentSmoke` for Java 17 component availability, guarded address entry, IPv4/IPv6 masking, and recent-server display privacy, and wired it into Gate 3.
 
 Verification: fresh Java 17 full-tree compile passed. `OptionsSwingComponentSmoke` and the complete `Gate3PlayerFacingTextSmokeSuite` passed. Headless display detection emitted safe-default warnings only. Manual visual inspection of native dialogs was not run.
+
+## Milestone 03 - Claimed Production Facility Quality Slice
+
+Activated the facility-quality cap for immediate manual crafting without inventing a separate facility save ledger. `ProductionFacilityQualityAuthority` evaluates the selected machine's claimed production room and counts serviceable production stations in that room. One station supports Common output, two or three support Serviceable, four or five support Fine, and six or more support Masterwork; broken stations do not contribute. Unclaimed work areas leave the facility hook open.
+
+The central production-quality trace now applies and names the facility cap alongside doctrine, recipe, machine, and named-material limits. Live recipe rows, detailed forecasts, and final execution share that authority. Crafted-item provenance records facility quality through append-only save encoding, decoding, and transfers. The Production Forecast reference documents the rule.
+
+Added `Milestone03ProductionFacilityQualitySmoke`, expanded quality trace and provenance coverage, and wired the new smoke into Gate 3. Verification: fresh Java 17 full-tree compile passed; focused facility, quality-trace, and provenance smokes passed; the complete `Gate3PlayerFacingTextSmokeSuite` passed. Manual GUI inspection was not run.
+
+## Milestone 03 - Defective Batch Market Appraisal Slice
+
+Converted recorded production defects from provenance-only warnings into a bounded market consequence. `ProductionDefectAppraisalAuthority` applies a visible 40% ordinary-trader resale penalty to units whose preserved batch disposition is `defect flagged`; passed batches retain ordinary pricing. Inventory inspection explains the consequence, trade preview shows the adjusted value before confirmation, and final sale execution uses the same appraisal authority.
+
+The slice deliberately does not invent hidden combat, durability, charge, or use penalties before a per-item condition owner exists. Updated batch feedback, Production Forecast guidance, and Infopedia coverage to state that boundary. Added `Milestone03ProductionDefectAppraisalSmoke`, updated the existing batch/readability guards, and wired the smoke into Gate 3.
+
+Verification: fresh Java 17 full-tree compile passed; focused appraisal, batch provenance, production readability, and trade readability smokes passed; the complete `Gate3PlayerFacingTextSmokeSuite` passed. Manual GUI inspection was not run.
+
+## Milestone 03 - Equipped Production Tool Quality Slice
+
+Activated the manual-production tool-quality cap through `ProductionToolQualityAuthority`. Only a deliberately equipped fabrication or repair tool participates; unrelated carried items and ordinary weapons do not silently affect production. If both hands hold qualifying tools, the better-quality tool governs. Empty hands leave the hook open under the selected machine's integrated tooling.
+
+The central production-quality trace now names equipped tool quality alongside doctrine, recipe, machine, material, and facility caps. Compact recipe rows, detailed forecasts, final execution, and append-only item provenance share the same result. The Production Forecast reference documents the equipped-tool rule and its no-silent-inventory-cap boundary.
+
+Added `Milestone03ProductionToolQualitySmoke`, expanded quality provenance and Infopedia guards, and wired the smoke into Gate 3. Verification: fresh Java 17 full-tree compile passed; focused tool-quality, quality-trace, provenance, and production-readability smokes passed; the complete `Gate3PlayerFacingTextSmokeSuite` passed. Manual GUI inspection was not run.

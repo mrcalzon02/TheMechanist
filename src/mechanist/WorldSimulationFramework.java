@@ -6,7 +6,8 @@ import java.util.*;
 
 class WorldSetupSettings {
     static final String[] NPC_DENSITY = {"Sparse", "Standard", "Crowded", "Teeming"};
-    static final String[] ZONE_SIZE = {"Compact", "Standard", "Large", "Sprawling"};
+    static final int[] ZONE_SIZE_TILES = {500, 600, 700, 800, 900, 1000};
+    static final String[] ZONE_SIZE = {"500 x 500", "600 x 600", "700 x 700", "800 x 800", "900 x 900", "1000 x 1000"};
     static final String[] ZONE_DENSITY = {"Loose", "Standard", "Dense", "Packed"};
     static final String[] PRICE = {"Cheap", "Standard", "Hard", "Punishing"};
     static final String[] CRAFT = {"Forgiving", "Standard", "Hard", "Punishing"};
@@ -21,34 +22,28 @@ class WorldSetupSettings {
     void cyclePriceDifficulty(){ priceDifficulty = (priceDifficulty + 1) % PRICE.length; }
     void cycleCraftDifficulty(){ craftDifficulty = (craftDifficulty + 1) % CRAFT.length; }
     void cycleSimulationAge(){ simulationAge = (simulationAge + 1) % AGE.length; }
+    int zoneSizeTiles(){ return ZONE_SIZE_TILES[Math.max(0, Math.min(zoneSize, ZONE_SIZE_TILES.length - 1))]; }
     double npcDensityMultiplier(){ return new double[]{0.55, 1.0, 1.35, 1.8}[Math.max(0, Math.min(npcDensity, 3))]; }
     double zoneDensityMultiplier(){ return new double[]{0.78, 1.0, 1.22, 1.45}[Math.max(0, Math.min(zoneDensity, 3))]; }
     double priceMultiplier(){ return new double[]{0.75, 1.0, 1.35, 1.75}[Math.max(0, Math.min(priceDifficulty, 3))]; }
     double craftMultiplier(){ return new double[]{0.75, 1.0, 1.35, 1.75}[Math.max(0, Math.min(craftDifficulty, 3))]; }
     int simulationBatches(){ return new int[]{1, 2, 4, 7}[Math.max(0, Math.min(simulationAge, 3))]; }
     WorldGenerationScaleProfile scaleProfile(WorldGenerationScaleProfile base){
-        int z = Math.max(0, Math.min(zoneSize, 3));
+        int z = Math.max(0, Math.min(zoneSize, ZONE_SIZE.length - 1));
         int minWeight = WorldGenerationApi.minWorldgenWeightForZoneSize(z);
         int maxWeight = WorldGenerationApi.maxWorldgenWeightForZoneSize(z);
-        double minScale = WorldGenerationApi.dimensionScaleForWorldgenWeight(minWeight);
-        double maxScale = WorldGenerationApi.dimensionScaleForWorldgenWeight(maxWeight);
-        int minW = Math.max(96, (int)Math.round(base.minWidth * minScale));
-        int maxW = Math.max(minW + 8, (int)Math.round(base.maxWidth * maxScale));
-        int minH = Math.max(72, (int)Math.round(base.minHeight * minScale));
-        int maxH = Math.max(minH + 8, (int)Math.round(base.maxHeight * maxScale));
+        int edgeTiles = zoneSizeTiles();
         double density = zoneDensityMultiplier();
-        double roomPressure = 0.92 + ((minWeight + maxWeight) * 0.5 - WorldGenerationApi.MIN_WORLDGEN_WEIGHT) / (double)(WorldGenerationApi.MAX_WORLDGEN_WEIGHT - WorldGenerationApi.MIN_WORLDGEN_WEIGHT) * 0.34;
-        double sizeRoomPressure = new double[]{0.95, 1.16, 1.55, 2.05}[z];
-        double roomScale = density * roomPressure * sizeRoomPressure;
-        return new WorldGenerationScaleProfile("setup." + ZONE_SIZE[z].toLowerCase(Locale.ROOT), ZONE_SIZE[z] + " / " + ZONE_DENSITY[Math.max(0, Math.min(zoneDensity,3))],
-            minW, maxW, minH, maxH,
+        double roomScale = density * Math.pow(edgeTiles / 600.0, 2.0);
+        return new WorldGenerationScaleProfile("setup.square." + edgeTiles, ZONE_SIZE[z] + " / " + ZONE_DENSITY[Math.max(0, Math.min(zoneDensity,3))],
+            edgeTiles, edgeTiles, edgeTiles, edgeTiles,
             Math.max(10, (int)Math.round(base.minRooms * roomScale)), Math.max(14, (int)Math.round(base.maxRooms * roomScale)), Math.max(12, (int)Math.round(base.defaultRoomTarget * roomScale)),
-            base.plazaMinSize, base.plazaPreferredSize, base.edgeMargin, "Runtime world setup profile: " + shortSummary() + " | worldgen weight band " + minWeight + "-" + maxWeight + " drives variance/density, road frontage, and room minima, not raw edge tiles");
+            base.plazaMinSize, base.plazaPreferredSize, base.edgeMargin, "Runtime world setup profile: " + shortSummary() + " | fixed square dimensions " + edgeTiles + " x " + edgeTiles + "; seed does not alter dimensions");
     }
     String shortSummary(){ return "NPC " + NPC_DENSITY[npcDensity] + ", size " + ZONE_SIZE[zoneSize] + ", density " + ZONE_DENSITY[zoneDensity] + ", prices " + PRICE[priceDifficulty] + ", craft " + CRAFT[craftDifficulty] + ", " + (hoarderMode?"Hoarder":"Carry limits") + ", age " + AGE[simulationAge]; }
-    ArrayList<String> detailLines(){ ArrayList<String> l = new ArrayList<>(); l.add("NPC density: " + NPC_DENSITY[npcDensity] + "  x" + String.format(Locale.US,"%.2f", npcDensityMultiplier())); l.add("Zone size: " + ZONE_SIZE[zoneSize] + " (worldgen weight " + WorldGenerationApi.worldgenWeightBandLabel(zoneSize) + "; dimensions derived, not raw 500+ edges)"); l.add("Zone density: " + ZONE_DENSITY[zoneDensity] + "  x" + String.format(Locale.US,"%.2f", zoneDensityMultiplier())); l.add("World price difficulty: " + PRICE[priceDifficulty] + "  x" + String.format(Locale.US,"%.2f", priceMultiplier())); l.add("Crafting recipe difficulty: " + CRAFT[craftDifficulty] + "  x" + String.format(Locale.US,"%.2f", craftMultiplier())); l.add("Hoarder mode: " + (hoarderMode ? "ON — unlimited personal inventory" : "OFF — Strength/Endurance carry limit")); l.add("Simulation age: " + AGE[simulationAge] + "  history batches " + simulationBatches()); return l; }
+    ArrayList<String> detailLines(){ ArrayList<String> l = new ArrayList<>(); l.add("NPC density: " + NPC_DENSITY[npcDensity] + "  x" + String.format(Locale.US,"%.2f", npcDensityMultiplier())); l.add("Zone size: " + ZONE_SIZE[zoneSize] + " exact fixed square; no range and no seed variance"); l.add("Zone density: " + ZONE_DENSITY[zoneDensity] + "  x" + String.format(Locale.US,"%.2f", zoneDensityMultiplier())); l.add("World price difficulty: " + PRICE[priceDifficulty] + "  x" + String.format(Locale.US,"%.2f", priceMultiplier())); l.add("Crafting recipe difficulty: " + CRAFT[craftDifficulty] + "  x" + String.format(Locale.US,"%.2f", craftMultiplier())); l.add("Hoarder mode: " + (hoarderMode ? "ON — unlimited personal inventory" : "OFF — Strength/Endurance carry limit")); l.add("Simulation age: " + AGE[simulationAge] + "  history batches " + simulationBatches()); return l; }
     String encode(){ return npcDensity+":"+zoneSize+":"+zoneDensity+":"+priceDifficulty+":"+craftDifficulty+":"+simulationAge+":"+hoarderMode; }
-    static WorldSetupSettings decode(String text){ WorldSetupSettings s = standard(); if(text == null || text.isBlank()) return s; String[] a=text.split(":"); try{ if(a.length>0)s.npcDensity=clampInt(a[0],0,3); if(a.length>1)s.zoneSize=clampInt(a[1],0,3); if(a.length>2)s.zoneDensity=clampInt(a[2],0,3); if(a.length>3)s.priceDifficulty=clampInt(a[3],0,3); if(a.length>4)s.craftDifficulty=clampInt(a[4],0,3); if(a.length>5)s.simulationAge=clampInt(a[5],0,3); if(a.length>6)s.hoarderMode=Boolean.parseBoolean(a[6]); }catch(Exception ignored){} return s; }
+    static WorldSetupSettings decode(String text){ WorldSetupSettings s = standard(); if(text == null || text.isBlank()) return s; String[] a=text.split(":"); try{ if(a.length>0)s.npcDensity=clampInt(a[0],0,3); if(a.length>1)s.zoneSize=clampInt(a[1],0,ZONE_SIZE.length-1); if(a.length>2)s.zoneDensity=clampInt(a[2],0,3); if(a.length>3)s.priceDifficulty=clampInt(a[3],0,3); if(a.length>4)s.craftDifficulty=clampInt(a[4],0,3); if(a.length>5)s.simulationAge=clampInt(a[5],0,3); if(a.length>6)s.hoarderMode=Boolean.parseBoolean(a[6]); }catch(Exception ignored){} return s; }
     static int clampInt(String v,int lo,int hi){ try{return Math.max(lo, Math.min(hi, Integer.parseInt(v)));}catch(Exception e){return lo;} }
 }
 

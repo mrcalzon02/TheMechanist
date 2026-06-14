@@ -69,6 +69,9 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone03ProductionWorkerQualitySmoke.main(args);
         Milestone03MachineKnowledgeSourceSmoke.main(args);
         Milestone03ProductionBatchProvenanceSmoke.main(args);
+        Milestone03ProductionFacilityQualitySmoke.main(args);
+        Milestone03ProductionDefectAppraisalSmoke.main(args);
+        Milestone03ProductionToolQualitySmoke.main(args);
         OptionsSwingComponentSmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }

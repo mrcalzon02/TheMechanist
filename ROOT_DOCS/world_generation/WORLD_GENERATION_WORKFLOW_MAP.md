@@ -39,7 +39,7 @@ flowchart TD
 | Preview | `WorldAtlas.preview` | copied `WorldSetupSettings` | Generates in memory and never writes `.mechworld`. |
 | New-world acceptance | `WorldAtlas.createNew` | copied selected setup | Creates a fresh definition for the seed and stores `worlddef.setup`. |
 | Existing-world selection | `.mechworld` | `worlddef.setup` | Stored world definition remains authoritative. |
-| Slice sizing | `WorldGenerationApi.zoneSliceSize` | resolved setup/profile | Derives width and height from the selected worldgen weight band. |
+| Slice sizing | `WorldGenerationApi.zoneSliceSize` | resolved setup/profile | Returns the selected literal square: 500, 600, 700, 800, 900, or 1000 on both axes. Seed is ignored for dimensions. |
 | Slice generation | `World.generationSettings` | full encoded setup | Roads, room targets, NPC density, and later passes use the same setup. |
 | Save slot | `Persistence.writeCore` | `run.worldSetup` | Records the setup needed for deterministic reconstruction. |
 | Save load | `Persistence.readCore` | saved `run.worldSetup` | Rebuilds the atlas and slice with saved settings before restoring mutable state. |
@@ -98,11 +98,11 @@ Stable option identifiers:
 | Identifier | Resolved modifier | Current consumers |
 |---|---|---|
 | `worldgen.npc_density` | NPC population multiplier | `World.populate`, NPC population seeding |
-| `worldgen.zone_size` | weight band, dimensions, road and room minima | `zoneSliceSize`, `roadFirstRoomTarget`, road spine distribution |
+| `worldgen.zone_size` | exact square edge, road and room minima | `zoneSliceSize`, `roadFirstRoomTarget`, road spine distribution |
 | `worldgen.zone_density` | room-pressure multiplier | scale profile and target room count |
 | `worldgen.price_difficulty` | buy/sell price multiplier | `TraderSession` pricing |
 | `worldgen.craft_difficulty` | supplies and machine-parts multiplier | `CraftingRecipe` costs |
 | `worldgen.hoarder_mode` | unlimited player carry capacity | `GamePanel.carryCapacity` |
 | `worldgen.simulation_age` | historical simulation batch count | `WorldAtlas` history initialization |
 
-`WorldTopologySettingsBridge` and its 500-1000 fixed-square `SectorSize` contract remain a separate topology migration surface. They are not silently treated as the four-option `zoneSize` selector; milestone work must choose and document an explicit migration before joining those models.
+`WorldSetupSettings.zoneSize`, `WorldTopologySettingsBridge`, and `WorldTopologyContract.SectorSize` now share one authoritative six-option contract: exactly 500, 600, 700, 800, 900, or 1000 tiles per edge. Every generated zone is a perfect square. Seeds may alter contents but never width or height, and unsupported intermediate values are rejected rather than rounded.

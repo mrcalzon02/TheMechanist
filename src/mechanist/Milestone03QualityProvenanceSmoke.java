@@ -7,7 +7,7 @@ import java.util.Set;
 final class Milestone03QualityProvenanceSmoke {
     public static void main(String[] args) {
         ProductionQualityTraceAuthority.QualityTrace trace = ProductionQualityTraceAuthority.evaluate(
-                Set.of("Fine Ballistics Patterns"), "Serviceable Ballistics Patterns", "Masterwork", 3);
+                Set.of("Fine Ballistics Patterns"), "Serviceable Ballistics Patterns", "Masterwork", 3, 4, 5);
         ProductionRecipe recipe = ProductionRecipe.create("Autopistol", Faction.HIVER, trace.outputQuality(),
                 "Serviceable Ballistics Patterns", "Test Forge");
         BaseObject machine = new BaseObject("Test Forge", 'f', 0, 0, 0, 0);
@@ -32,6 +32,8 @@ final class Milestone03QualityProvenanceSmoke {
         requireContains(made.qualityContextLines(), "Producing operator skill: Firearms via Firearms 9", "operator skill");
         requireContains(made.qualityContextLines(), "Producing operator band: skilled", "operator band");
         requireContains(made.qualityContextLines(), "Consumed material quality cap: Serviceable", "material quality");
+        requireContains(made.qualityContextLines(), "Producing facility quality cap: Fine", "facility quality");
+        requireContains(made.qualityContextLines(), "Equipped production tool quality cap: Masterwork", "tool quality");
 
         ItemProvenanceRecord decoded = ItemProvenanceRecord.decode(made.encode());
         require(decoded != null, "encoded provenance should decode");
@@ -40,6 +42,8 @@ final class Milestone03QualityProvenanceSmoke {
         require(made.operatorSkill.equals(decoded.operatorSkill), "operator skill should survive save encoding");
         require(made.operatorSkillBand.equals(decoded.operatorSkillBand), "operator band should survive save encoding");
         require(made.materialQuality.equals(decoded.materialQuality), "material quality should survive save encoding");
+        require(made.facilityQuality.equals(decoded.facilityQuality), "facility quality should survive save encoding");
+        require(made.toolQuality.equals(decoded.toolQuality), "tool quality should survive save encoding");
         require(made.knowledgeProvider.equals(decoded.knowledgeProvider), "knowledge provider should survive save encoding");
         require(made.batchId.equals(decoded.batchId), "batch identity should survive save encoding");
         require(made.defectState.equals(decoded.defectState), "defect disposition should survive save encoding");
@@ -54,6 +58,8 @@ final class Milestone03QualityProvenanceSmoke {
         require(decoded.operatorSkill.equals(transferred.operatorSkill), "operator skill should survive transfer");
         require(decoded.operatorSkillBand.equals(transferred.operatorSkillBand), "operator band should survive transfer");
         require(decoded.materialQuality.equals(transferred.materialQuality), "material quality should survive transfer");
+        require(decoded.facilityQuality.equals(transferred.facilityQuality), "facility quality should survive transfer");
+        require(decoded.toolQuality.equals(transferred.toolQuality), "tool quality should survive transfer");
 
         String legacy = String.join("~", ItemProvenanceRecord.enc("Common Legacy Tool"), ItemProvenanceRecord.enc("NONE"),
                 ItemProvenanceRecord.enc("legacy maker"), ItemProvenanceRecord.enc("legacy place"),

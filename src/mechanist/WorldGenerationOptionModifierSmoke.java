@@ -15,7 +15,7 @@ final class WorldGenerationOptionModifierSmoke {
 
         WorldSetupSettings high = WorldSetupSettings.standard();
         high.npcDensity = 3;
-        high.zoneSize = 3;
+        high.zoneSize = 5;
         high.zoneDensity = 3;
         high.priceDifficulty = 3;
         high.craftDifficulty = 3;
@@ -60,7 +60,7 @@ final class WorldGenerationOptionModifierSmoke {
         World world = new World(91L, 20, 20);
         world.configureGenerationSettings(high);
         require(WorldGenerationSettingsAuthority.forWorld(world).encodedSetup().equals(high.encode()), "world-owned modifier profile");
-        require(WorldGenerationSettingsAuthority.forWorld(world).zoneSizeIndex() == 3, "world modifier lookup");
+        require(WorldGenerationSettingsAuthority.forWorld(world).zoneSizeIndex() == 5, "world modifier lookup");
     }
 
     private static void require(boolean condition, String message) {

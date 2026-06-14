@@ -17,7 +17,8 @@ final class Milestone03ProductionBatchProvenanceSmoke {
         require(failed.batchId().startsWith("BATCH-12-"), "batch id should include production turn");
         require("defect flagged".equals(failed.defectState()), "low inspection roll should flag the batch");
         require("passed inspection".equals(passed.defectState()), "high inspection roll should pass the batch");
-        require(failed.lines().get(2).contains("not yet reduced"), "stat-effect boundary should remain explicit");
+        require(failed.lines().get(2).contains("40% resale penalty"), "flagged batch should expose its appraisal consequence");
+        require(failed.lines().get(2).contains("item statistics remain unchanged"), "stat-effect boundary should remain explicit");
     }
 
     private static void require(boolean condition, String message) {

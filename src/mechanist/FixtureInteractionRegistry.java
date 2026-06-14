@@ -136,6 +136,11 @@ final class FixtureInteractionRegistry {
         register(AssetIntegrationDisciplineAuthority.PARKED_UTILITY_BIKE, Family.ROAD_TRANSIT, 20, false, true, true, false, true, "Parked utility bike; passive light vehicle profile.");
         register(AssetIntegrationDisciplineAuthority.PARKED_ARMORED_CAR, Family.ROAD_TRANSIT, 28, false, true, true, false, true, "Parked armored car; passive security vehicle profile.");
         register(AssetIntegrationDisciplineAuthority.PARKED_TANK, Family.ROAD_TRANSIT, 32, false, true, true, false, true, "Parked heavy armor marker; passive vehicle profile without live weapon behavior.");
+        register(AssetIntegrationDisciplineAuthority.VEHICLE_DEALERSHIP_FRONTAGE, Family.ROAD_TRANSIT, 12, false, true, true, true, true, "Vehicle dealership; purchases persistent player vehicle titles.");
+        register(AssetIntegrationDisciplineAuthority.VEHICLE_PARTS_STORE_FRONTAGE, Family.ROAD_TRANSIT, 8, false, true, true, true, true, "Vehicle parts store; sells cataloged maintenance parts.");
+        register(AssetIntegrationDisciplineAuthority.VEHICLE_SERVICE_GARAGE_FRONTAGE, Family.ROAD_TRANSIT, 12, false, true, true, true, true, "Vehicle garage; consumes a machine part or script for title-authorized maintenance.");
+        register(AssetIntegrationDisciplineAuthority.PUBLIC_TRANSIT_STOP_FRONTAGE, Family.ROAD_TRANSIT, 20, false, true, true, false, true, "Public transit frontage with route and fare hooks.");
+        register(AssetIntegrationDisciplineAuthority.FACTION_MOTOR_POOL_FRONTAGE, Family.ROAD_TRANSIT, 24, false, true, true, false, true, "Faction motor pool with explicit vehicle ownership and role hooks.");
         register(AssetIntegrationDisciplineAuthority.ALGAE_TANK_FIXTURE, Family.FOOD_BIO, 18, false, true, true, false, true, "Algae tank; vat culture, synthetic food base, and water/nutrient handling preview target.");
         register(AssetIntegrationDisciplineAuthority.HYDROPONICS_BED_FIXTURE, Family.FOOD_BIO, 18, false, true, true, false, true, "Hydroponics bed; crop stock, leaf/grain trays, and agriculture staffing preview target.");
         register(AssetIntegrationDisciplineAuthority.ANIMAL_PEN_FIXTURE, Family.FOOD_BIO, 22, false, true, true, false, true, "Animal pen; livestock holding and farm-beast custody preview target.");

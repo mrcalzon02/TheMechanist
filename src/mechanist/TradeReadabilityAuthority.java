@@ -53,13 +53,19 @@ final class TradeReadabilityAuthority {
     }
 
     static List<String> salePreview(String item, int price) {
+        return salePreview(item, price, null);
+    }
+
+    static List<String> salePreview(String item, int price, ItemProvenanceRecord provenance) {
         ArrayList<String> lines = new ArrayList<>();
         if (item == null || item.isBlank()) {
             lines.add("Sale preview: no carried item selected.");
             return lines;
         }
         boolean protectedItem = TransferWorkflowReadabilityAuthority.protectedItem(item);
-        lines.add("Sale preview: " + item + " for " + Math.max(0, price) + " script.");
+        ProductionDefectAppraisalAuthority.Appraisal appraisal = ProductionDefectAppraisalAuthority.appraise(price, provenance);
+        lines.add("Sale preview: " + item + " for " + appraisal.adjustedPrice() + " script.");
+        if (appraisal.defectFlagged()) lines.addAll(appraisal.lines());
         lines.add(protectedItem
                 ? "Sale blocked: mission, evidence, or intelligence items require a dedicated hand-in or explicit release flow."
                 : "Sale available: confirming removes one item from carried inventory and is not automatically reversible.");

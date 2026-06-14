@@ -30,6 +30,12 @@ final class RoadFrontageFixtureAuthority {
         int barFronts;
         int roadsideLights;
         int imperialShrines;
+        int vehicleDealerships;
+        int vehiclePartsStores;
+        int vehicleServiceGarages;
+        int publicTransitStops;
+        int factionMotorPools;
+        int factionVehicles;
         int skippedOccupied;
         int skippedProtected;
         String layer = "road-frontage fixture generation";
@@ -48,6 +54,12 @@ final class RoadFrontageFixtureAuthority {
                     " serviceCounters=" + serviceCounters +
                     " medicaeFronts=" + medicaeFronts +
                     " barFronts=" + barFronts +
+                    " vehicleDealerships=" + vehicleDealerships +
+                    " vehiclePartsStores=" + vehiclePartsStores +
+                    " vehicleServiceGarages=" + vehicleServiceGarages +
+                    " publicTransitStops=" + publicTransitStops +
+                    " factionMotorPools=" + factionMotorPools +
+                    " factionVehicles=" + factionVehicles +
                     " skippedOccupied=" + skippedOccupied +
                     " skippedProtected=" + skippedProtected +
                     " rule=sidewalks and alleys gain low32 civic frontage fixtures with semantic interaction hooks";
@@ -83,6 +95,15 @@ final class RoadFrontageFixtureAuthority {
             if(res.infoKiosks < kioskTarget && maybe(16, r) && placePublicServiceFixture(w,p.x,p.y,AssetIntegrationDisciplineAuthority.PUBLIC_INFO_KIOSK,'T',r,res)) { res.infoKiosks++; continue; }
             if(res.serviceCounters < serviceTarget && maybe(12, r) && placePublicServiceFixture(w,p.x,p.y,AssetIntegrationDisciplineAuthority.PUBLIC_SERVICE_COUNTER,'T',r,res)) { res.serviceCounters++; continue; }
         }
+
+        // Vehicle commerce is a street-frontage anchor, so reserve it before dense ambient fixtures.
+        VehicleEconomyFrontageAuthority.Result vehicles = VehicleEconomyFrontageAuthority.apply(w, sidewalks, r);
+        res.vehicleDealerships = vehicles.dealerships;
+        res.vehiclePartsStores = vehicles.partsStores;
+        res.vehicleServiceGarages = vehicles.serviceGarages;
+        res.publicTransitStops = vehicles.transitStops;
+        res.factionMotorPools = vehicles.motorPools;
+        res.factionVehicles = vehicles.personalVehicles + vehicles.publicVehicles + vehicles.factionVehicles;
 
         // Seed scarce anchor fixtures by searching again so deterministic zones with short sidewalks still get visible targets.
         seedSpecific(w, sidewalks, r, res, medicaeTarget, AssetIntegrationDisciplineAuthority.MEDICAE_FRONTAGE, MedicaeFixtureAuthority.frontageLabel(w.zoneType, r), MedicaeFixtureAuthority.frontageStock(RoadGridIntegrationAuthority.SIDEWALK), 'N');

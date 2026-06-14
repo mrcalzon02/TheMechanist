@@ -20,9 +20,13 @@ final class ProductionReadabilityAuthority {
         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge = ProductionKnowledgeSourceAuthority.evaluate(
                 game, machine, recipe.requiredKnowledge);
         int materialTier = materials.active() && materials.complete() ? materials.limitingTier() : -1;
+        ProductionFacilityQualityAuthority.FacilityQuality facility = ProductionFacilityQualityAuthority.evaluate(game, machine);
+        int facilityTier = facility.active() ? facility.tier() : -1;
+        ProductionToolQualityAuthority.ToolQuality tool = ProductionToolQualityAuthority.evaluate(game);
+        int toolTier = tool.active() ? tool.tier() : -1;
         String quality = ProductionQualityTraceAuthority.evaluate(
                 knowledge.effectiveKnowledge(),
-                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier).outputQuality();
+                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier).outputQuality();
         int turns = ControlledProductionJobAuthority.manualTurnCost(game, machine, recipe);
         int fatigue = ControlledProductionJobAuthority.manualFatigueCost(game, machine, recipe);
         ProductionOperatorSkillAuthority.OperatorSkill operator = ProductionOperatorSkillAuthority.evaluate(game, recipe.xpSkill);
@@ -33,8 +37,10 @@ final class ProductionReadabilityAuthority {
         int history = game == null || game.machineOperationQueue == null ? 0 : game.machineOperationQueue.historyCount();
         lines.addAll(ProductionQualityTraceAuthority.evaluate(
                 knowledge.effectiveKnowledge(),
-                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier).lines());
+                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier).lines());
         lines.addAll(materials.lines());
+        lines.addAll(facility.lines());
+        lines.addAll(tool.lines());
         lines.addAll(knowledge.lines());
         lines.addAll(ProductionWorkerQualityAuthority.evaluate(game, machine, true).lines());
         lines.addAll(machineContext(machine, pending, active, history));
@@ -85,7 +91,7 @@ final class ProductionReadabilityAuthority {
                 + production.outputCharges() + "; defect risk about " + production.estimatedDefectPercent(machine,
                 operator == null ? 0 : operator.defectRiskAdjust()) + "%.");
         lines.add("Batch rule: manual Craft rolls one inspection disposition for the whole output batch and records it in item provenance.");
-        lines.add("Defect boundary: a flagged batch is traceable, but does not yet reduce item statistics.");
+        lines.add("Defect consequence: a flagged batch receives a 40% ordinary-trader resale penalty; item statistics remain unchanged.");
         lines.add("Purpose: " + safe(recipe.description, "No description recorded."));
         return lines;
     }

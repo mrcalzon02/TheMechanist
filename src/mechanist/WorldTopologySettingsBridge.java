@@ -26,7 +26,7 @@ final class WorldTopologySettingsBridge {
         Integer tiles = readInt(setup, FIELD_SECTOR_SIZE_TILES, "sectorSizeTiles", "mapSizeTiles", "zoneSizeTiles", "worldSizeTiles");
         if (tiles != null) return WorldTopologyContract.SectorSize.fromTiles(tiles);
 
-        Integer index = readInt(setup, FIELD_SECTOR_SIZE_INDEX, "sectorSizeIndex", "mapSizeIndex", FIELD_WORLD_SCALE_INDEX, FIELD_WORLD_SCALE);
+        Integer index = readInt(setup, FIELD_SECTOR_SIZE_INDEX, "sectorSizeIndex", "mapSizeIndex", "zoneSize", FIELD_WORLD_SCALE_INDEX, FIELD_WORLD_SCALE);
         if (index != null) return sizeByIndex(index);
 
         return WorldTopologyContract.SectorSize.STANDARD_600;
@@ -64,6 +64,7 @@ final class WorldTopologySettingsBridge {
         if (setup == null || size == null) return;
         if (writeInt(setup, FIELD_SECTOR_SIZE_TILES, size.tiles)) return;
         if (writeInt(setup, FIELD_SECTOR_SIZE_INDEX, size.ordinal())) return;
+        if (writeInt(setup, "zoneSize", size.ordinal())) return;
         if (writeInt(setup, FIELD_WORLD_SCALE_INDEX, size.ordinal())) return;
         if (writeInt(setup, FIELD_WORLD_SCALE, size.ordinal())) return;
         DebugLog.warn("WORLD_TOPOLOGY_SETTINGS", "Could not write fixed sector size into setup class " + setup.getClass().getName() + "; using runtime bridge value only.");

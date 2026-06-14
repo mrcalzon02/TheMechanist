@@ -3088,7 +3088,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         detail.addAll(TradeReadabilityAuthority.offerPreview(t, selected, carriedScript, inventoryWeight(), carryCapacity()));
         if (selected != null) detail.add(selected.displayLine(t.buyPrice(selected)));
         String carried = selectedInventoryItem();
-        detail.addAll(TradeReadabilityAuthority.salePreview(carried, t == null || carried == null ? 0 : t.sellPrice(carried)));
+        ItemProvenanceRecord carriedProvenance = peekProvenanceForItem(carried);
+        detail.addAll(TradeReadabilityAuthority.salePreview(carried,
+                t == null || carried == null ? 0 : t.sellPrice(carried), carriedProvenance));
         drawDetailBox(g, right, "Offer Detail", detail, selected == null ? null : images.getItemIcon(selected.name));
         int by = right.y + right.height - 36;
         addOverlayButton("Buy", right.x + 12, by, 72, 28, "Buy the selected offer.", this::buySelectedTradeOffer);
@@ -3450,15 +3452,18 @@ class GamePanel extends LegacyPanelBridgeBase {
             repaint();
             return;
         }
-        int price = activeTraderSession.sellPrice(item);
+        ItemProvenanceRecord pr = peekProvenanceForItem(item);
+        int ordinaryPrice = activeTraderSession.sellPrice(item);
+        int price = ProductionDefectAppraisalAuthority.appraise(ordinaryPrice, pr).adjustedPrice();
         inventory.remove(selectedInventoryIndex);
         selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
         addImperialScript(price);
-        ItemProvenanceRecord pr = takeProvenanceForItem(item);
+        pr = takeProvenanceForItem(item);
         if (pr != null) rememberItemProvenance(item, ItemProvenanceRecord.transferred(pr, item, world, turn, "sold by player to " + safeLabel(activeTraderSession.name, "trader")));
         rebuildItemContainersFromLegacyLists();
         gainXp("Commerce", 1, "sold " + item);
-        logEvent("Sold " + item + " for " + price + " script to " + safeLabel(activeTraderSession.name, "trader") + ".");
+        logEvent("Sold " + item + " for " + price + " script to " + safeLabel(activeTraderSession.name, "trader")
+                + (ordinaryPrice == price ? "." : " after its recorded defect appraisal."));
         advanceTurn("sells " + item + ".");
         repaint();
     }
@@ -5199,10 +5204,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         ProductionMaterialQualityAuthority.MaterialQuality materialQuality = ProductionMaterialQualityAuthority.evaluate(this, recipe);
         int materialTier = materialQuality.active() && materialQuality.complete() ? materialQuality.limitingTier() : -1;
+        ProductionFacilityQualityAuthority.FacilityQuality facilityQuality = ProductionFacilityQualityAuthority.evaluate(this, machine);
+        int facilityTier = facilityQuality.active() ? facilityQuality.tier() : -1;
+        ProductionToolQualityAuthority.ToolQuality toolQuality = ProductionToolQualityAuthority.evaluate(this);
+        int toolTier = toolQuality.active() ? toolQuality.tier() : -1;
         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledgeSource = ProductionKnowledgeSourceAuthority.evaluate(
                 this, machine, recipe.requiredKnowledge);
         ProductionQualityTraceAuthority.QualityTrace qualityTrace = ProductionQualityTraceAuthority.evaluate(
-                knowledgeSource.effectiveKnowledge(), recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier);
+                knowledgeSource.effectiveKnowledge(), recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier);
         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill = ProductionOperatorSkillAuthority.evaluate(this, recipe.xpSkill);
         recipe.consumeInputs(this);
         String quality = qualityTrace.outputQuality();
@@ -5587,11 +5596,15 @@ class GamePanel extends LegacyPanelBridgeBase {
     String cappedProductionQuality(BaseObject machine, CraftingRecipe recipe) {
         ProductionMaterialQualityAuthority.MaterialQuality materials = ProductionMaterialQualityAuthority.evaluate(this, recipe);
         int materialTier = materials.active() && materials.complete() ? materials.limitingTier() : -1;
+        ProductionFacilityQualityAuthority.FacilityQuality facility = ProductionFacilityQualityAuthority.evaluate(this, machine);
+        int facilityTier = facility.active() ? facility.tier() : -1;
+        ProductionToolQualityAuthority.ToolQuality tool = ProductionToolQualityAuthority.evaluate(this);
+        int toolTier = tool.active() ? tool.tier() : -1;
         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge = ProductionKnowledgeSourceAuthority.evaluate(
                 this, machine, recipe == null ? null : recipe.requiredKnowledge);
         return ProductionQualityTraceAuthority.evaluate(knowledge.effectiveKnowledge(),
                 recipe == null ? null : recipe.requiredKnowledge,
-                machine == null ? "Common" : machine.qualityName, materialTier).outputQuality();
+                machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier).outputQuality();
     }
     int availableRecruitLabor() { return Math.max(0, factionRecruits.size()); }
     int stat(String statName, int fallback) {

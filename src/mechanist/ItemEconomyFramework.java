@@ -120,6 +120,8 @@ class ItemProvenanceRecord {
     String operatorSkill = "";
     String operatorSkillBand = "";
     String materialQuality = "";
+    String facilityQuality = "";
+    String toolQuality = "";
     String qualityLimiter = "";
     int turnMade = 0;
 
@@ -174,6 +176,8 @@ class ItemProvenanceRecord {
             r.outputQuality = qualityTrace.outputQuality();
             r.qualityLimiter = qualityTrace.limiterLabel();
             r.materialQuality = qualityTrace.materialTier() < 0 ? "open" : QualityAuthorityApi.qualityName(qualityTrace.materialTier());
+            r.facilityQuality = qualityTrace.facilityTier() < 0 ? "open" : QualityAuthorityApi.qualityName(qualityTrace.facilityTier());
+            r.toolQuality = qualityTrace.toolTier() < 0 ? "open" : QualityAuthorityApi.qualityName(qualityTrace.toolTier());
         }
         if (operatorSkill != null) {
             r.operatorSkill = operatorSkill.recipeSkill() + " via " + operatorSkill.coreStat() + " " + operatorSkill.value();
@@ -204,6 +208,8 @@ class ItemProvenanceRecord {
         r.operatorSkill = prior.operatorSkill;
         r.operatorSkillBand = prior.operatorSkillBand;
         r.materialQuality = prior.materialQuality;
+        r.facilityQuality = prior.facilityQuality;
+        r.toolQuality = prior.toolQuality;
         r.qualityLimiter = prior.qualityLimiter;
         String priorChain = prior.chain == null || prior.chain.isBlank() ? (prior.maker + " -> " + prior.route) : prior.chain;
         r.chain = priorChain + " -> " + r.route;
@@ -224,19 +230,23 @@ class ItemProvenanceRecord {
         if (!knowledgeProvider.isBlank()) lines.add("Knowledge provider: " + knowledgeProvider + ".");
         if (!batchId.isBlank()) lines.add("Production batch: " + batchId + ".");
         if (!defectState.isBlank()) lines.add("Batch inspection: " + defectState + ".");
+        String defectConsequence = ProductionDefectAppraisalAuthority.inventoryLine(this);
+        if (!defectConsequence.isBlank()) lines.add(defectConsequence);
         if (!machineQuality.isBlank()) lines.add("Producing machine quality: " + machineQuality + ".");
         if (!machineCondition.isBlank()) lines.add("Producing machine condition: " + machineCondition + ".");
         if (!operatorSkill.isBlank()) lines.add("Producing operator skill: " + operatorSkill + ".");
         if (!operatorSkillBand.isBlank()) lines.add("Producing operator band: " + operatorSkillBand + ".");
         if (!materialQuality.isBlank()) lines.add("Consumed material quality cap: " + materialQuality + ".");
+        if (!facilityQuality.isBlank()) lines.add("Producing facility quality cap: " + facilityQuality + ".");
+        if (!toolQuality.isBlank()) lines.add("Equipped production tool quality cap: " + toolQuality + ".");
         if (!qualityLimiter.isBlank()) lines.add("Recorded quality limiter: " + qualityLimiter + ".");
         return lines;
     }
     String summary() { return "Origin: " + itemName + " | unit=" + unitId + " | maker=" + maker + " | faction=" + makerFaction + " | place=" + place + " | inputs=" + inputs + " | route=" + route + " | chain=" + shortChain() + " | turn=" + turnMade + "."; }
-    String encode() { return enc(itemName)+"~"+enc(makerFaction)+"~"+enc(maker)+"~"+enc(place)+"~"+enc(inputs)+"~"+enc(route)+"~"+turnMade+"~"+enc(chain)+"~"+enc(unitId)+"~"+enc(outputQuality)+"~"+enc(knowledgeSource)+"~"+enc(machineQuality)+"~"+enc(qualityLimiter)+"~"+enc(machineCondition)+"~"+enc(operatorSkill)+"~"+enc(operatorSkillBand)+"~"+enc(materialQuality)+"~"+enc(knowledgeProvider)+"~"+enc(batchId)+"~"+enc(defectState); }
+    String encode() { return enc(itemName)+"~"+enc(makerFaction)+"~"+enc(maker)+"~"+enc(place)+"~"+enc(inputs)+"~"+enc(route)+"~"+turnMade+"~"+enc(chain)+"~"+enc(unitId)+"~"+enc(outputQuality)+"~"+enc(knowledgeSource)+"~"+enc(machineQuality)+"~"+enc(qualityLimiter)+"~"+enc(machineCondition)+"~"+enc(operatorSkill)+"~"+enc(operatorSkillBand)+"~"+enc(materialQuality)+"~"+enc(knowledgeProvider)+"~"+enc(batchId)+"~"+enc(defectState)+"~"+enc(facilityQuality)+"~"+enc(toolQuality); }
     static ItemProvenanceRecord decode(String line) {
         try {
-            String[] a = line.split("~",20); if (a.length < 7) return null;
+            String[] a = line.split("~",22); if (a.length < 7) return null;
             ItemProvenanceRecord r = new ItemProvenanceRecord(); r.itemName=dec(a[0]); r.makerFaction=dec(a[1]); r.maker=dec(a[2]); r.place=dec(a[3]); r.inputs=dec(a[4]); r.route=dec(a[5]); r.turnMade=Integer.parseInt(a[6]);
             if (a.length >= 8) r.chain=dec(a[7]); else r.chain=r.maker + " -> " + r.route;
             if (a.length >= 9) r.unitId=dec(a[8]); else r.unitId="LEGACY-" + Math.abs(Objects.hash(r.itemName, r.maker, r.place, r.turnMade));
@@ -251,6 +261,8 @@ class ItemProvenanceRecord {
             if (a.length >= 18) r.knowledgeProvider=dec(a[17]);
             if (a.length >= 19) r.batchId=dec(a[18]);
             if (a.length >= 20) r.defectState=dec(a[19]);
+            if (a.length >= 21) r.facilityQuality=dec(a[20]);
+            if (a.length >= 22) r.toolQuality=dec(a[21]);
             return r;
         } catch(Exception ex) { return null; }
     }

@@ -16,7 +16,12 @@ final class Milestone03ProductionQualityTraceSmoke {
                 Set.of("Masterwork Tools Patterns"), "Masterwork Tools Patterns", "Common");
         require("Common".equals(machineLimited.outputQuality()), "machine should cap better doctrine and recipe quality");
         requireContains(machineLimited.lines(), "machine Common", "machine cap");
-        requireContains(machineLimited.lines(), "facility and worker quality do not reduce", "open hook honesty");
+        requireContains(machineLimited.lines(), "worker quality does not reduce immediate manual Craft", "open hook honesty");
+
+        ProductionQualityTraceAuthority.QualityTrace facilityLimited = ProductionQualityTraceAuthority.evaluate(
+                Set.of("Masterwork Tools Patterns"), "Masterwork Tools Patterns", "Masterwork", -1, 2);
+        require("Common".equals(facilityLimited.outputQuality()), "a Common facility should cap otherwise Masterwork production");
+        requireContains(facilityLimited.lines(), "production facility", "facility limiter");
 
         for (String line : recipeLimited.lines()) rejectLeaks(line);
         for (String line : machineLimited.lines()) rejectLeaks(line);

@@ -38,7 +38,7 @@ final class WorldGenerationSettingsAuthority {
         double numeric(String optionId) {
             return switch (optionId == null ? "" : optionId) {
                 case NPC_DENSITY -> npcDensityMultiplier;
-                case ZONE_SIZE -> zoneSizeIndex;
+                case ZONE_SIZE -> minWorldgenWeight;
                 case ZONE_DENSITY -> zoneDensityMultiplier;
                 case PRICE_DIFFICULTY -> priceMultiplier;
                 case CRAFT_DIFFICULTY -> craftMultiplier;
@@ -64,7 +64,7 @@ final class WorldGenerationSettingsAuthority {
         String auditLine() {
             return "setup=" + encodedSetup
                     + " npc=" + label(NPC_DENSITY) + " x" + fmt(npcDensityMultiplier)
-                    + " size=" + label(ZONE_SIZE) + " weight=" + minWorldgenWeight + "-" + maxWorldgenWeight
+                    + " size=" + label(ZONE_SIZE) + " exactSquare=" + minWorldgenWeight + "x" + maxWorldgenWeight
                     + " density=" + label(ZONE_DENSITY) + " x" + fmt(zoneDensityMultiplier)
                     + " prices=" + label(PRICE_DIFFICULTY) + " x" + fmt(priceMultiplier)
                     + " craft=" + label(CRAFT_DIFFICULTY) + " x" + fmt(craftMultiplier)
@@ -77,7 +77,7 @@ final class WorldGenerationSettingsAuthority {
     static Modifiers resolve(WorldSetupSettings settings) {
         WorldSetupSettings use = settings == null ? WorldSetupSettings.standard() : settings.copy();
         int npc = clamp(use.npcDensity);
-        int size = clamp(use.zoneSize);
+        int size = clampZoneSize(use.zoneSize);
         int density = clamp(use.zoneDensity);
         int price = clamp(use.priceDifficulty);
         int craft = clamp(use.craftDifficulty);
@@ -143,6 +143,7 @@ final class WorldGenerationSettingsAuthority {
     }
 
     private static int clamp(int value) { return Math.max(0, Math.min(3, value)); }
+    private static int clampZoneSize(int value) { return Math.max(0, Math.min(WorldSetupSettings.ZONE_SIZE.length - 1, value)); }
     private static String fmt(double value) { return String.format(Locale.US, "%.2f", value); }
 
     private WorldGenerationSettingsAuthority() { }

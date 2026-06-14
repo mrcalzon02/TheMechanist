@@ -34,6 +34,11 @@ final class AssetIntegrationDisciplineAuthority {
     static final String PARKED_UTILITY_BIKE = "parked-utility-bike";
     static final String PARKED_ARMORED_CAR = "parked-armored-car";
     static final String PARKED_TANK = "parked-tank";
+    static final String VEHICLE_DEALERSHIP_FRONTAGE = "vehicle-dealership-frontage";
+    static final String VEHICLE_PARTS_STORE_FRONTAGE = "vehicle-parts-store-frontage";
+    static final String VEHICLE_SERVICE_GARAGE_FRONTAGE = "vehicle-service-garage-frontage";
+    static final String PUBLIC_TRANSIT_STOP_FRONTAGE = "public-transit-stop-frontage";
+    static final String FACTION_MOTOR_POOL_FRONTAGE = "faction-motor-pool-frontage";
 
     static final String MEDICAE_ROOM_FIXTURE = "medicae-room-fixture";
     static final String MEDICAE_CLINIC_STALL = "medicae-clinic-stall";
@@ -145,6 +150,11 @@ final class AssetIntegrationDisciplineAuthority {
         alias("vehicle-bike-placeholder", PARKED_UTILITY_BIKE);
         alias("vehicle-armored-car-placeholder", PARKED_ARMORED_CAR);
         alias("vehicle-tank-placeholder", PARKED_TANK);
+        alias("vehicle-dealership", VEHICLE_DEALERSHIP_FRONTAGE);
+        alias("vehicle-parts-store", VEHICLE_PARTS_STORE_FRONTAGE);
+        alias("vehicle-service-garage", VEHICLE_SERVICE_GARAGE_FRONTAGE);
+        alias("public-transit-stop", PUBLIC_TRANSIT_STOP_FRONTAGE);
+        alias("faction-motor-pool", FACTION_MOTOR_POOL_FRONTAGE);
         alias("medicae-room-fixture-placeholder", MEDICAE_ROOM_FIXTURE);
         alias("clinic-stall", MEDICAE_CLINIC_STALL);
         alias("clinic-stall-placeholder", MEDICAE_CLINIC_STALL);
@@ -377,6 +387,11 @@ final class AssetIntegrationDisciplineAuthority {
         semantic(PARKED_UTILITY_BIKE, "entity_bike");
         semantic(PARKED_ARMORED_CAR, "entity_armored_car");
         semantic(PARKED_TANK, "entity_tank");
+        semantic(VEHICLE_DEALERSHIP_FRONTAGE, "feature_public_service_counter");
+        semantic(VEHICLE_PARTS_STORE_FRONTAGE, "feature_public_service_counter");
+        semantic(VEHICLE_SERVICE_GARAGE_FRONTAGE, "feature_public_service_counter");
+        semantic(PUBLIC_TRANSIT_STOP_FRONTAGE, "feature_public_info_column");
+        semantic(FACTION_MOTOR_POOL_FRONTAGE, "entity_car");
         semantic(MEDICAE_ROOM_FIXTURE, "build_backroom_medicae_stall");
         semantic(MEDICAE_CLINIC_STALL, "build_clinic_stall");
         semantic(MEDICAE_BACKROOM_STALL, "build_backroom_medicae_stall");
