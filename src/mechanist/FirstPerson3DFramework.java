@@ -33,6 +33,8 @@ final class FirstPersonRenderViewport {
     private final GameHudOverlay hudOverlay = new GameHudOverlay();
     private final ContinuousGridPlayer continuousPlayer = new ContinuousGridPlayer(0.5, 0.5);
     private final ArrayList<RenderableSprite> spriteScratch = new ArrayList<>(256);
+    private final java.util.HashMap<Long, BufferedImage> firstPersonFloorTextureCache = new java.util.HashMap<>();
+    private final java.util.HashMap<Long, BufferedImage> firstPersonWallTextureCache = new java.util.HashMap<>();
     private BufferedImage frame;
     private int[] pixels = new int[0];
     private long lastFrameMillis = System.currentTimeMillis();
@@ -265,6 +267,8 @@ final class FirstPersonRenderViewport {
 
     private void rasterizeWorld(GamePanel panel, int w, int h, long now) {
         World world = panel.world;
+        firstPersonFloorTextureCache.clear();
+        firstPersonWallTextureCache.clear();
         int horizon = h / 2 + (int)(camera.pitchRadians() * h * 0.55);
         int ceiling = 0xFF07080A;
         int floor = 0xFF11100D;
@@ -296,16 +300,23 @@ final class FirstPersonRenderViewport {
             int wallH = Math.min(h * 3, (int) Math.round(h / dist));
             int y0 = Math.max(0, horizon - wallH / 2);
             int y1 = Math.min(h - 1, horizon + wallH / 2);
+            double wallU = hit.side() == 0
+                    ? hit.impactZ() - Math.floor(hit.impactZ())
+                    : hit.impactX() - Math.floor(hit.impactX());
+            BufferedImage wallTexture = firstPersonTileTexture(
+                    panel, world, hit.tileX(), hit.tileY(), hit.tile(), true);
             double light = lightDecay.brightness(camera.x(), camera.z(), hit.impactX(), hit.impactZ(), panel, now);
-            int color = tileBaseColor(hit.tile(), hit.kind(), hit.side(), hit.tileX(), hit.tileY());
-            if (hasWallLightAt(hit.tileX(), hit.tileY())) color = wallLightOverlayColor(color, sx, y0, y1);
-            color = applyBrightness(color, light);
-            if (hit.side() == 1) color = darken(color, 0.78);
+            int baseColor = tileBaseColor(hit.tile(), hit.kind(), hit.side(), hit.tileX(), hit.tileY());
+            if (hasWallLightAt(hit.tileX(), hit.tileY())) baseColor = wallLightOverlayColor(baseColor, sx, y0, y1);
             float fogDistance = (float)(radialFog ? hit.distance() : dist);
-            color = fog.applyFogArgb(color, fogSettings, fogDistance);
             for (int y = y0; y <= y1; y++) {
+                double wallV = (y - y0) / Math.max(1.0, y1 - y0 + 1.0);
+                int color = sampleImageArgb(wallTexture, wallU, wallV, baseColor);
+                color = applyBrightness(color, light);
+                if (hit.side() == 1) color = darken(color, 0.78);
+                color = fog.applyFogArgb(color, fogSettings, fogDistance);
                 int stripe = (((y - y0) / 6) + sx / 9) & 1;
-                pixels[y * w + sx] = stripe == 0 ? color : darken(color, 0.88);
+                pixels[y * w + sx] = stripe == 0 ? color : darken(color, 0.94);
             }
         }
     }
@@ -344,7 +355,7 @@ final class FirstPersonRenderViewport {
                 if (world.inBounds(tx, ty)) {
                     if (floorSide) {
                         char tile = world.tiles[tx][ty];
-                        BufferedImage tex = panel.images.getTile(tile);
+                        BufferedImage tex = firstPersonTileTexture(panel, world, tx, ty, tile, false);
                         color = sampleImageArgb(tex, u, v, tile == '#' ? 0xFF2D2923 : 0xFF171613);
                     } else {
                         color = sampleImageArgb(ceilingTex, u, v, 0xFF08090B);
@@ -372,6 +383,19 @@ final class FirstPersonRenderViewport {
         int a = (argb >>> 24) & 255;
         if (a < 24) return fallback;
         return 0xFF000000 | (argb & 0x00FFFFFF);
+    }
+
+    private BufferedImage firstPersonTileTexture(GamePanel panel, World world, int tileX, int tileY,
+                                                 char fallbackGlyph, boolean wallSurface) {
+        if (panel == null || panel.images == null || world == null || !world.inBounds(tileX, tileY)) return null;
+        java.util.HashMap<Long, BufferedImage> cache = wallSurface
+                ? firstPersonWallTextureCache : firstPersonFloorTextureCache;
+        long key = (((long) tileX) << 32) ^ (tileY & 0xffffffffL);
+        if (cache.containsKey(key)) return cache.get(key);
+        BufferedImage image = panel.images.getCompiledTileImage(
+                world, tileX, tileY, fallbackGlyph, !wallSurface);
+        cache.put(key, image);
+        return image;
     }
 
     private void prepareWallLightScratch(GamePanel panel, World world) {

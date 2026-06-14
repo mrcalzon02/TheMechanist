@@ -6376,6 +6376,34 @@ final class LegacyImageSurface {
         return media.getSemanticAssetImage(assetId);
     }
 
+    BufferedImage getCompiledTileImage(World world, int worldX, int worldY,
+                                       char fallbackGlyph, boolean preferUnderlay) {
+        ensureLoaded(lastOptions);
+        CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(
+                world, worldX, worldY, fallbackGlyph);
+        if (descriptor == null) return media.tileArt.getRegistry().getTile(fallbackGlyph);
+
+        String artKey;
+        String assetId;
+        char glyph = fallbackGlyph;
+        if (preferUnderlay && descriptor.hasOverlay()) {
+            artKey = descriptor.underlayArtKey;
+            assetId = descriptor.underlayAssetId;
+            glyph = descriptor.underlayGlyph == null ? '.' : descriptor.underlayGlyph.charValue();
+        } else if (descriptor.hasOverlay()) {
+            artKey = descriptor.overlayArtKey;
+            assetId = AssetAuditDevRoomAuthority.assetIdFor(world, worldX, worldY, descriptor);
+        } else {
+            artKey = descriptor.primaryArtKey;
+            assetId = AssetAuditDevRoomAuthority.assetIdFor(world, worldX, worldY, descriptor);
+        }
+
+        BufferedImage image = assetId == null ? null : media.getSemanticAssetImage(assetId);
+        if (image == null && artKey != null) image = media.getTile(artKey, glyph);
+        if (image == null) image = media.tileArt.getRegistry().getTile(glyph);
+        return image;
+    }
+
     BufferedImage getCompiledSystemIcon(int sheet, int row, int col) {
         ensureLoaded(lastOptions);
         String cacheKey = sheet + ":" + row + ":" + col;
