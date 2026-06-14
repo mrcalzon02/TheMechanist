@@ -559,3 +559,11 @@ Activated the manual-production tool-quality cap through `ProductionToolQualityA
 The central production-quality trace now names equipped tool quality alongside doctrine, recipe, machine, material, and facility caps. Compact recipe rows, detailed forecasts, final execution, and append-only item provenance share the same result. The Production Forecast reference documents the equipped-tool rule and its no-silent-inventory-cap boundary.
 
 Added `Milestone03ProductionToolQualitySmoke`, expanded quality provenance and Infopedia guards, and wired the smoke into Gate 3. Verification: fresh Java 17 full-tree compile passed; focused tool-quality, quality-trace, provenance, and production-readability smokes passed; the complete `Gate3PlayerFacingTextSmokeSuite` passed. Manual GUI inspection was not run.
+
+## Milestone 02 - Character Paper Doll and Equipment Slot Restoration
+
+Restored the player-character paper doll and exact limb hit-point/status display to the live character panel. The repair reuses `Candidate.body`, `BodyPart`, `BodyConditionReadabilityAuthority`, and existing equipment state rather than creating duplicate health data. The character panel now expands for the body display, colors each tracked region by condition, prints current/max hit points, and lists every tracked limb with its readable state.
+
+Replaced the two blind hand-only unequip buttons with selectable Left Hand, Right Hand, and Body Protection slots. The selected equipped item receives a detail/icon surface and can be unequipped explicitly; hand slots route through the existing unequip implementation, while body protection is returned to carried inventory before the clothing slot is cleared. Added `CharacterPaperDollAuthority` and `Milestone02CharacterPaperDollSmoke`, with the smoke wired into Gate 3.
+
+Verification: Java 17 UTF-8 full-source compile, focused paper-doll smoke, and complete Gate 3 smoke suite in GitHub Actions. Manual GUI review remains required for supported window sizes.

@@ -52,6 +52,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02ConstructionReadabilitySmoke.main(args);
         Milestone02ConstructionCategorySmoke.main(args);
         Milestone02BodyConditionReadabilitySmoke.main(args);
+        Milestone02CharacterPaperDollSmoke.main(args);
         Milestone02MedicalTreatmentReadabilitySmoke.main(args);
         Milestone02EntityIdentityReadabilitySmoke.main(args);
         Milestone02ExpansionHeatReadabilitySmoke.main(args);

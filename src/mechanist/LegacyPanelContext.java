@@ -220,6 +220,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     int lookFocusDepth;
     int inventoryItemDescriptionScroll;
     int selectedInventoryIndex;
+    int selectedCharacterEquipmentSlot;
     int selectedTargetInventoryIndex;
     int selectedTradeOfferIndex;
     int selectedContainerItemIndex;
@@ -2335,10 +2336,15 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private Rectangle activePanelRect(int w, int h) {
-        int pw = Math.max(520, Math.min(w - 48, (int)Math.round(w * 0.78)));
-        int ph = Math.max(360, Math.min(h - 118, (int)Math.round(h * 0.68)));
-        return new Rectangle(Math.max(18, (w - pw) / 2), Math.max(62, (h - ph) / 2), pw, ph);
-    }
+    boolean characterSurface = panelMode == PanelMode.CHARACTER || screen == Screen.CHARACTER;
+    double widthShare = characterSurface ? 0.90 : 0.78;
+    double heightShare = characterSurface ? 0.84 : 0.68;
+    int pw = Math.max(characterSurface ? 820 : 520,
+            Math.min(w - 48, (int)Math.round(w * widthShare)));
+    int ph = Math.max(characterSurface ? 560 : 360,
+            Math.min(h - 92, (int)Math.round(h * heightShare)));
+    return new Rectangle(Math.max(18, (w - pw) / 2), Math.max(46, (h - ph) / 2), pw, ph);
+}
 
     private String panelTitle() {
         if (screen == Screen.PAUSE) return "PAUSE / COMMAND";
@@ -2436,37 +2442,117 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void drawCharacterOverlay(java.awt.Graphics2D g, Rectangle body) {
-        Candidate c = active;
-        Rectangle portrait = new Rectangle(body.x, body.y, Math.min(168, body.width / 4), Math.min(210, body.height));
-        drawDetailBox(g, portrait, c == null ? "Character" : c.name, java.util.List.of(c == null ? "No active character." : c.job, c == null ? "" : c.ageYears + " years / " + c.ageBand), c == null ? null : images.getPlayerPortrait(c));
-        Rectangle stats = new Rectangle(portrait.x + portrait.width + 14, body.y, Math.max(200, body.width / 3), body.height);
-        ArrayList<String> statLines = new ArrayList<>();
-        if (c != null) for (Map.Entry<String,Integer> e : c.stats.entrySet()) statLines.add(e.getKey() + ": " + e.getValue());
-        statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
-        statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
-        drawDetailBox(g, stats, "Stats", statLines, null);
-        Rectangle rightColumn = new Rectangle(stats.x + stats.width + 14, body.y, Math.max(200, body.x + body.width - stats.x - stats.width - 14), body.height);
-        int rightGap = 12;
-        int loadoutHeight = Math.max(190, rightColumn.height / 2);
-        Rectangle bodyBox = new Rectangle(rightColumn.x, rightColumn.y, rightColumn.width, loadoutHeight);
-        Rectangle rosterBox = new Rectangle(rightColumn.x, bodyBox.y + bodyBox.height + rightGap,
-                rightColumn.width, Math.max(100, rightColumn.height - bodyBox.height - rightGap));
-        ArrayList<String> bodyLines = new ArrayList<>(BodyConditionReadabilityAuthority.summary(c, wounds, bleeding,
-                infectionRisk, pain, fatigue, sleepNeed, food, water, equippedClothing,
-                equippedLeftHandItem, equippedRightHandItem));
-        bodyLines.addAll(MedicalTreatmentReadabilityAuthority.summary(inventory, wounds, bleeding, infectionRisk, pain));
-        drawDetailBox(g, bodyBox, "Body / Loadout", bodyLines, null);
-        int by = bodyBox.y + bodyBox.height - 36;
-        addOverlayButton("Unequip L", bodyBox.x + 12, by, 96, 28, "Clear left-hand equipment.", () -> unequipEquipmentSlot(0));
-        addOverlayButton("Unequip R", bodyBox.x + 116, by, 96, 28, "Clear right-hand equipment.", () -> unequipEquipmentSlot(1));
-        addOverlayButton("Health Info", bodyBox.x + 220, by, 96, 28, "Open the Body Condition mechanic reference.",
-                () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character health reference"));
-        drawDetailBox(g, rosterBox, "Faction Members",
-                FactionRosterReadabilityAuthority.summary(this, Math.max(1, (rosterBox.height - 82) / 18)), null);
-        addOverlayButton("Personnel Info", rosterBox.x + 12, rosterBox.y + rosterBox.height - 36, 112, 28,
-                "Open the faction personnel and staffing reference.",
-                () -> InfopediaHotLinkAuthority.openMechanic(this, "faction-personnel", "character personnel reference"));
+    Candidate c = active;
+    int gap = 12;
+    int portraitWidth = Math.max(150, Math.min(190, body.width / 6));
+    int statsWidth = Math.max(220, Math.min(310, body.width / 4));
+
+    Rectangle portrait = new Rectangle(body.x, body.y, portraitWidth, body.height);
+    drawDetailBox(g, portrait, c == null ? "Character" : c.name,
+            java.util.List.of(c == null ? "No active character." : c.job,
+                    c == null ? "" : c.ageYears + " years / " + c.ageBand),
+            c == null ? null : images.getPlayerPortrait(c));
+
+    Rectangle stats = new Rectangle(portrait.x + portrait.width + gap, body.y, statsWidth, body.height);
+    ArrayList<String> statLines = new ArrayList<>();
+    if (c != null) for (Map.Entry<String,Integer> e : c.stats.entrySet()) statLines.add(e.getKey() + ": " + e.getValue());
+    statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
+    statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
+    statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
+    drawDetailBox(g, stats, "Stats", statLines, null);
+
+    Rectangle rightColumn = new Rectangle(stats.x + stats.width + gap, body.y,
+            Math.max(360, body.x + body.width - stats.x - stats.width - gap), body.height);
+    int topHeight = Math.max(300, Math.min(rightColumn.height - 150, (int)Math.round(rightColumn.height * 0.62)));
+    int dollWidth = Math.max(210, Math.min(300, rightColumn.width / 2));
+    Rectangle dollBox = new Rectangle(rightColumn.x, rightColumn.y, dollWidth, topHeight);
+    Rectangle equipmentBox = new Rectangle(dollBox.x + dollBox.width + gap, rightColumn.y,
+            Math.max(190, rightColumn.width - dollBox.width - gap), topHeight);
+
+    CharacterPaperDollAuthority.paint(g, dollBox, c, smallFont.deriveFont(10f));
+
+    CharacterPaperDollAuthority.EquipmentView selectedEquipment =
+            CharacterPaperDollAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+                    equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+    ArrayList<String> bodySummary = new ArrayList<>(BodyConditionReadabilityAuthority.summary(c, wounds, bleeding,
+            infectionRisk, pain, fatigue, sleepNeed, food, water, equippedClothing,
+            equippedLeftHandItem, equippedRightHandItem));
+    ArrayList<String> equipmentLines = new ArrayList<>();
+    equipmentLines.add("Selected slot: " + selectedEquipment.slot().label());
+    equipmentLines.add("Equipped: " + selectedEquipment.itemName());
+    equipmentLines.add(selectedEquipment.empty()
+            ? "This slot is currently empty."
+            : "Unequip returns this item to carried inventory.");
+    equipmentLines.add("Active weapon hand: " + (activeWeaponHandIndex == 0 ? "left" : "right") + ".");
+    equipmentLines.addAll(bodySummary.subList(0, Math.min(4, bodySummary.size())));
+    BufferedImage selectedIcon = selectedEquipment.empty() ? null : images.getItemIcon(selectedEquipment.itemName());
+    drawDetailBox(g, equipmentBox, "Equipped Items", equipmentLines, selectedIcon);
+
+    int slotY = equipmentBox.y + Math.max(116, equipmentBox.height - 154);
+    java.util.List<CharacterPaperDollAuthority.EquipmentView> slots =
+            CharacterPaperDollAuthority.equipment(equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+    for (int i = 0; i < slots.size(); i++) {
+        final int slotIndex = i;
+        CharacterPaperDollAuthority.EquipmentView slot = slots.get(i);
+        addOverlayButton(slot.rowLabel(i == selectedCharacterEquipmentSlot),
+                equipmentBox.x + 10, slotY + i * 32, equipmentBox.width - 20, 27,
+                "Select " + slot.slot().label() + " equipment slot.",
+                () -> selectCharacterEquipmentSlot(slotIndex));
     }
+    int actionY = slotY + slots.size() * 32 + 2;
+    addOverlayButton("Unequip Selected", equipmentBox.x + 10, actionY,
+            Math.max(130, equipmentBox.width - 116), 28,
+            "Unequip the selected character equipment slot.", this::unequipSelectedCharacterEquipment);
+    addOverlayButton("Health Info", equipmentBox.x + equipmentBox.width - 100, actionY,
+            90, 28, "Open the Body Condition mechanic reference.",
+            () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character health reference"));
+
+    int lowerY = rightColumn.y + topHeight + gap;
+    int lowerHeight = Math.max(100, rightColumn.y + rightColumn.height - lowerY);
+    int statusWidth = Math.max(240, rightColumn.width / 2);
+    Rectangle statusBox = new Rectangle(rightColumn.x, lowerY, statusWidth, lowerHeight);
+    Rectangle rosterBox = new Rectangle(statusBox.x + statusBox.width + gap, lowerY,
+            Math.max(180, rightColumn.width - statusBox.width - gap), lowerHeight);
+
+    ArrayList<String> limbLines = new ArrayList<>(CharacterPaperDollAuthority.regionReadouts(
+            c, new Rectangle(0, 0, 280, 440)));
+    if (limbLines.isEmpty()) limbLines.add("No tracked body regions are available.");
+    drawDetailBox(g, statusBox, "Limb Hit Points / Status", limbLines, null);
+
+    drawDetailBox(g, rosterBox, "Faction Members",
+            FactionRosterReadabilityAuthority.summary(this, Math.max(1, (rosterBox.height - 82) / 18)), null);
+    addOverlayButton("Personnel Info", rosterBox.x + 12, rosterBox.y + rosterBox.height - 36, 112, 28,
+            "Open the faction personnel and staffing reference.",
+            () -> InfopediaHotLinkAuthority.openMechanic(this, "faction-personnel", "character personnel reference"));
+}
+
+private void selectCharacterEquipmentSlot(int slotIndex) {
+    selectedCharacterEquipmentSlot = CharacterPaperDollAuthority.EquipmentSlot.at(slotIndex).ordinal();
+    repaint();
+}
+
+private void unequipSelectedCharacterEquipment() {
+    CharacterPaperDollAuthority.EquipmentSlot slot =
+            CharacterPaperDollAuthority.EquipmentSlot.at(selectedCharacterEquipmentSlot);
+    if (slot == CharacterPaperDollAuthority.EquipmentSlot.LEFT_HAND) {
+        unequipEquipmentSlot(0);
+        return;
+    }
+    if (slot == CharacterPaperDollAuthority.EquipmentSlot.RIGHT_HAND) {
+        unequipEquipmentSlot(1);
+        return;
+    }
+    if (equippedClothing == null) {
+        logEvent("Body protection slot is already empty.");
+        repaint();
+        return;
+    }
+    String itemName = equippedClothing.name;
+    if (itemName != null && !itemName.isBlank()) inventory.add(itemName);
+    equippedClothing = null;
+    logEvent("Unequipped body protection: " + safeLabel(itemName, "clothing") + ".");
+    repaint();
+}
 
     private void drawMapOverlay(java.awt.Graphics2D g, Rectangle body) {
         Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(260, body.width * 2 / 3), body.height);
