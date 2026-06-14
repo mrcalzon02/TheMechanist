@@ -24,7 +24,7 @@ import java.util.Set;
  * loaded registry contains a semantically compatible entry.
  */
 final class TileSemanticAssetAuthority {
-    static final String VERSION = "0.9.10ka-runtime-registry";
+    static final String VERSION = "0.9.10kc-door-state-registry";
     private static final LinkedHashMap<String, String> ALIAS_TO_ID = new LinkedHashMap<>();
     private static final LinkedHashMap<String, Optional<String>> RUNTIME_ID_CACHE = new LinkedHashMap<>();
     private static final Set<String> TOKEN_STOPWORDS = Set.of(
@@ -220,7 +220,11 @@ final class TileSemanticAssetAuthority {
         ArrayList<List<String>> groups = new ArrayList<>();
 
         if (key.startsWith("floor_") && key.contains("corridor")) {
-            groups.add(List.of("corridor", "walkway", "service way", "utility tunnel"));
+            if (key.contains("noble")) {
+                groups.add(List.of("corridor", "walkway", "service way", "utility tunnel", "floor", "floors"));
+            } else {
+                groups.add(List.of("corridor", "walkway", "service way", "utility tunnel"));
+            }
         } else if (key.startsWith("floor_")) {
             groups.add(List.of("floor", "floors", "ground", "surface"));
         } else if ("void_space".equals(key)) {
@@ -288,6 +292,9 @@ final class TileSemanticAssetAuthority {
         }
         String phrase = normalizeText(key.replaceAll("_v[1-5]$", "").replace('_', ' '));
         if (!phrase.isBlank() && h.contains(phrase)) score += 20;
+        if (key.startsWith("door_") && asset.type() == AssetType.FIXTURE) score += 20;
+        if ("door_archway".equals(key) && containsAny(h, List.of("open", "opened"))) score += 8;
+        if ("door_standard".equals(key) && containsAny(h, List.of("closed", "shut"))) score += 8;
         return score;
     }
 

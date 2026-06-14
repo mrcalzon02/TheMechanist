@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.2-room-zone-item";
+    static final String VERSION = "semantic-render-asset-resolver-0.4-door-infrastructure";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -191,7 +191,11 @@ final class SemanticRenderAssetResolver {
         if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight")) score += 10;
-        if ((intent == RenderIntent.DOOR_OPEN || intent == RenderIntent.DOOR_CLOSED) && contains(h, "variant")) score += 3;
+        if (intent == RenderIntent.DOOR_OPEN || intent == RenderIntent.DOOR_CLOSED) {
+            if (contains(h, "variant")) score += 3;
+            if (asset.type() == AssetType.FIXTURE) score += 10;
+            if (contains(h, "semantic state")) score += 12;
+        }
         return score;
     }
 

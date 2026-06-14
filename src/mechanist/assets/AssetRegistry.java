@@ -373,17 +373,19 @@ public final class AssetRegistry {
     }
 
     private static AssetType compiledAssetType(String category, String sourceGroup, String sourceAtlas, String contentType, String tags) {
+        String explicitType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
+        if (containsAny(explicitType, "infrastructure_fixture", "fixture")) return AssetType.FIXTURE;
         String text = (category + " " + sourceGroup + " " + sourceAtlas + " " + contentType + " " + tags).toLowerCase(Locale.ROOT);
-        if (containsAny(text, "portrait", "protrait", "profile", "human", "cultist", "ganger", "noble", "servitor", "clerk", "cleric")) return AssetType.PORTRAIT;
-        if (containsAny(text, "corpse", "decay", "dead")) return AssetType.CORPSE_DECAY;
-        if (containsAny(text, "weapon", "weapons", "ammo", "firearm", "blade")) return AssetType.WEAPON_ICON;
-        if (containsAny(text, "armor", "armors", "clothing", "helmet")) return AssetType.ARMOR_ICON;
-        if (containsAny(text, "system", "ui", "interface", "rondel", "knowledge", "skill", "icon")) return AssetType.UI_ICON;
         if (containsAny(text, "road", "street", "vehicle_path")) return AssetType.ROAD_TILE;
         if (containsAny(text, "sidewalk", "pavement")) return AssetType.SIDEWALK_TILE;
         if (containsAny(text, "corridor", "walkway")) return AssetType.CORRIDOR_TILE;
         if (containsAny(text, "floor", "floors", "ground", "void")) return AssetType.FLOOR_TILE;
         if (containsAny(text, "wall", "walls", "bulkhead")) return AssetType.WALL_TILE;
+        if (containsAny(text, "portrait", "protrait", "profile", "human", "cultist", "ganger", "noble", "servitor", "clerk", "cleric")) return AssetType.PORTRAIT;
+        if (containsAny(text, "corpse", "decay", "dead")) return AssetType.CORPSE_DECAY;
+        if (containsAny(text, "weapon", "weapons", "ammo", "firearm", "blade")) return AssetType.WEAPON_ICON;
+        if (containsAny(text, "armor", "armors", "clothing", "helmet")) return AssetType.ARMOR_ICON;
+        if (containsAny(text, "system", "ui", "interface", "rondel", "knowledge", "skill", "icon")) return AssetType.UI_ICON;
         if (containsAny(text, "machine", "machinery", "vehicle", "automotive", "vending", "emergency_machines")) return AssetType.MACHINE;
         if (containsAny(text, "door", "defense", "fixture", "counter", "table", "station")) return AssetType.FIXTURE;
         if (containsAny(text, "item", "items", "implant", "drug", "narcotic", "reagent", "goods", "loot", "relic", "journal", "paper")) return AssetType.ITEM_ICON;
@@ -437,14 +439,17 @@ public final class AssetRegistry {
     }
 
     private static String compiledAssetDescription(String description, String category, String sourceGroup, String sourceAtlas, String tags) {
-        if (description != null && !description.isBlank()) {
-            return description.trim();
-        }
         StringBuilder out = new StringBuilder();
-        out.append("Compiled ").append(category == null || category.isBlank() ? "asset" : category.trim()).append(" asset");
-        if (sourceGroup != null && !sourceGroup.isBlank()) out.append(" from ").append(sourceGroup.trim());
-        if (sourceAtlas != null && !sourceAtlas.isBlank()) out.append(" / ").append(sourceAtlas.trim());
-        if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
+        if (description != null && !description.isBlank()) {
+            out.append(description.trim());
+        } else {
+            out.append("Compiled ").append(category == null || category.isBlank() ? "asset" : category.trim()).append(" asset");
+            if (sourceGroup != null && !sourceGroup.isBlank()) out.append(" from ").append(sourceGroup.trim());
+            if (sourceAtlas != null && !sourceAtlas.isBlank()) out.append(" / ").append(sourceAtlas.trim());
+            if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
+        }
+        if ("doors-c".equalsIgnoreCase(sourceAtlas)) out.append(". Semantic state: closed door.");
+        if ("doors-o".equalsIgnoreCase(sourceAtlas)) out.append(". Semantic state: open door.");
         return out.toString();
     }
 

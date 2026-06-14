@@ -10,6 +10,8 @@ The project already possesses semantic asset registries, asset metadata records,
 
 The renderer must progressively migrate from path-based or category-only rendering toward semantic rendering.
 
+Current checkpoint: live tile rendering prefers semantic asset IDs, tile aliases resolve only to entries in the active runtime registry, and representative generic, industrial, sewer, noble, road, door, and streetlight families are guarded by aggregate smoke coverage. Dedicated open and closed door fixture atlases retain their state through compiled-index loading and are selected ahead of mixed wall sheets. Road-infrastructure streetlight cells retain explicit fixture metadata and cannot resolve through system inventory or item/UI icons. Remaining infrastructure, district, room, fixture, furniture, container, item, and world-object paths continue through the ordered migration below.
+
 The renderer should never ask for:
 
 - floor tile
@@ -234,6 +236,8 @@ Migration order:
 9. Remaining world objects.
 
 Every migration should gain smoke coverage and semantic validation.
+
+The Tools / Zone Audit surface now includes a curated Semantic Asset Audit Dev Room. Its cursor can manually cycle the selected tile through compatible indexed assets with `[` / `]`, Enter, or the Previous/Next Tile Asset buttons. These overrides are transient audit state: they immediately affect the rendered tile for visual verification without rewriting the semantic registry or production world-generation rules.
 
 ### Phase 4.16.10 - Generic Fallback Elimination
 

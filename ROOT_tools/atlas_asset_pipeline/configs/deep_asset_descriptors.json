@@ -156,6 +156,22 @@
       "content_type": "civilian_prop",
       "description": "Creche, child-care, and civilian nursery objects.",
       "tags": ["creche", "child", "civilian", "nursery", "furniture"]
+    },
+    {
+      "group": "Roads",
+      "match": "Road_infrastructure",
+      "cells": {
+        "r05c01": {
+          "description": "Four-arm streetlight fixture on a sidewalk mounting base.",
+          "content_type": "infrastructure_fixture",
+          "tags": ["streetlight", "street_light", "street_lamp", "lamp_post", "infrastructure", "fixture", "sidewalk"]
+        },
+        "r05c02": {
+          "description": "Double-arm streetlight fixture on a sidewalk mounting base.",
+          "content_type": "infrastructure_fixture",
+          "tags": ["streetlight", "street_light", "street_lamp", "lamp_post", "infrastructure", "fixture", "sidewalk"]
+        }
+      }
     }
   ]
 }

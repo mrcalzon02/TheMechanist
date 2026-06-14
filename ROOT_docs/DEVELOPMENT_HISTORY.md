@@ -12,6 +12,38 @@ Earlier pre-milestone development remains archived at:
 
 Use this file for new completed work from this reset onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `ROOT_docs/MILESTONE_INDEX.md`.
 
+## Milestone 02 - Semantic Asset Audit Dev Room and Manual Tile Cycling
+
+Added a curated asset smoke-test room to Tools / Zone Audit. The audit cursor can cycle backward or forward through compatible indexed semantic assets for the selected tile, immediately updating the rendered target and showing its asset ID, type, name, source, and candidate count.
+
+Manual choices remain transient audit overrides, so visual diagnosis cannot silently rewrite production registry or world-generation data. The semantic runtime registry smoke now verifies that the room builds and that a floor tile can cycle to a different valid indexed asset.
+
+Verification: fresh Java 17 full-tree compile passed; the focused semantic runtime registry smoke and complete Gate 3 player-facing suite passed. The package-seed gate staged 3,000 Java 17-compatible classfiles, and the function and Mermaid code maps were refreshed. Manual GUI inspection was not run.
+
+## Milestone 02 - Streetlight Infrastructure Semantic Promotion Slice
+
+Promoted the existing `RoadInfrastructureTileRules` meaning for `Road_infrastructure` row 5 columns 1-2 into the deep asset descriptor source. Those visually verified lamp-post cells now carry explicit streetlight, infrastructure, fixture, and sidewalk metadata instead of inheriting only the broad road-atlas category.
+
+Runtime compiled-index classification now honors explicit fixture content types before broad source-group tags. The active semantic resolver therefore selects streetlight fixture art and rejects system inventory, item-icon, and UI-icon substitutions. Expanded the runtime registry smoke to guard that contract.
+
+Verification: fresh Java 17 full-tree compile passed. Focused runtime registry, semantic resolver, migration coverage, and binding-doctrine smokes passed; the complete Gate 3 player-facing smoke suite passed. The active registry resolves `STREETLIGHT_FIXTURE` to `FIX-0151` and reports infrastructure coverage complete (`1/1`), raising total semantic render intent coverage to `17/44`. The package-seed gate passed with 2,998 Java 17-compatible classfiles, and the function and Mermaid code maps were refreshed. Manual GUI inspection was not run.
+
+## Milestone 02 - Open and Closed Door Semantic Migration Slice
+
+Preserved the `Doors-C` and `Doors-O` atlas state when compiled content-index rows become runtime asset metadata. Door alias scoring and `SemanticRenderAssetResolver` ranking now prefer dedicated fixture assets over mixed bulkhead wall sheets, so the live renderer receives distinct closed and open semantic assets for standard doors and archways.
+
+Expanded the runtime registry smoke to require `FIXTURE`-typed closed and open door assets, reject opposite-state metadata, prove both states resolve to different IDs, and require the tile alias and general semantic resolver authorities to agree. Locked, security, vent-panel, and double-door aliases remain explicit missing-art cases until their specialized source art is semantically identified.
+
+Verification: fresh Java 17 full-tree compile passed. Focused runtime registry, semantic resolver, migration coverage, and binding-doctrine smokes passed; the complete Gate 3 player-facing smoke suite passed. Active-registry migration coverage reports both door intents available (`2/2`) and `16/44` total semantic render intents available. The package-seed gate passed with 2,998 Java 17-compatible classfiles, and the function and Mermaid code maps were refreshed. Manual GUI inspection was not run.
+
+## Milestone 02 - Themed Semantic Asset Registry Verification Slice
+
+Corrected compiled-asset classification so structural atlas identity takes precedence over theme words such as `noble`. Noble floors, corridors, and walls now remain floor, corridor, and wall assets instead of being misclassified as portraits, allowing the live semantic tile authority to resolve them from the active registry.
+
+Expanded `TileSemanticRuntimeRegistrySmoke` to verify generic, industrial, sewer, noble, road, and door representatives against their expected runtime asset type and theme while rejecting sewer/noble cross-theme substitution. Wired the smoke into the aggregate Gate 3 suite.
+
+Verification: fresh Java 17 full-tree compile passed. Focused semantic binding, resolver, migration coverage, registry extension, and runtime registry smokes passed; the complete Gate 3 player-facing smoke suite passed. Runtime alias resolution increased from 98 of 210 aliases to 120 of 210. The package-seed gate passed with 2,998 Java 17-compatible classfiles, and the function and Mermaid code maps were refreshed. Manual GUI inspection was not run.
+
 ## Milestone 02 - Doom Viewport, Shared HUD, and Entity Facing Restoration Slice
 
 Restored the live experimental Doom control mode by reconnecting `GamePanel` to the existing `FirstPersonRenderViewport` instead of the inert legacy stub. The active renderer now owns first-person painting, mouse look, continuous movement updates, movement-key release, ray-target clicks, and control-mode return to the normal 2D surface. Its diagnostic strip now renders above the shared HUD instead of underneath it.

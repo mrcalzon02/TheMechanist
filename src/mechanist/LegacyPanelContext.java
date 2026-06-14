@@ -1075,14 +1075,21 @@ class GamePanel extends LegacyPanelBridgeBase {
         lines.add("Density: " + WorldSetupSettings.ZONE_DENSITY[Math.max(0, Math.min(auditZoneDensityIndex, WorldSetupSettings.ZONE_DENSITY.length - 1))]);
         lines.add("Overlay: " + auditOverlayLabel());
         lines.add("Cursor: " + auditCursorX + "," + auditCursorY);
+        lines.add(AssetAuditDevRoomAuthority.status(viewWorld, auditCursorX, auditCursorY));
         lines.add("Replay: " + (auditTracePlaying ? "playing" : "paused") + " | Step " + (auditTraceSteps.isEmpty() ? 0 : auditTraceIndex + 1) + "/" + auditTraceSteps.size());
         if (auditSnapshot != null) lines.addAll(SectorAuditRuntimeAuthority.compactPanelLines(auditSnapshot, auditFindingIndex));
         else lines.add("Audit snapshot has not run.");
         int findingH = Math.max(150, Math.min(230, command.height * 2 / 5));
         drawDetailBox(g, new Rectangle(command.x, command.y, command.width, findingH), "Findings", lines, null);
-        String[] labels = {"Reroll Zone", auditTracePlaying ? "Pause Replay" : "Play Replay", "Next Replay Step", "Finish Replay", "Choose Zone Type", "Cycle Density", "Cycle Overlay", "Previous Finding", "Next Finding", "Return to Tools"};
-        Runnable[] actions = {this::rerollSectorAudit, this::toggleAuditReplay, () -> stepAuditReplay(1), this::finishAuditReplay,
-                () -> cycleAuditZoneType(1), this::cycleAuditZoneDensity, this::cycleAuditOverlay, () -> jumpAuditFinding(-1), () -> jumpAuditFinding(1), () -> setScreen(Screen.MODS)};
+        boolean assetRoom = AssetAuditDevRoomAuthority.isDevRoom(viewWorld);
+        String[] labels = assetRoom
+                ? new String[]{"Previous Tile Asset", "Next Tile Asset", "Reroll Zone", "Cycle Overlay", "Return to Tools"}
+                : new String[]{"Build Asset Room", "Reroll Zone", auditTracePlaying ? "Pause Replay" : "Play Replay", "Next Replay Step", "Choose Zone Type", "Cycle Density", "Cycle Overlay", "Previous Finding", "Next Finding", "Return to Tools"};
+        Runnable[] actions = assetRoom
+                ? new Runnable[]{() -> cycleAuditTileAsset(-1), () -> cycleAuditTileAsset(1), this::rerollSectorAudit, this::cycleAuditOverlay, () -> setScreen(Screen.MODS)}
+                : new Runnable[]{this::buildAssetAuditDevRoom, this::rerollSectorAudit, this::toggleAuditReplay, () -> stepAuditReplay(1),
+                        () -> cycleAuditZoneType(1), this::cycleAuditZoneDensity, this::cycleAuditOverlay,
+                        () -> jumpAuditFinding(-1), () -> jumpAuditFinding(1), () -> setScreen(Screen.MODS)};
         int buttonTop = command.y + findingH + 10;
         int buttonGap = 6;
         int buttonH = Math.max(28, Math.min(38, (command.y + command.height - buttonTop - buttonGap * (labels.length - 1)) / labels.length));
@@ -1128,7 +1135,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(viewWorld, wx, wy, ch);
                 g.setColor(auditTileColor(viewWorld, ch, wx, wy));
                 g.fillRect(sx, sy, tile, tile);
-                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, descriptor, ch, sx, sy, tile);
+                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, viewWorld, wx, wy, descriptor, ch, sx, sy, tile);
                 if (!drewArt && tile >= 13) {
                     g.setColor(tileGlyphColor(ch));
                     String s = Character.toString(ch);
@@ -1605,7 +1612,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, wx, wy, ch);
                 g.setColor(tileColor(ch, wx, wy));
                 g.fillRect(sx, sy, tile, tile);
-                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, descriptor, ch, sx, sy, tile);
+                boolean drewArt = options != null && options.tileIconRendering && drawCompiledTile(g, world, wx, wy, descriptor, ch, sx, sy, tile);
                 if (!drewArt && tile >= 13) {
                     g.setColor(tileGlyphColor(ch));
                     String s = Character.toString(ch);
@@ -1649,7 +1656,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         return Math.max(0, Math.min(188, lightAlpha + edgeAlpha));
     }
 
-    private boolean drawCompiledTile(java.awt.Graphics2D g, CompiledTileDescriptor descriptor, char fallbackGlyph, int x, int y, int tile) {
+    private boolean drawCompiledTile(java.awt.Graphics2D g, World tileWorld, int worldX, int worldY,
+                                     CompiledTileDescriptor descriptor, char fallbackGlyph, int x, int y, int tile) {
         if (descriptor == null) {
             BufferedImage img = images.getTile(fallbackGlyph);
             if (img == null) return false;
@@ -1663,14 +1671,16 @@ class GamePanel extends LegacyPanelBridgeBase {
                 g.drawImage(under, x, y, tile, tile, null);
                 drew = true;
             }
-            BufferedImage over = tileArtImage(descriptor.overlayArtKey, descriptor.overlayAssetId, fallbackGlyph);
+            String override = AssetAuditDevRoomAuthority.assetIdFor(tileWorld, worldX, worldY, descriptor);
+            BufferedImage over = tileArtImage(descriptor.overlayArtKey, override, fallbackGlyph);
             if (over != null) {
                 g.drawImage(over, x, y, tile, tile, null);
                 drew = true;
             }
             return drew;
         }
-        BufferedImage img = tileArtImage(descriptor.primaryArtKey, descriptor.primaryAssetId, fallbackGlyph);
+        String assetId = AssetAuditDevRoomAuthority.assetIdFor(tileWorld, worldX, worldY, descriptor);
+        BufferedImage img = tileArtImage(descriptor.primaryArtKey, assetId, fallbackGlyph);
         if (img == null) return false;
         g.drawImage(img, x, y, tile, tile, null);
         return true;
@@ -4776,6 +4786,27 @@ class GamePanel extends LegacyPanelBridgeBase {
             auditTracePlaying = false;
             logEvent("Sector audit generation failed: " + ex.getMessage());
         }
+        repaint();
+    }
+
+    void buildAssetAuditDevRoom() {
+        long auditSeed = (seed == 0L ? 0xA55E7L : seed) ^ 0xA55E7D3FL;
+        auditWorld = AssetAuditDevRoomAuthority.build(auditSeed);
+        auditTraceSteps.clear();
+        auditTracePlaying = false;
+        auditSnapshot = SectorAuditRuntimeAuthority.analyze(auditWorld, worldSetup, seed, auditSeed);
+        auditFindingIndex = 0;
+        auditCursorX = 4;
+        auditCursorY = 4;
+        logEvent("Semantic asset audit dev room built. Move the cursor and use [ / ] or Enter to cycle the selected tile asset.");
+        repaint();
+    }
+
+    void cycleAuditTileAsset(int delta) {
+        World target = auditViewWorld(currentAuditTraceStep());
+        if (target == null) return;
+        auditTracePlaying = false;
+        logEvent(AssetAuditDevRoomAuthority.cycle(target, auditCursorX, auditCursorY, delta));
         repaint();
     }
 

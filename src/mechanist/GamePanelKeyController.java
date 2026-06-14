@@ -95,11 +95,15 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_T) { panel.cycleAuditZoneType(1); return true; }
         if (code == KeyEvent.VK_G) { panel.cycleAuditZoneDensity(); return true; }
         if (code == KeyEvent.VK_O) { panel.cycleAuditOverlay(); return true; }
+        if (code == KeyEvent.VK_Q) { panel.buildAssetAuditDevRoom(); return true; }
         if (code == KeyEvent.VK_N) { panel.jumpAuditFinding(1); return true; }
         if (code == KeyEvent.VK_B) { panel.jumpAuditFinding(-1); return true; }
         if (code == KeyEvent.VK_P || code == KeyEvent.VK_SPACE) { panel.toggleAuditReplay(); return true; }
-        if (code == KeyEvent.VK_OPEN_BRACKET || code == KeyEvent.VK_PAGE_UP) { panel.stepAuditReplay(-1); return true; }
-        if (code == KeyEvent.VK_CLOSE_BRACKET || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_PAGE_DOWN) { panel.stepAuditReplay(1); return true; }
+        boolean assetRoom = AssetAuditDevRoomAuthority.isDevRoom(panel.auditWorld);
+        if (code == KeyEvent.VK_OPEN_BRACKET) { if (assetRoom) panel.cycleAuditTileAsset(-1); else panel.stepAuditReplay(-1); return true; }
+        if (code == KeyEvent.VK_CLOSE_BRACKET || code == KeyEvent.VK_ENTER) { if (assetRoom) panel.cycleAuditTileAsset(1); else panel.stepAuditReplay(1); return true; }
+        if (code == KeyEvent.VK_PAGE_UP) { panel.stepAuditReplay(-1); return true; }
+        if (code == KeyEvent.VK_PAGE_DOWN) { panel.stepAuditReplay(1); return true; }
         if (code == KeyEvent.VK_HOME) { panel.rewindAuditReplay(); return true; }
         if (code == KeyEvent.VK_END) { panel.finishAuditReplay(); return true; }
         int dx = 0;

@@ -3,11 +3,11 @@ src/mechanist/ContainerTradeFramework.java	70063	802	oversized_java_owner
 src/mechanist/FactionServicesFramework.java	69901	944	oversized_java_owner
 src/mechanist/FirstPerson3DFramework.java	64469	1246	oversized_java_owner
 src/mechanist/InfrastructurePromotionRegistry.java	62143	1001	oversized_java_owner
-src/mechanist/ItemEconomyFramework.java	231880	1418	oversized_java_owner
-src/mechanist/LegacyPanelContext.java	328097	5964	oversized_java_owner
-src/mechanist/PopulationPersonnelFramework.java	84167	1270	oversized_java_owner
+src/mechanist/ItemEconomyFramework.java	232847	1430	oversized_java_owner
+src/mechanist/LegacyPanelContext.java	365505	6561	oversized_java_owner
+src/mechanist/PopulationPersonnelFramework.java	84224	1271	oversized_java_owner
 src/mechanist/ProductionAuthorityFramework.java	345499	3117	oversized_java_owner
 src/mechanist/SimulationEditorSuite.java	97686	1687	oversized_java_owner
-src/mechanist/WorldRuntimeGenerationFramework.java	406393	8292	oversized_java_owner
-src/mechanist/WorldSimulationFramework.java	135662	1815	oversized_java_owner
-src/mechanist/WorldStartFlowAuthority.java	75292	1093	oversized_java_owner
+src/mechanist/WorldRuntimeGenerationFramework.java	406329	8289	oversized_java_owner
+src/mechanist/WorldSimulationFramework.java	135061	1810	oversized_java_owner
+src/mechanist/WorldStartFlowAuthority.java	76059	1093	oversized_java_owner

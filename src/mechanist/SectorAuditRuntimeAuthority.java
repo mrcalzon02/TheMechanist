@@ -1,5 +1,9 @@
 package mechanist;
 
+import mechanist.assets.AssetManager;
+import mechanist.assets.AssetMetadata;
+import mechanist.assets.AssetType;
+
 import java.awt.*;
 import java.util.*;
 
@@ -192,4 +196,115 @@ final class SectorAuditRuntimeAuthority {
     }
 
     private static String safe(String s, String fallback) { return s == null || s.isBlank() ? fallback : s; }
+}
+
+/** Curated audit room plus transient per-tile semantic asset target overrides. */
+final class AssetAuditDevRoomAuthority {
+    static final String VERSION = "asset-audit-dev-room-0.1";
+    private static final Map<World, Map<Long, String>> OVERRIDES = new WeakHashMap<>();
+    private static final Set<World> DEV_ROOMS = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private AssetAuditDevRoomAuthority() {}
+
+    static World build(long seed) {
+        World room = new World(seed, 31, 21);
+        room.zoneType = ZoneType.MECHANICUS_FORGE_CLOISTER;
+        room.zoneName = "Semantic Asset Audit Dev Room";
+        for (int x = 0; x < room.w; x++) {
+            for (int y = 0; y < room.h; y++) {
+                boolean boundary = x == 0 || y == 0 || x == room.w - 1 || y == room.h - 1;
+                room.tiles[x][y] = boundary ? '#' : '.';
+                if (!boundary) room.roomIds[x][y] = 0;
+            }
+        }
+        room.rooms.add(new Rectangle(1, 1, room.w - 2, room.h - 2));
+
+        placeRow(room, 4, 4, new char[]{'.', ',', '`', '.', '.', '.', '.', '.'}, 3);
+        placeRow(room, 4, 8, new char[]{'=', ':', '-', '~', '=', ':', '-', '~'}, 3);
+        placeRow(room, 4, 12, new char[]{';', '_', '\'', ';', '_', '\'', ';', '_'}, 3);
+        placeRow(room, 4, 16, new char[]{'/', '|', 'L', 'V', 'X', 'D', '/', '|'}, 3);
+        placeRow(room, 4, 18, new char[]{'w', 'e', 'l', 'x', 's', 't', 'I', 'C'}, 3);
+
+        TileDataCompilationAuthority.compile(room);
+        DEV_ROOMS.add(room);
+        OVERRIDES.put(room, new LinkedHashMap<>());
+        return room;
+    }
+
+    static boolean isDevRoom(World world) {
+        return world != null && DEV_ROOMS.contains(world);
+    }
+
+    static String assetIdFor(World world, int x, int y, CompiledTileDescriptor descriptor) {
+        String override = overrideAt(world, x, y);
+        return override == null ? descriptor == null ? null : descriptor.primaryAssetId : override;
+    }
+
+    static String cycle(World world, int x, int y, int delta) {
+        if (world == null || !world.inBounds(x, y)) return "Asset audit target is outside the room.";
+        CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, x, y, world.tiles[x][y]);
+        java.util.List<String> candidates = candidateAssetIds(descriptor);
+        if (candidates.isEmpty()) return "No compatible semantic assets are indexed for tile " + x + "," + y + ".";
+        String current = assetIdFor(world, x, y, descriptor);
+        int index = Math.max(0, candidates.indexOf(current));
+        String selected = candidates.get(Math.floorMod(index + (delta < 0 ? -1 : 1), candidates.size()));
+        OVERRIDES.computeIfAbsent(world, ignored -> new LinkedHashMap<>()).put(key(x, y), selected);
+        return status(world, x, y);
+    }
+
+    static String status(World world, int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return "Selected asset: no tile.";
+        CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(world, x, y, world.tiles[x][y]);
+        String assetId = assetIdFor(world, x, y, descriptor);
+        java.util.List<String> candidates = candidateAssetIds(descriptor);
+        AssetMetadata metadata = assetId == null ? null : AssetManager.metadata(assetId).orElse(null);
+        String source = overrideAt(world, x, y) == null ? "compiled target" : "manual override";
+        if (metadata == null) return "Selected asset: <missing> | " + source + " | candidates " + candidates.size() + ".";
+        return "Selected asset: " + metadata.id() + " | " + metadata.type().displayName() + " | "
+                + metadata.name() + " | " + source + " | candidates " + candidates.size() + ".";
+    }
+
+    static java.util.List<String> candidateAssetIds(CompiledTileDescriptor descriptor) {
+        if (descriptor == null) return java.util.List.of();
+        LinkedHashSet<String> ids = new LinkedHashSet<>();
+        if (descriptor.primaryAssetId != null && AssetManager.metadata(descriptor.primaryAssetId).isPresent()) {
+            ids.add(descriptor.primaryAssetId);
+        }
+        AssetManager.registry().all().stream()
+                .filter(asset -> compatible(asset, descriptor))
+                .map(AssetMetadata::id)
+                .sorted()
+                .forEach(ids::add);
+        return java.util.List.copyOf(ids);
+    }
+
+    private static boolean compatible(AssetMetadata asset, CompiledTileDescriptor descriptor) {
+        if (asset == null || descriptor == null) return false;
+        AssetType type = asset.type();
+        String semantic = (asset.name() + " " + asset.pathOrUri() + " " + asset.semanticDescription()).toLowerCase(Locale.ROOT);
+        if (descriptor.isDoor) return type == AssetType.FIXTURE && semantic.contains("door");
+        if (descriptor.isWall) return type == AssetType.WALL_TILE;
+        if (descriptor.isSidewalk) return type == AssetType.SIDEWALK_TILE || type == AssetType.ROAD_TILE;
+        if (descriptor.isRoad) return type == AssetType.ROAD_TILE || type == AssetType.SIDEWALK_TILE;
+        if (descriptor.isCorridor) return type == AssetType.CORRIDOR_TILE || type == AssetType.FLOOR_TILE;
+        if (descriptor.isFixture) return type == AssetType.FIXTURE || type == AssetType.OBJECT || type == AssetType.MACHINE;
+        if ("floor".equals(descriptor.baseLayer)) return type == AssetType.FLOOR_TILE;
+        return false;
+    }
+
+    private static void placeRow(World world, int startX, int y, char[] glyphs, int spacing) {
+        for (int i = 0; i < glyphs.length; i++) {
+            int x = startX + i * spacing;
+            if (world.inBounds(x, y)) world.tiles[x][y] = glyphs[i];
+        }
+    }
+
+    private static String overrideAt(World world, int x, int y) {
+        Map<Long, String> overrides = world == null ? null : OVERRIDES.get(world);
+        return overrides == null ? null : overrides.get(key(x, y));
+    }
+
+    private static long key(int x, int y) {
+        return ((long)x << 32) ^ (y & 0xffffffffL);
+    }
 }
