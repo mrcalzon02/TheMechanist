@@ -26,4 +26,4 @@ jobs:
             -o logs.zip
           mkdir logs
           unzip -q logs.zip -d logs
-          grep -RniE "error:|Exception|AssertionError|PASS|FAILED|failed" logs | tail -240 || true
+          cat "logs/implement-and-verify/5_Compile Java 17 UTF-8.txt"
