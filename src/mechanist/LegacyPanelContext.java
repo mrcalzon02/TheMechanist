@@ -1677,8 +1677,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private BufferedImage tileArtImage(String artKey, String assetId, char fallbackGlyph) {
-        BufferedImage img = artKey == null ? null : images.getTile(artKey, fallbackGlyph);
-        if (img == null && assetId != null) img = images.getSemanticAssetImage(assetId);
+        BufferedImage img = assetId == null ? null : images.getSemanticAssetImage(assetId);
+        if (img == null && artKey != null) img = images.getTile(artKey, fallbackGlyph);
         if (img == null) img = images.getTile(fallbackGlyph);
         return img;
     }
