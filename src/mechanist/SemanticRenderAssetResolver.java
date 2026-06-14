@@ -136,8 +136,8 @@ final class SemanticRenderAssetResolver {
             case NOBLE_FLOOR -> isFloor(asset) && themed(haystack, "noble", "luxury", "estate", "manor") && !themed(haystack, "sewer");
             case SLUM_FLOOR -> isFloor(asset) && themed(haystack, "slum", "shanty", "tenement", "scrap") && !themed(haystack, "sewer");
             case STREETLIGHT_FIXTURE -> (asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp") && !themed(haystack, "system inventory", "item icon", "ui icon");
-            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && themed(haystack, "closed", "shut") && !themed(haystack, "open");
-            case DOOR_OPEN -> doorType(asset) && themed(haystack, "door") && themed(haystack, "open", "opened") && !themed(haystack, "closed", "shut");
+            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && themed(haystack, "closed", "shut") && !themed(haystack, "open") && !generic(haystack);
+            case DOOR_OPEN -> doorType(asset) && themed(haystack, "door") && themed(haystack, "open", "opened") && !themed(haystack, "closed", "shut") && !generic(haystack);
             case WORKSHOP_TABLE -> fixtureOrObject(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
             case DINING_TABLE -> fixtureOrObject(asset) && themed(haystack, "dining table", "mess table", "kitchen table");
             case MEDICAL_TABLE -> fixtureOrObject(asset) && themed(haystack, "medical table", "operating table", "surgery table");
