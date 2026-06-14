@@ -159,7 +159,7 @@ final class SemanticRenderAssetResolver {
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "food", "ration", "meal", "water");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
             case TRADE_GOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter");
-            case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "religious", "relic", "icon", "prayer");
+            case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "religious", "relic", "prayer", "holy object", "devotional");
             case DATA_DEVICE_ITEM_ICON -> itemIcon(asset) && themed(haystack, "data", "device", "datapad", "terminal", "chip");
         };
     }
