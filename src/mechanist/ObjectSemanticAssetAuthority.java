@@ -24,7 +24,7 @@ import java.util.Optional;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10jy-stage6";
+    static final String VERSION = "0.9.10kc-active-registry";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
 
@@ -111,8 +111,13 @@ final class ObjectSemanticAssetAuthority {
         return assetIdForName(recipe == null ? null : recipe.name);
     }
 
+    static Optional<String> runtimeAssetIdForBuildRecipe(BuildRecipe recipe) {
+        String name = recipe == null ? "" : recipe.name;
+        return runtimeAssetIdForName(name);
+    }
+
     static Optional<AssetMetadata> metadataForBuildRecipe(BuildRecipe recipe) {
-        return AssetManager.metadata(assetIdForBuildRecipe(recipe));
+        return runtimeAssetIdForBuildRecipe(recipe).flatMap(AssetManager::metadata);
     }
 
     static String assetIdForBaseObject(BaseObject object) {
@@ -159,15 +164,41 @@ final class ObjectSemanticAssetAuthority {
     }
 
     static String assetIdForEditorPalette(String category, String item) {
+        return runtimeAssetIdForEditorPalette(category, item)
+                .orElseGet(() -> assetHintForEditorPalette(category, item));
+    }
+
+    static Optional<String> runtimeAssetIdForEditorPalette(String category, String item) {
+        String cat = normalize(category);
+        if (cat.contains("floor")) return TileSemanticAssetAuthority.assetIdForAlias("floor_bare_underhive");
+        if (cat.contains("wall")) return TileSemanticAssetAuthority.assetIdForAlias("wall_bulkhead");
+        String semantic = cat + " " + normalize(item);
+        return SemanticAssetHintResolver.resolve(assetHintForEditorPalette(category, item), semantic,
+                java.util.Set.of(AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+                        AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON));
+    }
+
+    private static String assetHintForEditorPalette(String category, String item) {
         String direct = assetIdForName(item);
         if (!"ITEM-G01".equals(direct)) return direct;
         String cat = normalize(category);
-        if (cat.contains("floor")) return TileSemanticAssetAuthority.assetIdForAlias("floor_bare_underhive").orElse("FLR-0101");
-        if (cat.contains("wall")) return TileSemanticAssetAuthority.assetIdForAlias("wall_bulkhead").orElse("WALL-A01");
+        if (cat.contains("floor")) return "FLR-0101";
+        if (cat.contains("wall")) return "WALL-A01";
         return direct;
     }
 
     static String assetIdForLight(ZoneLightSourceRecord light) {
+        return runtimeAssetIdForLight(light).orElseGet(() -> assetHintForLight(light));
+    }
+
+    static Optional<String> runtimeAssetIdForLight(ZoneLightSourceRecord light) {
+        String semantic = light == null ? "light fixture" : normalize(
+                light.profile + " " + light.colorName + " " + light.groupId + " light fixture");
+        return SemanticAssetHintResolver.resolve(assetHintForLight(light), semantic,
+                java.util.Set.of(AssetType.FIXTURE, AssetType.OBJECT, AssetType.MACHINE));
+    }
+
+    private static String assetHintForLight(ZoneLightSourceRecord light) {
         if (light == null) return "FTR-0003";
         String profile = normalize(light.profile + " " + light.colorName + " " + light.groupId);
         if (profile.contains("switch")) return "FTR-0004";
@@ -176,6 +207,17 @@ final class ObjectSemanticAssetAuthority {
     }
 
     static String assetIdForTrap(TrapRecord trap) {
+        return runtimeAssetIdForTrap(trap).orElseGet(() -> assetHintForTrap(trap));
+    }
+
+    static Optional<String> runtimeAssetIdForTrap(TrapRecord trap) {
+        String semantic = trap == null ? "alarm trap" : normalize(
+                trap.type + " " + trap.label + " " + trap.effect + " trap");
+        return SemanticAssetHintResolver.resolve(assetHintForTrap(trap), semantic,
+                java.util.Set.of(AssetType.FIXTURE, AssetType.OBJECT, AssetType.MACHINE, AssetType.ITEM_ICON));
+    }
+
+    private static String assetHintForTrap(TrapRecord trap) {
         if (trap == null) return "BLD-0004";
         String text = normalize(trap.type + " " + trap.label + " " + trap.effect);
         if (text.contains("wire") || text.contains("razor")) return "BLD-0007";
@@ -200,17 +242,24 @@ final class ObjectSemanticAssetAuthority {
         return out;
     }
 
+    static Optional<String> runtimeAssetIdForName(String name) {
+        return SemanticAssetHintResolver.resolve(assetIdForName(name), normalize(name), java.util.Set.of(
+                AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+                AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON, AssetType.WALL_TILE));
+    }
+
     static String semanticSummaryForName(String name) {
-        String id = assetIdForName(name);
-        Optional<AssetMetadata> meta = AssetManager.metadata(id);
-        if (meta.isEmpty()) return "Semantic object asset: " + id + " (registry metadata unavailable).";
+        String hint = assetIdForName(name);
+        Optional<AssetMetadata> meta = runtimeAssetIdForName(name).flatMap(AssetManager::metadata);
+        if (meta.isEmpty()) return "Semantic object asset hint: " + hint + " (no compatible active-registry asset).";
         AssetMetadata m = meta.get();
-        return "Semantic object asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name() + ".";
+        return "Semantic object asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name()
+                + " / authoredHint=" + hint + ".";
     }
 
     static String auditSummary() {
         return "objectSemanticAssetAuthority version=" + VERSION + " exactMappings=" + EXACT.size() +
-                " domains=construction+base-objects+map-fixtures+traps+lights+editor-palettes registryFirst=true legacyFallback=false typedMissing=true";
+                " domains=construction+base-objects+map-fixtures+traps+lights+editor-palettes activeRegistryValidated=true legacyHintsRetained=true typedMissing=true";
     }
 
     static Map<String, String> auditExactMappings() {
