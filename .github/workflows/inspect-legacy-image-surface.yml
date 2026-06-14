@@ -1,0 +1,24 @@
+name: Inspect Legacy Image Surface
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-legacy-image-surface.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print image surface methods
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=$(grep -RIl --include='*.java' 'class LegacyImageSurface' src | head -1)
+          echo "FILE=$file"
+          grep -n -A35 -B8 'getSemanticAssetImage' "$file" || true
+          grep -n -A35 -B8 'BufferedImage getTile' "$file" || true
