@@ -252,7 +252,9 @@ final class TileSemanticAssetAuthority {
             groups.add(List.of("maintenance", "service", "utility", "exterior"));
         }
         addConcept(groups, key, "padded", "padded");
-        addConcept(groups, key, "bulkhead", "bulkhead");
+        if (key.contains("bulkhead") && !containsAny(key, List.of("sewer", "noble", "maintenance", "exterior"))) {
+            groups.add(List.of("bulkhead"));
+        }
         addConcept(groups, key, "support_beam", "support beam", "beam");
         addConcept(groups, key, "gantry_lattice", "gantry", "lattice");
         addConcept(groups, key, "buried_conveyor", "conveyor");
