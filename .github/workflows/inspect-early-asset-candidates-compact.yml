@@ -1,0 +1,51 @@
+name: Inspect Early Asset Candidates Compact
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-early-asset-candidates-compact.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print top three candidates per early intent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body -sSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/27512546224/logs" \
+            -o logs.zip
+          mkdir logs
+          unzip -q logs.zip -d logs
+          output=$(find logs -type f -iname '*Print early migration candidates*.txt' | head -1)
+          python - "$output" <<'PY'
+          import re, sys
+          path = sys.argv[1]
+          counts = {}
+          with open(path, encoding='utf-8-sig', errors='replace') as handle:
+              for raw in handle:
+                  line = re.sub(r'^.*?Z ', '', raw.rstrip())
+                  if line.startswith('RESOLVED|'):
+                      print(line)
+                  elif line.startswith('CANDIDATES_BEGIN|'):
+                      intent = line.split('|', 1)[1]
+                      counts[intent] = 0
+                      print(line)
+                  elif line.startswith('CANDIDATE|'):
+                      parts = line.split('|', 2)
+                      intent = parts[1]
+                      if counts.get(intent, 0) < 3:
+                          print(line)
+                          counts[intent] = counts.get(intent, 0) + 1
+                  elif line.startswith('CANDIDATES_END|'):
+                      print(line)
+          PY
