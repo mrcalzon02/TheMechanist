@@ -1,0 +1,230 @@
+name: One Shot Live Semantic Render Migration
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-live-semantic-render-migration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Apply live semantic rendering migration
+        shell: pwsh
+        run: |
+          $script = @'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          root = Path('.')
+
+          # Restore the full Milestone 02 plan and retain the semantic migration stage.
+          milestone = root / 'ROOT_docs' / 'MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md'
+          current = milestone.read_text(encoding='utf-8')
+          marker = '## Phase 4.16 - Semantic Rendering Migration and Asset Binding Authority'
+          semantic_section = current[current.index(marker):].rstrip() if marker in current else ''
+          restored = subprocess.check_output([
+              'git', 'show',
+              '3dcda9c6033aceb77c9035ebf1fe9a2eb54efb67:ROOT_docs/MILESTONE_02_UI_EXAMINATION_INFOPEDIA_AND_PLAYER_READABILITY.md'
+          ], text=True, encoding='utf-8')
+          if semantic_section and marker not in restored:
+              restored = restored.rstrip() + '\n\n' + semantic_section + '\n'
+          milestone.write_text(restored, encoding='utf-8', newline='')
+
+          # Semantic IDs become authoritative in the active 2D renderer.
+          panel = root / 'src' / 'mechanist' / 'LegacyPanelContext.java'
+          text = panel.read_text(encoding='utf-8')
+          old = '''    private BufferedImage tileArtImage(String artKey, String assetId, char fallbackGlyph) {
+              BufferedImage img = artKey == null ? null : images.getTile(artKey, fallbackGlyph);
+              if (img == null && assetId != null) img = images.getSemanticAssetImage(assetId);
+              if (img == null) img = images.getTile(fallbackGlyph);
+              return img;
+          }'''
+          new = '''    private BufferedImage tileArtImage(String artKey, String assetId, char fallbackGlyph) {
+              // Semantic registry identity is authoritative. Legacy aliases remain a
+              // temporary compatibility bridge only when no semantic ID was compiled.
+              BufferedImage img = assetId == null ? null : images.getSemanticAssetImage(assetId);
+              if (img == null && assetId == null && artKey != null) img = images.getTile(artKey, fallbackGlyph);
+              if (img == null && assetId == null) img = images.getTile(fallbackGlyph);
+              return img;
+          }'''
+          if old not in text:
+              raise SystemExit('Expected tileArtImage body not found')
+          text = text.replace(old, new)
+
+          # Remove the per-visible-tile blue box grid. Keep a soft graduated facing tint.
+          pattern = re.compile(r'''    private void drawFacingVisionConeOverlay\(java\.awt\.Graphics2D g, int cols, int rows, int tile\) \{.*?\n    \}\n\n    private void drawMovementPlannerOverlay''', re.S)
+          replacement = '''    private void drawFacingVisionConeOverlay(java.awt.Graphics2D g, int cols, int rows, int tile) {
+              if (world == null) return;
+              int range = visionRange();
+              double originX = playerRenderWorldX();
+              double originY = playerRenderWorldY();
+              for (int y = Math.max(0, lastWorldViewMinY); y < Math.min(world.h, lastWorldViewMinY + rows); y++) {
+                  for (int x = Math.max(0, lastWorldViewMinX); x < Math.min(world.w, lastWorldViewMinX + cols); x++) {
+                      double distance = Math.hypot(x - originX, y - originY);
+                      if (distance <= 0.35 || !isVisible(x, y) || !withinFacingVisionConeVisual(x, y, range, originX, originY)) continue;
+                      double normalized = Math.max(0.0, Math.min(1.0, distance / Math.max(1.0, range)));
+                      double eased = 1.0 - normalized * normalized * (3.0 - 2.0 * normalized);
+                      int light = lightLevelAt(x, y);
+                      int alpha = (int)Math.round((8.0 + 20.0 * eased) * Math.max(0.35, Math.min(1.0, light / 72.0)));
+                      if (alpha <= 0) continue;
+                      int sx = lastWorldViewOriginX + (x - lastWorldViewMinX) * tile;
+                      int sy = lastWorldViewOriginY + (y - lastWorldViewMinY) * tile;
+                      g.setColor(new java.awt.Color(86, 148, 178, Math.max(3, Math.min(30, alpha))));
+                      g.fillRect(sx, sy, tile, tile);
+                  }
+              }
+          }
+
+          private void drawMovementPlannerOverlay'''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit('Expected vision overlay method not found')
+          panel.write_text(text, encoding='utf-8', newline='')
+
+          # Resolve compiled door state and unmapped thematic aliases through AssetRegistry.
+          tile = root / 'src' / 'mechanist' / 'TileDataCompilationAuthority.java'
+          text = tile.read_text(encoding='utf-8')
+          if 'import mechanist.assets.AssetManager;' not in text:
+              text = text.replace('package mechanist;\n\n', 'package mechanist;\n\nimport mechanist.assets.AssetManager;\n\n', 1)
+          text = text.replace(
+              '        this.primaryAssetId = TileSemanticAssetAuthority.assetIdOrMissing(primaryArtKey);',
+              '        this.primaryAssetId = semanticPrimaryAssetId(sourceGlyph, baseLayer, primaryArtKey);')
+          anchor = '    boolean hasOverlay() { return overlayArtKey != null && underlayArtKey != null; }'
+          helper = '''    private static String semanticPrimaryAssetId(char sourceGlyph, String baseLayer, String primaryArtKey) {
+              if ("door".equals(baseLayer)) {
+                  SemanticRenderAssetResolver.RenderIntent intent = sourceGlyph == '/'
+                          ? SemanticRenderAssetResolver.RenderIntent.DOOR_OPEN
+                          : SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED;
+                  return SemanticRenderAssetResolver.optional(AssetManager.registry(), intent)
+                          .map(mechanist.assets.AssetMetadata::id)
+                          .orElse(TileSemanticAssetAuthority.assetIdOrMissing(primaryArtKey));
+              }
+              return TileSemanticAssetAuthority.assetIdOrMissing(primaryArtKey);
+          }
+
+          ''' + anchor
+          if anchor not in text:
+              raise SystemExit('CompiledTileDescriptor insertion anchor not found')
+          text = text.replace(anchor, helper, 1)
+          tile.write_text(text, encoding='utf-8', newline='')
+
+          resolver = root / 'src' / 'mechanist' / 'SemanticRenderAssetResolver.java'
+          text = resolver.read_text(encoding='utf-8')
+          text = text.replace('semantic-render-asset-resolver-0.2-room-zone-item', 'semantic-render-asset-resolver-0.3-live-tile-migration')
+          text = text.replace(
+              'case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && themed(haystack, "closed", "shut") && !themed(haystack, "open");',
+              'case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && !themed(haystack, "open", "opened");')
+          resolver.write_text(text, encoding='utf-8', newline='')
+
+          semantic = root / 'src' / 'mechanist' / 'TileSemanticAssetAuthority.java'
+          text = semantic.read_text(encoding='utf-8')
+          old_return = '        return Optional.empty();\n    }\n\n    static String assetIdOrMissing(String alias)'
+          new_return = '''        Optional<SemanticRenderAssetResolver.RenderIntent> intent = semanticIntentForAlias(key);
+              if (intent.isPresent()) {
+                  return SemanticRenderAssetResolver.optional(AssetManager.registry(), intent.get()).map(AssetMetadata::id);
+              }
+              return Optional.empty();
+          }
+
+          private static Optional<SemanticRenderAssetResolver.RenderIntent> semanticIntentForAlias(String key) {
+              if (key == null || key.isBlank()) return Optional.empty();
+              if (key.contains("streetlight") || key.contains("street_light") || key.contains("lamp_post")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE);
+              if (key.contains("door_open") || key.contains("doors_open")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.DOOR_OPEN);
+              if (key.contains("door") && !key.contains("open")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED);
+              if (key.contains("floor_sewer")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR);
+              if (key.contains("wall_sewer")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.SEWER_WALL);
+              if (key.contains("floor_noble")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.NOBLE_FLOOR);
+              if (key.contains("floor_slum") || key.contains("floor_trash") || key.contains("floor_gang")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.SLUM_FLOOR);
+              if (key.contains("floor_market")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR);
+              if (key.contains("wall_market")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.MARKET_WALL);
+              if (key.contains("floor_hab") || key.contains("floor_apartment")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR);
+              if (key.contains("wall_hab") || key.contains("wall_apartment")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.HABITATION_WALL);
+              if (key.contains("floor_industrial") || key.contains("floor_factory") || key.contains("floor_workshop")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_FLOOR);
+              if (key.contains("wall_industrial") || key.contains("wall_factory") || key.contains("wall_workshop")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_WALL);
+              if (key.contains("floor_medical") || key.contains("floor_clinic") || key.contains("floor_hospital")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_FLOOR);
+              if (key.contains("floor_security") || key.contains("floor_prison") || key.contains("floor_checkpoint")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.SECURITY_FLOOR);
+              if (key.contains("floor_admin") || key.contains("floor_office") || key.contains("floor_records")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.ADMINISTRATIVE_FLOOR);
+              if (key.contains("floor_religious") || key.contains("floor_shrine") || key.contains("floor_chapel")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_FLOOR);
+              if (key.contains("floor_transit") || key.contains("floor_station") || key.contains("floor_platform")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.TRANSIT_FLOOR);
+              if (key.contains("floor_warehouse") || key.contains("floor_storage") || key.contains("floor_cargo")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.WAREHOUSE_FLOOR);
+              if (key.contains("toolbox")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOLBOX_CONTAINER);
+              if (key.contains("medical_cabinet")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_CABINET_CONTAINER);
+              if (key.contains("weapons_locker") || key.contains("weapon_locker")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPONS_LOCKER_CONTAINER);
+              if (key.contains("cargo_container") || key.contains("cargo_crate")) return Optional.of(SemanticRenderAssetResolver.RenderIntent.CARGO_CONTAINER);
+              return Optional.empty();
+          }
+
+          static String assetIdOrMissing(String alias)'''
+          if old_return not in text:
+              raise SystemExit('TileSemanticAssetAuthority fallback anchor not found')
+          text = text.replace(old_return, new_return, 1)
+          semantic.write_text(text, encoding='utf-8', newline='')
+
+          smoke = root / 'src' / 'mechanist' / 'Milestone02LiveSemanticTileMigrationSmoke.java'
+          smoke.write_text('''package mechanist;\n\nimport mechanist.assets.AssetManager;\nimport mechanist.assets.AssetMetadata;\nimport mechanist.assets.AssetRegistry;\nimport mechanist.assets.AssetType;\n\nimport java.lang.reflect.Constructor;\nimport java.util.LinkedHashMap;\nimport java.util.Map;\n\npublic final class Milestone02LiveSemanticTileMigrationSmoke {\n    public static void main(String[] args) throws Exception {\n        AssetRegistry registry = registry();\n        AssetManager.installRegistry(registry);\n\n        CompiledTileDescriptor open = TileDataCompilationAuthority.doorDescriptor('/');\n        CompiledTileDescriptor closed = TileDataCompilationAuthority.doorDescriptor('D');\n        if (!\"DOP-0001\".equals(open.primaryAssetId)) throw new AssertionError(\"open door did not resolve open semantic set: \" + open.primaryAssetId);\n        if (!\"DCL-0001\".equals(closed.primaryAssetId)) throw new AssertionError(\"closed door did not resolve closed semantic set: \" + closed.primaryAssetId);\n\n        String medical = TileSemanticAssetAuthority.assetIdForAlias(\"floor_medical_clinic\").orElse(\"\");\n        if (!\"MED-0001\".equals(medical)) throw new AssertionError(\"medical floor alias did not use semantic resolver: \" + medical);\n        String streetlight = TileSemanticAssetAuthority.assetIdForAlias(\"streetlight_fixture\").orElse(\"\");\n        if (!\"LGT-0001\".equals(streetlight)) throw new AssertionError(\"streetlight alias did not use infrastructure semantic asset: \" + streetlight);\n\n        System.out.println(\"Milestone02LiveSemanticTileMigrationSmoke PASS\");\n    }\n\n    private static AssetRegistry registry() throws Exception {\n        Map<String, AssetMetadata> entries = new LinkedHashMap<>();\n        put(entries, new AssetMetadata(\"DOP-0001\", \"assets/doors/open_01.png\", \"Open bulkhead door\", AssetType.WALL_TILE, \"bulkhead door entry open variant\"));\n        put(entries, new AssetMetadata(\"DCL-0001\", \"assets/doors/closed_01.png\", \"Closed bulkhead door\", AssetType.WALL_TILE, \"bulkhead door entry structure closed variant\"));\n        put(entries, new AssetMetadata(\"MED-0001\", \"assets/tiles/medical_floor.png\", \"Medical clinic floor\", AssetType.FLOOR_TILE, \"medical clinic hospital surgery floor tile\"));\n        put(entries, new AssetMetadata(\"LGT-0001\", \"assets/infrastructure/streetlight.png\", \"Streetlight fixture\", AssetType.FIXTURE, \"streetlight street light lamp post infrastructure fixture\"));\n        Constructor<AssetRegistry> ctor = AssetRegistry.class.getDeclaredConstructor(java.nio.file.Path.class, java.nio.file.Path.class, Map.class);\n        ctor.setAccessible(true);\n        return ctor.newInstance(java.nio.file.Path.of(\".\"), null, entries);\n    }\n\n    private static void put(Map<String, AssetMetadata> entries, AssetMetadata metadata) { entries.put(metadata.id(), metadata); }\n    private Milestone02LiveSemanticTileMigrationSmoke() {}\n}\n''', encoding='utf-8', newline='')
+
+          suite = root / 'src' / 'mechanist' / 'Gate3PlayerFacingTextSmokeSuite.java'
+          text = suite.read_text(encoding='utf-8')
+          if 'Milestone02LiveSemanticTileMigrationSmoke.main(args);' not in text:
+              text = text.replace('        Milestone02SemanticRenderAssetResolverSmoke.main(args);', '        Milestone02SemanticRenderAssetResolverSmoke.main(args);\n        Milestone02LiveSemanticTileMigrationSmoke.main(args);')
+          suite.write_text(text, encoding='utf-8', newline='')
+
+          history = root / 'ROOT_docs' / 'DEVELOPMENT_HISTORY.md'
+          text = history.read_text(encoding='utf-8')
+          heading = '## Milestone 02 - Live Semantic Tile Renderer Migration Slice'
+          if heading not in text:
+              text = text.rstrip() + '''\n\n## Milestone 02 - Live Semantic Tile Renderer Migration Slice\n\nBegan the live Phase 4.16 migration instead of stopping at doctrine and resolver tests. The active 2D renderer now requests compiled semantic asset IDs before legacy art aliases, and a compiled semantic ID no longer silently collapses back into an unrelated glyph tile. Compiled door descriptors now resolve the indexed open-door or closed-door family from actual door state, while unmapped thematic aliases can consult `SemanticRenderAssetResolver` for medical, security, administrative, religious, transit, warehouse, habitation, industrial, market, sewer, noble, slum, streetlight, and container families.\n\nRemoved the blue per-visible-tile facing-cone boxes and retained only a soft distance/light-graduated facing tint. Restored the complete Milestone 02 plan from its prior intact revision and retained the Phase 4.16 semantic-rendering migration section that had previously replaced it accidentally.\n\nVerification: the one-shot migration workflow requires Java 17 UTF-8 full-source compilation plus `Milestone02LiveSemanticTileMigrationSmoke` and the complete Gate 3 suite before committing. Manual GUI review remains required for visual confirmation against the real packaged asset registry.\n'''
+              history.write_text(text, encoding='utf-8', newline='')
+          '@
+          Set-Content -Path apply_live_semantic_migration.py -Value $script -Encoding UTF8
+          python apply_live_semantic_migration.py
+
+      - name: Compile Java 17 UTF-8
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force ROOT_build/semantic-migration-classes | Out-Null
+          $sources = Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName }
+          javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-migration-classes $sources
+
+      - name: Run focused and Gate 3 smokes
+        shell: pwsh
+        run: |
+          java -cp ROOT_build/semantic-migration-classes mechanist.Milestone02LiveSemanticTileMigrationSmoke
+          java -cp ROOT_build/semantic-migration-classes mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Remove one-shot files and build output
+        shell: pwsh
+        run: |
+          Remove-Item '.github/workflows/one-shot-live-semantic-render-migration.yml' -Force
+          Remove-Item 'apply_live_semantic_migration.py' -Force -ErrorAction SilentlyContinue
+          Remove-Item 'ROOT_build/semantic-migration-classes' -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Commit verified migration
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if (git diff --cached --quiet) {
+            Write-Host 'No changes to commit.'
+          } else {
+            git commit -m 'Begin live semantic renderer migration'
+            git push
+          }
