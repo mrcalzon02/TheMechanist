@@ -2,7 +2,7 @@ package mechanist;
 
 /** Runs the narrow Gate 3 readability checks from one entry point. */
 final class Gate3PlayerFacingTextSmokeSuite {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         FactionContractDisplaySmoke.main(args);
         PlayerFacingCopySanitizerSmoke.main(args);
         PlayerFacingUiTextSmoke.main(args);
@@ -60,6 +60,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02TransferWorkflowConsistencySmoke.main(args);
         Milestone02LivePanelPromptSmoke.main(args);
         Milestone02RenderAssetBindingDoctrineSmoke.main(args);
+        Milestone02SemanticRenderAssetResolverSmoke.main(args);
         Milestone03ProductionQualityTraceSmoke.main(args);
         Milestone03QualityProvenanceSmoke.main(args);
         Milestone03ProductionOutcomeForecastSmoke.main(args);
