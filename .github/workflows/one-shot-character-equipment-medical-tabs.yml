@@ -1,0 +1,723 @@
+name: One Shot Character Equipment And Medical Tabs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Implement equipment loadout and medical body tabs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          # Expand the authority with catalog-aware compatibility, backpack capacity,
+          # persistence, and explicit future-system medical hooks.
+          authority = Path('src/mechanist/CharacterEquipmentAndMedicalAuthority.java')
+          text = authority.read_text(encoding='utf-8')
+          text = text.replace('import java.util.Map;\n', 'import java.util.Map;\nimport java.util.Properties;\n')
+          text = text.replace('        String item = itemName.toLowerCase(Locale.ROOT);\n', '''        ItemDef definition = ItemCatalog.get(itemName);
+        String item = (itemName + " "
+                + (definition == null ? "" : definition.category) + " "
+                + (definition == null ? "" : definition.description)).toLowerCase(Locale.ROOT);
+''')
+          marker = '''    static void clearLegacyBackedSlot(Map<EquipmentSlot, String> extraSlots, EquipmentSlot slot) {
+        if (extraSlots == null || slot == null) return;
+        if (slot != EquipmentSlot.LEFT_HAND && slot != EquipmentSlot.RIGHT_HAND && slot != EquipmentSlot.CLOTHES) {
+            extraSlots.remove(slot);
+        }
+    }
+'''
+          extension = marker + '''
+    static int carryCapacityBonus(Map<EquipmentSlot, String> extraSlots) {
+        if (extraSlots == null) return 0;
+        String backpack = safe(extraSlots.get(EquipmentSlot.BACKPACK)).toLowerCase(Locale.ROOT);
+        if (backpack.equals("empty")) return 0;
+        if (contains(backpack, "expedition", "heavy", "frame pack")) return 12;
+        if (contains(backpack, "rucksack", "haversack")) return 10;
+        if (contains(backpack, "backpack")) return 8;
+        if (contains(backpack, "satchel")) return 4;
+        return 6;
+    }
+
+    static void installMedicalRecord(Map<String, String> installed, String bodyPartName,
+                                     MedicalLayer layer, String installedName) {
+        if (installed == null) return;
+        MedicalSlotKey key = new MedicalSlotKey(bodyPartName, layer);
+        if (installedName == null || installedName.isBlank()) installed.remove(key.storageKey());
+        else installed.put(key.storageKey(), installedName);
+    }
+
+    static String medicalRecord(Map<String, String> installed, String bodyPartName, MedicalLayer layer) {
+        if (installed == null) return "Empty";
+        return safe(installed.get(new MedicalSlotKey(bodyPartName, layer).storageKey()));
+    }
+
+    static void writeState(Properties properties, Map<EquipmentSlot, String> equipment,
+                           Map<String, String> medical) {
+        if (properties == null) return;
+        if (equipment != null) {
+            for (Map.Entry<EquipmentSlot, String> entry : equipment.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null || entry.getValue().isBlank()) continue;
+                properties.setProperty("character.equipment." + entry.getKey().name(), entry.getValue());
+            }
+        }
+        if (medical != null) {
+            int index = 0;
+            for (Map.Entry<String, String> entry : medical.entrySet()) {
+                if (entry.getKey() == null || entry.getKey().isBlank()
+                        || entry.getValue() == null || entry.getValue().isBlank()) continue;
+                properties.setProperty("character.medical." + index + ".key", entry.getKey());
+                properties.setProperty("character.medical." + index + ".value", entry.getValue());
+                index++;
+            }
+            properties.setProperty("character.medical.count", Integer.toString(index));
+        }
+    }
+
+    static void readState(Properties properties, Map<EquipmentSlot, String> equipment,
+                          Map<String, String> medical) {
+        if (properties == null) return;
+        if (equipment != null) {
+            equipment.clear();
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (slot == EquipmentSlot.LEFT_HAND || slot == EquipmentSlot.RIGHT_HAND || slot == EquipmentSlot.CLOTHES) continue;
+                String value = properties.getProperty("character.equipment." + slot.name());
+                if (value != null && !value.isBlank()) equipment.put(slot, value);
+            }
+        }
+        if (medical != null) {
+            medical.clear();
+            int count;
+            try { count = Math.max(0, Integer.parseInt(properties.getProperty("character.medical.count", "0"))); }
+            catch (NumberFormatException ignored) { count = 0; }
+            for (int i = 0; i < count; i++) {
+                String key = properties.getProperty("character.medical." + i + ".key");
+                String value = properties.getProperty("character.medical." + i + ".value");
+                if (key != null && !key.isBlank() && value != null && !value.isBlank()) medical.put(key, value);
+            }
+        }
+    }
+'''
+          if marker in text and 'static int carryCapacityBonus' not in text:
+              text = text.replace(marker, extension, 1)
+          text = text.replace('        lines.add("Future systems can bind directly through MedicalSlotKey.storageKey().");\n',
+                              '        lines.add("Future systems can bind directly through MedicalSlotKey.storageKey().");\n'
+                              '        lines.add("Cybernetic records reserve isolated, direct-interface hardware; no wireless control path is assumed.");\n')
+          authority.write_text(text, encoding='utf-8', newline='')
+
+          # Add a selected-region overload to the existing paper doll painter.
+          doll = Path('src/mechanist/CharacterPaperDollAuthority.java')
+          text = doll.read_text(encoding='utf-8')
+          old_signature = '''    static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font) {
+        if (g == null || bounds == null) return;
+'''
+          new_signature = '''    static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font) {
+        paint(g, bounds, candidate, font, null);
+    }
+
+    static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font, String selectedBodyPart) {
+        if (g == null || bounds == null) return;
+'''
+          if old_signature in text and 'String selectedBodyPart)' not in text:
+              text = text.replace(old_signature, new_signature, 1)
+          old_border = '''            g.setColor(new Color(235, 225, 188, 190));
+            g.setStroke(new BasicStroke(region.destroyed() ? 2.2f : 1.0f));
+'''
+          new_border = '''            boolean selected = selectedBodyPart != null && region.bodyPartName().equalsIgnoreCase(selectedBodyPart);
+            g.setColor(selected ? new Color(115, 210, 225, 235) : new Color(235, 225, 188, 190));
+            g.setStroke(new BasicStroke(selected ? 3.0f : region.destroyed() ? 2.2f : 1.0f));
+'''
+          if old_border in text:
+              text = text.replace(old_border, new_border, 1)
+          doll.write_text(text, encoding='utf-8', newline='')
+
+          # Give arbitrary clothing names a safe live profile while preserving known faction clothing.
+          clothing = Path('src/mechanist/Clothing.java')
+          text = clothing.read_text(encoding='utf-8')
+          if 'static Clothing fromItemName' not in text:
+              insertion = '''    static Clothing fromItemName(String itemName) {
+        String safe = itemName == null || itemName.isBlank() ? "Unidentified clothing" : itemName;
+        String low = safe.toLowerCase(java.util.Locale.ROOT);
+        boolean damaged = low.contains("damaged") || low.contains("torn") || low.contains("ruined");
+        if (low.contains("scavenger") && low.contains("rag")) return scavengerRags();
+        if (low.contains("bandit") && low.contains("color")) return banditColors(damaged);
+        if (low.contains("arbites") && low.contains("coat")) return arbitesCoat(damaged);
+        if (low.contains("hiver") && low.contains("workwear")) return hiverWorkwear(damaged);
+        int defense = low.contains("power armor") || low.contains("power armour") ? 5
+                : low.contains("armor") || low.contains("armour") ? 3
+                : low.contains("coat") || low.contains("uniform") ? 2 : 1;
+        return new Clothing(safe, null, 0, Math.max(0, defense - (damaged ? 1 : 0)), damaged);
+    }
+'''
+              text = text.replace('    static Clothing hiverWorkwear(boolean damaged){ return new Clothing(damaged ? "Damaged hiver workwear" : "Hiver workwear", Faction.HIVER, damaged ? 35 : 58, damaged ? 1 : 2, damaged); }\n}',
+                                  '    static Clothing hiverWorkwear(boolean damaged){ return new Clothing(damaged ? "Damaged hiver workwear" : "Hiver workwear", Faction.HIVER, damaged ? 35 : 58, damaged ? 1 : 2, damaged); }\n' + insertion + '}', 1)
+          clothing.write_text(text, encoding='utf-8', newline='')
+
+          legacy = Path('src/mechanist/LegacyPanelContext.java')
+          text = legacy.read_text(encoding='utf-8')
+
+          if 'equippedWearableSlots' not in text:
+              marker = '    final ArrayList<String> inventory = new ArrayList<>();'
+              replacement = marker + '''
+    final EnumMap<CharacterEquipmentAndMedicalAuthority.EquipmentSlot, String> equippedWearableSlots =
+            new EnumMap<>(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.class);
+    final LinkedHashMap<String, String> installedBodyModifications = new LinkedHashMap<>();'''
+              if marker not in text: raise SystemExit('inventory field marker missing')
+              text = text.replace(marker, replacement, 1)
+
+          if 'int characterTab;' not in text:
+              marker = '    int selectedCharacterEquipmentSlot;'
+              replacement = marker + '''
+    int characterTab;
+    int selectedCharacterMedicalLayer;
+    String selectedCharacterMedicalBodyPart = "";'''
+              if marker not in text: raise SystemExit('character selection field marker missing')
+              text = text.replace(marker, replacement, 1)
+
+          # Backpack capacity is additive to the existing Strength/world-settings capacity.
+          old_capacity = '''    int carryCapacity() {
+        return WorldGenerationSettingsAuthority.playerCarryCapacity(supplies, WorldGenerationSettingsAuthority.forGame(this));
+    }'''
+          new_capacity = '''    int carryCapacity() {
+        return WorldGenerationSettingsAuthority.playerCarryCapacity(supplies, WorldGenerationSettingsAuthority.forGame(this))
+                + CharacterEquipmentAndMedicalAuthority.carryCapacityBonus(equippedWearableSlots);
+    }'''
+          if old_capacity in text:
+              text = text.replace(old_capacity, new_capacity, 1)
+
+          start = text.index('    private void drawCharacterOverlay(java.awt.Graphics2D g, Rectangle body) {')
+          end = text.index('    private void drawMapOverlay(java.awt.Graphics2D g, Rectangle body) {', start)
+          block = r'''    private void drawCharacterOverlay(java.awt.Graphics2D g, Rectangle body) {
+        CharacterEquipmentAndMedicalAuthority.CharacterTab selectedTab =
+                CharacterEquipmentAndMedicalAuthority.CharacterTab.at(characterTab);
+        int tabGap = 8;
+        int tabHeight = 30;
+        int tabWidth = Math.max(120, Math.min(190, (body.width - tabGap * 2) / 3));
+        int tabX = body.x;
+        for (int i = 0; i < CharacterEquipmentAndMedicalAuthority.CharacterTab.values().length; i++) {
+            CharacterEquipmentAndMedicalAuthority.CharacterTab tab =
+                    CharacterEquipmentAndMedicalAuthority.CharacterTab.at(i);
+            final int tabIndex = i;
+            addOverlayButton((tab == selectedTab ? "> " : "") + tab.label(),
+                    tabX + i * (tabWidth + tabGap), body.y, tabWidth, tabHeight,
+                    "Open the character " + tab.label().toLowerCase(Locale.ROOT) + " tab.",
+                    () -> selectCharacterTab(tabIndex));
+        }
+        Rectangle content = new Rectangle(body.x, body.y + tabHeight + 10,
+                body.width, Math.max(120, body.height - tabHeight - 10));
+        switch (selectedTab) {
+            case OVERVIEW -> drawCharacterOverviewTab(g, content);
+            case EQUIPMENT -> drawCharacterEquipmentTab(g, content);
+            case MEDICAL -> drawCharacterMedicalTab(g, content);
+        }
+    }
+
+    private void drawCharacterOverviewTab(java.awt.Graphics2D g, Rectangle body) {
+        Candidate c = active;
+        int gap = 12;
+        int portraitWidth = Math.max(150, Math.min(190, body.width / 6));
+        int statsWidth = Math.max(220, Math.min(290, body.width / 4));
+        int dollWidth = Math.max(220, Math.min(300, body.width / 4));
+
+        Rectangle portrait = new Rectangle(body.x, body.y, portraitWidth, body.height);
+        drawDetailBox(g, portrait, c == null ? "Character" : c.name,
+                java.util.List.of(c == null ? "No active character." : c.job,
+                        c == null ? "" : c.ageYears + " years / " + c.ageBand),
+                c == null ? null : images.getPlayerPortrait(c));
+
+        Rectangle stats = new Rectangle(portrait.x + portrait.width + gap, body.y, statsWidth, body.height);
+        ArrayList<String> statLines = new ArrayList<>();
+        if (c != null) for (Map.Entry<String,Integer> entry : c.stats.entrySet()) {
+            statLines.add(entry.getKey() + ": " + entry.getValue());
+        }
+        statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
+        statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
+        statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
+        statLines.add("Carried load " + inventoryWeight() + "/" + carryCapacity() + ".");
+        drawDetailBox(g, stats, "Stats", statLines, null);
+
+        Rectangle dollBox = new Rectangle(stats.x + stats.width + gap, body.y, dollWidth, body.height);
+        CharacterPaperDollAuthority.paint(g, dollBox, c, smallFont.deriveFont(10f));
+
+        Rectangle summary = new Rectangle(dollBox.x + dollBox.width + gap, body.y,
+                Math.max(220, body.x + body.width - dollBox.x - dollBox.width - gap), body.height);
+        int summaryTopHeight = Math.max(180, summary.height * 3 / 5);
+        Rectangle condition = new Rectangle(summary.x, summary.y, summary.width, summaryTopHeight);
+        Rectangle roster = new Rectangle(summary.x, summary.y + summaryTopHeight + gap,
+                summary.width, Math.max(100, summary.height - summaryTopHeight - gap));
+        ArrayList<String> conditionLines = new ArrayList<>(BodyConditionReadabilityAuthority.summary(c, wounds, bleeding,
+                infectionRisk, pain, fatigue, sleepNeed, food, water, equippedClothing,
+                equippedLeftHandItem, equippedRightHandItem));
+        long occupied = CharacterEquipmentAndMedicalAuthority.equipmentViews(equippedWearableSlots,
+                equippedLeftHandItem, equippedRightHandItem, equippedClothing).stream().filter(view -> !view.empty()).count();
+        conditionLines.add("Equipment: " + occupied + "/"
+                + CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length + " slots occupied.");
+        drawDetailBox(g, condition, "Condition Summary", conditionLines, null);
+        drawDetailBox(g, roster, "Faction Members",
+                FactionRosterReadabilityAuthority.summary(this, Math.max(1, (roster.height - 52) / 18)), null);
+    }
+
+    private void drawCharacterEquipmentTab(java.awt.Graphics2D g, Rectangle body) {
+        int gap = 12;
+        int dollWidth = Math.max(230, Math.min(310, body.width * 27 / 100));
+        int slotWidth = Math.max(390, Math.min(560, body.width * 39 / 100));
+        Rectangle doll = new Rectangle(body.x, body.y, dollWidth, body.height);
+        Rectangle slots = new Rectangle(doll.x + doll.width + gap, body.y, slotWidth, body.height);
+        Rectangle carried = new Rectangle(slots.x + slots.width + gap, body.y,
+                Math.max(260, body.x + body.width - slots.x - slots.width - gap), body.height);
+
+        CharacterPaperDollAuthority.paint(g, doll, active, smallFont.deriveFont(10f));
+        drawBox(g, slots, "Equipment Slots");
+        java.util.List<CharacterEquipmentAndMedicalAuthority.EquipmentView> views =
+                CharacterEquipmentAndMedicalAuthority.equipmentViews(equippedWearableSlots,
+                        equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        int columns = 2;
+        int rows = (views.size() + columns - 1) / columns;
+        int buttonGap = 6;
+        int buttonWidth = Math.max(150, (slots.width - 24 - buttonGap) / columns);
+        int buttonHeight = 28;
+        int listTop = slots.y + 34;
+        for (int i = 0; i < views.size(); i++) {
+            final int slotIndex = i;
+            int column = i % columns;
+            int row = i / columns;
+            CharacterEquipmentAndMedicalAuthority.EquipmentView view = views.get(i);
+            addOverlayButton(view.label(i == selectedCharacterEquipmentSlot),
+                    slots.x + 10 + column * (buttonWidth + buttonGap),
+                    listTop + row * (buttonHeight + buttonGap), buttonWidth, buttonHeight,
+                    "Select the " + view.slot().label() + " equipment slot.",
+                    () -> selectCharacterEquipmentSlot(slotIndex));
+        }
+
+        int detailY = listTop + rows * (buttonHeight + buttonGap) + 4;
+        Rectangle slotDetail = new Rectangle(slots.x + 8, detailY, slots.width - 16,
+                Math.max(130, slots.y + slots.height - detailY - 8));
+        CharacterEquipmentAndMedicalAuthority.EquipmentView selected =
+                CharacterEquipmentAndMedicalAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+                        equippedWearableSlots, equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        ArrayList<String> slotLines = new ArrayList<>();
+        slotLines.add("Slot: " + selected.slot().label() + " / region " + selected.slot().bodyRegion() + ".");
+        slotLines.add("Equipped: " + selected.itemName() + ".");
+        slotLines.add("Accepts: " + String.join(", ",
+                CharacterEquipmentAndMedicalAuthority.compatibilityHints(selected.slot())) + ".");
+        slotLines.add(selected.empty() ? "Status: slot empty." : "Status: item equipped and available to character systems.");
+        if (selected.slot() == CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK) {
+            slotLines.add("Carry-capacity bonus: +"
+                    + CharacterEquipmentAndMedicalAuthority.carryCapacityBonus(equippedWearableSlots) + ".");
+        }
+        slotLines.add("Carried load: " + inventoryWeight() + "/" + carryCapacity() + ".");
+        drawDetailBox(g, slotDetail, "Selected Slot", slotLines,
+                selected.empty() ? null : images.getItemIcon(selected.itemName()));
+
+        int listHeight = Math.max(180, carried.height * 54 / 100);
+        Rectangle carriedList = new Rectangle(carried.x, carried.y, carried.width, listHeight);
+        drawListBox(g, carriedList, "Carried Items", inventory, selectedInventoryIndex, true);
+        int navY = carriedList.y + carriedList.height + 6;
+        addOverlayButton("Previous Item", carried.x, navY, Math.max(110, (carried.width - 6) / 2), 28,
+                "Select the previous carried item.", () -> { moveInventorySelection(-1); repaint(); });
+        addOverlayButton("Next Item", carried.x + Math.max(110, (carried.width - 6) / 2) + 6, navY,
+                Math.max(110, carried.width - Math.max(110, (carried.width - 6) / 2) - 6), 28,
+                "Select the next carried item.", () -> { moveInventorySelection(1); repaint(); });
+
+        int actionY = navY + 34;
+        Rectangle itemDetail = new Rectangle(carried.x, actionY, carried.width,
+                Math.max(140, carried.y + carried.height - actionY));
+        String carriedItem = selectedInventoryItem();
+        ArrayList<String> itemLines = new ArrayList<>();
+        itemLines.add(carriedItem == null ? "No carried item selected." : carriedItem);
+        itemLines.add("Target slot: " + selected.slot().label() + ".");
+        itemLines.add(carriedItem == null ? "Compatibility: unavailable."
+                : CharacterEquipmentAndMedicalAuthority.canEquip(carriedItem, selected.slot())
+                ? "Compatibility: valid for this slot."
+                : "Compatibility: this item does not match this slot.");
+        if (carriedItem != null) {
+            ItemDef definition = ItemCatalog.get(carriedItem);
+            itemLines.add("Category: " + (definition == null ? "uncataloged item" : definition.category) + ".");
+        }
+        drawDetailBox(g, itemDetail, "Loadout Action", itemLines,
+                carriedItem == null ? null : images.getItemIcon(carriedItem));
+        int actionButtonY = itemDetail.y + itemDetail.height - 66;
+        addOverlayButton("Equip Selected", itemDetail.x + 8, actionButtonY,
+                Math.max(120, itemDetail.width - 16), 28,
+                "Move the selected carried item into the selected equipment slot.",
+                this::equipSelectedInventoryToCharacterSlot);
+        addOverlayButton("Unequip Slot", itemDetail.x + 8, actionButtonY + 32,
+                Math.max(120, itemDetail.width - 16), 28,
+                "Return the selected equipped item to carried inventory.",
+                this::unequipSelectedCharacterEquipment);
+    }
+
+    private void drawCharacterMedicalTab(java.awt.Graphics2D g, Rectangle body) {
+        int gap = 12;
+        int dollWidth = Math.max(250, Math.min(330, body.width * 34 / 100));
+        int regionWidth = Math.max(320, Math.min(450, body.width * 31 / 100));
+        Rectangle doll = new Rectangle(body.x, body.y, dollWidth, body.height);
+        Rectangle regions = new Rectangle(doll.x + doll.width + gap, body.y, regionWidth, body.height);
+        Rectangle detail = new Rectangle(regions.x + regions.width + gap, body.y,
+                Math.max(280, body.x + body.width - regions.x - regions.width - gap), body.height);
+
+        java.util.List<String> bodyParts = CharacterEquipmentAndMedicalAuthority.bodyPartNames(active);
+        if (!bodyParts.isEmpty() && (selectedCharacterMedicalBodyPart == null
+                || selectedCharacterMedicalBodyPart.isBlank()
+                || !bodyParts.contains(selectedCharacterMedicalBodyPart))) {
+            selectedCharacterMedicalBodyPart = bodyParts.get(0);
+        }
+        CharacterPaperDollAuthority.paint(g, doll, active, smallFont.deriveFont(10f),
+                selectedCharacterMedicalBodyPart);
+
+        drawBox(g, regions, "Body Regions");
+        int columns = 2;
+        int buttonGap = 5;
+        int buttonWidth = Math.max(120, (regions.width - 24 - buttonGap) / columns);
+        int buttonHeight = 26;
+        int top = regions.y + 34;
+        for (int i = 0; i < bodyParts.size(); i++) {
+            String bodyPart = bodyParts.get(i);
+            int column = i % columns;
+            int row = i / columns;
+            addOverlayButton((bodyPart.equals(selectedCharacterMedicalBodyPart) ? "> " : "") + bodyPart,
+                    regions.x + 10 + column * (buttonWidth + buttonGap),
+                    top + row * (buttonHeight + buttonGap), buttonWidth, buttonHeight,
+                    "Select " + bodyPart + " for medical, mutation, modification, and cybernetic records.",
+                    () -> selectCharacterMedicalBodyPart(bodyPart));
+        }
+        int regionRows = Math.max(1, (bodyParts.size() + columns - 1) / columns);
+        int readinessY = top + regionRows * (buttonHeight + buttonGap) + 6;
+        Rectangle readiness = new Rectangle(regions.x + 8, readinessY, regions.width - 16,
+                Math.max(120, regions.y + regions.height - readinessY - 8));
+        ArrayList<String> regionLines = new ArrayList<>();
+        CharacterPaperDollAuthority.RegionView selectedRegion = CharacterPaperDollAuthority.regions(active,
+                new Rectangle(0, 0, 280, 440)).stream()
+                .filter(view -> view.bodyPartName().equals(selectedCharacterMedicalBodyPart))
+                .findFirst().orElse(null);
+        if (selectedRegion != null) {
+            regionLines.add(selectedRegion.readout());
+            regionLines.add("Health ratio: " + (int)Math.round(selectedRegion.healthRatio() * 100.0) + "%.");
+        }
+        regionLines.addAll(CharacterEquipmentAndMedicalAuthority.medicalReadinessLines(active,
+                selectedCharacterMedicalBodyPart, installedBodyModifications));
+        drawDetailBox(g, readiness, "Region Status", regionLines, null);
+
+        drawBox(g, detail, "Medical / Body Modification Layers");
+        java.util.List<CharacterEquipmentAndMedicalAuthority.MedicalView> medicalViews =
+                CharacterEquipmentAndMedicalAuthority.medicalViews(active,
+                        selectedCharacterMedicalBodyPart, installedBodyModifications);
+        int layerY = detail.y + 38;
+        for (int i = 0; i < medicalViews.size(); i++) {
+            final int layerIndex = i;
+            CharacterEquipmentAndMedicalAuthority.MedicalView view = medicalViews.get(i);
+            addOverlayButton(view.label(i == selectedCharacterMedicalLayer),
+                    detail.x + 10, layerY + i * 38, detail.width - 20, 32,
+                    "Select the " + view.key().layer().label().toLowerCase(Locale.ROOT)
+                            + " record for " + view.key().bodyPartName() + ".",
+                    () -> selectCharacterMedicalLayer(layerIndex));
+        }
+        CharacterEquipmentAndMedicalAuthority.MedicalView selectedLayer = medicalViews.isEmpty() ? null
+                : medicalViews.get(CharacterEquipmentAndMedicalAuthority.MedicalLayer.at(selectedCharacterMedicalLayer).ordinal());
+        int layerDetailY = layerY + medicalViews.size() * 38 + 8;
+        Rectangle layerDetail = new Rectangle(detail.x + 8, layerDetailY, detail.width - 16,
+                Math.max(150, detail.y + detail.height - layerDetailY - 48));
+        ArrayList<String> layerLines = new ArrayList<>();
+        if (selectedLayer == null) {
+            layerLines.add("No body-modification layer is available.");
+        } else {
+            layerLines.add("Region: " + selectedLayer.key().bodyPartName() + ".");
+            layerLines.add("Layer: " + selectedLayer.key().layer().label() + ".");
+            layerLines.add("Installed record: " + selectedLayer.installedName() + ".");
+            layerLines.add("This interface is live, but installation, surgery, compatibility, rejection, power, maintenance, and mutation mechanics are intentionally not simulated yet.");
+            layerLines.add("Future systems can call installCharacterMedicalRecord(...) without changing this screen.");
+        }
+        drawDetailBox(g, layerDetail, "Selected Medical Slot", layerLines,
+                selectedLayer == null || selectedLayer.empty() ? null : images.getItemIcon(selectedLayer.installedName()));
+        addOverlayButton("Medical Info", detail.x + 10, detail.y + detail.height - 36,
+                Math.max(120, detail.width - 20), 28,
+                "Open the body-condition and medical treatment reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character medical tab"));
+    }
+
+    private void selectCharacterTab(int tabIndex) {
+        characterTab = CharacterEquipmentAndMedicalAuthority.CharacterTab.at(tabIndex).ordinal();
+        selectedButton = 0;
+        repaint();
+    }
+
+    private void selectCharacterEquipmentSlot(int slotIndex) {
+        selectedCharacterEquipmentSlot = CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(slotIndex).ordinal();
+        repaint();
+    }
+
+    private void selectCharacterMedicalBodyPart(String bodyPartName) {
+        selectedCharacterMedicalBodyPart = bodyPartName == null ? "" : bodyPartName;
+        repaint();
+    }
+
+    private void selectCharacterMedicalLayer(int layerIndex) {
+        selectedCharacterMedicalLayer = CharacterEquipmentAndMedicalAuthority.MedicalLayer.at(layerIndex).ordinal();
+        repaint();
+    }
+
+    private void equipSelectedInventoryToCharacterSlot() {
+        String item = selectedInventoryItem();
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot =
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(selectedCharacterEquipmentSlot);
+        if (item == null) {
+            logEvent("No carried item is selected for " + slot.label() + ".");
+            repaint();
+            return;
+        }
+        if (!CharacterEquipmentAndMedicalAuthority.canEquip(item, slot)) {
+            logEvent(item + " is not compatible with the " + slot.label() + " slot.");
+            repaint();
+            return;
+        }
+        CharacterEquipmentAndMedicalAuthority.EquipmentView current =
+                CharacterEquipmentAndMedicalAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+                        equippedWearableSlots, equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        if (!current.empty() && current.itemName().equalsIgnoreCase(item)) {
+            logEvent(item + " is already equipped in " + slot.label() + ".");
+            return;
+        }
+        inventory.remove(selectedInventoryIndex);
+        if (!current.empty()) inventory.add(current.itemName());
+        setCharacterEquipmentSlot(slot, item);
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
+        rebuildItemContainersFromLegacyLists();
+        logEvent("Equipped " + item + " in " + slot.label() + ".");
+        repaint();
+    }
+
+    private void setCharacterEquipmentSlot(CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot, String item) {
+        if (slot == null || item == null || item.isBlank()) return;
+        switch (slot) {
+            case LEFT_HAND -> {
+                equippedLeftHandItem = item;
+                activeWeaponHandIndex = 0;
+                if (ItemCatalog.isFirearmLike(item)) loadedWeaponShots.putIfAbsent(item, 0);
+            }
+            case RIGHT_HAND -> {
+                equippedRightHandItem = item;
+                activeWeaponHandIndex = 1;
+                if (ItemCatalog.isFirearmLike(item)) loadedWeaponShots.putIfAbsent(item, 0);
+            }
+            case CLOTHES -> equippedClothing = Clothing.fromItemName(item);
+            default -> equippedWearableSlots.put(slot, item);
+        }
+    }
+
+    private void unequipSelectedCharacterEquipment() {
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot =
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(selectedCharacterEquipmentSlot);
+        CharacterEquipmentAndMedicalAuthority.EquipmentView current =
+                CharacterEquipmentAndMedicalAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+                        equippedWearableSlots, equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        if (current.empty()) {
+            logEvent(slot.label() + " is already empty.");
+            repaint();
+            return;
+        }
+        switch (slot) {
+            case LEFT_HAND -> equippedLeftHandItem = "LEFT EMPTY";
+            case RIGHT_HAND -> equippedRightHandItem = "RIGHT EMPTY";
+            case CLOTHES -> equippedClothing = null;
+            default -> equippedWearableSlots.remove(slot);
+        }
+        inventory.add(current.itemName());
+        rebuildItemContainersFromLegacyLists();
+        logEvent("Unequipped " + current.itemName() + " from " + slot.label() + ".");
+        repaint();
+    }
+
+    void installCharacterMedicalRecord(String bodyPartName,
+                                       CharacterEquipmentAndMedicalAuthority.MedicalLayer layer,
+                                       String installedName) {
+        CharacterEquipmentAndMedicalAuthority.installMedicalRecord(installedBodyModifications,
+                bodyPartName, layer, installedName);
+        repaint();
+    }
+
+    String characterMedicalRecord(String bodyPartName,
+                                  CharacterEquipmentAndMedicalAuthority.MedicalLayer layer) {
+        return CharacterEquipmentAndMedicalAuthority.medicalRecord(installedBodyModifications,
+                bodyPartName, layer);
+    }
+
+'''
+          text = text[:start] + block + text[end:]
+          legacy.write_text(text, encoding='utf-8', newline='')
+
+          # Wire the new maps into the existing property persistence authority when present.
+          persistence_patched = False
+          for source in Path('src').rglob('*.java'):
+              source_text = source.read_text(encoding='utf-8')
+              if 'class Persistence' not in source_text or 'writeCore' not in source_text:
+                  continue
+              if 'CharacterEquipmentAndMedicalAuthority.writeState' not in source_text:
+                  source_text, n = re.subn(
+                      r'(static\s+void\s+writeCore\s*\(\s*GamePanel\s+(\w+)\s*,\s*Properties\s+(\w+)\s*\)\s*\{)',
+                      lambda m: m.group(1) + '\n        CharacterEquipmentAndMedicalAuthority.writeState('
+                                + m.group(2) + '.equippedWearableSlots, ' + m.group(2)
+                                + '.installedBodyModifications);',
+                      source_text, count=1)
+                  # Correct the generated call if the regex insertion omitted Properties.
+                  source_text = source_text.replace(
+                      'CharacterEquipmentAndMedicalAuthority.writeState(g.equippedWearableSlots, g.installedBodyModifications);',
+                      'CharacterEquipmentAndMedicalAuthority.writeState(p, g.equippedWearableSlots, g.installedBodyModifications);')
+                  if n == 0:
+                      print('Persistence writeCore signature not matched in', source)
+              if 'CharacterEquipmentAndMedicalAuthority.readState' not in source_text:
+                  source_text, n = re.subn(
+                      r'(static\s+void\s+readCore\s*\(\s*GamePanel\s+(\w+)\s*,\s*Properties\s+(\w+)\s*\)\s*\{)',
+                      lambda m: m.group(1) + '\n        CharacterEquipmentAndMedicalAuthority.readState('
+                                + m.group(3) + ', ' + m.group(2) + '.equippedWearableSlots, '
+                                + m.group(2) + '.installedBodyModifications);',
+                      source_text, count=1)
+                  if n == 0:
+                      print('Persistence readCore signature not matched in', source)
+              source.write_text(source_text, encoding='utf-8', newline='')
+              persistence_patched = True
+              print('Persistence authority inspected:', source)
+              break
+          if not persistence_patched:
+              print('WARNING: Persistence class was not located; loadout maps remain runtime-ready but not save-bound.')
+
+          # Add an integration smoke that exercises real GamePanel transfer methods.
+          integration = Path('src/mechanist/Milestone02CharacterEquipmentScreenIntegrationSmoke.java')
+          integration.write_text(r'''package mechanist;
+
+import java.lang.reflect.Method;
+import java.util.Random;
+
+public final class Milestone02CharacterEquipmentScreenIntegrationSmoke {
+    public static void main(String[] args) throws Exception {
+        System.setProperty("java.awt.headless", "true");
+        GamePanel panel = new GamePanel();
+        try {
+            panel.active = Candidate.random(new Random(8181L));
+            panel.inventory.clear();
+            panel.inventory.add("Scrap helmet");
+            panel.selectedInventoryIndex = 0;
+            panel.selectedCharacterEquipmentSlot = CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR.ordinal();
+
+            Method equip = GamePanel.class.getDeclaredMethod("equipSelectedInventoryToCharacterSlot");
+            equip.setAccessible(true);
+            equip.invoke(panel);
+            if (!"Scrap helmet".equals(panel.equippedWearableSlots.get(
+                    CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR))) {
+                throw new AssertionError("headgear did not move into the live loadout map");
+            }
+            if (!panel.inventory.isEmpty()) throw new AssertionError("equipped headgear remained in carried inventory");
+
+            Method unequip = GamePanel.class.getDeclaredMethod("unequipSelectedCharacterEquipment");
+            unequip.setAccessible(true);
+            unequip.invoke(panel);
+            if (panel.equippedWearableSlots.containsKey(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR)) {
+                throw new AssertionError("headgear slot did not clear");
+            }
+            if (!panel.inventory.contains("Scrap helmet")) throw new AssertionError("unequipped headgear was not returned");
+
+            panel.inventory.clear();
+            panel.inventory.add("Survey backpack");
+            panel.selectedInventoryIndex = 0;
+            panel.selectedCharacterEquipmentSlot = CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK.ordinal();
+            int before = panel.carryCapacity();
+            equip.invoke(panel);
+            int after = panel.carryCapacity();
+            if (after <= before) throw new AssertionError("backpack did not increase carry capacity");
+
+            String region = CharacterEquipmentAndMedicalAuthority.bodyPartNames(panel.active).get(0);
+            panel.installCharacterMedicalRecord(region,
+                    CharacterEquipmentAndMedicalAuthority.MedicalLayer.CYBERNETIC,
+                    "Isolated test interface");
+            if (!"Isolated test interface".equals(panel.characterMedicalRecord(region,
+                    CharacterEquipmentAndMedicalAuthority.MedicalLayer.CYBERNETIC))) {
+                throw new AssertionError("medical slot hook did not retain the installed record");
+            }
+
+            System.out.println("Milestone02CharacterEquipmentScreenIntegrationSmoke PASS "
+                    + CharacterEquipmentAndMedicalAuthority.VERSION);
+        } finally {
+            panel.shutdownRuntime();
+        }
+    }
+
+    private Milestone02CharacterEquipmentScreenIntegrationSmoke() {}
+}
+''', encoding='utf-8', newline='')
+
+          suite = Path('src/mechanist/Gate3PlayerFacingTextSmokeSuite.java')
+          suite_text = suite.read_text(encoding='utf-8')
+          anchor = '        Milestone02CharacterPaperDollSmoke.main(args);'
+          additions = '''        Milestone02CharacterEquipmentMedicalSmoke.main(args);
+        Milestone02CharacterEquipmentScreenIntegrationSmoke.main(args);'''
+          if additions not in suite_text:
+              if anchor not in suite_text: raise SystemExit('Gate3 paper doll smoke anchor missing')
+              suite_text = suite_text.replace(anchor, anchor + '\n' + additions, 1)
+              suite.write_text(suite_text, encoding='utf-8', newline='')
+
+          history = Path('ROOT_docs/DEVELOPMENT_HISTORY.md')
+          history_text = history.read_text(encoding='utf-8')
+          heading = '## Milestone 02 - Full Character Equipment and Medical Body Tabs'
+          if heading not in history_text:
+              history_text = history_text.rstrip() + r'''
+
+## Milestone 02 - Full Character Equipment and Medical Body Tabs
+
+Expanded the restored character panel into Overview, Equipment, and Medical tabs. The Equipment tab now exposes Headgear, Underclothes, Clothes/Body, Gloves, Boots, Backpack, two Ring slots, two Accessory slots, and both Hand slots. It includes a live paper doll, selectable slots, carried-item navigation, compatibility feedback, selected-item icon/detail presentation, equip replacement, and explicit unequip-to-inventory behavior. Backpacks now contribute a visible additive carry-capacity bonus while preserving the existing Strength/world-settings capacity authority.
+
+Added `CharacterEquipmentAndMedicalAuthority` as the narrow loadout and body-modification contract rather than embedding another subsystem in the legacy panel bridge. Existing hand and clothing fields remain authoritative for their established mechanics; new wearable slots live in an enum-keyed map. The Medical tab mirrors every tracked `Candidate.body` region and reserves independent Mutation, Modification, and Cybernetic records for each region. It intentionally does not invent surgery, rejection, power, maintenance, mutation, or wireless cybernetic mechanics; future systems can bind through `installCharacterMedicalRecord(...)` and `MedicalSlotKey.storageKey()` without redesigning the screen. Cybernetic presentation assumes isolated direct-interface hardware rather than wireless control.
+
+Added property persistence hooks for the new wearable and medical maps where the existing `Persistence.writeCore/readCore` authority is available. Added focused authority and live GamePanel integration smokes, including equip/unequip transfer, backpack capacity, anatomical region mapping, and future medical-record binding. Verification uses Java 17 UTF-8 full-source compilation and the complete Gate 3 suite.
+'''
+              history.write_text(history_text, encoding='utf-8', newline='')
+          PY
+
+      - name: Compile Java 17 UTF-8
+        shell: bash
+        run: |
+          rm -rf ROOT_build/character-equipment-medical-classes
+          mkdir -p ROOT_build/character-equipment-medical-classes
+          find src -name '*.java' -print > character-equipment-medical-sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/character-equipment-medical-classes @character-equipment-medical-sources.txt
+
+      - name: Run focused and Gate 3 verification
+        shell: bash
+        run: |
+          java -cp ROOT_build/character-equipment-medical-classes mechanist.Milestone02CharacterEquipmentMedicalSmoke
+          java -cp ROOT_build/character-equipment-medical-classes mechanist.Milestone02CharacterEquipmentScreenIntegrationSmoke
+          java -cp ROOT_build/character-equipment-medical-classes mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Remove one-shot workflows and build output
+        shell: bash
+        run: |
+          rm -f .github/workflows/one-shot-character-equipment-medical-tabs.yml
+          rm -f .github/workflows/one-shot-market-floor-semantic-fix.yml
+          rm -f .github/workflows/one-shot-religious-item-semantic-fix.yml
+          rm -f .github/workflows/one-shot-door-semantic-fix.yml
+          rm -f character-equipment-medical-sources.txt
+          rm -rf ROOT_build/character-equipment-medical-classes
+
+      - name: Commit verified character tabs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Expand character equipment and medical body tabs'
+          git push
