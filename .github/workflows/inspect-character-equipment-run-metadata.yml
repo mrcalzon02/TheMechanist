@@ -1,0 +1,28 @@
+name: Inspect Character Equipment Run Metadata
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-character-equipment-run-metadata.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print run and job metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sS \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/27510822676" | jq '{id,name,event,status,conclusion,head_sha,path,run_started_at,updated_at,jobs_url}'
+          curl -sS \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/27510822676/jobs" | jq '{total_count,jobs:[.jobs[]|{id,name,status,conclusion}]}'
