@@ -1,0 +1,13 @@
+name: One Shot Semantic Tile Primary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo dispatch only
