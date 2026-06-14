@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Character loadout and body-modification presentation/state contract.
@@ -138,7 +139,10 @@ final class CharacterEquipmentAndMedicalAuthority {
 
     static boolean canEquip(String itemName, EquipmentSlot slot) {
         if (itemName == null || itemName.isBlank() || slot == null) return false;
-        String item = itemName.toLowerCase(Locale.ROOT);
+        ItemDef definition = ItemCatalog.get(itemName);
+        String item = (itemName + " "
+      + (definition == null ? "" : definition.category) + " "
+      + (definition == null ? "" : definition.description)).toLowerCase(Locale.ROOT);
         return switch (slot) {
             case LEFT_HAND, RIGHT_HAND -> true;
             case HEADGEAR -> contains(item, "hat", "helmet", "hood", "cap", "mask", "headgear", "goggles");
@@ -202,6 +206,7 @@ final class CharacterEquipmentAndMedicalAuthority {
         lines.add("Mutation, modification, and cybernetic layers are reserved independently.");
         lines.add("No surgery, compatibility, rejection, power, or maintenance mechanics are active yet.");
         lines.add("Future systems can bind directly through MedicalSlotKey.storageKey().");
+        lines.add("Cybernetic records reserve isolated, direct-interface hardware; no wireless control path is assumed.");
         int installedCount = 0;
         if (installed != null) for (String value : installed.values()) if (!safe(value).equals("Empty")) installedCount++;
         lines.add("Installed placeholder records: " + installedCount + ".");
@@ -220,6 +225,80 @@ final class CharacterEquipmentAndMedicalAuthority {
         if (extraSlots == null || slot == null) return;
         if (slot != EquipmentSlot.LEFT_HAND && slot != EquipmentSlot.RIGHT_HAND && slot != EquipmentSlot.CLOTHES) {
             extraSlots.remove(slot);
+        }
+    }
+
+    static int carryCapacityBonus(Map<EquipmentSlot, String> extraSlots) {
+        if (extraSlots == null) return 0;
+        String backpack = safe(extraSlots.get(EquipmentSlot.BACKPACK)).toLowerCase(Locale.ROOT);
+        if (backpack.equals("empty")) return 0;
+        if (contains(backpack, "expedition", "heavy", "frame pack")) return 12;
+        if (contains(backpack, "rucksack", "haversack")) return 10;
+        if (contains(backpack, "backpack")) return 8;
+        if (contains(backpack, "satchel")) return 4;
+        return 6;
+    }
+
+    static void installMedicalRecord(Map<String, String> installed, String bodyPartName,
+                                     MedicalLayer layer, String installedName) {
+        if (installed == null) return;
+        MedicalSlotKey key = new MedicalSlotKey(bodyPartName, layer);
+        if (installedName == null || installedName.isBlank()) installed.remove(key.storageKey());
+        else installed.put(key.storageKey(), installedName);
+    }
+
+    static String medicalRecord(Map<String, String> installed, String bodyPartName, MedicalLayer layer) {
+        if (installed == null) return "Empty";
+        return safe(installed.get(new MedicalSlotKey(bodyPartName, layer).storageKey()));
+    }
+
+    static void writeState(Properties properties, Map<EquipmentSlot, String> equipment,
+                           Map<String, String> medical) {
+        if (properties == null) return;
+        if (equipment != null) {
+            for (Map.Entry<EquipmentSlot, String> entry : equipment.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null || entry.getValue().isBlank()) continue;
+                properties.setProperty("character.equipment." + entry.getKey().name(), entry.getValue());
+            }
+        }
+        if (medical != null) {
+            int index = 0;
+            for (Map.Entry<String, String> entry : medical.entrySet()) {
+                if (entry.getKey() == null || entry.getKey().isBlank()
+                        || entry.getValue() == null || entry.getValue().isBlank()) continue;
+                properties.setProperty("character.medical." + index + ".key", entry.getKey());
+                properties.setProperty("character.medical." + index + ".value", entry.getValue());
+                index++;
+            }
+            properties.setProperty("character.medical.count", Integer.toString(index));
+        }
+    }
+
+    static void readState(Properties properties, Map<EquipmentSlot, String> equipment,
+                          Map<String, String> medical) {
+        if (properties == null) return;
+        if (equipment != null) {
+            equipment.clear();
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (slot == EquipmentSlot.LEFT_HAND || slot == EquipmentSlot.RIGHT_HAND
+                        || slot == EquipmentSlot.CLOTHES) continue;
+                String value = properties.getProperty("character.equipment." + slot.name());
+                if (value != null && !value.isBlank()) equipment.put(slot, value);
+            }
+        }
+        if (medical != null) {
+            medical.clear();
+            int count;
+            try {
+                count = Math.max(0, Integer.parseInt(properties.getProperty("character.medical.count", "0")));
+            } catch (NumberFormatException ignored) {
+                count = 0;
+            }
+            for (int i = 0; i < count; i++) {
+                String key = properties.getProperty("character.medical." + i + ".key");
+                String value = properties.getProperty("character.medical." + i + ".value");
+                if (key != null && !key.isBlank() && value != null && !value.isBlank()) medical.put(key, value);
+            }
         }
     }
 

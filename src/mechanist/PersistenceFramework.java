@@ -16,6 +16,7 @@ class Persistence {
     static final String VERSION = "0.9.10gs";
 
     static void writeCore(GamePanel g, Properties p) {
+        CharacterEquipmentAndMedicalAuthority.writeState(p, g.equippedWearableSlots, g.installedBodyModifications);
         put(p, "save.version", VERSION);
         put(p, "save.created", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         SaveEfficiencyAuthority.writeWorldReference(g, p);
@@ -151,6 +152,7 @@ class Persistence {
     }
 
     static void readCore(GamePanel g, Properties p) {
+        CharacterEquipmentAndMedicalAuthority.readState(p, g.equippedWearableSlots, g.installedBodyModifications);
         String version = p.getProperty("save.version", "unknown");
         if (!VERSION.equals(version)) DebugLog.warn("SAVE_VERSION", "Loading save version " + version + " with runtime " + VERSION + ". Migration uses compatibility defaults.");
         g.seed = getLong(p,"run.seed",System.currentTimeMillis());

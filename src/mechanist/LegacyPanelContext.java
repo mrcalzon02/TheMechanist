@@ -62,6 +62,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     javax.swing.Timer timer;
 
     final ArrayList<String> inventory = new ArrayList<>();
+    final EnumMap<CharacterEquipmentAndMedicalAuthority.EquipmentSlot, String> equippedWearableSlots =
+  new EnumMap<>(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.class);
+    final LinkedHashMap<String, String> installedBodyModifications = new LinkedHashMap<>();
     final ArrayList<String> eventLog = new ArrayList<>();
     final ArrayList<SectorGenerationTraceAuthority.Step> auditTraceSteps = new ArrayList<>();
     final ArrayList<BaseObject> baseObjects = new ArrayList<>();
@@ -221,6 +224,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     int inventoryItemDescriptionScroll;
     int selectedInventoryIndex;
     int selectedCharacterEquipmentSlot;
+    int characterTab;
+    int selectedCharacterMedicalLayer;
+    String selectedCharacterMedicalBodyPart = "";
     int selectedTargetInventoryIndex;
     int selectedTradeOfferIndex;
     int selectedContainerItemIndex;
@@ -2442,117 +2448,358 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void drawCharacterOverlay(java.awt.Graphics2D g, Rectangle body) {
-    Candidate c = active;
-    int gap = 12;
-    int portraitWidth = Math.max(150, Math.min(190, body.width / 6));
-    int statsWidth = Math.max(220, Math.min(310, body.width / 4));
-
-    Rectangle portrait = new Rectangle(body.x, body.y, portraitWidth, body.height);
-    drawDetailBox(g, portrait, c == null ? "Character" : c.name,
-            java.util.List.of(c == null ? "No active character." : c.job,
-                    c == null ? "" : c.ageYears + " years / " + c.ageBand),
-            c == null ? null : images.getPlayerPortrait(c));
-
-    Rectangle stats = new Rectangle(portrait.x + portrait.width + gap, body.y, statsWidth, body.height);
-    ArrayList<String> statLines = new ArrayList<>();
-    if (c != null) for (Map.Entry<String,Integer> e : c.stats.entrySet()) statLines.add(e.getKey() + ": " + e.getValue());
-    statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
-    statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
-    statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
-    drawDetailBox(g, stats, "Stats", statLines, null);
-
-    Rectangle rightColumn = new Rectangle(stats.x + stats.width + gap, body.y,
-            Math.max(360, body.x + body.width - stats.x - stats.width - gap), body.height);
-    int topHeight = Math.max(300, Math.min(rightColumn.height - 150, (int)Math.round(rightColumn.height * 0.62)));
-    int dollWidth = Math.max(210, Math.min(300, rightColumn.width / 2));
-    Rectangle dollBox = new Rectangle(rightColumn.x, rightColumn.y, dollWidth, topHeight);
-    Rectangle equipmentBox = new Rectangle(dollBox.x + dollBox.width + gap, rightColumn.y,
-            Math.max(190, rightColumn.width - dollBox.width - gap), topHeight);
-
-    CharacterPaperDollAuthority.paint(g, dollBox, c, smallFont.deriveFont(10f));
-
-    CharacterPaperDollAuthority.EquipmentView selectedEquipment =
-            CharacterPaperDollAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
-                    equippedLeftHandItem, equippedRightHandItem, equippedClothing);
-    ArrayList<String> bodySummary = new ArrayList<>(BodyConditionReadabilityAuthority.summary(c, wounds, bleeding,
-            infectionRisk, pain, fatigue, sleepNeed, food, water, equippedClothing,
-            equippedLeftHandItem, equippedRightHandItem));
-    ArrayList<String> equipmentLines = new ArrayList<>();
-    equipmentLines.add("Selected slot: " + selectedEquipment.slot().label());
-    equipmentLines.add("Equipped: " + selectedEquipment.itemName());
-    equipmentLines.add(selectedEquipment.empty()
-            ? "This slot is currently empty."
-            : "Unequip returns this item to carried inventory.");
-    equipmentLines.add("Active weapon hand: " + (activeWeaponHandIndex == 0 ? "left" : "right") + ".");
-    equipmentLines.addAll(bodySummary.subList(0, Math.min(4, bodySummary.size())));
-    BufferedImage selectedIcon = selectedEquipment.empty() ? null : images.getItemIcon(selectedEquipment.itemName());
-    drawDetailBox(g, equipmentBox, "Equipped Items", equipmentLines, selectedIcon);
-
-    int slotY = equipmentBox.y + Math.max(116, equipmentBox.height - 154);
-    java.util.List<CharacterPaperDollAuthority.EquipmentView> slots =
-            CharacterPaperDollAuthority.equipment(equippedLeftHandItem, equippedRightHandItem, equippedClothing);
-    for (int i = 0; i < slots.size(); i++) {
-        final int slotIndex = i;
-        CharacterPaperDollAuthority.EquipmentView slot = slots.get(i);
-        addOverlayButton(slot.rowLabel(i == selectedCharacterEquipmentSlot),
-                equipmentBox.x + 10, slotY + i * 32, equipmentBox.width - 20, 27,
-                "Select " + slot.slot().label() + " equipment slot.",
-                () -> selectCharacterEquipmentSlot(slotIndex));
+        CharacterEquipmentAndMedicalAuthority.CharacterTab selectedTab =
+      CharacterEquipmentAndMedicalAuthority.CharacterTab.at(characterTab);
+        int tabGap = 8;
+        int tabHeight = 30;
+        int tabWidth = Math.max(120, Math.min(190, (body.width - tabGap * 2) / 3));
+        int tabX = body.x;
+        for (int i = 0; i < CharacterEquipmentAndMedicalAuthority.CharacterTab.values().length; i++) {
+  CharacterEquipmentAndMedicalAuthority.CharacterTab tab =
+          CharacterEquipmentAndMedicalAuthority.CharacterTab.at(i);
+  final int tabIndex = i;
+  addOverlayButton((tab == selectedTab ? "> " : "") + tab.label(),
+          tabX + i * (tabWidth + tabGap), body.y, tabWidth, tabHeight,
+          "Open the character " + tab.label().toLowerCase(Locale.ROOT) + " tab.",
+          () -> selectCharacterTab(tabIndex));
+        }
+        Rectangle content = new Rectangle(body.x, body.y + tabHeight + 10,
+      body.width, Math.max(120, body.height - tabHeight - 10));
+        switch (selectedTab) {
+  case OVERVIEW -> drawCharacterOverviewTab(g, content);
+  case EQUIPMENT -> drawCharacterEquipmentTab(g, content);
+  case MEDICAL -> drawCharacterMedicalTab(g, content);
+        }
     }
-    int actionY = slotY + slots.size() * 32 + 2;
-    addOverlayButton("Unequip Selected", equipmentBox.x + 10, actionY,
-            Math.max(130, equipmentBox.width - 116), 28,
-            "Unequip the selected character equipment slot.", this::unequipSelectedCharacterEquipment);
-    addOverlayButton("Health Info", equipmentBox.x + equipmentBox.width - 100, actionY,
-            90, 28, "Open the Body Condition mechanic reference.",
-            () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character health reference"));
 
-    int lowerY = rightColumn.y + topHeight + gap;
-    int lowerHeight = Math.max(100, rightColumn.y + rightColumn.height - lowerY);
-    int statusWidth = Math.max(240, rightColumn.width / 2);
-    Rectangle statusBox = new Rectangle(rightColumn.x, lowerY, statusWidth, lowerHeight);
-    Rectangle rosterBox = new Rectangle(statusBox.x + statusBox.width + gap, lowerY,
-            Math.max(180, rightColumn.width - statusBox.width - gap), lowerHeight);
+    private void drawCharacterOverviewTab(java.awt.Graphics2D g, Rectangle body) {
+        Candidate c = active;
+        int gap = 12;
+        int portraitWidth = Math.max(150, Math.min(190, body.width / 6));
+        int statsWidth = Math.max(220, Math.min(290, body.width / 4));
+        int dollWidth = Math.max(220, Math.min(300, body.width / 4));
 
-    ArrayList<String> limbLines = new ArrayList<>(CharacterPaperDollAuthority.regionReadouts(
-            c, new Rectangle(0, 0, 280, 440)));
-    if (limbLines.isEmpty()) limbLines.add("No tracked body regions are available.");
-    drawDetailBox(g, statusBox, "Limb Hit Points / Status", limbLines, null);
+        Rectangle portrait = new Rectangle(body.x, body.y, portraitWidth, body.height);
+        drawDetailBox(g, portrait, c == null ? "Character" : c.name,
+      java.util.List.of(c == null ? "No active character." : c.job,
+              c == null ? "" : c.ageYears + " years / " + c.ageBand),
+      c == null ? null : images.getPlayerPortrait(c));
 
-    drawDetailBox(g, rosterBox, "Faction Members",
-            FactionRosterReadabilityAuthority.summary(this, Math.max(1, (rosterBox.height - 82) / 18)), null);
-    addOverlayButton("Personnel Info", rosterBox.x + 12, rosterBox.y + rosterBox.height - 36, 112, 28,
-            "Open the faction personnel and staffing reference.",
-            () -> InfopediaHotLinkAuthority.openMechanic(this, "faction-personnel", "character personnel reference"));
-}
+        Rectangle stats = new Rectangle(portrait.x + portrait.width + gap, body.y, statsWidth, body.height);
+        ArrayList<String> statLines = new ArrayList<>();
+        if (c != null) for (Map.Entry<String,Integer> entry : c.stats.entrySet()) {
+  statLines.add(entry.getKey() + ": " + entry.getValue());
+        }
+        statLines.add("XP " + xp + " / knowledge credits " + knowledgeCredits);
+        statLines.add("Food " + food + " / water " + water + " / fatigue " + fatigue);
+        statLines.add("Wounds " + wounds + " / bleeding " + bleeding + " / pain " + pain);
+        statLines.add("Carried load " + inventoryWeight() + "/" + carryCapacity() + ".");
+        drawDetailBox(g, stats, "Stats", statLines, null);
 
-private void selectCharacterEquipmentSlot(int slotIndex) {
-    selectedCharacterEquipmentSlot = CharacterPaperDollAuthority.EquipmentSlot.at(slotIndex).ordinal();
-    repaint();
-}
+        Rectangle dollBox = new Rectangle(stats.x + stats.width + gap, body.y, dollWidth, body.height);
+        CharacterPaperDollAuthority.paint(g, dollBox, c, smallFont.deriveFont(10f));
 
-private void unequipSelectedCharacterEquipment() {
-    CharacterPaperDollAuthority.EquipmentSlot slot =
-            CharacterPaperDollAuthority.EquipmentSlot.at(selectedCharacterEquipmentSlot);
-    if (slot == CharacterPaperDollAuthority.EquipmentSlot.LEFT_HAND) {
-        unequipEquipmentSlot(0);
-        return;
+        Rectangle summary = new Rectangle(dollBox.x + dollBox.width + gap, body.y,
+      Math.max(220, body.x + body.width - dollBox.x - dollBox.width - gap), body.height);
+        int summaryTopHeight = Math.max(180, summary.height * 3 / 5);
+        Rectangle condition = new Rectangle(summary.x, summary.y, summary.width, summaryTopHeight);
+        Rectangle roster = new Rectangle(summary.x, summary.y + summaryTopHeight + gap,
+      summary.width, Math.max(100, summary.height - summaryTopHeight - gap));
+        ArrayList<String> conditionLines = new ArrayList<>(BodyConditionReadabilityAuthority.summary(c, wounds, bleeding,
+      infectionRisk, pain, fatigue, sleepNeed, food, water, equippedClothing,
+      equippedLeftHandItem, equippedRightHandItem));
+        long occupied = CharacterEquipmentAndMedicalAuthority.equipmentViews(equippedWearableSlots,
+      equippedLeftHandItem, equippedRightHandItem, equippedClothing).stream().filter(view -> !view.empty()).count();
+        conditionLines.add("Equipment: " + occupied + "/"
+      + CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length + " slots occupied.");
+        drawDetailBox(g, condition, "Condition Summary", conditionLines, null);
+        drawDetailBox(g, roster, "Faction Members",
+      FactionRosterReadabilityAuthority.summary(this, Math.max(1, (roster.height - 52) / 18)), null);
     }
-    if (slot == CharacterPaperDollAuthority.EquipmentSlot.RIGHT_HAND) {
-        unequipEquipmentSlot(1);
-        return;
+
+    private void drawCharacterEquipmentTab(java.awt.Graphics2D g, Rectangle body) {
+        int gap = 12;
+        int dollWidth = Math.max(230, Math.min(310, body.width * 27 / 100));
+        int slotWidth = Math.max(390, Math.min(560, body.width * 39 / 100));
+        Rectangle doll = new Rectangle(body.x, body.y, dollWidth, body.height);
+        Rectangle slots = new Rectangle(doll.x + doll.width + gap, body.y, slotWidth, body.height);
+        Rectangle carried = new Rectangle(slots.x + slots.width + gap, body.y,
+      Math.max(260, body.x + body.width - slots.x - slots.width - gap), body.height);
+
+        CharacterPaperDollAuthority.paint(g, doll, active, smallFont.deriveFont(10f));
+        drawBox(g, slots, "Equipment Slots");
+        java.util.List<CharacterEquipmentAndMedicalAuthority.EquipmentView> views =
+      CharacterEquipmentAndMedicalAuthority.equipmentViews(equippedWearableSlots,
+              equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        int columns = 2;
+        int rows = (views.size() + columns - 1) / columns;
+        int buttonGap = 6;
+        int buttonWidth = Math.max(150, (slots.width - 24 - buttonGap) / columns);
+        int buttonHeight = 28;
+        int listTop = slots.y + 34;
+        for (int i = 0; i < views.size(); i++) {
+  final int slotIndex = i;
+  int column = i % columns;
+  int row = i / columns;
+  CharacterEquipmentAndMedicalAuthority.EquipmentView view = views.get(i);
+  addOverlayButton(view.label(i == selectedCharacterEquipmentSlot),
+          slots.x + 10 + column * (buttonWidth + buttonGap),
+          listTop + row * (buttonHeight + buttonGap), buttonWidth, buttonHeight,
+          "Select the " + view.slot().label() + " equipment slot.",
+          () -> selectCharacterEquipmentSlot(slotIndex));
+        }
+
+        int detailY = listTop + rows * (buttonHeight + buttonGap) + 4;
+        Rectangle slotDetail = new Rectangle(slots.x + 8, detailY, slots.width - 16,
+      Math.max(130, slots.y + slots.height - detailY - 8));
+        CharacterEquipmentAndMedicalAuthority.EquipmentView selected =
+      CharacterEquipmentAndMedicalAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+              equippedWearableSlots, equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        ArrayList<String> slotLines = new ArrayList<>();
+        slotLines.add("Slot: " + selected.slot().label() + " / region " + selected.slot().bodyRegion() + ".");
+        slotLines.add("Equipped: " + selected.itemName() + ".");
+        slotLines.add("Accepts: " + String.join(", ",
+      CharacterEquipmentAndMedicalAuthority.compatibilityHints(selected.slot())) + ".");
+        slotLines.add(selected.empty() ? "Status: slot empty." : "Status: item equipped and available to character systems.");
+        if (selected.slot() == CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK) {
+  slotLines.add("Carry-capacity bonus: +"
+          + CharacterEquipmentAndMedicalAuthority.carryCapacityBonus(equippedWearableSlots) + ".");
+        }
+        slotLines.add("Carried load: " + inventoryWeight() + "/" + carryCapacity() + ".");
+        drawDetailBox(g, slotDetail, "Selected Slot", slotLines,
+      selected.empty() ? null : images.getItemIcon(selected.itemName()));
+
+        int listHeight = Math.max(180, carried.height * 54 / 100);
+        Rectangle carriedList = new Rectangle(carried.x, carried.y, carried.width, listHeight);
+        drawListBox(g, carriedList, "Carried Items", inventory, selectedInventoryIndex, true);
+        int navY = carriedList.y + carriedList.height + 6;
+        addOverlayButton("Previous Item", carried.x, navY, Math.max(110, (carried.width - 6) / 2), 28,
+      "Select the previous carried item.", () -> { moveInventorySelection(-1); repaint(); });
+        addOverlayButton("Next Item", carried.x + Math.max(110, (carried.width - 6) / 2) + 6, navY,
+      Math.max(110, carried.width - Math.max(110, (carried.width - 6) / 2) - 6), 28,
+      "Select the next carried item.", () -> { moveInventorySelection(1); repaint(); });
+
+        int actionY = navY + 34;
+        Rectangle itemDetail = new Rectangle(carried.x, actionY, carried.width,
+      Math.max(140, carried.y + carried.height - actionY));
+        String carriedItem = selectedInventoryItem();
+        ArrayList<String> itemLines = new ArrayList<>();
+        itemLines.add(carriedItem == null ? "No carried item selected." : carriedItem);
+        itemLines.add("Target slot: " + selected.slot().label() + ".");
+        itemLines.add(carriedItem == null ? "Compatibility: unavailable."
+      : CharacterEquipmentAndMedicalAuthority.canEquip(carriedItem, selected.slot())
+      ? "Compatibility: valid for this slot."
+      : "Compatibility: this item does not match this slot.");
+        if (carriedItem != null) {
+  ItemDef definition = ItemCatalog.get(carriedItem);
+  itemLines.add("Category: " + (definition == null ? "uncataloged item" : definition.category) + ".");
+        }
+        drawDetailBox(g, itemDetail, "Loadout Action", itemLines,
+      carriedItem == null ? null : images.getItemIcon(carriedItem));
+        int actionButtonY = itemDetail.y + itemDetail.height - 66;
+        addOverlayButton("Equip Selected", itemDetail.x + 8, actionButtonY,
+      Math.max(120, itemDetail.width - 16), 28,
+      "Move the selected carried item into the selected equipment slot.",
+      this::equipSelectedInventoryToCharacterSlot);
+        addOverlayButton("Unequip Slot", itemDetail.x + 8, actionButtonY + 32,
+      Math.max(120, itemDetail.width - 16), 28,
+      "Return the selected equipped item to carried inventory.",
+      this::unequipSelectedCharacterEquipment);
     }
-    if (equippedClothing == null) {
-        logEvent("Body protection slot is already empty.");
+
+    private void drawCharacterMedicalTab(java.awt.Graphics2D g, Rectangle body) {
+        int gap = 12;
+        int dollWidth = Math.max(250, Math.min(330, body.width * 34 / 100));
+        int regionWidth = Math.max(320, Math.min(450, body.width * 31 / 100));
+        Rectangle doll = new Rectangle(body.x, body.y, dollWidth, body.height);
+        Rectangle regions = new Rectangle(doll.x + doll.width + gap, body.y, regionWidth, body.height);
+        Rectangle detail = new Rectangle(regions.x + regions.width + gap, body.y,
+      Math.max(280, body.x + body.width - regions.x - regions.width - gap), body.height);
+
+        java.util.List<String> bodyParts = CharacterEquipmentAndMedicalAuthority.bodyPartNames(active);
+        if (!bodyParts.isEmpty() && (selectedCharacterMedicalBodyPart == null
+      || selectedCharacterMedicalBodyPart.isBlank()
+      || !bodyParts.contains(selectedCharacterMedicalBodyPart))) {
+  selectedCharacterMedicalBodyPart = bodyParts.get(0);
+        }
+        CharacterPaperDollAuthority.paint(g, doll, active, smallFont.deriveFont(10f),
+      selectedCharacterMedicalBodyPart);
+
+        drawBox(g, regions, "Body Regions");
+        int columns = 2;
+        int buttonGap = 5;
+        int buttonWidth = Math.max(120, (regions.width - 24 - buttonGap) / columns);
+        int buttonHeight = 26;
+        int top = regions.y + 34;
+        for (int i = 0; i < bodyParts.size(); i++) {
+  String bodyPart = bodyParts.get(i);
+  int column = i % columns;
+  int row = i / columns;
+  addOverlayButton((bodyPart.equals(selectedCharacterMedicalBodyPart) ? "> " : "") + bodyPart,
+          regions.x + 10 + column * (buttonWidth + buttonGap),
+          top + row * (buttonHeight + buttonGap), buttonWidth, buttonHeight,
+          "Select " + bodyPart + " for medical, mutation, modification, and cybernetic records.",
+          () -> selectCharacterMedicalBodyPart(bodyPart));
+        }
+        int regionRows = Math.max(1, (bodyParts.size() + columns - 1) / columns);
+        int readinessY = top + regionRows * (buttonHeight + buttonGap) + 6;
+        Rectangle readiness = new Rectangle(regions.x + 8, readinessY, regions.width - 16,
+      Math.max(120, regions.y + regions.height - readinessY - 8));
+        ArrayList<String> regionLines = new ArrayList<>();
+        CharacterPaperDollAuthority.RegionView selectedRegion = CharacterPaperDollAuthority.regions(active,
+      new Rectangle(0, 0, 280, 440)).stream()
+      .filter(view -> view.bodyPartName().equals(selectedCharacterMedicalBodyPart))
+      .findFirst().orElse(null);
+        if (selectedRegion != null) {
+  regionLines.add(selectedRegion.readout());
+  regionLines.add("Health ratio: " + (int)Math.round(selectedRegion.healthRatio() * 100.0) + "%.");
+        }
+        regionLines.addAll(CharacterEquipmentAndMedicalAuthority.medicalReadinessLines(active,
+      selectedCharacterMedicalBodyPart, installedBodyModifications));
+        drawDetailBox(g, readiness, "Region Status", regionLines, null);
+
+        drawBox(g, detail, "Medical / Body Modification Layers");
+        java.util.List<CharacterEquipmentAndMedicalAuthority.MedicalView> medicalViews =
+      CharacterEquipmentAndMedicalAuthority.medicalViews(active,
+              selectedCharacterMedicalBodyPart, installedBodyModifications);
+        int layerY = detail.y + 38;
+        for (int i = 0; i < medicalViews.size(); i++) {
+  final int layerIndex = i;
+  CharacterEquipmentAndMedicalAuthority.MedicalView view = medicalViews.get(i);
+  addOverlayButton(view.label(i == selectedCharacterMedicalLayer),
+          detail.x + 10, layerY + i * 38, detail.width - 20, 32,
+          "Select the " + view.key().layer().label().toLowerCase(Locale.ROOT)
+                  + " record for " + view.key().bodyPartName() + ".",
+          () -> selectCharacterMedicalLayer(layerIndex));
+        }
+        CharacterEquipmentAndMedicalAuthority.MedicalView selectedLayer = medicalViews.isEmpty() ? null
+      : medicalViews.get(CharacterEquipmentAndMedicalAuthority.MedicalLayer.at(selectedCharacterMedicalLayer).ordinal());
+        int layerDetailY = layerY + medicalViews.size() * 38 + 8;
+        Rectangle layerDetail = new Rectangle(detail.x + 8, layerDetailY, detail.width - 16,
+      Math.max(150, detail.y + detail.height - layerDetailY - 48));
+        ArrayList<String> layerLines = new ArrayList<>();
+        if (selectedLayer == null) {
+  layerLines.add("No body-modification layer is available.");
+        } else {
+  layerLines.add("Region: " + selectedLayer.key().bodyPartName() + ".");
+  layerLines.add("Layer: " + selectedLayer.key().layer().label() + ".");
+  layerLines.add("Installed record: " + selectedLayer.installedName() + ".");
+  layerLines.add("This interface is live, but installation, surgery, compatibility, rejection, power, maintenance, and mutation mechanics are intentionally not simulated yet.");
+  layerLines.add("Future systems can call installCharacterMedicalRecord(...) without changing this screen.");
+        }
+        drawDetailBox(g, layerDetail, "Selected Medical Slot", layerLines,
+      selectedLayer == null || selectedLayer.empty() ? null : images.getItemIcon(selectedLayer.installedName()));
+        addOverlayButton("Medical Info", detail.x + 10, detail.y + detail.height - 36,
+      Math.max(120, detail.width - 20), 28,
+      "Open the body-condition and medical treatment reference.",
+      () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character medical tab"));
+    }
+
+    private void selectCharacterTab(int tabIndex) {
+        characterTab = CharacterEquipmentAndMedicalAuthority.CharacterTab.at(tabIndex).ordinal();
+        selectedButton = 0;
         repaint();
-        return;
     }
-    String itemName = equippedClothing.name;
-    if (itemName != null && !itemName.isBlank()) inventory.add(itemName);
-    equippedClothing = null;
-    logEvent("Unequipped body protection: " + safeLabel(itemName, "clothing") + ".");
-    repaint();
-}
+
+    private void selectCharacterEquipmentSlot(int slotIndex) {
+        selectedCharacterEquipmentSlot = CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(slotIndex).ordinal();
+        repaint();
+    }
+
+    private void selectCharacterMedicalBodyPart(String bodyPartName) {
+        selectedCharacterMedicalBodyPart = bodyPartName == null ? "" : bodyPartName;
+        repaint();
+    }
+
+    private void selectCharacterMedicalLayer(int layerIndex) {
+        selectedCharacterMedicalLayer = CharacterEquipmentAndMedicalAuthority.MedicalLayer.at(layerIndex).ordinal();
+        repaint();
+    }
+
+    private void equipSelectedInventoryToCharacterSlot() {
+        String item = selectedInventoryItem();
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot =
+      CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(selectedCharacterEquipmentSlot);
+        if (item == null) {
+  logEvent("No carried item is selected for " + slot.label() + ".");
+  repaint();
+  return;
+        }
+        if (!CharacterEquipmentAndMedicalAuthority.canEquip(item, slot)) {
+  logEvent(item + " is not compatible with the " + slot.label() + " slot.");
+  repaint();
+  return;
+        }
+        CharacterEquipmentAndMedicalAuthority.EquipmentView current =
+      CharacterEquipmentAndMedicalAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+              equippedWearableSlots, equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        if (!current.empty() && current.itemName().equalsIgnoreCase(item)) {
+  logEvent(item + " is already equipped in " + slot.label() + ".");
+  return;
+        }
+        inventory.remove(selectedInventoryIndex);
+        if (!current.empty()) inventory.add(current.itemName());
+        setCharacterEquipmentSlot(slot, item);
+        selectedInventoryIndex = Math.max(0, Math.min(selectedInventoryIndex, Math.max(0, inventory.size() - 1)));
+        rebuildItemContainersFromLegacyLists();
+        logEvent("Equipped " + item + " in " + slot.label() + ".");
+        repaint();
+    }
+
+    private void setCharacterEquipmentSlot(CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot, String item) {
+        if (slot == null || item == null || item.isBlank()) return;
+        switch (slot) {
+  case LEFT_HAND -> {
+      equippedLeftHandItem = item;
+      activeWeaponHandIndex = 0;
+      if (ItemCatalog.isFirearmLike(item)) loadedWeaponShots.putIfAbsent(item, 0);
+  }
+  case RIGHT_HAND -> {
+      equippedRightHandItem = item;
+      activeWeaponHandIndex = 1;
+      if (ItemCatalog.isFirearmLike(item)) loadedWeaponShots.putIfAbsent(item, 0);
+  }
+  case CLOTHES -> equippedClothing = Clothing.fromItemName(item);
+  default -> equippedWearableSlots.put(slot, item);
+        }
+    }
+
+    private void unequipSelectedCharacterEquipment() {
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot =
+      CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(selectedCharacterEquipmentSlot);
+        CharacterEquipmentAndMedicalAuthority.EquipmentView current =
+      CharacterEquipmentAndMedicalAuthority.selectedEquipment(selectedCharacterEquipmentSlot,
+              equippedWearableSlots, equippedLeftHandItem, equippedRightHandItem, equippedClothing);
+        if (current.empty()) {
+  logEvent(slot.label() + " is already empty.");
+  repaint();
+  return;
+        }
+        switch (slot) {
+  case LEFT_HAND -> equippedLeftHandItem = "LEFT EMPTY";
+  case RIGHT_HAND -> equippedRightHandItem = "RIGHT EMPTY";
+  case CLOTHES -> equippedClothing = null;
+  default -> equippedWearableSlots.remove(slot);
+        }
+        inventory.add(current.itemName());
+        rebuildItemContainersFromLegacyLists();
+        logEvent("Unequipped " + current.itemName() + " from " + slot.label() + ".");
+        repaint();
+    }
+
+    void installCharacterMedicalRecord(String bodyPartName,
+                             CharacterEquipmentAndMedicalAuthority.MedicalLayer layer,
+                             String installedName) {
+        CharacterEquipmentAndMedicalAuthority.installMedicalRecord(installedBodyModifications,
+      bodyPartName, layer, installedName);
+        repaint();
+    }
+
+    String characterMedicalRecord(String bodyPartName,
+                        CharacterEquipmentAndMedicalAuthority.MedicalLayer layer) {
+        return CharacterEquipmentAndMedicalAuthority.medicalRecord(installedBodyModifications,
+      bodyPartName, layer);
+    }
 
     private void drawMapOverlay(java.awt.Graphics2D g, Rectangle body) {
         Rectangle mapBox = new Rectangle(body.x, body.y, Math.max(260, body.width * 2 / 3), body.height);
@@ -4404,7 +4651,8 @@ private void unequipSelectedCharacterEquipment() {
     int totalBankedCash() { return Math.max(0, baseStashedScript); }
     int inventoryWeight() { return inventory == null ? 0 : inventory.size(); }
     int carryCapacity() {
-        return WorldGenerationSettingsAuthority.playerCarryCapacity(supplies, WorldGenerationSettingsAuthority.forGame(this));
+        return WorldGenerationSettingsAuthority.playerCarryCapacity(supplies, WorldGenerationSettingsAuthority.forGame(this))
+      + CharacterEquipmentAndMedicalAuthority.carryCapacityBonus(equippedWearableSlots);
     }
     void addInventoryItem(String item, ItemProvenanceRecord provenance) { if (item != null && !item.isBlank()) inventory.add(item); }
     void gainXp(String skill, int amount, String reason) { xp += Math.max(0, amount); }

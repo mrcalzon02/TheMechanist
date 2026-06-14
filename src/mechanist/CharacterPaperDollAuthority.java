@@ -135,6 +135,10 @@ final class CharacterPaperDollAuthority {
     }
 
     static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font) {
+        paint(g, bounds, candidate, font, null);
+    }
+
+    static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font, String selectedBodyPart) {
         if (g == null || bounds == null) return;
         g.setColor(new Color(8, 10, 10, 230));
         g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, 8);
