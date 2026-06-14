@@ -21,14 +21,26 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           path = Path('.github/workflows/one-shot-live-semantic-render-migration-v2.yml')
-          text = path.read_text(encoding='utf-8')
-          old = '''          $sources = Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName }
-          javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-migration-v2-classes $sources'''
-          new = '''          Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName } | Set-Content -Encoding UTF8 semantic-migration-sources.txt
-          javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-migration-v2-classes "@semantic-migration-sources.txt"'''
-          if old not in text:
-              raise SystemExit('Expected javac source expansion block was not found')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          changed = False
+          output = []
+          index = 0
+          while index < len(lines):
+              line = lines[index]
+              if '$sources = Get-ChildItem -Recurse src -Filter *.java' in line:
+                  indent = line[:len(line) - len(line.lstrip())]
+                  output.append(indent + 'Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName } | Set-Content -Encoding UTF8 semantic-migration-sources.txt')
+                  if index + 1 >= len(lines) or 'javac -encoding UTF-8 --release 17' not in lines[index + 1]:
+                      raise SystemExit('Expected javac line after source collection')
+                  output.append(indent + 'javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-migration-v2-classes "@semantic-migration-sources.txt"')
+                  index += 2
+                  changed = True
+                  continue
+              output.append(line)
+              index += 1
+          if not changed:
+              raise SystemExit('Source collection line was not found')
+          path.write_text('\n'.join(output) + '\n', encoding='utf-8', newline='')
           PY
 
       - name: Commit workflow repair
