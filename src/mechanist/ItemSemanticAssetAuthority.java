@@ -2,6 +2,7 @@ package mechanist;
 
 import mechanist.assets.AssetManager;
 import mechanist.assets.AssetMetadata;
+import mechanist.assets.AssetType;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -113,16 +114,25 @@ final class ItemSemanticAssetAuthority {
         return "ITEM-G01";
     }
 
+    static Optional<String> runtimeAssetIdForItemName(String rawName) {
+        String hint = semanticAssetIdForItemName(rawName);
+        String semanticName = normalizedItemName(rawName);
+        return SemanticAssetHintResolver.resolve(hint, semanticName, java.util.Set.of(
+                AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON,
+                AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE));
+    }
+
     static Optional<AssetMetadata> metadataForItemName(String rawName) {
-        return AssetManager.metadata(semanticAssetIdForItemName(rawName));
+        return runtimeAssetIdForItemName(rawName).flatMap(AssetManager::metadata);
     }
 
     static String semanticSummaryForItemName(String rawName) {
-        String id = semanticAssetIdForItemName(rawName);
-        Optional<AssetMetadata> meta = AssetManager.metadata(id);
-        if (meta.isEmpty()) return "Semantic asset: " + id + " (registry metadata unavailable).";
+        String hint = semanticAssetIdForItemName(rawName);
+        Optional<AssetMetadata> meta = metadataForItemName(rawName);
+        if (meta.isEmpty()) return "Semantic asset hint: " + hint + " (no compatible active-registry asset).";
         AssetMetadata m = meta.get();
-        return "Semantic asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name() + ".";
+        return "Semantic asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name()
+                + " / authoredHint=" + hint + ".";
     }
 
     private static void map(String token, String assetId) {

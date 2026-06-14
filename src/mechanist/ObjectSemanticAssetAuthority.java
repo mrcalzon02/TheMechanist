@@ -119,8 +119,16 @@ final class ObjectSemanticAssetAuthority {
         return assetIdForName(object == null ? null : object.name);
     }
 
+    static Optional<String> runtimeAssetIdForBaseObject(BaseObject object) {
+        String name = object == null ? "" : object.name;
+        return SemanticAssetHintResolver.resolve(assetIdForBaseObject(object), name, java.util.Set.of(
+                AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+                AssetType.ITEM_ICON, AssetType.WALL_TILE));
+    }
+
     static BufferedImage imageForBaseObject(BaseObject object) {
-        return imageForAssetId(assetIdForBaseObject(object));
+        String id = runtimeAssetIdForBaseObject(object).orElse(assetIdForBaseObject(object));
+        return imageForAssetId(id);
     }
 
     static String assetIdForMapObject(MapObjectState object) {
@@ -135,8 +143,19 @@ final class ObjectSemanticAssetAuthority {
         return assetIdForName(stock);
     }
 
+    static Optional<String> runtimeAssetIdForMapObject(MapObjectState object) {
+        if (object == null) return Optional.empty();
+        String semantic = (object.label == null ? "" : object.label) + " "
+                + (object.type == null ? "" : object.type) + " "
+                + (object.stockState == null ? "" : object.stockState);
+        return SemanticAssetHintResolver.resolve(assetIdForMapObject(object), semantic, java.util.Set.of(
+                AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+                AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON));
+    }
+
     static BufferedImage imageForMapObject(MapObjectState object) {
-        return imageForAssetId(assetIdForMapObject(object));
+        String id = runtimeAssetIdForMapObject(object).orElse(assetIdForMapObject(object));
+        return imageForAssetId(id);
     }
 
     static String assetIdForEditorPalette(String category, String item) {

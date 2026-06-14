@@ -6431,14 +6431,16 @@ final class LegacyImageSurface {
 
     BufferedImage getMapObjectImage(MapObjectState object) {
         ensureLoaded(lastOptions);
-        String id = ObjectSemanticAssetAuthority.assetIdForMapObject(object);
+        String hint = ObjectSemanticAssetAuthority.assetIdForMapObject(object);
+        String id = ObjectSemanticAssetAuthority.runtimeAssetIdForMapObject(object).orElse(hint);
         BufferedImage img = media.getSemanticAssetImage(id);
         return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
     }
 
     BufferedImage getBaseObjectImage(BaseObject object) {
         ensureLoaded(lastOptions);
-        String id = ObjectSemanticAssetAuthority.assetIdForBaseObject(object);
+        String hint = ObjectSemanticAssetAuthority.assetIdForBaseObject(object);
+        String id = ObjectSemanticAssetAuthority.runtimeAssetIdForBaseObject(object).orElse(hint);
         BufferedImage img = media.getSemanticAssetImage(id);
         return img != null ? img : ObjectSemanticAssetAuthority.imageForAssetId(id);
     }
@@ -6457,6 +6459,11 @@ final class LegacyImageSurface {
 
     BufferedImage getItemIcon(String itemName) {
         ensureLoaded(lastOptions);
+        Optional<String> runtimeId = ItemSemanticAssetAuthority.runtimeAssetIdForItemName(itemName);
+        if (runtimeId.isPresent()) {
+            BufferedImage semantic = media.getSemanticAssetImage(runtimeId.get());
+            if (semantic != null) return semantic;
+        }
         return media.getItemIcon(itemName);
     }
 
