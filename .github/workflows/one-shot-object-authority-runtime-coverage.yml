@@ -1,0 +1,235 @@
+name: One Shot Object Authority Runtime Coverage
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-object-authority-runtime-coverage.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Complete object authority active-registry resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/mechanist/ObjectSemanticAssetAuthority.java')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('static final String VERSION = "0.9.10jy-stage6";',
+                              'static final String VERSION = "0.9.10kc-active-registry";')
+
+          old = '''    static Optional<AssetMetadata> metadataForBuildRecipe(BuildRecipe recipe) {
+                  return AssetManager.metadata(assetIdForBuildRecipe(recipe));
+              }
+          '''
+          new = '''    static Optional<String> runtimeAssetIdForBuildRecipe(BuildRecipe recipe) {
+                  String name = recipe == null ? "" : recipe.name;
+                  return runtimeAssetIdForName(name);
+              }
+
+              static Optional<AssetMetadata> metadataForBuildRecipe(BuildRecipe recipe) {
+                  return runtimeAssetIdForBuildRecipe(recipe).flatMap(AssetManager::metadata);
+              }
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one build recipe metadata block, found {text.count(old)}')
+          text = text.replace(old, new)
+
+          old = '''    static String assetIdForEditorPalette(String category, String item) {
+                  String direct = assetIdForName(item);
+                  if (!"ITEM-G01".equals(direct)) return direct;
+                  String cat = normalize(category);
+                  if (cat.contains("floor")) return TileSemanticAssetAuthority.assetIdForAlias("floor_bare_underhive").orElse("FLR-0101");
+                  if (cat.contains("wall")) return TileSemanticAssetAuthority.assetIdForAlias("wall_bulkhead").orElse("WALL-A01");
+                  return direct;
+              }
+          '''
+          new = '''    static String assetIdForEditorPalette(String category, String item) {
+                  return runtimeAssetIdForEditorPalette(category, item)
+                          .orElseGet(() -> assetHintForEditorPalette(category, item));
+              }
+
+              static Optional<String> runtimeAssetIdForEditorPalette(String category, String item) {
+                  String cat = normalize(category);
+                  if (cat.contains("floor")) return TileSemanticAssetAuthority.assetIdForAlias("floor_bare_underhive");
+                  if (cat.contains("wall")) return TileSemanticAssetAuthority.assetIdForAlias("wall_bulkhead");
+                  String semantic = cat + " " + normalize(item);
+                  return SemanticAssetHintResolver.resolve(assetHintForEditorPalette(category, item), semantic,
+                          java.util.Set.of(AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+                                  AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON));
+              }
+
+              private static String assetHintForEditorPalette(String category, String item) {
+                  String direct = assetIdForName(item);
+                  if (!"ITEM-G01".equals(direct)) return direct;
+                  String cat = normalize(category);
+                  if (cat.contains("floor")) return "FLR-0101";
+                  if (cat.contains("wall")) return "WALL-A01";
+                  return direct;
+              }
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one editor palette block, found {text.count(old)}')
+          text = text.replace(old, new)
+
+          old = '''    static String assetIdForLight(ZoneLightSourceRecord light) {
+                  if (light == null) return "FTR-0003";
+                  String profile = normalize(light.profile + " " + light.colorName + " " + light.groupId);
+                  if (profile.contains("switch")) return "FTR-0004";
+                  if (profile.contains("sensor")) return "FTR-0005";
+                  return "FTR-0003";
+              }
+
+              static String assetIdForTrap(TrapRecord trap) {
+                  if (trap == null) return "BLD-0004";
+                  String text = normalize(trap.type + " " + trap.label + " " + trap.effect);
+                  if (text.contains("wire") || text.contains("razor")) return "BLD-0007";
+                  if (text.contains("explosive")) return "FTR-0006";
+                  if (text.contains("sensor")) return "FTR-0005";
+                  return "BLD-0004";
+              }
+          '''
+          new = '''    static String assetIdForLight(ZoneLightSourceRecord light) {
+                  return runtimeAssetIdForLight(light).orElseGet(() -> assetHintForLight(light));
+              }
+
+              static Optional<String> runtimeAssetIdForLight(ZoneLightSourceRecord light) {
+                  String semantic = light == null ? "light fixture" : normalize(
+                          light.profile + " " + light.colorName + " " + light.groupId + " light fixture");
+                  return SemanticAssetHintResolver.resolve(assetHintForLight(light), semantic,
+                          java.util.Set.of(AssetType.FIXTURE, AssetType.OBJECT, AssetType.MACHINE));
+              }
+
+              private static String assetHintForLight(ZoneLightSourceRecord light) {
+                  if (light == null) return "FTR-0003";
+                  String profile = normalize(light.profile + " " + light.colorName + " " + light.groupId);
+                  if (profile.contains("switch")) return "FTR-0004";
+                  if (profile.contains("sensor")) return "FTR-0005";
+                  return "FTR-0003";
+              }
+
+              static String assetIdForTrap(TrapRecord trap) {
+                  return runtimeAssetIdForTrap(trap).orElseGet(() -> assetHintForTrap(trap));
+              }
+
+              static Optional<String> runtimeAssetIdForTrap(TrapRecord trap) {
+                  String semantic = trap == null ? "alarm trap" : normalize(
+                          trap.type + " " + trap.label + " " + trap.effect + " trap");
+                  return SemanticAssetHintResolver.resolve(assetHintForTrap(trap), semantic,
+                          java.util.Set.of(AssetType.FIXTURE, AssetType.OBJECT, AssetType.MACHINE, AssetType.ITEM_ICON));
+              }
+
+              private static String assetHintForTrap(TrapRecord trap) {
+                  if (trap == null) return "BLD-0004";
+                  String text = normalize(trap.type + " " + trap.label + " " + trap.effect);
+                  if (text.contains("wire") || text.contains("razor")) return "BLD-0007";
+                  if (text.contains("explosive")) return "FTR-0006";
+                  if (text.contains("sensor")) return "FTR-0005";
+                  return "BLD-0004";
+              }
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one light/trap block, found {text.count(old)}')
+          text = text.replace(old, new)
+
+          old = '''    static String semanticSummaryForName(String name) {
+                  String id = assetIdForName(name);
+                  Optional<AssetMetadata> meta = AssetManager.metadata(id);
+                  if (meta.isEmpty()) return "Semantic object asset: " + id + " (registry metadata unavailable).";
+                  AssetMetadata m = meta.get();
+                  return "Semantic object asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name() + ".";
+              }
+          '''
+          new = '''    static Optional<String> runtimeAssetIdForName(String name) {
+                  return SemanticAssetHintResolver.resolve(assetIdForName(name), normalize(name), java.util.Set.of(
+                          AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+                          AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON, AssetType.WALL_TILE));
+              }
+
+              static String semanticSummaryForName(String name) {
+                  String hint = assetIdForName(name);
+                  Optional<AssetMetadata> meta = runtimeAssetIdForName(name).flatMap(AssetManager::metadata);
+                  if (meta.isEmpty()) return "Semantic object asset hint: " + hint + " (no compatible active-registry asset).";
+                  AssetMetadata m = meta.get();
+                  return "Semantic object asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name()
+                          + " / authoredHint=" + hint + ".";
+              }
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one object semantic summary block, found {text.count(old)}')
+          text = text.replace(old, new)
+          text = text.replace('registryFirst=true legacyFallback=false typedMissing=true',
+                              'activeRegistryValidated=true legacyHintsRetained=true typedMissing=true')
+          path.write_text(text, encoding='utf-8')
+
+          smoke = Path('src/mechanist/ObjectSemanticRuntimeCoverageSmoke.java')
+          smoke.write_text('''package mechanist;
+
+          import mechanist.assets.AssetManager;
+          import java.util.List;
+
+          public final class ObjectSemanticRuntimeCoverageSmoke {
+              public static void main(String[] args) {
+                  if (AssetManager.registry().size() == 0) throw new AssertionError("active semantic asset registry was empty");
+                  int resolved = 0;
+                  for (String name : List.of("storage crate", "scrap workbench", "generator", "terminal",
+                          "light fixture", "motion sensor", "clinic stall", "reinforced wall panel")) {
+                      var id = ObjectSemanticAssetAuthority.runtimeAssetIdForName(name);
+                      if (id.isPresent()) {
+                          resolved++;
+                          if (AssetManager.metadata(id.get()).isEmpty()) {
+                              throw new AssertionError("object resolution escaped registry: " + name + " -> " + id.get());
+                          }
+                      }
+                  }
+                  if (resolved == 0) throw new AssertionError("no representative object hint resolved");
+                  var floor = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("floor", "bare underhive floor");
+                  var wall = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("wall", "bulkhead wall");
+                  if (floor.isEmpty() || wall.isEmpty()) throw new AssertionError("editor floor/wall semantic resolution missing");
+                  System.out.println("ObjectSemanticRuntimeCoverageSmoke PASS registry=" + AssetManager.registry().size()
+                          + " representativeResolved=" + resolved + " authority=" + ObjectSemanticAssetAuthority.VERSION);
+              }
+              private ObjectSemanticRuntimeCoverageSmoke() {}
+          }
+          ''', encoding='utf-8')
+          PY
+
+      - name: Compile and run semantic coverage smokes
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ROOT_build/object-semantic-runtime
+          mkdir -p ROOT_build/object-semantic-runtime/classes
+          find src -name '*.java' -print > ROOT_build/object-semantic-runtime/sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/object-semantic-runtime/classes @ROOT_build/object-semantic-runtime/sources.txt
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/object-semantic-runtime/classes mechanist.ObjectSemanticRuntimeCoverageSmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/object-semantic-runtime/classes mechanist.RuntimeSemanticAssetHintSmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/object-semantic-runtime/classes mechanist.TileSemanticRuntimeRegistrySmoke
+
+      - name: Commit directly to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/one-shot-object-authority-runtime-coverage.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/mechanist/ObjectSemanticAssetAuthority.java src/mechanist/ObjectSemanticRuntimeCoverageSmoke.java .github/workflows/one-shot-object-authority-runtime-coverage.yml
+          git commit -m 'Complete object semantic active-registry coverage'
+          git push origin HEAD:main
