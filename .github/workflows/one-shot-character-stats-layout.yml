@@ -1,0 +1,60 @@
+name: One Shot Character Stats Layout Patch
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-character-stats-layout.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-character-stats-layout:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Patch character generation stats layout
+        shell: pwsh
+        run: |
+          $path = 'src/mechanist/WorldStartFlowAuthority.java'
+          $text = Get-Content -Raw -Encoding UTF8 $path
+          $original = $text
+
+          $text = $text.Replace('int statsH = Math.max(124, Math.min(156, r.y + r.height - statsY - 12));', 'int statsH = Math.max(216, Math.min(256, r.y + r.height - statsY - 12));')
+          $text = $text.Replace('int rows = count <= 6 ? 1 : 2;
+            int cols = Math.max(1, (int)Math.ceil(count / (double)rows));', 'int cols = Math.min(3, count);
+            int rows = Math.max(1, (int)Math.ceil(count / (double)cols));')
+          $text = $text.Replace('int cellH = Math.max(40, (availableH - Math.max(0, rows - 1) * gap) / rows);', 'int cellH = Math.max(44, (availableH - Math.max(0, rows - 1) * gap) / rows);')
+          $text = $text.Replace('drawFitted(g, statExplanation(key), r.x + pad, r.y + 35, r.width - pad * 2, main());', 'drawFitted(g, statExplanation(key), r.x + pad, r.y + 37, r.width - pad * 2, main());')
+          $text = $text.Replace('int ph = Math.max(540, Math.min(720, h - 72));', 'int ph = Math.max(stage == Stage.CHARACTER_CREATION ? 620 : 540, Math.min(stage == Stage.CHARACTER_CREATION ? 760 : 720, h - 72));')
+          $text = $text.Replace('return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(260, p.height - 250));', 'return new Rectangle(p.x + 24, p.y + 112, p.width - 48, Math.max(300, p.height - 230));')
+
+          if ($text -eq $original) {
+            Write-Host 'No source patch was needed; expected layout text was not found or was already updated.'
+          } else {
+            Set-Content -Path $path -Value $text -Encoding UTF8 -NoNewline
+          }
+
+      - name: Remove one-shot workflow
+        shell: pwsh
+        run: |
+          Remove-Item '.github/workflows/one-shot-character-stats-layout.yml' -Force
+
+      - name: Commit patch
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/mechanist/WorldStartFlowAuthority.java .github/workflows/one-shot-character-stats-layout.yml
+          if (git diff --cached --quiet) {
+            Write-Host 'No changes to commit.'
+          } else {
+            git commit -m 'Revise character generation stats layout'
+            git push
+          }
