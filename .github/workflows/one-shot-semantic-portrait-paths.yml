@@ -1,0 +1,41 @@
+name: One Shot Semantic Portrait Paths
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-semantic-portrait-paths.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  locate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Locate source paths and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_cache="$(grep -RIl --include='*.java' 'class ImageCache' src | head -1 || true)"
+          standards="$(find . -type f \( -iname '*standards*practices*' -o -iname 'STANDARDS_AND_PRACTICES.md' \) | sort | head -1 || true)"
+          partitions="$(find . -type f \( -iname '*portrait*partition*.tsv' -o -iname '*portrait*entity*.tsv' -o -iname '*portrait*partition*.csv' \) | sort | head -1 || true)"
+          history="$(find . -type f \( -iname '*development*history*' -o -iname '*dev*history*' \) | sort | head -1 || true)"
+          image_line=""
+          if [[ -n "$image_cache" ]]; then image_line="$(grep -n 'class ImageCache' "$image_cache" | head -1 | cut -d: -f1 || true)"; fi
+          rm .github/workflows/one-shot-semantic-portrait-paths.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/one-shot-semantic-portrait-paths.yml
+          git commit -m 'Record semantic portrait source locations' \
+            -m "IMAGE_CACHE=${image_cache:-NOT_FOUND}" \
+            -m "IMAGE_CACHE_LINE=${image_line:-NOT_FOUND}" \
+            -m "STANDARDS=${standards:-NOT_FOUND}" \
+            -m "PARTITIONS=${partitions:-NOT_FOUND}" \
+            -m "HISTORY=${history:-NOT_FOUND}"
+          git push origin HEAD:main
