@@ -1,0 +1,33 @@
+name: One Shot Save Portrait Error
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-save-portrait-error.yml'
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Save failed step tail
+        shell: bash
+        run: |
+          mkdir -p ROOT_build
+          gh run view 27517250022 --log-failed | tail -80 > ROOT_build/portrait_error_tail.txt
+          rm .github/workflows/one-shot-save-portrait-error.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_build/portrait_error_tail.txt .github/workflows/one-shot-save-portrait-error.yml
+          git commit -m 'Record semantic portrait error tail'
+          git push origin HEAD:main
