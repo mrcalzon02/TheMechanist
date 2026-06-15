@@ -21,7 +21,7 @@ import java.util.Optional;
  * unrelated, animal, restricted, or celebrity-locked artwork.</p>
  */
 final class PortraitSemanticPartitionResolver {
-    static final String VERSION = "portrait-semantic-partition-resolver-0.2";
+    static final String VERSION = "portrait-semantic-partition-resolver-0.3";
 
     private PortraitSemanticPartitionResolver() {}
 
@@ -62,6 +62,8 @@ final class PortraitSemanticPartitionResolver {
         try {
             return PortraitSemanticAssetAuthority.loadDefault(safeRoot).stream()
                     .filter(record -> canonicalKey.equals(canonicalPartitionKey(record.partitionKey())))
+                    .filter(record -> record.npcPoolAllowed()
+                            || (allowNameLocked && record.nameLockedOnly()))
                     .filter(record -> allowRestricted || !record.nonhumanOrRestricted())
                     .filter(record -> allowNameLocked || !record.nameLockedOnly())
                     .filter(record -> validRegistryPortrait(safeRegistry, record.assetId()))
