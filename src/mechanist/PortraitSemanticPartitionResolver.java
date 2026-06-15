@@ -4,6 +4,7 @@ import mechanist.assets.AssetMetadata;
 import mechanist.assets.AssetRegistry;
 import mechanist.assets.AssetType;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.Optional;
  * unrelated, animal, restricted, or celebrity-locked artwork.</p>
  */
 final class PortraitSemanticPartitionResolver {
-    static final String VERSION = "portrait-semantic-partition-resolver-0.1";
+    static final String VERSION = "portrait-semantic-partition-resolver-0.2";
 
     private PortraitSemanticPartitionResolver() {}
 
@@ -58,16 +59,20 @@ final class PortraitSemanticPartitionResolver {
         AssetRegistry safeRegistry = registry == null ? AssetRegistry.empty() : registry;
         Path safeRoot = projectRoot == null ? Path.of(".") : projectRoot;
 
-        return PortraitSemanticAssetAuthority.loadDefault(safeRoot).stream()
-                .filter(record -> canonicalKey.equals(canonicalPartitionKey(record.partitionKey())))
-                .filter(record -> allowRestricted || !record.nonhumanOrRestricted())
-                .filter(record -> allowNameLocked || !record.nameLockedOnly())
-                .filter(record -> validRegistryPortrait(safeRegistry, record.assetId()))
-                .sorted(Comparator
-                        .comparing((PortraitSemanticAssetAuthority.PartitionRecord record) ->
-                                normalizedPath(record.registryPath()))
-                        .thenComparing(PortraitSemanticAssetAuthority.PartitionRecord::assetId))
-                .toList();
+        try {
+            return PortraitSemanticAssetAuthority.loadDefault(safeRoot).stream()
+                    .filter(record -> canonicalKey.equals(canonicalPartitionKey(record.partitionKey())))
+                    .filter(record -> allowRestricted || !record.nonhumanOrRestricted())
+                    .filter(record -> allowNameLocked || !record.nameLockedOnly())
+                    .filter(record -> validRegistryPortrait(safeRegistry, record.assetId()))
+                    .sorted(Comparator
+                            .comparing((PortraitSemanticAssetAuthority.PartitionRecord record) ->
+                                    normalizedPath(record.registryPath()))
+                            .thenComparing(PortraitSemanticAssetAuthority.PartitionRecord::assetId))
+                    .toList();
+        } catch (IOException | RuntimeException ex) {
+            return List.of();
+        }
     }
 
     static String canonicalPartitionKey(String value) {
