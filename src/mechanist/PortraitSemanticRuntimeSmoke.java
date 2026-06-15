@@ -16,10 +16,27 @@ public final class PortraitSemanticRuntimeSmoke {
             throw new AssertionError("active semantic asset registry was empty");
         }
 
+        String source = PortraitSemanticAssetAuthority.partitionSource(root);
+        if (!"active-registry synthesis".equals(source)) {
+            throw new AssertionError("expected registry-synthesized portrait partitions, got " + source);
+        }
+
+        var records = PortraitSemanticAssetAuthority.loadDefault(root);
+        if (records.isEmpty()) {
+            throw new AssertionError("synthesized portrait partition records were empty");
+        }
+
         var audit = PortraitSemanticAssetAuthority.audit(root, registry);
         if (!audit.passed()) {
             throw new AssertionError("portrait partition audit failed: " + audit.errors());
         }
+
+        assertPartition(records, "administratum", false, false);
+        assertPartition(records, "name_locked_profile", false, true);
+        assertPartition(records, "rogue_automata_servitors", true, false);
+        assertPartition(records, "pets", true, false);
+        assertPartition(records, "flesh_cult", true, false);
+        assertPartition(records, "undying_lords", true, false);
 
         var playerPool = PortraitSemanticAssetAuthority.activePlayerPool(root, registry);
         var npcPool = PortraitSemanticAssetAuthority.activeNpcPool(root, registry);
@@ -28,12 +45,23 @@ public final class PortraitSemanticRuntimeSmoke {
 
         assertOrdinaryPool("player", playerPool);
         assertOrdinaryPool("NPC", npcPool);
+        for (var record : playerPool) {
+            if (!record.partitionKey().equals("administratum")) {
+                throw new AssertionError("non-administratum portrait leaked into player pool: "
+                        + record.compactLine());
+            }
+            String path = record.registryPath().toLowerCase(java.util.Locale.ROOT);
+            if (!path.contains("humans8x8")) {
+                throw new AssertionError("player pool contains non-Humans8x8 asset: "
+                        + record.compactLine());
+            }
+        }
 
         String playerA = PortraitSemanticAssetAuthority.runtimePlayerAssetId(
-                root, registry, "administratum baseline human", 7).orElseThrow(
+                root, registry, "Humans8x8", 7).orElseThrow(
                 () -> new AssertionError("player portrait selection returned empty"));
         String playerB = PortraitSemanticAssetAuthority.runtimePlayerAssetId(
-                root, registry, "administratum baseline human", 7).orElseThrow();
+                root, registry, "Humans8x8", 7).orElseThrow();
         if (!playerA.equals(playerB)) {
             throw new AssertionError("player portrait selection was not deterministic");
         }
@@ -63,11 +91,35 @@ public final class PortraitSemanticRuntimeSmoke {
 
         System.out.println("PortraitSemanticRuntimeSmoke PASS "
                 + audit.summaryLine()
+                + " source=" + source
+                + " synthesizedRecords=" + records.size()
                 + " activePlayer=" + playerPool.size()
                 + " activeNpc=" + npcPool.size()
                 + " player=" + playerA
                 + " npc=" + npcA
                 + " authority=" + PortraitSemanticAssetAuthority.VERSION);
+    }
+
+    private static void assertPartition(
+            List<PortraitSemanticAssetAuthority.PartitionRecord> records,
+            String key,
+            boolean restricted,
+            boolean nameLocked
+    ) {
+        var matching = records.stream()
+                .filter(record -> record.partitionKey().equals(key))
+                .toList();
+        if (matching.isEmpty()) {
+            throw new AssertionError("missing synthesized portrait partition " + key);
+        }
+        for (var record : matching) {
+            if (record.nonhumanOrRestricted() != restricted) {
+                throw new AssertionError(key + " restricted mismatch: " + record.compactLine());
+            }
+            if (record.nameLockedOnly() != nameLocked) {
+                throw new AssertionError(key + " name-lock mismatch: " + record.compactLine());
+            }
+        }
     }
 
     private static void assertOrdinaryPool(
