@@ -67,6 +67,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02SemanticCompiledIndexBoundarySmoke.main(args);
         Milestone02SemanticAssetMigrationCoverageSmoke.main(args);
         PortraitSemanticPartitionResolverSmoke.main(args);
+        PortraitSemanticNpcIdentityResolverSmoke.main(args);
         TileSemanticRuntimeRegistrySmoke.main(args);
         Milestone03ProductionQualityTraceSmoke.main(args);
         Milestone03QualityProvenanceSmoke.main(args);
