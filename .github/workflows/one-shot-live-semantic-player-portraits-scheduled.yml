@@ -1,10 +1,8 @@
-name: One Shot Immediate Live Semantic Player Portraits
+name: One Shot Live Semantic Player Portraits
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - '.github/workflows/one-shot-live-semantic-player-portraits-scheduled.yml'
+  issues:
+    types: [opened]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +14,7 @@ concurrency:
 
 jobs:
   migrate:
+    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] Run live semantic player portrait migration'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +46,10 @@ jobs:
           text = text.replace(overview_call, 'PortraitSemanticRuntimeBridge.playerPortrait(images, c)')
           if 'images.getPlayerPortrait(' in text:
               raise SystemExit('A direct live player portrait call remains.')
+          if text.count('PortraitSemanticRuntimeBridge.playerPortrait(images, active)') != 2:
+              raise SystemExit('Expected two active-player semantic bridge calls.')
+          if text.count('PortraitSemanticRuntimeBridge.playerPortrait(images, c)') != 1:
+              raise SystemExit('Expected one character-overview semantic bridge call.')
           path.write_text(text, encoding='utf-8')
           PY
 
