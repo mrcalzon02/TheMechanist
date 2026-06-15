@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.5-cell-semantic-items";
+    static final String VERSION = "semantic-render-asset-resolver-0.6-trade-goods";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -88,13 +88,8 @@ final class SemanticRenderAssetResolver {
             return new Resolution(intent, null, reason);
         }
 
-        boolean found() {
-            return asset != null;
-        }
-
-        String assetIdOrMissing() {
-            return asset == null ? "<missing>" : asset.id();
-        }
+        boolean found() { return asset != null; }
+        String assetIdOrMissing() { return asset == null ? "<missing>" : asset.id(); }
     }
 
     private SemanticRenderAssetResolver() {}
@@ -158,7 +153,7 @@ final class SemanticRenderAssetResolver {
             case DRUG_ITEM_ICON -> itemIcon(asset) && themed(haystack, "drug", "narcotic", "stimulant", "dose");
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "food", "ration", "meal", "water");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
-            case TRADE_GOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter");
+            case TRADE_GOOD_ITEM_ICON -> tradeGoodIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter", "cargo", "merchandise", "wares") && !themed(haystack, "junk", "scrap heap", "debris");
             case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "religious", "relic", "prayer", "holy object", "devotional");
             case DATA_DEVICE_ITEM_ICON -> dataDeviceIcon(asset) && themed(haystack, "data", "device", "datapad", "terminal", "chip", "knowledge device", "knowledge devices", "skill device") && !themed(haystack, "system control", "system button", "interface control", "rondel");
         };
@@ -192,6 +187,7 @@ final class SemanticRenderAssetResolver {
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight")) score += 10;
         if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "cell rule", "tool weapon", "powered tool", "maintenance tools")) score += 10;
+        if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "objects goods", "/goods_", "trade goods", "commodity")) score += 10;
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON && contains(h, "knowledge devices", "data device", "datapad")) score += 10;
         if (intent == RenderIntent.DOOR_OPEN || intent == RenderIntent.DOOR_CLOSED) {
             if (contains(h, "variant")) score += 3;
@@ -209,6 +205,7 @@ final class SemanticRenderAssetResolver {
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "weapon")); }
     private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "armor", "armour", "clothing")); }
     private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON; }
+    private static boolean tradeGoodIcon(AssetMetadata asset) { return itemIcon(asset) || asset.type() == AssetType.OBJECT; }
     private static boolean dataDeviceIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.UI_ICON; }
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE || asset.type() == AssetType.FLOOR_TILE || asset.type() == AssetType.CORRIDOR_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
