@@ -12,7 +12,7 @@ import java.util.Optional;
  * restricted and name-locked permissions explicit for the partition resolver.
  */
 final class PortraitSemanticNpcIdentityResolver {
-    static final String VERSION = "portrait-semantic-npc-identity-0.1";
+    static final String VERSION = "portrait-semantic-npc-identity-0.2";
 
     record Context(
             String nameLockedProfileKey,
@@ -78,11 +78,11 @@ final class PortraitSemanticNpcIdentityResolver {
                     true));
         }
 
-        String roleText = normalize(context.creatureKind() + " "
-                + context.animalProfileId() + " "
-                + context.role() + " "
-                + context.name());
-        String faction = normalize(context.factionKey());
+        String roleText = normalize(safe(context.creatureKind()) + " "
+                + safe(context.animalProfileId()) + " "
+                + safe(context.role()) + " "
+                + safe(context.name()));
+        String faction = PortraitSemanticPartitionResolver.canonicalPartitionKey(context.factionKey());
 
         if (containsAny(roleText, "servant", "chef", "butler", "household",
                 "laundry", "retainer", "pantry")) {
@@ -182,11 +182,11 @@ final class PortraitSemanticNpcIdentityResolver {
     }
 
     private static String stableIdentity(Context context) {
-        return normalize(context.name() + "|"
-                + context.role() + "|"
-                + context.creatureKind() + "|"
-                + context.animalProfileId() + "|"
-                + context.factionKey() + "|"
+        return normalize(safe(context.name()) + "|"
+                + safe(context.role()) + "|"
+                + safe(context.creatureKind()) + "|"
+                + safe(context.animalProfileId()) + "|"
+                + safe(context.factionKey()) + "|"
                 + context.portraitIndex());
     }
 
