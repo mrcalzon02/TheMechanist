@@ -23,14 +23,24 @@ import java.util.Set;
 /**
  * Semantic authority for portrait/entity-art pools.
  *
- * <p>The partition index remains the authored source of truth. Runtime selection
- * validates every record against the active registry, separates ordinary player
- * and NPC pools, excludes name-locked and restricted entries from ordinary use,
- * and chooses deterministically from an explicit persistent identity key.</p>
+ * <p>An authored partition index remains the preferred source of truth. When
+ * that optional index is absent from a source checkout or packaged client, the
+ * authority synthesizes equivalent partition records from active-registry
+ * PORTRAIT metadata. Runtime selection therefore fails closed by asset type and
+ * stable ID instead of silently returning an empty portrait system.</p>
  */
 public final class PortraitSemanticAssetAuthority {
-    public static final String VERSION = "0.9.10kd-runtime-portrait-partitions";
+    public static final String VERSION = "0.9.10ke-runtime-portrait-synthesis";
     public static final String DEFAULT_PARTITION_INDEX = "assets/indexes/semantic_portrait_entity_partitions.tsv";
+
+    private static final List<String> PARTITION_INDEX_CANDIDATES = List.of(
+            DEFAULT_PARTITION_INDEX,
+            "PACKAGE_client/" + DEFAULT_PARTITION_INDEX,
+            "client/" + DEFAULT_PARTITION_INDEX,
+            "packages/client/" + DEFAULT_PARTITION_INDEX,
+            "ROOT_tools/atlas_asset_pipeline/indexes/semantic_portrait_entity_partitions.tsv",
+            "ROOT_tools/atlas_asset_pipeline/semantic_portrait_entity_partitions.tsv"
+    );
 
     private static final Set<String> SEARCH_STOPWORDS = Set.of(
             "portrait", "portraits", "sheet", "pool", "entity", "entities",
@@ -90,10 +100,22 @@ public final class PortraitSemanticAssetAuthority {
     }
 
     public static List<PartitionRecord> loadDefault(Path projectRoot) throws IOException {
-        Path root = projectRoot == null
-                ? Path.of(".").toAbsolutePath().normalize()
-                : projectRoot.toAbsolutePath().normalize();
-        return load(root.resolve(DEFAULT_PARTITION_INDEX));
+        Path root = normalizedRoot(projectRoot);
+        AssetRegistry registry = AssetRegistry.loadDefault(root);
+        return loadDefault(root, registry);
+    }
+
+    public static String partitionSource(Path projectRoot) {
+        Path root = normalizedRoot(projectRoot);
+        Optional<Path> authored = firstExistingPartitionIndex(root);
+        return authored.map(path -> root.relativize(path).toString().replace('\\', '/'))
+                .orElse("active-registry synthesis");
+    }
+
+    private static List<PartitionRecord> loadDefault(Path root, AssetRegistry registry) throws IOException {
+        Optional<Path> authored = firstExistingPartitionIndex(root);
+        if (authored.isPresent()) return load(authored.orElseThrow());
+        return synthesizeFromRegistry(registry == null ? AssetRegistry.loadDefault(root) : registry);
     }
 
     public static List<PartitionRecord> load(Path indexFile) throws IOException {
@@ -117,10 +139,7 @@ public final class PortraitSemanticAssetAuthority {
                 ));
             }
         }
-        return out.stream()
-                .sorted(Comparator.comparing(PartitionRecord::partitionKey)
-                        .thenComparing(PartitionRecord::assetId))
-                .toList();
+        return ordered(out);
     }
 
     public static Optional<PartitionRecord> find(Path projectRoot, String assetId) {
@@ -160,9 +179,7 @@ public final class PortraitSemanticAssetAuthority {
                 .toList();
     }
 
-    /**
-     * Returns the ordinary player-creation pool after active-registry validation.
-     */
+    /** Returns the ordinary player-creation pool after active-registry validation. */
     public static List<PartitionRecord> activePlayerPool(Path projectRoot, AssetRegistry registry) {
         return activeRecords(projectRoot, registry).stream()
                 .filter(PartitionRecord::playerCreationAllowed)
@@ -171,9 +188,7 @@ public final class PortraitSemanticAssetAuthority {
                 .toList();
     }
 
-    /**
-     * Returns the ordinary NPC pool after active-registry validation.
-     */
+    /** Returns the ordinary NPC pool after active-registry validation. */
     public static List<PartitionRecord> activeNpcPool(Path projectRoot, AssetRegistry registry) {
         return activeRecords(projectRoot, registry).stream()
                 .filter(PartitionRecord::npcPoolAllowed)
@@ -182,12 +197,6 @@ public final class PortraitSemanticAssetAuthority {
                 .toList();
     }
 
-    /**
-     * Deterministically selects a player portrait using the existing persistent
-     * portrait sheet/index identity. A matching partition is preferred; when an
-     * old sheet label has no semantic match, the complete ordinary player pool
-     * is used without crossing into restricted or name-locked records.
-     */
     public static Optional<String> runtimePlayerAssetId(
             Path projectRoot,
             AssetRegistry registry,
@@ -201,12 +210,6 @@ public final class PortraitSemanticAssetAuthority {
         return deterministicAsset(pool, identityKey);
     }
 
-    /**
-     * Deterministically selects an NPC portrait from an explicit persistent
-     * identity key. Callers must not use coordinates or transient object identity.
-     * Name-locked records are considered only when their metadata positively
-     * matches the supplied identity; otherwise the ordinary NPC pool is used.
-     */
     public static Optional<String> runtimeNpcAssetId(
             Path projectRoot,
             AssetRegistry registry,
@@ -231,11 +234,9 @@ public final class PortraitSemanticAssetAuthority {
     }
 
     public static PartitionAudit audit(Path projectRoot, AssetRegistry registry) throws IOException {
-        Path root = projectRoot == null
-                ? Path.of(".").toAbsolutePath().normalize()
-                : projectRoot.toAbsolutePath().normalize();
+        Path root = normalizedRoot(projectRoot);
         AssetRegistry safeRegistry = registry == null ? AssetRegistry.loadDefault(root) : registry;
-        List<PartitionRecord> records = loadDefault(root);
+        List<PartitionRecord> records = loadDefault(root, safeRegistry);
         ArrayList<String> errors = new ArrayList<>();
         Map<String, PartitionRecord> byId = new LinkedHashMap<>();
         Map<String, Integer> partitions = new LinkedHashMap<>();
@@ -279,7 +280,7 @@ public final class PortraitSemanticAssetAuthority {
             }
         }
 
-        if (records.isEmpty()) errors.add("Portrait/entity partition index is empty");
+        if (records.isEmpty()) errors.add("Portrait/entity partition source is empty");
         if (player <= 0) errors.add("No portrait entries marked as player-creation allowed");
         if (npc <= 0) errors.add("No portrait entries marked as NPC-pool allowed");
         if (locked <= 0) errors.add("No name-locked portrait entries found");
@@ -310,19 +311,16 @@ public final class PortraitSemanticAssetAuthority {
         lines.add("Ordinary NPC pool: " + yesNo(record.npcPoolAllowed()));
         lines.add("Name-locked only: " + yesNo(record.nameLockedOnly()));
         lines.add("Non-human/restricted: " + yesNo(record.nonhumanOrRestricted()));
+        lines.add("Partition source: " + partitionSource(projectRoot));
         if (!record.notes().isBlank()) lines.add("Partition notes: " + record.notes());
         return lines;
     }
 
     private static List<PartitionRecord> activeRecords(Path projectRoot, AssetRegistry registry) {
         try {
-            Path root = projectRoot == null
-                    ? Path.of(".").toAbsolutePath().normalize()
-                    : projectRoot.toAbsolutePath().normalize();
-            AssetRegistry safeRegistry = registry == null
-                    ? AssetRegistry.loadDefault(root)
-                    : registry;
-            return loadDefault(root).stream()
+            Path root = normalizedRoot(projectRoot);
+            AssetRegistry safeRegistry = registry == null ? AssetRegistry.loadDefault(root) : registry;
+            return loadDefault(root, safeRegistry).stream()
                     .filter(record -> safeRegistry.find(record.assetId())
                             .filter(metadata -> metadata.type() == AssetType.PORTRAIT)
                             .isPresent())
@@ -332,10 +330,106 @@ public final class PortraitSemanticAssetAuthority {
         }
     }
 
-    private static List<PartitionRecord> partitionMatches(
-            List<PartitionRecord> records,
-            String hint
-    ) {
+    private static List<PartitionRecord> synthesizeFromRegistry(AssetRegistry registry) {
+        if (registry == null) return List.of();
+        ArrayList<PartitionRecord> out = new ArrayList<>();
+        for (AssetMetadata asset : registry.byType(AssetType.PORTRAIT)) {
+            String haystack = normalizeSearchText(asset.pathOrUri() + " "
+                    + asset.name() + " " + asset.semanticDescription());
+            String partition = synthesizedPartitionKey(haystack);
+            boolean nameLocked = partition.equals("name_locked_profile");
+            boolean restricted = synthesizedRestricted(partition, haystack);
+            boolean playerAllowed = synthesizedPlayerAllowed(partition, haystack)
+                    && !nameLocked && !restricted;
+            boolean npcAllowed = !nameLocked;
+            out.add(new PartitionRecord(
+                    asset.id(),
+                    partition,
+                    partitionLabel(partition),
+                    playerAllowed,
+                    npcAllowed,
+                    nameLocked,
+                    restricted,
+                    asset.pathOrUri(),
+                    "Synthesized from active semantic registry metadata; authored portrait partition TSV unavailable."
+            ));
+        }
+        return ordered(out);
+    }
+
+    private static String synthesizedPartitionKey(String haystack) {
+        if (containsAny(haystack, "specialprofiles", "special profiles", "name locked", "name locked profile", "celebrity")) {
+            return "name_locked_profile";
+        }
+        if (containsAny(haystack, "rogue automata", "servitor", "automata", "robot portrait", "machine person")) {
+            return "rogue_automata_servitors";
+        }
+        if (containsAny(haystack, "farm beasts", "farm beast", "livestock", "hog portrait", "goat portrait", "fowl portrait")) {
+            return "farm_beasts";
+        }
+        if (containsAny(haystack, "exotic pets", "swamp creatures", "sump creature", "eel portrait", "leech portrait")) {
+            return "exotic_pets_swamp_creatures";
+        }
+        if (containsAny(haystack, "pets", "pet portrait", "kennel", "mastiff", "hound portrait", "cat portrait", "rat portrait")) {
+            return "pets";
+        }
+        if (containsAny(haystack, "servants butlers and chefs", "servant", "butler", "chef portrait", "household staff")) {
+            return "servants_butlers_and_chefs";
+        }
+        if (containsAny(haystack, "schola children", "child portrait", "children portrait")) return "schola_children";
+        if (containsAny(haystack, "sisters hospital", "sororitas", "hospital sisters")) return "sisters_hospital";
+        if (containsAny(haystack, "enforcer arebites", "arbites", "enforcer portrait")) return "enforcer_arebites";
+        if (containsAny(haystack, "pdf military", "imperial guard", "military portrait")) return "pdf_military";
+        if (containsAny(haystack, "ecclesiarch", "ministorum", "priest portrait")) return "ecclesiarch";
+        if (containsAny(haystack, "mechanicus", "tech priest", "magos portrait")) return "mechanicus";
+        if (containsAny(haystack, "genestealer cult", "genestealer")) return "genestealer_cult";
+        if (containsAny(haystack, "cultists", "cultist portrait")) return "cultists";
+        if (containsAny(haystack, "heretics", "heretic portrait")) return "heretics";
+        if (containsAny(haystack, "mutants", "mutant portrait")) return "mutants";
+        if (containsAny(haystack, "gangers", "ganger portrait", "gang portrait")) return "gangers";
+        if (containsAny(haystack, "nobles", "noble portrait", "noble house")) return "nobles";
+        if (containsAny(haystack, "humans8x8", "baseline human", "base human", "player human",
+                "human profiles", "administratum", "ordinary human")) {
+            return "administratum";
+        }
+        return "unclassified_humanoid";
+    }
+
+    private static boolean synthesizedPlayerAllowed(String partition, String haystack) {
+        if (!partition.equals("administratum")) return false;
+        return containsAny(haystack, "humans8x8", "baseline human", "base human", "player human",
+                "human profiles", "administratum", "ordinary human");
+    }
+
+    private static boolean synthesizedRestricted(String partition, String haystack) {
+        return switch (partition) {
+            case "rogue_automata_servitors", "pets", "farm_beasts",
+                    "exotic_pets_swamp_creatures", "mutants", "genestealer_cult" -> true;
+            default -> containsAny(haystack, "nonhuman", "non human", "restricted portrait", "beast portrait");
+        };
+    }
+
+    private static String partitionLabel(String partition) {
+        String safe = partition == null || partition.isBlank() ? "unclassified_humanoid" : partition;
+        String[] words = safe.replace('_', ' ').split(" ");
+        StringBuilder out = new StringBuilder();
+        for (String word : words) {
+            if (word.isBlank()) continue;
+            if (!out.isEmpty()) out.append(' ');
+            out.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return out.toString();
+    }
+
+    private static Optional<Path> firstExistingPartitionIndex(Path root) {
+        for (String candidate : PARTITION_INDEX_CANDIDATES) {
+            Path path = root.resolve(candidate).normalize();
+            if (Files.isRegularFile(path)) return Optional.of(path);
+        }
+        return Optional.empty();
+    }
+
+    private static List<PartitionRecord> partitionMatches(List<PartitionRecord> records, String hint) {
         if (records == null || records.isEmpty()) return List.of();
         List<String> tokens = searchTokens(hint);
         if (tokens.isEmpty()) return List.of();
@@ -345,10 +439,7 @@ public final class PortraitSemanticAssetAuthority {
                 .toList();
     }
 
-    private static List<PartitionRecord> bestIdentityMatches(
-            List<PartitionRecord> records,
-            String identityKey
-    ) {
+    private static List<PartitionRecord> bestIdentityMatches(List<PartitionRecord> records, String identityKey) {
         if (records == null || records.isEmpty()) return List.of();
         List<String> tokens = searchTokens(identityKey);
         if (tokens.isEmpty()) return List.of();
@@ -371,18 +462,18 @@ public final class PortraitSemanticAssetAuthority {
         return List.copyOf(matches);
     }
 
-    private static Optional<String> deterministicAsset(
-            List<PartitionRecord> records,
-            String persistentIdentityKey
-    ) {
+    private static Optional<String> deterministicAsset(List<PartitionRecord> records, String persistentIdentityKey) {
         if (records == null || records.isEmpty()) return Optional.empty();
-        List<PartitionRecord> ordered = records.stream()
+        List<PartitionRecord> ordered = ordered(records);
+        int index = Math.floorMod(Objects.hash(normalizeSearchText(persistentIdentityKey)), ordered.size());
+        return Optional.of(ordered.get(index).assetId());
+    }
+
+    private static List<PartitionRecord> ordered(List<PartitionRecord> records) {
+        return records.stream()
                 .sorted(Comparator.comparing(PartitionRecord::partitionKey)
                         .thenComparing(PartitionRecord::assetId))
                 .toList();
-        int index = Math.floorMod(Objects.hash(normalizeSearchText(persistentIdentityKey)),
-                ordered.size());
-        return Optional.of(ordered.get(index).assetId());
     }
 
     private static String partitionHaystack(PartitionRecord record) {
@@ -399,6 +490,21 @@ public final class PortraitSemanticAssetAuthority {
             tokens.add(token);
         }
         return List.copyOf(tokens);
+    }
+
+    private static boolean containsAny(String text, String... alternatives) {
+        String normalized = normalizeSearchText(text);
+        for (String alternative : alternatives) {
+            String needle = normalizeSearchText(alternative);
+            if (!needle.isBlank() && normalized.contains(needle)) return true;
+        }
+        return false;
+    }
+
+    private static Path normalizedRoot(Path projectRoot) {
+        return projectRoot == null
+                ? Path.of(".").toAbsolutePath().normalize()
+                : projectRoot.toAbsolutePath().normalize();
     }
 
     private static String normalizeSearchText(String value) {
