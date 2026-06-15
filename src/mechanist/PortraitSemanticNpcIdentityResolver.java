@@ -12,7 +12,7 @@ import java.util.Optional;
  * restricted and name-locked permissions explicit for the partition resolver.
  */
 final class PortraitSemanticNpcIdentityResolver {
-    static final String VERSION = "portrait-semantic-npc-identity-0.2";
+    static final String VERSION = "portrait-semantic-npc-identity-0.3";
 
     record Context(
             String nameLockedProfileKey,
@@ -40,14 +40,19 @@ final class PortraitSemanticNpcIdentityResolver {
             AssetRegistry registry,
             NpcEntity npc
     ) {
-        return selectionFor(npc).flatMap(selection ->
-                PortraitSemanticPartitionResolver.assetId(
-                        projectRoot,
-                        registry,
-                        selection.partitionKey(),
-                        selection.stableIdentity(),
-                        selection.allowRestricted(),
-                        selection.allowNameLocked()));
+        Optional<Selection> selected = selectionFor(npc);
+        if (selected.isEmpty()) return Optional.empty();
+        Selection selection = selected.orElseThrow();
+        if (selection.allowNameLocked()) {
+            return nameLockedAssetId(projectRoot, registry, selection);
+        }
+        return PortraitSemanticPartitionResolver.assetId(
+                projectRoot,
+                registry,
+                selection.partitionKey(),
+                selection.stableIdentity(),
+                selection.allowRestricted(),
+                false);
     }
 
     static Optional<Selection> selectionFor(NpcEntity npc) {
@@ -73,7 +78,7 @@ final class PortraitSemanticNpcIdentityResolver {
         if (!lockedKey.isBlank()) {
             return Optional.of(new Selection(
                     "name_locked_profile",
-                    "name-locked|" + normalize(lockedKey),
+                    lockedKey,
                     false,
                     true));
         }
@@ -165,6 +170,24 @@ final class PortraitSemanticNpcIdentityResolver {
                 "administratum",
                 "nobles",
                 "gangers"), identity);
+    }
+
+    private static Optional<String> nameLockedAssetId(
+            Path projectRoot,
+            AssetRegistry registry,
+            Selection selection
+    ) {
+        Path root = projectRoot == null ? Path.of(".") : projectRoot;
+        return PortraitSemanticAssetAuthority.runtimeNpcAssetId(
+                        root,
+                        registry,
+                        selection.stableIdentity())
+                .filter(assetId -> PortraitSemanticAssetAuthority.find(root, assetId)
+                        .filter(PortraitSemanticAssetAuthority.PartitionRecord::nameLockedOnly)
+                        .filter(record -> selection.partitionKey().equals(
+                                PortraitSemanticPartitionResolver.canonicalPartitionKey(
+                                        record.partitionKey())))
+                        .isPresent());
     }
 
     private static Optional<Selection> ordinary(String partitionKey, String identity) {
