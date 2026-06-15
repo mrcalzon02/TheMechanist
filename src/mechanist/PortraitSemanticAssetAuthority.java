@@ -30,7 +30,7 @@ import java.util.Set;
  * stable ID instead of silently returning an empty portrait system.</p>
  */
 public final class PortraitSemanticAssetAuthority {
-    public static final String VERSION = "0.9.10ke-runtime-portrait-synthesis";
+    public static final String VERSION = "0.9.10kf-runtime-portrait-families";
     public static final String DEFAULT_PARTITION_INDEX = "assets/indexes/semantic_portrait_entity_partitions.tsv";
 
     private static final List<String> PARTITION_INDEX_CANDIDATES = List.of(
@@ -179,7 +179,6 @@ public final class PortraitSemanticAssetAuthority {
                 .toList();
     }
 
-    /** Returns the ordinary player-creation pool after active-registry validation. */
     public static List<PartitionRecord> activePlayerPool(Path projectRoot, AssetRegistry registry) {
         return activeRecords(projectRoot, registry).stream()
                 .filter(PartitionRecord::playerCreationAllowed)
@@ -188,7 +187,6 @@ public final class PortraitSemanticAssetAuthority {
                 .toList();
     }
 
-    /** Returns the ordinary NPC pool after active-registry validation. */
     public static List<PartitionRecord> activeNpcPool(Path projectRoot, AssetRegistry registry) {
         return activeRecords(projectRoot, registry).stream()
                 .filter(PartitionRecord::npcPoolAllowed)
@@ -285,15 +283,9 @@ public final class PortraitSemanticAssetAuthority {
         if (npc <= 0) errors.add("No portrait entries marked as NPC-pool allowed");
         if (locked <= 0) errors.add("No name-locked portrait entries found");
         if (restricted <= 0) errors.add("No restricted/nonhuman portrait entries found");
-        if (!partitions.containsKey("name_locked_profile")) {
-            errors.add("Missing name_locked_profile partition");
-        }
-        if (!partitions.containsKey("administratum")) {
-            errors.add("Missing administratum/baseline human portrait partition");
-        }
-        if (!partitions.containsKey("rogue_automata_servitors")) {
-            errors.add("Missing servitor/automata portrait partition");
-        }
+        if (!partitions.containsKey("name_locked_profile")) errors.add("Missing name_locked_profile partition");
+        if (!partitions.containsKey("administratum")) errors.add("Missing administratum/baseline human portrait partition");
+        if (!partitions.containsKey("rogue_automata_servitors")) errors.add("Missing servitor/automata portrait partition");
         if (!partitions.containsKey("pets")) errors.add("Missing pets portrait partition");
 
         return new PartitionAudit(records.size(), partitions.size(), player, npc,
@@ -343,14 +335,8 @@ public final class PortraitSemanticAssetAuthority {
                     && !nameLocked && !restricted;
             boolean npcAllowed = !nameLocked;
             out.add(new PartitionRecord(
-                    asset.id(),
-                    partition,
-                    partitionLabel(partition),
-                    playerAllowed,
-                    npcAllowed,
-                    nameLocked,
-                    restricted,
-                    asset.pathOrUri(),
+                    asset.id(), partition, partitionLabel(partition), playerAllowed,
+                    npcAllowed, nameLocked, restricted, asset.pathOrUri(),
                     "Synthesized from active semantic registry metadata; authored portrait partition TSV unavailable."
             ));
         }
@@ -373,14 +359,17 @@ public final class PortraitSemanticAssetAuthority {
         if (containsAny(haystack, "pets", "pet portrait", "kennel", "mastiff", "hound portrait", "cat portrait", "rat portrait")) {
             return "pets";
         }
-        if (containsAny(haystack, "servants butlers and chefs", "servant", "butler", "chef portrait", "household staff")) {
+        if (containsAny(haystack, "flesh cult", "flesh biotech", "organic cult")) return "flesh_cult";
+        if (containsAny(haystack, "undyinglords", "undying lords")) return "undying_lords";
+        if (containsAny(haystack, "servants butlers and chefs", "servants butlers chefs", "servant", "butler", "chef portrait", "household staff")) {
             return "servants_butlers_and_chefs";
         }
         if (containsAny(haystack, "schola children", "child portrait", "children portrait")) return "schola_children";
         if (containsAny(haystack, "sisters hospital", "sororitas", "hospital sisters")) return "sisters_hospital";
+        if (containsAny(haystack, "hospital", "medical portrait")) return "hospital";
         if (containsAny(haystack, "enforcer arebites", "arbites", "enforcer portrait")) return "enforcer_arebites";
         if (containsAny(haystack, "pdf military", "imperial guard", "military portrait")) return "pdf_military";
-        if (containsAny(haystack, "ecclesiarch", "ministorum", "priest portrait")) return "ecclesiarch";
+        if (containsAny(haystack, "ecclesiarch", "ministorum", "priest portrait", "clerics", "clergy")) return "ecclesiarch";
         if (containsAny(haystack, "mechanicus", "tech priest", "magos portrait")) return "mechanicus";
         if (containsAny(haystack, "genestealer cult", "genestealer")) return "genestealer_cult";
         if (containsAny(haystack, "cultists", "cultist portrait")) return "cultists";
@@ -389,7 +378,7 @@ public final class PortraitSemanticAssetAuthority {
         if (containsAny(haystack, "gangers", "ganger portrait", "gang portrait")) return "gangers";
         if (containsAny(haystack, "nobles", "noble portrait", "noble house")) return "nobles";
         if (containsAny(haystack, "humans8x8", "baseline human", "base human", "player human",
-                "human profiles", "administratum", "ordinary human")) {
+                "human profiles", "administratum", "ordinary human", "clerks", "clerk portrait")) {
             return "administratum";
         }
         return "unclassified_humanoid";
@@ -398,13 +387,14 @@ public final class PortraitSemanticAssetAuthority {
     private static boolean synthesizedPlayerAllowed(String partition, String haystack) {
         if (!partition.equals("administratum")) return false;
         return containsAny(haystack, "humans8x8", "baseline human", "base human", "player human",
-                "human profiles", "administratum", "ordinary human");
+                "human profiles", "ordinary human");
     }
 
     private static boolean synthesizedRestricted(String partition, String haystack) {
         return switch (partition) {
             case "rogue_automata_servitors", "pets", "farm_beasts",
-                    "exotic_pets_swamp_creatures", "mutants", "genestealer_cult" -> true;
+                    "exotic_pets_swamp_creatures", "mutants", "genestealer_cult",
+                    "flesh_cult", "undying_lords" -> true;
             default -> containsAny(haystack, "nonhuman", "non human", "restricted portrait", "beast portrait");
         };
     }
@@ -415,7 +405,7 @@ public final class PortraitSemanticAssetAuthority {
         StringBuilder out = new StringBuilder();
         for (String word : words) {
             if (word.isBlank()) continue;
-            if (!out.isEmpty()) out.append(' ');
+            if (out.length() > 0) out.append(' ');
             out.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
         }
         return out.toString();
@@ -434,8 +424,7 @@ public final class PortraitSemanticAssetAuthority {
         List<String> tokens = searchTokens(hint);
         if (tokens.isEmpty()) return List.of();
         return records.stream()
-                .filter(record -> tokens.stream().anyMatch(
-                        token -> partitionHaystack(record).contains(token)))
+                .filter(record -> tokens.stream().anyMatch(token -> partitionHaystack(record).contains(token)))
                 .toList();
     }
 
@@ -443,15 +432,12 @@ public final class PortraitSemanticAssetAuthority {
         if (records == null || records.isEmpty()) return List.of();
         List<String> tokens = searchTokens(identityKey);
         if (tokens.isEmpty()) return List.of();
-
         int bestScore = 0;
         ArrayList<PartitionRecord> matches = new ArrayList<>();
         for (PartitionRecord record : records) {
             String haystack = partitionHaystack(record);
             int score = 0;
-            for (String token : tokens) {
-                if (haystack.contains(token)) score += Math.max(1, token.length());
-            }
+            for (String token : tokens) if (haystack.contains(token)) score += Math.max(1, token.length());
             if (score <= 0) continue;
             if (score > bestScore) {
                 bestScore = score;
@@ -477,10 +463,8 @@ public final class PortraitSemanticAssetAuthority {
     }
 
     private static String partitionHaystack(PartitionRecord record) {
-        return normalizeSearchText(record.partitionKey() + " "
-                + record.partitionLabel() + " "
-                + record.registryPath() + " "
-                + record.notes());
+        return normalizeSearchText(record.partitionKey() + " " + record.partitionLabel() + " "
+                + record.registryPath() + " " + record.notes());
     }
 
     private static List<String> searchTokens(String value) {
@@ -525,16 +509,12 @@ public final class PortraitSemanticAssetAuthority {
 
     private static String normalizeAssetId(String raw) {
         String id = requireText(raw, "asset ID").toUpperCase(Locale.ROOT);
-        if (id.length() != 8) {
-            throw new IllegalArgumentException("asset ID must be exactly 8 characters: " + id);
-        }
+        if (id.length() != 8) throw new IllegalArgumentException("asset ID must be exactly 8 characters: " + id);
         return id;
     }
 
     private static String requireText(String value, String label) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("blank " + label);
-        }
+        if (value == null || value.isBlank()) throw new IllegalArgumentException("blank " + label);
         return value.trim();
     }
 
