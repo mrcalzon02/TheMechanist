@@ -1,8 +1,11 @@
-name: One Shot Scheduled Live Semantic Player Portraits
+name: One Shot Immediate Live Semantic Player Portraits
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-live-semantic-player-portraits-scheduled.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
