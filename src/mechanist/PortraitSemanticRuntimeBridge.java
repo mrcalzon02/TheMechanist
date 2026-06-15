@@ -18,7 +18,7 @@ import java.util.Optional;
  * loaders until their semantic partitions receive dedicated runtime rules.</p>
  */
 final class PortraitSemanticRuntimeBridge {
-    static final String VERSION = "portrait-semantic-runtime-bridge-0.1";
+    static final String VERSION = "portrait-semantic-runtime-bridge-0.2";
 
     private PortraitSemanticRuntimeBridge() {}
 
@@ -28,10 +28,9 @@ final class PortraitSemanticRuntimeBridge {
             int portraitIndex
     ) {
         if (media == null) return null;
-        Optional<String> semanticId = PortraitSemanticAssetAuthority.runtimePlayerAssetId(
+        Optional<String> semanticId = PortraitSemanticIdentityResolver.playerAssetId(
                 Path.of("."),
                 AssetManager.registry(),
-                "player-baseline-human-sheet-" + portraitSheet,
                 portraitIndex
         );
         if (semanticId.isPresent()) {
