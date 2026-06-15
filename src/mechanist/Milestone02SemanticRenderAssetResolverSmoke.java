@@ -57,6 +57,36 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         if (SemanticRenderAssetResolver.canUse(asset("NEG-0005", AssetType.ITEM_ICON, "Relic", "assets/items/relic.png", "religious relic icon"), SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON)) throw new AssertionError("weapon item resolver accepted religious object icon");
         if (SemanticRenderAssetResolver.canUse(asset("NEG-0006", AssetType.FLOOR_TILE, "Sewer Market Floor", "assets/tiles/sewer/market.png", "sewer market floor"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR)) throw new AssertionError("market floor resolver accepted sewer-themed market collision");
 
+        AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
+                "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
+                "cell rule weapon tool weapon shovel spade maintenance tool");
+        AssetMetadata ordinaryRifle = asset("CEL-0002", AssetType.WEAPON_ICON,
+                "Autogun Rifle", "assets/items/weapons_2_r03c03.png",
+                "cell rule ranged weapon firearm rifle carbine autogun");
+        AssetMetadata knowledgeDevice = asset("CEL-0003", AssetType.UI_ICON,
+                "Knowledge Device", "assets/items/knowledge_devices_r01c01.png",
+                "knowledge skill devices device equipment item inventory");
+        AssetMetadata systemButton = asset("CEL-0004", AssetType.UI_ICON,
+                "System Button", "assets/system/button_r01c01.png",
+                "system control interface control rondel button");
+
+        if (!SemanticRenderAssetResolver.canUse(atlasTool,
+                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)) {
+            throw new AssertionError("tool resolver rejected a weapon-atlas cell explicitly described as a tool");
+        }
+        if (SemanticRenderAssetResolver.canUse(ordinaryRifle,
+                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)) {
+            throw new AssertionError("tool resolver accepted an ordinary rifle without tool semantics");
+        }
+        if (!SemanticRenderAssetResolver.canUse(knowledgeDevice,
+                SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON)) {
+            throw new AssertionError("data-device resolver rejected the UI-typed Knowledge_devices family");
+        }
+        if (SemanticRenderAssetResolver.canUse(systemButton,
+                SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON)) {
+            throw new AssertionError("data-device resolver accepted a generic system-control icon");
+        }
+
         System.out.println("Milestone02SemanticRenderAssetResolverSmoke PASS " + SemanticRenderAssetResolver.VERSION);
     }
 
