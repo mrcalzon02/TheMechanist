@@ -1,6 +1,10 @@
 name: One Shot Live Semantic Player Portraits
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ROOT_docs/.noop'
   issues:
     types: [opened, edited]
   workflow_dispatch:
@@ -14,7 +18,7 @@ concurrency:
 
 jobs:
   migrate:
-    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] Run live semantic player portrait migration'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] Run live semantic player portrait migration'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +34,11 @@ jobs:
       - name: Patch the verified live player portrait calls
         shell: bash
         run: |
-          set -euo pipefail
-          git pull --ff-only origin main
-          python - <<'PY'
+          set -o pipefail
+          {
+            set -euo pipefail
+            git pull --ff-only origin main
+            python - <<'PY'
           from pathlib import Path
           path = Path('src/mechanist/LegacyPanelContext.java')
           text = path.read_text(encoding='utf-8')
@@ -52,19 +58,23 @@ jobs:
               raise SystemExit('Expected one character-overview semantic bridge call.')
           path.write_text(text, encoding='utf-8')
           PY
+          } 2>&1 | tee /tmp/live-semantic-player-portrait-patch.log
 
       - name: Compile Java 17 and run semantic verification
         shell: bash
         run: |
-          set -euo pipefail
-          rm -rf ROOT_build/live-semantic-player-portraits
-          mkdir -p ROOT_build/live-semantic-player-portraits/classes
-          find src -name '*.java' -print > ROOT_build/live-semantic-player-portraits/sources.txt
-          javac -encoding UTF-8 --release 17 -d ROOT_build/live-semantic-player-portraits/classes @ROOT_build/live-semantic-player-portraits/sources.txt
-          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.PortraitSemanticRuntimeSmoke
-          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
-          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.Milestone02SemanticCompiledIndexBoundarySmoke
-          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.Gate3PlayerFacingTextSmokeSuite
+          set -o pipefail
+          {
+            set -euo pipefail
+            rm -rf ROOT_build/live-semantic-player-portraits
+            mkdir -p ROOT_build/live-semantic-player-portraits/classes
+            find src -name '*.java' -print > ROOT_build/live-semantic-player-portraits/sources.txt
+            javac -encoding UTF-8 --release 17 -d ROOT_build/live-semantic-player-portraits/classes @ROOT_build/live-semantic-player-portraits/sources.txt
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.PortraitSemanticRuntimeSmoke
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.Milestone02SemanticCompiledIndexBoundarySmoke
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/live-semantic-player-portraits/classes mechanist.Gate3PlayerFacingTextSmokeSuite
+          } 2>&1 | tee /tmp/live-semantic-player-portrait-verification.log
 
       - name: Commit verified migration and remove one-shot workflows
         shell: bash
@@ -87,10 +97,39 @@ Verification completed with a full Java 17 UTF-8 compilation, the portrait seman
 '''
                   history.write_text(text, encoding='utf-8')
           PY
+          rm -f ROOT_docs/.noop
+          rm -f ROOT_docs/LIVE_SEMANTIC_PLAYER_PORTRAIT_MIGRATION_FAILURE.md
           rm -f .github/workflows/one-shot-live-semantic-player-portraits.yml
           rm -f .github/workflows/one-shot-live-semantic-player-portraits-scheduled.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/mechanist/LegacyPanelContext.java ROOT_docs/DEVELOPMENT_HISTORY.md .github/workflows/one-shot-live-semantic-player-portraits.yml .github/workflows/one-shot-live-semantic-player-portraits-scheduled.yml
+          git add -A
           git commit -m 'Route live player portraits through semantic identity resolution'
+          git push origin HEAD:main
+
+      - name: Record migration failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard HEAD
+          {
+            echo '# Live Semantic Player Portrait Migration Failure'
+            echo
+            echo 'The unverified source edits were discarded. The one-shot workflow and trigger sentinel remain on `main` for repair.'
+            echo
+            echo '## Patch diagnostics'
+            echo '```text'
+            if [ -f /tmp/live-semantic-player-portrait-patch.log ]; then tail -n 160 /tmp/live-semantic-player-portrait-patch.log; else echo 'Patch log was not created.'; fi
+            echo '```'
+            echo
+            echo '## Compile and smoke diagnostics'
+            echo '```text'
+            if [ -f /tmp/live-semantic-player-portrait-verification.log ]; then tail -n 260 /tmp/live-semantic-player-portrait-verification.log; else echo 'Verification log was not created.'; fi
+            echo '```'
+          } > ROOT_docs/LIVE_SEMANTIC_PLAYER_PORTRAIT_MIGRATION_FAILURE.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_docs/LIVE_SEMANTIC_PLAYER_PORTRAIT_MIGRATION_FAILURE.md
+          git commit -m 'Record live semantic player portrait migration failure'
           git push origin HEAD:main
