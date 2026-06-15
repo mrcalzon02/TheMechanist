@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 final class PortraitSemanticRuntimeBridge {
-    static final String VERSION = "portrait-semantic-runtime-bridge-0.4";
+    static final String VERSION = "portrait-semantic-runtime-bridge-0.5";
 
     private PortraitSemanticRuntimeBridge() {}
 
@@ -37,6 +37,12 @@ final class PortraitSemanticRuntimeBridge {
     static BufferedImage npcPortrait(ImageCache media, NpcEntity npc) {
         if (media == null) return null;
         if (npc == null) return media.getNpcPortrait(0);
+        Optional<String> semanticId = PortraitSemanticNpcIdentityResolver.assetId(
+                Path.of("."), AssetManager.registry(), npc);
+        if (semanticId.isPresent()) {
+            BufferedImage semantic = media.getSemanticAssetImage(semanticId.get());
+            if (semantic != null) return semantic;
+        }
         return media.getNpcPortraitFor(npc);
     }
 }
