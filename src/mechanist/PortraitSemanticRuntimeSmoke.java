@@ -89,6 +89,19 @@ public final class PortraitSemanticRuntimeSmoke {
             throw new AssertionError("portrait index one did not map to the second path-sorted portrait");
         }
 
+        String wrappedPlayerId = PortraitSemanticIdentityResolver.playerAssetId(
+                root, registry, orderedPlayerPool.size()).orElseThrow();
+        if (!wrappedPlayerId.equals(firstPlayerId)) {
+            throw new AssertionError("portrait index equal to pool size did not wrap to the first portrait");
+        }
+
+        String negativePlayerId = PortraitSemanticIdentityResolver.playerAssetId(
+                root, registry, -1).orElseThrow();
+        String expectedNegativeId = orderedPlayerPool.get(orderedPlayerPool.size() - 1).assetId();
+        if (!negativePlayerId.equals(expectedNegativeId)) {
+            throw new AssertionError("negative portrait index did not floor-mod to the final portrait");
+        }
+
         String npcIdentity = "persistent-npc:hiver-worker:unit-4421";
         String npcA = PortraitSemanticAssetAuthority.runtimeNpcAssetId(
                 root, registry, npcIdentity).orElseThrow(
@@ -119,6 +132,8 @@ public final class PortraitSemanticRuntimeSmoke {
                 + " activePlayer=" + playerPool.size()
                 + " activeNpc=" + npcPool.size()
                 + " player=" + playerA
+                + " wrapped=" + wrappedPlayerId
+                + " negative=" + negativePlayerId
                 + " npc=" + npcA
                 + " authority=" + PortraitSemanticAssetAuthority.VERSION
                 + " identityResolver=" + PortraitSemanticIdentityResolver.VERSION);
