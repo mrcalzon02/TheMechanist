@@ -1,0 +1,114 @@
+name: One Shot Portrait Semantic Runtime V2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-portrait-semantic-runtime-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Apply checked-in portrait migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path('.github/workflows/one-shot-portrait-semantic-runtime.yml')
+          lines = source.read_text(encoding='utf-8').splitlines()
+          start = next(i for i, line in enumerate(lines) if line.strip() == "python - <<'PY'") + 1
+          end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'PY')
+          script = '\n'.join(line[10:] if line.startswith('          ') else line for line in lines[start:end]) + '\n'
+          Path('/tmp/apply_portrait_migration.py').write_text(script, encoding='utf-8')
+          PY
+          python /tmp/apply_portrait_migration.py
+
+      - name: Compile and verify with captured diagnostics
+        id: verify
+        shell: bash
+        run: |
+          set +e
+          rm -rf ROOT_build/portrait-semantic-runtime
+          mkdir -p ROOT_build/portrait-semantic-runtime/classes
+          find src -name '*.java' -print > ROOT_build/portrait-semantic-runtime/sources.txt
+          {
+            echo '=== JAVA 17 COMPILE ==='
+            javac -encoding UTF-8 --release 17 -d ROOT_build/portrait-semantic-runtime/classes @ROOT_build/portrait-semantic-runtime/sources.txt
+            compile_status=$?
+            echo "COMPILE_STATUS=$compile_status"
+            if [ "$compile_status" -ne 0 ]; then exit "$compile_status"; fi
+            echo '=== PORTRAIT RUNTIME SMOKE ==='
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/portrait-semantic-runtime/classes mechanist.PortraitSemanticRuntimeSmoke
+            portrait_status=$?
+            echo "PORTRAIT_STATUS=$portrait_status"
+            if [ "$portrait_status" -ne 0 ]; then exit "$portrait_status"; fi
+            echo '=== SEMANTIC COVERAGE SMOKE ==='
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/portrait-semantic-runtime/classes mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
+            semantic_status=$?
+            echo "SEMANTIC_STATUS=$semantic_status"
+            if [ "$semantic_status" -ne 0 ]; then exit "$semantic_status"; fi
+            echo '=== GATE 3 ==='
+            java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp ROOT_build/portrait-semantic-runtime/classes mechanist.Gate3PlayerFacingTextSmokeSuite
+            gate_status=$?
+            echo "GATE3_STATUS=$gate_status"
+            exit "$gate_status"
+          } > /tmp/portrait-verification.log 2>&1
+          status=$?
+          cat /tmp/portrait-verification.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit verified migration
+        if: steps.verify.outputs.status == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/one-shot-portrait-semantic-runtime.yml
+          rm -f .github/workflows/one-shot-portrait-semantic-runtime-v2.yml
+          rm -f ROOT_docs/PORTRAIT_MIGRATION_FAILURE.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Route portrait pools through semantic registry partitions'
+          git push origin HEAD:main
+
+      - name: Publish failure diagnostics only
+        if: steps.verify.outputs.status != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          status='${{ steps.verify.outputs.status }}'
+          git reset --hard HEAD
+          {
+            echo '# Portrait Semantic Migration Failure'
+            echo
+            echo "Verification status: $status"
+            echo
+            echo 'The unverified source changes were discarded. The temporary workflows remain on main for repair.'
+            echo
+            echo '```text'
+            tail -n 220 /tmp/portrait-verification.log
+            echo '```'
+          } > ROOT_docs/PORTRAIT_MIGRATION_FAILURE.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_docs/PORTRAIT_MIGRATION_FAILURE.txt
+          git commit -m 'Record portrait semantic migration verification failure'
+          git push origin HEAD:main
