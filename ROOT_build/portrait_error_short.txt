@@ -1,0 +1,15 @@
+migrate	Install portrait authority and migration bridge	﻿2026-06-15T00:37:06.4233636Z ##[group]Run set -euo pipefail
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:06.4234017Z ^[[36;1mset -euo pipefail^[[0m
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:06.4234546Z ^[[36;1mecho "$AUTHORITY_GZ_B64" | base64 -d | gzip -d > src/mechanist/PortraitSemanticAssetAuthority.java^[[0m
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:06.4235293Z ^[[36;1mecho "$SMOKE_GZ_B64" | base64 -d | gzip -d > src/mechanist/PortraitSemanticRuntimeRegistrySmoke.java^[[0m
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:06.4235907Z ^[[36;1mecho "$PATCH_GZ_B64" | base64 -d | gzip -d > /tmp/portrait_migrate.py^[[0m
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:06.4236306Z ^[[36;1mpython /tmp/portrait_migrate.py^[[0m
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.3987545Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.3988200Z env:
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.3988751Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.3990763Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.4118069Z ##[endgroup]
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.6103875Z base64: invalid input
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.6129921Z 
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.6130890Z gzip: stdin: invalid compressed data--format violated
+migrate	Install portrait authority and migration bridge	2026-06-15T00:37:07.6147888Z ##[error]Process completed with exit code 1.
