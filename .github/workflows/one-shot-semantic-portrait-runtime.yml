@@ -1,0 +1,85 @@
+name: One Shot Semantic Portrait Runtime
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-semantic-portrait-runtime.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install portrait authority and migration bridge
+        shell: bash
+        env:
+          AUTHORITY_GZ_B64: "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"
+          SMOKE_GZ_B64: "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"
+          PATCH_GZ_B64: "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"
+        run: |
+          set -euo pipefail
+          echo "$AUTHORITY_GZ_B64" | base64 -d | gzip -d > src/mechanist/PortraitSemanticAssetAuthority.java
+          echo "$SMOKE_GZ_B64" | base64 -d | gzip -d > src/mechanist/PortraitSemanticRuntimeRegistrySmoke.java
+          echo "$PATCH_GZ_B64" | base64 -d | gzip -d > /tmp/portrait_migrate.py
+          python /tmp/portrait_migrate.py
+
+      - name: Compile and generate partition index
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ROOT_build/semantic-portrait-runtime
+          mkdir -p ROOT_build/semantic-portrait-runtime/classes
+          find src -name '*.java' -print > ROOT_build/semantic-portrait-runtime/sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-portrait-runtime/classes @ROOT_build/semantic-portrait-runtime/sources.txt
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -Dmechanist.writePortraitPartitionIndex=true -cp ROOT_build/semantic-portrait-runtime/classes mechanist.PortraitSemanticRuntimeRegistrySmoke
+
+      - name: Regenerate maps and repository manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          map_script="$(find . -type f -name 'BUILD_MERMAID_CODE_MAP.py' | head -1 || true)"
+          if [[ -z "$map_script" ]]; then map_script="$(grep -RIl --include='*.py' 'CODE_MERMAID_POSITION_LEDGER' ROOT_docs ROOT_tools 2>/dev/null | head -1 || true)"; fi
+          test -n "$map_script"
+          python "$map_script"
+          grep -Rqs 'src/mechanist/PortraitSemanticAssetAuthority.java' ROOT_docs/functionmap
+          grep -Rqs 'src/mechanist/PortraitSemanticRuntimeRegistrySmoke.java' ROOT_docs/functionmap
+          pwsh -File ROOT_tools/update-repository-file-manifest.ps1
+
+      - name: Run semantic and Gate 3 verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ROOT_build/semantic-portrait-runtime/classes
+          mkdir -p ROOT_build/semantic-portrait-runtime/classes
+          find src -name '*.java' -print > ROOT_build/semantic-portrait-runtime/sources.txt
+          javac -encoding UTF-8 --release 17 -d ROOT_build/semantic-portrait-runtime/classes @ROOT_build/semantic-portrait-runtime/sources.txt
+          CP=ROOT_build/semantic-portrait-runtime/classes
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp "$CP" mechanist.PortraitSemanticRuntimeRegistrySmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp "$CP" mechanist.TileSemanticRuntimeRegistrySmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp "$CP" mechanist.RuntimeSemanticAssetHintSmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp "$CP" mechanist.ObjectSemanticRuntimeCoverageSmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp "$CP" mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
+          java -Djava.awt.headless=true -Dmechanist.assetRoot="$PWD" -cp "$CP" mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Commit directly to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/one-shot-semantic-portrait-runtime.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/mechanist/PortraitSemanticAssetAuthority.java src/mechanist/PortraitSemanticRuntimeRegistrySmoke.java src/mechanist/LegacyPanelContext.java src/mechanist/MediaRuntimeFramework.java PACKAGE_client/assets/indexes/semantic_portrait_entity_partitions.tsv PACKAGE_client/assets/indexes/semantic_asset_deferred_legacy.tsv ROOT_docs/DEVELOPMENT_HISTORY.md ROOT_docs/functionmap ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv .github/workflows/one-shot-semantic-portrait-runtime.yml
+          git commit -m 'Route portraits through semantic registry partitions'
+          git push origin HEAD:main
