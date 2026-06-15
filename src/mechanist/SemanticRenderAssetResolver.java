@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.4-door-infrastructure";
+    static final String VERSION = "semantic-render-asset-resolver-0.5-cell-semantic-items";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -153,14 +153,14 @@ final class SemanticRenderAssetResolver {
             case FILING_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "filing cabinet", "records cabinet", "file cabinet");
             case WEAPON_ITEM_ICON -> weaponIcon(asset) && themed(haystack, "weapon", "gun", "blade", "ammo");
             case ARMOR_ITEM_ICON -> armorIcon(asset) && themed(haystack, "armor", "armour", "helmet", "clothing");
-            case TOOL_ITEM_ICON -> itemIcon(asset) && themed(haystack, "tool", "wrench", "repair", "fabrication");
+            case TOOL_ITEM_ICON -> toolIcon(asset) && themed(haystack, "tool", "wrench", "repair", "fabrication", "shovel", "spade", "cutter", "drill", "maintenance kit", "maintenance tools");
             case MEDICAL_ITEM_ICON -> itemIcon(asset) && themed(haystack, "medical", "medkit", "bandage", "suture", "medicine");
             case DRUG_ITEM_ICON -> itemIcon(asset) && themed(haystack, "drug", "narcotic", "stimulant", "dose");
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "food", "ration", "meal", "water");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
             case TRADE_GOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter");
             case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "religious", "relic", "prayer", "holy object", "devotional");
-            case DATA_DEVICE_ITEM_ICON -> itemIcon(asset) && themed(haystack, "data", "device", "datapad", "terminal", "chip");
+            case DATA_DEVICE_ITEM_ICON -> dataDeviceIcon(asset) && themed(haystack, "data", "device", "datapad", "terminal", "chip", "knowledge device", "knowledge devices", "skill device") && !themed(haystack, "system control", "system button", "interface control", "rondel");
         };
     }
 
@@ -191,6 +191,8 @@ final class SemanticRenderAssetResolver {
         if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight")) score += 10;
+        if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "cell rule", "tool weapon", "powered tool", "maintenance tools")) score += 10;
+        if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON && contains(h, "knowledge devices", "data device", "datapad")) score += 10;
         if (intent == RenderIntent.DOOR_OPEN || intent == RenderIntent.DOOR_CLOSED) {
             if (contains(h, "variant")) score += 3;
             if (asset.type() == AssetType.FIXTURE) score += 10;
@@ -206,6 +208,8 @@ final class SemanticRenderAssetResolver {
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON || asset.type() == AssetType.ARMOR_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "weapon")); }
     private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "armor", "armour", "clothing")); }
+    private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON; }
+    private static boolean dataDeviceIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.UI_ICON; }
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE || asset.type() == AssetType.FLOOR_TILE || asset.type() == AssetType.CORRIDOR_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
     private static boolean themed(String text, String... needles) { return contains(text, needles); }
