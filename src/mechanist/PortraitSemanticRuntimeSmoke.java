@@ -57,13 +57,36 @@ public final class PortraitSemanticRuntimeSmoke {
             }
         }
 
-        String playerA = PortraitSemanticAssetAuthority.runtimePlayerAssetId(
-                root, registry, "Humans8x8", 7).orElseThrow(
+        int persistentPortraitIndex = 7;
+        var orderedPlayerPool = PortraitSemanticIdentityResolver.orderedPlayerPool(root, registry);
+        if (orderedPlayerPool.size() != playerPool.size()) {
+            throw new AssertionError("identity resolver changed player-pool membership");
+        }
+        String expectedPlayerId = orderedPlayerPool.get(
+                Math.floorMod(persistentPortraitIndex, orderedPlayerPool.size())).assetId();
+        String playerA = PortraitSemanticIdentityResolver.playerAssetId(
+                root, registry, persistentPortraitIndex).orElseThrow(
                 () -> new AssertionError("player portrait selection returned empty"));
-        String playerB = PortraitSemanticAssetAuthority.runtimePlayerAssetId(
-                root, registry, "Humans8x8", 7).orElseThrow();
+        String playerB = PortraitSemanticIdentityResolver.playerAssetId(
+                root, registry, persistentPortraitIndex).orElseThrow();
         if (!playerA.equals(playerB)) {
             throw new AssertionError("player portrait selection was not deterministic");
+        }
+        if (!playerA.equals(expectedPlayerId)) {
+            throw new AssertionError("semantic player mapping changed the established portrait index: expected "
+                    + expectedPlayerId + " but got " + playerA);
+        }
+
+        String firstPlayerId = PortraitSemanticIdentityResolver.playerAssetId(
+                root, registry, 0).orElseThrow();
+        String secondPlayerId = PortraitSemanticIdentityResolver.playerAssetId(
+                root, registry, 1).orElseThrow();
+        if (!firstPlayerId.equals(orderedPlayerPool.get(0).assetId())) {
+            throw new AssertionError("portrait index zero did not map to the first path-sorted portrait");
+        }
+        if (orderedPlayerPool.size() > 1
+                && !secondPlayerId.equals(orderedPlayerPool.get(1).assetId())) {
+            throw new AssertionError("portrait index one did not map to the second path-sorted portrait");
         }
 
         String npcIdentity = "persistent-npc:hiver-worker:unit-4421";
@@ -97,7 +120,8 @@ public final class PortraitSemanticRuntimeSmoke {
                 + " activeNpc=" + npcPool.size()
                 + " player=" + playerA
                 + " npc=" + npcA
-                + " authority=" + PortraitSemanticAssetAuthority.VERSION);
+                + " authority=" + PortraitSemanticAssetAuthority.VERSION
+                + " identityResolver=" + PortraitSemanticIdentityResolver.VERSION);
     }
 
     private static void assertPartition(
