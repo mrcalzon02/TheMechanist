@@ -1,0 +1,54 @@
+name: One Shot Portrait Patch Counts
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/one-shot-portrait-patch-counts.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Count patch anchors and commit result
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          legacy = Path('src/mechanist/LegacyPanelContext.java').read_text(encoding='utf-8')
+          media = Path('src/mechanist/MediaRuntimeFramework.java').read_text(encoding='utf-8')
+          a = '''    BufferedImage getNpcPortraitFor(Object npc) {
+                  ensureLoaded(lastOptions);
+                  if (npc instanceof NpcEntity entity) return media.getNpcPortraitFor(entity);
+                  return media.getNpcPortrait(npc == null ? 0 : Math.abs(npc.hashCode()));
+              }
+
+              BufferedImage getPlayerPortrait(Candidate candidate) {
+                  ensureLoaded(lastOptions);
+                  if (candidate == null) return media.getPortrait(ImageCache.PLAYER_BASELINE_HUMAN_POOL, 0);
+                  return media.getPortrait(candidate.portraitSheet, candidate.portraitIndex);
+              }
+          '''
+          b = '''        int[] range = portraitRangeForNpc(npc);
+                  if (range != null && range[1] > range[0] && !npcPortraitCells.isEmpty()) return npcPortraitCells.get(range[0] + Math.floorMod(npc.portraitIndex, range[1]-range[0]));
+                  return getNpcPortrait(npc.portraitIndex);
+              }
+          '''
+          out = Path('ROOT_build/portrait_patch_counts.txt')
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(f'legacy={legacy.count(a)}\nmedia={media.count(b)}\nhistory={Path("ROOT_docs/DEVELOPMENT_HISTORY.md").exists()}\n', encoding='utf-8')
+          PY
+          rm .github/workflows/one-shot-portrait-patch-counts.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_build/portrait_patch_counts.txt .github/workflows/one-shot-portrait-patch-counts.yml
+          git commit -m 'Record semantic portrait patch anchor counts'
+          git push origin HEAD:main
