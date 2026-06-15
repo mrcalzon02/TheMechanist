@@ -2,7 +2,7 @@ name: One Shot Live Semantic Player Portraits
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
   workflow_dispatch:
 
 permissions:
