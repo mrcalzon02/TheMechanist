@@ -23,6 +23,11 @@ final class Milestone03ProductionQualityTraceSmoke {
         require("Common".equals(facilityLimited.outputQuality()), "a Common facility should cap otherwise Masterwork production");
         requireContains(facilityLimited.lines(), "production facility", "facility limiter");
 
+        ProductionQualityTraceAuthority.QualityTrace operatorLimited = ProductionQualityTraceAuthority.evaluate(
+                Set.of("Masterwork Tools Patterns"), "Masterwork Tools Patterns", "Masterwork", -1, 5, 5, 2);
+        require("Common".equals(operatorLimited.outputQuality()), "a novice operator should cap otherwise Masterwork production");
+        requireContains(operatorLimited.lines(), "manual operator skill", "operator limiter");
+
         for (String line : recipeLimited.lines()) rejectLeaks(line);
         for (String line : machineLimited.lines()) rejectLeaks(line);
     }

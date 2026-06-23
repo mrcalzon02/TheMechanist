@@ -122,6 +122,7 @@ This document contains durable rules. It is not a changelog. When a pass complet
 - Rebuild the zip from the corrected project tree only after compile, jar rebuild, launcher/preflight smoke, and Java 17 classfile scan have passed.
 - Run zip integrity checks.
 - For code changes, run targeted smoke tests tied to the touched subsystem, compiled with `--release 17` when direct `javac` is used.
+- Local GUI or package boot smoke tests are audible on developer machines; prefer non-audio compile/focused smokes for boot-menu timing changes, and do not run local audible boot/package smoke more than once unless the user explicitly asks for repeated launch verification.
 - State honestly what was not manually tested.
 
 

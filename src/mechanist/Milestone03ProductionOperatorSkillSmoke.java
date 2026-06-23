@@ -11,6 +11,16 @@ final class Milestone03ProductionOperatorSkillSmoke {
         ProductionOperatorSkillAuthority.OperatorSkill fallback = ProductionOperatorSkillAuthority.evaluate(null, "Mechanics");
         require("practiced".equals(fallback.band()), "fallback operator should be practiced");
         require(fallback.defectRiskAdjust() == 3, "practiced operator should add three defect points");
+        require(fallback.qualityTier() == 3 && "Serviceable".equals(fallback.quality()),
+                "practiced operator should cap output at Serviceable");
+
+        ProductionQualityTraceAuthority.QualityTrace operatorLimited = ProductionQualityTraceAuthority.evaluate(
+                java.util.Set.of("Masterwork Tools Patterns"), "Masterwork Tools Patterns", "Masterwork",
+                -1, 5, 5, fallback.qualityTier());
+        require("Serviceable".equals(operatorLimited.outputQuality()),
+                "practiced manual operator should cap otherwise Masterwork output");
+        require(operatorLimited.limiterLabel().contains("manual operator skill"),
+                "quality trace should name the operator limiter");
 
         ProductionRecipe product = ProductionRecipe.create("Tool", Faction.HIVER, "Common", "Common Tools Patterns", "Bench");
         BaseObject machine = new BaseObject("Bench", 'w', 0, 0, 0, 0);

@@ -122,6 +122,17 @@ class ItemProvenanceRecord {
     String materialQuality = "";
     String facilityQuality = "";
     String toolQuality = "";
+    String factionMutation = "";
+    String productionPressure = "";
+    String producingRoom = "";
+    String producingFacility = "";
+    String producingMachine = "";
+    String producingOperator = "";
+    String productionMode = "";
+    String productionLegalStatus = "";
+    String productionSource = "";
+    String batchIssueTags = "";
+    String repairModificationHistory = "";
     String qualityLimiter = "";
     int turnMade = 0;
 
@@ -161,6 +172,23 @@ class ItemProvenanceRecord {
                                          ProductionOperatorSkillAuthority.OperatorSkill operatorSkill,
                                          ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge,
                                          ProductionBatchAuthority.BatchDisposition batch) {
+        return produced(pr, machine, w, turn, worker, qualityTrace, operatorSkill, knowledge, batch, null);
+    }
+    static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker,
+                                         ProductionQualityTraceAuthority.QualityTrace qualityTrace,
+                                         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill,
+                                         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge,
+                                         ProductionBatchAuthority.BatchDisposition batch,
+                                         ProductionFatiguePressureAuthority.FatiguePressure pressure) {
+        return produced(pr, machine, w, turn, worker, qualityTrace, operatorSkill, knowledge, batch, pressure, null);
+    }
+    static ItemProvenanceRecord produced(ProductionRecipe pr, BaseObject machine, World w, int turn, String worker,
+                                         ProductionQualityTraceAuthority.QualityTrace qualityTrace,
+                                         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill,
+                                         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge,
+                                         ProductionBatchAuthority.BatchDisposition batch,
+                                         ProductionFatiguePressureAuthority.FatiguePressure pressure,
+                                         ProductionLocationAuthority.ProductionLocation productionLocation) {
         String item = pr == null ? "Unknown product" : pr.outputItemName();
         Faction f = pr == null ? Faction.NONE : pr.faction;
         String m = (machine == null ? "manual workbench" : machine.name) + " operated by " + (worker == null ? "unknown worker" : worker);
@@ -171,7 +199,12 @@ class ItemProvenanceRecord {
             r.knowledgeSource = pr.knowledgeName == null ? "" : pr.knowledgeName;
             r.machineQuality = machine == null || machine.qualityName == null ? "Common" : machine.qualityName;
             r.machineCondition = MachineConditionProductionAuthority.evaluate(machine).label();
+            r.factionMutation = ProductionFactionMutationAuthority.evaluate(pr).provenanceLabel();
         }
+        r.producingMachine = ProductionMachineIdentityAuthority.evaluate(machine).provenanceLabel();
+        r.producingOperator = ProductionOperatorIdentityAuthority.provenanceLabel(worker);
+        r.productionMode = ProductionWorkforceModeAuthority.manualLabel(worker);
+        r.repairModificationHistory = MachineRepairHistoryAuthority.provenanceLabel(machine);
         if (qualityTrace != null) {
             r.outputQuality = qualityTrace.outputQuality();
             r.qualityLimiter = qualityTrace.limiterLabel();
@@ -187,6 +220,13 @@ class ItemProvenanceRecord {
         if (batch != null) {
             r.batchId = batch.batchId();
             r.defectState = batch.defectState();
+        }
+        if (pressure != null) r.productionPressure = pressure.band() + " / fatigue "
+                + pressure.currentFatigue() + "->" + pressure.projectedFatigue()
+                + " / defect +" + pressure.defectRiskAdd() + " points";
+        if (productionLocation != null) {
+            r.producingRoom = productionLocation.roomLabel();
+            r.producingFacility = productionLocation.facilityLabel();
         }
         return r;
     }
@@ -210,6 +250,17 @@ class ItemProvenanceRecord {
         r.materialQuality = prior.materialQuality;
         r.facilityQuality = prior.facilityQuality;
         r.toolQuality = prior.toolQuality;
+        r.factionMutation = prior.factionMutation;
+        r.productionPressure = prior.productionPressure;
+        r.producingRoom = prior.producingRoom;
+        r.producingFacility = prior.producingFacility;
+        r.producingMachine = prior.producingMachine;
+        r.producingOperator = prior.producingOperator;
+        r.productionMode = prior.productionMode;
+        r.productionLegalStatus = prior.productionLegalStatus;
+        r.productionSource = prior.productionSource;
+        r.batchIssueTags = prior.batchIssueTags;
+        r.repairModificationHistory = prior.repairModificationHistory;
         r.qualityLimiter = prior.qualityLimiter;
         String priorChain = prior.chain == null || prior.chain.isBlank() ? (prior.maker + " -> " + prior.route) : prior.chain;
         r.chain = priorChain + " -> " + r.route;
@@ -230,6 +281,7 @@ class ItemProvenanceRecord {
         if (!knowledgeProvider.isBlank()) lines.add("Knowledge provider: " + knowledgeProvider + ".");
         if (!batchId.isBlank()) lines.add("Production batch: " + batchId + ".");
         if (!defectState.isBlank()) lines.add("Batch inspection: " + defectState + ".");
+        if (!batchIssueTags.isBlank()) lines.add("Batch issue tags: " + batchIssueTags + ".");
         String defectConsequence = ProductionDefectAppraisalAuthority.inventoryLine(this);
         if (!defectConsequence.isBlank()) lines.add(defectConsequence);
         if (!machineQuality.isBlank()) lines.add("Producing machine quality: " + machineQuality + ".");
@@ -239,14 +291,24 @@ class ItemProvenanceRecord {
         if (!materialQuality.isBlank()) lines.add("Consumed material quality cap: " + materialQuality + ".");
         if (!facilityQuality.isBlank()) lines.add("Producing facility quality cap: " + facilityQuality + ".");
         if (!toolQuality.isBlank()) lines.add("Equipped production tool quality cap: " + toolQuality + ".");
+        if (!factionMutation.isBlank()) lines.add("Faction production mutation: " + factionMutation + ".");
+        if (!productionPressure.isBlank()) lines.add("Production fatigue pressure: " + productionPressure + ".");
+        if (!producingRoom.isBlank()) lines.add("Producing room: " + producingRoom + ".");
+        if (!producingFacility.isBlank()) lines.add("Producing facility: " + producingFacility + ".");
+        if (!producingMachine.isBlank()) lines.add("Producing machine: " + producingMachine + ".");
+        if (!producingOperator.isBlank()) lines.add("Producing operator: " + producingOperator + ".");
+        if (!productionMode.isBlank()) lines.add("Production workforce: " + productionMode + ".");
+        if (!productionLegalStatus.isBlank()) lines.add("Production legal status: " + productionLegalStatus + ".");
+        if (!productionSource.isBlank()) lines.add("Production source: " + productionSource + ".");
+        if (!repairModificationHistory.isBlank()) lines.add("Repair/modification history: " + repairModificationHistory + ".");
         if (!qualityLimiter.isBlank()) lines.add("Recorded quality limiter: " + qualityLimiter + ".");
         return lines;
     }
     String summary() { return "Origin: " + itemName + " | unit=" + unitId + " | maker=" + maker + " | faction=" + makerFaction + " | place=" + place + " | inputs=" + inputs + " | route=" + route + " | chain=" + shortChain() + " | turn=" + turnMade + "."; }
-    String encode() { return enc(itemName)+"~"+enc(makerFaction)+"~"+enc(maker)+"~"+enc(place)+"~"+enc(inputs)+"~"+enc(route)+"~"+turnMade+"~"+enc(chain)+"~"+enc(unitId)+"~"+enc(outputQuality)+"~"+enc(knowledgeSource)+"~"+enc(machineQuality)+"~"+enc(qualityLimiter)+"~"+enc(machineCondition)+"~"+enc(operatorSkill)+"~"+enc(operatorSkillBand)+"~"+enc(materialQuality)+"~"+enc(knowledgeProvider)+"~"+enc(batchId)+"~"+enc(defectState)+"~"+enc(facilityQuality)+"~"+enc(toolQuality); }
+    String encode() { return enc(itemName)+"~"+enc(makerFaction)+"~"+enc(maker)+"~"+enc(place)+"~"+enc(inputs)+"~"+enc(route)+"~"+turnMade+"~"+enc(chain)+"~"+enc(unitId)+"~"+enc(outputQuality)+"~"+enc(knowledgeSource)+"~"+enc(machineQuality)+"~"+enc(qualityLimiter)+"~"+enc(machineCondition)+"~"+enc(operatorSkill)+"~"+enc(operatorSkillBand)+"~"+enc(materialQuality)+"~"+enc(knowledgeProvider)+"~"+enc(batchId)+"~"+enc(defectState)+"~"+enc(facilityQuality)+"~"+enc(toolQuality)+"~"+enc(factionMutation)+"~"+enc(productionPressure)+"~"+enc(producingRoom)+"~"+enc(producingFacility)+"~"+enc(producingMachine)+"~"+enc(producingOperator)+"~"+enc(productionMode)+"~"+enc(productionLegalStatus)+"~"+enc(productionSource)+"~"+enc(batchIssueTags)+"~"+enc(repairModificationHistory); }
     static ItemProvenanceRecord decode(String line) {
         try {
-            String[] a = line.split("~",22); if (a.length < 7) return null;
+            String[] a = line.split("~",33); if (a.length < 7) return null;
             ItemProvenanceRecord r = new ItemProvenanceRecord(); r.itemName=dec(a[0]); r.makerFaction=dec(a[1]); r.maker=dec(a[2]); r.place=dec(a[3]); r.inputs=dec(a[4]); r.route=dec(a[5]); r.turnMade=Integer.parseInt(a[6]);
             if (a.length >= 8) r.chain=dec(a[7]); else r.chain=r.maker + " -> " + r.route;
             if (a.length >= 9) r.unitId=dec(a[8]); else r.unitId="LEGACY-" + Math.abs(Objects.hash(r.itemName, r.maker, r.place, r.turnMade));
@@ -263,6 +325,17 @@ class ItemProvenanceRecord {
             if (a.length >= 20) r.defectState=dec(a[19]);
             if (a.length >= 21) r.facilityQuality=dec(a[20]);
             if (a.length >= 22) r.toolQuality=dec(a[21]);
+            if (a.length >= 23) r.factionMutation=dec(a[22]);
+            if (a.length >= 24) r.productionPressure=dec(a[23]);
+            if (a.length >= 25) r.producingRoom=dec(a[24]);
+            if (a.length >= 26) r.producingFacility=dec(a[25]);
+            if (a.length >= 27) r.producingMachine=dec(a[26]);
+            if (a.length >= 28) r.producingOperator=dec(a[27]);
+            if (a.length >= 29) r.productionMode=dec(a[28]);
+            if (a.length >= 30) r.productionLegalStatus=dec(a[29]);
+            if (a.length >= 31) r.productionSource=dec(a[30]);
+            if (a.length >= 32) r.batchIssueTags=dec(a[31]);
+            if (a.length >= 33) r.repairModificationHistory=dec(a[32]);
             return r;
         } catch(Exception ex) { return null; }
     }

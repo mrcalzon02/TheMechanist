@@ -897,6 +897,7 @@ class BaseObject {
     String assignedRecipe = "";
     String assignedWorker = "";
     String machineKnowledge = "";
+    String machineRepairHistory = "";
     int productionQueueTarget = 1;
     int productionQueueRemaining = 0;
     boolean underConstruction = false;
@@ -906,6 +907,7 @@ class BaseObject {
     int constructionLaborRequired = 0;
     int constructionLaborDone = 0;
     int constructionVisualProgress = 0;
+    char constructionOriginalTile = 0;
     Faction faction = Faction.NONE;
     BaseObject(String name, char symbol, int x, int y, int cost, int attention){ this.name=name; this.symbol=symbol; this.x=x; this.y=y; this.cost=cost; this.attention=attention; }
     boolean isBusinessAsset(){ return symbol=='w' || symbol=='u' || symbol=='e' || symbol=='f' || symbol=='l' || symbol=='s' || symbol=='B' || symbol=='M'; }
@@ -937,7 +939,7 @@ class BaseObject {
             default: return "uses general service accounting until a specific return profile is assigned.";
         }
     }
-    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+(assignedRecipe==null?"":assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge); }
+    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+(assignedRecipe==null?"":assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge)+"|"+(machineRepairHistory==null?"":machineRepairHistory)+"|"+(constructionOriginalTile==0?"":String.valueOf(constructionOriginalTile)); }
 }
 
 

@@ -81,6 +81,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     final HashSet<ZoneType> visitedZoneTypes = new HashSet<>();
     final HashSet<String> visitedZoneInstances = new HashSet<>();
     final HashSet<String> unlockedKnowledges = new HashSet<>();
+    final HashSet<String> unlockedSkillNodes = new HashSet<>();
     final ArrayDeque<LogisticsRouteIntentAuthority.RouteIntentRecord> logisticsRouteIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsDeliveryIntentAuthority.DeliveryIntentRecord> logisticsDeliveryIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsSourceReservationAuthority.SourceReservationRecord> logisticsSourceReservationHistory = new ArrayDeque<>();
@@ -137,6 +138,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     String lastArbitesPatrolReport = "No Arbites patrol report has been generated.";
     String lastItemLedgerAuditReport = "No item ledger audit has been generated.";
     boolean activePortableLightWorn;
+    boolean bootMainMenuMusicGateAudited;
     boolean combatCursorActive;
     boolean[][] visibleTiles = new boolean[1][1];
     boolean[][] rememberedTiles = new boolean[1][1];
@@ -328,6 +330,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     String lastBroadcastReport = "No broadcast has been received.";
     String lastLogisticsHaulExecutionReport = "No manual haul execution has been recorded.";
     long bootStartMillis = System.currentTimeMillis();
+    long bootMainMenuMusicNotBeforeMillis = 0L;
     long lastInputMillis = System.currentTimeMillis();
     long lastPassiveAmbientMillis = 0L;
     long lastPassiveWorldTickMillis = 0L;
@@ -360,9 +363,9 @@ class GamePanel extends LegacyPanelBridgeBase {
             DebugLog.error("CLIENT_MENU_BOOT", "Menu media preload failed; menu will use drawn fallbacks.", t);
         }
         if (options.bootSound) sounds.play("boot", options);
-        sounds.requestMusic("MAIN_MENU", options);
         timer = new javax.swing.Timer(33, e -> {
             tickPassiveAmbientSounds();
+            tickBootMainMenuMusicGate();
             tickSinglePlayerPassiveWorldTime();
             firstPersonRenderViewport.updateContinuousMotion(this);
             repaint();
@@ -1707,6 +1710,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 if (object == null || !worldPointInView(object.x, object.y, cols, rows)) continue;
                 if (!isVisible(object.x, object.y)) continue;
                 drawWorldSprite(g, images.getBaseObjectImage(object), object.x, object.y, tile, new java.awt.Color(104, 220, 145), Character.toString(object.symbol));
+                if (object.underConstruction) drawConstructionSiteOverlay(g, object, tile);
             }
         }
         if (world.npcs != null) {
@@ -1732,6 +1736,25 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void drawWorldSprite(java.awt.Graphics2D g, BufferedImage img, int wx, int wy, int tile, java.awt.Color outline, String fallback) {
         drawWorldSpriteAt(g, img, wx, wy, tile, outline, fallback, 1.0f);
+    }
+
+    private void drawConstructionSiteOverlay(java.awt.Graphics2D g, BaseObject site, int tile) {
+        if (g == null || site == null || !site.underConstruction) return;
+        int sx = (int)Math.round(lastWorldViewOriginX + (site.x - lastWorldViewMinX) * tile);
+        int sy = (int)Math.round(lastWorldViewOriginY + (site.y - lastWorldViewMinY) * tile);
+        int pad = Math.max(1, tile / 9);
+        int size = Math.max(4, tile - pad * 2);
+        java.awt.Color tint = ProgressiveConstructionAuthority.constructionOverlayColor(site, new java.awt.Color(104, 220, 145));
+        g.setColor(tint);
+        g.fillRect(sx + pad, sy + pad, size, size);
+        int progress = Math.max(0, Math.min(100, site.constructionVisualProgress));
+        int barW = Math.max(2, (size * progress) / 100);
+        int barH = Math.max(2, tile / 8);
+        int barY = sy + tile - pad - barH;
+        g.setColor(new java.awt.Color(12, 18, 22, 190));
+        g.fillRect(sx + pad, barY, size, barH);
+        g.setColor(new java.awt.Color(175, 220, 255, 230));
+        g.fillRect(sx + pad, barY, barW, barH);
     }
 
     private void drawWorldSprite(java.awt.Graphics2D g, BufferedImage img, int wx, int wy, int tile, java.awt.Color outline, String fallback, int facingDx, int facingDy) {
@@ -2854,7 +2877,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             mapInfo.add(QuestObjectiveGuidanceAuthority.describe(objective, playerX, playerY, System.currentTimeMillis()).summary());
             if (mapInfo.size() >= 11) break;
         }
-        mapInfo.addAll(ContractObjectiveReadabilityAuthority.summary(factionContracts, inventory, baseStorage, 2));
+        mapInfo.addAll(ContractObjectiveReadabilityAuthority.summary(factionContracts, inventory, baseStorage, 2,
+                unlockedSkillNodes, unlockedKnowledges));
         drawDetailBox(g, info, "World / Objectives", mapInfo, null);
         addOverlayButton("Contract Info", info.x + 12, info.y + info.height - 36, 112, 28,
                 "Open the Contract Objectives and Evidence mechanic reference.",
@@ -3433,7 +3457,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         String carried = selectedInventoryItem();
         ItemProvenanceRecord carriedProvenance = peekProvenanceForItem(carried);
         detail.addAll(TradeReadabilityAuthority.salePreview(carried,
-                t == null || carried == null ? 0 : t.sellPrice(carried), carriedProvenance));
+                t == null || carried == null ? 0 : t.sellPrice(carried), carriedProvenance, unlockedSkillNodes));
         drawDetailBox(g, right, "Offer Detail", detail, selected == null ? null : images.getItemIcon(selected.name));
         int by = right.y + right.height - 36;
         addOverlayButton("Buy", right.x + 12, by, 72, 28, "Buy the selected offer.", this::buySelectedTradeOffer);
@@ -3498,8 +3522,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (base != null) {
             lines.add("Base object at " + base.x + "," + base.y + " / " + safeLabel(base.qualityName, "Common") + ".");
-            lines.add(base.businessReturnLine(this));
-            lines.addAll(MachineRepairAuthority.detailLines(base, machineParts));
+            if (base.underConstruction) {
+                lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
+            } else {
+                lines.add(base.businessReturnLine(this));
+                lines.addAll(MachineRepairAuthority.detailLines(base, machineParts));
+            }
         }
         lines.add("Use the action buttons below; this target is no longer routed to the dead generic placeholder.");
         drawDetailBox(g, actions, "Actions", lines, null);
@@ -3510,6 +3538,18 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (obj != null && isContainerObject(obj)) {
             addOverlayButton("Open", x, by, 74, 28, "Open this object's container.", () -> openContainerForObject(obj)); x += 82;
+        }
+        if (base != null && base.underConstruction) {
+            addOverlayButton("Work", x, by, 78, 28, "Contribute one turn of labor to this staged construction site.", this::workActiveConstructionSite);
+            x += 86;
+            addOverlayButton("Dismantle", x, by, 104, 28, "Remove this unfinished construction site and recover staged materials.", this::dismantleActiveConstructionSite);
+            x += 112;
+            addOverlayButton("Look", x, by, 72, 28, "Inspect this construction site in look mode.", this::lookAtActiveInteractionTarget);
+            int targetX = base.x;
+            int targetY = base.y;
+            addOverlayButton("Approach", x + 80, by, 92, 28, "Plan movement to a reachable adjacent tile.",
+                    () -> approachActiveInteractionTarget(targetX, targetY, activeInteractionTitleOrDefault()));
+            return;
         }
         if (base != null || (obj != null && isMachineObject(obj))) {
             addOverlayButton("Operate", x, by, 94, 28, "Operate or inspect this machine.", this::operateActiveInteractionObject); x += 102;
@@ -3545,7 +3585,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (base != null) {
             lines.add(safeLabel(base.name, "Base object") + " / " + safeLabel(base.description, "built base object") + ".");
             lines.add("Quality: " + safeLabel(base.qualityName, "Common") + " / integrity " + base.integrity + " / capacity " + base.capacity + ".");
-            lines.add("Business: " + (base.isBusinessAsset() ? base.businessName() : "not a public business surface") + ".");
+            if (base.underConstruction) {
+                lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
+            } else {
+                lines.add("Business: " + (base.isBusinessAsset() ? base.businessName() : "not a public business surface") + ".");
+            }
         }
         if (lines.isEmpty()) lines.add("No active object target.");
         return lines;
@@ -3584,11 +3628,45 @@ class GamePanel extends LegacyPanelBridgeBase {
             repaint();
             return;
         }
+        machine.machineRepairHistory = MachineRepairHistoryAuthority.recordLine(machine, preview, turn,
+                active == null ? "player" : active.name);
         machineParts = Math.max(0, machineParts - preview.partCost());
         machine.integrity = preview.projectedIntegrity();
         logEvent("Repaired " + safeLabel(machine.name, "machine") + ". " + preview.summary()
                 + " Machine parts remaining " + machineParts + ".");
         advanceTurn("repairs " + safeLabel(machine.name, "a machine") + ".");
+    }
+
+    private void workActiveConstructionSite() {
+        BaseObject site = activeInteractionBaseObject;
+        if (site == null || !site.underConstruction) {
+            logEvent("No staged construction site is selected.");
+            repaint();
+            return;
+        }
+        String beforeName = safeLabel(site.name, "construction site");
+        int inserted = ProgressiveConstructionAuthority.contribute(this, site, 1, true);
+        logEvent(ProgressiveConstructionAuthority.contributionResultLine(site, inserted, !site.underConstruction));
+        if (!site.underConstruction) activeInteractionBaseObject = site;
+        advanceTurn(site.underConstruction ? "works on " + beforeName + "." : "finishes " + safeLabel(site.name, "construction") + ".");
+        repaint();
+    }
+
+    private void dismantleActiveConstructionSite() {
+        BaseObject site = activeInteractionBaseObject;
+        if (site == null || !site.underConstruction) {
+            logEvent("No unfinished construction site is selected.");
+            repaint();
+            return;
+        }
+        String beforeName = safeLabel(site.name, "construction site");
+        ProgressiveConstructionAuthority.DismantleResult result = ProgressiveConstructionAuthority.dismantle(this, site);
+        logEvent(result.summary());
+        clearActiveInteractionState();
+        panelMode = PanelMode.NONE;
+        screen = Screen.GAME;
+        advanceTurn("dismantles " + beforeName + ".");
+        repaint();
     }
 
     private void teachSelectedRecipeToMachine() {
@@ -4698,17 +4776,17 @@ class GamePanel extends LegacyPanelBridgeBase {
             graphicsDropdown = -1;
             panelMode = PanelMode.NONE;
             selectedButton = Math.max(0, Math.min(selectedButton, mainMenuRouteLabels().size() - 1));
-            sounds.requestMusic("MAIN_MENU", options);
+            requestMainMenuMusicAfterBootGate("screen=" + screen);
         } else if (screen == Screen.OPTIONS) {
             graphicsDropdown = -1;
             selectedButton = Math.max(0, Math.min(optionsTab, 7));
-            sounds.requestMusic("MAIN_MENU", options);
+            requestMainMenuMusicAfterBootGate("screen=OPTIONS");
         } else if (screen == Screen.INTRO_CRAWL) {
             sounds.playIntroCrawlNarration(options);
         } else if (screen == Screen.CHARACTER && newGameSetupActive) {
             graphicsDropdown = -1;
             sounds.stopIntroCrawlNarration("entered new game setup");
-            sounds.requestMusic("MAIN_MENU", options);
+            requestMainMenuMusicAfterBootGate("screen=CHARACTER_SETUP");
         } else if (screen == Screen.GAME || screen == Screen.PANEL || screen == Screen.INVENTORY || screen == Screen.CHARACTER || screen == Screen.INFO || screen == Screen.MAP || screen == Screen.KNOWLEDGE || screen == Screen.PAUSE) {
             graphicsDropdown = -1;
             sounds.stopIntroCrawlNarration("left intro crawl");
@@ -4721,6 +4799,25 @@ class GamePanel extends LegacyPanelBridgeBase {
         int tx = lastWorldViewMinX + (mx - lastWorldViewOriginX) / tile;
         int ty = lastWorldViewMinY + (my - lastWorldViewOriginY) / tile;
         return new Point(Math.max(0, Math.min(world.w - 1, tx)), Math.max(0, Math.min(world.h - 1, ty)));
+    }
+    void requestMainMenuMusicAfterBootGate(String reason) {
+        long now = System.currentTimeMillis();
+        if (!BootMenuFlowAuthority.mainMenuMusicAllowed(now, bootMainMenuMusicNotBeforeMillis)) {
+            if (!bootMainMenuMusicGateAudited) {
+                DebugLog.audit("BOOT_MENU_MUSIC_DELAY", "MAIN_MENU music delayed until "
+                        + bootMainMenuMusicNotBeforeMillis + " reason=" + (reason == null ? "unspecified" : reason));
+                bootMainMenuMusicGateAudited = true;
+            }
+            return;
+        }
+        bootMainMenuMusicNotBeforeMillis = 0L;
+        sounds.requestMusic("MAIN_MENU", options);
+    }
+    void tickBootMainMenuMusicGate() {
+        if (bootMainMenuMusicNotBeforeMillis <= 0L) return;
+        if (!(screen == Screen.MENU || screen == Screen.MAIN || screen == Screen.OPTIONS
+                || (screen == Screen.CHARACTER && newGameSetupActive))) return;
+        requestMainMenuMusicAfterBootGate("timer");
     }
     Point screenPointToAuditTile(int mx, int my) {
         if (auditWorld == null) return null;
@@ -5096,27 +5193,30 @@ class GamePanel extends LegacyPanelBridgeBase {
     void moveBuildCursor(int dx, int dy) { buildX += dx; buildY += dy; clampBuildCursorToWorld(); }
     void confirmBuildPlacement() {
         String raw = rawCanPlacePendingBuildAt(buildX, buildY);
-        if (!"ok".equalsIgnoreCase(raw)) {
+        boolean stagedStart = raw != null && raw.toLowerCase(Locale.ROOT).startsWith("staged start:");
+        if (!"ok".equalsIgnoreCase(raw) && !stagedStart) {
             logEvent(constructionPlacementResult(pendingBuildRecipe, buildX, buildY, raw));
             return;
         }
         BuildRecipe recipe = pendingBuildRecipe;
-        supplies -= Math.max(0, recipe.supplyCost);
-        machineParts -= Math.max(0, recipe.partCost);
-        consumeBuildComponents(recipe);
-        BaseObject object = new BaseObject(recipe.name, recipe.symbol, buildX, buildY, recipe.supplyCost, recipe.attention);
-        object.qualityName = recipe.qualityName;
-        object.description = recipe.description;
-        object.capacity = Math.max(1, recipe.supplyCost + recipe.partCost);
-        object.integrity = Math.max(1, 4 + recipe.partCost + recipe.supplyCost / 2);
-        object.faction = recipe.requiredFaction == null ? Faction.NONE : recipe.requiredFaction;
-        configureBaseObject(object);
+        BaseObject object = stagedStart
+                ? ProgressiveConstructionAuthority.createSite(recipe, buildX, buildY, recipe.baseTurns)
+                : ProgressiveConstructionAuthority.createPrepaidSite(recipe, buildX, buildY);
+        if (stagedStart) {
+            ProgressiveConstructionAuthority.contribute(this, object, 0, true);
+        } else {
+            supplies -= Math.max(0, recipe.supplyCost);
+            machineParts -= Math.max(0, recipe.partCost);
+            consumeBuildComponents(recipe);
+        }
         baseObjects.add(object);
+        ProgressiveConstructionAuthority.syncSiteTile(this, object);
         buildPlacementActive = false;
         pendingBuildRecipe = null;
         rebuildItemContainersFromLegacyLists();
-        logEvent("Built " + object.name + " at " + object.x + "," + object.y + ".");
-        advanceTurn("builds " + object.name + ".");
+        logEvent("Started construction of " + recipe.name + " at " + object.x + "," + object.y + ". "
+                + (stagedStart ? "Some materials are staged; more materials or labor remain." : "Materials are staged; labor remains."));
+        advanceTurn("starts construction on " + recipe.name + ".");
         repaint();
     }
     void moveSelectedButton(int delta) { if (!buttons.isEmpty()) selectedButton = Math.floorMod(selectedButton + delta, buttons.size()); }
@@ -5575,9 +5675,15 @@ class GamePanel extends LegacyPanelBridgeBase {
         int toolTier = toolQuality.active() ? toolQuality.tier() : -1;
         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledgeSource = ProductionKnowledgeSourceAuthority.evaluate(
                 this, machine, recipe.requiredKnowledge);
-        ProductionQualityTraceAuthority.QualityTrace qualityTrace = ProductionQualityTraceAuthority.evaluate(
-                knowledgeSource.effectiveKnowledge(), recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier);
         ProductionOperatorSkillAuthority.OperatorSkill operatorSkill = ProductionOperatorSkillAuthority.evaluate(this, recipe.xpSkill);
+        int fatigueCost = ControlledProductionJobAuthority.manualFatigueCost(this, machine, recipe);
+        ProductionFatiguePressureAuthority.FatiguePressure pressure =
+                ProductionFatiguePressureAuthority.evaluate(this, fatigueCost);
+        ProductionLocationAuthority.ProductionLocation productionLocation =
+                ProductionLocationAuthority.evaluate(this, machine);
+        ProductionQualityTraceAuthority.QualityTrace qualityTrace = ProductionQualityTraceAuthority.evaluate(
+                knowledgeSource.effectiveKnowledge(), recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName,
+                materialTier, facilityTier, toolTier, operatorSkill.qualityTier());
         recipe.consumeInputs(this);
         String quality = qualityTrace.outputQuality();
         ProductionRecipe production = ProductionRecipe.create(recipe.outputBaseItem, recipe.faction, quality, recipe.requiredKnowledge, recipe.machineName());
@@ -5585,13 +5691,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         int count = Math.max(1, recipe.outputCount);
         String worker = active == null ? "player" : active.name;
         ProductionBatchAuthority.BatchDisposition batch = ProductionBatchAuthority.assess(
-                production, machine, operatorSkill, rng, turn);
+                production, machine, operatorSkill, pressure, rng, turn);
         for (int i = 0; i < count; i++) {
             addInventoryItem(output, ItemProvenanceRecord.produced(
-                    production, machine, world, turn, worker, qualityTrace, operatorSkill, knowledgeSource, batch));
+                    production, machine, world, turn, worker, qualityTrace, operatorSkill, knowledgeSource, batch, pressure,
+                    productionLocation));
         }
         if (machine != null && recipe.machineWear > 0) machine.integrity = Math.max(0, machine.integrity - recipe.machineWear);
-        fatigue = Math.min(MAX_FOOD_WATER, fatigue + ControlledProductionJobAuthority.manualFatigueCost(this, machine, recipe));
+        fatigue = Math.min(MAX_FOOD_WATER, fatigue + fatigueCost);
         int turns = ControlledProductionJobAuthority.manualTurnCost(this, machine, recipe);
         turn += Math.max(0, turns - 1);
         worldTurn += Math.max(0, turns - 1);
@@ -5600,6 +5707,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         logEvent("Crafted " + count + "x " + output + " from " + recipe.name + ".");
         logEvent(batch.lines().get(0) + " " + batch.lines().get(1));
         advanceTurn("crafts " + recipe.name + ".");
+        ProductionQueueRecordBridge.recordManualRecipeCompletion(this, machine, recipe, turns, count);
         repaint();
     }
     private ArrayList<MapObjectState> nearbyScavengeTargets(int radius) {
@@ -5967,9 +6075,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         int toolTier = tool.active() ? tool.tier() : -1;
         ProductionKnowledgeSourceAuthority.KnowledgeSource knowledge = ProductionKnowledgeSourceAuthority.evaluate(
                 this, machine, recipe == null ? null : recipe.requiredKnowledge);
+        ProductionOperatorSkillAuthority.OperatorSkill operator = ProductionOperatorSkillAuthority.evaluate(
+                this, recipe == null ? null : recipe.xpSkill);
         return ProductionQualityTraceAuthority.evaluate(knowledge.effectiveKnowledge(),
                 recipe == null ? null : recipe.requiredKnowledge,
-                machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier).outputQuality();
+                machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier,
+                operator.qualityTier()).outputQuality();
     }
     int availableRecruitLabor() { return Math.max(0, factionRecruits.size()); }
     int stat(String statName, int fallback) {
@@ -6075,12 +6186,23 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (world.npcAt(x, y) != null) return "tile is occupied by an NPC";
         if (world.mapObjectAt(x, y) != null) return "tile already contains a map object";
         if (baseObjectAt(x, y) != null) return "tile already contains a base object";
-        if (supplies < pendingBuildRecipe.supplyCost) return "need " + pendingBuildRecipe.supplyCost + " supplies, have " + supplies;
-        if (machineParts < pendingBuildRecipe.partCost) return "need " + pendingBuildRecipe.partCost + " machine parts, have " + machineParts;
-        String componentProblem = buildComponentRequirementProblem(pendingBuildRecipe);
-        if (componentProblem != null && !"ok".equalsIgnoreCase(componentProblem)) return componentProblem;
         String requirementProblem = buildRequirementProblem(pendingBuildRecipe);
         if (requirementProblem != null && !"ok".equalsIgnoreCase(requirementProblem)) return requirementProblem;
+        boolean materialShortfall = supplies < pendingBuildRecipe.supplyCost || machineParts < pendingBuildRecipe.partCost;
+        String componentProblem = buildComponentRequirementProblem(pendingBuildRecipe);
+        if (componentProblem != null && !"ok".equalsIgnoreCase(componentProblem)) materialShortfall = true;
+        String accessProblem = SelfEntombmentConstructionAuthority.validate(this, pendingBuildRecipe, x, y);
+        if (materialShortfall) {
+            int available = ProgressiveConstructionAuthority.availableMaterialUnits(this, pendingBuildRecipe);
+            if (available > 0) {
+                if (accessProblem != null && !"ok".equalsIgnoreCase(accessProblem)) return accessProblem;
+                return "staged start: " + available + " material unit(s) available now; missing materials can be added later with Work.";
+            }
+            if (supplies < pendingBuildRecipe.supplyCost) return "need " + pendingBuildRecipe.supplyCost + " supplies, have " + supplies;
+            if (machineParts < pendingBuildRecipe.partCost) return "need " + pendingBuildRecipe.partCost + " machine parts, have " + machineParts;
+            return componentProblem;
+        }
+        if (accessProblem != null && !"ok".equalsIgnoreCase(accessProblem)) return accessProblem;
         return "ok";
     }
     String constructionPlacementResult(BuildRecipe recipe, int x, int y, String raw) {

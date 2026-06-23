@@ -286,6 +286,57 @@ final class ConstructionGovernanceAuthority {
         return sb.toString();
     }
 
+    static List<String> utilityReadinessAuditLines() {
+        ConstructionGovernanceAuthority authority = new ConstructionGovernanceAuthority();
+        int utilityBearingBlueprints = 0;
+        int noUtilityBlueprints = 0;
+        EnumMap<UtilityTag, Integer> blueprintHookCounts = new EnumMap<>(UtilityTag.class);
+        for (BlueprintGovernanceSpec spec : authority.blueprintSpecs.values()) {
+            boolean hasRealHook = false;
+            for (UtilityTag hook : spec.utilityHooks) {
+                if (hook == UtilityTag.NONE) continue;
+                hasRealHook = true;
+                blueprintHookCounts.merge(hook, 1, Integer::sum);
+            }
+            if (hasRealHook) utilityBearingBlueprints++;
+            else noUtilityBlueprints++;
+        }
+        int utilityBearingRooms = 0;
+        EnumMap<UtilityTag, Integer> roomUtilityCounts = new EnumMap<>(UtilityTag.class);
+        for (RoomGovernanceSpec spec : authority.roomSpecs.values()) {
+            boolean hasRealUtility = false;
+            for (UtilityTag utility : spec.requiredUtilities) {
+                if (utility == UtilityTag.NONE) continue;
+                hasRealUtility = true;
+                roomUtilityCounts.merge(utility, 1, Integer::sum);
+            }
+            if (hasRealUtility) utilityBearingRooms++;
+        }
+        String missingMachineUtility = authority.validateBlueprintMetadata("machine_placement", RoomRole.FORGE,
+                EnumSet.of(UtilityTag.POWER, UtilityTag.STORAGE_ACCESS), true, "utility readiness audit");
+        String readyMachineUtility = authority.validateBlueprintMetadata("machine_placement", RoomRole.FORGE,
+                EnumSet.of(UtilityTag.POWER, UtilityTag.STORAGE_ACCESS, UtilityTag.STAFFING_ACCESS), true, "utility readiness audit");
+        String blockedPassability = authority.validateBlueprintMetadata("defense_turret", RoomRole.SECURITY,
+                EnumSet.of(UtilityTag.POWER, UtilityTag.DATA, UtilityTag.STAFFING_ACCESS), false, "utility readiness audit");
+        return List.of(
+                "Construction utility readiness audit: owner=ConstructionGovernanceAuthority, blueprintOwner=BuildRecipe, roomOwner=RoomGovernanceSpec, utilityNetworkOwner=future utility network owner, readiness=metadata-only, ordinaryUiRawIds=false.",
+                "Construction utility catalog audit: roomSpecs=" + authority.roomSpecs.size()
+                        + ", utilityBearingRooms=" + utilityBearingRooms
+                        + ", blueprintSpecs=" + authority.blueprintSpecs.size()
+                        + ", utilityBearingBlueprints=" + utilityBearingBlueprints
+                        + ", noUtilityBlueprints=" + noUtilityBlueprints + ".",
+                "Construction utility hook audit: blueprint hooks=" + blueprintHookCounts
+                        + "; room utilities=" + roomUtilityCounts
+                        + "; tracked families include power, water, waste, ventilation, exhaust, light, data, road access, storage access, and staffing access.",
+                "Construction utility validation audit: missing machine utility sample='" + missingMachineUtility
+                        + "'; ready machine sample='" + readyMachineUtility
+                        + "'; blocked passability sample='" + blockedPassability + "'.",
+                "Construction utility readiness rule: required utility hooks fail closed when absent, but a ready metadata result is still permission to preview readiness, not permission to mutate a live power, water, exhaust, data, road, storage, or staffing network.",
+                "Construction utility boundary: this audit does not create utility grids, consume fuel or water, schedule workers, mutate room ownership, apply heat or suspicion, run background scans, or complete construction.",
+                "Guard: Milestone03BlueprintUtilityReadinessAuditSmoke checks utility-bearing room and blueprint coverage, hook families, fail-closed missing utility behavior, passability interaction, future-owner boundaries, and raw-ID hiding."
+        );
+    }
+
     String auditSummary() {
         return "constructionGovernance version=" + VERSION + " roomSpecs=" + roomSpecs.size()
                 + " blueprintSpecs=" + blueprintSpecs.size() + " validations=" + validationRequests

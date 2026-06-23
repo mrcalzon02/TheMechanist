@@ -1,50 +1,50 @@
 # Function Map Summary
 
-Generated: `2026-06-14 15:31:38`
+Generated: `2026-06-23 10:16:26`
 
 ## Counts
 
-- Files inventoried: `662`
-- Java classes/interfaces/enums/records: `1543`
-- Java functions/methods parsed: `8166`
-- Duplicate function-name groups: `613`
+- Files inventoried: `751`
+- Java classes/interfaces/enums/records: `1670`
+- Java functions/methods parsed: `8781`
+- Duplicate function-name groups: `642`
 - Documents inventoried: `50`
 - Document retirement candidate rows: `1`
 - Oversized owner rows: `12`
 
 ## Function Owner Zones
 
-- `assets.registry.art`: `243` functions
-- `combat.entities.simulation`: `579` functions
-- `diagnostics.smoke.audit`: `131` functions
-- `interaction.fixtures.machines`: `309` functions
-- `inventory.items.persistence`: `421` functions
-- `runtime.options`: `455` functions
+- `assets.registry.art`: `282` functions
+- `combat.entities.simulation`: `679` functions
+- `diagnostics.smoke.audit`: `221` functions
+- `interaction.fixtures.machines`: `326` functions
+- `inventory.items.persistence`: `448` functions
+- `runtime.options`: `489` functions
 - `server.authority.launcher`: `153` functions
-- `ui.input.navigation`: `505` functions
-- `ui.render.surface`: `3817` functions
-- `unclassified`: `507` functions
-- `world.generation.transition`: `1046` functions
+- `ui.input.navigation`: `524` functions
+- `ui.render.surface`: `3855` functions
+- `unclassified`: `588` functions
+- `world.generation.transition`: `1216` functions
 
 ## Class Owner Zones
 
-- `assets.registry.art`: `76` classes
-- `combat.entities.simulation`: `96` classes
-- `diagnostics.smoke.audit`: `53` classes
-- `interaction.fixtures.machines`: `69` classes
-- `inventory.items.persistence`: `94` classes
-- `runtime.options`: `70` classes
+- `assets.registry.art`: `86` classes
+- `combat.entities.simulation`: `125` classes
+- `diagnostics.smoke.audit`: `78` classes
+- `interaction.fixtures.machines`: `73` classes
+- `inventory.items.persistence`: `97` classes
+- `runtime.options`: `75` classes
 - `server.authority.launcher`: `84` classes
 - `ui.input.navigation`: `78` classes
-- `ui.render.surface`: `436` classes
-- `unclassified`: `280` classes
-- `world.generation.transition`: `207` classes
+- `ui.render.surface`: `439` classes
+- `unclassified`: `301` classes
+- `world.generation.transition`: `234` classes
 
 ## Document Status Guesses
 
-- `active_or_governance`: `31` documents
+- `active_or_governance`: `32` documents
 - `review_for_retirement`: `1` documents
-- `unknown_review`: `18` documents
+- `unknown_review`: `17` documents
 
 ## Next Use
 

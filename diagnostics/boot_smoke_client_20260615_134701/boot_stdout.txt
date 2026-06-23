@@ -1,0 +1,2 @@
+[13:47:01.795] INFO The Mechanist logging initialized. Single active log is logs/current.log; prior run rotated to logs/previous.log.
+[13:47:01.796] INFO The Mechanist booting.

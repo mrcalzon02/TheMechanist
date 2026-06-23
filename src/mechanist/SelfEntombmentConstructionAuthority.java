@@ -107,7 +107,7 @@ final class SelfEntombmentConstructionAuthority {
     }
 
     static String auditSummary() {
-        return "selfEntombment version=" + VERSION + " validation=placement-only bfs=claimed-room door-path blockerSymbols=defenses+major-machines";
+        return "selfEntombment version=" + VERSION + " validation=placement-only bfs=claimed-room door-path runtimeGuards=player-tile+npc-tile+claimed-room-exit blockerSymbols=defenses+major-machines";
     }
 
     private static final class Result {

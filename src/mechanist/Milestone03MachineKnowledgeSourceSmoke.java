@@ -28,8 +28,9 @@ final class Milestone03MachineKnowledgeSourceSmoke {
                 "Fine", -1).doctrineTier() == 4, "machine doctrine should contribute its quality tier");
 
         String[] saved = machine.saveLine().split("\\|", -1);
-        require(saved.length == 24, "base object save line should append one doctrine field");
+        require(saved.length >= 24, "base object save line should preserve append-only doctrine field");
         require(recipe.requiredKnowledge.equals(saved[23]), "machine doctrine should occupy append-only field");
+        require(saved.length < 25 || saved[24].isBlank(), "newer repair-history field should not displace doctrine");
         if (game.timer != null) game.timer.stop();
     }
 

@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: mechanist.TheMechanist
+Implementation-Title: The Mechanist
+Implementation-Version: 20260622_213502
+

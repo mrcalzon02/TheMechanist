@@ -1,5 +1,7 @@
 param(
-    [string]$TargetPath
+    [string]$TargetPath,
+    [switch]$ForceHash,
+    [switch]$LegacyFullHash
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,6 +17,17 @@ $targetFull = [System.IO.Path]::GetFullPath($TargetPath)
 $rootFull = [System.IO.Path]::GetFullPath($root)
 if (-not $targetFull.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Manifest target must stay inside the repository: $TargetPath"
+}
+
+if (-not $LegacyFullHash) {
+    $pythonScript = Join-Path $toolDir "update_repository_file_manifest_incremental.py"
+    $relativeTarget = $targetFull.Substring($rootFull.Length).TrimStart([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $args = @($pythonScript, "--target", $relativeTarget)
+    if ($ForceHash) {
+        $args += "--force-hash"
+    }
+    python @args
+    exit $LASTEXITCODE
 }
 
 function Convert-ToManifestText {

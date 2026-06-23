@@ -28,6 +28,8 @@ final class GameplayConsoleCommandAuthority {
         add("knowledge_unlock", 3, "knowledge_unlock <knowledge name>", "Force-unlocks a knowledge node/doctrine by name.");
         add("knowledge_lock", 3, "knowledge_lock <knowledge name>", "Force-locks/removes a knowledge node/doctrine by name.");
         add("knowledge_list", 3, "knowledge_list [filter]", "Lists known doctrines or matching doctrine names.");
+        add("skill_status", 1, "skill_status", "Reports XP, unlocked skill nodes, and available capability nodes.");
+        add("skill_unlock", 1, "skill_unlock <node id>", "Spends XP to unlock a skill capability node when prerequisites are met.");
         add("give", 3, "give <item_id> <amount>", "Adds an item/resource to inventory.");
         add("heal", 3, "heal <amount>", "Restores body endurance by amount.");
         add("kill", 3, "kill", "Defeats the local character.");
@@ -123,6 +125,8 @@ final class GameplayConsoleCommandAuthority {
                 case "knowledge_unlock" -> knowledgeUnlock(game, args);
                 case "knowledge_lock" -> knowledgeLock(game, args);
                 case "knowledge_list" -> knowledgeList(game, args);
+                case "skill_status" -> skillStatus(game);
+                case "skill_unlock" -> skillUnlock(game, args);
                 case "show_hitboxes" -> toggle(game, "hitboxes");
                 case "show_wireframe" -> toggle(game, "wireframe");
                 case "show_navmesh" -> toggle(game, "navmesh");
@@ -184,6 +188,19 @@ final class GameplayConsoleCommandAuthority {
     private static String knowledgeUnlock(GamePanel game, String[] args) { if (game == null) return "Game unavailable."; String name = canonicalKnowledgeName(args); if (name.isBlank()) return "Usage: knowledge_unlock <knowledge name>"; boolean added = game.unlockedKnowledges.add(name); refreshKnowledgeDebugState(game, "knowledge_unlock " + name); return added ? "Knowledge unlocked: " + name + "." : "Knowledge already unlocked: " + name + "."; }
     private static String knowledgeLock(GamePanel game, String[] args) { if (game == null) return "Game unavailable."; String name = canonicalKnowledgeName(args); if (name.isBlank()) return "Usage: knowledge_lock <knowledge name>"; boolean removed = game.unlockedKnowledges.remove(name); refreshKnowledgeDebugState(game, "knowledge_lock " + name); return removed ? "Knowledge locked: " + name + "." : "Knowledge was not unlocked: " + name + "."; }
     private static String knowledgeList(GamePanel game, String[] args) { if (game == null) return "Game unavailable."; String filter = args == null || args.length == 0 ? "" : ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim().toLowerCase(Locale.ROOT); java.util.ArrayList<String> lines = new java.util.ArrayList<>(); if (filter.isBlank()) { lines.add("Unlocked(" + game.unlockedKnowledges.size() + "): " + (game.unlockedKnowledges.isEmpty() ? "none" : String.join(", ", game.unlockedKnowledges))); lines.add("Credits: " + game.knowledgeCredits); } else { for (String name : KnowledgeDef.all().keySet()) if (name.toLowerCase(Locale.ROOT).contains(filter)) lines.add(name + (game.unlockedKnowledges.contains(name) ? " [unlocked]" : " [locked]")); if (lines.isEmpty()) lines.add("No matching knowledge definitions for filter: " + filter); } return String.join(" | ", lines); }
+    private static String skillStatus(GamePanel game) { if (game == null) return "Game unavailable."; return String.join(" | ", SkillTreeProgressionAuthority.statusLines(game.xp, game.unlockedSkillNodes, SkillTreeProgressionAuthority.SkillAccessContext.fromGame(game), game.active == null ? java.util.Map.of() : game.active.stats)); }
+    private static String skillUnlock(GamePanel game, String[] args) {
+        if (game == null) return "Game unavailable.";
+        if (args == null || args.length == 0) return "Usage: skill_unlock <node id>";
+        String raw = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim();
+        SkillTreeProgressionAuthority.SpendResult result = SkillTreeProgressionAuthority.spendXp(game.unlockedSkillNodes, game.xp, raw, SkillTreeProgressionAuthority.SkillAccessContext.fromGame(game), game.active == null ? java.util.Map.of() : game.active.stats);
+        if (!result.success()) return result.message();
+        game.xp = result.remainingXp();
+        game.unlockedSkillNodes.add(result.unlockedNodeId());
+        boolean statChanged = SkillTreeProgressionAuthority.applyStatEffect(game.active, result.statEffect());
+        game.logEvent("SKILL: " + result.message() + " Remaining XP " + game.xp + ".");
+        return result.message() + " Remaining XP " + game.xp + (statChanged ? " Stat effect applied: " + result.statEffect() + "." : ".");
+    }
     private static String canonicalKnowledgeName(String[] args) { if (args == null || args.length == 0) return ""; String raw = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim(); if (raw.isBlank()) return ""; String normalized = raw.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); for (String name : KnowledgeDef.all().keySet()) { String n = name.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); if (n.equals(normalized)) return name; } return raw; }
     private static void refreshKnowledgeDebugState(GamePanel game, String reason) { if (game == null) return; game.logEvent("CONSOLE: " + reason + " -> knowledge credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + "."); DebugLog.audit("KNOWLEDGE_DEBUG_COMMAND", reason + " credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + " state=" + game.stateSummary()); if (game.screen == GamePanel.Screen.KNOWLEDGE) game.selectedKnowledgeNodeId = null; game.repaint(); }
     private static String heal(GamePanel game, String[] args) { if (game == null) return "Game unavailable."; int amount = Math.max(1, Math.min(200, parseInt(args, 0, 10))); game.healWorstBodyPart(amount); return "Restored body endurance by " + amount + " to the most damaged body part."; }

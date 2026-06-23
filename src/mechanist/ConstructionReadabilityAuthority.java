@@ -27,7 +27,9 @@ final class ConstructionReadabilityAuthority {
             return lines;
         }
         boolean ready = placementResult != null && placementResult.equalsIgnoreCase("ok");
+        boolean stagedStart = placementResult != null && placementResult.toLowerCase().startsWith("staged start:");
         lines.add(ready ? "Placement: READY at " + x + "," + y + "."
+                : stagedStart ? "Placement: STAGED START at " + x + "," + y + " - " + safe(placementResult.substring("staged start:".length()).trim(), "partial materials available") + "."
                 : "Placement: BLOCKED at " + x + "," + y + " - " + safe(placementResult, "unknown reason") + ".");
         lines.add("Blueprint: " + recipe.name + " / " + safe(recipe.qualityName, "Common") + ".");
         lines.add("Cost: supplies " + Math.max(0, supplies) + "/" + Math.max(0, recipe.supplyCost)
@@ -37,7 +39,8 @@ final class ConstructionReadabilityAuthority {
         lines.add("Requirements: " + (recipe.requiresWorkbench ? "Scrap Workbench; " : "no workbench; ")
                 + "knowledge " + safe(recipe.requiredKnowledge, "none") + "; faction "
                 + (recipe.requiredFaction == null || recipe.requiredFaction == Faction.NONE ? "none" : recipe.requiredFaction.label) + ".");
-        lines.add("Placement consequence: consumes the listed materials and places one permanent base object on confirmation.");
+        lines.add("Access: owning the blueprint is separate from permission, reputation, license, permit, materials, workbench, knowledge, placement access, utilities, and labor.");
+        lines.add("Placement consequence: consumes the listed materials into a staged construction site; labor completion finishes the permanent base object.");
         lines.add("Purpose: " + safe(recipe.description, "No description recorded."));
         return lines;
     }

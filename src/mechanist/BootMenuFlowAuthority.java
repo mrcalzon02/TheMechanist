@@ -11,14 +11,17 @@ import javax.swing.SwingUtilities;
  * direct state mutation on the render call stack.
  */
 final class BootMenuFlowAuthority {
-    static final String VERSION = "boot-menu-flow-authority-0.9.10la";
-    static final long MIN_BOOT_MILLIS = 3400L;
+    static final String VERSION = "boot-menu-flow-authority-0.9.10lb";
+    static final long MIN_BOOT_MILLIS = 9000L;
+    static final long MAIN_MENU_MUSIC_DELAY_MILLIS = 9000L;
 
     private BootMenuFlowAuthority() {}
 
     static void startBootSequence(GamePanel panel, String reason) {
         if (panel == null) return;
         panel.bootStartMillis = System.currentTimeMillis();
+        panel.bootMainMenuMusicNotBeforeMillis = panel.bootStartMillis + MAIN_MENU_MUSIC_DELAY_MILLIS;
+        panel.bootMainMenuMusicGateAudited = false;
         panel.selectedButton = 0;
         panel.panelMode = GamePanel.PanelMode.NONE;
         panel.screen = GamePanel.Screen.BOOT;
@@ -56,7 +59,13 @@ final class BootMenuFlowAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " flow=application-entry->BOOT->MENU minimumMillis=" + MIN_BOOT_MILLIS;
+        return "authority=" + VERSION + " flow=application-entry->BOOT->MENU minimumMillis=" + MIN_BOOT_MILLIS
+                + " mainMenuMusicDelayMillis=" + MAIN_MENU_MUSIC_DELAY_MILLIS
+                + " placeholders=studio-intro+logo-splash";
+    }
+
+    static boolean mainMenuMusicAllowed(long nowMillis, long notBeforeMillis) {
+        return notBeforeMillis <= 0L || nowMillis >= notBeforeMillis;
     }
 
     private static String safe(String reason) {

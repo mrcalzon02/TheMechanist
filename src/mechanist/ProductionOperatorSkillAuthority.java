@@ -5,12 +5,14 @@ import java.util.Locale;
 
 /** Maps recipe skill labels onto the current core-stat scale for manual production risk. */
 final class ProductionOperatorSkillAuthority {
-    record OperatorSkill(String recipeSkill, String coreStat, int value, String band, int defectRiskAdjust) {
+    record OperatorSkill(String recipeSkill, String coreStat, int value, String band, int defectRiskAdjust,
+                         int qualityTier, String quality) {
         List<String> lines() {
             String sign = defectRiskAdjust > 0 ? "+" : "";
             return List.of(
                     "Operator skill: " + recipeSkill + " uses " + coreStat + " " + value + " / " + band + ".",
-                    "Operator defect adjustment: " + sign + defectRiskAdjust + " percentage points; operator skill does not change the quality cap yet.");
+                    "Operator quality cap: " + quality + ".",
+                    "Operator defect adjustment: " + sign + defectRiskAdjust + " percentage points.");
         }
     }
 
@@ -20,10 +22,10 @@ final class ProductionOperatorSkillAuthority {
         String skill = recipeSkill == null || recipeSkill.isBlank() ? "Mechanics" : recipeSkill;
         String core = coreStatFor(skill);
         int value = game == null ? 6 : game.stat(core, 6);
-        if (value <= 5) return new OperatorSkill(skill, core, value, "novice", 6);
-        if (value <= 7) return new OperatorSkill(skill, core, value, "practiced", 3);
-        if (value <= 9) return new OperatorSkill(skill, core, value, "skilled", 0);
-        return new OperatorSkill(skill, core, value, "expert", -3);
+        if (value <= 5) return result(skill, core, value, "novice", 6, 2);
+        if (value <= 7) return result(skill, core, value, "practiced", 3, 3);
+        if (value <= 9) return result(skill, core, value, "skilled", 0, 4);
+        return result(skill, core, value, "expert", -3, 5);
     }
 
     static String coreStatFor(String recipeSkill) {
@@ -34,5 +36,11 @@ final class ProductionOperatorSkillAuthority {
         if (value.contains("survival")) return "Endurance";
         if (value.contains("medical") || value.contains("medicine") || value.contains("knowledge") || value.contains("security")) return "Intellect";
         return "Mechanics";
+    }
+
+    private static OperatorSkill result(String skill, String core, int value, String band,
+                                        int defectRiskAdjust, int qualityTier) {
+        return new OperatorSkill(skill, core, value, band, defectRiskAdjust, qualityTier,
+                QualityAuthorityApi.qualityName(qualityTier));
     }
 }

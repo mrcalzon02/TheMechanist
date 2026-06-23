@@ -24,12 +24,14 @@ final class ProductionReadabilityAuthority {
         int facilityTier = facility.active() ? facility.tier() : -1;
         ProductionToolQualityAuthority.ToolQuality tool = ProductionToolQualityAuthority.evaluate(game);
         int toolTier = tool.active() ? tool.tier() : -1;
+        ProductionOperatorSkillAuthority.OperatorSkill operator = ProductionOperatorSkillAuthority.evaluate(game, recipe.xpSkill);
         String quality = ProductionQualityTraceAuthority.evaluate(
                 knowledge.effectiveKnowledge(),
-                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier).outputQuality();
+                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier,
+                operator.qualityTier()).outputQuality();
         int turns = ControlledProductionJobAuthority.manualTurnCost(game, machine, recipe);
         int fatigue = ControlledProductionJobAuthority.manualFatigueCost(game, machine, recipe);
-        ProductionOperatorSkillAuthority.OperatorSkill operator = ProductionOperatorSkillAuthority.evaluate(game, recipe.xpSkill);
+        ProductionFatiguePressureAuthority.FatiguePressure pressure = ProductionFatiguePressureAuthority.evaluate(game, fatigue);
         ArrayList<String> lines = new ArrayList<>(preview(recipe, machine, game == null ? 0 : game.supplies,
                 game == null ? 0 : game.machineParts, availableItems, quality, turns, fatigue, blocker, operator));
         int pending = game == null || game.machineOperationQueue == null ? 0 : game.machineOperationQueue.pendingCount();
@@ -37,11 +39,17 @@ final class ProductionReadabilityAuthority {
         int history = game == null || game.machineOperationQueue == null ? 0 : game.machineOperationQueue.historyCount();
         lines.addAll(ProductionQualityTraceAuthority.evaluate(
                 knowledge.effectiveKnowledge(),
-                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier).lines());
+                recipe.requiredKnowledge, machine == null ? "Common" : machine.qualityName, materialTier, facilityTier, toolTier,
+                operator.qualityTier()).lines());
         lines.addAll(materials.lines());
         lines.addAll(facility.lines());
         lines.addAll(tool.lines());
+        lines.addAll(pressure.lines());
+        lines.addAll(ProductionLocationAuthority.evaluate(game, machine).lines());
+        lines.addAll(ProductionMachineIdentityAuthority.evaluate(machine).lines());
+        lines.addAll(ProductionOperatorIdentityAuthority.evaluate(game).lines());
         lines.addAll(knowledge.lines());
+        lines.addAll(skillCapabilityContext(game));
         lines.addAll(ProductionWorkerQualityAuthority.evaluate(game, machine, true).lines());
         lines.addAll(machineContext(machine, pending, active, history));
         return lines;
@@ -85,11 +93,12 @@ final class ProductionReadabilityAuthority {
         }
         lines.add("Knowledge: " + safe(recipe.requiredKnowledge, "none") + ". Faction pattern: "
                 + FactionManufacturingProfile.forFaction(recipe.faction).label + ".");
+        lines.addAll(ProductionFactionMutationAuthority.evaluate(production).lines());
         lines.addAll(MachineConditionProductionAuthority.forecastLines(machine));
         if (operator != null) lines.addAll(operator.lines());
         lines.add("Outcome estimate: value about " + production.estimatedValue() + " script; usable charges about "
                 + production.outputCharges() + "; defect risk about " + production.estimatedDefectPercent(machine,
-                operator == null ? 0 : operator.defectRiskAdjust()) + "%.");
+                operator == null ? 0 : operator.defectRiskAdjust()) + "% before live fatigue pressure.");
         lines.add("Batch rule: manual Craft rolls one inspection disposition for the whole output batch and records it in item provenance.");
         lines.add("Defect consequence: a flagged batch receives a 40% ordinary-trader resale penalty; item statistics remain unchanged.");
         lines.add("Purpose: " + safe(recipe.description, "No description recorded."));
@@ -113,6 +122,24 @@ final class ProductionReadabilityAuthority {
                 + Math.max(0, activeOperations) + ", recorded " + Math.max(0, historyRecords) + ".");
         lines.add("Utility boundary: manual Craft currently checks machine presence, knowledge, supplies, parts, and named inputs; no separate power or fuel gate is enforced here.");
         lines.add("Routing boundary: manual output enters carried inventory; queued-machine output routing is not controlled by this Craft action.");
+        return lines;
+    }
+
+    static List<String> skillCapabilityContext(GamePanel game) {
+        ArrayList<String> lines = new ArrayList<>();
+        if (game == null || game.unlockedSkillNodes == null || game.unlockedSkillNodes.isEmpty()) {
+            lines.add("Skill capability hooks: no unlocked skill nodes are contributing production preview context.");
+            return lines;
+        }
+        List<String> passive = SkillTreeProgressionAuthority.passiveBonusLines(game.unlockedSkillNodes);
+        List<String> active = SkillTreeProgressionAuthority.activeAbilityLines(game.unlockedSkillNodes);
+        if (passive.isEmpty() && active.isEmpty()) {
+            lines.add("Skill capability hooks: unlocked nodes have no production preview hook yet.");
+            return lines;
+        }
+        lines.add("Skill capability hooks: preview context only; production execution math is unchanged until a consuming authority applies the hook.");
+        for (String line : passive) lines.add("Skill passive hook: " + line + ".");
+        for (String line : active) lines.add("Skill active ability: " + line + ".");
         return lines;
     }
 

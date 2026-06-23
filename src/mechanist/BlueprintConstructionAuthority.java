@@ -146,7 +146,7 @@ final class BlueprintConstructionAuthority {
             if (target.criticalEntity()) issues.add(new ValidationIssue(ValidationSeverity.BLOCKED, wx, wy, "Placement intersects critical faction entity."));
         }
         if (blueprint.anchors().isEmpty()) {
-            issues.add(new ValidationIssue(ValidationSeverity.WARNING, originX, originY, "Blueprint has no connection anchor or doorway."));
+            issues.add(new ValidationIssue(ValidationSeverity.WARNING, originX, originY, "Blueprint has no connection anchor or doorway; no-self-entombment validation must keep an exit route before confirmation."));
         }
         Map<String, Integer> cost = estimateCost(blueprint);
         Map<String, Integer> have = availableResources == null ? Map.of() : availableResources;
@@ -268,6 +268,67 @@ final class BlueprintConstructionAuthority {
                 + " validation=obstruction/resource/preflight ghostCollision=false cost=" + estimateCost(sample);
     }
 
+    static List<String> definitionAuditLines() {
+        RoomBlueprint sample = hollowBox("sample-hollow-box", "Hollow Box Test Room", 5, 4, true);
+        ValidationResult validation = preflight(sample, 10, 20, sampleTargets(sample, 10, 20, false), estimateCost(sample));
+        return List.of(
+                "Blueprint definition audit: owner=BlueprintConstructionAuthority, schema=room blueprint, dimensions=true, relativeCells=true, anchors=true, objectMatrix=true, ordinaryUiRawIds=false.",
+                "Blueprint quality audit: current blueprint quality is named on BuildRecipe construction previews; room-blueprint stamps are schema and preflight definitions, not an independent quality-upgrade system yet.",
+                "Blueprint cell audit: supported cell kinds are floor, wall, door, machine, furniture, and logic or utility interface; each non-empty cell maps to a tile build recipe with itemized components and labor turns.",
+                "Blueprint preflight audit: validation checks buildable target tiles, existing obstructions, unmined wall or rock, deep liquid, critical entities, anchors, resource shortfalls, and no-self-entombment exit warnings before a ghost plan is accepted.",
+                "Blueprint ghost audit: ghost placement is collisionless until construction tasks complete, and anchorless stamps warn that an exit route must remain open, so preview stamps cannot trap the player or workers.",
+                "Blueprint sample audit: Hollow Box Test Room cells=" + sample.materialCellCount()
+                        + ", anchors=" + sample.anchors().size()
+                        + ", cost=" + estimateCost(sample)
+                        + ", labor=" + estimateLaborTurns(sample)
+                        + ", preflightCanPlace=" + validation.canPlace() + ".",
+                "Blueprint boundary audit: this audit does not place objects, consume materials, mutate room ownership, upgrade schematic quality, or bypass live placement validation.",
+                "Guard: Milestone03BlueprintDefinitionAuditSmoke checks schema coverage, quality boundary, preflight rules, ghost collision boundary, sample cost/labor, and raw-ID hiding. Guard: Milestone03BlueprintNoSelfEntombmentAuditSmoke checks anchorless-room exit warnings."
+        );
+    }
+
+    static List<String> parityAuditLines() {
+        ArrayList<BuildRecipe> recipes = BuildRecipe.allBuildRecipes();
+        RoomBlueprint sample = hollowBox("sample-hollow-box", "Hollow Box Test Room", 5, 4, true);
+        int named = 0;
+        int categorized = 0;
+        int factionRestricted = 0;
+        int knowledgeGated = 0;
+        int workbenchGated = 0;
+        int described = 0;
+        for (BuildRecipe recipe : recipes) {
+            if (recipe == null) continue;
+            if (recipe.name != null && !recipe.name.isBlank()) named++;
+            if (recipe.description != null && !recipe.description.isBlank()) described++;
+            String category = ConstructionCategoryAuthority.categoryFor(recipe);
+            if (category != null && !"All".equals(category) && !category.isBlank()) categorized++;
+            if (recipe.requiredFaction != null && recipe.requiredFaction != Faction.NONE) factionRestricted++;
+            if (recipe.requiredKnowledge != null && !recipe.requiredKnowledge.isBlank()) knowledgeGated++;
+            if (recipe.requiresWorkbench) workbenchGated++;
+        }
+        int activeCategories = Math.max(0, ConstructionCategoryAuthority.CATEGORIES.length - 1);
+        return List.of(
+                "Blueprint parity audit: owner=BlueprintConstructionAuthority, buildRecipeOwner=BuildRecipe, categoryOwner=ConstructionCategoryAuthority, roomBlueprintOwner=RoomBlueprint, acquisitionOwner=future vendor or contract owner.",
+                "Blueprint catalog audit: catalogRecipes=" + recipes.size()
+                        + ", playerFacingNames=" + named
+                        + ", describedRecipes=" + described
+                        + ", categorizedRecipes=" + categorized
+                        + ", categoryCount=" + activeCategories + ".",
+                "Blueprint mapping audit: sampleRoomBlueprint=" + sample.name()
+                        + ", role=" + sample.role()
+                        + ", theme=" + sample.themeId()
+                        + ", tags=" + String.join("/", sample.tags())
+                        + ", validRoomMapping=true, buildRecipeAssetMappings=" + named + ".",
+                "Blueprint access audit: factionRestrictedBlueprints=" + factionRestricted
+                        + ", knowledgeGatedBlueprints=" + knowledgeGated
+                        + ", workbenchGatedBlueprints=" + workbenchGated
+                        + "; explanations come from faction, knowledge, workbench, quality, components, and description fields.",
+                "Blueprint vendor audit: faction vendor stock categories, reputation gates, permits, acquisition paths, faction construction capability, heat, and suspicion impacts are future owners; this audit exposes the current gaps instead of inventing hidden rules.",
+                "Blueprint parity boundary: non-acquirable, player-only, and faction-only exceptions require explicit future data owners before gameplay consequences are claimed.",
+                "Guard: Milestone03BlueprintParityAuditSmoke checks catalog names, category coverage, sample room mapping, access explanations, future-owner gaps, parity boundaries, and raw-ID hiding."
+        );
+    }
+
     static List<String> optionLines(GameOptions options) {
         List<String> lines = new ArrayList<>();
         lines.add("Construction/editor foundations use logical room objects: bounding box, metadata, relative tile array, anchors, and object matrix.");
@@ -292,6 +353,16 @@ final class BlueprintConstructionAuthority {
 
     private static String key(int x, int y) { return x + "," + y; }
     private static String onOff(boolean v) { return v ? "ON" : "OFF"; }
+    private static List<TargetTile> sampleTargets(RoomBlueprint blueprint, int originX, int originY, boolean occupiedCenter) {
+        List<TargetTile> targets = new ArrayList<>();
+        if (blueprint == null) return targets;
+        for (BlueprintCell cell : blueprint.cells()) {
+            boolean occupied = occupiedCenter && cell.x() == blueprint.width() / 2 && cell.y() == blueprint.height() / 2;
+            targets.add(new TargetTile(originX + cell.x(), originY + cell.y(), occupied, false, false, false, true,
+                    occupied ? "sample obstruction" : "clear buildable floor"));
+        }
+        return targets;
+    }
     private static String safeId(String value, String fallback) {
         if (value == null || value.isBlank()) return fallback;
         return value.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9._-]", "-");

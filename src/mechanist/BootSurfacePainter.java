@@ -147,13 +147,16 @@ final class BootSurfacePainter implements ScreenPainter {
     private void drawBootText(Graphics2D g, GamePanel panel, int w, int h, long elapsed) {
         g.setFont(panel.smallFont == null ? new Font("Monospaced", Font.BOLD, 14) : panel.smallFont);
         String[] steps = {
+                "studio intro placeholder",
+                "logo splash placeholder",
                 "loading cogitator frame slices",
                 "binding tile art registries",
                 "indexing portrait pools",
-                "arming menu authorities",
+                "holding main-menu music gate",
                 "opening main menu"
         };
-        int step = Math.min(steps.length - 1, (int)(elapsed / 650L));
+        long stepMillis = Math.max(1L, BootMenuFlowAuthority.MIN_BOOT_MILLIS / steps.length);
+        int step = Math.min(steps.length - 1, (int)(elapsed / stepMillis));
         String dots = switch ((int)((elapsed / 250L) % 4L)) { case 1 -> ".."; case 2 -> "..."; case 3 -> "...."; default -> "."; };
         g.setColor(new Color(170, 205, 145));
         drawCentered(g, "boot sequence // " + steps[step] + dots, w / 2, h - 92);

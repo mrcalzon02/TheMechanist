@@ -346,6 +346,22 @@ class QualityAuthorityApi {
         for (QualityAuthorityProfile p : profiles()) l.add("QUALITY " + p.auditLine());
         return l;
     }
+
+    static ArrayList<String> definitionAuditLines() {
+        ArrayList<String> l = new ArrayList<>();
+        l.add("Quality band definition audit: owner=QualityAuthorityApi, itemQualityOwner=ItemQuality, profileCount=" + profiles().size()
+                + ", itemQualityOrder=" + String.join(" > ", QUALITY_ORDER)
+                + ", doctrineBands=" + String.join(" > ", KNOWLEDGE_BANDS)
+                + ", ordinaryUiRawIds=false.");
+        l.add("Knowledge band boundary: Shoddy is a degradation quality and not a target doctrine school; Common is the civic baseline for missing or ordinary doctrine.");
+        l.add("Item outcome audit: item quality prefixes drive value and charge multipliers through ItemQuality, while production quality profiles describe usefulness, reliability, efficiency, defect pressure, comfort, prestige, and role text.");
+        l.add("Production cap audit: output quality remains the minimum of known doctrine tier, recipe requirement tier, machine ceiling tier, and any active input, facility, tool, or operator cap.");
+        for (QualityAuthorityProfile p : profiles()) {
+            l.add("Quality tier audit: " + p.auditLine());
+        }
+        l.add("Guard: Milestone03QualityBandDefinitionAuditSmoke checks quality order, doctrine bands, Shoddy boundary, item value/charge multipliers, profile roles, capping rule, and raw-ID hiding.");
+        return l;
+    }
 }
 
 

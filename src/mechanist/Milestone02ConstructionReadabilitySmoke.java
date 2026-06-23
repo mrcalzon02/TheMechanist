@@ -11,13 +11,20 @@ final class Milestone02ConstructionReadabilitySmoke {
         requireContains(ready, "supplies 8/5", "supply forecast");
         requireContains(ready, "Sensor lens 1/1", "component forecast");
         requireContains(ready, "Scrap Workbench", "workbench requirement");
+        requireContains(ready, "owning the blueprint is separate from permission", "blueprint ownership boundary");
         requireContains(ready, "permanent base object", "placement consequence");
+        List<String> staged = ConstructionReadabilityAuthority.preview(recipe, 1, 0, 3, 4,
+                "staged start: 1 material unit(s) available now; missing materials can be added later with Work.",
+                List.of("Sensor lens 0/1"));
+        requireContains(staged, "STAGED START", "staged-start status");
+        requireContains(staged, "missing materials can be added later", "staged-start explanation");
 
         List<String> blocked = ConstructionReadabilityAuthority.preview(recipe, 1, 0, 3, 4,
                 "need 5 supplies, have 1", List.of("Sensor lens 0/1"));
         requireContains(blocked, "BLOCKED", "blocked status");
         requireContains(blocked, "need 5 supplies", "blocked reason");
         for (String line : ready) rejectLeaks(line);
+        for (String line : staged) rejectLeaks(line);
         for (String line : blocked) rejectLeaks(line);
     }
 

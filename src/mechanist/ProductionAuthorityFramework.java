@@ -578,6 +578,8 @@ class CraftingRecipe {
         if (machine == null) return "requires built " + machineName() + ".";
         if (machineSymbol != ' ' && machineSymbol != machine.symbol) return "requires " + machineName() + ".";
         if (!MachineConditionProductionAuthority.evaluate(machine).operational()) return "requires repair: " + machine.name + " is broken.";
+        if (ProductionFatiguePressureAuthority.evaluate(g, ControlledProductionJobAuthority.manualFatigueCost(g, machine, this)).blocked())
+            return "player is exhausted; rest before operating machinery.";
         int needSupplies = effectiveSuppliesCost();
         int needParts = effectiveMachinePartsCost();
         if (g.supplies < needSupplies) return "needs " + needSupplies + " supplies; available " + g.supplies + ".";

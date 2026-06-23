@@ -16,6 +16,8 @@ final class ProgressiveConstructionAuthority {
 
     private ProgressiveConstructionAuthority() {}
 
+    record DismantleResult(boolean removed, int recoveredSupplies, int recoveredMachineParts, int recoveredNamedItems, String summary) {}
+
     static BaseObject createSite(BuildRecipe recipe, int x, int y, int requiredLabor) {
         BaseObject site = new BaseObject("Under construction: " + clean(recipe == null ? null : recipe.name, "unknown structure"), '?', x, y,
                 recipe == null ? 0 : recipe.supplyCost, recipe == null ? 0 : recipe.attention);
@@ -31,6 +33,37 @@ final class ProgressiveConstructionAuthority {
         site.faction = recipe == null ? Faction.NONE : recipe.requiredFaction;
         site.assignedRecipe = recipe == null ? "" : recipe.name;
         return site;
+    }
+
+    static BaseObject createPrepaidSite(BuildRecipe recipe, int x, int y) {
+        BaseObject site = createSite(recipe, x, y, recipe == null ? 1 : recipe.baseTurns);
+        site.constructionInsertedItems = site.constructionRequiredItems;
+        site.constructionVisualProgress = progressPercent(site);
+        return site;
+    }
+
+    static void syncSiteTile(GamePanel g, BaseObject site) {
+        if (g == null || g.world == null || site == null || !g.world.inBounds(site.x, site.y)) return;
+        if (site.underConstruction && site.constructionOriginalTile == 0 && g.world.tiles[site.x][site.y] != site.symbol) {
+            site.constructionOriginalTile = g.world.tiles[site.x][site.y];
+        }
+        g.world.tiles[site.x][site.y] = site.symbol;
+    }
+
+    static boolean canStartWithPartialMaterials(GamePanel g, BuildRecipe recipe) {
+        return availableMaterialUnits(g, recipe) > 0;
+    }
+
+    static int availableMaterialUnits(GamePanel g, BuildRecipe recipe) {
+        if (g == null || recipe == null) return 0;
+        int available = 0;
+        if (recipe.supplyCost > 0) available += Math.min(Math.max(0, g.supplies), recipe.supplyCost);
+        if (recipe.partCost > 0) available += Math.min(Math.max(0, g.machineParts), recipe.partCost);
+        if (recipe.componentCosts != null) for (Map.Entry<String,Integer> e : recipe.componentCosts.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null || e.getValue() <= 0) continue;
+            available += Math.min(Math.max(0, g.countProductionInput(e.getKey())), e.getValue());
+        }
+        return available;
     }
 
     static int contribute(GamePanel g, BaseObject site, int laborTurns, boolean allowMaterialPull) {
@@ -77,6 +110,59 @@ final class ProgressiveConstructionAuthority {
                 + " missing=" + missingMaterials(site);
     }
 
+    static java.util.List<String> inspectionLines(BaseObject site) {
+        if (site == null || !site.underConstruction) return java.util.List.of();
+        return java.util.List.of(
+                "Construction status: staged site, not a completed facility.",
+                progressLine(site) + ".",
+                "Completion: contribute labor after materials are staged; finished work becomes " + clean(String.valueOf(site.finalSymbol), "?") + "."
+        );
+    }
+
+    static String contributionResultLine(BaseObject site, int insertedBefore, boolean wasCompleted) {
+        if (site == null) return "Construction work could not find a staged site.";
+        if (wasCompleted || !site.underConstruction) {
+            return "Construction complete: " + clean(site.name, "structure") + ".";
+        }
+        return "Construction work added labor"
+                + (insertedBefore > 0 ? " and staged " + insertedBefore + " material unit(s)" : "")
+                + ". " + progressLine(site) + ".";
+    }
+
+    static DismantleResult dismantle(GamePanel g, BaseObject site) {
+        if (g == null || site == null || !site.underConstruction || g.baseObjects == null || !g.baseObjects.contains(site)) {
+            return new DismantleResult(false, 0, 0, 0, "No unfinished construction site is selected.");
+        }
+        Map<String,Integer> inserted = decode(site.constructionInsertedItems);
+        int supplies = 0;
+        int parts = 0;
+        int named = 0;
+        for (Map.Entry<String,Integer> e : inserted.entrySet()) {
+            String item = e.getKey();
+            int count = Math.max(0, e.getValue());
+            if (count <= 0) continue;
+            if (item.equalsIgnoreCase("Construction supplies")) {
+                g.supplies += count;
+                supplies += count;
+            } else if (item.equalsIgnoreCase("Machine part") || item.equalsIgnoreCase("Machine parts")) {
+                g.machineParts += count;
+                parts += count;
+            } else {
+                for (int i = 0; i < count; i++) g.baseStorage.add(item);
+                named += count;
+            }
+        }
+        boolean removed = g.baseObjects.remove(site);
+        if (g.world != null && g.world.inBounds(site.x, site.y) && g.world.tiles[site.x][site.y] == site.symbol) {
+            g.world.tiles[site.x][site.y] = site.constructionOriginalTile == 0 ? '.' : site.constructionOriginalTile;
+        }
+        String recovered = "Recovered " + supplies + " construction supplies, " + parts + " machine part(s), and "
+                + named + " named component(s).";
+        String summary = (removed ? "Dismantled " : "Cleared ") + clean(site.name, "unfinished construction site")
+                + ". " + recovered + " Labor progress was not recoverable.";
+        return new DismantleResult(removed, supplies, parts, named, summary);
+    }
+
     static String auditSummary(GamePanel g) {
         int active = 0;
         ArrayList<String> lines = new ArrayList<>();
@@ -89,6 +175,31 @@ final class ProgressiveConstructionAuthority {
         return "progressiveConstruction version=" + VERSION + " activeSites=" + active + " toolMultiplier=" + toolLaborMultiplier(g)
                 + " stagedMaterials=true perTileProgressBars=true ghostBlueToBuiltColor=true deconstructionTurnsWithTools=true"
                 + (lines.isEmpty() ? "" : " | " + String.join(" | ", lines));
+    }
+
+    static java.util.List<String> definitionAuditLines() {
+        BaseObject sample = createSite(BuildRecipe.shopCounter(), 12, 18, 7);
+        Color starting = constructionOverlayColor(sample, new Color(90, 210, 120));
+        sample.constructionVisualProgress = 100;
+        Color finished = constructionOverlayColor(sample, new Color(90, 210, 120));
+        return java.util.List.of(
+                "Progressive construction audit: owner=ProgressiveConstructionAuthority, siteOwner=BaseObject, recipeOwner=BuildRecipe, persistenceOwner=BaseObject save/load fields, ordinaryUiRawIds=false.",
+                "Construction site state audit: underConstruction=true, finalSymbol preserved, assignedRecipe preserved, requiredMaterials stored, insertedMaterials stored, laborRequired and laborDone stored, visualProgress stored, originalTile preserved, quality and faction preserved.",
+                "Construction progress audit: staged materials are inserted before labor completes, placement can create a prepaid or partial construction site, material progress contributes most of the visible progress, labor completes the remainder, and finished sites return to their final built symbol.",
+                "Construction tile sync audit: live placement preserves the original walkable tile, live placement reserves the world tile with the construction placeholder, completion restores the final built symbol, dismantle restores the original tile, and save/load reads the same tile state from BaseObject fields.",
+                "Construction visual audit: unfinished work starts as pale blue ghost construction and fades toward the final built color while retaining compact per-site progress text.",
+                "Construction inspection audit: object inspection reports staged-site status, material progress, labor progress, missing materials, and completion target before offering completed-facility actions.",
+                "Construction labor action audit: the interaction panel can stage available missing materials, contribute one turn of labor when materials are complete, and report progress or completion through ProgressiveConstructionAuthority.",
+                "Construction dismantle audit: unfinished staged sites can be dismantled before completion, inserted materials are recovered, labor progress is lost, and no completed facility configuration is applied.",
+                "Construction tool audit: construction and deconstruction use the existing held-tool multiplier so suitable tools reduce effort without bypassing time.",
+                "Construction persistence audit: staged construction fields are saved with base objects, restored before completed objects receive normal built-object configuration, and verified by a write/read round-trip smoke.",
+                "Construction sample audit: " + progressLine(createSite(BuildRecipe.shopCounter(), 12, 18, 7))
+                        + "; prepaid=" + progressLine(createPrepaidSite(BuildRecipe.shopCounter(), 12, 18))
+                        + "; overlayAlphaStart=" + starting.getAlpha()
+                        + "; overlayMovesTowardBuilt=" + (finished.getGreen() < starting.getGreen() && finished.getRed() < starting.getRed()) + ".",
+                "Progressive construction boundary: this audit does not dispatch workers, mutate room ownership, unlock blueprints, apply heat, or complete construction outside the staged construction owner.",
+                "Guard: Milestone03ProgressiveConstructionDefinitionAuditSmoke checks staged site metadata, progress text, visual fade, tool timing, persistence fields, boundaries, and raw-ID hiding. Guard: Milestone03ProgressiveConstructionPersistenceSmoke checks staged-site save/load round trips. Guard: Milestone03ProgressiveConstructionDismantleSmoke checks unfinished-site removal and material recovery. Guard: Milestone03ProgressiveConstructionTileSyncSmoke checks live placement and completion tile sync. Guard: Milestone03ProgressiveConstructionOriginalTileSmoke checks original-tile preservation and restoration."
+        );
     }
 
     private static int insertAvailableMaterials(GamePanel g, BaseObject site, int maxUnits) {
@@ -142,6 +253,7 @@ final class ProgressiveConstructionAuthority {
         site.symbol = site.finalSymbol == 0 ? '?' : site.finalSymbol;
         site.underConstruction = false;
         site.constructionVisualProgress = 100;
+        syncSiteTile(g, site);
         g.configureBaseObject(site);
         LiveProductionPlacementAuthority.annotateBuiltObject(g, site);
         g.runCrafted++;

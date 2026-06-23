@@ -62,7 +62,10 @@ final class MachineOperationStatusBridge {
         }
 
         BaseObject selected = g.selectedWorkerMachine();
-        if (selected != null) lines.add("Selected machine bridge: " + machineLine(g, selected));
+        if (selected != null) {
+            lines.add("Selected machine bridge: " + machineLine(g, selected));
+            lines.addAll(StaffedProductionExecutionAuthority.forecastLines(g, selected));
+        }
 
         ArrayList<BaseObject> machines = g.recruitOperableMachines();
         if (machines.isEmpty()) lines.add("Base machine bridge: no recruit-operable machines available.");
