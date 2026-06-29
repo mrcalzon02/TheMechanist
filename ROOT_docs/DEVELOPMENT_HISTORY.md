@@ -12,6 +12,238 @@ Earlier pre-milestone development remains archived at:
 
 Use this file for new completed work from this reset onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `ROOT_docs/MILESTONE_INDEX.md`.
 
+## Infopedia - Player-Facing Mechanic Reference Cleanup Slice
+
+Audited the game-owned Infopedia mechanic entries and removed the development-history debris that had accumulated there: smoke names, guard lines, authority names, audit ownership notes, future-owner boundaries, raw ID warnings, and construction tally prose. The Infopedia now describes current player-facing behavior for assets, Look/Examine, movement, context prompts, menu behavior, input rebinding, body/medical/inventory, production, skill progression, construction blueprints, expansion heat, interaction approach, contract evidence, transfer workflows, and faction staffing.
+
+This keeps the Infopedia as an in-game reference instead of a construction ledger. Development tracking remains here in `DEVELOPMENT_HISTORY.md`; the rendered Infopedia detail path and search matching now reject process-language mechanic lines, and the readability smokes sweep every rendered mechanic detail so stale guard/audit text fails fast.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused Infopedia mechanics, menu uniformity Infopedia detail, input rebinding Infopedia detail, and contract skill-proof Infopedia smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 710 Java modules and 0 unpositioned modules; package rebuild passed with 1699 class files and 6096 package assets; Java 17 package scan passed for 3398 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206255 indexed file rows with reused=202804, hashed=3451, errors=0.
+
+## Milestone 03 - Staged Construction Status Packet Slice
+
+Pivoted the construction milestone back onto live player-facing staged construction by making `/construction_progress` report a readable staged-site status packet instead of an internal audit blob. The packet now summarizes active staged sites, sites ready for labor, sites blocked by materials, nearly complete sites, and the first few staged-site lines with location, material progress, labor progress, and the next action.
+
+This moves construction tracking toward usable runtime feedback without adding another meta-audit layer: the slice does not create faction job queues, mutate rooms, assign workers, spend budget, change heat, alter placement validation, or complete construction. It reuses `ProgressiveConstructionAuthority`, updates the Construction Blueprints Infopedia wording, and expands the progressive construction smoke to cover empty status, blocked material status, ready-for-labor status, and the admin command path.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused progressive construction definition/status smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 710 Java modules and 0 unpositioned modules; package rebuild passed with 1699 class files and 6096 package assets; Java 17 package scan passed for 3398 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206241 indexed file rows with reused=202792, hashed=3449, errors=0.
+
+## Runtime Hygiene - Startup Sound Effects Silence Slice
+
+Removed the startup `boot` sound effect from the client boot path so repeated smoke-test/package launches no longer play a machine-start/beep cue before the game settles into its intro music flow. The old path fired `sounds.play("boot", options)` from the `GamePanel` constructor, registered `assets/sound/wav/machine_start.wav` as the `boot` cue, and could synthesize a generated fallback tone if the asset was missing.
+
+This makes startup sound effects inert instead of merely hidden behind a setting: `GamePanel` no longer plays the boot cue, `SoundManager` no longer registers the boot asset, the audio runtime suppresses the `boot` key and returns no generated boot cue bytes, legacy `bootSound` options are forced false, the Options audio tab no longer exposes a boot-sound toggle, and the packaged options file now persists `bootSound=false`. Intro/dynamic music remains on its separate channel.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; `BootStartupAudioSilenceSmoke`, `BootMenuMusicDelaySmoke`, and `OptionsSwingComponentSmoke` passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 710 Java modules and 0 unpositioned modules; package rebuild passed with 1699 class files and 6096 package assets; Java 17 package scan passed for 3398 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206228 indexed file rows with reused=202777, hashed=3451, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Review Action Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionAuthority`, an audit-only action contract for future archived faction construction response cycle review-action review reviews. The audit requires review readiness, permission readiness, confirmation readiness, evidence selection, audit text, and non-reopen boundary before any future review-action owner can offer an archived review-action review review action.
+
+This keeps faction construction non-mutating and action-separated: the slice does not execute review-action review review actions, reopen review-action reviews, write archives, export evidence, reveal hidden faction data, update status, enqueue notifications, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review review action smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 709 Java modules and 0 unpositioned modules; package rebuild passed with 1698 class files and 6096 package assets; Java 17 package scan passed for 3396 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206212 indexed file rows with reused=202767, hashed=3445, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Review Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewReviewAuthority`, an audit-only review contract for future archived faction construction response cycle review-action review readbacks. The audit requires readback readiness, readable reviewer context, evidence links, readable allowed actions, privacy reminder, and follow-up boundary before any future review owner can offer review of an archived review-action review.
+
+This keeps faction construction non-mutating and review-separated: the slice does not reopen review-action reviews, execute review-action review actions, write archives, reveal hidden faction data, update status, enqueue notifications, alter job state, move evidence, refresh archives, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review review smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 707 Java modules and 0 unpositioned modules; package rebuild passed with 1695 class files and 6096 package assets; Java 17 package scan passed for 3390 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206192 indexed file rows with reused=202753, hashed=3439, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Readback Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewReadbackAuthority`, an audit-only readback contract for future archived faction construction response cycle review-action reviews. The audit requires archive readiness, archive lookup readiness, readable summary, privacy filter readiness, readable replay reference, and stale record marker before any future readback owner can present an archived review-action review.
+
+This keeps faction construction non-mutating and readback-separated: the slice does not read archives from storage, write archives, replay commands, reveal hidden faction data, update status, enqueue notifications, alter job state, move evidence, refresh archives, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReadbackAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review readback smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 705 Java modules and 0 unpositioned modules; package rebuild passed with 1692 class files and 6096 package assets; Java 17 package scan passed for 3384 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206172 indexed file rows with reused=202739, hashed=3433, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Archive Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewArchiveAuthority`, an audit-only archive contract for future closed archived faction construction response cycle review-action reviews. The audit requires close readiness, readable archive reason, retention label, privacy label, result snapshot, and replay reference before any future archive owner can preserve a closed review-action review.
+
+This keeps faction construction non-mutating and archive-separated: the slice does not write archives, redact records, delete records, update status, enqueue notifications, move evidence, refresh archives, reveal hidden faction data, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewArchiveAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review archive smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 703 Java modules and 0 unpositioned modules; package rebuild passed with 1689 class files and 6096 package assets; Java 17 package scan passed for 3378 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206151 indexed file rows with reused=202720, hashed=3431, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Close Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewCloseAuthority`, an audit-only close contract for future archived faction construction response cycle review-action review follow-ups. The audit requires follow-up readiness, readable close decision, status return declaration, notification return declaration, evidence retention boundary, and archive refresh boundary before any future close owner can close archived review-action review follow-up.
+
+This keeps faction construction non-mutating and close-separated: the slice does not close follow-up, update status, enqueue notifications, move evidence, refresh archives, reveal hidden faction data, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewCloseAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review close smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 701 Java modules and 0 unpositioned modules; package rebuild passed with 1686 class files and 6096 package assets; Java 17 package scan passed for 3372 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206128 indexed file rows with reused=202706, hashed=3422, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Follow-up Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewFollowupAuthority`, an audit-only follow-up contract for future archived faction construction response cycle review-action review results. The audit requires result readiness, reviewer summary, evidence disposition, status refresh, notification boundary, and closure boundary before any future follow-up owner can schedule archived review-action review follow-up.
+
+This keeps faction construction non-mutating and follow-up-separated: the slice does not schedule follow-up, write summaries, move evidence, update status, enqueue notifications, close review actions, reveal hidden faction data, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewFollowupAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review follow-up smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 699 Java modules and 0 unpositioned modules; package rebuild passed with 1683 class files and 6096 package assets; Java 17 package scan passed for 3366 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206108 indexed file rows with reused=202692, hashed=3416, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Result Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionReviewResultAuthority`, an audit-only result contract for future archived faction construction response cycle review-action review actions. The audit requires handoff readiness, readable command outcome, audit ledger readiness, rollback outcome, follow-up boundary, and notification boundary before any future result owner can record an archived review-action review result.
+
+This keeps faction construction non-mutating and result-separated: the slice does not record result rows, execute review-action review actions, reopen review actions, write archives, export evidence, reveal hidden faction data, update status, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewResultAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review result smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 697 Java modules and 0 unpositioned modules; package rebuild passed with 1680 class files and 6096 package assets; Java 17 package scan passed for 3360 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206088 indexed file rows with reused=202678, hashed=3410, errors=0.
+
+## Milestone 02 - Construction Initial Placement Readback Slice
+
+Added immediate placement readback when a construction blueprint is selected. Selecting a blueprint still arms placement at the player tile, but now the event log also records the initial construction placement target and its current ready/blocked/staged status before the player moves the cursor.
+
+This keeps construction selection from feeling silent or ambiguous: players see the starting target coordinate and the first placement explanation right after choosing a blueprint, matching the readback they already get from mouse and keyboard placement movement. The change does not alter placement validation, material consumption, construction creation, or turn advancement.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard, construction readability, blueprint ownership/permission readability, and progressive construction definition smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206068 indexed file rows with reused=202666, hashed=3402, errors=0.
+
+## Milestone 02 - Construction Keyboard Placement Feedback Slice
+
+Repaired and clarified keyboard movement for active construction placement. Arrow and WASD placement movement now take priority while a blueprint is armed, update the build cursor through the same target path used by mouse placement, and write a construction placement target readback to the event log.
+
+This is a live construction control slice: keyboard users now get the same target coordinate and ready/blocked/staged feedback that mouse users already received, and the construction panel control text now says placement movement includes status readback. The change does not alter placement validation, material consumption, construction creation, or turn advancement.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard, construction readability, blueprint ownership/permission readability, and progressive construction definition smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206055 indexed file rows with reused=202652, hashed=3403, errors=0.
+
+## Milestone 02 - Construction Start Summary Slice
+
+Threaded the construction preview consequences into the live placement confirmation log. When a blueprint is started, the event log now keeps a `Construction summary` with the placed blueprint, target tile, staged-material state, labor turns, mishap risk, and heat/suspicion bands.
+
+This keeps the player-facing construction workflow coherent after commitment: the same labor and attention facts shown before placement remain visible after materials are staged and the build site is created. The slice is log/readability-only and does not change placement validation, material consumption, staged-site creation, or turn advancement.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction readability, construction keyboard, blueprint ownership/permission readability, and progressive construction definition smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206042 indexed file rows with reused=202639, hashed=3403, errors=0.
+
+## Milestone 02 - Construction Effort Preview Slice
+
+Threaded construction effort expectations into the live blueprint preview. Selected blueprints now show labor turns, required placement support, Mechanics and Intellect expectations, and mishap risk before the player commits placement.
+
+This supports the construction milestone goal that blueprints answer what time, manual effort, tools, and skill pressure are involved before construction begins. The preview is advisory and player-facing; it does not change placement validation, material consumption, or construction completion rules.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction readability, blueprint ownership/permission readability, and progressive construction definition smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206029 indexed file rows with reused=202627, hashed=3402, errors=0.
+
+## Milestone 02 - Construction Attention Preview Slice
+
+Threaded blueprint heat and suspicion projections into the live construction preview. Selected blueprints now show an `Attention preview` line with readable heat and suspicion bands, numeric projected impacts, and driver summaries such as armed defenses, visible commerce, industrial footprint, legality risk, or ordinary footprint.
+
+This moves the existing expansion-attention model into the player-facing construction workflow without mutating live heat or suspicion meters. It supports the construction milestone goal that blueprints answer what attention or suspicion may be generated before construction begins.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction readability, blueprint expansion heat, and blueprint ownership/permission readability smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206016 indexed file rows with reused=202614, hashed=3402, errors=0.
+
+## Milestone 02 - Construction Blocked Placement Guidance Slice
+
+Made blocked construction placement previews more actionable. The live construction detail panel still shows the exact placement status and blocker, but blocked previews now add a `Next step:` line using the existing player-facing construction denial guidance so players can see how to recover before they press confirm.
+
+This advances the milestone requirement that denied construction produce useful player-facing explanations. Material shortfalls now point the player toward gathering listed materials, while other placement blockers continue through the shared sanitized guidance path used by construction denial logs.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction readability and blueprint ownership/permission readability smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206003 indexed file rows with reused=202601, hashed=3402, errors=0.
+
+## Milestone 02 - Construction Selected Blueprint Marker Slice
+
+Made active construction blueprint selection visible in the live blueprint list. The selected pending blueprint row now renders with the same `> ` marker used by other local list surfaces, so players can see which recipe is armed for placement after keyboard or mouse selection.
+
+This is live construction UI behavior. The marker compares stable recipe names so equivalent recipe factory instances still highlight correctly, and the focused construction smoke now verifies selected and unselected row labels.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed with selected-row marker coverage; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205990 indexed file rows with reused=202588, hashed=3402, errors=0.
+
+## Milestone 02 - Construction Reverse Category Navigation Slice
+
+Extended the live construction blueprint list with reverse category navigation. Shift+Tab now cycles blueprint categories backward, and the construction footer exposes separate `Cat <` and `Cat >` buttons so mouse users can move both directions without wrapping through the full category list.
+
+This is live construction UI behavior. Category changes still reset the blueprint page, and the focused construction smoke now verifies backward category wrapping before the existing forward category, page, selection, placement, and cancel coverage.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed with Shift+Tab reverse-category coverage; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205977 indexed file rows with reused=202574, hashed=3403, errors=0.
+
+## Milestone 02 - Construction Blueprint Page Jump Slice
+
+Extended the live construction blueprint list with first-page and last-page keyboard navigation. Home now jumps to the first visible construction blueprint page, and End jumps to the final page, matching the existing Page Up/Page Down paging flow and making long construction catalogs faster to scan.
+
+This is live construction UI behavior. The construction detail pane now names the Home/End shortcuts, and the focused construction smoke verifies both page-jump directions before selecting from the active page.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed with Home/End page-jump coverage; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205964 indexed file rows with reused=202561, hashed=3403, errors=0.
+
+## Milestone 02 - Construction Visible Shortcut Labels Slice
+
+Made the live construction blueprint list advertise the shortcut keys it already supports. Visible build rows now render with `1.` through `9.` prefixes, and the tenth row renders as `0.`, matching the number-key and numpad selection mapping from the previous construction-control slice.
+
+This keeps the construction panel player-facing: the shortcut is visible where the player chooses blueprints, and mouse row selection still routes through the same selection helper as keyboard selection.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed with visible shortcut-label coverage; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205951 indexed file rows with reused=202549, hashed=3402, errors=0.
+
+## Milestone 02 - Construction Number-Key Blueprint Selection Slice
+
+Continued the live construction-panel usability lane by letting number keys select blueprints from the visible construction page. Pressing 1 through 9 selects rows 1 through 9, and 0 selects row 10; numpad digits follow the same mapping. Selection now uses the same helper as clickable build rows, so mouse and keyboard entry both start placement at the player tile, set the pending recipe, and log the selected blueprint.
+
+This is player-facing construction workflow development, not a future contract pass. The construction detail pane now names the number-key selection shortcut alongside category, page, placement, confirmation, and cancel controls.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed with number-key first-page and active-page selection coverage; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205938 indexed file rows with reused=202535, hashed=3403, errors=0.
+
+## Milestone 02 - Construction Mouse Placement Slice
+
+Extended the live construction panel placement workflow so mouse input can target and cancel active placements. While a build placement is active, left-clicking the world map moves the construction cursor to that tile and right-click cancels placement; the construction detail pane now names the mouse and keyboard controls together.
+
+This is live player-facing UI behavior, not a future audit contract. The existing construction keyboard smoke now also verifies direct placement targeting, and Gate 3 runs the updated construction control coverage.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205925 indexed file rows with reused=202514, hashed=3411, errors=0.
+
+## Milestone 02 - Construction Keyboard Control Slice
+
+Returned the active lane to player-facing implementation by improving the live construction panel controls. The construction detail pane now names the keyboard controls directly, and `GamePanelKeyController` supports `C` or Tab to cycle blueprint categories, Page Up/Page Down to move between blueprint pages, Escape to cancel an active placement, and Enter/Space as construction placement confirmation alongside `E`.
+
+This is live UI behavior rather than a future audit contract: category/page shortcuts work before selecting a placement, placement cancellation clears the selected blueprint, and the existing construction forecast remains visible while placing. Added `Milestone02ConstructionKeyboardSmoke` and wired it into Gate 3.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused construction keyboard smoke passed; construction readability and construction category smokes passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 695 Java modules and 0 unpositioned modules; package rebuild passed with 1677 class files and 6096 package assets; Java 17 package scan passed for 3354 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205904 indexed file rows with reused=202500, hashed=3404, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Handoff Audit Slice
+
+Added `BlueprintFactionConstructionResponseCycleReviewActionReviewHandoffAuthority` and `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewHandoffAuditSmoke` to continue the archived faction-construction response-cycle review-action chain after review-action review action readiness. The new audit requires review-action readiness, target resolution, command owner, rollback preview, turn cost preview, and result text before any future archived review-action review action can be handed off.
+
+This remains an audit-only contract: it does not hand off commands, execute review-action review actions, reopen review actions, write archives, export evidence, reveal hidden faction data, update status, alter job state, release reservations, or complete construction. The Infopedia construction-blueprints entry and Gate 3 suite now name the review-action review handoff boundary and guard.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review handoff smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 694 Java modules and 0 unpositioned modules; package rebuild passed with 1676 class files and 6096 package assets; Java 17 package scan passed for 3352 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205888 indexed file rows with reused=202485, hashed=3403, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Action Audit Slice
+
+Added `BlueprintFactionConstructionResponseCycleReviewActionReviewActionAuthority` and `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewActionAuditSmoke` to continue the archived faction-construction response-cycle review-action chain after review readiness. The new audit requires review readiness, permission readiness, confirmation readiness, evidence selection, audit text, and non-reopen boundary before any future archived review-action review action can be offered.
+
+This remains an audit-only contract: it does not execute review-action review actions, reopen review actions, write archives, export evidence, reveal hidden faction data, update status, enqueue notifications, alter job state, release reservations, or complete construction. The Infopedia construction-blueprints entry and Gate 3 suite now name the review-action action boundary and guard.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review action smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 692 Java modules and 0 unpositioned modules; package rebuild passed with 1673 class files and 6096 package assets; Java 17 package scan passed for 3346 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205867 indexed file rows with reused=202470, hashed=3397, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Review Audit Slice
+
+Added `BlueprintFactionConstructionResponseCycleReviewActionReviewAuthority` and `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewAuditSmoke` to continue the archived faction-construction response-cycle review-action chain after readback. The new audit requires readback readiness, readable reviewer context, evidence links, readable allowed actions, privacy reminder, and follow-up boundary before any future archived review action can be reviewed.
+
+This remains an audit-only contract: it does not reopen review actions, execute review actions, write archives, reveal hidden faction data, update status, enqueue notifications, alter job state, move evidence, refresh archives, release reservations, or complete construction. The Infopedia construction-blueprints entry and Gate 3 suite now name the review boundary and guard.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action review smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 690 Java modules and 0 unpositioned modules; package rebuild passed with 1670 class files and 6096 package assets; Java 17 package scan passed for 3340 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205846 indexed file rows with reused=202455, hashed=3391, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Readback Audit Slice
+
+Added `BlueprintFactionConstructionResponseCycleReviewActionReadbackAuthority` and `Milestone03BlueprintFactionConstructionResponseCycleReviewActionReadbackAuditSmoke` to continue the archived faction-construction response-cycle review-action chain after archive preservation. The new audit requires archive readiness, archive lookup readiness, readable summary, privacy filter readiness, readable replay reference, and stale record marker before any future archived review action can be presented.
+
+This remains an audit-only contract: it does not read archives from storage, write archives, replay commands, reveal hidden faction data, update status, enqueue notifications, alter job state, move evidence, refresh archives, release reservations, or complete construction. The Infopedia construction-blueprints entry and Gate 3 suite now name the readback boundary and guard.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action readback smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 688 Java modules and 0 unpositioned modules; package rebuild passed with 1667 class files and 6096 package assets; Java 17 package scan passed for 3334 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205825 indexed file rows with reused=202440, hashed=3385, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Archive Audit Slice
+
+Added `BlueprintFactionConstructionResponseCycleReviewActionArchiveAuthority` and `Milestone03BlueprintFactionConstructionResponseCycleReviewActionArchiveAuditSmoke` to continue the archived faction-construction response-cycle review-action chain after close readiness. The new audit requires close readiness, a readable archive reason, retention label, privacy label, result snapshot, and replay reference before any future closed archived review action can be preserved.
+
+This remains an audit-only contract: it does not write archives, redact records, delete records, update status, enqueue notifications, move evidence, refresh archives, reveal hidden faction data, alter job state, release reservations, or complete construction. The Infopedia construction-blueprints entry and Gate 3 suite now name the archive boundary and guard.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action archive smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 686 Java modules and 0 unpositioned modules; package rebuild passed with 1664 class files and 6096 package assets; Java 17 package scan passed for 3328 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205804 indexed file rows with reused=202425, hashed=3379, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Close Audit Slice
+
+Added `BlueprintFactionConstructionResponseCycleReviewActionCloseAuthority` and `Milestone03BlueprintFactionConstructionResponseCycleReviewActionCloseAuditSmoke` to continue the archived faction-construction response-cycle review-action chain. The new audit requires follow-up readiness, a readable close decision, status return declaration, notification return declaration, evidence retention boundary, and archive refresh boundary before any future archived review-action follow-up can close.
+
+This remains an audit-only contract: it does not close follow-up, update status, enqueue notifications, move evidence, refresh archives, reveal hidden faction data, alter job state, release reservations, or complete construction. The Infopedia construction-blueprints entry and Gate 3 suite now name the close boundary and guard.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused response cycle review action close smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 684 Java modules and 0 unpositioned modules; package rebuild passed with 1661 class files and 6096 package assets; Java 17 package scan passed for 3322 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 205783 indexed file rows with reused=202410, hashed=3373, errors=0.
+
 ## Milestone 02 - Semantic Asset Audit Dev Room and Manual Tile Cycling
 
 Added a curated asset smoke-test room to Tools / Zone Audit. The audit cursor can cycle backward or forward through compatible indexed semantic assets for the selected tile, immediately updating the rendered target and showing its asset ID, type, name, source, and candidate count.
@@ -1073,3 +1305,179 @@ Advanced the construction parity lane by adding `BlueprintFactionConstructionCan
 This keeps faction construction non-mutating: the slice does not cancel live jobs, release live reservations, refund budget, mutate heat, mutate suspicion, move crew, return materials, remove staged sites, place objects, advance labor, or complete construction. Added `Milestone03BlueprintFactionConstructionCancellationReleaseAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
 
 Verification: `javac --release 17`, `Milestone03BlueprintFactionConstructionCancellationReleaseAuditSmoke`, `Milestone03BlueprintFactionConstructionBudgetHeatAuthorizationAuditSmoke`, `Milestone03BlueprintFactionConstructionSiteReadinessAuditSmoke`, `Milestone03BlueprintFactionConstructionCrewAssignmentAuditSmoke`, `Milestone03BlueprintFactionConstructionMaterialReservationAuditSmoke`, `Milestone03BlueprintFactionConstructionJobDefinitionAuditSmoke`, `Milestone03BlueprintFactionConstructionCapabilityAuditSmoke`, `Milestone02ConstructionReadabilitySmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` pass. Function and Mermaid maps refreshed; Mermaid found 638 Java modules. Rebuilt `PACKAGE_client` with `scripts\PACKAGE_CLIENT_WINDOWS.ps1 -CleanClasses -BuildJar` and passed Java 17 classfile scan across 3,184 classfiles. Package jar SHA-256: `0C3A714FFE5AA3DCC8BFB64847183525D66D60FBBCF8F250F05474D8C0D78867`. The final repository manifest refresh wrote 205,244 indexed rows, reused 205,243 existing hashes, hashed 1 changed or new file, and reported 0 hash errors. Local GUI/package boot smoke was not run.
+
+## Milestone 03 - Blueprint Faction Construction Execution Handoff Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionExecutionHandoffAuthority`, an audit-only go/no-go handoff contract before any future faction construction execution owner can reserve a live job. The handoff aggregates job authorization, material reservation readiness, crew assignment readiness, site readiness, budget and heat authorization, and rollback release readiness into one explicit ready or blocked packet.
+
+This keeps faction construction non-mutating: the slice does not create live job queues, reserve sites or workers, remove materials, spend budget, mutate heat or suspicion, place staged construction, advance labor, cancel jobs, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionExecutionHandoffAuditSmoke` and wired the guard into Gate 3.
+
+Verification: `javac --release 17`, `Milestone03BlueprintFactionConstructionExecutionHandoffAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` pass. Function and Mermaid maps refreshed; Mermaid found 640 Java modules. Rebuilt `PACKAGE_client` with `scripts\PACKAGE_CLIENT_WINDOWS.ps1 -CleanClasses -BuildJar` through process execution-policy bypass and passed Java 17 classfile scan across 3,190 classfiles. The package rebuild reported 1,595 class files and 6,096 package asset files. The final repository manifest refresh wrote 205,318 indexed rows, reused 202,088 existing hashes, hashed 3,230 changed or new files, and reported 0 hash errors. Package boot smoke passed by keeping the client alive for the 8-second smoke window before cleanup.
+
+## Milestone 03 - Blueprint Faction Construction Queue Admission Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionQueueAdmissionAuthority`, an audit-only queue admission contract for future faction construction jobs. The audit projects whether a ready execution handoff can enter a reserved job slot or must remain blocked because the handoff is not ready or no queue slot is available.
+
+This keeps faction construction non-mutating: the slice does not create a live job queue, reserve live slots, reserve workers or sites, remove materials, spend budget, mutate heat or suspicion, place staged construction, advance labor, cancel jobs, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionQueueAdmissionAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: `javac --release 17`, `Milestone03BlueprintFactionConstructionQueueAdmissionAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` pass. Function and Mermaid maps refreshed; Mermaid found 642 Java modules. Rebuilt `PACKAGE_client` with `scripts\PACKAGE_CLIENT_WINDOWS.ps1 -CleanClasses -BuildJar` through process execution-policy bypass and passed Java 17 classfile scan across 3,196 classfiles. The package rebuild reported 1,598 class files and 6,096 package asset files. Package boot smoke passed by keeping the client alive for the 8-second smoke window before cleanup. The final repository manifest refresh wrote 205,342 indexed rows, reused 202,096 existing hashes, hashed 3,246 changed or new files, and reported 0 hash errors.
+
+## Milestone 03 - Blueprint Faction Construction Reservation Ledger Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionReservationLedgerAuthority`, an audit-only reservation ledger contract for future faction construction jobs. The audit requires queue admission plus material, crew, site, budget, and attention holds to be declared together before a future job can be treated as reserved.
+
+This keeps faction construction non-mutating: the slice does not write reservation rows, create a live job queue, reserve workers or sites, remove materials, spend budget, mutate heat or suspicion, place staged construction, advance labor, cancel jobs, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionReservationLedgerAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: `javac --release 17`, `Milestone03BlueprintFactionConstructionReservationLedgerAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` pass. Function and Mermaid maps refreshed; Mermaid found 644 Java modules. Rebuilt `PACKAGE_client` with `scripts\PACKAGE_CLIENT_WINDOWS.ps1 -CleanClasses -BuildJar` through process execution-policy bypass and passed Java 17 classfile scan across 3,202 classfiles. The package rebuild reported 1,601 class files and 6,096 package asset files. Package boot smoke passed by keeping the client alive for the 8-second smoke window before cleanup. The final repository manifest refresh wrote 205,362 indexed rows, reused 202,110 existing hashes, hashed 3,252 changed or new files, and reported 0 hash errors.
+
+## Milestone 03 - Blueprint Faction Construction Staged Handoff Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionStagedHandoffAuthority`, an audit-only handoff contract between reserved faction construction jobs and future staged-construction placement. The audit requires reservation readiness, immediate placement recheck, original tile capture, material transfer planning, and rollback planning before any future execution owner can hand the job to `ProgressiveConstructionAuthority`.
+
+This keeps faction construction non-mutating: the slice does not create staged sites, reserve tiles, mutate original tiles, transfer materials, assign workers, spend budget, mutate heat or suspicion, advance labor, cancel jobs, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionStagedHandoffAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: `javac --release 17`, `Milestone03BlueprintFactionConstructionStagedHandoffAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` pass. Function and Mermaid maps refreshed; Mermaid found 646 Java modules. Rebuilt `PACKAGE_client` with `scripts\PACKAGE_CLIENT_WINDOWS.ps1 -CleanClasses -BuildJar` through process execution-policy bypass and passed Java 17 classfile scan across 3,208 classfiles. The package rebuild reported 1,604 class files and 6,096 package asset files. Package boot smoke passed by keeping the client alive for the 8-second smoke window before cleanup. The final repository manifest refresh wrote 205,382 indexed rows, reused 202,124 existing hashes, hashed 3,258 changed or new files, and reported 0 hash errors.
+
+## Milestone 03 - Blueprint Faction Construction Placement Outcome Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionPlacementOutcomeAuthority`, an audit-only placement outcome contract for future faction staged-construction jobs. The audit requires staged handoff readiness, construction placeholder reservation, final symbol recording, staged inspection text, and visible rollback outcome before any future execution owner can report a staged site as placed.
+
+This keeps faction construction non-mutating: the slice does not write tiles, create staged sites, mutate original tiles, transfer materials, assign workers, spend budget, mutate heat or suspicion, advance labor, cancel jobs, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionPlacementOutcomeAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionPlacementOutcomeAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 648 Java modules and 0 unpositioned modules; package-client rebuild passed with 1607 class files and 6096 package asset files; Java 17 classfile scan passed across 3214 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205403 rows with reused=202138, hashed=3265, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Progress Tick Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionProgressTickAuthority`, an audit-only labor progress tick contract for future faction staged-construction jobs. The audit requires placement outcome readiness, crew presence, staged materials, an open work window, progress record readiness, and visible rollback outcome before any future execution owner can record labor progress.
+
+This keeps faction construction non-mutating and completion-separated: the slice does not advance labor, consume staged materials, move crew, mutate room ownership, configure facilities, spend budget, mutate heat or suspicion, cancel jobs, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionProgressTickAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionProgressTickAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 650 Java modules and 0 unpositioned modules; package-client rebuild passed with 1610 class files and 6096 package asset files; Java 17 classfile scan passed across 3220 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205424 rows with reused=202153, hashed=3271, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Completion Readiness Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionCompletionReadinessAuthority`, an audit-only completion readiness contract for future faction staged-construction jobs. The audit requires progress tick readiness, labor completion, final symbol restoration, completion inspection text, save update readiness, operation boundary readiness, and reservation release planning before any future execution owner can mark a staged site complete.
+
+This keeps faction construction non-mutating and operation-separated: the slice does not restore tiles, configure facilities, enable machine operation, mutate room ownership, spend budget, mutate heat or suspicion, move crew, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionCompletionReadinessAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionCompletionReadinessAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 652 Java modules and 0 unpositioned modules; package-client rebuild passed with 1613 class files and 6096 package asset files; Java 17 classfile scan passed across 3226 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205445 rows with reused=202168, hashed=3277, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Job Closeout Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionJobCloseoutAuthority`, an audit-only closeout contract for future faction staged-construction jobs. The audit requires completion readiness, readable site status, crew release readiness, material ledger closure, budget closeout, attention closeout, and a readable completed, failed, or blocked job record before any future execution owner can close a faction construction job.
+
+This keeps faction construction non-mutating and closeout-separated: the slice does not release crew, return materials, refund budget, mutate heat or suspicion, write job records, enable facility operation, mutate room ownership, or complete construction. Added `Milestone03BlueprintFactionConstructionJobCloseoutAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionJobCloseoutAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 654 Java modules and 0 unpositioned modules; package-client rebuild passed with 1616 class files and 6096 package asset files; Java 17 classfile scan passed across 3232 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205468 rows with reused=202183, hashed=3285, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Status Report Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionStatusReportAuthority`, an audit-only status reporting contract for future faction construction jobs. The audit requires closeout readiness, readable summary, readable blockers, readable next action, readable timeline, and hidden raw identifiers before any future reporting owner can expose faction construction job state to ordinary UI.
+
+This keeps faction construction non-mutating and reporting-separated: the slice does not write UI state, write job records, release reservations, mutate room ownership, mutate heat or suspicion, enable facility operation, or complete construction. Added `Milestone03BlueprintFactionConstructionStatusReportAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionStatusReportAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 656 Java modules and 0 unpositioned modules; package-client rebuild passed with 1619 class files and 6096 package asset files; Java 17 classfile scan passed across 3238 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205489 rows with reused=202200, hashed=3289, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Notification Readiness Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionNotificationReadinessAuthority`, an audit-only notification readiness contract for future faction construction job updates. The audit requires status report readiness, readable severity, declared audience, delivery text, dedupe key, and privacy redaction before any future notification owner can alert the UI about a faction construction update.
+
+This keeps faction construction non-mutating and notification-separated: the slice does not write UI state, enqueue notifications, write job records, reveal hidden faction data, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionNotificationReadinessAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionNotificationReadinessAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 658 Java modules and 0 unpositioned modules; package-client rebuild passed with 1622 class files and 6096 package asset files; Java 17 classfile scan passed across 3244 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205510 rows with reused=202215, hashed=3295, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Action Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseActionAuthority`, an audit-only response command readiness contract for future faction construction job updates. The audit requires notification readiness, readable action labels, permission checks, safety confirmation, cooldown state, and audit text before any future UI can offer inspect, resolve blockers, pause, or cancel response commands.
+
+This keeps faction construction non-mutating and command-separated: the slice does not write UI state, execute commands, pause jobs, cancel jobs, assign crew, release reservations, mutate heat or suspicion, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseActionAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseActionAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 660 Java modules and 0 unpositioned modules; package-client rebuild passed with 1625 class files and 6096 package asset files; Java 17 classfile scan passed across 3250 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205531 rows with reused=202230, hashed=3301, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Execution Handoff Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseExecutionHandoffAuthority`, an audit-only command execution handoff contract for future faction construction response commands. The audit requires response action readiness, target resolution, command owner declaration, rollback preview, turn cost preview, and result text before any future command owner can execute inspect, resolve blockers, pause, or cancel actions.
+
+This keeps faction construction non-mutating and execution-separated: the slice does not execute commands, inspect sites, resolve blockers, pause jobs, cancel jobs, write UI state, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseExecutionHandoffAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseExecutionHandoffAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 662 Java modules and 0 unpositioned modules; package-client rebuild passed with 1628 class files and 6096 package asset files; Java 17 classfile scan passed across 3256 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205552 rows with reused=202245, hashed=3307, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Result Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseResultAuthority`, an audit-only response result contract for future faction construction response commands. The audit requires execution handoff readiness, readable command outcome, audit ledger readiness, rollback outcome, follow-up status, and notification refresh before any future result owner can record a response result.
+
+This keeps faction construction non-mutating and result-separated: the slice does not write result records, execute commands, alter job status, refresh notifications, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseResultAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseResultAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 664 Java modules and 0 unpositioned modules; package-client rebuild passed with 1631 class files and 6096 package asset files; Java 17 classfile scan passed across 3262 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205573 rows with reused=202260, hashed=3313, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Follow-up Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseFollowupAuthority`, an audit-only follow-up contract for future faction construction response results. The audit requires response result readiness, readable continuation intent, status cycle readiness, notification refresh readiness, closeout consequence, and rollback consequence before any future follow-up owner can schedule another construction response cycle.
+
+This keeps faction construction non-mutating and follow-up-separated: the slice does not schedule follow-up actions, write status reports, enqueue notifications, close jobs, roll back results, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseFollowupAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseFollowupAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 666 Java modules and 0 unpositioned modules; package-client rebuild passed with 1634 class files and 6096 package asset files; Java 17 classfile scan passed across 3268 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205594 rows with reused=202275, hashed=3319, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Close Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleCloseAuthority`, an audit-only close decision contract for future faction construction response cycles. The audit requires follow-up readiness, readable cycle decision, status return declaration, notification return declaration, readable unresolved blockers, and archive boundary before any future cycle owner can close or return a construction response cycle.
+
+This keeps faction construction non-mutating and cycle-close-separated: the slice does not close response cycles, schedule status returns, enqueue notifications, archive decisions, alter job state, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleCloseAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleCloseAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 668 Java modules and 0 unpositioned modules; package-client rebuild passed with 1637 class files and 6096 package asset files; Java 17 classfile scan passed across 3274 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205615 rows with reused=202290, hashed=3325, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Archive Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleArchiveAuthority`, an audit-only archive contract for future faction construction response cycles. The audit requires cycle close readiness, readable archive reason, retention label, privacy label, status snapshot, and replay reference before any future archive owner can preserve a construction response cycle.
+
+This keeps faction construction non-mutating and archive-separated: the slice does not write archives, redact records, delete records, update status, enqueue notifications, alter job state, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleArchiveAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleArchiveAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 670 Java modules and 0 unpositioned modules; package-client rebuild passed with 1640 class files and 6096 package asset files; Java 17 classfile scan passed across 3280 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205636 rows with reused=202305, hashed=3331, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Readback Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReadbackAuthority`, an audit-only readback contract for future archived faction construction response cycles. The audit requires archive readiness, archive lookup readiness, readable summary, privacy filter readiness, readable replay reference, and stale record marker before any future readback owner can present an archived construction response cycle.
+
+This keeps faction construction non-mutating and readback-separated: the slice does not read archives from storage, write archives, replay commands, reveal hidden faction data, update status, enqueue notifications, alter job state, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReadbackAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleReadbackAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 672 Java modules and 0 unpositioned modules; package-client rebuild passed with 1643 class files and 6096 package asset files; Java 17 classfile scan passed across 3286 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205657 rows with reused=202320, hashed=3337, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewAuthority`, an audit-only review contract for future archived faction construction response cycle readbacks. The audit requires readback readiness, readable reviewer context, evidence links, readable allowed actions, privacy reminder, and follow-up boundary before any future review owner can offer archived construction response cycle review.
+
+This keeps faction construction non-mutating and review-separated: the slice does not reopen cycles, execute review actions, write archives, reveal hidden faction data, update status, enqueue notifications, alter job state, mutate heat or suspicion, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleReviewAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 674 Java modules and 0 unpositioned modules; package-client rebuild passed with 1646 class files and 6096 package asset files; Java 17 classfile scan passed across 3292 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205678 rows with reused=202335, hashed=3343, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionAuthority`, an audit-only action-readiness contract for future archived faction construction response cycle reviews. The audit requires review readiness, permission readiness, confirmation readiness, evidence selection, audit text, and non-reopen boundary before any future review-action owner can offer archived review actions.
+
+This keeps faction construction non-mutating and review-action-separated: the slice does not execute review actions, reopen cycles, write archives, export evidence, reveal hidden faction data, update status, enqueue notifications, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleReviewActionAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 676 Java modules and 0 unpositioned modules; package-client rebuild passed with 1649 class files and 6096 package asset files; Java 17 classfile scan passed across 3298 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205699 rows with reused=202350, hashed=3349, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Handoff Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionHandoffAuthority`, an audit-only handoff contract for future archived faction construction response cycle review actions. The audit requires review action readiness, target resolution, command owner, rollback preview, turn cost preview, and result text before any future handoff owner can pass an archived review action toward execution.
+
+This keeps faction construction non-mutating and handoff-separated: the slice does not hand off commands, execute review actions, reopen cycles, write archives, export evidence, reveal hidden faction data, update status, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionHandoffAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleReviewActionHandoffAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 678 Java modules and 0 unpositioned modules; package-client rebuild passed with 1652 class files and 6096 package asset files; Java 17 classfile scan passed across 3304 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205720 rows with reused=202365, hashed=3355, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Result Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionResultAuthority`, an audit-only result contract for future archived faction construction response cycle review actions. The audit requires handoff readiness, readable command outcome, audit ledger readiness, rollback outcome, follow-up boundary, and notification boundary before any future result owner can record an archived review action result.
+
+This keeps faction construction non-mutating and result-separated: the slice does not record result rows, execute review actions, reopen cycles, write archives, export evidence, reveal hidden faction data, update status, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionResultAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleReviewActionResultAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 680 Java modules and 0 unpositioned modules; package-client rebuild passed with 1655 class files and 6096 package asset files; Java 17 classfile scan passed across 3310 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205741 rows with reused=202380, hashed=3361, errors=0.
+
+## Milestone 03 - Blueprint Faction Construction Response Cycle Review Action Follow-up Audit Slice
+
+Advanced the construction parity lane by adding `BlueprintFactionConstructionResponseCycleReviewActionFollowupAuthority`, an audit-only follow-up contract for future archived faction construction response cycle review action results. The audit requires result readiness, reviewer summary, evidence disposition, status refresh, notification boundary, and closure boundary before any future follow-up owner can schedule archived review action follow-up.
+
+This keeps faction construction non-mutating and follow-up-separated: the slice does not schedule follow-up, write summaries, move evidence, update status, enqueue notifications, close cycles, reveal hidden faction data, alter job state, release reservations, or complete construction. Added `Milestone03BlueprintFactionConstructionResponseCycleReviewActionFollowupAuditSmoke`, expanded the Construction Blueprints Infopedia wording, and wired the guard into Gate 3.
+
+Verification: local Java 17 compile passed; `Milestone03BlueprintFactionConstructionResponseCycleReviewActionFollowupAuditSmoke`, `Milestone02InfopediaMechanicsReadabilitySmoke`, and `Gate3PlayerFacingTextSmokeSuite` passed; function and Mermaid maps refreshed with 682 Java modules and 0 unpositioned modules; package-client rebuild passed with 1658 class files and 6096 package asset files; Java 17 classfile scan passed across 3316 classfiles with highest major version 61; package boot smoke stayed alive for the 8-second window; repository manifest refresh wrote 205762 rows with reused=202395, hashed=3367, errors=0.

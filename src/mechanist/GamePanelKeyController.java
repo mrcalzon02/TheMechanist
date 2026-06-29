@@ -23,11 +23,12 @@ final class GamePanelKeyController {
         if (handleZoneAuditKey(panel, code)) return;
         if (handleInfopediaPanelKey(panel, code)) return;
         if (InventoryPanelKeyController.handleInventoryPanelKey(panel, code)) return;
+        if (handleConstructionPanelKey(panel, event, code)) return;
         if (handleUniversalMenuKey(panel, code)) return;
         if (handleTargetingPanelKey(panel, code)) return;
         if (handleTabKey(panel, code)) return;
-        if (handleScrollKeys(panel, code)) return;
         if (handleBuildPlacementPanelKey(panel, code)) return;
+        if (handleScrollKeys(panel, code)) return;
         if (handleCharacterScreenKey(panel, code)) return;
         if (handleGameWorldKey(panel, code)) return;
     }
@@ -36,6 +37,11 @@ final class GamePanelKeyController {
         if (code != KeyEvent.VK_ESCAPE) return false;
         if (panel.screen == GamePanel.Screen.GAME && panel.manualMovementPlanActive) {
             panel.cancelManualMovementPlan("keyboard cancel");
+            return true;
+        }
+        if (panel.screen == GamePanel.Screen.PANEL && panel.buildPlacementActive
+                && (panel.panelMode == GamePanel.PanelMode.BUILD || panel.panelMode == GamePanel.PanelMode.WORKBENCH)) {
+            panel.cancelBuildPlacement("keyboard cancel");
             return true;
         }
         if (panel.screen == GamePanel.Screen.GAME) {
@@ -196,7 +202,7 @@ final class GamePanelKeyController {
     }
 
     static boolean handleBuildPlacementPanelKey(GamePanel panel, int code) {
-        if (panel.screen != GamePanel.Screen.PANEL || panel.world == null || !panel.buildPlacementActive) return false;
+        if (panel.screen != GamePanel.Screen.PANEL || !panel.buildPlacementActive) return false;
         if (panel.panelMode != GamePanel.PanelMode.BUILD && panel.panelMode != GamePanel.PanelMode.WORKBENCH) return false;
         int dx = 0;
         int dy = 0;
@@ -205,8 +211,47 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
         if (dx != 0 || dy != 0) { panel.moveBuildCursor(dx, dy); panel.repaint(); return true; }
-        if (code == KeyEvent.VK_E) { panel.confirmBuildPlacement(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_E || code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { panel.confirmBuildPlacement(); panel.repaint(); return true; }
         return false;
+    }
+
+    static boolean handleConstructionPanelKey(GamePanel panel, KeyEvent event, int code) {
+        if (panel.screen != GamePanel.Screen.PANEL) return false;
+        if (panel.panelMode != GamePanel.PanelMode.BUILD && panel.panelMode != GamePanel.PanelMode.WORKBENCH) return false;
+        int recipeSlot = constructionRecipeSlotForKey(code);
+        if (recipeSlot >= 0) {
+            return panel.selectVisibleBuildRecipeSlot(recipeSlot, "keyboard");
+        }
+        if (code == KeyEvent.VK_C || code == KeyEvent.VK_TAB) {
+            boolean backwards = code == KeyEvent.VK_TAB && event != null && event.isShiftDown();
+            panel.cycleBuildRecipeCategory(backwards ? -1 : 1);
+            return true;
+        }
+        if (code == KeyEvent.VK_PAGE_UP) {
+            panel.changeBuildRecipePage(-1);
+            return true;
+        }
+        if (code == KeyEvent.VK_PAGE_DOWN) {
+            panel.changeBuildRecipePage(1);
+            return true;
+        }
+        if (code == KeyEvent.VK_HOME) {
+            panel.jumpBuildRecipePage(false);
+            return true;
+        }
+        if (code == KeyEvent.VK_END) {
+            panel.jumpBuildRecipePage(true);
+            return true;
+        }
+        return false;
+    }
+
+    private static int constructionRecipeSlotForKey(int code) {
+        if (code >= KeyEvent.VK_1 && code <= KeyEvent.VK_9) return code - KeyEvent.VK_1;
+        if (code == KeyEvent.VK_0) return 9;
+        if (code >= KeyEvent.VK_NUMPAD1 && code <= KeyEvent.VK_NUMPAD9) return code - KeyEvent.VK_NUMPAD1;
+        if (code == KeyEvent.VK_NUMPAD0) return 9;
+        return -1;
     }
 
     static boolean handleUniversalMenuKey(GamePanel panel, int code) {

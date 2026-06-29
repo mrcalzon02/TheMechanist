@@ -2,7 +2,7 @@
 
 Status: active master code-position map.
 
-Generated/evaluated: `2026-06-23 10:16:26`
+Generated/evaluated: `2026-06-29 08:22:05`
 
 ## Top-Line Rule
 
@@ -10,7 +10,7 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 ## Counts
 
-- Java modules mapped: `638`
+- Java modules mapped: `710`
 - Unpositioned modules: `0`
 - Oversized mapped modules: `13`
 
@@ -18,19 +18,19 @@ Every code module, generated code error, compile error cluster, or subsystem rem
 
 - `ASSET_REGISTRY`: `42` modules
 - `COMBAT_SIM`: `44` modules
-- `DIAGNOSTIC_DOC`: `111` modules
+- `DIAGNOSTIC_DOC`: `147` modules
 - `FIXTURE_MACHINE`: `29` modules
 - `INVENTORY_PERSIST`: `25` modules
 - `LOCALIZATION_TEXT`: `88` modules
 - `RUNTIME_OPTIONS`: `35` modules
 - `SERVER_AUTH`: `39` modules
-- `UI_INPUT`: `60` modules
-- `UI_RENDER`: `115` modules
-- `WORLD_GEN`: `50` modules
+- `UI_INPUT`: `61` modules
+- `UI_RENDER`: `119` modules
+- `WORLD_GEN`: `81` modules
 
 ## Status Counts
 
-- `positioned`: `638` modules
+- `positioned`: `710` modules
 
 ## Explicit Override Rule
 
@@ -46,32 +46,32 @@ flowchart TD
     ROOT --> Z_LOCALIZATION_TEXT["Localization Text<br/>88 modules"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_MediaRuntimeFramework_java["src/mechanist/MediaRuntimeFramework.java<br/>57 funcs / 794 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ModDeploymentManager_java["src/mechanist/ModDeploymentManager.java<br/>42 funcs / 551 lines"]
-    Z_LOCALIZATION_TEXT --> M_src_mechanist_AudioRuntimeFramework_java["src/mechanist/AudioRuntimeFramework.java<br/>47 funcs / 493 lines"]
+    Z_LOCALIZATION_TEXT --> M_src_mechanist_AudioRuntimeFramework_java["src/mechanist/AudioRuntimeFramework.java<br/>48 funcs / 499 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_SaveEfficiencyAuthority_java["src/mechanist/SaveEfficiencyAuthority.java<br/>38 funcs / 482 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_HousingVariantRules_java["src/mechanist/HousingVariantRules.java<br/>21 funcs / 448 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_EnvironmentSensesFramework_java["src/mechanist/EnvironmentSensesFramework.java<br/>70 funcs / 432 lines"]
+    Z_LOCALIZATION_TEXT --> M_src_mechanist_ProgressiveConstructionAuthority_java["src/mechanist/ProgressiveConstructionAuthority.java<br/>36 funcs / 387 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_BlueprintConstructionAuthority_java["src/mechanist/BlueprintConstructionAuthority.java<br/>30 funcs / 370 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_PersistenceFramework_java["src/mechanist/PersistenceFramework.java<br/>19 funcs / 362 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ArtPackManager_java["src/mechanist/ArtPackManager.java<br/>19 funcs / 360 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_ConstructionGovernanceAuthority_java["src/mechanist/ConstructionGovernanceAuthority.java<br/>19 funcs / 351 lines"]
     Z_LOCALIZATION_TEXT --> M_src_mechanist_LootDropSystemAuthority_java["src/mechanist/LootDropSystemAuthority.java<br/>36 funcs / 344 lines"]
-    Z_LOCALIZATION_TEXT --> M_src_mechanist_KnowledgeBranchDefinitions_java["src/mechanist/KnowledgeBranchDefinitions.java<br/>29 funcs / 338 lines"]
     Z_LOCALIZATION_TEXT --> Z_LOCALIZATION_TEXT_OTHER["+ 76 smaller modules"]
-    ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>115 modules"]
-    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>533 funcs / 6718 lines"]
+    ROOT --> Z_UI_RENDER["UI Render Surfaces<br/>119 modules"]
+    Z_UI_RENDER --> M_src_mechanist_LegacyPanelContext_java["src/mechanist/LegacyPanelContext.java<br/>543 funcs / 6780 lines"]
     Z_UI_RENDER --> M_src_mechanist_SimulationEditorSuite_java["src/mechanist/SimulationEditorSuite.java<br/>111 funcs / 1687 lines"]
     Z_UI_RENDER --> M_src_mechanist_FirstPerson3DFramework_java["src/mechanist/FirstPerson3DFramework.java<br/>110 funcs / 1270 lines"]
     Z_UI_RENDER --> M_src_mechanist_WorldStartFlowAuthority_java["src/mechanist/WorldStartFlowAuthority.java<br/>115 funcs / 1093 lines"]
     Z_UI_RENDER --> M_src_mechanist_VisualJuiceFramework_java["src/mechanist/VisualJuiceFramework.java<br/>56 funcs / 633 lines"]
     Z_UI_RENDER --> M_src_mechanist_SkillTreeProgressionAuthority_java["src/mechanist/SkillTreeProgressionAuthority.java<br/>42 funcs / 566 lines"]
+    Z_UI_RENDER --> M_src_mechanist_GamePanelKeyController_java["src/mechanist/GamePanelKeyController.java<br/>22 funcs / 455 lines"]
     Z_UI_RENDER --> M_src_mechanist_EconomicTopologyFramework_java["src/mechanist/EconomicTopologyFramework.java<br/>28 funcs / 452 lines"]
     Z_UI_RENDER --> M_src_mechanist_UiRuntimeSupportFramework_java["src/mechanist/UiRuntimeSupportFramework.java<br/>50 funcs / 439 lines"]
     Z_UI_RENDER --> M_src_mechanist_CharacterIdentityFramework_java["src/mechanist/CharacterIdentityFramework.java<br/>52 funcs / 430 lines"]
     Z_UI_RENDER --> M_src_mechanist_KnowledgeQualityFramework_java["src/mechanist/KnowledgeQualityFramework.java<br/>27 funcs / 429 lines"]
-    Z_UI_RENDER --> M_src_mechanist_GamePanelKeyController_java["src/mechanist/GamePanelKeyController.java<br/>20 funcs / 410 lines"]
     Z_UI_RENDER --> M_src_mechanist_LogisticsManualHaulExecutionAuthority_java["src/mechanist/LogisticsManualHaulExecutionAuthority.java<br/>24 funcs / 349 lines"]
-    Z_UI_RENDER --> Z_UI_RENDER_OTHER["+ 103 smaller modules"]
-    ROOT --> Z_UI_INPUT["UI Input Navigation<br/>60 modules"]
+    Z_UI_RENDER --> Z_UI_RENDER_OTHER["+ 107 smaller modules"]
+    ROOT --> Z_UI_INPUT["UI Input Navigation<br/>61 modules"]
     Z_UI_INPUT --> M_src_mechanist_SectorManager_java["src/mechanist/SectorManager.java<br/>59 funcs / 609 lines"]
     Z_UI_INPUT --> M_src_mechanist_input_KeyBindingManager_java["src/mechanist/input/KeyBindingManager.java<br/>46 funcs / 518 lines"]
     Z_UI_INPUT --> M_src_mechanist_AdminCommandDispatcher_java["src/mechanist/AdminCommandDispatcher.java<br/>34 funcs / 342 lines"]
@@ -84,10 +84,10 @@ flowchart TD
     Z_UI_INPUT --> M_src_mechanist_WorldCommandRequest_java["src/mechanist/WorldCommandRequest.java<br/>47 funcs / 171 lines"]
     Z_UI_INPUT --> M_src_mechanist_WorldEconomyInitializationAuthority_java["src/mechanist/WorldEconomyInitializationAuthority.java<br/>10 funcs / 158 lines"]
     Z_UI_INPUT --> M_src_mechanist_CrashDeobfuscatorEngine_java["src/mechanist/CrashDeobfuscatorEngine.java<br/>14 funcs / 155 lines"]
-    Z_UI_INPUT --> Z_UI_INPUT_OTHER["+ 48 smaller modules"]
+    Z_UI_INPUT --> Z_UI_INPUT_OTHER["+ 49 smaller modules"]
     ROOT --> Z_RUNTIME_OPTIONS["Runtime Options<br/>35 modules"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_GameOptionsFramework_java["src/mechanist/GameOptionsFramework.java<br/>85 funcs / 788 lines"]
-    Z_RUNTIME_OPTIONS --> M_src_mechanist_OptionsScreenPainter_java["src/mechanist/OptionsScreenPainter.java<br/>42 funcs / 598 lines"]
+    Z_RUNTIME_OPTIONS --> M_src_mechanist_OptionsScreenPainter_java["src/mechanist/OptionsScreenPainter.java<br/>42 funcs / 594 lines"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_NatTraversalManager_java["src/mechanist/NatTraversalManager.java<br/>15 funcs / 208 lines"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_WorldTopologySettingsBridge_java["src/mechanist/WorldTopologySettingsBridge.java<br/>16 funcs / 163 lines"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_SecureModClassLoader_java["src/mechanist/SecureModClassLoader.java<br/>6 funcs / 142 lines"]
@@ -99,7 +99,7 @@ flowchart TD
     Z_RUNTIME_OPTIONS --> M_src_mechanist_AccessibilityRuntimeOptionsSubsystem_java["src/mechanist/AccessibilityRuntimeOptionsSubsystem.java<br/>10 funcs / 76 lines"]
     Z_RUNTIME_OPTIONS --> M_src_mechanist_IntegratedLocalMultiplayerHost_java["src/mechanist/IntegratedLocalMultiplayerHost.java<br/>6 funcs / 72 lines"]
     Z_RUNTIME_OPTIONS --> Z_RUNTIME_OPTIONS_OTHER["+ 23 smaller modules"]
-    ROOT --> Z_WORLD_GEN["World Generation Transition<br/>50 modules"]
+    ROOT --> Z_WORLD_GEN["World Generation Transition<br/>81 modules"]
     Z_WORLD_GEN --> M_src_mechanist_WorldRuntimeGenerationFramework_java["src/mechanist/WorldRuntimeGenerationFramework.java<br/>377 funcs / 8289 lines"]
     Z_WORLD_GEN --> M_src_mechanist_ZoneGenerationContext_java["src/mechanist/ZoneGenerationContext.java<br/>18 funcs / 396 lines"]
     Z_WORLD_GEN --> M_src_mechanist_RoadGridIntegrationAuthority_java["src/mechanist/RoadGridIntegrationAuthority.java<br/>26 funcs / 359 lines"]
@@ -112,7 +112,7 @@ flowchart TD
     Z_WORLD_GEN --> M_src_mechanist_RoomConstructionParityAuthority_java["src/mechanist/RoomConstructionParityAuthority.java<br/>15 funcs / 213 lines"]
     Z_WORLD_GEN --> M_src_mechanist_RoadTransitFixtureAuthority_java["src/mechanist/RoadTransitFixtureAuthority.java<br/>18 funcs / 192 lines"]
     Z_WORLD_GEN --> M_src_mechanist_WorldTopologyPreplacementPlan_java["src/mechanist/WorldTopologyPreplacementPlan.java<br/>16 funcs / 192 lines"]
-    Z_WORLD_GEN --> Z_WORLD_GEN_OTHER["+ 38 smaller modules"]
+    Z_WORLD_GEN --> Z_WORLD_GEN_OTHER["+ 69 smaller modules"]
     ROOT --> Z_INVENTORY_PERSIST["Inventory Items Persistence<br/>25 modules"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ItemEconomyFramework_java["src/mechanist/ItemEconomyFramework.java<br/>72 funcs / 1503 lines"]
     Z_INVENTORY_PERSIST --> M_src_mechanist_ContainerTradeFramework_java["src/mechanist/ContainerTradeFramework.java<br/>92 funcs / 802 lines"]
@@ -162,7 +162,7 @@ flowchart TD
     Z_ASSET_REGISTRY --> M_src_mechanist_TileSemanticAssetAuthority_java["src/mechanist/TileSemanticAssetAuthority.java<br/>38 funcs / 525 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_PortraitSemanticAssetAuthority_java["src/mechanist/PortraitSemanticAssetAuthority.java<br/>37 funcs / 522 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_assets_AssetRegistry_java["src/mechanist/assets/AssetRegistry.java<br/>33 funcs / 483 lines"]
-    Z_ASSET_REGISTRY --> M_src_mechanist_SemanticAssetInfopediaAuthority_java["src/mechanist/SemanticAssetInfopediaAuthority.java<br/>24 funcs / 469 lines"]
+    Z_ASSET_REGISTRY --> M_src_mechanist_SemanticAssetInfopediaAuthority_java["src/mechanist/SemanticAssetInfopediaAuthority.java<br/>25 funcs / 453 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_GlyphBinder_java["src/mechanist/GlyphBinder.java<br/>14 funcs / 430 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_ObjectSemanticAssetAuthority_java["src/mechanist/ObjectSemanticAssetAuthority.java<br/>28 funcs / 326 lines"]
     Z_ASSET_REGISTRY --> M_src_mechanist_assets_AssetManager_java["src/mechanist/assets/AssetManager.java<br/>31 funcs / 320 lines"]
@@ -183,20 +183,20 @@ flowchart TD
     Z_SERVER_AUTH --> M_src_mechanist_launcher_LauncherFallbackProfileAuthority_java["src/mechanist/launcher/LauncherFallbackProfileAuthority.java<br/>5 funcs / 131 lines"]
     Z_SERVER_AUTH --> M_src_mechanist_launcher_LauncherWrapperDetector_java["src/mechanist/launcher/LauncherWrapperDetector.java<br/>9 funcs / 129 lines"]
     Z_SERVER_AUTH --> Z_SERVER_AUTH_OTHER["+ 27 smaller modules"]
-    ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>111 modules"]
+    ROOT --> Z_DIAGNOSTIC_DOC["Diagnostics Smoke Audit<br/>147 modules"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_SectorAuditRuntimeAuthority_java["src/mechanist/SectorAuditRuntimeAuthority.java<br/>22 funcs / 310 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_RetargetReadinessAuditAuthority_java["src/mechanist/RetargetReadinessAuditAuthority.java<br/>17 funcs / 212 lines"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Gate3PlayerFacingTextSmokeSuite_java["src/mechanist/Gate3PlayerFacingTextSmokeSuite.java<br/>2 funcs / 181 lines"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03ProgressiveConstructionDefinitionAuditSmoke_java["src/mechanist/Milestone03ProgressiveConstructionDefinitionAuditSmoke.java<br/>5 funcs / 180 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone02DoomHudFacingSmoke_java["src/mechanist/Milestone02DoomHudFacingSmoke.java<br/>14 funcs / 169 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03ProgressiveConstructionDefinitionAuditSmoke_java["src/mechanist/Milestone03ProgressiveConstructionDefinitionAuditSmoke.java<br/>5 funcs / 155 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Gate3PlayerFacingTextSmokeSuite_java["src/mechanist/Gate3PlayerFacingTextSmokeSuite.java<br/>2 funcs / 144 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_MenuDefinitionAuditAuthority_java["src/mechanist/MenuDefinitionAuditAuthority.java<br/>13 funcs / 143 lines"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone02InfopediaMechanicsReadabilitySmoke_java["src/mechanist/Milestone02InfopediaMechanicsReadabilitySmoke.java<br/>7 funcs / 135 lines"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03BlueprintFactionConstructionResponseCycleReviewActionHandoffAudit["src/mechanist/Milestone03BlueprintFactionConstructionResponseCycleReviewActionHandoffAuditSmoke.java<br/>6 funcs / 131 lines"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03BlueprintFactionConstructionResponseCycleReviewActionAuditSmoke_j["src/mechanist/Milestone03BlueprintFactionConstructionResponseCycleReviewActionAuditSmoke.java<br/>6 funcs / 129 lines"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03BlueprintFactionConstructionResponseCycleReviewAuditSmoke_java["src/mechanist/Milestone03BlueprintFactionConstructionResponseCycleReviewAuditSmoke.java<br/>6 funcs / 127 lines"]
     Z_DIAGNOSTIC_DOC --> M_src_mechanist_PerformanceDiagnosticsOverlayAuthority_java["src/mechanist/PerformanceDiagnosticsOverlayAuthority.java<br/>10 funcs / 125 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_DebugLog_java["src/mechanist/DebugLog.java<br/>19 funcs / 115 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone02InfopediaMechanicsReadabilitySmoke_java["src/mechanist/Milestone02InfopediaMechanicsReadabilitySmoke.java<br/>6 funcs / 113 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03BlueprintFactionConstructionCapabilityAuditSmoke_java["src/mechanist/Milestone03BlueprintFactionConstructionCapabilityAuditSmoke.java<br/>6 funcs / 102 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_WorldGenerationSetupPersistenceSmoke_java["src/mechanist/WorldGenerationSetupPersistenceSmoke.java<br/>6 funcs / 100 lines"]
-    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03BlueprintPermissionReadinessAuditSmoke_java["src/mechanist/Milestone03BlueprintPermissionReadinessAuditSmoke.java<br/>7 funcs / 97 lines"]
-    Z_DIAGNOSTIC_DOC --> Z_DIAGNOSTIC_DOC_OTHER["+ 99 smaller modules"]
+    Z_DIAGNOSTIC_DOC --> M_src_mechanist_Milestone03BlueprintFactionConstructionResponseCycleReadbackAuditSmoke_java["src/mechanist/Milestone03BlueprintFactionConstructionResponseCycleReadbackAuditSmoke.java<br/>6 funcs / 125 lines"]
+    Z_DIAGNOSTIC_DOC --> Z_DIAGNOSTIC_DOC_OTHER["+ 135 smaller modules"]
 ```
 
 ## Generated Ledgers

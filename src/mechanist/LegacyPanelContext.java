@@ -362,7 +362,6 @@ class GamePanel extends LegacyPanelBridgeBase {
         } catch (Throwable t) {
             DebugLog.error("CLIENT_MENU_BOOT", "Menu media preload failed; menu will use drawn fallbacks.", t);
         }
-        if (options.bootSound) sounds.play("boot", options);
         timer = new javax.swing.Timer(33, e -> {
             tickPassiveAmbientSounds();
             tickBootMainMenuMusicGate();
@@ -2936,37 +2935,24 @@ class GamePanel extends LegacyPanelBridgeBase {
             BuildRecipe recipe = recipes.get(first + i);
             int rowY = y + i * 30;
             BufferedImage icon = images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(recipe));
-            ButtonBox b = new ButtonBox(recipe.name, recipeList.x + 10, rowY - 20, recipeList.width - 20, 26, recipe.shortTip(), () -> {
-                pendingBuildRecipe = recipe;
-                buildPlacementActive = true;
-                buildX = playerX;
-                buildY = playerY;
-                panelMode = PanelMode.BUILD;
-                logEvent("Selected build recipe: " + recipe.name + ".");
+            ButtonBox b = new ButtonBox(visibleBuildRecipeLabel(i, recipe), recipeList.x + 10, rowY - 20, recipeList.width - 20, 26, recipe.shortTip(), () -> {
+                selectBuildRecipe(recipe, "mouse");
             }, icon);
             buttons.add(b);
         }
-        Rectangle detail = new Rectangle(recipeList.x + recipeList.width + 14, body.y, Math.max(220, body.x + body.width - recipeList.x - recipeList.width - 14), body.height);
+        Rectangle detail = new Rectangle(recipeList.x + recipeList.width + 14, body.y, Math.max(340, body.x + body.width - recipeList.x - recipeList.width - 14), body.height);
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Category: " + category + " / " + recipes.size() + " blueprint(s); catalog total " + allRecipes.size() + ".");
         lines.add("Blueprint page " + (buildRecipePage + 1) + "/" + pageCount + "; showing "
                 + (shown == 0 ? 0 : first + 1) + "-" + (first + shown) + ".");
+        lines.add("Controls: 1-0 selects a visible blueprint; C or Tab changes category; Shift+Tab changes category backward; Page Up/Page Down changes page; Home/End jumps first/last page; arrows or left-click move placement with status readback; E, Enter, or Space confirms; Escape or right-click cancels.");
         lines.addAll(ConstructionReadabilityAuthority.detailLines(this, pendingBuildRecipe, buildX, buildY));
         drawDetailBox(g, detail, "Construction", lines, pendingBuildRecipe == null ? null : images.getSemanticAssetImage(ObjectSemanticAssetAuthority.assetIdForBuildRecipe(pendingBuildRecipe)));
         int by = detail.y + detail.height - 36;
-        addOverlayButton("Category", detail.x + 12, by, 96, 28, "Cycle to the next blueprint category.", () -> {
-            buildRecipeCategoryIndex = ConstructionCategoryAuthority.nextCategory(buildRecipeCategoryIndex, 1);
-            buildRecipePage = 0;
-            repaint();
-        });
-        addOverlayButton("Previous", detail.x + 116, by, 96, 28, "Show the previous blueprint page.", () -> {
-            buildRecipePage = Math.max(0, buildRecipePage - 1);
-            repaint();
-        });
-        addOverlayButton("Next", detail.x + 220, by, 82, 28, "Show the next blueprint page.", () -> {
-            buildRecipePage = Math.min(pageCount - 1, buildRecipePage + 1);
-            repaint();
-        });
+        addOverlayButton("Cat <", detail.x + 12, by, 70, 28, "Cycle to the previous blueprint category.", () -> cycleBuildRecipeCategory(-1));
+        addOverlayButton("Cat >", detail.x + 88, by, 70, 28, "Cycle to the next blueprint category.", () -> cycleBuildRecipeCategory(1));
+        addOverlayButton("Page <", detail.x + 164, by, 78, 28, "Show the previous blueprint page.", () -> changeBuildRecipePage(-1));
+        addOverlayButton("Page >", detail.x + 248, by, 78, 28, "Show the next blueprint page.", () -> changeBuildRecipePage(1));
     }
 
     private void drawCraftingOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -5190,7 +5176,82 @@ class GamePanel extends LegacyPanelBridgeBase {
         repaint();
     }
     void enforceEntityOccupancy(String reason) {}
-    void moveBuildCursor(int dx, int dy) { buildX += dx; buildY += dy; clampBuildCursorToWorld(); }
+    void moveBuildCursor(int dx, int dy) {
+        if (dx == 0 && dy == 0) return;
+        targetBuildPlacementAt(buildX + dx, buildY + dy, "keyboard placement");
+    }
+    String visibleBuildRecipeLabel(int visibleSlot, BuildRecipe recipe) {
+        String key = visibleSlot == 9 ? "0" : Integer.toString(Math.max(0, visibleSlot) + 1);
+        String prefix = buildRecipeMatches(recipe, pendingBuildRecipe) ? "> " : "";
+        return prefix + key + ". " + (recipe == null ? "Unknown blueprint" : recipe.name);
+    }
+    boolean buildRecipeMatches(BuildRecipe a, BuildRecipe b) {
+        if (a == null || b == null) return false;
+        return Objects.equals(a.name, b.name);
+    }
+    boolean selectVisibleBuildRecipeSlot(int visibleSlot, String reason) {
+        if (visibleSlot < 0 || visibleSlot >= 10) return false;
+        ArrayList<BuildRecipe> recipes = ConstructionCategoryAuthority.filtered(BuildRecipe.allBuildRecipes(), buildRecipeCategoryIndex);
+        int pageCount = Math.max(1, (recipes.size() + 9) / 10);
+        buildRecipePage = Math.max(0, Math.min(pageCount - 1, buildRecipePage));
+        int index = buildRecipePage * 10 + visibleSlot;
+        if (index < 0 || index >= recipes.size()) return false;
+        selectBuildRecipe(recipes.get(index), reason);
+        return true;
+    }
+    void selectBuildRecipe(BuildRecipe recipe, String reason) {
+        if (recipe == null) return;
+        pendingBuildRecipe = recipe;
+        buildPlacementActive = true;
+        buildX = playerX;
+        buildY = playerY;
+        panelMode = PanelMode.BUILD;
+        logEvent("Selected build recipe: " + recipe.name
+                + (reason == null || reason.isBlank() ? "." : " (" + reason + ")."));
+        targetBuildPlacementAt(buildX, buildY, "initial placement");
+    }
+    int constructionBlueprintPageCount() {
+        ArrayList<BuildRecipe> recipes = ConstructionCategoryAuthority.filtered(BuildRecipe.allBuildRecipes(), buildRecipeCategoryIndex);
+        return Math.max(1, (recipes.size() + 9) / 10);
+    }
+    void cycleBuildRecipeCategory(int delta) {
+        buildRecipeCategoryIndex = ConstructionCategoryAuthority.nextCategory(buildRecipeCategoryIndex, delta);
+        buildRecipePage = 0;
+        logEvent("Construction category: " + ConstructionCategoryAuthority.categoryName(buildRecipeCategoryIndex) + ".");
+        repaint();
+    }
+    void changeBuildRecipePage(int delta) {
+        int pageCount = constructionBlueprintPageCount();
+        buildRecipePage = Math.max(0, Math.min(pageCount - 1, buildRecipePage + delta));
+        logEvent("Construction blueprint page " + (buildRecipePage + 1) + "/" + pageCount + ".");
+        repaint();
+    }
+    void jumpBuildRecipePage(boolean lastPage) {
+        int pageCount = constructionBlueprintPageCount();
+        buildRecipePage = lastPage ? pageCount - 1 : 0;
+        logEvent("Construction blueprint page " + (buildRecipePage + 1) + "/" + pageCount + ".");
+        repaint();
+    }
+    void cancelBuildPlacement(String reason) {
+        buildPlacementActive = false;
+        pendingBuildRecipe = null;
+        logEvent("Construction placement cancelled" + (reason == null || reason.isBlank() ? "." : ": " + reason + "."));
+        repaint();
+    }
+    void targetBuildPlacementAt(int x, int y, String reason) {
+        if (world != null) {
+            buildX = Math.max(0, Math.min(world.w - 1, x));
+            buildY = Math.max(0, Math.min(world.h - 1, y));
+        } else {
+            buildX = Math.max(0, x);
+            buildY = Math.max(0, y);
+        }
+        String raw = rawCanPlacePendingBuildAt(buildX, buildY);
+        logEvent("Construction placement target: " + buildX + "," + buildY + " - "
+                + constructionPlacementResult(pendingBuildRecipe, buildX, buildY, raw)
+                + (reason == null || reason.isBlank() ? "" : " (" + reason + ")") + ".");
+        repaint();
+    }
     void confirmBuildPlacement() {
         String raw = rawCanPlacePendingBuildAt(buildX, buildY);
         boolean stagedStart = raw != null && raw.toLowerCase(Locale.ROOT).startsWith("staged start:");
@@ -5215,7 +5276,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         pendingBuildRecipe = null;
         rebuildItemContainersFromLegacyLists();
         logEvent("Started construction of " + recipe.name + " at " + object.x + "," + object.y + ". "
-                + (stagedStart ? "Some materials are staged; more materials or labor remain." : "Materials are staged; labor remains."));
+                + (stagedStart ? "Some materials are staged; more materials or labor remain." : "Materials are staged; labor remains.")
+                + " " + ConstructionReadabilityAuthority.startSummary(recipe, object.x, object.y, stagedStart));
         advanceTurn("starts construction on " + recipe.name + ".");
         repaint();
     }

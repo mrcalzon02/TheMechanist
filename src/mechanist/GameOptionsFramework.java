@@ -38,7 +38,7 @@ class GameOptions {
     boolean soundEnabled = true;
     boolean musicEnabled = true;
     boolean conversationSound = true;
-    boolean bootSound = true;
+    boolean bootSound = false;
     boolean importedPortraits = true;
     boolean tileIconRendering = true;
     int artQualityIndex = 0; // 0 low_32 bundled, 1 standard_64 pack, 2 intermediate_128 pack, 3 high_native pack
@@ -197,7 +197,7 @@ class GameOptions {
                 o.soundEnabled = Boolean.parseBoolean(pr.getProperty("soundEnabled", String.valueOf(o.soundEnabled)));
                 o.musicEnabled = Boolean.parseBoolean(pr.getProperty("musicEnabled", String.valueOf(o.musicEnabled)));
                 o.conversationSound = Boolean.parseBoolean(pr.getProperty("conversationSound", String.valueOf(o.conversationSound)));
-                o.bootSound = Boolean.parseBoolean(pr.getProperty("bootSound", String.valueOf(o.bootSound)));
+                o.bootSound = false;
                 o.importedPortraits = Boolean.parseBoolean(pr.getProperty("importedPortraits", String.valueOf(o.importedPortraits)));
                 o.tileIconRendering = Boolean.parseBoolean(pr.getProperty("tileIconRendering", String.valueOf(o.tileIconRendering)));
                 o.artQualityIndex = Math.max(0, Math.min(ART_QUALITY_LABELS.length-1, Integer.parseInt(pr.getProperty("artQualityIndex", String.valueOf(o.artQualityIndex)))));
@@ -358,7 +358,7 @@ class GameOptions {
         return "fontScale=" + fontScale + "% uiScale=" + uiScale + "% displayDensity=" + DisplayDensityAuthority.auditSummary(this) + " sound=" + soundEnabled +
                " sfxVolume=" + sfxVolume + "% music=" + musicEnabled + " musicVolume=" + musicVolume +
                "% conversation=" + conversationSound + " conversationVolume=" + conversationVolume +
-               "% bootSound=" + bootSound + " portraits=" + importedPortraits + " tileIconRendering=" + tileIconRendering + " artQuality=" + artQualityLabel() + " generatedPayload=" + generatedAssetPayloadRootShortLabel() + " mapTileSize=" + mapTileSizeLabel() + " worldZoom=" + worldZoomLabel() + " hoverHelp=" + hoverHelp +
+               "% startupSfx=false portraits=" + importedPortraits + " tileIconRendering=" + tileIconRendering + " artQuality=" + artQualityLabel() + " generatedPayload=" + generatedAssetPayloadRootShortLabel() + " mapTileSize=" + mapTileSizeLabel() + " worldZoom=" + worldZoomLabel() + " hoverHelp=" + hoverHelp +
                " screenSaver=" + screenSaver + " windowMode=" + windowModeLabel() + " resolution=" + resolutionLabel() + " resolutionUserSelected=" + resolutionUserSelected + " downscale=" + downscaleLabel() +
                " targetFps=" + targetFpsLabel() + " frameLimited=" + frameLimitLabel() + " renderQuality=" + renderQualityLabel() + " lightingFx=" + lightingFxLabel() + " reducedMotion=" + reducedMotion + " diagnosticsOverlay=" + diagnosticsOverlay +
                " cvdMode=" + AccessibilityCompatibilityAuthority.cvdLabel(cvdModeIndex) + " highContrastText=" + highContrastText + " instantDialogueText=" + instantDialogueText + " screenShake=" + screenShakePercent + "%" +

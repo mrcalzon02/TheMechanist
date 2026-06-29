@@ -23,46 +23,50 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
         List<String> filtered = SemanticAssetInfopediaAuthority.mechanicEntryRows("ghost");
         requireContains(filtered, "Movement Planning", "movement filter row");
 
-        checkDetail("look-examine", "Examine the selected visible target", "Milestone02LookExamineReadabilitySmoke");
-        checkDetail("movement-planning", "Movement target selected", "Milestone02MovementPlanningReadabilitySmoke");
-        checkDetail("context-prompts", "Generic:", "Milestone02ContextPromptReadabilitySmoke");
-        checkDetail("body-condition", "immediate danger", "Milestone02BodyConditionReadabilitySmoke");
-        checkDetail("medical-treatment", "explicit treatment command", "Milestone02MedicalTreatmentReadabilitySmoke");
-        checkDetail("inventory-equipment", "one selected unit at a time", "Milestone02InventoryReadabilitySmoke");
-        checkDetail("production-forecast", "queued machine job", "Milestone02ProductionReadabilitySmoke");
-        checkDetail("production-forecast", "quality-sensitive defect risk", "Milestone03ProductionOutcomeForecastSmoke");
-        checkDetail("production-forecast", "one machine part and one turn", "Milestone03MachineRepairWorkflowSmoke");
-        checkDetail("production-forecast", "Novice, practiced, skilled, and expert operators", "Milestone03ProductionOperatorSkillSmoke");
-        checkDetail("production-forecast", "matching carried units first", "Milestone03ProductionMaterialQualitySmoke");
-        checkDetail("production-forecast", "manual Craft remains player-operated", "Milestone03ProductionWorkerQualitySmoke");
-        checkDetail("production-forecast", "Teach Machine", "Milestone03MachineKnowledgeSourceSmoke");
-        checkDetail("production-forecast", "another serviceable station", "Milestone03ProductionFacilityKnowledgeSmoke");
-        checkDetail("production-forecast", "one batch ID", "Milestone03ProductionBatchProvenanceSmoke");
-        checkDetail("production-forecast", "serviceable production stations", "Milestone03ProductionFacilityQualitySmoke");
-        checkDetail("production-forecast", "40% ordinary-trader resale penalty", "Milestone03ProductionDefectAppraisalSmoke");
-        checkDetail("production-forecast", "equipped fabrication or repair tool", "Milestone03ProductionToolQualitySmoke");
-        checkDetail("production-forecast", "Faction production mutation", "Milestone03ProductionFactionMutationSmoke");
-        checkDetail("production-forecast", "exhausted band", "Milestone03ProductionFatiguePressureSmoke");
-        checkDetail("production-forecast", "producing room and claimed facility", "Milestone03ProductionLocationProvenanceSmoke");
-        checkDetail("production-forecast", "exact producing station", "Milestone03ProductionMachineProvenanceSmoke");
-        checkDetail("production-forecast", "immediate manual operator", "Milestone03ProductionOperatorProvenanceSmoke");
-        checkDetail("production-forecast", "shared machine-operation history", "Milestone03ManualProductionOperationRecordSmoke");
-        checkDetail("production-forecast", "one queued run", "Milestone03StaffedProductionExecutionSmoke");
-        checkDetail("production-forecast", "manual or staffed", "Milestone03ProductionWorkforceModeProvenanceSmoke");
-        checkDetail("production-forecast", "lawful, restricted, black-market, contraband", "Milestone03ProductionLegalStatusProvenanceSmoke");
-        checkDetail("production-forecast", "generated recipe source", "Milestone03ProductionSourceProvenanceSmoke");
-        checkDetail("production-forecast", "Batch issue tags", "Milestone03ProductionBatchIssueTagsSmoke");
-        checkDetail("production-forecast", "Repair/modification history", "Milestone03ProductionRepairHistoryProvenanceSmoke");
-        checkDetail("skill-progression", "spend XP on durable capabilities", "Milestone03SkillTreeProgressionReadabilitySmoke");
-        checkDetail("skill-progression", "Knowledge Tree", "Milestone03SkillTreeProgressionReadabilitySmoke");
-        checkDetail("skill-progression", "skill_unlock <node id>", "Milestone03SkillTreeSpendingPersistenceSmoke");
-        checkDetail("construction-blueprints", "complete catalog", "Milestone02ConstructionCategorySmoke");
-        checkDetail("expansion-heat", "attention bands", "Milestone02ExpansionHeatReadabilitySmoke");
-        checkDetail("interaction-approach", "never moves", "Milestone02InteractionApproachSmoke");
-        checkDetail("contract-evidence", "carried, stored at base, or missing", "Milestone02ContractObjectiveReadabilitySmoke");
-        checkDetail("contract-evidence", "skill and knowledge proof readiness", "Milestone03ContractSkillProofSmoke");
-        checkDetail("transfer-workflows", "one item at a time", "Milestone02TransferWorkflowConsistencySmoke");
-        checkDetail("faction-personnel", "separate tracks", "Milestone02FactionRosterReadabilitySmoke");
+        checkDetail("look-examine", "Examine the selected visible target");
+        checkDetail("movement-planning", "Movement target selected");
+        checkDetail("context-prompts", "Generic:");
+        checkDetail("body-condition", "immediate danger");
+        checkDetail("medical-treatment", "explicit treatment command");
+        checkDetail("inventory-equipment", "one selected unit at a time");
+        checkDetail("production-forecast", "queued machine job");
+        checkDetail("production-forecast", "quality-sensitive defect risk");
+        checkDetail("production-forecast", "one machine part and one turn");
+        checkDetail("production-forecast", "Novice, practiced, skilled, and expert operators");
+        checkDetail("production-forecast", "matching carried units first");
+        checkDetail("production-forecast", "Manual Craft remains player-operated");
+        checkDetail("production-forecast", "Teach Machine");
+        checkDetail("production-forecast", "another serviceable station");
+        checkDetail("production-forecast", "one batch ID");
+        checkDetail("production-forecast", "serviceable production stations");
+        checkDetail("production-forecast", "40% ordinary-trader resale penalty");
+        checkDetail("production-forecast", "equipped fabrication or repair tool");
+        checkDetail("production-forecast", "Faction production mutation");
+        checkDetail("production-forecast", "exhausted band");
+        checkDetail("production-forecast", "producing room and claimed facility");
+        checkDetail("production-forecast", "exact producing station");
+        checkDetail("production-forecast", "immediate manual operator");
+        checkDetail("production-forecast", "shared machine-operation history");
+        checkDetail("production-forecast", "one queued run");
+        checkDetail("production-forecast", "manual or staffed");
+        checkDetail("production-forecast", "lawful, restricted, black-market, contraband");
+        checkDetail("production-forecast", "generated recipe source");
+        checkDetail("production-forecast", "Batch issue tags");
+        checkDetail("production-forecast", "Repair history");
+        checkDetail("skill-progression", "spends XP on durable capabilities");
+        checkDetail("skill-progression", "Knowledge Tree");
+        checkDetail("skill-progression", "skill unlock controls");
+        checkDetail("construction-blueprints", "complete catalog");
+        checkDetail("construction-blueprints", "staged construction site instead of a finished facility");
+        checkDetail("construction-blueprints", "Work on a staged site");
+        checkDetail("construction-blueprints", "Dismantle removes an unfinished staged site");
+        checkDetail("construction-blueprints", "construction progress command reports active staged-site count");
+        checkDetail("expansion-heat", "attention bands");
+        checkDetail("interaction-approach", "never moves");
+        checkDetail("contract-evidence", "carried, stored at base, or missing");
+        checkDetail("contract-evidence", "skill and knowledge proof readiness");
+        checkDetail("transfer-workflows", "one item at a time");
+        checkDetail("faction-personnel", "separate tracks");
 
         List<String> healthFiltered = SemanticAssetInfopediaAuthority.mechanicEntryRows("bleeding");
         requireContains(healthFiltered, "Body Condition", "body condition filter row");
@@ -79,14 +83,20 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
             throw new AssertionError("Related mechanic row should be navigable: " + firstRelated);
         }
         for (String line : detailFromRow) rejectLeaks(line, "mechanic detail from row");
+        for (String row : rows) {
+            for (String line : SemanticAssetInfopediaAuthority.detailLines(null, row, null, "")) {
+                rejectLeaks(line, "mechanic detail sweep");
+                rejectInfopediaProcessLanguage(line, "mechanic detail sweep");
+            }
+        }
     }
 
-    private static void checkDetail(String key, String expected, String guardName) {
+    private static void checkDetail(String key, String expected) {
         List<String> lines = SemanticAssetInfopediaAuthority.mechanicDetailLinesByKey(key);
         requireContains(lines, expected, key + " detail expected text");
-        requireContains(lines, guardName, key + " smoke guard name");
         for (String line : lines) {
             rejectLeaks(line, key + " detail");
+            rejectInfopediaProcessLanguage(line, key + " detail");
             rejectContains(line, "targetZoneKey", key + " raw route key");
             rejectContains(line, "className", key + " raw class key");
         }
@@ -106,6 +116,18 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
     private static void rejectLeaks(String text, String label) {
         if (PlayerFacingText.containsLikelyLeak(text)) {
             throw new AssertionError("Player-facing leak in " + label + ": " + text);
+        }
+    }
+
+    private static void rejectInfopediaProcessLanguage(String text, String label) {
+        if (text == null) return;
+        String l = text.toLowerCase();
+        String[] forbidden = {
+                "guard", "smoke", "milestone", "authority", "audit", "future",
+                "owner=", "raw-id", "raw id", "migration note", "stage status"
+        };
+        for (String token : forbidden) {
+            if (l.contains(token)) throw new AssertionError(label + " contains process language '" + token + "': " + text);
         }
     }
 

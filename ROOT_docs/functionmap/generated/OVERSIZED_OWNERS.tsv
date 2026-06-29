@@ -4,7 +4,7 @@ src/mechanist/FactionServicesFramework.java	70107	946	oversized_java_owner
 src/mechanist/FirstPerson3DFramework.java	66420	1270	oversized_java_owner
 src/mechanist/InfrastructurePromotionRegistry.java	62143	1001	oversized_java_owner
 src/mechanist/ItemEconomyFramework.java	238455	1503	oversized_java_owner
-src/mechanist/LegacyPanelContext.java	374462	6718	oversized_java_owner
+src/mechanist/LegacyPanelContext.java	378207	6780	oversized_java_owner
 src/mechanist/PopulationPersonnelFramework.java	84224	1271	oversized_java_owner
 src/mechanist/ProductionAuthorityFramework.java	345715	3119	oversized_java_owner
 src/mechanist/SimulationEditorSuite.java	97686	1687	oversized_java_owner

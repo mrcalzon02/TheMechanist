@@ -11,8 +11,6 @@ final class Milestone03ContractSkillProofInfopediaSmoke {
         requireContains(lines, "Investigation Trace Reading", "trace-reading reference");
         requireContains(lines, "Contract Negotiation", "knowledge proof reference");
         requireContains(lines, "does not complete the contract", "completion boundary");
-        requireContains(lines, "Milestone03ContractSkillProofSmoke", "guard reference");
-        requireContains(lines, "Milestone03ContractSkillProofAuditSmoke", "audit guard reference");
         for (String line : lines) rejectLeaks(line);
     }
 
@@ -24,6 +22,13 @@ final class Milestone03ContractSkillProofInfopediaSmoke {
     private static void rejectLeaks(String line) {
         if (PlayerFacingText.containsLikelyLeak(line)) {
             throw new AssertionError("Contract skill-proof Infopedia leaked implementation text: " + line);
+        }
+        String lower = line == null ? "" : line.toLowerCase();
+        String[] processTerms = {"guard", "smoke", "authority", "audit", "future", "owner=", "raw-id", "raw id"};
+        for (String term : processTerms) {
+            if (lower.contains(term)) {
+                throw new AssertionError("Contract skill-proof Infopedia included process language '" + term + "': " + line);
+            }
         }
     }
 

@@ -27,7 +27,6 @@ class SoundManager {
         put("portrait", "assets/sound/wav/tp_gui_portrait_select_01.wav");
         put("tab", "assets/sound/wav/tp_gui_tab_change_01.wav");
         put("type", "assets/sound/wav/typing_sounds.wav");
-        put("boot", "assets/sound/wav/machine_start.wav");
         put("intro_crawl_narration", "assets/sound/voice/new_world_intro_crawl_narration.wav");
         put("weapon_bash", "assets/sound/effects/bash.wav");
         put("weapon_flame", "assets/sound/effects/flame.wav");
@@ -111,7 +110,11 @@ class SoundManager {
         try (FileInputStream in = new FileInputStream(f)) { p.load(in); return p.getProperty(key); }
         catch (Throwable t) { DebugLog.warn("AUDIO", "Could not read options while resolving audio path: " + t.getMessage()); return null; }
     }
+    boolean startupCueSuppressed(String key) {
+        return key != null && "boot".equalsIgnoreCase(key.trim());
+    }
     void play(String key, GameOptions opt) {
+        if (startupCueSuppressed(key)) return;
         if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
         File f = sounds.get(key); if (f == null) { playGeneratedCue(key, opt, ("type".equals(key) || "portrait".equals(key)) ? opt.conversationVolume : opt.sfxVolume); return; }
         new Thread(() -> {
@@ -184,6 +187,7 @@ class SoundManager {
     }
     void playDistantCue(String key, int distance, GameOptions opt) { playDistanceScaled(key, distance, opt, false); }
     void playDistanceScaled(String key, int distance, GameOptions opt, boolean quiet) {
+        if (startupCueSuppressed(key)) return;
         if (opt == null || !opt.soundEnabled || opt.volume <= 0) return;
         int base = quiet ? Math.min(opt.sfxVolume, 55) : Math.min(opt.sfxVolume, 42);
         int vol = Math.max(4, base - Math.max(0, distance) * (quiet ? 5 : 2));
@@ -191,6 +195,7 @@ class SoundManager {
         playWithVolume(key, f, vol);
     }
     void playWithVolume(String key, File f, int volumePercent) {
+        if (startupCueSuppressed(key)) return;
         new Thread(() -> {
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(f)) {
                 Clip clip = AudioSystem.getClip();
@@ -206,6 +211,7 @@ class SoundManager {
     }
     void playReloadEffect(GameOptions opt) { play("weapon_reload", opt); }
     void playGeneratedCue(String key, GameOptions opt, int volumePercent) {
+        if (startupCueSuppressed(key)) return;
         if (opt == null || !opt.soundEnabled || volumePercent <= 0) return;
         String safeKey = key == null || key.isBlank() ? "cue" : key.replaceAll("[^A-Za-z0-9_-]+", "_");
         new Thread(() -> {
@@ -230,9 +236,10 @@ class SoundManager {
     }
 
     byte[] generatedCueBytes(String key, int volumePercent, AudioFormat format) {
+        if (startupCueSuppressed(key)) return new byte[0];
         String k = key == null ? "" : key.toLowerCase(Locale.ROOT);
         int sampleRate = Math.max(8000, (int)format.getSampleRate());
-        int ms = k.contains("boot") ? 420 : (k.contains("ambient") ? 300 : (k.contains("weapon") ? 180 : (k.contains("type") ? 55 : 95)));
+        int ms = k.contains("ambient") ? 300 : (k.contains("weapon") ? 180 : (k.contains("type") ? 55 : 95));
         int samples = Math.max(1, sampleRate * ms / 1000);
         byte[] data = new byte[samples * 2];
         double freq = generatedCueFrequency(k);
@@ -267,7 +274,6 @@ class SoundManager {
 
     double generatedCueFrequency(String key) {
         if (key == null) return 440.0;
-        if (key.contains("boot")) return 92.0;
         if (key.contains("panelopen")) return 330.0;
         if (key.contains("panelclose")) return 196.0;
         if (key.contains("tab")) return 520.0;

@@ -46,14 +46,17 @@ final class Milestone02InputRebindingAuditSmoke {
         }
 
         List<String> entryRows = SemanticAssetInfopediaAuthority.mechanicEntryRows("rebinding");
-        requireContains(entryRows, "Input Rebinding Audit", "input rebinding mechanic row");
-        List<String> detail = SemanticAssetInfopediaAuthority.mechanicDetailLinesByKey("input-rebinding-audit");
-        requireContains(detail, "InputRebindingAuditAuthority", "input audit source");
-        requireContains(detail, "Milestone02InputRebindingAuditSmoke", "input audit guard");
-        requireContains(detail, "Current limitation", "honest scope note");
-        for (String line : detail) rejectLeaks(line, "input rebinding infopedia detail");
+        requireContains(entryRows, "Input Rebinding", "input rebinding mechanic row");
+        List<String> detail = SemanticAssetInfopediaAuthority.mechanicDetailLinesByKey("input-rebinding");
+        requireContains(detail, "Controls screen groups actions by context", "input rebinding controls screen explanation");
+        requireContains(detail, "Required recovery actions keep a usable default path", "input rebinding recovery explanation");
+        requireContains(detail, "Conflict notes explain", "input rebinding conflict explanation");
+        for (String line : detail) {
+            rejectLeaks(line, "input rebinding infopedia detail");
+            rejectProcessLanguage(line, "input rebinding detail");
+        }
 
-        List<String> related = SemanticAssetInfopediaAuthority.relatedRowsForEntry(null, "MECHANIC - Input Rebinding Audit [Controls]", null);
+        List<String> related = SemanticAssetInfopediaAuthority.relatedRowsForEntry(null, "MECHANIC - Input Rebinding [Controls]", null);
         requireContains(related, "Context Prompts", "input audit related context prompts");
         manager.resetAllToDefaults();
     }
@@ -67,6 +70,15 @@ final class Milestone02InputRebindingAuditSmoke {
 
     private static void rejectContains(String text, String forbidden, String label) {
         if (text != null && text.contains(forbidden)) throw new AssertionError(label + ": " + text);
+    }
+
+    private static void rejectProcessLanguage(String text, String label) {
+        if (text == null) return;
+        String l = text.toLowerCase();
+        String[] forbidden = {"guard", "smoke", "milestone", "authority", "audit", "future", "owner=", "raw-id", "raw id"};
+        for (String token : forbidden) {
+            if (l.contains(token)) throw new AssertionError(label + " contains process language '" + token + "': " + text);
+        }
     }
 
     private static void rejectLeaks(String text, String label) {

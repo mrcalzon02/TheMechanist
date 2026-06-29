@@ -31,6 +31,10 @@ final class ConstructionReadabilityAuthority {
         lines.add(ready ? "Placement: READY at " + x + "," + y + "."
                 : stagedStart ? "Placement: STAGED START at " + x + "," + y + " - " + safe(placementResult.substring("staged start:".length()).trim(), "partial materials available") + "."
                 : "Placement: BLOCKED at " + x + "," + y + " - " + safe(placementResult, "unknown reason") + ".");
+        if (!ready && !stagedStart) {
+            lines.add("Next step: " + ActionDenialGuidanceAuthority.explain(
+                    ActionDenialGuidanceAuthority.DenialKind.CONSTRUCTION, placementResult));
+        }
         lines.add("Blueprint: " + recipe.name + " / " + safe(recipe.qualityName, "Common") + ".");
         lines.add("Cost: supplies " + Math.max(0, supplies) + "/" + Math.max(0, recipe.supplyCost)
                 + "; machine parts " + Math.max(0, machineParts) + "/" + Math.max(0, recipe.partCost) + ".");
@@ -39,10 +43,46 @@ final class ConstructionReadabilityAuthority {
         lines.add("Requirements: " + (recipe.requiresWorkbench ? "Scrap Workbench; " : "no workbench; ")
                 + "knowledge " + safe(recipe.requiredKnowledge, "none") + "; faction "
                 + (recipe.requiredFaction == null || recipe.requiredFaction == Faction.NONE ? "none" : recipe.requiredFaction.label) + ".");
+        lines.add(effortPreview(recipe));
+        lines.add(attentionPreview(recipe));
         lines.add("Access: owning the blueprint is separate from permission, reputation, license, permit, materials, workbench, knowledge, placement access, utilities, and labor.");
         lines.add("Placement consequence: consumes the listed materials into a staged construction site; labor completion finishes the permanent base object.");
         lines.add("Purpose: " + safe(recipe.description, "No description recorded."));
         return lines;
+    }
+
+    static String effortPreview(BuildRecipe recipe) {
+        if (recipe == null) return "Effort preview: no blueprint selected.";
+        int turns = Math.max(1, recipe.baseTurns);
+        String tool = recipe.requiresWorkbench ? "Scrap Workbench support" : "hand placement";
+        String skill = "Mechanics " + Math.max(0, recipe.reqMechanics)
+                + ", Intellect " + Math.max(0, recipe.reqIntellect);
+        String risk = recipe.baseFail <= 0 ? "low mishap risk" : "mishap risk " + Math.max(0, recipe.baseFail) + "%";
+        return "Effort preview: " + turns + " labor turn" + (turns == 1 ? "" : "s")
+                + "; " + tool + "; " + skill + "; " + risk + ".";
+    }
+
+    static String attentionPreview(BuildRecipe recipe) {
+        if (recipe == null) return "Attention preview: quiet heat and quiet suspicion; drivers ordinary footprint.";
+        BlueprintExpansionHeatAuthority.HeatProfile profile = BlueprintExpansionHeatAuthority.profileFor(recipe);
+        return "Attention preview: heat " + ExpansionHeatReadabilityAuthority.pressureBand(profile.heatImpact())
+                + " (+" + profile.heatImpact() + "), suspicion "
+                + ExpansionHeatReadabilityAuthority.pressureBand(profile.suspicionImpact())
+                + " (+" + profile.suspicionImpact() + "); drivers " + safe(profile.driverSummary(), "ordinary footprint") + ".";
+    }
+
+    static String startSummary(BuildRecipe recipe, int x, int y, boolean stagedStart) {
+        if (recipe == null) return "Construction summary: no blueprint was started.";
+        BlueprintExpansionHeatAuthority.HeatProfile profile = BlueprintExpansionHeatAuthority.profileFor(recipe);
+        int turns = Math.max(1, recipe.baseTurns);
+        String materials = stagedStart ? "partial materials staged" : "materials fully staged";
+        String risk = recipe.baseFail <= 0 ? "low mishap risk" : "mishap risk " + Math.max(0, recipe.baseFail) + "%";
+        return "Construction summary: " + recipe.name + " at " + x + "," + y
+                + "; " + materials + "; labor " + turns + " turn" + (turns == 1 ? "" : "s")
+                + "; " + risk + "; heat " + ExpansionHeatReadabilityAuthority.pressureBand(profile.heatImpact())
+                + " (+" + profile.heatImpact() + "), suspicion "
+                + ExpansionHeatReadabilityAuthority.pressureBand(profile.suspicionImpact())
+                + " (+" + profile.suspicionImpact() + ").";
     }
 
     private static String safe(String value, String fallback) {

@@ -1,44 +1,44 @@
 # Function Map Summary
 
-Generated: `2026-06-23 10:16:26`
+Generated: `2026-06-29 08:22:04`
 
 ## Counts
 
-- Files inventoried: `751`
-- Java classes/interfaces/enums/records: `1670`
-- Java functions/methods parsed: `8781`
-- Duplicate function-name groups: `642`
+- Files inventoried: `823`
+- Java classes/interfaces/enums/records: `1802`
+- Java functions/methods parsed: `9236`
+- Duplicate function-name groups: `661`
 - Documents inventoried: `50`
 - Document retirement candidate rows: `1`
 - Oversized owner rows: `12`
 
 ## Function Owner Zones
 
-- `assets.registry.art`: `282` functions
-- `combat.entities.simulation`: `679` functions
-- `diagnostics.smoke.audit`: `221` functions
+- `assets.registry.art`: `288` functions
+- `combat.entities.simulation`: `840` functions
+- `diagnostics.smoke.audit`: `223` functions
 - `interaction.fixtures.machines`: `326` functions
-- `inventory.items.persistence`: `448` functions
+- `inventory.items.persistence`: `450` functions
 - `runtime.options`: `489` functions
 - `server.authority.launcher`: `153` functions
-- `ui.input.navigation`: `524` functions
-- `ui.render.surface`: `3855` functions
-- `unclassified`: `588` functions
-- `world.generation.transition`: `1216` functions
+- `ui.input.navigation`: `528` functions
+- `ui.render.surface`: `3874` functions
+- `unclassified`: `590` functions
+- `world.generation.transition`: `1475` functions
 
 ## Class Owner Zones
 
-- `assets.registry.art`: `86` classes
-- `combat.entities.simulation`: `125` classes
+- `assets.registry.art`: `87` classes
+- `combat.entities.simulation`: `213` classes
 - `diagnostics.smoke.audit`: `78` classes
 - `interaction.fixtures.machines`: `73` classes
 - `inventory.items.persistence`: `97` classes
 - `runtime.options`: `75` classes
 - `server.authority.launcher`: `84` classes
-- `ui.input.navigation`: `78` classes
+- `ui.input.navigation`: `79` classes
 - `ui.render.surface`: `439` classes
 - `unclassified`: `301` classes
-- `world.generation.transition`: `234` classes
+- `world.generation.transition`: `276` classes
 
 ## Document Status Guesses
 

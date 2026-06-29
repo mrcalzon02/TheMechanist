@@ -119,6 +119,52 @@ final class ProgressiveConstructionAuthority {
         );
     }
 
+    static java.util.List<String> statusPacketLines(GamePanel g) {
+        ArrayList<BaseObject> sites = activeSites(g);
+        int readyForLabor = 0;
+        int blockedByMaterials = 0;
+        int nearlyComplete = 0;
+        for (BaseObject site : sites) {
+            if (materialsComplete(site)) readyForLabor++;
+            else blockedByMaterials++;
+            if (progressPercent(site) >= 80) nearlyComplete++;
+        }
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Construction progress: active staged sites=" + sites.size()
+                + ", ready for labor=" + readyForLabor
+                + ", blocked by materials=" + blockedByMaterials
+                + ", nearly complete=" + nearlyComplete + ".");
+        if (sites.isEmpty()) {
+            lines.add("Construction next action: no staged construction sites are waiting.");
+            return lines;
+        }
+        int shown = 0;
+        for (BaseObject site : sites) {
+            if (shown >= 5) break;
+            lines.add(siteStatusLine(site));
+            shown++;
+        }
+        if (sites.size() > shown) lines.add("Construction progress: " + (sites.size() - shown) + " additional staged site(s) not shown.");
+        return lines;
+    }
+
+    static String statusPacket(GamePanel g) {
+        return String.join(" | ", statusPacketLines(g));
+    }
+
+    static String siteStatusLine(BaseObject site) {
+        if (site == null || !site.underConstruction) return "Construction site: none.";
+        String next = materialsComplete(site)
+                ? (site.constructionLaborDone >= site.constructionLaborRequired ? "ready to finish" : "work to add labor")
+                : "stage " + missingMaterials(site);
+        return clean(site.name, "Unfinished construction site")
+                + " at " + site.x + "," + site.y
+                + ": " + progressPercent(site) + "% complete"
+                + ", materials " + materialProgress(site)
+                + ", labor " + Math.max(0, site.constructionLaborDone) + "/" + Math.max(0, site.constructionLaborRequired)
+                + ", next action: " + next + ".";
+    }
+
     static String contributionResultLine(BaseObject site, int insertedBefore, boolean wasCompleted) {
         if (site == null) return "Construction work could not find a staged site.";
         if (wasCompleted || !site.underConstruction) {
@@ -191,6 +237,7 @@ final class ProgressiveConstructionAuthority {
                 "Construction inspection audit: object inspection reports staged-site status, material progress, labor progress, missing materials, and completion target before offering completed-facility actions.",
                 "Construction labor action audit: the interaction panel can stage available missing materials, contribute one turn of labor when materials are complete, and report progress or completion through ProgressiveConstructionAuthority.",
                 "Construction dismantle audit: unfinished staged sites can be dismantled before completion, inserted materials are recovered, labor progress is lost, and no completed facility configuration is applied.",
+                "Construction status packet audit: the construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, nearly-complete count, first site progress lines, and next action without exposing raw identifiers.",
                 "Construction tool audit: construction and deconstruction use the existing held-tool multiplier so suitable tools reduce effort without bypassing time.",
                 "Construction persistence audit: staged construction fields are saved with base objects, restored before completed objects receive normal built-object configuration, and verified by a write/read round-trip smoke.",
                 "Construction sample audit: " + progressLine(createSite(BuildRecipe.shopCounter(), 12, 18, 7))
@@ -234,6 +281,14 @@ final class ProgressiveConstructionAuthority {
         }
         ProductionInputConsumptionRecord rec = g.consumeProductionInputNamedResult(item, "staged construction insertion");
         return rec != null && rec.success;
+    }
+
+    private static ArrayList<BaseObject> activeSites(GamePanel g) {
+        ArrayList<BaseObject> sites = new ArrayList<>();
+        if (g == null || g.baseObjects == null) return sites;
+        for (BaseObject obj : g.baseObjects) if (obj != null && obj.underConstruction) sites.add(obj);
+        sites.sort(Comparator.comparingInt((BaseObject b) -> b.y).thenComparingInt(b -> b.x).thenComparing(b -> clean(b.name, "")));
+        return sites;
     }
 
     private static boolean materialsComplete(BaseObject site) {

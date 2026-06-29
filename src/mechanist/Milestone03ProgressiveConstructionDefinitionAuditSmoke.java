@@ -32,6 +32,10 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         requireContains(audit, "contribute one turn of labor when materials are complete", "labor action audit");
         requireContains(audit, "unfinished staged sites can be dismantled", "dismantle action audit");
         requireContains(audit, "inserted materials are recovered", "dismantle recovery audit");
+        requireContains(audit, "reports active staged-site count", "status packet audit");
+        requireContains(audit, "ready-for-labor count", "status ready count audit");
+        requireContains(audit, "material-blocked count", "status blocked count audit");
+        requireContains(audit, "next action without exposing raw identifiers", "status next-action audit");
         requireContains(audit, "held-tool multiplier", "tool timing");
         requireContains(audit, "saved with base objects", "save persistence");
         requireContains(audit, "restored before completed objects", "load persistence");
@@ -82,6 +86,13 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         requireContains(inspection, "progress=65%", "inspection progress");
         requireContains(inspection, "labor=0/7", "inspection labor");
         requireContains(inspection, "finished work becomes B", "inspection target");
+        requireContains(ProgressiveConstructionAuthority.statusPacketLines(null), "active staged sites=0", "null status count");
+        requireContains(ProgressiveConstructionAuthority.statusPacketLines(null), "no staged construction sites are waiting", "null status next action");
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(site), "Under construction: Licensed Shop Counter at 12,18", "site status location");
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(site),
+                "next action: stage Construction supplies x3, Fastener button card x1, Machine part x1, Warehouse inventory tag bundle x1",
+                "site status blocked next action");
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(prepaid), "next action: work to add labor", "site status labor next action");
         requireContains(ProgressiveConstructionAuthority.contributionResultLine(prepaid, 0, false),
                 "Construction work added labor", "contribution progress text");
         requireContains(ProgressiveConstructionAuthority.auditSummary(null), "activeSites=0", "empty audit");
@@ -119,6 +130,20 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         if (game.timer != null) game.timer.stop();
         game.baseObjects.clear();
         game.baseObjects.add(prepaid);
+        game.baseObjects.add(site);
+        List<String> status = ProgressiveConstructionAuthority.statusPacketLines(game);
+        requireContains(status, "active staged sites=2", "status active count");
+        requireContains(status, "ready for labor=1", "status ready count");
+        requireContains(status, "blocked by materials=1", "status blocked count");
+        requireContains(status, "nearly complete=0", "status nearly complete count");
+        requireContains(status, "Under construction: Licensed Shop Counter at 12,18: 0% complete", "status blocked site");
+        requireContains(status, "Under construction: Licensed Shop Counter at 12,18: 65% complete", "status prepaid site");
+        String commandStatus = new AdminCommandDispatcher(null, null, null)
+                .executeCommand(game, new InternalServerSessionAuthority.CommandContext("admin", "local-user", true, "local-world", "local-server"),
+                        new ConsoleCommandRequest("admin", "/construction_progress"));
+        requireContains(commandStatus, "Construction progress: active staged sites=2", "admin construction progress status");
+        requireContains(commandStatus, "next action: work to add labor", "admin construction next action");
+        game.baseObjects.remove(site);
         for (int i = 0; i < 7; i++) {
             ProgressiveConstructionAuthority.contribute(game, prepaid, 1, false);
         }

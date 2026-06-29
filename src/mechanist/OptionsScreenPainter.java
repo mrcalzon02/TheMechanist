@@ -263,10 +263,6 @@ final class OptionsScreenPainter {
         out.add(cmd("Voice Volume: " + panel.options.conversationVolume + "%", "Adjust voice volume with a slider.",
                 () -> SwingOptionsEditorAuthority.editInt(panel, "Voice Volume", panel.options.conversationVolume, 0, 100, 5, "%",
                         value -> panel.logEvent(OptionsBoundaryAuthority.changeConversationVolume(panel.options, value - panel.options.conversationVolume)))));
-        out.add(cmd("Boot " + onOff(panel.options.bootSound), "Choose whether boot sound playback is enabled.", () -> radio(panel, "Boot Sound", panel.options.bootSound, () -> {
-            panel.options.bootSound = !panel.options.bootSound;
-            saveFlag(panel, "Boot sound", panel.options.bootSound);
-        })));
         out.add(cmd("Test SFX", "Play the menu button sound through the live audio bridge.", () -> {
             panel.sounds.play("button", panel.options);
             panel.logEvent("SFX test requested.");
@@ -517,7 +513,7 @@ final class OptionsScreenPainter {
         lines.add("SFX: " + (panel.options.soundEnabled ? "ON" : "OFF") + " / " + panel.options.sfxVolume + "%");
         lines.add("MUSIC: " + (panel.options.musicEnabled ? "ON" : "OFF") + " / " + panel.options.musicVolume + "%");
         lines.add("VOICE / CONVERSATION: " + (panel.options.conversationSound ? "ON" : "OFF") + " / " + panel.options.conversationVolume + "%");
-        lines.add("BOOT SOUND: " + (panel.options.bootSound ? "ON" : "OFF"));
+        lines.add("STARTUP SFX: OFF");
         lines.add("Music has a dedicated channel even before music assets are imported. Defaults begin around 80% so the first audible implementation is not a screaming logic Engine.");
         return lines;
     }

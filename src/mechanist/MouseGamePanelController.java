@@ -13,6 +13,20 @@ final class MouseGamePanelController {
             return true;
         }
         if (handleGameWorldClick(panel, event, mx, my)) return true;
+        if (panel.screen == GamePanel.Screen.PANEL && panel.world != null && panel.buildPlacementActive
+                && (panel.panelMode == GamePanel.PanelMode.BUILD || panel.panelMode == GamePanel.PanelMode.WORKBENCH)) {
+            Point tile = panel.screenPointToWorldTile(mx, my);
+            if (tile != null && SwingUtilities.isLeftMouseButton(event)) {
+                panel.targetBuildPlacementAt(tile.x, tile.y, "mouse placement");
+                panel.requestFocusInWindow();
+                return true;
+            }
+            if (SwingUtilities.isRightMouseButton(event)) {
+                panel.cancelBuildPlacement("mouse cancel");
+                panel.requestFocusInWindow();
+                return true;
+            }
+        }
         if (panel.screen == GamePanel.Screen.PANEL && panel.world != null && (panel.panelMode == GamePanel.PanelMode.LOOK || panel.panelMode == GamePanel.PanelMode.COMBAT || panel.panelMode == GamePanel.PanelMode.INTERACT)) {
             Point tile = panel.screenPointToWorldTile(mx, my);
             if (tile != null && (SwingUtilities.isLeftMouseButton(event) || SwingUtilities.isRightMouseButton(event))) {

@@ -288,7 +288,7 @@ final class AdminCommandDispatcher {
     }
 
     private String handleConstructionProgress(GamePanel game) {
-        String line = ProgressiveConstructionAuthority.auditSummary(game);
+        String line = ProgressiveConstructionAuthority.statusPacket(game);
         DebugLog.audit("ADMIN_CONSTRUCTION_PROGRESS", line);
         return line;
     }

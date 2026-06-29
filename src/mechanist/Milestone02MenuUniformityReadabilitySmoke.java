@@ -52,8 +52,12 @@ final class Milestone02MenuUniformityReadabilitySmoke {
         requireContains(menuEntry, "Menu Uniformity", "menu uniformity mechanic row");
         List<String> detail = SemanticAssetInfopediaAuthority.mechanicDetailLinesByKey("menu-uniformity");
         requireContains(detail, "Back returns", "menu detail back behavior");
-        requireContains(detail, "Milestone02MenuUniformityReadabilitySmoke", "menu detail smoke guard");
-        for (String line : detail) rejectLeaks(line, "menu uniformity infopedia detail");
+        requireContains(detail, "Disabled actions explain", "menu detail disabled-state behavior");
+        requireContains(detail, "source, destination, selected item, quantity", "menu detail transfer behavior");
+        for (String line : detail) {
+            rejectLeaks(line, "menu uniformity infopedia detail");
+            rejectProcessLanguage(line, "menu detail");
+        }
     }
 
     private static void requireContains(List<String> lines, String expected, String label) {
@@ -71,6 +75,15 @@ final class Milestone02MenuUniformityReadabilitySmoke {
 
     private static void rejectContains(String text, String forbidden, String label) {
         if (text != null && text.contains(forbidden)) throw new AssertionError(label + ": " + text);
+    }
+
+    private static void rejectProcessLanguage(String text, String label) {
+        if (text == null) return;
+        String l = text.toLowerCase();
+        String[] forbidden = {"guard", "smoke", "milestone", "authority", "audit", "future", "owner=", "raw-id", "raw id"};
+        for (String token : forbidden) {
+            if (l.contains(token)) throw new AssertionError(label + " contains process language '" + token + "': " + text);
+        }
     }
 
     private static void require(boolean condition, String message) {
