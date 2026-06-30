@@ -225,12 +225,12 @@ final class GameplayConsoleCommandAuthority {
         if (completed) {
             result = ProgressiveConstructionAuthority.contributionResultLine(site, inserted, true);
         } else if (inserted <= 0 && laborAdded <= 0) {
-            result = "Construction blocked. " + ProgressiveConstructionAuthority.siteStatusLine(site);
+            result = "Construction blocked. " + ProgressiveConstructionAuthority.siteStatusLine(game, site);
         } else {
             java.util.ArrayList<String> changes = new java.util.ArrayList<>();
             if (inserted > 0) changes.add("staged " + inserted + " material unit(s)");
             if (laborAdded > 0) changes.add("added " + laborAdded + " labor");
-            result = "Construction work " + String.join(" and ", changes) + ". " + ProgressiveConstructionAuthority.siteStatusLine(site);
+            result = "Construction work " + String.join(" and ", changes) + ". " + ProgressiveConstructionAuthority.siteStatusLine(game, site);
         }
         game.logEvent(result);
         DebugLog.audit("GAMEPLAY_CONSTRUCTION_WORK", "turns=" + turns + " inserted=" + inserted + " laborAdded=" + laborAdded + " completed=" + completed + " site=" + site.x + "," + site.y);
@@ -241,20 +241,24 @@ final class GameplayConsoleCommandAuthority {
         if (game == null || game.baseObjects == null) return null;
         BaseObject best = null;
         int bestDistance = Integer.MAX_VALUE;
+        int bestPriority = Integer.MAX_VALUE;
         int bestProgress = Integer.MIN_VALUE;
         for (BaseObject site : game.baseObjects) {
             if (site == null || !site.underConstruction) continue;
             int distance = Math.max(Math.abs(site.x - game.playerX), Math.abs(site.y - game.playerY));
             if (distance > 1) continue;
             int progress = Math.max(0, site.constructionVisualProgress);
+            int priority = ProgressiveConstructionAuthority.workCommandPriority(game, site);
             boolean earlier = best == null
-                    || distance < bestDistance
-                    || (distance == bestDistance && progress > bestProgress)
-                    || (distance == bestDistance && progress == bestProgress
+                    || priority < bestPriority
+                    || (priority == bestPriority && distance < bestDistance)
+                    || (priority == bestPriority && distance == bestDistance && progress > bestProgress)
+                    || (priority == bestPriority && distance == bestDistance && progress == bestProgress
                     && (site.y < best.y || (site.y == best.y && site.x < best.x)));
             if (earlier) {
                 best = site;
                 bestDistance = distance;
+                bestPriority = priority;
                 bestProgress = progress;
             }
         }

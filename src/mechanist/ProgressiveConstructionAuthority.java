@@ -123,25 +123,38 @@ final class ProgressiveConstructionAuthority {
         ArrayList<BaseObject> sites = activeSites(g);
         int readyForLabor = 0;
         int blockedByMaterials = 0;
+        int materialReady = 0;
+        int inWorkReach = 0;
         int nearlyComplete = 0;
         for (BaseObject site : sites) {
             if (materialsComplete(site)) readyForLabor++;
-            else blockedByMaterials++;
+            else {
+                blockedByMaterials++;
+                if (availableMissingMaterialUnits(g, site) > 0) materialReady++;
+            }
+            if (isInWorkReach(g, site)) inWorkReach++;
             if (progressPercent(site) >= 80) nearlyComplete++;
         }
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Construction progress: active staged sites=" + sites.size()
                 + ", ready for labor=" + readyForLabor
                 + ", blocked by materials=" + blockedByMaterials
+                + ", material ready=" + materialReady
+                + ", in work reach=" + inWorkReach
                 + ", nearly complete=" + nearlyComplete + ".");
         if (sites.isEmpty()) {
             lines.add("Construction next action: no staged construction sites are waiting.");
             return lines;
         }
+        ArrayList<BaseObject> prioritized = new ArrayList<>(sites);
+        prioritized.sort(Comparator.comparingInt((BaseObject site) -> statusPriority(g, site))
+                .thenComparingInt((BaseObject b) -> b.y)
+                .thenComparingInt(b -> b.x)
+                .thenComparing(b -> clean(b.name, "")));
         int shown = 0;
-        for (BaseObject site : sites) {
+        for (BaseObject site : prioritized) {
             if (shown >= 5) break;
-            lines.add(siteStatusLine(site));
+            lines.add(siteStatusLine(g, site));
             shown++;
         }
         if (sites.size() > shown) lines.add("Construction progress: " + (sites.size() - shown) + " additional staged site(s) not shown.");
@@ -153,15 +166,18 @@ final class ProgressiveConstructionAuthority {
     }
 
     static String siteStatusLine(BaseObject site) {
+        return siteStatusLine(null, site);
+    }
+
+    static String siteStatusLine(GamePanel g, BaseObject site) {
         if (site == null || !site.underConstruction) return "Construction site: none.";
-        String next = materialsComplete(site)
-                ? (site.constructionLaborDone >= site.constructionLaborRequired ? "ready to finish" : "work to add labor")
-                : "stage " + missingMaterials(site);
+        String next = nextActionLine(g, site);
         return clean(site.name, "Unfinished construction site")
                 + " at " + site.x + "," + site.y
                 + ": " + progressPercent(site) + "% complete"
                 + ", materials " + materialProgress(site)
                 + ", labor " + Math.max(0, site.constructionLaborDone) + "/" + Math.max(0, site.constructionLaborRequired)
+                + reachLine(g, site)
                 + ", next action: " + next + ".";
     }
 
@@ -173,6 +189,10 @@ final class ProgressiveConstructionAuthority {
         return "Construction work added labor"
                 + (insertedBefore > 0 ? " and staged " + insertedBefore + " material unit(s)" : "")
                 + ". " + progressLine(site) + ".";
+    }
+
+    static int workCommandPriority(GamePanel g, BaseObject site) {
+        return statusPriority(g, site);
     }
 
     static DismantleResult dismantle(GamePanel g, BaseObject site) {
@@ -237,7 +257,7 @@ final class ProgressiveConstructionAuthority {
                 "Construction inspection audit: object inspection reports staged-site status, material progress, labor progress, missing materials, and completion target before offering completed-facility actions.",
                 "Construction labor action audit: the interaction panel can stage available missing materials, contribute one turn of labor when materials are complete, and report progress or completion through ProgressiveConstructionAuthority.",
                 "Construction dismantle audit: unfinished staged sites can be dismantled before completion, inserted materials are recovered, labor progress is lost, and no completed facility configuration is applied.",
-                "Construction status packet audit: the construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, nearly-complete count, first site progress lines, and next action without exposing raw identifiers.",
+                "Construction status packet audit: the construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, material-ready count, in-work-reach count, nearly-complete count, command target priority, prioritized site progress lines, and next action without exposing raw identifiers.",
                 "Construction tool audit: construction and deconstruction use the existing held-tool multiplier so suitable tools reduce effort without bypassing time.",
                 "Construction persistence audit: staged construction fields are saved with base objects, restored before completed objects receive normal built-object configuration, and verified by a write/read round-trip smoke.",
                 "Construction sample audit: " + progressLine(createSite(BuildRecipe.shopCounter(), 12, 18, 7))
@@ -291,11 +311,93 @@ final class ProgressiveConstructionAuthority {
         return sites;
     }
 
+    private static int statusPriority(GamePanel g, BaseObject site) {
+        if (site == null) return 9;
+        int actionBand;
+        if (progressPercent(site) >= 80) actionBand = 0;
+        else if (materialsComplete(site)) actionBand = 1;
+        else if (availableMissingMaterialUnits(g, site) > 0) actionBand = 2;
+        else actionBand = 3;
+        return actionBand * 2 + (isInWorkReach(g, site) ? 0 : 1);
+    }
+
+    private static String reachLine(GamePanel g, BaseObject site) {
+        if (g == null || site == null) return "";
+        int distance = workReachDistance(g, site);
+        return isInWorkReach(g, site) ? ", access in work reach" : ", access stand adjacent to work (range " + distance + ")";
+    }
+
+    private static boolean isInWorkReach(GamePanel g, BaseObject site) {
+        return workReachDistance(g, site) <= 1;
+    }
+
+    private static int workReachDistance(GamePanel g, BaseObject site) {
+        if (g == null || site == null) return Integer.MAX_VALUE;
+        return Math.max(Math.abs(site.x - g.playerX), Math.abs(site.y - g.playerY));
+    }
+
     private static boolean materialsComplete(BaseObject site) {
         Map<String,Integer> req = decode(site.constructionRequiredItems);
         Map<String,Integer> ins = decode(site.constructionInsertedItems);
         for (Map.Entry<String,Integer> e : req.entrySet()) if (ins.getOrDefault(e.getKey(), 0) < e.getValue()) return false;
         return true;
+    }
+
+    private static String nextActionLine(GamePanel g, BaseObject site) {
+        if (materialsComplete(site)) {
+            return site.constructionLaborDone >= site.constructionLaborRequired ? "ready to finish" : "work to add labor";
+        }
+        if (g == null) return "stage " + missingMaterials(site);
+        String available = availableMissingMaterials(g, site);
+        if (!"none".equals(available)) {
+            String unavailable = unavailableMissingMaterials(g, site);
+            return "stage available " + available + ("none".equals(unavailable) ? "" : "; still missing " + unavailable);
+        }
+        return "stage " + missingMaterials(site);
+    }
+
+    private static int availableMissingMaterialUnits(GamePanel g, BaseObject site) {
+        if (g == null || site == null) return 0;
+        Map<String,Integer> req = decode(site.constructionRequiredItems);
+        Map<String,Integer> ins = decode(site.constructionInsertedItems);
+        int available = 0;
+        for (Map.Entry<String,Integer> e : req.entrySet()) {
+            int missing = Math.max(0, e.getValue() - ins.getOrDefault(e.getKey(), 0));
+            if (missing <= 0) continue;
+            available += Math.min(missing, availableCount(g, e.getKey()));
+        }
+        return available;
+    }
+
+    private static String availableMissingMaterials(GamePanel g, BaseObject site) {
+        Map<String,Integer> req = decode(site.constructionRequiredItems);
+        Map<String,Integer> ins = decode(site.constructionInsertedItems);
+        ArrayList<String> lines = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : req.entrySet()) {
+            int missing = Math.max(0, e.getValue() - ins.getOrDefault(e.getKey(), 0));
+            int available = Math.min(missing, availableCount(g, e.getKey()));
+            if (available > 0) lines.add(e.getKey() + " x" + available);
+        }
+        return lines.isEmpty() ? "none" : String.join(", ", lines);
+    }
+
+    private static String unavailableMissingMaterials(GamePanel g, BaseObject site) {
+        Map<String,Integer> req = decode(site.constructionRequiredItems);
+        Map<String,Integer> ins = decode(site.constructionInsertedItems);
+        ArrayList<String> lines = new ArrayList<>();
+        for (Map.Entry<String,Integer> e : req.entrySet()) {
+            int missing = Math.max(0, e.getValue() - ins.getOrDefault(e.getKey(), 0));
+            int unavailable = Math.max(0, missing - availableCount(g, e.getKey()));
+            if (unavailable > 0) lines.add(e.getKey() + " x" + unavailable);
+        }
+        return lines.isEmpty() ? "none" : String.join(", ", lines);
+    }
+
+    private static int availableCount(GamePanel g, String item) {
+        if (g == null || item == null) return 0;
+        if (item.equalsIgnoreCase("Construction supplies")) return Math.max(0, g.supplies);
+        if (item.equalsIgnoreCase("Machine part") || item.equalsIgnoreCase("Machine parts")) return Math.max(0, g.machineParts);
+        return Math.max(0, g.countProductionInput(item));
     }
 
     private static boolean complete(BaseObject site) {

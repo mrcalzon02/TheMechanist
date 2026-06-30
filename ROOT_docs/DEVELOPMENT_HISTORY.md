@@ -12,6 +12,46 @@ Earlier pre-milestone development remains archived at:
 
 Use this file for new completed work from this reset onward. Keep entries concise: record what changed, why it matters for the milestone sequence, and what verification was run. Do not restate the full roadmap here; roadmap authority remains in `MASTER_DEVELOPMENT_PLAN.md`, with detailed milestone targets indexed by `ROOT_docs/MILESTONE_INDEX.md`.
 
+## Milestone 03 - Staged Construction Aggregate Readiness Readback Slice
+
+Expanded the staged-construction progress summary so `/construction_progress` and `/construction_status` now count material-ready blocked sites and staged sites already in work reach alongside the existing active, labor-ready, blocked, and nearly complete counts.
+
+This lets the player see whether waiting construction can be acted on immediately before reading the individual site lines. The slice does not change construction placement, work range, target priority, material consumption, labor amount, completion, dismantle behavior, room ownership, heat, or faction construction jobs. Expanded the progressive construction, construction gameplay command, and Construction Blueprints Infopedia smokes.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused progressive construction definition/status smoke passed; construction gameplay command smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 711 Java modules and 0 unpositioned modules; package rebuild passed with 1700 class files and 6096 package assets; Java 17 package scan passed for 3400 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206318 indexed file rows with reused=202869, hashed=3449, errors=0.
+
+## Milestone 03 - Staged Construction Work Target Priority Slice
+
+Aligned `/construction_work` target selection with the staged-construction progress packet. When multiple unfinished sites are adjacent, the work command now uses the same action-priority ranking as `/construction_progress`, so reachable labor-ready or material-ready sites are chosen ahead of less useful blocked sites before falling back to distance, progress, and map order.
+
+This makes the command behavior match the player's readback: the site surfaced as most actionable is also the site worked first when it is in reach. The slice does not alter work range, placement validation, material consumption rules, labor amount, completion, dismantle behavior, room ownership, heat, or faction construction jobs. Expanded the progressive construction, construction gameplay command, and Construction Blueprints Infopedia smokes.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused progressive construction definition/status smoke passed; construction gameplay command smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 711 Java modules and 0 unpositioned modules; package rebuild passed with 1700 class files and 6096 package assets; Java 17 package scan passed for 3400 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206306 indexed file rows with reused=202855, hashed=3451, errors=0.
+
+## Milestone 03 - Staged Construction Work Reach Readback Slice
+
+Improved staged-construction status lines by showing whether each waiting site is already within `/construction_work` reach or requires the player to stand adjacent first. The progress packet now keeps the existing action priority while using reach as a tie-breaker, so reachable material-ready sites surface ahead of equally blocked distant sites.
+
+This keeps construction status actionable without changing construction mechanics: players can tell whether the next step is work now, stage available materials now, move adjacent, or go find missing inputs. The slice does not alter work range, placement validation, material consumption, labor contribution, completion, dismantle behavior, room ownership, heat, or faction construction jobs. Expanded the progressive construction, construction gameplay command, and Construction Blueprints Infopedia smokes.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused progressive construction definition/status smoke passed; construction gameplay command smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 711 Java modules and 0 unpositioned modules; package rebuild passed with 1700 class files and 6096 package assets; Java 17 package scan passed for 3400 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206294 indexed file rows with reused=202844, hashed=3450, errors=0.
+
+## Milestone 03 - Staged Construction Material Availability Readback Slice
+
+Improved live staged-construction feedback by making construction status and work-result lines distinguish missing materials that are currently available to stage from materials still absent from base storage. `/construction_progress` now promotes material-ready blocked sites ahead of fully blocked sites, and each material-blocked site can say which available materials can be staged now before listing what remains missing.
+
+This keeps the staged construction loop clearer after partial placement: players can see whether the next useful action is Work, stage available supplies/components, or go acquire missing inputs. The slice does not change material consumption, labor contribution, placement validation, completion, dismantle behavior, room ownership, heat, or faction construction jobs. Expanded the progressive construction, construction gameplay command, and Construction Blueprints Infopedia smokes.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused progressive construction definition/status smoke passed; construction gameplay command smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 711 Java modules and 0 unpositioned modules; package rebuild passed with 1700 class files and 6096 package assets; Java 17 package scan passed for 3400 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; repository manifest refresh wrote 206282 indexed file rows with reused=202831, hashed=3451, errors=0.
+
+## Milestone 03 - Staged Construction Progress Priority Slice
+
+Improved the live `/construction_progress` readback by prioritizing staged-site lines after the aggregate counts. Nearly complete sites now appear before other labor-ready work, and labor-ready work appears before material-blocked sites, with coordinates and names still providing stable ordering inside each priority.
+
+This keeps staged construction feedback useful once multiple builds are waiting: the command now surfaces the next most actionable site instead of listing only by map position. The slice does not change placement validation, material consumption, labor contribution, completion, dismantle behavior, room ownership, heat, or faction construction jobs. Expanded the progressive construction smoke and Construction Blueprints Infopedia wording.
+
+Verification: Java 17 full-tree compile passed with the existing Netty unchecked note; focused progressive construction definition/status smoke passed; Infopedia mechanics readability smoke passed; Gate 3 player-facing text smoke suite passed with existing worldgen/save warnings; function and Mermaid maps refreshed at 711 Java modules and 0 unpositioned modules; package rebuild passed with 1700 class files and 6096 package assets; Java 17 package scan passed for 3400 classfiles, highest major version 61; package boot smoke stayed alive for 8 seconds; final repository manifest refresh wrote 206270 indexed file rows with reused=206269, hashed=1, errors=0.
+
 ## Infopedia - Player-Facing Mechanic Reference Cleanup Slice
 
 Audited the game-owned Infopedia mechanic entries and removed the development-history debris that had accumulated there: smoke names, guard lines, authority names, audit ownership notes, future-owner boundaries, raw ID warnings, and construction tally prose. The Infopedia now describes current player-facing behavior for assets, Look/Examine, movement, context prompts, menu behavior, input rebinding, body/medical/inventory, production, skill progression, construction blueprints, expansion heat, interaction approach, contract evidence, transfer workflows, and faction staffing.

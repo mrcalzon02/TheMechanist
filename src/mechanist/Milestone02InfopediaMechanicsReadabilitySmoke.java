@@ -61,6 +61,12 @@ final class Milestone02InfopediaMechanicsReadabilitySmoke {
         checkDetail("construction-blueprints", "Work on a staged site");
         checkDetail("construction-blueprints", "Dismantle removes an unfinished staged site");
         checkDetail("construction-blueprints", "construction progress command reports active staged-site count");
+        checkDetail("construction-blueprints", "nearly complete and labor-ready work before material-blocked sites");
+        checkDetail("construction-blueprints", "material-ready count");
+        checkDetail("construction-blueprints", "in-work-reach count");
+        checkDetail("construction-blueprints", "currently available to stage");
+        checkDetail("construction-blueprints", "within work reach");
+        checkDetail("construction-blueprints", "same priority as construction progress");
         checkDetail("expansion-heat", "attention bands");
         checkDetail("interaction-approach", "never moves");
         checkDetail("contract-evidence", "carried, stored at base, or missing");

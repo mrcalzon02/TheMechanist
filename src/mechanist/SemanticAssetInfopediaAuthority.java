@@ -269,7 +269,11 @@ public final class SemanticAssetInfopediaAuthority {
                                 "Work on a staged site can stage available missing materials and then add labor when materials are complete.",
                                 "Dismantle removes an unfinished staged site, restores the original tile, recovers inserted materials, and loses labor progress.",
                                 "Finished staged sites restore the final built symbol, become normal base objects, and can then use their completed facility behavior.",
-                                "The construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, nearly complete count, and next action lines for waiting sites."
+                                "The construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, material-ready count, in-work-reach count, nearly complete count, and next action lines for waiting sites.",
+                                "When several staged sites are waiting, construction progress lists nearly complete and labor-ready work before material-blocked sites so the next useful action is easier to find.",
+                                "Material-blocked staged sites name which missing materials are currently available to stage and which are still missing from base storage.",
+                                "Construction progress marks sites already within work reach and tells the player to stand adjacent when a staged site is too far away to work.",
+                                "The construction work command uses the same priority as construction progress, so adjacent labor-ready or material-ready sites are chosen before less useful blocked work."
                         ),
                         List.of("production-forecast", "movement-planning", "menu-uniformity")),
                 new MechanicEntry("expansion-heat", "Expansion Heat", "Economy",

@@ -29,6 +29,9 @@ final class Milestone05ConstructionGameplayCommandSmoke {
         String status = GameplayConsoleCommandAuthority.execute(game, player, "construction_status", new String[0]);
         requireContains(status, "active staged sites=1", "construction status count");
         requireContains(status, "blocked by materials=1", "construction status blocked count");
+        requireContains(status, "material ready=1", "construction status material-ready count");
+        requireContains(status, "in work reach=1", "construction status in-reach count");
+        requireContains(status, "access in work reach", "construction status reach guidance");
 
         String worked = GameplayConsoleCommandAuthority.execute(game, player, "construction_work", new String[]{"1"});
         requireContains(worked, "staged 1 material unit(s)", "material staging result");
@@ -44,6 +47,34 @@ final class Milestone05ConstructionGameplayCommandSmoke {
         requireContains(blockedResult, "Construction blocked", "blocked construction result");
         requireContains(blockedResult, "next action: stage Construction supplies x1", "blocked next action");
         require(blocked.constructionLaborDone == 0, "blocked work should not invent labor progress");
+
+        game.supplies = 1;
+        BaseObject materialReady = ProgressiveConstructionAuthority.createSite(recipe, siteX, siteY, 3);
+        game.baseObjects.clear();
+        game.baseObjects.add(materialReady);
+        String materialReadyStatus = GameplayConsoleCommandAuthority.execute(game, player, "construction_status", new String[0]);
+        requireContains(materialReadyStatus, "next action: stage available Construction supplies x1", "material-ready status guidance");
+
+        game.supplies = 1;
+        game.machineParts = 0;
+        game.baseObjects.clear();
+        BuildRecipe partBlockedRecipe = new BuildRecipe(
+                "Console Part Frame", 's', 0, 1, 0, 0, 0, 3, 10, false,
+                Faction.NONE, null, "adjacent staged construction unavailable part fixture");
+        BaseObject ordinaryBlocked = ProgressiveConstructionAuthority.createSite(partBlockedRecipe, siteX, siteY, 3);
+        BaseObject actionableBlocked = ProgressiveConstructionAuthority.createSite(recipe, siteX, siteY + 1, 3);
+        game.baseObjects.add(ordinaryBlocked);
+        game.baseObjects.add(actionableBlocked);
+        String prioritizedWork = GameplayConsoleCommandAuthority.execute(game, player, "construction_work", new String[0]);
+        requireContains(prioritizedWork, "staged 1 material unit(s)", "work command should pick material-ready site first");
+        require(actionableBlocked.constructionLaborDone == 1, "work command should add labor to the material-ready adjacent site");
+        require(ordinaryBlocked.constructionLaborDone == 0, "work command should leave the less actionable adjacent site alone");
+
+        game.baseObjects.clear();
+        BaseObject farSite = ProgressiveConstructionAuthority.createSite(recipe, siteX + 20, siteY + 20, 3);
+        game.baseObjects.add(farSite);
+        String farStatus = GameplayConsoleCommandAuthority.execute(game, player, "construction_status", new String[0]);
+        requireContains(farStatus, "access stand adjacent to work", "distant status reach guidance");
 
         game.baseObjects.clear();
         String outOfReach = GameplayConsoleCommandAuthority.execute(game, player, "construction_work", new String[0]);

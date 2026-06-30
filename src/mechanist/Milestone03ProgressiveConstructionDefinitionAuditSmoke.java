@@ -35,6 +35,10 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         requireContains(audit, "reports active staged-site count", "status packet audit");
         requireContains(audit, "ready-for-labor count", "status ready count audit");
         requireContains(audit, "material-blocked count", "status blocked count audit");
+        requireContains(audit, "material-ready count", "status available-material audit");
+        requireContains(audit, "in-work-reach count", "status reach audit");
+        requireContains(audit, "command target priority", "status command priority audit");
+        requireContains(audit, "prioritized site progress lines", "status priority audit");
         requireContains(audit, "next action without exposing raw identifiers", "status next-action audit");
         requireContains(audit, "held-tool multiplier", "tool timing");
         requireContains(audit, "saved with base objects", "save persistence");
@@ -92,7 +96,23 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         requireContains(ProgressiveConstructionAuthority.siteStatusLine(site),
                 "next action: stage Construction supplies x3, Fastener button card x1, Machine part x1, Warehouse inventory tag bundle x1",
                 "site status blocked next action");
+        GamePanel availabilityGame = new GamePanel();
+        if (availabilityGame.timer != null) availabilityGame.timer.stop();
+        availabilityGame.supplies = 1;
+        availabilityGame.machineParts = 0;
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(availabilityGame, site),
+                "next action: stage available Construction supplies x1; still missing Construction supplies x2",
+                "site status available material next action");
+        BaseObject reachableSite = ProgressiveConstructionAuthority.createSite(BuildRecipe.shopCounter(), availabilityGame.playerX + 1, availabilityGame.playerY, 7);
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(availabilityGame, reachableSite),
+                "access in work reach", "site status reachable guidance");
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(availabilityGame, site),
+                "access stand adjacent to work", "site status distant guidance");
+        if (availabilityGame.timer != null) availabilityGame.timer.stop();
         requireContains(ProgressiveConstructionAuthority.siteStatusLine(prepaid), "next action: work to add labor", "site status labor next action");
+        require(ProgressiveConstructionAuthority.workCommandPriority(null, prepaid)
+                        < ProgressiveConstructionAuthority.workCommandPriority(null, site),
+                "work command priority should prefer labor-ready sites over material-blocked sites");
         requireContains(ProgressiveConstructionAuthority.contributionResultLine(prepaid, 0, false),
                 "Construction work added labor", "contribution progress text");
         requireContains(ProgressiveConstructionAuthority.auditSummary(null), "activeSites=0", "empty audit");
@@ -129,21 +149,38 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         GamePanel game = new GamePanel();
         if (game.timer != null) game.timer.stop();
         game.baseObjects.clear();
+        game.supplies = 1;
+        game.machineParts = 0;
+        BaseObject reachableMaterial = ProgressiveConstructionAuthority.createSite(BuildRecipe.shopCounter(), game.playerX + 1, game.playerY, 7);
+        BaseObject nearlyDone = ProgressiveConstructionAuthority.createPrepaidSite(BuildRecipe.shopCounter(), 9, 16);
+        nearlyDone.constructionLaborDone = 6;
+        nearlyDone.constructionVisualProgress = 95;
         game.baseObjects.add(prepaid);
         game.baseObjects.add(site);
+        game.baseObjects.add(reachableMaterial);
+        game.baseObjects.add(nearlyDone);
         List<String> status = ProgressiveConstructionAuthority.statusPacketLines(game);
-        requireContains(status, "active staged sites=2", "status active count");
-        requireContains(status, "ready for labor=1", "status ready count");
-        requireContains(status, "blocked by materials=1", "status blocked count");
-        requireContains(status, "nearly complete=0", "status nearly complete count");
+        requireContains(status, "active staged sites=4", "status active count");
+        requireContains(status, "ready for labor=2", "status ready count");
+        requireContains(status, "blocked by materials=2", "status blocked count");
+        requireContains(status, "material ready=2", "status material-ready count");
+        requireContains(status, "in work reach=1", "status work-reach count");
+        requireContains(status, "nearly complete=1", "status nearly complete count");
+        require(status.size() > 1 && status.get(1).contains("94% complete"),
+                "status packet should prioritize nearly complete staged sites");
+        require(status.size() > 3 && status.get(3).contains("access in work reach")
+                        && status.get(3).contains("stage available Construction supplies x1"),
+                "status packet should show reachable available staged materials before distant blocked materials");
         requireContains(status, "Under construction: Licensed Shop Counter at 12,18: 0% complete", "status blocked site");
         requireContains(status, "Under construction: Licensed Shop Counter at 12,18: 65% complete", "status prepaid site");
         String commandStatus = new AdminCommandDispatcher(null, null, null)
                 .executeCommand(game, new InternalServerSessionAuthority.CommandContext("admin", "local-user", true, "local-world", "local-server"),
                         new ConsoleCommandRequest("admin", "/construction_progress"));
-        requireContains(commandStatus, "Construction progress: active staged sites=2", "admin construction progress status");
+        requireContains(commandStatus, "Construction progress: active staged sites=4", "admin construction progress status");
         requireContains(commandStatus, "next action: work to add labor", "admin construction next action");
         game.baseObjects.remove(site);
+        game.baseObjects.remove(reachableMaterial);
+        game.baseObjects.remove(nearlyDone);
         for (int i = 0; i < 7; i++) {
             ProgressiveConstructionAuthority.contribute(game, prepaid, 1, false);
         }
