@@ -109,6 +109,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone03ProgressiveConstructionDismantleSmoke.main(args);
         Milestone03ProgressiveConstructionTileSyncSmoke.main(args);
         Milestone03ProgressiveConstructionOriginalTileSmoke.main(args);
+        Milestone05ConstructionGameplayCommandSmoke.main(args);
         Milestone02BodyConditionReadabilitySmoke.main(args);
         Milestone02CharacterPaperDollSmoke.main(args);
         Milestone02CharacterEquipmentMedicalSmoke.main(args);
