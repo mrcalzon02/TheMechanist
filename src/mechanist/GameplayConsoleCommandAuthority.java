@@ -9,7 +9,7 @@ import java.util.Map;
 
 /** Strict registry and implementation bridge for gameplay/debug/admin console commands. */
 final class GameplayConsoleCommandAuthority {
-    static final String VERSION = "gameplay-console-command-authority-0.9.10jk";
+    static final String VERSION = "gameplay-console-command-authority-0.9.10jl";
     private static final ArrayDeque<String> HISTORY = new ArrayDeque<>();
     private static final int HISTORY_MAX = 40;
     private static final Map<String, CommandSpec> SPECS = new LinkedHashMap<>();
@@ -30,6 +30,8 @@ final class GameplayConsoleCommandAuthority {
         add("knowledge_list", 3, "knowledge_list [filter]", "Lists known doctrines or matching doctrine names.");
         add("skill_status", 1, "skill_status", "Reports XP, unlocked skill nodes, and available capability nodes.");
         add("skill_unlock", 1, "skill_unlock <node id>", "Spends XP to unlock a skill capability node when prerequisites are met.");
+        add("construction_status", 1, "construction_status", "Reports active staged construction sites and their next required work.");
+        add("construction_work", 1, "construction_work [turns]", "Stages available materials and contributes labor to an adjacent unfinished site.");
         add("give", 3, "give <item_id> <amount>", "Adds an item/resource to inventory.");
         add("heal", 3, "heal <amount>", "Restores body endurance by amount.");
         add("kill", 3, "kill", "Defeats the local character.");
@@ -127,6 +129,8 @@ final class GameplayConsoleCommandAuthority {
                 case "knowledge_list" -> knowledgeList(game, args);
                 case "skill_status" -> skillStatus(game);
                 case "skill_unlock" -> skillUnlock(game, args);
+                case "construction_status" -> constructionStatus(game);
+                case "construction_work" -> constructionWork(game, args);
                 case "show_hitboxes" -> toggle(game, "hitboxes");
                 case "show_wireframe" -> toggle(game, "wireframe");
                 case "show_navmesh" -> toggle(game, "navmesh");
@@ -200,6 +204,61 @@ final class GameplayConsoleCommandAuthority {
         boolean statChanged = SkillTreeProgressionAuthority.applyStatEffect(game.active, result.statEffect());
         game.logEvent("SKILL: " + result.message() + " Remaining XP " + game.xp + ".");
         return result.message() + " Remaining XP " + game.xp + (statChanged ? " Stat effect applied: " + result.statEffect() + "." : ".");
+    }
+    private static String constructionStatus(GamePanel game) {
+        if (game == null) return "Construction status unavailable until a run is active.";
+        return ProgressiveConstructionAuthority.statusPacket(game);
+    }
+    private static String constructionWork(GamePanel game, String[] args) {
+        if (game == null || game.baseObjects == null) return "Construction work unavailable until a run is active.";
+        if (args != null && args.length > 1) return "Usage: construction_work [turns]";
+        if (args != null && args.length == 1 && !isInt(args[0])) return "Construction work turns must be an integer.";
+        int turns = Math.max(1, Math.min(20, parseInt(args, 0, 1)));
+        BaseObject site = nearestReachableConstructionSite(game);
+        if (site == null) return "No staged construction site is within reach. Stand beside an unfinished site and try again.";
+        int laborBefore = Math.max(0, site.constructionLaborDone);
+        boolean wasUnderConstruction = site.underConstruction;
+        int inserted = ProgressiveConstructionAuthority.contribute(game, site, turns, true);
+        int laborAdded = Math.max(0, site.constructionLaborDone - laborBefore);
+        boolean completed = wasUnderConstruction && !site.underConstruction;
+        String result;
+        if (completed) {
+            result = ProgressiveConstructionAuthority.contributionResultLine(site, inserted, true);
+        } else if (inserted <= 0 && laborAdded <= 0) {
+            result = "Construction blocked. " + ProgressiveConstructionAuthority.siteStatusLine(site);
+        } else {
+            java.util.ArrayList<String> changes = new java.util.ArrayList<>();
+            if (inserted > 0) changes.add("staged " + inserted + " material unit(s)");
+            if (laborAdded > 0) changes.add("added " + laborAdded + " labor");
+            result = "Construction work " + String.join(" and ", changes) + ". " + ProgressiveConstructionAuthority.siteStatusLine(site);
+        }
+        game.logEvent(result);
+        DebugLog.audit("GAMEPLAY_CONSTRUCTION_WORK", "turns=" + turns + " inserted=" + inserted + " laborAdded=" + laborAdded + " completed=" + completed + " site=" + site.x + "," + site.y);
+        game.repaint();
+        return result;
+    }
+    private static BaseObject nearestReachableConstructionSite(GamePanel game) {
+        if (game == null || game.baseObjects == null) return null;
+        BaseObject best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        int bestProgress = Integer.MIN_VALUE;
+        for (BaseObject site : game.baseObjects) {
+            if (site == null || !site.underConstruction) continue;
+            int distance = Math.max(Math.abs(site.x - game.playerX), Math.abs(site.y - game.playerY));
+            if (distance > 1) continue;
+            int progress = Math.max(0, site.constructionVisualProgress);
+            boolean earlier = best == null
+                    || distance < bestDistance
+                    || (distance == bestDistance && progress > bestProgress)
+                    || (distance == bestDistance && progress == bestProgress
+                    && (site.y < best.y || (site.y == best.y && site.x < best.x)));
+            if (earlier) {
+                best = site;
+                bestDistance = distance;
+                bestProgress = progress;
+            }
+        }
+        return best;
     }
     private static String canonicalKnowledgeName(String[] args) { if (args == null || args.length == 0) return ""; String raw = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim(); if (raw.isBlank()) return ""; String normalized = raw.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); for (String name : KnowledgeDef.all().keySet()) { String n = name.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); if (n.equals(normalized)) return name; } return raw; }
     private static void refreshKnowledgeDebugState(GamePanel game, String reason) { if (game == null) return; game.logEvent("CONSOLE: " + reason + " -> knowledge credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + "."); DebugLog.audit("KNOWLEDGE_DEBUG_COMMAND", reason + " credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + " state=" + game.stateSummary()); if (game.screen == GamePanel.Screen.KNOWLEDGE) game.selectedKnowledgeNodeId = null; game.repaint(); }
