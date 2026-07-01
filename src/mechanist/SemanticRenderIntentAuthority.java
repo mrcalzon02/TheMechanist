@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.1";
+    static final String VERSION = "semantic-render-intent-authority-0.2-infrastructure";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -77,8 +77,33 @@ final class SemanticRenderIntentAuthority {
             }
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED);
         }
+
         if (contains(text, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE);
+        }
+        if (contains(text, "traffic light", "signal light", "crossing signal")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TRAFFIC_LIGHT_FIXTURE);
+        }
+        if (contains(text, "security camera", "surveillance camera", "cctv")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE);
+        }
+        if (contains(text, "junction box", "electrical box", "power box")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.JUNCTION_BOX_FIXTURE);
+        }
+        if (contains(text, "ventilation unit", "vent unit", "air handler", "exhaust fan")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.VENTILATION_UNIT_FIXTURE);
+        }
+        if (contains(text, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.SEWER_PIPE_FIXTURE);
+        }
+        if (contains(text, "water pipe", "fresh water pipe", "water main")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE);
+        }
+        if (contains(text, "transformer", "power transformer", "electrical transformer")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TRANSFORMER_MACHINE);
+        }
+        if (contains(text, "generator", "power generator", "genset")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.GENERATOR_MACHINE);
         }
 
         if (contains(text, "toolbox", "tool box")) {
@@ -95,6 +120,9 @@ final class SemanticRenderIntentAuthority {
         }
         if (contains(text, "filing cabinet", "file cabinet", "records cabinet")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.FILING_CABINET_CONTAINER);
+        }
+        if (contains(text, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.REFRIGERATED_STORAGE_CONTAINER);
         }
         if (contains(text, "cargo container", "shipping container", "cargo crate", "freight crate")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.CARGO_CONTAINER);
