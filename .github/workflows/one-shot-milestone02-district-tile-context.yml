@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  statuses: write
 
 jobs:
   implement-and-verify:
@@ -107,21 +108,18 @@ import java.util.*;
                 || (faction != null && faction.name().startsWith("GANGER_"))) {
             return "gang_or_trash_rough";
         }
+        if (zone == ZoneType.SUMP_MARKET) return "market_room";
+        if (zone == ZoneType.ARBITES_PRECINCT_EDGE || zone == ZoneType.IMPERIAL_GUARD_BILLET) return "security_room";
+        if (zone == ZoneType.MECHANICUS_RELIC_DUCT || zone == ZoneType.MECHANICUS_FORGE_CLOISTER) return "industrial_room";
+        if (zone == ZoneType.ADMINISTRATUM_ARCHIVE || zone == ZoneType.IMPERIAL_NEWS_NETWORK) return "administrative_room";
+        if (zone == ZoneType.TRAIN_SERVICE_YARD || zone == ZoneType.NEUTRAL_RAIL_DEPOT) return "transit_room";
+        if (isSecurityFaction(faction)) return "security_room";
+        if (isMechanistFaction(faction)) return "industrial_room";
+        if (isAdministrativeFaction(faction)) return "administrative_room";
+        if (isReligiousFaction(faction)) return "religious_room";
         if (zone == ZoneType.HAB_STACK || zone == ZoneType.NEUTRAL_CIVILIAN_FLOOR || isHiverFaction(faction)) {
             return "habitation_room";
         }
-        if (zone == ZoneType.SUMP_MARKET) return "market_room";
-        if (zone == ZoneType.ARBITES_PRECINCT_EDGE || zone == ZoneType.IMPERIAL_GUARD_BILLET || isSecurityFaction(faction)) {
-            return "security_room";
-        }
-        if (zone == ZoneType.MECHANICUS_RELIC_DUCT || zone == ZoneType.MECHANICUS_FORGE_CLOISTER || isMechanistFaction(faction)) {
-            return "industrial_room";
-        }
-        if (zone == ZoneType.ADMINISTRATUM_ARCHIVE || zone == ZoneType.IMPERIAL_NEWS_NETWORK || isAdministrativeFaction(faction)) {
-            return "administrative_room";
-        }
-        if (zone == ZoneType.TRAIN_SERVICE_YARD || zone == ZoneType.NEUTRAL_RAIL_DEPOT) return "transit_room";
-        if (isReligiousFaction(faction)) return "religious_room";
         return "bare_underhive";
     }
 
@@ -230,11 +228,9 @@ final class Milestone02DistrictRoomTileContextSmoke {
         require(TileDataCompilationAuthority.floorIntentForFamily("security_room")
                         == SemanticRenderAssetResolver.RenderIntent.SECURITY_FLOOR,
                 "security family did not map to security semantic intent");
-        require(TileDataCompilationAuthority.MISSING_RECOGNIZED_TILE_ID.equals(
-                        TileDataCompilationAuthority.primaryAssetIdForDescriptor(
-                                "floor", "market_room", "deliberately_missing_market_alias"))
-                        || TileDataCompilationAuthority.primaryAssetIdForDescriptor(
-                                "floor", "market_room", "deliberately_missing_market_alias") != null,
+        String marketAsset = TileDataCompilationAuthority.primaryAssetIdForDescriptor(
+                "floor", "market_room", "deliberately_missing_market_alias");
+        require(marketAsset != null,
                 "recognized district floor did not produce an asset or typed missing-art identity");
 
         System.out.println("Milestone02DistrictRoomTileContextSmoke PASS " + TileDataCompilationAuthority.VERSION);
@@ -247,7 +243,6 @@ final class Milestone02DistrictRoomTileContextSmoke {
         world.sewerLayer = false;
         world.tiles[4][4] = '.';
         if (world.roomIds != null) world.roomIds[4][4] = -1;
-        world.compiledTileDescriptors = null;
         return world;
     }
 
@@ -317,3 +312,24 @@ final class Milestone02DistrictRoomTileContextSmoke {
           fi
           git commit -m 'Add district-aware semantic floor compilation'
           git push origin HEAD:main
+
+  publish-status:
+    if: always()
+    needs: implement-and-verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish district context workflow status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = '${{ needs.implement-and-verify.result }}';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: result === 'success' ? 'success' : 'failure',
+              context: 'one-shot-district-tile-context',
+              description: result === 'success'
+                ? 'District tile context compiled, smoked, and committed'
+                : `District tile context workflow ${result}`
+            });
