@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: main-java17-milestone-gate
@@ -43,6 +44,14 @@ jobs:
             -d ROOT_build/main-java17-gate/classes \
             @ROOT_build/main-java17-gate/sources.txt
 
+      - name: Run focused semantic resolver smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone02SemanticRenderAssetResolverSmoke
+
       - name: Run focused semantic runtime bridge smoke
         shell: bash
         run: |
@@ -50,6 +59,14 @@ jobs:
           java -Djava.awt.headless=true \
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Milestone02SemanticRuntimeIntentBridgeSmoke
+
+      - name: Run semantic coverage smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
 
       - name: Run Gate 3 player-facing smoke suite
         shell: bash
@@ -85,3 +102,25 @@ jobs:
 
           print(f'Java 17 classfile gate passed: files={len(files)} highestMajor={highest}')
           PY
+
+  publish-status:
+    if: always()
+    needs: compile-and-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish connector-visible commit status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = '${{ needs.compile-and-smoke.result }}';
+            const passed = result === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: passed ? 'success' : 'failure',
+              context: 'main-java17-milestone-gate',
+              description: passed
+                ? 'Java 17 compile and milestone smokes passed'
+                : `Java 17 milestone gate ${result}`
+            });
