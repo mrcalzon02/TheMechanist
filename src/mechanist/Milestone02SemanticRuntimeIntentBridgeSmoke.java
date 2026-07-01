@@ -90,6 +90,23 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
         requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Cold storage freezer"),
                 "OBJ-COLD", "cold-storage family resolution");
 
+        AssetRegistry unrelated = unrelatedRegistry();
+        require(SemanticRenderIntentAuthority.resolveItemFamily(unrelated, "Field trauma bandage").isEmpty(),
+                "medical item family must not accept a generic item icon");
+        require(SemanticRenderIntentAuthority.resolveObjectFamily(unrelated, "Traffic light signal").isEmpty(),
+                "traffic-light family must not accept a UI control icon or generic crate");
+        require(SemanticRenderIntentAuthority.resolveObjectFamily(unrelated, "Fresh water pipe").isEmpty(),
+                "water-pipe family must not accept sewer-contaminated pipe art");
+        require(ItemSemanticAssetAuthority.MISSING_RECOGNIZED_ITEM_ID.equals(
+                        ItemSemanticAssetAuthority.semanticAssetIdForItemName("Field trauma bandage")),
+                "recognized item family should carry the typed-missing fallback ID into legacy callers");
+        requireContains(ItemSemanticAssetAuthority.auditSummary(), "recognizedFamiliesFailClosed=true",
+                "item fail-closed audit");
+        requireContains(ObjectSemanticAssetAuthority.auditSummary(), "recognizedFamiliesFailClosed=true",
+                "object fail-closed audit");
+        requireContains(ObjectSemanticAssetAuthority.auditSummary(), "typedMissing=true",
+                "object typed-missing audit");
+
         require(SemanticRenderIntentAuthority.itemIntent("Unclassified keepsake").isEmpty(),
                 "unknown item text should not invent a semantic family");
         require(SemanticRenderIntentAuthority.objectIntent("Unclassified decoration").isEmpty(),
@@ -142,7 +159,23 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
                 "assets/infrastructure/security_camera.png", "security camera surveillance camera cctv"));
         put(entries, asset("OBJ-COLD", AssetType.OBJECT, "Cold Storage Freezer",
                 "assets/containers/cold_storage.png", "refrigerated storage cold storage freezer refrigerator chiller locker"));
+        return registry(entries);
+    }
 
+    private static AssetRegistry unrelatedRegistry() throws Exception {
+        Map<String, AssetMetadata> entries = new LinkedHashMap<>();
+        put(entries, asset("BAD-ITEM", AssetType.ITEM_ICON, "Generic Item",
+                "assets/items/generic.png", "generic plain item icon"));
+        put(entries, asset("BAD-UI01", AssetType.UI_ICON, "Traffic Light Button",
+                "assets/ui/traffic_light.png", "system control interface traffic light button"));
+        put(entries, asset("BAD-OBJ1", AssetType.OBJECT, "Generic Crate",
+                "assets/objects/crate.png", "generic cargo crate object"));
+        put(entries, asset("BAD-PIPE", AssetType.FIXTURE, "Sewer Water Pipe",
+                "assets/infrastructure/sewer_water_pipe.png", "sewer waste sludge water pipe"));
+        return registry(entries);
+    }
+
+    private static AssetRegistry registry(Map<String, AssetMetadata> entries) throws Exception {
         Constructor<AssetRegistry> ctor = AssetRegistry.class.getDeclaredConstructor(
                 java.nio.file.Path.class, java.nio.file.Path.class, Map.class);
         ctor.setAccessible(true);
