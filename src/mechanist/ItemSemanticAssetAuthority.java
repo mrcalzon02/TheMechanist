@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.10kd";
+    static final String VERSION = "item-semantic-asset-authority-0.9.10ke";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
             AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON,
@@ -129,9 +129,13 @@ final class ItemSemanticAssetAuthority {
             if (authored.isPresent()) return authored;
         }
 
-        // Generic or missing hints now pass through strict semantic item families before broad matching.
-        Optional<String> family = SemanticRenderIntentAuthority.resolveItemFamily(rawName);
-        if (family.isPresent()) return family;
+        // A recognized family is authoritative. Missing family art must remain visibly missing
+        // rather than falling through to a broad query that can select an unrelated icon.
+        Optional<SemanticRenderAssetResolver.RenderIntent> intent =
+                SemanticRenderIntentAuthority.itemIntent(rawName);
+        if (intent.isPresent()) {
+            return SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+        }
 
         return SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
     }
@@ -151,7 +155,7 @@ final class ItemSemanticAssetAuthority {
 
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
-                + " authoredFirst=true strictFamilyFallback=true activeRegistryValidated=true";
+                + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true activeRegistryValidated=true";
     }
 
     private static void map(String token, String assetId) {
