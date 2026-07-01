@@ -47,9 +47,12 @@ jobs:
                   break
               if active:
                   prefix = '          '
-                  if not line.startswith(prefix):
+                  if not line.strip():
+                      captured.append('')
+                  elif line.startswith(prefix):
+                      captured.append(line[len(prefix):])
+                  else:
                       raise SystemExit('Unexpected district patch indentation: ' + repr(line))
-                  captured.append(line[len(prefix):])
           if not captured:
               raise SystemExit('Registered district patch script was not found.')
           Path('ROOT_build/district-context-patch.py').parent.mkdir(parents=True, exist_ok=True)
