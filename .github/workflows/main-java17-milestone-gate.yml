@@ -1,0 +1,87 @@
+name: Main Java 17 Milestone Gate
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'ROOT_docs/**'
+      - '.github/workflows/main-java17-milestone-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-java17-milestone-gate
+  cancel-in-progress: true
+
+jobs:
+  compile-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Compile full Java source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf ROOT_build/main-java17-gate
+          mkdir -p ROOT_build/main-java17-gate/classes
+          find src -name '*.java' -print | sort > ROOT_build/main-java17-gate/sources.txt
+          test -s ROOT_build/main-java17-gate/sources.txt
+          javac -encoding UTF-8 --release 17 \
+            -d ROOT_build/main-java17-gate/classes \
+            @ROOT_build/main-java17-gate/sources.txt
+
+      - name: Run focused semantic runtime bridge smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Milestone02SemanticRuntimeIntentBridgeSmoke
+
+      - name: Run Gate 3 player-facing smoke suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -Djava.awt.headless=true \
+            -cp ROOT_build/main-java17-gate/classes \
+            mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Record Java classfile ceiling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+
+          root = Path('ROOT_build/main-java17-gate/classes')
+          files = sorted(root.rglob('*.class'))
+          if not files:
+              raise SystemExit('No class files were produced.')
+
+          highest = 0
+          for path in files:
+              with path.open('rb') as handle:
+                  magic = handle.read(4)
+                  if magic != b'\xca\xfe\xba\xbe':
+                      raise SystemExit(f'Invalid classfile magic: {path}')
+                  minor, major = struct.unpack('>HH', handle.read(4))
+                  highest = max(highest, major)
+                  if major > 61:
+                      raise SystemExit(f'Classfile exceeds Java 17: {path} major={major}')
+
+          print(f'Java 17 classfile gate passed: files={len(files)} highestMajor={highest}')
+          PY
