@@ -46,6 +46,22 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
                 SemanticRenderAssetResolver.RenderIntent.WORKSHOP_TABLE, "workshop furniture intent");
         requireIntent(SemanticRenderIntentAuthority.objectIntent("Streetlight pole"),
                 SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE, "streetlight intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Traffic light signal"),
+                SemanticRenderAssetResolver.RenderIntent.TRAFFIC_LIGHT_FIXTURE, "traffic-light intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Power transformer"),
+                SemanticRenderAssetResolver.RenderIntent.TRANSFORMER_MACHINE, "transformer intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Electrical junction box"),
+                SemanticRenderAssetResolver.RenderIntent.JUNCTION_BOX_FIXTURE, "junction-box intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Ventilation unit"),
+                SemanticRenderAssetResolver.RenderIntent.VENTILATION_UNIT_FIXTURE, "ventilation intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Fresh water pipe"),
+                SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE, "water-pipe intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Sewer drain pipe"),
+                SemanticRenderAssetResolver.RenderIntent.SEWER_PIPE_FIXTURE, "sewer-pipe intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Security camera"),
+                SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE, "security-camera intent");
+        requireIntent(SemanticRenderIntentAuthority.objectIntent("Cold storage freezer"),
+                SemanticRenderAssetResolver.RenderIntent.REFRIGERATED_STORAGE_CONTAINER, "cold-storage intent");
 
         requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Open service door"),
                 "OBJ-DOP1", "open door family resolution");
@@ -57,6 +73,22 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
                 "OBJ-WRK1", "workshop furniture family resolution");
         requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Streetlight pole"),
                 "OBJ-LGT1", "streetlight family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Traffic light signal"),
+                "INF-TRF1", "traffic-light family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Power transformer"),
+                "INF-XFM1", "transformer family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Electrical junction box"),
+                "INF-JBX1", "junction-box family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Ventilation unit"),
+                "INF-VNT1", "ventilation family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Fresh water pipe"),
+                "INF-WTR1", "water-pipe family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Sewer drain pipe"),
+                "INF-SWR1", "sewer-pipe family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Security camera"),
+                "INF-CAM1", "security-camera family resolution");
+        requireResolved(SemanticRenderIntentAuthority.resolveObjectFamily(registry, "Cold storage freezer"),
+                "OBJ-COLD", "cold-storage family resolution");
 
         require(SemanticRenderIntentAuthority.itemIntent("Unclassified keepsake").isEmpty(),
                 "unknown item text should not invent a semantic family");
@@ -94,6 +126,22 @@ final class Milestone02SemanticRuntimeIntentBridgeSmoke {
                 "assets/furniture/workshop_table.png", "workshop table workbench fabrication table"));
         put(entries, asset("OBJ-LGT1", AssetType.FIXTURE, "Streetlight Pole",
                 "assets/infrastructure/streetlight.png", "streetlight fixture street light lamp post street lamp"));
+        put(entries, asset("INF-TRF1", AssetType.FIXTURE, "Traffic Signal",
+                "assets/infrastructure/traffic_light.png", "traffic light signal light crossing signal"));
+        put(entries, asset("INF-XFM1", AssetType.MACHINE, "Power Transformer",
+                "assets/infrastructure/transformer.png", "power transformer electrical transformer machine"));
+        put(entries, asset("INF-JBX1", AssetType.FIXTURE, "Electrical Junction Box",
+                "assets/infrastructure/junction_box.png", "junction box electrical box power box fixture"));
+        put(entries, asset("INF-VNT1", AssetType.MACHINE, "Ventilation Unit",
+                "assets/infrastructure/ventilation.png", "ventilation unit vent unit air handler exhaust fan"));
+        put(entries, asset("INF-WTR1", AssetType.FIXTURE, "Fresh Water Pipe",
+                "assets/infrastructure/water_pipe.png", "fresh water pipe water main infrastructure"));
+        put(entries, asset("INF-SWR1", AssetType.FIXTURE, "Sewer Drain Pipe",
+                "assets/infrastructure/sewer_pipe.png", "sewer pipe waste pipe drain pipe sludge pipe"));
+        put(entries, asset("INF-CAM1", AssetType.FIXTURE, "Security Camera",
+                "assets/infrastructure/security_camera.png", "security camera surveillance camera cctv"));
+        put(entries, asset("OBJ-COLD", AssetType.OBJECT, "Cold Storage Freezer",
+                "assets/containers/cold_storage.png", "refrigerated storage cold storage freezer refrigerator chiller locker"));
 
         Constructor<AssetRegistry> ctor = AssetRegistry.class.getDeclaredConstructor(
                 java.nio.file.Path.class, java.nio.file.Path.class, Map.class);
