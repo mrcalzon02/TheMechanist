@@ -20,7 +20,8 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.10ke";
+    static final String VERSION = "item-semantic-asset-authority-0.9.10kf";
+    static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
             AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON,
@@ -116,6 +117,11 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "boiler")) return "MACH-B01";
         if (containsAny(name, "forge", "smelter")) return "MACH-F01";
 
+        // Carry the recognized-family state into legacy image callers. The unknown ID is
+        // intentionally absent from the registry so AssetManager returns a typed missing icon.
+        if (SemanticRenderIntentAuthority.itemIntent(rawName).isPresent()) {
+            return MISSING_RECOGNIZED_ITEM_ID;
+        }
         return "ITEM-G01";
     }
 
@@ -124,17 +130,16 @@ final class ItemSemanticAssetAuthority {
         String semanticName = normalizedItemName(rawName);
 
         // Preserve exact and structured authored identities whenever the active registry can satisfy them.
-        if (!"ITEM-G01".equals(hint)) {
+        if (!"ITEM-G01".equals(hint) && !MISSING_RECOGNIZED_ITEM_ID.equals(hint)) {
             Optional<String> authored = SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
             if (authored.isPresent()) return authored;
         }
 
-        // A recognized family is authoritative. Missing family art must remain visibly missing
-        // rather than falling through to a broad query that can select an unrelated icon.
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
                 SemanticRenderIntentAuthority.itemIntent(rawName);
         if (intent.isPresent()) {
-            return SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+            return Optional.of(SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get())
+                    .orElse(MISSING_RECOGNIZED_ITEM_ID));
         }
 
         return SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
@@ -155,7 +160,8 @@ final class ItemSemanticAssetAuthority {
 
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
-                + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true activeRegistryValidated=true";
+                + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
+                + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
     private static void map(String token, String assetId) {
