@@ -1,5 +1,7 @@
 package mechanist;
 
+import mechanist.assets.AssetManager;
+
 import java.util.*;
 
 /**
@@ -12,7 +14,8 @@ import java.util.*;
  * underlay, variant, and a readable combined key.
  */
 final class TileDataCompilationAuthority {
-    static final String VERSION = "0.9.10jq";
+    static final String VERSION = "0.9.10jr";
+    static final String MISSING_RECOGNIZED_TILE_ID = "MISSING-SEMANTIC-TILE";
     static final char ROAD_LANE = RoadGridIntegrationAuthority.ROAD_LANE;
     static final char SIDEWALK = RoadGridIntegrationAuthority.SIDEWALK;
     static final char PARKING_SPACE = RoadGridIntegrationAuthority.PARKING_SPACE;
@@ -261,6 +264,13 @@ final class TileDataCompilationAuthority {
                 if ("sewer_room".equals(family)) art = "floor_sewer_room_v" + variant;
                 else if ("gang_or_trash_rough".equals(family)) art = "floor_trash_mutant_rough_v" + variant;
                 else if ("noble_room".equals(family)) art = "floor_noble_room_v" + variant;
+                else if ("habitation_room".equals(family)) art = "floor_habitation_room_v" + variant;
+                else if ("market_room".equals(family)) art = "floor_market_room_v" + variant;
+                else if ("security_room".equals(family)) art = "floor_security_room_v" + variant;
+                else if ("industrial_room".equals(family)) art = "floor_industrial_room_v" + variant;
+                else if ("administrative_room".equals(family)) art = "floor_administrative_room_v" + variant;
+                else if ("transit_room".equals(family)) art = "floor_transit_room_v" + variant;
+                else if ("religious_room".equals(family)) art = "floor_religious_room_v" + variant;
                 else art = "floor_bare_underhive_v" + variant;
                 break;
         }
@@ -334,11 +344,88 @@ final class TileDataCompilationAuthority {
     static String roomFloorFamily(World w, int x, int y, char glyph) {
         if (w == null || !w.inBounds(x, y)) return "bare_underhive";
         int rid = w.roomIdAt(x, y);
-        Faction f = w.roomFaction(rid);
-        if (f == Faction.NOBLE || isNobleZone(w)) return "noble_room";
-        if (w.zoneType == ZoneType.MUTANT_SEWER_CAMP || w.zoneType == ZoneType.CULTIST_SEWER_CAMP) return "sewer_room";
-        if (w.zoneType == ZoneType.GANGER_TURF || f == Faction.BANDIT || (f != null && f.name().startsWith("GANGER"))) return "gang_or_trash_rough";
+        return floorFamilyForContext(w.zoneType, w.roomFaction(rid), sewerContext(w, x, y), w.floor);
+    }
+
+    static String floorFamilyForContext(ZoneType zone, Faction faction, boolean sewer, int floor) {
+        if (sewer || zone == ZoneType.SEWER_CONDUIT || zone == ZoneType.MUTANT_SEWER_CAMP || zone == ZoneType.CULTIST_SEWER_CAMP) {
+            return "sewer_room";
+        }
+        if (isNobleFaction(faction) || zone == ZoneType.SECTOR_GOVERNORS_MANSION
+                || zone == ZoneType.NOBLE_SERVICE_SPINE || floor >= 7) {
+            return "noble_room";
+        }
+        if (zone == ZoneType.GANGER_TURF || zone == ZoneType.TRASH_WARREN || zone == ZoneType.MUTANT_WARRENS
+                || faction == Faction.BANDIT || faction == Faction.MUTANT
+                || (faction != null && faction.name().startsWith("GANGER_"))) {
+            return "gang_or_trash_rough";
+        }
+        if (zone == ZoneType.SUMP_MARKET) return "market_room";
+        if (zone == ZoneType.ARBITES_PRECINCT_EDGE || zone == ZoneType.IMPERIAL_GUARD_BILLET) return "security_room";
+        if (zone == ZoneType.MECHANICUS_RELIC_DUCT || zone == ZoneType.MECHANICUS_FORGE_CLOISTER) return "industrial_room";
+        if (zone == ZoneType.ADMINISTRATUM_ARCHIVE || zone == ZoneType.IMPERIAL_NEWS_NETWORK) return "administrative_room";
+        if (zone == ZoneType.TRAIN_SERVICE_YARD || zone == ZoneType.NEUTRAL_RAIL_DEPOT) return "transit_room";
+        if (isSecurityFaction(faction)) return "security_room";
+        if (isMechanistFaction(faction)) return "industrial_room";
+        if (isAdministrativeFaction(faction)) return "administrative_room";
+        if (isReligiousFaction(faction)) return "religious_room";
+        if (zone == ZoneType.HAB_STACK || zone == ZoneType.NEUTRAL_CIVILIAN_FLOOR || isHiverFaction(faction)) {
+            return "habitation_room";
+        }
         return "bare_underhive";
+    }
+
+    static boolean isNobleFaction(Faction faction) {
+        return faction == Faction.NOBLE || (faction != null && faction.name().startsWith("NOBLE_HOUSE_"));
+    }
+
+    static boolean isHiverFaction(Faction faction) {
+        return faction == Faction.HIVER || (faction != null && faction.name().startsWith("HIVER_BLOCK_"));
+    }
+
+    static boolean isSecurityFaction(Faction faction) {
+        return faction == Faction.ARBITES || faction == Faction.CIVIC_WARDENS || faction == Faction.IMPERIAL_GUARD;
+    }
+
+    static boolean isMechanistFaction(Faction faction) {
+        return faction == Faction.MECHANICUS || faction == Faction.MECHANIST_COLLEGIA
+                || (faction != null && faction.name().startsWith("MECHANICUS_CLOISTER_"));
+    }
+
+    static boolean isAdministrativeFaction(Faction faction) {
+        return faction == Faction.ADMINISTRATUM || faction == Faction.CIVIC_LEDGER_OFFICE || faction == Faction.INN;
+    }
+
+    static boolean isReligiousFaction(Faction faction) {
+        return faction == Faction.MINISTORUM || faction == Faction.SORORITAS;
+    }
+
+    static SemanticRenderAssetResolver.RenderIntent floorIntentForFamily(String family) {
+        if (family == null) return null;
+        return switch (family) {
+            case "sewer_room" -> SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR;
+            case "gang_or_trash_rough" -> SemanticRenderAssetResolver.RenderIntent.SLUM_FLOOR;
+            case "noble_room" -> SemanticRenderAssetResolver.RenderIntent.NOBLE_FLOOR;
+            case "habitation_room" -> SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR;
+            case "market_room" -> SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR;
+            case "security_room" -> SemanticRenderAssetResolver.RenderIntent.SECURITY_FLOOR;
+            case "industrial_room" -> SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_FLOOR;
+            case "administrative_room" -> SemanticRenderAssetResolver.RenderIntent.ADMINISTRATIVE_FLOOR;
+            case "transit_room" -> SemanticRenderAssetResolver.RenderIntent.TRANSIT_FLOOR;
+            case "religious_room" -> SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_FLOOR;
+            case "bare_underhive", "alleyway_cracked" -> SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR;
+            default -> null;
+        };
+    }
+
+    static String primaryAssetIdForDescriptor(String baseLayer, String family, String artKey) {
+        String direct = TileSemanticAssetAuthority.assetIdOrMissing(artKey);
+        if (direct != null || !"floor".equals(baseLayer)) return direct;
+        SemanticRenderAssetResolver.RenderIntent intent = floorIntentForFamily(family);
+        if (intent == null) return null;
+        SemanticRenderAssetResolver.Resolution resolution =
+                SemanticRenderAssetResolver.resolve(AssetManager.registry(), intent);
+        return resolution.found() ? resolution.asset.id() : MISSING_RECOGNIZED_TILE_ID;
     }
 
     static String corridorOrientation(World w, int x, int y, char glyph) {
@@ -592,7 +679,7 @@ final class CompiledTileDescriptor {
         this.underlayArtKey = underlayArtKey;
         this.overlayArtKey = overlayArtKey;
         this.semanticTag = semanticTag;
-        this.primaryAssetId = TileSemanticAssetAuthority.assetIdOrMissing(primaryArtKey);
+        this.primaryAssetId = TileDataCompilationAuthority.primaryAssetIdForDescriptor(baseLayer, family, primaryArtKey);
         this.underlayAssetId = TileSemanticAssetAuthority.assetIdOrMissing(underlayArtKey);
         this.overlayAssetId = TileSemanticAssetAuthority.assetIdOrMissing(overlayArtKey);
         this.isWall = isWall;
