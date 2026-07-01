@@ -12,9 +12,11 @@ The renderer must progressively migrate from path-based or category-only renderi
 
 Current checkpoint: live tile rendering prefers semantic asset IDs, tile aliases resolve only to entries in the active runtime registry, and representative generic, industrial, sewer, noble, road, door, and streetlight families are guarded by aggregate smoke coverage. Dedicated open and closed door fixture atlases retain their state through compiled-index loading and are selected ahead of mixed wall sheets. Road-infrastructure streetlight cells retain explicit fixture metadata and cannot resolve through system inventory or item/UI icons.
 
-The live inventory and world-object render bridges now also preserve valid authored asset identities first, then classify unresolved or generic labels through strict semantic render families before broad legacy matching. `ItemSemanticAssetAuthority` covers weapon, armor, tool, medical, drug, food, industrial-component, trade-good, religious-object, and data-device families. `ObjectSemanticAssetAuthority` covers doors, streetlights, typed containers, and purpose-specific furniture for build recipes, base objects, map objects, lights, and editor previews. `Milestone02SemanticRuntimeIntentBridgeSmoke` guards classification, strict resolution, and the rule that unknown labels do not invent a family.
+The live inventory and world-object render bridges preserve valid authored asset identities first, then classify unresolved or generic labels through strict semantic render families. `ItemSemanticAssetAuthority` covers weapon, armor, tool, medical, drug, food, industrial-component, trade-good, religious-object, and data-device families. `ObjectSemanticAssetAuthority` covers doors, typed containers, purpose-specific furniture, streetlights, traffic lights, generators, transformers, junction boxes, ventilation units, water pipes, sewer pipes, security cameras, and refrigerated storage for build recipes, base objects, map objects, lights, and editor previews.
 
-Remaining Phase 4.16 work is therefore narrowed to richer district and room context, missing infrastructure families beyond streetlights, and genuinely unclassified world-object paths. It is no longer accurate to describe containers, furniture, or item previews as wholly disconnected from the live semantic registry.
+Recognized item and object families now fail closed. When no compatible indexed family asset exists, the live bridge carries an explicit unknown semantic asset ID into `AssetManager`, which produces typed missing art instead of allowing a later broad lookup to choose an unrelated crate, UI icon, wall, fixture, or item. `Milestone02SemanticRuntimeIntentBridgeSmoke` guards classification, positive family resolution, cross-theme rejection, typed-missing fallback identifiers, and the rule that unknown labels do not invent a family.
+
+Remaining Phase 4.16 work is narrowed to richer district and room context, additional genuinely distinct infrastructure families discovered in the asset registry, and unclassified world-object paths. It is no longer accurate to describe infrastructure, containers, furniture, or item previews as wholly disconnected from the live semantic registry.
 
 The renderer should never ask for:
 
@@ -123,7 +125,12 @@ Examples:
 - Sewer Pipe
 - Security Camera
 
-Streetlights specifically must never render through system inventory icons.
+Current bridge status:
+
+- Every listed infrastructure family has a strict render intent and registry-backed resolver path.
+- UI controls and system inventory icons are forbidden as infrastructure matches.
+- Fresh-water pipes reject sewer, waste, and sludge semantics.
+- Missing recognized infrastructure remains typed missing art instead of degrading into a generic object.
 
 Exit criteria:
 
@@ -161,6 +168,7 @@ Current bridge status:
 
 - These purpose-specific furniture families have strict runtime intent classification.
 - Valid authored identities remain higher priority than family fallback.
+- Recognized furniture with missing family art displays typed missing art.
 - Generic or unknown furniture labels remain unresolved rather than being silently forced into an unrelated purpose.
 
 Exit criteria:
@@ -188,7 +196,8 @@ Current bridge status:
 
 - All listed item families have strict runtime intent classification.
 - Existing authored and structured atlas identities remain first priority.
-- Generic item hints use the strict family resolver before broad semantic matching.
+- Recognized families use strict resolver matching and carry a typed missing-item identifier when no compatible art exists.
+- Broad semantic matching remains available only for text that does not claim one of the recognized families.
 
 Future quality, provenance, condition, faction, and manufacturer visual variation should consume these semantic categories.
 
@@ -212,8 +221,9 @@ Examples:
 
 Current bridge status:
 
-- Toolbox, medical-cabinet, weapons-locker, wardrobe, cargo-container, and filing-cabinet families have strict runtime intent classification.
-- Refrigerated storage remains a future explicit family.
+- Every listed container family has strict runtime intent classification.
+- Valid authored identities remain first priority.
+- Missing recognized container art produces a typed missing object rather than a generic crate or cabinet.
 
 Exit criteria:
 
@@ -247,13 +257,13 @@ Renderer paths should progressively migrate to `SemanticRenderAssetResolver`, `S
 Migration state:
 
 1. Doors - live semantic state path established.
-2. Streetlights - live infrastructure path established.
+2. Streetlights and principal infrastructure families - live strict-family path established.
 3. Sewer and generic tiles - live semantic tile path established.
 4. District tile families - partially established; richer district context remains.
 5. Room tile families - partially established; richer room context remains.
-6. Containers - live strict-family bridge established; refrigerated storage remains.
+6. Containers - live strict-family bridge established, including refrigerated storage.
 7. Furniture - live strict-family bridge established for named purpose families.
-8. Items - live strict-family bridge established for the principal player-facing families.
+8. Items - live strict-family bridge established for principal player-facing families.
 9. Remaining world objects - continue by meaningful runtime family, not audit-only layers.
 
 Every migration should gain smoke coverage and semantic validation.
@@ -263,6 +273,12 @@ The Tools / Zone Audit surface now includes a curated Semantic Asset Audit Dev R
 ### Phase 4.16.10 - Generic Fallback Elimination
 
 The long-term objective is removal of silent visual substitution.
+
+Current bridge status:
+
+- Recognized item, door, furniture, container, and infrastructure families fail closed to typed missing art.
+- Unknown text may still use bounded legacy matching because it makes no stronger semantic claim.
+- Cross-theme negative smokes reject sewer/generic tile swaps, UI-icon infrastructure, wall-as-door, unrelated item families, and sewer-contaminated water pipes.
 
 Allowed:
 
