@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'src/**'
+      - 'scripts/PACKAGE_CLIENT_WINDOWS.ps1'
       - 'ROOT_docs/**'
       - '.github/workflows/main-java17-milestone-gate.yml'
   workflow_dispatch:
@@ -20,7 +21,7 @@ concurrency:
 jobs:
   compile-and-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
 
     steps:
       - name: Check out main
@@ -76,7 +77,7 @@ jobs:
             -cp ROOT_build/main-java17-gate/classes \
             mechanist.Gate3PlayerFacingTextSmokeSuite
 
-      - name: Record Java classfile ceiling
+      - name: Record source-build Java classfile ceiling
         shell: bash
         run: |
           set -euo pipefail
@@ -100,8 +101,89 @@ jobs:
                   if major > 61:
                       raise SystemExit(f'Classfile exceeds Java 17: {path} major={major}')
 
-          print(f'Java 17 classfile gate passed: files={len(files)} highestMajor={highest}')
+          print(f'Java 17 source classfile gate passed: files={len(files)} highestMajor={highest}')
           PY
+
+      - name: Build production client package and jar
+        shell: pwsh
+        run: |
+          ./scripts/PACKAGE_CLIENT_WINDOWS.ps1 `
+            -OutputDir 'ROOT_build/main-package-client' `
+            -CleanOutput `
+            -CleanClasses `
+            -BuildJar
+
+      - name: Verify packaged jar and Java 17 classfiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_root='ROOT_build/main-package-client'
+          jar_path="$package_root/TheMechanist.jar"
+          test -d "$package_root/classes"
+          test -f "$package_root/classes/mechanist/TheMechanist.class"
+          test -f "$jar_path"
+          jar tf "$jar_path" | grep -Fx 'mechanist/TheMechanist.class'
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | grep -F 'Main-Class: mechanist.TheMechanist'
+
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+
+          root = Path('ROOT_build/main-package-client/classes')
+          files = sorted(root.rglob('*.class'))
+          if not files:
+              raise SystemExit('The production package contained no class files.')
+
+          highest = 0
+          for path in files:
+              with path.open('rb') as handle:
+                  if handle.read(4) != b'\xca\xfe\xba\xbe':
+                      raise SystemExit(f'Invalid packaged classfile magic: {path}')
+                  minor, major = struct.unpack('>HH', handle.read(4))
+                  highest = max(highest, major)
+                  if major > 61:
+                      raise SystemExit(f'Packaged classfile exceeds Java 17: {path} major={major}')
+
+          print(f'Java 17 package classfile gate passed: files={len(files)} highestMajor={highest}')
+          PY
+
+      - name: Boot packaged client for eight seconds
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+          package_root="$PWD/ROOT_build/main-package-client"
+          stdout="$PWD/ROOT_build/main-package-client-boot.stdout.log"
+          stderr="$PWD/ROOT_build/main-package-client-boot.stderr.log"
+          set +e
+          timeout 8s xvfb-run -a java \
+            -Djava.awt.headless=false \
+            -Dmechanist.assetRoot="$package_root" \
+            -Dmechanist.generatedAssetRoot="$package_root" \
+            -Dmechanist.assetTier=low_32 \
+            -Dmechanist.assetResolution=32 \
+            -cp "$package_root/classes:$package_root" \
+            mechanist.TheMechanist \
+            >"$stdout" 2>"$stderr"
+          code=$?
+          set -e
+
+          if [ "$code" -eq 0 ]; then
+            echo 'Package boot smoke passed: client exited cleanly before the timeout.'
+          elif [ "$code" -eq 124 ]; then
+            echo 'Package boot smoke passed: client remained alive for the eight-second window.'
+          else
+            echo "Package boot smoke failed with exit code $code."
+            echo '--- stdout ---'
+            cat "$stdout" || true
+            echo '--- stderr ---'
+            cat "$stderr" || true
+            exit "$code"
+          fi
 
   publish-status:
     if: always()
@@ -121,6 +203,6 @@ jobs:
               state: passed ? 'success' : 'failure',
               context: 'main-java17-milestone-gate',
               description: passed
-                ? 'Java 17 compile and milestone smokes passed'
+                ? 'Java 17 compile, smokes, package, jar, and boot passed'
                 : `Java 17 milestone gate ${result}`
             });
