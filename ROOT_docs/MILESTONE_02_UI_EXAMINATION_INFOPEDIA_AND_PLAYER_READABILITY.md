@@ -10,7 +10,11 @@ The project already possesses semantic asset registries, asset metadata records,
 
 The renderer must progressively migrate from path-based or category-only rendering toward semantic rendering.
 
-Current checkpoint: live tile rendering prefers semantic asset IDs, tile aliases resolve only to entries in the active runtime registry, and representative generic, industrial, sewer, noble, road, door, and streetlight families are guarded by aggregate smoke coverage. Dedicated open and closed door fixture atlases retain their state through compiled-index loading and are selected ahead of mixed wall sheets. Road-infrastructure streetlight cells retain explicit fixture metadata and cannot resolve through system inventory or item/UI icons. Remaining infrastructure, district, room, fixture, furniture, container, item, and world-object paths continue through the ordered migration below.
+Current checkpoint: live tile rendering prefers semantic asset IDs, tile aliases resolve only to entries in the active runtime registry, and representative generic, industrial, sewer, noble, road, door, and streetlight families are guarded by aggregate smoke coverage. Dedicated open and closed door fixture atlases retain their state through compiled-index loading and are selected ahead of mixed wall sheets. Road-infrastructure streetlight cells retain explicit fixture metadata and cannot resolve through system inventory or item/UI icons.
+
+The live inventory and world-object render bridges now also preserve valid authored asset identities first, then classify unresolved or generic labels through strict semantic render families before broad legacy matching. `ItemSemanticAssetAuthority` covers weapon, armor, tool, medical, drug, food, industrial-component, trade-good, religious-object, and data-device families. `ObjectSemanticAssetAuthority` covers doors, streetlights, typed containers, and purpose-specific furniture for build recipes, base objects, map objects, lights, and editor previews. `Milestone02SemanticRuntimeIntentBridgeSmoke` guards classification, strict resolution, and the rule that unknown labels do not invent a family.
+
+Remaining Phase 4.16 work is therefore narrowed to richer district and room context, missing infrastructure families beyond streetlights, and genuinely unclassified world-object paths. It is no longer accurate to describe containers, furniture, or item previews as wholly disconnected from the live semantic registry.
 
 The renderer should never ask for:
 
@@ -153,6 +157,12 @@ Examples:
 - Administrative Desk
 - Interrogation Desk
 
+Current bridge status:
+
+- These purpose-specific furniture families have strict runtime intent classification.
+- Valid authored identities remain higher priority than family fallback.
+- Generic or unknown furniture labels remain unresolved rather than being silently forced into an unrelated purpose.
+
 Exit criteria:
 
 Furniture art reflects purpose and room context.
@@ -174,6 +184,12 @@ Examples:
 - Religious Object
 - Data Device
 
+Current bridge status:
+
+- All listed item families have strict runtime intent classification.
+- Existing authored and structured atlas identities remain first priority.
+- Generic item hints use the strict family resolver before broad semantic matching.
+
 Future quality, provenance, condition, faction, and manufacturer visual variation should consume these semantic categories.
 
 Exit criteria:
@@ -193,6 +209,11 @@ Examples:
 - Cargo Container
 - Filing Cabinet
 - Refrigerated Storage
+
+Current bridge status:
+
+- Toolbox, medical-cabinet, weapons-locker, wardrobe, cargo-container, and filing-cabinet families have strict runtime intent classification.
+- Refrigerated storage remains a future explicit family.
 
 Exit criteria:
 
@@ -221,19 +242,19 @@ Districts become visually recognizable without requiring labels.
 
 ### Phase 4.16.9 - Semantic Render Resolver Migration
 
-Renderer paths should progressively migrate to SemanticRenderAssetResolver and AssetRegistry-backed lookups.
+Renderer paths should progressively migrate to `SemanticRenderAssetResolver`, `SemanticRenderIntentAuthority`, and AssetRegistry-backed lookups.
 
-Migration order:
+Migration state:
 
-1. Doors.
-2. Streetlights and infrastructure.
-3. Sewer and generic tiles.
-4. District tile families.
-5. Room tile families.
-6. Containers.
-7. Furniture.
-8. Items.
-9. Remaining world objects.
+1. Doors - live semantic state path established.
+2. Streetlights - live infrastructure path established.
+3. Sewer and generic tiles - live semantic tile path established.
+4. District tile families - partially established; richer district context remains.
+5. Room tile families - partially established; richer room context remains.
+6. Containers - live strict-family bridge established; refrigerated storage remains.
+7. Furniture - live strict-family bridge established for named purpose families.
+8. Items - live strict-family bridge established for the principal player-facing families.
+9. Remaining world objects - continue by meaningful runtime family, not audit-only layers.
 
 Every migration should gain smoke coverage and semantic validation.
 
