@@ -16,7 +16,7 @@ import java.util.Map;
  * meanings are available or missing before a live renderer path is converted.
  */
 final class SemanticAssetMigrationCoverageAuthority {
-    static final String VERSION = "semantic-asset-migration-coverage-0.1";
+    static final String VERSION = "semantic-asset-migration-coverage-0.2-infrastructure";
 
     enum Family {
         ZONE_TILE,
@@ -104,12 +104,15 @@ final class SemanticAssetMigrationCoverageAuthority {
     static Family familyOf(SemanticRenderAssetResolver.RenderIntent intent) {
         if (intent == null) return Family.ZONE_TILE;
         return switch (intent) {
-            case STREETLIGHT_FIXTURE -> Family.INFRASTRUCTURE;
+            case STREETLIGHT_FIXTURE, TRAFFIC_LIGHT_FIXTURE, GENERATOR_MACHINE,
+                    TRANSFORMER_MACHINE, JUNCTION_BOX_FIXTURE, VENTILATION_UNIT_FIXTURE,
+                    WATER_PIPE_FIXTURE, SEWER_PIPE_FIXTURE, SECURITY_CAMERA_FIXTURE -> Family.INFRASTRUCTURE;
             case DOOR_CLOSED, DOOR_OPEN -> Family.DOOR;
             case WORKSHOP_TABLE, DINING_TABLE, MEDICAL_TABLE, SHRINE_ALTAR,
                     MARKET_COUNTER, ADMINISTRATIVE_DESK, INTERROGATION_DESK -> Family.FURNITURE;
             case TOOLBOX_CONTAINER, MEDICAL_CABINET_CONTAINER, WEAPONS_LOCKER_CONTAINER,
-                    WARDROBE_CONTAINER, CARGO_CONTAINER, FILING_CABINET_CONTAINER -> Family.CONTAINER;
+                    WARDROBE_CONTAINER, CARGO_CONTAINER, FILING_CABINET_CONTAINER,
+                    REFRIGERATED_STORAGE_CONTAINER -> Family.CONTAINER;
             case WEAPON_ITEM_ICON, ARMOR_ITEM_ICON, TOOL_ITEM_ICON, MEDICAL_ITEM_ICON,
                     DRUG_ITEM_ICON, FOOD_ITEM_ICON, INDUSTRIAL_COMPONENT_ITEM_ICON,
                     TRADE_GOOD_ITEM_ICON, RELIGIOUS_OBJECT_ITEM_ICON, DATA_DEVICE_ITEM_ICON -> Family.ITEM;
