@@ -59,11 +59,10 @@ jobs:
           if end is None:
               raise SystemExit('Registered district patch terminator was not found.')
           block = lines[start + 1:end]
-          indents = [len(line) - len(line.lstrip()) for line in block if line.strip()]
-          if not indents:
+          prefix = '          '
+          captured = [line[len(prefix):] if line.startswith(prefix) else line for line in block]
+          if not any(line.strip() for line in captured):
               raise SystemExit('Registered district patch script was empty.')
-          indent = min(indents)
-          captured = [line[indent:] if line.strip() else '' for line in block]
           Path('ROOT_build/district-context-patch.py').parent.mkdir(parents=True, exist_ok=True)
           Path('ROOT_build/district-context-patch.py').write_text('\n'.join(captured) + '\n', encoding='utf-8')
           PY
