@@ -8,18 +8,23 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Stage 4 bridge between carried item/UI preview labels and the Semantic Asset Registry.
  *
  * This authority deliberately maps player-visible item names to 8-character semantic
- * asset IDs before legacy icon aliases are consulted.  It is not yet the final item
+ * asset IDs before legacy icon aliases are consulted. It is not yet the final item
  * definition schema; it is the migration bridge that prevents high-error previews
  * (scrap knives as bolters, water barrels as shelves, cots as unrelated art, etc.)
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
+    static final String VERSION = "item-semantic-asset-authority-0.9.10kd";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
+    private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
+            AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON,
+            AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE);
 
     static {
         // High-error exact names from the reconciliation crosswalk.
@@ -117,9 +122,18 @@ final class ItemSemanticAssetAuthority {
     static Optional<String> runtimeAssetIdForItemName(String rawName) {
         String hint = semanticAssetIdForItemName(rawName);
         String semanticName = normalizedItemName(rawName);
-        return SemanticAssetHintResolver.resolve(hint, semanticName, java.util.Set.of(
-                AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON,
-                AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE));
+
+        // Preserve exact and structured authored identities whenever the active registry can satisfy them.
+        if (!"ITEM-G01".equals(hint)) {
+            Optional<String> authored = SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
+            if (authored.isPresent()) return authored;
+        }
+
+        // Generic or missing hints now pass through strict semantic item families before broad matching.
+        Optional<String> family = SemanticRenderIntentAuthority.resolveItemFamily(rawName);
+        if (family.isPresent()) return family;
+
+        return SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
     }
 
     static Optional<AssetMetadata> metadataForItemName(String rawName) {
@@ -133,6 +147,11 @@ final class ItemSemanticAssetAuthority {
         AssetMetadata m = meta.get();
         return "Semantic asset: " + m.id() + " / " + m.type().displayName() + " / " + m.name()
                 + " / authoredHint=" + hint + ".";
+    }
+
+    static String auditSummary() {
+        return "authority=" + VERSION + " exactMappings=" + EXACT.size()
+                + " authoredFirst=true strictFamilyFallback=true activeRegistryValidated=true";
     }
 
     private static void map(String token, String assetId) {
