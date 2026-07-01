@@ -12,11 +12,13 @@ The renderer must progressively migrate from path-based or category-only renderi
 
 Current checkpoint: live tile rendering prefers semantic asset IDs, tile aliases resolve only to entries in the active runtime registry, and representative generic, industrial, sewer, noble, road, door, and streetlight families are guarded by aggregate smoke coverage. Dedicated open and closed door fixture atlases retain their state through compiled-index loading and are selected ahead of mixed wall sheets. Road-infrastructure streetlight cells retain explicit fixture metadata and cannot resolve through system inventory or item/UI icons.
 
+District and room context now enters live floor compilation through the existing `World.zoneType`, room-faction, sewer-layer, and floor-height state. `TileDataCompilationAuthority` distinguishes habitation, market, security, industrial, administrative, transit, religious, noble, rough, sewer, and generic floor families before the renderer receives a `CompiledTileDescriptor`. Context-specific floor aliases resolve through the active tile registry first and then through the strict semantic resolver; recognized missing floor families carry `MISSING-SEMANTIC-TILE` rather than silently degrading to an unrelated generic floor. `Milestone02DistrictRoomTileContextSmoke` guards both context classification and the live descriptor boundary.
+
 The live inventory and world-object render bridges preserve valid authored asset identities first, then classify unresolved or generic labels through strict semantic render families. `ItemSemanticAssetAuthority` covers weapon, armor, tool, medical, drug, food, industrial-component, trade-good, religious-object, and data-device families. `ObjectSemanticAssetAuthority` covers doors, typed containers, purpose-specific furniture, streetlights, traffic lights, generators, transformers, junction boxes, ventilation units, water pipes, sewer pipes, security cameras, and refrigerated storage for build recipes, base objects, map objects, lights, and editor previews.
 
 Recognized item and object families now fail closed. When no compatible indexed family asset exists, the live bridge carries an explicit unknown semantic asset ID into `AssetManager`, which produces typed missing art instead of allowing a later broad lookup to choose an unrelated crate, UI icon, wall, fixture, or item. `Milestone02SemanticRuntimeIntentBridgeSmoke` guards classification, positive family resolution, cross-theme rejection, typed-missing fallback identifiers, and the rule that unknown labels do not invent a family.
 
-Remaining Phase 4.16 work is narrowed to richer district and room context, additional genuinely distinct infrastructure families discovered in the asset registry, and unclassified world-object paths. It is no longer accurate to describe infrastructure, containers, furniture, or item previews as wholly disconnected from the live semantic registry.
+Remaining Phase 4.16 work is narrowed to deeper room-purpose semantics beyond existing zone/faction context, wall and fixture selection that consumes the same context, additional genuinely distinct infrastructure families discovered in the asset registry, and unclassified world-object paths. It is no longer accurate to describe district floors, infrastructure, containers, furniture, or item previews as wholly disconnected from the live semantic registry.
 
 The renderer should never ask for:
 
@@ -78,6 +80,12 @@ Rules:
 - Specialized district tile families are not interchangeable.
 - Renderer fallbacks may fail to missing-art states but may not silently substitute unrelated themes.
 
+Current bridge status:
+
+- Existing zone and faction state selects habitation, market, security, industrial, administrative, transit, religious, noble, rough, sewer, or generic floor families.
+- Every recognized contextual floor family maps to a strict `SemanticRenderAssetResolver` floor intent.
+- Missing contextual floor art publishes typed missing-tile identity rather than unrelated floor art.
+
 Exit criteria:
 
 The renderer can no longer place sewer floors inside ordinary habitation rooms because a generic floor request happened to resolve first.
@@ -104,6 +112,13 @@ Examples:
 - Morgue
 
 Rooms should influence floor, wall, fixture, furniture, and decoration selection.
+
+Current bridge status:
+
+- Room faction and surrounding zone context now influence compiled floor families.
+- Specialized faction identity overrides a generic civilian-zone fallback.
+- Explicit sewer, noble, rough, market, security, industrial, administrative, and transit district contexts retain priority over generic habitation.
+- Detailed authored room-purpose records remain future work for walls, fixtures, furniture variation, and decorations.
 
 Exit criteria:
 
@@ -246,6 +261,13 @@ Examples:
 - Habitation Apartment Block
 - Sewer Utility Tunnel
 
+Current bridge status:
+
+- Zone type is now a live input to floor-family compilation.
+- Habitation, market, security, industrial, administrative, transit, noble, rough, and sewer districts compile different floor-family and art-key identities from the same ordinary floor glyph.
+- Room faction supplements zone context for noble, security, industrial, administrative, religious, and habitation ownership.
+- District wall, fixture, decoration, and detailed room-purpose context remain incomplete.
+
 Exit criteria:
 
 Districts become visually recognizable without requiring labels.
@@ -259,8 +281,8 @@ Migration state:
 1. Doors - live semantic state path established.
 2. Streetlights and principal infrastructure families - live strict-family path established.
 3. Sewer and generic tiles - live semantic tile path established.
-4. District tile families - partially established; richer district context remains.
-5. Room tile families - partially established; richer room context remains.
+4. District floor families - live zone/faction-aware compilation established; walls, fixtures, and decoration context remain.
+5. Room floor families - live zone/faction-aware compilation established; detailed authored room-purpose context remains.
 6. Containers - live strict-family bridge established, including refrigerated storage.
 7. Furniture - live strict-family bridge established for named purpose families.
 8. Items - live strict-family bridge established for principal player-facing families.
@@ -276,7 +298,7 @@ The long-term objective is removal of silent visual substitution.
 
 Current bridge status:
 
-- Recognized item, door, furniture, container, and infrastructure families fail closed to typed missing art.
+- Recognized contextual floor, item, door, furniture, container, and infrastructure families fail closed to typed missing art.
 - Unknown text may still use bounded legacy matching because it makes no stronger semantic claim.
 - Cross-theme negative smokes reject sewer/generic tile swaps, UI-icon infrastructure, wall-as-door, unrelated item families, and sewer-contaminated water pipes.
 
