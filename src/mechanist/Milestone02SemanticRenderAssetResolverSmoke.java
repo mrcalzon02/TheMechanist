@@ -29,7 +29,17 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.WAREHOUSE_FLOOR, "WAR-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.NOBLE_FLOOR, "NOB-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.SLUM_FLOOR, "SLM-0001");
-        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE, "FIX-0001");
+
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE, "INF-0001");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.TRAFFIC_LIGHT_FIXTURE, "INF-0002");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.GENERATOR_MACHINE, "INF-0003");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.TRANSFORMER_MACHINE, "INF-0004");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.JUNCTION_BOX_FIXTURE, "INF-0005");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.VENTILATION_UNIT_FIXTURE, "INF-0006");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE, "INF-0007");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.SEWER_PIPE_FIXTURE, "INF-0008");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE, "INF-0009");
+
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED, "DOR-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.DOOR_OPEN, "DOR-0002");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.WORKSHOP_TABLE, "FUR-0001");
@@ -39,6 +49,8 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MEDICAL_CABINET_CONTAINER, "CON-0002");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.WEAPONS_LOCKER_CONTAINER, "CON-0003");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.CARGO_CONTAINER, "CON-0004");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.REFRIGERATED_STORAGE_CONTAINER, "CON-0005");
+
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON, "WEA-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.ARMOR_ITEM_ICON, "ARM-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON, "ITE-0001");
@@ -50,12 +62,15 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON, "ITE-0007");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON, "ITE-0008");
 
-        if (SemanticRenderAssetResolver.canUse(asset("NEG-0001", AssetType.ITEM_ICON, "System Inventory Light", "assets/ui/system_light.png", "system inventory icon light"), SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE)) throw new AssertionError("streetlight resolver accepted system inventory icon");
-        if (SemanticRenderAssetResolver.canUse(asset("NEG-0002", AssetType.FLOOR_TILE, "Sewer Floor", "assets/sewer/floor.png", "sewer floor"), SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR)) throw new AssertionError("generic floor resolver accepted sewer floor tile");
-        if (SemanticRenderAssetResolver.canUse(asset("NEG-0003", AssetType.FLOOR_TILE, "Generic Floor", "assets/generic/floor.png", "generic main floor"), SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR)) throw new AssertionError("sewer floor resolver accepted generic floor tile");
-        if (SemanticRenderAssetResolver.canUse(asset("NEG-0004", AssetType.WALL_TILE, "Closed Doorish Wall", "assets/wall.png", "generic wall"), SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED)) throw new AssertionError("closed-door resolver accepted generic wall");
-        if (SemanticRenderAssetResolver.canUse(asset("NEG-0005", AssetType.ITEM_ICON, "Relic", "assets/items/relic.png", "religious relic icon"), SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON)) throw new AssertionError("weapon item resolver accepted religious object icon");
-        if (SemanticRenderAssetResolver.canUse(asset("NEG-0006", AssetType.FLOOR_TILE, "Sewer Market Floor", "assets/tiles/sewer/market.png", "sewer market floor"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR)) throw new AssertionError("market floor resolver accepted sewer-themed market collision");
+        reject(asset("NEG-0001", AssetType.ITEM_ICON, "System Inventory Light", "assets/ui/system_light.png", "system inventory icon light"), SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE, "streetlight resolver accepted system inventory icon");
+        reject(asset("NEG-0002", AssetType.FLOOR_TILE, "Sewer Floor", "assets/sewer/floor.png", "sewer floor"), SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, "generic floor resolver accepted sewer floor tile");
+        reject(asset("NEG-0003", AssetType.FLOOR_TILE, "Generic Floor", "assets/generic/floor.png", "generic main floor"), SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR, "sewer floor resolver accepted generic floor tile");
+        reject(asset("NEG-0004", AssetType.WALL_TILE, "Closed Doorish Wall", "assets/wall.png", "generic wall"), SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED, "closed-door resolver accepted generic wall");
+        reject(asset("NEG-0005", AssetType.ITEM_ICON, "Relic", "assets/items/relic.png", "religious relic icon"), SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON, "weapon item resolver accepted religious object icon");
+        reject(asset("NEG-0006", AssetType.FLOOR_TILE, "Sewer Market Floor", "assets/tiles/sewer/market.png", "sewer market floor"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "market floor resolver accepted sewer-themed market collision");
+        reject(asset("NEG-0007", AssetType.UI_ICON, "Traffic Light Button", "assets/ui/traffic_light.png", "system control ui icon traffic light"), SemanticRenderAssetResolver.RenderIntent.TRAFFIC_LIGHT_FIXTURE, "traffic-light resolver accepted UI control icon");
+        reject(asset("NEG-0008", AssetType.FIXTURE, "Sewer Water Pipe", "assets/infrastructure/sewer_water_pipe.png", "sewer waste sludge water pipe"), SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE, "water-pipe resolver accepted sewer-contaminated pipe");
+        reject(asset("NEG-0009", AssetType.ITEM_ICON, "Camera Icon", "assets/ui/camera.png", "system inventory item icon security camera"), SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE, "security-camera resolver accepted item icon");
 
         AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
                 "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
@@ -70,22 +85,16 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
                 "System Button", "assets/system/button_r01c01.png",
                 "system control interface control rondel button");
 
-        if (!SemanticRenderAssetResolver.canUse(atlasTool,
-                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)) {
-            throw new AssertionError("tool resolver rejected a weapon-atlas cell explicitly described as a tool");
-        }
-        if (SemanticRenderAssetResolver.canUse(ordinaryRifle,
-                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)) {
-            throw new AssertionError("tool resolver accepted an ordinary rifle without tool semantics");
-        }
-        if (!SemanticRenderAssetResolver.canUse(knowledgeDevice,
-                SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON)) {
-            throw new AssertionError("data-device resolver rejected the UI-typed Knowledge_devices family");
-        }
-        if (SemanticRenderAssetResolver.canUse(systemButton,
-                SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON)) {
-            throw new AssertionError("data-device resolver accepted a generic system-control icon");
-        }
+        require(SemanticRenderAssetResolver.canUse(atlasTool,
+                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
+                "tool resolver rejected a weapon-atlas cell explicitly described as a tool");
+        reject(ordinaryRifle, SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON,
+                "tool resolver accepted an ordinary rifle without tool semantics");
+        require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
+                SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
+                "data-device resolver rejected the UI-typed Knowledge_devices family");
+        reject(systemButton, SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON,
+                "data-device resolver accepted a generic system-control icon");
 
         System.out.println("Milestone02SemanticRenderAssetResolverSmoke PASS " + SemanticRenderAssetResolver.VERSION);
     }
@@ -94,6 +103,14 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent);
         if (!resolution.found()) throw new AssertionError(intent + " did not resolve: " + resolution.reason);
         if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " resolved " + resolution.asset.id() + " instead of " + expectedId);
+    }
+
+    private static void reject(AssetMetadata asset, SemanticRenderAssetResolver.RenderIntent intent, String message) {
+        if (SemanticRenderAssetResolver.canUse(asset, intent)) throw new AssertionError(message);
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
     }
 
     private static AssetRegistry testRegistry() throws Exception {
@@ -116,16 +133,28 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("WAR-0001", AssetType.FLOOR_TILE, "Warehouse Loading Floor", "assets/tiles/warehouse/floor_loading.png", "warehouse storage cargo loading floor tile"));
         put(entries, asset("NOB-0001", AssetType.FLOOR_TILE, "Noble Estate Floor", "assets/tiles/noble/floor_estate.png", "noble luxury estate manor floor tile"));
         put(entries, asset("SLM-0001", AssetType.FLOOR_TILE, "Slum Scrap Floor", "assets/tiles/slum/floor_scrap.png", "slum shanty tenement scrap floor tile"));
-        put(entries, asset("FIX-0001", AssetType.FIXTURE, "Streetlight Pole Lamp", "assets/fixtures/infrastructure/streetlight_pole.png", "streetlight fixture street light pole lamp"));
-        put(entries, asset("DOR-0001", AssetType.FIXTURE, "Closed Door Variant", "assets/tiles/doors/door_closed_a.png", "door closed shut tile variant"));
-        put(entries, asset("DOR-0002", AssetType.FIXTURE, "Open Door Variant", "assets/tiles/doors/door_open_a.png", "door open opened tile variant"));
-        put(entries, asset("FUR-0001", AssetType.FIXTURE, "Workshop Table", "assets/fixtures/workshop/table.png", "workshop table workbench fabrication table"));
-        put(entries, asset("FUR-0002", AssetType.FIXTURE, "Medical Table", "assets/fixtures/medical/table.png", "medical table operating table surgery table"));
-        put(entries, asset("FUR-0003", AssetType.FIXTURE, "Market Counter", "assets/fixtures/market/counter.png", "market counter shop counter stall counter"));
+
+        put(entries, asset("INF-0001", AssetType.FIXTURE, "Streetlight Pole Lamp", "assets/infrastructure/streetlight_pole.png", "streetlight fixture street light pole lamp"));
+        put(entries, asset("INF-0002", AssetType.FIXTURE, "Traffic Light Signal", "assets/infrastructure/traffic_light.png", "traffic light signal light crossing signal"));
+        put(entries, asset("INF-0003", AssetType.MACHINE, "Power Generator", "assets/infrastructure/generator.png", "generator power generator genset machine"));
+        put(entries, asset("INF-0004", AssetType.MACHINE, "Power Transformer", "assets/infrastructure/transformer.png", "transformer power transformer electrical transformer machine"));
+        put(entries, asset("INF-0005", AssetType.FIXTURE, "Junction Box", "assets/infrastructure/junction_box.png", "junction box electrical box power box fixture"));
+        put(entries, asset("INF-0006", AssetType.MACHINE, "Ventilation Unit", "assets/infrastructure/ventilation.png", "ventilation unit vent unit air handler exhaust fan"));
+        put(entries, asset("INF-0007", AssetType.FIXTURE, "Fresh Water Pipe", "assets/infrastructure/water_pipe.png", "water pipe fresh water pipe water main"));
+        put(entries, asset("INF-0008", AssetType.FIXTURE, "Sewer Drain Pipe", "assets/infrastructure/sewer_pipe.png", "sewer pipe waste pipe drain pipe sludge pipe"));
+        put(entries, asset("INF-0009", AssetType.FIXTURE, "Security Camera", "assets/infrastructure/security_camera.png", "security camera surveillance camera cctv"));
+
+        put(entries, asset("DOR-0001", AssetType.FIXTURE, "Closed Door Variant", "assets/doors/door_closed_a.png", "door closed shut semantic state variant"));
+        put(entries, asset("DOR-0002", AssetType.FIXTURE, "Open Door Variant", "assets/doors/door_open_a.png", "door open opened semantic state variant"));
+        put(entries, asset("FUR-0001", AssetType.FIXTURE, "Workshop Table", "assets/furniture/workshop_table.png", "workshop table workbench fabrication table"));
+        put(entries, asset("FUR-0002", AssetType.FIXTURE, "Medical Table", "assets/furniture/medical_table.png", "medical table operating table surgery table"));
+        put(entries, asset("FUR-0003", AssetType.FIXTURE, "Market Counter", "assets/furniture/market_counter.png", "market counter shop counter stall counter"));
         put(entries, asset("CON-0001", AssetType.OBJECT, "Toolbox Container", "assets/containers/toolbox.png", "toolbox tool box container"));
         put(entries, asset("CON-0002", AssetType.OBJECT, "Medical Cabinet", "assets/containers/medical_cabinet.png", "medical cabinet medicine cabinet clinic cabinet"));
         put(entries, asset("CON-0003", AssetType.OBJECT, "Weapons Locker", "assets/containers/weapons_locker.png", "weapons locker armory locker"));
         put(entries, asset("CON-0004", AssetType.OBJECT, "Cargo Container", "assets/containers/cargo_container.png", "cargo container crate shipping container"));
+        put(entries, asset("CON-0005", AssetType.OBJECT, "Cold Storage Freezer", "assets/containers/cold_storage.png", "refrigerated storage cold storage freezer refrigerator chiller locker"));
+
         put(entries, asset("WEA-0001", AssetType.WEAPON_ICON, "Weapon Icon", "assets/items/weapon.png", "weapon gun blade ammo icon"));
         put(entries, asset("ARM-0001", AssetType.ARMOR_ICON, "Armor Icon", "assets/items/armor.png", "armor helmet clothing icon"));
         put(entries, asset("ITE-0001", AssetType.ITEM_ICON, "Tool Icon", "assets/items/tool.png", "tool wrench repair fabrication icon"));
@@ -136,12 +165,19 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("ITE-0006", AssetType.ITEM_ICON, "Trade Good Icon", "assets/items/trade_good.png", "trade good goods commodity barter icon"));
         put(entries, asset("ITE-0007", AssetType.ITEM_ICON, "Religious Object Icon", "assets/items/relic.png", "religious relic icon prayer object"));
         put(entries, asset("ITE-0008", AssetType.ITEM_ICON, "Data Device Icon", "assets/items/data_device.png", "data device datapad terminal chip icon"));
+
         Constructor<AssetRegistry> ctor = AssetRegistry.class.getDeclaredConstructor(java.nio.file.Path.class, java.nio.file.Path.class, Map.class);
         ctor.setAccessible(true);
         return ctor.newInstance(java.nio.file.Path.of("."), null, entries);
     }
 
-    private static void put(Map<String, AssetMetadata> entries, AssetMetadata asset) { entries.put(asset.id(), asset); }
-    private static AssetMetadata asset(String id, AssetType type, String name, String path, String description) { return new AssetMetadata(id, path, name, type, description); }
+    private static void put(Map<String, AssetMetadata> entries, AssetMetadata asset) {
+        entries.put(asset.id(), asset);
+    }
+
+    private static AssetMetadata asset(String id, AssetType type, String name, String path, String description) {
+        return new AssetMetadata(id, path, name, type, description);
+    }
+
     private Milestone02SemanticRenderAssetResolverSmoke() {}
 }

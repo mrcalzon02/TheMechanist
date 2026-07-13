@@ -131,6 +131,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone02LivePanelPromptSmoke.main(args);
         Milestone02RenderAssetBindingDoctrineSmoke.main(args);
         Milestone02SemanticRenderAssetResolverSmoke.main(args);
+        Milestone02SemanticRuntimeIntentBridgeSmoke.main(args);
+        Milestone02DistrictRoomTileContextSmoke.main(args);
         Milestone02SemanticCompiledIndexBoundarySmoke.main(args);
         Milestone02SemanticAssetMigrationCoverageSmoke.main(args);
         PortraitSemanticPartitionResolverSmoke.main(args);

@@ -29,18 +29,32 @@ public final class Milestone02SemanticAssetMigrationCoverageSmoke {
         if (report.availableByFamily().getOrDefault(SemanticAssetMigrationCoverageAuthority.Family.ITEM, 0) < 2) {
             throw new AssertionError("item semantic coverage missing");
         }
-        if (SemanticAssetMigrationCoverageAuthority.familyOf(
-                SemanticRenderAssetResolver.RenderIntent.MEDICAL_FLOOR)
-                != SemanticAssetMigrationCoverageAuthority.Family.ROOM_TILE) {
-            throw new AssertionError("medical floor was not classified as room tile");
-        }
-        if (SemanticAssetMigrationCoverageAuthority.familyOf(
-                SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR)
-                != SemanticAssetMigrationCoverageAuthority.Family.ZONE_TILE) {
-            throw new AssertionError("sewer floor was not classified as zone tile");
-        }
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.MEDICAL_FLOOR,
+                SemanticAssetMigrationCoverageAuthority.Family.ROOM_TILE, "medical floor");
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR,
+                SemanticAssetMigrationCoverageAuthority.Family.ZONE_TILE, "sewer floor");
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.TRAFFIC_LIGHT_FIXTURE,
+                SemanticAssetMigrationCoverageAuthority.Family.INFRASTRUCTURE, "traffic light");
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.TRANSFORMER_MACHINE,
+                SemanticAssetMigrationCoverageAuthority.Family.INFRASTRUCTURE, "transformer");
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE,
+                SemanticAssetMigrationCoverageAuthority.Family.INFRASTRUCTURE, "water pipe");
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE,
+                SemanticAssetMigrationCoverageAuthority.Family.INFRASTRUCTURE, "security camera");
+        requireFamily(SemanticRenderAssetResolver.RenderIntent.REFRIGERATED_STORAGE_CONTAINER,
+                SemanticAssetMigrationCoverageAuthority.Family.CONTAINER, "refrigerated storage");
 
         System.out.println("Milestone02SemanticAssetMigrationCoverageSmoke PASS " + report.summary());
+    }
+
+    private static void requireFamily(SemanticRenderAssetResolver.RenderIntent intent,
+                                      SemanticAssetMigrationCoverageAuthority.Family expected,
+                                      String label) {
+        SemanticAssetMigrationCoverageAuthority.Family actual =
+                SemanticAssetMigrationCoverageAuthority.familyOf(intent);
+        if (actual != expected) {
+            throw new AssertionError(label + " was classified as " + actual + " instead of " + expected);
+        }
     }
 
     private static AssetRegistry registry() throws Exception {

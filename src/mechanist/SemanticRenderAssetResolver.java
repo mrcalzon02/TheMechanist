@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.6-trade-goods";
+    static final String VERSION = "semantic-render-asset-resolver-0.7-infrastructure";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -42,6 +42,14 @@ final class SemanticRenderAssetResolver {
         NOBLE_FLOOR,
         SLUM_FLOOR,
         STREETLIGHT_FIXTURE,
+        TRAFFIC_LIGHT_FIXTURE,
+        GENERATOR_MACHINE,
+        TRANSFORMER_MACHINE,
+        JUNCTION_BOX_FIXTURE,
+        VENTILATION_UNIT_FIXTURE,
+        WATER_PIPE_FIXTURE,
+        SEWER_PIPE_FIXTURE,
+        SECURITY_CAMERA_FIXTURE,
         DOOR_CLOSED,
         DOOR_OPEN,
         WORKSHOP_TABLE,
@@ -57,6 +65,7 @@ final class SemanticRenderAssetResolver {
         WARDROBE_CONTAINER,
         CARGO_CONTAINER,
         FILING_CABINET_CONTAINER,
+        REFRIGERATED_STORAGE_CONTAINER,
         WEAPON_ITEM_ICON,
         ARMOR_ITEM_ICON,
         TOOL_ITEM_ICON,
@@ -130,7 +139,15 @@ final class SemanticRenderAssetResolver {
             case WAREHOUSE_FLOOR -> isFloor(asset) && themed(haystack, "warehouse", "storage", "cargo", "loading") && !themed(haystack, "sewer");
             case NOBLE_FLOOR -> isFloor(asset) && themed(haystack, "noble", "luxury", "estate", "manor") && !themed(haystack, "sewer");
             case SLUM_FLOOR -> isFloor(asset) && themed(haystack, "slum", "shanty", "tenement", "scrap") && !themed(haystack, "sewer");
-            case STREETLIGHT_FIXTURE -> (asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp") && !themed(haystack, "system inventory", "item icon", "ui icon");
+            case STREETLIGHT_FIXTURE -> infrastructureType(asset) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp") && notUiIcon(haystack);
+            case TRAFFIC_LIGHT_FIXTURE -> infrastructureType(asset) && themed(haystack, "traffic light", "signal light", "crossing signal") && notUiIcon(haystack);
+            case GENERATOR_MACHINE -> fixtureOrObject(asset) && themed(haystack, "generator", "power generator", "genset") && notUiIcon(haystack);
+            case TRANSFORMER_MACHINE -> fixtureOrObject(asset) && themed(haystack, "transformer", "power transformer", "electrical transformer") && notUiIcon(haystack);
+            case JUNCTION_BOX_FIXTURE -> infrastructureType(asset) && themed(haystack, "junction box", "electrical box", "power box") && notUiIcon(haystack);
+            case VENTILATION_UNIT_FIXTURE -> infrastructureType(asset) && themed(haystack, "ventilation unit", "vent unit", "air handler", "exhaust fan") && notUiIcon(haystack);
+            case WATER_PIPE_FIXTURE -> infrastructureType(asset) && themed(haystack, "water pipe", "fresh water pipe", "water main") && !themed(haystack, "sewer", "waste", "sludge") && notUiIcon(haystack);
+            case SEWER_PIPE_FIXTURE -> infrastructureType(asset) && themed(haystack, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe") && notUiIcon(haystack);
+            case SECURITY_CAMERA_FIXTURE -> infrastructureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
             case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && themed(haystack, "closed", "shut") && !themed(haystack, "open") && !generic(haystack);
             case DOOR_OPEN -> doorType(asset) && themed(haystack, "door") && themed(haystack, "open", "opened") && !themed(haystack, "closed", "shut") && !generic(haystack);
             case WORKSHOP_TABLE -> fixtureOrObject(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
@@ -146,6 +163,7 @@ final class SemanticRenderAssetResolver {
             case WARDROBE_CONTAINER -> containerType(asset) && themed(haystack, "wardrobe", "clothes cabinet");
             case CARGO_CONTAINER -> containerType(asset) && themed(haystack, "cargo container", "crate", "shipping container");
             case FILING_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "filing cabinet", "records cabinet", "file cabinet");
+            case REFRIGERATED_STORAGE_CONTAINER -> containerType(asset) && themed(haystack, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker");
             case WEAPON_ITEM_ICON -> weaponIcon(asset) && themed(haystack, "weapon", "gun", "blade", "ammo");
             case ARMOR_ITEM_ICON -> armorIcon(asset) && themed(haystack, "armor", "armour", "helmet", "clothing");
             case TOOL_ITEM_ICON -> toolIcon(asset) && themed(haystack, "tool", "wrench", "repair", "fabrication", "shovel", "spade", "cutter", "drill", "maintenance kit", "maintenance tools");
@@ -186,6 +204,9 @@ final class SemanticRenderAssetResolver {
         if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight")) score += 10;
+        if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light")) score += 10;
+        if (intent == RenderIntent.SECURITY_CAMERA_FIXTURE && contains(h, "security camera", "surveillance camera")) score += 10;
+        if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage")) score += 10;
         if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "cell rule", "tool weapon", "powered tool", "maintenance tools")) score += 10;
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "objects goods", "/goods_", "trade goods", "commodity")) score += 10;
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON && contains(h, "knowledge devices", "data device", "datapad")) score += 10;
@@ -200,6 +221,7 @@ final class SemanticRenderAssetResolver {
     private static boolean isFloor(AssetMetadata asset) { return asset.type() == AssetType.FLOOR_TILE || asset.type() == AssetType.ROAD_TILE || asset.type() == AssetType.SIDEWALK_TILE || asset.type() == AssetType.CORRIDOR_TILE; }
     private static boolean isWall(AssetMetadata asset) { return asset.type() == AssetType.WALL_TILE; }
     private static boolean fixtureOrObject(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT || asset.type() == AssetType.MACHINE; }
+    private static boolean infrastructureType(AssetMetadata asset) { return fixtureOrObject(asset); }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE || asset.type() == AssetType.ITEM_ICON; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON || asset.type() == AssetType.ARMOR_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "weapon")); }
@@ -210,6 +232,7 @@ final class SemanticRenderAssetResolver {
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE || asset.type() == AssetType.FLOOR_TILE || asset.type() == AssetType.CORRIDOR_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
     private static boolean themed(String text, String... needles) { return contains(text, needles); }
+    private static boolean notUiIcon(String text) { return !themed(text, "system inventory", "item icon", "ui icon", "system control", "interface control"); }
 
     private static String haystack(AssetMetadata asset) {
         return normalize(asset.id() + " " + asset.name() + " " + asset.pathOrUri() + " " + asset.type().displayName() + " " + asset.semanticDescription());
