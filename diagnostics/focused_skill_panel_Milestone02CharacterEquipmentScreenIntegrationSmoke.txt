@@ -1,2 +1,0 @@
-[06:07:46.992] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
-Milestone02CharacterEquipmentScreenIntegrationSmoke PASS character-equipment-medical-0.2

@@ -1,1 +1,0 @@
-[06:07:36.825] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.

@@ -1,7 +1,0 @@
-Latest Diagnostics Index
-Generated: 2026-06-02 15:06:39
-Diagnostics root: C:\GITS\The Mechanist\TheMechanist\diagnostics
-
-Latest compile diagnostic: none
-
-Latest operations diagnostic: none

@@ -1,9 +1,0 @@
-﻿Boot Smoke Run: 20260626_175925
-PackageDir: C:\GITS\The Mechanist\TheMechanist\PACKAGE_client
-TimeoutSeconds: 8
-Java: C:\Program Files\Common Files\Oracle\Java\javapath\java.exe
-Command: -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist
-ProcessId: 3360
-Exited: false
-Interpretation: process survived timeout; GUI boot likely reached or is awaiting user interaction
-BOOT_SMOKE_PASS_TIMEOUT: client stayed alive for 8 second(s); killed after smoke window

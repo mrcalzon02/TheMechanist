@@ -7,7 +7,10 @@ final class Milestone04EssentialSupplyProvenanceSmoke {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         World local = populatedWorld(94001L, ZoneType.HAB_STACK);
-        local.zoneProductionHistory = "P1: facility=hydroponics-17 :: purpose=hydroponics and water recycler"
+        local.zoneProductionHistory = "P0: facility=rival-hydroponics :: purpose=hydroponics and water recycler"
+                + " :: controller=BANDIT :: focus=food and potable water :: cadence=daily :: batches=9"
+                + " :: retained=4 :: samples=Emergency rations, Water bottle :: rival-controlled output;;"
+                + "P1: facility=hydroponics-17 :: purpose=hydroponics and water recycler"
                 + " :: controller=HIVER :: focus=food and potable water :: cadence=daily :: batches=3"
                 + " :: retained=2 :: samples=Emergency rations, Water bottle :: local provisioning output";
         TraderSession localTrader = basicTrader();

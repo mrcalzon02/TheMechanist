@@ -195,7 +195,7 @@ final class EssentialSupplyProvenanceAuthority {
         for (ZoneProductionOutputRecord output : ProductionFacilityOutputSimulationApi.parseProductionLedger(world.zoneProductionHistory)) {
             String text = safe(output.facilityId) + " " + safe(output.facilityPurpose) + " "
                     + safe(output.outputFocus) + " " + safe(output.sampleItems);
-            if (!sourceMatches(text, category)) continue;
+            if (!sourceMatches(text, category) || !controllerCompatible(faction, output.controller)) continue;
             int capacity = Math.max(8, Math.min(24, Math.max(1, output.batches) * 4));
             String label = safe(output.facilityId).isBlank() ? safe(output.facilityPurpose) : output.facilityId;
             return new Source("faction production site", label, safe(output.facilityId),
@@ -314,6 +314,18 @@ final class EssentialSupplyProvenanceAuthority {
         String a = wanted.name().split("_")[0];
         String b = owner.name().split("_")[0];
         return a.equals(b);
+    }
+
+    private static boolean controllerCompatible(Faction faction, String controller) {
+        String low = safe(controller).toLowerCase(Locale.ROOT).trim();
+        if (low.isBlank() || contains(low, "unknown", "unrecorded", "none", "neutral")) return true;
+        if (faction == null || faction == Faction.NONE) return true;
+        String name = faction.name().toLowerCase(Locale.ROOT).replace('_', ' ');
+        String label = safe(faction.label).toLowerCase(Locale.ROOT);
+        if (low.contains(name) || low.contains(label) || name.contains(low) || label.contains(low)) return true;
+        if ((faction == Faction.MECHANICUS || faction == Faction.MECHANIST_COLLEGIA)
+                && contains(low, "mechanicus", "mechanist collegia")) return true;
+        return faction == Faction.CIVIC_WARDENS && contains(low, "arbites", "civic wardens");
     }
 
     private static String stockClass(String item, String category, String sourceKind, Faction faction) {

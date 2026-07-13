@@ -1,3 +1,0 @@
-[11:22:41.916] INFO The Mechanist logging initialized. Single active log is logs/current.log; prior run rotated to logs/previous.log.
-[11:22:41.917] INFO The Mechanist booting.
-[11:22:46.206] WARN/MENU_TEXT No menu language file found; using Java fallbacks.
