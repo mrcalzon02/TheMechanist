@@ -27,6 +27,7 @@ final class TradeReadabilityAuthority {
                 : "Unavailable: need " + Math.abs(remaining) + " more script.");
         int quality = ItemQuality.tierIndex(offer.name);
         lines.add("Quality: " + ItemQuality.NAMES[Math.max(0, Math.min(ItemQuality.NAMES.length - 1, quality))] + ".");
+        if (trader.populationPressure != null) lines.add(trader.populationPressure.offerLine(offer));
         lines.add("Status: " + legalityLabel(offer) + ".");
         lines.add(carriedWeight < carryCapacity
                 ? "Inventory result: item enters carried inventory."
@@ -49,6 +50,10 @@ final class TradeReadabilityAuthority {
         lines.add(trader.supplyChainSummary == null || trader.supplyChainSummary.isBlank()
                 ? "Supply context: no additional shipment or scarcity record is available."
                 : "Supply context: " + trader.supplyChainSummary);
+        if (trader.sourceWorkforceSummary != null && !trader.sourceWorkforceSummary.isBlank()) {
+            lines.add(trader.sourceWorkforceSummary);
+        }
+        if (trader.populationPressure != null) lines.addAll(trader.populationPressure.contextLines());
         lines.add("Service scope: this panel supports item buying and selling only; repairs, treatment, lodging, banking, training, and other services require their owning interaction surface.");
         return lines;
     }

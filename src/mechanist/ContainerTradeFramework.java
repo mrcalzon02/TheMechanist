@@ -43,6 +43,8 @@ class MapObjectState {
 class TradeOffer {
     String name, category, description; int basePrice;
     String itemInstanceId = "";
+    String essentialSupplyReserveId = "";
+    String verticalTradeReserveId = "";
     ItemProvenanceRecord provenance = null;
     TradeOffer(String name, String category, int basePrice, String description){ this(name, category, basePrice, description, null); }
     TradeOffer(String name, String category, int basePrice, String description, ItemProvenanceRecord provenance){ this.name=name; this.category=category; this.basePrice=basePrice; this.description=description; this.provenance=provenance; }
@@ -690,7 +692,10 @@ class TraderSupplyChainApi {
 class TraderSession {
     String name, archetype, zoneLabel; int discountPct=0, markupPct=0, haggleAttempts=0;
     String supplyChainSummary = "";
+    String sourceWorkforceSummary = "";
     NpcFactionSite sourceSite = null;
+    PopulationMarketPressureAuthority.Profile populationPressure = null;
+    VerticalFloorTradeAuthority.Profile verticalFloorTrade = null;
     ArrayList<TradeOffer> offers = new ArrayList<>();
     static TraderSession forNpc(NpcEntity npc, ZoneType zone, Random r) {
         TraderSession t = new TraderSession();
@@ -780,10 +785,12 @@ class TraderSession {
         if (roll < 100) return 6;
         return 7;
     }
-    int buyPrice(TradeOffer o) { int p = ItemCatalog.priceFor(o.name); if (p <= 1 && ItemCatalog.get(o.name) == null) p = o.basePrice; return WorldGenerationSettingsAuthority.adjustedBuyPrice(p, markupPct, discountPct, WorldGenerationSettingsAuthority.active()); }
+    int buyPrice(TradeOffer o) { int p = ItemCatalog.priceFor(o.name); if (p <= 1 && ItemCatalog.get(o.name) == null) p = o.basePrice; int ordinary = WorldGenerationSettingsAuthority.adjustedBuyPrice(p, markupPct, discountPct, WorldGenerationSettingsAuthority.active()); int populationAdjusted = PopulationMarketPressureAuthority.adjustBuyPrice(populationPressure, o, ordinary); return VerticalFloorTradeAuthority.adjustBuyPrice(verticalFloorTrade, o, populationAdjusted); }
     int sellPrice(String item) {
         int v = ItemCatalog.priceFor(item);
-        return WorldGenerationSettingsAuthority.adjustedSellPrice(v, markupPct, WorldGenerationSettingsAuthority.active());
+        int ordinary = WorldGenerationSettingsAuthority.adjustedSellPrice(v, markupPct, WorldGenerationSettingsAuthority.active());
+        int populationAdjusted = PopulationMarketPressureAuthority.adjustSellPrice(populationPressure, item, ordinary);
+        return VerticalFloorTradeAuthority.adjustSellPrice(verticalFloorTrade, item, populationAdjusted);
     }
     String rumor(ZoneType z, Random r) {
         String[] generic = {"Doors remember who forces them.", "A quiet corridor is often waiting for witnesses.", "The lower sewers have started praying back.", "If a room has guards, it has ledgers or loot."};

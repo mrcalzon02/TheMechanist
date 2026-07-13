@@ -10,7 +10,11 @@ final class Milestone03ContractSkillProofInfopediaSmoke {
         requireContains(lines, "Certified Market Appraisal", "certified appraisal reference");
         requireContains(lines, "Investigation Trace Reading", "trace-reading reference");
         requireContains(lines, "Contract Negotiation", "knowledge proof reference");
-        requireContains(lines, "does not complete the contract", "completion boundary");
+        requireContains(lines, "matching faction representative", "representative turn-in route");
+        requireContains(lines, "Take Work", "production work acceptance");
+        requireContains(lines, "recorded production origin", "production provenance requirement");
+        requireContains(lines, "consumes the qualifying unit", "qualified proof consumption");
+        requireContains(lines, "blocked hand-in changes nothing", "non-mutating blocker boundary");
         for (String line : lines) rejectLeaks(line);
     }
 

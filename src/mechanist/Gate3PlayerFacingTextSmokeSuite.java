@@ -4,6 +4,13 @@ package mechanist;
 final class Gate3PlayerFacingTextSmokeSuite {
     public static void main(String[] args) throws Exception {
         FactionContractDisplaySmoke.main(args);
+        Milestone03ContractTurnInSmoke.main(args);
+        Milestone03ProductionContractWorkflowSmoke.main(args);
+        Milestone04PopulationMarketPressureSmoke.main(args);
+        Milestone04PopulationOriginDemandSmoke.main(args);
+        Milestone04FactionSiteWorkforceMarketSmoke.main(args);
+        Milestone04EssentialSupplyProvenanceSmoke.main(args);
+        Milestone04VerticalFloorTradeSmoke.main(args);
         PlayerFacingCopySanitizerSmoke.main(args);
         PlayerFacingUiTextSmoke.main(args);
         PlayerFacingDenialTextSmoke.main(args);
@@ -107,6 +114,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone03ProgressiveConstructionDefinitionAuditSmoke.main(args);
         Milestone03ProgressiveConstructionPersistenceSmoke.main(args);
         Milestone03ProgressiveConstructionDismantleSmoke.main(args);
+        Milestone03ProgressiveConstructionInteractionWorkSmoke.main(args);
         Milestone03ProgressiveConstructionTileSyncSmoke.main(args);
         Milestone03ProgressiveConstructionOriginalTileSmoke.main(args);
         Milestone05ConstructionGameplayCommandSmoke.main(args);
@@ -159,6 +167,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone03ProductionQualityDefinitionAuditSmoke.main(args);
         Milestone03SkillTreeProgressionReadabilitySmoke.main(args);
         Milestone03SkillTreeSpendingPersistenceSmoke.main(args);
+        Milestone03SkillTreeCharacterPanelSmoke.main(args);
         Milestone03SkillTreeAccessGateSmoke.main(args);
         Milestone03SkillTreeStatGateSmoke.main(args);
         Milestone03SkillTreeMutualExclusionSmoke.main(args);
@@ -170,10 +179,15 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone03ContractSkillProofSmoke.main(args);
         Milestone03ContractSkillProofInfopediaSmoke.main(args);
         Milestone03ContractSkillProofAuditSmoke.main(args);
+        Milestone04FactionReinforcementLifecycleSmoke.main(args);
+        Milestone04ReinforcementSourcePolicySmoke.main(args);
+        Milestone04CrecheGenerationMaturitySmoke.main(args);
         BootMenuMusicDelaySmoke.main(args);
         BootStartupAudioSilenceSmoke.main(args);
         Milestone03ManualProductionOperationRecordSmoke.main(args);
+        Milestone03ProductionStatusCommandSmoke.main(args);
         Milestone03StaffedProductionExecutionSmoke.main(args);
+        Milestone03ProductionControlBoardSmoke.main(args);
         OptionsSwingComponentSmoke.main(args);
         System.out.println("Gate 3 player-facing text smoke suite passed.");
     }

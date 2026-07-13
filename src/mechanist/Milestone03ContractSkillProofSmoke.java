@@ -32,8 +32,8 @@ final class Milestone03ContractSkillProofSmoke {
         requireContains(trained, "Skill proof: Certified Market Appraisal / trained", "trained certified skill");
         requireContains(trained, "Knowledge proof: Contract Negotiation / known", "known contract knowledge");
         requireContains(trained, "carried and ready for turn-in", "carried proof");
-        requireContains(trained, "completion and reward rules remain owned by the contract turn-in flow",
-                "contract proof boundary");
+        requireContains(trained, "Turn In rechecks every listed skill and knowledge requirement",
+                "contract turn-in proof check");
         for (String line : trained) rejectLeaks(line);
     }
 

@@ -714,7 +714,7 @@ class NpcFactionSite {
     }
 
     boolean produceHour(int turn, Random rng) {
-        if (outputs.isEmpty()) return false;
+        if (outputs.isEmpty() || workers <= 0) return false;
         int cadence = Math.max(1, 4 - Math.min(3, baseLevel));
         if (turn <= 0 || turn % (cadence * GamePanel.TURNS_PER_HOUR) != 0) return false;
         int units = Math.max(1, workers / 2 + machineLevel / 3);
@@ -725,8 +725,8 @@ class NpcFactionSite {
 
     ArrayList<String> exportSample(Random rng) {
         ArrayList<String> list = new ArrayList<>();
-        if (outputs.isEmpty()) return list;
-        int n = Math.max(1, Math.min(3, 1 + stock / 20));
+        if (outputs.isEmpty() || workers <= 0 || stock <= 0) return list;
+        int n = Math.min(stock, Math.max(1, Math.min(3, 1 + stock / 20)));
         for (int i=0;i<n;i++) {
             String base = outputs.get(Math.abs(Objects.hash(name, i, stock)) % outputs.size());
             list.add(qualityStamped(base, i));
@@ -762,6 +762,7 @@ class FactionContract {
     String id, type, description, targetZoneKey, targetEntityId, targetName, requiredTurnInItem;
     Faction faction = Faction.NONE;
     int payout = 75, repReward = 1;
+    int minimumQualityTier = -1, skillXpReward = 0;
     boolean spawned = false, completed = false;
 
     static FactionContract create(String type, Faction f, WorldAtlas atlas, World world, Random rng, int standing) {
@@ -829,7 +830,7 @@ class FactionContract {
 
     String shortLine(){ return displayType() + " for " + displayFactionName() + " pays " + payout + " script" + (spawned ? "; target confirmed" : "; route pending"); }
     String longLine(){ return displayFactionName() + " " + displayType() + ": " + displayDescription() + " Location: " + displayLocation() + ". Reward " + payout + " script, rep +" + repReward + "."; }
-    String displayType(){ if ("LOCKBOX".equals(type)) return "lockbox contract"; if ("FETCH".equals(type)) return "fetch contract"; return "bounty contract"; }
+    String displayType(){ if ("LOCKBOX".equals(type)) return "lockbox contract"; if ("FETCH".equals(type)) return "fetch contract"; if ("PRODUCTION".equals(type)) return "production order"; return "bounty contract"; }
     String displayFactionName(){
         if (faction == Faction.CIVIC_WARDENS || faction == Faction.ARBITES) return "Adeptus Civic Wardens";
         return faction == null ? "local faction" : faction.label;
@@ -846,6 +847,12 @@ class FactionContract {
         if (lower.startsWith("sealed object ")) return "the sealed object";
         return requiredTurnInItem;
     }
+    boolean requiresProductionProof() { return "PRODUCTION".equals(type); }
+    String minimumQualityName() {
+        int tier = Math.max(0, Math.min(ItemQuality.NAMES.length - 1,
+                minimumQualityTier < 0 ? ItemQuality.tierIndex("Common item") : minimumQualityTier));
+        return ItemQuality.NAMES[tier];
+    }
     String displayLocation(){
         String[] a = targetZoneKey == null ? new String[0] : targetZoneKey.split(",");
         if (a.length < 6) return "nearby contract zone";
@@ -857,10 +864,10 @@ class FactionContract {
             return "nearby contract zone";
         }
     }
-    String saveLine(){ return String.join("|", id,type,faction.name(),targetZoneKey,targetEntityId,targetName,requiredTurnInItem,Integer.toString(payout),Integer.toString(repReward),Boolean.toString(spawned),Boolean.toString(completed),description); }
+    String saveLine(){ return String.join("|", id,type,faction.name(),targetZoneKey,targetEntityId,targetName,requiredTurnInItem,Integer.toString(payout),Integer.toString(repReward),Boolean.toString(spawned),Boolean.toString(completed),description,Integer.toString(minimumQualityTier),Integer.toString(skillXpReward)); }
     static FactionContract parse(String s){
-        String[] a=s.split("\\|",12); if(a.length<12) return null;
-        try { FactionContract c=new FactionContract(); c.id=a[0]; c.type=a[1]; c.faction=Faction.valueOf(a[2]); c.targetZoneKey=a[3]; c.targetEntityId=a[4]; c.targetName=a[5]; c.requiredTurnInItem=a[6]; c.payout=Integer.parseInt(a[7]); c.repReward=Integer.parseInt(a[8]); c.spawned=Boolean.parseBoolean(a[9]); c.completed=Boolean.parseBoolean(a[10]); c.description=a[11]; return c; } catch(Exception e){ return null; }
+        String[] a=s.split("\\|",-1); if(a.length<12) return null;
+        try { FactionContract c=new FactionContract(); c.id=a[0]; c.type=a[1]; c.faction=Faction.valueOf(a[2]); c.targetZoneKey=a[3]; c.targetEntityId=a[4]; c.targetName=a[5]; c.requiredTurnInItem=a[6]; c.payout=Integer.parseInt(a[7]); c.repReward=Integer.parseInt(a[8]); c.spawned=Boolean.parseBoolean(a[9]); c.completed=Boolean.parseBoolean(a[10]); c.description=a[11]; if(a.length>=13)c.minimumQualityTier=Integer.parseInt(a[12]); if(a.length>=14)c.skillXpReward=Integer.parseInt(a[13]); return c; } catch(Exception e){ return null; }
     }
 }
 
@@ -900,6 +907,11 @@ class BaseObject {
     String machineRepairHistory = "";
     int productionQueueTarget = 1;
     int productionQueueRemaining = 0;
+    int productionProgressTurns = 0;
+    String productionMaterialPolicy = "WAIT";
+    String productionOutputPolicy = "BASE";
+    String productionNoRoomPolicy = "WAIT";
+    String productionLastBlocker = "";
     boolean underConstruction = false;
     char finalSymbol = 0;
     String constructionRequiredItems = "";
@@ -939,7 +951,22 @@ class BaseObject {
             default: return "uses general service accounting until a specific return profile is assigned.";
         }
     }
-    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+(assignedRecipe==null?"":assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge)+"|"+(machineRepairHistory==null?"":machineRepairHistory)+"|"+(constructionOriginalTile==0?"":String.valueOf(constructionOriginalTile)); }
+    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+encodeDelimitedField(assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge)+"|"+(machineRepairHistory==null?"":machineRepairHistory)+"|"+(constructionOriginalTile==0?"":String.valueOf(constructionOriginalTile))+"|"+productionProgressTurns+"|"+productionMaterialPolicy+"|"+productionOutputPolicy+"|"+productionNoRoomPolicy+"|"+encodeDelimitedField(productionLastBlocker); }
+    static String encodeDelimitedField(String value) {
+        String text = value == null ? "" : value;
+        if (!text.contains("|") && !text.startsWith("~b64~")) return text;
+        return "~b64~" + java.util.Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+    static String decodeDelimitedField(String value) {
+        if (value == null || !value.startsWith("~b64~")) return value == null ? "" : value;
+        try {
+            return new String(java.util.Base64.getUrlDecoder().decode(value.substring(5)),
+                    java.nio.charset.StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ignored) {
+            return "";
+        }
+    }
 }
 
 

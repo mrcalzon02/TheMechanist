@@ -16,7 +16,7 @@ final class Milestone03ProgressiveConstructionPersistenceSmoke {
         site.machineRepairHistory = "field repair before staging";
 
         String[] saved = site.saveLine().split("\\|", -1);
-        require(saved.length == 26, "base object save line should preserve 26 fields");
+        require(saved.length == 31, "base object save line should preserve 31 append-only fields");
         require("true".equals(saved[16]), "under-construction field should be saved");
         require("B".equals(saved[17]), "final symbol should be saved");
         require(saved[18].contains("Construction supplies=3"), "required supplies should be saved");
@@ -28,6 +28,11 @@ final class Milestone03ProgressiveConstructionPersistenceSmoke {
         require(saved[23].equals("Retail Counter Assembly"), "machine knowledge field should remain after construction fields");
         require(saved[24].equals("field repair before staging"), "repair history field should remain after construction fields");
         require(saved[25].equals("/"), "original tile field should be saved after existing base-object fields");
+        require(saved[26].equals("0"), "background production progress should default to zero");
+        require(saved[27].equals("WAIT"), "material shortage policy should default to wait");
+        require(saved[28].equals("BASE"), "production output should default to base storage");
+        require(saved[29].equals("WAIT"), "no-room policy should default to wait");
+        require(saved[30].isEmpty(), "production blocker readback should default to empty");
 
         GamePanel writer = new GamePanel();
         if (writer.timer != null) writer.timer.stop();

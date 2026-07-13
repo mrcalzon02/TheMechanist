@@ -37,9 +37,13 @@ class PersonnelProvenanceRecord {
 
 
 class PersonnelReplacementRequest {
-    String deadNpcId, deadName, source, sourceLedgerId, reason; Faction faction; int dueTurn; int x,y, sourceRoomId = -1;
-    String saveLine(){ return enc(deadNpcId)+"|"+enc(deadName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+dueTurn+"|"+x+"|"+y+"|"+enc(source)+"|"+enc(reason)+"|"+sourceRoomId+"|"+enc(sourceLedgerId); }
-    static PersonnelReplacementRequest parse(String s){ try{ String[] a=s.split("\\|",10); if(a.length<8) return null; PersonnelReplacementRequest r=new PersonnelReplacementRequest(); r.deadNpcId=dec(a[0]); r.deadName=dec(a[1]); r.faction=Faction.valueOf(a[2]); r.dueTurn=Integer.parseInt(a[3]); r.x=Integer.parseInt(a[4]); r.y=Integer.parseInt(a[5]); r.source=dec(a[6]); r.reason=dec(a[7]); if(a.length>=9) try{ r.sourceRoomId=Integer.parseInt(a[8]); }catch(Exception ignored){} if(a.length>=10) r.sourceLedgerId=dec(a[9]); return r; }catch(Exception e){ return null; } }
+    String deadNpcId, deadName, source, sourceLedgerId, reason;
+    String sourceMode = "legacy-roster", sourcePrerequisite = "linked population roster";
+    Faction faction;
+    int requestedTurn, dueTurn, expiresTurn, scriptCost;
+    int x,y, sourceRoomId = -1;
+    String saveLine(){ return enc(deadNpcId)+"|"+enc(deadName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+dueTurn+"|"+x+"|"+y+"|"+enc(source)+"|"+enc(reason)+"|"+sourceRoomId+"|"+enc(sourceLedgerId)+"|"+requestedTurn+"|"+expiresTurn+"|"+enc(sourceMode)+"|"+scriptCost+"|"+enc(sourcePrerequisite); }
+    static PersonnelReplacementRequest parse(String s){ try{ String[] a=s.split("\\|",15); if(a.length<8) return null; PersonnelReplacementRequest r=new PersonnelReplacementRequest(); r.deadNpcId=dec(a[0]); r.deadName=dec(a[1]); r.faction=Faction.valueOf(a[2]); r.dueTurn=Integer.parseInt(a[3]); r.x=Integer.parseInt(a[4]); r.y=Integer.parseInt(a[5]); r.source=dec(a[6]); r.reason=dec(a[7]); if(a.length>=9) try{ r.sourceRoomId=Integer.parseInt(a[8]); }catch(Exception ignored){} if(a.length>=10) r.sourceLedgerId=dec(a[9]); r.requestedTurn=a.length>=11?Integer.parseInt(a[10]):Math.max(0,r.dueTurn-84); r.expiresTurn=a.length>=12?Integer.parseInt(a[11]):r.dueTurn+FactionReinforcementAuthority.ARRIVAL_WINDOW_TURNS; if(a.length>=13&&!dec(a[12]).isBlank()) r.sourceMode=dec(a[12]); r.scriptCost=a.length>=14?Math.max(0,Integer.parseInt(a[13])):0; if(a.length>=15&&!dec(a[14]).isBlank()) r.sourcePrerequisite=dec(a[14]); return r; }catch(Exception e){ return null; } }
     static String enc(String s){ return Base64.getUrlEncoder().withoutPadding().encodeToString((s==null?"":s).getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     static String dec(String s){ try{return new String(Base64.getUrlDecoder().decode(s), java.nio.charset.StandardCharsets.UTF_8);}catch(Exception e){return "";} }
 }
@@ -62,17 +66,28 @@ class RoomPopulationLedger {
     int available = 0;
     int assigned = 0;
     int dead = 0;
+    int careProviders = 0;
+    int crecheFoodStorageUnits = 0;
+    int crecheWaterStorageUnits = 0;
+    int crecheBedUnits = 0;
+    int crecheTeachingStations = 0;
 
     String saveLine(){
         return enc(id)+"|"+roomId+"|"+enc(roomName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+enc(sourceKind)+"|"+enc(sourceLabel)+"|"+capacity+"|"+available+"|"+assigned+"|"+dead
-            +"|"+enc(facilityId)+"|"+enc(facilityPurpose)+"|"+enc(facilityEstablishedBy)+"|"+enc(facilityProductFocus)+"|"+enc(facilityHistoricNote);
+            +"|"+enc(facilityId)+"|"+enc(facilityPurpose)+"|"+enc(facilityEstablishedBy)+"|"+enc(facilityProductFocus)+"|"+enc(facilityHistoricNote)+"|"+careProviders
+            +"|"+crecheFoodStorageUnits+"|"+crecheWaterStorageUnits+"|"+crecheBedUnits+"|"+crecheTeachingStations;
     }
     static RoomPopulationLedger parse(String s){
         try{
-            String[] a=s.split("\\|",15); if(a.length<10) return null;
+            String[] a=s.split("\\|",20); if(a.length<10) return null;
             RoomPopulationLedger l=new RoomPopulationLedger();
             l.id=dec(a[0]); l.roomId=Integer.parseInt(a[1]); l.roomName=dec(a[2]); l.faction=Faction.valueOf(a[3]); l.sourceKind=dec(a[4]); l.sourceLabel=dec(a[5]); l.capacity=Integer.parseInt(a[6]); l.available=Integer.parseInt(a[7]); l.assigned=Integer.parseInt(a[8]); l.dead=Integer.parseInt(a[9]);
             if(a.length>=15){ l.facilityId=dec(a[10]); l.facilityPurpose=dec(a[11]); l.facilityEstablishedBy=dec(a[12]); l.facilityProductFocus=dec(a[13]); l.facilityHistoricNote=dec(a[14]); }
+            if(a.length>=16) l.careProviders=Math.max(0,Integer.parseInt(a[15]));
+            if(a.length>=17) l.crecheFoodStorageUnits=Math.max(0,Integer.parseInt(a[16]));
+            if(a.length>=18) l.crecheWaterStorageUnits=Math.max(0,Integer.parseInt(a[17]));
+            if(a.length>=19) l.crecheBedUnits=Math.max(0,Integer.parseInt(a[18]));
+            if(a.length>=20) l.crecheTeachingStations=Math.max(0,Integer.parseInt(a[19]));
             return l;
         }catch(Exception e){ return null; }
     }
@@ -390,6 +405,14 @@ class PersonnelPopulationApi {
             l.faction = normalizeFaction(f, w.zoneType);
             l.sourceKind = sourceKindFor(low, w.zoneType, l.faction);
             l.sourceLabel = labelFor(l.sourceKind, l.faction, name, w.zoneType);
+            if(l.sourceKind.contains("creche") || l.sourceKind.contains("daycare")) {
+                if(low.contains("care provider") || low.contains("child minder")) l.careProviders = 1;
+                if(low.contains("food storage") || low.contains("ration cabinet")) l.crecheFoodStorageUnits = 1;
+                if(low.contains("water storage") || low.contains("water tank")) l.crecheWaterStorageUnits = 1;
+                if(low.contains("stacked child beds")) l.crecheBedUnits = 3;
+                else if(low.contains("child bed") || low.contains("crib") || low.contains("child cot")) l.crecheBedUnits = 1;
+                if(low.contains("teaching station") || low.contains("lesson station")) l.crecheTeachingStations = 1;
+            }
             l.capacity = cap;
             int reserve = Math.max(1, cap/3);
             l.available = Math.max(0, cap - reserve);
@@ -479,7 +502,7 @@ class PersonnelPopulationApi {
     static void recordDeath(World w, NpcEntity dead){
         if(w == null || dead == null || dead.provenance == null) return;
         RoomPopulationLedger l = ledgerById(w, dead.provenance.originSiteId);
-        if(l != null) l.dead++;
+        if(l != null){ l.assigned = Math.max(0, l.assigned - 1); l.dead++; }
     }
 
     static int pruneReplacementQueueToCapacity(World w){
@@ -523,7 +546,7 @@ class PersonnelPopulationApi {
     static int countLivingFactionActors(World w, Faction faction){
         if(w == null || w.npcs == null || faction == null) return 0;
         int n = 0;
-        for(NpcEntity npc: w.npcs) if(npc != null && npc.faction == faction && !npc.isUntargetableAnchor()) n++;
+        for(NpcEntity npc: w.npcs) if(npc != null && npc.hp > 0 && npc.faction == faction && !npc.isUntargetableAnchor()) n++;
         return n;
     }
 
@@ -586,6 +609,10 @@ class PersonnelPopulationApi {
     }
     static String sourceKindFor(String low, ZoneType z, Faction f){
         if(low.contains("rail") || z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return "rail intake roster";
+        if(low.contains("refugee") || low.contains("relief") || low.contains("displaced") || low.contains("evacuation")) return "displaced population roster";
+        if(low.contains("prison") || low.contains("holding") || low.contains("detention") || low.contains("cell block")) return "custody population ledger";
+        if(low.contains("pilgrim") || low.contains("temple") || low.contains("shrine hostel")) return "pilgrim lodging roster";
+        if(low.contains("contract labor") || low.contains("factory dorm") || low.contains("industrial dorm") || low.contains("worker dorm")) return "contract labor roster";
         if(low.contains("creche") || low.contains("daycare")) return "creche population ledger";
         if(low.contains("barracks") || low.contains("billet") || low.contains("drill") || f == Faction.IMPERIAL_GUARD || f == Faction.CIVIC_WARDENS) return "barracks duty roster";
         if(low.contains("household") || f == Faction.NOBLE || (f != null && f.name().startsWith("NOBLE"))) return "household servant ledger";
@@ -597,7 +624,7 @@ class PersonnelPopulationApi {
     }
     static String labelFor(String kind, Faction f, String roomName, ZoneType z){ return (f==null?"Unaligned":f.label) + " " + kind + " from " + roomName + " in " + (z==null?"unknown zone":z.label); }
     static Faction normalizeFaction(Faction f, ZoneType z){ if(f != null && f != Faction.NONE) return f; if(z == ZoneType.IMPERIAL_NEWS_NETWORK) return Faction.INN; if(z == ZoneType.HAB_STACK || z == ZoneType.NEUTRAL_CIVILIAN_FLOOR) return Faction.HIVER; if(z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return Faction.CIVIC_LEDGER_OFFICE; return Faction.NONE; }
-    static String originModeFor(String kind){ if(kind == null) return "arcology-born"; if(kind.contains("rail")) return "rail-arrival"; if(kind.contains("creche")) return "creche-raised"; if(kind.contains("barracks")) return "barracks-raised"; if(kind.contains("household")) return "household-born"; if(kind.contains("gang")) return "gang-raised"; return "arcology-born"; }
+    static String originModeFor(String kind){ if(kind == null) return "arcology-born"; if(kind.contains("rail")) return "rail-arrival"; if(kind.contains("displaced")) return "disaster-displaced"; if(kind.contains("custody")) return "custodial-population"; if(kind.contains("pilgrim")) return "pilgrim-arrival"; if(kind.contains("contract labor")) return "contract-labor-arrival"; if(kind.contains("creche")) return "creche-raised"; if(kind.contains("barracks")) return "barracks-raised"; if(kind.contains("household")) return "household-born"; if(kind.contains("gang")) return "gang-raised"; return "arcology-born"; }
     static String upbringingFromLedger(RoomPopulationLedger l, ZoneType z){ return "managed by " + l.sourceLabel + "; facility " + l.facilitySummary() + "; capacity " + l.capacity + ", available reserve " + l.available + ", assigned " + l.assigned + ", dead " + l.dead + "."; }
 }
 
@@ -642,7 +669,8 @@ class PersonnelProvenanceApi {
         req.source = replacementSource(dead.faction, world.zoneType, r);
         PersonnelPopulationApi.recordDeath(world, dead);
         PersonnelPopulationApi.fillReplacementRequest(world, req, r);
-        req.dueTurn = turn + replacementDelay(dead.faction, world.zoneType, r);
+        req.requestedTurn = turn;
+        FactionReinforcementAuthority.configureInitialSource(world, req, turn, r);
         world.replacementQueue.add(req);
         DebugLog.audit("PERSONNEL_DEATH_SCHEDULE", "dead=" + dead.id + " name=" + dead.name + " faction=" + dead.faction.label + " source=" + req.source + " due=" + req.dueTurn + " reason=" + req.reason + " provenance=" + dead.originSummary());
         return req;
@@ -722,6 +750,7 @@ class NpcEntity {
     int factionRank = 8;
     int ageYears = 0;
     long birthWorldTurn = 0L;
+    long pregnancyDueWorldTurn = 0L;
     String ageBand = "adult";
     String nameLockedProfileKey = "";
     String factionRankTitle = "";
@@ -1213,7 +1242,7 @@ class NpcEntity {
 
     String saveLine(){
         ensureRankIdentity(new Random(numericId == 0 ? Objects.hash(name, faction) : numericId));
-        return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey);
+        return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey)+"|"+pregnancyDueWorldTurn;
     }
 
     static NpcEntity parseLine(String s, World w){
@@ -1250,6 +1279,7 @@ class NpcEntity {
             n.ageBand = dec(a[32]);
         }
         if (a.length >= 34) n.nameLockedProfileKey = dec(a[33]);
+        if (a.length >= 35) try { n.pregnancyDueWorldTurn = Math.max(0L, Long.parseLong(a[34])); } catch(Exception ignored) {}
         if (n.creatureKind == null || n.creatureKind.isBlank()) n.creatureKind = "humanoid";
         if (!n.isAnimalActor() && n.ageYears <= 0) AgeAndWorldTimeAuthority.initializeNpcAge(n, w == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : w.zoneType, new Random(n.numericId == 0 ? 1 : n.numericId));
         AgeAndWorldTimeAuthority.synchronizeNpc(n, 0L);

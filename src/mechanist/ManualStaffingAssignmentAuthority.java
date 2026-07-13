@@ -31,7 +31,9 @@ final class ManualStaffingAssignmentAuthority {
         String warning = validation.ideal ? "" : " WARNING: duty mismatch accepted for now.";
         return "STAFFING: " + worker.name + " assigned to " + station.name + " as "
                 + StaffingLaborBridgeAuthority.primaryRole(station).label + ". " + validation.summary + warning
-                + " Production/combat automation remains dormant.";
+                + (StaffingLaborBridgeAuthority.isMachineStation(station)
+                ? " Configure a staffed job and queue from the machine workbench."
+                : " Defense automation remains dormant.");
     }
 
     static String unassign(GamePanel g, BaseObject station) {
@@ -48,6 +50,24 @@ final class ManualStaffingAssignmentAuthority {
             if (obj == null || obj == keep) continue;
             if (workerName.equals(obj.assignedWorker)) obj.assignedWorker = "";
         }
+    }
+
+    static RecruitWorker assignedWorker(GamePanel g, BaseObject station) {
+        if (g == null || station == null || station.assignedWorker == null || station.assignedWorker.isBlank()) return null;
+        for (RecruitWorker worker : g.factionRecruits) {
+            if (worker != null && station.assignedWorker.equals(worker.name)) return worker;
+        }
+        return null;
+    }
+
+    static String activeAssignmentProblem(GamePanel g, BaseObject station) {
+        if (station == null) return "no staffed machine selected";
+        if (station.assignedWorker == null || station.assignedWorker.isBlank()) return "no assigned worker";
+        RecruitWorker worker = assignedWorker(g, station);
+        if (worker == null) return "assigned worker " + station.assignedWorker + " is no longer recruited";
+        StaffingRoleSkillValidationAuthority.ValidationResult validation =
+                StaffingRoleSkillValidationAuthority.validate(g, station, worker);
+        return validation.allowed ? null : "assigned worker " + worker.name + " is not valid: " + validation.summary;
     }
 
     static String selectionLine(GamePanel g, BaseObject station, RecruitWorker worker) {

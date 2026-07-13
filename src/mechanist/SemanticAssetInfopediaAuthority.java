@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * the 8-character semantic asset ID from a displayed row.
  */
 public final class SemanticAssetInfopediaAuthority {
-    public static final String VERSION = "0.9.10ju-stage2-semantic-asset-infopedia";
+    public static final String VERSION = "0.9.10kl-stage4-semantic-asset-infopedia";
 
     private static final Pattern ID_PREFIX = Pattern.compile("^[A-Z0-9]{3,4}-[A-Z0-9]{3,4}\\b");
     private static final String MECHANIC_PREFIX = "MECHANIC - ";
@@ -221,6 +221,7 @@ public final class SemanticAssetInfopediaAuthority {
                                 "An equipped fabrication or repair tool contributes its quality as a cap. If neither hand holds a qualifying tool, integrated machine tooling leaves the hand-tool hook open; unrelated carried items never silently cap production.",
                                 "Named material selection follows immediate Craft execution: matching carried units first, then matching base-storage units. Abstract supplies and machine parts do not invent a material-quality cap.",
                                 "Machine integrity zero blocks production; critical and worn machines add visible defect risk. Owned machines can spend one machine part and one turn on bounded field repair toward serviceable integrity.",
+                                "A forge tutor, artificer, mechanic, machinist, engineer, or repair master can offer Train during conversation. Forge-Tutored Repair then lets one machine part restore a broken owned machine directly to serviceable integrity.",
                                 "Manual operator skill maps the recipe's named skill onto an existing core stat. Novice, practiced, skilled, and expert operators support Common, Serviceable, Fine, and Masterwork output respectively while also adjusting defect risk.",
                                 "Assigned recruit skill has a readable potential worker-quality tier. Manual Craft remains player-operated, while staffed queue runs use worker readiness when a staffed assignment executes.",
                                 "A machine may store one installed recipe doctrine. Teach Machine requires the player to know the selected doctrine; afterward the machine can supply that recipe knowledge independently and persists it with the base object.",
@@ -233,9 +234,17 @@ public final class SemanticAssetInfopediaAuthority {
                                 "Manual Craft uses the established fatigue readiness bands. Slightly tired and tired operators add visible defect pressure; the exhausted band blocks machinery operation until the player rests. Produced-item provenance records the pressure present during the run.",
                                 "Forecast and item inspection preserve the producing room and claimed facility separately. Unclaimed world workspaces remain explicitly unclaimed rather than inheriting the player's base identity.",
                                 "Forecast and item inspection preserve the exact producing station by name, role, and coordinates so same-quality machines remain distinguishable after transfer.",
+                                "When a workbench is opened through Operate, its forecast and Craft action use that operated machine for compatibility, condition, quality, fatigue, wear, provenance, and completion history. Selecting another recipe keeps that machine-bound workbench context.",
+                                "Operate and Craft on a built base machine open the same machine-bound workbench. Its recipe list shows only known recipes compatible with that machine; when none match, the workbench tells the player to operate another machine or learn a matching recipe.",
                                 "Item provenance records the immediate manual operator separately from skill. Staffed queued output records the staffed workforce mode when that queue run executes.",
-                                "After a successful manual Craft finishes, one completion record enters shared machine-operation history.",
-                                "A staffed generated-production assignment can execute one queued run when worker, knowledge, machine, room ownership, and inputs are ready. The run consumes concrete inputs, stores output in base storage, records provenance, decrements the queue, and writes shared operation history.",
+                                "After a successful manual Craft finishes, the event log summarizes final quality, main quality limiter, fatigue band, batch state, and defect risk, and the shared machine-operation history preserves that summary in the completion record. Use the crafting panel Status action or production_status for a base-wide live queue summary. A workbench or machine interaction Status action scopes queue counts, live operations, latest completion, and readiness to the machine being operated; its History action likewise filters completed records. Use crafting panel History or production_history for recent base-wide records.",
+                                "A staffed generated-production assignment advances in the background as ordinary game turns pass, including while the player leaves the workbench. Each completed run consumes concrete inputs, routes output through the selected destination, records provenance, decrements the queue, and writes shared operation history.",
+                                "Staff Jobs opens the operated machine's generated-production setup. Category, readiness, and page controls keep compatible known jobs reachable; Assign validates access, doctrine, machine quality, and apparatus; Worker selects the next valid recruit; Queue minus and plus maintain a bounded 0 to 20 run queue. Changing jobs clears the prior queue and current-run progress so runs cannot silently change output.",
+                                "Materials cycles shortage handling between waiting with the worker assigned, pausing and releasing that worker for another station, or cancelling the remaining queue. A blocked run does not consume inputs, add output, wear the machine, decrement the queue, or write completion history.",
+                                "Output routes completed goods to unlimited Base Storage, the nearest claimed-room faction container with available capacity, or an interactable floor pile near the machine.",
+                                "No Room cycles destination failure handling between waiting, releasing the worker, cancelling the queue, or dumping output into the nearby floor pile. Clear cancels remaining runs and current progress. Queue policies, progress, and the last blocker persist with the machine.",
+                                "Production opens the base-wide production board. It prioritizes blocked and running machines, shows each selected machine's job, worker, queue, progress, policies, and last blocker, and provides the same worker, queue, policy, clear, Status, and History controls without reopening every station. Workbench opens that machine's staffed-job setup.",
+                                "Staffed execution revalidates the specifically assigned recruit. A missing or no-longer-recruited assigned worker pauses the queue, and another available recruit never silently substitutes.",
                                 "Item provenance records whether the run was immediate manual Craft or staffed queued production, so inspection can distinguish manual or staffed workforce ownership after transfer.",
                                 "Generated staffed output preserves the variant law status used by production access rules: lawful, restricted, black-market, contraband, profaned, or hostile-social context.",
                                 "Generated staffed output also preserves the generated recipe source and note that produced the variant. This is recipe/source provenance, not blueprint ownership.",
@@ -250,6 +259,8 @@ public final class SemanticAssetInfopediaAuthority {
                         List.of(
                                 "Skill Tree spending uses XP to unlock durable character capabilities; Knowledge Tree unlocks recipes, doctrines, recognition, and explanations.",
                                 "Unlocked skill nodes persist separately from unlocked knowledge, and spending XP on a skill does not grant recipe doctrine.",
+                                "The Character Skills tab lists readable branches and nodes, shows XP cost, prerequisite, access, stat, specialization, capability, and visible effect, and enables Unlock only through the same validated spending path used by skill commands.",
+                                "Qualifying specialist conversations offer Train and open the matching trainer-gated node with temporary in-person access. Leaving the training panel removes that trainer access without removing learned skills.",
                                 "Skill nodes can improve field repair, batch appraisal, trace reading, machine operation, leadership handoff, and similar capabilities when their requirements are met.",
                                 "Nodes show XP cost, prerequisites, visible effect, and any faction, trainer, equipment, facility, knowledge, stat, or specialization requirement.",
                                 "Some specializations are mutually exclusive; choosing one blocks its sibling specialization.",
@@ -266,14 +277,30 @@ public final class SemanticAssetInfopediaAuthority {
                                 "Construction previews can show heat and suspicion projections from visible commerce, defenses, production footprint, laboratories or clinics, legality gates, and faction-visible assets.",
                                 "Confirmed placement creates a staged construction site instead of a finished facility. The site reserves the tile with a construction placeholder and remembers the final built symbol.",
                                 "Staged sites show material progress, labor progress, missing materials, final symbol, map and inspection text, quality, faction, and saved progress.",
-                                "Work on a staged site can stage available missing materials and then add labor when materials are complete.",
-                                "Dismantle removes an unfinished staged site, restores the original tile, recovers inserted materials, and loses labor progress.",
+                                "Work on a staged site can stage available missing materials and then add labor when materials are complete; Work requires the selected staged site to still exist and be adjacent and spends a turn only when the site actually changes.",
+                                "Dismantle removes an adjacent unfinished staged site, reports the site location, restores the original tile, recovers inserted materials, and loses labor progress.",
+                                "The construction dismantle command removes an adjacent unfinished staged site through the same recovery rules as the Dismantle interaction and spends one turn when a site is removed.",
+                                "When several unfinished staged sites are adjacent, the construction dismantle command prefers the least-complete site first.",
+                                "Construction progress and construction status show the adjacent work target, its next action, and adjacent dismantle target before either command is run.",
+                                "If no staged site is adjacent, construction progress and construction status say no work target is in reach and point to the nearest staged site.",
+                                "When no staged site is adjacent, construction progress and construction status say no dismantle target is in reach and point to the nearest staged site.",
+                                "If construction dismantle finds staged sites but none are adjacent, it asks the player to stand adjacent and points to the nearest staged site.",
+                                "The command help for construction status, construction progress, and construction dismantle names the same dismantle target guidance.",
                                 "Finished staged sites restore the final built symbol, become normal base objects, and can then use their completed facility behavior.",
-                                "The construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, material-ready count, in-work-reach count, nearly complete count, and next action lines for waiting sites.",
+                                "The construction progress and construction status commands show the same staged-site packet.",
+                                "That packet reports active staged-site count, ready-for-labor count, material-blocked count, material-ready count, in-work-reach count, nearly complete count, and next action lines for waiting sites.",
+                                "When no staged construction sites are waiting, that packet says there is no next construction action, no work target, and no dismantle target.",
                                 "When several staged sites are waiting, construction progress lists nearly complete and labor-ready work before material-blocked sites so the next useful action is easier to find.",
+                                "If more staged sites are waiting than the progress packet lists, the overflow line names the next unlisted site, its location, progress, and next action.",
                                 "Material-blocked staged sites name which missing materials are currently available to stage and which are still missing from base storage.",
-                                "Construction progress marks sites already within work reach and tells the player to stand adjacent when a staged site is too far away to work.",
-                                "The construction work command uses the same priority as construction progress, so adjacent labor-ready or material-ready sites are chosen before less useful blocked work."
+                                "Construction progress marks sites already within work reach and shows distance and direction guidance when a staged site is too far away to work.",
+                                "The construction work command uses the same priority as construction progress, so adjacent labor-ready or material-ready sites are chosen before less useful blocked work.",
+                                "Construction work help names its 1 to 20 turn range, progress-priority target choice, and nearest-site guidance when no staged site is adjacent.",
+                                "Construction work accepts 1 to 20 turns at a time and reports when a requested turn count is adjusted into that range.",
+                                "Construction work spends the actual productive work turns it uses; material-only staging spends one turn, and held tools can reduce spent turns by adding more labor per turn.",
+                                "Construction work progress reports name material staging and labor separately, then repeat the staged site's location and next action.",
+                                "When construction work completes a staged site, the completion message names the finished structure and its map location.",
+                                "If construction work finds no adjacent staged site, it points to the nearest staged site before asking the player to stand adjacent."
                         ),
                         List.of("production-forecast", "movement-planning", "menu-uniformity")),
                 new MechanicEntry("expansion-heat", "Expansion Heat", "Economy",
@@ -284,6 +311,31 @@ public final class SemanticAssetInfopediaAuthority {
                                 "Relief guidance identifies lower-profile development and heat reduction paths without promising that attention disappears immediately."
                         ),
                         List.of("contract-evidence", "construction-blueprints")),
+                new MechanicEntry("population-markets", "Population and Market Pressure", "Economy",
+                        "Local population ledgers create visible demand for essential goods and connect resident capacity, workforce, losses, facilities, stock, and prices.",
+                        List.of(
+                                "NPC traders allocate basic food and water when the local population is large enough to support essential trade; medicine is also allocated when population or casualty pressure warrants it.",
+                                "Population identity matters as well as size: duty and custody rosters raise ammunition and medical demand, industrial and transport labor raises tool and work-food demand, noble households raise luxury demand, and arrivals or displaced populations raise immediate food, water, and medical demand.",
+                                "Population identity can allocate matching fallback goods such as tool bundles, ammunition, or noble delicacies when the relevant local demand exists.",
+                                "Food, water, medicine, tools and components, and security goods compare local demand with the vendor's visible stock. The resulting surplus, balanced, tight, strained, or severe-shortage band changes both purchase prices and player sale value within bounded limits.",
+                                "The trade panel names the local population target, assigned workforce, recorded losses, facility-linked population records, strongest pressure, and the selected offer's exact adjustment.",
+                                "Population-allocated food and water draw from a finite persisted reserve. Production ledgers and local farms, hydroponics, kitchens, food stores, recyclers, and purifiers are preferred; rail shipments or a small emergency allotment are used only when local supply is unavailable.",
+                                "Every essential shelf offer names its stock class, source facility or route, remaining reserve, and refill turn. A successful purchase consumes one unit, while failed purchases and reopened vendor sessions cannot recreate depleted stock.",
+                                "Each inhabited floor trades with its sewer layer below. Universal waste runoff feeds sewer fertilizer and basic chemical processing, those finite goods move upward by freight lift, and sewer markets pay a premium for food, clean water, filters, and tools brought down from above.",
+                                "A local faction production site uses assigned workers from matching population rosters. An unstaffed site pauses production and exports; a staffed site produces bounded stock, shelf exports consume that stock, and depleted sites contribute no free replacement item.",
+                                "Trade supply context states whether a source site is staffed, unstaffed, or depleted. Site-produced shelf goods preserve their facility and production provenance.",
+                                "Faction casualties open durable replacement manifests with a semi-random availability turn and a source-specific arrival window. Dead workers leave their assigned roster slot before a replacement can consume reserve population.",
+                                "Reinforcement trains are free but slow and require a faction-linked rail intake. Barracks reserve musters are fastest, require barracks or duty infrastructure, and charge a modest equipment-processing fee. Paid local recruitment needs only an available population roster, uses a medium timer, and costs the most script per person.",
+                                "A faction representative reports the selected source, exact price, infrastructure prerequisite, availability turn, and whether reinforcements are inbound, ready, route-delayed, capacity-blocked, or expired. Change Source cycles supported methods and resets the manifest timer to the newly selected method.",
+                                "Receive Reinforcements admits up to four ready personnel through the selected linked roster or import intake, charges only for personnel who actually arrive, preserves arrival provenance, and spends a turn only when somebody arrives.",
+                                "Ready personnel wait when staffed housing or faction-room capacity is full, and a blocked manifest expires if the faction cannot receive it before the stated turn."
+                                ,"A planned crèche counts as operating only with at least 24 floor tiles, one care provider, food storage, water storage, a child bed unit, and a teaching station. Missing requirements prevent happiness, newborn intake, and cohort recruitment benefits."
+                                ,"Crèche happiness scales gradually to a maximum +25 faction boost at ten operating crèches. One care provider supports up to twelve children, while each dense child bed unit holds four; both care and bed limits apply."
+                                ,"Operating crèches accept a small yearly abstract abandoned-or-ward cohort and also accept newborns from faction members whose recorded pregnancy reaches its due world turn. Parent births retain the parent identity; when care or beds are full, the due birth waits."
+                                ,"Every immature cohort member adds extra growth-food, clean-water, and pediatric-care market pressure. That child-specific pressure ends when the cohort reaches young adulthood."
+                                ,"Children remain aggregate and cannot be recruited. After sixteen full world years, Muster Cohort can materialize up to six mature young adults with crèche upbringing and birth-source provenance."
+                        ),
+                        List.of("faction-personnel", "transfer-workflows", "production-forecast")),
                 new MechanicEntry("interaction-approach", "Interaction Approach Planning", "Movement",
                         "Approach planning finds the shortest reachable tile adjacent to a visible interaction target and opens the existing movement ghost for confirmation.",
                         List.of(
@@ -292,12 +344,14 @@ public final class SemanticAssetInfopediaAuthority {
                         ),
                         List.of("movement-planning", "look-examine", "context-prompts")),
                 new MechanicEntry("contract-evidence", "Contract Objectives and Evidence", "Quests",
-                        "Contract summaries explain the objective, route certainty, required proof or delivery item, current evidence location, and promised reward without exposing contract IDs.",
+                        "Contract summaries explain the objective, route certainty, required proof or delivery item, production standard, current evidence location, and promised reward without exposing contract IDs.",
                         List.of(
                                 "Evidence may be carried, stored at base, or missing; the Map objective pane reports the known state directly.",
                                 "Route wording distinguishes a known destination from uncertain guidance instead of inventing precision.",
                                 "Contract summaries include skill and knowledge proof readiness for relevant jobs, such as Certified Market Appraisal, Investigation Trace Reading, Streetwise Appraisal, fabrication inspection, Contract Negotiation, or Scrap-Forging Doctrine.",
-                                "Skill proof is explanatory only: it does not complete the contract, pay rewards, bypass hand-in rules, or reveal hidden target identity before the contract allows it."
+                                "A faction representative can issue one production order through Take Work when that faction has no active contract. Accepting the order records it and spends one turn.",
+                                "Production orders require the named item at the listed minimum quality, a recorded production origin, and a passed batch inspection; low-quality, untraced, and defect-flagged substitutes remain carried and do not complete the order.",
+                                "At a matching faction representative, Turn In requires the carried proof item and rechecks every listed skill, knowledge, quality, production, and inspection requirement. A valid hand-in consumes the qualifying unit, completes the contract, pays script, awards faction standing and listed skill XP, and spends one turn; a blocked hand-in changes nothing."
                         ),
                         List.of("expansion-heat", "transfer-workflows", "movement-planning")),
                 new MechanicEntry("transfer-workflows", "Transfer Workflows", "Inventory",
@@ -312,7 +366,7 @@ public final class SemanticAssetInfopediaAuthority {
                         "Faction personnel references separate player command membership from the NPC worker roster and explain the supported station-assignment path without inventing member inventory control.",
                         List.of(
                                 "Player command roles and NPC worker records remain separate tracks even when they share a comparable command tier scale.",
-                                "Recruited workers may be assigned to supported machine or defense stations through station management with role and skill validation.",
+                                "Recruited workers may be assigned to supported machine or defense stations through station management with role and skill validation. Machine workbench Staff Jobs can cycle to the next valid recruit while configuring staffed production.",
                                 "Direct duty editing, member inventory transfer, and member equipment commands are unavailable in the compact recruit roster because it does not expose rank, location, or personal item ledgers."
                         ),
                         List.of("production-forecast", "skill-progression", "construction-blueprints", "transfer-workflows", "menu-uniformity"))

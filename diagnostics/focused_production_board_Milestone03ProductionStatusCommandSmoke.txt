@@ -1,0 +1,5 @@
+[05:54:20.108] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Emergency ration paste from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[05:54:20.108] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Ration wrapper roll from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[05:54:20.108] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Tin can sleeve from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[05:54:20.109] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Civic inspection chit from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE
+[05:54:20.109] WARN/PRODUCTION_INPUT_LEGACY_FALLBACK item=Food-safe sealant from=base-storage route=staffed queued production by Hest Var state=turn=44 pos=0,0 screen=MENU panel=NONE

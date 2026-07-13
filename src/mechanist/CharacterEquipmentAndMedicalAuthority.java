@@ -18,12 +18,13 @@ import java.util.Properties;
  * the character screen again.
  */
 final class CharacterEquipmentAndMedicalAuthority {
-    static final String VERSION = "character-equipment-medical-0.1";
+    static final String VERSION = "character-equipment-medical-0.2";
 
     enum CharacterTab {
         OVERVIEW("Overview"),
         EQUIPMENT("Equipment"),
-        MEDICAL("Medical");
+        MEDICAL("Medical"),
+        SKILLS("Skills");
 
         private final String label;
 

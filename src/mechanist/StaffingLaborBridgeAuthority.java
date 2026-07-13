@@ -57,14 +57,20 @@ final class StaffingLaborBridgeAuthority {
         if (obj == null) return "No station selected.";
         LaborRole role = primaryRole(obj);
         String worker = obj.assignedWorker == null || obj.assignedWorker.isBlank() ? "unassigned" : obj.assignedWorker;
-        String assignment = worker.equals("unassigned") || worker.equals("unmanned") ? "understaffed" : "staffed";
+        String staffingProblem = ManualStaffingAssignmentAuthority.activeAssignmentProblem(g, obj);
+        String assignment = worker.equals("unassigned") || worker.equals("unmanned")
+                ? "understaffed" : (staffingProblem == null ? "staffed" : "invalid");
         if (isMachineStation(obj)) {
             String recipe = obj.assignedRecipe == null || obj.assignedRecipe.isBlank() ? "none" : obj.assignedRecipe;
+            String recipeLabel = ControlledProductionJobAuthority.assignmentLabel(recipe);
             String readiness = "idle";
             if (!"none".equals(recipe)) {
                 if (ControlledProductionJobAuthority.isGeneratedAssignment(recipe)) {
                     FactionRecipeVariant v = ControlledProductionJobAuthority.findVariantByAssignmentKey(recipe);
-                    String problem = v == null ? "invalid generated assignment" : ControlledProductionJobAuthority.operationProblem(g, obj, v, false);
+                    String problem = v == null ? "invalid generated assignment"
+                            : (staffingProblem == null
+                            ? ControlledProductionJobAuthority.operationProblem(g, obj, v, false)
+                            : staffingProblem);
                     readiness = problem == null ? "ready" : "blocked: " + problem;
                 } else {
                     CraftingRecipe r = CraftingRecipe.byName(recipe);
@@ -73,8 +79,9 @@ final class StaffingLaborBridgeAuthority {
                 }
             }
             return obj.name + " staffing=" + assignment + " role=" + role.label + " worker=" + worker
-                    + " recipe=" + recipe + " machine=" + readiness
-                    + " queue=" + Math.max(0, obj.productionQueueRemaining) + "/" + Math.max(1, obj.productionQueueTarget);
+                    + " recipe=" + recipeLabel + " machine=" + readiness
+                    + " queue=" + Math.max(0, obj.productionQueueRemaining) + "/" + Math.max(1, obj.productionQueueTarget)
+                    + " progress=" + Math.max(0, obj.productionProgressTurns) + " turn(s)";
         }
         if (isDefenseStation(obj)) {
             PassiveDefenseProfile p = PassiveDefenseEffectsAuthority.profile(obj.symbol);

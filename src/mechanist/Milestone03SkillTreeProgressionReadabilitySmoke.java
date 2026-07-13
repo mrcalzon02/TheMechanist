@@ -31,6 +31,8 @@ final class Milestone03SkillTreeProgressionReadabilitySmoke {
                 "implementation boundary");
         requireContains(SkillTreeProgressionAuthority.infopediaLines(), "Knowledge Tree", "knowledge separation");
         requireContains(SkillTreeProgressionAuthority.infopediaLines(), "faction standing", "world access gates");
+        requireContains(SkillTreeProgressionAuthority.infopediaLines(), "specialist conversations can offer Train",
+                "in-person trainer route");
         requireContains(SkillTreeProgressionAuthority.infopediaLines(), "stat threshold", "stat gates");
         requireContains(SkillTreeProgressionAuthority.infopediaLines(), "mutually exclusive", "specialization exclusivity");
         requireContains(SkillTreeProgressionAuthority.infopediaLines(), "capability keys", "capability hooks");

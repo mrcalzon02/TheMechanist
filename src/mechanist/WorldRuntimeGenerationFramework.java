@@ -112,6 +112,10 @@ class World {
     ArrayList<NpcEntity> npcs = new ArrayList<>();
     ArrayList<PersonnelReplacementRequest> replacementQueue = new ArrayList<>();
     ArrayList<RoomPopulationLedger> roomPopulationLedgers = new ArrayList<>();
+    ArrayList<CrecheCohortRecord> crecheCohorts = new ArrayList<>();
+    ArrayList<EssentialSupplyReserveRecord> essentialSupplyReserves = new ArrayList<>();
+    ArrayList<VerticalTradeReserveRecord> verticalTradeReserves = new ArrayList<>();
+    EnumMap<Faction,Integer> factionHappinessBoost = new EnumMap<>(Faction.class);
     ArrayList<MapObjectState> mapObjects = new ArrayList<>();
     ArrayList<ZoneLightSourceRecord> lightSources = new ArrayList<>();
     ArrayList<ZoneNoiseSourceRecord> noiseSources = new ArrayList<>();

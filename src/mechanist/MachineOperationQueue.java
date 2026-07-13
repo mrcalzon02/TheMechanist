@@ -260,6 +260,14 @@ final class MachineOperationQueue {
         return Collections.unmodifiableList(out);
     }
 
+    List<OperationRecord> pendingOperations() {
+        return Collections.unmodifiableList(new ArrayList<>(pending));
+    }
+
+    List<OperationRecord> activeOperations() {
+        return Collections.unmodifiableList(new ArrayList<>(active));
+    }
+
     List<OperationRecord> recentHistory() {
         return Collections.unmodifiableList(history);
     }

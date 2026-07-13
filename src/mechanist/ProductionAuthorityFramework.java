@@ -558,6 +558,14 @@ class CraftingRecipe {
     }
     CraftingRecipe input(String item, int count) { itemInputs.put(item, count); return this; }
     static CraftingRecipe noKnownRecipes() { CraftingRecipe r = new CraftingRecipe("No known craft recipes", "Vended scrap", Faction.NONE, null, ' ', 0,0,0,0,0,0,0,"Knowledge", "Unlock production knowledge to reveal real recipes here."); r.disabled = true; return r; }
+    static CraftingRecipe noCompatibleRecipes(BaseObject machine) {
+        String label = machine == null || machine.name == null || machine.name.isBlank() ? "this machine" : machine.name;
+        CraftingRecipe r = new CraftingRecipe("No compatible recipes", "Vended scrap", Faction.NONE, null,
+                machine == null ? ' ' : machine.symbol, 0,0,0,0,0,0,0,"Knowledge",
+                "No known recipes are compatible with " + label + ". Operate another machine or learn a matching recipe.");
+        r.disabled = true;
+        return r;
+    }
     boolean visibleTo(GamePanel g) { return disabled || g == null || g.hasProductionKnowledge(this, requiredMachine(g)); }
     BaseObject requiredMachine(GamePanel g) { return g.requiredMachineFor(this); }
     String machineName() { if (machineSymbol == ' ') return "Scrap Workbench"; if (machineSymbol == 'w') return "Scrap Workbench"; if (machineSymbol == 'e') return "EMM Atmospheric Condenser"; if (machineSymbol == 'f') return "EMM Micro Forge"; if (machineSymbol == 'l') return "EMM Micro Lab"; if (machineSymbol == 'x') return "Security Cogitator Node"; return "machine '" + machineSymbol + "'"; }
@@ -593,7 +601,7 @@ class CraftingRecipe {
         for (Map.Entry<String,Integer> e : itemInputs.entrySet()) for (int i=0;i<e.getValue();i++) g.consumeInventoryNamed(e.getKey());
     }
     String shortStatus(GamePanel g) {
-        if (disabled) return "no unlocked recipes";
+        if (disabled) return description;
         String problem = blockingProblem(g);
         BaseObject machine = requiredMachine(g);
         String cap = machine == null ? "no machine" : "cap " + g.cappedProductionQuality(machine, this);
@@ -2072,8 +2080,11 @@ class ControlledProductionJobAuthority {
     static String readinessFilterName(int i){ return READINESS_FILTERS[Math.max(0, Math.min(READINESS_FILTERS.length-1, i))]; }
 
     static ArrayList<FactionRecipeVariant> visibleJobs(GamePanel g, int max) {
+        return visibleJobs(g, g == null ? null : g.selectedWorkerMachine(), max);
+    }
+
+    static ArrayList<FactionRecipeVariant> visibleJobs(GamePanel g, BaseObject selected, int max) {
         ArrayList<FactionRecipeVariant> out = new ArrayList<>();
-        BaseObject selected = g == null ? null : g.selectedWorkerMachine();
         for (FactionRecipeVariant v : FactionRecipeVariantApi.generatedFactionVariants()) {
             if (v == null || v.base == null) continue;
             if (!passesBasicFilter(g, selected, v)) continue;
@@ -2155,6 +2166,12 @@ class ControlledProductionJobAuthority {
         if (!isGeneratedAssignment(key)) return null;
         for (FactionRecipeVariant v : FactionRecipeVariantApi.generatedFactionVariants()) if (assignmentKey(v).equals(key)) return v;
         return null;
+    }
+    static String assignmentLabel(String key) {
+        if (key == null || key.isBlank()) return "none";
+        if (!isGeneratedAssignment(key)) return key;
+        FactionRecipeVariant variant = findVariantByAssignmentKey(key);
+        return variant == null ? "invalid generated job" : variant.outputName;
     }
 
     static String shortStatus(GamePanel g, BaseObject machine, FactionRecipeVariant v) {

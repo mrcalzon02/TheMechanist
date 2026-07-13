@@ -33,9 +33,18 @@ final class ContractObjectiveReadabilityAuthority {
             lines.add("Route: " + contract.displayLocation() + "; "
                     + (contract.spawned ? "target or objective confirmed" : "contract route recorded; exact local target not confirmed") + ".");
             lines.add("Required proof or delivery: " + item + " / "
-                    + (carried ? "carried and ready for turn-in" : stored ? "held in base storage; retrieve before turn-in" : "not currently held") + ".");
+                    + (carried
+                            ? (contract.requiresProductionProof()
+                                    ? "carried; quality, production record, and inspection are checked at turn-in"
+                                    : "carried and ready for turn-in")
+                            : stored ? "held in base storage; retrieve before turn-in" : "not currently held") + ".");
+            if (contract.requiresProductionProof()) {
+                lines.add("Production standard: " + contract.minimumQualityName()
+                        + " quality or better, recorded production origin, and passed batch inspection.");
+            }
             lines.addAll(skillProofLines(contract, unlockedSkillNodes, unlockedKnowledges));
-            lines.add("Reward: " + contract.payout + " script and faction standing +" + contract.repReward + ".");
+            lines.add("Reward: " + contract.payout + " script and faction standing +" + contract.repReward
+                    + (contract.skillXpReward > 0 ? " and skill XP +" + contract.skillXpReward : "") + ".");
             shown++;
         }
         if (active > shown) lines.add((active - shown) + " additional active contract(s) not shown in this compact view.");
@@ -62,8 +71,23 @@ final class ContractObjectiveReadabilityAuthority {
             boolean known = containsKnowledge(knowledges, knowledge);
             lines.add("Knowledge proof: " + knowledge + " / " + (known ? "known" : "not known") + ".");
         }
-        lines.add("Contract proof boundary: these lines explain readiness; contract completion and reward rules remain owned by the contract turn-in flow.");
+        lines.add("Turn-in rule: carry the required proof to a matching faction representative; Turn In rechecks every listed skill and knowledge requirement before completion and reward.");
         return lines;
+    }
+
+    static String proofProblem(FactionContract contract, Set<String> unlockedSkillNodes,
+                               Set<String> unlockedKnowledges) {
+        if (contract == null) return "no contract proof is available";
+        for (String skill : requiredCapabilityKeys(contract)) {
+            if (!SkillTreeProgressionAuthority.hasCapability(unlockedSkillNodes, skill)) {
+                return "required skill not trained: " + capabilityLabel(skill);
+            }
+        }
+        Set<String> knowledges = unlockedKnowledges == null ? Set.of() : unlockedKnowledges;
+        for (String knowledge : requiredKnowledgeNames(contract)) {
+            if (!containsKnowledge(knowledges, knowledge)) return "required knowledge not known: " + knowledge;
+        }
+        return "";
     }
 
     static List<String> auditLines(List<FactionContract> contracts, Set<String> unlockedSkillNodes,
@@ -72,7 +96,7 @@ final class ContractObjectiveReadabilityAuthority {
         int active = 0;
         if (contracts != null) for (FactionContract contract : contracts) if (contract != null && !contract.completed) active++;
         lines.add("Contract proof audit: activeContracts=" + active + ", shownLimit=" + Math.max(1, limit)
-                + ", owner=ContractObjectiveReadabilityAuthority, completionMutation=false, rewardMutation=false, rawIdsHidden=true.");
+                + ", owner=ContractObjectiveReadabilityAuthority, turnInOwner=ContractTurnInAuthority, productionOrderOwner=ProductionContractAuthority, completionMutation=false, rewardMutation=false, rawIdsHidden=true.");
         int shown = 0;
         if (contracts != null) {
             for (FactionContract contract : contracts) {
@@ -98,6 +122,8 @@ final class ContractObjectiveReadabilityAuthority {
                 lines.add("Contract proof audit: " + contract.displayFactionName() + " / " + contract.displayType()
                         + " skillProof=" + joinStates(skillStates) + ", knowledgeProof=" + joinStates(knowledgeStates)
                         + ", evidenceLocation=" + (contract.spawned ? "route confirmed" : "route unconfirmed")
+                        + (contract.requiresProductionProof() ? ", minimumQuality=" + contract.minimumQualityName()
+                                + ", productionRecord=true, passedInspection=true, skillXpReward=" + contract.skillXpReward : "")
                         + ", boundary=readiness only.");
                 shown++;
             }
@@ -110,10 +136,12 @@ final class ContractObjectiveReadabilityAuthority {
     private static String objectiveText(FactionContract contract) {
         if ("BOUNTY".equals(contract.type)) return "find " + safe(contract.targetName, "the marked target") + " and recover " + contract.publicRequiredItem();
         if ("LOCKBOX".equals(contract.type)) return "acquire " + contract.publicRequiredItem() + " from the named vault route";
+        if (contract.requiresProductionProof()) return "produce one " + contract.minimumQualityName() + " "
+                + contract.publicRequiredItem() + " or better to faction standard";
         return "retrieve " + safe(contract.targetName, contract.publicRequiredItem()) + " without compromising it";
     }
 
-    private static LinkedHashSet<String> requiredCapabilityKeys(FactionContract contract) {
+    static LinkedHashSet<String> requiredCapabilityKeys(FactionContract contract) {
         LinkedHashSet<String> keys = new LinkedHashSet<>();
         String text = contractText(contract);
         if ("LOCKBOX".equals(contract.type) || containsAny(text, "certificate", "permit", "commerce", "bank", "noble")) {
@@ -131,7 +159,7 @@ final class ContractObjectiveReadabilityAuthority {
         return keys;
     }
 
-    private static LinkedHashSet<String> requiredKnowledgeNames(FactionContract contract) {
+    static LinkedHashSet<String> requiredKnowledgeNames(FactionContract contract) {
         LinkedHashSet<String> names = new LinkedHashSet<>();
         String text = contractText(contract);
         if (containsAny(text, "contract", "bank", "certificate", "permit", "commerce", "noble")) {

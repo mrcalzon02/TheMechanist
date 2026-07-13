@@ -7,6 +7,7 @@ final class Milestone03ProgressiveConstructionDismantleSmoke {
     public static void main(String[] args) {
         List<String> audit = ProgressiveConstructionAuthority.definitionAuditLines();
         requireContains(audit, "unfinished staged sites can be dismantled", "dismantle audit");
+        requireContains(audit, "dismantle summaries identify the site location", "dismantle location audit");
         requireContains(audit, "inserted materials are recovered", "material recovery audit");
 
         GamePanel game = new GamePanel();
@@ -35,6 +36,7 @@ final class Milestone03ProgressiveConstructionDismantleSmoke {
         require(game.world == null || !game.world.inBounds(site.x, site.y) || game.world.tiles[site.x][site.y] == '.',
                 "placeholder tile should be cleared when it belongs to the staged site");
         requireContains(result.summary(), "Dismantled Under construction: Licensed Shop Counter", "dismantle summary");
+        requireContains(result.summary(), "at 12,18", "dismantle location summary");
         requireContains(result.summary(), "Recovered 2 construction supplies, 1 machine part(s), and 1 named component(s)", "recovery summary");
         requireContains(result.summary(), "Labor progress was not recoverable", "labor loss summary");
 

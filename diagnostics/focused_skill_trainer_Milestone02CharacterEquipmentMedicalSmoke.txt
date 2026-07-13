@@ -1,0 +1,1 @@
+Milestone02CharacterEquipmentMedicalSmoke PASS character-equipment-medical-0.2

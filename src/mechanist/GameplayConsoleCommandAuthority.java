@@ -9,7 +9,7 @@ import java.util.Map;
 
 /** Strict registry and implementation bridge for gameplay/debug/admin console commands. */
 final class GameplayConsoleCommandAuthority {
-    static final String VERSION = "gameplay-console-command-authority-0.9.10jl";
+    static final String VERSION = "gameplay-console-command-authority-0.9.10jt";
     private static final ArrayDeque<String> HISTORY = new ArrayDeque<>();
     private static final int HISTORY_MAX = 40;
     private static final Map<String, CommandSpec> SPECS = new LinkedHashMap<>();
@@ -30,8 +30,12 @@ final class GameplayConsoleCommandAuthority {
         add("knowledge_list", 3, "knowledge_list [filter]", "Lists known doctrines or matching doctrine names.");
         add("skill_status", 1, "skill_status", "Reports XP, unlocked skill nodes, and available capability nodes.");
         add("skill_unlock", 1, "skill_unlock <node id>", "Spends XP to unlock a skill capability node when prerequisites are met.");
-        add("construction_status", 1, "construction_status", "Reports active staged construction sites and their next required work.");
-        add("construction_work", 1, "construction_work [turns]", "Stages available materials and contributes labor to an adjacent unfinished site.");
+        add("construction_status", 1, "construction_status", "Reports active staged construction sites, work target, next required work, and dismantle target guidance.");
+        add("construction_progress", 1, "construction_progress", "Reports the same staged construction progress, work target, and dismantle target packet as construction_status.");
+        add("construction_work", 1, "construction_work [turns 1-20]", "Stages available materials or adds labor to the adjacent staged site named by construction_progress, spends productive work turns, accepts 1-20 turns, and points to the nearest staged site when none are adjacent.");
+        add("construction_dismantle", 1, "construction_dismantle", "Dismantles the least-complete adjacent unfinished staged site, spends one turn when a site is removed, recovers staged materials, and points to the nearest staged site when none are adjacent.");
+        add("production_status", 1, "production_status", "Reports live production queue status, selected-machine readiness, and recent completion guidance.");
+        add("production_history", 1, "production_history [count 1-5]", "Lists recent completed production records from shared machine-operation history, including saved result readbacks when present.");
         add("give", 3, "give <item_id> <amount>", "Adds an item/resource to inventory.");
         add("heal", 3, "heal <amount>", "Restores body endurance by amount.");
         add("kill", 3, "kill", "Defeats the local character.");
@@ -129,8 +133,11 @@ final class GameplayConsoleCommandAuthority {
                 case "knowledge_list" -> knowledgeList(game, args);
                 case "skill_status" -> skillStatus(game);
                 case "skill_unlock" -> skillUnlock(game, args);
-                case "construction_status" -> constructionStatus(game);
+                case "construction_status", "construction_progress" -> constructionStatus(game, command, args);
                 case "construction_work" -> constructionWork(game, args);
+                case "construction_dismantle" -> constructionDismantle(game, args);
+                case "production_status" -> productionStatus(game, args);
+                case "production_history" -> productionHistory(game, args);
                 case "show_hitboxes" -> toggle(game, "hitboxes");
                 case "show_wireframe" -> toggle(game, "wireframe");
                 case "show_navmesh" -> toggle(game, "navmesh");
@@ -197,30 +204,29 @@ final class GameplayConsoleCommandAuthority {
         if (game == null) return "Game unavailable.";
         if (args == null || args.length == 0) return "Usage: skill_unlock <node id>";
         String raw = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim();
-        SkillTreeProgressionAuthority.SpendResult result = SkillTreeProgressionAuthority.spendXp(game.unlockedSkillNodes, game.xp, raw, SkillTreeProgressionAuthority.SkillAccessContext.fromGame(game), game.active == null ? java.util.Map.of() : game.active.stats);
-        if (!result.success()) return result.message();
-        game.xp = result.remainingXp();
-        game.unlockedSkillNodes.add(result.unlockedNodeId());
-        boolean statChanged = SkillTreeProgressionAuthority.applyStatEffect(game.active, result.statEffect());
-        game.logEvent("SKILL: " + result.message() + " Remaining XP " + game.xp + ".");
-        return result.message() + " Remaining XP " + game.xp + (statChanged ? " Stat effect applied: " + result.statEffect() + "." : ".");
+        return game.unlockSkillNode(raw);
     }
-    private static String constructionStatus(GamePanel game) {
+    private static String constructionStatus(GamePanel game, String command, String[] args) {
         if (game == null) return "Construction status unavailable until a run is active.";
+        if (args != null && args.length > 0) return "Usage: " + command;
         return ProgressiveConstructionAuthority.statusPacket(game);
     }
     private static String constructionWork(GamePanel game, String[] args) {
         if (game == null || game.baseObjects == null) return "Construction work unavailable until a run is active.";
-        if (args != null && args.length > 1) return "Usage: construction_work [turns]";
+        if (args != null && args.length > 1) return "Usage: construction_work [turns 1-20]";
         if (args != null && args.length == 1 && !isInt(args[0])) return "Construction work turns must be an integer.";
-        int turns = Math.max(1, Math.min(20, parseInt(args, 0, 1)));
-        BaseObject site = nearestReachableConstructionSite(game);
-        if (site == null) return "No staged construction site is within reach. Stand beside an unfinished site and try again.";
+        int requestedTurns = parseInt(args, 0, 1);
+        int turns = Math.max(1, Math.min(20, requestedTurns));
+        String turnNotice = constructionWorkTurnNotice(args, requestedTurns, turns);
+        BaseObject site = ProgressiveConstructionAuthority.workCommandTarget(game);
+        if (site == null) return turnNotice + ProgressiveConstructionAuthority.workReachFailureLine(game);
+        String beforeName = constructionEventName(site, "construction site");
         int laborBefore = Math.max(0, site.constructionLaborDone);
         boolean wasUnderConstruction = site.underConstruction;
         int inserted = ProgressiveConstructionAuthority.contribute(game, site, turns, true);
         int laborAdded = Math.max(0, site.constructionLaborDone - laborBefore);
         boolean completed = wasUnderConstruction && !site.underConstruction;
+        int turnCost = constructionWorkTurnCost(game, turns, inserted, laborAdded);
         String result;
         if (completed) {
             result = ProgressiveConstructionAuthority.contributionResultLine(site, inserted, true);
@@ -232,37 +238,72 @@ final class GameplayConsoleCommandAuthority {
             if (laborAdded > 0) changes.add("added " + laborAdded + " labor");
             result = "Construction work " + String.join(" and ", changes) + ". " + ProgressiveConstructionAuthority.siteStatusLine(game, site);
         }
+        result = appendConstructionTimeSpent(turnNotice + result, turnCost);
         game.logEvent(result);
-        DebugLog.audit("GAMEPLAY_CONSTRUCTION_WORK", "turns=" + turns + " inserted=" + inserted + " laborAdded=" + laborAdded + " completed=" + completed + " site=" + site.x + "," + site.y);
+        advanceConstructionWorkTurns(game, site, beforeName, turnCost, completed);
+        DebugLog.audit("GAMEPLAY_CONSTRUCTION_WORK", "turns=" + turns + " spent=" + turnCost + " inserted=" + inserted + " laborAdded=" + laborAdded + " completed=" + completed + " site=" + site.x + "," + site.y);
         game.repaint();
         return result;
     }
-    private static BaseObject nearestReachableConstructionSite(GamePanel game) {
-        if (game == null || game.baseObjects == null) return null;
-        BaseObject best = null;
-        int bestDistance = Integer.MAX_VALUE;
-        int bestPriority = Integer.MAX_VALUE;
-        int bestProgress = Integer.MIN_VALUE;
-        for (BaseObject site : game.baseObjects) {
-            if (site == null || !site.underConstruction) continue;
-            int distance = Math.max(Math.abs(site.x - game.playerX), Math.abs(site.y - game.playerY));
-            if (distance > 1) continue;
-            int progress = Math.max(0, site.constructionVisualProgress);
-            int priority = ProgressiveConstructionAuthority.workCommandPriority(game, site);
-            boolean earlier = best == null
-                    || priority < bestPriority
-                    || (priority == bestPriority && distance < bestDistance)
-                    || (priority == bestPriority && distance == bestDistance && progress > bestProgress)
-                    || (priority == bestPriority && distance == bestDistance && progress == bestProgress
-                    && (site.y < best.y || (site.y == best.y && site.x < best.x)));
-            if (earlier) {
-                best = site;
-                bestDistance = distance;
-                bestPriority = priority;
-                bestProgress = progress;
-            }
+    private static String constructionWorkTurnNotice(String[] args, int requestedTurns, int turns) {
+        if (args == null || args.length == 0 || requestedTurns == turns) return "";
+        return "Construction work turns adjusted to " + turns + " (allowed 1-20). ";
+    }
+    private static int constructionWorkTurnCost(GamePanel game, int requestedTurns, int inserted, int laborAdded) {
+        if (inserted <= 0 && laborAdded <= 0) return 0;
+        if (laborAdded <= 0) return 1;
+        int multiplier = Math.max(1, ProgressiveConstructionAuthority.toolLaborMultiplier(game));
+        int productiveTurns = (laborAdded + multiplier - 1) / multiplier;
+        return Math.max(1, Math.min(Math.max(1, requestedTurns), productiveTurns));
+    }
+    private static void advanceConstructionWorkTurns(GamePanel game, BaseObject site, String beforeName, int turnCost, boolean completed) {
+        if (game == null || turnCost <= 0) return;
+        String completedName = constructionEventName(site, "construction");
+        String workingName = (beforeName == null || beforeName.isBlank()) ? completedName : beforeName;
+        for (int i = 0; i < turnCost; i++) {
+            boolean finalTurn = completed && i == turnCost - 1;
+            game.advanceTurn(finalTurn ? "finishes " + completedName + "." : "works on " + workingName + ".");
         }
-        return best;
+    }
+    private static String appendConstructionTimeSpent(String result, int turnCost) {
+        if (turnCost <= 0) return result;
+        return result + " Construction time spent: " + turnCost + " " + (turnCost == 1 ? "turn" : "turns") + ".";
+    }
+    private static String constructionEventName(BaseObject site, String fallback) {
+        if (site == null || site.name == null || site.name.isBlank()) return fallback;
+        return site.name.trim();
+    }
+    private static String constructionDismantle(GamePanel game, String[] args) {
+        if (game == null || game.baseObjects == null) return "Construction dismantle unavailable until a run is active.";
+        if (args != null && args.length > 0) return "Usage: construction_dismantle";
+        BaseObject site = ProgressiveConstructionAuthority.dismantleCommandTarget(game);
+        if (site == null) return ProgressiveConstructionAuthority.dismantleReachFailureLine(game);
+        String beforeName = constructionEventName(site, "construction site");
+        ProgressiveConstructionAuthority.DismantleResult result = ProgressiveConstructionAuthority.dismantle(game, site);
+        int turnCost = result.removed() ? 1 : 0;
+        String summary = appendConstructionTimeSpent(result.summary(), turnCost);
+        game.logEvent(summary);
+        if (turnCost > 0) game.advanceTurn("dismantles " + beforeName + ".");
+        DebugLog.audit("GAMEPLAY_CONSTRUCTION_DISMANTLE", "removed=" + result.removed()
+                + " spent=" + turnCost
+                + " supplies=" + result.recoveredSupplies()
+                + " parts=" + result.recoveredMachineParts()
+                + " named=" + result.recoveredNamedItems()
+                + " site=" + site.x + "," + site.y);
+        game.repaint();
+        return summary;
+    }
+    private static String productionStatus(GamePanel game, String[] args) {
+        if (game == null) return "Production status unavailable until a run is active.";
+        if (args != null && args.length > 0) return "Usage: production_status";
+        return String.join(" | ", MachineOperationStatusBridge.statusLines(game));
+    }
+    private static String productionHistory(GamePanel game, String[] args) {
+        if (game == null || game.machineOperationQueue == null) return "Production history unavailable until a run is active.";
+        if (args != null && args.length > 1) return "Usage: production_history [count 1-5]";
+        if (args != null && args.length == 1 && !isInt(args[0])) return "Production history count must be an integer.";
+        int limit = Math.max(1, Math.min(5, parseInt(args, 0, 3)));
+        return String.join(" | ", MachineOperationStatusBridge.historyLines(game, limit));
     }
     private static String canonicalKnowledgeName(String[] args) { if (args == null || args.length == 0) return ""; String raw = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim(); if (raw.isBlank()) return ""; String normalized = raw.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); for (String name : KnowledgeDef.all().keySet()) { String n = name.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); if (n.equals(normalized)) return name; } return raw; }
     private static void refreshKnowledgeDebugState(GamePanel game, String reason) { if (game == null) return; game.logEvent("CONSOLE: " + reason + " -> knowledge credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + "."); DebugLog.audit("KNOWLEDGE_DEBUG_COMMAND", reason + " credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + " state=" + game.stateSummary()); if (game.screen == GamePanel.Screen.KNOWLEDGE) game.selectedKnowledgeNodeId = null; game.repaint(); }

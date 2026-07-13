@@ -11,7 +11,7 @@ import java.util.*;
  * inspection paths can see them without adding a second live-world object list.
  */
 final class ProgressiveConstructionAuthority {
-    static final String VERSION = "0.9.10hm";
+    static final String VERSION = "0.9.10hs";
     private static final Color GHOST_BLUE = new Color(175, 220, 255);
 
     private ProgressiveConstructionAuthority() {}
@@ -144,6 +144,8 @@ final class ProgressiveConstructionAuthority {
                 + ", nearly complete=" + nearlyComplete + ".");
         if (sites.isEmpty()) {
             lines.add("Construction next action: no staged construction sites are waiting.");
+            lines.add(workNoTargetLine(g, sites));
+            lines.add(dismantleNoTargetLine(g, sites));
             return lines;
         }
         ArrayList<BaseObject> prioritized = new ArrayList<>(sites);
@@ -157,7 +159,16 @@ final class ProgressiveConstructionAuthority {
             lines.add(siteStatusLine(g, site));
             shown++;
         }
-        if (sites.size() > shown) lines.add("Construction progress: " + (sites.size() - shown) + " additional staged site(s) not shown.");
+        if (sites.size() > shown) {
+            BaseObject next = prioritized.get(shown);
+            lines.add("Construction progress: " + (sites.size() - shown)
+                    + " additional staged site(s) not shown; next unlisted site: "
+                    + overflowSiteLine(g, next) + ".");
+        }
+        BaseObject workTarget = workCommandTarget(g);
+        lines.add(workTarget == null ? workNoTargetLine(g, sites) : workTargetLine(g, workTarget));
+        BaseObject dismantleTarget = dismantleCommandTarget(g);
+        lines.add(dismantleTarget == null ? dismantleNoTargetLine(g, sites) : dismantleTargetLine(dismantleTarget));
         return lines;
     }
 
@@ -181,18 +192,145 @@ final class ProgressiveConstructionAuthority {
                 + ", next action: " + next + ".";
     }
 
+    private static String overflowSiteLine(GamePanel g, BaseObject site) {
+        if (site == null || !site.underConstruction) return "none";
+        return clean(site.name, "Unfinished construction site")
+                + " at " + site.x + "," + site.y
+                + ", " + progressPercent(site) + "% complete"
+                + ", next action: " + nextActionLine(g, site);
+    }
+
+    private static String workTargetLine(GamePanel g, BaseObject site) {
+        if (site == null || !site.underConstruction) return "Construction work target: none.";
+        return "Construction work target: " + clean(site.name, "Unfinished construction site")
+                + " at " + site.x + "," + site.y
+                + ", " + progressPercent(site) + "% complete; next action: " + nextActionLine(g, site)
+                + "; command uses construction progress priority among adjacent staged sites.";
+    }
+
+    private static String workNoTargetLine(GamePanel g, java.util.List<BaseObject> sites) {
+        String guidance = workNearestGuidanceLine(g, sites, false);
+        return guidance.isBlank() ? "Construction work target: none." : "Construction work target: none in reach; " + guidance;
+    }
+
+    private static String workNearestGuidanceLine(GamePanel g, java.util.List<BaseObject> sites, boolean sentenceStart) {
+        BaseObject nearest = nearestByWorkReach(g, sites);
+        if (nearest == null) return "";
+        return (sentenceStart ? "Stand" : "stand") + " adjacent to work a staged site. Nearest staged site: "
+                + siteStatusLine(g, nearest);
+    }
+
+    private static String dismantleTargetLine(BaseObject site) {
+        if (site == null || !site.underConstruction) return "Construction dismantle target: none.";
+        return "Construction dismantle target: " + clean(site.name, "Unfinished construction site")
+                + " at " + site.x + "," + site.y
+                + ", " + progressPercent(site) + "% complete; command removes the least-complete adjacent staged site first.";
+    }
+
+    private static String dismantleNoTargetLine(GamePanel g, java.util.List<BaseObject> sites) {
+        String guidance = dismantleNearestGuidanceLine(g, sites, false);
+        return guidance.isBlank() ? "Construction dismantle target: none." : "Construction dismantle target: none in reach; " + guidance;
+    }
+
+    private static String dismantleNearestGuidanceLine(GamePanel g, java.util.List<BaseObject> sites, boolean sentenceStart) {
+        BaseObject nearest = nearestByWorkReach(g, sites);
+        if (nearest == null) return "";
+        return (sentenceStart ? "Stand" : "stand") + " adjacent to remove a staged site. Nearest staged site: "
+                + siteStatusLine(g, nearest);
+    }
+
     static String contributionResultLine(BaseObject site, int insertedBefore, boolean wasCompleted) {
+        return contributionResultLine(null, site, insertedBefore, wasCompleted ? 0 : 1, wasCompleted);
+    }
+
+    static String contributionResultLine(GamePanel g, BaseObject site, int insertedBefore, int laborAdded, boolean wasCompleted) {
         if (site == null) return "Construction work could not find a staged site.";
         if (wasCompleted || !site.underConstruction) {
-            return "Construction complete: " + clean(site.name, "structure") + ".";
+            return "Construction complete: " + clean(site.name, "structure") + " at " + site.x + "," + site.y + ".";
         }
-        return "Construction work added labor"
-                + (insertedBefore > 0 ? " and staged " + insertedBefore + " material unit(s)" : "")
-                + ". " + progressLine(site) + ".";
+        ArrayList<String> changes = new ArrayList<>();
+        if (insertedBefore > 0) changes.add("staged " + insertedBefore + " material unit(s)");
+        if (laborAdded > 0) changes.add("added " + laborAdded + " labor");
+        String lead = changes.isEmpty()
+                ? "Construction work made no progress"
+                : "Construction work " + String.join(" and ", changes);
+        return lead + ". " + siteStatusLine(g, site);
+    }
+
+    static String workReachFailureLine(GamePanel g) {
+        ArrayList<BaseObject> sites = activeSites(g);
+        if (sites.isEmpty()) {
+            return "No staged construction site is within reach. No staged construction sites are waiting.";
+        }
+        return "No staged construction site is within reach. " + workNearestGuidanceLine(g, sites, true);
+    }
+
+    static String dismantleReachFailureLine(GamePanel g) {
+        ArrayList<BaseObject> sites = activeSites(g);
+        if (sites.isEmpty()) {
+            return "No unfinished staged construction site is within reach. No staged construction sites are waiting.";
+        }
+        return "No unfinished staged construction site is within reach. " + dismantleNearestGuidanceLine(g, sites, true);
     }
 
     static int workCommandPriority(GamePanel g, BaseObject site) {
         return statusPriority(g, site);
+    }
+
+    static BaseObject workCommandTarget(GamePanel g) {
+        if (g == null || g.baseObjects == null) return null;
+        BaseObject best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        int bestPriority = Integer.MAX_VALUE;
+        int bestProgress = Integer.MIN_VALUE;
+        for (BaseObject site : g.baseObjects) {
+            if (site == null || !site.underConstruction) continue;
+            int distance = workReachDistance(g, site);
+            if (distance > 1) continue;
+            int priority = statusPriority(g, site);
+            int progress = progressPercent(site);
+            boolean earlier = best == null
+                    || priority < bestPriority
+                    || (priority == bestPriority && distance < bestDistance)
+                    || (priority == bestPriority && distance == bestDistance && progress > bestProgress)
+                    || (priority == bestPriority && distance == bestDistance && progress == bestProgress
+                    && (site.y < best.y || (site.y == best.y && site.x < best.x)));
+            if (earlier) {
+                best = site;
+                bestDistance = distance;
+                bestPriority = priority;
+                bestProgress = progress;
+            }
+        }
+        return best;
+    }
+
+    static BaseObject dismantleCommandTarget(GamePanel g) {
+        if (g == null || g.baseObjects == null) return null;
+        BaseObject best = null;
+        int bestProgress = Integer.MAX_VALUE;
+        int bestWorkPriority = Integer.MIN_VALUE;
+        int bestDistance = Integer.MAX_VALUE;
+        for (BaseObject site : g.baseObjects) {
+            if (site == null || !site.underConstruction) continue;
+            int distance = workReachDistance(g, site);
+            if (distance > 1) continue;
+            int progress = progressPercent(site);
+            int workPriority = statusPriority(g, site);
+            boolean earlier = best == null
+                    || progress < bestProgress
+                    || (progress == bestProgress && workPriority > bestWorkPriority)
+                    || (progress == bestProgress && workPriority == bestWorkPriority && distance < bestDistance)
+                    || (progress == bestProgress && workPriority == bestWorkPriority && distance == bestDistance
+                    && (site.y < best.y || (site.y == best.y && site.x < best.x)));
+            if (earlier) {
+                best = site;
+                bestProgress = progress;
+                bestWorkPriority = workPriority;
+                bestDistance = distance;
+            }
+        }
+        return best;
     }
 
     static DismantleResult dismantle(GamePanel g, BaseObject site) {
@@ -225,7 +363,7 @@ final class ProgressiveConstructionAuthority {
         String recovered = "Recovered " + supplies + " construction supplies, " + parts + " machine part(s), and "
                 + named + " named component(s).";
         String summary = (removed ? "Dismantled " : "Cleared ") + clean(site.name, "unfinished construction site")
-                + ". " + recovered + " Labor progress was not recoverable.";
+                + " at " + site.x + "," + site.y + ". " + recovered + " Labor progress was not recoverable.";
         return new DismantleResult(removed, supplies, parts, named, summary);
     }
 
@@ -255,9 +393,9 @@ final class ProgressiveConstructionAuthority {
                 "Construction tile sync audit: live placement preserves the original walkable tile, live placement reserves the world tile with the construction placeholder, completion restores the final built symbol, dismantle restores the original tile, and save/load reads the same tile state from BaseObject fields.",
                 "Construction visual audit: unfinished work starts as pale blue ghost construction and fades toward the final built color while retaining compact per-site progress text.",
                 "Construction inspection audit: object inspection reports staged-site status, material progress, labor progress, missing materials, and completion target before offering completed-facility actions.",
-                "Construction labor action audit: the interaction panel can stage available missing materials, contribute one turn of labor when materials are complete, and report progress or completion through ProgressiveConstructionAuthority.",
-                "Construction dismantle audit: unfinished staged sites can be dismantled before completion, inserted materials are recovered, labor progress is lost, and no completed facility configuration is applied.",
-                "Construction status packet audit: the construction progress command reports active staged-site count, ready-for-labor count, material-blocked count, material-ready count, in-work-reach count, nearly-complete count, command target priority, prioritized site progress lines, and next action without exposing raw identifiers.",
+                "Construction labor action audit: the interaction panel can stage available missing materials, contribute one turn of labor when materials are complete, require the selected staged site to still exist and be adjacent, spend a turn only when Work changes staged materials or labor progress, construction_work spends productive command turns only when staging or labor changes progress, and progress or completion reports include location and next-action readback.",
+                "Construction dismantle audit: unfinished staged sites can be dismantled before completion, the interaction panel requires the selected staged site to still exist and be adjacent, the gameplay command requires an adjacent staged site, construction_dismantle spends one turn when it removes a site, the command prefers the least-complete adjacent staged site, command no-target guidance names the nearest staged site, dismantle summaries identify the site location, inserted materials are recovered, labor progress is lost, and no completed facility configuration is applied.",
+                "Construction status packet audit: the construction progress and construction status commands share the same player packet with active staged-site count, ready-for-labor count, material-blocked count, material-ready count, in-work-reach count, nearly-complete count, command target priority, adjacent work target readback with next action, nearest out-of-reach work guidance, empty-state work target readback, directional distance guidance, prioritized site progress lines, overflow next-site readback, adjacent dismantle target readback, no-target dismantle guidance, empty-state dismantle target readback, and next action without exposing raw identifiers.",
                 "Construction tool audit: construction and deconstruction use the existing held-tool multiplier so suitable tools reduce effort without bypassing time.",
                 "Construction persistence audit: staged construction fields are saved with base objects, restored before completed objects receive normal built-object configuration, and verified by a write/read round-trip smoke.",
                 "Construction sample audit: " + progressLine(createSite(BuildRecipe.shopCounter(), 12, 18, 7))
@@ -265,7 +403,7 @@ final class ProgressiveConstructionAuthority {
                         + "; overlayAlphaStart=" + starting.getAlpha()
                         + "; overlayMovesTowardBuilt=" + (finished.getGreen() < starting.getGreen() && finished.getRed() < starting.getRed()) + ".",
                 "Progressive construction boundary: this audit does not dispatch workers, mutate room ownership, unlock blueprints, apply heat, or complete construction outside the staged construction owner.",
-                "Guard: Milestone03ProgressiveConstructionDefinitionAuditSmoke checks staged site metadata, progress text, visual fade, tool timing, persistence fields, boundaries, and raw-ID hiding. Guard: Milestone03ProgressiveConstructionPersistenceSmoke checks staged-site save/load round trips. Guard: Milestone03ProgressiveConstructionDismantleSmoke checks unfinished-site removal and material recovery. Guard: Milestone03ProgressiveConstructionTileSyncSmoke checks live placement and completion tile sync. Guard: Milestone03ProgressiveConstructionOriginalTileSmoke checks original-tile preservation and restoration."
+                "Guard: Milestone03ProgressiveConstructionDefinitionAuditSmoke checks staged site metadata, progress text, visual fade, tool timing, persistence fields, boundaries, and raw-ID hiding. Guard: Milestone03ProgressiveConstructionPersistenceSmoke checks staged-site save/load round trips. Guard: Milestone03ProgressiveConstructionDismantleSmoke checks unfinished-site removal and material recovery. Guard: Milestone03ProgressiveConstructionInteractionWorkSmoke checks Work and Dismantle interaction reach and turn costs. Guard: Milestone03ProgressiveConstructionTileSyncSmoke checks live placement and completion tile sync. Guard: Milestone03ProgressiveConstructionOriginalTileSmoke checks original-tile preservation and restoration."
         );
     }
 
@@ -324,7 +462,9 @@ final class ProgressiveConstructionAuthority {
     private static String reachLine(GamePanel g, BaseObject site) {
         if (g == null || site == null) return "";
         int distance = workReachDistance(g, site);
-        return isInWorkReach(g, site) ? ", access in work reach" : ", access stand adjacent to work (range " + distance + ")";
+        return isInWorkReach(g, site)
+                ? ", access in work reach"
+                : ", access stand adjacent to work (" + distanceLabel(distance) + " away, move " + directionLabel(g, site) + ")";
     }
 
     private static boolean isInWorkReach(GamePanel g, BaseObject site) {
@@ -334,6 +474,50 @@ final class ProgressiveConstructionAuthority {
     private static int workReachDistance(GamePanel g, BaseObject site) {
         if (g == null || site == null) return Integer.MAX_VALUE;
         return Math.max(Math.abs(site.x - g.playerX), Math.abs(site.y - g.playerY));
+    }
+
+    private static BaseObject nearestByWorkReach(GamePanel g, java.util.List<BaseObject> sites) {
+        BaseObject best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        int bestPriority = Integer.MAX_VALUE;
+        int bestProgress = Integer.MIN_VALUE;
+        for (BaseObject site : sites) {
+            if (site == null || !site.underConstruction) continue;
+            int distance = workReachDistance(g, site);
+            int priority = statusPriority(g, site);
+            int progress = progressPercent(site);
+            boolean earlier = best == null
+                    || distance < bestDistance
+                    || (distance == bestDistance && priority < bestPriority)
+                    || (distance == bestDistance && priority == bestPriority && progress > bestProgress)
+                    || (distance == bestDistance && priority == bestPriority && progress == bestProgress
+                    && (site.y < best.y || (site.y == best.y && site.x < best.x)));
+            if (earlier) {
+                best = site;
+                bestDistance = distance;
+                bestPriority = priority;
+                bestProgress = progress;
+            }
+        }
+        return best;
+    }
+
+    private static String distanceLabel(int distance) {
+        if (distance == Integer.MAX_VALUE) return "unknown distance";
+        int safe = Math.max(0, distance);
+        return safe + " tile" + (safe == 1 ? "" : "s");
+    }
+
+    private static String directionLabel(GamePanel g, BaseObject site) {
+        if (g == null || site == null) return "toward site";
+        int dx = Integer.compare(site.x, g.playerX);
+        int dy = Integer.compare(site.y, g.playerY);
+        ArrayList<String> parts = new ArrayList<>();
+        if (dx > 0) parts.add("east");
+        else if (dx < 0) parts.add("west");
+        if (dy > 0) parts.add("south");
+        else if (dy < 0) parts.add("north");
+        return parts.isEmpty() ? "toward site" : String.join("/", parts);
     }
 
     private static boolean materialsComplete(BaseObject site) {

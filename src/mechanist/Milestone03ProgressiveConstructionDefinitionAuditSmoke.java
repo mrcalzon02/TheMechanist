@@ -30,15 +30,35 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         requireContains(audit, "object inspection reports staged-site status", "inspection audit");
         requireContains(audit, "can stage available missing materials", "material staging action audit");
         requireContains(audit, "contribute one turn of labor when materials are complete", "labor action audit");
+        requireContains(audit, "require the selected staged site to still exist and be adjacent", "interaction work live-site audit");
+        requireContains(audit, "spend a turn only when Work changes staged materials or labor progress", "interaction work time-cost audit");
+        requireContains(audit, "construction_work spends productive command turns", "work command time-cost audit");
+        requireContains(audit, "location and next-action readback", "labor action readback audit");
         requireContains(audit, "unfinished staged sites can be dismantled", "dismantle action audit");
+        requireContains(audit, "interaction panel requires the selected staged site to still exist and be adjacent",
+                "dismantle interaction live-site audit");
+        requireContains(audit, "gameplay command requires an adjacent staged site", "dismantle command reach audit");
+        requireContains(audit, "construction_dismantle spends one turn when it removes a site", "dismantle command time-cost audit");
+        requireContains(audit, "command prefers the least-complete adjacent staged site", "dismantle command priority audit");
+        requireContains(audit, "command no-target guidance names the nearest staged site", "dismantle command no-target audit");
+        requireContains(audit, "dismantle summaries identify the site location", "dismantle location audit");
         requireContains(audit, "inserted materials are recovered", "dismantle recovery audit");
-        requireContains(audit, "reports active staged-site count", "status packet audit");
+        requireContains(audit, "construction progress and construction status commands share the same player packet", "status command alias audit");
+        requireContains(audit, "active staged-site count", "status packet audit");
         requireContains(audit, "ready-for-labor count", "status ready count audit");
         requireContains(audit, "material-blocked count", "status blocked count audit");
         requireContains(audit, "material-ready count", "status available-material audit");
         requireContains(audit, "in-work-reach count", "status reach audit");
         requireContains(audit, "command target priority", "status command priority audit");
+        requireContains(audit, "adjacent work target readback with next action", "status work target audit");
+        requireContains(audit, "nearest out-of-reach work guidance", "status nearest work guidance audit");
+        requireContains(audit, "empty-state work target readback", "status empty work target audit");
+        requireContains(audit, "directional distance guidance", "status directional guidance audit");
         requireContains(audit, "prioritized site progress lines", "status priority audit");
+        requireContains(audit, "overflow next-site readback", "status overflow audit");
+        requireContains(audit, "adjacent dismantle target readback", "status dismantle target audit");
+        requireContains(audit, "no-target dismantle guidance", "status dismantle no-target audit");
+        requireContains(audit, "empty-state dismantle target readback", "status empty dismantle audit");
         requireContains(audit, "next action without exposing raw identifiers", "status next-action audit");
         requireContains(audit, "held-tool multiplier", "tool timing");
         requireContains(audit, "saved with base objects", "save persistence");
@@ -55,6 +75,8 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         requireContains(audit, "Milestone03ProgressiveConstructionDefinitionAuditSmoke", "guard reference");
         requireContains(audit, "Milestone03ProgressiveConstructionPersistenceSmoke", "persistence guard reference");
         requireContains(audit, "Milestone03ProgressiveConstructionDismantleSmoke", "dismantle guard reference");
+        requireContains(audit, "Milestone03ProgressiveConstructionInteractionWorkSmoke", "interaction work guard reference");
+        requireContains(audit, "Work and Dismantle interaction reach and turn costs", "interaction reach guard detail");
         requireContains(audit, "Milestone03ProgressiveConstructionTileSyncSmoke", "tile sync guard reference");
         requireContains(audit, "Milestone03ProgressiveConstructionOriginalTileSmoke", "original tile guard reference");
 
@@ -72,6 +94,15 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         require(site.qualityName.equals("Common"), "site should preserve quality");
         require(ProgressiveConstructionAuthority.availableMaterialUnits(null, BuildRecipe.shopCounter()) == 0,
                 "null game should report no available materials");
+        GamePanel emptyGame = new GamePanel();
+        if (emptyGame.timer != null) emptyGame.timer.stop();
+        emptyGame.baseObjects.clear();
+        String emptyStatus = ProgressiveConstructionAuthority.statusPacket(emptyGame);
+        requireContains(emptyStatus, "active staged sites=0", "empty status count");
+        requireContains(emptyStatus, "Construction next action: no staged construction sites are waiting.", "empty next action");
+        requireContains(emptyStatus, "Construction work target: none.", "empty work target");
+        requireContains(emptyStatus, "Construction dismantle target: none.", "empty dismantle target");
+        if (emptyGame.timer != null) emptyGame.timer.stop();
 
         BaseObject prepaid = ProgressiveConstructionAuthority.createPrepaidSite(BuildRecipe.shopCounter(), 12, 18);
         require(prepaid.underConstruction, "prepaid site should remain staged");
@@ -108,13 +139,19 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
                 "access in work reach", "site status reachable guidance");
         requireContains(ProgressiveConstructionAuthority.siteStatusLine(availabilityGame, site),
                 "access stand adjacent to work", "site status distant guidance");
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(availabilityGame, site),
+                "tiles away", "site status distant distance");
+        requireContains(ProgressiveConstructionAuthority.siteStatusLine(availabilityGame, site),
+                "move east/south", "site status distant direction");
         if (availabilityGame.timer != null) availabilityGame.timer.stop();
         requireContains(ProgressiveConstructionAuthority.siteStatusLine(prepaid), "next action: work to add labor", "site status labor next action");
         require(ProgressiveConstructionAuthority.workCommandPriority(null, prepaid)
                         < ProgressiveConstructionAuthority.workCommandPriority(null, site),
                 "work command priority should prefer labor-ready sites over material-blocked sites");
-        requireContains(ProgressiveConstructionAuthority.contributionResultLine(prepaid, 0, false),
-                "Construction work added labor", "contribution progress text");
+        String laborResult = ProgressiveConstructionAuthority.contributionResultLine(availabilityGame, prepaid, 0, 1, false);
+        requireContains(laborResult, "Construction work added 1 labor", "contribution progress text");
+        requireContains(laborResult, "at 12,18", "contribution location text");
+        requireContains(laborResult, "next action: work to add labor", "contribution next action text");
         requireContains(ProgressiveConstructionAuthority.auditSummary(null), "activeSites=0", "empty audit");
         require(ProgressiveConstructionAuthority.deconstructionTurnsForTile('#', null) == 5, "wall deconstruction turns");
         require(ProgressiveConstructionAuthority.deconstructionTurnsForTile('.', null) == 2, "ordinary tile deconstruction turns");
@@ -142,9 +179,33 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         require(partial.constructionVisualProgress == 69, "partial site should combine material and one labor turn progress");
         require(materialGame.supplies == 0, "staging should consume supplies");
         require(materialGame.machineParts == 0, "staging should consume machine parts");
-        requireContains(ProgressiveConstructionAuthority.contributionResultLine(partial, inserted, false),
-                "staged 4 material unit(s)", "material staging text");
+        String mixedResult = ProgressiveConstructionAuthority.contributionResultLine(materialGame, partial, inserted, 1, false);
+        requireContains(mixedResult, "staged 4 material unit(s) and added 1 labor", "material staging text");
+        requireContains(mixedResult, "at 14,18", "material staging location");
+        requireContains(mixedResult, "next action: work to add labor", "material staging next action");
         if (materialGame.timer != null) materialGame.timer.stop();
+
+        GamePanel materialOnlyGame = new GamePanel();
+        if (materialOnlyGame.timer != null) materialOnlyGame.timer.stop();
+        materialOnlyGame.baseObjects.clear();
+        materialOnlyGame.supplies = 1;
+        materialOnlyGame.machineParts = 0;
+        BuildRecipe mixedNeeds = new BuildRecipe("Material Only Test Frame", 'm', 1, 1, 0, 0, 0, 4, 10, false,
+                Faction.NONE, null, "material-only staged construction fixture");
+        BaseObject materialOnly = ProgressiveConstructionAuthority.createSite(mixedNeeds, 15, 18, 4);
+        materialOnlyGame.baseObjects.add(materialOnly);
+        int materialOnlyLaborBefore = Math.max(0, materialOnly.constructionLaborDone);
+        int materialOnlyInserted = ProgressiveConstructionAuthority.contribute(materialOnlyGame, materialOnly, 1, true);
+        int materialOnlyLaborAdded = Math.max(0, materialOnly.constructionLaborDone - materialOnlyLaborBefore);
+        require(materialOnlyInserted == 1, "material-only staging should insert the available supply");
+        require(materialOnlyLaborAdded == 0, "material-only staging should not report invented labor");
+        String materialOnlyResult = ProgressiveConstructionAuthority.contributionResultLine(materialOnlyGame,
+                materialOnly, materialOnlyInserted, materialOnlyLaborAdded, false);
+        requireContains(materialOnlyResult, "Construction work staged 1 material unit(s).", "material-only result");
+        requireContains(materialOnlyResult, "at 15,18", "material-only location");
+        requireContains(materialOnlyResult, "next action: stage Machine part x1", "material-only next action");
+        requireNotContains(materialOnlyResult, "added 1 labor", "material-only labor wording");
+        if (materialOnlyGame.timer != null) materialOnlyGame.timer.stop();
 
         GamePanel game = new GamePanel();
         if (game.timer != null) game.timer.stop();
@@ -173,6 +234,55 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
                 "status packet should show reachable available staged materials before distant blocked materials");
         requireContains(status, "Under construction: Licensed Shop Counter at 12,18: 0% complete", "status blocked site");
         requireContains(status, "Under construction: Licensed Shop Counter at 12,18: 65% complete", "status prepaid site");
+        requireContains(status, "Construction work target: Under construction: Licensed Shop Counter at "
+                        + reachableMaterial.x + "," + reachableMaterial.y,
+                "status work target");
+        requireContains(status, "Construction work target: Under construction: Licensed Shop Counter at "
+                        + reachableMaterial.x + "," + reachableMaterial.y
+                        + ", 0% complete; next action: stage available Construction supplies x1",
+                "status work target next action");
+        requireContains(status, "command uses construction progress priority among adjacent staged sites",
+                "status work target rule");
+        requireContains(status, "Construction dismantle target: Under construction: Licensed Shop Counter at "
+                        + reachableMaterial.x + "," + reachableMaterial.y,
+                "status dismantle target");
+        requireContains(status, "least-complete adjacent staged site first", "status dismantle target rule");
+        GamePanel overflowGame = new GamePanel();
+        if (overflowGame.timer != null) overflowGame.timer.stop();
+        overflowGame.baseObjects.clear();
+        for (int i = 0; i < 6; i++) {
+            overflowGame.baseObjects.add(ProgressiveConstructionAuthority.createSite(BuildRecipe.shopCounter(),
+                    30 + i, 40 + i, 7));
+        }
+        List<String> overflowStatus = ProgressiveConstructionAuthority.statusPacketLines(overflowGame);
+        requireContains(overflowStatus, "active staged sites=6", "overflow active count");
+        requireContains(overflowStatus, "1 additional staged site(s) not shown", "overflow additional count");
+        requireContains(overflowStatus, "next unlisted site: Under construction: Licensed Shop Counter at 35,45",
+                "overflow next site location");
+        requireContains(overflowStatus, "next action: stage Construction supplies x3", "overflow next action");
+        if (overflowGame.timer != null) overflowGame.timer.stop();
+        GamePanel farWorkGame = new GamePanel();
+        if (farWorkGame.timer != null) farWorkGame.timer.stop();
+        farWorkGame.baseObjects.clear();
+        BaseObject farWorkSite = ProgressiveConstructionAuthority.createSite(BuildRecipe.shopCounter(),
+                farWorkGame.playerX + 20, farWorkGame.playerY + 20, 7);
+        farWorkGame.baseObjects.add(farWorkSite);
+        List<String> farStatus = ProgressiveConstructionAuthority.statusPacketLines(farWorkGame);
+        requireContains(farStatus, "Construction work target: none in reach", "status work no-target lead");
+        requireContains(farStatus, "stand adjacent to work a staged site", "status work no-target action");
+        requireContains(farStatus, "Nearest staged site: Under construction: Licensed Shop Counter", "status work nearest site");
+        requireContains(farStatus, "Construction dismantle target: none in reach", "status dismantle no-target lead");
+        requireContains(farStatus, "stand adjacent to remove a staged site", "status dismantle no-target action");
+        requireContains(farStatus, "Nearest staged site: Under construction: Licensed Shop Counter", "status dismantle nearest site");
+        requireContains(farStatus, "tiles away", "status dismantle nearest distance");
+        requireContains(farStatus, "move east/south", "status dismantle nearest direction");
+        String workReachFailure = ProgressiveConstructionAuthority.workReachFailureLine(farWorkGame);
+        requireContains(workReachFailure, "No staged construction site is within reach", "work reach failure lead");
+        requireContains(workReachFailure, "Nearest staged site: Under construction: Licensed Shop Counter", "work reach nearest site");
+        requireContains(workReachFailure, "tiles away", "work reach distance");
+        requireContains(workReachFailure, "move east/south", "work reach direction");
+        requireContains(workReachFailure, "next action:", "work reach next action");
+        if (farWorkGame.timer != null) farWorkGame.timer.stop();
         String commandStatus = new AdminCommandDispatcher(null, null, null)
                 .executeCommand(game, new InternalServerSessionAuthority.CommandContext("admin", "local-user", true, "local-world", "local-server"),
                         new ConsoleCommandRequest("admin", "/construction_progress"));
@@ -190,6 +300,8 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
         require("Licensed Shop Counter".equals(prepaid.name), "completed site should drop construction prefix");
         requireContains(ProgressiveConstructionAuthority.contributionResultLine(prepaid, 0, true),
                 "Construction complete: Licensed Shop Counter", "completion text");
+        requireContains(ProgressiveConstructionAuthority.contributionResultLine(prepaid, 0, true),
+                "at 12,18", "completion location text");
         if (game.timer != null) game.timer.stop();
 
         for (String auditLine : audit) {
@@ -211,6 +323,11 @@ final class Milestone03ProgressiveConstructionDefinitionAuditSmoke {
     private static void requireContains(List<String> lines, String expected, String label) {
         for (String line : lines) if (line != null && line.contains(expected)) return;
         throw new AssertionError("Expected " + label + " to contain '" + expected + "': " + lines);
+    }
+
+    private static void requireNotContains(String text, String forbidden, String label) {
+        if (text == null || !text.contains(forbidden)) return;
+        throw new AssertionError("Expected " + label + " not to contain '" + forbidden + "': " + text);
     }
 
     private Milestone03ProgressiveConstructionDefinitionAuditSmoke() { }

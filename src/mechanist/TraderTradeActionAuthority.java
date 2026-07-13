@@ -69,12 +69,34 @@ final class TraderTradeActionAuthority {
         t.sourceSite = site;
         Random r = rng == null ? new Random(FactionInventoryStockAuthority.stableSeed(site.faction, null)) : rng;
         Faction faction = FactionInventoryStockAuthority.normalizeFaction(site.faction);
-        for (String item : site.exportSample(r)) {
+        ArrayList<String> exports = site.exportSample(r);
+        if (exports.isEmpty()) {
+            String reason = site.workers <= 0 ? "site production is unstaffed" : "site export stock is depleted";
+            String line = "Site supply: " + site.name + " contributed no shelf stock because " + reason + ".";
+            t.supplyChainSummary = t.supplyChainSummary == null || t.supplyChainSummary.isBlank()
+                    ? line : t.supplyChainSummary + " " + line;
+        }
+        for (String item : exports) {
             if (item == null || ItemCatalog.get(item) == null) continue;
             ItemProvenanceRecord made = ItemProvenanceRecord.of(item, site.faction, site.name, world, Math.max(0, site.lastProductionTurn), site.recipeSummaryFor(item), "produced into faction stock ledger");
             ItemProvenanceRecord shelf = ItemProvenanceRecord.transferred(made, item, world, turn, "loaded from " + site.name + " onto trader shelf for " + t.name);
-            addOffer(t, faction, null, item, "traceable site stock from " + site.name + ".", shelf, r);
+            addSiteOffer(t, faction, item, "traceable site stock from " + site.name + ".", shelf, r);
         }
+    }
+
+    private static boolean addSiteOffer(TraderSession t, Faction faction, String item, String description,
+                                        ItemProvenanceRecord provenance, Random rng) {
+        if (t == null || item == null || item.isBlank() || ItemCatalog.get(item) == null) return false;
+        int count = FactionInventoryStockAuthority.limitedStockCount(faction, null, item, rng);
+        String desc = description + " Stock available: " + count + ".";
+        for (TradeOffer offer : t.offers) {
+            if (offer != null && ItemQuality.namesMatch(offer.name, item)) {
+                if (offer.provenance == null) offer.provenance = provenance;
+                return false;
+            }
+        }
+        t.offers.add(new TradeOffer(item, categoryFor(item), Math.max(1, ItemCatalog.priceFor(item)), desc, provenance));
+        return true;
     }
 
     private static String categoryFor(String item) {

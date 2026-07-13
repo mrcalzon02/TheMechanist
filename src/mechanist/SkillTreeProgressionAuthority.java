@@ -50,7 +50,8 @@ final class SkillTreeProgressionAuthority {
             if (game.equippedWearableSlots != null) {
                 for (String item : game.equippedWearableSlots.values()) addToken(equipment, item);
             }
-            return new SkillAccessContext(knowledges, standings, facilities, Set.of(), equipment, false);
+            LinkedHashSet<String> trainers = new LinkedHashSet<>(game.activeSkillTrainers);
+            return new SkillAccessContext(knowledges, standings, facilities, trainers, equipment, false);
         }
     }
     record SpendResult(boolean success, String message, int remainingXp, String unlockedNodeId, String statEffect) { }
@@ -75,7 +76,12 @@ final class SkillTreeProgressionAuthority {
                                 "Workshop-bound repair and production previews can expose advanced blockers instead of generic refusal.",
                                 "This requires world access; knowledge still remains separate from practiced fabrication.",
                                 "facility:forge-fabrication-stall",
-                                "Mechanics:8", "Mechanics:+1")),
+                                "Mechanics:8", "Mechanics:+1"),
+                        gatedNode("fabrication-repair", "fab-repair-forge-tutoring", "Forge-Tutored Repair", 45, "Field Repair Discipline",
+                                "Can restore a broken owned production machine to serviceable integrity with one machine part.",
+                                "Field-repair previews show the stronger trained restoration before the part and turn are spent.",
+                                "This is practiced repair technique taught in person; it does not grant machine doctrine.",
+                                "trainer:forge-tutor")),
                 branch("machine-operation", "Machine Operation",
                         "Operate staffed or manual machinery with lower risk, clearer blockers, and better handoff discipline.",
                         hookNode("machine-operation", "machine-safe-start", "Safe Start Ritual", 30, "none",
@@ -135,7 +141,7 @@ final class SkillTreeProgressionAuthority {
     static List<String> summaryLines() {
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Skill progression: XP buys durable capabilities; knowledge unlocks facts, recipes, doctrines, or recognition.");
-        lines.add("Current implementation boundary: skill-node spending, save persistence, and access-gate validation exist; full character-screen UI comes later.");
+        lines.add("Skill-node spending, save persistence, and access-gate validation exist in the Character Skills tab, which browses branches and nodes, previews requirements and visible effects, and spends XP through the same validated path as the console command.");
         for (SkillBranch branch : branches()) {
             lines.add("Branch: " + branch.name() + " - " + branch.worldUse());
             for (SkillNode node : branch.nodes()) {
@@ -161,10 +167,11 @@ final class SkillTreeProgressionAuthority {
         lines.add("Skill nodes must expose capabilities such as safer field repair, batch appraisal, trace reading, machine operation, or leadership handoff.");
         lines.add("Every initial node names an XP cost, prerequisite, visible effect, and boundary from knowledge.");
         lines.add("Advanced skill nodes may require faction standing, trainer proof, equipment, facilities, or unlocked knowledge before XP can be spent.");
+        lines.add("Qualifying specialist conversations can offer Train, opening the Skills tab with temporary in-person trainer access for matching nodes.");
         lines.add("Some skill nodes may require a character stat threshold and may grant a bounded stat increase when unlocked.");
         lines.add("Some specialization nodes are mutually exclusive; unlocking one node in a group blocks the sibling specialization.");
         lines.add("Unlocked nodes expose capability keys, passive bonuses, and active abilities for later gameplay systems to query directly.");
-        lines.add("Use skill_status to inspect XP and unlocked nodes; use skill_unlock <node id> to spend XP on a node when prerequisites are met.");
+        lines.add("Use the Character Skills tab to inspect branches, XP, requirements, and visible effects, then Unlock an available node. The skill_status and skill_unlock <node id> console routes use the same rules.");
         lines.add("The skill-tree definition audit names branch and node coverage, XP costs, dependencies, access gates, stat modifiers, exclusive groups, and capability hooks while keeping ordinary UI free of raw node IDs.");
         lines.add("Guard: Milestone03SkillTreeProgressionReadabilitySmoke checks branch count, node capabilities, XP costs, prerequisites, and skill-versus-knowledge wording; Milestone03SkillTreeSpendingPersistenceSmoke checks spending and save persistence; Milestone03SkillTreeAccessGateSmoke checks world access requirements; Milestone03SkillTreeStatGateSmoke checks stat gates and effects; Milestone03SkillTreeMutualExclusionSmoke checks exclusive specialization groups; Milestone03SkillTreeCapabilityHooksSmoke checks capability/passive/active hooks.");
         lines.add("Guard: Milestone03SkillTreeDefinitionAuditSmoke checks definition-audit branch/node coverage, XP costs, dependencies, access gates, stat modifiers, exclusive groups, capability hooks, knowledge separation, and raw-ID hiding.");
@@ -173,7 +180,7 @@ final class SkillTreeProgressionAuthority {
 
     static String auditLine() {
         return "skillBranches=" + branches().size() + " skillNodes=" + allNodes().size()
-                + " mutation=skill-node-save+stat-effect spendingUi=console-route accessGates=knowledge+faction+trainer+facility+equipment statGates=true exclusiveGroups=true capabilityHooks=true knowledgeDistinct=true";
+                + " mutation=skill-node-save+stat-effect spendingUi=character-skills-tab+console-route accessGates=knowledge+faction+trainer+facility+equipment statGates=true exclusiveGroups=true capabilityHooks=true knowledgeDistinct=true";
     }
 
     static List<String> definitionAuditLines() {
@@ -370,7 +377,7 @@ final class SkillTreeProgressionAuthority {
         String kind = parts.length > 0 ? parts[0] : value;
         String target = parts.length > 1 ? parts[1] : "";
         if ("knowledge".equalsIgnoreCase(kind)) return "knowledge " + target;
-        if ("trainer".equalsIgnoreCase(kind)) return "trainer " + target;
+        if ("trainer".equalsIgnoreCase(kind)) return "trainer " + target.replace('-', ' ').replace('_', ' ');
         if ("facility".equalsIgnoreCase(kind)) return "facility " + target.replace('-', ' ');
         if ("equipment".equalsIgnoreCase(kind)) return "equipment " + target.replace('-', ' ');
         if ("faction".equalsIgnoreCase(kind)) {

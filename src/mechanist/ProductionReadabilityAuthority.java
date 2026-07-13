@@ -105,6 +105,23 @@ final class ProductionReadabilityAuthority {
         return lines;
     }
 
+    static String completionResultLine(int outputCount, ProductionRecipe production,
+                                       ProductionQualityTraceAuthority.QualityTrace qualityTrace,
+                                       ProductionFatiguePressureAuthority.FatiguePressure pressure,
+                                       ProductionBatchAuthority.BatchDisposition batch) {
+        String item = production == null ? "crafted output" : production.outputItemName();
+        String quality = qualityTrace == null ? "unknown" : safe(qualityTrace.outputQuality(), "unknown");
+        String limiter = qualityTrace == null ? "unknown" : safe(qualityTrace.limiterLabel(), "open caps");
+        String fatigue = pressure == null ? "unknown" : safe(pressure.band(), "unknown");
+        String batchState = batch == null ? "uninspected" : safe(batch.defectState(), "uninspected");
+        String risk = batch == null ? "unknown defect risk" : batch.defectRiskPercent() + "% defect risk";
+        return "Production result: " + Math.max(1, outputCount) + "x " + item
+                + "; quality " + quality
+                + "; main limiter " + limiter
+                + "; fatigue " + fatigue
+                + "; batch " + batchState + " at " + risk + ".";
+    }
+
     static List<String> machineContext(BaseObject machine, int pendingOperations, int activeOperations, int historyRecords) {
         ArrayList<String> lines = new ArrayList<>();
         if (machine == null) {
@@ -114,7 +131,7 @@ final class ProductionReadabilityAuthority {
             return lines;
         }
         String worker = safe(machine.assignedWorker, "unassigned");
-        String assignedRecipe = safe(machine.assignedRecipe, "none");
+        String assignedRecipe = ControlledProductionJobAuthority.assignmentLabel(machine.assignedRecipe);
         lines.add("Machine staffing: " + worker + "; manual Craft remains player-operated and does not require an assigned worker.");
         lines.add("Machine queue record: assigned recipe " + assignedRecipe + "; remaining "
                 + Math.max(0, machine.productionQueueRemaining) + "/" + Math.max(1, machine.productionQueueTarget) + ".");

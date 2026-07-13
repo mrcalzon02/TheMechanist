@@ -1,10 +1,10 @@
 The Mechanist unfolded client package
-Built: 20260630_115333
+Built: 20260712_161529
 Primary layout: unfolded directory, not jar-first
 Classes: classes\mechanist\*.class
 Assets: assets\
 Package asset files: 6096
-Source files compiled: 711
+Source files compiled: 738
 Launch: RUN_THE_MECHANIST_CLIENT.vbs (no console window) or powershell -ExecutionPolicy Bypass -File RUN_THE_MECHANIST_CLIENT.ps1
 Diagnostic launch: RUN_THE_MECHANIST_CLIENT_DIAGNOSTIC.bat
 Manual launch: javaw -Dmechanist.assetRoot=. -Dmechanist.generatedAssetRoot=. -Dmechanist.assetTier=low_32 -Dmechanist.assetResolution=32 -cp "classes;." mechanist.TheMechanist

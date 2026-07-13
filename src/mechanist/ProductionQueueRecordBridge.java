@@ -11,7 +11,7 @@ import java.util.*;
  * legacy production as the source of truth.
  */
 final class ProductionQueueRecordBridge {
-    static final String VERSION = "0.9.08x";
+    static final String VERSION = "0.9.08y";
 
     private ProductionQueueRecordBridge() {}
 
@@ -25,10 +25,18 @@ final class ProductionQueueRecordBridge {
     }
 
     static MachineOperationQueue.OperationRecord recordManualRecipeCompletion(GamePanel g, BaseObject machine, CraftingRecipe recipe, int durationTurns, int outputCount) {
+        return recordManualRecipeCompletion(g, machine, recipe, durationTurns, outputCount, null);
+    }
+
+    static MachineOperationQueue.OperationRecord recordManualRecipeCompletion(GamePanel g, BaseObject machine, CraftingRecipe recipe,
+                                                                              int durationTurns, int outputCount,
+                                                                              String completionReadback) {
         if (g == null || recipe == null) return null;
         String op = operationTypeFor(machine, recipe.name + " " + recipe.outputBaseItem);
         String actor = actorId(g.active == null ? "player manual operation" : g.active.name + " manual operation", true);
         String status = "manual recipe completion recorded: " + recipe.name + " outputs=" + Math.max(1, outputCount) + "; legacy production consumed inputs and created outputs";
+        String readback = clean(completionReadback);
+        if (!readback.isBlank()) status += "; " + readback;
         return record(g, op, actor, "player_base", targetId(machine, recipe.name), Math.max(1, durationTurns), status);
     }
 

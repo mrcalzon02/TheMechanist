@@ -82,6 +82,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     final HashSet<String> visitedZoneInstances = new HashSet<>();
     final HashSet<String> unlockedKnowledges = new HashSet<>();
     final HashSet<String> unlockedSkillNodes = new HashSet<>();
+    final LinkedHashSet<String> activeSkillTrainers = new LinkedHashSet<>();
     final ArrayDeque<LogisticsRouteIntentAuthority.RouteIntentRecord> logisticsRouteIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsDeliveryIntentAuthority.DeliveryIntentRecord> logisticsDeliveryIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsSourceReservationAuthority.SourceReservationRecord> logisticsSourceReservationHistory = new ArrayDeque<>();
@@ -195,6 +196,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     boolean jvmRuntimeRestartPending;
     int turn;
     long worldTurn;
+    int lastStaffedProductionBackgroundTurn;
     int food;
     int water;
     int sleepNeed;
@@ -227,8 +229,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     int selectedInventoryIndex;
     int selectedCharacterEquipmentSlot;
     int characterTab;
+    int selectedSkillBranch;
     int selectedCharacterMedicalLayer;
     String selectedCharacterMedicalBodyPart = "";
+    String selectedSkillNodeId = "";
     int selectedTargetInventoryIndex;
     int selectedTradeOfferIndex;
     int selectedContainerItemIndex;
@@ -286,6 +290,12 @@ class GamePanel extends LegacyPanelBridgeBase {
     int selectedFireModeIndex;
     int generatedJobCategoryFilterIndex;
     int generatedJobReadinessFilterIndex;
+    int workbenchStaffedJobPage;
+    int productionBoardPage;
+    boolean workbenchStaffedJobsActive;
+    boolean productionBoardActive;
+    String selectedWorkbenchStaffedJobKey = "";
+    String activeSkillTrainerLabel = "";
     int mouseX = -1;
     int mouseY = -1;
     boolean baseClaimed;
@@ -344,6 +354,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     NpcEntity activeInteractionNpc;
     MapObjectState activeInteractionObject;
     BaseObject activeInteractionBaseObject;
+    BaseObject selectedProductionBoardMachine;
     TraderSession activeTraderSession;
 
     GamePanel() {
@@ -2387,6 +2398,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     private String panelTitle() {
         if (screen == Screen.PAUSE) return "PAUSE / COMMAND";
         if (panelMode == PanelMode.NONE) return screen.name();
+        if (productionBoardActive && (panelMode == PanelMode.WORKBENCH || panelMode == PanelMode.CRAFTING)) {
+            return "BASE PRODUCTION CONTROL";
+        }
         return switch (panelMode) {
             case INVENTORY -> "INVENTORY / STORAGE";
             case CHARACTER -> "CHARACTER";
@@ -2484,7 +2498,8 @@ class GamePanel extends LegacyPanelBridgeBase {
       CharacterEquipmentAndMedicalAuthority.CharacterTab.at(characterTab);
         int tabGap = 8;
         int tabHeight = 30;
-        int tabWidth = Math.max(120, Math.min(190, (body.width - tabGap * 2) / 3));
+        int tabCount = CharacterEquipmentAndMedicalAuthority.CharacterTab.values().length;
+        int tabWidth = Math.max(96, Math.min(190, (body.width - tabGap * (tabCount - 1)) / tabCount));
         int tabX = body.x;
         for (int i = 0; i < CharacterEquipmentAndMedicalAuthority.CharacterTab.values().length; i++) {
   CharacterEquipmentAndMedicalAuthority.CharacterTab tab =
@@ -2501,6 +2516,7 @@ class GamePanel extends LegacyPanelBridgeBase {
   case OVERVIEW -> drawCharacterOverviewTab(g, content);
   case EQUIPMENT -> drawCharacterEquipmentTab(g, content);
   case MEDICAL -> drawCharacterMedicalTab(g, content);
+  case SKILLS -> drawCharacterSkillsTab(g, content);
         }
     }
 
@@ -2725,6 +2741,125 @@ class GamePanel extends LegacyPanelBridgeBase {
       Math.max(120, detail.width - 20), 28,
       "Open the body-condition and medical treatment reference.",
       () -> InfopediaHotLinkAuthority.openMechanic(this, "body-condition", "character medical tab"));
+    }
+
+    private void drawCharacterSkillsTab(java.awt.Graphics2D g, Rectangle body) {
+        int gap = 12;
+        int branchWidth = Math.max(210, Math.min(270, body.width / 4));
+        int nodeWidth = Math.max(300, Math.min(390, body.width * 32 / 100));
+        Rectangle branchesBox = new Rectangle(body.x, body.y, branchWidth, body.height);
+        Rectangle nodesBox = new Rectangle(branchesBox.x + branchesBox.width + gap, body.y, nodeWidth, body.height);
+        Rectangle detailColumn = new Rectangle(nodesBox.x + nodesBox.width + gap, body.y,
+                Math.max(280, body.x + body.width - nodesBox.x - nodesBox.width - gap), body.height);
+
+        java.util.List<SkillTreeProgressionAuthority.SkillBranch> branches = SkillTreePanelAuthority.branches();
+        SkillTreeProgressionAuthority.SkillBranch branch = selectedSkillBranch(branches);
+        drawBox(g, branchesBox, "Skill Branches");
+        int branchY = branchesBox.y + 38;
+        for (int i = 0; i < branches.size(); i++) {
+            SkillTreeProgressionAuthority.SkillBranch candidate = branches.get(i);
+            int branchIndex = i;
+            addOverlayButton((candidate == branch ? "> " : "") + SkillTreePanelAuthority.branchLabel(this, candidate),
+                    branchesBox.x + 10, branchY + i * 38, branchesBox.width - 20, 32,
+                    candidate.worldUse(), () -> selectSkillBranch(branchIndex));
+        }
+
+        java.util.List<SkillTreeProgressionAuthority.SkillNode> nodes =
+                SkillTreePanelAuthority.nodesForBranch(branch);
+        SkillTreeProgressionAuthority.SkillNode selectedNode = selectedSkillNode(branch);
+        drawBox(g, nodesBox, branch == null ? "Skill Nodes" : branch.name());
+        int nodeY = nodesBox.y + 38;
+        for (int i = 0; i < nodes.size(); i++) {
+            SkillTreeProgressionAuthority.SkillNode node = nodes.get(i);
+            addOverlayButton((node == selectedNode ? "> " : "") + SkillTreePanelAuthority.nodeLabel(this, node),
+                    nodesBox.x + 10, nodeY + i * 46, nodesBox.width - 20, 40,
+                    node.visibleEffect(), () -> selectSkillNode(node));
+        }
+
+        int actionsHeight = 36;
+        Rectangle detail = new Rectangle(detailColumn.x, detailColumn.y, detailColumn.width,
+                Math.max(150, detailColumn.height - actionsHeight - 8));
+        drawDetailBox(g, detail, selectedNode == null ? "Skill Detail" : selectedNode.name(),
+                SkillTreePanelAuthority.detailLines(this, branch, selectedNode), null);
+        int actionY = detail.y + detail.height + 8;
+        int actionWidth = Math.max(110, (detailColumn.width - gap) / 2);
+        addOverlayButton("Unlock", detailColumn.x, actionY, actionWidth, 28,
+                "Spend XP to unlock the selected skill when every requirement is met.", this::unlockSelectedSkillNode);
+        addOverlayButton("Skill Info", detailColumn.x + actionWidth + gap, actionY, actionWidth, 28,
+                "Open the Skill Progression reference.",
+                () -> InfopediaHotLinkAuthority.openMechanic(this, "skill-progression", "character skill tree"));
+    }
+
+    private SkillTreeProgressionAuthority.SkillBranch selectedSkillBranch(
+            java.util.List<SkillTreeProgressionAuthority.SkillBranch> branches) {
+        if (branches == null || branches.isEmpty()) return null;
+        selectedSkillBranch = Math.max(0, Math.min(selectedSkillBranch, branches.size() - 1));
+        return branches.get(selectedSkillBranch);
+    }
+
+    private SkillTreeProgressionAuthority.SkillNode selectedSkillNode(
+            SkillTreeProgressionAuthority.SkillBranch branch) {
+        java.util.List<SkillTreeProgressionAuthority.SkillNode> nodes =
+                SkillTreePanelAuthority.nodesForBranch(branch);
+        if (nodes.isEmpty()) {
+            selectedSkillNodeId = "";
+            return null;
+        }
+        for (SkillTreeProgressionAuthority.SkillNode node : nodes) {
+            if (node.id().equals(selectedSkillNodeId)) return node;
+        }
+        SkillTreeProgressionAuthority.SkillNode selected = nodes.get(0);
+        selectedSkillNodeId = selected.id();
+        return selected;
+    }
+
+    void selectSkillBranch(int branchIndex) {
+        java.util.List<SkillTreeProgressionAuthority.SkillBranch> branches = SkillTreePanelAuthority.branches();
+        if (branches.isEmpty()) return;
+        selectedSkillBranch = Math.max(0, Math.min(branchIndex, branches.size() - 1));
+        java.util.List<SkillTreeProgressionAuthority.SkillNode> nodes =
+                SkillTreePanelAuthority.nodesForBranch(branches.get(selectedSkillBranch));
+        selectedSkillNodeId = nodes.isEmpty() ? "" : nodes.get(0).id();
+        selectedButton = 0;
+        repaint();
+    }
+
+    void selectSkillNode(SkillTreeProgressionAuthority.SkillNode node) {
+        if (node == null) return;
+        selectedSkillNodeId = node.id();
+        repaint();
+    }
+
+    SkillTreeProgressionAuthority.SkillNode selectedSkillNode() {
+        return selectedSkillNode(selectedSkillBranch(SkillTreePanelAuthority.branches()));
+    }
+
+    void unlockSelectedSkillNode() {
+        SkillTreeProgressionAuthority.SkillNode node = selectedSkillNode();
+        if (node == null) {
+            logEvent("No skill node is selected.");
+            repaint();
+            return;
+        }
+        unlockSkillNode(node.name());
+        repaint();
+    }
+
+    String unlockSkillNode(String rawNode) {
+        SkillTreeProgressionAuthority.SpendResult result = SkillTreeProgressionAuthority.spendXp(
+                unlockedSkillNodes, xp, rawNode, SkillTreeProgressionAuthority.SkillAccessContext.fromGame(this),
+                active == null ? java.util.Map.of() : active.stats);
+        if (!result.success()) {
+            logEvent(result.message());
+            return result.message();
+        }
+        xp = result.remainingXp();
+        unlockedSkillNodes.add(result.unlockedNodeId());
+        boolean statChanged = SkillTreeProgressionAuthority.applyStatEffect(active, result.statEffect());
+        String message = result.message() + " Remaining XP " + xp
+                + (statChanged ? " Stat effect applied: " + result.statEffect() + "." : ".");
+        logEvent("SKILL: " + message);
+        return message;
     }
 
     private void selectCharacterTab(int tabIndex) {
@@ -2956,12 +3091,18 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private void drawCraftingOverlay(java.awt.Graphics2D g, Rectangle body) {
+        BaseObject workbenchMachine = activeWorkbenchProductionMachine();
+        if (productionBoardActive) {
+            drawProductionControlBoardOverlay(g, body);
+            return;
+        }
+        if (workbenchMachine != null && workbenchStaffedJobsActive) {
+            drawStaffedWorkbenchOverlay(g, body, workbenchMachine);
+            return;
+        }
         Rectangle recipeList = new Rectangle(body.x, body.y, Math.max(280, body.width / 2), body.height);
         drawBox(g, recipeList, "Craft Recipes");
-        ArrayList<CraftingRecipe> all = CraftingRecipe.all();
-        ArrayList<CraftingRecipe> visible = new ArrayList<>();
-        for (CraftingRecipe recipe : all) if (recipe.visibleTo(this)) visible.add(recipe);
-        if (visible.isEmpty()) visible.add(CraftingRecipe.noKnownRecipes());
+        ArrayList<CraftingRecipe> visible = visibleCraftingRecipesForCurrentSurface();
         selectedCraftingRecipe = visibleCraftingRecipeMatching(visible, selectedCraftingRecipe);
         int shown = Math.min(10, visible.size());
         int y = recipeList.y + 34;
@@ -2970,30 +3111,189 @@ class GamePanel extends LegacyPanelBridgeBase {
             int rowY = y + i * 30;
             BufferedImage icon = images.getItemIcon(recipe.outputBaseItem);
             ButtonBox b = new ButtonBox(recipe.name, recipeList.x + 10, rowY - 20, recipeList.width - 20, 26,
-                    recipe.shortStatus(this), () -> {
-                        selectedCraftingRecipe = recipe;
-                        panelMode = PanelMode.CRAFTING;
-                        logEvent("Selected craft recipe: " + recipe.name + ".");
-                    }, icon);
+                    recipe.shortStatus(this), () -> selectCraftingRecipeFromPanel(recipe), icon);
             buttons.add(b);
         }
 
         Rectangle detail = new Rectangle(recipeList.x + recipeList.width + 14, body.y, Math.max(240, body.x + body.width - recipeList.x - recipeList.width - 14), body.height);
         CraftingRecipe recipe = selectedCraftingRecipe;
         ArrayList<String> lines = new ArrayList<>();
-        if (recipe == null) {
-            lines.add("No crafting recipe selected.");
+        if (recipe == null || recipe.disabled) {
+            lines.add(recipe == null ? "No crafting recipe selected." : recipe.description);
         } else {
             lines.addAll(ProductionReadabilityAuthority.detailLines(this, recipe));
         }
-        drawDetailBox(g, detail, "Crafting", lines, recipe == null ? null : images.getItemIcon(recipe.outputBaseItem));
+        String detailTitle = workbenchMachine == null ? "Crafting" : "Workbench - " + safeLabel(workbenchMachine.name, "machine");
+        drawDetailBox(g, detail, detailTitle, lines, recipe == null ? null : images.getItemIcon(recipe.outputBaseItem));
         int by = detail.y + detail.height - 36;
-        addOverlayButton("Craft", detail.x + 12, by, 92, 28, "Craft the selected recipe if inputs and machine are valid.", this::craftSelectedRecipe);
-        addOverlayButton("Build", detail.x + 112, by, 86, 28, "Open construction recipes.", () -> openPanel(PanelMode.BUILD));
-        addOverlayButton("Production Info", detail.x + 206, by, 112, 28, "Open the Production Forecast mechanic reference.",
+        int buttonGap = 8;
+        int buttonX = detail.x + 12;
+        int availableButtonWidth = Math.max(216, detail.width - 24);
+        int primaryButtonWidth = Math.max(48, (availableButtonWidth - buttonGap * 3) / 4);
+        int secondaryY = by - 34;
+        int secondaryButtonWidth = Math.max(72, (availableButtonWidth - buttonGap * 2) / 3);
+        addOverlayButton("Craft", buttonX, by, primaryButtonWidth, 28, "Craft the selected recipe if inputs and machine are valid.", this::craftSelectedRecipe);
+        if (workbenchMachine == null) {
+            addOverlayButton("Build", buttonX + primaryButtonWidth + buttonGap, by, primaryButtonWidth, 28,
+                    "Open construction recipes.", () -> openPanel(PanelMode.BUILD));
+        } else {
+            addOverlayButton("Staff Jobs", buttonX + primaryButtonWidth + buttonGap, by, primaryButtonWidth, 28,
+                    "Configure staffed production for this machine.", this::openStaffedWorkbenchJobs);
+        }
+        addOverlayButton("Status", buttonX + (primaryButtonWidth + buttonGap) * 2, by, primaryButtonWidth, 28,
+                "Show the current production status in the event log.", this::reportProductionStatusFromCraftingPanel);
+        addOverlayButton("History", buttonX + (primaryButtonWidth + buttonGap) * 3, by, primaryButtonWidth, 28,
+                "Show recent production history in the event log.", this::reportProductionHistoryFromCraftingPanel);
+        addOverlayButton("Production", buttonX, secondaryY, secondaryButtonWidth, 28,
+                "Open the base-wide staffed-production board.", this::openProductionControlBoard);
+        addOverlayButton("Production Info", buttonX + secondaryButtonWidth + buttonGap, secondaryY, secondaryButtonWidth, 28, "Open the Production Forecast mechanic reference.",
                 () -> InfopediaHotLinkAuthority.openMechanic(this, "production-forecast", "crafting production reference"));
-        addOverlayButton("Teach Machine", detail.x + 326, by, 112, 28, "Install the selected recipe doctrine in its required machine.",
+        addOverlayButton("Teach Machine", buttonX + (secondaryButtonWidth + buttonGap) * 2, secondaryY, secondaryButtonWidth, 28, "Install the selected recipe doctrine in its required machine.",
                 this::teachSelectedRecipeToMachine);
+    }
+
+    private void drawStaffedWorkbenchOverlay(java.awt.Graphics2D g, Rectangle body, BaseObject machine) {
+        Rectangle jobList = new Rectangle(body.x, body.y, Math.max(280, body.width / 2), body.height);
+        drawBox(g, jobList, "Staffed Jobs");
+        ArrayList<FactionRecipeVariant> jobs = visibleWorkbenchStaffedJobs();
+        FactionRecipeVariant selected = selectedWorkbenchStaffedJob(jobs);
+        int perPage = 8;
+        int pageCount = Math.max(1, (jobs.size() + perPage - 1) / perPage);
+        workbenchStaffedJobPage = Math.max(0, Math.min(pageCount - 1, workbenchStaffedJobPage));
+        int first = workbenchStaffedJobPage * perPage;
+        int shown = Math.min(perPage, Math.max(0, jobs.size() - first));
+        int y = jobList.y + 34;
+        for (int i = 0; i < shown; i++) {
+            FactionRecipeVariant variant = jobs.get(first + i);
+            int rowY = y + i * 30;
+            ButtonBox button = new ButtonBox(variant.outputName, jobList.x + 10, rowY - 20,
+                    jobList.width - 20, 26, ControlledProductionJobAuthority.shortStatus(this, machine, variant),
+                    () -> selectWorkbenchStaffedJob(variant), images.getItemIcon(variant.base.outputBaseItem));
+            buttons.add(button);
+        }
+        int listButtonY = jobList.y + jobList.height - 36;
+        int listGap = 6;
+        int listButtonWidth = Math.max(56, (jobList.width - 20 - listGap * 3) / 4);
+        addOverlayButton("Cat >", jobList.x + 10, listButtonY, listButtonWidth, 28,
+                "Cycle staffed-job category filter.", () -> cycleWorkbenchStaffedCategory(1));
+        addOverlayButton("Ready >", jobList.x + 10 + listButtonWidth + listGap, listButtonY, listButtonWidth, 28,
+                "Cycle staffed-job readiness filter.", () -> cycleWorkbenchStaffedReadiness(1));
+        addOverlayButton("Page <", jobList.x + 10 + (listButtonWidth + listGap) * 2, listButtonY, listButtonWidth, 28,
+                "Show the previous staffed-job page.", () -> changeWorkbenchStaffedJobPage(-1));
+        addOverlayButton("Page >", jobList.x + 10 + (listButtonWidth + listGap) * 3, listButtonY, listButtonWidth, 28,
+                "Show the next staffed-job page.", () -> changeWorkbenchStaffedJobPage(1));
+
+        Rectangle detail = new Rectangle(jobList.x + jobList.width + 14, body.y,
+                Math.max(240, body.x + body.width - jobList.x - jobList.width - 14), body.height);
+        ArrayList<String> lines = staffedWorkbenchDetailLines(machine, selected, jobs.size(), pageCount);
+        drawDetailBox(g, detail, "Staffed Setup - " + safeLabel(machine.name, "machine"), lines,
+                selected == null ? images.getBaseObjectImage(machine) : images.getItemIcon(selected.base.outputBaseItem));
+        int by = detail.y + detail.height - 36;
+        int gap = 8;
+        int x = detail.x + 12;
+        int available = Math.max(216, detail.width - 24);
+        int width = Math.max(48, (available - gap * 3) / 4);
+        int policyY = by - 34;
+        int navigationY = policyY - 34;
+        int policyWidth = Math.max(48, (available - gap * 3) / 4);
+        addOverlayButton("Assign", x, by, width, 28, "Assign the selected generated job to this machine.",
+                this::assignSelectedWorkbenchStaffedJob);
+        addOverlayButton("Worker >", x + width + gap, by, width, 28,
+                "Assign the next valid recruited worker to this machine.", this::cycleActiveWorkbenchWorker);
+        addOverlayButton("Queue -", x + (width + gap) * 2, by, width, 28,
+                "Remove one queued staffed run.", () -> adjustActiveWorkbenchQueue(-1));
+        addOverlayButton("Queue +", x + (width + gap) * 3, by, width, 28,
+                "Add one staffed run, up to twenty; queued work advances in the background.",
+                () -> adjustActiveWorkbenchQueue(1));
+        addOverlayButton("Materials >", x, policyY, policyWidth, 28,
+                "Cycle what this machine does when required materials run out.", this::cycleActiveWorkbenchMaterialPolicy);
+        addOverlayButton("Output >", x + policyWidth + gap, policyY, policyWidth, 28,
+                "Cycle where completed staffed output is routed.", this::cycleActiveWorkbenchOutputPolicy);
+        addOverlayButton("No Room >", x + (policyWidth + gap) * 2, policyY, policyWidth, 28,
+                "Cycle what this machine does when its output destination has no room.", this::cycleActiveWorkbenchNoRoomPolicy);
+        addOverlayButton("Clear", x + (policyWidth + gap) * 3, policyY, policyWidth, 28,
+                "Cancel the remaining staffed queue and clear current-run progress.", this::clearActiveWorkbenchQueue);
+        int navigationWidth = Math.max(96, (available - gap) / 2);
+        addOverlayButton("Production", x, navigationY, navigationWidth, 28,
+                "Open the base-wide staffed-production board.", this::openProductionControlBoard);
+        addOverlayButton("Manual", x + navigationWidth + gap, navigationY, navigationWidth, 28,
+                "Return to immediate manual crafting recipes.", this::openManualWorkbenchRecipes);
+    }
+
+    private void drawProductionControlBoardOverlay(java.awt.Graphics2D g, Rectangle body) {
+        ArrayList<BaseObject> machines = ProductionControlBoardAuthority.machines(this);
+        BaseObject selected = selectedProductionBoardMachine(machines);
+        int perPage = 8;
+        int pageCount = Math.max(1, (machines.size() + perPage - 1) / perPage);
+        if (selected != null) {
+            int selectedIndex = machines.indexOf(selected);
+            if (selectedIndex >= 0) productionBoardPage = selectedIndex / perPage;
+        }
+        productionBoardPage = Math.max(0, Math.min(pageCount - 1, productionBoardPage));
+        int first = productionBoardPage * perPage;
+        int shown = Math.min(perPage, Math.max(0, machines.size() - first));
+
+        Rectangle list = new Rectangle(body.x, body.y, Math.max(280, body.width / 2), body.height);
+        drawBox(g, list, "Base Production");
+        int y = list.y + 34;
+        if (machines.isEmpty()) {
+            drawUiTextLine(g, "No built production machines.", list.x + 12, y);
+        }
+        for (int i = 0; i < shown; i++) {
+            BaseObject machine = machines.get(first + i);
+            int rowY = y + i * 30;
+            ButtonBox button = new ButtonBox(ProductionControlBoardAuthority.rowLabel(this, machine),
+                    list.x + 10, rowY - 20, list.width - 20, 26,
+                    "Select this machine for production control.",
+                    () -> selectProductionBoardMachine(machine), images.getBaseObjectImage(machine));
+            buttons.add(button);
+        }
+        int listButtonY = list.y + list.height - 36;
+        int listButtonWidth = Math.max(90, (list.width - 26) / 2);
+        addOverlayButton("Page <", list.x + 10, listButtonY, listButtonWidth, 28,
+                "Show the previous production-machine page.", () -> changeProductionBoardPage(-1));
+        addOverlayButton("Page >", list.x + 16 + listButtonWidth, listButtonY, listButtonWidth, 28,
+                "Show the next production-machine page.", () -> changeProductionBoardPage(1));
+
+        Rectangle detailColumn = new Rectangle(list.x + list.width + 14, body.y,
+                Math.max(240, body.x + body.width - list.x - list.width - 14), body.height);
+        int controlRowsHeight = 96;
+        Rectangle detail = new Rectangle(detailColumn.x, detailColumn.y, detailColumn.width,
+                Math.max(120, detailColumn.height - controlRowsHeight - 8));
+        drawDetailBox(g, detail, selected == null ? "Production Control" : safeLabel(selected.name, "Machine"),
+                ProductionControlBoardAuthority.detailLines(this, selected),
+                selected == null ? null : images.getBaseObjectImage(selected));
+
+        int gap = 6;
+        int x = detailColumn.x;
+        int available = detailColumn.width;
+        int width = Math.max(48, (available - gap * 3) / 4);
+        int row1 = detail.y + detail.height + 8;
+        int row2 = row1 + 34;
+        int row3 = row2 + 34;
+        addOverlayButton("Worker >", x, row1, width, 28,
+                "Assign the next valid recruited worker to the selected machine.", this::cycleProductionBoardWorker);
+        addOverlayButton("Queue -", x + width + gap, row1, width, 28,
+                "Remove one run from the selected machine's queue.", () -> adjustProductionBoardQueue(-1));
+        addOverlayButton("Queue +", x + (width + gap) * 2, row1, width, 28,
+                "Add one background run to the selected machine's queue.", () -> adjustProductionBoardQueue(1));
+        addOverlayButton("Workbench", x + (width + gap) * 3, row1, width, 28,
+                "Open staffed-job setup for the selected machine.", this::openSelectedProductionBoardWorkbench);
+        addOverlayButton("Materials >", x, row2, width, 28,
+                "Cycle shortage handling for the selected machine.", () -> updateProductionBoardPolicy("materials"));
+        addOverlayButton("Output >", x + width + gap, row2, width, 28,
+                "Cycle output routing for the selected machine.", () -> updateProductionBoardPolicy("output"));
+        addOverlayButton("No Room >", x + (width + gap) * 2, row2, width, 28,
+                "Cycle no-room handling for the selected machine.", () -> updateProductionBoardPolicy("no-room"));
+        addOverlayButton("Clear", x + (width + gap) * 3, row2, width, 28,
+                "Cancel the selected machine's remaining queue and progress.", this::clearProductionBoardQueue);
+        int navWidth = Math.max(72, (available - gap * 2) / 3);
+        addOverlayButton("Status", x, row3, navWidth, 28,
+                "Write selected-machine production status to the event log.", this::reportProductionBoardStatus);
+        addOverlayButton("History", x + navWidth + gap, row3, navWidth, 28,
+                "Write selected-machine production history to the event log.", this::reportProductionBoardHistory);
+        addOverlayButton("Recipes", x + (navWidth + gap) * 2, row3, navWidth, 28,
+                "Return to crafting recipes.", this::closeProductionControlBoard);
     }
 
     private void drawAuspexOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -3381,6 +3681,13 @@ class GamePanel extends LegacyPanelBridgeBase {
             lines.addAll(ConversationReadabilityAuthority.describe(npc,
                     factionStanding.getOrDefault(conversationFaction, 0),
                     temporaryHostileTurns.getOrDefault(conversationFaction, 0)).lines());
+            if (SkillTrainerAuthority.canTrain(npc)) lines.add(SkillTrainerAuthority.trainerLine(npc));
+            if (npc.isFactionRepresentative()) {
+                lines.add(ProductionContractAuthority.representativeLine(this, npc));
+                lines.add(ContractTurnInAuthority.representativeLine(this, npc));
+                lines.add(FactionReinforcementAuthority.representativeLine(this, npc));
+                lines.add(FactionCrecheAuthority.representativeLine(this, npc));
+            }
         }
         drawDetailBox(g, actions, npc != null && npc.isAnimalActor() ? "Animal Options" : "Conversation Options", lines, null);
         int by = actions.y + actions.height - 36;
@@ -3390,10 +3697,50 @@ class GamePanel extends LegacyPanelBridgeBase {
             addOverlayButton("Look", actions.x + 116, by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
             addOverlayButton("Approach", actions.x + 196, by, 92, 28, "Plan movement to a reachable adjacent tile.", () -> approachActiveInteractionTarget(npc.x, npc.y, npc.name));
         } else {
-            addOverlayButton("Talk", actions.x + 12, by, 82, 28, "Talk to this entity.", this::talkToActiveNpc);
-            if (npc != null && npc.isTrader()) addOverlayButton("Trade", actions.x + 102, by, 92, 28, "Open this trader's store panel.", () -> openTradeForNpc(npc));
-            addOverlayButton("Look", actions.x + (npc != null && npc.isTrader() ? 202 : 102), by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
-            if (npc != null) addOverlayButton("Approach", actions.x + (npc.isTrader() ? 282 : 182), by, 92, 28,
+            int actionX = actions.x + 12;
+            addOverlayButton("Talk", actionX, by, 82, 28, "Talk to this entity.", this::talkToActiveNpc);
+            actionX += 90;
+            if (npc != null && npc.isTrader()) {
+                addOverlayButton("Trade", actionX, by, 92, 28, "Open this trader's store panel.", () -> openTradeForNpc(npc));
+                actionX += 100;
+            }
+            boolean trainerService = SkillTrainerAuthority.canTrain(npc);
+            boolean contractService = npc != null && npc.isFactionRepresentative();
+            if (trainerService || contractService) {
+                int serviceGap = 8;
+                if (contractService) {
+                    int contractWidth = Math.max(90, (actions.width - 24 - serviceGap) / 2);
+                    int serviceX = actions.x + 12;
+                    addOverlayButton("Take Work", serviceX, by - 34, contractWidth, 28,
+                            "Accept one faction production order when this faction has no active contract.",
+                            this::acceptProductionContractWithActiveNpc);
+                    serviceX += contractWidth + serviceGap;
+                    addOverlayButton("Turn In", serviceX, by - 34, contractWidth, 28,
+                            "Submit carried contract proof and receive the promised reward when all requirements are met.",
+                            this::turnInContractWithActiveNpc);
+                    int reinforcementWidth = Math.max(120, (actions.width - 24 - serviceGap) / 2);
+                    addOverlayButton("Receive Reinforcements", actions.x + 12, by - 68,
+                            reinforcementWidth, 28,
+                            "Receive a ready casualty-replacement group when its route and staffed capacity are available.",
+                            this::receiveReinforcementsWithActiveNpc);
+                    addOverlayButton("Change Source", actions.x + 12 + reinforcementWidth + serviceGap, by - 68,
+                            reinforcementWidth, 28,
+                            "Cycle the open manifest among available train, barracks, and paid local recruitment sources.",
+                            this::cycleReinforcementSourceWithActiveNpc);
+                    addOverlayButton("Muster Cohort", actions.x + 12, by - 102,
+                            Math.max(120, actions.width - 24), 28,
+                            "Recruit a bounded group only from crèche cohorts that have reached young adulthood in world time.",
+                            this::musterCrecheCohortWithActiveNpc);
+                }
+                if (trainerService) {
+                    addOverlayButton("Train", actions.x + 12, contractService ? by - 136 : by - 34,
+                            Math.max(120, actions.width - 24), 28,
+                            "Open the Skills tab with this trainer's instruction available.", this::trainWithActiveNpc);
+                }
+            }
+            addOverlayButton("Look", actionX, by, 72, 28, "Inspect this entity in look mode.", this::lookAtActiveInteractionTarget);
+            actionX += 80;
+            if (npc != null) addOverlayButton("Approach", actionX, by, 92, 28,
                     "Plan movement to a reachable adjacent tile.", () -> approachActiveInteractionTarget(npc.x, npc.y, npc.name));
         }
     }
@@ -3512,7 +3859,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                 lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
             } else {
                 lines.add(base.businessReturnLine(this));
-                lines.addAll(MachineRepairAuthority.detailLines(base, machineParts));
+                lines.addAll(MachineRepairAuthority.detailLines(this, base, machineParts));
             }
         }
         lines.add("Use the action buttons below; this target is no longer routed to the dead generic placeholder.");
@@ -3539,8 +3886,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (base != null || (obj != null && isMachineObject(obj))) {
             addOverlayButton("Operate", x, by, 94, 28, "Operate or inspect this machine.", this::operateActiveInteractionObject); x += 102;
-            addOverlayButton("Craft", x, by, 78, 28, "Open crafting/workbench recipes.", () -> openPanel(PanelMode.CRAFTING)); x += 86;
+            Runnable craftAction = base == null ? () -> openPanel(PanelMode.CRAFTING) : this::openActiveMachineWorkbench;
+            String craftTooltip = base == null ? "Open crafting recipes." : "Open recipes compatible with this machine.";
+            addOverlayButton("Craft", x, by, 78, 28, craftTooltip, craftAction); x += 86;
             if (base != null) {
+                addOverlayButton("Status", actions.x + 12, by - 34, 92, 28, "Show this machine's production status in the event log.",
+                        this::reportActiveMachineProductionStatus);
+                addOverlayButton("History", actions.x + 112, by - 34, 92, 28, "Show this machine's recent production history in the event log.",
+                        this::reportActiveMachineProductionHistory);
                 addOverlayButton("Repair", x, by, 82, 28, "Spend one machine part to restore this owned machine toward serviceable condition.",
                         this::repairActiveBaseMachine); x += 90;
             }
@@ -3608,7 +3961,7 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void repairActiveBaseMachine() {
         BaseObject machine = activeInteractionBaseObject;
-        MachineRepairAuthority.RepairPreview preview = MachineRepairAuthority.preview(machine, machineParts);
+        MachineRepairAuthority.RepairPreview preview = MachineRepairAuthority.preview(this, machine, machineParts);
         if (!preview.available()) {
             logEvent(preview.summary());
             repaint();
@@ -3623,25 +3976,51 @@ class GamePanel extends LegacyPanelBridgeBase {
         advanceTurn("repairs " + safeLabel(machine.name, "a machine") + ".");
     }
 
-    private void workActiveConstructionSite() {
+    void workActiveConstructionSite() {
         BaseObject site = activeInteractionBaseObject;
         if (site == null || !site.underConstruction) {
             logEvent("No staged construction site is selected.");
             repaint();
             return;
         }
+        if (!constructionInteractionSiteExists(site)) {
+            logEvent("Construction site is no longer available. Re-open a staged site before working.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionInReach(site)) {
+            logEvent("Construction site is no longer within reach. Stand adjacent to work this staged site.");
+            repaint();
+            return;
+        }
         String beforeName = safeLabel(site.name, "construction site");
+        int laborBefore = Math.max(0, site.constructionLaborDone);
+        boolean wasUnderConstruction = site.underConstruction;
         int inserted = ProgressiveConstructionAuthority.contribute(this, site, 1, true);
-        logEvent(ProgressiveConstructionAuthority.contributionResultLine(site, inserted, !site.underConstruction));
+        int laborAdded = Math.max(0, site.constructionLaborDone - laborBefore);
+        logEvent(ProgressiveConstructionAuthority.contributionResultLine(this, site, inserted, laborAdded,
+                wasUnderConstruction && !site.underConstruction));
         if (!site.underConstruction) activeInteractionBaseObject = site;
-        advanceTurn(site.underConstruction ? "works on " + beforeName + "." : "finishes " + safeLabel(site.name, "construction") + ".");
+        if (inserted > 0 || laborAdded > 0 || (wasUnderConstruction && !site.underConstruction)) {
+            advanceTurn(site.underConstruction ? "works on " + beforeName + "." : "finishes " + safeLabel(site.name, "construction") + ".");
+        }
         repaint();
     }
 
-    private void dismantleActiveConstructionSite() {
+    void dismantleActiveConstructionSite() {
         BaseObject site = activeInteractionBaseObject;
         if (site == null || !site.underConstruction) {
             logEvent("No unfinished construction site is selected.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionSiteExists(site)) {
+            logEvent("Construction site is no longer available. Re-open a staged site before removing it.");
+            repaint();
+            return;
+        }
+        if (!constructionInteractionInReach(site)) {
+            logEvent("Construction site is no longer within reach. Stand adjacent to remove this staged site.");
             repaint();
             return;
         }
@@ -3653,6 +4032,14 @@ class GamePanel extends LegacyPanelBridgeBase {
         screen = Screen.GAME;
         advanceTurn("dismantles " + beforeName + ".");
         repaint();
+    }
+
+    private boolean constructionInteractionSiteExists(BaseObject site) {
+        return site != null && baseObjects != null && baseObjects.contains(site);
+    }
+
+    private boolean constructionInteractionInReach(BaseObject site) {
+        return site != null && Math.max(Math.abs(site.x - playerX), Math.abs(site.y - playerY)) <= 1;
     }
 
     private void teachSelectedRecipeToMachine() {
@@ -3760,8 +4147,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         TraderTradeActionAuthority.populateAccessibleFactionStock(t, npc, zone, r);
         Faction f = npc == null ? FactionInventoryStockAuthority.factionForZone(zone) : npc.faction;
         NpcFactionSite site = siteForFaction(f, zone);
+        FactionSiteWorkforceAuthority.Status workforce = FactionSiteWorkforceAuthority.sync(site, world);
+        t.sourceWorkforceSummary = workforce.playerLine();
         TraderTradeActionAuthority.attachNpcSiteStock(t, site, r, world, turn);
         t.applySupplyChainStock(world, turn, r);
+        PopulationMarketPressureAuthority.apply(t, world, f, worldTurn, turn);
+        VerticalFloorTradeAuthority.apply(t, world, f, worldTurn, turn);
         if (source != null) {
             t.name = safeLabel(source.label, "Store");
             t.archetype = safeLabel(source.type, "Store");
@@ -3820,6 +4211,16 @@ class GamePanel extends LegacyPanelBridgeBase {
             logEvent("Cannot buy " + offer.name + ": this vending machine is out of stock.");
             return;
         }
+        String essentialSupplyBlock = EssentialSupplyProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!essentialSupplyBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + essentialSupplyBlock + ".");
+            return;
+        }
+        String verticalTradeBlock = VerticalFloorTradeAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!verticalTradeBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + verticalTradeBlock + ".");
+            return;
+        }
         int price = activeTraderSession.buyPrice(offer);
         if (!spendImperialScript(price)) {
             logEvent("Cannot buy " + offer.name + ": need " + price + " script, have " + carriedScript + ".");
@@ -3832,6 +4233,10 @@ class GamePanel extends LegacyPanelBridgeBase {
             activeInteractionObject.vendCount++;
             activeTraderSession.supplyChainSummary = "Limited vending stock: " + rem + " vend(s) remaining.";
         }
+        EssentialSupplyProvenanceAuthority.consume(world, offer, worldTurn);
+        EssentialSupplyProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        VerticalFloorTradeAuthority.consume(world, offer, worldTurn);
+        VerticalFloorTradeAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
         ItemProvenanceRecord pr = offer.provenance == null
                 ? ItemProvenanceRecord.trade(offer.name, activeInteractionNpc == null ? FactionInventoryStockAuthority.factionForZone(world == null ? null : world.zoneType) : activeInteractionNpc.faction, activeTraderSession.name, world, turn, "bought by player through interaction trade panel")
                 : ItemProvenanceRecord.transferred(offer.provenance, offer.name, world, turn, "sold to player by " + activeTraderSession.name);
@@ -3980,6 +4385,69 @@ class GamePanel extends LegacyPanelBridgeBase {
         repaint();
     }
 
+    void turnInContractWithActiveNpc() {
+        ContractTurnInAuthority.TurnInResult result = ContractTurnInAuthority.turnInFirst(this, activeInteractionNpc);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("turns in completed contract proof.");
+        repaint();
+    }
+
+    void acceptProductionContractWithActiveNpc() {
+        ProductionContractAuthority.WorkResult result = ProductionContractAuthority.accept(this, activeInteractionNpc);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("accepts faction production work.");
+        repaint();
+    }
+
+    void receiveReinforcementsWithActiveNpc() {
+        NpcEntity representative = activeInteractionNpc;
+        FactionReinforcementAuthority.ReceptionResult result = FactionReinforcementAuthority.receive(
+                world, representative == null ? Faction.NONE : representative.faction, turn, carriedScript, rng);
+        if (result.success() && !spendImperialScript(result.scriptCost())) {
+            throw new IllegalStateException("Validated reinforcement payment exceeded carried script.");
+        }
+        logEvent(result.message());
+        if (result.success()) advanceTurn("receives a faction reinforcement group.");
+        repaint();
+    }
+
+    void cycleReinforcementSourceWithActiveNpc() {
+        NpcEntity representative = activeInteractionNpc;
+        FactionReinforcementAuthority.SourceChangeResult result = FactionReinforcementAuthority.cycleSource(
+                world, representative == null ? Faction.NONE : representative.faction, turn, rng);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("changes a faction reinforcement source.");
+        repaint();
+    }
+
+    void musterCrecheCohortWithActiveNpc() {
+        NpcEntity representative = activeInteractionNpc;
+        FactionCrecheAuthority.MusterResult result = FactionCrecheAuthority.muster(
+                world, representative == null ? Faction.NONE : representative.faction, worldTurn, rng);
+        logEvent(result.message());
+        if (result.success()) advanceTurn("musters a mature faction crèche cohort.");
+        repaint();
+    }
+
+    void trainWithActiveNpc() {
+        NpcEntity npc = activeInteractionNpc;
+        java.util.Set<String> trainers = SkillTrainerAuthority.trainerTokens(npc);
+        if (trainers.isEmpty()) {
+            logEvent("This character does not offer skill training.");
+            repaint();
+            return;
+        }
+        activeSkillTrainers.clear();
+        activeSkillTrainers.addAll(trainers);
+        activeSkillTrainerLabel = safeLabel(npc.name, safeLabel(npc.role, "specialist"));
+        characterTab = CharacterEquipmentAndMedicalAuthority.CharacterTab.SKILLS.ordinal();
+        selectedSkillBranch = 0;
+        selectedSkillNodeId = "fab-repair-forge-tutoring";
+        openPanel(PanelMode.CHARACTER);
+        logEvent("Training opened with " + activeSkillTrainerLabel + ".");
+        repaint();
+    }
+
     private void petActiveAnimal() {
         NpcEntity npc = activeInteractionNpc;
         if (npc == null || !npc.isAnimalActor()) {
@@ -4002,10 +4470,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         MapObjectState obj = activeInteractionObject;
         BaseObject base = activeInteractionBaseObject;
         if (base != null) {
-            logEvent("Opened " + safeLabel(base.name, "base object") + " operation surface.");
-            panelMode = PanelMode.WORKBENCH;
-            screen = Screen.PANEL;
-            repaint();
+            openActiveMachineWorkbench();
             return;
         }
         if (obj == null) {
@@ -4291,6 +4756,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         turn++;
         worldTurn++;
         if (line != null && !line.isBlank()) logEvent(line);
+        int staffedElapsed = lastStaffedProductionBackgroundTurn > turn
+                ? 1 : Math.max(1, turn - lastStaffedProductionBackgroundTurn);
+        lastStaffedProductionBackgroundTurn = turn;
+        StaffedProductionBackgroundAuthority.tick(this, staffedElapsed);
         tickFactionRuntimeSystems(false);
         tickPopulationEconomyRuntimeSystems(false);
     }
@@ -4821,6 +5290,8 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         panelMode = PanelMode.NONE;
         screen = world == null ? Screen.MENU : Screen.GAME;
+        activeSkillTrainers.clear();
+        activeSkillTrainerLabel = "";
     }
     void closeKnowledgeScreen() { screen = Screen.GAME; }
     void handleKnowledgeKeyPressed(int code) {}
@@ -5365,6 +5836,10 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     void openPanel(PanelMode mode) {
         panelMode = mode == null ? PanelMode.NONE : mode;
+        if (panelMode != PanelMode.CHARACTER) {
+            activeSkillTrainers.clear();
+            activeSkillTrainerLabel = "";
+        }
         screen = mode == PanelMode.CHARACTER ? Screen.CHARACTER : Screen.PANEL;
         if (mode == PanelMode.LOOK) lookCursorActive = true;
         noteUniversalWindowOpened(mode, "open panel");
@@ -5694,19 +6169,448 @@ class GamePanel extends LegacyPanelBridgeBase {
         repaint();
     }
     void openCraftingPanel() {
+        productionBoardActive = false;
+        workbenchStaffedJobsActive = false;
         selectedCraftingRecipe = selectedCraftingRecipe == null ? firstVisibleCraftingRecipe() : selectedCraftingRecipe;
         openPanel(PanelMode.CRAFTING);
         logEvent("Crafting panel opened.");
         repaint();
     }
+
+    void openActiveMachineWorkbench() {
+        BaseObject machine = activeInteractionBaseObject;
+        if (machine == null) {
+            openCraftingPanel();
+            return;
+        }
+        panelMode = PanelMode.WORKBENCH;
+        screen = Screen.PANEL;
+        productionBoardActive = false;
+        workbenchStaffedJobsActive = false;
+        selectedCraftingRecipe = visibleCraftingRecipeMatching(
+                visibleCraftingRecipesForCurrentSurface(), selectedCraftingRecipe);
+        logEvent("Opened " + safeLabel(machine.name, "base object") + " operation surface.");
+        repaint();
+    }
+
+    void openStaffedWorkbenchJobs() {
+        BaseObject machine = activeWorkbenchProductionMachine();
+        if (machine == null) {
+            logEvent("Staffed setup unavailable: operate a built machine first.");
+            repaint();
+            return;
+        }
+        productionBoardActive = false;
+        workbenchStaffedJobsActive = true;
+        workbenchStaffedJobPage = 0;
+        selectedWorkbenchStaffedJob(visibleWorkbenchStaffedJobs());
+        logEvent("Opened staffed production setup for " + safeLabel(machine.name, "machine") + ".");
+        repaint();
+    }
+
+    void openManualWorkbenchRecipes() {
+        productionBoardActive = false;
+        workbenchStaffedJobsActive = false;
+        selectedCraftingRecipe = visibleCraftingRecipeMatching(
+                visibleCraftingRecipesForCurrentSurface(), selectedCraftingRecipe);
+        logEvent("Returned to manual crafting recipes.");
+        repaint();
+    }
+
+    void openProductionControlBoard() {
+        productionBoardActive = true;
+        workbenchStaffedJobsActive = false;
+        ArrayList<BaseObject> machines = ProductionControlBoardAuthority.machines(this);
+        selectedProductionBoardMachine(machines);
+        logEvent("Base production board opened: " + machines.size() + " built machine(s).");
+        repaint();
+    }
+
+    void closeProductionControlBoard() {
+        productionBoardActive = false;
+        selectedCraftingRecipe = visibleCraftingRecipeMatching(
+                visibleCraftingRecipesForCurrentSurface(), selectedCraftingRecipe);
+        logEvent("Returned to crafting recipes.");
+        repaint();
+    }
+
+    BaseObject selectedProductionBoardMachine(ArrayList<BaseObject> machines) {
+        if (machines == null || machines.isEmpty()) {
+            selectedProductionBoardMachine = null;
+            productionBoardPage = 0;
+            return null;
+        }
+        if (!machines.contains(selectedProductionBoardMachine)) selectedProductionBoardMachine = machines.get(0);
+        return selectedProductionBoardMachine;
+    }
+
+    BaseObject selectedProductionBoardMachine() {
+        return selectedProductionBoardMachine(ProductionControlBoardAuthority.machines(this));
+    }
+
+    void selectProductionBoardMachine(BaseObject machine) {
+        if (machine == null || !ProductionControlBoardAuthority.machines(this).contains(machine)) return;
+        selectedProductionBoardMachine = machine;
+        logEvent("Selected production machine: " + safeLabel(machine.name, "machine") + ".");
+        repaint();
+    }
+
+    void changeProductionBoardPage(int delta) {
+        ArrayList<BaseObject> machines = ProductionControlBoardAuthority.machines(this);
+        int pageCount = Math.max(1, (machines.size() + 7) / 8);
+        productionBoardPage = Math.floorMod(productionBoardPage + delta, pageCount);
+        int first = productionBoardPage * 8;
+        if (first < machines.size()) selectedProductionBoardMachine = machines.get(first);
+        logEvent("Production machine page " + (productionBoardPage + 1) + "/" + pageCount + ".");
+        repaint();
+    }
+
+    void openSelectedProductionBoardWorkbench() {
+        BaseObject machine = selectedProductionBoardMachine();
+        if (machine == null) {
+            logEvent("Workbench unavailable: select a built production machine first.");
+            repaint();
+            return;
+        }
+        activeInteractionBaseObject = machine;
+        panelMode = PanelMode.WORKBENCH;
+        screen = Screen.PANEL;
+        productionBoardActive = false;
+        workbenchStaffedJobsActive = false;
+        openStaffedWorkbenchJobs();
+    }
+
+    ArrayList<FactionRecipeVariant> visibleWorkbenchStaffedJobs() {
+        BaseObject machine = activeWorkbenchProductionMachine();
+        if (machine == null) return new ArrayList<>();
+        return ControlledProductionJobAuthority.visibleJobs(this, machine, Integer.MAX_VALUE);
+    }
+
+    FactionRecipeVariant selectedWorkbenchStaffedJob(ArrayList<FactionRecipeVariant> jobs) {
+        if (jobs == null || jobs.isEmpty()) {
+            selectedWorkbenchStaffedJobKey = "";
+            return null;
+        }
+        for (FactionRecipeVariant variant : jobs) {
+            if (ControlledProductionJobAuthority.assignmentKey(variant).equals(selectedWorkbenchStaffedJobKey)) return variant;
+        }
+        FactionRecipeVariant selected = jobs.get(0);
+        selectedWorkbenchStaffedJobKey = ControlledProductionJobAuthority.assignmentKey(selected);
+        return selected;
+    }
+
+    void selectWorkbenchStaffedJob(FactionRecipeVariant variant) {
+        if (variant == null) return;
+        selectedWorkbenchStaffedJobKey = ControlledProductionJobAuthority.assignmentKey(variant);
+        logEvent("Selected staffed job: " + variant.outputName + ".");
+        repaint();
+    }
+
+    void cycleWorkbenchStaffedCategory(int delta) {
+        generatedJobCategoryFilterIndex = Math.floorMod(generatedJobCategoryFilterIndex + delta,
+                ControlledProductionJobAuthority.categoryFilters().length);
+        workbenchStaffedJobPage = 0;
+        selectedWorkbenchStaffedJob(visibleWorkbenchStaffedJobs());
+        logEvent("Staffed job category: "
+                + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex) + ".");
+        repaint();
+    }
+
+    void cycleWorkbenchStaffedReadiness(int delta) {
+        generatedJobReadinessFilterIndex = Math.floorMod(generatedJobReadinessFilterIndex + delta,
+                ControlledProductionJobAuthority.readinessFilters().length);
+        workbenchStaffedJobPage = 0;
+        selectedWorkbenchStaffedJob(visibleWorkbenchStaffedJobs());
+        logEvent("Staffed job readiness: "
+                + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex) + ".");
+        repaint();
+    }
+
+    void changeWorkbenchStaffedJobPage(int delta) {
+        int pageCount = Math.max(1, (visibleWorkbenchStaffedJobs().size() + 7) / 8);
+        workbenchStaffedJobPage = Math.floorMod(workbenchStaffedJobPage + delta, pageCount);
+        logEvent("Staffed job page " + (workbenchStaffedJobPage + 1) + "/" + pageCount + ".");
+        repaint();
+    }
+
+    ArrayList<String> staffedWorkbenchDetailLines(BaseObject machine, FactionRecipeVariant variant,
+                                                   int visibleCount, int pageCount) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Filters: category " + ControlledProductionJobAuthority.categoryFilterName(generatedJobCategoryFilterIndex)
+                + "; readiness " + ControlledProductionJobAuthority.readinessFilterName(generatedJobReadinessFilterIndex)
+                + "; matching jobs " + Math.max(0, visibleCount) + "; page "
+                + (workbenchStaffedJobPage + 1) + "/" + Math.max(1, pageCount) + ".");
+        lines.add("Machine setup: " + MachineOperationStatusBridge.machineLine(this, machine));
+        if (variant == null) {
+            lines.add("No known generated jobs match this machine and the current filters.");
+            lines.add("Change Category or Ready filters, learn matching production knowledge, or operate another machine.");
+            return lines;
+        }
+        lines.add("Selected job: " + variant.outputName + ".");
+        lines.add("Category: " + ControlledProductionJobAuthority.categoryFor(variant)
+                + "; faction " + variant.faction.label + "; quality " + variant.qualityName
+                + "; law " + variant.lawStatus + ".");
+        lines.add("Required knowledge: " + variant.requiredKnowledge + "; machine quality "
+                + variant.machineQuality + "; machine hint " + variant.machineHint + ".");
+        lines.add("Inputs: " + variant.inputSummary() + ".");
+        lines.add("Apparatus: " + variant.equipmentSummary() + ".");
+        lines.add(ControlledProductionJobAuthority.shortStatus(this, machine, variant));
+        lines.add(ControlledProductionJobAuthority.queueForecastLine(this, machine, variant));
+        lines.addAll(StaffedProductionExecutionAuthority.forecastLines(this, machine));
+        return lines;
+    }
+
+    String assignSelectedWorkbenchStaffedJob() {
+        BaseObject machine = activeWorkbenchProductionMachine();
+        FactionRecipeVariant variant = selectedWorkbenchStaffedJob(visibleWorkbenchStaffedJobs());
+        if (machine == null || variant == null) {
+            String result = "Staffed job assignment failed: no matching machine job is selected.";
+            logEvent(result);
+            repaint();
+            return result;
+        }
+        String problem = ControlledProductionJobAuthority.assignmentProblem(this, machine, variant);
+        if (problem != null) {
+            String result = "Staffed job assignment failed: " + problem;
+            logEvent(result);
+            repaint();
+            return result;
+        }
+        String key = ControlledProductionJobAuthority.assignmentKey(variant);
+        boolean changed = !key.equals(machine.assignedRecipe);
+        machine.assignedRecipe = key;
+        if (changed) {
+            machine.productionQueueTarget = 1;
+            machine.productionQueueRemaining = 0;
+            machine.productionProgressTurns = 0;
+        }
+        String result = "Staffed job assigned to " + machine.name + ": " + variant.outputName
+                + (changed ? "; queue reset to 0/1." : "; existing queue preserved.");
+        logEvent(result);
+        repaint();
+        return result;
+    }
+
+    String cycleActiveWorkbenchWorker() {
+        return cycleProductionWorker(activeWorkbenchProductionMachine());
+    }
+
+    String cycleProductionBoardWorker() {
+        return cycleProductionWorker(selectedProductionBoardMachine());
+    }
+
+    private String cycleProductionWorker(BaseObject machine) {
+        if (machine == null || factionRecruits.isEmpty()) {
+            String result = machine == null
+                    ? "Worker assignment failed: select a built machine first."
+                    : "Worker assignment failed: no recruited workers are available.";
+            logEvent(result);
+            repaint();
+            return result;
+        }
+        int current = -1;
+        for (int i = 0; i < factionRecruits.size(); i++) {
+            RecruitWorker worker = factionRecruits.get(i);
+            if (worker != null && worker.name != null && worker.name.equals(machine.assignedWorker)) current = i;
+        }
+        String lastFailure = "Worker assignment failed: no valid recruited worker is available for " + machine.name + ".";
+        for (int step = 1; step <= factionRecruits.size(); step++) {
+            RecruitWorker worker = factionRecruits.get(Math.floorMod(current + step, factionRecruits.size()));
+            String result = ManualStaffingAssignmentAuthority.assign(this, machine, worker);
+            if (worker != null && worker.name != null && worker.name.equals(machine.assignedWorker)) {
+                logEvent(result);
+                repaint();
+                return result;
+            }
+            lastFailure = result;
+        }
+        logEvent(lastFailure);
+        repaint();
+        return lastFailure;
+    }
+
+    String adjustActiveWorkbenchQueue(int delta) {
+        return adjustProductionQueue(activeWorkbenchProductionMachine(), delta);
+    }
+
+    String adjustProductionBoardQueue(int delta) {
+        return adjustProductionQueue(selectedProductionBoardMachine(), delta);
+    }
+
+    private String adjustProductionQueue(BaseObject machine, int delta) {
+        if (machine == null || !ControlledProductionJobAuthority.isGeneratedAssignment(machine.assignedRecipe)) {
+            String result = "Staffed queue change failed: select a machine with an assigned generated job first.";
+            logEvent(result);
+            repaint();
+            return result;
+        }
+        int beforeRemaining = Math.max(0, machine.productionQueueRemaining);
+        int beforeTarget = Math.max(1, machine.productionQueueTarget);
+        if (delta > 0) {
+            if (beforeRemaining == 0) {
+                machine.productionQueueTarget = 1;
+                machine.productionQueueRemaining = 1;
+            } else if (beforeTarget < 20) {
+                machine.productionQueueTarget = beforeTarget + 1;
+                machine.productionQueueRemaining = Math.min(machine.productionQueueTarget, beforeRemaining + 1);
+            }
+        } else if (delta < 0 && beforeRemaining > 0) {
+            machine.productionQueueRemaining = beforeRemaining - 1;
+            machine.productionQueueTarget = machine.productionQueueRemaining == 0
+                    ? 1 : Math.max(machine.productionQueueRemaining, beforeTarget - 1);
+            if (machine.productionQueueRemaining == 0) machine.productionProgressTurns = 0;
+        }
+        String result = "Staffed queue for " + machine.name + ": "
+                + Math.max(0, machine.productionQueueRemaining) + "/" + Math.max(1, machine.productionQueueTarget)
+                + " run(s) remaining/target (limit 20).";
+        logEvent(result);
+        repaint();
+        return result;
+    }
+
+    String clearActiveWorkbenchQueue() {
+        return clearProductionQueue(activeWorkbenchProductionMachine());
+    }
+
+    String clearProductionBoardQueue() {
+        return clearProductionQueue(selectedProductionBoardMachine());
+    }
+
+    private String clearProductionQueue(BaseObject machine) {
+        if (machine == null) {
+            String result = "Staffed queue clear failed: select a built machine first.";
+            logEvent(result);
+            repaint();
+            return result;
+        }
+        machine.productionQueueTarget = 1;
+        machine.productionQueueRemaining = 0;
+        machine.productionProgressTurns = 0;
+        String result = "Staffed queue cleared for " + machine.name + "; background production is idle.";
+        logEvent(result);
+        repaint();
+        return result;
+    }
+
+    String cycleActiveWorkbenchMaterialPolicy() {
+        return updateActiveWorkbenchPolicy("materials");
+    }
+
+    String cycleActiveWorkbenchOutputPolicy() {
+        return updateActiveWorkbenchPolicy("output");
+    }
+
+    String cycleActiveWorkbenchNoRoomPolicy() {
+        return updateActiveWorkbenchPolicy("no-room");
+    }
+
+    private String updateActiveWorkbenchPolicy(String policy) {
+        return updateProductionPolicy(activeWorkbenchProductionMachine(), policy);
+    }
+
+    String updateProductionBoardPolicy(String policy) {
+        return updateProductionPolicy(selectedProductionBoardMachine(), policy);
+    }
+
+    private String updateProductionPolicy(BaseObject machine, String policy) {
+        if (machine == null) {
+            String result = "Production policy change failed: select a built machine first.";
+            logEvent(result);
+            repaint();
+            return result;
+        }
+        String result;
+        if ("materials".equals(policy)) result = ProductionQueuePolicyAuthority.cycleMaterialPolicy(machine);
+        else if ("output".equals(policy)) result = ProductionQueuePolicyAuthority.cycleOutputPolicy(machine);
+        else result = ProductionQueuePolicyAuthority.cycleNoRoomPolicy(machine);
+        machine.productionLastBlocker = "";
+        logEvent(machine.name + ": " + result);
+        repaint();
+        return result;
+    }
+
+    void reportProductionBoardStatus() {
+        BaseObject machine = selectedProductionBoardMachine();
+        java.util.List<String> lines = machine == null
+                ? MachineOperationStatusBridge.statusLines(this)
+                : MachineOperationStatusBridge.statusLinesForMachine(this, machine);
+        for (String line : lines) logEvent(line);
+        repaint();
+    }
+
+    void reportProductionBoardHistory() {
+        BaseObject machine = selectedProductionBoardMachine();
+        java.util.List<String> lines = machine == null
+                ? MachineOperationStatusBridge.historyLines(this, 3)
+                : MachineOperationStatusBridge.historyLinesForMachine(this, machine, 3);
+        for (String line : lines) logEvent(line);
+        repaint();
+    }
+
+    void reportProductionStatusFromCraftingPanel() {
+        BaseObject machine = activeWorkbenchProductionMachine();
+        java.util.List<String> lines = machine == null
+                ? MachineOperationStatusBridge.statusLines(this)
+                : MachineOperationStatusBridge.statusLinesForMachine(this, machine);
+        for (String line : lines) logEvent(line);
+        repaint();
+    }
+
+    void reportProductionHistoryFromCraftingPanel() {
+        BaseObject machine = activeWorkbenchProductionMachine();
+        java.util.List<String> lines = machine == null
+                ? MachineOperationStatusBridge.historyLines(this, 3)
+                : MachineOperationStatusBridge.historyLinesForMachine(this, machine, 3);
+        for (String line : lines) logEvent(line);
+        repaint();
+    }
+
+    private BaseObject activeWorkbenchProductionMachine() {
+        return panelMode == PanelMode.WORKBENCH ? activeInteractionBaseObject : null;
+    }
+
+    void reportActiveMachineProductionStatus() {
+        BaseObject machine = activeInteractionBaseObject;
+        if (machine == null) {
+            for (String line : MachineOperationStatusBridge.statusLines(this)) logEvent(line);
+        } else {
+            for (String line : MachineOperationStatusBridge.statusLinesForMachine(this, machine)) logEvent(line);
+        }
+        repaint();
+    }
+
+    void reportActiveMachineProductionHistory() {
+        BaseObject machine = activeInteractionBaseObject;
+        java.util.List<String> lines = machine == null
+                ? MachineOperationStatusBridge.historyLines(this, 3)
+                : MachineOperationStatusBridge.historyLinesForMachine(this, machine, 3);
+        for (String line : lines) logEvent(line);
+        repaint();
+    }
+
     void openScavengePanel() {
         openPanel(PanelMode.SCAVENGE);
         logEvent("Scavenge panel opened.");
         repaint();
     }
     private CraftingRecipe firstVisibleCraftingRecipe() {
-        for (CraftingRecipe recipe : CraftingRecipe.all()) if (recipe.visibleTo(this)) return recipe;
-        return CraftingRecipe.noKnownRecipes();
+        return visibleCraftingRecipesForCurrentSurface().get(0);
+    }
+    ArrayList<CraftingRecipe> visibleCraftingRecipesForCurrentSurface() {
+        ArrayList<CraftingRecipe> visible = new ArrayList<>();
+        for (CraftingRecipe recipe : CraftingRecipe.all()) {
+            if (craftingRecipeVisibleOnCurrentSurface(recipe)) visible.add(recipe);
+        }
+        if (visible.isEmpty()) {
+            BaseObject workbench = activeWorkbenchProductionMachine();
+            visible.add(workbench == null ? CraftingRecipe.noKnownRecipes() : CraftingRecipe.noCompatibleRecipes(workbench));
+        }
+        return visible;
+    }
+    boolean craftingRecipeVisibleOnCurrentSurface(CraftingRecipe recipe) {
+        if (recipe == null || !recipe.visibleTo(this)) return false;
+        BaseObject workbench = activeWorkbenchProductionMachine();
+        return workbench == null || recipe.machineSymbol == ' ' || recipe.machineSymbol == workbench.symbol;
     }
     private CraftingRecipe visibleCraftingRecipeMatching(ArrayList<CraftingRecipe> visible, CraftingRecipe previous) {
         if (visible == null || visible.isEmpty()) return CraftingRecipe.noKnownRecipes();
@@ -5715,10 +6619,16 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         return visible.get(0);
     }
-    private void craftSelectedRecipe() {
+    void selectCraftingRecipeFromPanel(CraftingRecipe recipe) {
+        if (recipe == null) return;
+        selectedCraftingRecipe = recipe;
+        if (panelMode != PanelMode.WORKBENCH) panelMode = PanelMode.CRAFTING;
+        logEvent("Selected craft recipe: " + recipe.name + ".");
+    }
+    void craftSelectedRecipe() {
         CraftingRecipe recipe = selectedCraftingRecipe == null ? firstVisibleCraftingRecipe() : selectedCraftingRecipe;
         if (recipe == null || recipe.disabled) {
-            logEvent("Crafting unavailable: no real recipe is selected.");
+            logEvent("Crafting unavailable: " + (recipe == null ? "no real recipe is selected." : recipe.description));
             repaint();
             return;
         }
@@ -5766,10 +6676,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         worldTurn += Math.max(0, turns - 1);
         gainXp(recipe.xpSkill, recipe.xpGain, "crafted " + recipe.name);
         rebuildItemContainersFromLegacyLists();
+        String productionResultLine = ProductionReadabilityAuthority.completionResultLine(count, production, qualityTrace, pressure, batch);
         logEvent("Crafted " + count + "x " + output + " from " + recipe.name + ".");
+        logEvent(productionResultLine);
         logEvent(batch.lines().get(0) + " " + batch.lines().get(1));
         advanceTurn("crafts " + recipe.name + ".");
-        ProductionQueueRecordBridge.recordManualRecipeCompletion(this, machine, recipe, turns, count);
+        ProductionQueueRecordBridge.recordManualRecipeCompletion(this, machine, recipe, turns, count, productionResultLine);
         repaint();
     }
     private ArrayList<MapObjectState> nearbyScavengeTargets(int radius) {
@@ -6114,6 +7026,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     BaseObject requiredMachineFor(CraftingRecipe recipe) {
         if (recipe == null) return null;
+        BaseObject operatedMachine = activeWorkbenchProductionMachine();
+        if (operatedMachine != null) return operatedMachine;
         char symbol = recipe.machineSymbol == ' ' ? 'w' : recipe.machineSymbol;
         BaseObject exact = firstBaseObject(symbol);
         if (exact != null) return exact;
@@ -6364,6 +7278,11 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     void tickPopulationEconomyRuntimeSystems(boolean sleeping) {
         if (world == null) return;
+        FactionCrecheAuthority.tick(world, worldTurn);
+        FactionReinforcementAuthority.TickResult reinforcementTick = FactionReinforcementAuthority.tick(world, turn, rng);
+        if (reinforcementTick.casualties() > 0 || reinforcementTick.expired() > 0) {
+            logEvent(reinforcementTick.message());
+        }
         EconomyRuntimeState economy = ZoneEconomyInitializationManager.stateFor(world);
         int locationKey = WorldEconomyInitializationAuthority.locationKey(world);
         if (!economy.isInitialized(locationKey)) {
@@ -6397,6 +7316,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (turn <= 0 || turn % TURNS_PER_HOUR != 0 || npcFactionSites.isEmpty()) return;
         int produced = 0;
         for (NpcFactionSite site : npcFactionSites) {
+            FactionSiteWorkforceAuthority.sync(site, world);
             if (site != null && site.produceHour(turn, rng)) produced++;
         }
         if (produced > 0) {

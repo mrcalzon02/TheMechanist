@@ -29,6 +29,10 @@ final class Milestone03SkillTreeDefinitionAuditSmoke {
         requireContains(audit, "access=facility forge fabrication stall", "readable facility gate");
         requireContains(audit, "statRequirement=Mechanics:8", "stat requirement");
         requireContains(audit, "statEffect=Mechanics:+1", "stat effect");
+        requireContains(audit, "Skill node audit: Forge-Tutored Repair", "trainer-gated repair node");
+        requireContains(audit, "access=trainer forge tutor", "readable trainer gate");
+        require(SkillTreeProgressionAuthority.auditLine().contains("spendingUi=character-skills-tab+console-route"),
+                "skill audit should expose shared Character-panel and console spending routes");
         requireContains(audit, "Milestone03SkillTreeDefinitionAuditSmoke", "guard reference");
 
         rejectRawNodeId(audit, "trade-guilder-certification");
@@ -47,6 +51,10 @@ final class Milestone03SkillTreeDefinitionAuditSmoke {
                 throw new AssertionError("Skill-tree definition audit leaked raw node id '" + forbidden + "': " + line);
             }
         }
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
     }
 
     private Milestone03SkillTreeDefinitionAuditSmoke() { }

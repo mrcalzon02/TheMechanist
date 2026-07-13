@@ -22,6 +22,7 @@ final class Milestone03ContractSkillProofAuditSmoke {
         List<String> audit = ContractObjectiveReadabilityAuthority.auditLines(List.of(lockbox),
                 Set.of("trade-batch-appraisal", "trade-guilder-certification"), Set.of("Contract Negotiation"), 2);
         requireContains(audit, "owner=ContractObjectiveReadabilityAuthority", "owner");
+        requireContains(audit, "turnInOwner=ContractTurnInAuthority", "turn-in owner");
         requireContains(audit, "completionMutation=false", "completion boundary");
         requireContains(audit, "rewardMutation=false", "reward boundary");
         requireContains(audit, "rawIdsHidden=true", "raw-id boundary");
