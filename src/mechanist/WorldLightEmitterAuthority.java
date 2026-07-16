@@ -31,18 +31,32 @@ final class WorldLightEmitterAuthority {
     }
 
     static ArrayList<Emitter> gameplayEmitters(GamePanel game) {
+        return gameplayEmitters(game, System.currentTimeMillis());
+    }
+
+    static ArrayList<Emitter> gameplayEmitters(GamePanel game, long nowMillis) {
         ArrayList<Emitter> out = new ArrayList<>();
         if (game == null || game.world == null) return out;
         addPlayerEmitter(game, out);
         addDoorEmitters(game, out, 0, 0, game.world.w, game.world.h, Integer.MAX_VALUE);
+        out.addAll(VehicleOperationFeedbackAuthority.gameplayEmitters(game, nowMillis));
         return out;
     }
 
     static ArrayList<Emitter> viewportEmitters(GamePanel game, int camX, int camY, int cols, int rows) {
+        return viewportEmitters(game, camX, camY, cols, rows,
+                System.currentTimeMillis());
+    }
+
+    static ArrayList<Emitter> viewportEmitters(GamePanel game, int camX, int camY,
+                                               int cols, int rows,
+                                               long nowMillis) {
         ArrayList<Emitter> out = new ArrayList<>();
         if (game == null || game.world == null) return out;
         addPlayerEmitter(game, out);
         addDoorEmitters(game, out, camX, camY, cols, rows, 3);
+        out.addAll(VehicleOperationFeedbackAuthority.viewportEmitters(
+                game, camX, camY, cols, rows, nowMillis));
         return out;
     }
 
