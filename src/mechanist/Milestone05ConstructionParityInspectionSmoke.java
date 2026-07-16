@@ -98,6 +98,7 @@ final class Milestone05ConstructionParityInspectionSmoke {
                 "No construction parity entries match",
                 "parity editor empty state");
 
+        Milestone05ReleaseAuditSmoke.main(args);
         System.out.println("Milestone 05 construction parity inspection smoke passed.");
     }
 
