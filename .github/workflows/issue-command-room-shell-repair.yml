@@ -3,6 +3,8 @@ name: Issue Command Room Shell Repair
 on:
   issues:
     types: [opened]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
@@ -15,7 +17,9 @@ concurrency:
 
 jobs:
   repair-and-verify:
-    if: github.event.issue.title == '[automation] Repair Milestone 05 room shell material ledger'
+    if: >-
+      github.event.issue.title == '[automation] Repair Milestone 05 room shell material ledger' &&
+      (github.event_name == 'issues' || github.event.comment.body == '/run-room-shell-repair')
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -162,7 +166,10 @@ jobs:
             });
 
   report-failure:
-    if: always() && github.event.issue.title == '[automation] Repair Milestone 05 room shell material ledger'
+    if: >-
+      always() &&
+      github.event.issue.title == '[automation] Repair Milestone 05 room shell material ledger' &&
+      (github.event_name == 'issues' || github.event.comment.body == '/run-room-shell-repair')
     needs: repair-and-verify
     runs-on: ubuntu-latest
     steps:
