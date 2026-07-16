@@ -696,7 +696,7 @@ final class FactionRoomShellConstructionAuthority {
             int y = spec.originY() + cell.y();
             boolean inBounds = world.inBounds(x, y);
             boolean occupied = inBounds && !replay && occupied(game, x, y, ignored);
-            boolean transition = inBounds && World.isTransitionTile(world.tiles[x][y]);
+            boolean transition = inBounds && BoundedOuterHiveWallApi.isTransitionTile(world.tiles[x][y]);
             boolean buildable = inBounds && world.roomIdAt(x, y) < 0 && !transition;
             String descriptor = !inBounds ? "outside loaded world"
                     : world.roomIdAt(x, y) >= 0 ? "existing room " + world.roomIdAt(x, y)
@@ -727,8 +727,8 @@ final class FactionRoomShellConstructionAuthority {
                 && world.roomIdAt(inward.x, inward.y) == spec.sourceRoomId());
         if (!belongs) return false;
         if (world.roomIdAt(spec.connectorX(), spec.connectorY()) >= 0) return false;
-        if (World.isTransitionTile(world.tiles[spec.sourceDoorX()][spec.sourceDoorY()])
-                || World.isTransitionTile(world.tiles[spec.connectorX()][spec.connectorY()])) return false;
+        if (BoundedOuterHiveWallApi.isTransitionTile(world.tiles[spec.sourceDoorX()][spec.sourceDoorY()])
+                || BoundedOuterHiveWallApi.isTransitionTile(world.tiles[spec.connectorX()][spec.connectorY()])) return false;
         if (!replay && (occupied(game, spec.sourceDoorX(), spec.sourceDoorY(), ignored)
                 || occupied(game, spec.connectorX(), spec.connectorY(), ignored))) return false;
         return !(spec.sourceDoorX() == game.playerX && spec.sourceDoorY() == game.playerY)
@@ -870,7 +870,7 @@ final class FactionRoomShellConstructionAuthority {
             world.roomIds[spec.sourceDoorX()][spec.sourceDoorY()] = spec.sourceRoomId();
             world.tiles[spec.sourceDoorX()][spec.sourceDoorY()] = '/';
             world.roomIds[spec.connectorX()][spec.connectorY()] = -1;
-            world.tiles[spec.connectorX()][spec.connectorY()] = World.HIVEWALL_CORRIDOR;
+            world.tiles[spec.connectorX()][spec.connectorY()] = BoundedOuterHiveWallApi.HIVEWALL_CORRIDOR;
 
             int transferred = transferWorkers
                     ? transferAssignedWorkers(world, marker, spec, faction, roomId)
@@ -1002,7 +1002,7 @@ final class FactionRoomShellConstructionAuthority {
         if (!overlayAt(game, spec.sourceDoorX(), spec.sourceDoorY())
                 && world.tiles[spec.sourceDoorX()][spec.sourceDoorY()] != '/') return -1;
         if (!overlayAt(game, spec.connectorX(), spec.connectorY())
-                && world.tiles[spec.connectorX()][spec.connectorY()] != World.HIVEWALL_CORRIDOR) return -1;
+                && world.tiles[spec.connectorX()][spec.connectorY()] != BoundedOuterHiveWallApi.HIVEWALL_CORRIDOR) return -1;
         return roomId;
     }
 
