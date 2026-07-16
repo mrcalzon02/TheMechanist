@@ -155,6 +155,6 @@ final class VehicleEconomyFrontageAuthority {
     }
 
     private static String serviceVehicle(GamePanel g, MapObjectState m) {
-        return VehicleRuntimeAuthority.serviceNearestPlayerVehicle(g, m).message();
+        return VehicleMaintenanceAuthority.serviceNearestPlayerVehicle(g, m).message();
     }
 }
