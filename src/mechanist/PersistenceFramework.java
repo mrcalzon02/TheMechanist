@@ -303,7 +303,16 @@ class Persistence {
         LogisticsManualHaulExecutionAuthority.restoreHistory(g, decList(p.getProperty("logistics.haulExecution.history", "")));
         g.lastLogisticsHaulExecutionReport = p.getProperty("logistics.haulExecution.lastReport", g.lastLogisticsHaulExecutionReport);
         readWorldState(g.world, p);
-        FactionRoomShellConstructionAuthority.restoreCompletedRooms(g);
+        int restoredPlayerX = g.playerX;
+        int restoredPlayerY = g.playerY;
+        try {
+            g.playerX = Integer.MIN_VALUE;
+            g.playerY = Integer.MIN_VALUE;
+            FactionRoomShellConstructionAuthority.restoreCompletedRooms(g);
+        } finally {
+            g.playerX = restoredPlayerX;
+            g.playerY = restoredPlayerY;
+        }
         g.markZoneVisitedAndCheckFirstType();
         g.migrateLegacyPhysicalScript("save/read");
         g.auditItemLedgers("save/read");
