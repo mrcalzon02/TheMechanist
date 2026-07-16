@@ -167,6 +167,7 @@ final class VehicleMaintenanceAuthority {
             set(vehicle, "operationState", "parked");
         }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
+        clearResolvedLossConsequences(vehicle, game.turn);
         append(vehicle, "repairHistory", selected.label + " / "
                 + (selected == Mode.FULL_REFURBISHMENT
                 ? "all component groups " + before + "->100 average"
@@ -218,6 +219,9 @@ final class VehicleMaintenanceAuthority {
         lines.add("Garage repair: 1 Machine part or 8 script; restores 35% to the lowest component.");
         lines.add("Component replacement: Tool bundle, 2 Machine parts, and 12 script; replaces the lowest component.");
         lines.add("Full refurbishment: Tool bundle, 4 Machine parts, and 30 script; restores all major component groups.");
+        if ("recovered".equals(value(vehicle, "lossRecoveryState"))) {
+            lines.add("Loss recovery: critical systems are restored; active leak and loss-obstruction flags were cleared while historical loss records were retained.");
+        }
         return List.copyOf(lines);
     }
 
@@ -269,6 +273,34 @@ final class VehicleMaintenanceAuthority {
                 && component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT) > 0
                 && component(vehicle, VehicleRuntimeAuthority.Component.DRIVE) > 0
                 && component(vehicle, VehicleRuntimeAuthority.Component.MOBILITY) > 0;
+    }
+
+    private static void clearResolvedLossConsequences(MapObjectState vehicle,
+                                                      int turn) {
+        if (!criticalComponentsOperational(vehicle)) return;
+        boolean cleared = false;
+        if ("true".equals(value(vehicle, "roadObstacle"))) {
+            set(vehicle, "roadObstacle", "false");
+            cleared = true;
+        }
+        if (component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT) > 20
+                && "true".equals(value(vehicle, "fuelOrPowerLeak"))) {
+            set(vehicle, "fuelOrPowerLeak", "false");
+            set(vehicle, "hazardState", "none");
+            cleared = true;
+        }
+        if ("true".equals(value(vehicle, "burnedOut"))) {
+            set(vehicle, "burnedOut", "false");
+            vehicle.glyph = 'N';
+            vehicle.label = displayName(vehicle) + " / refurbished vehicle";
+            cleared = true;
+        }
+        if (cleared || !value(vehicle, "lossOutcomeTags").isBlank()) {
+            set(vehicle, "lossRecoveryState", "recovered");
+            set(vehicle, "lossRecoveryTurn", Integer.toString(Math.max(0, turn)));
+            append(vehicle, "lossHistory", "critical systems restored at turn "
+                    + Math.max(0, turn) + "; active loss hazards cleared");
+        }
     }
 
     private static int component(MapObjectState vehicle,
