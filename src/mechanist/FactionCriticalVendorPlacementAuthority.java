@@ -32,6 +32,22 @@ final class FactionCriticalVendorPlacementAuthority {
         String summary() { return "criticalVendors placed=" + vendorsPlaced() + " factions=" + consideredFactions + " categories=" + categorySummary(placements); }
     }
 
+    record FacilityActivation(boolean handled, boolean opened, boolean existing,
+                              String blocker, String message, int roomId, int workers,
+                              NpcEntity vendor, MapObjectState market) {
+        static FacilityActivation notHandled(String message) {
+            return new FacilityActivation(false, false, false, "not-handled", safe(message),
+                    -1, 0, null, null);
+        }
+
+        static FacilityActivation blocked(String blocker, String message, int roomId, int workers) {
+            return new FacilityActivation(true, false, false, safe(blocker), safe(message),
+                    roomId, Math.max(0, workers), null, null);
+        }
+
+        String vendorId() { return vendor == null || vendor.id == null ? "" : vendor.id; }
+    }
+
     private FactionCriticalVendorPlacementAuthority() {}
 
     static Result apply(World world, Random rng) {
@@ -79,6 +95,122 @@ final class FactionCriticalVendorPlacementAuthority {
         return new Result(placements, considered);
     }
 
+    /**
+     * Opens or attaches a physical vendor only after its exact faction facility
+     * has completed and the facility room still has assigned same-family staff.
+     * The existing room roster is conserved; the vendor actor represents one of
+     * those assigned workers rather than increasing the population ledger.
+     */
+    static FacilityActivation activateCompletedFacility(GamePanel game, NpcFactionSite site,
+                                                         BaseObject facility) {
+        Category category = categoryForFacility(facility);
+        if (category == null) {
+            return FacilityActivation.notHandled("The completed faction asset has no vendor service category.");
+        }
+        if (game == null || game.world == null) {
+            return FacilityActivation.blocked("no-world",
+                    "Vendor opening requires the completed facility's loaded world.", -1, 0);
+        }
+        if (site == null) {
+            return FacilityActivation.blocked("no-site",
+                    "Vendor opening requires the faction site linked to the completed facility.", -1, 0);
+        }
+        if (facility == null || facility.underConstruction
+                || !FactionPhysicalConstructionAuthority.isFactionManaged(facility)
+                || !FactionPhysicalConstructionAuthority.belongsToSite(facility, site)) {
+            return FacilityActivation.blocked("facility-not-complete",
+                    "Vendor opening waits for a completed faction-managed facility with a valid site receipt.",
+                    facility == null ? -1 : game.world.roomIdAt(facility.x, facility.y), 0);
+        }
+        if (!sameLocation(site, game.world)) {
+            return FacilityActivation.blocked("site-not-local",
+                    safe(site.name) + " is not in the loaded zone, so its vendor cannot open here.", -1, 0);
+        }
+
+        int roomId = game.world.roomIdAt(facility.x, facility.y);
+        if (roomId < 0 || !FactionIdentityAuthority.sameFamily(
+                game.world.roomFaction(roomId), site.faction)) {
+            return FacilityActivation.blocked("facility-room-control",
+                    "The completed facility is not inside a same-family controlled room.", roomId, 0);
+        }
+        int workers = assignedFacilityWorkers(game.world, roomId, site);
+        if (workers <= 0) {
+            return FacilityActivation.blocked("facility-unstaffed",
+                    RoomOwnershipAuthority.roomName(game.world, roomId)
+                            + " has no assigned same-family worker available to operate a vendor.",
+                    roomId, 0);
+        }
+
+        NpcEntity existingVendor = facilityVendor(game.world, site, category, roomId);
+        if (existingVendor != null) {
+            MapObjectState market = ensureFacilityMarket(game.world, site, facility, category,
+                    roomId, workers, existingVendor.x, existingVendor.y);
+            String message = market == null
+                    ? existingVendor.name + " remains the staffed " + category.role
+                            + " for the completed facility; its existing position is occupied by another fixture."
+                    : existingVendor.name + " now operates the completed facility's "
+                            + category.role + " counter with " + workers + " assigned worker(s).";
+            return new FacilityActivation(true, false, true, "", message,
+                    roomId, workers, existingVendor, market);
+        }
+
+        Point point = firstLegalVendorPoint(game, roomId);
+        if (point == null) {
+            return FacilityActivation.blocked("no-vendor-position",
+                    "The completed facility has staff, but no legal open counter position remains in "
+                            + RoomOwnershipAuthority.roomName(game.world, roomId) + ".",
+                    roomId, workers);
+        }
+
+        Random r = new Random(game.world.seed ^ java.util.Objects.hash(
+                siteToken(site), facilityToken(facility), category.id, roomId));
+        NpcEntity vendor = NpcEntity.create(site.faction, game.world.zoneType, point.x, point.y, r);
+        vendor.role = category.role;
+        vendor.state = "Trade";
+        vendor.symbol = 'T';
+        vendor.name = vendorName(site.faction, category, vendor.name);
+        vendor.id = facilityVendorId(site, category);
+        MapObjectState market = ensureFacilityMarket(game.world, site, facility, category,
+                roomId, workers, point.x, point.y);
+        if (market == null) {
+            return FacilityActivation.blocked("market-fixture-blocked",
+                    "The completed facility's counter position became occupied before opening.",
+                    roomId, workers);
+        }
+        game.world.npcs.add(vendor);
+
+        RoomProfile profile = roomId < game.world.roomProfiles.size()
+                ? game.world.roomProfile(roomId) : null;
+        if (profile != null) {
+            profile.featureText = append(profile.featureText,
+                    "Operational faction vendor: " + vendor.name + " staffs " + category.coverage
+                            + " from the completed facility with " + workers + " assigned worker(s).");
+        }
+        return new FacilityActivation(true, true, false, "",
+                vendor.name + " opened a staffed " + category.role + " counter in "
+                        + RoomOwnershipAuthority.roomName(game.world, roomId)
+                        + "; the room roster remains " + workers + " assigned worker(s).",
+                roomId, workers, vendor, market);
+    }
+
+    /** Reconciles completed faction facilities after load or an older completion. */
+    static int reconcileCompletedFacilities(GamePanel game) {
+        if (game == null || game.world == null || game.baseObjects == null
+                || game.npcFactionSites == null) return 0;
+        int opened = 0;
+        for (BaseObject facility : new ArrayList<>(game.baseObjects)) {
+            if (facility == null || facility.underConstruction
+                    || !FactionPhysicalConstructionAuthority.isFactionManaged(facility)) continue;
+            for (NpcFactionSite site : game.npcFactionSites) {
+                if (site == null || !FactionPhysicalConstructionAuthority.belongsToSite(facility, site)) continue;
+                FacilityActivation activation = activateCompletedFacility(game, site, facility);
+                if (activation.opened()) opened++;
+                break;
+            }
+        }
+        return opened;
+    }
+
     static void applyVendorStock(TraderSession trader, NpcEntity npc) {
         if (trader == null || npc == null) return;
         Category category = categoryForRole(npc.role);
@@ -101,7 +233,9 @@ final class FactionCriticalVendorPlacementAuthority {
                     "Night Milk", "Lockpicks", "Tripwire mine");
         }
         ConstructionBlueprintOwnershipAuthority.applyVendorStock(trader, normalized, category);
-        String line = "Vendor remit: " + category.coverage + "; physical faction facility required.";
+        String line = isFacilityVendor(npc)
+                ? "Vendor remit: " + category.coverage + "; opened from a completed staffed faction facility."
+                : "Vendor remit: " + category.coverage + "; physical faction facility required.";
         trader.supplyChainSummary = append(trader.supplyChainSummary, line);
     }
 
@@ -109,6 +243,132 @@ final class FactionCriticalVendorPlacementAuthority {
         if (role == null) return null;
         for (Category category : Category.values()) if (role.equalsIgnoreCase(category.role)) return category;
         return null;
+    }
+
+    static boolean isFacilityVendor(NpcEntity npc) {
+        return npc != null && npc.id != null && npc.id.startsWith("FACTION-FACILITY-VENDOR-");
+    }
+
+    static String siteToken(NpcFactionSite site) {
+        if (site == null) return "SITE-UNLINKED";
+        return "SITE-" + Integer.toUnsignedString(java.util.Objects.hash(
+                safe(site.name), site.faction, site.sectorX, site.sectorY,
+                site.zoneX, site.zoneY, site.floor), 36).toUpperCase(Locale.ROOT);
+    }
+
+    private static Category categoryForFacility(BaseObject facility) {
+        if (facility == null || facility.underConstruction) return null;
+        char symbol = facility.symbol == '?' && facility.finalSymbol != 0
+                ? facility.finalSymbol : facility.symbol;
+        return switch (symbol) {
+            case 'f', 'w', 'l', 's' -> Category.INDUSTRIAL;
+            case 'M' -> Category.MEDICAL;
+            case 'u', 'e', 'B' -> Category.PROVISIONS;
+            default -> null;
+        };
+    }
+
+    private static int assignedFacilityWorkers(World world, int roomId, NpcFactionSite site) {
+        if (world == null || site == null || roomId < 0) return 0;
+        if (world.roomPopulationLedgers == null || world.roomPopulationLedgers.isEmpty()) {
+            return Math.max(0, FactionSiteWorkforceAuthority.evaluate(site, world).effectiveWorkers());
+        }
+        long assigned = 0;
+        for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
+            if (ledger == null || ledger.roomId != roomId
+                    || !FactionIdentityAuthority.sameFamily(ledger.faction, site.faction)) continue;
+            assigned += Math.max(0, ledger.assigned);
+        }
+        return (int)Math.min(Integer.MAX_VALUE, assigned);
+    }
+
+    private static NpcEntity facilityVendor(World world, NpcFactionSite site, Category category,
+                                            int roomId) {
+        if (world == null || site == null || category == null || world.npcs == null) return null;
+        String stableId = facilityVendorId(site, category);
+        for (NpcEntity npc : world.npcs) {
+            if (npc == null) continue;
+            if (stableId.equals(npc.id)) return npc;
+            if (world.roomIdAt(npc.x, npc.y) == roomId
+                    && FactionIdentityAuthority.sameFamily(npc.faction, site.faction)
+                    && category == categoryForRole(npc.role)) return npc;
+        }
+        return null;
+    }
+
+    private static Point firstLegalVendorPoint(GamePanel game, int roomId) {
+        if (game == null || game.world == null || roomId < 0) return null;
+        java.awt.Rectangle room = game.world.roomRect(roomId);
+        if (room == null) return null;
+        int xStart = Math.max(0, room.x + 1);
+        int xEnd = Math.min(game.world.w, room.x + room.width - 1);
+        int yStart = Math.max(0, room.y + 1);
+        int yEnd = Math.min(game.world.h, room.y + room.height - 1);
+        for (int x = xStart; x < xEnd; x++) {
+            for (int y = yStart; y < yEnd; y++) {
+                if (game.world.roomIdAt(x, y) != roomId || !game.world.walkable(x, y)) continue;
+                if (x == game.playerX && y == game.playerY) continue;
+                if (game.world.npcAt(x, y) != null || game.world.mapObjectAt(x, y) != null) continue;
+                if (game.baseObjectAt(x, y) != null
+                        || game.world.isDoorAccessReservedForObject(x, y)) continue;
+                return new Point(x, y);
+            }
+        }
+        return null;
+    }
+
+    private static MapObjectState ensureFacilityMarket(World world, NpcFactionSite site,
+                                                        BaseObject facility, Category category,
+                                                        int roomId, int workers, int x, int y) {
+        if (world == null || !world.inBounds(x, y)) return null;
+        MapObjectState existing = world.mapObjectAt(x, y);
+        if (existing != null) {
+            if (!"faction-market".equals(existing.type)) return null;
+            enrichFacilityMarket(existing, site, facility, workers);
+            return existing;
+        }
+        RoomProfile profile = roomId >= 0 && roomId < world.roomProfiles.size()
+                ? world.roomProfile(roomId) : null;
+        char under = world.tiles[x][y];
+        MapObjectState market = MapObjectState.factionMarket(x, y, world.zoneType, site.faction,
+                category.id, category.coverage, roomId,
+                profile == null ? "controlled room" : profile.name, under);
+        enrichFacilityMarket(market, site, facility, workers);
+        world.tiles[x][y] = market.glyph;
+        world.mapObjects.add(market);
+        return market;
+    }
+
+    private static void enrichFacilityMarket(MapObjectState market, NpcFactionSite site,
+                                              BaseObject facility, int workers) {
+        if (market == null) return;
+        market.stockState = MapObjectState.setStockFlag(market.stockState,
+                "facilityVendor", "true");
+        market.stockState = MapObjectState.setStockFlag(market.stockState,
+                "sourceSite", siteToken(site));
+        market.stockState = MapObjectState.setStockFlag(market.stockState,
+                "sourceFacility", facilityToken(facility));
+        market.stockState = MapObjectState.setStockFlag(market.stockState,
+                "assignedWorkers", Integer.toString(Math.max(0, workers)));
+    }
+
+    private static String facilityVendorId(NpcFactionSite site, Category category) {
+        String categoryId = category == null ? "GENERAL" : category.id.toUpperCase(Locale.ROOT).replace('-', '_');
+        return "FACTION-FACILITY-VENDOR-" + categoryId + "-" + siteToken(site);
+    }
+
+    private static String facilityToken(BaseObject facility) {
+        if (facility == null) return "FACILITY-UNLINKED";
+        return "FACILITY-" + Integer.toUnsignedString(java.util.Objects.hash(
+                facility.x, facility.y, facility.symbol, safe(facility.name),
+                safe(facility.constructionLinkedSiteName)), 36).toUpperCase(Locale.ROOT);
+    }
+
+    private static boolean sameLocation(NpcFactionSite site, World world) {
+        return site != null && world != null
+                && site.sectorX == world.sectorX && site.sectorY == world.sectorY
+                && site.zoneX == world.zoneX && site.zoneY == world.zoneY
+                && site.floor == world.floor;
     }
 
     private static LinkedHashSet<Category> categoriesFor(World world, Faction faction) {
