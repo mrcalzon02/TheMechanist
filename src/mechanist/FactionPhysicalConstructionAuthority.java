@@ -4,13 +4,12 @@ import java.awt.Point;
 import java.awt.Rectangle;
 
 /**
- * Turns the Mechanist factory-upgrade strategic action into a physical staged
- * construction site in the controlled world.
+ * Turns Mechanist factory-upgrade and repair strategic actions into physical
+ * staged work in the controlled world.
  *
- * <p>All world-placement checks happen before the blueprint upgrade authority
- * can acquire a plan or debit faction stock. The completed preflight therefore
- * makes a blocked placement mutation-free, while successful construction is
- * prepaid entirely from the linked faction site's stock.</p>
+ * <p>All world-placement and maintenance checks happen before faction stock is
+ * reserved. Blocked work is mutation-free, while successful construction and
+ * repair are prepaid entirely from the linked faction site's stock.</p>
  */
 final class FactionPhysicalConstructionAuthority {
     static final String FACTION_OWNER_MODE = "FACTION";
@@ -60,14 +59,14 @@ final class FactionPhysicalConstructionAuthority {
 
     private FactionPhysicalConstructionAuthority() { }
 
-    /** Only the exact factory goal for the Mechanist strategic family is handled. */
+    /** Handles the exact physical factory-upgrade and repair goals for the Mechanist family. */
     static boolean handles(FactionStrategicPlan plan) {
         return FactionFacilityBlueprintUpgradeAuthority.handles(plan)
                 && mechanistFamily(plan.faction);
     }
 
     /**
-     * Preflights and stages one prepaid EMM Micro Forge construction site.
+     * Preflights and stages one prepaid physical faction operation.
      * Player supplies, parts, components, tools, XP, and craft totals are never
      * read or changed by this path.
      */
@@ -75,7 +74,10 @@ final class FactionPhysicalConstructionAuthority {
         if (!handles(plan)) {
             String goal = plan == null || plan.immediateGoal == null ? "none" : plan.immediateGoal;
             return Outcome.notHandled(site,
-                    "Physical Mechanist construction does not handle strategic goal: " + goal + ".");
+                    "Physical Mechanist operations do not handle strategic goal: " + goal + ".");
+        }
+        if (MachineRepairAuthority.handlesFactionRepair(plan)) {
+            return fromFactionRepair(MachineRepairAuthority.stageFactionRepair(game, plan, site));
         }
 
         int effectiveWorkers = workforce(site, game == null ? null : game.world);
@@ -194,7 +196,7 @@ final class FactionPhysicalConstructionAuthority {
                 effectiveWorkers, upgrade, construction);
     }
 
-    /** True only for construction explicitly owned by faction simulation. */
+    /** True only for construction or maintenance explicitly owned by faction simulation. */
     static boolean isFactionManaged(BaseObject object) {
         return object != null && FACTION_OWNER_MODE.equalsIgnoreCase(
                 object.constructionOwnerMode == null ? "" : object.constructionOwnerMode.trim());
@@ -220,7 +222,7 @@ final class FactionPhysicalConstructionAuthority {
                 || site.hasCompletedConstructionJob(linked));
     }
 
-    /** Returns the linked site's current unfinished construction, if any. */
+    /** Returns the linked site's current unfinished construction or maintenance, if any. */
     static BaseObject activeSite(GamePanel game, NpcFactionSite site) {
         if (game == null || site == null || game.baseObjects == null) return null;
         BaseObject best = null;
@@ -235,6 +237,7 @@ final class FactionPhysicalConstructionAuthority {
     static ProgressiveConstructionAuthority.FactionWorkResult advanceHourly(
             GamePanel game, NpcFactionSite site) {
         BaseObject construction = activeSite(game, site);
+        boolean repairWork = MachineRepairAuthority.isFactionRepairSite(construction);
         int roomId = game == null || game.world == null || construction == null
                 ? -1 : game.world.roomIdAt(construction.x, construction.y);
         boolean localRosterMode = game != null && hasLocalPopulationLedgers(game.world);
@@ -243,12 +246,42 @@ final class FactionPhysicalConstructionAuthority {
                 : workforce(site, game == null ? null : game.world);
         String roomName = game == null || game.world == null || roomId < 0
                 ? "linked construction room" : RoomOwnershipAuthority.roomName(game.world, roomId);
-        String crew = crewLabel(site, roomName, laborTurns, localRosterMode);
-        if (construction != null) construction.assignedWorker = crew;
+        String crew = repairWork
+                ? construction == null ? "assigned faction maintenance crew" : construction.assignedWorker
+                : crewLabel(site, roomName, laborTurns, localRosterMode);
+        if (construction != null && !repairWork) construction.assignedWorker = crew;
         ProgressiveConstructionAuthority.FactionWorkResult work =
                 ProgressiveConstructionAuthority.contributeFaction(
                 game, construction, laborTurns, crew);
         if (!work.completed() || construction == null) return work;
+
+        if (repairWork) {
+            MachineRepairAuthority.FactionRepairCompletion completion =
+                    MachineRepairAuthority.completeFactionRepair(
+                            construction, game == null ? 0 : game.turn, crew);
+            FactionStrategicPlan plan = linkedPlan(game, construction);
+            if (completion.completed() && plan != null) {
+                plan.success++;
+                plan.lastOutcome = "SUCCESS: " + siteLabel(site) + " completed physical "
+                        + (completion.replacement() ? "replacement" : "repair") + " of "
+                        + objectLabel(construction) + " at " + construction.x + ","
+                        + construction.y + "; integrity " + completion.integrityBefore()
+                        + " -> " + completion.integrityAfter() + ".";
+                plan.addHistory(game == null ? 0 : game.turn, plan.lastOutcome);
+            }
+            String planReadback = plan == null
+                    ? " No loaded strategic plan matched the persisted repair link."
+                    : " The linked strategic plan recorded one completed maintenance success.";
+            FactionCriticalVendorPlacementAuthority.FacilityActivation vendorActivation =
+                    FactionCriticalVendorPlacementAuthority.activateCompletedFacility(
+                            game, site, construction);
+            String vendorReadback = vendorActivation.handled()
+                    ? " " + vendorActivation.message() : "";
+            return new ProgressiveConstructionAuthority.FactionWorkResult(
+                    work.advanced(), work.laborAdded(), completion.completed(),
+                    work.summary() + " " + completion.message()
+                            + planReadback + vendorReadback);
+        }
 
         String receiptKey = construction.constructionLinkedSiteName == null
                 ? "" : construction.constructionLinkedSiteName.trim();
@@ -465,5 +498,16 @@ final class FactionPhysicalConstructionAuthority {
         return new Outcome(shell.handled(), shell.success(), shell.blocker(), shell.message(),
                 shell.sourceRoomId(), shell.sourceRoomName(), shell.originX(), shell.originY(),
                 shell.stockBefore(), shell.stockAfter(), shell.workers(), null, shell.marker());
+    }
+
+    private static Outcome fromFactionRepair(MachineRepairAuthority.FactionRepairStage repair) {
+        if (repair == null) {
+            return Outcome.notHandled(null, "No faction facility repair result was available.");
+        }
+        BaseObject facility = repair.facility();
+        return new Outcome(repair.handled(), repair.success(), repair.blocker(), repair.message(),
+                repair.roomId(), "", facility == null ? -1 : facility.x,
+                facility == null ? -1 : facility.y,
+                repair.stockBefore(), repair.stockAfter(), repair.workers(), null, facility);
     }
 }
