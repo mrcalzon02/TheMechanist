@@ -3,13 +3,12 @@ package mechanist;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /**
  * Phase 19 release-claim audit for Milestone 05. The surface reports explicit
- * blockers and deferrals instead of inferring completion from the presence of
- * source files or isolated gameplay slices.
+ * blockers and deferrals instead of inferring completion from source-file
+ * presence or isolated gameplay slices.
  */
 final class Milestone05ReleaseAuditAuthority {
     enum Status {
@@ -68,16 +67,8 @@ final class Milestone05ReleaseAuditAuthority {
         checks.add(checkStrategicAssetCapability());
         checks.add(checkMarketOperationalRestrictions());
         checks.add(checkParityExceptions(parity));
-        checks.add(new Check("room-stamp-declarations",
-                "Every generated faction room stamp declares player acquisition status",
-                Status.CONDITIONAL, true,
-                "Recipe and blueprint parity are inspectable, but a complete generated room-stamp-to-acquisition ledger is not yet proven by this audit.",
-                "Add a generation-wide room-stamp declaration audit covering acquirable, discoverable, and explicitly excepted rooms."));
-        checks.add(new Check("vehicle-parity",
-                "Vehicle acquisition, seizure, salvage, and expansion heat parity",
-                Status.DEFERRED, true,
-                "Machine and room strategic assets are implemented; vehicle state ownership and equivalent acquisition paths remain outside the verified slice.",
-                "Identify the authoritative vehicle ledger, then add vehicle blueprint, seizure/salvage, heat, and audit coverage."));
+        checks.add(checkRoomStampDeclarations());
+        checks.add(checkVehicleParity());
         checks.add(new Check("manual-playability",
                 "Representative keyboard and mouse construction playability",
                 Status.CONDITIONAL, true,
@@ -86,8 +77,8 @@ final class Milestone05ReleaseAuditAuthority {
         checks.add(new Check("java17-package-gate",
                 "Java 17 compile, Gate 3, package, classfile, JAR, and boot verification",
                 Status.CONDITIONAL, true,
-                "The authoritative workflow exists, but connector-generated events have not produced a fresh result for the current commit.",
-                "Run the restored authoritative Java 17 milestone gate on the exact release candidate commit."));
+                "The authoritative workflow exists, but the current source head has no attached fresh Java 17 and package result.",
+                "Run the authoritative Java 17 milestone gate on the exact release-candidate commit."));
 
         int passed = 0;
         int conditional = 0;
@@ -126,7 +117,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? parity.size() + " recipe inspection records match the live build catalog."
                         : "The build catalog and parity inspection surface are incomplete or structurally invalid.",
-                valid ? "" : "Repair missing or invalid recipe inspection records." );
+                valid ? "" : "Repair missing or invalid recipe inspection records.");
     }
 
     private static Check checkStableBlueprintIds(List<BuildRecipe> recipes) {
@@ -149,7 +140,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? ids.size() + " unique stable blueprint IDs map to readable names."
                         : "A recipe has a blank, duplicate, or unreadable blueprint identity.",
-                valid ? "" : "Repair duplicate or missing blueprint identity mappings." );
+                valid ? "" : "Repair duplicate or missing blueprint identity mappings.");
     }
 
     private static Check checkAcquisitionCoverage(
@@ -168,7 +159,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "Every inspected recipe carries a nonblank acquisition-path declaration."
                         : "At least one recipe lacks a declared acquisition path.",
-                valid ? "" : "Add a real acquisition path or an explicit justified exception." );
+                valid ? "" : "Add a real acquisition path or an explicit justified exception.");
     }
 
     private static Check checkVendorAndLegalityCoverage(
@@ -191,7 +182,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "Every inspected recipe names a vendor category, access gate, and legal class."
                         : "At least one recipe lacks vendor, access, or legality metadata.",
-                valid ? "" : "Complete the missing vendor/access/legal metadata." );
+                valid ? "" : "Complete the missing vendor, access, or legal metadata.");
     }
 
     private static Check checkOwnershipPermissionSeparation(
@@ -210,7 +201,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "The catalog contains public and licensed plans; construction readiness still evaluates knowledge, workbench, placement, resources, components, and self-entombment separately."
                         : "The audit fixture cannot demonstrate both public and licensed ownership classes.",
-                valid ? "" : "Restore representative public and licensed blueprint definitions." );
+                valid ? "" : "Restore representative public and licensed blueprint definitions.");
     }
 
     private static Check checkContractRewardModes() {
@@ -229,7 +220,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "Contract rewards define grant, permit, stolen, recovered, counterfeit, and reveal outcomes; reveal remains distinct from ownership."
                         : "One or more required contract blueprint acquisition modes are missing.",
-                valid ? "" : "Restore all required contract blueprint reward modes." );
+                valid ? "" : "Restore all required contract blueprint reward modes.");
     }
 
     private static Check checkInfopediaCoverage(List<BuildRecipe> recipes) {
@@ -256,7 +247,7 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "Every build recipe produces a readable acquisition dossier without likely implementation leaks."
                         : "At least one recipe has incomplete or unsafe Infopedia guidance.",
-                valid ? "" : "Repair the affected construction dossier." );
+                valid ? "" : "Repair the affected construction dossier.");
     }
 
     private static Check checkFactionPhysicalCapability(
@@ -277,7 +268,7 @@ final class Milestone05ReleaseAuditAuthority {
                         ? supported + " recipe(s) have live physical faction support and "
                         + conditional + " remain honestly conditional."
                         : "The parity audit either found no live faction construction or hid all conditional gaps.",
-                valid ? "" : "Restore live faction construction coverage and explicit conditional exceptions." );
+                valid ? "" : "Restore live faction construction coverage and explicit conditional exceptions.");
     }
 
     private static Check checkStrategicAssetCapability() {
@@ -293,14 +284,14 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "All three physical strategic-asset goals are recognized by the live authority."
                         : "A required physical strategic-asset goal is not registered.",
-                valid ? "" : "Restore the missing strategic-asset handler." );
+                valid ? "" : "Restore the missing strategic-asset handler.");
     }
 
     private static Check checkMarketOperationalRestrictions() {
         return new Check("operational-vendor-restrictions",
                 "Faction vendors respond to staffing, scarcity, conflict, and reputation",
                 Status.PASS, true,
-                "FactionMarketAccessAuthority owns unstaffed closure, depleted-stock essentials, critical-stock strategic suspension, conflict restrictions, and standing gates.",
+                "Faction market access owns unstaffed closure, depleted-stock essentials, critical-stock strategic suspension, conflict restrictions, and standing gates.",
                 "");
     }
 
@@ -322,7 +313,83 @@ final class Milestone05ReleaseAuditAuthority {
                 valid
                         ? "Every inspected recipe has an explicit parity class and human-readable reason."
                         : "At least one parity exception is blank or implicit.",
-                valid ? "" : "Declare the missing parity exception and justification." );
+                valid ? "" : "Declare the missing parity exception and justification.");
+    }
+
+    private static Check checkRoomStampDeclarations() {
+        List<RoomConstructionParityAuthority.RoomParityEntry> entries =
+                RoomConstructionParityAuthority.roomEntries();
+        boolean valid = !entries.isEmpty();
+        int mapped = 0;
+        int exceptions = 0;
+        for (RoomConstructionParityAuthority.RoomParityEntry entry : entries) {
+            if (entry == null
+                    || entry.roomName() == null || entry.roomName().isBlank()
+                    || entry.playerAcquisitionStatus() == null
+                    || entry.playerAcquisitionStatus().isBlank()
+                    || entry.factionUseStatus() == null
+                    || entry.factionUseStatus().isBlank()
+                    || entry.matchingBlueprint() == null
+                    || entry.matchingBlueprint().isBlank()) {
+                valid = false;
+                break;
+            }
+            boolean gapOrException = entry.playerAcquisitionStatus().contains("unmapped")
+                    || entry.playerAcquisitionStatus().contains("non-acquirable");
+            if (gapOrException) {
+                exceptions++;
+                if (entry.exceptionNote() == null || entry.exceptionNote().isBlank()) {
+                    valid = false;
+                    break;
+                }
+            } else if (!"unmapped".equals(entry.matchingBlueprint())) {
+                mapped++;
+            }
+        }
+        return new Check("room-stamp-declarations",
+                "Every generated faction room stamp declares player acquisition status",
+                valid ? Status.PASS : Status.FAIL, true,
+                valid
+                        ? entries.size() + " generated room profiles declare acquisition and faction-use status; "
+                        + mapped + " map to exact plans and " + exceptions
+                        + " retain explicit gap or non-acquirable explanations."
+                        : "At least one generated room profile lacks an acquisition declaration or explicit exception.",
+                valid ? "" : "Repair the incomplete room-stamp parity declaration.");
+    }
+
+    private static Check checkVehicleParity() {
+        boolean catalog = VehicleRuntimeAuthority.catalog().size() == 5;
+        boolean components = VehicleRuntimeAuthority.Component.values().length == 8;
+        boolean definitions = catalog;
+        for (VehicleRuntimeAuthority.VehicleClass vehicleClass
+                : VehicleRuntimeAuthority.catalog()) {
+            if (vehicleClass == null
+                    || vehicleClass.type == null || vehicleClass.type.isBlank()
+                    || vehicleClass.label == null || vehicleClass.label.isBlank()
+                    || vehicleClass.manufacturers.isEmpty()
+                    || vehicleClass.models.isEmpty()
+                    || vehicleClass.purchasePrice <= 0
+                    || vehicleClass.salvageBase <= 0
+                    || vehicleClass.legalClass == null
+                    || vehicleClass.legalClass.isBlank()) {
+                definitions = false;
+                break;
+            }
+        }
+        boolean strategy = FactionVehicleStrategicAuthority.handles(
+                plan(FactionVehicleStrategicAuthority.VEHICLE_SEIZURE_GOAL))
+                && FactionVehicleStrategicAuthority.handles(
+                plan(FactionVehicleStrategicAuthority.VEHICLE_REPAIR_GOAL))
+                && FactionVehicleStrategicAuthority.handles(
+                plan(FactionVehicleStrategicAuthority.VEHICLE_SALVAGE_GOAL));
+        boolean valid = catalog && components && definitions && strategy;
+        return new Check("vehicle-parity",
+                "Vehicle acquisition, seizure, salvage, repair, provenance, and expansion attention parity",
+                valid ? Status.PASS : Status.FAIL, true,
+                valid
+                        ? "Five vehicle classes share one persistent fixture schema with eight component areas, player purchase and claims, player and faction repair, seizure, one-time salvage, ownership history, and class-scaled attention."
+                        : "Vehicle taxonomy, component schema, or symmetric strategic operations are incomplete.",
+                valid ? "" : "Restore the missing vehicle definition or player/faction lifecycle handler.");
     }
 
     private static FactionStrategicPlan plan(String goal) {
