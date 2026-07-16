@@ -52,7 +52,7 @@ final class VehicleMaintenanceAuthority {
     private VehicleMaintenanceAuthority() { }
 
     static Result serviceNearestPlayerVehicle(GamePanel game,
-                                              MapObjectState garage) {
+                                               MapObjectState garage) {
         if (game == null || game.world == null) {
             return Result.blocked(Mode.GARAGE_REPAIR,
                     "SERVICE GARAGE: no vehicle-service world is loaded.", null);
@@ -162,6 +162,10 @@ final class VehicleMaintenanceAuthority {
             after = Math.min(100, before + selected.repairAmount);
             setComponent(vehicle, worst, after);
         }
+        if (criticalComponentsOperational(vehicle)
+                && "disabled".equals(value(vehicle, "operationState"))) {
+            set(vehicle, "operationState", "parked");
+        }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
         append(vehicle, "repairHistory", selected.label + " / "
                 + (selected == Mode.FULL_REFURBISHMENT
@@ -258,6 +262,13 @@ final class VehicleMaintenanceAuthority {
             if (component(vehicle, component) < 100) count++;
         }
         return count;
+    }
+
+    private static boolean criticalComponentsOperational(MapObjectState vehicle) {
+        return component(vehicle, VehicleRuntimeAuthority.Component.FRAME) > 0
+                && component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT) > 0
+                && component(vehicle, VehicleRuntimeAuthority.Component.DRIVE) > 0
+                && component(vehicle, VehicleRuntimeAuthority.Component.MOBILITY) > 0;
     }
 
     private static int component(MapObjectState vehicle,
