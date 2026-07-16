@@ -85,7 +85,7 @@ final class VehicleEconomyFrontageAuthority {
             return "PUBLIC TRANSIT: local taxi and mass-transit routes are posted here. Fare execution and boarding remain reserved for the transit runtime.";
         }
         return "FACTION MOTOR POOL: " + MapObjectState.stockValue(m.stockState, "ownerFaction") +
-                " vehicles are assigned here. Access is faction-controlled; ownership metadata is live.";
+                " vehicles are assigned here. Vehicle identity, component condition, ownership history, repair, seizure, and salvage records are live; operation remains access-controlled.";
     }
 
     static List<Faction> factionsForZone(ZoneType zone) {
@@ -128,6 +128,7 @@ final class VehicleEconomyFrontageAuthority {
             m.stockState = MapObjectState.setStockFlag(m.stockState, "vehicleRole", role);
             m.stockState = MapObjectState.setStockFlag(m.stockState, "forSale", Boolean.toString(forSale));
             m.stockState = MapObjectState.setStockFlag(m.stockState, "condition", "serviceable");
+            VehicleRuntimeAuthority.initialize(w, m, faction, ownership, role, forSale, r);
             w.mapObjects.add(m);
             return 1;
         }
@@ -142,13 +143,7 @@ final class VehicleEconomyFrontageAuthority {
     private static Faction primaryFaction(List<Faction> factions) { return factions.isEmpty() ? Faction.CIVIC_LEDGER_OFFICE : factions.get(0); }
 
     private static String buyVehicleTitle(GamePanel g, MapObjectState m) {
-        String[] models = {"Utility bike", "Civilian car", "Cargo truck", "Armored car"};
-        int[] prices = {90, 180, 240, 360};
-        int i = Math.floorMod(m.vendCount, models.length);
-        if (!g.spendImperialScript(prices[i])) return "DEALERSHIP: " + models[i] + " costs " + prices[i] + " script; you do not have enough carried script.";
-        String title = "Vehicle title: " + models[i];
-        g.addInventoryItem(title, null);
-        return "DEALERSHIP PURCHASE: paid " + prices[i] + " script and received " + title + ". The title is the persistent ownership hook for the vehicle runtime.";
+        return VehicleRuntimeAuthority.purchaseNearestForSale(g, m).message();
     }
 
     private static String buyPart(GamePanel g, MapObjectState m) {
@@ -160,15 +155,6 @@ final class VehicleEconomyFrontageAuthority {
     }
 
     private static String serviceVehicle(GamePanel g, MapObjectState m) {
-        boolean ownsVehicle = false;
-        for (String item : g.inventory) if (item != null && item.startsWith("Vehicle title: ")) { ownsVehicle = true; break; }
-        if (!ownsVehicle) return "SERVICE GARAGE: no player vehicle title was found in carried inventory.";
-        int part = g.inventory.indexOf("Machine part");
-        if (part >= 0) {
-            g.inventory.remove(part);
-            return "SERVICE GARAGE: consumed one Machine part and completed owner-authorized maintenance.";
-        }
-        if (!g.spendImperialScript(8)) return "SERVICE GARAGE: maintenance requires one Machine part or 8 script.";
-        return "SERVICE GARAGE: paid 8 script for owner-authorized maintenance.";
+        return VehicleRuntimeAuthority.serviceNearestPlayerVehicle(g, m).message();
     }
 }
