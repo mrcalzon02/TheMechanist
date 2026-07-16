@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 
 /** Focused smoke for Phase 17.2 physical faction construction and attribution. */
@@ -160,6 +161,12 @@ final class Milestone05FactionPhysicalConstructionSmoke {
 
             assertFactionMetadataRoundTrip(game, construction);
 
+            int roomRosterBeforeVendor = roomAssignedWorkers(game.world, forgeRoom, site.faction);
+            game.world.npcs.removeIf(npc -> npc != null
+                    && "PHYSICAL-WORKS-FACTOR".equals(npc.id));
+            require(facilityVendor(game.world) == null,
+                    "blueprint-acquisition vendor should be absent before the facility completes");
+
             ProgressiveConstructionAuthority.FactionWorkResult firstHour =
                     FactionPhysicalConstructionAuthority.advanceHourly(game, site);
             require(firstHour.advanced() && firstHour.laborAdded() == 3 && !firstHour.completed(),
@@ -170,6 +177,8 @@ final class Milestone05FactionPhysicalConstructionSmoke {
             require(site.baseLevel == baseLevelBefore && site.machineLevel == machineLevelBefore
                             && plan.success == 0,
                     "partial faction labor must leave levels and strategic success pending");
+            require(facilityVendor(game.world) == null,
+                    "an unfinished facility must not open a replacement vendor");
 
             ProgressiveConstructionAuthority.FactionWorkResult completion = firstHour;
             int hourlyCalls = 1;
@@ -195,6 +204,59 @@ final class Milestone05FactionPhysicalConstructionSmoke {
                     "completed strategic history");
             requireContains(completion.summary(), "facility levels advanced once",
                     "completion level readback");
+            requireContains(completion.summary(), "opened a staffed Industrial Blueprint Trader counter",
+                    "facility vendor completion readback");
+
+            NpcEntity facilityVendor = facilityVendor(game.world);
+            require(facilityVendor != null
+                            && FactionCriticalVendorPlacementAuthority.isFacilityVendor(facilityVendor),
+                    "completed Micro Forge should open one stable facility-backed vendor");
+            require(FactionCriticalVendorPlacementAuthority.Category.INDUSTRIAL.role
+                            .equals(facilityVendor.role)
+                            && game.world.roomIdAt(facilityVendor.x, facilityVendor.y) == forgeRoom,
+                    "facility vendor should serve the completed forge room as an industrial trader");
+            MapObjectState facilityMarket = game.world.mapObjectAt(facilityVendor.x, facilityVendor.y);
+            require(facilityMarket != null && "faction-market".equals(facilityMarket.type),
+                    "facility vendor should have a physical faction-market counter");
+            require("true".equals(MapObjectState.stockValue(
+                            facilityMarket.stockState, "facilityVendor"))
+                            && FactionCriticalVendorPlacementAuthority.siteToken(site).equals(
+                            MapObjectState.stockValue(facilityMarket.stockState, "sourceSite"))
+                            && !MapObjectState.stockValue(
+                            facilityMarket.stockState, "sourceFacility").isBlank(),
+                    "facility counter should retain stable site and completed-facility linkage");
+            require(Integer.toString(roomRosterBeforeVendor).equals(MapObjectState.stockValue(
+                            facilityMarket.stockState, "assignedWorkers"))
+                            && roomAssignedWorkers(game.world, forgeRoom, site.faction)
+                            == roomRosterBeforeVendor,
+                    "opening the vendor must represent assigned room staff without inventing population");
+
+            int npcCountAfterOpen = game.world.npcs.size();
+            int marketCountAfterOpen = game.world.mapObjects.size();
+            FactionCriticalVendorPlacementAuthority.FacilityActivation repeatedVendor =
+                    FactionCriticalVendorPlacementAuthority.activateCompletedFacility(
+                            game, site, construction);
+            require(repeatedVendor.handled() && repeatedVendor.existing()
+                            && !repeatedVendor.opened()
+                            && repeatedVendor.vendor() == facilityVendor,
+                    "repeat facility activation should reuse the stable vendor");
+            require(game.world.npcs.size() == npcCountAfterOpen
+                            && game.world.mapObjects.size() == marketCountAfterOpen
+                            && FactionCriticalVendorPlacementAuthority
+                            .reconcileCompletedFacilities(game) == 0,
+                    "repeat activation and reconciliation must not duplicate vendors or counters");
+
+            FactionSiteWorkforceAuthority.sync(site, game.world);
+            TraderSession facilityTrade = TraderSession.forNpc(
+                    facilityVendor, game.world.zoneType, new Random(1702172L));
+            TraderTradeActionAuthority.attachNpcSiteStock(
+                    facilityTrade, site, new Random(1702173L), game.world, game.turn);
+            require(facilityTrade.sourceSite == site,
+                    "facility vendor trade should attach the exact local faction site");
+            require(hasTracedSiteOffer(facilityTrade, site.name),
+                    "facility vendor shelf should include stock with faction-site provenance");
+            requireContains(facilityTrade.supplyChainSummary,
+                    "completed staffed faction facility", "facility vendor remit");
             playerBefore.requireSame(game);
 
             int completedBaseLevel = site.baseLevel;
@@ -211,6 +273,9 @@ final class Milestone05FactionPhysicalConstructionSmoke {
             require(site.baseLevel == completedBaseLevel && site.machineLevel == completedMachineLevel
                             && plan.success == completedSuccess && plan.history.size() == completedHistory,
                     "repeat ticks/receipts must not advance levels or strategic success twice");
+            require(game.world.npcs.size() == npcCountAfterOpen
+                            && game.world.mapObjects.size() == marketCountAfterOpen,
+                    "completed construction ticks must not duplicate the facility vendor");
             playerBefore.requireSame(game);
 
             verifyPlacementBlockerAtomicity(game, forgeRoom, distantCrewRoom, materialCost);
@@ -392,6 +457,39 @@ final class Milestone05FactionPhysicalConstructionSmoke {
         vendor.x = x;
         vendor.y = y;
         return vendor;
+    }
+
+    private static NpcEntity facilityVendor(World world) {
+        if (world == null || world.npcs == null) return null;
+        NpcEntity found = null;
+        for (NpcEntity npc : world.npcs) {
+            if (!FactionCriticalVendorPlacementAuthority.isFacilityVendor(npc)) continue;
+            require(found == null, "only one facility-backed vendor should exist in the smoke world");
+            found = npc;
+        }
+        return found;
+    }
+
+    private static int roomAssignedWorkers(World world, int roomId, Faction faction) {
+        if (world == null || world.roomPopulationLedgers == null) return 0;
+        int assigned = 0;
+        for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
+            if (ledger == null || ledger.roomId != roomId
+                    || !FactionIdentityAuthority.sameFamily(ledger.faction, faction)) continue;
+            assigned += Math.max(0, ledger.assigned);
+        }
+        return assigned;
+    }
+
+    private static boolean hasTracedSiteOffer(TraderSession trader, String siteName) {
+        if (trader == null || trader.offers == null) return false;
+        for (TradeOffer offer : trader.offers) {
+            if (offer == null || offer.provenance == null) continue;
+            String trace = offer.provenance.shortChain();
+            if ((trace != null && trace.contains(siteName))
+                    || (offer.description != null && offer.description.contains(siteName))) return true;
+        }
+        return false;
     }
 
     private static String tileFingerprint(World world) {
