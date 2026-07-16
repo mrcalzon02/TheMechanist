@@ -178,6 +178,7 @@ final class Milestone06VehicleMaintenanceSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06VehicleLossSmoke.main(args);
     }
 
     private static World world() {
