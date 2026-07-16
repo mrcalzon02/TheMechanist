@@ -173,7 +173,7 @@ final class VehicleOperationFeedbackAuthority {
         appendEmitters(game, out, nowMillis, 0, 0,
                 game == null || game.world == null ? 0 : game.world.w,
                 game == null || game.world == null ? 0 : game.world.h,
-                Integer.MAX_VALUE);
+                0);
         return out;
     }
 
