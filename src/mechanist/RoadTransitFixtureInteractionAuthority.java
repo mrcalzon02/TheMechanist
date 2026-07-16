@@ -14,7 +14,19 @@ final class RoadTransitFixtureInteractionAuthority {
         if (m == null || !RoadTransitFixtureAuthority.isRoadTransitType(m.type)) return false;
         String line;
         if (RoadTransitFixtureAuthority.isVehicleType(m.type)) {
-            line = VehicleRuntimeAuthority.interact(g, m).message();
+            if (VehicleRuntimeAuthority.playerOwns(g, m)
+                    && g.manualMovementPlanActive
+                    && g.manualMovementPlanPath != null
+                    && !g.manualMovementPlanPath.isEmpty()) {
+                line = VehicleTransitAuthority.executeManualPlan(g, m).message();
+            } else {
+                VehicleRuntimeAuthority.Result result = VehicleRuntimeAuthority.interact(g, m);
+                line = result.message();
+                if (result.success() && !result.changed()
+                        && VehicleRuntimeAuthority.playerOwns(g, m)) {
+                    line += " Create a manual movement plan to a road or parking destination, then interact again to preview and commit a constrained vehicle route.";
+                }
+            }
         } else if (VehicleEconomyFrontageAuthority.isCommerceType(m.type)) {
             line = VehicleEconomyFrontageAuthority.interaction(g, m);
         } else {
