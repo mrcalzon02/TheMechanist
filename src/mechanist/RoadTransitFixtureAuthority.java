@@ -6,8 +6,9 @@ import java.util.*;
  * Road/transit fixture authority.
  *
  * Owns passive road-adjacent fixtures, parking markers, taxi booths, and parked
- * vehicle records. Ownership and commerce metadata are live; movement, fuel,
- * storage, collision, recall, and combat remain outside this authority.
+ * vehicle records. Parked vehicles now expose authoritative identity,
+ * component, ownership, repair, capture, and salvage state while movement,
+ * fuel, collision, recall, and combat remain outside this authority.
  */
 final class RoadTransitFixtureAuthority {
     static final String VERSION = "0.9.10ai";
@@ -145,44 +146,20 @@ final class RoadTransitFixtureAuthority {
         if (AssetIntegrationDisciplineAuthority.TAXI_BOOTH.equals(t)) return "TRANSIT BOOTH: a taxi-call and toll surface. It exposes route/service metadata here; boarding, fare execution, recall, and traffic are not exposed by this inspected fixture.";
         if (AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER.equals(t)) return "PARKING MARKER: a vehicle set-down bay with readable access metadata and no live storage, fueling, ownership, or driving behavior attached.";
         if (AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t)) return "VEHICLE STAGING POINT: a passive roadside vehicle marker used to keep the street readable without spawning a movable vehicle entity.";
-        if (isVehicleType(t)) return vehicleInspectionLine(m, t);
+        if (isVehicleType(t)) return VehicleRuntimeAuthority.inspectionLine(null, m);
         if (VehicleEconomyFrontageAuthority.isCommerceType(t)) return "VEHICLE SERVICE FRONTAGE: " + (m == null ? "service metadata unavailable" : m.label) + ".";
         return "ROAD TRANSIT FIXTURE: passive transit metadata surface.";
-    }
-
-    static String vehicleInspectionLine(MapObjectState m, String type) {
-        String stock = m == null || m.stockState == null ? "" : m.stockState;
-        String armor = value(stock, "armor");
-        String seats = value(stock, "seats");
-        String cargo = value(stock, "cargo");
-        String label = m == null || m.label == null ? labelForType(type, null, null) : m.label.split(" / ")[0];
-        String owner = value(stock, "ownerFaction");
-        String ownership = value(stock, "ownership");
-        String role = value(stock, "vehicleRole");
-        return "PARKED VEHICLE: " + label + ". Profile: armor=" + empty(armor, "unlisted") + ", seats=" + empty(seats, "unlisted") +
-                (cargo.isBlank() ? "" : ", cargo=" + cargo) + ", owner=" + empty(owner, "unassigned") +
-                ", ownership=" + empty(ownership, "unassigned") + ", role=" + empty(role, "general") +
-                ". Ownership hooks are live; driving remains reserved for the vehicle runtime.";
     }
 
     static String actionVerb(String type) {
         String t = AssetIntegrationDisciplineAuthority.canonicalType(type);
         if (AssetIntegrationDisciplineAuthority.TAXI_BOOTH.equals(t)) return "checks transit booth routing metadata.";
-        if (isVehicleType(t) || AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t)) return "inspects a parked vehicle.";
+        if (isVehicleType(t)) return "handles a parked vehicle.";
+        if (AssetIntegrationDisciplineAuthority.ROAD_VEHICLE_STAGING_MARKER.equals(t)) return "inspects a parked vehicle marker.";
         if (AssetIntegrationDisciplineAuthority.PARKING_LOT_MARKER.equals(t)) return "inspects a vehicle set-down bay.";
         return "inspects a road-adjacent civic fixture.";
     }
 
-    private static String value(String stock, String key) {
-        if (stock == null || key == null) return "";
-        for (String part : stock.split(";")) {
-            int i = part.indexOf('=');
-            if (i > 0 && part.substring(0, i).equals(key)) return part.substring(i + 1);
-        }
-        return "";
-    }
-
-    private static String empty(String s, String fallback) { return s == null || s.isBlank() ? fallback : s; }
     private static String safe(String s) { return s == null ? "" : s; }
     private static String pick(Random r, String... vals) {
         if (vals == null || vals.length == 0) return "Road transit fixture";
