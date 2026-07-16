@@ -8,42 +8,63 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
-  audit-symbols:
+  patch-room-shell-symbols:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Find canonical transition and corridor definitions
+        with:
+          fetch-depth: 0
+      - name: Apply exact canonical-owner substitutions
         shell: bash
         run: |
-          set +e
-          {
-            echo '=== transition-related definitions and calls ==='
-            grep -RInE 'isTransition|transition.*[Tt]ile|[Tt]ransition.*glyph|HIVEWALL|isCorridorGlyph|exterior_hivewall_maintenance' src/mechanist | head -n 400
-            echo
-            echo '=== direct transition glyph comparisons ==='
-            grep -RInE "== *'<'|== *'>'|!= *'<'|!= *'>'|case *'<'|case *'>'" src/mechanist | head -n 300
-          } > room-shell-symbol-audit.log 2>&1
-      - name: Post symbol audit to issue 46
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/mechanist/FactionRoomShellConstructionAuthority.java')
+          text = path.read_text(encoding='utf-8')
+          replacements = [
+              ('World.isTransitionTile', 'BoundedOuterHiveWallApi.isTransitionTile', 3),
+              ('World.HIVEWALL_CORRIDOR', 'BoundedOuterHiveWallApi.HIVEWALL_CORRIDOR', 2),
+          ]
+          for old, new, expected in replacements:
+              actual = text.count(old)
+              if actual != expected:
+                  raise SystemExit(f'Expected {expected} occurrences of {old!r}, found {actual}.')
+              text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8')
+          PY
+          git diff --check
+          changed=$(git diff --numstat -- src/mechanist/FactionRoomShellConstructionAuthority.java)
+          test "$changed" = $'5\t5\tsrc/mechanist/FactionRoomShellConstructionAuthority.java'
+      - name: Commit exact source repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/mechanist/FactionRoomShellConstructionAuthority.java
+          git commit -m 'Use canonical room shell transition APIs'
+          git push origin HEAD:main
+      - name: Record patch audit on issue 46
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const text = fs.readFileSync('room-shell-symbol-audit.log', 'utf8');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: 46,
               body: [
-                '## Temporary room-shell symbol audit',
+                '## Canonical room-shell symbol repair dispatched',
                 '',
-                `Commit: \`${context.sha}\``,
+                `Workflow commit: \`${context.sha}\``,
                 '',
-                '```text',
-                text.length > 50000 ? text.slice(-50000) : text,
-                '```'
+                '- Replaced three invalid `World.isTransitionTile` references with `BoundedOuterHiveWallApi.isTransitionTile`.',
+                '- Replaced two invalid `World.HIVEWALL_CORRIDOR` references with `BoundedOuterHiveWallApi.HIVEWALL_CORRIDOR`.',
+                '- The patcher required an exact `5 additions / 5 deletions` source diff before committing.'
               ].join('\n')
             });
