@@ -7,6 +7,13 @@ import java.util.Locale;
 final class ExpansionHeatReadabilityAuthority {
     private ExpansionHeatReadabilityAuthority() {}
 
+    static List<String> summary(GamePanel game) {
+        ArrayList<String> lines = new ArrayList<>(summary(game == null ? 0 : game.suspicion,
+                game == null ? 0 : game.gangHeat, game == null ? List.of() : game.baseObjects));
+        lines.add(ConstructionExpansionReactionAuthority.statusLine(game));
+        return lines;
+    }
+
     static List<String> summary(int suspicion, int gangHeat, List<BaseObject> assets) {
         int businesses = 0;
         int defenses = 0;
@@ -36,7 +43,7 @@ final class ExpansionHeatReadabilityAuthority {
         } else {
             lines.add("Attention drivers: visible commerce, armed defenses, industrial capacity, laboratories, and restricted facilities may attract scrutiny as authority expands.");
         }
-        lines.add("Simulation boundary: asset exposure is advisory; it is not yet automatically added to the global suspicion or gang-attention meters.");
+        lines.add("Construction rule: starting a player construction site adds its previewed exposure to the global suspicion and gang-attention meters once.");
         lines.add("Relief paths: rest, entertainment, and reconciliation services can reduce tracked pressure where their interaction supports it.");
         return lines;
     }

@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -57,6 +58,7 @@ final class ProgressiveLookAuthority {
         lines.add(tileSurfaceLine(game.world.walkable(x, y), ch));
         CompiledTileDescriptor descriptor = TileDataCompilationAuthority.resolve(game.world, x, y, ch);
         if (descriptor != null && d >= 1) lines.add(tileDescriptorLine(descriptor));
+        lines.addAll(RoomOwnershipAuthority.inspectionLines(game, x, y, d));
         if (x == game.playerX && y == game.playerY) lines.add("Player position.");
 
         NpcEntity npc = game.world.npcAt(x, y);
@@ -107,6 +109,7 @@ final class ProgressiveLookAuthority {
         lines.add(PlayerFacingText.inspectionActor(safe(npc.name, "unknown figure"), safe(npc.role, "unknown role")));
         if (depth >= 1) lines.add("Faction read: " + (npc.faction == null ? "unknown" : npc.faction.label) + ".");
         if (depth >= 2) lines.add(npc.rankLine());
+        if (depth >= 2) lines.add(NpcHappinessAuthority.statusLine(game.world, npc, game.worldTurn));
         if (depth >= 2) lines.add(intentLine(game, npc));
         if (depth >= 3) lines.add("Visible condition: " + EntityIdentityReadabilityAuthority.conditionBand(npc.hp) + " / age " + npc.ageLine() + ".");
         if (depth >= 4) {
@@ -123,6 +126,10 @@ final class ProgressiveLookAuthority {
     private static void addObjectLines(GamePanel game, ArrayList<String> lines, MapObjectState obj, int depth) {
         lines.add(PlayerFacingText.inspectionFixture(game.safeLabel(obj.label, obj.type), "nearby object"));
         if (depth >= 1) lines.add("Object read: " + game.safeLabel(obj.type, "object") + "; stock appears " + game.safeLabel(obj.stockState, "none") + ".");
+        if (depth >= 2 && FactionImportNodeGenerationAuthority.isImportNode(obj)) {
+            List<String> importLines = FactionImportNodeGenerationAuthority.inspectionLines(game.world, obj, game.worldTurn);
+            lines.addAll(importLines);
+        }
         if (depth >= 2) {
             FixtureInteractionRegistry.Definition def = FixtureInteractionRegistry.definitionFor(obj.type);
             if (def != null) lines.add("Fixture: " + def.family.label + " / " + def.family.interaction + " / " + def.notes);
@@ -132,6 +139,19 @@ final class ProgressiveLookAuthority {
 
     private static void addBaseObjectLines(GamePanel game, ArrayList<String> lines, BaseObject base, int depth) {
         lines.add(PlayerFacingText.inspectionFixture(game.safeLabel(base.name, "base object"), "built fixture"));
+        if (base.underConstruction && depth >= 1) {
+            lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
+        } else if (depth >= 1 && FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
+            String faction = base.faction == null ? Faction.NONE.label : base.faction.label;
+            String materials = base.constructionMaterialSource == null || base.constructionMaterialSource.isBlank()
+                    ? "reserved faction stock" : base.constructionMaterialSource;
+            String plan = base.constructionPlanSource == null || base.constructionPlanSource.isBlank()
+                    ? "known faction plan" : base.constructionPlanSource;
+            lines.add("Facility custody: " + faction + "; "
+                    + FactionPhysicalConstructionAuthority.crewReadback(base)
+                    + "; constructed from " + materials + " under " + plan
+                    + ". Player operation, repair, staffing, and dismantling are unavailable.");
+        }
         if (depth >= 1) lines.add("Build read: " + game.safeLabel(base.qualityName, "Common") + " quality.");
         if (depth >= 2) lines.add(game.safeLabel(base.description, "Built base object."));
         if (depth >= 3) lines.add("Integrity/capacity: " + base.integrity + " / " + base.capacity + ".");

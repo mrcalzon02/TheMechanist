@@ -56,7 +56,9 @@ final class Milestone04VerticalFloorTradeSmoke {
             render(game);
             runButton(game, "Buy");
             require(surfaceFertilizer.remaining == 0,
-                    "successful inter-floor purchase should consume exactly one persisted route unit");
+                    "successful inter-floor purchase should consume exactly one persisted route unit; selected="
+                            + (game.activeTraderSession == null ? "no trader" : game.selectedTradeOfferIndex)
+                            + "; script=" + game.carriedScript + "; events=" + game.eventLog);
             require(game.inventory.stream().anyMatch(item -> ItemQuality.namesMatch(item, "Fertilizer")),
                     "purchased sewer fertilizer should reach carried inventory");
             require(offer(surfaceTrader, "Fertilizer") == null,

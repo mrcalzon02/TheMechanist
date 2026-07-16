@@ -136,6 +136,8 @@ final class ContractObjectiveReadabilityAuthority {
     private static String objectiveText(FactionContract contract) {
         if ("BOUNTY".equals(contract.type)) return "find " + safe(contract.targetName, "the marked target") + " and recover " + contract.publicRequiredItem();
         if ("LOCKBOX".equals(contract.type)) return "acquire " + contract.publicRequiredItem() + " from the named vault route";
+        if ("MARKET".equals(contract.type)) return "deliver " + contract.publicRequiredItem() + " to address "
+                + safe(contract.targetName, "the recorded faction-market pressure");
         if (contract.requiresProductionProof()) return "produce one " + contract.minimumQualityName() + " "
                 + contract.publicRequiredItem() + " or better to faction standard";
         return "retrieve " + safe(contract.targetName, contract.publicRequiredItem()) + " without compromising it";

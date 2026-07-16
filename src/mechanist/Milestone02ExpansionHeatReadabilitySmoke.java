@@ -22,7 +22,7 @@ final class Milestone02ExpansionHeatReadabilitySmoke {
         requireContains(lines, "defenses 1", "defense driver");
         requireContains(lines, "laboratories/clinics 1", "laboratory driver");
         requireContains(lines, "Recorded business heat: 3", "business heat total");
-        requireContains(lines, "not yet automatically added", "simulation boundary");
+        requireContains(lines, "starting a player construction site adds its previewed exposure", "live construction rule");
         for (String line : lines) if (PlayerFacingText.containsLikelyLeak(line)) {
             throw new AssertionError("Expansion heat summary leaked implementation text: " + line);
         }

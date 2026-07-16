@@ -1,0 +1,2 @@
+[20:58:55.673] WARN/DISPLAY_RESOLUTION_DETECT Could not enumerate display modes; using safe defaults.
+Milestone 04 raw material provenance smoke passed.

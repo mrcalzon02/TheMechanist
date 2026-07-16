@@ -24,6 +24,7 @@ public final class SemanticAssetInfopediaAuthority {
 
     private static final Pattern ID_PREFIX = Pattern.compile("^[A-Z0-9]{3,4}-[A-Z0-9]{3,4}\\b");
     private static final String MECHANIC_PREFIX = "MECHANIC - ";
+    private static final String ITEM_PREFIX = "ITEM - ";
 
     private static final AssetType[] BROWSE_TYPES = {
             AssetType.PORTRAIT,
@@ -66,6 +67,11 @@ public final class SemanticAssetInfopediaAuthority {
                 out.add(formatMechanicEntry(entry));
                 added++;
             }
+            for (ItemDef definition : ItemCatalog.ITEMS.values()) {
+                if (!itemMatchesFilter(definition, q)) continue;
+                out.add(formatItemEntry(definition));
+                added++;
+            }
         }
         for (AssetMetadata metadata : source) {
             if (!metadata.matchesFilter(q)) continue;
@@ -103,6 +109,8 @@ public final class SemanticAssetInfopediaAuthority {
         if (mechanic.isPresent()) {
             return mechanicDetailLines(mechanic.get());
         }
+        Optional<ItemDef> item = itemDefinitionForEntry(entry);
+        if (item.isPresent()) return itemDetailLines(item.get());
         Optional<AssetMetadata> metadata = metadataForEntry(safe, entry);
         if (metadata.isEmpty()) {
             lines.add(entry == null || entry.isBlank() ? "Semantic Asset Index" : entry);
@@ -311,6 +319,18 @@ public final class SemanticAssetInfopediaAuthority {
                                 "Relief guidance identifies lower-profile development and heat reduction paths without promising that attention disappears immediately."
                         ),
                         List.of("contract-evidence", "construction-blueprints")),
+                new MechanicEntry("world-events", "World Events", "World",
+                        "Top-down world events are sector conditions such as train outages, quarantines, export bans, supply shocks, relief shipments, repair periods, tithes, and civic observances. They are recorded separately from faction officers' schemes.",
+                        List.of(
+                                "Each event records its start and end turn, duration, scope, severity, eligibility reason, public notice channels, economy and population effects, shipment and reinforcement timing, vendor restrictions, local exceptions, physical risks, and aftermath.",
+                                "Events are selected from conditions that make them suitable. Severe shortage, losses, delayed freight, or structural harm favor relief or repair instead of adding another arbitrary penalty.",
+                                "Active events can advance or delay shipment windows and reinforcement arrivals, change freight risk, replenish limited reserves during relief, and contribute visible pressure to distant faction-network outcomes.",
+                                "Import closures, export bans, and off-map sales restrictions state what closes. Local stock, internal faction issue, clinic treatment, relief distribution, and other named exceptions can remain available.",
+                                "An event can visibly close or repurpose its exact generated import or market facility. The affected marker and room name show the event use, and a closed import node cannot receive train reinforcements.",
+                                "The original marker, route status, room purpose, and room description remain attached to the event. Recovery restores that exact facility instead of leaving permanent unexplained damage.",
+                                "Use world_events to read the active event, exact timing, restrictions, exceptions, physical risk, and recovery terms."
+                        ),
+                        List.of("population-markets", "expansion-heat")),
                 new MechanicEntry("population-markets", "Population and Market Pressure", "Economy",
                         "Local population ledgers create visible demand for essential goods and connect resident capacity, workforce, losses, facilities, stock, and prices.",
                         List.of(
@@ -321,7 +341,47 @@ public final class SemanticAssetInfopediaAuthority {
                                 "The trade panel names the local population target, assigned workforce, recorded losses, facility-linked population records, strongest pressure, and the selected offer's exact adjustment.",
                                 "Population-allocated food and water draw from a finite persisted reserve. Production ledgers and local farms, hydroponics, kitchens, food stores, recyclers, and purifiers are preferred; rail shipments or a small emergency allotment are used only when local supply is unavailable.",
                                 "Every essential shelf offer names its stock class, source facility or route, remaining reserve, and refill turn. A successful purchase consumes one unit, while failed purchases and reopened vendor sessions cannot recreate depleted stock.",
+                                "Population also consumes matching faction food and water reserves once per world day. Demand follows persisted population capacity; immature crèche cohorts count as additional mouths and consume twice the normal food share while growing.",
                                 "Each inhabited floor trades with its sewer layer below. Universal waste runoff feeds sewer fertilizer and basic chemical processing, those finite goods move upward by freight lift, and sewer markets pay a premium for food, clean water, filters, and tools brought down from above.",
+                                "Weapon and ammunition shelves use separate finite reserves tied to faction supply policy. Concord military issue, Warden controlled security stock, Mechanist custody weapons, noble household arms, gang black-market stock, hidden-cell weapons, improvised sump arms, and civilian defensive goods keep distinct classifications and legality.",
+                                "Security stock resolves to faction-controlled arms production, armories, munition stores, workshops, confiscated evidence, theft or black-market diversion, battlefield recovery, outside-sector rail shipments, or a small faction reserve. Rival-controlled production cannot supply the shelf.",
+                                "Blockades close outside-sector arms routes and leave only a one-unit local reserve with a long refill. Failed purchases consume nothing; successful purchases consume the exact weapon or ammunition reserve, and depletion survives reopened traders and save/load.",
+                                "Medical and drug shelves use finite reserves tied to clinics, laboratories, private physicians, faction stores, illicit producers, relief intake, rail imports, or event-diverted batches. Rival-controlled laboratories cannot supply the shelf.",
+                                "Legal clinic medicine, restricted service medicine, private physician stock, black-market performance drugs, sump sedatives, counterfeit medicine, contaminated medicine, outside-sector pharmaceuticals, and disaster relief stock keep distinct source and legality records.",
+                                "Stimulants name stimulant-strain and sleep-debt risk; illicit sedatives name dependency and contamination risk; counterfeit or contaminated batches carry an unsafe batch warning into item provenance. These warnings do not invent an addiction system where none exists.",
+                                "Medical blockades close outside shipments and leave a one-unit local reserve. Failed purchases consume nothing, successful purchases consume the exact treatment or drug reserve, and depletion survives reopened traders and save/load.",
+                                "Ordinary noble luxuries use finite estate, production, event-diverted, merchant-import, or household reserves. Their provenance preserves house control, source route, prestige or gifting purpose, and blockade, tax, seizure, or tithe effects.",
+                                "Rare draughts are protected custody objects rather than ordinary valuables. Each has a minimum Common value of 850 script and records noble-house owner, off-world origin, broker, smuggler, physician, or merchant route, exact vault, quantity, authenticity, event status, and household purpose.",
+                                "A house vault may hold a genuine draught for household use, prestige, gifting, bargaining, blackmail, medical privilege, private indulgence, inheritance, or hoarding without placing it on a trader shelf. Generic draught offers are withheld.",
+                                "Only an explicit theft, smuggling, black-market, bargaining, or sale event can exceptionally release one draught unit. Genuine, diluted, counterfeit, contaminated, stolen, misdeclared, or house-certified identity and blockade, tax, seizure, or tithe status remain on the purchased item's custody trace.",
+                                "Pet, animal, and agricultural shelves use finite reserves tied to compatible faction farms, gardens, fungus rooms, cloning nurseries, rail imports, or living farm, pet, and kennel animals. Rival-owned rooms, production, and animals cannot supply another faction's market.",
+                                "Animal products, feed, pet bundles, and veterinary kits name the linked animal, breeder or owner, pen owner, handler, feed source, water station, and care source. Seeds, fungi, and cloning samples preserve their operated room, production facility, or inspected import route.",
+                                "Animal disease screening and feed shortages reduce local output to a rationed reserve. Import restrictions close purely imported seed, breeding, and cloning stock instead of creating a replacement source; failed purchases consume nothing, while successful purchases consume one exact unit and depletion survives reopened traders and save/load.",
+                                "Raw earth, quarried stone, ferric scrap, recovered industrial salvage, waste biomass, and refined metal stock use separate finite reserves. Sources resolve to compatible local mining, quarrying, salvage, recycling, scavenging, production, facility stockpiles, event relief or seizure, or outside-sector imports.",
+                                "Noble, military, black-market, and ordinary merchant material imports retain their supplier class and rail route. Rival-controlled rooms and ledgers cannot supply the shelf, and blockades close outside material routes.",
+                                "When an existing production or trade chain requests material before its extraction chain is simulated, only a one-unit bounded faction reserve is allowed. Its assumed source, reason, faction, locality, event modifier, and source-review requirement remain visible; failed purchases consume nothing and depletion survives reopened traders and save/load.",
+                                "Controlled faction territories place staffed provision, armory, medical, industrial-blueprint, animal-care, luxury, or black-market counters according to faction identity and the rooms they control. Each trader has a physical market marker inside its supporting room.",
+                                "Provisioners guarantee food and water; military quartermasters guarantee weapons, ammunition, and armor; dispensaries guarantee treatment stock; and industrial factors guarantee tools, construction supplies, carried room and machine blueprint records, and vehicle-service components.",
+                                "Illicit factions can promote a controlled room into a concealed chem kitchen with a chemical fixture, a working chem cook, a production record, and a black-market dealer carrying weapons, ammunition, narcotics, tools, and restricted goods.",
+                                "Noble estates can promote a controlled store into a secured luxury and draught vault. The estate broker sells ordinary luxury stock, while rare draughts remain in exact protected custody unless an explicit release event permits sale.",
+                                "Faction-market offers remain visible when standing, faction membership, permits, military issue rules, noble patronage, suspicion, or a world event blocks purchase. Every selected offer reports its market class, exact access requirement, consequence, and local-event exception before money, stock, inventory, or time can change.",
+                                "Black-market dealers visibly prefer several narcotic lines and accept underworld credibility, while legal dispensaries and noble brokers gate controlled medicine through standing or access papers. Stolen and counterfeit provenance is disclosed rather than erased, and protected draught custody remains exceptional even when its political value is known.",
+                                "Faction representatives generate market supply contracts from the first concrete pressure they can identify: active event response, delayed or intercepted cargo, reinforcement support, depleted essential or material reserves, recorded market pressure, or faction-identity demand. With no market pressure, ordinary production work remains available.",
+                                "Market contract turn-in consumes the named item, pays through the normal contract flow, reduces faction market pressure, and updates the exact linked reserve, shipment, reinforcement request, or event response where one exists. Contract completion also enters the public news ledger.",
+                                "Active and recovered top-down events enter newspapers and broadcasts as confirmed sector-event notices. Vendor panels and faction representatives show the same restriction and local exception immediately, while ordinary faction rumors and editorial framing can remain incomplete or biased.",
+                                "Agricultural civilian, lower-hive, and noble territories can promote a controlled room into a farm and animal-care facility with grow space, feed, water, cleaning, handler, and veterinary support. A staffed animal-supply trader then carries feed, pet supplies, and veterinary kits.",
+                                "Incoming external stock receives a persisted shipment manifest naming its supplier and source site, destination faction and facility, arrival node, cargo and value, legality, quality risk, event modifier, interception and delay risk, arrival window, operational mode, and whether the manifest is player-visible.",
+                                "Each destination faction applies its own off-map procurement policy. The manifest records total source cost, landed unit-cost floor, base cooldown, a large deterministic positive or negative cooldown variance, effective cooldown, and the exact world turn when that source can provide another shipment.",
+                                "Arrived shipment cargo can reach a trader shelf. Delayed cargo remains withheld until its arrival window opens, intercepted cargo never appears as delivered stock, and reopening a trader cannot bypass either state.",
+                                "After delivered cargo is exhausted, a refilled linked reserve still cannot create another off-map shipment until the faction source cooldown expires. Military, noble, black-market, Mechanist, civilian, and irregular salvage routes use distinct cooldown and procurement-cost policies.",
+                                "A successful purchase consumes one unit from both the shipment manifest and its linked finite reserve; a failed purchase consumes neither. Shipment status, remaining cargo, route, and risk survive save/load.",
+                                "Distant stock-movement ledgers can create abstract operational shipments with real manifests, routes, cargo value, and destination ownership, so external supply can support the economy without simulating every remote factory or mine at local detail.",
+                                "Zone generation promotes one controlled receiving room into an identifiable import node suited to its setting: sector exchange or rail cargo station, freight elevator, service lift, customs checkpoint, road loading bay, high-level cargo dock, noble private import room, concealed smuggling entry, or sewer freight hoist.",
+                                "The promoted room contains a persistent physical arrival marker. External shipment manifests name that exact marker, while Look and Interact report arrived, delayed, scheduled, intercepted, and completed cargo traffic.",
+                                "Free slow train reinforcements bind to the generated import intake roster, name the exact arrival marker in personnel provenance, and materialize on an open tile beside it. The early floor-five zone-2,2 sector exchange is selected from world coordinates rather than being the only hardcoded route.",
+                                "Distant faction activity uses compact persisted network ledgers instead of ticking every remote actor, room, machine, and item. Each ledger tracks strength, influence, wealth, population and reinforcement pressure, suppliers, routes, shipments, stockpiles, materials, machinery, quality, efficiency, import capacity, rivals, leadership, schemes, events, and player disruption.",
+                                "A distant network resolves on a variable review timer. Its success chance is calculated from recorded support and pressure factors, while the deterministic roll, factors, next review turn, and outcome remain visible through the faction import node and the distant_network command.",
+                                "Distant outcomes have concrete limits: they may advance or delay incoming shipments and reinforcements, improve or disrupt linked raw-material reserves, or shift persistent faction strength, influence, wealth, and rival pressure. They do not create full remote rooms, actors, or loose item piles.",
                                 "A local faction production site uses assigned workers from matching population rosters. An unstaffed site pauses production and exports; a staffed site produces bounded stock, shelf exports consume that stock, and depleted sites contribute no free replacement item.",
                                 "Trade supply context states whether a source site is staffed, unstaffed, or depleted. Site-produced shelf goods preserve their facility and production provenance.",
                                 "Faction casualties open durable replacement manifests with a semi-random availability turn and a source-specific arrival window. Dead workers leave their assigned roster slot before a replacement can consume reserve population.",
@@ -334,6 +394,11 @@ public final class SemanticAssetInfopediaAuthority {
                                 ,"Operating crèches accept a small yearly abstract abandoned-or-ward cohort and also accept newborns from faction members whose recorded pregnancy reaches its due world turn. Parent births retain the parent identity; when care or beds are full, the due birth waits."
                                 ,"Every immature cohort member adds extra growth-food, clean-water, and pediatric-care market pressure. That child-specific pressure ends when the cohort reaches young adulthood."
                                 ,"Children remain aggregate and cannot be recruited. After sixteen full world years, Muster Cohort can materialize up to six mature young adults with crèche upbringing and birth-source provenance."
+                                ,"Every adult faction NPC tracks persisted happiness from 0 to 100. Food, water, current pay, a bed, housing appropriate to rank, and faction-owned crèches raise the target; shortages, arrears, homelessness, and rank-inappropriate quarters lower it gradually over time."
+                                ,"NPCs at 45 happiness or lower become vulnerable to rival recruitment. The exact chance rises with their unhappiness, the happiness advantage of the destination faction, and the recruiting officer's standing; recent faction changes and full destination housing block recruitment."
+                                ,"Faction officers can pursue rival recruitment through the normal planning, execution, and cooldown framework. A successful scheme transfers one named NPC and consumes destination population capacity; a failed approach leaves membership unchanged."
+                                ,"Each faction plan leader has a persisted personal scheme cadence from 80% to 125%. Planning and cooldown also receive a bounded cycle-specific jitter of minus four to plus four hours, so officers who begin together do not repeatedly plan or recover in lockstep. The faction ledger shows the officer cadence, current jitter, and next phase turn."
+                                ,"Leaving for the general populace is more severe than recruitment: an NPC must remain at 12 happiness or lower with at least three severe failures among food, water, pay, and a bed for seven continuous days. Departure becomes certain only after fourteen continuous days, and the NPC remains in the world as an unaffiliated resident."
                         ),
                         List.of("faction-personnel", "transfer-workflows", "production-forecast")),
                 new MechanicEntry("interaction-approach", "Interaction Approach Planning", "Movement",
@@ -442,6 +507,13 @@ public final class SemanticAssetInfopediaAuthority {
     static List<String> relatedRowsForEntry(AssetRegistry registry, String row, AssetType selectedType) {
         Optional<MechanicEntry> mechanic = mechanicForEntry(row);
         if (mechanic.isPresent()) return relatedEntryRowsFor(mechanic.get());
+        if (itemDefinitionForEntry(row).isPresent()) {
+            ArrayList<String> rows = new ArrayList<>();
+            mechanicByKey("population-markets").map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+            mechanicByKey("world-events").map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+            mechanicByKey("production-forecast").map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+            return List.copyOf(rows);
+        }
         Optional<AssetMetadata> metadata = metadataForEntry(registry, row);
         if (metadata.isEmpty()) return List.of();
         AssetMetadata m = metadata.get();
@@ -474,6 +546,92 @@ public final class SemanticAssetInfopediaAuthority {
         return mechanicEntries().stream()
                 .filter(e -> e.key().equalsIgnoreCase(wanted))
                 .findFirst();
+    }
+
+    private static String formatItemEntry(ItemDef definition) {
+        return ITEM_PREFIX + definition.name + " [" + readableCategory(definition.category) + "]";
+    }
+
+    private static Optional<ItemDef> itemDefinitionForEntry(String row) {
+        if (row == null || !row.startsWith(ITEM_PREFIX)) return Optional.empty();
+        String name = row.substring(ITEM_PREFIX.length());
+        int bracket = name.lastIndexOf(" [");
+        if (bracket >= 0) name = name.substring(0, bracket);
+        return Optional.ofNullable(ItemCatalog.get(name.trim()));
+    }
+
+    private static boolean itemMatchesFilter(ItemDef definition, String filter) {
+        if (definition == null) return false;
+        if (filter == null || filter.isBlank()) return true;
+        String q = filter.toLowerCase(Locale.ROOT);
+        return (definition.name + " " + definition.category + " " + definition.source + " "
+                + definition.description + " " + definition.use).toLowerCase(Locale.ROOT).contains(q);
+    }
+
+    private static List<String> itemDetailLines(ItemDef definition) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(definition.name);
+        lines.add("Category: " + readableCategory(definition.category) + (definition.weapon ? " / weapon" : ""));
+        lines.add("Common value: " + definition.basePrice + " script before quality, scarcity, shipment, and vendor adjustments.");
+        lines.add("");
+        lines.add("What it is:");
+        lines.add(PlayerFacingText.sanitize(definition.description));
+        lines.add("Common sources and facilities: " + PlayerFacingText.sanitize(definition.source) + ".");
+        lines.add("Common use: " + PlayerFacingText.sanitize(definition.use) + ".");
+        lines.add("");
+        lines.add("Market and provenance:");
+        lines.add("Typical access: " + itemMarketClass(definition) + ".");
+        lines.add("Common sellers: " + itemSellerLine(definition) + ".");
+        lines.add("Availability: " + itemAvailabilityLine(definition) + ".");
+        lines.add("A specific unit can also record local production, salvage, stockpile issue, train or outside-sector shipment, off-world import, relief, confiscation, theft, counterfeit or contaminated origin, or an unresolved fallback source.");
+        lines.add("Quality, batch condition, legal status, faction ownership, shipment risk, event restrictions, and source cooldown can change value or access without changing the base item definition.");
+        return List.copyOf(lines);
+    }
+
+    private static String itemMarketClass(ItemDef definition) {
+        String text = itemText(definition);
+        if (text.contains("chem/rare-campaign") || text.contains("draught")) return "noble-only protected custody unless an explicit release occurs";
+        if (containsAny(text, "chem/cult", "forbidden", "warp", "heretic", "blasphem")) return "forbidden or contraband trade, normally limited to illicit channels";
+        if (containsAny(text, "chem/ganger", "narcotic", "obscura", "stimm", "sedative")) return "controlled or illicit medicine whose seller and provenance determine access";
+        if (definition.weapon || containsAny(text, "ammo", "munition", "explosive", "security")) return "regulated security stock that may require standing, membership, or access papers";
+        if (containsAny(text, "luxury", "noble")) return "luxury or private-house stock that may require patronage or favorable standing";
+        if (containsAny(text, "medical", "medicine", "clinic")) return "ordinary treatment stock unless the batch is controlled, restricted, or event-rationed";
+        return "ordinary legal stock when a local vendor has a supported source and reserve";
+    }
+
+    private static String itemSellerLine(ItemDef definition) {
+        String text = itemText(definition);
+        if (containsAny(text, "chem/rare-campaign", "draught", "luxury", "noble")) return "noble estate brokers, private physicians, or exceptional custody holders";
+        if (containsAny(text, "chem/ganger", "narcotic", "contraband", "forbidden")) return "black-market chem dealers and illicit faction counters";
+        if (definition.weapon || containsAny(text, "ammo", "munition", "security")) return "military quartermasters, controlled security counters, industrial factors, or illicit arms dealers";
+        if (containsAny(text, "food", "water", "ration")) return "provisioners, farms, kitchens, water services, relief counters, and ordinary markets";
+        if (containsAny(text, "medical", "medicine", "clinic")) return "dispensaries, clinics, laboratories, private physicians, and relief counters";
+        if (containsAny(text, "animal", "agriculture", "seed", "feed", "fertilizer")) return "farm, garden, animal-care, sewer-reclamation, and agricultural supply counters";
+        if (containsAny(text, "material", "component", "tool", "construction")) return "industrial factors, workshops, salvage markets, and shipment-backed stores";
+        return "general traders or faction specialists whose facilities and market identity support the item";
+    }
+
+    private static String itemAvailabilityLine(ItemDef definition) {
+        String text = itemText(definition);
+        if (containsAny(text, "chem/rare-campaign", "draught")) return "usually held in a secured estate vault and absent from ordinary shelves";
+        if (containsAny(text, "food", "water", "medical", "ammo", "munition")) return "finite local reserves, population demand, production, and emergency allocation determine whether shelf stock remains";
+        if (containsAny(text, "raw", "material", "component", "tool", "construction")) return "local extraction, salvage, production, shipment arrival, route safety, and supplier cooldown determine supply";
+        return "facility operation, faction preference, finite stock, shipment state, access rules, and active world events can all withhold it";
+    }
+
+    private static String itemText(ItemDef definition) {
+        return (definition.name + " " + definition.category + " " + definition.source + " " + definition.use)
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean containsAny(String text, String... terms) {
+        for (String term : terms) if (text.contains(term)) return true;
+        return false;
+    }
+
+    private static String readableCategory(String category) {
+        if (category == null || category.isBlank()) return "uncategorized";
+        return category.replace('/', ' ').replace('-', ' ');
     }
 
     private static boolean playerFacingInfopediaLine(String line) {

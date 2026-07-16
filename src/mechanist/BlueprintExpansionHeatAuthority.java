@@ -4,10 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Audits projected heat and suspicion from construction blueprints without mutating live meters. */
+/** Projects and applies heat and suspicion from player construction. */
 final class BlueprintExpansionHeatAuthority {
     record HeatProfile(String blueprintName, String category, String legalLabel,
                        int attentionScore, int heatImpact, int suspicionImpact, String driverSummary) { }
+
+    record AppliedAttention(int heatBefore, int heatAfter, int suspicionBefore, int suspicionAfter,
+                            int heatImpact, int suspicionImpact, String driverSummary) {
+        String summary() {
+            return "Construction attention applied: gang heat " + heatBefore + "->" + heatAfter
+                    + " (+" + heatImpact + "), suspicion " + suspicionBefore + "->" + suspicionAfter
+                    + " (+" + suspicionImpact + "); drivers " + driverSummary + ".";
+        }
+    }
 
     private BlueprintExpansionHeatAuthority() { }
 
@@ -62,6 +71,20 @@ final class BlueprintExpansionHeatAuthority {
                 heat, suspicion, String.join(", ", drivers));
     }
 
+    static AppliedAttention applyConstructionStart(GamePanel game, BuildRecipe recipe) {
+        HeatProfile profile = profileFor(recipe);
+        int heatBefore = game == null ? 0 : Math.max(0, game.gangHeat);
+        int suspicionBefore = game == null ? 0 : Math.max(0, game.suspicion);
+        int heatAfter = heatBefore + profile.heatImpact();
+        int suspicionAfter = suspicionBefore + profile.suspicionImpact();
+        if (game != null) {
+            game.gangHeat = heatAfter;
+            game.suspicion = suspicionAfter;
+        }
+        return new AppliedAttention(heatBefore, heatAfter, suspicionBefore, suspicionAfter,
+                profile.heatImpact(), profile.suspicionImpact(), profile.driverSummary());
+    }
+
     static List<String> definitionAuditLines() {
         List<HeatProfile> profiles = profiles();
         int heatBearing = 0;
@@ -98,7 +121,7 @@ final class BlueprintExpansionHeatAuthority {
                 "Blueprint heat sample audit: " + sampleLine("Licensed Shop Counter")
                         + " | " + sampleLine("Security Sensor Mast")
                         + " | " + sampleLine("Fume hood") + ".",
-                "Blueprint heat boundary: this audit does not mutate gang heat, suspicion, reputation, permits, law response, faction schemes, or live construction completion.",
+                "Blueprint heat execution audit: a successful player construction start adds the previewed heat and suspicion once; blocked placement adds none, while law response and faction reactions remain later owners.",
                 "Guard: Milestone03BlueprintExpansionHeatAuditSmoke checks blueprint heat coverage, driver categories, sample impacts, readability bands, future-owner boundaries, and raw-ID hiding."
         );
     }

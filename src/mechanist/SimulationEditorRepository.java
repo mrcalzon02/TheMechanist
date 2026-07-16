@@ -77,6 +77,28 @@ final class SimulationEditorRepository {
         list.add(entity.copy());
     }
 
+    synchronized int replaceRuntimeEntities(String editorName, List<EditableEntity> runtimeEntities) {
+        if (!SimulationToolSuiteRegistry.isKnownEditor(editorName)) return 0;
+        ArrayList<EditableEntity> list = (ArrayList<EditableEntity>) entitiesByEditor.computeIfAbsent(
+                editorName, ignored -> new ArrayList<>());
+        ArrayList<String> removedIds = new ArrayList<>();
+        for (EditableEntity entity : list) {
+            if (entity != null && Boolean.TRUE.equals(entity.properties().get("runtimeSnapshot"))) removedIds.add(entity.id());
+        }
+        list.removeIf(entity -> entity != null && Boolean.TRUE.equals(entity.properties().get("runtimeSnapshot")));
+        selectedForModScope.removeIf(ref -> ref != null && editorName.equals(ref.editorName())
+                && removedIds.contains(ref.entityId()));
+        int added = 0;
+        if (runtimeEntities != null) {
+            for (EditableEntity entity : runtimeEntities) {
+                if (entity == null) continue;
+                list.add(entity.copy());
+                added++;
+            }
+        }
+        return added;
+    }
+
     synchronized void removeEntity(EntityRef ref) {
         if (ref == null) return;
         List<EditableEntity> list = entitiesByEditor.get(ref.editorName());

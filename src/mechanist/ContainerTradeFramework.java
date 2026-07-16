@@ -17,6 +17,7 @@ class MapObjectState {
     static MapObjectState vending(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type="vending";m.label="Vending machine "+glyph+" / "+z.label;m.stockState="seeded-stock";m.cooldownUntilTurn=0;m.vendCount=0;m.id="VM-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
     static MapObjectState shrine(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type=(glyph=='H'?"heretical-shrine":"concord-shrine");m.label=(glyph=='H'?"Heretical shrine":"Concord shrine")+" / "+z.label;m.stockState="passive";m.id="SH-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
     static MapObjectState shop(int x, int y, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='T';m.type="shop";m.label="Trader stock point / "+z.label;m.stockState="zone-appropriate-inventory";m.id="SHOP-"+Math.abs(Objects.hash(x,y,z.label)); return m; }
+    static MapObjectState factionMarket(int x, int y, ZoneType z, Faction faction, String category, String coverage, int roomId, String roomName, char underlying){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='T';m.type="faction-market";m.label=(faction==null?"Faction":faction.label)+" "+(category==null?"market":category.replace('-',' '))+" / "+(roomName==null?"controlled room":roomName);m.stockState="vendorCategory="+(category==null?"general":category)+";faction="+(faction==null?Faction.NONE.name():faction.name())+";roomId="+roomId+";coverage="+(coverage==null?"critical stock":coverage.replace(';',','))+";under="+(int)underlying;m.id="FACTION-MARKET-"+Math.abs(Objects.hash(x,y,z==null?"zone":z.label,faction,category,roomId)); return m; }
     static MapObjectState governor(int x, int y, ZoneType z, long seed){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='Q';m.type="sector-governor";m.label="Sector Governor audience dais / "+z.label;m.stockState=(Math.floorMod(seed ^ (x*31L) ^ (y*17L),100)<35?"seed-ticket-present":"seed-ticket-absent");m.id="GOV-"+Math.abs(Objects.hash(x,y,z.label,seed)); return m; }
     static MapObjectState emergencyMachine(int x, int y, char glyph, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph=glyph;m.type="martian-emergency-machine";m.label="EMM "+glyph+" / "+z.label;m.stockState="locked-state-seeded; powered-state-persistent";m.id="EMM-"+Math.abs(Objects.hash(x,y,glyph,z.label)); return m; }
     static MapObjectState contractObject(int x, int y, String id, String item, Faction f, ZoneType z){ MapObjectState m=new MapObjectState(); m.x=x;m.y=y;m.glyph='o';m.type="contract-object";m.label="Sealed contract object / "+(f==null?"Unknown":f.label)+" / "+z.label;m.stockState=item;m.cooldownUntilTurn=0;m.vendCount=0;m.id=id; return m; }
@@ -42,9 +43,18 @@ class MapObjectState {
 
 class TradeOffer {
     String name, category, description; int basePrice;
+    String constructionBlueprintId = "";
     String itemInstanceId = "";
     String essentialSupplyReserveId = "";
     String verticalTradeReserveId = "";
+    String securitySupplyReserveId = "";
+    String medicalSupplyReserveId = "";
+    String nobleLuxuryReserveId = "";
+    String draughtCustodyId = "";
+    String animalAgricultureReserveId = "";
+    String rawMaterialReserveId = "";
+    String shipmentRecordId = "";
+    int shipmentProcurementUnitCost = 0;
     ItemProvenanceRecord provenance = null;
     TradeOffer(String name, String category, int basePrice, String description){ this(name, category, basePrice, description, null); }
     TradeOffer(String name, String category, int basePrice, String description, ItemProvenanceRecord provenance){ this.name=name; this.category=category; this.basePrice=basePrice; this.description=description; this.provenance=provenance; }
@@ -691,17 +701,25 @@ class TraderSupplyChainApi {
 
 class TraderSession {
     String name, archetype, zoneLabel; int discountPct=0, markupPct=0, haggleAttempts=0;
+    Faction marketFaction = Faction.NONE;
+    String marketCategory = "general";
     String supplyChainSummary = "";
     String sourceWorkforceSummary = "";
     NpcFactionSite sourceSite = null;
     PopulationMarketPressureAuthority.Profile populationPressure = null;
     VerticalFloorTradeAuthority.Profile verticalFloorTrade = null;
+    SecuritySupplyProvenanceAuthority.Profile securitySupplyProfile = null;
+    MedicalSupplyProvenanceAuthority.Profile medicalSupplyProfile = null;
     ArrayList<TradeOffer> offers = new ArrayList<>();
     static TraderSession forNpc(NpcEntity npc, ZoneType zone, Random r) {
         TraderSession t = new TraderSession();
         t.name = npc == null ? "Nameless Counter" : npc.name;
         t.archetype = npc == null ? "Trader" : npc.role;
         t.zoneLabel = zone == null ? "Unknown Zone" : zone.label;
+        t.marketFaction = FactionInventoryStockAuthority.factionForTrader(npc, zone);
+        FactionCriticalVendorPlacementAuthority.Category vendorCategory =
+                FactionCriticalVendorPlacementAuthority.categoryForRole(t.archetype);
+        if (vendorCategory != null) t.marketCategory = vendorCategory.id;
         ZoneType z = zone == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : zone;
         if (z == ZoneType.MECHANICUS_FORGE_CLOISTER || (npc != null && npc.faction.name().startsWith("MECHANIST COLLEGIA"))) {
             t.offers.add(new TradeOffer("Machine part", "mechanical", 3, "usable in workbench fabrication and machine repair."));
@@ -735,6 +753,7 @@ class TraderSession {
             t.offers.add(new TradeOffer("Bandage roll", "medical", 4, "cheap immediate bleeding control."));
         }
         TraderStockExpansionApi.applyFactionIdentityStock(t, z, npc, r);
+        FactionCriticalVendorPlacementAuthority.applyVendorStock(t, npc);
         if (r.nextDouble() < 0.35) t.offers.add(new TradeOffer("Stim vial", "stimulant", 6, "pushes back sleep need while accumulating strain."));
         if (r.nextDouble() < 0.28) t.offers.add(new TradeOffer(r.nextBoolean()?"Field dressings":"Medkit", "medical", r.nextBoolean()?7:14, "medical treatment for bleeding, wounds, and body damage."));
         if (r.nextDouble() < 0.12) t.offers.add(new TradeOffer("Data spike", "security", 24, "rare single-use electronic intrusion spike."));
@@ -785,7 +804,7 @@ class TraderSession {
         if (roll < 100) return 6;
         return 7;
     }
-    int buyPrice(TradeOffer o) { int p = ItemCatalog.priceFor(o.name); if (p <= 1 && ItemCatalog.get(o.name) == null) p = o.basePrice; int ordinary = WorldGenerationSettingsAuthority.adjustedBuyPrice(p, markupPct, discountPct, WorldGenerationSettingsAuthority.active()); int populationAdjusted = PopulationMarketPressureAuthority.adjustBuyPrice(populationPressure, o, ordinary); return VerticalFloorTradeAuthority.adjustBuyPrice(verticalFloorTrade, o, populationAdjusted); }
+    int buyPrice(TradeOffer o) { int p = ItemCatalog.priceFor(o.name); if (p <= 1 && ItemCatalog.get(o.name) == null) p = o.basePrice; int ordinary = WorldGenerationSettingsAuthority.adjustedBuyPrice(p, markupPct, discountPct, WorldGenerationSettingsAuthority.active()); int populationAdjusted = PopulationMarketPressureAuthority.adjustBuyPrice(populationPressure, o, ordinary); int verticalAdjusted = VerticalFloorTradeAuthority.adjustBuyPrice(verticalFloorTrade, o, populationAdjusted); return ShipmentProvenanceAuthority.adjustBuyPrice(o, verticalAdjusted); }
     int sellPrice(String item) {
         int v = ItemCatalog.priceFor(item);
         int ordinary = WorldGenerationSettingsAuthority.adjustedSellPrice(v, markupPct, WorldGenerationSettingsAuthority.active());

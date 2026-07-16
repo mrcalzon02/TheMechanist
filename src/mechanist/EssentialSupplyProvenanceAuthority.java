@@ -22,18 +22,19 @@ final class EssentialSupplyReserveRecord {
     int remaining = 2;
     int restockIntervalTurns = GamePanel.TURNS_PER_HOUR * GamePanel.HOURS_PER_DAY * 7;
     long nextRestockWorldTurn = restockIntervalTurns;
+    long lastPopulationConsumptionWorldTurn = -1L;
 
     String saveLine() {
         return enc(id) + "|" + enc(category) + "|" + enc(itemName) + "|"
                 + (faction == null ? Faction.NONE.name() : faction.name()) + "|"
                 + enc(sourceKind) + "|" + enc(sourceLabel) + "|" + enc(sourceFacilityId) + "|"
                 + enc(stockClass) + "|" + enc(route) + "|" + capacity + "|" + remaining + "|"
-                + restockIntervalTurns + "|" + nextRestockWorldTurn;
+                + restockIntervalTurns + "|" + nextRestockWorldTurn + "|" + lastPopulationConsumptionWorldTurn;
     }
 
     static EssentialSupplyReserveRecord parse(String line) {
         try {
-            String[] a = line.split("\\|", 13);
+            String[] a = line.split("\\|", 14);
             if (a.length < 13) return null;
             EssentialSupplyReserveRecord r = new EssentialSupplyReserveRecord();
             r.id = dec(a[0]);
@@ -49,6 +50,7 @@ final class EssentialSupplyReserveRecord {
             r.remaining = Math.max(0, Math.min(r.capacity, Integer.parseInt(a[10])));
             r.restockIntervalTurns = Math.max(1, Integer.parseInt(a[11]));
             r.nextRestockWorldTurn = Math.max(0L, Long.parseLong(a[12]));
+            if (a.length >= 14) r.lastPopulationConsumptionWorldTurn = Long.parseLong(a[13]);
             return r;
         } catch (Exception ignored) {
             return null;
@@ -79,6 +81,7 @@ final class EssentialSupplyReserveRecord {
 
 final class EssentialSupplyProvenanceAuthority {
     record Allocation(TradeOffer offer, EssentialSupplyReserveRecord reserve, boolean newlyAdded) { }
+    record PopulationConsumption(int reservesTouched, int unitsConsumed, int depleted, String summary) { }
     private record Source(String kind, String label, String facilityId, String stockClass,
                           String route, int capacity, int restockTurns) { }
 
@@ -155,9 +158,10 @@ final class EssentialSupplyProvenanceAuthority {
 
     static EssentialSupplyReserveRecord reserveFor(World world, Faction faction, String category) {
         if (world == null || world.essentialSupplyReserves == null) return null;
-        Faction wanted = faction == null ? Faction.NONE : faction;
+        Faction wanted = FactionIdentityAuthority.strategicFamily(faction);
         for (EssentialSupplyReserveRecord reserve : world.essentialSupplyReserves) {
-            if (reserve != null && reserve.faction == wanted && category.equalsIgnoreCase(reserve.category)) return reserve;
+            if (reserve != null && FactionIdentityAuthority.sameFamily(reserve.faction, wanted)
+                    && category.equalsIgnoreCase(reserve.category)) return reserve;
         }
         return null;
     }
@@ -172,7 +176,7 @@ final class EssentialSupplyProvenanceAuthority {
 
     private static EssentialSupplyReserveRecord createReserve(World world, Faction faction, String category,
                                                                String item, long worldTurn) {
-        Faction owner = faction == null ? Faction.NONE : faction;
+        Faction owner = FactionIdentityAuthority.strategicFamily(faction);
         Source source = resolveSource(world, owner, category, item);
         EssentialSupplyReserveRecord reserve = new EssentialSupplyReserveRecord();
         reserve.id = "essential." + Math.abs(Objects.hash(world.seed, owner.name(), category));
@@ -188,7 +192,68 @@ final class EssentialSupplyProvenanceAuthority {
         reserve.remaining = source.capacity();
         reserve.restockIntervalTurns = source.restockTurns();
         reserve.nextRestockWorldTurn = Math.max(0L, worldTurn) + source.restockTurns();
+        reserve.lastPopulationConsumptionWorldTurn = Math.max(0L, worldTurn);
         return reserve;
+    }
+
+    static PopulationConsumption tickPopulationConsumption(World world, long worldTurn) {
+        if (world == null || world.essentialSupplyReserves == null) {
+            return new PopulationConsumption(0, 0, 0, "No essential population reserves are loaded.");
+        }
+        int dayTurns = days(1);
+        int touched = 0;
+        int consumed = 0;
+        int depleted = 0;
+        for (EssentialSupplyReserveRecord reserve : world.essentialSupplyReserves) {
+            if (reserve == null || !isEssentialCategory(reserve.category)) continue;
+            refresh(reserve, worldTurn);
+            if (reserve.lastPopulationConsumptionWorldTurn < 0L) {
+                reserve.lastPopulationConsumptionWorldTurn = Math.max(0L, worldTurn);
+                continue;
+            }
+            long elapsedDays = (worldTurn - reserve.lastPopulationConsumptionWorldTurn) / dayTurns;
+            if (elapsedDays <= 0L) continue;
+            int daysToApply = (int) Math.min(30L, elapsedDays);
+            int dailyDemand = dailyPopulationUnits(world, reserve.faction, reserve.category);
+            reserve.lastPopulationConsumptionWorldTurn += (long) daysToApply * dayTurns;
+            if (dailyDemand <= 0) continue;
+            int before = reserve.remaining;
+            reserve.remaining = Math.max(0, reserve.remaining - dailyDemand * daysToApply);
+            int used = before - reserve.remaining;
+            touched++;
+            consumed += used;
+            if (before > 0 && reserve.remaining == 0) depleted++;
+        }
+        return new PopulationConsumption(touched, consumed, depleted,
+                "Population supply use: " + consumed + " reserve unit(s) consumed across " + touched
+                        + " faction reserve(s); " + depleted + " depleted.");
+    }
+
+    static int availableForFaction(World world, Faction faction, String category, long worldTurn) {
+        EssentialSupplyReserveRecord reserve = reserveFor(world, faction, category);
+        if (reserve == null) return -1;
+        refresh(reserve, worldTurn);
+        return reserve.remaining;
+    }
+
+    private static int dailyPopulationUnits(World world, Faction faction, String category) {
+        int adultDemand = 0;
+        for (RoomPopulationLedger ledger : safeLedgers(world)) {
+            if (ledger != null && FactionIdentityAuthority.sameFamily(ledger.faction, faction)) {
+                adultDemand += Math.max(0, Math.max(ledger.assigned, ledger.capacity));
+            }
+        }
+        int childDemand = 0;
+        if (world.crecheCohorts != null) {
+            for (CrecheCohortRecord cohort : world.crecheCohorts) {
+                if (cohort != null && cohort.remaining > 0
+                        && FactionIdentityAuthority.sameFamily(cohort.faction, faction)) {
+                    childDemand += cohort.remaining;
+                }
+            }
+        }
+        int weightedDemand = adultDemand + childDemand * ("food".equals(category) ? 2 : 1);
+        return weightedDemand <= 0 ? 0 : Math.max(1, (weightedDemand + 23) / 24);
     }
 
     private static Source resolveSource(World world, Faction faction, String category, String item) {
@@ -310,10 +375,7 @@ final class EssentialSupplyProvenanceAuthority {
 
     private static boolean factionCompatible(Faction wanted, Faction owner) {
         if (owner == null || owner == Faction.NONE || wanted == null || wanted == Faction.NONE) return true;
-        if (owner == wanted) return true;
-        String a = wanted.name().split("_")[0];
-        String b = owner.name().split("_")[0];
-        return a.equals(b);
+        return FactionIdentityAuthority.sameFamily(wanted, owner);
     }
 
     private static boolean controllerCompatible(Faction faction, String controller) {
@@ -322,7 +384,9 @@ final class EssentialSupplyProvenanceAuthority {
         if (faction == null || faction == Faction.NONE) return true;
         String name = faction.name().toLowerCase(Locale.ROOT).replace('_', ' ');
         String label = safe(faction.label).toLowerCase(Locale.ROOT);
-        if (low.contains(name) || low.contains(label) || name.contains(low) || label.contains(low)) return true;
+        String compact = compactIdentity(low);
+        if (low.contains(name) || low.contains(label) || name.contains(low) || label.contains(low)
+                || compact.equals(compactIdentity(faction.name())) || compact.equals(compactIdentity(faction.label))) return true;
         if ((faction == Faction.MECHANICUS || faction == Faction.MECHANIST_COLLEGIA)
                 && contains(low, "mechanicus", "mechanist collegia")) return true;
         return faction == Faction.CIVIC_WARDENS && contains(low, "arbites", "civic wardens");
@@ -348,5 +412,8 @@ final class EssentialSupplyProvenanceAuthority {
         return false;
     }
 
+    private static String compactIdentity(String value) {
+        return safe(value).toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
     private static String safe(String value) { return value == null ? "" : value; }
 }

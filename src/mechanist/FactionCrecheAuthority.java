@@ -33,7 +33,7 @@ final class FactionCrecheAuthority {
         long birthYear = Math.max(0L, worldTurn / AgeAndWorldTimeAuthority.TURNS_PER_YEAR);
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
             BuildingReadiness readiness = buildingReadiness(world, ledger);
-            if (!readiness.operating()) continue;
+            if (!readiness.operating() || !FactionIdentityAuthority.aligned(ledger.faction)) continue;
             boolean exists = false;
             for (CrecheCohortRecord cohort : world.crecheCohorts) {
                 if (cohort != null && ledger.id.equals(cohort.ledgerId) && cohort.birthYear == birthYear) {
@@ -60,14 +60,15 @@ final class FactionCrecheAuthority {
             created++;
         }
         world.factionHappinessBoost.clear();
-        for (Faction faction : Faction.values()) {
-            if (faction == Faction.NONE) continue;
-            int creches = 0;
-            for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
-                if (buildingReadiness(world, ledger).operating()
-                        && (ledger.faction == faction || ledger.faction == Faction.NONE)) creches++;
-            }
-            if (creches > 0) world.factionHappinessBoost.put(faction, happinessBoost(creches));
+        java.util.EnumMap<Faction,Integer> crechesByFamily = new java.util.EnumMap<>(Faction.class);
+        for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
+            if (ledger == null || !FactionIdentityAuthority.aligned(ledger.faction)
+                    || !buildingReadiness(world, ledger).operating()) continue;
+            Faction family = FactionIdentityAuthority.strategicFamily(ledger.faction);
+            crechesByFamily.put(family, crechesByFamily.getOrDefault(family, 0) + 1);
+        }
+        for (java.util.Map.Entry<Faction,Integer> entry : crechesByFamily.entrySet()) {
+            world.factionHappinessBoost.put(entry.getKey(), happinessBoost(entry.getValue()));
         }
         return created;
     }
@@ -83,7 +84,7 @@ final class FactionCrecheAuthority {
         int plannedCreches = 0;
         ArrayList<String> buildingBlockers = new ArrayList<>();
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
-            if (!(ledger.faction == target || ledger.faction == Faction.NONE)) continue;
+            if (!FactionIdentityAuthority.sameFamily(ledger.faction, target)) continue;
             BuildingReadiness readiness = buildingReadiness(world, ledger);
             if (!readiness.plannedCreche()) continue;
             plannedCreches++;
@@ -97,7 +98,7 @@ final class FactionCrecheAuthority {
         int oldest = 0;
         long soonest = Long.MAX_VALUE;
         for (CrecheCohortRecord cohort : world.crecheCohorts) {
-            if (cohort == null || cohort.faction != target || cohort.remaining <= 0) continue;
+            if (cohort == null || !FactionIdentityAuthority.sameFamily(cohort.faction, target) || cohort.remaining <= 0) continue;
             int age = cohort.ageYears(worldTurn);
             oldest = Math.max(oldest, age);
             if (age >= MATURITY_YEARS) mature += cohort.remaining;
@@ -108,7 +109,7 @@ final class FactionCrecheAuthority {
         }
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
             if (buildingReadiness(world, ledger).operating()
-                    && (ledger.faction == target || ledger.faction == Faction.NONE)) {
+                    && FactionIdentityAuthority.sameFamily(ledger.faction, target)) {
                 careProviders += Math.max(0, ledger.careProviders);
                 careCapacity += childCareCapacity(ledger);
             }
@@ -169,7 +170,8 @@ final class FactionCrecheAuthority {
         }
         ArrayList<CrecheCohortRecord> cohorts = new ArrayList<>();
         for (CrecheCohortRecord cohort : world.crecheCohorts) {
-            if (cohort != null && cohort.faction == target && cohort.remaining > 0 && cohort.ageYears(worldTurn) >= MATURITY_YEARS) {
+            if (cohort != null && FactionIdentityAuthority.sameFamily(cohort.faction, target)
+                    && cohort.remaining > 0 && cohort.ageYears(worldTurn) >= MATURITY_YEARS) {
                 cohorts.add(cohort);
             }
         }
@@ -248,6 +250,11 @@ final class FactionCrecheAuthority {
                 (count * MAX_HAPPINESS_BOOST + CRECHES_FOR_MAX_HAPPINESS - 1) / CRECHES_FOR_MAX_HAPPINESS);
     }
 
+    static int happinessBoostFor(World world, Faction faction) {
+        if (world == null || world.factionHappinessBoost == null) return 0;
+        return world.factionHappinessBoost.getOrDefault(FactionIdentityAuthority.strategicFamily(faction), 0);
+    }
+
     static boolean registerPregnancy(NpcEntity parent, long dueWorldTurn) {
         if (parent == null || parent.isAnimalActor() || parent.faction == null || parent.faction == Faction.NONE) return false;
         parent.pregnancyDueWorldTurn = Math.max(1L, dueWorldTurn);
@@ -280,7 +287,7 @@ final class FactionCrecheAuthority {
             RoomPopulationLedger destination = null;
             int mostOpenCare = 0;
             for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
-                if (!(ledger.faction == parent.faction || ledger.faction == Faction.NONE)) continue;
+                if (!FactionIdentityAuthority.sameFamily(ledger.faction, parent.faction)) continue;
                 if (!buildingReadiness(world, ledger).operating()) continue;
                 int open = childCareCapacity(ledger) - immatureChildren(world, ledger.id, worldTurn);
                 if (open > mostOpenCare) {

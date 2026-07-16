@@ -1,0 +1,16 @@
+﻿Hyper-V and sandbox repair 2026-07-14T20:06:10.0818600-08:00
+Secondary Logon: status=Running start=Manual
+Microsoft-Hyper-V-All before=Disabled
+Microsoft-Hyper-V-All enableResult= restartNeeded=True
+Microsoft-Hyper-V-All after=Enabled
+VirtualMachinePlatform before=Disabled
+VirtualMachinePlatform enableResult= restartNeeded=True
+VirtualMachinePlatform after=Enabled
+HypervisorPlatform before=Disabled
+HypervisorPlatform enableResult= restartNeeded=True
+HypervisorPlatform after=Enabled
+Containers-DisposableClientVM before=Disabled
+Containers-DisposableClientVM enableResult= restartNeeded=True
+Containers-DisposableClientVM after=Enabled
+bcdedit: The operation completed successfully.
+HypervisorPresent=True

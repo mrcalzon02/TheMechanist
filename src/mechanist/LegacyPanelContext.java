@@ -82,6 +82,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     final HashSet<String> visitedZoneInstances = new HashSet<>();
     final HashSet<String> unlockedKnowledges = new HashSet<>();
     final HashSet<String> unlockedSkillNodes = new HashSet<>();
+    final LinkedHashSet<String> unlockedConstructionBlueprints = new LinkedHashSet<>();
+    final LinkedHashSet<String> constructionExpansionReactions = new LinkedHashSet<>();
+    final ArrayDeque<RoomOwnershipAuthority.OwnershipChange> roomOwnershipHistory = new ArrayDeque<>();
     final LinkedHashSet<String> activeSkillTrainers = new LinkedHashSet<>();
     final ArrayDeque<LogisticsRouteIntentAuthority.RouteIntentRecord> logisticsRouteIntentHistory = new ArrayDeque<>();
     final ArrayDeque<LogisticsDeliveryIntentAuthority.DeliveryIntentRecord> logisticsDeliveryIntentHistory = new ArrayDeque<>();
@@ -158,6 +161,7 @@ class GamePanel extends LegacyPanelBridgeBase {
     String lastSensoryModelReport = "No visual sensory model has been rebuilt.";
     String lastNpcRuntimeReport = "No NPC needs/duty runtime tick has run.";
     String lastAbstractDistantZoneReport = "No abstract distant-zone simulation tick has run.";
+    String lastDeferredFactionSimulationReport = "No deferred faction-network outcome has resolved.";
     String lastEconomyRuntimeReport = "No persistent economy runtime tick has run.";
     final ArrayList<PortableLightInstance> portableLights = new ArrayList<>();
     final ArrayList<FactionContract> factionContracts = new ArrayList<>();
@@ -670,6 +674,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         visitedZoneTypes.clear();
         unlockedKnowledges.clear();
         unlockedKnowledges.add("Underhive Basics");
+        unlockedConstructionBlueprints.clear();
+        constructionExpansionReactions.clear();
+        roomOwnershipHistory.clear();
         turn = 0;
         worldTurn = 0L;
         carriedScript = 15;
@@ -1044,9 +1051,9 @@ class GamePanel extends LegacyPanelBridgeBase {
         ), null);
         int gridTop = intro.y + intro.height + 12;
         int gridBottom = panel.y + panel.height - 54;
-        int cols = panel.width >= 1080 ? 3 : 2;
+        int cols = 3;
         int gap = 10;
-        int rows = (SimulationToolSuiteRegistry.specs().size() + 1 + cols - 1) / cols;
+        int rows = (SimulationToolSuiteRegistry.specs().size() + 2 + cols - 1) / cols;
         int buttonW = Math.max(180, (panel.width - 36 - gap * (cols - 1)) / cols);
         int buttonH = Math.max(30, Math.min(42, (gridBottom - gridTop - gap * Math.max(0, rows - 1)) / Math.max(1, rows)));
         int index = 0;
@@ -1060,7 +1067,9 @@ class GamePanel extends LegacyPanelBridgeBase {
             addOverlayButton(spec.editorName(), bx, by, buttonW, buttonH, spec.purpose(), () -> openInGameEditor(spec.editorName()));
             index++;
         }
-        addOverlayButton("Mod Packaging Editor", panel.x + panel.width - buttonW - 18, gridBottom - buttonH, buttonW, buttonH,
+        int packageCol = index % cols;
+        int packageRow = index / cols;
+        addOverlayButton("Mod Packaging Editor", panel.x + 18 + packageCol * (buttonW + gap), gridTop + packageRow * (buttonH + gap), buttonW, buttonH,
                 "Open mod scope and package controls.", () -> openInGameEditor(SimulationToolSuiteRegistry.MOD_PACKAGING_EDITOR));
         addOverlayButton("Back", panel.x + 18, panel.y + panel.height - 42, 110, 30, "Return to the main menu.", () -> setScreen(Screen.MENU));
         drawOverlayButtons(g);
@@ -1356,8 +1365,9 @@ class GamePanel extends LegacyPanelBridgeBase {
             entityLines.add("Default destination: PACKAGE_client/mods");
             entityLines.add("Save Mod creates a new randomized archive unless metadata is edited.");
         } else {
-            entityLines.add("Source: current project defaults (read-through seed)");
-            entityLines.add("Base files: read-only from this screen; edits: isolated mod overlay");
+            boolean runtimeSnapshot = entity != null && Boolean.TRUE.equals(entity.properties().get("runtimeSnapshot"));
+            entityLines.add(runtimeSnapshot ? "Source: active world snapshot" : "Source: project template");
+            entityLines.add("Edit target: isolated mod overlay");
             entityLines.add("Record " + (entities.isEmpty() ? 0 : inGameEditorEntityIndex + 1) + "/" + entities.size());
             if (entity != null) {
                 SimulationEditorRepository.EntityRef ref = currentInGameEditorRef();
@@ -1384,13 +1394,26 @@ class GamePanel extends LegacyPanelBridgeBase {
         propertyLines.add("History: " + inGameEditorHistory.compactState());
         drawDetailBox(g, new Rectangle(body.x, body.y + summaryH + 12, body.width, body.height - summaryH - 12), "Editable Property", propertyLines, null);
 
-        String[] labels = {"Previous Record", "Next Record", "Previous Property", "Next Property", "Previous Value", "Next Value", "Edit Text Value", "New Record", "Include / Exclude", "Undo", "Redo", "Save Mod Package", "Return to Tools"};
-        Runnable[] actions = {() -> cycleInGameEditorEntity(-1), () -> cycleInGameEditorEntity(1), () -> cycleInGameEditorProperty(-1), () -> cycleInGameEditorProperty(1),
-                () -> adjustInGameEditorValue(-1), () -> adjustInGameEditorValue(1), this::beginInGameEditorTextEdit, this::createNewInGameEditorEntry,
-                this::toggleCurrentInGameEditorScope, this::inGameEditorUndo, this::inGameEditorRedo, this::saveInGameEditorModPackage, () -> setScreen(Screen.MODS)};
+        java.util.ArrayList<String> labels = new java.util.ArrayList<>(java.util.List.of(
+                "Previous Record", "Next Record", "Previous Property", "Next Property", "Previous Value", "Next Value",
+                "Edit Text Value", "New Record", "Include / Exclude", "Undo", "Redo"));
+        java.util.ArrayList<Runnable> actions = new java.util.ArrayList<>(java.util.List.of(
+                () -> cycleInGameEditorEntity(-1), () -> cycleInGameEditorEntity(1), () -> cycleInGameEditorProperty(-1),
+                () -> cycleInGameEditorProperty(1), () -> adjustInGameEditorValue(-1), () -> adjustInGameEditorValue(1),
+                this::beginInGameEditorTextEdit, this::createNewInGameEditorEntry, this::toggleCurrentInGameEditorScope,
+                this::inGameEditorUndo, this::inGameEditorRedo));
+        if (SimulationRuntimeEditorBridgeAuthority.supports(inGameEditorName)) {
+            labels.add("Refresh Live World");
+            actions.add(this::refreshInGameEditorRuntime);
+        }
+        labels.add("Save Mod Package");
+        actions.add(this::saveInGameEditorModPackage);
+        labels.add("Return to Tools");
+        actions.add(() -> setScreen(Screen.MODS));
         int gap = 6;
-        int buttonH = Math.max(27, Math.min(38, (command.height - gap * (labels.length - 1)) / labels.length));
-        for (int i = 0; i < labels.length; i++) addOverlayButton(labels[i], command.x + 8, command.y + i * (buttonH + gap), command.width - 16, buttonH, labels[i], actions[i]);
+        int buttonH = Math.max(27, Math.min(38, (command.height - gap * (labels.size() - 1)) / labels.size()));
+        for (int i = 0; i < labels.size(); i++) addOverlayButton(labels.get(i), command.x + 8,
+                command.y + i * (buttonH + gap), command.width - 16, buttonH, labels.get(i), actions.get(i));
         drawOverlayButtons(g);
     }
 
@@ -1401,7 +1424,26 @@ class GamePanel extends LegacyPanelBridgeBase {
         inGameEditorPropertyIndex = 0;
         inGameEditorTextEditActive = false;
         inGameEditorStatus = "Opened " + inGameEditorName + " against current project defaults.";
+        if (SimulationRuntimeEditorBridgeAuthority.supports(inGameEditorName)) refreshInGameEditorRuntime();
         setScreen(Screen.EDITOR);
+    }
+
+    private void refreshInGameEditorRuntime() {
+        SimulationRuntimeEditorBridgeAuthority.RefreshResult result = SimulationRuntimeEditorBridgeAuthority.refresh(
+                this, inGameEditorRepository, inGameEditorName);
+        inGameEditorTextEditActive = false;
+        inGameEditorPropertyIndex = 0;
+        if (result.records() > 0) {
+            java.util.List<SimulationEditorRepository.EditableEntity> entities = inGameEditorRepository.entities(inGameEditorName);
+            for (int i = 0; i < entities.size(); i++) {
+                if (Boolean.TRUE.equals(entities.get(i).properties().get("runtimeSnapshot"))) {
+                    inGameEditorEntityIndex = i;
+                    break;
+                }
+            }
+        }
+        inGameEditorStatus = result.message();
+        repaint();
     }
 
     private SimulationEditorRepository.EditableEntity currentInGameEditorEntity() {
@@ -2038,6 +2080,17 @@ class GamePanel extends LegacyPanelBridgeBase {
             int bx = r.x + r.width - actionReserve + 10;
             int bw = Math.max(90, actionReserve - 22);
             int by = r.y + r.height - 74;
+            if (panelMode == PanelMode.LOOK) {
+                final int roomTargetX = tx;
+                final int roomTargetY = ty;
+                RoomBlueprintVendorGuidanceAuthority.Guidance vendorGuidance =
+                        RoomBlueprintVendorGuidanceAuthority.forTile(this, roomTargetX, roomTargetY);
+                if (vendorGuidance.locatable()) {
+                    addOverlayButton("Locate Seller", bx, by - 38, bw, 30,
+                            "Mark this room plan's physical vendor on Map and check route access.",
+                            () -> locateRoomPlanSeller(roomTargetX, roomTargetY));
+                }
+            }
             String actionLabel = panelMode == PanelMode.INTERACT ? "Confirm" : panelMode == PanelMode.COMBAT ? "Fire" : "Inspect";
             addOverlayButton(actionLabel, bx, by, bw, 30, "Run the selected target action.", () -> {
                 if (panelMode == PanelMode.INTERACT) confirmInteraction();
@@ -3013,10 +3066,13 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         mapInfo.addAll(ContractObjectiveReadabilityAuthority.summary(factionContracts, inventory, baseStorage, 2,
                 unlockedSkillNodes, unlockedKnowledges));
+        mapInfo.addAll(RoomOwnershipAuthority.inspectionLines(this, playerX, playerY, 1));
         drawDetailBox(g, info, "World / Objectives", mapInfo, null);
         addOverlayButton("Contract Info", info.x + 12, info.y + info.height - 36, 112, 28,
                 "Open the Contract Objectives and Evidence mechanic reference.",
                 () -> InfopediaHotLinkAuthority.openMechanic(this, "contract-evidence", "map contract reference"));
+        addOverlayButton(RoomOwnershipAuthority.currentActionLabel(this), info.x + 132, info.y + info.height - 36, 112, 28,
+                RoomOwnershipAuthority.currentActionTooltip(this), this::activateCurrentRoomControl);
     }
 
     private void drawTargetOverlay(java.awt.Graphics2D g, Rectangle body) {
@@ -3048,6 +3104,17 @@ class GamePanel extends LegacyPanelBridgeBase {
             else if (panelMode == PanelMode.COMBAT) confirmCombatTarget();
             else examineSelectedLookTarget();
         });
+        if (panelMode == PanelMode.LOOK) {
+            final int roomTargetX = tx;
+            final int roomTargetY = ty;
+            RoomBlueprintVendorGuidanceAuthority.Guidance vendorGuidance =
+                    RoomBlueprintVendorGuidanceAuthority.forTile(this, roomTargetX, roomTargetY);
+            if (vendorGuidance.locatable()) {
+                addOverlayButton("Locate Seller", linesBox.x + 110, by, 118, 28,
+                        "Mark the nearest physical vendor for this room's construction plan on Map and check route access.",
+                        () -> locateRoomPlanSeller(roomTargetX, roomTargetY));
+            }
+        }
         if (panelMode == PanelMode.COMBAT) {
             addOverlayButton("Cycle Weapon", linesBox.x + 110, by, 126, 28, "Alternate the active attack hand.", this::cycleEquippedWeaponHand);
             addOverlayButton("Fire Mode", linesBox.x + 244, by, 96, 28, "Cycle snap/aimed/burst fire mode.", this::cycleFireMode);
@@ -3317,7 +3384,7 @@ class GamePanel extends LegacyPanelBridgeBase {
         signals.add("Noise sources: " + (world == null || world.noiseSources == null ? 0 : world.noiseSources.size()));
         signals.add("Hazard warnings: " + (world == null || world.hazardWarnings == null ? 0 : world.hazardWarnings.size()));
         signals.add("Current target: " + lastTargetingReport);
-        signals.addAll(ExpansionHeatReadabilityAuthority.summary(suspicion, gangHeat, baseObjects));
+        signals.addAll(ExpansionHeatReadabilityAuthority.summary(this));
         for (MapObjectState target : nearbyScavengeTargets(5)) {
             signals.add("Nearby searchable: " + WasteNewsprintScavengeAuthority.shortLabel(target) + " at " + target.x + "," + target.y);
             if (signals.size() >= 11) break;
@@ -3677,16 +3744,19 @@ class GamePanel extends LegacyPanelBridgeBase {
             lines.add("Conversation surface for " + safeLabel(npc.role, "local actor") + ".");
             lines.add("Faction: " + (npc.faction == null ? "No faction" : npc.faction.label) + ".");
             lines.add(npc.rankLine());
+            lines.add(NpcHappinessAuthority.statusLine(world, npc, worldTurn));
             Faction conversationFaction = npc.faction == null ? Faction.NONE : npc.faction;
             lines.addAll(ConversationReadabilityAuthority.describe(npc,
                     factionStanding.getOrDefault(conversationFaction, 0),
                     temporaryHostileTurns.getOrDefault(conversationFaction, 0)).lines());
             if (SkillTrainerAuthority.canTrain(npc)) lines.add(SkillTrainerAuthority.trainerLine(npc));
             if (npc.isFactionRepresentative()) {
-                lines.add(ProductionContractAuthority.representativeLine(this, npc));
+                lines.add(FactionMarketContractAuthority.representativeLine(this, npc));
                 lines.add(ContractTurnInAuthority.representativeLine(this, npc));
                 lines.add(FactionReinforcementAuthority.representativeLine(this, npc));
                 lines.add(FactionCrecheAuthority.representativeLine(this, npc));
+                String notice = FactionMarketAccessAuthority.marketNotice(world, worldTurn);
+                if (!notice.isBlank()) lines.add("Market notice: " + notice);
             }
         }
         drawDetailBox(g, actions, npc != null && npc.isAnimalActor() ? "Animal Options" : "Conversation Options", lines, null);
@@ -3712,7 +3782,7 @@ class GamePanel extends LegacyPanelBridgeBase {
                     int contractWidth = Math.max(90, (actions.width - 24 - serviceGap) / 2);
                     int serviceX = actions.x + 12;
                     addOverlayButton("Take Work", serviceX, by - 34, contractWidth, 28,
-                            "Accept one faction production order when this faction has no active contract.",
+                            "Accept one faction market or production order when this faction has no active contract.",
                             this::acceptProductionContractWithActiveNpc);
                     serviceX += contractWidth + serviceGap;
                     addOverlayButton("Turn In", serviceX, by - 34, contractWidth, 28,
@@ -3769,7 +3839,9 @@ class GamePanel extends LegacyPanelBridgeBase {
                 int rowY = y + (i - start) * rowH;
                 int price = t.buyPrice(offer);
                 int idx = i;
-                String label = (idx == selectedTradeOfferIndex ? "> " : "") + offer.name + " / " + price + " script";
+                FactionMarketAccessAuthority.Decision access = marketAccessDecision(offer);
+                String label = (idx == selectedTradeOfferIndex ? "> " : "") + access.rowTag()
+                        + offer.name + " / " + price + " script";
                 buttons.add(new ButtonBox(GuiLayoutApi.fitLabel(label, fm, offers.width - 28), offers.x + 10, rowY - 20, offers.width - 20, 26,
                         "Select " + offer.name + ".", () -> { selectedTradeOfferIndex = idx; repaint(); }, images.getItemIcon(offer.name)));
             }
@@ -3780,12 +3852,17 @@ class GamePanel extends LegacyPanelBridgeBase {
         detail.add("Carried script " + carriedScript + " / inventory " + inventoryWeight() + "/" + carryCapacity() + ".");
         if (t != null) {
             detail.add("Archetype: " + safeLabel(t.archetype, "store") + " / " + safeLabel(t.zoneLabel, world == null ? "unknown zone" : world.zoneType.label) + ".");
-            Faction marketFaction = activeInteractionNpc == null ? FactionInventoryStockAuthority.factionForZone(world == null ? null : world.zoneType) : activeInteractionNpc.faction;
+            Faction marketFaction = t.marketFaction == null ? Faction.NONE : t.marketFaction;
             detail.addAll(TradeReadabilityAuthority.marketContext(t,
-                    marketFaction == null ? "local independent trade" : marketFaction.label,
-                    marketFaction == null ? 0 : factionStanding.getOrDefault(marketFaction, 0)));
+                    marketFaction == Faction.NONE ? "local independent trade" : marketFaction.label,
+                    marketFaction == Faction.NONE ? 0 : factionStanding.getOrDefault(marketFaction, 0)));
+            String eventNotice = FactionMarketAccessAuthority.marketNotice(world, worldTurn);
+            if (!eventNotice.isBlank()) detail.add("Active market notice: " + eventNotice);
         }
-        detail.addAll(TradeReadabilityAuthority.offerPreview(t, selected, carriedScript, inventoryWeight(), carryCapacity()));
+        FactionMarketAccessAuthority.Decision selectedAccess = marketAccessDecision(selected);
+        detail.addAll(TradeReadabilityAuthority.offerPreview(t, selected, carriedScript, inventoryWeight(), carryCapacity(),
+                selectedAccess));
+        detail.addAll(ConstructionBlueprintOfferReadinessAuthority.evaluate(this, t, selected, selectedAccess).lines());
         if (selected != null) detail.add(selected.displayLine(t.buyPrice(selected)));
         String carried = selectedInventoryItem();
         ItemProvenanceRecord carriedProvenance = peekProvenanceForItem(carried);
@@ -3855,6 +3932,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         if (base != null) {
             lines.add("Base object at " + base.x + "," + base.y + " / " + safeLabel(base.qualityName, "Common") + ".");
+            if (FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
+                lines.add("Facility custody: operated by " + (base.faction == null ? Faction.NONE.label : base.faction.label)
+                        + "; player materials, labor, operation, repair, and dismantling are unavailable without a later access path.");
+            }
             if (base.underConstruction) {
                 lines.addAll(ProgressiveConstructionAuthority.inspectionLines(base));
             } else {
@@ -3873,11 +3954,21 @@ class GamePanel extends LegacyPanelBridgeBase {
             addOverlayButton("Open", x, by, 74, 28, "Open this object's container.", () -> openContainerForObject(obj)); x += 82;
         }
         if (base != null && base.underConstruction) {
-            addOverlayButton("Work", x, by, 78, 28, "Contribute one turn of labor to this staged construction site.", this::workActiveConstructionSite);
-            x += 86;
-            addOverlayButton("Dismantle", x, by, 104, 28, "Remove this unfinished construction site and recover staged materials.", this::dismantleActiveConstructionSite);
-            x += 112;
+            if (!FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
+                addOverlayButton("Work", x, by, 78, 28, "Contribute one turn of labor to this staged construction site.", this::workActiveConstructionSite);
+                x += 86;
+                addOverlayButton("Dismantle", x, by, 104, 28, "Remove this unfinished construction site and recover staged materials.", this::dismantleActiveConstructionSite);
+                x += 112;
+            }
             addOverlayButton("Look", x, by, 72, 28, "Inspect this construction site in look mode.", this::lookAtActiveInteractionTarget);
+            int targetX = base.x;
+            int targetY = base.y;
+            addOverlayButton("Approach", x + 80, by, 92, 28, "Plan movement to a reachable adjacent tile.",
+                    () -> approachActiveInteractionTarget(targetX, targetY, activeInteractionTitleOrDefault()));
+            return;
+        }
+        if (base != null && FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
+            addOverlayButton("Look", x, by, 72, 28, "Inspect this faction facility in look mode.", this::lookAtActiveInteractionTarget);
             int targetX = base.x;
             int targetY = base.y;
             addOverlayButton("Approach", x + 80, by, 92, 28, "Plan movement to a reachable adjacent tile.",
@@ -3961,6 +4052,12 @@ class GamePanel extends LegacyPanelBridgeBase {
 
     private void repairActiveBaseMachine() {
         BaseObject machine = activeInteractionBaseObject;
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(machine)) {
+            logEvent("Faction facility repair is unavailable through player machine controls; "
+                    + FactionPhysicalConstructionAuthority.crewReadback(machine) + " retains custody.");
+            repaint();
+            return;
+        }
         MachineRepairAuthority.RepairPreview preview = MachineRepairAuthority.preview(this, machine, machineParts);
         if (!preview.available()) {
             logEvent(preview.summary());
@@ -3980,6 +4077,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         BaseObject site = activeInteractionBaseObject;
         if (site == null || !site.underConstruction) {
             logEvent("No staged construction site is selected.");
+            repaint();
+            return;
+        }
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            logEvent("Faction-managed construction is worked by its assigned roster; player materials, tools, and labor were not used. "
+                    + FactionPhysicalConstructionAuthority.crewReadback(site) + ".");
             repaint();
             return;
         }
@@ -4011,6 +4114,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         BaseObject site = activeInteractionBaseObject;
         if (site == null || !site.underConstruction) {
             logEvent("No unfinished construction site is selected.");
+            repaint();
+            return;
+        }
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            logEvent("Faction-managed construction remains in faction custody and cannot be dismantled into player storage. "
+                    + FactionPhysicalConstructionAuthority.crewReadback(site) + ".");
             repaint();
             return;
         }
@@ -4153,10 +4262,22 @@ class GamePanel extends LegacyPanelBridgeBase {
         t.applySupplyChainStock(world, turn, r);
         PopulationMarketPressureAuthority.apply(t, world, f, worldTurn, turn);
         VerticalFloorTradeAuthority.apply(t, world, f, worldTurn, turn);
+        SecuritySupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
+        MedicalSupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
+        NobleLuxuryProvenanceAuthority.apply(t, world, f, worldTurn, turn);
+        AnimalAgricultureSupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
+        RawMaterialSupplyProvenanceAuthority.apply(t, world, f, worldTurn, turn);
+        ShipmentProvenanceAuthority.apply(t, world, f, worldTurn, turn);
         if (source != null) {
             t.name = safeLabel(source.label, "Store");
             t.archetype = safeLabel(source.type, "Store");
+            String sourceFaction = MapObjectState.stockValue(source.stockState, "faction");
+            try { t.marketFaction = Faction.valueOf(sourceFaction); }
+            catch (Exception ignored) { }
+            String sourceCategory = MapObjectState.stockValue(source.stockState, "vendorCategory");
+            if (!sourceCategory.isBlank()) t.marketCategory = sourceCategory;
         }
+        ConstructionBlueprintOwnershipAuthority.removeOwnedOffers(t, unlockedConstructionBlueprints);
         return t;
     }
 
@@ -4167,6 +4288,7 @@ class GamePanel extends LegacyPanelBridgeBase {
             t.name = safeLabel(obj.label, "Vending machine");
             t.archetype = "Vending machine";
             t.zoneLabel = world == null ? "Unknown Zone" : world.zoneType.label;
+            t.marketCategory = "vending";
             t.markupPct = 12;
             t.supplyChainSummary = "Limited vending stock: " + LimitedVendingStockAuthority.remaining(obj) + " vend(s) remaining.";
             for (String item : LimitedVendingStockAuthority.items(obj)) {
@@ -4197,10 +4319,37 @@ class GamePanel extends LegacyPanelBridgeBase {
         return activeTraderSession.offers.get(selectedTradeOfferIndex);
     }
 
+    private FactionMarketAccessAuthority.Decision marketAccessDecision(TradeOffer offer) {
+        TraderSession trader = activeTraderSession;
+        Faction vendor = trader == null || trader.marketFaction == null ? Faction.NONE : trader.marketFaction;
+        return FactionMarketAccessAuthority.evaluate(trader, offer,
+                new FactionMarketAccessAuthority.AccessContext(playerFaction(), factionStanding.getOrDefault(vendor, 0),
+                        gangHeat, suspicion, unlockedSkillNodes, unlockedKnowledges, inventory, world, worldTurn));
+    }
+
     private void buySelectedTradeOffer() {
         TradeOffer offer = selectedTradeOffer();
         if (offer == null || activeTraderSession == null) {
             logEvent("No trade offer selected.");
+            return;
+        }
+        FactionMarketAccessAuthority.Decision access = marketAccessDecision(offer);
+        ConstructionBlueprintOfferReadinessAuthority.Readiness blueprintReadiness =
+                ConstructionBlueprintOfferReadinessAuthority.evaluate(this, activeTraderSession, offer, access);
+        if (blueprintReadiness.applies() && !blueprintReadiness.purchaseReady()) {
+            logEvent("Cannot buy " + offer.name + ": " + blueprintReadiness.purchaseBlock() + ".");
+            repaint();
+            return;
+        }
+        if (!access.allowed()) {
+            logEvent("Cannot buy " + offer.name + ": " + access.purchaseBlock() + ".");
+            repaint();
+            return;
+        }
+        String blueprintBlock = ConstructionBlueprintOwnershipAuthority.purchaseBlock(this, offer);
+        if (!blueprintBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + blueprintBlock + ".");
+            repaint();
             return;
         }
         if (inventoryWeight() + 1 > carryCapacity()) {
@@ -4221,6 +4370,36 @@ class GamePanel extends LegacyPanelBridgeBase {
             logEvent("Cannot buy " + offer.name + ": " + verticalTradeBlock + ".");
             return;
         }
+        String securitySupplyBlock = SecuritySupplyProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!securitySupplyBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + securitySupplyBlock + ".");
+            return;
+        }
+        String medicalSupplyBlock = MedicalSupplyProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!medicalSupplyBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + medicalSupplyBlock + ".");
+            return;
+        }
+        String nobleLuxuryBlock = NobleLuxuryProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!nobleLuxuryBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + nobleLuxuryBlock + ".");
+            return;
+        }
+        String animalAgricultureBlock = AnimalAgricultureSupplyProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!animalAgricultureBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + animalAgricultureBlock + ".");
+            return;
+        }
+        String rawMaterialBlock = RawMaterialSupplyProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!rawMaterialBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + rawMaterialBlock + ".");
+            return;
+        }
+        String shipmentBlock = ShipmentProvenanceAuthority.purchaseBlock(world, offer, worldTurn);
+        if (!shipmentBlock.isBlank()) {
+            logEvent("Cannot buy " + offer.name + ": " + shipmentBlock + ".");
+            return;
+        }
         int price = activeTraderSession.buyPrice(offer);
         if (!spendImperialScript(price)) {
             logEvent("Cannot buy " + offer.name + ": need " + price + " script, have " + carriedScript + ".");
@@ -4237,12 +4416,31 @@ class GamePanel extends LegacyPanelBridgeBase {
         EssentialSupplyProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
         VerticalFloorTradeAuthority.consume(world, offer, worldTurn);
         VerticalFloorTradeAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        SecuritySupplyProvenanceAuthority.consume(world, offer, worldTurn);
+        SecuritySupplyProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        MedicalSupplyProvenanceAuthority.consume(world, offer, worldTurn);
+        MedicalSupplyProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        NobleLuxuryProvenanceAuthority.consume(world, offer, worldTurn);
+        NobleLuxuryProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        AnimalAgricultureSupplyProvenanceAuthority.consume(world, offer, worldTurn);
+        AnimalAgricultureSupplyProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        RawMaterialSupplyProvenanceAuthority.consume(world, offer, worldTurn);
+        RawMaterialSupplyProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
+        ShipmentProvenanceAuthority.consume(world, offer, worldTurn);
+        ShipmentProvenanceAuthority.updateSessionAfterPurchase(activeTraderSession, world, offer);
         ItemProvenanceRecord pr = offer.provenance == null
                 ? ItemProvenanceRecord.trade(offer.name, activeInteractionNpc == null ? FactionInventoryStockAuthority.factionForZone(world == null ? null : world.zoneType) : activeInteractionNpc.faction, activeTraderSession.name, world, turn, "bought by player through interaction trade panel")
                 : ItemProvenanceRecord.transferred(offer.provenance, offer.name, world, turn, "sold to player by " + activeTraderSession.name);
         addInventoryItem(offer.name, pr);
         rememberItemProvenance(offer.name, pr);
         rebuildItemContainersFromLegacyLists();
+        String learnedBlueprint = ConstructionBlueprintOwnershipAuthority.grantPurchasedBlueprint(this, offer);
+        if (!learnedBlueprint.isBlank()) {
+            logEvent("Construction blueprint learned: " + learnedBlueprint + ".");
+            activeTraderSession.offers.removeIf(candidate -> candidate == offer);
+            selectedTradeOfferIndex = Math.max(0, Math.min(selectedTradeOfferIndex,
+                    Math.max(0, activeTraderSession.offers.size() - 1)));
+        }
         gainXp("Commerce", 1, "bought " + offer.name);
         logEvent("Bought " + offer.name + " for " + price + " script from " + safeLabel(activeTraderSession.name, "store") + ".");
         advanceTurn("buys " + offer.name + ".");
@@ -4393,9 +4591,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     void acceptProductionContractWithActiveNpc() {
-        ProductionContractAuthority.WorkResult result = ProductionContractAuthority.accept(this, activeInteractionNpc);
+        FactionMarketContractAuthority.WorkResult result = FactionMarketContractAuthority.accept(this, activeInteractionNpc);
         logEvent(result.message());
-        if (result.success()) advanceTurn("accepts faction production work.");
+        if (result.success()) advanceTurn("accepts faction market work.");
         repaint();
     }
 
@@ -4470,6 +4668,12 @@ class GamePanel extends LegacyPanelBridgeBase {
         MapObjectState obj = activeInteractionObject;
         BaseObject base = activeInteractionBaseObject;
         if (base != null) {
+            if (FactionPhysicalConstructionAuthority.isFactionManaged(base)) {
+                logEvent("Faction facility operation is restricted to its assigned roster. "
+                        + FactionPhysicalConstructionAuthority.crewReadback(base) + ".");
+                repaint();
+                return;
+            }
             openActiveMachineWorkbench();
             return;
         }
@@ -4783,7 +4987,8 @@ class GamePanel extends LegacyPanelBridgeBase {
             updatePendingInteractionSummary();
             return;
         }
-        if (RoomFixtureInteractionAuthority.tryInteract(this, lookX, lookY)
+        if (FactionImportNodeGenerationAuthority.tryInteract(this, lookX, lookY)
+                || RoomFixtureInteractionAuthority.tryInteract(this, lookX, lookY)
                 || FrontageFixtureInteractionAuthority.tryInteract(this, lookX, lookY)
                 || RoadTransitFixtureInteractionAuthority.tryInteract(this, lookX, lookY)) {
             updatePendingInteractionSummary();
@@ -5608,6 +5813,46 @@ class GamePanel extends LegacyPanelBridgeBase {
         lastTargetingReport = stack.isEmpty() ? "No target data available." : stack.get(Math.max(0, Math.min(lookStackIndex, stack.size() - 1)));
         logEvent("Look " + lookX + "," + lookY + ": " + lastTargetingReport);
     }
+    void activateCurrentRoomControl() {
+        lastTargetingReport = RoomOwnershipAuthority.completePlayerAction(this,
+                RoomOwnershipAuthority.applyCurrentRoomAction(this));
+        repaint();
+    }
+    void locateRoomPlanSeller(int roomX, int roomY) {
+        RoomBlueprintVendorGuidanceAuthority.Guidance guidance =
+                RoomBlueprintVendorGuidanceAuthority.forTile(this, roomX, roomY);
+        NpcEntity seller = guidance.seller();
+        if (seller == null) {
+            String report = guidance.lines().isEmpty()
+                    ? "No mapped construction-plan seller is available for that room."
+                    : guidance.lines().get(0);
+            lastTargetingReport = report;
+            logEvent(report);
+            repaint();
+            return;
+        }
+        RoomBlueprintVendorGuidanceAuthority.SellerRoute route =
+                RoomBlueprintVendorGuidanceAuthority.routeToSeller(this, seller);
+        int sellerRoomId = world.roomIdAt(seller.x, seller.y);
+        String sellerRoom = RoomOwnershipAuthority.roomName(world, sellerRoomId);
+        String folio = ConstructionBlueprintOwnershipAuthority.blueprintItemName(guidance.recipe());
+        activeQuestGuidance.removeIf(objective -> objective != null
+                && RoomBlueprintVendorGuidanceAuthority.PLAN_SELLER_OBJECTIVE_LABEL.equals(objective.label()));
+        activeQuestGuidance.add(new QuestObjectiveGuidanceAuthority.ObjectiveGuidance(
+                RoomBlueprintVendorGuidanceAuthority.PLAN_SELLER_OBJECTIVE_LABEL,
+                QuestObjectiveGuidanceAuthority.GuidanceKind.EXACT,
+                seller.x,
+                seller.y,
+                true,
+                true,
+                seller.name + " offers " + folio + " in " + sellerRoom + ". "
+                        + route.summary() + " Move adjacent and Interact to open the live offer."));
+        lastTargetingReport = "Plan seller marked on Map: " + seller.name + " / " + seller.role
+                + " / " + sellerRoom + ". " + route.summary();
+        logEvent(lastTargetingReport);
+        openPanel(PanelMode.MAP);
+        repaint();
+    }
     void moveInteractCursor(int dx, int dy) { lookX += dx; lookY += dy; clampInteractCursorToAdjacent(); setFacingToward(lookX, lookY, "interact cursor"); lookStackIndex = 0; lookStackScroll = 0; ProgressiveLookAuthority.reset(this, "interact cursor moved"); updatePendingInteractionSummary(); }
     ArrayList<String> tileStackAt(int x, int y) {
         return ProgressiveLookAuthority.tileStackAt(this, x, y);
@@ -5654,7 +5899,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     String visibleBuildRecipeLabel(int visibleSlot, BuildRecipe recipe) {
         String key = visibleSlot == 9 ? "0" : Integer.toString(Math.max(0, visibleSlot) + 1);
         String prefix = buildRecipeMatches(recipe, pendingBuildRecipe) ? "> " : "";
-        return prefix + key + ". " + (recipe == null ? "Unknown blueprint" : recipe.name);
+        String access = recipe != null && !ConstructionBlueprintOwnershipAuthority.owns(this, recipe) ? "[LOCKED] " : "";
+        return prefix + key + ". " + access + (recipe == null ? "Unknown blueprint" : recipe.name);
     }
     boolean buildRecipeMatches(BuildRecipe a, BuildRecipe b) {
         if (a == null || b == null) return false;
@@ -5743,12 +5989,18 @@ class GamePanel extends LegacyPanelBridgeBase {
         }
         baseObjects.add(object);
         ProgressiveConstructionAuthority.syncSiteTile(this, object);
+        BlueprintExpansionHeatAuthority.AppliedAttention attention =
+                BlueprintExpansionHeatAuthority.applyConstructionStart(this, recipe);
+        ConstructionExpansionReactionAuthority.Reaction reaction =
+                ConstructionExpansionReactionAuthority.apply(this, attention);
         buildPlacementActive = false;
         pendingBuildRecipe = null;
         rebuildItemContainersFromLegacyLists();
         logEvent("Started construction of " + recipe.name + " at " + object.x + "," + object.y + ". "
                 + (stagedStart ? "Some materials are staged; more materials or labor remain." : "Materials are staged; labor remains.")
-                + " " + ConstructionReadabilityAuthority.startSummary(recipe, object.x, object.y, stagedStart));
+                + " " + ConstructionReadabilityAuthority.startSummary(recipe, object.x, object.y, stagedStart)
+                + " " + attention.summary()
+                + (reaction.triggered() ? " " + ConstructionExpansionReactionAuthority.playerLine(reaction) : ""));
         advanceTurn("starts construction on " + recipe.name + ".");
         repaint();
     }
@@ -6183,6 +6435,12 @@ class GamePanel extends LegacyPanelBridgeBase {
             openCraftingPanel();
             return;
         }
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(machine)) {
+            logEvent("Faction facility operation is restricted to its assigned roster. "
+                    + FactionPhysicalConstructionAuthority.crewReadback(machine) + ".");
+            repaint();
+            return;
+        }
         panelMode = PanelMode.WORKBENCH;
         screen = Screen.PANEL;
         productionBoardActive = false;
@@ -6566,7 +6824,9 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
 
     private BaseObject activeWorkbenchProductionMachine() {
-        return panelMode == PanelMode.WORKBENCH ? activeInteractionBaseObject : null;
+        if (panelMode != PanelMode.WORKBENCH) return null;
+        BaseObject machine = activeInteractionBaseObject;
+        return FactionPhysicalConstructionAuthority.isFactionManaged(machine) ? null : machine;
     }
 
     void reportActiveMachineProductionStatus() {
@@ -7031,7 +7291,10 @@ class GamePanel extends LegacyPanelBridgeBase {
         char symbol = recipe.machineSymbol == ' ' ? 'w' : recipe.machineSymbol;
         BaseObject exact = firstBaseObject(symbol);
         if (exact != null) return exact;
-        return baseObjects.isEmpty() ? null : baseObjects.get(0);
+        for (BaseObject object : baseObjects) {
+            if (object != null && !FactionPhysicalConstructionAuthority.isFactionManaged(object)) return object;
+        }
+        return null;
     }
     void consumeInventoryNamed(String item) {
         if (item == null || item.isBlank()) return;
@@ -7087,14 +7350,28 @@ class GamePanel extends LegacyPanelBridgeBase {
         ItemInstance inst = itemInstances.get(c.itemInstanceIds.get(0));
         return inst == null ? "unknown item" : inst.displayName;
     }
-    boolean isInClaimedRoom(int x, int y) { return !baseClaimed || claimedRoomId < 0 || (Math.abs(x - baseX) <= 12 && Math.abs(y - baseY) <= 12); }
+    boolean isInClaimedRoom(int x, int y) {
+        if (!baseClaimed || claimedRoomId < 0) return true;
+        if (world != null && claimedRoomId < world.rooms.size() && claimedRoomId < world.roomFactions.size()
+                && world.roomFaction(claimedRoomId) == Faction.HIVER
+                && RoomOwnershipAuthority.hasAuthoritativePlayerClaim(this, claimedRoomId)) {
+            return world.roomIdAt(x, y) == claimedRoomId;
+        }
+        return Math.abs(x - baseX) <= 12 && Math.abs(y - baseY) <= 12;
+    }
     Faction playerFaction() { return baseClaimed ? Faction.HIVER : Faction.NONE; }
     boolean playerIsFactionMember(Faction faction) { return faction == null || faction == Faction.NONE || sameFactionFamily(faction, playerFaction()); }
     boolean sameFactionFamily(Faction a, Faction b) { return sameFactionFamilyStatic(a, b); }
-    String baseDisplayName() { return claimedRoomId >= 0 ? "Claimed room " + claimedRoomId : "claimed base"; }
+    String baseDisplayName() {
+        if (claimedRoomId < 0) return "claimed base";
+        if (world != null && claimedRoomId < world.rooms.size() && claimedRoomId < world.roomFactions.size()) {
+            return RoomOwnershipAuthority.roomName(world, claimedRoomId);
+        }
+        return "Claimed room " + claimedRoomId;
+    }
     int machineQualityTier(BaseObject machine) { return QualityAuthorityApi.tierIndex(machine == null ? "Common" : machine.qualityName); }
     ProductionInputConsumptionRecord consumeProductionInputNamedResult(String item, String route) { return ProductionContainerAuthority.consumeOne(this, item, route); }
-    BaseObject firstBaseObject(char symbol) { for (BaseObject b : baseObjects) if (b != null && b.symbol == symbol) return b; return null; }
+    BaseObject firstBaseObject(char symbol) { for (BaseObject b : baseObjects) if (b != null && b.symbol == symbol && !FactionPhysicalConstructionAuthority.isFactionManaged(b)) return b; return null; }
     void recordPlayerNewsEvent(String kind, String siteName, Faction faction, String text, int attention) { logEvent(text == null || text.isBlank() ? "Player news event recorded." : text); }
     Point nearestMedicalFacilityPoint() { return new Point(playerX, playerY); }
     BaseObject baseObjectAt(int x, int y) { for (BaseObject b : baseObjects) if (b != null && b.x == x && b.y == y) return b; return null; }
@@ -7198,6 +7475,8 @@ class GamePanel extends LegacyPanelBridgeBase {
     }
     String buildRequirementProblem(BuildRecipe recipe) {
         if (recipe == null) return "no selected build";
+        String blueprintProblem = ConstructionBlueprintOwnershipAuthority.requirementProblem(this, recipe);
+        if (!"ok".equalsIgnoreCase(blueprintProblem)) return blueprintProblem;
         if (recipe.requiredKnowledge != null && !recipe.requiredKnowledge.isBlank() && !hasKnowledge(recipe.requiredKnowledge)) return "missing knowledge: " + recipe.requiredKnowledge;
         if (recipe.requiresWorkbench && firstBaseObject('w') == null) return "requires a Scrap Workbench";
         return "ok";
@@ -7283,6 +7562,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (reinforcementTick.casualties() > 0 || reinforcementTick.expired() > 0) {
             logEvent(reinforcementTick.message());
         }
+        TopDownWorldEventAuthority.tick(this, sleeping);
+        DeferredOutOfSectorSimulationAuthority.tick(this, sleeping);
+        EssentialSupplyProvenanceAuthority.PopulationConsumption populationSupply =
+                EssentialSupplyProvenanceAuthority.tickPopulationConsumption(world, worldTurn);
+        if (populationSupply.depleted() > 0) logEvent(populationSupply.summary());
         EconomyRuntimeState economy = ZoneEconomyInitializationManager.stateFor(world);
         int locationKey = WorldEconomyInitializationAuthority.locationKey(world);
         if (!economy.isInitialized(locationKey)) {
@@ -7302,6 +7586,11 @@ class GamePanel extends LegacyPanelBridgeBase {
         if (npcTurnBudgetScheduler.shouldAudit(turn)) {
             DebugLog.audit("NPC_NEEDS_DUTY_TICK", lastNpcRuntimeReport);
         }
+        NpcHappinessAuthority.TickResult happinessTick = NpcHappinessAuthority.tick(this);
+        if (happinessTick.departed() > 0) {
+            logEvent(happinessTick.summary());
+            DebugLog.audit("NPC_HAPPINESS_DEPARTURE", happinessTick.summary());
+        }
 
         int abstractBudget = Math.max(1, npcTick.deferredBudget);
         if (sleeping) abstractBudget += 4;
@@ -7315,15 +7604,38 @@ class GamePanel extends LegacyPanelBridgeBase {
     void tickNpcFactionSiteProduction() {
         if (turn <= 0 || turn % TURNS_PER_HOUR != 0 || npcFactionSites.isEmpty()) return;
         int produced = 0;
+        int constructionAdvanced = 0;
         for (NpcFactionSite site : npcFactionSites) {
             FactionSiteWorkforceAuthority.sync(site, world);
+            if (FactionRoomShellConstructionAuthority.activeSite(this, site) != null) {
+                ProgressiveConstructionAuthority.FactionWorkResult work =
+                        FactionRoomShellConstructionAuthority.advanceHourly(this, site);
+                if (work.advanced() || work.completed()) {
+                    constructionAdvanced++;
+                    lastFactionSimulationReport = work.summary();
+                    DebugLog.audit("FACTION_ROOM_SHELL_CONSTRUCTION_TICK", work.summary());
+                }
+                continue;
+            }
+            if (FactionPhysicalConstructionAuthority.activeSite(this, site) != null) {
+                ProgressiveConstructionAuthority.FactionWorkResult work =
+                        FactionPhysicalConstructionAuthority.advanceHourly(this, site);
+                if (work.advanced() || work.completed()) {
+                    constructionAdvanced++;
+                    lastFactionSimulationReport = work.summary();
+                    DebugLog.audit("FACTION_PHYSICAL_CONSTRUCTION_TICK", work.summary());
+                }
+                continue;
+            }
             if (site != null && site.produceHour(turn, rng)) produced++;
         }
-        if (produced > 0) {
-            DebugLog.audit("NPC_FACTION_SITE_PRODUCTION", "sitesProduced=" + produced + " turn=" + turn + " sites=" + npcFactionSites.size());
+        if (produced > 0 || constructionAdvanced > 0) {
+            DebugLog.audit("NPC_FACTION_SITE_PRODUCTION", "sitesProduced=" + produced
+                    + " constructionAdvanced=" + constructionAdvanced
+                    + " turn=" + turn + " sites=" + npcFactionSites.size());
         }
     }
-    static boolean sameFactionFamilyStatic(Faction a, Faction b) { return a != null && b != null && (a == b || a.name().split("_")[0].equals(b.name().split("_")[0])); }
+    static boolean sameFactionFamilyStatic(Faction a, Faction b) { return FactionIdentityAuthority.sameFamily(a, b); }
     String factionStockContainerId(NpcFactionSite site) { return site == null ? "faction-stock-none" : "faction-stock-" + Math.abs(site.name.hashCode()); }
     void ensureContainer(String containerId, String label) { if (containerId != null && !containerId.isBlank()) itemContainers.putIfAbsent(containerId, new ContainerRecord(containerId, label == null ? containerId : label)); }
     void addItemToContainerResult(String containerId, String label, String item, ItemProvenanceRecord provenance, Object source, String reason) {

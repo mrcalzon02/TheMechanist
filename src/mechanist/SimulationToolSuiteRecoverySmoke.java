@@ -12,6 +12,11 @@ public final class SimulationToolSuiteRecoverySmoke {
                 SimulationToolSuiteRegistry.SECTOR_EDITOR,
                 SimulationToolSuiteRegistry.ZONE_EDITOR,
                 SimulationToolSuiteRegistry.FACTION_EDITOR,
+                SimulationToolSuiteRegistry.POPULATION_EDITOR,
+                SimulationToolSuiteRegistry.ECONOMY_EDITOR,
+                SimulationToolSuiteRegistry.REINFORCEMENT_EDITOR,
+                SimulationToolSuiteRegistry.DEFERRED_NETWORK_EDITOR,
+                SimulationToolSuiteRegistry.WORLD_EVENT_EDITOR,
                 SimulationToolSuiteRegistry.QUEST_EDITOR,
                 SimulationToolSuiteRegistry.ITEM_EDITOR,
                 SimulationToolSuiteRegistry.TILE_EDITOR,
@@ -50,6 +55,11 @@ public final class SimulationToolSuiteRecoverySmoke {
         require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.INFOPEDIA_EDITOR).containsKey("body"), "infopedia editor missing body text");
         require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.FACTION_EDITOR).containsKey("schemePosture"), "faction editor missing scheme posture");
         require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.FACTION_EDITOR).containsKey("journalPolicy"), "faction editor missing journal policy");
+        require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.POPULATION_EDITOR).containsKey("demandProfile"), "population editor missing demand profile");
+        require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.ECONOMY_EDITOR).containsKey("sourceKind"), "economy editor missing source provenance");
+        require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.REINFORCEMENT_EDITOR).containsKey("arrivalWindowTurns"), "reinforcement editor missing arrival window");
+        require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.DEFERRED_NETWORK_EDITOR).containsKey("lastChancePct"), "deferred editor missing probability output");
+        require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.WORLD_EVENT_EDITOR).containsKey("roomMutationHook"), "world-event editor missing room mutation hook");
         require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.QUEST_EDITOR).containsKey("lifecycleState"), "quest editor missing lifecycle state");
         require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.QUEST_EDITOR).containsKey("objectiveGuidance"), "quest editor missing objective guidance");
         require(SimulationToolSuiteRegistry.defaultPropertiesFor(SimulationToolSuiteRegistry.QUEST_EDITOR).containsKey("evidenceRule"), "quest editor missing evidence rule");
@@ -68,6 +78,11 @@ public final class SimulationToolSuiteRecoverySmoke {
         require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.SECTOR_EDITOR, repository).containsKey("overlaySet"), "sector editor missing overlay link");
         require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.SECTOR_EDITOR, repository).containsKey("worldgenTuning"), "sector editor missing worldgen tuning link");
         require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.FACTION_EDITOR, repository).containsKey("schemePosture"), "faction editor missing scheme posture link");
+        require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.POPULATION_EDITOR, repository).containsKey("demandProfile"), "population editor missing demand choices");
+        require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.ECONOMY_EDITOR, repository).containsKey("legality"), "economy editor missing legality choices");
+        require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.REINFORCEMENT_EDITOR, repository).containsKey("sourceMode"), "reinforcement editor missing source choices");
+        require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.DEFERRED_NETWORK_EDITOR, repository).containsKey("lastOutcome"), "deferred editor missing outcome choices");
+        require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.WORLD_EVENT_EDITOR, repository).containsKey("eventType"), "world-event editor missing family choices");
         require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.QUEST_EDITOR, repository).containsKey("lifecycleState"), "quest editor missing lifecycle link");
         require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.QUEST_EDITOR, repository).containsKey("evidenceRule"), "quest editor missing evidence link");
         require(SimulationToolSuiteRegistry.linkOptionsFor(SimulationToolSuiteRegistry.TILE_EDITOR, repository).containsKey("family"), "tile editor missing family link");

@@ -2230,6 +2230,9 @@ class ControlledProductionJobAuthority {
     static String assignmentProblem(GamePanel g, BaseObject machine, FactionRecipeVariant v) {
         if (g == null) return "missing game context.";
         if (machine == null) return "no selected machine/apparatus.";
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(machine)) {
+            return "faction facility operation is reserved for its assigned roster.";
+        }
         if (v == null || v.base == null) return "no generated production job selected.";
         String access = ActorAccessAuthority.productionAssignmentProblem(g, machine, v);
         if (access != null) return access;
@@ -2440,7 +2443,9 @@ class LiveProductionPlacementAuthority {
     static ArrayList<BaseObject> installedLabEquipment(GamePanel g) {
         ArrayList<BaseObject> out = new ArrayList<>();
         if (g == null) return out;
-        for (BaseObject obj : g.baseObjects) if (isLaboratoryObject(obj)) out.add(obj);
+        for (BaseObject obj : g.baseObjects) {
+            if (isLaboratoryObject(obj) && !FactionPhysicalConstructionAuthority.isFactionManaged(obj)) out.add(obj);
+        }
         return out;
     }
     static String validateDraftRecipeForBase(GamePanel g, DraftIndustrialRecipe r) {

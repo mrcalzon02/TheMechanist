@@ -73,6 +73,7 @@ final class FactionReinforcementAuthority {
             request.dueTurn = turn + SourceMethod.LEGACY_ROSTER.delay(random);
             request.expiresTurn = request.dueTurn + SourceMethod.LEGACY_ROSTER.arrivalWindow;
         }
+        TopDownWorldEventAuthority.applyToNewReinforcement(world, request);
     }
 
     static SourceChangeResult cycleSource(World world, Faction faction, int turn, Random random) {
@@ -246,12 +247,14 @@ final class FactionReinforcementAuthority {
                 fundsBlocked++;
                 continue;
             }
-            Point point = PersonnelPopulationApi.spawnPointForReplacement(world, request, rng);
+            Point point = SourceMethod.fromId(request.sourceMode) == SourceMethod.TRAIN_IMPORT
+                    ? FactionImportNodeGenerationAuthority.arrivalPoint(world, request.faction) : null;
+            if (point == null) point = PersonnelPopulationApi.spawnPointForReplacement(world, request, rng);
             if (point == null || world.npcAt(point.x, point.y) != null) {
                 routeBlocked++;
                 continue;
             }
-            NpcEntity npc = NpcEntity.create(target, world.zoneType, point.x, point.y, rng);
+            NpcEntity npc = NpcEntity.create(request.faction, world.zoneType, point.x, point.y, rng);
             npc.state = "Reinforcement Intake";
             PersonnelProvenanceApi.assignReplacementProvenance(npc, world, request, rng);
             NpcPortraitSelectionAuthority.assignForSpawn(npc, world);
@@ -317,6 +320,10 @@ final class FactionReinforcementAuthority {
             request.sourceRoomId = ledger.roomId;
             request.source = method.label + " through " + ledger.sourceLabel
                     + (ledger.facilityId == null || ledger.facilityId.isBlank() ? "" : " / " + ledger.facilitySummary());
+            if (method == SourceMethod.TRAIN_IMPORT) {
+                MapObjectState node = FactionImportNodeGenerationAuthority.nodeForRoom(world, ledger.roomId);
+                if (node != null) request.source += " at " + node.label;
+            }
         }
         request.sourceMode = method.id;
         request.scriptCost = method.scriptCost;
@@ -332,7 +339,7 @@ final class FactionReinforcementAuthority {
         RoomPopulationLedger fallback = null;
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
             if (ledger == null || ledger.capacity <= 0) continue;
-            if (!(ledger.faction == faction || ledger.faction == Faction.NONE)) continue;
+            if (!(FactionIdentityAuthority.sameFamily(ledger.faction, faction) || ledger.faction == Faction.NONE)) continue;
             if (method == SourceMethod.PAID_LOCAL) {
                 if (fallback == null) fallback = ledger;
                 if (!isTrainLedger(ledger) && !isBarracksLedger(ledger)) return ledger;
@@ -380,10 +387,11 @@ final class FactionReinforcementAuthority {
         SourceMethod method = SourceMethod.fromId(request.sourceMode);
         boolean sourceMatches = method == SourceMethod.LEGACY_ROSTER
                 || method == SourceMethod.PAID_LOCAL
-                || (method == SourceMethod.TRAIN_IMPORT && isTrainLedger(ledger))
+                || (method == SourceMethod.TRAIN_IMPORT && isTrainLedger(ledger)
+                    && FactionImportNodeGenerationAuthority.routeOperational(world,request.faction))
                 || (method == SourceMethod.BARRACKS_MUSTER && isBarracksLedger(ledger));
         return ledger != null && sourceMatches && ledger.available > 0 && ledger.capacity > 0
-                && (ledger.faction == request.faction || ledger.faction == Faction.NONE);
+                && (FactionIdentityAuthority.sameFamily(ledger.faction, request.faction) || ledger.faction == Faction.NONE);
     }
 
     private static boolean hasRequestFor(World world, String npcId) {
@@ -395,7 +403,7 @@ final class FactionReinforcementAuthority {
     }
 
     private static boolean matches(PersonnelReplacementRequest request, Faction faction) {
-        return request != null && request.faction == faction;
+        return request != null && FactionIdentityAuthority.sameFamily(request.faction, faction);
     }
 
     private static boolean expired(PersonnelReplacementRequest request, int turn) {

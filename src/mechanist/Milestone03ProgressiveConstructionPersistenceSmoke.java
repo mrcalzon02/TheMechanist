@@ -16,7 +16,7 @@ final class Milestone03ProgressiveConstructionPersistenceSmoke {
         site.machineRepairHistory = "field repair before staging";
 
         String[] saved = site.saveLine().split("\\|", -1);
-        require(saved.length == 31, "base object save line should preserve 31 append-only fields");
+        require(saved.length == 36, "base object save line should preserve 36 append-only fields");
         require("true".equals(saved[16]), "under-construction field should be saved");
         require("B".equals(saved[17]), "final symbol should be saved");
         require(saved[18].contains("Construction supplies=3"), "required supplies should be saved");
@@ -33,6 +33,11 @@ final class Milestone03ProgressiveConstructionPersistenceSmoke {
         require(saved[28].equals("BASE"), "production output should default to base storage");
         require(saved[29].equals("WAIT"), "no-room policy should default to wait");
         require(saved[30].isEmpty(), "production blocker readback should default to empty");
+        require(saved[31].equals("PLAYER"), "legacy staged construction should default to player ownership mode");
+        require(saved[32].isEmpty(), "player construction material source should default to empty");
+        require(saved[33].isEmpty(), "player construction plan source should default to empty");
+        require(saved[34].isEmpty(), "player construction should not default to a linked faction site");
+        require(saved[35].isEmpty(), "player construction should not default to a linked faction strategy plan");
 
         GamePanel writer = new GamePanel();
         if (writer.timer != null) writer.timer.stop();
@@ -71,6 +76,10 @@ final class Milestone03ProgressiveConstructionPersistenceSmoke {
         require(loaded.faction == Faction.NONE, "loaded site should preserve faction");
         require("Retail Counter Assembly".equals(loaded.machineKnowledge), "loaded site should preserve later machine knowledge field");
         require("field repair before staging".equals(loaded.machineRepairHistory), "loaded site should preserve later repair history field");
+        require("PLAYER".equals(loaded.constructionOwnerMode), "loaded legacy staged site should retain player ownership mode");
+        require(loaded.constructionMaterialSource.isEmpty() && loaded.constructionPlanSource.isEmpty()
+                        && loaded.constructionLinkedSiteName.isEmpty() && loaded.constructionLinkedPlanId.isEmpty(),
+                "loaded player site should keep faction construction provenance blank");
         require(reader.world != null && reader.world.inBounds(loaded.x, loaded.y), "loaded site should be in world bounds");
         require(reader.world.tiles[loaded.x][loaded.y] == '?', "loaded world tile should show staged placeholder");
 

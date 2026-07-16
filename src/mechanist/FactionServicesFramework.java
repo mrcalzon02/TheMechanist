@@ -32,8 +32,14 @@ class FactionStrategicPlan {
     int secrecy = 35;
     int aggression = 35;
     int ambition = 35;
+    int officerCadencePct = 100;
+    int cadenceCycle = 0;
+    int lastPhaseDurationTurns = 0;
+    int lastPhaseJitterHours = 0;
     String lastOutcome = "No action has resolved yet.";
     final ArrayList<String> history = new ArrayList<>();
+
+    private record PhaseTiming(int hours, int jitterHours) { }
 
     static FactionStrategicPlan create(Faction f, Random r, int turn) {
         if (r == null) r = new Random();
@@ -45,6 +51,7 @@ class FactionStrategicPlan {
         p.ambition = 25 + r.nextInt(65);
         p.aggression = aggressionFor(p.faction, r);
         p.secrecy = secrecyFor(p.faction, r);
+        p.officerCadencePct = cadenceFor(p.faction, p.leaderName, p.deputyName);
         p.longTermGoal = pick(longTermGoals(p.faction), r);
         p.personalGoal = pick(personalGoals(p.faction), r);
         p.chooseNewImmediateGoal(r, turn);
@@ -60,10 +67,16 @@ class FactionStrategicPlan {
         targetRoom = pick(targetRoomsForGoal(immediateGoal, faction), r);
         scheme = r.nextInt(100) < schemeChance() ? pick(schemesFor(faction), r) : "";
         phase = "PLANNING";
-        int planHours = 18 + r.nextInt(54);
-        phaseUntilTurn = turn + planHours * GamePanel.TURNS_PER_HOUR;
+        cadenceCycle++;
+        PhaseTiming timing = phaseTiming("PLANNING", 18, 54, r, turn);
+        lastPhaseDurationTurns = timing.hours() * GamePanel.TURNS_PER_HOUR;
+        lastPhaseJitterHours = timing.jitterHours();
+        phaseUntilTurn = turn + lastPhaseDurationTurns;
         nextDecisionTurn = phaseUntilTurn;
-        addHistory(turn, "Planning selected: " + immediateGoal + "; target item " + targetItem + "; target room " + targetRoom + (scheme.isBlank()?"":"; private scheme " + scheme + " vs " + schemeTargetFaction.label) + ".");
+        addHistory(turn, "Planning selected: " + immediateGoal + "; target item " + targetItem + "; target room " + targetRoom
+                + (scheme.isBlank()?"":"; private scheme " + scheme + " vs " + schemeTargetFaction.label)
+                + "; officer cadence " + officerCadencePct + "% with cycle jitter " + signedHours(lastPhaseJitterHours)
+                + "; planning window " + timing.hours() + " hours.");
     }
 
     int schemeChance() {
@@ -77,13 +90,19 @@ class FactionStrategicPlan {
         if ("PLANNING".equals(phase)) {
             phase = "EXECUTION";
             int hours = 10 + (r == null ? 0 : r.nextInt(38));
-            phaseUntilTurn = turn + hours * GamePanel.TURNS_PER_HOUR;
+            lastPhaseDurationTurns = hours * GamePanel.TURNS_PER_HOUR;
+            lastPhaseJitterHours = 0;
+            phaseUntilTurn = turn + lastPhaseDurationTurns;
             addHistory(turn, "Execution opened for: " + immediateGoal + ".");
         } else if ("EXECUTION".equals(phase)) {
             phase = "COOLDOWN";
-            int hours = 16 + (r == null ? 0 : r.nextInt(42));
-            phaseUntilTurn = turn + hours * GamePanel.TURNS_PER_HOUR;
-            addHistory(turn, "Execution resolved: " + lastOutcome + ". Cooling down and covering paperwork.");
+            PhaseTiming timing = phaseTiming("COOLDOWN", 16, 42, r, turn);
+            lastPhaseDurationTurns = timing.hours() * GamePanel.TURNS_PER_HOUR;
+            lastPhaseJitterHours = timing.jitterHours();
+            phaseUntilTurn = turn + lastPhaseDurationTurns;
+            addHistory(turn, "Execution resolved: " + lastOutcome + ". Cooling down for " + timing.hours()
+                    + " hours at officer cadence " + officerCadencePct + "% with cycle jitter "
+                    + signedHours(lastPhaseJitterHours) + ".");
         } else {
             chooseNewImmediateGoal(r, turn);
         }
@@ -96,32 +115,49 @@ class FactionStrategicPlan {
     }
 
     String journalHeader() { return faction.label + " ledger of " + leaderName + " with deputy " + deputyName; }
-    String shortLine() { return faction.label + " | " + leaderName + " | " + phase + " until " + phaseUntilTurn + " | " + immediateGoal + " | long: " + longTermGoal + (scheme == null || scheme.isBlank() ? "" : " | scheme: " + scheme); }
+    String shortLine() { return faction.label + " | " + leaderName + " | " + phase + " until " + phaseUntilTurn
+            + " | cadence " + officerCadencePct + "% / cycle jitter " + signedHours(lastPhaseJitterHours)
+            + " | " + immediateGoal + " | long: " + longTermGoal
+            + (scheme == null || scheme.isBlank() ? "" : " | scheme: " + scheme); }
     String publicLine() { return faction.label + " is rumored to be in " + phase.toLowerCase(Locale.ROOT) + " around " + publicGoalPhrase(immediateGoal) + "."; }
 
     String saveLine() {
-        return enc(id)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+enc(leaderName)+"|"+enc(deputyName)+"|"+enc(phase)+"|"+enc(immediateGoal)+"|"+enc(longTermGoal)+"|"+enc(personalGoal)+"|"+enc(scheme)+"|"+(schemeTargetFaction==null?Faction.NONE.name():schemeTargetFaction.name())+"|"+enc(targetItem)+"|"+enc(targetRoom)+"|"+phaseUntilTurn+"|"+nextDecisionTurn+"|"+success+"|"+failure+"|"+secrecy+"|"+aggression+"|"+ambition+"|"+enc(lastOutcome)+"|"+enc(String.join("~~", history));
+        return enc(id)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+enc(leaderName)+"|"+enc(deputyName)+"|"+enc(phase)+"|"+enc(immediateGoal)+"|"+enc(longTermGoal)+"|"+enc(personalGoal)+"|"+enc(scheme)+"|"+(schemeTargetFaction==null?Faction.NONE.name():schemeTargetFaction.name())+"|"+enc(targetItem)+"|"+enc(targetRoom)+"|"+phaseUntilTurn+"|"+nextDecisionTurn+"|"+success+"|"+failure+"|"+secrecy+"|"+aggression+"|"+ambition+"|"+enc(lastOutcome)+"|"+enc(String.join("~~", history))
+                +"|"+officerCadencePct+"|"+cadenceCycle+"|"+lastPhaseDurationTurns+"|"+lastPhaseJitterHours;
     }
     static FactionStrategicPlan parse(String s) {
         try {
-            String[] a=s.split("\\|",21); if(a.length<20) return null;
+            String[] a=s.split("\\|",25); if(a.length<20) return null;
             FactionStrategicPlan p=new FactionStrategicPlan();
             p.id=dec(a[0]); p.faction=Faction.valueOf(a[1]); p.leaderName=dec(a[2]); p.deputyName=dec(a[3]); p.phase=dec(a[4]); p.immediateGoal=dec(a[5]); p.longTermGoal=dec(a[6]); p.personalGoal=dec(a[7]); p.scheme=dec(a[8]); p.schemeTargetFaction=Faction.valueOf(a[9]); p.targetItem=dec(a[10]); p.targetRoom=dec(a[11]); p.phaseUntilTurn=Integer.parseInt(a[12]); p.nextDecisionTurn=Integer.parseInt(a[13]); p.success=Integer.parseInt(a[14]); p.failure=Integer.parseInt(a[15]); p.secrecy=Integer.parseInt(a[16]); p.aggression=Integer.parseInt(a[17]); p.ambition=Integer.parseInt(a[18]); p.lastOutcome=dec(a[19]);
             if(a.length>=21){ String h=dec(a[20]); if(!h.isBlank()) for(String line:h.split("~~")) if(!line.isBlank()) p.history.add(line); }
+            p.officerCadencePct=a.length>=22?Math.max(80,Math.min(125,Integer.parseInt(a[21]))):cadenceFor(p.faction,p.leaderName,p.deputyName);
+            p.cadenceCycle=a.length>=23?Math.max(0,Integer.parseInt(a[22])):0;
+            p.lastPhaseDurationTurns=a.length>=24?Math.max(0,Integer.parseInt(a[23])):Math.max(0,p.phaseUntilTurn-p.nextDecisionTurn);
+            p.lastPhaseJitterHours=a.length>=25?Math.max(-4,Math.min(4,Integer.parseInt(a[24]))):0;
             return p;
         } catch(Exception e) { return null; }
     }
     static String enc(String s){ return Base64.getUrlEncoder().withoutPadding().encodeToString((s==null?"":s).getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
     static String dec(String s){ try{return new String(Base64.getUrlDecoder().decode(s), java.nio.charset.StandardCharsets.UTF_8);}catch(Exception e){return "";} }
     static String pick(String[] a, Random r){ return a[Math.floorMod(r==null?0:r.nextInt(), a.length)]; }
+    static int cadenceFor(Faction faction,String leader,String deputy){return 80+Math.floorMod(Objects.hash(faction,safeName(leader),safeName(deputy),"officer-scheme-cadence"),46);}
+    private PhaseTiming phaseTiming(String phaseName,int minimumHours,int spreadHours,Random random,int turn){
+        int rolled=minimumHours+(random==null?0:random.nextInt(Math.max(1,spreadHours)));
+        int paced=Math.max(4,(rolled*officerCadencePct+50)/100);
+        int jitter=Math.floorMod(Objects.hash(id,leaderName,phaseName,cadenceCycle,turn),9)-4;
+        return new PhaseTiming(Math.max(4,paced+jitter),jitter);
+    }
+    private static String signedHours(int hours){return (hours>=0?"+":"")+hours+"h";}
+    private static String safeName(String value){return value==null?"":value;}
     static int aggressionFor(Faction f, Random r){ int b = (f==Faction.MUTANT||f==Faction.CULTIST||f==Faction.HERETIC||f==Faction.BANDIT||(f!=null&&f.name().startsWith("GANGER")))?62:32; if(f==Faction.ARBITES||f==Faction.IMPERIAL_GUARD||f==Faction.SORORITAS) b=48; return Math.max(5, Math.min(95, b+(r==null?0:r.nextInt(31)-15))); }
     static int secrecyFor(Faction f, Random r){ int b = (f==Faction.CULTIST||f==Faction.HERETIC||f==Faction.NOBLE||(f!=null&&f.name().startsWith("NOBLE")))?64:35; if(f==Faction.ARBITES||f==Faction.ADMINISTRATUM) b=48; return Math.max(5, Math.min(95, b+(r==null?0:r.nextInt(31)-15))); }
     static String publicGoalPhrase(String g){ if(g==null) return "unreadable business"; if(g.toLowerCase(Locale.ROOT).contains("assassin")) return "a sudden death"; if(g.toLowerCase(Locale.ROOT).contains("steal")) return "missing stock"; if(g.toLowerCase(Locale.ROOT).contains("attack")) return "open violence"; if(g.toLowerCase(Locale.ROOT).contains("stockpile")) return "quiet accumulation"; return g; }
     static Faction pickTargetFaction(Faction self, Random r){ Faction[] pool={Faction.HIVER,Faction.BANDIT,Faction.ARBITES,Faction.IMPERIAL_GUARD,Faction.MECHANICUS,Faction.NOBLE,Faction.CULTIST,Faction.MUTANT,Faction.ADMINISTRATUM}; Faction f=pool[Math.floorMod(r==null?1:r.nextInt(), pool.length)]; return f==self?Faction.BANDIT:f; }
-    static String[] immediateGoals(Faction f){ return new String[]{"take control of a room","build or upgrade a factory","begin production of a recipe","stockpile a strategic item","gain more followers","attack an enemy faction","steal from an enemy stockpile","assassinate a rival officer","bribe a local official","open a trade route","repair a damaged facility","sabotage a rival machine","secure food and water reserves","secure ammunition reserves","recruit guards for a room"}; }
+    static String[] immediateGoals(Faction f){ return new String[]{"take control of a room","build or upgrade a factory","begin production of a recipe","stockpile a strategic item","gain more followers","recruit a rival faction member","attack an enemy faction","steal from an enemy stockpile","assassinate a rival officer","bribe a local official","open a trade route","repair a damaged facility","sabotage a rival machine","secure food and water reserves","secure ammunition reserves","recruit guards for a room"}; }
     static String[] longTermGoals(Faction f){ return new String[]{"dominate local room control","secure a stable production chain","monopolize a useful commodity","expand follower count","weaken nearest rival","gain leverage over civil authorities","protect faction leadership","capture a profitable corridor route","build an armed reserve","create a hidden contingency stockpile","make the zone dependent on faction services","prepare for a larger political coup"}; }
     static String[] personalGoals(Faction f){ return new String[]{"advance one rank before the next audit","remove a deputy who knows too much","be seen as indispensable","hide evidence of misused stock","secure a safer room and better guards","increase personal wealth","win favor from a superior","pay off a dangerous obligation","avoid being blamed for the next failure","make a rival look incompetent"}; }
-    static String[] schemesFor(Faction f){ return new String[]{"sell information","arrange a betrayal","frame a subordinate","hire an assassin","divert faction stock","leak patrol routes","plant contraband evidence","make a private deal","blackmail a rival officer","poison a contract negotiation","open a back door during an attack","fake a shortage to gain leverage"}; }
+    static String[] schemesFor(Faction f){ return new String[]{"sell information","arrange a betrayal","recruit a disaffected rival member","frame a subordinate","hire an assassin","divert faction stock","leak patrol routes","plant contraband evidence","make a private deal","blackmail a rival officer","poison a contract negotiation","open a back door during an attack","fake a shortage to gain leverage"}; }
     static String[] targetItemsForGoal(String g, Faction f){ String l=g==null?"":g.toLowerCase(Locale.ROOT); if(l.contains("ammo")||l.contains("attack")||l.contains("guard")) return new String[]{"Las charge pack","Autogun magazine","Stub cartridge box","Frag grenade","Guard flak vest"}; if(l.contains("food")||l.contains("water")) return new String[]{"Clean water","Water bottle","Emergency rations","Amino culture broth"}; if(l.contains("factory")||l.contains("production")||l.contains("repair")) return new String[]{"Machine part","Sacred wire bundle","Construction supplies","Assembled component"}; if(l.contains("steal")||l.contains("bribe")) return new String[]{"Trade chit","Lockpicks","Data spike","Sealed bank lockbox"}; return new String[]{"Emergency rations","Clean water","Machine part","Autogun magazine","Medkit"}; }
     static String[] targetRoomsForGoal(String g, Faction f){ return new String[]{"watch post","stockroom","machine room","shrine annex","dormitory block","service corridor","kitchen","barracks room","archive desk","trade counter","water room","munition locker"}; }
 }
@@ -165,12 +201,49 @@ class FactionStrategySimulationApi {
     }
     static void resolveExecution(GamePanel g, FactionStrategicPlan p) {
         if (g == null || p == null) return;
+        if (NpcHappinessAuthority.isRecruitmentPlan(p)) {
+            NpcHappinessAuthority.RecruitmentOutcome outcome = NpcHappinessAuthority.attemptSchemeRecruitment(g, p);
+            if (outcome.success()) p.success++;
+            else p.failure++;
+            p.lastOutcome = (outcome.success() ? "SUCCESS: " : "FAILURE: ") + outcome.message();
+            p.addHistory(g.turn, p.lastOutcome);
+            if (g.rng.nextInt(100) < Math.max(10, 65 - p.secrecy / 2)) {
+                g.logEvent("RUMOR: " + p.faction.label + " officers approached a rival faction member.");
+            }
+            return;
+        }
         NpcFactionSite site = g.siteForFaction(p.faction, g.world == null ? null : g.world.zoneType);
         int strength = 30 + p.ambition/2 + p.aggression/4 + (site == null ? 0 : site.baseLevel*6 + site.workers);
         int difficulty = 35 + Math.abs(Objects.hash(p.immediateGoal, p.schemeTargetFaction, g.turn)) % 55;
         boolean ok = strength + g.rng.nextInt(40) >= difficulty;
+        if (ok && tryApplyLiveFactoryUpgrade(g, p, site)) return;
         if (ok) { p.success++; applySuccess(g, p, site); }
         else { p.failure++; applyFailure(g, p); }
+    }
+    static boolean tryApplyLiveFactoryUpgrade(GamePanel g, FactionStrategicPlan p, NpcFactionSite site) {
+        if (g == null || p == null || !FactionFacilityBlueprintUpgradeAuthority.handles(p)
+                || !FactionIdentityAuthority.sameFamily(p.faction, Faction.MECHANIST_COLLEGIA)) return false;
+        FactionPhysicalConstructionAuthority.Outcome outcome =
+                FactionPhysicalConstructionAuthority.attempt(g, p, site);
+        if (!outcome.handled()) return false;
+        if (!outcome.success()) {
+            p.failure++;
+            g.addFactionMarketPressure(p.faction, 1,
+                    "blocked physical factory construction: " + outcome.blocker());
+        }
+        String prefix = outcome.success() ? "IN PROGRESS: " : "FAILURE: ";
+        String detail = outcome.message() == null ? "" : outcome.message();
+        p.lastOutcome = detail.startsWith("IN PROGRESS:") ? detail : prefix + detail;
+        if (p.history.isEmpty() || !p.history.get(p.history.size() - 1).endsWith(p.lastOutcome)) {
+            p.addHistory(g.turn, p.lastOutcome);
+        }
+        DebugLog.audit("FACTION_FACTORY_PHYSICAL_CONSTRUCTION",
+                "faction=" + p.faction.label + " success=" + outcome.success()
+                        + " blocker=" + outcome.blocker() + " detail=" + outcome.message());
+        if (g.rng.nextInt(100) < Math.max(10, 65 - p.secrecy / 2)) {
+            g.logEvent("RUMOR: " + p.publicLine());
+        }
+        return true;
     }
     static void applySuccess(GamePanel g, FactionStrategicPlan p, NpcFactionSite site) {
         String goal = p.immediateGoal == null ? "" : p.immediateGoal.toLowerCase(Locale.ROOT);
@@ -573,6 +646,7 @@ class ImperialNewsNetworkApi {
         String zone = ev.zone == null ? "an unnamed zone" : ev.zone;
         String cat = ev.category == null ? "" : ev.category.toLowerCase(Locale.ROOT);
         String authTail = " Inspectors may review licenses, purchase permits, and facility papers where public attention lingers.";
+        if (cat.contains("world-event")) return "Sector event bulletin: " + ev.detail;
         if (cat.contains("kill")) return "Public incident column: authorities report a violent incident involving " + subject + " in " + zone + ". Names are withheld pending retaliation, identification, or a better headline." + authTail;
         if (cat.contains("room")) return "Property notice: a previously unremarkable room in " + zone + " has acquired a private claimant, visible traffic, and the expensive smell of reserved paperwork." + authTail;
         if (cat.contains("facility") || cat.contains("production")) return "Permit desk: local observers note new machinery or production activity tied to " + subject + " in " + zone + ". Officials remind citizens that useful work remains illegal until licensed." + authTail;
@@ -617,6 +691,7 @@ class ImperialNewsNetworkApi {
         if (candidates.isEmpty()) return null;
         PlayerNewsEvent ev = candidates.get(Math.floorMod(r == null ? candidates.size() : r.nextInt(), candidates.size()));
         String cat = ev.category == null ? "" : ev.category.toLowerCase(Locale.ROOT);
+        if (cat.contains("world-event")) return "sector event notice: " + ev.detail;
         if (cat.contains("kill")) return "breaking local report: an altercation involving " + ev.subject + " has authorities reviewing witness statements in " + ev.zone + ".";
         if (cat.contains("facility") || cat.contains("production") || cat.contains("service")) return "local licensing reminder: new activity around " + ev.subject + " in " + ev.zone + " may prompt permit checks.";
         if (cat.contains("room")) return "property irregularity reported in " + ev.zone + "; claimants are reminded that possession is not paperwork.";
@@ -701,6 +776,8 @@ class NpcFactionSite {
     int sectorX = 1, sectorY = 1, zoneX = 2, zoneY = 2, floor = 4;
     int baseLevel = 1, workers = 2, machineLevel = 2, stock = 0, lastProductionTurn = 0;
     ArrayList<String> outputs = new ArrayList<>();
+    final LinkedHashSet<String> knownConstructionBlueprints = new LinkedHashSet<>();
+    final LinkedHashSet<String> completedConstructionJobs = new LinkedHashSet<>();
     String knowledge = "local technique";
 
     static NpcFactionSite create(String name, Faction faction, String facilityType, int sx, int sy, int zx, int zy, int floor, String primary, String secondary, String knowledge) {
@@ -746,13 +823,52 @@ class NpcFactionSite {
         return knowledge + "; facility=" + facilityType + "; machine tier " + machineLevel + "; workers " + workers + "; output=" + base;
     }
 
+    boolean knowsConstructionBlueprint(String blueprintId) {
+        String stableId = stableConstructionBlueprintId(blueprintId);
+        return !stableId.isBlank() && knownConstructionBlueprints.contains(stableId);
+    }
+
+    boolean learnConstructionBlueprint(String blueprintId) {
+        String stableId = stableConstructionBlueprintId(blueprintId);
+        return !stableId.isBlank() && knownConstructionBlueprints.add(stableId);
+    }
+
+    boolean hasCompletedConstructionJob(String jobId) {
+        String stableId = stableConstructionJobId(jobId);
+        return !stableId.isBlank() && completedConstructionJobs.contains(stableId);
+    }
+
+    boolean recordCompletedConstructionJob(String jobId) {
+        String stableId = stableConstructionJobId(jobId);
+        return !stableId.isBlank() && completedConstructionJobs.add(stableId);
+    }
+
+    private static String stableConstructionBlueprintId(String blueprintId) {
+        if (blueprintId == null) return "";
+        String stableId = blueprintId.trim();
+        return stableId.isBlank() || stableId.indexOf('|') >= 0 || stableId.indexOf(',') >= 0 ? "" : stableId;
+    }
+    private static String stableConstructionJobId(String jobId) {
+        if (jobId == null) return "";
+        String stableId = jobId.trim();
+        return stableId.isBlank() || stableId.indexOf('|') >= 0 || stableId.indexOf(',') >= 0 ? "" : stableId;
+    }
+
     String locationKey() { return "sector " + sectorX + "," + sectorY + " zone " + zoneX + "," + zoneY + " floor " + floor; }
-    String summaryLine() { return name + " — " + faction.label + " — " + facilityType + " — " + locationKey() + " — level " + baseLevel + " machine " + machineLevel + " workers " + workers + " stock " + stock + " outputs " + String.join(", ", outputs); }
-    String saveLine() { return name+"|"+faction.name()+"|"+facilityType+"|"+sectorX+"|"+sectorY+"|"+zoneX+"|"+zoneY+"|"+floor+"|"+baseLevel+"|"+workers+"|"+machineLevel+"|"+stock+"|"+lastProductionTurn+"|"+knowledge+"|"+String.join(",", outputs); }
+    String constructionPlanSummary() {
+        ArrayList<String> names = new ArrayList<>();
+        for (String id : knownConstructionBlueprints) {
+            BuildRecipe recipe = ConstructionBlueprintOwnershipAuthority.recipeForId(id);
+            names.add(recipe == null ? "unknown retained plan" : recipe.name);
+        }
+        return names.isEmpty() ? "none" : String.join(", ", names);
+    }
+    String summaryLine() { return name + " — " + faction.label + " — " + facilityType + " — " + locationKey() + " — level " + baseLevel + " machine " + machineLevel + " workers " + workers + " stock " + stock + " outputs " + String.join(", ", outputs) + " — construction plans " + constructionPlanSummary() + " — completed construction " + completedConstructionJobs.size(); }
+    String saveLine() { return name+"|"+faction.name()+"|"+facilityType+"|"+sectorX+"|"+sectorY+"|"+zoneX+"|"+zoneY+"|"+floor+"|"+baseLevel+"|"+workers+"|"+machineLevel+"|"+stock+"|"+lastProductionTurn+"|"+knowledge+"|"+String.join(",", outputs)+"|"+String.join(",", knownConstructionBlueprints)+"|"+String.join(",", completedConstructionJobs); }
     static NpcFactionSite parse(String s) {
         try {
-            String[] a = s.split("\\|",15); if (a.length < 15) return null;
-            NpcFactionSite site = new NpcFactionSite(); site.name=a[0]; site.faction=Faction.valueOf(a[1]); site.facilityType=a[2]; site.sectorX=Integer.parseInt(a[3]); site.sectorY=Integer.parseInt(a[4]); site.zoneX=Integer.parseInt(a[5]); site.zoneY=Integer.parseInt(a[6]); site.floor=Integer.parseInt(a[7]); site.baseLevel=Integer.parseInt(a[8]); site.workers=Integer.parseInt(a[9]); site.machineLevel=Integer.parseInt(a[10]); site.stock=Integer.parseInt(a[11]); site.lastProductionTurn=Integer.parseInt(a[12]); site.knowledge=a[13]; site.outputs.clear(); for(String o:a[14].split(",")) if(!o.isBlank()) site.outputs.add(o); return site;
+            String[] a = s.split("\\|",17); if (a.length < 15) return null;
+            NpcFactionSite site = new NpcFactionSite(); site.name=a[0]; site.faction=Faction.valueOf(a[1]); site.facilityType=a[2]; site.sectorX=Integer.parseInt(a[3]); site.sectorY=Integer.parseInt(a[4]); site.zoneX=Integer.parseInt(a[5]); site.zoneY=Integer.parseInt(a[6]); site.floor=Integer.parseInt(a[7]); site.baseLevel=Integer.parseInt(a[8]); site.workers=Integer.parseInt(a[9]); site.machineLevel=Integer.parseInt(a[10]); site.stock=Integer.parseInt(a[11]); site.lastProductionTurn=Integer.parseInt(a[12]); site.knowledge=a[13]; site.outputs.clear(); for(String o:a[14].split(",")) if(!o.isBlank()) site.outputs.add(o); if(a.length >= 16) for(String id:a[15].split(",")) site.learnConstructionBlueprint(id); if(a.length >= 17) for(String id:a[16].split(",")) site.recordCompletedConstructionJob(id); return site;
         } catch(Exception ex) { return null; }
     }
 }
@@ -830,7 +946,7 @@ class FactionContract {
 
     String shortLine(){ return displayType() + " for " + displayFactionName() + " pays " + payout + " script" + (spawned ? "; target confirmed" : "; route pending"); }
     String longLine(){ return displayFactionName() + " " + displayType() + ": " + displayDescription() + " Location: " + displayLocation() + ". Reward " + payout + " script, rep +" + repReward + "."; }
-    String displayType(){ if ("LOCKBOX".equals(type)) return "lockbox contract"; if ("FETCH".equals(type)) return "fetch contract"; if ("PRODUCTION".equals(type)) return "production order"; return "bounty contract"; }
+    String displayType(){ if ("LOCKBOX".equals(type)) return "lockbox contract"; if ("FETCH".equals(type)) return "fetch contract"; if ("PRODUCTION".equals(type)) return "production order"; if ("MARKET".equals(type)) return "market supply contract"; return "bounty contract"; }
     String displayFactionName(){
         if (faction == Faction.CIVIC_WARDENS || faction == Faction.ARBITES) return "Adeptus Civic Wardens";
         return faction == null ? "local faction" : faction.label;
@@ -920,6 +1036,11 @@ class BaseObject {
     int constructionLaborDone = 0;
     int constructionVisualProgress = 0;
     char constructionOriginalTile = 0;
+    String constructionOwnerMode = "PLAYER";
+    String constructionMaterialSource = "";
+    String constructionPlanSource = "";
+    String constructionLinkedSiteName = "";
+    String constructionLinkedPlanId = "";
     Faction faction = Faction.NONE;
     BaseObject(String name, char symbol, int x, int y, int cost, int attention){ this.name=name; this.symbol=symbol; this.x=x; this.y=y; this.cost=cost; this.attention=attention; }
     boolean isBusinessAsset(){ return symbol=='w' || symbol=='u' || symbol=='e' || symbol=='f' || symbol=='l' || symbol=='s' || symbol=='B' || symbol=='M'; }
@@ -951,7 +1072,7 @@ class BaseObject {
             default: return "uses general service accounting until a specific return profile is assigned.";
         }
     }
-    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+encodeDelimitedField(assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge)+"|"+(machineRepairHistory==null?"":machineRepairHistory)+"|"+(constructionOriginalTile==0?"":String.valueOf(constructionOriginalTile))+"|"+productionProgressTurns+"|"+productionMaterialPolicy+"|"+productionOutputPolicy+"|"+productionNoRoomPolicy+"|"+encodeDelimitedField(productionLastBlocker); }
+    String saveLine(){ return name+"|"+symbol+"|"+x+"|"+y+"|"+capacity+"|"+qualityName+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+charges+"|"+integrity+"|"+encodeDelimitedField(assignedRecipe)+"|"+(assignedWorker==null?"":assignedWorker)+"|"+businessOpen+"|"+permittedBusiness+"|"+businessHeat+"|"+productionQueueTarget+"|"+productionQueueRemaining+"|"+underConstruction+"|"+(finalSymbol==0?"":String.valueOf(finalSymbol))+"|"+(constructionRequiredItems==null?"":constructionRequiredItems)+"|"+(constructionInsertedItems==null?"":constructionInsertedItems)+"|"+constructionLaborRequired+"|"+constructionLaborDone+"|"+constructionVisualProgress+"|"+(machineKnowledge==null?"":machineKnowledge)+"|"+(machineRepairHistory==null?"":machineRepairHistory)+"|"+(constructionOriginalTile==0?"":String.valueOf(constructionOriginalTile))+"|"+productionProgressTurns+"|"+productionMaterialPolicy+"|"+productionOutputPolicy+"|"+productionNoRoomPolicy+"|"+encodeDelimitedField(productionLastBlocker)+"|"+encodeDelimitedField(constructionOwnerMode)+"|"+encodeDelimitedField(constructionMaterialSource)+"|"+encodeDelimitedField(constructionPlanSource)+"|"+encodeDelimitedField(constructionLinkedSiteName)+"|"+encodeDelimitedField(constructionLinkedPlanId); }
     static String encodeDelimitedField(String value) {
         String text = value == null ? "" : value;
         if (!text.contains("|") && !text.startsWith("~b64~")) return text;

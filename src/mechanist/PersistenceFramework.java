@@ -51,6 +51,9 @@ class Persistence {
         put(p, "run.lastDefeatLocation", g.lastDefeatLocation);
         put(p, "run.knowledges", encList(new ArrayList<String>(g.unlockedKnowledges)));
         put(p, "run.skillNodes", encList(new ArrayList<String>(g.unlockedSkillNodes)));
+        put(p, "run.constructionBlueprints", encList(new ArrayList<String>(g.unlockedConstructionBlueprints)));
+        put(p, "run.constructionExpansionReactions", encList(new ArrayList<String>(g.constructionExpansionReactions)));
+        put(p, "run.roomOwnershipHistory", encList(RoomOwnershipAuthority.saveHistory(g)));
         if (g.atlas != null) {
             put(p, "atlas.seed", Long.toString(g.atlas.seed));
             put(p, "atlas.sx", Integer.toString(g.atlas.sectorX));
@@ -169,7 +172,7 @@ class Persistence {
         g.rememberedTiles = new boolean[g.world.w][g.world.h];
         g.turn = getInt(p,"run.turn",0); g.worldTurn = getLong(p,"run.worldTurn", g.turn); g.lastStaffedProductionBackgroundTurn = g.turn; g.playerX = clamp(getInt(p,"run.playerX", g.world.startPoint().x),0,g.world.w-1); g.playerY = clamp(getInt(p,"run.playerY", g.world.startPoint().y),0,g.world.h-1);
         g.lookX = g.playerX; g.lookY = g.playerY; g.lookCursorActive=false; g.interactCursorActive=false; g.panelMode=GamePanel.PanelMode.NONE;
-        g.suspicion=getInt(p,"run.suspicion",0); g.gangHeat=getInt(p,"run.gangHeat",0); g.supplies=getInt(p,"run.supplies",0); g.food=getInt(p,"run.food",GamePanel.MAX_FOOD_WATER); g.water=getInt(p,"run.water",GamePanel.MAX_FOOD_WATER); g.fatigue=getInt(p,"run.fatigue",0); g.wounds=getInt(p,"run.wounds",0); g.sleepNeed=getInt(p,"run.sleepNeed",0); g.stimulantStrain=getInt(p,"run.stimulantStrain",0); g.bleeding=getInt(p,"run.bleeding",0); g.infectionRisk=getInt(p,"run.infectionRisk",0); g.pain=getInt(p,"run.pain",0); g.machineParts=getInt(p,"run.machineParts",0); g.xp=getInt(p,"run.xp",0); g.knowledgeCredits=getInt(p,"run.knowledgeCredits",0); g.unlockedKnowledges.clear(); g.unlockedKnowledges.addAll(decList(p.getProperty("run.knowledges","Underhive Basics"))); g.unlockedSkillNodes.clear(); g.unlockedSkillNodes.addAll(decList(p.getProperty("run.skillNodes","")));
+        g.suspicion=getInt(p,"run.suspicion",0); g.gangHeat=getInt(p,"run.gangHeat",0); g.supplies=getInt(p,"run.supplies",0); g.food=getInt(p,"run.food",GamePanel.MAX_FOOD_WATER); g.water=getInt(p,"run.water",GamePanel.MAX_FOOD_WATER); g.fatigue=getInt(p,"run.fatigue",0); g.wounds=getInt(p,"run.wounds",0); g.sleepNeed=getInt(p,"run.sleepNeed",0); g.stimulantStrain=getInt(p,"run.stimulantStrain",0); g.bleeding=getInt(p,"run.bleeding",0); g.infectionRisk=getInt(p,"run.infectionRisk",0); g.pain=getInt(p,"run.pain",0); g.machineParts=getInt(p,"run.machineParts",0); g.xp=getInt(p,"run.xp",0); g.knowledgeCredits=getInt(p,"run.knowledgeCredits",0); g.unlockedKnowledges.clear(); g.unlockedKnowledges.addAll(decList(p.getProperty("run.knowledges","Underhive Basics"))); g.unlockedSkillNodes.clear(); g.unlockedSkillNodes.addAll(decList(p.getProperty("run.skillNodes",""))); g.unlockedConstructionBlueprints.clear(); g.unlockedConstructionBlueprints.addAll(decList(p.getProperty("run.constructionBlueprints",""))); g.constructionExpansionReactions.clear(); g.constructionExpansionReactions.addAll(decList(p.getProperty("run.constructionExpansionReactions",""))); RoomOwnershipAuthority.restoreHistory(g, decList(p.getProperty("run.roomOwnershipHistory","")));
         g.active = readCandidate(p, g.seed);
         try { Faction cf=Faction.valueOf(p.getProperty("clothing.faction","SCAVENGER")); g.equippedClothing = new Clothing(p.getProperty("clothing.name","Scavenger rags"), cf, getInt(p,"clothing.disguise",35), getInt(p,"clothing.defense",1), false); } catch(Exception e){ g.equippedClothing=Clothing.scavengerRags(); }
         g.inventory.clear(); g.inventory.addAll(decList(p.getProperty("inventory","")));
@@ -230,7 +233,49 @@ class Persistence {
         g.seedNpcFactionProductionSites();
         g.scavengeCooldownUntilTurn.clear(); for(String s: decList(p.getProperty("scavenge.cooldowns",""))) { String[] a=s.split(":",2); if(a.length==2) try{g.scavengeCooldownUntilTurn.put(Integer.parseInt(a[0]),Integer.parseInt(a[1]));}catch(Exception ignored){} }
         g.baseClaimed=Boolean.parseBoolean(p.getProperty("base.claimed","false")); g.baseX=getInt(p,"base.x",-1); g.baseY=getInt(p,"base.y",-1); g.claimedRoomId=getInt(p,"base.room",-1);
-        g.baseObjects.clear(); for(String s: decList(p.getProperty("base.objects",""))) { String[] a=s.split("\\|",31); if(a.length>=5) try{ BaseObject b=new BaseObject(a[0], a[1].isEmpty()?'?':a[1].charAt(0), Integer.parseInt(a[2]), Integer.parseInt(a[3]), 0, 0); b.capacity=Integer.parseInt(a[4]); if(a.length>=6) b.qualityName=a[5]; if(a.length>=7) try{ b.faction=Faction.valueOf(a[6]); }catch(Exception ignored){} if(a.length>=8) b.charges=Integer.parseInt(a[7]); if(a.length>=9) b.integrity=Integer.parseInt(a[8]); if(a.length>=10) b.assignedRecipe=BaseObject.decodeDelimitedField(a[9]); if(a.length>=11) b.assignedWorker=a[10]; if(a.length>=12) b.businessOpen=Boolean.parseBoolean(a[11]); if(a.length>=13) b.permittedBusiness=Boolean.parseBoolean(a[12]); if(a.length>=14) try{ b.businessHeat=Integer.parseInt(a[13]); }catch(Exception ignored){} if(a.length>=15) try{ b.productionQueueTarget=Integer.parseInt(a[14]); }catch(Exception ignored){} if(a.length>=16) try{ b.productionQueueRemaining=Integer.parseInt(a[15]); }catch(Exception ignored){} if(a.length>=17) b.underConstruction=Boolean.parseBoolean(a[16]); if(a.length>=18 && !a[17].isBlank()) b.finalSymbol=a[17].charAt(0); if(a.length>=19) b.constructionRequiredItems=a[18]; if(a.length>=20) b.constructionInsertedItems=a[19]; if(a.length>=21) try{ b.constructionLaborRequired=Integer.parseInt(a[20]); }catch(Exception ignored){} if(a.length>=22) try{ b.constructionLaborDone=Integer.parseInt(a[21]); }catch(Exception ignored){} if(a.length>=23) try{ b.constructionVisualProgress=Integer.parseInt(a[22]); }catch(Exception ignored){} if(a.length>=24) b.machineKnowledge=a[23]; if(a.length>=25) b.machineRepairHistory=a[24]; if(a.length>=26 && !a[25].isBlank()) b.constructionOriginalTile=a[25].charAt(0); if(a.length>=27) try{ b.productionProgressTurns=Math.max(0,Integer.parseInt(a[26])); }catch(Exception ignored){} if(a.length>=28) b.productionMaterialPolicy=a[27]; if(a.length>=29) b.productionOutputPolicy=a[28]; if(a.length>=30) b.productionNoRoomPolicy=a[29]; if(a.length>=31) b.productionLastBlocker=BaseObject.decodeDelimitedField(a[30]); if(!b.underConstruction) g.configureBaseObject(b); g.baseObjects.add(b); if(g.world.inBounds(b.x,b.y)) g.world.tiles[b.x][b.y]=b.symbol; }catch(Exception ignored){} }
+        g.baseObjects.clear();
+        for(String s: decList(p.getProperty("base.objects",""))) {
+            String[] a=s.split("\\|",36);
+            if(a.length>=5) try {
+                BaseObject b=new BaseObject(a[0], a[1].isEmpty()?'?':a[1].charAt(0),
+                        Integer.parseInt(a[2]), Integer.parseInt(a[3]), 0, 0);
+                b.capacity=Integer.parseInt(a[4]);
+                if(a.length>=6) b.qualityName=a[5];
+                if(a.length>=7) try{ b.faction=Faction.valueOf(a[6]); }catch(Exception ignored){}
+                if(a.length>=8) b.charges=Integer.parseInt(a[7]);
+                if(a.length>=9) b.integrity=Integer.parseInt(a[8]);
+                if(a.length>=10) b.assignedRecipe=BaseObject.decodeDelimitedField(a[9]);
+                if(a.length>=11) b.assignedWorker=a[10];
+                if(a.length>=12) b.businessOpen=Boolean.parseBoolean(a[11]);
+                if(a.length>=13) b.permittedBusiness=Boolean.parseBoolean(a[12]);
+                if(a.length>=14) try{ b.businessHeat=Integer.parseInt(a[13]); }catch(Exception ignored){}
+                if(a.length>=15) try{ b.productionQueueTarget=Integer.parseInt(a[14]); }catch(Exception ignored){}
+                if(a.length>=16) try{ b.productionQueueRemaining=Integer.parseInt(a[15]); }catch(Exception ignored){}
+                if(a.length>=17) b.underConstruction=Boolean.parseBoolean(a[16]);
+                if(a.length>=18 && !a[17].isBlank()) b.finalSymbol=a[17].charAt(0);
+                if(a.length>=19) b.constructionRequiredItems=a[18];
+                if(a.length>=20) b.constructionInsertedItems=a[19];
+                if(a.length>=21) try{ b.constructionLaborRequired=Integer.parseInt(a[20]); }catch(Exception ignored){}
+                if(a.length>=22) try{ b.constructionLaborDone=Integer.parseInt(a[21]); }catch(Exception ignored){}
+                if(a.length>=23) try{ b.constructionVisualProgress=Integer.parseInt(a[22]); }catch(Exception ignored){}
+                if(a.length>=24) b.machineKnowledge=a[23];
+                if(a.length>=25) b.machineRepairHistory=a[24];
+                if(a.length>=26 && !a[25].isBlank()) b.constructionOriginalTile=a[25].charAt(0);
+                if(a.length>=27) try{ b.productionProgressTurns=Math.max(0,Integer.parseInt(a[26])); }catch(Exception ignored){}
+                if(a.length>=28) b.productionMaterialPolicy=a[27];
+                if(a.length>=29) b.productionOutputPolicy=a[28];
+                if(a.length>=30) b.productionNoRoomPolicy=a[29];
+                if(a.length>=31) b.productionLastBlocker=BaseObject.decodeDelimitedField(a[30]);
+                if(a.length>=32) b.constructionOwnerMode=BaseObject.decodeDelimitedField(a[31]);
+                if(a.length>=33) b.constructionMaterialSource=BaseObject.decodeDelimitedField(a[32]);
+                if(a.length>=34) b.constructionPlanSource=BaseObject.decodeDelimitedField(a[33]);
+                if(a.length>=35) b.constructionLinkedSiteName=BaseObject.decodeDelimitedField(a[34]);
+                if(a.length>=36) b.constructionLinkedPlanId=BaseObject.decodeDelimitedField(a[35]);
+                if(!b.underConstruction) g.configureBaseObject(b);
+                g.baseObjects.add(b);
+                if(g.world.inBounds(b.x,b.y)) g.world.tiles[b.x][b.y]=b.symbol;
+            } catch(Exception ignored) {}
+        }
         g.factionRecruits.clear(); for(String rs: decList(p.getProperty("base.recruits",""))) { RecruitWorker r = RecruitWorker.parse(rs); if(r != null) g.factionRecruits.add(r); }
         if (g.machineOperationQueue != null) g.machineOperationQueue.restoreRecentHistory(decList(p.getProperty("machine.queue.history", "")));
         g.nextLogisticsIntentSeq = Math.max(1, getInt(p, "logistics.intent.nextSeq", g.nextLogisticsIntentSeq));
@@ -258,6 +303,7 @@ class Persistence {
         LogisticsManualHaulExecutionAuthority.restoreHistory(g, decList(p.getProperty("logistics.haulExecution.history", "")));
         g.lastLogisticsHaulExecutionReport = p.getProperty("logistics.haulExecution.lastReport", g.lastLogisticsHaulExecutionReport);
         readWorldState(g.world, p);
+        FactionRoomShellConstructionAuthority.restoreCompletedRooms(g);
         g.markZoneVisitedAndCheckFirstType();
         g.migrateLegacyPhysicalScript("save/read");
         g.auditItemLedgers("save/read");
@@ -293,6 +339,16 @@ class Persistence {
         ArrayList<String> crecheCohorts=new ArrayList<>(); for(CrecheCohortRecord cc:w.crecheCohorts) if(cc!=null) crecheCohorts.add(cc.saveLine()); put(p,"world.crecheCohorts",encList(crecheCohorts));
         ArrayList<String> essentialReserves=new ArrayList<>(); for(EssentialSupplyReserveRecord er:w.essentialSupplyReserves) if(er!=null) essentialReserves.add(er.saveLine()); put(p,"world.essentialSupplyReserves",encList(essentialReserves));
         ArrayList<String> verticalReserves=new ArrayList<>(); for(VerticalTradeReserveRecord vr:w.verticalTradeReserves) if(vr!=null) verticalReserves.add(vr.saveLine()); put(p,"world.verticalTradeReserves",encList(verticalReserves));
+        ArrayList<String> securityReserves=new ArrayList<>(); for(SecuritySupplyReserveRecord sr:w.securitySupplyReserves) if(sr!=null) securityReserves.add(sr.saveLine()); put(p,"world.securitySupplyReserves",encList(securityReserves));
+        ArrayList<String> medicalReserves=new ArrayList<>(); for(MedicalSupplyReserveRecord mr:w.medicalSupplyReserves) if(mr!=null) medicalReserves.add(mr.saveLine()); put(p,"world.medicalSupplyReserves",encList(medicalReserves));
+        ArrayList<String> luxuryReserves=new ArrayList<>(); for(NobleLuxuryReserveRecord nr:w.nobleLuxuryReserves) if(nr!=null) luxuryReserves.add(nr.saveLine()); put(p,"world.nobleLuxuryReserves",encList(luxuryReserves));
+        ArrayList<String> draughtCustody=new ArrayList<>(); for(DraughtCustodyRecord dc:w.draughtCustodyRecords) if(dc!=null) draughtCustody.add(dc.saveLine()); put(p,"world.draughtCustodyRecords",encList(draughtCustody));
+        ArrayList<String> animalAgricultureReserves=new ArrayList<>(); for(AnimalAgricultureSupplyReserveRecord ar:w.animalAgricultureSupplyReserves) if(ar!=null) animalAgricultureReserves.add(ar.saveLine()); put(p,"world.animalAgricultureSupplyReserves",encList(animalAgricultureReserves));
+        ArrayList<String> rawMaterialReserves=new ArrayList<>(); for(RawMaterialSupplyReserveRecord rr:w.rawMaterialSupplyReserves) if(rr!=null) rawMaterialReserves.add(rr.saveLine()); put(p,"world.rawMaterialSupplyReserves",encList(rawMaterialReserves));
+        ArrayList<String> shipments=new ArrayList<>(); for(ShipmentProvenanceRecord sr:w.shipmentRecords) if(sr!=null) shipments.add(sr.saveLine()); put(p,"world.shipmentRecords",encList(shipments));
+        ArrayList<String> deferredFactions=new ArrayList<>(); for(DeferredFactionLedgerRecord dr:w.deferredFactionLedgers) if(dr!=null) deferredFactions.add(dr.saveLine()); put(p,"world.deferredFactionLedgers",encList(deferredFactions));
+        ArrayList<String> worldEvents=new ArrayList<>(); for(TopDownWorldEventRecord er:w.topDownWorldEvents) if(er!=null) worldEvents.add(er.saveLine()); put(p,"world.topDownWorldEvents",encList(worldEvents));
+        put(p,"world.nextTopDownWorldEventCheckTurn",Long.toString(w.nextTopDownWorldEventCheckTurn)); put(p,"world.topDownWorldEventGenerationCount",Integer.toString(w.topDownWorldEventGenerationCount));
         ArrayList<String> factionHappiness=new ArrayList<>(); for(Map.Entry<Faction,Integer> e:w.factionHappinessBoost.entrySet()) factionHappiness.add(e.getKey().name()+":"+Math.max(0,e.getValue())); put(p,"world.factionHappinessBoost",encList(factionHappiness));
         ArrayList<String> roomFaction=new ArrayList<>(); for(Faction f:w.roomFactions) roomFaction.add(f.name()); put(p,"world.roomFactions",encList(roomFaction));
     }
@@ -314,6 +370,17 @@ class Persistence {
         java.util.List<String> crecheCohorts=decList(p.getProperty("world.crecheCohorts","")); w.crecheCohorts.clear(); for(String s:crecheCohorts){ CrecheCohortRecord cc=CrecheCohortRecord.parse(s); if(cc!=null) w.crecheCohorts.add(cc); }
         java.util.List<String> essentialReserves=decList(p.getProperty("world.essentialSupplyReserves","")); w.essentialSupplyReserves.clear(); for(String s:essentialReserves){ EssentialSupplyReserveRecord er=EssentialSupplyReserveRecord.parse(s); if(er!=null) w.essentialSupplyReserves.add(er); }
         java.util.List<String> verticalReserves=decList(p.getProperty("world.verticalTradeReserves","")); w.verticalTradeReserves.clear(); for(String s:verticalReserves){ VerticalTradeReserveRecord vr=VerticalTradeReserveRecord.parse(s); if(vr!=null) w.verticalTradeReserves.add(vr); }
+        java.util.List<String> securityReserves=decList(p.getProperty("world.securitySupplyReserves","")); w.securitySupplyReserves.clear(); for(String s:securityReserves){ SecuritySupplyReserveRecord sr=SecuritySupplyReserveRecord.parse(s); if(sr!=null) w.securitySupplyReserves.add(sr); }
+        java.util.List<String> medicalReserves=decList(p.getProperty("world.medicalSupplyReserves","")); w.medicalSupplyReserves.clear(); for(String s:medicalReserves){ MedicalSupplyReserveRecord mr=MedicalSupplyReserveRecord.parse(s); if(mr!=null) w.medicalSupplyReserves.add(mr); }
+        java.util.List<String> luxuryReserves=decList(p.getProperty("world.nobleLuxuryReserves","")); w.nobleLuxuryReserves.clear(); for(String s:luxuryReserves){ NobleLuxuryReserveRecord nr=NobleLuxuryReserveRecord.parse(s); if(nr!=null) w.nobleLuxuryReserves.add(nr); }
+        java.util.List<String> draughtCustody=decList(p.getProperty("world.draughtCustodyRecords","")); w.draughtCustodyRecords.clear(); for(String s:draughtCustody){ DraughtCustodyRecord dc=DraughtCustodyRecord.parse(s); if(dc!=null) w.draughtCustodyRecords.add(dc); }
+        java.util.List<String> animalAgricultureReserves=decList(p.getProperty("world.animalAgricultureSupplyReserves","")); w.animalAgricultureSupplyReserves.clear(); for(String s:animalAgricultureReserves){ AnimalAgricultureSupplyReserveRecord ar=AnimalAgricultureSupplyReserveRecord.parse(s); if(ar!=null) w.animalAgricultureSupplyReserves.add(ar); }
+        java.util.List<String> rawMaterialReserves=decList(p.getProperty("world.rawMaterialSupplyReserves","")); w.rawMaterialSupplyReserves.clear(); for(String s:rawMaterialReserves){ RawMaterialSupplyReserveRecord rr=RawMaterialSupplyReserveRecord.parse(s); if(rr!=null) w.rawMaterialSupplyReserves.add(rr); }
+        java.util.List<String> shipments=decList(p.getProperty("world.shipmentRecords","")); w.shipmentRecords.clear(); for(String s:shipments){ ShipmentProvenanceRecord sr=ShipmentProvenanceRecord.parse(s); if(sr!=null) w.shipmentRecords.add(sr); }
+        java.util.List<String> deferredFactions=decList(p.getProperty("world.deferredFactionLedgers","")); w.deferredFactionLedgers.clear(); for(String s:deferredFactions){ DeferredFactionLedgerRecord dr=DeferredFactionLedgerRecord.parse(s); if(dr!=null) w.deferredFactionLedgers.add(dr); }
+        java.util.List<String> worldEvents=decList(p.getProperty("world.topDownWorldEvents","")); w.topDownWorldEvents.clear(); for(String s:worldEvents){ TopDownWorldEventRecord er=TopDownWorldEventRecord.parse(s); if(er!=null) w.topDownWorldEvents.add(er); }
+        w.nextTopDownWorldEventCheckTurn=getLong(p,"world.nextTopDownWorldEventCheckTurn",0L); w.topDownWorldEventGenerationCount=getInt(p,"world.topDownWorldEventGenerationCount",w.topDownWorldEvents.size());
+        WorldEventFacilityMutationAuthority.restorePersistedState(w);
         w.factionHappinessBoost.clear(); readFactionMap(p.getProperty("world.factionHappinessBoost",""), w.factionHappinessBoost);
     }
     static void readFactionMap(String text, EnumMap<Faction,Integer> map) { for(String s: decList(text)) { String[] a=s.split(":",2); if(a.length==2) try{ map.put(Faction.valueOf(a[0]),Integer.parseInt(a[1])); }catch(Exception ignored){} } }

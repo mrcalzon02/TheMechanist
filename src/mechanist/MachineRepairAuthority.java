@@ -19,6 +19,11 @@ final class MachineRepairAuthority {
 
     static RepairPreview preview(GamePanel game, BaseObject machine, int availableParts) {
         if (machine == null) return new RepairPreview(false, PART_COST, 0, 0, "Repair unavailable: no owned machine selected.");
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(machine)) {
+            int current = Math.max(0, machine.integrity);
+            return new RepairPreview(false, 0, current, current,
+                    "Repair unavailable: this faction facility retains its assigned maintenance roster.");
+        }
         int current = Math.max(0, machine.integrity);
         if (current >= SERVICEABLE_INTEGRITY) {
             return new RepairPreview(false, 0, current, current, "Repair unnecessary: machine condition is already serviceable.");

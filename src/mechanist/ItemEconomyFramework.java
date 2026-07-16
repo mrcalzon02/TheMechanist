@@ -367,6 +367,7 @@ class ItemQuality {
     }
     static int tierIndex(String itemName) {
         if (itemName == null) return 2;
+        if (ItemCatalog.ITEMS != null && ItemCatalog.ITEMS.containsKey(itemName.trim())) return 2;
         String s = itemName.trim().toLowerCase(Locale.ROOT);
         for (int i=0;i<NAMES.length;i++) if (s.startsWith(NAMES[i].toLowerCase(Locale.ROOT) + " ")) return i;
         return 2;
@@ -440,6 +441,8 @@ class ItemCatalog {
     }
     static ItemDef get(String name) {
         if (name == null) return null;
+        ItemDef exact = ITEMS.get(name.trim());
+        if (exact != null) return exact;
         ItemDef d = ITEMS.get(ItemQuality.stripQuality(name));
         if (d != null) return d;
         return ITEMS.get(ItemQuality.stripManufacturingIdentity(name));
@@ -479,6 +482,9 @@ class ItemCatalog {
         add(m,"Dirty canteen","water/tool",2,"Scrap Mechanist starting kit and trash-warren scavenging","a canteen with more history than hygiene","consume to restore water; quality affects reliability later",false);
         add(m,"Filter canteen","water/tool",5,"Sump Prospector starting kit and sewer traders","canteen with a filter that may actually filter something","consume to restore water; supports sewer survival checks",false);
         add(m,"Construction supplies","supplies",5,"civilian traders, work sites, workbench salvage, vending machines","generic build supplies pooled into the construction system","USE packs carried copy into build-supply pool",false);
+        add(m,"Room blueprint folio","knowledge/blueprint/room",26,"licensed civic works counters, faction construction vendors, salvage researchers","a bound set of room layouts, access notes, utility assumptions, and faction approval marks","physical proof for room-plan families; named licensed folios unlock restricted faction construction",false);
+        add(m,"Machine blueprint slate","knowledge/blueprint/machine",42,"Mechanist works factors, industrial blueprint vendors, controlled technical markets","a durable slate of machine layouts, component callouts, power assumptions, and license marks","physical proof for machine-plan families; named licensed slates unlock restricted faction machinery",false);
+        add(m,"Vehicle service component crate","supplies/vehicle/garage",18,"rail yards, garage suppliers, Mechanist factors, cargo workshops","a compact crate of hose, brake, bearing, seal, cable, and mounting parts for vehicle or garage work","vehicle and garage maintenance supply; reserved for repair, construction, and logistics consumers",false);
         add(m,"Machine part","mechanical",3,"Mechanicus traders, vending machines, machinery rooms, forge cloisters","usable mechanical component","workbench/build/repair material",false);
         add(m,"Mechanical detritus","mechanical junk",2,"broken machines, trash warrens, forge floors","scrap-mouth parts and incomplete components","workbench salvage; low-tier quality tends toward clogging junk",false);
         add(m,"Spare bolts","mechanical",2,"Scrap Mechanist starting kit and maintenance rooms","small hardware worth keeping","workbench/repair material",false);
@@ -560,6 +566,11 @@ class ItemCatalog {
         add(m,"Citation slate","paperwork/tool",8,"Arbites Probationer starting kit and precincts","official slate for making problems formal","reserved law/social interaction support",false);
         add(m,"Vended scrap","junk",1,"failed or generic vending output","low-value scrap from a machine with contempt","workbench salvage",false);
         ItemCatalogExpansionApi.registerFactionIdentityItems(m);
+        for (ItemDef definition : m.values()) {
+            if (definition != null && "chem/rare-campaign".equalsIgnoreCase(definition.category)) {
+                definition.basePrice = Math.max(850, definition.basePrice);
+            }
+        }
         return m;
     }
 }
@@ -618,6 +629,7 @@ class ItemCatalogExpansionApi {
         factionArmorAndClothing(m);
         booksTrainingAndCivicGoods(m);
         hivewallCacheGoods(m);
+        ConstructionBlueprintOwnershipAuthority.registerCatalogItems(m);
     }
     private static void add(LinkedHashMap<String,ItemDef> m, String n, String cat, int price, String src, String desc, String use, boolean weapon){ ItemCatalog.add(m,n,cat,price,src,desc,use,weapon); }
 
@@ -692,6 +704,8 @@ class ItemCatalogExpansionApi {
         add(m,"Drill head","component/tool/drill",8,"mining lockers, repair stores, deep-work benches","boring head for drills and rock tools","industrial input for drills and mining tools",false);
         add(m,"Scrap plate","component/scrap",3,"trash warrens, salvage crates, collapsed rooms","flat salvaged plate suitable for crude reinforcement","industrial input for scrap assemblies",false);
         add(m,"Ferric scrap","material/raw/metal",2,"salvage yards, collapsed rooms, trash warrens, stripped rail fittings","mixed iron-bearing scrap waiting to be sorted into something less shameful","raw input for metal stock and scrap plates",false);
+        add(m,"Quarried stone aggregate","material/raw/stone",3,"quarries, excavation rooms, collapsed masonry stockpiles","graded stone, gravel, and mineral fragments retained as usable construction feedstock","raw construction and ceramic input",false);
+        add(m,"Recovered industrial salvage","material/raw/salvage",4,"salvage warehouses, recycler rooms, stripped industrial sites","sorted machine housings, fittings, plate, and cable fragments awaiting material recovery","raw recycling and industrial input",false);
         add(m,"Refined metal stock","material/processed/metal",6,"forge stores, machine shops, rail depots, armory works","usable bar, strip, and plate stock for frames, receivers, and tool heads","processed input for industrial components",false);
         add(m,"Hardened metal stock","material/processed/metal/hardened",10,"armory heat-treat benches, military shops, forge cloisters","hardened stock for barrels, blades, springs, and things expected to survive impact","processed input for weapon-critical components",false);
         add(m,"Plasteel shaving bale","material/processed/plasteel",14,"high-grade salvage sorters, military repair cages, noble security workshops","bundled plasteel offcuts too valuable to leave in the sweepings","processed input for advanced casings and heavy components",false);
@@ -797,6 +811,11 @@ class ItemCatalogExpansionApi {
         add(m,"Seed culture tray","component/agriculture/seed",6,"hydroponic farms, noble bio-gardens, ration greenhouses","tray of seed cultures kept alive by regulation and artificial hope","agricultural input",false);
         add(m,"Algae starter culture","component/agriculture/algae",5,"algae vats, reclamation tanks, synthetic food works","living starter culture for synthetic nutrient production","vat agriculture input",false);
         add(m,"Fungus starter mat","component/agriculture/fungus",5,"sump farms, sewer niches, ration works","fungal mat ready to colonize trays and weak policy","fungus agriculture input",false);
+        add(m,"Animal feed sack","agriculture/animal/feed",5,"farm stores, animal pens, kennel feed rooms","measured fodder and nutrient pellets allocated to living animal stock","animal feed trade and husbandry input",false);
+        add(m,"Farm animal product crate","agriculture/animal/product",9,"faction farms, animal pens, breeder markets","finite eggs, milk, fiber, hides, or other output logged against living farm stock","animal-product trade good",false);
+        add(m,"Pet care bundle","supplies/pet-care",8,"pet vendors, kennels, animal handlers","food portions, bedding, grooming cloth, and restraint-safe household animal supplies","pet and companion-animal supply",false);
+        add(m,"Veterinary care kit","tool/animal-care",14,"veterinary rooms, farm clinics, kennel handlers","basic animal dressings, disinfectant, dosing tools, and handler equipment","animal-care tool and supply",false);
+        add(m,"Cloning sample ampoule","agriculture/genetic-sample",28,"cloning nurseries, gene labs, inspected agricultural imports","sealed living sample whose source, custody, and viability must remain traceable","controlled breeding and agricultural sample",false);
         add(m,"Hydroponic growth tray","component/agriculture/tray",8,"hydroponic racks, farm stores, noble gardens","growth tray with channels, clips, and roots' last known address","hydroponic facility component",false);
         add(m,"Artificial sun-lamp tube","component/agriculture/light",16,"noble gardens, hydroponic decks, maintenance stores","lamp tube tuned to convince plants the ceiling is a star","controlled agriculture component",false);
         add(m,"Fermentation yeast culture","component/food/fermentation",5,"still rooms, kitchens, orchard stores","yeast culture for turning fruit and grain into commerce with headaches","fermentation input",false);
@@ -1320,6 +1339,7 @@ class ItemCatalogExpansionApi {
 
     private static void factionWeaponsAndAmmo(LinkedHashMap<String,ItemDef> m){
         add(m,"Guard lascarbine","weapon",34,"Imperial Guard armories, billet security rooms, rare military traders","rugged short-pattern las weapon with institutional ownership marks","weapon; deeper ranged/ammo API pending",true);
+        add(m,"Light Rifle","weapon/ranged/las/military",36,"Imperial Guard armories, billet quartermasters, military shipment crates","standard light-pattern las rifle issued where a carbine is too short and a longlas is too specialized","ranged weapon; uses las charge packs",true);
         add(m,"Las charge pack","ammo/energy",9,"Guard munition warehouses and quartermaster counters","standard charge pack with serial numbers filed down only sometimes","ammunition for reserved las weapons",false);
         add(m,"Guard trench knife","weapon",12,"Guard barracks, drill halls, field kit","broad military knife built for utility and close bad news","melee weapon",true);
         add(m,"Arbites shock maul","weapon/security",30,"Arbites armories, holding cell rows, precinct stores","authority on a stick with capacitors and paperwork behind it","weapon; stun-control API pending",true);

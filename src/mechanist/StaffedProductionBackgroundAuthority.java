@@ -18,6 +18,7 @@ final class StaffedProductionBackgroundAuthority {
     }
 
     private static int tickMachine(GamePanel game, BaseObject machine) {
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(machine)) return 0;
         if (machine == null || machine.productionQueueRemaining <= 0) {
             if (machine != null) machine.productionProgressTurns = 0;
             return 0;

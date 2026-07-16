@@ -16,6 +16,19 @@ final class RoomConstructionParityAuthority {
 
     private RoomConstructionParityAuthority() { }
 
+    static RoomParityEntry liveEntry(RoomProfile profile, ZoneType zone) {
+        if (profile == null) {
+            return new RoomParityEntry("Unknown room", zone == null ? "Unknown Zone" : zone.label,
+                    "None", "non-acquirable: no room profile is available",
+                    "faction use unknown", "unmapped", "");
+        }
+        return entryFor(profile, zone);
+    }
+
+    static BuildRecipe liveMatchingRecipe(RoomProfile profile) {
+        return profile == null ? null : recipeNamed(matchingBlueprint(profile));
+    }
+
     static List<RoomParityEntry> roomEntries() {
         LinkedHashMap<String, RoomParityEntry> entries = new LinkedHashMap<>();
         for (ZoneType zone : ZoneType.values()) {

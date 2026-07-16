@@ -15,8 +15,16 @@ final class ConstructionReadabilityAuthority {
             int have = game == null ? 0 : game.countProductionInput(component.getKey());
             componentLines.add(component.getKey() + " " + have + "/" + component.getValue());
         }
-        return preview(recipe, game == null ? 0 : game.supplies, game == null ? 0 : game.machineParts,
-                x, y, placement, componentLines);
+        ArrayList<String> lines = new ArrayList<>(preview(recipe,
+                game == null ? 0 : game.supplies, game == null ? 0 : game.machineParts,
+                x, y, placement, componentLines));
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).startsWith("Access:")) {
+                lines.set(i, ConstructionBlueprintOwnershipAuthority.playerAccessLine(game, recipe));
+                break;
+            }
+        }
+        return lines;
     }
 
     static List<String> preview(BuildRecipe recipe, int supplies, int machineParts, int x, int y,

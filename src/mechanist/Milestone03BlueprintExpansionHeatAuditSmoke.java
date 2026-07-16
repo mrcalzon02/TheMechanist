@@ -28,7 +28,7 @@ final class Milestone03BlueprintExpansionHeatAuditSmoke {
         requireContains(audit, "laboratory or clinic footprint", "laboratory driver");
         requireContains(audit, "access or legality risk", "access risk driver");
         requireContains(audit, "quiet, low, noticeable, high, and critical", "readability bands");
-        requireContains(audit, "does not mutate gang heat, suspicion", "future mutation boundary");
+        requireContains(audit, "successful player construction start adds the previewed heat and suspicion once", "live mutation rule");
         requireContains(audit, "Milestone03BlueprintExpansionHeatAuditSmoke", "guard reference");
 
         BlueprintExpansionHeatAuthority.HeatProfile shop = requireProfile(profiles, "Licensed Shop Counter");

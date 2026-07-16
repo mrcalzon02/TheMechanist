@@ -19,6 +19,9 @@ final class ManualStaffingAssignmentAuthority {
     static String assign(GamePanel g, BaseObject station, RecruitWorker worker) {
         if (g == null) return "Staffing assignment failed: no active game panel.";
         if (station == null) return "Staffing assignment failed: no staffable station selected.";
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(station)) {
+            return "Staffing assignment failed: this faction facility retains its assigned roster.";
+        }
         if (worker == null) return "Staffing assignment failed: no recruited worker selected.";
         if (!(StaffingLaborBridgeAuthority.isMachineStation(station) || StaffingLaborBridgeAuthority.isDefenseStation(station))) {
             return "Staffing assignment failed: " + station.name + " is not a staffable machine or defensive station.";
@@ -39,6 +42,9 @@ final class ManualStaffingAssignmentAuthority {
     static String unassign(GamePanel g, BaseObject station) {
         if (g == null) return "Staffing clear failed: no active game panel.";
         if (station == null) return "Staffing clear failed: no staffable station selected.";
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(station)) {
+            return "Staffing clear failed: this faction facility retains its assigned roster.";
+        }
         String prior = station.assignedWorker == null || station.assignedWorker.isBlank() ? "unassigned" : station.assignedWorker;
         station.assignedWorker = "";
         return "STAFFING: cleared " + prior + " from " + station.name + ".";
@@ -48,6 +54,7 @@ final class ManualStaffingAssignmentAuthority {
         if (g == null || workerName == null || workerName.isBlank()) return;
         for (BaseObject obj : g.baseObjects) {
             if (obj == null || obj == keep) continue;
+            if (FactionPhysicalConstructionAuthority.isFactionManaged(obj)) continue;
             if (workerName.equals(obj.assignedWorker)) obj.assignedWorker = "";
         }
     }

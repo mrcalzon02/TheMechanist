@@ -18,6 +18,8 @@ final class ProgressiveConstructionAuthority {
 
     record DismantleResult(boolean removed, int recoveredSupplies, int recoveredMachineParts, int recoveredNamedItems, String summary) {}
 
+    record FactionWorkResult(boolean advanced, int laborAdded, boolean completed, String summary) {}
+
     static BaseObject createSite(BuildRecipe recipe, int x, int y, int requiredLabor) {
         BaseObject site = new BaseObject("Under construction: " + clean(recipe == null ? null : recipe.name, "unknown structure"), '?', x, y,
                 recipe == null ? 0 : recipe.supplyCost, recipe == null ? 0 : recipe.attention);
@@ -68,12 +70,46 @@ final class ProgressiveConstructionAuthority {
 
     static int contribute(GamePanel g, BaseObject site, int laborTurns, boolean allowMaterialPull) {
         if (g == null || site == null || !site.underConstruction) return 0;
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) return 0;
         int inserted = allowMaterialPull ? insertAvailableMaterials(g, site, 32) : 0;
         int labor = Math.max(0, laborTurns) * toolLaborMultiplier(g);
         if (materialsComplete(site)) site.constructionLaborDone = Math.min(site.constructionLaborRequired, site.constructionLaborDone + labor);
         site.constructionVisualProgress = progressPercent(site);
         if (complete(site)) finalizeSite(g, site);
         return inserted;
+    }
+
+    /**
+     * Advances a faction-managed staged site without consuming player materials,
+     * applying player tools, granting player XP, or incrementing player craft totals.
+     */
+    static FactionWorkResult contributeFaction(GamePanel g, BaseObject site, int laborTurns, String crewLabel) {
+        if (g == null || site == null || !site.underConstruction
+                || !FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            return new FactionWorkResult(false, 0, false,
+                    "No active faction-managed construction site was available.");
+        }
+        if (!materialsComplete(site)) {
+            site.constructionVisualProgress = progressPercent(site);
+            return new FactionWorkResult(false, 0, false,
+                    clean(site.name, "Faction construction") + " is waiting for staged faction materials: "
+                            + missingMaterials(site) + ".");
+        }
+        int before = Math.max(0, site.constructionLaborDone);
+        int labor = Math.max(0, laborTurns);
+        site.constructionLaborDone = Math.min(Math.max(1, site.constructionLaborRequired), before + labor);
+        int added = Math.max(0, site.constructionLaborDone - before);
+        site.constructionVisualProgress = progressPercent(site);
+        boolean completed = complete(site);
+        if (completed) finalizeFactionSite(g, site, crewLabel);
+        String crew = clean(crewLabel, "assigned faction crew");
+        String summary = completed
+                ? "Faction construction complete: " + clean(site.name, "facility") + " at " + site.x + "," + site.y
+                        + " by " + crew + "."
+                : clean(site.name, "Faction construction") + " advanced by " + added + " labor from " + crew
+                        + "; labor " + site.constructionLaborDone + "/" + site.constructionLaborRequired
+                        + ", progress " + progressPercent(site) + "%.";
+        return new FactionWorkResult(added > 0, added, completed, summary);
     }
 
     static int toolLaborMultiplier(GamePanel g) {
@@ -112,11 +148,20 @@ final class ProgressiveConstructionAuthority {
 
     static java.util.List<String> inspectionLines(BaseObject site) {
         if (site == null || !site.underConstruction) return java.util.List.of();
-        return java.util.List.of(
-                "Construction status: staged site, not a completed facility.",
-                progressLine(site) + ".",
-                "Completion: contribute labor after materials are staged; finished work becomes " + clean(String.valueOf(site.finalSymbol), "?") + "."
-        );
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Construction status: staged site, not a completed facility.");
+        lines.add(progressLine(site) + ".");
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            lines.add("Construction owner: " + (site.faction == null ? Faction.NONE.label : site.faction.label)
+                    + "; " + FactionPhysicalConstructionAuthority.crewReadback(site)
+                    + "; materials: " + clean(site.constructionMaterialSource, "reserved faction stock")
+                    + "; plan: " + clean(site.constructionPlanSource, clean(site.assignedRecipe, "known faction plan"))
+                    + ". Faction stock and assigned workforce drive this site; player materials and labor are not used.");
+        } else {
+            lines.add("Completion: contribute labor after materials are staged; finished work becomes "
+                    + clean(String.valueOf(site.finalSymbol), "?") + ".");
+        }
+        return lines;
     }
 
     static java.util.List<String> statusPacketLines(GamePanel g) {
@@ -126,13 +171,16 @@ final class ProgressiveConstructionAuthority {
         int materialReady = 0;
         int inWorkReach = 0;
         int nearlyComplete = 0;
+        int factionManaged = 0;
         for (BaseObject site : sites) {
+            boolean factionSite = FactionPhysicalConstructionAuthority.isFactionManaged(site);
+            if (factionSite) factionManaged++;
             if (materialsComplete(site)) readyForLabor++;
             else {
                 blockedByMaterials++;
-                if (availableMissingMaterialUnits(g, site) > 0) materialReady++;
+                if (!factionSite && availableMissingMaterialUnits(g, site) > 0) materialReady++;
             }
-            if (isInWorkReach(g, site)) inWorkReach++;
+            if (!factionSite && isInWorkReach(g, site)) inWorkReach++;
             if (progressPercent(site) >= 80) nearlyComplete++;
         }
         ArrayList<String> lines = new ArrayList<>();
@@ -141,6 +189,7 @@ final class ProgressiveConstructionAuthority {
                 + ", blocked by materials=" + blockedByMaterials
                 + ", material ready=" + materialReady
                 + ", in work reach=" + inWorkReach
+                + ", faction-managed=" + factionManaged
                 + ", nearly complete=" + nearlyComplete + ".");
         if (sites.isEmpty()) {
             lines.add("Construction next action: no staged construction sites are waiting.");
@@ -210,6 +259,9 @@ final class ProgressiveConstructionAuthority {
 
     private static String workNoTargetLine(GamePanel g, java.util.List<BaseObject> sites) {
         String guidance = workNearestGuidanceLine(g, sites, false);
+        if (guidance.isBlank() && hasFactionManagedSite(sites)) {
+            return "Construction work target: none; faction-managed sites advance through their assigned rosters.";
+        }
         return guidance.isBlank() ? "Construction work target: none." : "Construction work target: none in reach; " + guidance;
     }
 
@@ -229,6 +281,9 @@ final class ProgressiveConstructionAuthority {
 
     private static String dismantleNoTargetLine(GamePanel g, java.util.List<BaseObject> sites) {
         String guidance = dismantleNearestGuidanceLine(g, sites, false);
+        if (guidance.isBlank() && hasFactionManagedSite(sites)) {
+            return "Construction dismantle target: none; faction-managed sites cannot be recovered into player storage.";
+        }
         return guidance.isBlank() ? "Construction dismantle target: none." : "Construction dismantle target: none in reach; " + guidance;
     }
 
@@ -262,7 +317,10 @@ final class ProgressiveConstructionAuthority {
         if (sites.isEmpty()) {
             return "No staged construction site is within reach. No staged construction sites are waiting.";
         }
-        return "No staged construction site is within reach. " + workNearestGuidanceLine(g, sites, true);
+        String guidance = workNearestGuidanceLine(g, sites, true);
+        return guidance.isBlank() && hasFactionManagedSite(sites)
+                ? "No player-managed staged construction site is available; faction sites use assigned rosters."
+                : "No staged construction site is within reach. " + guidance;
     }
 
     static String dismantleReachFailureLine(GamePanel g) {
@@ -270,7 +328,10 @@ final class ProgressiveConstructionAuthority {
         if (sites.isEmpty()) {
             return "No unfinished staged construction site is within reach. No staged construction sites are waiting.";
         }
-        return "No unfinished staged construction site is within reach. " + dismantleNearestGuidanceLine(g, sites, true);
+        String guidance = dismantleNearestGuidanceLine(g, sites, true);
+        return guidance.isBlank() && hasFactionManagedSite(sites)
+                ? "No player-managed staged site can be dismantled; faction sites remain in faction custody."
+                : "No unfinished staged construction site is within reach. " + guidance;
     }
 
     static int workCommandPriority(GamePanel g, BaseObject site) {
@@ -285,6 +346,7 @@ final class ProgressiveConstructionAuthority {
         int bestProgress = Integer.MIN_VALUE;
         for (BaseObject site : g.baseObjects) {
             if (site == null || !site.underConstruction) continue;
+            if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) continue;
             int distance = workReachDistance(g, site);
             if (distance > 1) continue;
             int priority = statusPriority(g, site);
@@ -313,6 +375,7 @@ final class ProgressiveConstructionAuthority {
         int bestDistance = Integer.MAX_VALUE;
         for (BaseObject site : g.baseObjects) {
             if (site == null || !site.underConstruction) continue;
+            if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) continue;
             int distance = workReachDistance(g, site);
             if (distance > 1) continue;
             int progress = progressPercent(site);
@@ -336,6 +399,11 @@ final class ProgressiveConstructionAuthority {
     static DismantleResult dismantle(GamePanel g, BaseObject site) {
         if (g == null || site == null || !site.underConstruction || g.baseObjects == null || !g.baseObjects.contains(site)) {
             return new DismantleResult(false, 0, 0, 0, "No unfinished construction site is selected.");
+        }
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            return new DismantleResult(false, 0, 0, 0,
+                    "Faction-managed construction cannot be dismantled into player storage; "
+                            + FactionPhysicalConstructionAuthority.crewReadback(site) + " retains custody.");
         }
         Map<String,Integer> inserted = decode(site.constructionInsertedItems);
         int supplies = 0;
@@ -449,6 +517,15 @@ final class ProgressiveConstructionAuthority {
         return sites;
     }
 
+    private static boolean hasFactionManagedSite(java.util.List<BaseObject> sites) {
+        if (sites == null) return false;
+        for (BaseObject site : sites) {
+            if (site != null && site.underConstruction
+                    && FactionPhysicalConstructionAuthority.isFactionManaged(site)) return true;
+        }
+        return false;
+    }
+
     private static int statusPriority(GamePanel g, BaseObject site) {
         if (site == null) return 9;
         int actionBand;
@@ -461,6 +538,9 @@ final class ProgressiveConstructionAuthority {
 
     private static String reachLine(GamePanel g, BaseObject site) {
         if (g == null || site == null) return "";
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            return ", access controlled by assigned faction crew";
+        }
         int distance = workReachDistance(g, site);
         return isInWorkReach(g, site)
                 ? ", access in work reach"
@@ -483,6 +563,7 @@ final class ProgressiveConstructionAuthority {
         int bestProgress = Integer.MIN_VALUE;
         for (BaseObject site : sites) {
             if (site == null || !site.underConstruction) continue;
+            if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) continue;
             int distance = workReachDistance(g, site);
             int priority = statusPriority(g, site);
             int progress = progressPercent(site);
@@ -528,6 +609,11 @@ final class ProgressiveConstructionAuthority {
     }
 
     private static String nextActionLine(GamePanel g, BaseObject site) {
+        if (FactionPhysicalConstructionAuthority.isFactionManaged(site)) {
+            return materialsComplete(site)
+                    ? "assigned faction crew will add labor on the next staffed site tick"
+                    : "faction logistics must stage " + missingMaterials(site);
+        }
         if (materialsComplete(site)) {
             return site.constructionLaborDone >= site.constructionLaborRequired ? "ready to finish" : "work to add labor";
         }
@@ -602,6 +688,24 @@ final class ProgressiveConstructionAuthority {
         g.recordPlayerNewsEvent("facility-built", site.name, site.faction, "staged facility completed in claimed space at " + site.x + "," + site.y, 2 + Math.max(0, site.attention));
         g.logEvent("Construction complete: " + site.name + " at " + site.x + "," + site.y + ".");
         DebugLog.audit("STAGED_BUILD_COMPLETE", "site=" + site.name + " at=" + site.x + "," + site.y + " " + auditSummary(g));
+    }
+
+    private static void finalizeFactionSite(GamePanel g, BaseObject site, String crewLabel) {
+        if (g == null || site == null || !site.underConstruction) return;
+        site.name = site.name.replaceFirst("^Under construction: ", "");
+        site.symbol = site.finalSymbol == 0 ? '?' : site.finalSymbol;
+        site.underConstruction = false;
+        site.constructionVisualProgress = 100;
+        site.description = "A completed faction facility constructed from reserved faction stock by "
+                + clean(crewLabel, "assigned faction workers") + ".";
+        syncSiteTile(g, site);
+        g.configureBaseObject(site);
+        LiveProductionPlacementAuthority.annotateBuiltObject(g, site);
+        g.logEvent("Faction construction complete: " + site.name + " at " + site.x + "," + site.y
+                + " for " + (site.faction == null ? Faction.NONE.label : site.faction.label) + ".");
+        DebugLog.audit("FACTION_STAGED_BUILD_COMPLETE", "site=" + site.name + " faction="
+                + (site.faction == null ? Faction.NONE.name() : site.faction.name())
+                + " at=" + site.x + "," + site.y + " crew=" + clean(crewLabel, "assigned faction workers"));
     }
 
     private static String encodeRequirements(BuildRecipe recipe) {

@@ -516,12 +516,14 @@ class PersonnelPopulationApi {
             int roomCap = replacementCapacityForFaction(w, req.faction);
             int current = countLivingFactionActors(w, req.faction);
             int allowedQueue = Math.max(0, roomCap - current);
-            int used = demand.getOrDefault(req.faction, 0);
+            Faction family = FactionIdentityAuthority.strategicFamily(req.faction);
+            int used = demand.getOrDefault(family, 0);
             RoomPopulationLedger linked = ledgerById(w, req.sourceLedgerId);
-            boolean linkedStillValid = linked != null && linked.capacity > 0 && linked.available > 0 && (linked.faction == req.faction || linked.faction == Faction.NONE || req.faction == Faction.NONE);
+            boolean linkedStillValid = linked != null && linked.capacity > 0 && linked.available > 0
+                    && (FactionIdentityAuthority.sameFamily(linked.faction, req.faction) || linked.faction == Faction.NONE);
             if(used < allowedQueue && (linkedStillValid || allowedQueue > 0)){
                 kept.add(req);
-                demand.put(req.faction, used + 1);
+                demand.put(family, used + 1);
             } else pruned++;
         }
         if(pruned > 0){
@@ -537,7 +539,7 @@ class PersonnelPopulationApi {
         ensureLedgers(w, new Random(w.seed));
         for(RoomPopulationLedger l: w.roomPopulationLedgers){
             if(l == null || l.capacity <= 0) continue;
-            if(l.faction == faction || l.faction == Faction.NONE || faction == Faction.NONE) cap += Math.max(0, l.capacity);
+            if(FactionIdentityAuthority.sameFamily(l.faction, faction) || l.faction == Faction.NONE || faction == Faction.NONE) cap += Math.max(0, l.capacity);
         }
         // Continuity floor: a faction reduced to its protected bar/representative should not be destroyed as a concept.
         return Math.max(1, cap);
@@ -546,7 +548,8 @@ class PersonnelPopulationApi {
     static int countLivingFactionActors(World w, Faction faction){
         if(w == null || w.npcs == null || faction == null) return 0;
         int n = 0;
-        for(NpcEntity npc: w.npcs) if(npc != null && npc.hp > 0 && npc.faction == faction && !npc.isUntargetableAnchor()) n++;
+        for(NpcEntity npc: w.npcs) if(npc != null && npc.hp > 0
+                && FactionIdentityAuthority.sameFamily(npc.faction, faction) && !npc.isUntargetableAnchor()) n++;
         return n;
     }
 
@@ -572,7 +575,7 @@ class PersonnelPopulationApi {
         for(RoomPopulationLedger l: w.roomPopulationLedgers){
             if(l.available <= 0 && replacement) continue;
             if(roomId >= 0 && l.roomId == roomId) preferred.add(l);
-            if(l.faction == nf || nf == Faction.NONE || l.faction == Faction.NONE) factional.add(l);
+            if(FactionIdentityAuthority.sameFamily(l.faction, nf) || nf == Faction.NONE || l.faction == Faction.NONE) factional.add(l);
             any.add(l);
         }
         ArrayList<RoomPopulationLedger> src = !preferred.isEmpty()?preferred:(!factional.isEmpty()?factional:any);
@@ -601,14 +604,14 @@ class PersonnelPopulationApi {
         if(low.contains("barracks") || low.contains("billet") || low.contains("dormitory") || low.contains("duty barracks")) return 10;
         if(low.contains("creche") || low.contains("daycare") || low.contains("rookery")) return 8;
         if(low.contains("apartment") || low.contains("household") || low.contains("servant") || low.contains("rest cell") || low.contains("sleeper") || low.contains("sleep")) return 6;
-        if(low.contains("rail") || low.contains("platform") || low.contains("ticket")) return 7;
+        if(low.contains("rail") || low.contains("platform") || low.contains("ticket") || low.contains("import intake")) return 7;
         if(low.contains("cafeteria") || low.contains("mess") || low.contains("canteen") || low.contains("kitchen") || low.contains("galley")) return 4;
         if(low.contains("security") || low.contains("holding") || low.contains("checkpoint") || low.contains("watch") || low.contains("training") || low.contains("drill")) return 4;
         if(z == ZoneType.MUTANT_SEWER_CAMP || z == ZoneType.CULTIST_SEWER_CAMP || z == ZoneType.GANGER_TURF) return 5;
         return 0;
     }
     static String sourceKindFor(String low, ZoneType z, Faction f){
-        if(low.contains("rail") || z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return "rail intake roster";
+        if(low.contains("rail") || low.contains("import intake") || z == ZoneType.NEUTRAL_RAIL_DEPOT || z == ZoneType.TRAIN_SERVICE_YARD) return "rail intake roster";
         if(low.contains("refugee") || low.contains("relief") || low.contains("displaced") || low.contains("evacuation")) return "displaced population roster";
         if(low.contains("prison") || low.contains("holding") || low.contains("detention") || low.contains("cell block")) return "custody population ledger";
         if(low.contains("pilgrim") || low.contains("temple") || low.contains("shrine hostel")) return "pilgrim lodging roster";
@@ -751,6 +754,12 @@ class NpcEntity {
     int ageYears = 0;
     long birthWorldTurn = 0L;
     long pregnancyDueWorldTurn = 0L;
+    int happiness = 60;
+    long happinessLastEvaluatedWorldTurn = -1L;
+    long severeUnhappinessSinceWorldTurn = -1L;
+    long lastPaidWorldTurn = -1L;
+    long lastFactionChangeWorldTurn = -1L;
+    String happinessReason = "settled living conditions";
     String ageBand = "adult";
     String nameLockedProfileKey = "";
     String factionRankTitle = "";
@@ -1242,7 +1251,9 @@ class NpcEntity {
 
     String saveLine(){
         ensureRankIdentity(new Random(numericId == 0 ? Objects.hash(name, faction) : numericId));
-        return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey)+"|"+pregnancyDueWorldTurn;
+        return enc(id)+"|"+numericId+"|"+enc(name)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+symbol+"|"+x+"|"+y+"|"+homeX+"|"+homeY+"|"+enc(state)+"|"+enc(role)+"|"+hunger+"|"+thirst+"|"+sleepDebt+"|"+portraitIndex+"|"+enc(provenance==null?"":provenance.save())+"|"+intellect+"|"+equipmentTier+"|"+enc(equippedMeleeWeapon)+"|"+enc(equippedRangedWeapon)+"|"+enc(equippedArmor)+"|"+enc(equippedExplosive)+"|"+loadedShots+"|"+ammoReloadsRemaining+"|"+factionRank+"|"+enc(factionRankTitle)+"|"+enc(factionRankScope)+"|"+enc(creatureKind)+"|"+enc(animalProfileId)+"|"+enc(companionOf)+"|"+ageYears+"|"+birthWorldTurn+"|"+enc(ageBand)+"|"+enc(nameLockedProfileKey)+"|"+pregnancyDueWorldTurn
+                +"|"+happiness+"|"+happinessLastEvaluatedWorldTurn+"|"+severeUnhappinessSinceWorldTurn
+                +"|"+lastPaidWorldTurn+"|"+lastFactionChangeWorldTurn+"|"+enc(happinessReason);
     }
 
     static NpcEntity parseLine(String s, World w){
@@ -1280,6 +1291,12 @@ class NpcEntity {
         }
         if (a.length >= 34) n.nameLockedProfileKey = dec(a[33]);
         if (a.length >= 35) try { n.pregnancyDueWorldTurn = Math.max(0L, Long.parseLong(a[34])); } catch(Exception ignored) {}
+        if (a.length >= 36) try { n.happiness = Math.max(0, Math.min(100, Integer.parseInt(a[35]))); } catch(Exception ignored) {}
+        if (a.length >= 37) try { n.happinessLastEvaluatedWorldTurn = Long.parseLong(a[36]); } catch(Exception ignored) {}
+        if (a.length >= 38) try { n.severeUnhappinessSinceWorldTurn = Long.parseLong(a[37]); } catch(Exception ignored) {}
+        if (a.length >= 39) try { n.lastPaidWorldTurn = Long.parseLong(a[38]); } catch(Exception ignored) {}
+        if (a.length >= 40) try { n.lastFactionChangeWorldTurn = Long.parseLong(a[39]); } catch(Exception ignored) {}
+        if (a.length >= 41 && !dec(a[40]).isBlank()) n.happinessReason = dec(a[40]);
         if (n.creatureKind == null || n.creatureKind.isBlank()) n.creatureKind = "humanoid";
         if (!n.isAnimalActor() && n.ageYears <= 0) AgeAndWorldTimeAuthority.initializeNpcAge(n, w == null ? ZoneType.NEUTRAL_CIVILIAN_FLOOR : w.zoneType, new Random(n.numericId == 0 ? 1 : n.numericId));
         AgeAndWorldTimeAuthority.synchronizeNpc(n, 0L);

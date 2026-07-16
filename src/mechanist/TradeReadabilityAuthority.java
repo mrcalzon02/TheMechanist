@@ -9,6 +9,11 @@ final class TradeReadabilityAuthority {
     private TradeReadabilityAuthority() {}
 
     static List<String> offerPreview(TraderSession trader, TradeOffer offer, int carriedScript, int carriedWeight, int carryCapacity) {
+        return offerPreview(trader, offer, carriedScript, carriedWeight, carryCapacity, null);
+    }
+
+    static List<String> offerPreview(TraderSession trader, TradeOffer offer, int carriedScript, int carriedWeight,
+                                     int carryCapacity, FactionMarketAccessAuthority.Decision access) {
         ArrayList<String> lines = new ArrayList<>();
         if (trader == null) {
             lines.add("No trader session is available.");
@@ -28,14 +33,19 @@ final class TradeReadabilityAuthority {
         int quality = ItemQuality.tierIndex(offer.name);
         lines.add("Quality: " + ItemQuality.NAMES[Math.max(0, Math.min(ItemQuality.NAMES.length - 1, quality))] + ".");
         if (trader.populationPressure != null) lines.add(trader.populationPressure.offerLine(offer));
-        lines.add("Status: " + legalityLabel(offer) + ".");
-        lines.add(carriedWeight < carryCapacity
-                ? "Inventory result: item enters carried inventory."
-                : "Inventory result: carrying load is full; purchase is blocked.");
+        lines.add("Status: " + (access == null ? legalityLabel(offer) : access.legalClass()) + ".");
+        if (access != null) lines.addAll(access.lines());
+        lines.add(access != null && !access.allowed()
+                ? "Inventory result: no transfer; market access is blocked."
+                : carriedWeight < carryCapacity
+                    ? "Inventory result: item enters carried inventory."
+                    : "Inventory result: carrying load is full; purchase is blocked.");
+        boolean accessAllowed = access == null || access.allowed();
+        String accessProblem = accessAllowed ? null : access.purchaseBlock();
         lines.addAll(TransferWorkflowReadabilityAuthority.describe("vendor stock", "carried inventory", offer.name, 1,
-                "vendor purchase access", remaining >= 0 && carriedWeight < carryCapacity,
+                "vendor purchase access", accessAllowed && remaining >= 0 && carriedWeight < carryCapacity,
                 TransferWorkflowReadabilityAuthority.protectedItem(offer.name), false,
-                remaining < 0 ? "insufficient script" : carriedWeight >= carryCapacity ? "carrying load is full" : null));
+                accessProblem != null ? accessProblem : remaining < 0 ? "insufficient script" : carriedWeight >= carryCapacity ? "carrying load is full" : null));
         if (offer.provenance != null) lines.add("Provenance: " + offer.provenance.shortChain() + ".");
         return lines;
     }
@@ -46,7 +56,7 @@ final class TradeReadabilityAuthority {
         lines.add("Market affiliation: " + safe(factionLabel, "local independent trade") + "; standing " + standingBand(standing) + ".");
         lines.add(trader.offers == null || trader.offers.isEmpty()
                 ? "Stock unavailable: this vendor currently has no accessible goods."
-                : "Accessible stock: " + trader.offers.size() + " offer(s); unavailable or restricted goods are not silently listed as purchasable.");
+                : "Visible stock: " + trader.offers.size() + " offer(s); unavailable or restricted goods remain listed with an explicit access verdict.");
         lines.add(trader.supplyChainSummary == null || trader.supplyChainSummary.isBlank()
                 ? "Supply context: no additional shipment or scarcity record is available."
                 : "Supply context: " + trader.supplyChainSummary);

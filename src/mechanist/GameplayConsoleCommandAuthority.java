@@ -34,8 +34,14 @@ final class GameplayConsoleCommandAuthority {
         add("construction_progress", 1, "construction_progress", "Reports the same staged construction progress, work target, and dismantle target packet as construction_status.");
         add("construction_work", 1, "construction_work [turns 1-20]", "Stages available materials or adds labor to the adjacent staged site named by construction_progress, spends productive work turns, accepts 1-20 turns, and points to the nearest staged site when none are adjacent.");
         add("construction_dismantle", 1, "construction_dismantle", "Dismantles the least-complete adjacent unfinished staged site, spends one turn when a site is removed, recovers staged materials, and points to the nearest staged site when none are adjacent.");
+        add("room_status", 1, "room_status", "Reports the current room owner, claimed base, and latest durable control change.");
+        add("room_claim", 1, "room_claim", "Claims the unowned room you are standing in as your local base and spends one turn on success.");
+        add("room_buy", 1, "room_buy", "Buys the faction-owned room you are standing in when its quoted price and authorization requirements are met; spends one turn on success.");
+        add("room_abandon", 1, "room_abandon", "Relinquishes your claimed room while standing inside it and spends one turn on success.");
         add("production_status", 1, "production_status", "Reports live production queue status, selected-machine readiness, and recent completion guidance.");
         add("production_history", 1, "production_history [count 1-5]", "Lists recent completed production records from shared machine-operation history, including saved result readbacks when present.");
+        add("distant_network", 1, "distant_network", "Reports the local faction's deferred outside-sector network, resolution odds, contributing factors, next review, and latest outcome.");
+        add("world_events", 1, "world_events", "Reports active top-down sector events, timing, scope, severity, restrictions, exceptions, consequences, and recovery.");
         add("give", 3, "give <item_id> <amount>", "Adds an item/resource to inventory.");
         add("heal", 3, "heal <amount>", "Restores body endurance by amount.");
         add("kill", 3, "kill", "Defeats the local character.");
@@ -136,8 +142,14 @@ final class GameplayConsoleCommandAuthority {
                 case "construction_status", "construction_progress" -> constructionStatus(game, command, args);
                 case "construction_work" -> constructionWork(game, args);
                 case "construction_dismantle" -> constructionDismantle(game, args);
+                case "room_status" -> roomStatus(game, args);
+                case "room_claim" -> roomClaim(game, args);
+                case "room_buy" -> roomBuy(game, args);
+                case "room_abandon" -> roomAbandon(game, args);
                 case "production_status" -> productionStatus(game, args);
                 case "production_history" -> productionHistory(game, args);
+                case "distant_network" -> distantNetwork(game, args);
+                case "world_events" -> worldEvents(game, args);
                 case "show_hitboxes" -> toggle(game, "hitboxes");
                 case "show_wireframe" -> toggle(game, "wireframe");
                 case "show_navmesh" -> toggle(game, "navmesh");
@@ -298,6 +310,18 @@ final class GameplayConsoleCommandAuthority {
         if (args != null && args.length > 0) return "Usage: production_status";
         return String.join(" | ", MachineOperationStatusBridge.statusLines(game));
     }
+
+    private static String distantNetwork(GamePanel game, String[] args) {
+        if (args.length > 0) return "Usage: distant_network";
+        if (game == null || game.world == null) return "Distant network unavailable: no active world.";
+        DeferredOutOfSectorSimulationAuthority.ensureLedgers(game.world,game,game.worldTurn);
+        return DeferredOutOfSectorSimulationAuthority.commandReport(game.world,game.worldTurn);
+    }
+    private static String worldEvents(GamePanel game, String[] args) {
+        if (args.length > 0) return "Usage: world_events";
+        if (game == null || game.world == null) return "World events unavailable: no active world.";
+        return TopDownWorldEventAuthority.commandReport(game.world);
+    }
     private static String productionHistory(GamePanel game, String[] args) {
         if (game == null || game.machineOperationQueue == null) return "Production history unavailable until a run is active.";
         if (args != null && args.length > 1) return "Usage: production_history [count 1-5]";
@@ -306,6 +330,10 @@ final class GameplayConsoleCommandAuthority {
         return String.join(" | ", MachineOperationStatusBridge.historyLines(game, limit));
     }
     private static String canonicalKnowledgeName(String[] args) { if (args == null || args.length == 0) return ""; String raw = ChatRuntimeAuthority.ChatSecurity.sanitizeChatText(String.join(" ", args)).trim(); if (raw.isBlank()) return ""; String normalized = raw.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); for (String name : KnowledgeDef.all().keySet()) { String n = name.toLowerCase(Locale.ROOT).replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " "); if (n.equals(normalized)) return name; } return raw; }
+    private static String roomStatus(GamePanel game, String[] args) { if (args != null && args.length > 0) return "Usage: room_status"; return RoomOwnershipAuthority.status(game); }
+    private static String roomClaim(GamePanel game, String[] args) { if (args != null && args.length > 0) return "Usage: room_claim"; return RoomOwnershipAuthority.completePlayerAction(game, RoomOwnershipAuthority.claimCurrentRoom(game)); }
+    private static String roomBuy(GamePanel game, String[] args) { if (args != null && args.length > 0) return "Usage: room_buy"; return RoomOwnershipAuthority.completePlayerAction(game, RoomOwnershipAuthority.purchaseCurrentRoom(game)); }
+    private static String roomAbandon(GamePanel game, String[] args) { if (args != null && args.length > 0) return "Usage: room_abandon"; return RoomOwnershipAuthority.completePlayerAction(game, RoomOwnershipAuthority.abandonClaimedRoom(game)); }
     private static void refreshKnowledgeDebugState(GamePanel game, String reason) { if (game == null) return; game.logEvent("CONSOLE: " + reason + " -> knowledge credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + "."); DebugLog.audit("KNOWLEDGE_DEBUG_COMMAND", reason + " credits=" + game.knowledgeCredits + " unlocked=" + game.unlockedKnowledges.size() + " state=" + game.stateSummary()); if (game.screen == GamePanel.Screen.KNOWLEDGE) game.selectedKnowledgeNodeId = null; game.repaint(); }
     private static String heal(GamePanel game, String[] args) { if (game == null) return "Game unavailable."; int amount = Math.max(1, Math.min(200, parseInt(args, 0, 10))); game.healWorstBodyPart(amount); return "Restored body endurance by " + amount + " to the most damaged body part."; }
     private static String kill(GamePanel game) { if (game == null) return "Game unavailable."; game.triggerPlayerDeath("console kill", "server-authoritative console", "self-command", "self"); return "Local character defeated."; }

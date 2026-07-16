@@ -30,9 +30,14 @@ final class TraderTradeActionAuthority {
         if (t == null) return;
         Random r = rng == null ? new Random(0) : rng;
         Faction faction = FactionInventoryStockAuthority.factionForTrader(npc, zone);
+        t.marketFaction = faction;
+        FactionCriticalVendorPlacementAuthority.Category vendorCategory =
+                FactionCriticalVendorPlacementAuthority.categoryForRole(npc == null ? null : npc.role);
+        if (vendorCategory != null) t.marketCategory = vendorCategory.id;
         ArrayList<String> stock = FactionInventoryStockAuthority.accessibleStock(faction, zone, r);
         for (String item : stock) addOffer(t, faction, zone, item, "faction-accessible trader stock.", null, r);
         removeInaccessibleOffers(t, faction, zone);
+        FactionCriticalVendorPlacementAuthority.applyVendorStock(t, npc);
         if (t.supplyChainSummary == null || t.supplyChainSummary.isBlank()) {
             t.supplyChainSummary = "Faction shelf access: " + faction.label + " / " + (zone == null ? "Unknown Zone" : zone.label) + "; " + t.offers.size() + " accessible offer(s).";
         }

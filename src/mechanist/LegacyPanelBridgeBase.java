@@ -43,7 +43,12 @@ class LegacyPanelBridgeBase extends JPanel {
 
     ArrayList<BaseObject> recruitOperableMachines() {
         ArrayList<BaseObject> out = new ArrayList<>();
-        if (this instanceof GamePanel g) out.addAll(g.baseObjects);
+        if (this instanceof GamePanel g) {
+            for (BaseObject object : g.baseObjects) {
+                if (object != null && !object.underConstruction
+                        && !FactionPhysicalConstructionAuthority.isFactionManaged(object)) out.add(object);
+            }
+        }
         return out;
     }
 

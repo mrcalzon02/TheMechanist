@@ -31,6 +31,8 @@ final class ContractTurnInAuthority {
         String deliveredItem = game.inventory.remove(itemIndex);
         game.takeProvenanceForItem(deliveredItem);
         game.rebuildItemContainersFromLegacyLists();
+        FactionMarketContractAuthority.CompletionResult marketResult =
+                FactionMarketContractAuthority.complete(game, contract, deliveredItem);
         contract.completed = true;
         game.carriedScript = Math.max(0, game.carriedScript + Math.max(0, contract.payout));
         Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
@@ -41,7 +43,8 @@ final class ContractTurnInAuthority {
         }
         String message = "Contract completed for " + contract.displayFactionName() + ": paid "
                 + contract.payout + " script and awarded standing +" + contract.repReward
-                + (contract.skillXpReward > 0 ? " and skill XP +" + contract.skillXpReward : "") + ".";
+                + (contract.skillXpReward > 0 ? " and skill XP +" + contract.skillXpReward : "") + "."
+                + (marketResult.summary().isBlank() ? "" : " " + marketResult.summary());
         return new TurnInResult(true, message, contract);
     }
 
