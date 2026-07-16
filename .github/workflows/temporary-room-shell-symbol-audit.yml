@@ -1,0 +1,49 @@
+name: Temporary Room Shell Symbol Audit
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/temporary-room-shell-symbol-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit-symbols:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find canonical transition and corridor definitions
+        shell: bash
+        run: |
+          set +e
+          {
+            echo '=== transition-related definitions and calls ==='
+            grep -RInE 'isTransition|transition.*[Tt]ile|[Tt]ransition.*glyph|HIVEWALL|isCorridorGlyph|exterior_hivewall_maintenance' src/mechanist | head -n 400
+            echo
+            echo '=== direct transition glyph comparisons ==='
+            grep -RInE "== *'<'|== *'>'|!= *'<'|!= *'>'|case *'<'|case *'>'" src/mechanist | head -n 300
+          } > room-shell-symbol-audit.log 2>&1
+      - name: Post symbol audit to issue 46
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const text = fs.readFileSync('room-shell-symbol-audit.log', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: 46,
+              body: [
+                '## Temporary room-shell symbol audit',
+                '',
+                `Commit: \`${context.sha}\``,
+                '',
+                '```text',
+                text.length > 50000 ? text.slice(-50000) : text,
+                '```'
+              ].join('\n')
+            });
