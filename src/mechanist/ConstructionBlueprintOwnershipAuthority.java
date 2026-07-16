@@ -59,9 +59,10 @@ final class ConstructionBlueprintOwnershipAuthority {
         for (BuildRecipe recipe : BuildRecipe.allBuildRecipes()) {
             if (!requiresLicensedBlueprint(recipe)) continue;
             ItemCatalog.add(catalog, blueprintItemName(recipe), "knowledge/blueprint/construction",
-                    blueprintPrice(recipe), issuingFaction(recipe).label + " " + vendorLabel(recipe) + "s",
-                    "a licensed construction folio for " + recipe.name + ", with serialized plans, material callouts, and faction approval marks",
-                    "purchase records the named construction blueprint as a persistent run unlock; retain the folio as physical proof",
+                    blueprintPrice(recipe),
+                    ConstructionBlueprintInfopediaBridgeAuthority.sourceLine(recipe),
+                    ConstructionBlueprintInfopediaBridgeAuthority.description(recipe),
+                    ConstructionBlueprintInfopediaBridgeAuthority.useLine(recipe),
                     false);
         }
     }
