@@ -711,6 +711,13 @@ final class ProgressiveConstructionAuthority {
     private static String encodeRequirements(BuildRecipe recipe) {
         TreeMap<String,Integer> req = new TreeMap<>();
         if (recipe == null) return "";
+        if (FactionRoomShellConstructionAuthority.MARKER_RECIPE.equals(recipe.name)) {
+            req.put("Bearing set", 1);
+            req.put("Construction supplies", 20);
+            req.put("Rivet set", 14);
+            req.put("Scrap plate", 14);
+            return encode(req);
+        }
         if (recipe.supplyCost > 0) req.put("Construction supplies", recipe.supplyCost);
         if (recipe.partCost > 0) req.put("Machine part", recipe.partCost);
         if (recipe.componentCosts != null) for (Map.Entry<String,Integer> e : recipe.componentCosts.entrySet()) if (e.getValue() != null && e.getValue() > 0) req.merge(e.getKey(), e.getValue(), Integer::sum);
