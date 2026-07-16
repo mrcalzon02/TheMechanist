@@ -16,9 +16,9 @@ final class Milestone05ReleaseAuditSmoke {
         require(audit.passed() > 0,
                 "release audit should recognize implemented milestone slices");
         require(audit.releaseBlockers() > 0 && !audit.releaseClaimReady(),
-                "release claim must remain blocked while required verification and parity gaps remain");
+                "release claim must remain blocked while exact-head verification remains");
         require(audit.failed() == 0,
-                "current static release audit should report explicit conditional/deferred blockers rather than hidden structural failures: "
+                "current static release audit should report verification blockers rather than hidden structural failures: "
                         + lines);
 
         for (Milestone05ReleaseAuditAuthority.Check check : audit.checks()) {
@@ -59,9 +59,9 @@ final class Milestone05ReleaseAuditSmoke {
         requireStatus(audit, "intentional-parity-exceptions",
                 Milestone05ReleaseAuditAuthority.Status.PASS);
         requireStatus(audit, "room-stamp-declarations",
-                Milestone05ReleaseAuditAuthority.Status.CONDITIONAL);
+                Milestone05ReleaseAuditAuthority.Status.PASS);
         requireStatus(audit, "vehicle-parity",
-                Milestone05ReleaseAuditAuthority.Status.DEFERRED);
+                Milestone05ReleaseAuditAuthority.Status.PASS);
         requireStatus(audit, "manual-playability",
                 Milestone05ReleaseAuditAuthority.Status.CONDITIONAL);
         requireStatus(audit, "java17-package-gate",
@@ -69,8 +69,10 @@ final class Milestone05ReleaseAuditSmoke {
 
         requireContains(lines, "Release claim state: BLOCKED",
                 "release audit final state");
-        requireContains(lines, "vehicle", "vehicle parity blocker");
-        requireContains(lines, "room stamp", "room-stamp blocker");
+        requireContains(lines, "Five vehicle classes",
+                "vehicle parity evidence");
+        requireContains(lines, "generated room profiles",
+                "room-stamp declaration evidence");
         requireContains(lines, "Java 17", "Java 17 gate blocker");
         requireContains(lines, "keyboard and mouse", "manual playability blocker");
         requireContains(lines, "reveal remains distinct from ownership",
