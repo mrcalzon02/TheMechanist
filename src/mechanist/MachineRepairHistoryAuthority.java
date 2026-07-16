@@ -1,6 +1,6 @@
 package mechanist;
 
-/** Formats the narrow repair-history note owned by the current machine repair flows. */
+/** Persists the bounded player and faction repair/replacement provenance ledger. */
 final class MachineRepairHistoryAuthority {
     private static final int MAX_HISTORY_CHARS = 900;
 
