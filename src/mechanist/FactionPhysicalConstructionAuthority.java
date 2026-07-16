@@ -211,12 +211,13 @@ final class FactionPhysicalConstructionAuthority {
                 : "Assigned faction construction crew from " + source;
     }
 
-    /** Tests the persisted faction-site link rather than transient object identity. */
+    /** Tests the active job key or an exact completed receipt for this faction site. */
     static boolean belongsToSite(BaseObject object, NpcFactionSite site) {
         if (!isFactionManaged(object) || site == null) return false;
         String linked = object.constructionLinkedSiteName == null
                 ? "" : object.constructionLinkedSiteName.trim();
-        return !linked.isBlank() && linked.equals(jobKey(site));
+        return !linked.isBlank() && (linked.equals(jobKey(site))
+                || site.hasCompletedConstructionJob(linked));
     }
 
     /** Returns the linked site's current unfinished construction, if any. */
