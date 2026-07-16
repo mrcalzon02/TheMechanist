@@ -1,5 +1,4 @@
 name: Main Java 17 Milestone Gate
-# Verification trigger after the canonical room-shell transition API repair.
 
 on:
   push:
@@ -14,7 +13,6 @@ on:
 permissions:
   contents: read
   statuses: write
-  issues: write
 
 concurrency:
   group: main-java17-milestone-gate
@@ -186,138 +184,6 @@ jobs:
             cat "$stderr" || true
             exit "$code"
           fi
-
-  diagnose-first-failure:
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Record first failing Java 17 stage
-        id: diagnose
-        shell: bash
-        run: |
-          set +e
-          mkdir -p ROOT_build/main-java17-diagnostic
-          log='ROOT_build/main-java17-diagnostic/full.log'
-          tail_file='ROOT_build/main-java17-diagnostic/tail.log'
-          : > "$log"
-          failed=''
-          failure_code=0
-
-          run_stage() {
-            local label="$1"
-            shift
-            echo "=== $label ===" | tee -a "$log"
-            "$@" >>"$log" 2>&1
-            local code=$?
-            if [ "$code" -ne 0 ]; then
-              failed="$label"
-              failure_code="$code"
-              echo "FAILED stage=$label code=$code" | tee -a "$log"
-              return 1
-            fi
-            echo "PASSED stage=$label" | tee -a "$log"
-            return 0
-          }
-
-          run_stage 'Compile full Java source tree' bash -lc '
-            rm -rf ROOT_build/main-java17-diagnostic/classes
-            mkdir -p ROOT_build/main-java17-diagnostic/classes
-            find src -name "*.java" -print | sort > ROOT_build/main-java17-diagnostic/sources.txt
-            test -s ROOT_build/main-java17-diagnostic/sources.txt
-            javac -encoding UTF-8 --release 17 \
-              -d ROOT_build/main-java17-diagnostic/classes \
-              @ROOT_build/main-java17-diagnostic/sources.txt
-          '
-
-          if [ -z "$failed" ]; then
-            run_stage 'Focused semantic resolver smoke' java -Djava.awt.headless=true \
-              -cp ROOT_build/main-java17-diagnostic/classes \
-              mechanist.Milestone02SemanticRenderAssetResolverSmoke
-          fi
-          if [ -z "$failed" ]; then
-            run_stage 'Focused semantic runtime bridge smoke' java -Djava.awt.headless=true \
-              -cp ROOT_build/main-java17-diagnostic/classes \
-              mechanist.Milestone02SemanticRuntimeIntentBridgeSmoke
-          fi
-          if [ -z "$failed" ]; then
-            run_stage 'Semantic coverage smoke' java -Djava.awt.headless=true \
-              -cp ROOT_build/main-java17-diagnostic/classes \
-              mechanist.Milestone02SemanticAssetMigrationCoverageSmoke
-          fi
-          if [ -z "$failed" ]; then
-            run_stage 'Gate 3 player-facing smoke suite' java -Djava.awt.headless=true \
-              -cp ROOT_build/main-java17-diagnostic/classes \
-              mechanist.Gate3PlayerFacingTextSmokeSuite
-          fi
-          if [ -z "$failed" ]; then
-            run_stage 'Production package build' pwsh -NoProfile -Command \
-              "./scripts/PACKAGE_CLIENT_WINDOWS.ps1 -OutputDir 'ROOT_build/main-package-client-diagnostic' -CleanOutput -CleanClasses -BuildJar"
-          fi
-          if [ -z "$failed" ]; then
-            run_stage 'Packaged jar verification' bash -lc '
-              package_root="ROOT_build/main-package-client-diagnostic"
-              jar_path="$package_root/TheMechanist.jar"
-              test -d "$package_root/classes"
-              test -f "$package_root/classes/mechanist/TheMechanist.class"
-              test -f "$jar_path"
-              jar tf "$jar_path" | grep -Fx "mechanist/TheMechanist.class"
-              unzip -p "$jar_path" META-INF/MANIFEST.MF | grep -F "Main-Class: mechanist.TheMechanist"
-            '
-          fi
-
-          if [ -z "$failed" ]; then
-            failed='none through packaged jar verification'
-            failure_code=0
-            echo 'All diagnosed stages passed; the remaining authoritative stage is packaged-client boot.' | tee -a "$log"
-          fi
-
-          tail -n 180 "$log" > "$tail_file"
-          echo "stage=$failed" >> "$GITHUB_OUTPUT"
-          echo "code=$failure_code" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Post diagnostic result to issue 46
-        uses: actions/github-script@v7
-        env:
-          DIAGNOSTIC_STAGE: ${{ steps.diagnose.outputs.stage }}
-          DIAGNOSTIC_CODE: ${{ steps.diagnose.outputs.code }}
-        with:
-          script: |
-            const fs = require('fs');
-            const tail = fs.readFileSync('ROOT_build/main-java17-diagnostic/tail.log', 'utf8');
-            const stage = process.env.DIAGNOSTIC_STAGE || 'unknown';
-            const code = process.env.DIAGNOSTIC_CODE || 'unknown';
-            const clipped = tail.length > 50000 ? tail.slice(-50000) : tail;
-            const body = [
-              '## Temporary Java 17 milestone-gate diagnostic',
-              '',
-              `Commit: \`${context.sha}\``,
-              `First failing stage: **${stage}**`,
-              `Exit code: \`${code}\``,
-              '',
-              '<details><summary>Final diagnostic log</summary>',
-              '',
-              '```text',
-              clipped,
-              '```',
-              '</details>'
-            ].join('\n');
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: 46,
-              body
-            });
 
   publish-status:
     if: always()
