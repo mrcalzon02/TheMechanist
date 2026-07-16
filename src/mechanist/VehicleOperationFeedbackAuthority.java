@@ -133,8 +133,13 @@ final class VehicleOperationFeedbackAuthority {
             return VisualState.inactive();
         }
         prune(nowMillis);
-        Session session = SESSIONS.get(key(vehicle));
+        String vehicleKey = key(vehicle);
+        Session session = SESSIONS.get(vehicleKey);
         if (session == null || nowMillis > session.expiresAtMillis()) {
+            return VisualState.inactive();
+        }
+        if (terminalOperationState(vehicle)) {
+            SESSIONS.remove(vehicleKey);
             return VisualState.inactive();
         }
         boolean active = nowMillis <= session.activeUntilMillis();
@@ -286,6 +291,19 @@ final class VehicleOperationFeedbackAuthority {
     static synchronized void clearTransientFeedback() {
         SESSIONS.clear();
         LAST_SOUND_AT.clear();
+    }
+
+    private static boolean terminalOperationState(MapObjectState vehicle) {
+        String operation = MapObjectState.stockValue(vehicle.stockState,
+                "operationState").toLowerCase(Locale.ROOT);
+        String condition = MapObjectState.stockValue(vehicle.stockState,
+                "condition").toLowerCase(Locale.ROOT);
+        String ownerType = MapObjectState.stockValue(vehicle.stockState,
+                "ownerType").toUpperCase(Locale.ROOT);
+        return operation.equals("disabled") || operation.equals("dismantled")
+                || condition.equals("wreck") || condition.equals("salvaged")
+                || ownerType.equals(VehicleRuntimeAuthority.OwnerType.ABANDONED.name())
+                || ownerType.equals(VehicleRuntimeAuthority.OwnerType.SALVAGE.name());
     }
 
     private static void playCue(GamePanel game, MapObjectState vehicle,
