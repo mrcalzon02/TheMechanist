@@ -11,6 +11,7 @@ final class Milestone06VehicleTransitSmoke {
         GamePanel game = new GamePanel();
         game.shutdownRuntime();
         try {
+            VehicleOperationFeedbackAuthority.clearTransientFeedback();
             game.world = world();
             game.playerX = 1;
             game.playerY = 1;
@@ -44,8 +45,18 @@ final class Milestone06VehicleTransitSmoke {
             require("parked".equals(MapObjectState.stockValue(
                             vehicle.stockState, "operationState"))
                             && "false".equals(MapObjectState.stockValue(
-                            vehicle.stockState, "headlightsActive")),
-                    "completed route should stop the running state and headlights");
+                            vehicle.stockState, "headlightsActive"))
+                            && "recently-parked".equals(MapObjectState.stockValue(
+                            vehicle.stockState, "operationFeedback")),
+                    "completed route should stop persistent running state while retaining bounded arrival feedback");
+            VehicleOperationFeedbackAuthority.VisualState arrival =
+                    VehicleOperationFeedbackAuthority.visualState(
+                            game, vehicle, System.currentTimeMillis());
+            require(arrival.visible() && arrival.recentlyParked()
+                            && arrival.pulseAlpha() > 0,
+                    "completed atomic route should expose a short operation-arrival pulse");
+            requireContains(moved.message(), "bounded and transient",
+                    "vehicle transit feedback summary");
             requireContains(MapObjectState.stockValue(vehicle.stockState, "lastRoute"),
                     "2,4", "vehicle route origin history");
             requireContains(MapObjectState.stockValue(vehicle.stockState, "lastRoute"),
@@ -108,14 +119,20 @@ final class Milestone06VehicleTransitSmoke {
                     "single-lane route should remain blocked while the obstacle exists");
             game.world.mapObjects.remove(obstruction);
 
+            // Vehicle routing uses the planning cursor as its destination and
+            // independently validates up to the vehicle route limit. It does not
+            // require an actor-range path to have been built successfully.
             game.manualMovementPlanActive = true;
+            game.lookCursorActive = true;
+            game.lookX = 25;
+            game.lookY = 4;
             game.manualMovementPlanPath.clear();
-            game.manualMovementPlanPath.add(new Point(25, 4));
             VehicleTransitAuthority.TransitResult manual =
                     VehicleTransitAuthority.executeManualPlan(game, vehicle);
-            require(manual.success() && vehicle.x == 25 && vehicle.y == 4
+            require(manual.success() && manual.steps() == 23
+                            && vehicle.x == 25 && vehicle.y == 4
                             && !game.manualMovementPlanActive,
-                    "manual movement endpoint should execute through vehicle validation and clear after success");
+                    "planning cursor should execute a vehicle-range route and clear after success");
 
             VehicleRuntimeAuthority.applyDamage(vehicle,
                     VehicleRuntimeAuthority.Component.MOBILITY, 100,
@@ -144,6 +161,10 @@ final class Milestone06VehicleTransitSmoke {
                     "vehicle transit rule inspection");
             requireContains(inspection, "manual movement plan",
                     "vehicle transit control inspection");
+            requireContains(inspection, "ordinary actor movement range",
+                    "vehicle route-range separation inspection");
+            requireContains(inspection, "bounded pulse",
+                    "vehicle operation feedback inspection");
             for (String line : inspection) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
                         "vehicle transit inspection leaked implementation text: " + line);
@@ -151,6 +172,7 @@ final class Milestone06VehicleTransitSmoke {
 
             System.out.println("Milestone 06 vehicle transit smoke passed.");
         } finally {
+            VehicleOperationFeedbackAuthority.clearTransientFeedback();
             game.shutdownRuntime();
         }
     }
