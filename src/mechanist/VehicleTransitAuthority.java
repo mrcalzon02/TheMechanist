@@ -138,8 +138,10 @@ final class VehicleTransitAuthority {
         Point previous = plan.path().get(0);
         for (int i = 1; i < plan.path().size(); i++) {
             Point step = plan.path().get(i);
+            boolean finalParkingCell = i == plan.path().size() - 1;
             if (Math.abs(step.x - previous.x) + Math.abs(step.y - previous.y) != 1
-                    || !routeCell(game.world, vehicle, step.x, step.y, true)) {
+                    || !routeCell(game.world, vehicle, step.x, step.y,
+                    finalParkingCell)) {
                 set(vehicle, "operationState", "parked");
                 return TransitResult.blocked(RoutePlan.blocked(
                         plan.requestedTarget(), "route-became-blocked",
