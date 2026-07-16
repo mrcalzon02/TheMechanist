@@ -217,8 +217,8 @@ final class FactionVehicleStrategicAuthority {
     }
 
     private static MapObjectState seizableVehicle(GamePanel game,
-                                                   FactionStrategicPlan plan,
-                                                   NpcFactionSite site) {
+                                                  FactionStrategicPlan plan,
+                                                  NpcFactionSite site) {
         return first(game, vehicle -> {
             VehicleRuntimeAuthority.Snapshot snapshot =
                     VehicleRuntimeAuthority.inspect(game.world, vehicle);
@@ -229,8 +229,9 @@ final class FactionVehicleStrategicAuthority {
                     || VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)) return false;
             Faction target = plan.schemeTargetFaction == null
                     ? Faction.NONE : plan.schemeTargetFaction;
-            return target == Faction.NONE || snapshot.ownerFaction() == Faction.NONE
-                    || FactionIdentityAuthority.sameFamily(snapshot.ownerFaction(), target);
+            if (target == Faction.NONE) return true;
+            return snapshot.ownerFaction() != Faction.NONE
+                    && FactionIdentityAuthority.sameFamily(snapshot.ownerFaction(), target);
         });
     }
 
