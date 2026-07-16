@@ -130,11 +130,6 @@ final class VehicleTransitAuthority {
                     vehicle);
         }
 
-        int fromX = vehicle.x;
-        int fromY = vehicle.y;
-        set(vehicle, "operationState", "running");
-        set(vehicle, "headlightsActive", Boolean.toString(
-                component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS) > 0));
         Point previous = plan.path().get(0);
         for (int i = 1; i < plan.path().size(); i++) {
             Point step = plan.path().get(i);
@@ -142,7 +137,6 @@ final class VehicleTransitAuthority {
             if (Math.abs(step.x - previous.x) + Math.abs(step.y - previous.y) != 1
                     || !routeCell(game.world, vehicle, step.x, step.y,
                     finalParkingCell)) {
-                set(vehicle, "operationState", "parked");
                 return TransitResult.blocked(RoutePlan.blocked(
                         plan.requestedTarget(), "route-became-blocked",
                         "The planned route became blocked at " + step.x + "," + step.y
@@ -151,18 +145,20 @@ final class VehicleTransitAuthority {
             previous = step;
         }
 
+        int fromX = vehicle.x;
+        int fromY = vehicle.y;
         Point destination = plan.resolvedParking();
         Point lastMove = plan.path().size() >= 2
                 ? plan.path().get(plan.path().size() - 2)
                 : new Point(fromX, fromY);
         int dx = Integer.signum(destination.x - lastMove.x);
         int dy = Integer.signum(destination.y - lastMove.y);
+        VehicleOperationFeedbackAuthority.begin(game, vehicle, plan.steps(),
+                fromX, fromY, destination.x, destination.y, dx, dy);
         vehicle.x = destination.x;
         vehicle.y = destination.y;
         set(vehicle, "facingDx", Integer.toString(dx));
         set(vehicle, "facingDy", Integer.toString(dy));
-        set(vehicle, "operationState", "parked");
-        set(vehicle, "headlightsActive", "false");
         set(vehicle, "lastRoute", routeText(plan.path()));
         append(vehicle, "deploymentHistory",
                 "Local road route " + fromX + "," + fromY + " -> "
@@ -170,6 +166,10 @@ final class VehicleTransitAuthority {
                         + plan.steps() + " step(s) / turn " + game.turn);
         append(vehicle, "vehicleHistory",
                 "Parked after a validated local road route at turn " + game.turn);
+        VehicleOperationFeedbackAuthority.Feedback feedback =
+                VehicleOperationFeedbackAuthority.complete(game, vehicle,
+                        plan.steps(), fromX, fromY, destination.x, destination.y,
+                        dx, dy);
         game.markLocalDirtyRegion("vehicle transit", destination.x, destination.y,
                 8, false, false, true, false);
         return new TransitResult(true,
@@ -177,23 +177,36 @@ final class VehicleTransitAuthority {
                 plan.steps(), fromX, fromY, destination.x, destination.y,
                 "VEHICLE TRANSIT: " + displayName(vehicle) + " followed "
                         + plan.steps() + " validated road tile(s) and parked at "
-                        + destination.x + "," + destination.y + ".",
+                        + destination.x + "," + destination.y + ". "
+                        + feedback.summary(),
                 plan);
     }
 
     static TransitResult executeManualPlan(GamePanel game, MapObjectState vehicle) {
-        if (game == null || !game.manualMovementPlanActive
-                || game.manualMovementPlanPath == null
-                || game.manualMovementPlanPath.isEmpty()) {
+        if (game == null || game.world == null || !game.manualMovementPlanActive) {
             RoutePlan blocked = RoutePlan.blocked(
                     new Point(vehicle == null ? -1 : vehicle.x,
                             vehicle == null ? -1 : vehicle.y),
                     "no-manual-route",
-                    "Create a manual movement plan to a road or parking destination, then interact with the player-owned vehicle to preview and commit its route.");
+                    "Open manual movement planning, position the planning cursor on a road or parking destination, then interact with the player-owned vehicle.");
             return TransitResult.blocked(blocked, vehicle);
         }
-        Point target = game.manualMovementPlanPath.get(
-                game.manualMovementPlanPath.size() - 1);
+        Point target = null;
+        if (game.lookCursorActive && game.world.inBounds(game.lookX, game.lookY)) {
+            target = new Point(game.lookX, game.lookY);
+        } else if (game.manualMovementPlanPath != null
+                && !game.manualMovementPlanPath.isEmpty()) {
+            target = game.manualMovementPlanPath.get(
+                    game.manualMovementPlanPath.size() - 1);
+        } else if (game.world.inBounds(game.lookX, game.lookY)) {
+            target = new Point(game.lookX, game.lookY);
+        }
+        if (target == null) {
+            RoutePlan blocked = RoutePlan.blocked(new Point(vehicle.x, vehicle.y),
+                    "no-vehicle-route-target",
+                    "The vehicle route cursor does not currently identify a destination inside this zone.");
+            return TransitResult.blocked(blocked, vehicle);
+        }
         RoutePlan plan = plan(game, vehicle, target.x, target.y);
         if (!plan.valid()) return TransitResult.blocked(plan, vehicle);
         TransitResult result = execute(game, vehicle, plan);
@@ -206,15 +219,21 @@ final class VehicleTransitAuthority {
         lines.add(VehicleRuntimeAuthority.inspectionLine(
                 game == null ? null : game.world, vehicle));
         lines.add("Transit rule: roads and marked parking carry movement; clear curb-adjacent sidewalks may receive automatic parking, but they are not through-routes.");
-        lines.add("Route control: create a manual movement plan, then interact with a player-owned operational vehicle. The vehicle authority rechecks ownership, components, road continuity, occupancy, distance, and legal parking before movement.");
+        lines.add("Route control: open the manual movement plan, place its cursor on the desired road or parking destination, then interact with a player-owned operational vehicle. Vehicle route range is validated independently from ordinary actor movement range.");
+        lines.add("Operation feedback: validated movement drives the same running state used by the bounded pulse, forward headlights, degraded-component feedback, and one-shot distance-aware engine cue.");
         if (game != null && vehicle != null && VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
-            if (game.manualMovementPlanActive && !game.manualMovementPlanPath.isEmpty()) {
-                Point target = game.manualMovementPlanPath.get(
+            Point target = null;
+            if (game.manualMovementPlanActive && game.lookCursorActive
+                    && game.world != null && game.world.inBounds(game.lookX, game.lookY)) {
+                target = new Point(game.lookX, game.lookY);
+            } else if (game.manualMovementPlanActive
+                    && game.manualMovementPlanPath != null
+                    && !game.manualMovementPlanPath.isEmpty()) {
+                target = game.manualMovementPlanPath.get(
                         game.manualMovementPlanPath.size() - 1);
-                lines.add(plan(game, vehicle, target.x, target.y).summary());
-            } else {
-                lines.add("No vehicle route is currently previewed.");
             }
+            if (target != null) lines.add(plan(game, vehicle, target.x, target.y).summary());
+            else lines.add("No vehicle route is currently previewed.");
         }
         return List.copyOf(lines);
     }
