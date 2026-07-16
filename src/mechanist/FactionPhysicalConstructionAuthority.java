@@ -270,9 +270,15 @@ final class FactionPhysicalConstructionAuthority {
         String planReadback = plan == null
                 ? " No loaded strategic plan matched the persisted completion link."
                 : " The linked strategic plan recorded one completed success.";
+        FactionCriticalVendorPlacementAuthority.FacilityActivation vendorActivation =
+                FactionCriticalVendorPlacementAuthority.activateCompletedFacility(
+                        game, site, construction);
+        String vendorReadback = vendorActivation.handled()
+                ? " " + vendorActivation.message() : "";
         return new ProgressiveConstructionAuthority.FactionWorkResult(
                 work.advanced(), work.laborAdded(), true,
-                work.summary() + " Linked faction facility levels advanced once." + planReadback);
+                work.summary() + " Linked faction facility levels advanced once."
+                        + planReadback + vendorReadback);
     }
 
     private static RoomSelection selectRoomAndTile(GamePanel game, Faction faction,
