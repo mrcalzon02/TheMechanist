@@ -278,6 +278,10 @@ final class Milestone05FactionPhysicalConstructionSmoke {
                     "completed construction ticks must not duplicate the facility vendor");
             playerBefore.requireSame(game);
 
+            verifyFactionRepairLifecycle(game, site, construction, forgeRoom,
+                    distantCrewRoom, npcCountAfterOpen, marketCountAfterOpen,
+                    completedBaseLevel, completedMachineLevel, playerBefore);
+
             verifyPlacementBlockerAtomicity(game, forgeRoom, distantCrewRoom, materialCost);
             playerBefore.requireSame(game);
 
@@ -328,6 +332,142 @@ final class Milestone05FactionPhysicalConstructionSmoke {
         } finally {
             reader.shutdownRuntime();
         }
+    }
+
+    private static void verifyFactionRepairLifecycle(GamePanel game, NpcFactionSite site,
+                                                     BaseObject facility, int forgeRoom,
+                                                     int distantCrewRoom, int npcCount,
+                                                     int marketCount, int baseLevel,
+                                                     int machineLevel,
+                                                     PlayerSnapshot playerBefore) {
+        int receiptCount = site.completedConstructionJobs.size();
+        int assignedWorkers = roomAssignedWorkers(game.world, forgeRoom, site.faction);
+        String originalRecipe = facility.assignedRecipe;
+
+        facility.integrity = 1;
+        FactionStrategicPlan repairPlan = repairPlan("STRAT-PHYSICAL-REPAIR");
+        game.factionStrategicPlans.add(repairPlan);
+        require(FactionFacilityBlueprintUpgradeAuthority.handles(repairPlan),
+                "existing faction strategy gate should route the exact repair goal");
+        require(!FactionFacilityBlueprintUpgradeAuthority.attempt(
+                        game, repairPlan, site).handled(),
+                "repair routing must not execute the factory blueprint transaction");
+        int repairStockBefore = site.stock;
+        require(FactionStrategySimulationApi.tryApplyLiveFactoryUpgrade(
+                        game, repairPlan, site),
+                "live faction strategy execution should handle physical repair");
+        require(facility.underConstruction
+                        && MachineRepairAuthority.isFactionRepairSite(facility)
+                        && facility.symbol == '?' && facility.finalSymbol == 'f',
+                "damaged Micro Forge should become one staged repair work order");
+        require(site.stock == repairStockBefore - 2
+                        && facility.constructionRequiredItems.equals("Machine part=2")
+                        && facility.constructionInsertedItems.equals("Machine part=2")
+                        && facility.constructionLaborRequired == 4,
+                "integrity-one repair should reserve two stock and four labor exactly");
+        require(repairPlan.success == 0 && repairPlan.failure == 0
+                        && repairPlan.lastOutcome.startsWith("IN PROGRESS:"),
+                "strategy repair should remain pending until physical labor completes");
+        require(site.baseLevel == baseLevel && site.machineLevel == machineLevel
+                        && site.completedConstructionJobs.size() == receiptCount,
+                "repair staging must not advance levels or add a construction receipt");
+
+        int stockAfterRepairStage = site.stock;
+        FactionPhysicalConstructionAuthority.Outcome repairResume =
+                FactionPhysicalConstructionAuthority.attempt(game, repairPlan, site);
+        require(repairResume.handled() && repairResume.success()
+                        && repairResume.constructionSite() == facility
+                        && site.stock == stockAfterRepairStage,
+                "repeat repair execution should resume without another stock debit");
+
+        ProgressiveConstructionAuthority.FactionWorkResult repairHourOne =
+                FactionPhysicalConstructionAuthority.advanceHourly(game, site);
+        require(repairHourOne.advanced() && repairHourOne.laborAdded() == 3
+                        && !repairHourOne.completed()
+                        && facility.constructionLaborDone == 3,
+                "three assigned room workers should add three repair labor in the first hour");
+        ProgressiveConstructionAuthority.FactionWorkResult repairComplete =
+                FactionPhysicalConstructionAuthority.advanceHourly(game, site);
+        require(repairComplete.completed() && repairComplete.laborAdded() == 1
+                        && !facility.underConstruction && facility.integrity == 3,
+                "second repair hour should apply the remaining labor and restore serviceable integrity");
+        require(originalRecipe.equals(facility.assignedRecipe)
+                        && MachineRepairHistoryAuthority.provenanceLabel(facility)
+                        .contains("faction repair")
+                        && MachineRepairHistoryAuthority.provenanceLabel(facility)
+                        .contains("integrity 1->3"),
+                "repair completion should restore the original machine role and append provenance");
+        require(repairPlan.success == 1 && repairPlan.failure == 0
+                        && repairPlan.lastOutcome.startsWith("SUCCESS:"),
+                "repair completion should record exactly one strategic success");
+        require(site.baseLevel == baseLevel && site.machineLevel == machineLevel
+                        && site.completedConstructionJobs.size() == receiptCount,
+                "repair completion must not impersonate a facility upgrade");
+        require(game.world.npcs.size() == npcCount
+                        && game.world.mapObjects.size() == marketCount
+                        && roomAssignedWorkers(game.world, forgeRoom, site.faction) == assignedWorkers,
+                "repair completion must preserve vendor fixtures and the assigned room roster");
+        playerBefore.requireSame(game);
+
+        facility.integrity = 0;
+        FactionStrategicPlan replacementPlan = repairPlan("STRAT-PHYSICAL-REPLACEMENT");
+        game.factionStrategicPlans.add(replacementPlan);
+        int replacementStockBefore = site.stock;
+        require(FactionStrategySimulationApi.tryApplyLiveFactoryUpgrade(
+                        game, replacementPlan, site),
+                "live faction strategy execution should handle zero-integrity replacement");
+        require(facility.underConstruction
+                        && MachineRepairAuthority.isFactionRepairSite(facility)
+                        && site.stock == replacementStockBefore - 4
+                        && facility.constructionRequiredItems.equals("Machine part=4")
+                        && facility.constructionLaborRequired == 8,
+                "destroyed facility replacement should reserve four stock and eight labor");
+        int replacementHours = 0;
+        ProgressiveConstructionAuthority.FactionWorkResult replacementComplete = null;
+        while (facility.underConstruction && replacementHours < 6) {
+            replacementComplete = FactionPhysicalConstructionAuthority.advanceHourly(game, site);
+            replacementHours++;
+        }
+        require(replacementHours == 3 && replacementComplete != null
+                        && replacementComplete.completed() && facility.integrity == 3,
+                "three-worker crew should finish eight replacement labor in three hourly calls");
+        require(originalRecipe.equals(facility.assignedRecipe)
+                        && MachineRepairHistoryAuthority.provenanceLabel(facility)
+                        .contains("faction replacement")
+                        && MachineRepairHistoryAuthority.provenanceLabel(facility)
+                        .contains("integrity 0->3"),
+                "replacement completion should restore machine identity and append replacement provenance");
+        require(replacementPlan.success == 1 && replacementPlan.failure == 0
+                        && replacementPlan.lastOutcome.startsWith("SUCCESS:"),
+                "replacement completion should record one strategic success");
+        require(site.baseLevel == baseLevel && site.machineLevel == machineLevel
+                        && site.completedConstructionJobs.size() == receiptCount,
+                "replacement must not create an upgrade receipt or level gain");
+        require(game.world.npcs.size() == npcCount
+                        && game.world.mapObjects.size() == marketCount
+                        && roomAssignedWorkers(game.world, forgeRoom, site.faction) == assignedWorkers,
+                "replacement must preserve the existing vendor and workforce ledgers");
+        playerBefore.requireSame(game);
+
+        facility.integrity = 1;
+        configureWorkforce(game.world, distantCrewRoom, 4);
+        int blockedStock = site.stock;
+        FactionPhysicalConstructionAuthority.Outcome unstaffed =
+                FactionPhysicalConstructionAuthority.attempt(
+                        game, repairPlan("STRAT-PHYSICAL-UNSTAFFED-REPAIR"), site);
+        require(!unstaffed.success() && "facility-unstaffed".equals(unstaffed.blocker())
+                        && site.stock == blockedStock && !facility.underConstruction,
+                "workers assigned in another room must not repair the physical forge");
+        configureWorkforce(game.world, forgeRoom, assignedWorkers);
+        facility.integrity = 3;
+        FactionPhysicalConstructionAuthority.Outcome unnecessary =
+                FactionPhysicalConstructionAuthority.attempt(
+                        game, repairPlan("STRAT-PHYSICAL-NO-DAMAGE"), site);
+        require(!unnecessary.success()
+                        && "no-damaged-facility".equals(unnecessary.blocker())
+                        && site.stock == blockedStock,
+                "serviceable facility should not consume stock for unnecessary repair");
+        playerBefore.requireSame(game);
     }
 
     private static void verifyPlacementBlockerAtomicity(GamePanel game, int forgeRoom,
@@ -441,6 +581,16 @@ final class Milestone05FactionPhysicalConstructionSmoke {
         plan.id = id;
         plan.faction = Faction.MECHANICUS;
         plan.immediateGoal = FactionFacilityBlueprintUpgradeAuthority.FACTORY_UPGRADE_GOAL;
+        plan.targetRoom = "Exact Forge Assembly Room";
+        plan.targetItem = "Machine part";
+        return plan;
+    }
+
+    private static FactionStrategicPlan repairPlan(String id) {
+        FactionStrategicPlan plan = new FactionStrategicPlan();
+        plan.id = id;
+        plan.faction = Faction.MECHANICUS;
+        plan.immediateGoal = MachineRepairAuthority.FACTION_REPAIR_GOAL;
         plan.targetRoom = "Exact Forge Assembly Room";
         plan.targetItem = "Machine part";
         return plan;
