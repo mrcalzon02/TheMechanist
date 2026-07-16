@@ -80,6 +80,10 @@ final class FactionRoomLayoutAuthority {
         int jitter = scale == RoomScale.LARGE ? 2 : 1;
         size.width = Math.max(4, Math.min(13, size.width + r.nextInt(jitter + 1)));
         size.height = Math.max(4, Math.min(10, size.height + r.nextInt(jitter + 1)));
+        if (kind.contains("DAYCARE") || kind.contains("CRECHE")) {
+            size.width = Math.max(ExplicitRoomTypeRequirementAuthority.CRECHE_MIN_WIDTH, size.width);
+            size.height = Math.max(ExplicitRoomTypeRequirementAuthority.CRECHE_MIN_HEIGHT, size.height);
+        }
 
         int intended = intendedFeatureCount(kind, scale, quality);
         int blocking = Math.max(1, intended / 2);

@@ -62,6 +62,7 @@ class RoomPopulationLedger {
     String facilityEstablishedBy = "";
     String facilityProductFocus = "";
     String facilityHistoricNote = "";
+    String declaredRoomPurposeId = "";
     int capacity = 0;
     int available = 0;
     int assigned = 0;
@@ -75,11 +76,11 @@ class RoomPopulationLedger {
     String saveLine(){
         return enc(id)+"|"+roomId+"|"+enc(roomName)+"|"+(faction==null?Faction.NONE.name():faction.name())+"|"+enc(sourceKind)+"|"+enc(sourceLabel)+"|"+capacity+"|"+available+"|"+assigned+"|"+dead
             +"|"+enc(facilityId)+"|"+enc(facilityPurpose)+"|"+enc(facilityEstablishedBy)+"|"+enc(facilityProductFocus)+"|"+enc(facilityHistoricNote)+"|"+careProviders
-            +"|"+crecheFoodStorageUnits+"|"+crecheWaterStorageUnits+"|"+crecheBedUnits+"|"+crecheTeachingStations;
+            +"|"+crecheFoodStorageUnits+"|"+crecheWaterStorageUnits+"|"+crecheBedUnits+"|"+crecheTeachingStations+"|"+enc(declaredRoomPurposeId);
     }
     static RoomPopulationLedger parse(String s){
         try{
-            String[] a=s.split("\\|",20); if(a.length<10) return null;
+            String[] a=s.split("\\|",21); if(a.length<10) return null;
             RoomPopulationLedger l=new RoomPopulationLedger();
             l.id=dec(a[0]); l.roomId=Integer.parseInt(a[1]); l.roomName=dec(a[2]); l.faction=Faction.valueOf(a[3]); l.sourceKind=dec(a[4]); l.sourceLabel=dec(a[5]); l.capacity=Integer.parseInt(a[6]); l.available=Integer.parseInt(a[7]); l.assigned=Integer.parseInt(a[8]); l.dead=Integer.parseInt(a[9]);
             if(a.length>=15){ l.facilityId=dec(a[10]); l.facilityPurpose=dec(a[11]); l.facilityEstablishedBy=dec(a[12]); l.facilityProductFocus=dec(a[13]); l.facilityHistoricNote=dec(a[14]); }
@@ -88,6 +89,7 @@ class RoomPopulationLedger {
             if(a.length>=18) l.crecheWaterStorageUnits=Math.max(0,Integer.parseInt(a[17]));
             if(a.length>=19) l.crecheBedUnits=Math.max(0,Integer.parseInt(a[18]));
             if(a.length>=20) l.crecheTeachingStations=Math.max(0,Integer.parseInt(a[19]));
+            if(a.length>=21) l.declaredRoomPurposeId=dec(a[20]);
             return l;
         }catch(Exception e){ return null; }
     }
@@ -405,14 +407,7 @@ class PersonnelPopulationApi {
             l.faction = normalizeFaction(f, w.zoneType);
             l.sourceKind = sourceKindFor(low, w.zoneType, l.faction);
             l.sourceLabel = labelFor(l.sourceKind, l.faction, name, w.zoneType);
-            if(l.sourceKind.contains("creche") || l.sourceKind.contains("daycare")) {
-                if(low.contains("care provider") || low.contains("child minder")) l.careProviders = 1;
-                if(low.contains("food storage") || low.contains("ration cabinet")) l.crecheFoodStorageUnits = 1;
-                if(low.contains("water storage") || low.contains("water tank")) l.crecheWaterStorageUnits = 1;
-                if(low.contains("stacked child beds")) l.crecheBedUnits = 3;
-                else if(low.contains("child bed") || low.contains("crib") || low.contains("child cot")) l.crecheBedUnits = 1;
-                if(low.contains("teaching station") || low.contains("lesson station")) l.crecheTeachingStations = 1;
-            }
+            l.declaredRoomPurposeId = rp == null ? "" : rp.declaredPurposeId;
             l.capacity = cap;
             int reserve = Math.max(1, cap/3);
             l.available = Math.max(0, cap - reserve);
@@ -429,6 +424,7 @@ class PersonnelPopulationApi {
             linkLedgerToFacility(w, l);
             w.roomPopulationLedgers.add(l);
         }
+        ExplicitRoomTypeRequirementAuthority.synchronizeCompatibilityCounters(w);
         DebugLog.audit("PERSONNEL_POP_LEDGER_SEED", "zone="+w.zoneType.label+" ledgers="+w.roomPopulationLedgers.size()+" rooms="+w.rooms.size()+" facilityLinked="+facilityLinkedCount(w));
     }
 

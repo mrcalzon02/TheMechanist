@@ -13,19 +13,23 @@ import java.util.*;
 import java.util.List;
 
 class RoomProfile {
-    String name, descriptor, featureText; int scavengeChance; Faction faction; String[] loot; char[] contents;
-    RoomProfile(String name,String descriptor,int chance,Faction faction,String[] loot,char[] contents){this.name=name;this.descriptor=descriptor;this.featureText=defaultFeatures(name, descriptor);this.scavengeChance=chance;this.faction=faction;this.loot=loot;this.contents=contents;}
+    String name, descriptor, featureText;
+    String declaredPurposeId;
+    int scavengeChance; Faction faction; String[] loot; char[] contents;
+    RoomProfile(String name,String descriptor,int chance,Faction faction,String[] loot,char[] contents){this.name=name;this.descriptor=descriptor;this.featureText=defaultFeatures(name, descriptor);this.declaredPurposeId=ExplicitRoomTypeRequirementAuthority.inferDeclaredPurposeId(name, descriptor);this.scavengeChance=chance;this.faction=faction;this.loot=loot;this.contents=contents;}
     static String defaultFeatures(String name, String descriptor){ return descriptor; }
     RoomProfile withFeatures(String f){ this.featureText=f; return this; }
     RoomProfile asSpecial(ZoneType z, Random r){
         String[] specialNames={"Trader alcove","Hidden supply cache","Faction-locked chamber","Machinery room","Random encounter room","Shrine-side store","Clinic spillover","Sealed service cell","Watch post"};
         String sn=specialNames[r.nextInt(specialNames.length)];
         RoomProfile rp=new RoomProfile(sn + " / " + name, descriptor + "; special feature: " + sn.toLowerCase(Locale.ROOT), Math.min(90, scavengeChance+12+r.nextInt(12)), faction, loot, contents);
+        rp.declaredPurposeId = declaredPurposeId;
         rp.featureText = featureText + "; SPECIAL: " + sn + "; inspectable hooks: trader, cache, lock, machinery, or encounter hook.";
         return rp;
     }
     RoomProfile asMachineRoom(String machineName, String machineDescription, char glyph){
         RoomProfile rp = new RoomProfile(machineName, machineDescription, Math.max(45, scavengeChance), faction, loot, contents);
+        rp.declaredPurposeId = "";
         rp.featureText = machineDescription + " Inspectable Martian emergency machine glyph '" + glyph + "'. Look displays the imported EMM machine profile; Interact handles locks, power, ownership, and machine-specific work.";
         return rp;
     }

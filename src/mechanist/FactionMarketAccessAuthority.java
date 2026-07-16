@@ -63,15 +63,21 @@ final class FactionMarketAccessAuthority {
                 "cult contraband", "cult ritual", "cult faction", "heretic", "warp", "blasphem", "forbidden");
         boolean contraband = forbidden || contains(legalText, "contraband", "illegal", "black-market", "smuggl");
         boolean disputed = contains(legalText, "stolen", "counterfeit", "misdeclared", "diluted", "contaminated");
-        boolean military = channel.contains("armory") || !safe(offer.securitySupplyReserveId).isBlank()
-                || contains(text, "military", "regulated", "munition", "ammo", "explosive", "guard flak", "suppression shell");
-        boolean noble = channel.contains("luxury") || contains(text, "noble", "house-certified", "estate luxury", "private medicine");
-        boolean blueprint = channel.contains("blueprint") || contains(text, "blueprint", "licensed plan", "construction folio");
-        boolean controlledMedical = narcotic || contains(text, "controlled medicine", "restricted medicine", "interrogation dosing");
+        boolean explicitBlueprint = !safe(offer.constructionBlueprintId).isBlank()
+                || contains(legalText,
+                "blueprint", "licensed plan", "construction folio");
+        boolean essential = !explicitBlueprint && !narcotic && essentialOffer(offer);
+        boolean military = !essential && (channel.contains("armory") || !safe(offer.securitySupplyReserveId).isBlank()
+                || contains(text, "military", "regulated", "munition", "ammo", "explosive", "guard flak", "suppression shell"));
+        boolean noble = !essential && (channel.contains("luxury")
+                || contains(text, "noble", "house-certified", "estate luxury", "private medicine"));
+        boolean blueprint = explicitBlueprint || (!essential && channel.contains("blueprint"));
+        boolean controlledMedical = !essential && (narcotic
+                || contains(text, "controlled medicine", "restricted medicine", "interrogation dosing"));
         String eventNotice = eventNotice(c.world(), c.worldTurn(), offer, blackMarket);
 
         Decision operational = operationalRestriction(trader, vendor, c, member,
-                military, noble, blueprint, controlledMedical, text, eventNotice);
+                military, noble, blueprint, controlledMedical, essential, eventNotice);
         if (operational != null) return operational;
         if (hostile) {
             return blocked("faction-closed market", "the vendor faction is hostile at standing " + c.standing(),
@@ -177,10 +183,9 @@ final class FactionMarketAccessAuthority {
                                                    boolean military, boolean noble,
                                                    boolean blueprint,
                                                    boolean controlledMedical,
-                                                   String offerText,
+                                                   boolean essential,
                                                    String eventNotice) {
         NpcFactionSite site = trader == null ? null : trader.sourceSite;
-        boolean essential = essentialOffer(offerText);
         if (site != null && site.workers <= 0) {
             return blocked("unstaffed faction facility",
                     site.name + " has no effective workers available to operate this counter",
@@ -193,7 +198,7 @@ final class FactionMarketAccessAuthority {
                     "food, water, basic dressings, and explicit relief stock remain the only eligible sales",
                     eventNotice);
         }
-        if (site != null && site.stock <= 2
+        if (site != null && site.stock <= 2 && !essential
                 && (military || noble || blueprint || controlledMedical)) {
             return blocked("scarcity-restricted strategic stock",
                     site.name + " is at critical stock " + site.stock
@@ -201,7 +206,7 @@ final class FactionMarketAccessAuthority {
                     "restore faction-site supply before strategic stock returns to public issue",
                     eventNotice);
         }
-        if (!member && recentFactionConflict(context.world(), context.worldTurn(), vendor)
+        if (!essential && !member && recentFactionConflict(context.world(), context.worldTurn(), vendor)
                 && (military || noble || blueprint || controlledMedical)) {
             return blocked("conflict-restricted faction market",
                     "recent seizure or salvage conflict involving " + vendor.label
@@ -244,11 +249,44 @@ final class FactionMarketAccessAuthority {
         catch (RuntimeException ignored) { return fallback; }
     }
 
-    private static boolean essentialOffer(String text) {
-        return contains(safe(text).toLowerCase(Locale.ROOT),
-                "emergency ration", "ration", "food", "water", "clean water",
-                "bandage", "field dressing", "antiseptic", "basic medicine",
-                "relief", "animal feed");
+    private static boolean essentialOffer(TradeOffer offer) {
+        if (offer == null) return false;
+        if (!safe(offer.essentialSupplyReserveId).isBlank()) return true;
+        if (!safe(offer.constructionBlueprintId).isBlank()
+                || !safe(offer.securitySupplyReserveId).isBlank()
+                || !safe(offer.nobleLuxuryReserveId).isBlank()
+                || !safe(offer.draughtCustodyId).isBlank()) return false;
+        String category = safe(offer.category).toLowerCase(Locale.ROOT);
+        if (containsTerm(category,
+                "luxury", "blueprint", "narcotic", "controlled", "contraband")) return false;
+        String name = safe(offer.name).toLowerCase(Locale.ROOT);
+        if ("food".equals(category) || category.startsWith("food/")
+                || "water".equals(category) || category.startsWith("water/")) return true;
+        return containsTerm(name,
+                "emergency ration", "emergency rations", "ration", "rations",
+                "food", "water", "clean water", "bandage", "bandages",
+                "field dressing", "field dressings", "antiseptic",
+                "basic medicine", "relief", "animal feed");
+    }
+
+    private static boolean containsTerm(String text, String... terms) {
+        if (text == null || text.isBlank() || terms == null) return false;
+        for (String term : terms) {
+            if (term == null || term.isBlank()) continue;
+            int from = 0;
+            while (from < text.length()) {
+                int index = text.indexOf(term, from);
+                if (index < 0) break;
+                int end = index + term.length();
+                boolean leftBoundary = index == 0
+                        || !Character.isLetterOrDigit(text.charAt(index - 1));
+                boolean rightBoundary = end >= text.length()
+                        || !Character.isLetterOrDigit(text.charAt(end));
+                if (leftBoundary && rightBoundary) return true;
+                from = index + 1;
+            }
+        }
+        return false;
     }
 
     private static String eventNotice(World world, long worldTurn, TradeOffer offer, boolean blackMarket) {

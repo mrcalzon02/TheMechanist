@@ -49,6 +49,7 @@ final class Milestone05BlueprintContractRewardSmoke {
             Faction issuer = ConstructionBlueprintOwnershipAuthority.issuingFactionFor(recipe);
             FactionContract contract = contract("CONTRACT-BLUEPRINT-" + mode.name(),
                     issuer, description, "Blueprint proof folio " + mode.name());
+            satisfyProofGates(game, contract);
             game.factionContracts.add(contract);
             game.inventory.add(contract.requiredTurnInItem);
             NpcEntity representative = representative(issuer);
@@ -135,6 +136,7 @@ final class Milestone05BlueprintContractRewardSmoke {
             FactionContract contract = contract("CONTRACT-ORDINARY-EVIDENCE", issuer,
                     "Return sealed evidence from a local investigation.",
                     "Sealed evidence parcel");
+            satisfyProofGates(game, contract);
             game.factionContracts.add(contract);
             game.inventory.add(contract.requiredTurnInItem);
             ContractTurnInAuthority.TurnInResult result =
@@ -216,6 +218,13 @@ final class Milestone05BlueprintContractRewardSmoke {
         representative.faction = faction;
         representative.hp = 10;
         return representative;
+    }
+
+    private static void satisfyProofGates(GamePanel game, FactionContract contract) {
+        game.unlockedSkillNodes.addAll(
+                ContractObjectiveReadabilityAuthority.requiredCapabilityKeys(contract));
+        game.unlockedKnowledges.addAll(
+                ContractObjectiveReadabilityAuthority.requiredKnowledgeNames(contract));
     }
 
     private static void requireContains(String text, String expected, String label) {

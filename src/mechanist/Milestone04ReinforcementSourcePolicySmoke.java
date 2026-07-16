@@ -1,5 +1,6 @@
 package mechanist;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -110,20 +111,85 @@ final class Milestone04ReinforcementSourcePolicySmoke {
     }
 
     private static World worldWithSources() {
-        World world = new World(84199L, 32, 32);
+        World world = new World(84199L, 32, 16);
+        world.zoneType = ZoneType.ARBITES_PRECINCT_EDGE;
         world.npcs.clear();
+        world.mapObjects.clear();
+        world.hazardWarnings.clear();
         world.replacementQueue.clear();
         world.roomPopulationLedgers.clear();
-        world.roomPopulationLedgers.add(ledger("pop.rail", "Wardens Rail Intake", "rail intake roster", 6));
-        world.roomPopulationLedgers.add(ledger("pop.barracks", "Wardens Duty Barracks", "barracks duty roster", 6));
-        world.roomPopulationLedgers.add(ledger("pop.local", "Civic Hab Roster", "local hab work roster", 6));
+        world.rooms.clear();
+        world.roomProfiles.clear();
+        world.roomFactions.clear();
+        world.roomSpecials.clear();
+        for (int x = 0; x < world.w; x++) {
+            for (int y = 0; y < world.h; y++) {
+                world.tiles[x][y] = '#';
+                world.roomIds[x][y] = -1;
+            }
+        }
+
+        addSourceRoom(world, new Rectangle(2, 2, 6, 4),
+                new RoomProfile("Wardens Rail Intake",
+                        "a platform-side intake room with rail manifests and arrival processing",
+                        30, Faction.CIVIC_WARDENS, new String[]{"rail docket"}, new char[]{'q'}));
+        RoomProfile barracks = new RoomProfile("Civic Wardens Duty Barracks",
+                "a guarded barracks with four duty berths, an equipment issue post, and a muster anchor",
+                45, Faction.CIVIC_WARDENS,
+                new String[]{"Flak vest", "Shock maul"}, new char[]{'c', 'q', 'A'});
+        barracks.declaredPurposeId = ExplicitRoomTypeRequirementAuthority.BARRACKS_ID;
+        addSourceRoom(world, new Rectangle(10, 2, 6, 4), barracks);
+        addSourceRoom(world, new Rectangle(18, 2, 6, 4),
+                new RoomProfile("Civic Hab Roster Room",
+                        "an ordinary staffed hab work roster and local recruitment desk",
+                        30, Faction.CIVIC_WARDENS, new String[]{"work chit"}, new char[]{'q'}));
+
+        world.roomPopulationLedgers.add(ledger(
+                "pop.rail", 0, "Wardens Rail Intake", "rail intake roster", 6));
+        RoomPopulationLedger barracksLedger = ledger(
+                "pop.barracks", 1, "Civic Wardens Duty Barracks", "barracks duty roster", 6);
+        barracksLedger.declaredRoomPurposeId = ExplicitRoomTypeRequirementAuthority.BARRACKS_ID;
+        barracksLedger.facilityPurpose = "guard readiness and bounded reserve muster";
+        world.roomPopulationLedgers.add(barracksLedger);
+        world.roomPopulationLedgers.add(ledger(
+                "pop.local", 2, "Civic Hab Roster", "local hab work roster", 6));
+        require(ExplicitRoomTypeRequirementAuthority.installBarracksFixtures(world, 1) == 3,
+                "source-policy setup should install exact physical barracks fixtures");
+        require(ExplicitRoomTypeRequirementAuthority.ensureGeneratedBarracksDutyStaff(
+                        world, new Random(84201L)) == 1,
+                "source-policy setup should assign one living barracks duty guard");
+        require(ExplicitRoomTypeRequirementAuthority.assessRoom(world, 1).operating(),
+                "source-policy setup should expose one operating physical barracks");
         return world;
     }
 
+    private static void addSourceRoom(World world, Rectangle room, RoomProfile profile) {
+        int roomId = world.rooms.size();
+        world.rooms.add(room);
+        world.roomProfiles.add(profile);
+        world.roomFactions.add(Faction.CIVIC_WARDENS);
+        world.roomSpecials.add(Boolean.FALSE);
+        for (int x = room.x; x < room.x + room.width; x++) {
+            for (int y = room.y; y < room.y + room.height; y++) {
+                boolean boundary = x == room.x || y == room.y
+                        || x == room.x + room.width - 1
+                        || y == room.y + room.height - 1;
+                world.tiles[x][y] = boundary ? '#' : '.';
+                world.roomIds[x][y] = roomId;
+            }
+        }
+        world.tiles[room.x][room.y + 1] = 'D';
+    }
+
     private static RoomPopulationLedger ledger(String id, String room, String kind, int capacity) {
+        return ledger(id, 0, room, kind, capacity);
+    }
+
+    private static RoomPopulationLedger ledger(
+            String id, int roomId, String room, String kind, int capacity) {
         RoomPopulationLedger ledger = new RoomPopulationLedger();
         ledger.id = id;
-        ledger.roomId = 0;
+        ledger.roomId = roomId;
         ledger.roomName = room;
         ledger.faction = Faction.CIVIC_WARDENS;
         ledger.sourceKind = kind;

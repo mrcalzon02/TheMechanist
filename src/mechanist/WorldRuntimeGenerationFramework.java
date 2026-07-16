@@ -285,6 +285,13 @@ class World {
         }
         applyInterstitialHiveMass();
         SectorGenerationTraceAuthority.record(this, "INTERWALL", "Interstitial arcology mass and hidden features seeded after road-first room validation.");
+        int explicitRoomFixtures = ExplicitRoomTypeRequirementAuthority.materializeGeneratedFixtures(this);
+        SectorGenerationTraceAuthority.record(this, "ROOM-ASSETS",
+                "Explicit room-purpose requirements reconciled persisted semantic fixtures after final topology repairs="
+                        + explicitRoomFixtures + ".");
+        DebugLog.audit("EXPLICIT_ROOM_PURPOSE_FIXTURES",
+                "reconciled=" + explicitRoomFixtures + " registry="
+                        + ExplicitRoomTypeRequirementAuthority.VERSION + " zone=" + zoneType.label);
         PersonnelPopulationApi.ensureLedgers(this, r);
         EnvironmentalHazardVisibilityApi.Result hazardResult = EnvironmentalHazardVisibilityApi.seed(this, r);
         DebugLog.audit("HAZARD_WARNING_OVERLAY", hazardResult.summary());
@@ -646,6 +653,7 @@ class World {
 
     String roomKindFromProfile(RoomProfile rp){
         if(rp == null) return "ROOM";
+        if (ExplicitRoomTypeRequirementAuthority.CRECHE_ID.equals(rp.declaredPurposeId)) return "DAYCARE";
         String n = ((rp.name == null ? "" : rp.name) + " " + (rp.descriptor == null ? "" : rp.descriptor)).toUpperCase(Locale.ROOT);
         if(n.contains("DORM") || n.contains("BARRACK") || n.contains("SLEEP") || n.contains("BUNK")) return "DORMITORY";
         if(n.contains("CAFETERIA") || n.contains("MESS") || n.contains("CANTEEN") || n.contains("EATING")) return "CAFETERIA";
@@ -3095,7 +3103,9 @@ class World {
 
     void populate(){
         npcs.clear();
-        mapObjects.clear();
+        // Generation reset owns map-object clearing. Road, facility, room-fixture,
+        // and explicit room-purpose objects were placed in earlier phases and must
+        // survive population rather than collapsing back into untyped glyphs.
         for(int i=1;i<rooms.size();i++){
             NpcEntity profileNoble = NameLockedProfilePortraitAuthority.maybeCreateNobleSeed(this, i, r);
             if (profileNoble != null) {
@@ -3134,9 +3144,10 @@ class World {
         FactionCriticalVendorPlacementAuthority.Result criticalVendorResult = FactionCriticalVendorPlacementAuthority.apply(this, r);
         DebugLog.audit("FACTION_CRITICAL_VENDORS", criticalVendorResult.summary()+" promotedFacilityStaff="+factionFacilityStaff);
         int hivewallThreats = BoundedOuterHiveWallApi.populateDangerRooms(this, r);
+        int crecheProviders = ExplicitRoomTypeRequirementAuthority.ensureGeneratedCareProviders(this, r);
         LightingNoiseMetadataApi.Result ln = LightingNoiseMetadataApi.seed(this, r);
         lightNoiseSummary = ln.summary();
-        DebugLog.audit("NPC_POPULATE", "zone="+zoneType.label+" layer="+layerText()+" npcs="+npcs.size()+" rooms="+rooms.size()+" target="+targetPassiveEntityCount()+" animals="+animalResult.summary()+" hivewallThreats="+hivewallThreats+" lighting="+ln.summary());
+        DebugLog.audit("NPC_POPULATE", "zone="+zoneType.label+" layer="+layerText()+" npcs="+npcs.size()+" rooms="+rooms.size()+" target="+targetPassiveEntityCount()+" animals="+animalResult.summary()+" hivewallThreats="+hivewallThreats+" crecheProviders="+crecheProviders+" lighting="+ln.summary());
     }
 
 
@@ -3248,11 +3259,11 @@ class World {
         for(int tries=0; tries<80; tries++){
             int x=rr.x+1+r.nextInt(Math.max(1, rr.width-2));
             int y=rr.y+1+r.nextInt(Math.max(1, rr.height-2));
-            if(inBounds(x,y) && walkable(x,y) && roomIds[x][y]>=0 && npcAt(x,y)==null) return new Point(x,y);
+            if(inBounds(x,y) && walkable(x,y) && roomIds[x][y]>=0 && npcAt(x,y)==null && mapObjectAt(x,y)==null) return new Point(x,y);
         }
         Point c=center(rr);
-        if(inBounds(c.x,c.y) && walkable(c.x,c.y) && npcAt(c.x,c.y)==null) return c;
-        for(int x=rr.x;x<rr.x+rr.width;x++) for(int y=rr.y;y<rr.y+rr.height;y++) if(inBounds(x,y) && walkable(x,y) && roomIds[x][y]>=0 && npcAt(x,y)==null) return new Point(x,y);
+        if(inBounds(c.x,c.y) && walkable(c.x,c.y) && npcAt(c.x,c.y)==null && mapObjectAt(c.x,c.y)==null) return c;
+        for(int x=rr.x;x<rr.x+rr.width;x++) for(int y=rr.y;y<rr.y+rr.height;y++) if(inBounds(x,y) && walkable(x,y) && roomIds[x][y]>=0 && npcAt(x,y)==null && mapObjectAt(x,y)==null) return new Point(x,y);
         return null;
     }
 
@@ -3346,13 +3357,14 @@ class World {
             for(int tries=0; tries<120; tries++){
                 Rectangle rr = rooms.get(use.nextInt(rooms.size()));
                 Point p = randomOpenPointInRoom(rr);
-                if(p != null && inBounds(p.x,p.y) && walkable(p.x,p.y) && npcAt(p.x,p.y)==null) return p;
+                if(p != null && inBounds(p.x,p.y) && walkable(p.x,p.y)
+                        && npcAt(p.x,p.y)==null && mapObjectAt(p.x,p.y)==null) return p;
             }
         }
         for(int tries=0; tries<300; tries++){
             int x=1+use.nextInt(Math.max(1,w-2));
             int y=1+use.nextInt(Math.max(1,h-2));
-            if(inBounds(x,y) && walkable(x,y) && npcAt(x,y)==null) return new Point(x,y);
+            if(inBounds(x,y) && walkable(x,y) && npcAt(x,y)==null && mapObjectAt(x,y)==null) return new Point(x,y);
         }
         return ensurePlayerSpawnPoint();
     }

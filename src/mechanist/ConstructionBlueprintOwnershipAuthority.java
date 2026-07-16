@@ -123,6 +123,15 @@ final class ConstructionBlueprintOwnershipAuthority {
         return null;
     }
 
+    static BuildRecipe recipeForBlueprintItem(String itemName) {
+        if (itemName == null || itemName.isBlank()) return null;
+        for (BuildRecipe recipe : BuildRecipe.allBuildRecipes()) {
+            if (!requiresLicensedBlueprint(recipe)) continue;
+            if (ItemQuality.namesMatch(itemName, blueprintItemName(recipe))) return recipe;
+        }
+        return null;
+    }
+
     static ArrayList<BuildRecipe> licensedRecipesForFaction(Faction faction) {
         Faction normalized = FactionInventoryStockAuthority.normalizeFaction(faction);
         ArrayList<BuildRecipe> out = new ArrayList<>();

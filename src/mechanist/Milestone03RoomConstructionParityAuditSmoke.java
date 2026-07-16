@@ -23,6 +23,8 @@ final class Milestone03RoomConstructionParityAuditSmoke {
         requireContains(audit, "playerBlueprints=" + BuildRecipe.allBuildRecipes().size(), "player blueprint count");
         requireContains(audit, "faction usable", "faction-use wording");
         requireContains(audit, "non-acquirable civic/transition/utility exception", "non-acquirable boundary");
+        requireContains(audit, "explicit unmapped gap with no invented channel",
+                "unmapped acquisition boundary");
         requireContains(audit, "does not place rooms, unlock blueprints, mutate ownership", "future owner boundary");
         requireContains(audit, "Milestone03RoomConstructionParityAuditSmoke", "guard reference");
 

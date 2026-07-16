@@ -151,7 +151,11 @@ final class Milestone04EconomyWorldEditorInfopediaSmoke {
     private static void verifyInGameRefreshControl(GamePanel game) {
         game.openInGameEditor(SimulationToolSuiteRegistry.ECONOMY_EDITOR);
         require(game.screen == GamePanel.Screen.EDITOR, "economy editor should open inside the primary game window");
-        require(game.inGameEditorStatus.contains("live economy editor record"), "opening should load the active world snapshot");
+        require(game.inGameEditorStatus.contains("Refreshed ")
+                        && game.inGameEditorStatus.contains("economy editor records")
+                        && game.inGameEditorStatus.contains("live-world")
+                        && game.inGameEditorStatus.contains("catalog/definition"),
+                "opening should distinguish live world and catalog-definition records");
         game.setSize(1280, 820);
         BufferedImage image = new BufferedImage(1280, 820, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();

@@ -80,7 +80,7 @@ final class RoomConstructionParityAuthority {
                         + ", mappedBlueprints=" + mappedBlueprints
                         + ", playerBlueprints=" + blueprints.size()
                         + ", factionUsableBlueprints=" + factionUsableBlueprints + ".",
-                "Room parity acquisition audit: faction rooms are marked with player path, restricted player path, salvage or research path, or non-acquirable civic/transition/utility exception.",
+                "Room parity acquisition audit: faction rooms expose an exact registered plan channel, an explicit unmapped gap with no invented channel, or a non-acquirable civic/transition/utility exception.",
                 "Room parity faction-use audit: player blueprints are marked faction usable when they are public, faction-approved, facility-like, defensive, logistical, medical, laboratory, or market-facing.",
                 "Room parity sample audit: " + sampleLine("Civic Wardens Precinct Lobby")
                         + " | " + sampleLine("Maintenance closet")
@@ -126,8 +126,10 @@ final class RoomConstructionParityAuthority {
             return (faction == Faction.NONE ? "player path" : "restricted player path") + " via " + path.representativeType()
                     + " as " + path.legalLabel();
         }
-        if (faction != Faction.NONE) return "restricted player path via faction representative, contract reward, salvage, theft, or research";
-        return "player path via public construction market or salvage research";
+        if (faction != Faction.NONE) {
+            return "restricted player path is unmapped; no exact plan or acquisition channel is registered";
+        }
+        return "player path is unmapped; no exact public construction plan is registered";
     }
 
     private static String exceptionNote(RoomProfile profile, ZoneType zone, String blueprint) {
@@ -142,43 +144,66 @@ final class RoomConstructionParityAuthority {
     }
 
     private static String matchingBlueprint(RoomProfile profile) {
+        if (profile != null && ExplicitRoomTypeRequirementAuthority.CRECHE_ID
+                .equals(profile.declaredPurposeId)) {
+            return "unmapped";
+        }
         String text = text(profile.name, profile.descriptor, profile.featureText);
-        Map<String, String> map = Map.ofEntries(
-                Map.entry("warehouse", "Storage Crate"),
-                Map.entry("storehouse", "Storage Crate"),
-                Map.entry("storage", "Storage Crate"),
-                Map.entry("dormitory", "Sleeping Cot"),
-                Map.entry("barracks", "Guard Barracks"),
-                Map.entry("clinic", "Backroom Medicae Stall"),
-                Map.entry("medicae", "Backroom Medicae Stall"),
-                Map.entry("kitchen", "Licensed Shop Counter"),
-                Map.entry("storefront", "Licensed Shop Counter"),
-                Map.entry("counter", "Licensed Shop Counter"),
-                Map.entry("market", "Licensed Shop Counter"),
-                Map.entry("workshop", "Scrap Workbench"),
-                Map.entry("maintenance", "Scrap Workbench"),
-                Map.entry("laboratory", "Crude chem bench"),
-                Map.entry("lab", "Crude chem bench"),
-                Map.entry("diagnostic", "Reagent preparation bench"),
-                Map.entry("security", "Security Sensor Mast"),
-                Map.entry("armory", "Security Sensor Mast"),
-                Map.entry("watch", "Watch Post"),
-                Map.entry("guard", "Watch Post"),
-                Map.entry("logistics", "Logistics Center"),
-                Map.entry("supply", "Supply Post"),
-                Map.entry("water", "Water Barrel"),
-                Map.entry("condenser", "EMM Atmospheric Condenser"),
-                Map.entry("assembler", "EMM Micro Forge"),
-                Map.entry("forge", "EMM Micro Forge"),
-                Map.entry("relay", "Shield Relay"),
-                Map.entry("shrine", "Base Decor Object"),
-                Map.entry("chapel", "Base Decor Object"),
-                Map.entry("laundry", "Base Decor Object")
-        );
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("micro forge", "EMM Micro Forge");
+        map.put("assembler", "EMM Micro Forge");
+        map.put("forge", "EMM Micro Forge");
+        map.put("atmospheric condenser", "EMM Atmospheric Condenser");
+        map.put("condenser", "EMM Atmospheric Condenser");
+        map.put("warehouse", "Storage Crate");
+        map.put("storehouse", "Storage Crate");
+        map.put("storage", "Storage Crate");
+        map.put("dormitory", "Sleeping Cot");
+        map.put("barracks", "Guard Barracks");
+        map.put("clinic", "Backroom Medicae Stall");
+        map.put("medicae", "Backroom Medicae Stall");
+        map.put("kitchen", "Licensed Shop Counter");
+        map.put("storefront", "Licensed Shop Counter");
+        map.put("counter", "Licensed Shop Counter");
+        map.put("market", "Licensed Shop Counter");
+        map.put("workshop", "Scrap Workbench");
+        map.put("maintenance", "Scrap Workbench");
+        map.put("laboratory", "Crude chem bench");
+        map.put("lab", "Crude chem bench");
+        map.put("diagnostic", "Reagent preparation bench");
+        map.put("security", "Security Sensor Mast");
+        map.put("armory", "Security Sensor Mast");
+        map.put("watch", "Watch Post");
+        map.put("guard", "Watch Post");
+        map.put("logistics", "Logistics Center");
+        map.put("supply", "Supply Post");
+        map.put("water", "Water Barrel");
+        map.put("relay", "Shield Relay");
+        map.put("shrine", "Base Decor Object");
+        map.put("chapel", "Base Decor Object");
+        map.put("laundry", "Base Decor Object");
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            if (text.contains(entry.getKey()) && recipeNamed(entry.getValue()) != null) return entry.getValue();
+            if (containsTerm(text, entry.getKey())
+                    && recipeNamed(entry.getValue()) != null) return entry.getValue();
         }
         return "unmapped";
+    }
+
+    private static boolean containsTerm(String text, String term) {
+        if (text == null || term == null || term.isBlank()) return false;
+        int from = 0;
+        while (from < text.length()) {
+            int index = text.indexOf(term, from);
+            if (index < 0) return false;
+            int end = index + term.length();
+            boolean leftBoundary = index == 0
+                    || !Character.isLetterOrDigit(text.charAt(index - 1));
+            boolean rightBoundary = end >= text.length()
+                    || !Character.isLetterOrDigit(text.charAt(end));
+            if (leftBoundary && rightBoundary) return true;
+            from = index + 1;
+        }
+        return false;
     }
 
     private static String sampleLine(String roomName) {

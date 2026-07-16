@@ -17,7 +17,8 @@ final class FactionReinforcementAuthority {
         TRAIN_IMPORT("train-import", "Reinforcement train", 150, 101, 0,
                 GamePanel.TURNS_PER_HOUR * 8, "owned or faction-linked rail intake building"),
         BARRACKS_MUSTER("barracks-muster", "Barracks reserve muster", 35, 31, 6,
-                GamePanel.TURNS_PER_HOUR * 4, "owned or faction-linked barracks/duty building"),
+                GamePanel.TURNS_PER_HOUR * 4,
+                "operating explicitly designated barracks/duty room with required fixtures, duty staff, aligned control, and no blocking hazards"),
         PAID_LOCAL("paid-local", "Paid local recruitment", 65, 46, 24,
                 GamePanel.TURNS_PER_HOUR * 6, "available local population roster"),
         LEGACY_ROSTER("legacy-roster", "Legacy roster replacement", 36, 49, 0,
@@ -155,6 +156,7 @@ final class FactionReinforcementAuthority {
         int nextDue = Integer.MAX_VALUE;
         int nextExpiry = Integer.MAX_VALUE;
         PersonnelReplacementRequest nextRequest = null;
+        PersonnelReplacementRequest firstRouteBlocked = null;
         int capacity = PersonnelPopulationApi.replacementCapacityForFaction(world, target);
         int living = PersonnelPopulationApi.countLivingFactionActors(world, target);
         int availableSlots = Math.max(0, capacity - living);
@@ -166,7 +168,10 @@ final class FactionReinforcementAuthority {
             if (nextRequest == null || request.dueTurn < nextRequest.dueTurn) nextRequest = request;
             if (request.dueTurn > turn) inbound++;
             else if (availableSlots <= 0) capacityBlocked++;
-            else if (!routeReady(world, request)) routeBlocked++;
+            else if (!routeReady(world, request)) {
+                routeBlocked++;
+                if (firstRouteBlocked == null) firstRouteBlocked = request;
+            }
             else ready++;
         }
         String line;
@@ -183,7 +188,8 @@ final class FactionReinforcementAuthority {
                     + living + "/" + capacity + "; the earliest manifest expires on turn " + nextExpiry + "." + sourceTerms;
         } else if (routeBlocked > 0) {
             line = "Reinforcements delayed: " + routeBlocked
-                    + " ready manifest(s) lack an available local roster or import intake slot; earliest expiry turn "
+                    + " ready manifest(s) lack their selected source prerequisite or intake slot: "
+                    + routeBlocker(world, firstRouteBlocked) + "; earliest expiry turn "
                     + nextExpiry + "." + sourceTerms;
         } else {
             line = "Reinforcements inbound: " + inbound + " personnel requested; next availability turn "
@@ -226,6 +232,7 @@ final class FactionReinforcementAuthority {
         int capacityBlocked = 0;
         int fundsBlocked = 0;
         int spent = 0;
+        PersonnelReplacementRequest firstRouteBlocked = null;
         ArrayList<NpcEntity> arrived = new ArrayList<>();
         Random rng = random == null ? new Random(world.seed ^ turn ^ target.ordinal()) : random;
         for (PersonnelReplacementRequest request : ordered) {
@@ -240,6 +247,7 @@ final class FactionReinforcementAuthority {
             }
             if (!routeReady(world, request)) {
                 routeBlocked++;
+                if (firstRouteBlocked == null) firstRouteBlocked = request;
                 continue;
             }
             int cost = Math.max(0, request.scriptCost);
@@ -276,7 +284,9 @@ final class FactionReinforcementAuthority {
                     + living + "/" + capacity + "; the manifest remains open until its expiry turn.", List.of());
         }
         if (routeBlocked > 0) {
-            return new ReceptionResult(false, 0, 0, "Reinforcement reception delayed: the selected source prerequisite or intake slot is unavailable; the manifest remains open until expiry.", List.of());
+            return new ReceptionResult(false, 0, 0, "Reinforcement reception delayed: the selected source prerequisite or intake slot is unavailable: "
+                    + routeBlocker(world, firstRouteBlocked)
+                    + "; the manifest remains open and no payment is consumed until expiry.", List.of());
         }
         if (fundsBlocked > 0) {
             int lowest = ordered.stream().filter(request -> request.dueTurn <= turn).mapToInt(request -> Math.max(0, request.scriptCost)).min().orElse(0);
@@ -336,22 +346,23 @@ final class FactionReinforcementAuthority {
 
     private static RoomPopulationLedger findLedger(World world, Faction faction, SourceMethod method) {
         if (world == null || world.roomPopulationLedgers == null || method == null) return null;
-        RoomPopulationLedger fallback = null;
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
             if (ledger == null || ledger.capacity <= 0) continue;
             if (!(FactionIdentityAuthority.sameFamily(ledger.faction, faction) || ledger.faction == Faction.NONE)) continue;
             if (method == SourceMethod.PAID_LOCAL) {
-                if (fallback == null) fallback = ledger;
-                if (!isTrainLedger(ledger) && !isBarracksLedger(ledger)) return ledger;
+                // A declared barracks is infrastructure, even while blocked. It
+                // must not silently become the ordinary paid-local population
+                // roster that bypasses its physical muster requirements.
+                if (!isTrainLedger(ledger) && !isDeclaredBarracks(world, ledger)) return ledger;
             } else if (method == SourceMethod.TRAIN_IMPORT && isTrainLedger(ledger)) {
                 return ledger;
-            } else if (method == SourceMethod.BARRACKS_MUSTER && isBarracksLedger(ledger)) {
+            } else if (method == SourceMethod.BARRACKS_MUSTER && isOperatingBarracks(world, ledger)) {
                 return ledger;
             } else if (method == SourceMethod.LEGACY_ROSTER) {
                 return ledger;
             }
         }
-        return method == SourceMethod.PAID_LOCAL ? fallback : null;
+        return null;
     }
 
     private static boolean isTrainLedger(RoomPopulationLedger ledger) {
@@ -359,11 +370,20 @@ final class FactionReinforcementAuthority {
         return text.contains("rail") || text.contains("train") || text.contains("platform") || text.contains("import intake");
     }
 
-    private static boolean isBarracksLedger(RoomPopulationLedger ledger) {
-        String text = ledgerText(ledger);
-        return text.contains("barracks") || text.contains("billet") || text.contains("duty")
-                || text.contains("drill") || text.contains("guard") || text.contains("security")
-                || text.contains("precinct");
+    private static boolean isDeclaredBarracks(World world, RoomPopulationLedger ledger) {
+        return ledger != null && ExplicitRoomTypeRequirementAuthority.BARRACKS_ID.equals(
+                ExplicitRoomTypeRequirementAuthority.declaredPurposeId(
+                        world, ledger.roomId, ledger));
+    }
+
+    private static boolean isOperatingBarracks(World world, RoomPopulationLedger ledger) {
+        if (!isDeclaredBarracks(world, ledger)) return false;
+        ExplicitRoomTypeRequirementAuthority.Assessment assessment =
+                ExplicitRoomTypeRequirementAuthority.assess(world, ledger);
+        return assessment.definition() != null
+                && ExplicitRoomTypeRequirementAuthority.BARRACKS_ID.equals(
+                assessment.definition().id())
+                && assessment.operating();
     }
 
     private static String ledgerText(RoomPopulationLedger ledger) {
@@ -385,13 +405,58 @@ final class FactionReinforcementAuthority {
         if (world == null || request == null) return false;
         RoomPopulationLedger ledger = PersonnelPopulationApi.ledgerById(world, request.sourceLedgerId);
         SourceMethod method = SourceMethod.fromId(request.sourceMode);
-        boolean sourceMatches = method == SourceMethod.LEGACY_ROSTER
-                || method == SourceMethod.PAID_LOCAL
+        // Current selectable sources persist both identities. Preserve the old
+        // ledger-only legacy roster contract for pre-source-policy manifests.
+        boolean exactRoomBinding = ledger != null && (method == SourceMethod.LEGACY_ROSTER
+                || request.sourceRoomId == ledger.roomId);
+        boolean sourceMatches = exactRoomBinding && (method == SourceMethod.LEGACY_ROSTER
+                || (method == SourceMethod.PAID_LOCAL && !isTrainLedger(ledger)
+                    && !isDeclaredBarracks(world, ledger))
                 || (method == SourceMethod.TRAIN_IMPORT && isTrainLedger(ledger)
                     && FactionImportNodeGenerationAuthority.routeOperational(world,request.faction))
-                || (method == SourceMethod.BARRACKS_MUSTER && isBarracksLedger(ledger));
+                // Reassess the exact selected room at arrival. Missing or moved
+                // fixtures, lost duty staff, changed control, or new hazards
+                // leave the manifest waiting rather than consuming it.
+                || (method == SourceMethod.BARRACKS_MUSTER && isOperatingBarracks(world, ledger)));
         return ledger != null && sourceMatches && ledger.available > 0 && ledger.capacity > 0
                 && (FactionIdentityAuthority.sameFamily(ledger.faction, request.faction) || ledger.faction == Faction.NONE);
+    }
+
+    private static String routeBlocker(World world, PersonnelReplacementRequest request) {
+        if (world == null || request == null) return "no selected reinforcement source is available";
+        RoomPopulationLedger ledger = PersonnelPopulationApi.ledgerById(world, request.sourceLedgerId);
+        SourceMethod method = SourceMethod.fromId(request.sourceMode);
+        if (ledger == null) return "the exact linked population ledger is missing";
+        if (method != SourceMethod.LEGACY_ROSTER && request.sourceRoomId != ledger.roomId) {
+            return "the linked ledger no longer belongs to selected room " + request.sourceRoomId;
+        }
+        if (ledger.capacity <= 0) return "the exact linked roster has no capacity";
+        if (ledger.available <= 0) return "the exact linked roster has no available reserve personnel";
+        if (!(FactionIdentityAuthority.sameFamily(ledger.faction, request.faction)
+                || ledger.faction == Faction.NONE)) {
+            return "the exact linked roster is no longer aligned with the requesting faction";
+        }
+        if (method == SourceMethod.BARRACKS_MUSTER) {
+            ExplicitRoomTypeRequirementAuthority.Assessment assessment =
+                    ExplicitRoomTypeRequirementAuthority.assess(world, ledger);
+            if (assessment.definition() == null
+                    || !ExplicitRoomTypeRequirementAuthority.BARRACKS_ID.equals(
+                    assessment.definition().id())) {
+                return "the exact selected room is not designated as a Security Barracks";
+            }
+            if (!assessment.operating()) return assessment.line();
+        }
+        if (method == SourceMethod.PAID_LOCAL
+                && (isTrainLedger(ledger) || isDeclaredBarracks(world, ledger))) {
+            return "the selected infrastructure ledger is not an ordinary paid-local population roster";
+        }
+        if (method == SourceMethod.TRAIN_IMPORT) {
+            if (!isTrainLedger(ledger)) return "the exact linked room is no longer a rail intake";
+            if (!FactionImportNodeGenerationAuthority.routeOperational(world, request.faction)) {
+                return "the faction-linked rail intake route is not operational";
+            }
+        }
+        return "the exact selected source is not ready";
     }
 
     private static boolean hasRequestFor(World world, String npcId) {

@@ -144,6 +144,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone05BlueprintContractRewardSmoke.main(args);
         Milestone05BlueprintInfopediaBridgeSmoke.main(args);
         Milestone05ConstructionParityInspectionSmoke.main(args);
+        Milestone05ConstructionParityEditorSmoke.main(args);
+        Milestone05RoomConstructionParityEditorSmoke.main(args);
         Milestone05RoomOwnershipCommandSmoke.main(args);
         Milestone05RoomOwnershipUiSmoke.main(args);
         Milestone05RoomPurchaseSmoke.main(args);
@@ -215,6 +217,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone04FactionReinforcementLifecycleSmoke.main(args);
         Milestone04ReinforcementSourcePolicySmoke.main(args);
         Milestone04CrecheGenerationMaturitySmoke.main(args);
+        Milestone09ExplicitRoomPurposeCrecheSmoke.main(args);
+        Milestone09ExplicitRoomPurposeBarracksSmoke.main(args);
         BootMenuMusicDelaySmoke.main(args);
         BootStartupAudioSilenceSmoke.main(args);
         Milestone03ManualProductionOperationRecordSmoke.main(args);

@@ -6,6 +6,8 @@ import java.util.Locale;
 
 /** Defines inspectable acquisition-path metadata for construction blueprints. */
 final class BlueprintAcquisitionPathAuthority {
+    private static final String PUBLIC_CATALOG = "public construction catalog";
+
     record AcquisitionPath(String blueprintName, String constructionCategory, String sourceFaction,
                            String representativeType, String accessLabel, String acquisitionPath,
                            String legalLabel, String explanation) { }
@@ -26,7 +28,7 @@ final class BlueprintAcquisitionPathAuthority {
         Faction faction = FactionInventoryStockAuthority.normalizeFaction(
                 recipe == null ? Faction.NONE : recipe.requiredFaction);
         boolean factionBound = faction != Faction.NONE;
-        String sourceFaction = factionBound ? faction.label : "public construction market";
+        String sourceFaction = factionBound ? faction.label : PUBLIC_CATALOG;
         String representative = representativeFor(recipe, faction, category);
         String legal = legalLabelFor(recipe, faction, category);
         String access = accessLabelFor(recipe, faction, legal);
@@ -46,12 +48,12 @@ final class BlueprintAcquisitionPathAuthority {
         int heatOrSuspicion = 0;
         for (AcquisitionPath path : paths) {
             String text = (path.accessLabel + " " + path.acquisitionPath + " " + path.legalLabel + " " + path.explanation).toLowerCase(Locale.ROOT);
-            if (!"public construction market".equals(path.sourceFaction)) factionBound++;
+            if (!PUBLIC_CATALOG.equals(path.sourceFaction)) factionBound++;
             if (text.contains("knowledge")) knowledgeGated++;
             if (text.contains("permit") || text.contains("license")) permitOrLicense++;
             if (text.contains("restricted") || text.contains("military")) restricted++;
             if (text.contains("black-market") || text.contains("stolen") || text.contains("counterfeit")) blackMarket++;
-            if (text.contains("heat") || text.contains("suspicion")) heatOrSuspicion++;
+            if (text.contains("may raise heat or suspicion")) heatOrSuspicion++;
         }
         return List.of(
                 "Blueprint acquisition definition audit: owner=BlueprintAcquisitionPathAuthority, catalogOwner=BuildRecipe, categoryOwner=ConstructionCategoryAuthority, traderStockOwner=TraderTradeActionAuthority, factionStockOwner=FactionInventoryStockAuthority, ordinaryUiRawIds=false.",
@@ -62,7 +64,7 @@ final class BlueprintAcquisitionPathAuthority {
                         + ", restrictedPaths=" + restricted
                         + ", blackMarketOrStolenPaths=" + blackMarket
                         + ", heatOrSuspicionPaths=" + heatOrSuspicion + ".",
-                "Blueprint acquisition channel audit: supported channels include public construction market, faction representative, civic permit office, Mechanist Collegia vendor, Guard quartermaster, Civic Wardens armory desk, noble estate factor, contract reward, salvage research, theft or black-market broker.",
+                "Blueprint acquisition channel audit: public plans are available by default through the public construction catalog; licensed channels include faction representatives, Mechanist Collegia vendors, Guard quartermasters, Civic Wardens armory desks, noble estate factors, contract rewards, salvage or recovery, theft, and counterfeit plans.",
                 "Blueprint acquisition gate audit: owning a blueprint is distinct from having permission, reputation, license, permit, materials, workbench, knowledge, placement access, utilities, and construction labor.",
                 "Blueprint acquisition sample audit: " + sampleLine("Licensed Shop Counter")
                         + " | " + sampleLine("Security Sensor Mast")
@@ -82,16 +84,11 @@ final class BlueprintAcquisitionPathAuthority {
     }
 
     private static String representativeFor(BuildRecipe recipe, Faction faction, String category) {
-        String text = text(recipe);
         if (faction == Faction.CIVIC_WARDENS) return "Civic Wardens armory desk";
         if (faction == Faction.IMPERIAL_GUARD) return "Guard quartermaster";
         if (faction == Faction.MECHANIST_COLLEGIA) return "Mechanist Collegia vendor";
         if (faction == Faction.NOBLE) return "noble estate factor";
-        if (text.contains("shop") || text.contains("business") || text.contains("permit")) return "civic permit office";
-        if ("Laboratory".equals(category)) return "research or clinic supplier";
-        if ("Logistics".equals(category)) return "cargo office representative";
-        if ("Defense".equals(category)) return "security goods broker";
-        return "public construction market";
+        return "no seller or grantor; available by default";
     }
 
     private static String accessLabelFor(BuildRecipe recipe, Faction faction, String legalLabel) {
@@ -106,6 +103,9 @@ final class BlueprintAcquisitionPathAuthority {
 
     private static String acquisitionFor(BuildRecipe recipe, Faction faction, String representative, String legalLabel) {
         String text = text(recipe);
+        if (faction == Faction.NONE) {
+            return "available by default in the public construction catalog; no separate plan unlock is required";
+        }
         if (faction != Faction.NONE && legalLabel.contains("license")) {
             return "earn standing, buy from " + representative + " after license check, receive as contract reward, or salvage/research a comparable plan";
         }
@@ -118,7 +118,7 @@ final class BlueprintAcquisitionPathAuthority {
         if (faction != Faction.NONE) {
             return "earn standing, buy from " + representative + ", receive as contract reward, or salvage/research a comparable plan";
         }
-        return "buy from " + representative + ", receive as contract reward, or learn through salvage research";
+        return "available by default in the public construction catalog; no separate plan unlock is required";
     }
 
     private static String legalLabelFor(BuildRecipe recipe, Faction faction, String category) {
@@ -144,7 +144,10 @@ final class BlueprintAcquisitionPathAuthority {
 
     private static String text(BuildRecipe recipe) {
         if (recipe == null) return "";
-        return (safe(recipe.name, "") + " " + safe(recipe.description, "") + " " + safe(recipe.requiredKnowledge, ""))
+        // Legality and acquisition channels are structural recipe metadata.
+        // Flavor copy may mention stolen goods, crime, guards, or suspicion
+        // without making the construction plan itself stolen or restricted.
+        return (safe(recipe.name, "") + " " + safe(recipe.requiredKnowledge, ""))
                 .toLowerCase(Locale.ROOT);
     }
 

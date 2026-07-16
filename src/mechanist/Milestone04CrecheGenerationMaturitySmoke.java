@@ -1,5 +1,6 @@
 package mechanist;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
@@ -9,6 +10,8 @@ final class Milestone04CrecheGenerationMaturitySmoke {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         World world = crecheWorld();
+        require(world.roomPopulationLedgers.get(0).roomId != world.roomPopulationLedgers.get(1).roomId,
+                "the two operating creches should occupy distinct physical rooms");
         int created = FactionCrecheAuthority.tick(world, 0L);
         require(created == 2 && world.crecheCohorts.size() == 2,
                 "each operating crèche should create one aggregate newborn cohort for the world year");
@@ -16,15 +19,21 @@ final class Milestone04CrecheGenerationMaturitySmoke {
                 world, world.roomPopulationLedgers.get(0));
         require(operating.operating() && operating.floorArea() >= FactionCrecheAuthority.MINIMUM_FLOOR_AREA,
                 "a full-size room with care, food, water, beds, and teaching should count as an operating crèche");
-        RoomPopulationLedger missingFood = RoomPopulationLedger.parse(world.roomPopulationLedgers.get(0).saveLine());
-        missingFood.crecheFoodStorageUnits = 0;
-        require(!FactionCrecheAuthority.buildingReadiness(world, missingFood).operating()
-                        && FactionCrecheAuthority.buildingReadiness(world, missingFood).blockers().contains("food storage 0/1"),
-                "missing required food storage should block the building type");
+        World missingFoodWorld = crecheWorld();
+        RoomPopulationLedger missingFood = missingFoodWorld.roomPopulationLedgers.get(0);
+        MapObjectState removedFood = removeCrecheFixture(missingFoodWorld, missingFood.roomId,
+                ExplicitRoomTypeRequirementAuthority.Capability.SECURE_FOOD_STORAGE);
+        FactionCrecheAuthority.BuildingReadiness missingFoodReadiness =
+                FactionCrecheAuthority.buildingReadiness(missingFoodWorld, missingFood);
+        require(removedFood != null && missingFood.crecheFoodStorageUnits == 1
+                        && !missingFoodReadiness.operating()
+                        && missingFoodReadiness.blockers().contains("secure food storage 0/1"),
+                "removing live secure-food fixture evidence should block the building despite a stale legacy counter");
         World undersized = crecheWorld();
-        undersized.rooms.set(0, new java.awt.Rectangle(0, 0, 4, 4));
+        Rectangle originalRoom = undersized.rooms.get(0);
+        undersized.rooms.set(0, new Rectangle(originalRoom.x, originalRoom.y, 4, 4));
         require(!FactionCrecheAuthority.buildingReadiness(undersized, undersized.roomPopulationLedgers.get(0)).operating(),
-                "a sixteen-tile room should not satisfy the twenty-four-tile crèche minimum");
+                "a four-by-four room should not satisfy the explicit six-by-six creche minimum");
         require(FactionCrecheAuthority.happinessBoost(1) == 3
                         && FactionCrecheAuthority.happinessBoost(2) == 5
                         && FactionCrecheAuthority.happinessBoost(10) == 25
@@ -195,56 +204,89 @@ final class Milestone04CrecheGenerationMaturitySmoke {
 
     private static World crecheWorld() {
         World world = new World(84300L, 32, 32);
-        addRoom(world, new java.awt.Rectangle(2, 2, 6, 6), "Civic Faction Creche");
+        int northRoom = addRoom(world, new Rectangle(2, 2, 6, 6), "Civic Faction Creche",
+                ExplicitRoomTypeRequirementAuthority.CRECHE_ID);
+        int southRoom = addRoom(world, new Rectangle(12, 2, 6, 6), "Civic Faction Nursery",
+                ExplicitRoomTypeRequirementAuthority.CRECHE_ID);
         world.npcs.clear();
         world.roomPopulationLedgers.clear();
         world.crecheCohorts.clear();
-        world.roomPopulationLedgers.add(ledger("pop.creche.a", "North Crèche", "creche population ledger"));
-        world.roomPopulationLedgers.add(ledger("pop.creche.b", "South Nursery", "nursery population ledger"));
+        world.roomPopulationLedgers.add(ledger("pop.creche.a", northRoom, "North Crèche",
+                "creche population ledger", ExplicitRoomTypeRequirementAuthority.CRECHE_ID));
+        world.roomPopulationLedgers.add(ledger("pop.creche.b", southRoom, "South Nursery",
+                "nursery population ledger", ExplicitRoomTypeRequirementAuthority.CRECHE_ID));
+        ExplicitRoomTypeRequirementAuthority.installCrecheFixtures(world, northRoom);
+        ExplicitRoomTypeRequirementAuthority.installCrecheFixtures(world, southRoom);
+        ExplicitRoomTypeRequirementAuthority.ensureGeneratedCareProviders(world, new Random(84300L));
         return world;
     }
 
     private static World ordinaryWorld() {
         World world = new World(84310L, 32, 32);
-        addRoom(world, new java.awt.Rectangle(2, 2, 6, 6), "Ordinary Hab Room");
+        int northRoom = addRoom(world, new Rectangle(2, 2, 6, 6), "North Ordinary Hab Room", "");
+        int southRoom = addRoom(world, new Rectangle(12, 2, 6, 6), "South Ordinary Hab Room", "");
         world.npcs.clear();
         world.roomPopulationLedgers.clear();
         world.crecheCohorts.clear();
-        world.roomPopulationLedgers.add(ledger("pop.hab.a", "North Hab", "local hab work roster"));
-        world.roomPopulationLedgers.add(ledger("pop.hab.b", "South Hab", "local hab work roster"));
+        world.roomPopulationLedgers.add(ledger("pop.hab.a", northRoom, "North Hab",
+                "local hab work roster", ""));
+        world.roomPopulationLedgers.add(ledger("pop.hab.b", southRoom, "South Hab",
+                "local hab work roster", ""));
         return world;
     }
 
-    private static void addRoom(World world, java.awt.Rectangle room, String name) {
+    private static int addRoom(World world, Rectangle room, String name, String declaredPurposeId) {
+        int roomId = world.rooms.size();
         world.rooms.add(room);
-        world.roomProfiles.add(RoomProfile.themedRoom(name, name, 20, Faction.CIVIC_WARDENS,
-                new String[]{"Emergency rations"}, new char[]{'b'}));
+        RoomProfile profile = RoomProfile.themedRoom(name, name, 20, Faction.CIVIC_WARDENS,
+                new String[]{"Emergency rations"}, new char[]{'b'});
+        profile.declaredPurposeId = declaredPurposeId == null ? "" : declaredPurposeId;
+        world.roomProfiles.add(profile);
         world.roomFactions.add(Faction.CIVIC_WARDENS);
         world.roomSpecials.add(Boolean.FALSE);
         for (int x = room.x; x < room.x + room.width; x++) {
             for (int y = room.y; y < room.y + room.height; y++) {
-                world.tiles[x][y] = '.';
-                world.roomIds[x][y] = 0;
+                boolean boundary = x == room.x || y == room.y
+                        || x == room.x + room.width - 1 || y == room.y + room.height - 1;
+                world.tiles[x][y] = boundary ? '#' : '.';
+                world.roomIds[x][y] = roomId;
             }
         }
+        world.tiles[room.x + room.width / 2][room.y] = 'D';
+        return roomId;
     }
 
-    private static RoomPopulationLedger ledger(String id, String room, String kind) {
+    private static RoomPopulationLedger ledger(String id, int roomId, String room, String kind,
+                                                String declaredPurposeId) {
         RoomPopulationLedger ledger = new RoomPopulationLedger();
         ledger.id = id;
-        ledger.roomId = 0;
+        ledger.roomId = roomId;
         ledger.roomName = room;
         ledger.sourceKind = kind;
         ledger.sourceLabel = "Civic Wardens " + kind;
         ledger.faction = Faction.CIVIC_WARDENS;
         ledger.capacity = 8;
         ledger.available = 8;
-        ledger.careProviders = 1;
-        ledger.crecheFoodStorageUnits = 1;
-        ledger.crecheWaterStorageUnits = 1;
-        ledger.crecheBedUnits = 3;
-        ledger.crecheTeachingStations = 1;
+        ledger.declaredRoomPurposeId = declaredPurposeId == null ? "" : declaredPurposeId;
         return ledger;
+    }
+
+    private static MapObjectState removeCrecheFixture(World world, int roomId,
+                                                       ExplicitRoomTypeRequirementAuthority.Capability capability) {
+        for (int i = 0; i < world.mapObjects.size(); i++) {
+            MapObjectState object = world.mapObjects.get(i);
+            if (object == null || world.roomIdAt(object.x, object.y) != roomId
+                    || !ExplicitRoomTypeRequirementAuthority.CRECHE_ID.equals(
+                    MapObjectState.stockValue(object.stockState, "roomPurpose"))
+                    || !capability.name().equals(MapObjectState.stockValue(object.stockState, "capability"))) {
+                continue;
+            }
+            world.mapObjects.remove(i);
+            char underlying = MapObjectState.underlyingTileFromStock(object.stockState);
+            world.tiles[object.x][object.y] = underlying == 0 ? '.' : underlying;
+            return object;
+        }
+        return null;
     }
 
     private static void render(GamePanel game) {

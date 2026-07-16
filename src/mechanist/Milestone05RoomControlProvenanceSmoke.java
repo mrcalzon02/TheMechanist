@@ -21,7 +21,7 @@ final class Milestone05RoomControlProvenanceSmoke {
             requireContains(warehouseRead, "Control: Civic Wardens", "current controller");
             requireContains(warehouseRead, "Room origin: built to Mechanist Collegia standards", "different origin faction");
             requireContains(warehouseRead, "Construction plan: Storage Crate", "mapped construction plan");
-            requireContains(warehouseRead, "public construction market", "mapped plan acquisition source");
+            requireContains(warehouseRead, "available by default", "mapped public-plan availability");
             requireContains(warehouseRead, "Plan access: Storage Crate is public", "public plan readiness");
             requireNotContains(warehouseRead, "unmapped", "internal mapping sentinel");
 

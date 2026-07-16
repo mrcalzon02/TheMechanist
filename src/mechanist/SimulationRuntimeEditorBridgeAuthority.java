@@ -15,7 +15,8 @@ final class SimulationRuntimeEditorBridgeAuthority {
     private SimulationRuntimeEditorBridgeAuthority() { }
 
     static boolean supports(String editorName) {
-        return SimulationToolSuiteRegistry.FACTION_EDITOR.equals(editorName)
+        return SimulationToolSuiteRegistry.ROOM_EDITOR.equals(editorName)
+                || SimulationToolSuiteRegistry.FACTION_EDITOR.equals(editorName)
                 || SimulationToolSuiteRegistry.POPULATION_EDITOR.equals(editorName)
                 || SimulationToolSuiteRegistry.ECONOMY_EDITOR.equals(editorName)
                 || SimulationToolSuiteRegistry.REINFORCEMENT_EDITOR.equals(editorName)
@@ -33,16 +34,29 @@ final class SimulationRuntimeEditorBridgeAuthority {
         }
         List<SimulationEditorRepository.EditableEntity> records = snapshot(game, editorName);
         int added = repository.replaceRuntimeEntities(editorName, records);
-        return new RefreshResult(true, added, "Loaded " + added + " live " + editorName.toLowerCase()
-                + " record" + (added == 1 ? "" : "s") + " at world turn " + game.worldTurn
-                + ". Changes remain mod-local until exported.");
+        int liveWorldRecords = 0;
+        int catalogDefinitionRecords = 0;
+        for (SimulationEditorRepository.EditableEntity record : records) {
+            if (record != null && Boolean.FALSE.equals(
+                    record.properties().get("liveWorldDependent"))) {
+                catalogDefinitionRecords++;
+            } else {
+                liveWorldRecords++;
+            }
+        }
+        return new RefreshResult(true, added, "Refreshed " + added + " "
+                + editorName.toLowerCase() + " record" + (added == 1 ? "" : "s")
+                + " at world turn " + game.worldTurn + " (" + liveWorldRecords
+                + " live-world, " + catalogDefinitionRecords + " catalog/definition)."
+                + " Changes remain mod-local until exported.");
     }
 
     static List<SimulationEditorRepository.EditableEntity> snapshot(GamePanel game, String editorName) {
         if (game == null || game.world == null || !supports(editorName)) return List.of();
         World world = game.world;
         ArrayList<SimulationEditorRepository.EditableEntity> out = new ArrayList<>();
-        if (SimulationToolSuiteRegistry.FACTION_EDITOR.equals(editorName)) addFactionSnapshots(out, game);
+        if (SimulationToolSuiteRegistry.ROOM_EDITOR.equals(editorName)) addRoomParitySnapshots(out, game);
+        else if (SimulationToolSuiteRegistry.FACTION_EDITOR.equals(editorName)) addFactionSnapshots(out, game);
         else if (SimulationToolSuiteRegistry.POPULATION_EDITOR.equals(editorName)) addPopulationSnapshots(out, game);
         else if (SimulationToolSuiteRegistry.ECONOMY_EDITOR.equals(editorName)) addEconomySnapshots(out, game);
         else if (SimulationToolSuiteRegistry.REINFORCEMENT_EDITOR.equals(editorName)) addReinforcementSnapshots(out, game);
@@ -83,6 +97,168 @@ final class SimulationRuntimeEditorBridgeAuthority {
             props.put("reinforcementStatus", reinforcement.line());
             out.add(entity(SimulationToolSuiteRegistry.FACTION_EDITOR, "faction-" + faction.name(), faction.label, props));
         }
+    }
+
+    private static void addRoomParitySnapshots(
+            ArrayList<SimulationEditorRepository.EditableEntity> out, GamePanel game) {
+        World world = game.world;
+        int mappedRooms = 0;
+        int nonAcquirableRooms = 0;
+        int unmappedRooms = 0;
+        int controllerDivergences = 0;
+        int controllerFamilyDivergences = 0;
+        int specialRooms = 0;
+        int missingProfiles = 0;
+        int declaredPurposeRooms = 0;
+        int operatingPurposeRooms = 0;
+        int blockedPurposeRooms = 0;
+        int roomCount = world.rooms == null ? 0 : world.rooms.size();
+        for (int roomId = 0; roomId < roomCount; roomId++) {
+            java.awt.Rectangle bounds = world.roomRect(roomId);
+            RoomProfile profile = roomId < world.roomProfiles.size()
+                    ? world.roomProfiles.get(roomId) : null;
+            Faction profileDeclared = profile == null || profile.faction == null
+                    ? Faction.NONE : profile.faction;
+            Faction profileFamily = FactionIdentityAuthority.strategicFamily(profileDeclared);
+            Faction controller = world.roomFaction(roomId);
+            if (controller == null) controller = Faction.NONE;
+            Faction controllerFamily = FactionIdentityAuthority.strategicFamily(controller);
+            boolean special = roomId < world.roomSpecials.size()
+                    && Boolean.TRUE.equals(world.roomSpecials.get(roomId));
+            RoomConstructionParityAuthority.RoomParityEntry parity =
+                    RoomConstructionParityAuthority.liveEntry(profile, world.zoneType);
+            String acquisition = safe(parity.playerAcquisitionStatus());
+            boolean nonAcquirable = acquisition.toLowerCase().contains("non-acquirable");
+            BuildRecipe mappedRecipe = nonAcquirable
+                    ? null : RoomConstructionParityAuthority.liveMatchingRecipe(profile);
+            String mappingStatus;
+            if (nonAcquirable) {
+                mappingStatus = "NON_ACQUIRABLE_EXCEPTION";
+                nonAcquirableRooms++;
+            } else if (mappedRecipe != null) {
+                mappingStatus = "MAPPED";
+                mappedRooms++;
+            } else {
+                mappingStatus = "UNMAPPED_GAP";
+                unmappedRooms++;
+            }
+            boolean differs = profileDeclared != controller;
+            boolean familyDiffers = profileFamily != controllerFamily;
+            if (differs) controllerDivergences++;
+            if (familyDiffers) controllerFamilyDivergences++;
+            if (special) specialRooms++;
+            if (profile == null) missingProfiles++;
+            ExplicitRoomTypeRequirementAuthority.Assessment purpose =
+                    ExplicitRoomTypeRequirementAuthority.assessRoom(world, roomId);
+            if (purpose.declared()) {
+                declaredPurposeRooms++;
+                if (purpose.operating()) operatingPurposeRooms++;
+                else blockedPurposeRooms++;
+            }
+
+            LinkedHashMap<String, Object> props = runtimeProperties(
+                    "RoomConstructionParityInspection", game.worldTurn);
+            props.put("liveWorldDependent", true);
+            props.put("worldLocationKey", world.locationKey());
+            props.put("sectorX", world.sectorX);
+            props.put("sectorY", world.sectorY);
+            props.put("zoneX", world.zoneX);
+            props.put("zoneY", world.zoneY);
+            props.put("floor", world.floor);
+            props.put("sewerLayer", world.sewerLayer);
+            props.put("roomId", roomId);
+            props.put("roomName", safe(parity.roomName()));
+            props.put("zoneType", world.zoneType == null ? "UNKNOWN" : world.zoneType.name());
+            props.put("sourceZone", safe(parity.sourceZone()));
+            props.put("x", bounds == null ? -1 : bounds.x);
+            props.put("y", bounds == null ? -1 : bounds.y);
+            props.put("width", bounds == null ? 0 : bounds.width);
+            props.put("height", bounds == null ? 0 : bounds.height);
+            props.put("roomProfilePresent", profile != null);
+            props.put("roomBoundsPresent", bounds != null);
+            props.put("specialRoom", special);
+            props.put("profileDeclaredFaction", profileDeclared.name());
+            props.put("profileDeclaredFactionLabel", profileDeclared.label);
+            props.put("profileDeclaredStrategicFamily", profileFamily.name());
+            props.put("profileDeclaredStrategicFamilyLabel", profileFamily.label);
+            props.put("currentControllerFaction", controller.name());
+            props.put("currentControllerLabel", controller.label);
+            props.put("currentControllerStrategicFamily", controllerFamily.name());
+            props.put("currentControllerStrategicFamilyLabel", controllerFamily.label);
+            props.put("controllerDiffersFromProfileDeclaration", differs);
+            props.put("controllerFamilyDiffersFromProfileFamily", familyDiffers);
+            props.put("blueprintMappingStatus", mappingStatus);
+            props.put("matchingBlueprint", mappedRecipe == null
+                    ? "No exact blueprint" : mappedRecipe.name);
+            props.put("blueprintMappingValid", mappedRecipe != null);
+            props.put("blueprintAcquisitionStatus", acquisition);
+            props.put("profileDeclaredFactionUseStatus", safe(parity.factionUseStatus()));
+            props.put("exceptionNote", profile == null && safe(parity.exceptionNote()).isBlank()
+                    ? "No room profile is available for this live room index."
+                    : safe(parity.exceptionNote()));
+            props.put("declaredPurposeId", purpose.definition() == null
+                    ? "" : purpose.definition().id());
+            props.put("declaredPurposeLabel", purpose.definition() == null
+                    ? "No explicit purpose" : purpose.definition().label());
+            props.put("declaredPurposeSource", purpose.declarationSource());
+            props.put("roomPurposeStatus", purpose.status().name());
+            props.put("roomPurposeOperating", purpose.operating());
+            props.put("roomPurposePhysicallyQualified", purpose.physicallyQualified());
+            props.put("roomPurposeBlockers", purpose.blockers().isEmpty()
+                    ? "none" : String.join(" | ", purpose.blockers()));
+            props.put("roomPurposeEvidence", purpose.declared()
+                    ? purpose.requirementSummary() + " | witnesses: " + purpose.witnessSummary()
+                    : "No explicit room-purpose definition is declared; prose and glyphs are not qualification evidence.");
+            props.put("roomPurposeAssignedStaff", purpose.assignedStaff());
+            props.put("roomPurposeRawCapacityUnits", purpose.capacityUnits());
+            props.put("roomPurposeOperatingCapacity", purpose.operatingCapacity());
+            props.put("roomPurposeCapacityUnitLabel", purpose.capacityUnitLabel());
+            props.put("roomPurposeCapacitySummary", purpose.operatingCapacity() + " "
+                    + purpose.capacityUnitLabel());
+            String purposeId = purpose.definition() == null ? "" : purpose.definition().id();
+            if (ExplicitRoomTypeRequirementAuthority.CRECHE_ID.equals(purposeId)) {
+                // Retain the original crèche-specific key for existing editor
+                // consumers while keeping it off unrelated purpose rows.
+                props.put("roomPurposeChildCapacity", purpose.childCapacity());
+                props.put("roomPurposeAssignedCareProviders", purpose.assignedCareProviders());
+                props.put("roomPurposeChildBedUnits", purpose.childBedUnits());
+            }
+            if (ExplicitRoomTypeRequirementAuthority.BARRACKS_ID.equals(purposeId)) {
+                props.put("roomPurposeAssignedDutyStaff", purpose.assignedDutyStaff());
+                props.put("roomPurposeDutyBerthUnits", purpose.dutyBerthUnits());
+                props.put("roomPurposeDutyCapacity", purpose.dutyCapacity());
+                props.put("roomPurposeMusterCapacity", purpose.operatingCapacity());
+                props.put("roomPurposeBarracksMusterEligible", purpose.operating());
+            }
+            out.add(entity(SimulationToolSuiteRegistry.ROOM_EDITOR,
+                    "room-parity-" + world.locationKey() + "-" + roomId,
+                    "Room " + roomId + " - " + safe(parity.roomName()), props));
+        }
+
+        LinkedHashMap<String, Object> audit = runtimeProperties(
+                "RoomConstructionParityAudit", game.worldTurn);
+        audit.put("liveWorldDependent", true);
+        audit.put("worldLocationKey", world.locationKey());
+        audit.put("roomCount", roomCount);
+        audit.put("mappedRoomCount", mappedRooms);
+        audit.put("nonAcquirableExceptionCount", nonAcquirableRooms);
+        audit.put("unmappedGapCount", unmappedRooms);
+        audit.put("controllerDivergenceCount", controllerDivergences);
+        audit.put("controllerFamilyDivergenceCount", controllerFamilyDivergences);
+        audit.put("specialRoomCount", specialRooms);
+        audit.put("missingProfileCount", missingProfiles);
+        audit.put("roomPurposeDefinitionCount",
+                ExplicitRoomTypeRequirementAuthority.definitions().size());
+        audit.put("roomPurposeDeclaredCount", declaredPurposeRooms);
+        audit.put("roomPurposeOperatingCount", operatingPurposeRooms);
+        audit.put("roomPurposeBlockedCount", blockedPurposeRooms);
+        audit.put("roomPurposeDefinitionAudit",
+                ExplicitRoomTypeRequirementAuthority.definitionAuditLine());
+        audit.put("boundary",
+                "Read-only mod-local room snapshot. Explicit-purpose fields assess live room geometry, reachable semantic installed-fixture capabilities, assigned living personnel, control, and recorded hazards. Capacity is type-specific: child-care capacity for creches and duty/muster capacity for security barracks. Fixture presence does not prove current food, water, arms, or ammunition contents; assignment does not prove an active work shift. Blueprint parity still does not prove plan ownership, vendor stock, or price, and editor changes do not apply to the live world.");
+        out.add(entity(SimulationToolSuiteRegistry.ROOM_EDITOR,
+                "room-parity-audit-" + world.locationKey(),
+                "Room Construction Parity Audit", audit));
     }
 
     private static void addPopulationSnapshots(ArrayList<SimulationEditorRepository.EditableEntity> out, GamePanel game) {
@@ -133,6 +309,49 @@ final class SimulationRuntimeEditorBridgeAuthority {
             out.add(entity(SimulationToolSuiteRegistry.ECONOMY_EDITOR, "market-pressure-" + pressure.getKey().name(),
                     pressure.getKey().label + " Market Pressure", props));
         }
+        addConstructionParitySnapshots(out, game.worldTurn);
+    }
+
+    private static void addConstructionParitySnapshots(
+            ArrayList<SimulationEditorRepository.EditableEntity> out, long worldTurn) {
+        for (ConstructionParityInspectionAuthority.RecipeInspection inspection
+                : ConstructionParityInspectionAuthority.inspectAll()) {
+            LinkedHashMap<String, Object> props = runtimeProperties(
+                    "ConstructionParityInspection", worldTurn);
+            props.put("sourceMode",
+                    "refreshable construction catalog inspection; not live ownership, vendor, site, or price state");
+            props.put("liveWorldDependent", false);
+            props.put("recipeName", inspection.recipeName());
+            props.put("category", inspection.category());
+            props.put("playerCapability", inspection.playerCapability().name());
+            props.put("factionCapability", inspection.factionCapability().name());
+            props.put("blueprintName", inspection.blueprintName());
+            props.put("blueprintMappingValid", inspection.blueprintMappingValid());
+            props.put("issuingFaction", inspection.issuingFaction());
+            props.put("vendorCategory", inspection.vendorCategory());
+            props.put("acquisitionPath", inspection.acquisitionPath());
+            props.put("accessGate", inspection.accessGate());
+            props.put("legalClass", inspection.legalClass());
+            props.put("materialSummary", inspection.materialSummary());
+            props.put("workforceSummary", inspection.workforceSummary());
+            props.put("exceptionClass", inspection.exceptionClass());
+            props.put("exceptionReason", inspection.exceptionReason());
+            out.add(entity(SimulationToolSuiteRegistry.ECONOMY_EDITOR,
+                    "construction-parity-" + inspection.recipeName(),
+                    inspection.recipeName() + " Construction Parity", props));
+        }
+        LinkedHashMap<String, Object> summary = runtimeProperties(
+                "ConstructionParityAudit", worldTurn);
+        summary.put("sourceMode",
+                "refreshable construction catalog inspection; not live ownership, vendor, site, or price state");
+        summary.put("liveWorldDependent", false);
+        summary.put("recipeCount", ConstructionParityInspectionAuthority.inspectAll().size());
+        summary.put("auditLines", String.join(" | ",
+                ConstructionParityInspectionAuthority.auditLines()));
+        summary.put("interpretation",
+                "Player-only, faction-only, conditional, unsupported, and invalid mappings remain visible until their live owner is implemented.");
+        out.add(entity(SimulationToolSuiteRegistry.ECONOMY_EDITOR,
+                "construction-parity-audit", "Construction Parity Audit", summary));
     }
 
     private static void addReinforcementSnapshots(ArrayList<SimulationEditorRepository.EditableEntity> out, GamePanel game) {

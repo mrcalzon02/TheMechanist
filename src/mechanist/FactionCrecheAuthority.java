@@ -3,9 +3,10 @@ package mechanist;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 
 /** Owns crèche happiness, long-form birth cohorts, maturation, and young-adult musters. */
 final class FactionCrecheAuthority {
@@ -13,7 +14,8 @@ final class FactionCrecheAuthority {
     static final int CRECHES_FOR_MAX_HAPPINESS = 10;
     static final int MATURITY_YEARS = 16;
     static final int MAX_MUSTER_GROUP = 6;
-    static final int MINIMUM_FLOOR_AREA = 24;
+    static final int MINIMUM_FLOOR_AREA = ExplicitRoomTypeRequirementAuthority.CRECHE_MIN_WIDTH
+            * ExplicitRoomTypeRequirementAuthority.CRECHE_MIN_HEIGHT;
 
     record Status(int creches, int happinessBoost, int careProviders, int childCareCapacity,
                   int children, int matureYoungAdults,
@@ -31,20 +33,26 @@ final class FactionCrecheAuthority {
         if (world.crecheCohorts == null) return 0;
         int created = acceptDueFactionBirths(world, worldTurn);
         long birthYear = Math.max(0L, worldTurn / AgeAndWorldTimeAuthority.TURNS_PER_YEAR);
+        Set<String> processedCrecheRooms = new HashSet<>();
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
-            BuildingReadiness readiness = buildingReadiness(world, ledger);
-            if (!readiness.operating() || !FactionIdentityAuthority.aligned(ledger.faction)) continue;
+            ExplicitRoomTypeRequirementAuthority.Assessment assessment =
+                    ExplicitRoomTypeRequirementAuthority.assess(world, ledger);
+            if (!assessment.operating() || !FactionIdentityAuthority.aligned(ledger.faction)) continue;
+            String roomKey = FactionIdentityAuthority.strategicFamily(ledger.faction) + ":" + ledger.roomId;
+            if (!processedCrecheRooms.add(roomKey)) continue;
             boolean exists = false;
             for (CrecheCohortRecord cohort : world.crecheCohorts) {
-                if (cohort != null && ledger.id.equals(cohort.ledgerId) && cohort.birthYear == birthYear) {
+                if (cohort != null && cohort.roomId == ledger.roomId
+                        && FactionIdentityAuthority.sameFamily(cohort.faction, ledger.faction)
+                        && cohort.birthYear == birthYear) {
                     exists = true;
                     break;
                 }
             }
             if (exists) continue;
-            int currentChildren = immatureChildren(world, ledger.id, worldTurn);
-            int openCare = Math.max(0, childCareCapacity(ledger) - currentChildren);
-            int count = Math.min(openCare, Math.max(1, ledger.careProviders * 3));
+            int currentChildren = immatureChildrenInRoom(world, ledger.roomId, ledger.faction, worldTurn);
+            int openCare = Math.max(0, assessment.childCapacity() - currentChildren);
+            int count = Math.min(openCare, Math.max(1, assessment.assignedCareProviders() * 3));
             if (count <= 0) continue;
             CrecheCohortRecord cohort = new CrecheCohortRecord();
             cohort.id = "creche." + Math.abs((ledger.id + ":" + birthYear).hashCode());
@@ -61,10 +69,12 @@ final class FactionCrecheAuthority {
         }
         world.factionHappinessBoost.clear();
         java.util.EnumMap<Faction,Integer> crechesByFamily = new java.util.EnumMap<>(Faction.class);
+        Set<String> countedCrecheRooms = new HashSet<>();
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
             if (ledger == null || !FactionIdentityAuthority.aligned(ledger.faction)
                     || !buildingReadiness(world, ledger).operating()) continue;
             Faction family = FactionIdentityAuthority.strategicFamily(ledger.faction);
+            if (!countedCrecheRooms.add(family + ":" + ledger.roomId)) continue;
             crechesByFamily.put(family, crechesByFamily.getOrDefault(family, 0) + 1);
         }
         for (java.util.Map.Entry<Faction,Integer> entry : crechesByFamily.entrySet()) {
@@ -83,10 +93,12 @@ final class FactionCrecheAuthority {
         int creches = 0;
         int plannedCreches = 0;
         ArrayList<String> buildingBlockers = new ArrayList<>();
+        Set<Integer> auditedRooms = new HashSet<>();
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
             if (!FactionIdentityAuthority.sameFamily(ledger.faction, target)) continue;
             BuildingReadiness readiness = buildingReadiness(world, ledger);
             if (!readiness.plannedCreche()) continue;
+            if (!auditedRooms.add(ledger.roomId)) continue;
             plannedCreches++;
             if (readiness.operating()) creches++;
             else buildingBlockers.add(ledger.roomName + ": " + String.join(", ", readiness.blockers()));
@@ -107,12 +119,14 @@ final class FactionCrecheAuthority {
                 soonest = Math.min(soonest, cohort.maturityTurn() - worldTurn);
             }
         }
+        Set<Integer> capacityRooms = new HashSet<>();
         for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
-            if (buildingReadiness(world, ledger).operating()
-                    && FactionIdentityAuthority.sameFamily(ledger.faction, target)) {
-                careProviders += Math.max(0, ledger.careProviders);
-                careCapacity += childCareCapacity(ledger);
-            }
+            if (!FactionIdentityAuthority.sameFamily(ledger.faction, target)) continue;
+            ExplicitRoomTypeRequirementAuthority.Assessment assessment =
+                    ExplicitRoomTypeRequirementAuthority.assess(world, ledger);
+            if (!assessment.operating() || !capacityRooms.add(ledger.roomId)) continue;
+            careProviders += assessment.assignedCareProviders();
+            careCapacity += assessment.childCapacity();
         }
         int happiness = happinessBoost(creches);
         String line;
@@ -211,37 +225,23 @@ final class FactionCrecheAuthority {
 
     static boolean isCrecheLedger(RoomPopulationLedger ledger) {
         if (ledger == null || ledger.capacity <= 0) return false;
-        String text = (safe(ledger.sourceKind) + " " + safe(ledger.sourceLabel) + " " + safe(ledger.roomName)
-                + " " + safe(ledger.facilityPurpose)).toLowerCase(Locale.ROOT);
-        return text.contains("creche") || text.contains("crèche") || text.contains("daycare")
-                || text.contains("nursery") || text.contains("rookery");
+        if (ExplicitRoomTypeRequirementAuthority.CRECHE_ID.equals(ledger.declaredRoomPurposeId)) return true;
+        return ExplicitRoomTypeRequirementAuthority.CRECHE_ID.equals(
+                ExplicitRoomTypeRequirementAuthority.inferDeclaredPurposeId(
+                        safe(ledger.roomName) + " " + safe(ledger.facilityPurpose) + " "
+                                + safe(ledger.facilityHistoricNote)));
     }
 
     static BuildingReadiness buildingReadiness(World world, RoomPopulationLedger ledger) {
-        if (!isCrecheLedger(ledger)) {
-            return new BuildingReadiness(false, false, 0, List.of("room is not designated as a crèche"),
-                    "Not a planned crèche.");
+        ExplicitRoomTypeRequirementAuthority.Assessment assessment =
+                ExplicitRoomTypeRequirementAuthority.assess(world, ledger);
+        if (!assessment.declared()) {
+            return new BuildingReadiness(false, false, assessment.footprintArea(),
+                    List.of("room is not explicitly designated as a crèche"),
+                    "Not an explicitly planned crèche.");
         }
-        int floorArea = 0;
-        if (world != null && ledger.roomId >= 0 && ledger.roomId < world.rooms.size()) {
-            java.awt.Rectangle room = world.rooms.get(ledger.roomId);
-            if (room != null) floorArea = Math.max(0, room.width) * Math.max(0, room.height);
-        }
-        ArrayList<String> blockers = new ArrayList<>();
-        if (floorArea < MINIMUM_FLOOR_AREA) blockers.add("floor area " + floorArea + "/" + MINIMUM_FLOOR_AREA);
-        if (ledger.careProviders < 1) blockers.add("care provider 0/1");
-        if (ledger.crecheFoodStorageUnits < 1) blockers.add("food storage 0/1");
-        if (ledger.crecheWaterStorageUnits < 1) blockers.add("water storage 0/1");
-        if (ledger.crecheBedUnits < 1) blockers.add("child bed unit 0/1");
-        if (ledger.crecheTeachingStations < 1) blockers.add("teaching station 0/1");
-        boolean operating = blockers.isEmpty();
-        String line = operating
-                ? "Operating crèche: floor area " + floorArea + "; providers " + ledger.careProviders
-                + "; food storage " + ledger.crecheFoodStorageUnits + "; water storage " + ledger.crecheWaterStorageUnits
-                + "; child bed units " + ledger.crecheBedUnits + " at four children each; teaching stations "
-                + ledger.crecheTeachingStations + "."
-                : "Planned crèche blocked: " + String.join(", ", blockers) + ".";
-        return new BuildingReadiness(true, operating, floorArea, List.copyOf(blockers), line);
+        return new BuildingReadiness(true, assessment.operating(), assessment.footprintArea(),
+                assessment.blockers(), assessment.line());
     }
 
     static int happinessBoost(int creches) {
@@ -261,18 +261,17 @@ final class FactionCrecheAuthority {
         return true;
     }
 
-    static int childCareCapacity(RoomPopulationLedger ledger) {
+    static int childCareCapacity(World world, RoomPopulationLedger ledger) {
         if (ledger == null) return 0;
-        int providerCapacity = Math.max(0, ledger.careProviders) * 12;
-        int denseBedCapacity = Math.max(0, ledger.crecheBedUnits) * 4;
-        return Math.min(providerCapacity, denseBedCapacity);
+        return ExplicitRoomTypeRequirementAuthority.assess(world, ledger).childCapacity();
     }
 
-    private static int immatureChildren(World world, String ledgerId, long worldTurn) {
-        if (world == null || ledgerId == null) return 0;
+    private static int immatureChildrenInRoom(World world, int roomId, Faction faction, long worldTurn) {
+        if (world == null || roomId < 0) return 0;
         int children = 0;
         for (CrecheCohortRecord cohort : world.crecheCohorts) {
-            if (cohort != null && ledgerId.equals(cohort.ledgerId) && cohort.remaining > 0
+            if (cohort != null && cohort.roomId == roomId
+                    && FactionIdentityAuthority.sameFamily(cohort.faction, faction) && cohort.remaining > 0
                     && cohort.ageYears(worldTurn) < MATURITY_YEARS) children += cohort.remaining;
         }
         return children;
@@ -289,7 +288,8 @@ final class FactionCrecheAuthority {
             for (RoomPopulationLedger ledger : world.roomPopulationLedgers) {
                 if (!FactionIdentityAuthority.sameFamily(ledger.faction, parent.faction)) continue;
                 if (!buildingReadiness(world, ledger).operating()) continue;
-                int open = childCareCapacity(ledger) - immatureChildren(world, ledger.id, worldTurn);
+                int open = childCareCapacity(world, ledger)
+                        - immatureChildrenInRoom(world, ledger.roomId, ledger.faction, worldTurn);
                 if (open > mostOpenCare) {
                     destination = ledger;
                     mostOpenCare = open;

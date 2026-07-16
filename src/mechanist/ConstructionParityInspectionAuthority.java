@@ -81,8 +81,15 @@ final class ConstructionParityInspectionAuthority {
         String blueprintName = licensed
                 ? ConstructionBlueprintOwnershipAuthority.blueprintItemName(recipe)
                 : recipe.name + " public construction plan";
-        boolean mappingValid = !ConstructionBlueprintOwnershipAuthority
-                .blueprintId(recipe).isBlank();
+        String blueprintId = ConstructionBlueprintOwnershipAuthority.blueprintId(recipe);
+        BuildRecipe mappedRecipe = ConstructionBlueprintOwnershipAuthority
+                .recipeForId(blueprintId);
+        boolean roundTrips = !blueprintId.isBlank() && mappedRecipe != null
+                && recipe.name.equals(mappedRecipe.name);
+        boolean folioPresent = !licensed || (ItemCatalog.ITEMS != null
+                && ItemCatalog.get(ConstructionBlueprintOwnershipAuthority
+                        .blueprintItemName(recipe)) != null);
+        boolean mappingValid = roundTrips && folioPresent;
         Faction issuer = FactionInventoryStockAuthority.normalizeFaction(
                 recipe.requiredFaction == null ? Faction.NONE : recipe.requiredFaction);
         Capability player = playerCapability(recipe, licensed, path);
@@ -91,9 +98,9 @@ final class ConstructionParityInspectionAuthority {
         String exceptionReason = exceptionReason(recipe, player, faction, licensed);
         String vendor = licensed
                 ? ConstructionBlueprintOwnershipAuthority.vendorCategoryFor(recipe).id
-                : "public construction market";
+                : "not applicable - public catalog";
         String issuing = issuer == Faction.NONE
-                ? "public construction market" : issuer.label;
+                ? "public construction catalog" : issuer.label;
         return new RecipeInspection(recipe.name,
                 ConstructionCategoryAuthority.categoryFor(recipe),
                 player, faction, blueprintName, mappingValid, issuing, vendor,

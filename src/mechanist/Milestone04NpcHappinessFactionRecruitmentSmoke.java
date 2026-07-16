@@ -25,6 +25,8 @@ final class Milestone04NpcHappinessFactionRecruitmentSmoke {
                 Faction.HIVER_BLOCK_AUREL, 23, 4);
         world.roomPopulationLedgers.add(creche("creche.neutral", neutralRoom, Faction.NONE));
         world.roomPopulationLedgers.add(creche("creche.aurel", aurelRoom, Faction.HIVER_BLOCK_AUREL));
+        ExplicitRoomTypeRequirementAuthority.installCrecheFixtures(world, aurelRoom);
+        ExplicitRoomTypeRequirementAuthority.ensureGeneratedCareProviders(world, new Random(17101L));
 
         DeferredFactionLedgerRecord family = new DeferredFactionLedgerRecord();
         family.id = "distant.hiver";
@@ -273,6 +275,7 @@ final class Milestone04NpcHappinessFactionRecruitmentSmoke {
         ledger.roomName = id;
         ledger.faction = faction;
         ledger.sourceKind = "creche population room";
+        ledger.declaredRoomPurposeId = ExplicitRoomTypeRequirementAuthority.CRECHE_ID;
         ledger.capacity = 12;
         ledger.careProviders = 1;
         ledger.crecheFoodStorageUnits = 1;
@@ -303,6 +306,7 @@ final class Milestone04NpcHappinessFactionRecruitmentSmoke {
         for (int px = room.x + 1; px < room.x + room.width - 1; px++) {
             for (int py = room.y + 1; py < room.y + room.height - 1; py++) world.tiles[px][py] = '.';
         }
+        world.tiles[room.x + room.width / 2][room.y] = 'D';
         world.tiles[room.x + 2][room.y + 2] = 'c';
         return index;
     }

@@ -165,10 +165,16 @@ final class Milestone05FactionStrategicAssetSmoke {
 
         TradeOffer blueprint = new TradeOffer("Machine blueprint slate", "blueprint", 80,
                 "licensed construction blueprint from the completed facility");
+        TradeOffer waterBlueprint = new TradeOffer("Water Barrel licensed blueprint",
+                "knowledge/blueprint/construction", 42,
+                "licensed construction blueprint for emergency water storage");
+        waterBlueprint.constructionBlueprintId = "construction.water.barrel";
         TradeOffer tool = new TradeOffer("Tool bundle", "tool", 12,
                 "ordinary industrial tool stock");
         TradeOffer ration = new TradeOffer("Emergency rations", "food", 4,
                 "basic emergency ration stock");
+        TradeOffer calibrationTool = new TradeOffer("Cogitator calibration tool",
+                "tool", 16, "precision calibration stock");
 
         site.workers = 0;
         site.stock = 12;
@@ -196,6 +202,12 @@ final class Milestone05FactionStrategicAssetSmoke {
         require(!scarcity.allowed()
                         && "scarcity-restricted strategic stock".equals(scarcity.legalClass()),
                 "critical stock should suspend blueprint and other strategic transfers");
+        FactionMarketAccessAuthority.Decision waterBlueprintScarcity = evaluate(
+                game, trader, waterBlueprint, Faction.HIVER, 20);
+        require(!waterBlueprintScarcity.allowed()
+                        && "scarcity-restricted strategic stock".equals(
+                        waterBlueprintScarcity.legalClass()),
+                "essential words must not exempt an explicitly licensed construction blueprint");
 
         site.stock = 12;
         game.worldTurn = game.turn;
@@ -204,12 +216,37 @@ final class Milestone05FactionStrategicAssetSmoke {
         require(!conflict.allowed()
                         && "conflict-restricted faction market".equals(conflict.legalClass()),
                 "recent seizure/salvage conflict should restrict strategic stock to non-members");
+        FactionMarketAccessAuthority.Decision conflictRelief = evaluate(game, trader, ration,
+                Faction.HIVER, 0);
+        require(conflictRelief.allowed(),
+                "recent conflict should keep ordinary emergency rations open to non-members");
+        FactionMarketAccessAuthority.Decision conflictWaterBlueprint = evaluate(
+                game, trader, waterBlueprint, Faction.HIVER, 20);
+        require(!conflictWaterBlueprint.allowed()
+                        && "conflict-restricted faction market".equals(
+                        conflictWaterBlueprint.legalClass()),
+                "explicit blueprint metadata should outrank essential-supply words during conflict");
         FactionMarketAccessAuthority.Decision member = evaluate(game, trader, blueprint,
                 Faction.MECHANICUS, -40);
         require(member.allowed(),
                 "same-family members should retain controlled access during faction conflict");
 
         game.world.zoneConflictLossHistory = "";
+        FactionMarketAccessAuthority.Decision licensedWaterBlueprint = evaluate(
+                game, trader, waterBlueprint, Faction.HIVER, 0);
+        require(!licensedWaterBlueprint.allowed()
+                        && "faction-only licensed blueprint".equals(
+                        licensedWaterBlueprint.legalClass()),
+                "structured blueprint identity should preserve the ordinary license gate");
+        String ordinaryCategory = trader.marketCategory;
+        trader.marketCategory = FactionCriticalVendorPlacementAuthority.Category.ARMORY.id;
+        FactionMarketAccessAuthority.Decision calibrationGate = evaluate(
+                game, trader, calibrationTool, Faction.HIVER, 0);
+        require(!calibrationGate.allowed()
+                        && "military and security restricted goods".equals(
+                        calibrationGate.legalClass()),
+                "the word calibration must not create a false ration exemption");
+        trader.marketCategory = ordinaryCategory;
         FactionMarketAccessAuthority.Decision hostile = evaluate(game, trader, tool,
                 Faction.HIVER, -25);
         require(!hostile.allowed()

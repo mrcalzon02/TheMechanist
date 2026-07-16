@@ -53,6 +53,21 @@ final class RoomOwnershipAuthority {
         Faction owner = game.world.roomFaction(roomId);
         lines.add("Room: " + roomName(game.world, roomId) + ". Control: " + ownerLabel(owner)
                 + ". Access: " + accessLabel(game, roomId, owner) + ".");
+        ExplicitRoomTypeRequirementAuthority.Assessment purpose =
+                ExplicitRoomTypeRequirementAuthority.assessRoom(game.world, roomId);
+        if (purpose.declared() && purpose.definition() != null) {
+            lines.add("Declared purpose: " + purpose.definition().label() + " ("
+                    + purpose.definition().id() + ") via " + purpose.declarationSource() + ".");
+            lines.add("Room-purpose status: " + purpose.status().name()
+                    + ". Capacity: " + purpose.operatingCapacity() + " "
+                    + purpose.capacityUnitLabel() + capacityContext(purpose) + ". Assigned staff: "
+                    + purpose.assignedStaff() + ". Blockers: "
+                    + (purpose.blockers().isEmpty() ? "none" : String.join("; ", purpose.blockers())) + ".");
+        } else {
+            lines.add("Declared purpose: none.");
+            lines.add("Room-purpose status: " + purpose.status().name()
+                    + ". Capacity: not defined. Blockers: no explicit room purpose is declared.");
+        }
         if (depth >= 1) {
             RoomProfile profile = game.world.roomProfile(roomId);
             if (profile != null && profile.descriptor != null && !profile.descriptor.isBlank()) {
@@ -69,8 +84,36 @@ final class RoomOwnershipAuthority {
             lines.addAll(RoomControlProvenanceAuthority.inspectionLines(game, roomId));
             OwnershipChange latest = latestChangeFor(game, roomId);
             if (latest != null) lines.add("Latest room control change: " + latest.readback());
+            if (purpose.declared()) {
+                lines.add("Room-purpose physical evidence: geometry " + purpose.width() + "x"
+                        + purpose.height() + ", reachable interior " + purpose.reachableInteriorCells()
+                        + ", reachable entrances " + purpose.entrances() + "; witnessed objects/personnel/control/hazards: "
+                        + purpose.witnessSummary() + ".");
+                for (ExplicitRoomTypeRequirementAuthority.RequirementResult result : purpose.results()) {
+                    if (result == null) continue;
+                    lines.add("Room-purpose requirement " + (result.satisfied() ? "PASS" : "FAIL")
+                            + (result.physicalQualification() ? " [physical]: " : " [operational]: ")
+                            + sentence(result.line()) + " Evidence: "
+                            + (result.witnesses().isEmpty()
+                            ? "authoritative live room state."
+                            : String.join(", ", result.witnesses()) + "."));
+                }
+            } else {
+                lines.add("Room-purpose physical evidence: no requirement definition is declared, so no use qualification is inferred from prose or glyphs.");
+            }
         }
         return lines;
+    }
+
+    private static String capacityContext(ExplicitRoomTypeRequirementAuthority.Assessment purpose) {
+        if (purpose == null || purpose.definition() == null) return "";
+        if (ExplicitRoomTypeRequirementAuthority.CRECHE_ID.equals(purpose.definition().id())) {
+            return " (child care)";
+        }
+        if (ExplicitRoomTypeRequirementAuthority.BARRACKS_ID.equals(purpose.definition().id())) {
+            return " (barracks muster)";
+        }
+        return " (operating capacity)";
     }
 
     static String currentActionLabel(GamePanel game) {

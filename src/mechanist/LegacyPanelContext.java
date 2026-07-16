@@ -1366,7 +1366,11 @@ class GamePanel extends LegacyPanelBridgeBase {
             entityLines.add("Save Mod creates a new randomized archive unless metadata is edited.");
         } else {
             boolean runtimeSnapshot = entity != null && Boolean.TRUE.equals(entity.properties().get("runtimeSnapshot"));
-            entityLines.add(runtimeSnapshot ? "Source: active world snapshot" : "Source: project template");
+            String sourceMode = runtimeSnapshot && entity.properties().get("sourceMode") != null
+                    ? String.valueOf(entity.properties().get("sourceMode")).trim() : "";
+            entityLines.add(runtimeSnapshot
+                    ? "Source: " + (sourceMode.isBlank() ? "active world snapshot" : sourceMode)
+                    : "Source: project template");
             entityLines.add("Edit target: isolated mod overlay");
             entityLines.add("Record " + (entities.isEmpty() ? 0 : inGameEditorEntityIndex + 1) + "/" + entities.size());
             if (entity != null) {

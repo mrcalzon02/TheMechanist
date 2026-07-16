@@ -19,22 +19,22 @@ final class Milestone03BlueprintAcquisitionPathAuditSmoke {
         requireContains(audit, "blueprintPaths=" + recipes, "path count");
         requireContains(audit, "factionBoundPaths=", "faction-bound count");
         requireContains(audit, "permitOrLicensePaths=", "permit count");
-        requireContains(audit, "public construction market", "public channel");
+        requireContains(audit, "public construction catalog", "public channel");
         requireContains(audit, "faction representative", "faction channel");
-        requireContains(audit, "civic permit office", "permit channel");
         requireContains(audit, "Mechanist Collegia vendor", "mechanist channel");
         requireContains(audit, "Guard quartermaster", "guard channel");
         requireContains(audit, "Civic Wardens armory desk", "wardens channel");
-        requireContains(audit, "theft or black-market broker", "illicit channel");
+        requireContains(audit, "theft, and counterfeit plans", "illicit reward channels");
         requireContains(audit, "owning a blueprint is distinct from having permission", "ownership boundary");
         requireContains(audit, "does not add live vendor offers", "future vendor boundary");
         requireContains(audit, "heat mutation, suspicion mutation, or faction construction execution", "future consequence boundary");
         requireContains(audit, "Milestone03BlueprintAcquisitionPathAuditSmoke", "guard reference");
 
         BlueprintAcquisitionPathAuthority.AcquisitionPath shop = requirePath(paths, "Licensed Shop Counter");
-        requireContains(shop.representativeType(), "civic permit office", "shop representative");
+        requireContains(shop.representativeType(), "no seller or grantor", "public shop plan channel");
         requireContains(shop.legalLabel(), "civic permit-bound", "shop permit label");
-        requireContains(shop.acquisitionPath(), "permit or license check", "shop acquisition gate");
+        requireContains(shop.accessLabel(), "civic permit-bound", "shop construction permit gate");
+        requireContains(shop.acquisitionPath(), "available by default", "shop plan availability");
 
         BlueprintAcquisitionPathAuthority.AcquisitionPath sensor = requirePath(paths, "Security Sensor Mast");
         requireContains(sensor.representativeType(), "Civic Wardens armory desk", "security representative");

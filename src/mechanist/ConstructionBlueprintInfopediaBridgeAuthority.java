@@ -20,9 +20,14 @@ final class ConstructionBlueprintInfopediaBridgeAuthority {
         if (recipe == null) return "An unidentified construction plan with no registered build definition.";
         BlueprintAcquisitionPathAuthority.AcquisitionPath path =
                 BlueprintAcquisitionPathAuthority.pathFor(recipe);
+        ConstructionParityInspectionAuthority.RecipeInspection parity =
+                ConstructionParityInspectionAuthority.inspect(recipe);
         return "Infopedia construction dossier for " + recipe.name + ". Category: "
-                + path.constructionCategory() + ". Player construction: supported after this blueprint is owned and all permission, placement, material, knowledge, workbench, utility, and labor checks pass. "
-                + "Faction construction: supported through known faction plans when a compatible controlled room, workforce, materials, and facility authority exist. "
+                + path.constructionCategory() + ". Player construction: "
+                + capabilityLabel(parity.playerCapability())
+                + " after all ownership, permission, placement, material, knowledge, workbench, utility, and labor checks pass. "
+                + "Faction construction: " + capabilityLabel(parity.factionCapability())
+                + "; " + parity.workforceSummary() + ". "
                 + "Issuing source: " + path.sourceFaction() + ". Ordinary representative: "
                 + path.representativeType() + ". Legal class: " + path.legalLabel() + ".";
     }
@@ -31,11 +36,14 @@ final class ConstructionBlueprintInfopediaBridgeAuthority {
         if (recipe == null) return "No registered construction use is available.";
         BlueprintAcquisitionPathAuthority.AcquisitionPath path =
                 BlueprintAcquisitionPathAuthority.pathFor(recipe);
+        boolean licensed = ConstructionBlueprintOwnershipAuthority.requiresLicensedBlueprint(recipe);
         return "Records the persistent " + recipe.name + " construction unlock. Acquisition: "
                 + path.acquisitionPath() + ". Access: " + path.accessLabel()
                 + ". Build requirements: " + requirementSummary(recipe)
                 + ". Materials: " + materialSummary(recipe)
-                + ". Contracts can grant, permit, steal, recover, counterfeit, or reveal this plan; a revealed lead does not grant ownership. "
+                + (licensed
+                ? ". Contracts can grant, permit, steal, recover, counterfeit, or reveal this plan; a revealed lead does not grant ownership. "
+                : ". This public plan needs no licensed folio or contract reward for ownership. ")
                 + "Stolen and counterfeit rewards create visible suspicion or legality risk. Search the Infopedia for '"
                 + ConstructionBlueprintOwnershipAuthority.blueprintItemName(recipe)
                 + "' to reopen this exact dossier.";
@@ -49,20 +57,33 @@ final class ConstructionBlueprintInfopediaBridgeAuthority {
         }
         BlueprintAcquisitionPathAuthority.AcquisitionPath path =
                 BlueprintAcquisitionPathAuthority.pathFor(recipe);
+        ConstructionParityInspectionAuthority.RecipeInspection parity =
+                ConstructionParityInspectionAuthority.inspect(recipe);
+        boolean licensed = ConstructionBlueprintOwnershipAuthority.requiresLicensedBlueprint(recipe);
         lines.add(recipe.name + " construction blueprint");
-        lines.add("Player construction: supported after ownership and all readiness checks pass.");
-        lines.add("Faction construction: supported through compatible known-plan, room, workforce, material, and facility rules.");
-        lines.add("Blueprint unlock: "
-                + ConstructionBlueprintOwnershipAuthority.blueprintItemName(recipe) + ".");
-        lines.add("Issuing faction or market: " + path.sourceFaction() + ".");
-        lines.add("Ordinary seller or grantor: " + path.representativeType() + ".");
+        lines.add("Player construction: " + capabilityLabel(parity.playerCapability()) + "; "
+                + (licensed ? "the licensed plan and all readiness checks are required."
+                : "the public construction catalog and all readiness checks are available; no licensed folio is required."));
+        lines.add("Faction construction: " + capabilityLabel(parity.factionCapability())
+                + "; " + parity.workforceSummary() + ".");
+        lines.add(licensed
+                ? "Blueprint unlock: " + ConstructionBlueprintOwnershipAuthority.blueprintItemName(recipe) + "."
+                : "Blueprint access: PUBLIC - no licensed faction folio is required.");
+        lines.add("Plan source or catalog: " + path.sourceFaction() + ".");
+        lines.add("Ordinary acquisition channel: " + path.representativeType() + ".");
         lines.add("Access and reputation: " + path.accessLabel() + ".");
         lines.add("Acquisition pathways: " + path.acquisitionPath() + ".");
         lines.add("Requirements: " + requirementSummary(recipe) + ".");
         lines.add("Materials: " + materialSummary(recipe) + ".");
+        lines.add(ConstructionReadabilityAuthority.effortPreview(recipe));
         lines.add("Legality and attention: " + path.legalLabel() + ". "
+                + ConstructionReadabilityAuthority.attentionPreview(recipe) + " "
                 + liveConsequenceLine(path));
-        lines.add("Contract outcomes: grant, permit, stolen, recovered, and counterfeit rewards can unlock the plan; reveal rewards record a lead without ownership.");
+        lines.add(licensed
+                ? "Contract outcomes: grant, permit, stolen, recovered, and counterfeit rewards can unlock the plan; reveal rewards record a lead without ownership."
+                : "Contract outcomes: this public plan needs no ownership reward; contracts may still name construction work or reveal supporting context.");
+        lines.add("Parity status: " + parity.exceptionClass() + " - "
+                + parity.exceptionReason() + ".");
         return lines;
     }
 
@@ -114,5 +135,15 @@ final class ConstructionBlueprintInfopediaBridgeAuthority {
 
     private static String safe(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim().replace('|', '/');
+    }
+
+    private static String capabilityLabel(
+            ConstructionParityInspectionAuthority.Capability capability) {
+        if (capability == null) return "not supported";
+        return switch (capability) {
+            case SUPPORTED -> "supported";
+            case CONDITIONAL -> "conditional";
+            case NOT_SUPPORTED -> "not supported";
+        };
     }
 }

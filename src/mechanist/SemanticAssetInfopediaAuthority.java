@@ -25,6 +25,7 @@ public final class SemanticAssetInfopediaAuthority {
     private static final Pattern ID_PREFIX = Pattern.compile("^[A-Z0-9]{3,4}-[A-Z0-9]{3,4}\\b");
     private static final String MECHANIC_PREFIX = "MECHANIC - ";
     private static final String ITEM_PREFIX = "ITEM - ";
+    private static final String CONSTRUCTION_PREFIX = "CONSTRUCTION - ";
 
     private static final AssetType[] BROWSE_TYPES = {
             AssetType.PORTRAIT,
@@ -65,6 +66,11 @@ public final class SemanticAssetInfopediaAuthority {
             for (MechanicEntry entry : mechanicEntries()) {
                 if (!entry.matchesFilter(q)) continue;
                 out.add(formatMechanicEntry(entry));
+                added++;
+            }
+            for (BuildRecipe recipe : BuildRecipe.allBuildRecipes()) {
+                if (!constructionMatchesFilter(recipe, q)) continue;
+                out.add(formatConstructionEntry(recipe));
                 added++;
             }
             for (ItemDef definition : ItemCatalog.ITEMS.values()) {
@@ -108,6 +114,11 @@ public final class SemanticAssetInfopediaAuthority {
         Optional<MechanicEntry> mechanic = mechanicForEntry(entry);
         if (mechanic.isPresent()) {
             return mechanicDetailLines(mechanic.get());
+        }
+        Optional<BuildRecipe> construction = constructionRecipeForEntry(entry);
+        if (construction.isPresent()) {
+            return List.copyOf(ConstructionBlueprintInfopediaBridgeAuthority
+                    .dossierLines(construction.get()));
         }
         Optional<ItemDef> item = itemDefinitionForEntry(entry);
         if (item.isPresent()) return itemDetailLines(item.get());
@@ -385,11 +396,14 @@ public final class SemanticAssetInfopediaAuthority {
                                 "A local faction production site uses assigned workers from matching population rosters. An unstaffed site pauses production and exports; a staffed site produces bounded stock, shelf exports consume that stock, and depleted sites contribute no free replacement item.",
                                 "Trade supply context states whether a source site is staffed, unstaffed, or depleted. Site-produced shelf goods preserve their facility and production provenance.",
                                 "Faction casualties open durable replacement manifests with a semi-random availability turn and a source-specific arrival window. Dead workers leave their assigned roster slot before a replacement can consume reserve population.",
-                                "Reinforcement trains are free but slow and require a faction-linked rail intake. Barracks reserve musters are fastest, require barracks or duty infrastructure, and charge a modest equipment-processing fee. Paid local recruitment needs only an available population roster, uses a medium timer, and costs the most script per person.",
+                                "Reinforcement trains are free but slow and require a faction-linked rail intake. Barracks reserve musters are fastest, require an explicitly designated and currently operating Security Barracks, and charge a modest equipment-processing fee. Paid local recruitment needs an available ordinary population roster, cannot substitute a declared barracks, uses a medium timer, and costs the most script per person.",
                                 "A faction representative reports the selected source, exact price, infrastructure prerequisite, availability turn, and whether reinforcements are inbound, ready, route-delayed, capacity-blocked, or expired. Change Source cycles supported methods and resets the manifest timer to the newly selected method.",
                                 "Receive Reinforcements admits up to four ready personnel through the selected linked roster or import intake, charges only for personnel who actually arrive, preserves arrival provenance, and spends a turn only when somebody arrives.",
                                 "Ready personnel wait when staffed housing or faction-room capacity is full, and a blocked manifest expires if the faction cannot receive it before the stated turn."
-                                ,"A planned crèche counts as operating only with at least 24 floor tiles, one care provider, food storage, water storage, a child bed unit, and a teaching station. Missing requirements prevent happiness, newborn intake, and cohort recruitment benefits."
+                                ,ExplicitRoomTypeRequirementAuthority.barracksInfopediaRequirementLine()
+                                        + " A selected barracks muster remains bound to its exact room and population ledger. Arrival rechecks its fixtures, assigned duty staff, live controller, and hazards; a failed recheck leaves the manifest and payment untouched."
+                                ,ExplicitRoomTypeRequirementAuthority.crecheInfopediaRequirementLine()
+                                        + " This replaces the earlier at least 24 floor tiles shorthand. Missing requirements prevent happiness, newborn intake, and cohort recruitment benefits."
                                 ,"Crèche happiness scales gradually to a maximum +25 faction boost at ten operating crèches. One care provider supports up to twelve children, while each dense child bed unit holds four; both care and bed limits apply."
                                 ,"Operating crèches accept a small yearly abstract abandoned-or-ward cohort and also accept newborns from faction members whose recorded pregnancy reaches its due world turn. Parent births retain the parent identity; when care or beds are full, the due birth waits."
                                 ,"Every immature cohort member adds extra growth-food, clean-water, and pediatric-care market pressure. That child-specific pressure ends when the cohort reaches young adulthood."
@@ -507,8 +521,34 @@ public final class SemanticAssetInfopediaAuthority {
     static List<String> relatedRowsForEntry(AssetRegistry registry, String row, AssetType selectedType) {
         Optional<MechanicEntry> mechanic = mechanicForEntry(row);
         if (mechanic.isPresent()) return relatedEntryRowsFor(mechanic.get());
-        if (itemDefinitionForEntry(row).isPresent()) {
+        Optional<BuildRecipe> construction = constructionRecipeForEntry(row);
+        if (construction.isPresent()) {
             ArrayList<String> rows = new ArrayList<>();
+            mechanicByKey("construction-blueprints")
+                    .map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+            mechanicByKey("expansion-heat")
+                    .map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+            BuildRecipe recipe = construction.get();
+            if (ConstructionBlueprintOwnershipAuthority.requiresLicensedBlueprint(recipe)) {
+                ItemDef item = ItemCatalog.get(
+                        ConstructionBlueprintOwnershipAuthority.blueprintItemName(recipe));
+                if (item != null) rows.add(formatItemEntry(item));
+            }
+            return List.copyOf(rows);
+        }
+        Optional<ItemDef> itemDefinition = itemDefinitionForEntry(row);
+        if (itemDefinition.isPresent()) {
+            ArrayList<String> rows = new ArrayList<>();
+            BuildRecipe recipe = ConstructionBlueprintOwnershipAuthority
+                    .recipeForBlueprintItem(itemDefinition.get().name);
+            if (recipe != null) {
+                rows.add(formatConstructionEntry(recipe));
+                mechanicByKey("construction-blueprints")
+                        .map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+                mechanicByKey("expansion-heat")
+                        .map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
+                return List.copyOf(rows);
+            }
             mechanicByKey("population-markets").map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
             mechanicByKey("world-events").map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
             mechanicByKey("production-forecast").map(SemanticAssetInfopediaAuthority::formatMechanicEntry).ifPresent(rows::add);
@@ -552,6 +592,35 @@ public final class SemanticAssetInfopediaAuthority {
         return ITEM_PREFIX + definition.name + " [" + readableCategory(definition.category) + "]";
     }
 
+    private static String formatConstructionEntry(BuildRecipe recipe) {
+        return CONSTRUCTION_PREFIX + recipe.name + " ["
+                + ConstructionCategoryAuthority.categoryFor(recipe) + "]";
+    }
+
+    private static Optional<BuildRecipe> constructionRecipeForEntry(String row) {
+        if (row == null || !row.startsWith(CONSTRUCTION_PREFIX)) return Optional.empty();
+        String name = row.substring(CONSTRUCTION_PREFIX.length());
+        int bracket = name.lastIndexOf(" [");
+        if (bracket >= 0) name = name.substring(0, bracket);
+        String wanted = name.trim();
+        for (BuildRecipe recipe : BuildRecipe.allBuildRecipes()) {
+            if (recipe != null && recipe.name != null
+                    && recipe.name.equalsIgnoreCase(wanted)) return Optional.of(recipe);
+        }
+        return Optional.empty();
+    }
+
+    private static boolean constructionMatchesFilter(BuildRecipe recipe, String filter) {
+        if (recipe == null) return false;
+        if (filter == null || filter.isBlank()) return true;
+        String q = filter.toLowerCase(Locale.ROOT);
+        String dossier = String.join(" ",
+                ConstructionBlueprintInfopediaBridgeAuthority.dossierLines(recipe));
+        return (recipe.name + " " + ConstructionCategoryAuthority.categoryFor(recipe)
+                + " " + (recipe.description == null ? "" : recipe.description)
+                + " " + dossier).toLowerCase(Locale.ROOT).contains(q);
+    }
+
     private static Optional<ItemDef> itemDefinitionForEntry(String row) {
         if (row == null || !row.startsWith(ITEM_PREFIX)) return Optional.empty();
         String name = row.substring(ITEM_PREFIX.length());
@@ -569,6 +638,12 @@ public final class SemanticAssetInfopediaAuthority {
     }
 
     private static List<String> itemDetailLines(ItemDef definition) {
+        BuildRecipe construction = ConstructionBlueprintOwnershipAuthority
+                .recipeForBlueprintItem(definition == null ? null : definition.name);
+        if (construction != null) {
+            return List.copyOf(ConstructionBlueprintInfopediaBridgeAuthority
+                    .dossierLines(construction));
+        }
         ArrayList<String> lines = new ArrayList<>();
         lines.add(definition.name);
         lines.add("Category: " + readableCategory(definition.category) + (definition.weapon ? " / weapon" : ""));
