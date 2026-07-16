@@ -36,6 +36,18 @@ public final class VehicleEconomyFrontageSmoke {
             require(!MapObjectState.stockValue(m.stockState, "ownerFaction").isBlank(), "vehicle missing ownerFaction: " + m.summary());
             require(!MapObjectState.stockValue(m.stockState, "ownership").isBlank(), "vehicle missing ownership: " + m.summary());
             require(!MapObjectState.stockValue(m.stockState, "vehicleRole").isBlank(), "vehicle missing vehicleRole: " + m.summary());
+            require(VehicleRuntimeAuthority.SCHEMA_VERSION.equals(
+                            MapObjectState.stockValue(m.stockState, "vehicleSchema")),
+                    "generated vehicle missing runtime schema: " + m.summary());
+            VehicleRuntimeAuthority.Snapshot snapshot =
+                    VehicleRuntimeAuthority.inspect(world, m);
+            require(snapshot != null
+                            && !snapshot.manufacturer().isBlank()
+                            && !snapshot.model().isBlank()
+                            && !snapshot.productionBatch().isBlank()
+                            && snapshot.components().size() == 8
+                            && snapshot.integrity() == 100,
+                    "generated vehicle missing identity or component truth: " + m.summary());
             ownedVehicles++;
         }
         require(ownedVehicles == result.personalVehicles + result.factionVehicles + result.publicVehicles, "vehicle result count disagrees with generated records");
