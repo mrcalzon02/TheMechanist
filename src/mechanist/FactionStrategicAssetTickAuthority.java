@@ -1,9 +1,9 @@
 package mechanist;
 
 /**
- * Resolves physical strategic-asset plans as their execution phase opens.
- * Completed attempts advance directly into cooldown before the later abstract
- * execution deadline can award a second scripted result.
+ * Resolves physical room, machine, specialist, and vehicle plans as their
+ * execution phase opens. Completed attempts advance directly into cooldown
+ * before the later abstract execution deadline can award a second result.
  */
 final class FactionStrategicAssetTickAuthority {
     private static final String SPECIALIST_ID_PREFIX = "FACTION-FACILITY-SPECIALIST-";
@@ -15,7 +15,9 @@ final class FactionStrategicAssetTickAuthority {
         int resolved = 0;
         for (FactionStrategicPlan plan : game.factionStrategicPlans) {
             promoteSequentialPhysicalGoal(game, plan);
-            if (plan == null || !FactionStrategicAssetAuthority.handles(plan)) continue;
+            boolean facilityPlan = FactionStrategicAssetAuthority.handles(plan);
+            boolean vehiclePlan = FactionVehicleStrategicAuthority.handles(plan);
+            if (plan == null || (!facilityPlan && !vehiclePlan)) continue;
 
             // If this tick reaches a due physical plan immediately before the
             // legacy strategy tick, open execution here. If the legacy tick ran
@@ -28,13 +30,15 @@ final class FactionStrategicAssetTickAuthority {
 
             NpcFactionSite site = game.siteForFaction(plan.faction, game.world.zoneType);
             FactionStrategicAssetAuthority.Outcome outcome;
-            if (FactionStrategicAssetAuthority.CAPTURED_ASSET_SALVAGE_GOAL
+            if (facilityPlan && FactionStrategicAssetAuthority.CAPTURED_ASSET_SALVAGE_GOAL
                     .equalsIgnoreCase(plan.immediateGoal == null ? "" : plan.immediateGoal.trim())
                     && site != null && site.stock >= 160) {
                 outcome = FactionStrategicAssetAuthority.Outcome.blocked(
                         "faction-stock-capacity",
                         site.name + " is at its 160-unit stock cap; captured machinery remains intact until storage capacity is available.",
                         site, -1, null);
+            } else if (vehiclePlan) {
+                outcome = FactionVehicleStrategicAuthority.attempt(game, plan, site);
             } else {
                 outcome = FactionStrategicAssetAuthority.attempt(game, plan, site);
             }
@@ -71,13 +75,14 @@ final class FactionStrategicAssetTickAuthority {
 
     /**
      * Converts ordinary planning into the next available physical follow-up:
-     * first salvage foreign machinery in a controlled room, then materialize a
-     * specialist for an operational facility that still lacks one.
+     * captured machinery, seized/damaged/scheme-targeted vehicles, then a
+     * visible specialist for an operational facility that still lacks one.
      */
     private static void promoteSequentialPhysicalGoal(GamePanel game,
-                                                      FactionStrategicPlan plan) {
+                                                       FactionStrategicPlan plan) {
         if (plan == null || !"PLANNING".equals(plan.phase)
-                || FactionStrategicAssetAuthority.handles(plan)) return;
+                || FactionStrategicAssetAuthority.handles(plan)
+                || FactionVehicleStrategicAuthority.handles(plan)) return;
         NpcFactionSite site = game.siteForFaction(plan.faction, game.world.zoneType);
         if (!localSite(site, game.world)) return;
 
@@ -89,6 +94,18 @@ final class FactionStrategicAssetTickAuthority {
             plan.addHistory(game.turn,
                     "Planning redirected to physical salvage because " + plan.targetRoom
                             + " contains captured foreign machinery with assigned workers.");
+            return;
+        }
+
+        FactionVehicleStrategicAuthority.Suggestion vehicle =
+                FactionVehicleStrategicAuthority.nextSuggestion(game, site, plan);
+        if (vehicle.available()) {
+            plan.immediateGoal = vehicle.goal();
+            plan.targetRoom = vehicle.target();
+            plan.targetItem = "Machine part";
+            plan.addHistory(game.turn,
+                    "Planning redirected to " + vehicle.goal() + " because "
+                            + vehicle.reason() + ". Target: " + vehicle.target() + ".");
             return;
         }
 
@@ -124,7 +141,7 @@ final class FactionStrategicAssetTickAuthority {
     }
 
     private static int facilityNeedingSpecialistRoom(GamePanel game,
-                                                     NpcFactionSite site) {
+                                                      NpcFactionSite site) {
         if (game == null || game.world == null || game.baseObjects == null) return -1;
         int best = Integer.MAX_VALUE;
         for (BaseObject object : game.baseObjects) {
