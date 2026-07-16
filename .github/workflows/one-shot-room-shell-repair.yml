@@ -1,0 +1,96 @@
+name: One-shot room shell repair
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/one-shot-room-shell-repair.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-room-shell-repair
+  cancel-in-progress: false
+
+jobs:
+  repair-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Patch the exact annex material ledger
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/mechanist/FactionRoomShellConstructionAuthority.java')
+          text = path.read_text(encoding='utf-8')
+          old = '''        BuildRecipe recipe = new BuildRecipe(MARKER_RECIPE, COMPLETED_MARKER_SYMBOL,
+                  MATERIAL_STOCK_COST, 0, 0, 0, 0, LABOR_REQUIRED, 0,
+                  false, site.faction, null,
+                  "A prepaid faction room-shell marker for a 5x4 Basic Forge Annex.");'''
+          new = '''        BuildRecipe recipe = new BuildRecipe(MARKER_RECIPE, COMPLETED_MARKER_SYMBOL,
+                  20, 0, 0, 0, 0, LABOR_REQUIRED, 0,
+                  false, site.faction, Map.of(
+                          "Scrap plate", 14,
+                          "Rivet set", 14,
+                          "Bearing set", 1),
+                  "A prepaid faction room-shell marker for a 5x4 Basic Forge Annex.");'''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one room-shell recipe block, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+          git diff --check
+          git diff -- src/mechanist/FactionRoomShellConstructionAuthority.java
+
+      - name: Compile the full Java tree for release 17
+        run: mvn -B -DskipTests compile
+
+      - name: Build runtime classpath
+        run: mvn -B -DincludeScope=runtime dependency:build-classpath -Dmdep.outputFile=target/runtime-classpath.txt
+
+      - name: Run focused Milestone 05 smokes
+        shell: bash
+        run: |
+          CP="target/classes:$(cat target/runtime-classpath.txt)"
+          java -Djava.awt.headless=true -cp "$CP" mechanist.Milestone05FactionRoomShellConstructionSmoke
+          java -Djava.awt.headless=true -cp "$CP" mechanist.Milestone05FactionPhysicalConstructionSmoke
+          java -Djava.awt.headless=true -cp "$CP" mechanist.Milestone05FactionBlueprintSiteUpgradeSmoke
+
+      - name: Run expanded Gate 3 smoke suite
+        shell: bash
+        run: |
+          CP="target/classes:$(cat target/runtime-classpath.txt)"
+          java -Djava.awt.headless=true -cp "$CP" mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Build client and server jars
+        run: mvn -B -DskipTests package
+
+      - name: Commit verified repair to main and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-room-shell-repair.yml
+          git add src/mechanist/FactionRoomShellConstructionAuthority.java
+          git diff --cached --check
+          git commit -m "Fix faction room shell material ledger [skip ci]"
+          git push origin HEAD:main
