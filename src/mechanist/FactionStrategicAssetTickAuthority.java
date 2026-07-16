@@ -27,8 +27,17 @@ final class FactionStrategicAssetTickAuthority {
             if (!"EXECUTION".equals(plan.phase)) continue;
 
             NpcFactionSite site = game.siteForFaction(plan.faction, game.world.zoneType);
-            FactionStrategicAssetAuthority.Outcome outcome =
-                    FactionStrategicAssetAuthority.attempt(game, plan, site);
+            FactionStrategicAssetAuthority.Outcome outcome;
+            if (FactionStrategicAssetAuthority.CAPTURED_ASSET_SALVAGE_GOAL
+                    .equalsIgnoreCase(plan.immediateGoal == null ? "" : plan.immediateGoal.trim())
+                    && site != null && site.stock >= 160) {
+                outcome = FactionStrategicAssetAuthority.Outcome.blocked(
+                        "faction-stock-capacity",
+                        site.name + " is at its 160-unit stock cap; captured machinery remains intact until storage capacity is available.",
+                        site, -1, null);
+            } else {
+                outcome = FactionStrategicAssetAuthority.attempt(game, plan, site);
+            }
             if (!outcome.handled()) continue;
 
             if (outcome.success()) {
