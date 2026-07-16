@@ -12,10 +12,13 @@ final class ContractTurnInAuthority {
         FactionContract contract = bestActiveContract(game, representative);
         if (contract == null) return "Contract turn-in: no active contract belongs to this representative's faction.";
         String problem = turnInProblem(game, representative, contract);
+        String blueprintPreview = ConstructionBlueprintContractRewardAuthority.preview(contract);
         return problem == null
                 ? "Contract turn-in ready: " + contract.displayType() + " for " + contract.payout
                         + " script and standing +" + contract.repReward + "."
-                : "Contract turn-in blocked: " + problem + ".";
+                        + (blueprintPreview.isBlank() ? "" : " " + blueprintPreview)
+                : "Contract turn-in blocked: " + problem + "."
+                        + (blueprintPreview.isBlank() ? "" : " " + blueprintPreview);
     }
 
     static TurnInResult turnInFirst(GamePanel game, NpcEntity representative) {
@@ -33,6 +36,8 @@ final class ContractTurnInAuthority {
         game.rebuildItemContainersFromLegacyLists();
         FactionMarketContractAuthority.CompletionResult marketResult =
                 FactionMarketContractAuthority.complete(game, contract, deliveredItem);
+        ConstructionBlueprintContractRewardAuthority.RewardResult blueprintResult =
+                ConstructionBlueprintContractRewardAuthority.apply(game, contract, deliveredItem);
         contract.completed = true;
         game.carriedScript = Math.max(0, game.carriedScript + Math.max(0, contract.payout));
         Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
@@ -44,7 +49,8 @@ final class ContractTurnInAuthority {
         String message = "Contract completed for " + contract.displayFactionName() + ": paid "
                 + contract.payout + " script and awarded standing +" + contract.repReward
                 + (contract.skillXpReward > 0 ? " and skill XP +" + contract.skillXpReward : "") + "."
-                + (marketResult.summary().isBlank() ? "" : " " + marketResult.summary());
+                + (marketResult.summary().isBlank() ? "" : " " + marketResult.summary())
+                + (blueprintResult.summary().isBlank() ? "" : " " + blueprintResult.summary());
         return new TurnInResult(true, message, contract);
     }
 
