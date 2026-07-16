@@ -142,6 +142,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone05FactionRoomShellConstructionSmoke.main(args);
         Milestone05FactionStrategicAssetSmoke.main(args);
         Milestone05BlueprintContractRewardSmoke.main(args);
+        Milestone05BlueprintInfopediaBridgeSmoke.main(args);
+        Milestone05ConstructionParityInspectionSmoke.main(args);
         Milestone05RoomOwnershipCommandSmoke.main(args);
         Milestone05RoomOwnershipUiSmoke.main(args);
         Milestone05RoomPurchaseSmoke.main(args);
