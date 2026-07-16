@@ -8,6 +8,7 @@ final class StaffedProductionBackgroundAuthority {
 
     static int tick(GamePanel game, int elapsedTurns) {
         if (game == null || elapsedTurns <= 0) return 0;
+        FactionStrategicAssetTickAuthority.tick(game);
         int completions = 0;
         for (int step = 0; step < elapsedTurns; step++) {
             for (BaseObject machine : new ArrayList<>(game.baseObjects)) {
