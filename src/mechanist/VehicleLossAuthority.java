@@ -27,6 +27,7 @@ final class VehicleLossAuthority {
         DISABLED_REPAIR_PROJECT("disabled but repairable"),
         BURNED_OUT_WRECK("burned-out wreck"),
         SALVAGE_HULK("salvage hulk"),
+        ABANDONED_RECOVERY_ASSET("abandoned recovery asset"),
         CAPTURED_MOTOR_POOL_ASSET("captured motor-pool asset"),
         LOOTED_VEHICLE("looted vehicle"),
         BLOCKED_ROAD_OBSTACLE("blocked-road obstacle"),
@@ -101,8 +102,6 @@ final class VehicleLossAuthority {
             case FIRE -> {
                 primary = Outcome.BURNED_OUT_WRECK;
                 setComponentAtMost(vehicle,
-                        VehicleRuntimeAuthority.Component.FRAME, 15);
-                setComponentAtMost(vehicle,
                         VehicleRuntimeAuthority.Component.POWERPLANT, 0);
                 setComponentAtMost(vehicle,
                         VehicleRuntimeAuthority.Component.ARMOR, 20);
@@ -136,10 +135,14 @@ final class VehicleLossAuthority {
                 append(vehicle, "captureHistory",
                         formerOwner + " abandoned custody at turn "
                                 + Math.max(0, game.turn));
-                primary = component(vehicle,
-                        VehicleRuntimeAuthority.Component.FRAME) <= 0
-                        ? Outcome.SALVAGE_HULK
-                        : Outcome.LOOTED_VEHICLE;
+                if (component(vehicle,
+                        VehicleRuntimeAuthority.Component.FRAME) <= 0) {
+                    primary = Outcome.SALVAGE_HULK;
+                } else if (!criticalComponentsOperational(vehicle)) {
+                    primary = Outcome.DISABLED_REPAIR_PROJECT;
+                } else {
+                    primary = Outcome.ABANDONED_RECOVERY_ASSET;
+                }
                 changed = true;
             }
             case CAPTURE -> {
@@ -209,6 +212,10 @@ final class VehicleLossAuthority {
                             vehicle);
                 }
                 appendFormerOwner(vehicle, formerOwner);
+                setComponentAtMost(vehicle,
+                        VehicleRuntimeAuthority.Component.FRAME, 0);
+                setComponentAtMost(vehicle,
+                        VehicleRuntimeAuthority.Component.POWERPLANT, 0);
                 set(vehicle, "ownerType",
                         VehicleRuntimeAuthority.OwnerType.SALVAGE.name());
                 set(vehicle, "ownerFaction", Faction.NONE.name());
@@ -377,6 +384,8 @@ final class VehicleLossAuthority {
 
     private static void makeWreck(MapObjectState vehicle, boolean burned,
                                   int turn, String reason) {
+        setComponentAtMost(vehicle,
+                VehicleRuntimeAuthority.Component.FRAME, 0);
         set(vehicle, "condition", "wreck");
         set(vehicle, "operationState", "disabled");
         set(vehicle, "headlightsActive", "false");
