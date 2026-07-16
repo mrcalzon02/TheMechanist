@@ -70,6 +70,9 @@ final class FactionMarketAccessAuthority {
         boolean controlledMedical = narcotic || contains(text, "controlled medicine", "restricted medicine", "interrogation dosing");
         String eventNotice = eventNotice(c.world(), c.worldTurn(), offer, blackMarket);
 
+        Decision operational = operationalRestriction(trader, vendor, c, member,
+                military, noble, blueprint, controlledMedical, text, eventNotice);
+        if (operational != null) return operational;
         if (hostile) {
             return blocked("faction-closed market", "the vendor faction is hostile at standing " + c.standing(),
                     "improve standing or end active hostility before trading", eventNotice);
@@ -167,6 +170,85 @@ final class FactionMarketAccessAuthority {
                     + ": " + event.vendorRestriction;
         }
         return "";
+    }
+
+    private static Decision operationalRestriction(TraderSession trader, Faction vendor,
+                                                   AccessContext context, boolean member,
+                                                   boolean military, boolean noble,
+                                                   boolean blueprint,
+                                                   boolean controlledMedical,
+                                                   String offerText,
+                                                   String eventNotice) {
+        NpcFactionSite site = trader == null ? null : trader.sourceSite;
+        boolean essential = essentialOffer(offerText);
+        if (site != null && site.workers <= 0) {
+            return blocked("unstaffed faction facility",
+                    site.name + " has no effective workers available to operate this counter",
+                    "the vendor remains physically present but all sales are closed until staff return",
+                    eventNotice);
+        }
+        if (site != null && site.stock <= 0 && !essential) {
+            return blocked("depleted faction-site stock",
+                    site.name + " has exhausted distributable stock and is reserving its remaining essentials",
+                    "food, water, basic dressings, and explicit relief stock remain the only eligible sales",
+                    eventNotice);
+        }
+        if (site != null && site.stock <= 2
+                && (military || noble || blueprint || controlledMedical)) {
+            return blocked("scarcity-restricted strategic stock",
+                    site.name + " is at critical stock " + site.stock
+                            + " and has suspended controlled, luxury, blueprint, and military transfers",
+                    "restore faction-site supply before strategic stock returns to public issue",
+                    eventNotice);
+        }
+        if (!member && recentFactionConflict(context.world(), context.worldTurn(), vendor)
+                && (military || noble || blueprint || controlledMedical)) {
+            return blocked("conflict-restricted faction market",
+                    "recent seizure or salvage conflict involving " + vendor.label
+                            + " suspends strategic transfers to non-members",
+                    "ordinary essentials remain open; faction membership or the end of the conflict window restores controlled access",
+                    eventNotice);
+        }
+        return null;
+    }
+
+    private static boolean recentFactionConflict(World world, long worldTurn,
+                                                 Faction vendor) {
+        if (world == null || vendor == null || vendor == Faction.NONE
+                || world.zoneConflictLossHistory == null
+                || world.zoneConflictLossHistory.isBlank()) return false;
+        String faction = vendor.label.toLowerCase(Locale.ROOT);
+        String normalized = vendor.name().toLowerCase(Locale.ROOT).replace('_', ' ');
+        String[] entries = world.zoneConflictLossHistory.split(";;");
+        for (int i = entries.length - 1; i >= 0; i--) {
+            String entry = safe(entries[i]).toLowerCase(Locale.ROOT);
+            if (!contains(entry, "live-seizure", "live-salvage")) continue;
+            if (!entry.contains(faction) && !entry.contains(normalized)) continue;
+            long eventTurn = tokenLong(entry, "turn=", -1L);
+            if (eventTurn < 0L) return true;
+            long age = Math.max(0L, worldTurn - eventTurn);
+            return age <= 12L * Math.max(1, GamePanel.TURNS_PER_HOUR);
+        }
+        return false;
+    }
+
+    private static long tokenLong(String text, String token, long fallback) {
+        if (text == null || token == null) return fallback;
+        int start = text.indexOf(token);
+        if (start < 0) return fallback;
+        start += token.length();
+        int end = start;
+        while (end < text.length() && Character.isDigit(text.charAt(end))) end++;
+        if (end <= start) return fallback;
+        try { return Long.parseLong(text.substring(start, end)); }
+        catch (RuntimeException ignored) { return fallback; }
+    }
+
+    private static boolean essentialOffer(String text) {
+        return contains(safe(text).toLowerCase(Locale.ROOT),
+                "emergency ration", "ration", "food", "water", "clean water",
+                "bandage", "field dressing", "antiseptic", "basic medicine",
+                "relief", "animal feed");
     }
 
     private static String eventNotice(World world, long worldTurn, TradeOffer offer, boolean blackMarket) {
