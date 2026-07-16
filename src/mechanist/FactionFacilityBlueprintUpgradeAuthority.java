@@ -3,12 +3,13 @@ package mechanist;
 import java.util.Map;
 
 /**
- * Live Phase 17.2 acquisition path for Mechanist faction factory upgrades.
+ * Live Phase 17.2 acquisition path for Mechanist faction facility operations.
  *
- * <p>The authority only handles the exact strategic goal named by
- * {@link #FACTORY_UPGRADE_GOAL}. It evaluates every acquisition, workforce,
- * material, and level-cap blocker before changing the faction site's plan
- * ledger or construction state.</p>
+ * <p>The authority exposes the strategic-operation gate used by the existing
+ * faction execution path, while the blueprint transaction itself remains
+ * limited to the exact factory-upgrade goal. Physical repair goals are routed
+ * onward to {@link MachineRepairAuthority} through
+ * {@link FactionPhysicalConstructionAuthority}.</p>
  */
 final class FactionFacilityBlueprintUpgradeAuthority {
     static final String FACTORY_UPGRADE_GOAL = "build or upgrade a factory";
@@ -35,7 +36,12 @@ final class FactionFacilityBlueprintUpgradeAuthority {
 
     private FactionFacilityBlueprintUpgradeAuthority() { }
 
+    /** Strategic gate shared by physical factory construction and facility repair. */
     static boolean handles(FactionStrategicPlan plan) {
+        return handlesFactoryUpgrade(plan) || MachineRepairAuthority.handlesFactionRepair(plan);
+    }
+
+    private static boolean handlesFactoryUpgrade(FactionStrategicPlan plan) {
         return plan != null && FACTORY_UPGRADE_GOAL.equalsIgnoreCase(
                 plan.immediateGoal == null ? "" : plan.immediateGoal.trim());
     }
@@ -54,13 +60,17 @@ final class FactionFacilityBlueprintUpgradeAuthority {
 
     /** Reserves the known plan and exact site stock while physical labor remains pending. */
     static Outcome reserveForPhysicalConstruction(GamePanel game, FactionStrategicPlan plan,
-                                                  NpcFactionSite site) {
+                                                   NpcFactionSite site) {
         return attemptInternal(game, plan, site, false);
     }
 
     private static Outcome attemptInternal(GamePanel game, FactionStrategicPlan plan,
-                                           NpcFactionSite site, boolean applyLevels) {
-        if (!handles(plan)) {
+                                            NpcFactionSite site, boolean applyLevels) {
+        if (MachineRepairAuthority.handlesFactionRepair(plan)) {
+            return Outcome.notHandled(
+                    "Physical faction repair is handled by the staged maintenance authority.");
+        }
+        if (!handlesFactoryUpgrade(plan)) {
             String goal = plan == null || plan.immediateGoal == null ? "none" : plan.immediateGoal;
             return Outcome.notHandled("Factory blueprint upgrade authority does not handle goal: " + goal + ".");
         }
