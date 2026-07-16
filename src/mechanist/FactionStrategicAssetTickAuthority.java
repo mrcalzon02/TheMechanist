@@ -1,9 +1,9 @@
 package mechanist;
 
 /**
- * Resolves physical strategic-asset plans before the legacy abstract faction
- * strategy pass. Completed attempts advance directly into cooldown so the same
- * plan cannot also receive a scripted success or failure in the later pass.
+ * Resolves physical strategic-asset plans as their execution phase opens.
+ * Completed attempts advance directly into cooldown before the later abstract
+ * execution deadline can award a second scripted result.
  */
 final class FactionStrategicAssetTickAuthority {
     private static final String SPECIALIST_ID_PREFIX = "FACTION-FACILITY-SPECIALIST-";
@@ -15,9 +15,16 @@ final class FactionStrategicAssetTickAuthority {
         int resolved = 0;
         for (FactionStrategicPlan plan : game.factionStrategicPlans) {
             promoteSequentialPhysicalGoal(game, plan);
-            if (plan == null || !FactionStrategicAssetAuthority.handles(plan)
-                    || !"EXECUTION".equals(plan.phase)
-                    || game.turn < plan.phaseUntilTurn) continue;
+            if (plan == null || !FactionStrategicAssetAuthority.handles(plan)) continue;
+
+            // If this tick reaches a due physical plan immediately before the
+            // legacy strategy tick, open execution here. If the legacy tick ran
+            // first, the plan is already in EXECUTION. Either order reaches the
+            // same physical resolution before the abstract execution deadline.
+            if ("PLANNING".equals(plan.phase) && game.turn >= plan.phaseUntilTurn) {
+                plan.advancePhase(game.rng, game.turn);
+            }
+            if (!"EXECUTION".equals(plan.phase)) continue;
 
             NpcFactionSite site = game.siteForFaction(plan.faction, game.world.zoneType);
             FactionStrategicAssetAuthority.Outcome outcome =
