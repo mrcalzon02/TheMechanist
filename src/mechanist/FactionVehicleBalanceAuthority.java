@@ -6,8 +6,8 @@ import java.util.List;
 /**
  * Derived balance-of-power comparison over authoritative faction vehicle
  * fixtures. The authority stores no parallel strategic registry: assault,
- * defense, route-control, confidence, and deterrence are recalculated from the
- * loaded fleets exposed by FactionVehicleDoctrineAuthority.
+ * defense, route-control, confidence, deterrence, and committed route orders are
+ * recalculated from the loaded physical fleet.
  */
 final class FactionVehicleBalanceAuthority {
     enum Posture {
@@ -25,6 +25,8 @@ final class FactionVehicleBalanceAuthority {
                    int attackerPower, int defenderPower,
                    int attackerHeavy, int defenderHeavy,
                    int attackerAssault, int defenderDefense,
+                   int attackerRouteCommitment,
+                   int defenderRouteCommitment,
                    int routeControlDelta, int confidence,
                    int deterrence, int escalationThreshold,
                    Posture posture, String summary) {
@@ -65,18 +67,26 @@ final class FactionVehicleBalanceAuthority {
                 FactionVehicleDoctrineAuthority.Dimension.STRATEGIC_PROJECTION)
                 + defenderFleet.power(
                 FactionVehicleDoctrineAuthority.Dimension.ROUTE_CONTROL) / 2;
+        int attackerRouteCommitment = normalizedRouteCommitment(
+                game, attackerFamily);
+        int defenderRouteCommitment = normalizedRouteCommitment(
+                game, defenderFamily);
         int attackerPower = attackerFleet.totalPower()
                 + attackerAssault * 3
                 + attackerFleet.readyVehicles() * 6
-                + attackerFleet.heavyVehicles() * 18;
+                + attackerFleet.heavyVehicles() * 18
+                + attackerRouteCommitment * 2;
         int defenderPower = defenderFleet.totalPower()
                 + defenderDefense * 3
                 + defenderFleet.readyVehicles() * 6
-                + defenderFleet.heavyVehicles() * 20;
+                + defenderFleet.heavyVehicles() * 20
+                + defenderRouteCommitment * 2;
         int routeDelta = attackerFleet.power(
                 FactionVehicleDoctrineAuthority.Dimension.ROUTE_CONTROL)
+                + attackerRouteCommitment
                 - defenderFleet.power(
-                FactionVehicleDoctrineAuthority.Dimension.ROUTE_CONTROL);
+                FactionVehicleDoctrineAuthority.Dimension.ROUTE_CONTROL)
+                - defenderRouteCommitment;
 
         Posture posture = posture(attackerPower, defenderPower);
         int total = Math.max(25, attackerPower + defenderPower);
@@ -100,11 +110,14 @@ final class FactionVehicleBalanceAuthority {
                 + ": vehicle power " + attackerPower + " vs "
                 + defenderPower + ", confidence " + confidence
                 + "%, deterrence " + deterrence + "%, route-control balance "
-                + signed(routeDelta) + ".";
+                + signed(routeDelta) + ", committed route strength "
+                + attackerRouteCommitment + " vs "
+                + defenderRouteCommitment + ".";
         return new Contest(attackerFamily, defenderFamily, attackerPower,
                 defenderPower, attackerFleet.heavyVehicles(),
                 defenderFleet.heavyVehicles(), attackerAssault,
-                defenderDefense, routeDelta, confidence, deterrence,
+                defenderDefense, attackerRouteCommitment,
+                defenderRouteCommitment, routeDelta, confidence, deterrence,
                 threshold, posture, summary);
     }
 
@@ -118,10 +131,21 @@ final class FactionVehicleBalanceAuthority {
                 + contest.attackerHeavy() + "; "
                 + faction(contest.defender()) + " "
                 + contest.defenderHeavy() + ".");
+        lines.add("Route commitments: " + faction(contest.attacker()) + " "
+                + contest.attackerRouteCommitment() + "; "
+                + faction(contest.defender()) + " "
+                + contest.defenderRouteCommitment() + ".");
         lines.add("Escalation requirement: combined leadership aggression and ambition "
                 + contest.escalationThreshold() + " or greater for the current "
                 + contest.posture().label + " posture.");
         return List.copyOf(lines);
+    }
+
+    private static int normalizedRouteCommitment(GamePanel game,
+                                                 Faction faction) {
+        return Math.max(0,
+                FactionVehicleRouteControlAuthority.committedStrength(
+                        game, faction) / 5);
     }
 
     private static Posture posture(int attackerPower, int defenderPower) {
