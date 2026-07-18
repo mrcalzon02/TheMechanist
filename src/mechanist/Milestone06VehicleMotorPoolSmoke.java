@@ -135,6 +135,33 @@ final class Milestone06VehicleMotorPoolSmoke {
             require(!denied.success() && foreignBefore.equals(foreign.stockState),
                     "foreign faction vehicle must reject motor-pool assignment without ownership transfer");
 
+            NpcFactionSite annex = NpcFactionSite.create(
+                    "Mechanist Reserve Annex",
+                    Faction.MECHANIST_COLLEGIA, "motor pool annex",
+                    game.world.sectorX, game.world.sectorY,
+                    game.world.zoneX, game.world.zoneY, game.world.floor,
+                    "Machine part", "Tool bundle",
+                    "Reserve Fleet Doctrine");
+            annex.stock = 30;
+            annex.workers = 3;
+            MapObjectState annexCar = vehicle(game.world, 9, 5,
+                    AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                    annex.faction, "faction", 153L);
+            game.world.mapObjects.add(annexCar);
+            require(VehicleMotorPoolAuthority.assign(game, annexCar, annex,
+                    "reserve staff transport", "annex registration").success(),
+                    "same-family annex should own its own explicit vehicle assignment");
+            String annexBefore = annexCar.stockState;
+            int unrelatedChanges = VehicleMotorPoolAuthority.reconcileSiteFleet(
+                    game, site, "primary pool activity");
+            VehicleMotorPoolAuthority.Snapshot annexAfter =
+                    VehicleMotorPoolAuthority.inspect(game, annexCar, annex);
+            require(unrelatedChanges == 0
+                            && annexBefore.equals(annexCar.stockState)
+                            && annexAfter.assigned()
+                            && annexAfter.siteName().equals(annex.name),
+                    "primary pool reconciliation must not steal a vehicle already assigned to another same-family pool");
+
             FactionStrategicPlan seizure = new FactionStrategicPlan();
             seizure.id = "STRAT-MOTOR-POOL-SEIZURE";
             seizure.faction = Faction.MECHANICUS;
