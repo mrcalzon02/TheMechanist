@@ -25,7 +25,7 @@ final class Milestone06VehicleStrategicTransitCommitSmoke {
             VehicleFuelAuthority.Snapshot initialFuel =
                     VehicleFuelAuthority.inspect(source, vehicle);
             VehicleStrategicTransitAuthority.Request route = route(destination,
-                    18, 1, 12, 4);
+                    18, 3, 12, 4);
             VehicleStrategicTransitAuthority.Reservation reservation =
                     VehicleStrategicTransitAuthority.reserve(game, vehicle, route);
             require(reservation.success() && reservation.changed(),
@@ -77,7 +77,7 @@ final class Milestone06VehicleStrategicTransitCommitSmoke {
             source.mapObjects.add(blockedVehicle);
             VehicleFuelAuthority.ensureInitialized(source, blockedVehicle);
             require(VehicleStrategicTransitAuthority.reserve(game,
-                    blockedVehicle, route(destination, 12, 1, 12, 3)).success(),
+                    blockedVehicle, route(destination, 12, 3, 12, 3)).success(),
                     "blocked-destination fixture should reserve successfully");
             String blockedStock = blockedVehicle.stockState;
             VehicleStrategicTransitCommitAuthority.Result badParking =
