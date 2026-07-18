@@ -2,7 +2,6 @@ package mechanist;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Atomic consumer for a READY strategic vehicle reservation.
@@ -104,6 +103,8 @@ final class VehicleStrategicTransitCommitAuthority {
             set(vehicle, "strategicTransitCommitSource", source.locationKey());
             set(vehicle, "strategicTransitCommitDestination",
                     destination.locationKey());
+            set(vehicle, "strategicTransitSourceX", Integer.toString(sourceX));
+            set(vehicle, "strategicTransitSourceY", Integer.toString(sourceY));
             set(vehicle, "strategicTransitCommitX",
                     Integer.toString(request.destinationX()));
             set(vehicle, "strategicTransitCommitY",
@@ -188,6 +189,10 @@ final class VehicleStrategicTransitCommitAuthority {
         String reservationId = value(vehicle, "strategicTransitReservationId");
         if (inSource && inDestination) {
             destination.mapObjects.remove(vehicle);
+            vehicle.x = intValue(value(vehicle, "strategicTransitSourceX"),
+                    vehicle.x);
+            vehicle.y = intValue(value(vehicle, "strategicTransitSourceY"),
+                    vehicle.y);
             set(vehicle, "strategicTransitState", "reserved");
             append(vehicle, "deploymentHistory", "Interrupted transfer "
                     + reservationId + " recovered to source after duplicate placement");
@@ -197,6 +202,10 @@ final class VehicleStrategicTransitCommitAuthority {
                     vehicle);
         }
         if (inSource) {
+            vehicle.x = intValue(value(vehicle, "strategicTransitSourceX"),
+                    vehicle.x);
+            vehicle.y = intValue(value(vehicle, "strategicTransitSourceY"),
+                    vehicle.y);
             set(vehicle, "strategicTransitState", "reserved");
             append(vehicle, "deploymentHistory", "Interrupted transfer "
                     + reservationId + " recovered at source before fuel commit");
