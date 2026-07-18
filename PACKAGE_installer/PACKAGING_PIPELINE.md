@@ -31,9 +31,11 @@ Packaging scripts stage a launcher-owned runtime layout rather than relying on t
 
 ```text
 manifests/
+launcher/MechanistLauncher.jar
 packages/client/TheMechanist.jar
 packages/server/TheMechanistServer.jar
 packages/support/lib/*.jar
+runtime/
 ```
 
 The platform runtime manifest records package identity, version, platform, paths, sizes, hashes, and main classes. The launcher must treat that manifest as the package identity source of truth.
@@ -43,6 +45,42 @@ The same layout may be used as a local package seed for acquisition testing. The
 Manifest compatibility is part of package identity. Current launcher verification accepts schema `2`, distribution model `installer-thin-launcher-client-server`, and the platform matching the running launcher, such as `windows-x64` or `linux-x64`.
 
 Required support libraries such as LWJGL, platform native LWJGL jars, controller bridges such as Jamepad or its successor, Netty when used by a launched package, and future support libraries must be staged into `packages/support/lib/` by the packaging/update/acquisition stage. Game launchers and the client runtime must not download support libraries opportunistically during game startup.
+
+## Remote Java 17 verification and GitHub Releases
+
+The remote development and release path is owned by:
+
+```text
+.github/workflows/java17-verify-and-release.yml
+ROOT_build/ci/build_runnable_distribution.py
+ROOT_build/ci/verify_runnable_distribution.py
+```
+
+Every push to `main` and every pull request targeting `main` runs the cross-platform Java 17 verification matrix on Linux and Windows. The workflow:
+
+1. Checks out the exact commit.
+2. Installs Temurin Java 17 and records the active toolchain.
+3. Rebuilds client and server shaded jars from source.
+4. Executes `Gate3PlayerFacingTextSmokeSuite`.
+5. Executes the focused packaged startup smoke.
+6. Starts the packaged headless server with `--help` under an isolated user-storage root.
+7. Builds the launcher.
+8. Stages the client, server, launcher, platform-matching runtime libraries, documentation, launch scripts, and a bundled Java 17 `jlink` runtime.
+9. Generates a schema-2 manifest covering every staged file with size and SHA-256 identity.
+10. Verifies all declared files, rejects undeclared files, validates JAR entry points, rejects classfiles newer than Java 17 major version 61, checks platform-native support libraries, and checks ZIP integrity.
+11. Runs Gate 3 and the server smoke again from the staged distribution using the bundled runtime.
+12. Uploads the runnable ZIP and machine-readable verification report as workflow artifacts.
+
+Ordinary `main` and pull-request runs build non-obfuscated development distributions for exact-head verification. Release publication uses the `release-obfuscation` Maven profile and must pass the same matrix before publication.
+
+A GitHub Release is created only by one of these explicit conditions:
+
+- Push a `v*` tag, such as `v0.9.10iz`.
+- Manually dispatch **Java 17 Verify and Release**, enable `publish_release`, and provide a valid `v`-prefixed release tag.
+
+The release job does not run until both Linux and Windows verification jobs succeed. It attaches both portable runnable ZIPs, both verification reports, and `SHA256SUMS.txt`. Existing releases with the same tag receive replacement assets through an explicit clobbering upload; ordinary `main` pushes never publish a release.
+
+Workflow publication permission is limited to the release job. Verification jobs have read-only repository contents permission.
 
 ## Local package seed builder
 
@@ -87,12 +125,13 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package\build-windows-install
 3. Run source compile or Maven package with Java 17 compatibility.
 4. Run targeted smoke tests for touched systems.
 5. Rebuild client and server jars from the corrected source tree.
-6. Stage client, server, support libraries, and manifests into the launcher-managed package layout.
-7. Verify manifest hashes and required support-library presence, including platform LWJGL native jars when required.
+6. Stage client, server, launcher, support libraries, manifests, and the platform Java runtime into the launcher-managed package layout.
+7. Verify manifest hashes and complete file coverage, including platform LWJGL native jars when required.
 8. Scan shipped jars/class directories for Java 17 classfile compatibility.
-9. Build platform packages on their native operating systems.
-10. Verify checksums and zip/archive integrity.
-11. State honestly what was not manually tested.
+9. Run Gate 3 and client/server startup checks from the staged distribution.
+10. Build native installers on their native operating systems when installer publication is required.
+11. Verify checksums and zip/archive integrity.
+12. State honestly what was not manually tested.
 
 ## Current segmentation note
 
