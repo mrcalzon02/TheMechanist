@@ -123,6 +123,7 @@ final class Gate3PlayerFacingTextSmokeSuite {
         Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReadbackAuditSmoke.main(args);
         Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewAuditSmoke.main(args);
         Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionAuditSmoke.main(args);
+        Milestone03BlueprintFactionConstructionResponseCycleReviewActionReviewReviewActionHandoffAuditSmoke.main(args);
         Milestone03RoomConstructionParityAuditSmoke.main(args);
         Milestone03BlueprintExpansionHeatAuditSmoke.main(args);
         Milestone03BlueprintUtilityReadinessAuditSmoke.main(args);
