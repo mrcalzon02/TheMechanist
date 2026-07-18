@@ -72,6 +72,23 @@ def platform_id() -> str:
     raise RuntimeError(f"unsupported release platform: {sys.platform}")
 
 
+def native_classifier(platform_name: str) -> str:
+    if platform_name.startswith("windows-"):
+        return "natives-windows"
+    if platform_name.startswith("linux-"):
+        return "natives-linux"
+    if platform_name.startswith("macos-"):
+        return "natives-macos"
+    raise RuntimeError(f"unsupported native-library platform: {platform_name}")
+
+
+def dependency_matches_platform(path: pathlib.Path, platform_name: str) -> bool:
+    name = path.name.lower()
+    if "natives-" not in name:
+        return True
+    return native_classifier(platform_name) in name
+
+
 def copy_file(source: pathlib.Path, destination: pathlib.Path) -> None:
     if not source.is_file():
         raise RuntimeError(f"required build artifact missing: {source}")
@@ -236,7 +253,8 @@ def main() -> int:
     support_target = distribution / "packages" / "support" / "lib"
     support_target.mkdir(parents=True, exist_ok=True)
     for dependency in sorted(dependencies.glob("*.jar")):
-        copy_file(dependency, support_target / dependency.name)
+        if dependency_matches_platform(dependency, current_platform):
+            copy_file(dependency, support_target / dependency.name)
 
     java_home = pathlib.Path(os.environ.get("JAVA_HOME", ""))
     jlink = java_home / "bin" / executable("jlink")
