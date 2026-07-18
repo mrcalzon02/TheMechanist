@@ -126,6 +126,7 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             game.shutdownRuntime();
         }
         Milestone06VehicleMaintenanceSmoke.main(args);
+        Milestone06VehicleAccessSmoke.main(args);
     }
 
     private static World world() {
