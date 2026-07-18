@@ -159,7 +159,7 @@ final class FactionVehicleRouteStrategicAuthority {
             if (existingPlan.isBlank()
                     && clean(order.reason(), "").equalsIgnoreCase(
                     clean(plan.scheme, ""))) {
-                bind(conflict, plan, deploymentCost(request), "pending", game);
+                bind(conflict, plan, 0, "pending", game);
                 return advanceBound(game, plan, site, conflict);
             }
             return Progress.terminal(false, false,
@@ -541,9 +541,10 @@ final class FactionVehicleRouteStrategicAuthority {
             GamePanel game, FactionStrategicPlan plan,
             MapObjectState vehicle,
             FactionVehicleRouteControlAuthority.Snapshot order) {
+        String id = planId(plan);
         if (game == null || plan == null || vehicle == null
-                || "true".equalsIgnoreCase(value(vehicle,
-                "routeControlStrategicPressureApplied"))) return false;
+                || id.equals(value(vehicle,
+                "routeControlStrategicPressurePlanId"))) return false;
         Faction target = targetFaction(plan);
         if (order.mission()
                 != FactionVehicleRouteControlAuthority.Mission.ROUTE_CONTEST
@@ -555,7 +556,7 @@ final class FactionVehicleRouteStrategicAuthority {
                 faction(plan.faction) + " completed "
                         + order.mission().label + " at "
                         + order.destinationKey());
-        set(vehicle, "routeControlStrategicPressureApplied", "true");
+        set(vehicle, "routeControlStrategicPressurePlanId", id);
         return true;
     }
 
