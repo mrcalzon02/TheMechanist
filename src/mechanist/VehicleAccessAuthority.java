@@ -73,8 +73,7 @@ final class VehicleAccessAuthority {
                 .contains("seized");
         boolean military = "MILITARY".equals(snapshot.legalClass());
         boolean restricted = military || "RESTRICTED".equals(snapshot.legalClass());
-        boolean title = credential(game, "Vehicle title")
-                || credential(game, snapshot.manufacturer() + " " + snapshot.model());
+        boolean title = matchingVehicleTitle(game, snapshot);
         boolean driverPermit = credential(game, "Driver permit")
                 || credential(game, "Vehicle operator permit");
         boolean transitPass = credential(game, "Transit pass")
@@ -100,7 +99,7 @@ final class VehicleAccessAuthority {
             if (requested == Permission.DEPLOYMENT && restricted
                     && !title && !commandPermit) {
                 return blocked(requested, "restricted owner deployment",
-                        "carry the vehicle title or a motor-pool deployment order",
+                        "carry this vehicle's title or a motor-pool deployment order",
                         "ordinary inspection, repair, and local custody remain available");
             }
             return allowed(requested, "recorded owner",
@@ -254,6 +253,20 @@ final class VehicleAccessAuthority {
                 .toLowerCase(Locale.ROOT);
         return !operation.equals("disabled") && !operation.equals("dismantled")
                 && !condition.equals("wreck") && !condition.equals("salvaged");
+    }
+
+    private static boolean matchingVehicleTitle(
+            GamePanel game, VehicleRuntimeAuthority.Snapshot snapshot) {
+        if (game == null || snapshot == null) return false;
+        String identity = (snapshot.manufacturer() + " " + snapshot.model())
+                .trim().toLowerCase(Locale.ROOT);
+        if (identity.isBlank()) return false;
+        for (String carried : game.inventory) {
+            if (carried == null) continue;
+            String low = carried.toLowerCase(Locale.ROOT);
+            if (low.contains("vehicle title") && low.contains(identity)) return true;
+        }
+        return false;
     }
 
     private static boolean credential(GamePanel game, String expected) {
