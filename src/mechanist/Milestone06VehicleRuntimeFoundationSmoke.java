@@ -201,21 +201,49 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
                 "scheme seizure should transfer the physical vehicle and spend faction stock");
         requireContains(MapObjectState.stockValue(nobleTruck.stockState, "captureHistory"),
                 "Mechanist", "faction vehicle capture history");
+        require(VehicleMotorPoolAuthority.inspect(game, nobleTruck, site).assigned(),
+                "successful seizure should register the useful cargo truck with the local motor pool");
         playerBefore.requireSame(game);
+
+        preparePlanning(plan, "stockpile a strategic item");
+        FactionStrategicAssetTickAuthority.tick(game);
+        require(!FactionVehicleStrategicAuthority.VEHICLE_SALVAGE_GOAL
+                        .equals(plan.immediateGoal)
+                        && !"salvaged".equals(MapObjectState.stockValue(
+                        nobleTruck.stockState, "condition"))
+                        && !FactionVehicleDoctrineAuthority.shouldSalvageCaptured(
+                        game, nobleTruck, site),
+                "useful captured cargo truck should remain a doctrine-aligned fleet asset");
+
+        MapObjectState capturedWreck = vehicle(game.world, 18, 8,
+                AssetIntegrationDisciplineAuthority.PARKED_CIVILIAN_CAR,
+                Faction.NOBLE, "faction", "damaged-staff-transport", false, 24L);
+        game.world.mapObjects.add(capturedWreck);
+        require(VehicleRuntimeAuthority.transferToFaction(capturedWreck,
+                site.faction, game.turn, "smoke catastrophic capture").success(),
+                "catastrophic salvage fixture should transfer into faction custody");
+        VehicleRuntimeAuthority.applyDamage(capturedWreck,
+                VehicleRuntimeAuthority.Component.FRAME, 100,
+                game.turn, "captured vehicle frame collapse");
+        require(FactionVehicleDoctrineAuthority.shouldSalvageCaptured(
+                game, capturedWreck, site),
+                "catastrophic captured civilian vehicle should be recommended for salvage");
 
         preparePlanning(plan, "stockpile a strategic item");
         FactionStrategicAssetTickAuthority.tick(game);
         require(FactionVehicleStrategicAuthority.VEHICLE_SALVAGE_GOAL
                         .equals(plan.immediateGoal),
-                "seized faction vehicle should promote the next planning cycle into salvage");
+                "catastrophic captured vehicle should promote the next planning cycle into salvage");
         int stockBeforeSalvage = site.stock;
         prepareExecution(plan, game.turn);
         FactionStrategicAssetTickAuthority.tick(game);
         require("salvaged".equals(MapObjectState.stockValue(
+                        capturedWreck.stockState, "condition"))
+                        && !"salvaged".equals(MapObjectState.stockValue(
                         nobleTruck.stockState, "condition"))
                         && site.stock > stockBeforeSalvage
                         && plan.success == 2,
-                "faction salvage should strip the seized vehicle and credit site stock once");
+                "faction salvage should strip the poor-fit wreck while retaining the useful cargo truck");
         require(hasFactionStockMachinePart(game, site),
                 "faction vehicle salvage should materialize provenance-aware Machine part stock");
         playerBefore.requireSame(game);
