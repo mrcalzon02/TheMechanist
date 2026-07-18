@@ -99,7 +99,7 @@ final class FactionVehicleBalanceAuthority {
                 + " against " + faction(defenderFamily)
                 + ": vehicle power " + attackerPower + " vs "
                 + defenderPower + ", confidence " + confidence
-                + "%, deterrence " + deterrence + "%, route-control delta "
+                + "%, deterrence " + deterrence + "%, route-control balance "
                 + signed(routeDelta) + ".";
         return new Contest(attackerFamily, defenderFamily, attackerPower,
                 defenderPower, attackerFleet.heavyVehicles(),
