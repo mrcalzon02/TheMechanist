@@ -7,8 +7,8 @@ import java.util.Locale;
 /**
  * Symmetric faction vehicle operations over the same persistent vehicle records
  * used by player purchase, ownership, repair, and salvage. Candidate selection
- * consumes faction doctrine and derived strategic fleet value rather than
- * alphabetical fixture order.
+ * consumes faction doctrine, derived strategic fleet value, and opposing fleet
+ * deterrence rather than alphabetical fixture order.
  */
 final class FactionVehicleStrategicAuthority {
     static final String VEHICLE_SEIZURE_GOAL = "seize a vehicle";
@@ -75,10 +75,28 @@ final class FactionVehicleStrategicAuthority {
             if (target != null) {
                 FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
                         FactionVehicleDoctrineAuthority.assess(game, target, site);
+                VehicleRuntimeAuthority.Snapshot targetState =
+                        VehicleRuntimeAuthority.inspect(game.world, target);
+                Faction defender = targetState == null
+                        ? Faction.NONE : targetState.ownerFaction();
+                FactionVehicleBalanceAuthority.Contest contest =
+                        FactionVehicleBalanceAuthority.compare(game,
+                                site.faction, defender, site);
+                if (defender != Faction.NONE
+                        && !FactionIdentityAuthority.sameFamily(
+                        defender, site.faction)
+                        && !contest.canEscalate(plan.aggression,
+                        plan.ambition)) {
+                    return Suggestion.none();
+                }
                 return new Suggestion(VEHICLE_SEIZURE_GOAL,
                         displayName(target),
                         "the active scheme has a physical rival vehicle aligned with faction doctrine; fit "
-                                + assessment.doctrineFit() + "%");
+                                + assessment.doctrineFit() + "%, fleet posture "
+                                + contest.posture().label + ", commitment "
+                                + contest.commitment(plan.aggression,
+                                plan.ambition) + "/"
+                                + contest.escalationThreshold());
             }
         }
         return Suggestion.none();
@@ -102,7 +120,26 @@ final class FactionVehicleStrategicAuthority {
                 VehicleRuntimeAuthority.inspect(game.world, vehicle);
         FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
                 FactionVehicleDoctrineAuthority.assess(game, vehicle, site);
-        int cost = 2 + Math.max(0, snapshot.purchasePrice()) / 180;
+        Faction formerFaction = snapshot.ownerFaction();
+        FactionVehicleBalanceAuthority.Contest contest =
+                FactionVehicleBalanceAuthority.compare(game, site.faction,
+                        formerFaction, site);
+        if (formerFaction != null && formerFaction != Faction.NONE
+                && !FactionIdentityAuthority.sameFamily(
+                formerFaction, site.faction)
+                && !contest.canEscalate(plan.aggression, plan.ambition)) {
+            return blocked("vehicle-fleet-deterrence",
+                    faction(site.faction) + " declined the seizure of "
+                            + displayName(vehicle) + ". " + contest.summary()
+                            + " Leadership commitment "
+                            + contest.commitment(plan.aggression,
+                            plan.ambition) + "/"
+                            + contest.escalationThreshold() + ".",
+                    site);
+        }
+        int deterrenceCost = Math.max(0, contest.deterrence() - 50) / 25;
+        int cost = 2 + Math.max(0, snapshot.purchasePrice()) / 180
+                + Math.min(3, deterrenceCost);
         if (site.stock < cost) {
             return blocked("insufficient-vehicle-seizure-stock",
                     site.name + " needs " + cost
@@ -110,7 +147,6 @@ final class FactionVehicleStrategicAuthority {
                             + site.stock + ".", site);
         }
         int before = site.stock;
-        Faction formerFaction = snapshot.ownerFaction();
         String formerOwner = snapshot.ownerName();
         site.stock -= cost;
         VehicleRuntimeAuthority.Result result =
@@ -124,15 +160,19 @@ final class FactionVehicleStrategicAuthority {
                 && !FactionIdentityAuthority.sameFamily(formerFaction, site.faction)) {
             int strategicPressure = Math.min(5,
                     Math.max(0, assessment.strategicValue()) / 35);
+            int balancePressure = Math.min(4,
+                    Math.max(0, contest.deterrence()) / 25);
             game.addFactionMarketPressure(formerFaction,
-                    2 + Math.max(0, plan.aggression) / 35 + strategicPressure,
+                    2 + Math.max(0, plan.aggression) / 35
+                            + strategicPressure + balancePressure,
                     site.faction.label + " seized " + displayName(vehicle));
         }
         return new FactionStrategicAssetAuthority.Outcome(true, true, "",
                 site.faction.label + " seized " + displayName(vehicle)
                         + " from " + clean(formerOwner, faction(formerFaction))
                         + " through " + plan.scheme + "; doctrine fit "
-                        + assessment.doctrineFit() + "%; site stock "
+                        + assessment.doctrineFit() + "%; fleet posture "
+                        + contest.posture().label + "; site stock "
                         + before + " -> " + site.stock + ".",
                 -1, before, site.stock, null, null);
     }
