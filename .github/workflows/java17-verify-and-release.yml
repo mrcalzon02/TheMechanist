@@ -222,7 +222,7 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Resolve and validate release tag
+      - name: Resolve and validate release identity
         id: release
         shell: bash
         env:
@@ -239,11 +239,32 @@ jobs:
             exit 1
           fi
           ZIP_COUNT=$(find release-assets -type f -name '*.zip' | wc -l | tr -d ' ')
-          if [[ "$ZIP_COUNT" -lt 2 ]]; then
-            echo "Expected verified Linux and Windows runnable ZIPs; found $ZIP_COUNT." >&2
+          REPORT_COUNT=$(find release-assets -type f -name 'verification-*.json' | wc -l | tr -d ' ')
+          if [[ "$ZIP_COUNT" -lt 2 || "$REPORT_COUNT" -lt 2 ]]; then
+            echo "Expected verified Linux and Windows ZIPs and reports; found ZIPs=$ZIP_COUNT reports=$REPORT_COUNT." >&2
+            exit 1
+          fi
+          RELEASE_VERSION=$(python - <<'PY'
+          import glob, json, os, sys
+          reports = [json.load(open(path, encoding='utf-8')) for path in glob.glob('release-assets/**/verification-*.json', recursive=True)]
+          versions = {str(report.get('version', '')) for report in reports}
+          commits = {str(report.get('commit', '')) for report in reports}
+          platforms = {str(report.get('platform', '')) for report in reports}
+          if len(versions) != 1 or '' in versions:
+              raise SystemExit(f'verification reports disagree on version: {sorted(versions)}')
+          if commits != {os.environ['GITHUB_SHA']}:
+              raise SystemExit(f'verification reports do not identify exact release commit: {sorted(commits)}')
+          if not {'linux-x64', 'windows-x64'}.issubset(platforms):
+              raise SystemExit(f'verification reports are missing required platforms: {sorted(platforms)}')
+          print(next(iter(versions)))
+          PY
+          )
+          if [[ "$TAG" != "v$RELEASE_VERSION" ]]; then
+            echo "Release tag $TAG does not match verified artifact version v$RELEASE_VERSION." >&2
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Generate release checksums
         shell: bash
@@ -281,6 +302,7 @@ jobs:
             echo "## GitHub Release published"
             echo
             echo "- Tag: \`${{ steps.release.outputs.tag }}\`"
+            echo "- Version: \`${{ steps.release.outputs.version }}\`"
             echo "- Commit: \`${{ github.sha }}\`"
             echo "- Linux and Windows portable distributions: attached"
             echo "- SHA-256 checksums: attached"
