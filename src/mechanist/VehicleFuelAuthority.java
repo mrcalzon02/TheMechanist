@@ -2,7 +2,6 @@ package mechanist;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Persistent fuel or power ledger attached to the authoritative vehicle fixture.
@@ -31,7 +30,7 @@ final class VehicleFuelAuthority {
         ensureInitialized(world, vehicle);
         int current = intValue(value(vehicle, "fuelOrPowerCurrent"), 0);
         int capacity = intValue(value(vehicle, "fuelOrPowerCapacity"), 0);
-        int reserved = Math.min(current, Math.max(0,
+        int reserved = Math.max(0, Math.min(capacity,
                 intValue(value(vehicle, "strategicTransitFuelReserved"), 0)));
         return new Snapshot(current, capacity, reserved,
                 Math.max(0, current - reserved),
@@ -134,7 +133,10 @@ final class VehicleFuelAuthority {
         if (snapshot.reserved() > 0) {
             lines.add("Strategic reservation: " + snapshot.reserved()
                     + " unit(s) reserved; " + snapshot.available()
-                    + " remain available for other committed operations.");
+                    + " remain available for other committed operations."
+                    + (snapshot.current() < snapshot.reserved()
+                    ? " The reservation is stale because current energy is below the committed amount."
+                    : ""));
         } else {
             lines.add("Strategic reservation: no fuel or power units are reserved.");
         }
@@ -156,7 +158,7 @@ final class VehicleFuelAuthority {
                 "fuelOrPowerCapacity"), 1));
         int current = Math.max(0, Math.min(capacity,
                 intValue(value(vehicle, "fuelOrPowerCurrent"), capacity)));
-        int reserved = Math.max(0, Math.min(current,
+        int reserved = Math.max(0, Math.min(capacity,
                 intValue(value(vehicle, "strategicTransitFuelReserved"), 0)));
         set(vehicle, "fuelOrPowerCapacity", Integer.toString(capacity));
         set(vehicle, "fuelOrPowerCurrent", Integer.toString(current));
