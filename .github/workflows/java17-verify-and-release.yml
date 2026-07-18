@@ -1,0 +1,296 @@
+name: Java 17 Verify and Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish_prerelease:
+        description: Publish a verified portable prerelease after all gates pass
+        type: boolean
+        required: true
+        default: false
+      release_tag:
+        description: Optional exact tag such as v0.9.10iz
+        type: string
+        required: false
+
+concurrency:
+  group: java17-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-package:
+    name: Build package (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture toolchain
+        shell: bash
+        run: |
+          mkdir -p ci-logs
+          {
+            java -version
+            javac -version
+            mvn -version
+            python --version
+            echo "commit=$GITHUB_SHA"
+            echo "platform=${{ matrix.platform }}"
+          } 2>&1 | tee ci-logs/toolchain-${{ matrix.platform }}.log
+      - name: Compile Java 17 client and server
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn -B -DskipTests clean package 2>&1 | tee ci-logs/maven-${{ matrix.platform }}.log
+      - name: Run focused boot smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          java -Djava.awt.headless=true -cp target/TheMechanist-all.jar mechanist.BootStartupAudioSilenceSmoke 2>&1 | tee ci-logs/boot-${{ matrix.platform }}.log
+      - name: Run server operation smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          java -Duser.home="${{ runner.temp }}/mechanist-server-smoke" -jar target/TheMechanistServer-all.jar --help 2>&1 | tee ci-logs/server-${{ matrix.platform }}.log
+      - name: Build portable distribution
+        id: package
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/build_runnable_distribution.py --repo . --commit "$GITHUB_SHA" --output dist/releases 2>&1 | tee ci-logs/package-${{ matrix.platform }}.log
+          ARCHIVE=$(find dist/releases -maxdepth 1 -type f -name 'TheMechanist-*.zip' | head -n 1)
+          DIST=$(find dist/releases -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
+          test -n "$ARCHIVE" && test -n "$DIST"
+          echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
+          echo "distribution=$DIST" >> "$GITHUB_OUTPUT"
+      - name: Verify distribution
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/verify_runnable_distribution.py "${{ steps.package.outputs.distribution }}" --archive "${{ steps.package.outputs.archive }}" --report "dist/releases/verification-${{ matrix.platform }}.json" 2>&1 | tee ci-logs/verify-${{ matrix.platform }}.log
+      - name: Upload package and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheMechanist-${{ matrix.platform }}
+          path: |
+            dist/releases/*.zip
+            dist/releases/verification-${{ matrix.platform }}.json
+            ci-logs/*.log
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
+
+  gate3:
+    name: Gate 3 (${{ matrix.platform }})
+    needs: build-package
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TheMechanist-${{ matrix.platform }}
+          path: package
+      - name: Extract package
+        id: dist
+        shell: bash
+        run: |
+          ARCHIVE=$(find package -type f -name '*.zip' | head -n 1)
+          test -n "$ARCHIVE"
+          mkdir extracted
+          python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall('extracted')"
+          DIST=$(find extracted -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
+          test -n "$DIST"
+          echo "root=$DIST" >> "$GITHUB_OUTPUT"
+      - name: Run packaged Gate 3 on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          DIST='${{ steps.dist.outputs.root }}'
+          "$DIST/runtime/bin/java" -Djava.awt.headless=true -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
+      - name: Run packaged Gate 3 on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist='${{ steps.dist.outputs.root }}'
+          & "$dist/runtime/bin/java.exe" '-Djava.awt.headless=true' -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  synthetic-environment:
+    name: Synthetic environment (${{ matrix.platform }})
+    needs: gate3
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: TheMechanist-${{ matrix.platform }}
+          path: package
+      - name: Extract package
+        id: dist
+        shell: bash
+        run: |
+          ARCHIVE=$(find package -type f -name '*.zip' | head -n 1)
+          mkdir extracted
+          python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall('extracted')"
+          DIST=$(find extracted -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
+          echo "root=$DIST" >> "$GITHUB_OUTPUT"
+      - name: Run synthetic distribution auditor
+        run: >-
+          python ROOT_build/ci/run_synthetic_distribution_tests.py
+          "${{ steps.dist.outputs.root }}"
+          --verifier ROOT_build/ci/verify_runnable_distribution.py
+          --report synthetic-${{ matrix.platform }}.json
+      - name: Install Xvfb
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Run Linux GUI startup under Xvfb
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          DIST='${{ steps.dist.outputs.root }}'
+          set +e
+          HOME="$RUNNER_TEMP/Mechanist GUI Profile" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.TheMechanist
+          CODE=$?
+          set -e
+          if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
+      - name: Run Windows GUI startup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist='${{ steps.dist.outputs.root }}'
+          $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList @('-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.TheMechanist') -PassThru
+          Start-Sleep -Seconds 12
+          if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Synthetic-${{ matrix.platform }}
+          path: synthetic-${{ matrix.platform }}.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  record-history:
+    name: Record verified prerelease history
+    needs: synthetic-environment
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      history_sha: ${{ steps.commit.outputs.history_sha }}
+      tag: ${{ steps.identity.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*
+          path: release-assets
+          merge-multiple: true
+      - name: Resolve identity
+        id: identity
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag }}
+        run: |
+          VERSION=$(python - <<'PY'
+          import glob,json
+          reports=[json.load(open(p,encoding='utf-8')) for p in glob.glob('release-assets/verification-*.json')]
+          versions={r['version'] for r in reports}; commits={r['commit'] for r in reports}; platforms={r['platform'] for r in reports}
+          assert len(versions)==1 and commits=={'${{ github.sha }}'} and {'linux-x64','windows-x64'}.issubset(platforms)
+          print(next(iter(versions)))
+          PY
+          )
+          TAG="${REQUESTED_TAG:-v$VERSION}"
+          test "$TAG" = "v$VERSION"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Record verified release
+        run: >-
+          python ROOT_build/ci/record_verified_release.py
+          --history ROOT_docs/DEVELOPMENT_HISTORY.md
+          --reports 'release-assets/verification-*.json'
+          --commit '${{ github.sha }}'
+          --run-url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+      - name: Commit history
+        id: commit
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_docs/DEVELOPMENT_HISTORY.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Record verified remote prerelease [skip ci]'
+            git push origin HEAD:main
+          fi
+          echo "history_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  publish-prerelease:
+    name: Publish verified prerelease
+    needs: record-history
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.record-history.outputs.tag }}
+          TARGET: ${{ needs.record-history.outputs.history_sha }}
+        run: |
+          cd release-assets
+          sha256sum *.zip > SHA256SUMS.txt
+          gh release create "$TAG" *.zip verification-*.json SHA256SUMS.txt --target "$TARGET" --title "The Mechanist $TAG" --generate-notes --prerelease
