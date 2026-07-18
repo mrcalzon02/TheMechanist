@@ -233,6 +233,7 @@ final class Milestone06VehicleMotorPoolSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06FactionVehicleDoctrineSmoke.main(args);
     }
 
     private static World world() {
