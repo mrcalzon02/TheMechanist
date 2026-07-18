@@ -10,9 +10,9 @@ import java.util.Set;
 
 /**
  * Persistent faction route-control orders over authoritative motor-pool vehicles.
- * This authority selects and reserves a real fleet asset for a mission, but does
- * not move it between worlds. Cross-zone movement remains owned by
- * VehicleStrategicTransitAuthority and its commit authority.
+ * This authority selects a real fleet asset and owns the mission lifecycle.
+ * Strategic reservation and cross-zone movement remain owned by the existing
+ * vehicle transit authorities.
  */
 final class FactionVehicleRouteControlAuthority {
     enum Mission {
@@ -36,7 +36,8 @@ final class FactionVehicleRouteControlAuthority {
             mission = mission == null ? Mission.PATROL : mission;
             destinationKey = clean(destinationKey,
                     "unselected route-control destination");
-            targetFaction = targetFaction == null ? Faction.NONE : targetFaction;
+            targetFaction = targetFaction == null
+                    ? Faction.NONE : targetFaction;
             infrastructure = infrastructure == null
                     ? Set.of() : Set.copyOf(infrastructure);
             routeDistance = Math.max(0, routeDistance);
@@ -60,13 +61,18 @@ final class FactionVehicleRouteControlAuthority {
         static Result blocked(String action, String message,
                               MapObjectState vehicle,
                               List<String> blockers) {
+            List<String> safe = blockers == null ? List.of() : blockers;
             return new Result(false, false, clean(action,
                     "route-control order"), clean(message,
                     "The route-control order was blocked."), vehicle,
-                    inspect(vehicle), List.copyOf(new LinkedHashSet<>(
-                    blockers == null ? List.of() : blockers)));
+                    inspect(vehicle), List.copyOf(
+                    new LinkedHashSet<>(safe)));
         }
     }
+
+    private record Candidate(MapObjectState vehicle, boolean allowed,
+                             int score, int strength, int requiredFuel,
+                             List<String> blockers) { }
 
     private FactionVehicleRouteControlAuthority() { }
 
@@ -74,21 +80,16 @@ final class FactionVehicleRouteControlAuthority {
                          Request request) {
         ArrayList<String> blockers = new ArrayList<>();
         if (game == null || game.world == null) {
-            blockers.add("a loaded world is required");
             return Result.blocked("assign route control",
                     "Faction route control requires a loaded world.",
-                    null, blockers);
+                    null, List.of("a loaded world is required"));
         }
         if (!localSite(site, game.world)) {
-            blockers.add("a local faction motor pool is required");
             return Result.blocked("assign route control",
                     "Faction route control requires a local motor pool.",
-                    null, blockers);
+                    null, List.of("a local faction motor pool is required"));
         }
-        Request order = request == null ? new Request(Mission.PATROL,
-                "unselected route-control destination", Faction.NONE,
-                Set.of(), 0, 0, false, false, false,
-                0, 0, "route patrol") : request;
+        Request order = safeRequest(request);
         validateOrderShape(order, blockers);
         if (!blockers.isEmpty()) {
             return Result.blocked("assign route control",
@@ -105,14 +106,12 @@ final class FactionVehicleRouteControlAuthority {
                     existing, inspect(existing), List.of());
         }
 
-        if (order.mission() == Mission.ROUTE_CONTEST
-                && order.targetFaction() != Faction.NONE
-                && !FactionIdentityAuthority.sameFamily(
-                order.targetFaction(), site.faction)) {
+        if (hostileContest(order, site)) {
             FactionVehicleBalanceAuthority.Contest contest =
                     FactionVehicleBalanceAuthority.compare(game,
                             site.faction, order.targetFaction(), site);
-            if (!contest.canEscalate(order.aggression(), order.ambition())) {
+            if (!contest.canEscalate(order.aggression(),
+                    order.ambition())) {
                 blockers.add("leadership commitment "
                         + contest.commitment(order.aggression(),
                         order.ambition()) + "/"
@@ -128,15 +127,18 @@ final class FactionVehicleRouteControlAuthority {
 
         ArrayList<Candidate> candidates = new ArrayList<>();
         ArrayList<String> fleetBlockers = new ArrayList<>();
-        for (MapObjectState vehicle : game.world.mapObjects) {
-            if (!VehicleRuntimeAuthority.isVehicle(vehicle)
-                    || !VehicleRuntimeAuthority.factionOwns(
-                    vehicle, site.faction)) continue;
-            VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
-            VehicleFuelAuthority.ensureInitialized(game.world, vehicle);
-            Candidate candidate = candidate(game, vehicle, site, order);
-            if (candidate.allowed()) candidates.add(candidate);
-            else fleetBlockers.addAll(candidate.blockers());
+        if (game.world.mapObjects != null) {
+            for (MapObjectState vehicle : game.world.mapObjects) {
+                if (!VehicleRuntimeAuthority.isVehicle(vehicle)
+                        || !VehicleRuntimeAuthority.factionOwns(
+                        vehicle, site.faction)) continue;
+                VehicleRuntimeAuthority.ensureInitialized(
+                        game.world, vehicle);
+                VehicleFuelAuthority.ensureInitialized(game.world, vehicle);
+                Candidate candidate = candidate(game, vehicle, site, order);
+                if (candidate.allowed()) candidates.add(candidate);
+                else fleetBlockers.addAll(candidate.blockers());
+            }
         }
         candidates.sort(Comparator
                 .comparingInt(Candidate::score).reversed()
@@ -153,15 +155,18 @@ final class FactionVehicleRouteControlAuthority {
             return Result.blocked("assign route control",
                     site.name + " has no vehicle ready for "
                             + order.mission().label + ": "
-                            + String.join("; ", new LinkedHashSet<>(blockers))
-                            + ".", null, blockers);
+                            + String.join("; ",
+                            new LinkedHashSet<>(blockers)) + ".",
+                    null, blockers);
         }
 
         Candidate selected = candidates.get(0);
         MapObjectState vehicle = selected.vehicle();
         String id = "ROUTE-" + Math.abs((clean(vehicle.id,
                 vehicle.label) + "|" + order.mission().name() + "|"
-                + order.destinationKey() + "|" + game.worldTurn).hashCode());
+                + order.destinationKey() + "|"
+                + order.targetFaction().name() + "|"
+                + game.worldTurn).hashCode());
         set(vehicle, "routeControlOrderState", "assigned");
         set(vehicle, "routeControlOrderId", id);
         set(vehicle, "routeControlOrderMission", order.mission().name());
@@ -190,9 +195,9 @@ final class FactionVehicleRouteControlAuthority {
                 + selected.requiredFuel() + " / " + order.reason()
                 + turn(game));
         append(vehicle, "deploymentHistory", "Route-control order "
-                + id + " / " + order.mission().label + " / destination "
-                + order.destinationKey() + " / strength "
-                + selected.strength());
+                + id + " / " + order.mission().label
+                + " / destination " + order.destinationKey()
+                + " / strength " + selected.strength());
         return new Result(true, true, "assign route control",
                 "ROUTE CONTROL: " + displayName(game.world, vehicle)
                         + " assigned to " + order.mission().label + " at "
@@ -203,10 +208,7 @@ final class FactionVehicleRouteControlAuthority {
 
     static VehicleStrategicTransitAuthority.Request transitRequest(
             GamePanel game, MapObjectState vehicle, Request request) {
-        Request order = request == null ? new Request(Mission.PATROL,
-                "unselected route-control destination", Faction.NONE,
-                Set.of(), 0, 0, false, false, false,
-                0, 0, "route patrol") : request;
+        Request order = safeRequest(request);
         World world = game == null ? null : game.world;
         VehicleManifestAuthority.Snapshot manifest =
                 VehicleManifestAuthority.inspect(world, vehicle);
@@ -227,20 +229,43 @@ final class FactionVehicleRouteControlAuthority {
                 + " / " + order.reason());
     }
 
+    static VehicleStrategicTransitAuthority.Reservation reserveTransit(
+            GamePanel game, NpcFactionSite site,
+            MapObjectState vehicle, Request request) {
+        Snapshot orderState = inspect(vehicle);
+        Request order = safeRequest(request);
+        if (!orderState.assigned()) {
+            return blockedReservation(
+                    "Assign a route-control order before reserving strategic transit.");
+        }
+        if (orderState.mission() != order.mission()
+                || !orderState.destinationKey().equals(
+                order.destinationKey())
+                || !sameTarget(orderState.targetFaction(),
+                order.targetFaction())) {
+            return blockedReservation(
+                    "The strategic-transit request does not match the active route-control order.");
+        }
+        return VehicleStrategicTransitAuthority.reserveForFaction(
+                game, vehicle, transitRequest(game, vehicle, order), site);
+    }
+
     static Result activate(GamePanel game, NpcFactionSite site,
                            MapObjectState vehicle) {
         Snapshot before = inspect(vehicle);
         if (!before.assigned()) {
             return Result.blocked("activate route control",
                     "The vehicle has no assigned route-control order.",
-                    vehicle, List.of("assign a route-control order first"));
+                    vehicle, List.of(
+                    "assign a route-control order first"));
         }
         VehicleMotorPoolAuthority.Snapshot pool =
                 VehicleMotorPoolAuthority.inspect(game, vehicle, site);
         if (!pool.siteLocal() || !pool.ownerAligned()) {
             return Result.blocked("activate route control",
                     "Only the assigned local motor pool may activate this order.",
-                    vehicle, List.of("restore local motor-pool custody"));
+                    vehicle, List.of(
+                    "restore local motor-pool custody"));
         }
         String transitState = value(vehicle, "strategicTransitState")
                 .toLowerCase(Locale.ROOT);
@@ -264,14 +289,16 @@ final class FactionVehicleRouteControlAuthority {
                         : Math.max(0L, game.worldTurn)));
         append(vehicle, "routeControlOrderHistory", "Activated "
                 + before.mission().label + " / transit reservation "
-                + clean(value(vehicle, "strategicTransitReservationId"),
-                "unrecorded") + turn(game));
+                + clean(value(vehicle,
+                "strategicTransitReservationId"), "unrecorded")
+                + turn(game));
         append(vehicle, "deploymentHistory", "Route-control order "
                 + before.orderId() + " activated");
         return new Result(true, true, "activate route control",
                 "ROUTE CONTROL ACTIVE: " + displayName(
                 game == null ? null : game.world, vehicle)
-                        + " is committed to " + before.destinationKey() + ".",
+                        + " is committed to "
+                        + before.destinationKey() + ".",
                 vehicle, inspect(vehicle), List.of());
     }
 
@@ -288,14 +315,16 @@ final class FactionVehicleRouteControlAuthority {
         if (!pool.siteLocal() || !pool.ownerAligned()) {
             return Result.blocked("cancel route control",
                     "Only the assigned local motor pool may cancel this order.",
-                    vehicle, List.of("restore local motor-pool custody"));
+                    vehicle, List.of(
+                    "restore local motor-pool custody"));
         }
         String transit = value(vehicle, "strategicTransitState")
                 .toLowerCase(Locale.ROOT);
         if (transit.equals("reserved") || transit.equals("committing")) {
             return Result.blocked("cancel route control",
                     "Cancel or complete the strategic-transit reservation first.",
-                    vehicle, List.of("close strategic transit before cancelling the order"));
+                    vehicle, List.of(
+                    "close strategic transit before cancelling the order"));
         }
         set(vehicle, "routeControlOrderState", "cancelled");
         set(vehicle, "routeControlOrderCancelledTurn",
@@ -319,22 +348,31 @@ final class FactionVehicleRouteControlAuthority {
         Snapshot before = inspect(vehicle);
         if (!before.assigned()) {
             return Result.blocked("complete route control",
-                    "The vehicle has no route-control order to complete.",
-                    vehicle, List.of("assign and activate a route-control order"));
+                    "The vehicle has no active route-control order to complete.",
+                    vehicle, List.of(
+                    "assign and activate a route-control order"));
+        }
+        if (!"active".equalsIgnoreCase(before.state())) {
+            return Result.blocked("complete route control",
+                    "Activate the route-control order before completing it.",
+                    vehicle, List.of(
+                    "activate the matching strategic-transit reservation"));
         }
         VehicleMotorPoolAuthority.Snapshot pool =
                 VehicleMotorPoolAuthority.inspect(game, vehicle, site);
         if (!pool.ownerAligned()) {
             return Result.blocked("complete route control",
                     "The vehicle is no longer aligned with its motor-pool faction.",
-                    vehicle, List.of("restore aligned faction ownership"));
+                    vehicle, List.of(
+                    "restore aligned faction ownership"));
         }
         String transit = value(vehicle, "strategicTransitState")
                 .toLowerCase(Locale.ROOT);
-        if (transit.equals("reserved") || transit.equals("committing")) {
+        if (!transit.equals("completed")) {
             return Result.blocked("complete route control",
-                    "The strategic transfer must finish before the mission closes.",
-                    vehicle, List.of("complete the strategic transfer"));
+                    "The authoritative strategic transfer must report completion before the mission closes.",
+                    vehicle, List.of(
+                    "complete the strategic transfer"));
         }
         set(vehicle, "routeControlOrderState", "completed");
         set(vehicle, "routeControlOrderCompletedTurn",
@@ -342,7 +380,8 @@ final class FactionVehicleRouteControlAuthority {
                         : Math.max(0L, game.worldTurn)));
         append(vehicle, "routeControlOrderHistory", "Completed "
                 + before.mission().label + " / "
-                + clean(outcome, "route objective secured") + turn(game));
+                + clean(outcome, "route objective secured")
+                + turn(game));
         append(vehicle, "deploymentHistory", "Route-control order "
                 + before.orderId() + " completed / "
                 + clean(outcome, "objective secured"));
@@ -353,8 +392,8 @@ final class FactionVehicleRouteControlAuthority {
     }
 
     static Snapshot inspect(MapObjectState vehicle) {
-        String state = clean(value(vehicle, "routeControlOrderState"),
-                "unassigned");
+        String state = clean(value(vehicle,
+                "routeControlOrderState"), "unassigned");
         Mission mission = parseMission(value(vehicle,
                 "routeControlOrderMission"));
         return new Snapshot(state.equalsIgnoreCase("assigned")
@@ -362,7 +401,7 @@ final class FactionVehicleRouteControlAuthority {
                 value(vehicle, "routeControlOrderId"), mission,
                 value(vehicle, "routeControlOrderDestination"),
                 parseFaction(value(vehicle,
-                        "routeControlOrderTargetFaction")),
+                "routeControlOrderTargetFaction")),
                 state, intValue(value(vehicle,
                 "routeControlOrderStrength"), 0),
                 intValue(value(vehicle,
@@ -395,9 +434,24 @@ final class FactionVehicleRouteControlAuthority {
         return List.copyOf(lines);
     }
 
-    private record Candidate(MapObjectState vehicle, boolean allowed,
-                             int score, int strength, int requiredFuel,
-                             List<String> blockers) { }
+    static int committedStrength(GamePanel game, Faction faction) {
+        if (game == null || game.world == null
+                || game.world.mapObjects == null) return 0;
+        Faction family = FactionIdentityAuthority.strategicFamily(faction);
+        int total = 0;
+        for (MapObjectState vehicle : game.world.mapObjects) {
+            if (!VehicleRuntimeAuthority.isVehicle(vehicle)
+                    || !VehicleRuntimeAuthority.factionOwns(
+                    vehicle, family)) continue;
+            Snapshot snapshot = inspect(vehicle);
+            if (snapshot.state().equalsIgnoreCase("active")) {
+                total += snapshot.strength();
+            } else if (snapshot.state().equalsIgnoreCase("assigned")) {
+                total += Math.max(1, snapshot.strength() / 2);
+            }
+        }
+        return total;
+    }
 
     private static Candidate candidate(GamePanel game,
                                        MapObjectState vehicle,
@@ -413,7 +467,8 @@ final class FactionVehicleRouteControlAuthority {
         VehicleRuntimeAuthority.Snapshot runtime =
                 VehicleRuntimeAuthority.inspect(game.world, vehicle);
         FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
-                FactionVehicleDoctrineAuthority.assess(game, vehicle, site);
+                FactionVehicleDoctrineAuthority.assess(
+                game, vehicle, site);
         Snapshot order = inspect(vehicle);
         int requiredFuel = estimatedFuel(runtime.vehicleClass(),
                 request.routeDistance());
@@ -426,9 +481,7 @@ final class FactionVehicleRouteControlAuthority {
             blockers.add(displayName(game.world, vehicle)
                     + " lacks aligned operational custody");
         }
-        if (!manifest.driver().isBlank()) {
-            // driver present
-        } else {
+        if (manifest.driver().isBlank()) {
             blockers.add(displayName(game.world, vehicle)
                     + " has no assigned driver");
         }
@@ -520,6 +573,21 @@ final class FactionVehicleRouteControlAuthority {
         return values.getOrDefault(dimension, 0);
     }
 
+    private static Request safeRequest(Request request) {
+        return request == null ? new Request(Mission.PATROL,
+                "unselected route-control destination", Faction.NONE,
+                Set.of(), 0, 0, false, false, false,
+                0, 0, "route patrol") : request;
+    }
+
+    private static boolean hostileContest(Request request,
+                                          NpcFactionSite site) {
+        return request.mission() == Mission.ROUTE_CONTEST
+                && request.targetFaction() != Faction.NONE
+                && !FactionIdentityAuthority.sameFamily(
+                request.targetFaction(), site.faction);
+    }
+
     private static void validateOrderShape(Request request,
                                            List<String> blockers) {
         if (request.destinationKey().equals(
@@ -607,11 +675,35 @@ final class FactionVehicleRouteControlAuthority {
                     && snapshot.mission() == request.mission()
                     && snapshot.destinationKey().equals(
                     request.destinationKey())
+                    && sameTarget(snapshot.targetFaction(),
+                    request.targetFaction())
                     && snapshot.siteName().equals(site.name)) {
                 return vehicle;
             }
         }
         return null;
+    }
+
+    private static boolean sameTarget(Faction left, Faction right) {
+        Faction safeLeft = left == null ? Faction.NONE : left;
+        Faction safeRight = right == null ? Faction.NONE : right;
+        if (safeLeft == Faction.NONE || safeRight == Faction.NONE) {
+            return safeLeft == safeRight;
+        }
+        return FactionIdentityAuthority.sameFamily(safeLeft, safeRight);
+    }
+
+    private static VehicleStrategicTransitAuthority.Reservation
+    blockedReservation(String message) {
+        VehicleStrategicTransitAuthority.Readiness readiness =
+                new VehicleStrategicTransitAuthority.Readiness(
+                VehicleStrategicTransitAuthority.Status.BLOCKED,
+                false, List.of(clean(message,
+                "Strategic transit reservation was blocked.")),
+                List.of(), 0, 0, clean(message,
+                "Strategic transit reservation was blocked."));
+        return new VehicleStrategicTransitAuthority.Reservation(
+                false, false, "", readiness, readiness.summary());
     }
 
     private static int estimatedFuel(
@@ -647,29 +739,6 @@ final class FactionVehicleRouteControlAuthority {
         }
         names.sort(String::compareTo);
         return String.join(",", names);
-    }
-
-    private static int activeStrength(GamePanel game, Faction faction) {
-        if (game == null || game.world == null
-                || game.world.mapObjects == null) return 0;
-        int total = 0;
-        for (MapObjectState vehicle : game.world.mapObjects) {
-            if (!VehicleRuntimeAuthority.isVehicle(vehicle)
-                    || !VehicleRuntimeAuthority.factionOwns(vehicle,
-                    faction)) continue;
-            Snapshot snapshot = inspect(vehicle);
-            if (snapshot.state().equalsIgnoreCase("active")) {
-                total += snapshot.strength();
-            } else if (snapshot.state().equalsIgnoreCase("assigned")) {
-                total += Math.max(1, snapshot.strength() / 2);
-            }
-        }
-        return total;
-    }
-
-    static int committedStrength(GamePanel game, Faction faction) {
-        return activeStrength(game,
-                FactionIdentityAuthority.strategicFamily(faction));
     }
 
     private static boolean localSite(NpcFactionSite site, World world) {
