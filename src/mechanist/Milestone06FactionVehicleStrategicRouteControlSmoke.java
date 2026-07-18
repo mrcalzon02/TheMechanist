@@ -3,7 +3,7 @@ package mechanist;
 import java.util.List;
 import java.util.Random;
 
-/** Focused smoke for faction planning promotion into transactional route control. */
+/** Focused smoke for faction route planning, pending transfer, and terminal closure. */
 final class Milestone06FactionVehicleStrategicRouteControlSmoke {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
@@ -92,44 +92,63 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
                             .inspect(cargo).assigned(),
                     "damaged fleet maintenance must outrank an otherwise valid route-control scheme");
 
-            int stockBefore = mechanist.stock;
+            int stockBeforeStage = mechanist.stock;
             FactionStrategicPlan plan = planningPlan(
                     "STRAT-ROUTE-PROMOTION",
                     "contest guard control of the eastern freight route",
                     "sector-6/east-guard-checkpoint",
                     Faction.IMPERIAL_GUARD, 100, 100, game.turn);
             game.factionStrategicPlans.add(plan);
-            int resolved = FactionStrategicAssetTickAuthority.tick(game);
-            FactionVehicleRouteControlAuthority.Snapshot order =
-                    FactionVehicleRouteControlAuthority.inspect(armored);
-            require(resolved == 1
-                            && plan.success == 1 && plan.failure == 0
-                            && "COOLDOWN".equals(plan.phase)
+            int stagedResolved = FactionStrategicAssetTickAuthority.tick(game);
+            MapObjectState stagedVehicle = vehicleForPlan(game.world, plan.id);
+            require(stagedVehicle != null,
+                    "promoted route plan should bind one physical vehicle");
+            FactionVehicleRouteControlAuthority.Snapshot stagedOrder =
+                    FactionVehicleRouteControlAuthority.inspect(stagedVehicle);
+            require(stagedResolved == 0
+                            && plan.success == 0 && plan.failure == 0
+                            && "EXECUTION".equals(plan.phase)
                             && FactionVehicleRouteStrategicAuthority
                             .VEHICLE_ROUTE_CONTROL_GOAL.equals(
                             plan.immediateGoal)
-                            && plan.targetRoom.equals(
-                            "sector-6/east-guard-checkpoint")
-                            && order.assigned()
-                            && "active".equals(order.state())
-                            && order.mission()
+                            && stagedOrder.assigned()
+                            && "active".equals(stagedOrder.state())
+                            && stagedOrder.mission()
                             == FactionVehicleRouteControlAuthority.Mission.ROUTE_CONTEST
-                            && order.targetFaction()
+                            && stagedOrder.targetFaction()
                             == Faction.IMPERIAL_GUARD
-                            && order.destinationKey().equals(plan.targetRoom)
-                            && "reserved".equals(MapObjectState.stockValue(
-                            armored.stockState, "strategicTransitState"))
-                            && mechanist.stock < stockBefore,
-                    "ordinary planning should promote and stage one authoritative hostile route deployment");
-            requireContains(plan.lastOutcome, "route-control balance",
-                    "strategic route outcome");
-            requireContains(MapObjectState.stockValue(armored.stockState,
-                            "deploymentHistory"),
-                    "Route-control order", "strategic deployment history");
+                            && stagedOrder.destinationKey().equals(plan.targetRoom)
+                            && "reserved".equals(value(stagedVehicle,
+                            "strategicTransitState"))
+                            && "pending".equals(value(stagedVehicle,
+                            "routeControlStrategicState"))
+                            && plan.id.equals(value(stagedVehicle,
+                            "routeControlStrategicPlanId"))
+                            && mechanist.stock < stockBeforeStage
+                            && plan.phaseUntilTurn > game.turn
+                            && plan.nextDecisionTurn > game.turn,
+                    "route planning should stage one active reservation without declaring strategic success");
+            requireContains(plan.lastOutcome, "IN PROGRESS",
+                    "pending route-plan outcome");
+            requireContains(plan.lastOutcome, "awaiting authoritative strategic transfer",
+                    "pending transfer explanation");
 
-            String armoredAfterSuccess = armored.stockState;
-            String cargoAfterSuccess = cargo.stockState;
-            int stockAfterSuccess = mechanist.stock;
+            String vehicleAfterStage = stagedVehicle.stockState;
+            int stockAfterStage = mechanist.stock;
+            String waitingOutcome = plan.lastOutcome;
+            int waitingResolved = FactionStrategicAssetTickAuthority.tick(game);
+            require(waitingResolved == 0
+                            && plan.success == 0 && plan.failure == 0
+                            && "EXECUTION".equals(plan.phase)
+                            && stockAfterStage == mechanist.stock
+                            && vehicleAfterStage.equals(stagedVehicle.stockState)
+                            && waitingOutcome.equals(plan.lastOutcome)
+                            && plan.phaseUntilTurn > game.turn
+                            && plan.nextDecisionTurn > game.turn,
+                    "a reserved strategic route must wait without duplicate stock, history, or vehicle mutation");
+
+            String armoredBeforeDuplicate = armored.stockState;
+            String cargoBeforeDuplicate = cargo.stockState;
             FactionStrategicPlan duplicate = executionPlan(
                     "STRAT-ROUTE-DUPLICATE",
                     "contest guard control of the eastern freight route",
@@ -138,13 +157,18 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
             game.factionStrategicPlans.add(duplicate);
             int duplicateResolved = FactionStrategicAssetTickAuthority.tick(game);
             require(duplicateResolved == 1
-                            && duplicate.success == 1
-                            && duplicate.failure == 0
+                            && duplicate.success == 0
+                            && duplicate.failure == 1
                             && "COOLDOWN".equals(duplicate.phase)
-                            && mechanist.stock == stockAfterSuccess
-                            && armoredAfterSuccess.equals(armored.stockState)
-                            && cargoAfterSuccess.equals(cargo.stockState),
-                    "duplicate strategic route execution should be idempotent and spend no additional stock");
+                            && mechanist.stock == stockAfterStage
+                            && armoredBeforeDuplicate.equals(armored.stockState)
+                            && cargoBeforeDuplicate.equals(cargo.stockState)
+                            && plan.success == 0 && plan.failure == 0
+                            && "EXECUTION".equals(plan.phase),
+                    "a second plan cannot claim or spend against an already-bound route objective");
+            requireContains(duplicate.lastOutcome,
+                    "already assigned to another strategic operation",
+                    "duplicate route-plan denial");
 
             FactionStrategicPlan deterred = planningPlan(
                     "STRAT-ROUTE-DETERRED",
@@ -160,6 +184,76 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
                             && deterred.success == 0 && deterred.failure == 0,
                     "zero-commitment hostile route planning should remain unpromoted under fleet deterrence");
 
+            stagedVehicle.stockState = MapObjectState.setStockFlag(
+                    stagedVehicle.stockState,
+                    "strategicTransitState", "completed");
+            stagedVehicle.stockState = MapObjectState.setStockFlag(
+                    stagedVehicle.stockState,
+                    "strategicTransitFuelReserved", "0");
+            int stockBeforeCompletion = mechanist.stock;
+            int completionResolved =
+                    FactionStrategicAssetTickAuthority.tick(game);
+            FactionVehicleRouteControlAuthority.Snapshot completedOrder =
+                    FactionVehicleRouteControlAuthority.inspect(stagedVehicle);
+            require(completionResolved == 1
+                            && plan.success == 1 && plan.failure == 0
+                            && "COOLDOWN".equals(plan.phase)
+                            && "completed".equals(completedOrder.state())
+                            && !completedOrder.assigned()
+                            && "completed".equals(value(stagedVehicle,
+                            "routeControlStrategicState"))
+                            && mechanist.stock == stockBeforeCompletion,
+                    "only authoritative transit completion should close the strategic route plan successfully");
+            requireContains(plan.lastOutcome, "SUCCESS",
+                    "completed strategic route outcome");
+            requireContains(plan.lastOutcome, "completed contested route operation",
+                    "completed route mission explanation");
+
+            staff(armored, "Strategic Driver Kest", 9);
+            staff(cargo, "Strategic Driver Vale", 6);
+            FactionStrategicPlan cancelled = executionPlan(
+                    "STRAT-ROUTE-CANCELLED",
+                    "reinforce the southern checkpoint gate",
+                    "sector-6/south-checkpoint",
+                    Faction.NONE, 50, 50, game.turn);
+            game.factionStrategicPlans.add(cancelled);
+            int stockBeforeCancelledStage = mechanist.stock;
+            int cancelledStageResolved =
+                    FactionStrategicAssetTickAuthority.tick(game);
+            MapObjectState cancelledVehicle =
+                    vehicleForPlan(game.world, cancelled.id);
+            require(cancelledStageResolved == 0
+                            && cancelledVehicle != null
+                            && cancelled.success == 0
+                            && cancelled.failure == 0
+                            && "EXECUTION".equals(cancelled.phase)
+                            && "active".equals(
+                            FactionVehicleRouteControlAuthority.inspect(
+                            cancelledVehicle).state())
+                            && mechanist.stock < stockBeforeCancelledStage,
+                    "a second route mission should stage pending before cancellation");
+            int stockAfterCancelledStage = mechanist.stock;
+            require(VehicleStrategicTransitAuthority.cancel(
+                    game, cancelledVehicle,
+                    "strategic route cancellation smoke").success(),
+                    "the authoritative transit owner should cancel the staged reservation");
+            int cancelledResolved =
+                    FactionStrategicAssetTickAuthority.tick(game);
+            require(cancelledResolved == 1
+                            && cancelled.success == 0
+                            && cancelled.failure == 1
+                            && "COOLDOWN".equals(cancelled.phase)
+                            && "cancelled".equals(
+                            FactionVehicleRouteControlAuthority.inspect(
+                            cancelledVehicle).state())
+                            && "failed".equals(value(cancelledVehicle,
+                            "routeControlStrategicState"))
+                            && mechanist.stock == stockAfterCancelledStage,
+                    "authoritative transit cancellation should terminally fail and close the route plan without refunding staging cost");
+            requireContains(cancelled.lastOutcome, "was cancelled",
+                    "cancelled strategic route outcome");
+
+            staff(armored, "", 0);
             staff(cargo, "", 0);
             String armoredBeforeBlocked = armored.stockState;
             String cargoBeforeBlocked = cargo.stockState;
@@ -192,6 +286,10 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
                     "background strategic route operations must not mutate player resources or attention");
             require(!PlayerFacingText.containsLikelyLeak(plan.lastOutcome)
                             && !PlayerFacingText.containsLikelyLeak(
+                            duplicate.lastOutcome)
+                            && !PlayerFacingText.containsLikelyLeak(
+                            cancelled.lastOutcome)
+                            && !PlayerFacingText.containsLikelyLeak(
                             blocked.lastOutcome),
                     "strategic route outcomes should remain player-facing and implementation-safe");
 
@@ -199,6 +297,22 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
         } finally {
             game.shutdownRuntime();
         }
+    }
+
+    private static MapObjectState vehicleForPlan(World world,
+                                                 String planId) {
+        if (world == null || world.mapObjects == null) return null;
+        for (MapObjectState vehicle : world.mapObjects) {
+            if (VehicleRuntimeAuthority.isVehicle(vehicle)
+                    && planId.equals(value(vehicle,
+                    "routeControlStrategicPlanId"))) return vehicle;
+        }
+        return null;
+    }
+
+    private static String value(MapObjectState vehicle, String key) {
+        return vehicle == null ? ""
+                : MapObjectState.stockValue(vehicle.stockState, key);
     }
 
     private static int component(GamePanel game, MapObjectState vehicle,
