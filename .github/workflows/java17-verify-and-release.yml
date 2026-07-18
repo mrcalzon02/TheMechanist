@@ -180,9 +180,91 @@ jobs:
           & "$dist/runtime/bin/java.exe" '-Djava.awt.headless=true' -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  record-history:
-    name: Update development history after Gate 3
+  synthetic-environment:
+    name: Synthetic end-user environment (${{ matrix.platform }})
     needs: gate3
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*-${{ matrix.platform }}
+          path: synthetic-assets
+          merge-multiple: true
+      - name: Extract completed distribution
+        id: dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE=$(find synthetic-assets -maxdepth 1 -type f -name '*.zip' | head -n 1)
+          test -n "$ARCHIVE"
+          mkdir -p synthetic-dist
+          python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall('synthetic-dist')"
+          DIST=$(find synthetic-dist -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
+          test -n "$DIST"
+          echo "root=$DIST" >> "$GITHUB_OUTPUT"
+      - name: Run isolated profile, path, read-only, Gate 3, server, and corruption tests
+        run: >-
+          python ROOT_build/ci/run_synthetic_distribution_tests.py
+          "${{ steps.dist.outputs.root }}"
+          --verifier ROOT_build/ci/verify_runnable_distribution.py
+          --report "synthetic-report-${{ matrix.platform }}.json"
+      - name: Install Linux virtual display
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+      - name: Run Linux Xvfb packaged GUI startup
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST='${{ steps.dist.outputs.root }}'
+          PROFILE="$RUNNER_TEMP/Mechanist GUI Profile With Spaces"
+          mkdir -p "$PROFILE"
+          set +e
+          HOME="$PROFILE" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" \
+            -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" \
+            mechanist.TheMechanist
+          CODE=$?
+          set -e
+          if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
+      - name: Run Windows packaged GUI startup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist = '${{ steps.dist.outputs.root }}'
+          $profile = "$env:RUNNER_TEMP\Mechanist GUI Profile With Spaces"
+          New-Item -ItemType Directory -Force -Path $profile | Out-Null
+          $env:USERPROFILE = $profile
+          $args = @('-cp', "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*", 'mechanist.TheMechanist')
+          $p = Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList $args -PassThru -WorkingDirectory $env:RUNNER_TEMP
+          Start-Sleep -Seconds 12
+          if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Synthetic-${{ matrix.platform }}
+          path: synthetic-report-${{ matrix.platform }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  record-history:
+    name: Update development history after synthetic certification
+    needs: synthetic-environment
     if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release) || (github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
