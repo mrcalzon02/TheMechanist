@@ -1,6 +1,5 @@
 package mechanist;
 
-import java.util.List;
 import java.util.Random;
 
 /** Focused smoke for faction vehicle doctrine, strategic fleet power, and doctrine-aware strategy selection. */
@@ -135,9 +134,18 @@ final class Milestone06FactionVehicleDoctrineSmoke {
             VehicleRuntimeAuthority.applyDamage(capturedWreck,
                     VehicleRuntimeAuthority.Component.FRAME, 100,
                     game.turn, "catastrophic doctrine smoke damage");
-            require(FactionVehicleDoctrineAuthority.shouldSalvageCaptured(
-                    game, capturedWreck, mechanist),
-                    "catastrophic captured civilian car should be recommended for salvage");
+            capturedWreck.stockState = MapObjectState.setStockFlag(
+                    capturedWreck.stockState, "strategicTransitState",
+                    "reserved");
+            FactionVehicleDoctrineAuthority.VehicleAssessment wreckAssessment =
+                    FactionVehicleDoctrineAuthority.assess(game,
+                            capturedWreck, mechanist);
+            require(wreckAssessment.readiness() <= 10
+                            && wreckAssessment.salvageRecommended()
+                            && wreckAssessment.strategicValue()
+                            < FactionVehicleDoctrineAuthority.assess(
+                            game, capturedCargo, mechanist).strategicValue(),
+                    "stale transit reservation must not elevate a wreck above retained fleet assets");
 
             FactionVehicleStrategicAuthority.Suggestion suggestion =
                     FactionVehicleStrategicAuthority.nextSuggestion(game,
