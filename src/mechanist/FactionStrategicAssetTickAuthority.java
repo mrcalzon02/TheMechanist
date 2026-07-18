@@ -44,6 +44,11 @@ final class FactionStrategicAssetTickAuthority {
             }
             if (!outcome.handled()) continue;
 
+            int motorPoolChanges = 0;
+            if (outcome.success() && vehiclePlan && site != null) {
+                motorPoolChanges = VehicleMotorPoolAuthority.reconcileSiteFleet(
+                        game, site, plan.immediateGoal);
+            }
             if (outcome.success()) {
                 plan.success++;
             } else {
@@ -60,7 +65,8 @@ final class FactionStrategicAssetTickAuthority {
                             + " success=" + outcome.success()
                             + " blocker=" + outcome.blocker()
                             + " room=" + outcome.roomId()
-                            + " stock=" + outcome.stockBefore() + "->" + outcome.stockAfter());
+                            + " stock=" + outcome.stockBefore() + "->" + outcome.stockAfter()
+                            + " motorPoolChanges=" + motorPoolChanges);
             if (game.rng.nextInt(100) < Math.max(10, 65 - plan.secrecy / 2)) {
                 game.logEvent("RUMOR: " + plan.publicLine());
             }
