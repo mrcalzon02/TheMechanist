@@ -7,7 +7,20 @@ import argparse
 import datetime as dt
 import glob
 import json
+import os
 import pathlib
+import subprocess
+
+
+def current_git_head() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return result.stdout.strip()
 
 
 def main() -> int:
@@ -18,6 +31,14 @@ def main() -> int:
     parser.add_argument("--commit", required=True)
     parser.add_argument("--run-url", required=True)
     args = parser.parse_args()
+
+    if os.environ.get("GITHUB_ACTIONS", "").lower() == "true":
+        head = current_git_head()
+        if head != args.commit:
+            raise SystemExit(
+                "Refusing stale release-history mutation: checked-out HEAD "
+                f"{head} does not equal verified source commit {args.commit}"
+            )
 
     report_paths = sorted(glob.glob(args.reports, recursive=True))
     if len(report_paths) < 2:
@@ -51,7 +72,7 @@ def main() -> int:
 
 Recorded the first-class remote release pipeline for the launcher -> client -> server distribution path. GitHub-hosted Linux x64 and Windows x64 jobs compiled the exact source tree with Java 17, rebuilt the client, server, and launcher packages, staged platform-specific support libraries and bundled Java runtimes, generated schema-2 SHA-256 manifests, and produced portable runnable ZIP distributions. Gate 3 ran only after both platform package jobs completed successfully, and final distribution certification revalidated archive integrity, manifest completeness, entry points, platform-native support libraries, and Java 17 classfile compatibility before release publication.
 
-Verification: exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
+Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
 
 <!-- {marker} -->
 """
