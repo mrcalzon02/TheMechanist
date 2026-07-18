@@ -6,7 +6,9 @@ import java.util.Locale;
 
 /**
  * Symmetric faction vehicle operations over the same persistent vehicle records
- * used by player purchase, ownership, repair, and salvage.
+ * used by player purchase, ownership, repair, and salvage. Candidate selection
+ * consumes faction doctrine and derived strategic fleet value rather than
+ * alphabetical fixture order.
  */
 final class FactionVehicleStrategicAuthority {
     static final String VEHICLE_SEIZURE_GOAL = "seize a vehicle";
@@ -48,24 +50,35 @@ final class FactionVehicleStrategicAuthority {
     static Suggestion nextSuggestion(GamePanel game, NpcFactionSite site,
                                      FactionStrategicPlan plan) {
         if (!localSite(site, game == null ? null : game.world)) return Suggestion.none();
-        MapObjectState captured = capturedVehicle(game, site);
+        MapObjectState captured = capturedVehicle(game, site, true);
         if (captured != null) {
+            FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                    FactionVehicleDoctrineAuthority.assess(game, captured, site);
             return new Suggestion(VEHICLE_SALVAGE_GOAL,
                     VehicleRuntimeAuthority.inspectionLine(game.world, captured),
-                    "a seized same-family vehicle is ready for accountable salvage");
+                    "a seized vehicle is a poor or catastrophic fit for "
+                            + FactionVehicleDoctrineAuthority.profile(site.faction).label()
+                            + " and is ready for accountable salvage; readiness "
+                            + assessment.readiness() + "%");
         }
         MapObjectState damaged = damagedVehicle(game, site);
         if (damaged != null) {
+            FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                    FactionVehicleDoctrineAuthority.assess(game, damaged, site);
             return new Suggestion(VEHICLE_REPAIR_GOAL,
                     displayName(damaged),
-                    "a same-family vehicle has damaged components");
+                    "a strategically useful same-family vehicle has damaged components; value "
+                            + assessment.strategicValue());
         }
         if (plan != null && plan.scheme != null && !plan.scheme.isBlank()) {
             MapObjectState target = seizableVehicle(game, plan, site);
             if (target != null) {
+                FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                        FactionVehicleDoctrineAuthority.assess(game, target, site);
                 return new Suggestion(VEHICLE_SEIZURE_GOAL,
                         displayName(target),
-                        "the active scheme has a physical non-player vehicle target");
+                        "the active scheme has a physical rival vehicle aligned with faction doctrine; fit "
+                                + assessment.doctrineFit() + "%");
             }
         }
         return Suggestion.none();
@@ -87,6 +100,8 @@ final class FactionVehicleStrategicAuthority {
         }
         VehicleRuntimeAuthority.Snapshot snapshot =
                 VehicleRuntimeAuthority.inspect(game.world, vehicle);
+        FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                FactionVehicleDoctrineAuthority.assess(game, vehicle, site);
         int cost = 2 + Math.max(0, snapshot.purchasePrice()) / 180;
         if (site.stock < cost) {
             return blocked("insufficient-vehicle-seizure-stock",
@@ -107,14 +122,17 @@ final class FactionVehicleStrategicAuthority {
         }
         if (formerFaction != null && formerFaction != Faction.NONE
                 && !FactionIdentityAuthority.sameFamily(formerFaction, site.faction)) {
+            int strategicPressure = Math.min(5,
+                    Math.max(0, assessment.strategicValue()) / 35);
             game.addFactionMarketPressure(formerFaction,
-                    2 + Math.max(0, plan.aggression) / 35,
+                    2 + Math.max(0, plan.aggression) / 35 + strategicPressure,
                     site.faction.label + " seized " + displayName(vehicle));
         }
         return new FactionStrategicAssetAuthority.Outcome(true, true, "",
                 site.faction.label + " seized " + displayName(vehicle)
                         + " from " + clean(formerOwner, faction(formerFaction))
-                        + " through " + plan.scheme + "; site stock "
+                        + " through " + plan.scheme + "; doctrine fit "
+                        + assessment.doctrineFit() + "%; site stock "
                         + before + " -> " + site.stock + ".",
                 -1, before, site.stock, null, null);
     }
@@ -144,14 +162,18 @@ final class FactionVehicleStrategicAuthority {
             site.stock = before;
             return blocked("vehicle-repair-failed", result.message(), site);
         }
+        FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                FactionVehicleDoctrineAuthority.assess(game, vehicle, site);
         return new FactionStrategicAssetAuthority.Outcome(true, true, "",
-                result.message() + " Site stock " + before + " -> "
-                        + site.stock + ".", -1, before, site.stock, null, null);
+                result.message() + " Strategic value "
+                        + assessment.strategicValue() + "; site stock "
+                        + before + " -> " + site.stock + ".",
+                -1, before, site.stock, null, null);
     }
 
     private static FactionStrategicAssetAuthority.Outcome salvage(
             GamePanel game, FactionStrategicPlan plan, NpcFactionSite site) {
-        MapObjectState vehicle = capturedVehicle(game, site);
+        MapObjectState vehicle = capturedVehicle(game, site, false);
         if (vehicle == null) {
             return blocked("no-captured-faction-vehicle",
                     site.name + " has no seized vehicle available for salvage.", site);
@@ -164,6 +186,8 @@ final class FactionVehicleStrategicAuthority {
                     site);
         }
         int before = site.stock;
+        FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                FactionVehicleDoctrineAuthority.assess(game, vehicle, site);
         VehicleRuntimeAuthority.Result result =
                 VehicleRuntimeAuthority.salvageForFaction(vehicle, site.faction,
                         game.turn, plan.immediateGoal);
@@ -173,8 +197,10 @@ final class FactionVehicleStrategicAuthority {
                 "Machine part", Math.max(1, yield / 3),
                 "salvaged from seized " + displayName(vehicle));
         return new FactionStrategicAssetAuthority.Outcome(true, true, "",
-                result.message() + " Site stock " + before + " -> "
-                        + site.stock + " with provenance-aware Machine part recovery.",
+                result.message() + " Former strategic value "
+                        + assessment.strategicValue() + "; site stock "
+                        + before + " -> " + site.stock
+                        + " with provenance-aware Machine part recovery.",
                 -1, before, site.stock, null, null);
     }
 
@@ -203,44 +229,59 @@ final class FactionVehicleStrategicAuthority {
     }
 
     private static MapObjectState capturedVehicle(GamePanel game,
-                                                   NpcFactionSite site) {
-        return first(game, vehicle -> VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)
-                && VehicleRuntimeAuthority.seized(vehicle)
-                && !"salvaged".equals(MapObjectState.stockValue(
-                vehicle.stockState, "condition")));
+                                                   NpcFactionSite site,
+                                                   boolean recommendedOnly) {
+        return best(game, site, FactionVehicleDoctrineAuthority.Operation.SALVAGE,
+                vehicle -> VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)
+                        && VehicleRuntimeAuthority.seized(vehicle)
+                        && !"salvaged".equals(MapObjectState.stockValue(
+                        vehicle.stockState, "condition"))
+                        && (!recommendedOnly
+                        || FactionVehicleDoctrineAuthority.shouldSalvageCaptured(
+                        game, vehicle, site)));
     }
 
     private static MapObjectState damagedVehicle(GamePanel game,
                                                   NpcFactionSite site) {
-        return first(game, vehicle -> VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)
-                && VehicleRuntimeAuthority.damaged(vehicle));
+        return best(game, site, FactionVehicleDoctrineAuthority.Operation.REPAIR,
+                vehicle -> VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)
+                        && VehicleRuntimeAuthority.damaged(vehicle));
     }
 
     private static MapObjectState seizableVehicle(GamePanel game,
                                                   FactionStrategicPlan plan,
                                                   NpcFactionSite site) {
-        return first(game, vehicle -> {
-            VehicleRuntimeAuthority.Snapshot snapshot =
-                    VehicleRuntimeAuthority.inspect(game.world, vehicle);
-            if (snapshot == null
-                    || snapshot.ownerType() == VehicleRuntimeAuthority.OwnerType.PLAYER
-                    || snapshot.ownerType() == VehicleRuntimeAuthority.OwnerType.SALVAGE
-                    || "salvaged".equals(snapshot.condition())
-                    || VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)) return false;
-            Faction target = plan.schemeTargetFaction == null
-                    ? Faction.NONE : plan.schemeTargetFaction;
-            if (target == Faction.NONE) return true;
-            return snapshot.ownerFaction() != Faction.NONE
-                    && FactionIdentityAuthority.sameFamily(snapshot.ownerFaction(), target);
-        });
+        return best(game, site, FactionVehicleDoctrineAuthority.Operation.SEIZURE,
+                vehicle -> {
+                    VehicleRuntimeAuthority.Snapshot snapshot =
+                            VehicleRuntimeAuthority.inspect(game.world, vehicle);
+                    if (snapshot == null
+                            || snapshot.ownerType()
+                            == VehicleRuntimeAuthority.OwnerType.PLAYER
+                            || snapshot.ownerType()
+                            == VehicleRuntimeAuthority.OwnerType.SALVAGE
+                            || "salvaged".equals(snapshot.condition())
+                            || VehicleRuntimeAuthority.factionOwns(
+                            vehicle, site.faction)) return false;
+                    Faction target = plan.schemeTargetFaction == null
+                            ? Faction.NONE : plan.schemeTargetFaction;
+                    if (target == Faction.NONE) return true;
+                    return snapshot.ownerFaction() != Faction.NONE
+                            && FactionIdentityAuthority.sameFamily(
+                            snapshot.ownerFaction(), target);
+                });
     }
 
     private interface Predicate {
         boolean test(MapObjectState vehicle);
     }
 
-    private static MapObjectState first(GamePanel game, Predicate predicate) {
-        if (game == null || game.world == null || game.world.mapObjects == null) return null;
+    private static MapObjectState best(
+            GamePanel game, NpcFactionSite site,
+            FactionVehicleDoctrineAuthority.Operation operation,
+            Predicate predicate) {
+        if (game == null || game.world == null
+                || game.world.mapObjects == null) return null;
         ArrayList<MapObjectState> candidates = new ArrayList<>();
         for (MapObjectState object : game.world.mapObjects) {
             if (!VehicleRuntimeAuthority.isVehicle(object)) continue;
@@ -248,7 +289,11 @@ final class FactionVehicleStrategicAuthority {
             if (predicate.test(object)) candidates.add(object);
         }
         candidates.sort(Comparator
-                .comparing((MapObjectState object) -> displayName(object))
+                .comparingInt((MapObjectState object) ->
+                        FactionVehicleDoctrineAuthority.operationPriority(
+                                game, object, site, operation))
+                .reversed()
+                .thenComparing(FactionVehicleStrategicAuthority::displayName)
                 .thenComparing(object -> clean(object.id, object.label)));
         return candidates.isEmpty() ? null : candidates.get(0);
     }
@@ -273,7 +318,8 @@ final class FactionVehicleStrategicAuthority {
         String key = "vehicleComponent" + component.name().charAt(0)
                 + component.name().substring(1).toLowerCase(Locale.ROOT);
         try {
-            return Integer.parseInt(MapObjectState.stockValue(vehicle.stockState, key));
+            return Integer.parseInt(MapObjectState.stockValue(
+                    vehicle.stockState, key));
         } catch (Exception ignored) {
             return 100;
         }
@@ -290,8 +336,10 @@ final class FactionVehicleStrategicAuthority {
 
     private static boolean localSite(NpcFactionSite site, World world) {
         return site != null && world != null
-                && site.sectorX == world.sectorX && site.sectorY == world.sectorY
-                && site.zoneX == world.zoneX && site.zoneY == world.zoneY
+                && site.sectorX == world.sectorX
+                && site.sectorY == world.sectorY
+                && site.zoneX == world.zoneX
+                && site.zoneY == world.zoneY
                 && site.floor == world.floor;
     }
 
@@ -309,7 +357,8 @@ final class FactionVehicleStrategicAuthority {
     }
 
     private static String clean(String value, String fallback) {
-        String text = value == null ? "" : value.trim().replaceAll("\\s+", " ");
+        String text = value == null ? ""
+                : value.trim().replaceAll("\\s+", " ");
         return text.isBlank() ? fallback : text;
     }
 }
