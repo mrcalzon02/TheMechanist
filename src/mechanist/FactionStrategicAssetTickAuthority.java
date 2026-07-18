@@ -45,12 +45,10 @@ final class FactionStrategicAssetTickAuthority {
             if (!outcome.handled()) continue;
 
             int motorPoolChanges = 0;
-            int fleetPower = 0;
-            if (vehiclePlan && site != null) {
-                if (outcome.success()) {
-                    motorPoolChanges = VehicleMotorPoolAuthority.reconcileSiteFleet(
-                            game, site, plan.immediateGoal);
-                }
+            int fleetPower = -1;
+            if (outcome.success() && vehiclePlan && site != null) {
+                motorPoolChanges = VehicleMotorPoolAuthority.reconcileSiteFleet(
+                        game, site, plan.immediateGoal);
                 fleetPower = FactionVehicleDoctrineAuthority.fleet(
                         game, site.faction, site).totalPower();
             }
