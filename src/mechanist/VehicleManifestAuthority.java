@@ -76,6 +76,26 @@ final class VehicleManifestAuthority {
                 + name + " assigned.", game, vehicle);
     }
 
+    static Result releaseDriver(GamePanel game, MapObjectState vehicle,
+                                String reason) {
+        Snapshot before = inspect(game == null ? null : game.world, vehicle);
+        VehicleAccessAuthority.Decision access = VehicleAccessAuthority.evaluate(
+                game, vehicle, VehicleAccessAuthority.Permission.DEPLOYMENT);
+        if (!access.allowed()) {
+            return Result.blocked("release driver", access.summary(), before);
+        }
+        if (before.driver().isBlank()) {
+            return new Result(true, false, "release driver",
+                    "The vehicle has no assigned driver.", before);
+        }
+        String released = before.driver();
+        set(vehicle, "vehicleDriver", "");
+        append(vehicle, "crewHistory", "Driver released: " + released
+                + " / " + clean(reason, "vehicle stood down") + turn(game));
+        return changed("release driver", "VEHICLE MANIFEST: driver "
+                + released + " released.", game, vehicle);
+    }
+
     static Result addCrew(GamePanel game, MapObjectState vehicle,
                           String crewName) {
         Snapshot before = inspect(game == null ? null : game.world, vehicle);
@@ -101,6 +121,33 @@ final class VehicleManifestAuthority {
                 + turn(game));
         return changed("assign crew", "VEHICLE MANIFEST: crew member "
                 + name + " assigned.", game, vehicle);
+    }
+
+    static Result releaseCrew(GamePanel game, MapObjectState vehicle,
+                              String crewName, String reason) {
+        Snapshot before = inspect(game == null ? null : game.world, vehicle);
+        VehicleAccessAuthority.Decision access = VehicleAccessAuthority.evaluate(
+                game, vehicle, VehicleAccessAuthority.Permission.DEPLOYMENT);
+        if (!access.allowed()) {
+            return Result.blocked("release crew", access.summary(), before);
+        }
+        String name = clean(crewName, "");
+        if (name.isBlank()) {
+            return Result.blocked("release crew",
+                    "A readable crew identity is required.", before);
+        }
+        int index = indexOfIgnoreCase(before.crew(), name);
+        if (index < 0) {
+            return new Result(true, false, "release crew",
+                    "That crew member is not assigned to the vehicle.", before);
+        }
+        ArrayList<String> crew = new ArrayList<>(before.crew());
+        String released = crew.remove(index);
+        set(vehicle, "vehicleCrewManifest", String.join("~", crew));
+        append(vehicle, "crewHistory", "Crew released: " + released
+                + " / " + clean(reason, "assignment ended") + turn(game));
+        return changed("release crew", "VEHICLE MANIFEST: crew member "
+                + released + " released.", game, vehicle);
     }
 
     static Result boardPassenger(GamePanel game, MapObjectState vehicle,
@@ -133,6 +180,33 @@ final class VehicleManifestAuthority {
                 + name + " boarded.", game, vehicle);
     }
 
+    static Result disembarkPassenger(GamePanel game, MapObjectState vehicle,
+                                     String passengerName, String reason) {
+        Snapshot before = inspect(game == null ? null : game.world, vehicle);
+        VehicleAccessAuthority.Decision access = VehicleAccessAuthority.evaluate(
+                game, vehicle, VehicleAccessAuthority.Permission.PASSENGER);
+        if (!access.allowed()) {
+            return Result.blocked("disembark passenger", access.summary(), before);
+        }
+        String name = clean(passengerName, "");
+        if (name.isBlank()) {
+            return Result.blocked("disembark passenger",
+                    "A readable passenger identity is required.", before);
+        }
+        int index = indexOfIgnoreCase(before.passengers(), name);
+        if (index < 0) {
+            return new Result(true, false, "disembark passenger",
+                    "That passenger is not aboard the vehicle.", before);
+        }
+        ArrayList<String> passengers = new ArrayList<>(before.passengers());
+        String released = passengers.remove(index);
+        set(vehicle, "vehiclePassengerManifest", String.join("~", passengers));
+        append(vehicle, "passengerHistory", "Passenger disembarked: " + released
+                + " / " + clean(reason, "journey ended") + turn(game));
+        return changed("disembark passenger", "VEHICLE MANIFEST: passenger "
+                + released + " disembarked.", game, vehicle);
+    }
+
     static Result registerCargo(GamePanel game, MapObjectState vehicle,
                                 String label, String owner, int units) {
         Snapshot before = inspect(game == null ? null : game.world, vehicle);
@@ -155,7 +229,16 @@ final class VehicleManifestAuthority {
                     before);
         }
         ArrayList<CargoEntry> cargo = new ArrayList<>(before.cargo());
-        cargo.add(new CargoEntry(cargoLabel, cargoOwner, amount));
+        boolean merged = false;
+        for (int i = 0; i < cargo.size(); i++) {
+            CargoEntry entry = cargo.get(i);
+            if (!sameCargo(entry, cargoLabel, cargoOwner)) continue;
+            cargo.set(i, new CargoEntry(entry.label(), entry.owner(),
+                    entry.units() + amount));
+            merged = true;
+            break;
+        }
+        if (!merged) cargo.add(new CargoEntry(cargoLabel, cargoOwner, amount));
         set(vehicle, "vehicleCargoManifest", cargoText(cargo));
         append(vehicle, "cargoHistory", "Cargo registered: " + cargoLabel
                 + " / owner " + cargoOwner + " / units " + amount
@@ -163,6 +246,58 @@ final class VehicleManifestAuthority {
         return changed("register cargo", "VEHICLE MANIFEST: registered "
                 + amount + " unit(s) of " + cargoLabel + " for "
                 + cargoOwner + ".", game, vehicle);
+    }
+
+    static Result unloadCargo(GamePanel game, MapObjectState vehicle,
+                              String label, String owner, int units,
+                              String reason) {
+        Snapshot before = inspect(game == null ? null : game.world, vehicle);
+        VehicleAccessAuthority.Decision access = VehicleAccessAuthority.evaluate(
+                game, vehicle, VehicleAccessAuthority.Permission.CARGO);
+        if (!access.allowed()) {
+            return Result.blocked("unload cargo", access.summary(), before);
+        }
+        String cargoLabel = clean(label, "");
+        String cargoOwner = clean(owner, "");
+        int amount = Math.max(0, units);
+        if (cargoLabel.isBlank() || cargoOwner.isBlank() || amount <= 0) {
+            return Result.blocked("unload cargo",
+                    "Cargo unloading requires a readable label, owner, and positive unit count.",
+                    before);
+        }
+        int available = 0;
+        for (CargoEntry entry : before.cargo()) {
+            if (sameCargo(entry, cargoLabel, cargoOwner)) available += entry.units();
+        }
+        if (available < amount) {
+            return Result.blocked("unload cargo",
+                    "Only " + available + " unit(s) of " + cargoLabel
+                            + " for " + cargoOwner + " are registered.", before);
+        }
+        int remainingToUnload = amount;
+        ArrayList<CargoEntry> cargo = new ArrayList<>();
+        for (CargoEntry entry : before.cargo()) {
+            if (!sameCargo(entry, cargoLabel, cargoOwner)
+                    || remainingToUnload <= 0) {
+                cargo.add(entry);
+                continue;
+            }
+            int removed = Math.min(entry.units(), remainingToUnload);
+            int left = entry.units() - removed;
+            remainingToUnload -= removed;
+            if (left > 0) {
+                cargo.add(new CargoEntry(entry.label(), entry.owner(), left));
+            }
+        }
+        set(vehicle, "vehicleCargoManifest", cargoText(cargo));
+        append(vehicle, "cargoHistory", "Cargo unloaded: " + cargoLabel
+                + " / owner " + cargoOwner + " / units " + amount
+                + " / " + clean(reason, "custody transfer completed")
+                + turn(game));
+        return changed("unload cargo", "VEHICLE MANIFEST: unloaded "
+                + amount + " unit(s) of " + cargoLabel + " for "
+                + cargoOwner + "; " + (available - amount)
+                + " unit(s) remain.", game, vehicle);
     }
 
     static Result clearManifest(GamePanel game, MapObjectState vehicle,
@@ -232,7 +367,7 @@ final class VehicleManifestAuthority {
 
     private static List<CargoEntry> cargoEntries(String text) {
         ArrayList<CargoEntry> entries = new ArrayList<>();
-        for (String token : split(text)) {
+        for (String token : tokens(text)) {
             String[] fields = token.split("\\^", -1);
             if (fields.length < 3) continue;
             int units;
@@ -254,12 +389,19 @@ final class VehicleManifestAuthority {
         return String.join("~", tokens);
     }
 
+    private static boolean sameCargo(CargoEntry entry, String label,
+                                     String owner) {
+        return entry != null
+                && entry.label().equalsIgnoreCase(clean(label, ""))
+                && entry.owner().equalsIgnoreCase(clean(owner, ""));
+    }
+
     private static String safeToken(String value) {
         return clean(value, "").replace('~', '-').replace('^', '-');
     }
 
-    private static List<String> split(String text) {
-        LinkedHashSet<String> values = new LinkedHashSet<>();
+    private static List<String> tokens(String text) {
+        ArrayList<String> values = new ArrayList<>();
         if (text != null) for (String token : text.split("~")) {
             String cleaned = clean(token, "");
             if (!cleaned.isBlank()) values.add(cleaned);
@@ -267,12 +409,22 @@ final class VehicleManifestAuthority {
         return List.copyOf(values);
     }
 
+    private static List<String> split(String text) {
+        LinkedHashSet<String> values = new LinkedHashSet<>(tokens(text));
+        return List.copyOf(values);
+    }
+
+    private static int indexOfIgnoreCase(List<String> values,
+                                         String expected) {
+        for (int i = 0; i < values.size(); i++) {
+            if (values.get(i).equalsIgnoreCase(expected)) return i;
+        }
+        return -1;
+    }
+
     private static boolean containsIgnoreCase(List<String> values,
                                               String expected) {
-        for (String value : values) {
-            if (value.equalsIgnoreCase(expected)) return true;
-        }
-        return false;
+        return indexOfIgnoreCase(values, expected) >= 0;
     }
 
     private static String turn(GamePanel game) {
