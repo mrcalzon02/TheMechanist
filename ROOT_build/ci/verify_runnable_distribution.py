@@ -102,6 +102,17 @@ def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int]:
     return class_count, project_class_count
 
 
+def native_fragment(platform_name: str) -> str:
+    if platform_name.startswith("windows-"):
+        return "natives-windows"
+    if platform_name.startswith("linux-"):
+        return "natives-linux"
+    if platform_name.startswith("macos-"):
+        return "natives-macos"
+    fail(f"unsupported manifest platform {platform_name!r}")
+    return ""
+
+
 def verify_distribution(root: pathlib.Path, archive: pathlib.Path | None) -> dict[str, object]:
     manifest_path = root / "manifests" / "runtime-manifest.json"
     if not manifest_path.is_file():
@@ -152,12 +163,17 @@ def verify_distribution(root: pathlib.Path, archive: pathlib.Path | None) -> dic
                 "sha256": actual_hash,
             }
 
+    runtime_java = root / "runtime" / "bin" / ("java.exe" if str(manifest["platform"]).startswith("windows-") else "java")
+    if not runtime_java.is_file():
+        fail(f"bundled Java runtime is missing executable {runtime_java}")
+
     support_dir = root / "packages" / "support" / "lib"
     support_jars = sorted(support_dir.glob("*.jar")) if support_dir.is_dir() else []
     if not support_jars:
         fail("distribution contains no launcher-managed support libraries")
     support_names = [path.name.lower() for path in support_jars]
-    for required_fragment in ("netty", "lwjgl", "natives-linux"):
+    required_fragments = ("netty", "lwjgl", native_fragment(str(manifest["platform"])))
+    for required_fragment in required_fragments:
         if not any(required_fragment in name for name in support_names):
             fail(f"support library set is missing required fragment {required_fragment!r}")
     for support in support_jars:
@@ -185,6 +201,7 @@ def verify_distribution(root: pathlib.Path, archive: pathlib.Path | None) -> dic
         "commit": manifest["commit"],
         "artifactCount": len(artifacts),
         "supportJarCount": len(support_jars),
+        "requiredNativeFragment": native_fragment(str(manifest["platform"])),
         "jars": jar_summary,
         "archive": str(archive) if archive else None,
         "status": "verified",
