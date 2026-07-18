@@ -45,9 +45,14 @@ final class FactionStrategicAssetTickAuthority {
             if (!outcome.handled()) continue;
 
             int motorPoolChanges = 0;
-            if (outcome.success() && vehiclePlan && site != null) {
-                motorPoolChanges = VehicleMotorPoolAuthority.reconcileSiteFleet(
-                        game, site, plan.immediateGoal);
+            int fleetPower = 0;
+            if (vehiclePlan && site != null) {
+                if (outcome.success()) {
+                    motorPoolChanges = VehicleMotorPoolAuthority.reconcileSiteFleet(
+                            game, site, plan.immediateGoal);
+                }
+                fleetPower = FactionVehicleDoctrineAuthority.fleet(
+                        game, site.faction, site).totalPower();
             }
             if (outcome.success()) {
                 plan.success++;
@@ -66,7 +71,8 @@ final class FactionStrategicAssetTickAuthority {
                             + " blocker=" + outcome.blocker()
                             + " room=" + outcome.roomId()
                             + " stock=" + outcome.stockBefore() + "->" + outcome.stockAfter()
-                            + " motorPoolChanges=" + motorPoolChanges);
+                            + " motorPoolChanges=" + motorPoolChanges
+                            + " fleetPower=" + fleetPower);
             if (game.rng.nextInt(100) < Math.max(10, 65 - plan.secrecy / 2)) {
                 game.logEvent("RUMOR: " + plan.publicLine());
             }
