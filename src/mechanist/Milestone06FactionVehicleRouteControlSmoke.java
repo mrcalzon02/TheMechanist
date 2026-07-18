@@ -141,8 +141,26 @@ final class Milestone06FactionVehicleRouteControlSmoke {
                             armored.stockState),
                     "route-control activation must wait for the matching transit reservation");
 
-            markTransitReserved(armored, patrol.destinationKey(),
-                    assigned.snapshot().requiredFuel());
+            VehicleStrategicTransitAuthority.Reservation reservation =
+                    FactionVehicleRouteControlAuthority.reserveTransit(
+                            game, mechanist, armored, patrol);
+            require(reservation.success() && reservation.changed()
+                            && reservation.readiness().allowed()
+                            && reservation.readiness().status()
+                            == VehicleStrategicTransitAuthority.Status.RESERVED
+                            && patrol.destinationKey().equals(
+                            MapObjectState.stockValue(armored.stockState,
+                                    "strategicTransitDestination")),
+                    "faction motor-pool authority should create the real strategic-transit reservation");
+            String reservedStock = armored.stockState;
+            VehicleStrategicTransitAuthority.Reservation duplicateReservation =
+                    FactionVehicleRouteControlAuthority.reserveTransit(
+                            game, mechanist, armored, patrol);
+            require(duplicateReservation.success()
+                            && !duplicateReservation.changed()
+                            && reservedStock.equals(armored.stockState),
+                    "matching faction transit reservation should be idempotent");
+
             FactionVehicleRouteControlAuthority.Result activated =
                     FactionVehicleRouteControlAuthority.activate(game,
                             mechanist, armored);
@@ -167,10 +185,12 @@ final class Milestone06FactionVehicleRouteControlSmoke {
             require(!reservedCancel.success()
                             && beforeReservedCancel.equals(armored.stockState),
                     "active transit reservation must block route-order cancellation without mutation");
-            armored.stockState = MapObjectState.setStockFlag(
-                    armored.stockState, "strategicTransitState", "cancelled");
-            armored.stockState = MapObjectState.setStockFlag(
-                    armored.stockState, "strategicTransitFuelReserved", "0");
+            VehicleStrategicTransitAuthority.Reservation transitCancelled =
+                    VehicleStrategicTransitAuthority.cancel(game, armored,
+                            "checkpoint patrol stood down");
+            require(transitCancelled.success()
+                            && transitCancelled.changed(),
+                    "authoritative transit owner should cancel the pending reservation");
             FactionVehicleRouteControlAuthority.Result cancelled =
                     FactionVehicleRouteControlAuthority.cancel(game,
                             mechanist, armored,
@@ -218,6 +238,35 @@ final class Milestone06FactionVehicleRouteControlSmoke {
                             && contest.snapshot().mission()
                             == FactionVehicleRouteControlAuthority.Mission.ROUTE_CONTEST,
                     "high-commitment route contest should reserve the best available armored vehicle");
+            String beforeUnlaunchedCompletion = armored.stockState;
+            FactionVehicleRouteControlAuthority.Result unlaunchedCompletion =
+                    FactionVehicleRouteControlAuthority.complete(game,
+                            mechanist, armored,
+                            "invalid completion before deployment");
+            require(!unlaunchedCompletion.success()
+                            && beforeUnlaunchedCompletion.equals(
+                            armored.stockState),
+                    "an assigned but unlaunched route order cannot be completed");
+
+            VehicleStrategicTransitAuthority.Reservation contestReservation =
+                    FactionVehicleRouteControlAuthority.reserveTransit(
+                            game, mechanist, armored, committedContest);
+            require(contestReservation.success()
+                            && contestReservation.changed(),
+                    "committed hostile route order should receive a faction-authorized transit reservation");
+            require(FactionVehicleRouteControlAuthority.activate(game,
+                    mechanist, armored).success(),
+                    "committed contested route order should activate after reservation");
+            String beforeIncompleteTransfer = armored.stockState;
+            FactionVehicleRouteControlAuthority.Result incompleteTransfer =
+                    FactionVehicleRouteControlAuthority.complete(game,
+                            mechanist, armored,
+                            "invalid completion before transfer commit");
+            require(!incompleteTransfer.success()
+                            && beforeIncompleteTransfer.equals(
+                            armored.stockState),
+                    "active order must wait for the transit commit authority to report completion");
+            markTransitCompleted(armored);
             FactionVehicleRouteControlAuthority.Result completed =
                     FactionVehicleRouteControlAuthority.complete(game,
                             mechanist, armored,
@@ -226,6 +275,10 @@ final class Milestone06FactionVehicleRouteControlSmoke {
                             && "completed".equals(completed.snapshot().state())
                             && !completed.snapshot().history().isEmpty(),
                     "completed route contest should preserve its lifecycle history and release strategic contribution");
+            require(FactionVehicleBalanceAuthority.compare(game,
+                    mechanist.faction, Faction.IMPERIAL_GUARD,
+                    mechanist).attackerRouteCommitment() == 0,
+                    "completed deployment should no longer count as an active route commitment");
 
             List<String> inspection =
                     FactionVehicleRouteControlAuthority.inspectionLines(armored);
@@ -261,17 +314,11 @@ final class Milestone06FactionVehicleRouteControlSmoke {
                 aggression, ambition, reason);
     }
 
-    private static void markTransitReserved(MapObjectState vehicle,
-                                            String destination,
-                                            int requiredFuel) {
+    private static void markTransitCompleted(MapObjectState vehicle) {
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                "strategicTransitState", "reserved");
+                "strategicTransitState", "completed");
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                "strategicTransitReservationId", "ROUTE-SMOKE-RESERVATION");
-        vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                "strategicTransitDestination", destination);
-        vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                "strategicTransitFuelReserved", Integer.toString(requiredFuel));
+                "strategicTransitFuelReserved", "0");
     }
 
     private static NpcFactionSite site(String name, Faction faction,
