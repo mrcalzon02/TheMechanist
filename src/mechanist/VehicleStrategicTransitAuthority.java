@@ -7,9 +7,9 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Cross-zone vehicle departure readiness. This authority validates and records
- * a route reservation but deliberately does not load or replace worlds; the
- * existing world-transition owner must consume a READY reservation later.
+ * Cross-zone vehicle departure readiness and reservation. This authority owns
+ * the persistent reservation ledger but deliberately does not load or replace
+ * worlds; the existing transition commit authority consumes a READY reservation.
  */
 final class VehicleStrategicTransitAuthority {
     enum Infrastructure {
@@ -49,7 +49,8 @@ final class VehicleStrategicTransitAuthority {
             infrastructure = infrastructure == null
                     ? Set.of() : Set.copyOf(infrastructure);
             routeDistance = Math.max(0, routeDistance);
-            destinationParkingCapacity = Math.max(0, destinationParkingCapacity);
+            destinationParkingCapacity = Math.max(0,
+                    destinationParkingCapacity);
             assignedCrew = Math.max(0, assignedCrew);
             fuelOrPowerAvailable = Math.max(0, fuelOrPowerAvailable);
             fuelOrPowerRequired = Math.max(0, fuelOrPowerRequired);
@@ -68,10 +69,29 @@ final class VehicleStrategicTransitAuthority {
                        String reservationId, Readiness readiness,
                        String message) { }
 
+    private enum AuthorityMode { PLAYER, FACTION }
+
     private VehicleStrategicTransitAuthority() { }
 
     static Readiness evaluate(GamePanel game, MapObjectState vehicle,
                               Request request) {
+        return evaluateInternal(game, vehicle, request,
+                AuthorityMode.PLAYER, null);
+    }
+
+    static Readiness evaluateForFaction(GamePanel game,
+                                        MapObjectState vehicle,
+                                        Request request,
+                                        NpcFactionSite site) {
+        return evaluateInternal(game, vehicle, request,
+                AuthorityMode.FACTION, site);
+    }
+
+    private static Readiness evaluateInternal(GamePanel game,
+                                              MapObjectState vehicle,
+                                              Request request,
+                                              AuthorityMode authorityMode,
+                                              NpcFactionSite site) {
         ArrayList<String> blockers = new ArrayList<>();
         ArrayList<String> requirements = new ArrayList<>();
         if (game == null || game.world == null || vehicle == null
@@ -81,26 +101,61 @@ final class VehicleStrategicTransitAuthority {
                     "Strategic vehicle transit is blocked because no loaded vehicle is available.");
         }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
-        Request route = request == null
-                ? new Request("unselected destination", Set.of(), 0, 0,
-                0, false, 0, 0, false, false, false,
-                Faction.NONE, "vehicle transit") : request;
+        VehicleFuelAuthority.ensureInitialized(game.world, vehicle);
+        Request route = safeRequest(request);
         VehicleRuntimeAuthority.Snapshot snapshot =
                 VehicleRuntimeAuthority.inspect(game.world, vehicle);
-        VehicleRuntimeAuthority.VehicleClass definition = snapshot.vehicleClass();
+        VehicleRuntimeAuthority.VehicleClass definition =
+                snapshot.vehicleClass();
         int crewRequired = Math.max(1, definition.crewRequired);
         int fuelRequired = route.fuelOrPowerRequired() > 0
                 ? route.fuelOrPowerRequired()
                 : estimatedFuel(definition, route.routeDistance());
 
-        VehicleAccessAuthority.Decision operation =
-                VehicleAccessAuthority.evaluate(game, vehicle,
-                        VehicleAccessAuthority.Permission.OPERATION);
-        VehicleAccessAuthority.Decision deployment =
-                VehicleAccessAuthority.evaluate(game, vehicle,
-                        VehicleAccessAuthority.Permission.DEPLOYMENT);
-        if (!operation.allowed()) blockers.add(operation.requirement());
-        if (!deployment.allowed()) blockers.add(deployment.requirement());
+        if (authorityMode == AuthorityMode.PLAYER) {
+            VehicleAccessAuthority.Decision operation =
+                    VehicleAccessAuthority.evaluate(game, vehicle,
+                            VehicleAccessAuthority.Permission.OPERATION);
+            VehicleAccessAuthority.Decision deployment =
+                    VehicleAccessAuthority.evaluate(game, vehicle,
+                            VehicleAccessAuthority.Permission.DEPLOYMENT);
+            if (!operation.allowed()) blockers.add(operation.requirement());
+            if (!deployment.allowed()) blockers.add(deployment.requirement());
+            if (route.routeController() != Faction.NONE
+                    && !FactionIdentityAuthority.sameFamily(
+                    route.routeController(), game.playerFaction())
+                    && !credential(game, "Road transit permit")
+                    && !credential(game,
+                    route.routeController().label + " transit permit")) {
+                blockers.add(route.routeController().label
+                        + " controls the route; carry a matching road transit permit");
+            }
+            requirements.add("operation and deployment authority");
+        } else {
+            if (!localSite(site, game.world)) {
+                blockers.add("a local faction motor pool is required");
+            } else {
+                VehicleMotorPoolAuthority.Snapshot pool =
+                        VehicleMotorPoolAuthority.inspect(game, vehicle, site);
+                if (snapshot.ownerType()
+                        != VehicleRuntimeAuthority.OwnerType.FACTION
+                        || snapshot.ownerFaction() == Faction.NONE
+                        || !FactionIdentityAuthority.sameFamily(
+                        snapshot.ownerFaction(), site.faction)) {
+                    blockers.add("the vehicle must be owned by the dispatching faction family");
+                }
+                if (!pool.assigned() || !pool.siteLocal()) {
+                    blockers.add("the vehicle must belong to the dispatching local motor pool");
+                }
+                if (!pool.ownerAligned()) {
+                    blockers.add("restore aligned faction ownership before departure");
+                }
+                if (!pool.operational()) {
+                    blockers.add("restore the vehicle to an operational condition");
+                }
+            }
+            requirements.add("local faction motor-pool authority");
+        }
 
         if (route.destinationKey().equals("unselected destination")) {
             blockers.add("select a destination zone or depot");
@@ -116,7 +171,8 @@ final class VehicleStrategicTransitAuthority {
                     + route.assignedCrew() + " are assigned");
         }
         if (route.fuelOrPowerAvailable() < fuelRequired) {
-            blockers.add("reserve " + fuelRequired + " fuel or power units; only "
+            blockers.add("reserve " + fuelRequired
+                    + " fuel or power units; only "
                     + route.fuelOrPowerAvailable() + " are available");
         }
         if (route.securityClosure()) {
@@ -132,21 +188,15 @@ final class VehicleStrategicTransitAuthority {
             blockers.add("the route gate is closed");
         }
         if (!route.checkpointOpen()
-                && route.infrastructure().contains(Infrastructure.CHECKPOINT)) {
+                && route.infrastructure().contains(
+                Infrastructure.CHECKPOINT)) {
             blockers.add("the route checkpoint is closed");
         }
         if (route.destinationParkingCapacity() < footprint(definition)) {
             blockers.add("destination parking capacity "
-                    + route.destinationParkingCapacity() + " is below the vehicle footprint "
+                    + route.destinationParkingCapacity()
+                    + " is below the vehicle footprint "
                     + footprint(definition));
-        }
-        if (route.routeController() != Faction.NONE
-                && !FactionIdentityAuthority.sameFamily(
-                route.routeController(), game.playerFaction())
-                && !credential(game, "Road transit permit")
-                && !credential(game, route.routeController().label + " transit permit")) {
-            blockers.add(route.routeController().label
-                    + " controls the route; carry a matching road transit permit");
         }
         if (VehicleLossAuthority.isRoadBlocker(vehicle)
                 || VehicleLossAuthority.hasLeakHazard(vehicle)) {
@@ -156,18 +206,22 @@ final class VehicleStrategicTransitAuthority {
         requirements.add("driver assigned");
         requirements.add(crewRequired + " crew member(s)");
         requirements.add(fuelRequired + " fuel or power units");
-        requirements.add("destination parking capacity " + footprint(definition));
+        requirements.add("destination parking capacity "
+                + footprint(definition));
         requirements.add("open gates and checkpoints where present");
-        requirements.add("operation and deployment authority");
 
         boolean allowed = blockers.isEmpty();
+        String authorityLabel = authorityMode == AuthorityMode.FACTION
+                ? "Faction strategic vehicle route"
+                : "Strategic vehicle route";
         String summary = allowed
-                ? "Strategic vehicle route is ready for reservation: "
-                + displayName(vehicle) + " may travel " + route.routeDistance()
-                + " infrastructure unit(s) to " + route.destinationKey()
-                + " with " + route.assignedCrew() + " assigned crew and "
+                ? authorityLabel + " is ready for reservation: "
+                + displayName(vehicle) + " may travel "
+                + route.routeDistance() + " infrastructure unit(s) to "
+                + route.destinationKey() + " with "
+                + route.assignedCrew() + " assigned crew and "
                 + fuelRequired + " fuel or power units reserved."
-                : "Strategic vehicle route is blocked: "
+                : authorityLabel + " is blocked: "
                 + String.join("; ", blockers) + ".";
         return result(allowed, blockers, requirements, crewRequired,
                 fuelRequired, summary);
@@ -175,27 +229,57 @@ final class VehicleStrategicTransitAuthority {
 
     static Reservation reserve(GamePanel game, MapObjectState vehicle,
                                Request request) {
-        Readiness readiness = evaluate(game, vehicle, request);
+        return reserveReady(game, vehicle, safeRequest(request),
+                evaluate(game, vehicle, request));
+    }
+
+    static Reservation reserveForFaction(GamePanel game,
+                                         MapObjectState vehicle,
+                                         Request request,
+                                         NpcFactionSite site) {
+        return reserveReady(game, vehicle, safeRequest(request),
+                evaluateForFaction(game, vehicle, request, site));
+    }
+
+    private static Reservation reserveReady(GamePanel game,
+                                            MapObjectState vehicle,
+                                            Request request,
+                                            Readiness readiness) {
         if (!readiness.allowed()) {
             return new Reservation(false, false, "", readiness,
                     readiness.summary());
         }
         String existing = value(vehicle, "strategicTransitState");
         if ("reserved".equals(existing)) {
+            String existingDestination = value(vehicle,
+                    "strategicTransitDestination");
+            if (!existingDestination.equals(request.destinationKey())) {
+                Readiness blocked = result(false,
+                        List.of("the vehicle already has a reservation to "
+                                + clean(existingDestination,
+                                "another destination")),
+                        readiness.requirements(), readiness.crewRequired(),
+                        readiness.fuelRequired(),
+                        "Strategic vehicle route is blocked by a conflicting active reservation.");
+                return new Reservation(false, false,
+                        value(vehicle, "strategicTransitReservationId"),
+                        blocked, blocked.summary());
+            }
             return new Reservation(true, false,
                     value(vehicle, "strategicTransitReservationId"),
                     new Readiness(Status.RESERVED, true,
                             readiness.blockers(), readiness.requirements(),
                             readiness.crewRequired(), readiness.fuelRequired(),
-                            "The vehicle already has a strategic transit reservation."),
-                    "STRATEGIC TRANSIT: the existing reservation remains active; no fuel or world state was changed.");
+                            "The vehicle already has the matching strategic transit reservation."),
+                    "STRATEGIC TRANSIT: the matching reservation remains active; no fuel or world state was changed.");
         }
         String id = "TRANSIT-" + Math.abs((vehicle.id + "|"
                 + request.destinationKey() + "|" + game.worldTurn).hashCode());
         set(vehicle, "strategicTransitState", "reserved");
         set(vehicle, "strategicTransitReservationId", id);
         set(vehicle, "strategicTransitOrigin", game.world.locationKey());
-        set(vehicle, "strategicTransitDestination", request.destinationKey());
+        set(vehicle, "strategicTransitDestination",
+                request.destinationKey());
         set(vehicle, "strategicTransitDistance",
                 Integer.toString(request.routeDistance()));
         set(vehicle, "strategicTransitCrew",
@@ -210,10 +294,11 @@ final class VehicleStrategicTransitAuthority {
         set(vehicle, "strategicTransitReservedTurn",
                 Long.toString(Math.max(0L, game.worldTurn)));
         append(vehicle, "deploymentHistory", "Strategic route reserved "
-                + game.world.locationKey() + " -> " + request.destinationKey()
-                + " / distance " + request.routeDistance()
-                + " / fuel " + readiness.fuelRequired()
-                + " / crew " + request.assignedCrew());
+                + game.world.locationKey() + " -> "
+                + request.destinationKey() + " / distance "
+                + request.routeDistance() + " / fuel "
+                + readiness.fuelRequired() + " / crew "
+                + request.assignedCrew());
         return new Reservation(true, true, id,
                 new Readiness(Status.RESERVED, true,
                         readiness.blockers(), readiness.requirements(),
@@ -241,9 +326,11 @@ final class VehicleStrategicTransitAuthority {
         set(vehicle, "strategicTransitState", "cancelled");
         set(vehicle, "strategicTransitFuelReserved", "0");
         set(vehicle, "strategicTransitCancelledTurn",
-                Long.toString(game == null ? 0L : Math.max(0L, game.worldTurn)));
+                Long.toString(game == null ? 0L
+                        : Math.max(0L, game.worldTurn)));
         append(vehicle, "deploymentHistory", "Strategic route reservation "
-                + id + " cancelled / " + clean(reason, "route cancelled"));
+                + id + " cancelled / "
+                + clean(reason, "route cancelled"));
         Readiness readiness = new Readiness(Status.BLOCKED, false,
                 List.of("reservation cancelled"), List.of(), 0, 0,
                 "The strategic transit reservation was cancelled before departure.");
@@ -251,13 +338,28 @@ final class VehicleStrategicTransitAuthority {
                 "STRATEGIC TRANSIT CANCELLED: no fuel or world-transition state was consumed.");
     }
 
-    static List<String> inspectionLines(GamePanel game, MapObjectState vehicle,
+    static List<String> inspectionLines(GamePanel game,
+                                        MapObjectState vehicle,
                                         Request request) {
         Readiness readiness = evaluate(game, vehicle, request);
+        return inspectionLines(vehicle, readiness);
+    }
+
+    static List<String> inspectionLinesForFaction(GamePanel game,
+                                                  MapObjectState vehicle,
+                                                  Request request,
+                                                  NpcFactionSite site) {
+        Readiness readiness = evaluateForFaction(game, vehicle, request, site);
+        return inspectionLines(vehicle, readiness);
+    }
+
+    private static List<String> inspectionLines(MapObjectState vehicle,
+                                                Readiness readiness) {
         ArrayList<String> lines = new ArrayList<>();
         lines.add(readiness.summary());
         lines.add("Crew requirement: " + readiness.crewRequired()
-                + "; fuel or power requirement: " + readiness.fuelRequired() + ".");
+                + "; fuel or power requirement: "
+                + readiness.fuelRequired() + ".");
         if (!readiness.blockers().isEmpty()) {
             for (String blocker : readiness.blockers()) {
                 lines.add("Route blocker: " + blocker + ".");
@@ -266,10 +368,17 @@ final class VehicleStrategicTransitAuthority {
         String state = value(vehicle, "strategicTransitState");
         if (!state.isBlank()) {
             lines.add("Reservation state: " + state + "; destination "
-                    + clean(value(vehicle, "strategicTransitDestination"),
-                    "not recorded") + ".");
+                    + clean(value(vehicle,
+                    "strategicTransitDestination"), "not recorded") + ".");
         }
         return List.copyOf(lines);
+    }
+
+    private static Request safeRequest(Request request) {
+        return request == null
+                ? new Request("unselected destination", Set.of(), 0, 0,
+                0, false, 0, 0, false, false, false,
+                Faction.NONE, "vehicle transit") : request;
     }
 
     private static void validateInfrastructure(
@@ -308,7 +417,8 @@ final class VehicleStrategicTransitAuthority {
         }
     }
 
-    private static Readiness result(boolean allowed, List<String> blockers,
+    private static Readiness result(boolean allowed,
+                                    List<String> blockers,
                                     List<String> requirements,
                                     int crewRequired, int fuelRequired,
                                     String summary) {
@@ -328,7 +438,8 @@ final class VehicleStrategicTransitAuthority {
             case ARMORED_CAR -> 3;
             case TANK -> 2;
         };
-        return Math.max(1, (Math.max(1, distance) + divisor - 1) / divisor);
+        return Math.max(1, (Math.max(1, distance) + divisor - 1)
+                / divisor);
     }
 
     private static int footprint(
@@ -347,14 +458,26 @@ final class VehicleStrategicTransitAuthority {
         String needle = expected.toLowerCase(Locale.ROOT);
         for (String item : game.inventory) {
             if (item != null
-                    && item.toLowerCase(Locale.ROOT).contains(needle)) return true;
+                    && item.toLowerCase(Locale.ROOT).contains(needle)) {
+                return true;
+            }
         }
         return false;
+    }
+
+    private static boolean localSite(NpcFactionSite site, World world) {
+        return site != null && world != null
+                && site.sectorX == world.sectorX
+                && site.sectorY == world.sectorY
+                && site.zoneX == world.zoneX
+                && site.zoneY == world.zoneY
+                && site.floor == world.floor;
     }
 
     private static String infrastructureText(Set<Infrastructure> values) {
         ArrayList<String> names = new ArrayList<>();
         for (Infrastructure value : values) names.add(value.name());
+        names.sort(String::compareTo);
         return String.join(",", names);
     }
 
@@ -363,7 +486,8 @@ final class VehicleStrategicTransitAuthority {
                 VehicleRuntimeAuthority.inspect(null, vehicle);
         if (snapshot == null) return "vehicle";
         return (clean(snapshot.manufacturer(), "") + " "
-                + clean(snapshot.model(), snapshot.vehicleClass().label)).trim();
+                + clean(snapshot.model(),
+                snapshot.vehicleClass().label)).trim();
     }
 
     private static void append(MapObjectState vehicle, String key,
@@ -379,7 +503,8 @@ final class VehicleStrategicTransitAuthority {
                 : MapObjectState.stockValue(vehicle.stockState, key);
     }
 
-    private static void set(MapObjectState vehicle, String key, String value) {
+    private static void set(MapObjectState vehicle, String key,
+                            String value) {
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
                 key, clean(value, "").replace(';', ',').replace('|', '/'));
     }
