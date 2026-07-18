@@ -210,6 +210,7 @@ final class Milestone06FactionVehicleDoctrineSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06FactionVehicleBalanceSmoke.main(args);
     }
 
     private static NpcFactionSite site(String name, Faction faction,
