@@ -34,7 +34,6 @@ final class Milestone06VehicleMotorPoolSmoke {
                     AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK,
                     site.faction, "faction", 151L);
             game.world.mapObjects.add(truck);
-            VehicleFuelAuthority.ensureInitialized(game.world, truck);
 
             VehicleMotorPoolAuthority.Result assigned =
                     VehicleMotorPoolAuthority.assign(game, truck, site,
@@ -247,6 +246,7 @@ final class Milestone06VehicleMotorPoolSmoke {
                 "ownerName", faction.label);
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
                 "ownership", ownership);
+        VehicleFuelAuthority.ensureInitialized(world, vehicle);
         return vehicle;
     }
 
