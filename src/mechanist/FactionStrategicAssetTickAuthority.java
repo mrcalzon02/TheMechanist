@@ -110,9 +110,9 @@ final class FactionStrategicAssetTickAuthority {
 
     /**
      * Converts ordinary planning into the next available physical follow-up:
-     * captured machinery, concrete route-control deployment, seized/damaged or
-     * scheme-targeted vehicles, then a visible specialist for an operational
-     * facility that still lacks one.
+     * captured machinery, captured or damaged faction vehicles, concrete route
+     * deployment, opportunistic vehicle seizure, then a visible specialist for
+     * an operational facility that still lacks one.
      */
     private static void promoteSequentialPhysicalGoal(
             GamePanel game, FactionStrategicPlan plan) {
@@ -140,6 +140,21 @@ final class FactionStrategicAssetTickAuthority {
             return;
         }
 
+        FactionVehicleStrategicAuthority.Suggestion vehicle =
+                FactionVehicleStrategicAuthority.nextSuggestion(
+                        game, site, plan);
+        if (vehicle.available()
+                && urgentVehicleMaintenanceGoal(vehicle.goal())) {
+            plan.immediateGoal = vehicle.goal();
+            plan.targetRoom = vehicle.target();
+            plan.targetItem = "Machine part";
+            plan.addHistory(game.turn,
+                    "Planning redirected to " + vehicle.goal() + " because "
+                            + vehicle.reason() + ". Target: "
+                            + vehicle.target() + ".");
+            return;
+        }
+
         FactionVehicleRouteStrategicAuthority.Suggestion route =
                 FactionVehicleRouteStrategicAuthority.nextSuggestion(
                         game, site, plan);
@@ -154,9 +169,6 @@ final class FactionStrategicAssetTickAuthority {
             return;
         }
 
-        FactionVehicleStrategicAuthority.Suggestion vehicle =
-                FactionVehicleStrategicAuthority.nextSuggestion(
-                        game, site, plan);
         if (vehicle.available()) {
             plan.immediateGoal = vehicle.goal();
             plan.targetRoom = vehicle.target();
@@ -180,6 +192,14 @@ final class FactionStrategicAssetTickAuthority {
                             + plan.targetRoom
                             + " has an operational staffed facility without a visible specialist.");
         }
+    }
+
+    private static boolean urgentVehicleMaintenanceGoal(String goal) {
+        String safe = goal == null ? "" : goal.trim();
+        return FactionVehicleStrategicAuthority.VEHICLE_REPAIR_GOAL
+                .equalsIgnoreCase(safe)
+                || FactionVehicleStrategicAuthority.VEHICLE_SALVAGE_GOAL
+                .equalsIgnoreCase(safe);
     }
 
     private static int capturedAssetRoom(GamePanel game,
