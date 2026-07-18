@@ -134,6 +134,7 @@ def verify_distribution(root: pathlib.Path, archive: pathlib.Path | None) -> dic
     if missing_roles:
         fail(f"runtime manifest missing required roles: {sorted(missing_roles)}")
 
+    declared_paths: set[str] = set()
     jar_summary: dict[str, dict[str, object]] = {}
     for entry in artifacts:
         if not isinstance(entry, dict):
@@ -144,6 +145,10 @@ def verify_distribution(root: pathlib.Path, archive: pathlib.Path | None) -> dic
         relative = pathlib.PurePosixPath(str(entry["path"]))
         if relative.is_absolute() or ".." in relative.parts:
             fail(f"unsafe artifact path in manifest: {relative}")
+        relative_text = relative.as_posix()
+        if relative_text in declared_paths:
+            fail(f"runtime manifest declares duplicate artifact path {relative_text}")
+        declared_paths.add(relative_text)
         path = root.joinpath(*relative.parts)
         if not path.is_file():
             fail(f"manifest artifact does not exist: {path}")
@@ -157,11 +162,23 @@ def verify_distribution(root: pathlib.Path, archive: pathlib.Path | None) -> dic
         if role in EXPECTED_MAIN_CLASSES:
             classes, project_classes = scan_jar(path, role)
             jar_summary[role] = {
-                "path": str(relative),
+                "path": relative_text,
                 "classes": classes,
                 "projectClasses": project_classes,
                 "sha256": actual_hash,
             }
+
+    actual_paths = {
+        pathlib.PurePosixPath(path.relative_to(root).as_posix()).as_posix()
+        for path in root.rglob("*")
+        if path.is_file() and path != manifest_path
+    }
+    undeclared = actual_paths - declared_paths
+    missing = declared_paths - actual_paths
+    if undeclared:
+        fail(f"distribution contains undeclared files: {sorted(undeclared)[:12]}")
+    if missing:
+        fail(f"manifest declares missing files: {sorted(missing)[:12]}")
 
     runtime_java = root / "runtime" / "bin" / ("java.exe" if str(manifest["platform"]).startswith("windows-") else "java")
     if not runtime_java.is_file():
