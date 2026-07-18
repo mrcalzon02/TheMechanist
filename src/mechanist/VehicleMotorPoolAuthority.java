@@ -173,13 +173,14 @@ final class VehicleMotorPoolAuthority {
         if (game == null || game.world == null || !localSite(site, game.world)
                 || game.world.mapObjects == null) return 0;
         int changed = 0;
+        String activeSiteKey = siteKey(site);
         for (MapObjectState vehicle : game.world.mapObjects) {
             if (!VehicleRuntimeAuthority.isVehicle(vehicle)) continue;
             VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
             Snapshot current = inspect(game, vehicle, site);
             String condition = value(vehicle, "condition")
                     .toLowerCase(Locale.ROOT);
-            if (current.assigned() && current.siteKey().equals(siteKey(site))
+            if (current.assigned() && current.siteKey().equals(activeSiteKey)
                     && condition.equals("salvaged")) {
                 if (releaseInternal(game, vehicle,
                         "vehicle removed from active fleet after salvage").changed()) {
@@ -187,12 +188,14 @@ final class VehicleMotorPoolAuthority {
                 }
                 continue;
             }
+            if (current.assigned() && !current.siteKey().equals(activeSiteKey)) {
+                continue;
+            }
             if (!VehicleRuntimeAuthority.factionOwns(vehicle, site.faction)) {
                 continue;
             }
             Result result;
-            if (!current.assigned()
-                    || !current.siteKey().equals(siteKey(site))) {
+            if (!current.assigned()) {
                 result = assign(game, vehicle, site,
                         VehicleRuntimeAuthority.vehicleClass(vehicle.type).role,
                         clean(reason, "successful faction vehicle operation"));
@@ -242,7 +245,7 @@ final class VehicleMotorPoolAuthority {
                 && !"salvaged".equalsIgnoreCase(vehicleState.condition())
                 && !"disabled".equalsIgnoreCase(vehicleState.operationState())
                 && !"dismantled".equalsIgnoreCase(vehicleState.operationState());
-        ArrayList<String> blockers = blockers(game, vehicle, site,
+        ArrayList<String> blockers = blockers(vehicle, site,
                 assigned, ownerAligned, local, manifest, fuel,
                 required, operational);
         String state = assigned ? derivedState(game, vehicle, site)
@@ -285,7 +288,6 @@ final class VehicleMotorPoolAuthority {
     private static Result releaseInternal(GamePanel game,
                                           MapObjectState vehicle,
                                           String reason) {
-        Snapshot before = inspect(game, vehicle, null);
         String priorSite = clean(value(vehicle, "motorPoolSiteName"),
                 "unnamed motor pool");
         String priorRole = clean(value(vehicle, "motorPoolRole"),
@@ -362,7 +364,7 @@ final class VehicleMotorPoolAuthority {
         return "ready";
     }
 
-    private static ArrayList<String> blockers(GamePanel game,
+    private static ArrayList<String> blockers(
                                               MapObjectState vehicle,
                                               NpcFactionSite site,
                                               boolean assigned,
