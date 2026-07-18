@@ -106,6 +106,101 @@ final class Milestone06VehicleManifestSmoke {
                     "fully staffed manifest-backed truck route should be ready: "
                             + readiness.summary());
 
+            VehicleManifestAuthority.Result partialUnload =
+                    VehicleManifestAuthority.unloadCargo(game, truck,
+                            "Machine components", "Mechanist Collegia", 3,
+                            "three units delivered to the destination workshop");
+            require(partialUnload.success() && partialUnload.changed()
+                            && partialUnload.snapshot().cargoUnits() == 15
+                            && cargoUnits(partialUnload.snapshot(),
+                            "Machine components", "Mechanist Collegia") == 7,
+                    "partial unloading should preserve the remaining custody record");
+            VehicleManifestAuthority.Result mergedReload =
+                    VehicleManifestAuthority.registerCargo(game, truck,
+                            "Machine components", "Mechanist Collegia", 2);
+            require(mergedReload.success() && mergedReload.changed()
+                            && mergedReload.snapshot().cargoUnits() == 17
+                            && mergedReload.snapshot().cargo().size() == 2
+                            && cargoUnits(mergedReload.snapshot(),
+                            "Machine components", "Mechanist Collegia") == 9,
+                    "matching cargo owner and label should merge into one canonical custody row");
+            String beforeOverUnload = truck.stockState;
+            VehicleManifestAuthority.Result overUnload =
+                    VehicleManifestAuthority.unloadCargo(game, truck,
+                            "Medical reserve", "Civic Clinic", 9,
+                            "invalid over-unload attempt");
+            require(!overUnload.success()
+                            && beforeOverUnload.equals(truck.stockState),
+                    "over-unloading must fail without changing the persistent manifest");
+
+            VehicleManifestAuthority.Result disembarked =
+                    VehicleManifestAuthority.disembarkPassenger(game, truck,
+                            "Passenger Sol", "destination reached");
+            require(disembarked.success() && disembarked.changed()
+                            && disembarked.snapshot().occupiedSeats() == 2
+                            && !disembarked.snapshot().passengers().contains(
+                            "Passenger Sol"),
+                    "named passenger disembark should free one seat");
+            String beforeMissingPassenger = truck.stockState;
+            VehicleManifestAuthority.Result missingPassenger =
+                    VehicleManifestAuthority.disembarkPassenger(game, truck,
+                            "Passenger Missing", "not aboard");
+            require(missingPassenger.success() && !missingPassenger.changed()
+                            && beforeMissingPassenger.equals(truck.stockState),
+                    "releasing a passenger who is not aboard should be idempotent");
+            require(VehicleManifestAuthority.boardPassenger(game, truck,
+                    "Passenger Sol").success(),
+                    "released passenger should be able to board again when a seat is free");
+
+            VehicleManifestAuthority.Result crewReleased =
+                    VehicleManifestAuthority.releaseCrew(game, truck,
+                            "Haul Crew 6", "shift completed");
+            require(crewReleased.success() && crewReleased.changed()
+                            && crewReleased.snapshot().assignedCrew() == 6,
+                    "named crew release should reduce the strategic crew count");
+            VehicleStrategicTransitAuthority.Request underCrewRequest =
+                    VehicleManifestAuthority.strategicRequest(game, truck,
+                            "sector-3/zone-2/floor-0", request.infrastructure(),
+                            12, 3, 3, true, true, false, Faction.NONE,
+                            "under-crewed freight route");
+            require(!VehicleStrategicTransitAuthority.evaluate(game, truck,
+                            underCrewRequest).allowed(),
+                    "releasing required crew should immediately block strategic departure");
+            require(VehicleManifestAuthority.addCrew(game, truck,
+                    "Haul Crew 6").success(),
+                    "released crew member should be assignable again");
+
+            VehicleManifestAuthority.Result driverReleased =
+                    VehicleManifestAuthority.releaseDriver(game, truck,
+                            "driver shift completed");
+            require(driverReleased.success() && driverReleased.changed()
+                            && driverReleased.snapshot().driver().isBlank(),
+                    "driver release should clear the authoritative driver slot");
+            VehicleStrategicTransitAuthority.Request noDriverRequest =
+                    VehicleManifestAuthority.strategicRequest(game, truck,
+                            "sector-3/zone-2/floor-0", request.infrastructure(),
+                            12, 3, 3, true, true, false, Faction.NONE,
+                            "driverless freight route");
+            require(!VehicleStrategicTransitAuthority.evaluate(game, truck,
+                            noDriverRequest).allowed(),
+                    "a released driver should immediately block strategic departure");
+            require(VehicleManifestAuthority.assignDriver(game, truck,
+                    "Driver Mara Venn").success(),
+                    "released driver should be assignable again");
+
+            requireContains(MapObjectState.stockValue(truck.stockState,
+                            "crewHistory"), "Crew released: Haul Crew 6",
+                    "crew release history");
+            requireContains(MapObjectState.stockValue(truck.stockState,
+                            "crewHistory"), "Driver released: Driver Mara Venn",
+                    "driver release history");
+            requireContains(MapObjectState.stockValue(truck.stockState,
+                            "passengerHistory"), "Passenger disembarked: Passenger Sol",
+                    "passenger release history");
+            requireContains(MapObjectState.stockValue(truck.stockState,
+                            "cargoHistory"), "Cargo unloaded: Machine components",
+                    "cargo unload history");
+
             List<String> inspection =
                     VehicleManifestAuthority.inspectionLines(game.world, truck);
             requireContains(inspection, "Driver Mara Venn",
@@ -116,6 +211,8 @@ final class Milestone06VehicleManifestSmoke {
                     "passenger inspection");
             requireContains(inspection, "Mechanist Collegia",
                     "cargo owner inspection");
+            requireContains(inspection, "9 unit(s)",
+                    "remaining machine component count");
             requireContains(inspection, "Civic Clinic",
                     "second cargo owner inspection");
             for (String line : inspection) {
@@ -167,11 +264,36 @@ final class Milestone06VehicleManifestSmoke {
             require(!deniedCargo.success()
                             && privateBefore.equals(privateTruck.stockState),
                     "private vehicle should reject cargo registration without cargo authority");
+            VehicleManifestAuthority.Result deniedRelease =
+                    VehicleManifestAuthority.releaseDriver(game, privateTruck,
+                            "unauthorized stand-down");
+            require(!deniedRelease.success()
+                            && privateBefore.equals(privateTruck.stockState),
+                    "private vehicle should reject driver release without deployment authority");
+            VehicleManifestAuthority.Result deniedUnload =
+                    VehicleManifestAuthority.unloadCargo(game, privateTruck,
+                            "Unauthorized load", "Unknown", 1,
+                            "unauthorized unload");
+            require(!deniedUnload.success()
+                            && privateBefore.equals(privateTruck.stockState),
+                    "private vehicle should reject cargo unloading without cargo authority");
 
-            System.out.println("Milestone 06 vehicle manifest smoke passed.");
+            System.out.println("Milestone 06 vehicle manifest lifecycle smoke passed.");
         } finally {
             game.shutdownRuntime();
         }
+    }
+
+    private static int cargoUnits(VehicleManifestAuthority.Snapshot snapshot,
+                                  String label, String owner) {
+        int units = 0;
+        for (VehicleManifestAuthority.CargoEntry entry : snapshot.cargo()) {
+            if (entry.label().equalsIgnoreCase(label)
+                    && entry.owner().equalsIgnoreCase(owner)) {
+                units += entry.units();
+            }
+        }
+        return units;
     }
 
     private static World world() {
@@ -222,6 +344,12 @@ final class Milestone06VehicleManifestSmoke {
         }
         throw new AssertionError("Expected " + label + " to contain '"
                 + expected + "': " + lines);
+    }
+
+    private static void requireContains(String text, String expected,
+                                        String label) {
+        require(text != null && text.contains(expected),
+                "Expected " + label + " to contain '" + expected + "': " + text);
     }
 
     private static void require(boolean condition, String message) {
