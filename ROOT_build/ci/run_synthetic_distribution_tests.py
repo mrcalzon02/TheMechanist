@@ -31,6 +31,10 @@ def profile_env(profile: pathlib.Path) -> dict[str, str]:
     return env
 
 
+def java_profile_args(profile: pathlib.Path) -> list[str]:
+    return [f'-Duser.home={profile}']
+
+
 def make_read_only(root: pathlib.Path) -> None:
     for path in root.rglob('*'):
         try:
@@ -56,22 +60,23 @@ def main() -> int:
     profile.mkdir(parents=True)
     env = profile_env(profile)
     java = java_bin(install)
+    profile_args = java_profile_args(profile)
 
     run([sys.executable, args.verifier.resolve(), install], env=env)
-    run([java, '-Djava.awt.headless=true', '-cp', classpath(install, 'client'),
+    run([java, *profile_args, '-Djava.awt.headless=true', '-cp', classpath(install, 'client'),
          'mechanist.Gate3PlayerFacingTextSmokeSuite'], cwd=root, env=env, timeout=600)
-    run([java, '-cp', classpath(install, 'server'), 'mechanist.MechanistServerMain', '--help'],
-        cwd=root, env=env)
+    run([java, *profile_args, '-cp', classpath(install, 'server'),
+         'mechanist.MechanistServerMain', '--help'], cwd=root, env=env)
     before = sorted(str(p.relative_to(profile)) for p in profile.rglob('*'))
-    run([java, '-cp', classpath(install, 'server'), 'mechanist.MechanistServerMain', '--help'],
-        cwd=root, env=env)
+    run([java, *profile_args, '-cp', classpath(install, 'server'),
+         'mechanist.MechanistServerMain', '--help'], cwd=root, env=env)
     after = sorted(str(p.relative_to(profile)) for p in profile.rglob('*'))
     if not after:
         raise RuntimeError('synthetic profile remained empty after server initialization')
 
     make_read_only(install)
-    run([java, '-cp', classpath(install, 'server'), 'mechanist.MechanistServerMain', '--help'],
-        cwd=root, env=env)
+    run([java, *profile_args, '-cp', classpath(install, 'server'),
+         'mechanist.MechanistServerMain', '--help'], cwd=root, env=env)
 
     tampered = root / 'Tampered Distribution'
     shutil.copytree(source, tampered)
