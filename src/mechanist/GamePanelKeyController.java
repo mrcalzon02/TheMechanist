@@ -156,12 +156,36 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) dx = 1;
         if (code == KeyEvent.VK_UP || code == KeyEvent.VK_W) dy = -1;
         if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_S) dy = 1;
-        if (code == KeyEvent.VK_F) { panel.cycleFireMode(); panel.repaint(); return true; }
-        if (code == KeyEvent.VK_Q || code == KeyEvent.VK_TAB) { panel.cycleEquippedWeaponHand(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_F) {
+            panel.cycleFireMode();
+            StructuralScaleCombatAuthority.refreshTargetingReport(panel);
+            panel.repaint();
+            return true;
+        }
+        if (code == KeyEvent.VK_Q || code == KeyEvent.VK_TAB) {
+            panel.cycleEquippedWeaponHand();
+            StructuralScaleCombatAuthority.refreshTargetingReport(panel);
+            panel.repaint();
+            return true;
+        }
         if (code == KeyEvent.VK_G) { panel.throwSelectedExplosiveAtCursor(); panel.repaint(); return true; }
-        if (code == KeyEvent.VK_X) { panel.reloadCurrentRangedWeapon(); panel.repaint(); return true; }
-        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) { panel.confirmCombatTarget(); panel.repaint(); return true; }
-        if (dx != 0 || dy != 0) { panel.moveCombatCursor(dx, dy); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_X) {
+            panel.reloadCurrentRangedWeapon();
+            StructuralScaleCombatAuthority.refreshTargetingReport(panel);
+            panel.repaint();
+            return true;
+        }
+        if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE) {
+            StructuralScaleCombatAuthority.confirm(panel);
+            panel.repaint();
+            return true;
+        }
+        if (dx != 0 || dy != 0) {
+            panel.moveCombatCursor(dx, dy);
+            StructuralScaleCombatAuthority.refreshTargetingReport(panel);
+            panel.repaint();
+            return true;
+        }
         return false;
     }
 
@@ -310,7 +334,12 @@ final class GamePanelKeyController {
         if (code == KeyEvent.VK_L) { panel.beginLookMode(); return true; }
         if (code == KeyEvent.VK_E) { panel.beginInteractMode(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_I) { panel.openPanel(GamePanel.PanelMode.INVENTORY); return true; }
-        if (code == KeyEvent.VK_F) { panel.beginCombatTargeting(); panel.repaint(); return true; }
+        if (code == KeyEvent.VK_F) {
+            panel.beginCombatTargeting();
+            StructuralScaleCombatAuthority.refreshTargetingReport(panel);
+            panel.repaint();
+            return true;
+        }
         if (code == KeyEvent.VK_G) { panel.beginExplosiveTargeting(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_X) { panel.reloadCurrentRangedWeapon(); panel.repaint(); return true; }
         if (code == KeyEvent.VK_C) { panel.openPanel(GamePanel.PanelMode.CHARACTER); return true; }
