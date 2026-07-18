@@ -128,6 +128,7 @@ final class Milestone06VehicleOperationFeedbackSmoke {
         Milestone06VehicleMaintenanceSmoke.main(args);
         Milestone06VehicleAccessSmoke.main(args);
         Milestone06VehicleMotorPoolSmoke.main(args);
+        Milestone06StructuralScaleCombatSmoke.main(args);
     }
 
     private static World world() {
