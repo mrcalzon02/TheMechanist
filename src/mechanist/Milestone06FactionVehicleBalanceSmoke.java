@@ -186,6 +186,7 @@ final class Milestone06FactionVehicleBalanceSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06FactionVehicleRouteControlSmoke.main(args);
     }
 
     private static FactionStrategicPlan seizurePlan(String id,
