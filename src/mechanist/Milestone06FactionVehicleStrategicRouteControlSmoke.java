@@ -59,8 +59,40 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
             int heatBefore = game.gangHeat;
             int suspicionBefore = game.suspicion;
             List<String> inventoryBefore = List.copyOf(game.inventory);
-            int stockBefore = mechanist.stock;
 
+            require(VehicleRuntimeAuthority.applyDamage(cargo,
+                    VehicleRuntimeAuthority.Component.MOBILITY, 55,
+                    game.turn, "strategic maintenance priority smoke").success(),
+                    "maintenance priority setup should damage the cargo truck mobility system");
+            int mobilityBeforeRepair = component(game, cargo,
+                    VehicleRuntimeAuthority.Component.MOBILITY);
+            int stockBeforeRepair = mechanist.stock;
+            FactionStrategicPlan maintenance = planningPlan(
+                    "STRAT-ROUTE-MAINTENANCE-PRIORITY",
+                    "contest guard control of the maintenance freight route",
+                    "sector-6/maintenance-route",
+                    Faction.IMPERIAL_GUARD, 100, 100, game.turn);
+            game.factionStrategicPlans.add(maintenance);
+            int maintenanceResolved =
+                    FactionStrategicAssetTickAuthority.tick(game);
+            require(maintenanceResolved == 1
+                            && maintenance.success == 1
+                            && maintenance.failure == 0
+                            && "COOLDOWN".equals(maintenance.phase)
+                            && FactionVehicleStrategicAuthority
+                            .VEHICLE_REPAIR_GOAL.equals(
+                            maintenance.immediateGoal)
+                            && component(game, cargo,
+                            VehicleRuntimeAuthority.Component.MOBILITY)
+                            > mobilityBeforeRepair
+                            && mechanist.stock < stockBeforeRepair
+                            && !FactionVehicleRouteControlAuthority
+                            .inspect(armored).assigned()
+                            && !FactionVehicleRouteControlAuthority
+                            .inspect(cargo).assigned(),
+                    "damaged fleet maintenance must outrank an otherwise valid route-control scheme");
+
+            int stockBefore = mechanist.stock;
             FactionStrategicPlan plan = planningPlan(
                     "STRAT-ROUTE-PROMOTION",
                     "contest guard control of the eastern freight route",
@@ -167,6 +199,14 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
         } finally {
             game.shutdownRuntime();
         }
+    }
+
+    private static int component(GamePanel game, MapObjectState vehicle,
+                                 VehicleRuntimeAuthority.Component component) {
+        Integer value = VehicleRuntimeAuthority.inspect(
+                game == null ? null : game.world, vehicle)
+                .components().get(component);
+        return value == null ? 100 : value;
     }
 
     private static FactionStrategicPlan planningPlan(
