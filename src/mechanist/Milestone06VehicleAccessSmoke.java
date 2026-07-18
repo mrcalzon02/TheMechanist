@@ -150,6 +150,7 @@ final class Milestone06VehicleAccessSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06VehicleStrategicTransitSmoke.main(args);
     }
 
     private static World world() {
