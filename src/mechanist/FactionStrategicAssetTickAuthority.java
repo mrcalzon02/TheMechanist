@@ -2,9 +2,10 @@ package mechanist;
 
 /**
  * Resolves physical room, machine, specialist, vehicle, and route-control plans
- * as their execution phase opens. Completed attempts advance directly into
- * cooldown before the later abstract execution deadline can award a second
- * result.
+ * as their execution phase opens. Ordinary physical attempts are terminal in one
+ * pass. Route-control deployment remains in execution while its authoritative
+ * strategic transfer is reserved or committing, then closes exactly once after
+ * completion or cancellation.
  */
 final class FactionStrategicAssetTickAuthority {
     private static final String SPECIALIST_ID_PREFIX =
@@ -30,7 +31,7 @@ final class FactionStrategicAssetTickAuthority {
             // If this tick reaches a due physical plan immediately before the
             // legacy strategy tick, open execution here. If the legacy tick ran
             // first, the plan is already in EXECUTION. Either order reaches the
-            // same physical resolution before the abstract execution deadline.
+            // physical authority before the abstract execution deadline.
             if ("PLANNING".equals(plan.phase)
                     && game.turn >= plan.phaseUntilTurn) {
                 plan.advancePhase(game.rng, game.turn);
@@ -40,7 +41,39 @@ final class FactionStrategicAssetTickAuthority {
             NpcFactionSite site = game.siteForFaction(
                     plan.faction, game.world.zoneType);
             FactionStrategicAssetAuthority.Outcome outcome;
-            if (facilityPlan
+            if (routePlan) {
+                FactionVehicleRouteStrategicAuthority.Progress progress =
+                        FactionVehicleRouteStrategicAuthority.advance(
+                                game, plan, site);
+                if (!progress.handled()) continue;
+                if (progress.pending()) {
+                    deferPendingRoutePlan(plan, game.turn);
+                    if (progress.changed()) {
+                        int motorPoolChanges = site == null ? 0
+                                : VehicleMotorPoolAuthority.reconcileSiteFleet(
+                                game, site, plan.immediateGoal);
+                        int fleetPower = site == null ? -1
+                                : FactionVehicleDoctrineAuthority.fleet(
+                                game, site.faction, site).totalPower();
+                        plan.lastOutcome = "IN PROGRESS: "
+                                + progress.message();
+                        plan.addHistory(game.turn, plan.lastOutcome);
+                        DebugLog.audit(
+                                "FACTION_STRATEGIC_ASSET_OPERATION",
+                                "faction=" + plan.faction.label
+                                        + " goal=" + plan.immediateGoal
+                                        + " terminal=false success=false"
+                                        + " blocker=" + progress.blocker()
+                                        + " stock=" + progress.stockBefore()
+                                        + "->" + progress.stockAfter()
+                                        + " motorPoolChanges="
+                                        + motorPoolChanges
+                                        + " fleetPower=" + fleetPower);
+                    }
+                    continue;
+                }
+                outcome = progress.outcome();
+            } else if (facilityPlan
                     && FactionStrategicAssetAuthority
                     .CAPTURED_ASSET_SALVAGE_GOAL.equalsIgnoreCase(
                     plan.immediateGoal == null
@@ -51,9 +84,6 @@ final class FactionStrategicAssetTickAuthority {
                         site.name
                                 + " is at its 160-unit stock cap; captured machinery remains intact until storage capacity is available.",
                         site, -1, null);
-            } else if (routePlan) {
-                outcome = FactionVehicleRouteStrategicAuthority.attempt(
-                        game, plan, site);
             } else if (vehiclePlan) {
                 outcome = FactionVehicleStrategicAuthority.attempt(
                         game, plan, site);
@@ -88,7 +118,7 @@ final class FactionStrategicAssetTickAuthority {
             DebugLog.audit("FACTION_STRATEGIC_ASSET_OPERATION",
                     "faction=" + plan.faction.label
                             + " goal=" + plan.immediateGoal
-                            + " success=" + outcome.success()
+                            + " terminal=true success=" + outcome.success()
                             + " blocker=" + outcome.blocker()
                             + " room=" + outcome.roomId()
                             + " stock=" + outcome.stockBefore()
@@ -100,12 +130,20 @@ final class FactionStrategicAssetTickAuthority {
                 game.logEvent("RUMOR: " + plan.publicLine());
             }
 
-            // EXECUTION -> COOLDOWN here prevents the later abstract strategy
-            // resolver from mutating the same plan or asset a second time.
+            // Terminal physical resolution advances to cooldown before the
+            // later abstract strategy resolver can mutate the same plan again.
             plan.advancePhase(game.rng, game.turn);
             resolved++;
         }
         return resolved;
+    }
+
+    private static void deferPendingRoutePlan(FactionStrategicPlan plan,
+                                               int turn) {
+        if (plan == null) return;
+        int next = Math.max(0, turn) + 2;
+        plan.phaseUntilTurn = Math.max(plan.phaseUntilTurn, next);
+        plan.nextDecisionTurn = Math.max(plan.nextDecisionTurn, next);
     }
 
     /**
