@@ -77,8 +77,12 @@ def main() -> int:
     shutil.copytree(source, tampered)
     manifest = tampered / 'manifests' / 'runtime-manifest.json'
     data = json.loads(manifest.read_text(encoding='utf-8'))
-    data['commit'] = 'tampered'
-    manifest.write_text(json.dumps(data, indent=2), encoding='utf-8')
+    declared = next((entry for entry in data.get('artifacts', [])
+                     if entry.get('role') in {'client', 'server', 'launcher'}), None)
+    if declared is None:
+        raise RuntimeError('manifest contains no primary artifact to tamper')
+    declared['sha256'] = '0' * 64
+    manifest.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     run([sys.executable, args.verifier.resolve(), tampered], expect=1)
 
     missing = root / 'Missing Support Library'
