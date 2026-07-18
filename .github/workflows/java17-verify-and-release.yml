@@ -127,6 +127,7 @@ jobs:
         id: dist
         shell: bash
         run: |
+          set -euo pipefail
           ARCHIVE=$(find package -type f -name '*.zip' | head -n 1)
           test -n "$ARCHIVE"
           mkdir extracted
@@ -138,14 +139,19 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          set -euo pipefail
           DIST='${{ steps.dist.outputs.root }}'
-          "$DIST/runtime/bin/java" -Djava.awt.headless=true -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
+          PROFILE="$RUNNER_TEMP/Mechanist Gate3 Profile"
+          mkdir -p "$PROFILE"
+          "$DIST/runtime/bin/java" -Duser.home="$PROFILE" -Djava.awt.headless=true -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
       - name: Run packaged Gate 3 on Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $dist='${{ steps.dist.outputs.root }}'
-          & "$dist/runtime/bin/java.exe" '-Djava.awt.headless=true' -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
+          $profile="$env:RUNNER_TEMP\Mechanist Gate3 Profile"
+          New-Item -ItemType Directory -Force -Path $profile | Out-Null
+          & "$dist/runtime/bin/java.exe" "-Duser.home=$profile" '-Djava.awt.headless=true' -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   synthetic-environment:
@@ -174,10 +180,13 @@ jobs:
         id: dist
         shell: bash
         run: |
+          set -euo pipefail
           ARCHIVE=$(find package -type f -name '*.zip' | head -n 1)
+          test -n "$ARCHIVE"
           mkdir extracted
           python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall('extracted')"
           DIST=$(find extracted -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
+          test -n "$DIST"
           echo "root=$DIST" >> "$GITHUB_OUTPUT"
       - name: Run synthetic distribution auditor
         run: >-
@@ -192,9 +201,12 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          set -euo pipefail
           DIST='${{ steps.dist.outputs.root }}'
+          PROFILE="$RUNNER_TEMP/Mechanist GUI Profile"
+          mkdir -p "$PROFILE"
           set +e
-          HOME="$RUNNER_TEMP/Mechanist GUI Profile" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.TheMechanist
+          HOME="$PROFILE" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" -Duser.home="$PROFILE" -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.TheMechanist
           CODE=$?
           set -e
           if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
@@ -203,7 +215,10 @@ jobs:
         shell: pwsh
         run: |
           $dist='${{ steps.dist.outputs.root }}'
-          $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList @('-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.TheMechanist') -PassThru
+          $profile="$env:RUNNER_TEMP\Mechanist GUI Profile"
+          New-Item -ItemType Directory -Force -Path $profile | Out-Null
+          $args=@("-Duser.home=$profile",'-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.TheMechanist')
+          $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList $args -PassThru -WorkingDirectory $env:RUNNER_TEMP
           Start-Sleep -Seconds 12
           if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
@@ -225,6 +240,7 @@ jobs:
     outputs:
       history_sha: ${{ steps.commit.outputs.history_sha }}
       tag: ${{ steps.identity.outputs.tag }}
+      version: ${{ steps.identity.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -235,22 +251,38 @@ jobs:
           pattern: TheMechanist-*
           path: release-assets
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Synthetic-*
+          path: synthetic-assets
+          merge-multiple: true
       - name: Resolve identity
         id: identity
         shell: bash
         env:
           REQUESTED_TAG: ${{ inputs.release_tag }}
         run: |
+          set -euo pipefail
           VERSION=$(python - <<'PY'
-          import glob,json
+          import glob,json,os
           reports=[json.load(open(p,encoding='utf-8')) for p in glob.glob('release-assets/verification-*.json')]
-          versions={r['version'] for r in reports}; commits={r['commit'] for r in reports}; platforms={r['platform'] for r in reports}
-          assert len(versions)==1 and commits=={'${{ github.sha }}'} and {'linux-x64','windows-x64'}.issubset(platforms)
+          synthetic=[json.load(open(p,encoding='utf-8')) for p in glob.glob('synthetic-assets/synthetic-*.json')]
+          versions={r['version'] for r in reports}
+          commits={r['commit'] for r in reports}
+          platforms={r['platform'] for r in reports}
+          statuses={r['status'] for r in reports}
+          synthetic_statuses={r.get('status') for r in synthetic}
+          if len(reports)!=2 or len(versions)!=1: raise SystemExit('expected exactly two matching verification reports')
+          if commits!={os.environ['GITHUB_SHA']}: raise SystemExit(f'commit mismatch: {sorted(commits)}')
+          if platforms!={'linux-x64','windows-x64'}: raise SystemExit(f'platform mismatch: {sorted(platforms)}')
+          if statuses!={'verified'}: raise SystemExit(f'verification status mismatch: {sorted(statuses)}')
+          if len(synthetic)!=2 or synthetic_statuses!={'passed'}: raise SystemExit('both synthetic reports must pass')
           print(next(iter(versions)))
           PY
           )
           TAG="${REQUESTED_TAG:-v$VERSION}"
           test "$TAG" = "v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Record verified release
         run: >-
@@ -263,6 +295,7 @@ jobs:
         id: commit
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add ROOT_docs/DEVELOPMENT_HISTORY.md
@@ -272,9 +305,76 @@ jobs:
           fi
           echo "history_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+  release-certification:
+    name: Final immutable distribution certification
+    needs: [record-history, synthetic-environment]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      checksums: ${{ steps.certify.outputs.checksums }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.record-history.outputs.history_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Synthetic-*
+          path: synthetic-assets
+          merge-multiple: true
+      - name: Reopen and certify release artifacts
+        id: certify
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          RELEASE_VERSION: ${{ needs.record-history.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p final-certification
+          ZIP_COUNT=0
+          for ARCHIVE in release-assets/TheMechanist-*.zip; do
+            test -f "$ARCHIVE"
+            NAME=$(basename "$ARCHIVE" .zip)
+            DEST="final-certification/$NAME"
+            mkdir -p "$DEST"
+            python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall(r'$DEST')"
+            DIST="$DEST/$NAME"
+            PLATFORM=$(python -c "import json; print(json.load(open(r'$DIST/manifests/runtime-manifest.json',encoding='utf-8'))['platform'])")
+            python ROOT_build/ci/verify_runnable_distribution.py "$DIST" --archive "$ARCHIVE" --report "final-certification/final-$PLATFORM.json"
+            python -c "import json,os; r=json.load(open(r'final-certification/final-$PLATFORM.json')); assert r['commit']==os.environ['SOURCE_SHA']; assert r['version']==os.environ['RELEASE_VERSION']; assert r['status']=='verified'"
+            ZIP_COUNT=$((ZIP_COUNT+1))
+          done
+          test "$ZIP_COUNT" -eq 2
+          python - <<'PY'
+          import glob,json
+          reports=[json.load(open(p,encoding='utf-8')) for p in glob.glob('synthetic-assets/synthetic-*.json')]
+          assert len(reports)==2
+          assert {r.get('status') for r in reports}=={'passed'}
+          assert all(r.get('packagedGate3') and r.get('serverOperation') and r.get('tamperedManifestRejected') and r.get('missingSupportRejected') for r in reports)
+          PY
+          (cd release-assets && sha256sum TheMechanist-*.zip > SHA256SUMS.txt)
+          echo "checksums=release-assets/SHA256SUMS.txt" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Release-Certification
+          path: |
+            release-assets/SHA256SUMS.txt
+            final-certification/final-*.json
+          if-no-files-found: error
+          retention-days: 90
+
   publish-prerelease:
     name: Publish verified prerelease
-    needs: record-history
+    needs: [record-history, release-certification]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -284,6 +384,15 @@ jobs:
           pattern: TheMechanist-*
           path: release-assets
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Synthetic-*
+          path: synthetic-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: Release-Certification
+          path: certification-assets
       - name: Publish release
         shell: bash
         env:
@@ -291,6 +400,11 @@ jobs:
           TAG: ${{ needs.record-history.outputs.tag }}
           TARGET: ${{ needs.record-history.outputs.history_sha }}
         run: |
-          cd release-assets
-          sha256sum *.zip > SHA256SUMS.txt
-          gh release create "$TAG" *.zip verification-*.json SHA256SUMS.txt --target "$TARGET" --title "The Mechanist $TAG" --generate-notes --prerelease
+          set -euo pipefail
+          mapfile -t ASSETS < <(find release-assets synthetic-assets certification-assets -type f \( -name '*.zip' -o -name 'verification-*.json' -o -name 'synthetic-*.json' -o -name 'final-*.json' -o -name 'SHA256SUMS.txt' \) | sort)
+          test ${#ASSETS[@]} -ge 9
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
+          else
+            gh release create "$TAG" "${ASSETS[@]}" --target "$TARGET" --title "The Mechanist $TAG" --generate-notes --prerelease
+          fi
