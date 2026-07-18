@@ -3,7 +3,6 @@ package mechanist;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * Shared large-target combat boundary for vehicles, machines, durable fixtures,
@@ -29,17 +28,14 @@ final class StructuralScaleCombatAuthority {
     }
 
     enum TargetKind {
-        ACTOR("actor"),
-        VEHICLE("vehicle"),
-        MACHINE("machine"),
-        STRUCTURE("structure"),
-        DOOR("door"),
-        WALL("wall"),
-        DURABLE_OBJECT("durable object"),
-        NONE("no durable target");
-
-        final String label;
-        TargetKind(String label) { this.label = label; }
+        ACTOR,
+        VEHICLE,
+        MACHINE,
+        STRUCTURE,
+        DOOR,
+        WALL,
+        DURABLE_OBJECT,
+        NONE
     }
 
     record WeaponProfile(String name, WeaponTier tier, int force,
@@ -98,7 +94,7 @@ final class StructuralScaleCombatAuthority {
         if (distance > weapon.range()) {
             return new Preview(false, false, false, 0, 0, weapon, target,
                     target.label() + " is outside the " + weapon.tier().label
-                            + " range of " + weapon.range() + " tile(s)." );
+                            + " range of " + weapon.range() + " tile(s).");
         }
         if (weapon.range() > 1 && !clearLine(game.world,
                 game.playerX, game.playerY, x, y)) {
@@ -154,16 +150,17 @@ final class StructuralScaleCombatAuthority {
         } else {
             changed = applyDamage(game, preview.target(), damage,
                     preview.weapon().name());
-            TargetProfile after = targetAt(game, preview.target().x(),
-                    preview.target().y());
-            impact = impactLine(preview.weapon(), preview.target(), after,
-                    damage, changed);
+            int remaining = remainingIntegrity(game, preview.target());
+            impact = impactLine(preview.weapon(), preview.target(),
+                    remaining, damage, changed);
         }
         game.lastTargetingReport = impact;
         game.advanceTurn(impact);
-        game.markLocalDirtyRegion("structural combat impact",
-                preview.target().x(), preview.target().y(), 3,
-                true, false, true, false);
+        if (changed) {
+            game.markLocalDirtyRegion("structural combat impact",
+                    preview.target().x(), preview.target().y(), 3,
+                    true, false, true, false);
+        }
         return new Result(true, true, changed, changed ? damage : 0,
                 ammunition, impact, preview);
     }
@@ -282,11 +279,10 @@ final class StructuralScaleCombatAuthority {
         }
         BaseObject base = baseObjectAt(game, x, y);
         if (base != null && !base.underConstruction) {
-            int maximum = Math.max(100, Math.max(0, base.integrity));
             return new TargetProfile(TargetKind.MACHINE,
                     clean(base.name, "constructed machine"),
-                    baseArmor(base), Math.max(0, base.integrity), maximum,
-                    null, base, null, x, y);
+                    baseArmor(base), Math.max(0, base.integrity),
+                    baseMaximum(base), null, base, null, x, y);
         }
         if (object != null && durableObject(object)) {
             int maximum = intValue(MapObjectState.stockValue(
@@ -302,7 +298,7 @@ final class StructuralScaleCombatAuthority {
                     object, null, null, x, y);
         }
         char tile = game.world.tiles[x][y];
-        if (game.isDoorTile(tile)) {
+        if (tile != '/' && game.isDoorTile(tile)) {
             return tileTarget(game, TargetKind.DOOR, doorLabel(tile),
                     tileArmor(tile), tileMaximum(tile), x, y);
         }
@@ -368,6 +364,26 @@ final class StructuralScaleCombatAuthority {
         return before != after;
     }
 
+    private static int remainingIntegrity(GamePanel game,
+                                          TargetProfile target) {
+        if (target.kind() == TargetKind.VEHICLE) {
+            VehicleRuntimeAuthority.Snapshot snapshot =
+                    VehicleRuntimeAuthority.inspect(game.world,
+                            target.mapObject());
+            return snapshot == null ? 0 : snapshot.components().getOrDefault(
+                    target.vehicleComponent(), 0);
+        }
+        if (target.baseObject() != null) {
+            return Math.max(0, target.baseObject().integrity);
+        }
+        if (target.mapObject() != null) {
+            return intValue(MapObjectState.stockValue(
+                    target.mapObject().stockState, "structuralIntegrity"), 0);
+        }
+        return Math.max(0, game.terrainIntegrity.getOrDefault(
+                terrainKey(game, target.x(), target.y()), 0));
+    }
+
     private static void breachTile(GamePanel game, int x, int y, char tile) {
         if (game.isDoorTile(tile)) game.world.tiles[x][y] = '/';
         else if (wallTile(tile) || structuralTile(tile)) game.world.tiles[x][y] = '.';
@@ -402,18 +418,17 @@ final class StructuralScaleCombatAuthority {
     }
 
     private static String impactLine(WeaponProfile weapon,
-                                     TargetProfile before,
-                                     TargetProfile after,
-                                     int damage, boolean changed) {
-        if (!changed) return ineffectiveLine(weapon, before);
-        int remaining = Math.max(0, after.currentIntegrity());
+                                     TargetProfile target,
+                                     int remaining, int damage,
+                                     boolean changed) {
+        if (!changed) return ineffectiveLine(weapon, target);
         if (remaining <= 0) {
-            return weapon.name() + " breaches " + before.label()
+            return weapon.name() + " breaches " + target.label()
                     + "; structural integrity is exhausted.";
         }
-        return weapon.name() + " damages " + before.label() + " for "
+        return weapon.name() + " damages " + target.label() + " for "
                 + damage + " structural integrity; " + remaining + "/"
-                + after.maximumIntegrity() + " remains.";
+                + target.maximumIntegrity() + " remains.";
     }
 
     private static VehicleRuntimeAuthority.Component vehicleComponent(
@@ -452,13 +467,25 @@ final class StructuralScaleCombatAuthority {
     }
 
     private static int baseArmor(BaseObject base) {
-        String text = (clean(base == null ? null : base.name, "") + " "
-                + clean(base == null ? null : base.description, ""))
-                .toLowerCase(Locale.ROOT);
+        String text = baseText(base);
         if (contains(text, "reactor", "forge", "press", "industrial",
                 "armored", "heavy")) return 12;
         if (contains(text, "machine", "generator", "workbench", "fabricator")) return 10;
         return 8;
+    }
+
+    private static int baseMaximum(BaseObject base) {
+        String text = baseText(base);
+        if (contains(text, "reactor", "forge", "press", "industrial",
+                "armored", "heavy")) return 220;
+        if (contains(text, "machine", "generator", "workbench", "fabricator")) return 180;
+        return 140;
+    }
+
+    private static String baseText(BaseObject base) {
+        return (clean(base == null ? null : base.name, "") + " "
+                + clean(base == null ? null : base.description, ""))
+                .toLowerCase(Locale.ROOT);
     }
 
     private static boolean durableObject(MapObjectState object) {
