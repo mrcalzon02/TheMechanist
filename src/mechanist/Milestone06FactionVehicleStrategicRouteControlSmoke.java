@@ -61,7 +61,7 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
             List<String> inventoryBefore = List.copyOf(game.inventory);
 
             require(VehicleRuntimeAuthority.applyDamage(cargo,
-                    VehicleRuntimeAuthority.Component.MOBILITY, 55,
+                    VehicleRuntimeAuthority.Component.MOBILITY, 30,
                     game.turn, "strategic maintenance priority smoke").success(),
                     "maintenance priority setup should damage the cargo truck mobility system");
             int mobilityBeforeRepair = component(game, cargo,
