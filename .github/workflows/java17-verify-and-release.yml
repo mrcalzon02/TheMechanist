@@ -30,11 +30,14 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  RELEASE_REQUESTED: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release) || (github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')) }}
+
 jobs:
   verify-and-package:
-    name: Verify and package (${{ matrix.platform }})
+    name: Build and package (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
@@ -70,13 +73,10 @@ jobs:
           javac -version
           mvn -version
           python --version
-          printf 'commit=%s\nplatform=%s\n' "$GITHUB_SHA" "${{ matrix.platform }}"
+          printf 'commit=%s\nplatform=%s\nrelease_requested=%s\n' "$GITHUB_SHA" "${{ matrix.platform }}" "$RELEASE_REQUESTED"
 
       - name: Compile and build Java 17 client and server jars
         run: mvn -B -DskipTests clean package
-
-      - name: Run Gate 3 authoritative smoke suite
-        run: java -Djava.awt.headless=true -cp target/TheMechanist-all.jar mechanist.Gate3PlayerFacingTextSmokeSuite
 
       - name: Run focused packaged boot smoke
         run: java -Djava.awt.headless=true -cp target/TheMechanist-all.jar mechanist.BootStartupAudioSilenceSmoke
@@ -88,7 +88,7 @@ jobs:
 
       - name: Build ordinary verified runnable distribution
         id: package_development
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') && !(github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+        if: env.RELEASE_REQUESTED != 'true'
         run: >-
           python ROOT_build/ci/build_runnable_distribution.py
           --repo .
@@ -97,7 +97,7 @@ jobs:
 
       - name: Build release-hardened runnable distribution
         id: package_release
-        if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+        if: env.RELEASE_REQUESTED == 'true'
         run: >-
           python ROOT_build/ci/build_runnable_distribution.py
           --repo .
@@ -129,26 +129,6 @@ jobs:
           --archive "${{ steps.package.outputs.archive }}"
           --report "dist/releases/verification-${{ matrix.platform }}.json"
 
-      - name: Run Gate 3 from staged client distribution
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euo pipefail
-          DIST='${{ steps.package.outputs.distribution }}'
-          "$DIST/runtime/bin/java" -Djava.awt.headless=true \
-            -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" \
-            mechanist.Gate3PlayerFacingTextSmokeSuite
-
-      - name: Run Gate 3 from staged client distribution
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $dist = '${{ steps.package.outputs.distribution }}'
-          & "$dist/runtime/bin/java.exe" '-Djava.awt.headless=true' `
-            -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" `
-            mechanist.Gate3PlayerFacingTextSmokeSuite
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
       - name: Run staged headless server
         if: runner.os == 'Linux'
         shell: bash
@@ -171,24 +151,6 @@ jobs:
             mechanist.MechanistServerMain --help
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Publish verification summary
-        shell: bash
-        run: |
-          set -euo pipefail
-          {
-            echo "## Java 17 distribution gate — ${{ matrix.platform }}"
-            echo
-            echo "- Commit: \`${{ github.sha }}\`"
-            echo "- Version: \`${{ steps.package.outputs.version }}\`"
-            echo "- Platform: \`${{ steps.package.outputs.platform }}\`"
-            echo "- Gate 3: passed"
-            echo "- Java 17 compile: passed"
-            echo "- Client packaged smoke: passed"
-            echo "- Server packaged smoke: passed"
-            echo "- Distribution verifier: passed"
-            echo "- Archive: \`$(basename '${{ steps.package.outputs.archive }}')\`"
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - name: Upload runnable distribution and verification report
         uses: actions/upload-artifact@v4
         with:
@@ -200,96 +162,274 @@ jobs:
           retention-days: 30
           compression-level: 0
 
-  publish-release:
-    name: Publish verified GitHub Release
+      - name: Publish platform build summary
+        shell: bash
+        run: |
+          {
+            echo "## Java 17 package prerequisite — ${{ matrix.platform }}"
+            echo
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Version: \`${{ steps.package.outputs.version }}\`"
+            echo "- Java 17 compile: passed"
+            echo "- Client boot smoke: passed"
+            echo "- Server operation smoke: passed"
+            echo "- Initial distribution verification: passed"
+            echo "- Gate 3: deferred to the downstream certification job"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  gate3-certification:
+    name: Gate 3 after package completion (${{ matrix.platform }})
     needs: verify-and-package
-    if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+
+    steps:
+      - name: Download completed platform distribution
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*-${{ matrix.platform }}
+          path: gate3-assets
+          merge-multiple: true
+
+      - name: Extract verified distribution
+        id: extracted
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE=$(find gate3-assets -maxdepth 1 -type f -name '*.zip' | head -n 1)
+          test -n "$ARCHIVE"
+          rm -rf gate3-dist
+          mkdir -p gate3-dist
+          python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall('gate3-dist')"
+          DIST=$(find gate3-dist -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
+          test -n "$DIST"
+          echo "distribution=$DIST" >> "$GITHUB_OUTPUT"
+
+      - name: Run Gate 3 from completed Linux distribution
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST='${{ steps.extracted.outputs.distribution }}'
+          "$DIST/runtime/bin/java" -Djava.awt.headless=true \
+            -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" \
+            mechanist.Gate3PlayerFacingTextSmokeSuite
+
+      - name: Run Gate 3 from completed Windows distribution
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist = '${{ steps.extracted.outputs.distribution }}'
+          & "$dist/runtime/bin/java.exe" '-Djava.awt.headless=true' `
+            -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" `
+            mechanist.Gate3PlayerFacingTextSmokeSuite
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Publish Gate 3 summary
+        shell: bash
+        run: |
+          {
+            echo "## Downstream Gate 3 certification — ${{ matrix.platform }}"
+            echo
+            echo "- Package prerequisites completed before Gate 3: yes"
+            echo "- Gate 3 from staged runnable distribution: passed"
+            echo "- Commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  record-release-history:
+    name: Record verified release history
+    needs: gate3-certification
+    if: ${{ env.RELEASE_REQUESTED == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: write
+    outputs:
+      history_sha: ${{ steps.commit.outputs.history_sha }}
+      version: ${{ steps.identity.outputs.version }}
+      tag: ${{ steps.identity.outputs.tag }}
 
     steps:
-      - name: Check out release commit
+      - name: Check out main for verified history update
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
-      - name: Download verified distributions
+      - name: Download verified platform reports and distributions
         uses: actions/download-artifact@v4
         with:
           pattern: TheMechanist-*
           path: release-assets
           merge-multiple: true
 
-      - name: Resolve and validate release identity
-        id: release
+      - name: Resolve verified release identity
+        id: identity
         shell: bash
         env:
           MANUAL_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            TAG="${GITHUB_REF_NAME}"
-          else
-            TAG="$MANUAL_TAG"
-          fi
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9._-]*$ ]]; then
-            echo "A manual release requires a valid v-prefixed release_tag such as v0.9.10iz." >&2
-            exit 1
-          fi
-          ZIP_COUNT=$(find release-assets -type f -name '*.zip' | wc -l | tr -d ' ')
-          REPORT_COUNT=$(find release-assets -type f -name 'verification-*.json' | wc -l | tr -d ' ')
-          if [[ "$ZIP_COUNT" -lt 2 || "$REPORT_COUNT" -lt 2 ]]; then
-            echo "Expected verified Linux and Windows ZIPs and reports; found ZIPs=$ZIP_COUNT reports=$REPORT_COUNT." >&2
-            exit 1
-          fi
-          RELEASE_VERSION=$(python - <<'PY'
-          import glob, json, os, sys
+          VERSION=$(python - <<'PY'
+          import glob, json, os
           reports = [json.load(open(path, encoding='utf-8')) for path in glob.glob('release-assets/**/verification-*.json', recursive=True)]
-          versions = {str(report.get('version', '')) for report in reports}
-          commits = {str(report.get('commit', '')) for report in reports}
-          platforms = {str(report.get('platform', '')) for report in reports}
-          if len(versions) != 1 or '' in versions:
-              raise SystemExit(f'verification reports disagree on version: {sorted(versions)}')
-          if commits != {os.environ['GITHUB_SHA']}:
-              raise SystemExit(f'verification reports do not identify exact release commit: {sorted(commits)}')
-          if not {'linux-x64', 'windows-x64'}.issubset(platforms):
-              raise SystemExit(f'verification reports are missing required platforms: {sorted(platforms)}')
+          versions = {str(r.get('version', '')) for r in reports}
+          commits = {str(r.get('commit', '')) for r in reports}
+          platforms = {str(r.get('platform', '')) for r in reports}
+          statuses = {str(r.get('status', '')) for r in reports}
+          if len(versions) != 1 or '' in versions: raise SystemExit(f'version mismatch: {sorted(versions)}')
+          if commits != {os.environ['GITHUB_SHA']}: raise SystemExit(f'commit mismatch: {sorted(commits)}')
+          if not {'linux-x64', 'windows-x64'}.issubset(platforms): raise SystemExit(f'platform mismatch: {sorted(platforms)}')
+          if statuses != {'verified'}: raise SystemExit(f'status mismatch: {sorted(statuses)}')
           print(next(iter(versions)))
           PY
           )
-          if [[ "$TAG" != "v$RELEASE_VERSION" ]]; then
-            echo "Release tag $TAG does not match verified artifact version v$RELEASE_VERSION." >&2
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            TAG="$GITHUB_REF_NAME"
+          elif [[ -n "$MANUAL_TAG" ]]; then
+            TAG="$MANUAL_TAG"
+          else
+            TAG="v$VERSION"
+          fi
+          if [[ "$TAG" != "v$VERSION" ]]; then
+            echo "Release tag $TAG does not match verified version v$VERSION." >&2
             exit 1
           fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Append idempotent verified release history entry
+        run: >-
+          python ROOT_build/ci/record_verified_release.py
+          --history ROOT_docs/DEVELOPMENT_HISTORY.md
+          --reports 'release-assets/**/verification-*.json'
+          --commit '${{ github.sha }}'
+          --run-url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
+      - name: Commit verified development history
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_docs/DEVELOPMENT_HISTORY.md
+          if git diff --cached --quiet; then
+            echo "No new history entry was required."
+          else
+            git commit -m "Record verified remote release ${{ steps.identity.outputs.version }} [skip ci]"
+            git push origin HEAD:main
+          fi
+          echo "history_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  final-distribution-certification:
+    name: Final distribution certification after history
+    needs: record-release-history
+    if: ${{ env.RELEASE_REQUESTED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out release tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.record-release-history.outputs.history_sha }}
+
+      - name: Download release candidates
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Reverify both runnable distributions after history record
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf final-check
+          mkdir -p final-check
+          COUNT=0
+          for ARCHIVE in release-assets/*.zip; do
+            test -f "$ARCHIVE"
+            NAME=$(basename "$ARCHIVE" .zip)
+            DEST="final-check/$NAME"
+            mkdir -p "$DEST"
+            python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall(r'$DEST')"
+            DIST="$DEST/$NAME"
+            PLATFORM=$(python -c "import json; print(json.load(open(r'$DIST/manifests/runtime-manifest.json', encoding='utf-8'))['platform'])")
+            REPORT="release-assets/verification-$PLATFORM.json"
+            python ROOT_build/ci/verify_runnable_distribution.py "$DIST" --archive "$ARCHIVE" --report "final-check/final-$PLATFORM.json"
+            python -c "import json; a=json.load(open(r'$REPORT')); b=json.load(open(r'final-check/final-$PLATFORM.json')); assert a['commit']==b['commit']=='${{ github.sha }}'; assert a['version']==b['version']=='${{ needs.record-release-history.outputs.version }}'; assert b['status']=='verified'"
+            COUNT=$((COUNT + 1))
+          done
+          test "$COUNT" -eq 2
+
+      - name: Publish final certification summary
+        shell: bash
+        run: |
+          {
+            echo "## Final distribution certification"
+            echo
+            echo "- Verified source commit: \`${{ github.sha }}\`"
+            echo "- Development-history commit: \`${{ needs.record-release-history.outputs.history_sha }}\`"
+            echo "- Version: \`${{ needs.record-release-history.outputs.version }}\`"
+            echo "- Linux and Windows archives reverified after history update: passed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish-release:
+    name: Publish verified GitHub Release
+    needs: [record-release-history, final-distribution-certification]
+    if: ${{ env.RELEASE_REQUESTED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download certified release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: TheMechanist-*
+          path: release-assets
+          merge-multiple: true
 
       - name: Generate release checksums
         shell: bash
         run: |
           set -euo pipefail
           cd release-assets
-          find . -type f -name '*.zip' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          find . -maxdepth 1 -type f -name '*.zip' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Create or update GitHub Release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release.outputs.tag }}
-          PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease }}
+          TAG: ${{ needs.record-release-history.outputs.tag }}
+          TARGET: ${{ needs.record-release-history.outputs.history_sha }}
+          PRERELEASE: ${{ (github.event_name == 'workflow_dispatch' && inputs.prerelease) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
         run: |
           set -euo pipefail
-          mapfile -t ASSETS < <(find release-assets -maxdepth 2 -type f \( -name '*.zip' -o -name 'SHA256SUMS.txt' -o -name 'verification-*.json' \) | sort)
+          mapfile -t ASSETS < <(find release-assets -maxdepth 1 -type f \( -name '*.zip' -o -name 'SHA256SUMS.txt' -o -name 'verification-*.json' \) | sort)
+          if [[ ${#ASSETS[@]} -lt 5 ]]; then
+            echo "Expected two ZIPs, two verification reports, and checksums." >&2
+            exit 1
+          fi
+          EXTRA=()
+          if [[ "$PRERELEASE" == "true" ]]; then EXTRA+=(--prerelease); fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --clobber
           else
-            EXTRA=()
-            if [[ "$PRERELEASE" == "true" ]]; then EXTRA+=(--prerelease); fi
             gh release create "$TAG" "${ASSETS[@]}" \
-              --target "${{ github.sha }}" \
+              --target "$TARGET" \
               --title "The Mechanist $TAG" \
               --generate-notes \
               "${EXTRA[@]}"
@@ -301,10 +441,9 @@ jobs:
           {
             echo "## GitHub Release published"
             echo
-            echo "- Tag: \`${{ steps.release.outputs.tag }}\`"
-            echo "- Version: \`${{ steps.release.outputs.version }}\`"
-            echo "- Commit: \`${{ github.sha }}\`"
-            echo "- Linux and Windows portable distributions: attached"
-            echo "- SHA-256 checksums: attached"
-            echo "- Java 17, Gate 3, packaged client/server, classfile, manifest, and ZIP gates: passed before publication"
+            echo "- Tag: \`${{ needs.record-release-history.outputs.tag }}\`"
+            echo "- Version: \`${{ needs.record-release-history.outputs.version }}\`"
+            echo "- Verified source commit: \`${{ github.sha }}\`"
+            echo "- History/release target: \`${{ needs.record-release-history.outputs.history_sha }}\`"
+            echo "- Java 17 compile, packaged operation, downstream Gate 3, history update, and final distribution recertification all passed before publication"
           } >> "$GITHUB_STEP_SUMMARY"
