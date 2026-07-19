@@ -297,6 +297,7 @@ final class Milestone06FactionVehicleStrategicRouteControlSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06FactionVehicleRouteTransitCommitSmoke.main(args);
     }
 
     private static MapObjectState vehicleForPlan(World world,
