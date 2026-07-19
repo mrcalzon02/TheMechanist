@@ -92,50 +92,76 @@ final class FactionStrategicAssetTickAuthority {
                         game, plan, site);
             }
             if (!outcome.handled()) continue;
-
-            int motorPoolChanges = 0;
-            int fleetPower = -1;
-            if (outcome.success() && (vehiclePlan || routePlan)
-                    && site != null) {
-                motorPoolChanges =
-                        VehicleMotorPoolAuthority.reconcileSiteFleet(
-                                game, site, plan.immediateGoal);
-                fleetPower = FactionVehicleDoctrineAuthority.fleet(
-                        game, site.faction, site).totalPower();
-            }
-            if (outcome.success()) {
-                plan.success++;
-            } else {
-                plan.failure++;
-                game.addFactionMarketPressure(plan.faction, 1,
-                        "blocked physical strategic asset operation: "
-                                + outcome.blocker());
-            }
-            String prefix = outcome.success()
-                    ? "SUCCESS: " : "FAILURE: ";
-            plan.lastOutcome = prefix + outcome.message();
-            plan.addHistory(game.turn, plan.lastOutcome);
-            DebugLog.audit("FACTION_STRATEGIC_ASSET_OPERATION",
-                    "faction=" + plan.faction.label
-                            + " goal=" + plan.immediateGoal
-                            + " terminal=true success=" + outcome.success()
-                            + " blocker=" + outcome.blocker()
-                            + " room=" + outcome.roomId()
-                            + " stock=" + outcome.stockBefore()
-                            + "->" + outcome.stockAfter()
-                            + " motorPoolChanges=" + motorPoolChanges
-                            + " fleetPower=" + fleetPower);
-            if (game.rng.nextInt(100)
-                    < Math.max(10, 65 - plan.secrecy / 2)) {
-                game.logEvent("RUMOR: " + plan.publicLine());
-            }
-
-            // Terminal physical resolution advances to cooldown before the
-            // later abstract strategy resolver can mutate the same plan again.
-            plan.advancePhase(game.rng, game.turn);
-            resolved++;
+            resolved += resolveTerminal(game, plan, site,
+                    vehiclePlan, routePlan, outcome);
         }
         return resolved;
+    }
+
+    /**
+     * Completes a terminal route progress result produced by a resolved-world
+     * transfer bridge. Keeping this accounting here guarantees that direct
+     * transfer completion and ordinary tick completion share the same counters,
+     * audit, rumor, motor-pool reconciliation, market pressure, and cooldown.
+     */
+    static int finalizeRouteProgress(
+            GamePanel game, FactionStrategicPlan plan,
+            NpcFactionSite site,
+            FactionVehicleRouteStrategicAuthority.Progress progress) {
+        if (progress == null || !progress.handled()
+                || progress.pending()) return 0;
+        return resolveTerminal(game, plan, site,
+                false, true, progress.outcome());
+    }
+
+    private static int resolveTerminal(
+            GamePanel game, FactionStrategicPlan plan,
+            NpcFactionSite site, boolean vehiclePlan,
+            boolean routePlan,
+            FactionStrategicAssetAuthority.Outcome outcome) {
+        if (game == null || plan == null || outcome == null
+                || !outcome.handled()) return 0;
+        int motorPoolChanges = 0;
+        int fleetPower = -1;
+        if (outcome.success() && (vehiclePlan || routePlan)
+                && site != null) {
+            motorPoolChanges =
+                    VehicleMotorPoolAuthority.reconcileSiteFleet(
+                            game, site, plan.immediateGoal);
+            fleetPower = FactionVehicleDoctrineAuthority.fleet(
+                    game, site.faction, site).totalPower();
+        }
+        if (outcome.success()) {
+            plan.success++;
+        } else {
+            plan.failure++;
+            game.addFactionMarketPressure(plan.faction, 1,
+                    "blocked physical strategic asset operation: "
+                            + outcome.blocker());
+        }
+        String prefix = outcome.success()
+                ? "SUCCESS: " : "FAILURE: ";
+        plan.lastOutcome = prefix + outcome.message();
+        plan.addHistory(game.turn, plan.lastOutcome);
+        DebugLog.audit("FACTION_STRATEGIC_ASSET_OPERATION",
+                "faction=" + plan.faction.label
+                        + " goal=" + plan.immediateGoal
+                        + " terminal=true success=" + outcome.success()
+                        + " blocker=" + outcome.blocker()
+                        + " room=" + outcome.roomId()
+                        + " stock=" + outcome.stockBefore()
+                        + "->" + outcome.stockAfter()
+                        + " motorPoolChanges=" + motorPoolChanges
+                        + " fleetPower=" + fleetPower);
+        if (game.rng.nextInt(100)
+                < Math.max(10, 65 - plan.secrecy / 2)) {
+            game.logEvent("RUMOR: " + plan.publicLine());
+        }
+
+        // Terminal physical resolution advances to cooldown before the
+        // later abstract strategy resolver can mutate the same plan again.
+        plan.advancePhase(game.rng, game.turn);
+        return 1;
     }
 
     private static void deferPendingRoutePlan(FactionStrategicPlan plan,
