@@ -30,6 +30,9 @@ REQUIRED_DOCS = {
         "readiness, presence, and chat-state",
         "monotonic command sequence",
         "deterministically ordered hosted-session roster",
+        "authoritative hosted-roster broadcasts",
+        "asynchronous `mech` control frames",
+        "separate from `seq` relay payloads",
         "unsupported world verbs are rejected",
         "remote world state",
         "redistribution",
@@ -89,6 +92,8 @@ def verify(root: pathlib.Path) -> dict[str, object]:
         "documentCount": len(checked),
         "canonicalManifestCoverage": True,
         "hostedSessionLimitationsCovered": True,
+        "hostedRosterBroadcastLimitationsCovered": True,
+        "asynchronousControlAndRelaySeparationCovered": True,
         "remoteWorldAuthorityOverclaimPrevented": True,
     }
 
