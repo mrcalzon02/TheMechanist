@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Stage a verified canonical distribution for native jpackage installers.
 
-The canonical portable distribution remains the source of truth. Native installers
-consume its verified launcher, client, server, support libraries, and documentation
-instead of rebuilding a competing package tree. The canonical jlink runtime is
-supplied to jpackage separately and is therefore not duplicated inside the app
-payload.
+The canonical portable distribution remains the source of truth. Native
+installers consume its verified launcher, client, server, support libraries,
+documentation, and launch scripts instead of rebuilding a competing package
+tree. The canonical jlink runtime is supplied to jpackage separately and is
+therefore not duplicated inside the app payload.
 """
 
 from __future__ import annotations
@@ -17,16 +17,23 @@ import pathlib
 import shutil
 import sys
 
-from verify_runnable_distribution import verify_distribution
+from verify_runnable_distribution import (
+    REMOTE_CLIENT_MAIN,
+    verify_distribution,
+)
 
-LAUNCHER_MANIFEST = pathlib.PurePosixPath("manifests/launcher-runtime-manifest.json")
+LAUNCHER_MANIFEST = pathlib.PurePosixPath(
+    "manifests/launcher-runtime-manifest.json"
+)
 COPY_ROOTS = ("launcher", "packages", "docs")
 COPY_FILES = (
     "Run-The-Mechanist.cmd",
     "Run-Client-Direct.cmd",
+    "Run-Remote-Client.cmd",
     "Run-Server.cmd",
     "run-the-mechanist.sh",
     "run-client-direct.sh",
+    "run-remote-client.sh",
     "run-server.sh",
 )
 
@@ -47,6 +54,14 @@ def copy_optional(source: pathlib.Path, destination: pathlib.Path) -> None:
         shutil.copy2(source, destination)
 
 
+def platform_remote_launcher(platform_name: str) -> str:
+    return (
+        "Run-Remote-Client.cmd"
+        if platform_name.startswith("windows-")
+        else "run-remote-client.sh"
+    )
+
+
 def stage_payload(
     distribution: pathlib.Path,
     output: pathlib.Path,
@@ -64,6 +79,10 @@ def stage_payload(
         raise RuntimeError(
             f"canonical distribution platform {platform_name!r}, "
             f"expected {expected_platform!r}"
+        )
+    if summary.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
+        raise RuntimeError(
+            "canonical distribution does not expose the governed remote-client entry"
         )
 
     source_manifest = distribution / "manifests" / "runtime-manifest.json"
@@ -83,10 +102,14 @@ def stage_payload(
 
     certification = output / "certification"
     certification.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source_manifest, certification / "canonical-runtime-manifest.json")
+    shutil.copy2(
+        source_manifest,
+        certification / "canonical-runtime-manifest.json",
+    )
 
+    remote_launcher = platform_remote_launcher(platform_name)
     source_record = {
-        "schema": 1,
+        "schema": 2,
         "sourceDistribution": distribution.name,
         "version": summary["version"],
         "platform": platform_name,
@@ -96,9 +119,18 @@ def stage_payload(
         "canonicalManifestSha256": sha256(source_manifest),
         "canonicalArtifactCount": summary["artifactCount"],
         "launcherCompatibilityManifest": LAUNCHER_MANIFEST.as_posix(),
-        "runtimeImageSource": "canonical distribution runtime/ supplied to jpackage",
+        "remoteClientEntryPoint": REMOTE_CLIENT_MAIN,
+        "portableRemoteClientLauncher": remote_launcher,
+        "nativeRemoteClientLauncher": "The Mechanist Remote Lobby",
+        "runtimeImageSource": (
+            "canonical distribution runtime/ supplied to jpackage"
+        ),
+        "mutableStorageIncluded": False,
+        "remoteWorldAuthority": False,
     }
-    source_record_path = certification / "installer-source-verification.json"
+    source_record_path = (
+        certification / "installer-source-verification.json"
+    )
     source_record_path.write_text(
         json.dumps(source_record, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -109,12 +141,15 @@ def stage_payload(
         output / "packages" / "client" / "TheMechanist.jar",
         output / "packages" / "server" / "TheMechanistServer.jar",
         active_manifest,
+        output / remote_launcher,
     )
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
-        raise RuntimeError(f"native installer payload is incomplete: {missing}")
+        raise RuntimeError(
+            f"native installer payload is incomplete: {missing}"
+        )
 
-    result = {
+    return {
         "payload": str(output),
         "runtimeImage": str(distribution / "runtime"),
         "version": summary["version"],
@@ -122,8 +157,12 @@ def stage_payload(
         "commit": summary["commit"],
         "releaseHardened": True,
         "sourceVerification": str(source_record_path),
+        "remoteClientEntryPoint": REMOTE_CLIENT_MAIN,
+        "portableRemoteClientLauncher": remote_launcher,
+        "nativeRemoteClientLauncher": "The Mechanist Remote Lobby",
+        "mutableStorageIncluded": False,
+        "remoteWorldAuthority": False,
     }
-    return result
 
 
 def main() -> int:
@@ -139,7 +178,7 @@ def main() -> int:
             args.output,
             args.expected_platform,
         )
-    except Exception as exc:  # noqa: BLE001 - packaging tools need one clear failure
+    except Exception as exc:  # noqa: BLE001 - one packaging failure surface
         print(f"NATIVE INSTALLER STAGING FAILED: {exc}", file=sys.stderr)
         return 1
     rendered = json.dumps(result, indent=2, sort_keys=True)
