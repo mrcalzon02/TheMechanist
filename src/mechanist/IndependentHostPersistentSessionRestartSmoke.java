@@ -8,12 +8,14 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.security.MessageDigest;
+import java.util.List;
 import java.util.stream.Stream;
 
-/** Packaged socket smoke for atomic remote-session continuity across a clean host restart. */
+/** Packaged socket smoke for remote-session and hosted-lobby continuity across a clean host restart. */
 final class IndependentHostPersistentSessionRestartSmoke {
     private static final String LOOPBACK = "127.0.0.1";
     private static final String WORLD_ID = "persistent-relay-session-smoke";
@@ -27,8 +29,7 @@ final class IndependentHostPersistentSessionRestartSmoke {
         long firstSnapshotVersion;
 
         int firstPort = NetworkPortAuthority.firstAvailableGamePort();
-        HostBindingResult first = MultiplayerHostBindingService.bind(
-                config(firstPort));
+        HostBindingResult first = MultiplayerHostBindingService.bind(config(firstPort));
         require(first.success(),
                 "persistent relay first bind failed: " + first.compactLine());
         require(first.session() instanceof NativeTcpRelayServer,
@@ -47,11 +48,36 @@ final class IndependentHostPersistentSessionRestartSmoke {
                     "fresh persistent session did not begin at generation one");
             token = client.resumeToken;
             playerId = client.playerId;
+
+            HostedCommandReadout ready = client.sessionCommand(0L, "READY", "true");
+            require(ready.ready && ready.acceptedHostedCommands == 1L,
+                    "persistent READY command was not accepted authoritatively");
+            HostedCommandReadout presence = client.sessionCommand(1L, "PRESENCE", "away");
+            require("away".equals(presence.presence),
+                    "persistent PRESENCE command was not retained");
+            HostedCommandReadout chat = client.sessionCommand(2L, "CHAT_STATE", "typing");
+            require("typing".equals(chat.chatState)
+                            && chat.acceptedHostedCommands == 3L,
+                    "persistent CHAT_STATE command lost hosted-command accounting");
+            HostedRosterReadout firstRoster = client.sessionRoster();
+            require(firstRoster.totalSessions == 1
+                            && firstRoster.activeSessions == 1
+                            && !firstRoster.worldAuthority,
+                    "persistent hosted roster overclaimed or lost session state");
+
             client.write("SEQ|0|persistent-before-restart");
             waitForFrameCount(firstRelay, PROFILE, 1L, 3_000L);
             SessionReadout status = client.sessionStatus();
             require(status.connected && status.acceptedRelayFrames == 1L,
                     "first persistent session snapshot did not account for its frame");
+            RemoteSessionLedgerAuthority.SessionSnapshot sourceSnapshot =
+                    firstRelay.remoteSessionSnapshot(PROFILE);
+            require(sourceSnapshot != null
+                            && sourceSnapshot.acceptedHostedCommands() == 3L
+                            && sourceSnapshot.ready()
+                            && "away".equals(sourceSnapshot.presence())
+                            && "typing".equals(sourceSnapshot.chatState()),
+                    "live ledger did not own hosted-session state before restart");
             firstSnapshotVersion = status.snapshotVersion;
         } finally {
             first.close();
@@ -61,16 +87,19 @@ final class IndependentHostPersistentSessionRestartSmoke {
                 "clean host shutdown did not leave a remote-session ledger");
         String persisted = Files.readString(
                 ledgerFile, StandardCharsets.ISO_8859_1);
+        require(persisted.contains("schema=2"),
+                "live relay did not persist hosted-session schema two");
         require(!persisted.contains(token),
                 "live relay persisted a reusable plaintext resume token");
         require(persisted.contains(sha256Hex(token)),
                 "live relay did not persist the resume-token hash");
+        require(persisted.contains("acceptedHostedCommands=3"),
+                "live relay did not persist hosted-command accounting");
         require(!hasTemporarySibling(ledgerFile),
                 "live relay left an atomic-write temporary sibling");
 
         int secondPort = NetworkPortAuthority.firstAvailableGamePort();
-        HostBindingResult second = MultiplayerHostBindingService.bind(
-                config(secondPort));
+        HostBindingResult second = MultiplayerHostBindingService.bind(config(secondPort));
         require(second.success(),
                 "persistent relay restart bind failed: " + second.compactLine());
         require(second.session() instanceof NativeTcpRelayServer,
@@ -86,13 +115,17 @@ final class IndependentHostPersistentSessionRestartSmoke {
                     "restarted relay did not force restored session offline");
             require(restoredOffline.playerId().equals(playerId),
                     "restarted relay changed the stable player identity");
-            require(restoredOffline.acceptedRelayFrames() == 1L,
-                    "restarted relay lost lifetime relay accounting");
+            require(restoredOffline.acceptedRelayFrames() == 1L
+                            && restoredOffline.acceptedHostedCommands() == 3L,
+                    "restarted relay lost lifetime session accounting");
+            require(!restoredOffline.ready()
+                            && "offline".equals(restoredOffline.presence())
+                            && "idle".equals(restoredOffline.chatState()),
+                    "restarted relay retained stale hosted-lobby liveness state");
             require(restoredOffline.version() > firstSnapshotVersion,
                     "restarted relay did not advance the immutable ledger version");
 
-            try (Client resumed = Client.connect(
-                    second.port(), PROFILE, token)) {
+            try (Client resumed = Client.connect(second.port(), PROFILE, token)) {
                 require(resumed.resumed,
                         "valid token did not resume after full host restart");
                 require(resumed.playerId.equals(playerId),
@@ -102,6 +135,19 @@ final class IndependentHostPersistentSessionRestartSmoke {
                 SessionReadout beforeFrame = resumed.sessionStatus();
                 require(beforeFrame.acceptedRelayFrames == 1L,
                         "host restart resume lost prior relay accounting");
+
+                HostedCommandReadout resumedPresence = resumed.sessionCommand(
+                        0L, "PRESENCE", "busy");
+                require("busy".equals(resumedPresence.presence)
+                                && resumedPresence.acceptedHostedCommands == 4L
+                                && resumedPresence.lastConnectionCommandId == 0L,
+                        "host restart resume lost hosted-command continuity");
+                HostedRosterReadout resumedRoster = resumed.sessionRoster();
+                require(resumedRoster.totalSessions == 1
+                                && resumedRoster.activeSessions == 1
+                                && !resumedRoster.worldAuthority,
+                        "resumed hosted roster was incorrect");
+
                 resumed.write("SEQ|0|persistent-after-restart");
                 waitForFrameCount(secondRelay, PROFILE, 2L, 3_000L);
                 SessionReadout afterFrame = resumed.sessionStatus();
@@ -119,13 +165,14 @@ final class IndependentHostPersistentSessionRestartSmoke {
         }
 
         String valid = Files.readString(ledgerFile, StandardCharsets.ISO_8859_1);
+        require(valid.contains("acceptedHostedCommands=4"),
+                "second host shutdown lost hosted-command persistence");
         Files.writeString(
                 ledgerFile,
-                valid.replaceFirst("schema=1", "schema=999"),
+                valid.replaceFirst("schema=2", "schema=999"),
                 StandardCharsets.ISO_8859_1);
         int corruptPort = NetworkPortAuthority.firstAvailableGamePort();
-        HostBindingResult corrupt = MultiplayerHostBindingService.bind(
-                config(corruptPort));
+        HostBindingResult corrupt = MultiplayerHostBindingService.bind(config(corruptPort));
         try {
             require(!corrupt.success(),
                     "corrupted remote-session ledger unexpectedly allowed host bind");
@@ -145,6 +192,10 @@ final class IndependentHostPersistentSessionRestartSmoke {
                 + " stablePlayerIdentity=true"
                 + " generationContinuity=true"
                 + " lifetimeRelayAccounting=true"
+                + " hostedSessionCommands=true"
+                + " hostedCommandPersistence=true"
+                + " immutableHostedRoster=true"
+                + " staleLivenessReset=true"
                 + " corruptedLedgerRejected=true"
                 + " worldAuthority=false"
                 + " gameplaySessionCertified=false");
@@ -261,6 +312,27 @@ final class IndependentHostPersistentSessionRestartSmoke {
             String lastEvent
     ) { }
 
+    private record HostedCommandReadout(
+            long commandId,
+            String command,
+            String value,
+            long snapshotVersion,
+            boolean ready,
+            String presence,
+            String chatState,
+            long acceptedHostedCommands,
+            long lastConnectionCommandId
+    ) { }
+
+    private record HostedRosterReadout(
+            long snapshotVersion,
+            String worldId,
+            int totalSessions,
+            int activeSessions,
+            boolean worldAuthority,
+            List<String[]> entries
+    ) { }
+
     private record Challenge(
             String salt,
             String manifestFingerprint,
@@ -370,6 +442,62 @@ final class IndependentHostPersistentSessionRestartSmoke {
                     Long.parseLong(snapshot[7]),
                     Long.parseLong(snapshot[8]),
                     snapshot[9]);
+        }
+
+        HostedCommandReadout sessionCommand(
+                long commandId,
+                String command,
+                String value
+        ) throws Exception {
+            write("MECH|SESSION_COMMAND|" + commandId + "|" + command + "|" + value);
+            String[] accepted = requireCommand(
+                    reader.readLine(), "SESSION_COMMAND_ACCEPTED");
+            require(accepted.length == 11,
+                    "persistent client received invalid SESSION_COMMAND_ACCEPTED: "
+                            + Arrays.toString(accepted));
+            readRoster();
+            return new HostedCommandReadout(
+                    Long.parseLong(accepted[2]),
+                    accepted[3],
+                    accepted[4],
+                    Long.parseLong(accepted[5]),
+                    Boolean.parseBoolean(accepted[6]),
+                    accepted[7],
+                    accepted[8],
+                    Long.parseLong(accepted[9]),
+                    Long.parseLong(accepted[10]));
+        }
+
+        HostedRosterReadout sessionRoster() throws Exception {
+            write("MECH|SESSION_ROSTER");
+            return readRoster();
+        }
+
+        private HostedRosterReadout readRoster() throws Exception {
+            String[] begin = requireCommand(
+                    reader.readLine(), "HOSTED_ROSTER_BEGIN");
+            require(begin.length == 7,
+                    "persistent client received invalid HOSTED_ROSTER_BEGIN");
+            int total = Integer.parseInt(begin[4]);
+            ArrayList<String[]> entries = new ArrayList<>();
+            for (int i = 0; i < total; i++) {
+                String[] entry = requireCommand(
+                        reader.readLine(), "HOSTED_ROSTER_ENTRY");
+                require(entry.length == 10,
+                        "persistent client received invalid HOSTED_ROSTER_ENTRY");
+                entries.add(entry);
+            }
+            String[] end = requireCommand(
+                    reader.readLine(), "HOSTED_ROSTER_END");
+            require(begin[2].equals(end[2]),
+                    "persistent roster begin/end versions do not match");
+            return new HostedRosterReadout(
+                    Long.parseLong(begin[2]),
+                    begin[3],
+                    total,
+                    Integer.parseInt(begin[5]),
+                    Boolean.parseBoolean(begin[6]),
+                    List.copyOf(entries));
         }
 
         @Override
