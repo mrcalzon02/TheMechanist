@@ -77,6 +77,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ ! -s "$INVENTORY_DIR/committed-before.tsv" ]]; then
+            echo 'committed_empty=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'committed_empty=false' >> "$GITHUB_OUTPUT"
+          fi
           if cmp -s "$INVENTORY_DIR/generated.tsv" "$INVENTORY_DIR/committed-before.tsv"; then
             echo 'matches=true' >> "$GITHUB_OUTPUT"
           else
@@ -88,7 +93,7 @@ jobs:
           fi
 
       - name: Commit regenerated manifest
-        if: ${{ inputs.update_committed_manifest }}
+        if: ${{ inputs.update_committed_manifest || (github.event_name == 'push' && steps.manifest_match.outputs.committed_empty == 'true') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -152,7 +157,7 @@ jobs:
           git rev-parse HEAD > "$INVENTORY_DIR/source-commit.txt"
 
       - name: Enforce committed manifest match
-        if: ${{ !inputs.update_committed_manifest && steps.manifest_match.outputs.matches != 'true' }}
+        if: ${{ !inputs.update_committed_manifest && !(github.event_name == 'push' && steps.manifest_match.outputs.committed_empty == 'true') && steps.manifest_match.outputs.matches != 'true' }}
         shell: bash
         run: |
           echo 'The generated full-checkout manifest differs from the committed manifest.' >&2
