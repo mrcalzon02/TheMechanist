@@ -12,6 +12,11 @@ import pathlib
 import subprocess
 
 
+READABLE_COMMIT_STATUS_CONTEXTS = (
+    "the-mechanist/java17-verification",
+    "the-mechanist/native-alpha-gate",
+)
+
 REQUIRED_SYNTHETIC_TRUE = (
     "releaseHardened",
     "pathWithSpaces",
@@ -167,18 +172,22 @@ def main() -> int:
         return 0
 
     date = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    status_contexts = ", ".join(f"`{item}`" for item in READABLE_COMMIT_STATUS_CONTEXTS)
     entry = f"""
 
 ## Remote Release {version} - Java 17, Gate 3, and Runnable Distribution Certification
 
 Recorded the first-class remote release pipeline for the launcher -> client -> server distribution path. GitHub-hosted Linux x64 and Windows x64 jobs compiled the exact source tree with Java 17, rebuilt the client, server, and launcher packages, staged platform-specific support libraries and bundled Java runtimes, generated schema-2 SHA-256 manifests, and produced portable runnable ZIP distributions. Gate 3 ran only after both platform package jobs completed successfully, and final distribution certification revalidated archive integrity, manifest completeness, entry points, platform-native support libraries, and Java 17 classfile compatibility before release publication.
 
-Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; launcher and alpha operating documents were verified; supervised single-player host save/resume passed; independent-host identity, manifest, restart, integrity challenge, exact bind, server-owned persistent session ledger, stable remote player identity, token-gated reconnect continuity, duplicate/invalid-token denial, immutable session snapshots, lifetime relay accounting, atomic hash-only storage, clean host-restart continuity, and corrupt-ledger rejection passed; remote world authority and gameplay certification remained explicitly false; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
+Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; launcher and alpha operating documents were verified; supervised single-player host save/resume passed; independent-host identity, manifest, restart, integrity challenge, exact bind, server-owned persistent session ledger, stable remote player identity, token-gated reconnect continuity, duplicate/invalid-token denial, immutable session snapshots, lifetime relay accounting, atomic hash-only storage, clean host-restart continuity, and corrupt-ledger rejection passed; remote world authority and gameplay certification remained explicitly false; distribution verification reports returned `verified`; final release certification passed. Workflow-run conclusions were also published as readable commit statuses under {status_contexts}. Workflow evidence: {args.run_url}
 
 <!-- {marker} -->
 """
     args.history.write_text(history.rstrip() + entry + "\n", encoding="utf-8")
-    print(f"Appended verified release history entry for {version} at {args.commit}")
+    print(
+        f"Appended verified release history entry for {version} at {args.commit}; "
+        f"status contexts={READABLE_COMMIT_STATUS_CONTEXTS}"
+    )
     return 0
 
 
