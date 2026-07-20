@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /** Runtime startup envelope shared by the desktop shell and launcher handoff. */
 final class RuntimeProfile {
-    static final String VERSION = "runtime-profile-0.9.10fd";
+    static final String VERSION = "runtime-profile-0.9.10fe";
 
     final ApplicationRuntimeMode requestedMode;
     final ApplicationRuntimeMode effectiveMode;
@@ -60,9 +60,11 @@ final class RuntimeProfile {
         this.headlessServerAvailable = headlessServerAvailable;
         this.hotRestartAvailable = hotRestartAvailable;
         this.remoteHost = safeHost(remoteHost);
-        this.remotePort = NetworkPortAuthority.portWithinAllowedGameRange(remotePort)
-                ? remotePort
-                : NetworkPortAuthority.DEFAULT_GAME_PORT;
+        if (!NetworkPortAuthority.portWithinAllowedGameRange(remotePort)) {
+            throw new IllegalArgumentException(
+                    "remote port must be within the configured game-port range");
+        }
+        this.remotePort = remotePort;
         String endpointKey = normalizedEndpointKey(this.remoteHost, this.remotePort);
         this.remoteServerKey = safeServerKey(remoteServerKey, endpointKey);
     }
@@ -113,9 +115,8 @@ final class RuntimeProfile {
                 } else if (trimmed.startsWith("--host=")) {
                     remoteHost = trimmed.substring("--host=".length());
                 } else if (trimmed.startsWith("--port=")) {
-                    remotePort = NetworkPortAuthority.parsePort(
-                            trimmed.substring("--port=".length()),
-                            NetworkPortAuthority.DEFAULT_GAME_PORT);
+                    remotePort = strictRemotePort(
+                            trimmed.substring("--port=".length()));
                 } else if (trimmed.startsWith("--server-key=")) {
                     remoteServerKey = trimmed.substring("--server-key=".length());
                 } else if (trimmed.startsWith("--mod-manifest=")) {
@@ -197,6 +198,24 @@ final class RuntimeProfile {
         out.add("Remote endpoint: " + remoteEndpointDisplay());
         out.add("Remote server key: " + remoteServerKey);
         return out;
+    }
+
+    private static int strictRemotePort(String value) {
+        final int port;
+        try {
+            port = Integer.parseInt(Objects.requireNonNullElse(value, "").trim());
+        } catch (NumberFormatException failure) {
+            throw new IllegalArgumentException("remote port must be a number", failure);
+        }
+        if (!NetworkPortAuthority.portWithinAllowedGameRange(port)) {
+            throw new IllegalArgumentException(
+                    "remote port must be within "
+                            + NetworkPortAuthority.CUSTOM_GAME_PORT_MIN
+                            + "-"
+                            + NetworkPortAuthority.CUSTOM_GAME_PORT_MAX
+                            + " and outside reserved ranges");
+        }
+        return port;
     }
 
     private static String clean(String value, String fallback) {
