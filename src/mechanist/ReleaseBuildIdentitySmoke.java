@@ -53,8 +53,8 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report authenticated peer roster broadcasts");
         require(separation.contains("independentHostRosterClient=canonical-connected-only"),
                 "runtime separation must report canonical connected-only client rosters");
-        require(separation.contains("independentHostClientSupervisor=handshake-token-roster-command-relay"),
-                "runtime separation must report the supervised independent-host client");
+        require(separation.contains("independentHostClientSupervisor=handshake-token-roster-command-relay-wait"),
+                "runtime separation must report the supervised wait-capable independent-host client");
         require(separation.contains("independentHostClientTokenCustody=atomic-owner-only-plaintext"),
                 "runtime separation must distinguish protected client token custody");
         require(separation.contains("independentHostClientTokenDiagnostics=redacted"),
@@ -63,14 +63,20 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report supervised client reconnect certification");
         require(separation.contains("independentHostTurnAuthority=headless-persistent-smoke-gated"),
                 "runtime separation must report the shared headless turn authority");
-        require(separation.contains("independentHostTurnCommand=wait-only-not-network-exposed"),
-                "runtime separation must report the exact turn-authority boundary");
-        require(separation.contains("independentHostClientWorldCommandApi=not-implemented"),
-                "runtime separation must keep the client world-command API closed");
-        require(separation.contains("independentHostNetworkWorldCommands=rejected"),
-                "runtime separation must report network world-command rejection");
-        require(separation.contains("independentHostWorldAuthority=core-not-network-exposed"),
-                "runtime separation must not overclaim network world authority");
+        require(separation.contains("independentHostTurnCommand=wait-only-network-exposed"),
+                "runtime separation must report the network-exposed wait boundary");
+        require(separation.contains("independentHostClientGenericWorldCommandApi=not-implemented"),
+                "runtime separation must keep the generic client world-command API closed");
+        require(separation.contains("independentHostNetworkWorldCommands=wait-only"),
+                "runtime separation must report the one accepted network world command");
+        require(separation.contains("independentHostTransportAccess=relay-only")
+                        && separation.contains("independentHostControlAccess=authenticated-wait-only"),
+                "runtime separation must distinguish relay transport from wait control");
+        require(separation.contains("independentHostWorldAuthority=wait-turn-only")
+                        && separation.contains("independentHostMovementAuthority=false")
+                        && separation.contains("independentHostMapAuthority=false")
+                        && separation.contains("independentHostFullWorldAuthority=false"),
+                "runtime separation must not overclaim remote world authority");
         require(separation.contains("remoteGameplaySession=not-yet-certified"),
                 "runtime separation must not overclaim independent-host gameplay certification");
         require(SinglePlayerInternalHostSupervisor.auditSummary().contains("shutdown=supervised"),
@@ -80,6 +86,7 @@ final class ReleaseBuildIdentitySmoke {
         HostedRosterClientAuthoritySmoke.main(args);
         IndependentHostHostedSessionWireSmoke.main(args);
         IndependentHostTurnAuthoritySmoke.main(args);
+        IndependentHostWorldWaitWireSmoke.main(args);
         RemoteClientStartupSmoke.main(args);
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
