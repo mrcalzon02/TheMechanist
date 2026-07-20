@@ -23,6 +23,7 @@ final class BootStartupAudioSilenceSmoke {
             require(!source.contains("sounds.play(\"boot\""), "GamePanel constructor must not play boot sound effects");
         }
 
+        ReleaseBuildIdentitySmoke.main(args);
         System.out.println("BootStartupAudioSilenceSmoke PASS startup sound effects disabled; intro music channel remains separate.");
     }
 
