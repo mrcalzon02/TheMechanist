@@ -35,8 +35,12 @@ final class ReleaseBuildIdentitySmoke {
         String separation = RuntimeSeparationAuthority.auditSummary(RuntimeProfile.defaultProfile());
         require(separation.contains("headlessServer=implemented"),
                 "runtime separation must acknowledge the packaged headless server");
-        require(separation.contains("singlePlayerInternalServer=not-yet-supervised"),
-                "runtime separation must not overclaim single-player server supervision");
+        require(separation.contains("singlePlayerInternalServer=supervised-in-process"),
+                "runtime separation must report the supervised local internal host");
+        require(separation.contains("remoteGameplaySession=not-yet-certified"),
+                "runtime separation must not overclaim independent-host gameplay certification");
+        require(SinglePlayerInternalHostSupervisor.auditSummary().contains("shutdown=supervised"),
+                "internal-host authority must own shutdown");
 
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
