@@ -9,15 +9,17 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Authenticated wire exchange for the independent-host relay and hosted-session ledger.
+ * Authenticated wire exchange for the independent-host relay, hosted-session
+ * ledger, and the narrowly scoped authoritative wait command.
  *
  * Client identity, manifest acquisition, restart, and integrity must complete
- * before a server-owned remote session is attached. Access remains RELAY_ONLY;
- * readiness, presence, chat-state, and immutable roster snapshots are server
- * authoritative, while gameplay and world mutation remain closed.
+ * before a server-owned remote session is attached. The transport access class
+ * remains RELAY_ONLY. A separate authenticated WORLD_COMMAND control frame may
+ * invoke only WaitCommand; movement, maps, interaction, combat, inventory, and
+ * general remote gameplay authority remain closed.
  */
 final class IndependentHostWireProtocol {
-    static final String VERSION = "independent-host-wire-5";
+    static final String VERSION = "independent-host-wire-6";
     private static final String PREFIX = "MECH";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -25,6 +27,7 @@ final class IndependentHostWireProtocol {
     private final SecureHandshakeStateMachine.ModManifestRecord manifest;
     private final String manifestFingerprint;
     private final RemoteSessionLedgerAuthority sessionLedger;
+    private final IndependentHostTurnAuthority turnAuthority;
     private String profileIdentity = "";
     private String requestedResumeToken = "";
     private RemoteSessionLedgerAuthority.Attachment sessionAttachment;
@@ -32,15 +35,30 @@ final class IndependentHostWireProtocol {
     private boolean disconnected;
 
     IndependentHostWireProtocol(String sessionId) {
-        this(sessionId, new RemoteSessionLedgerAuthority("standalone-" + sessionId));
+        this(
+                sessionId,
+                new RemoteSessionLedgerAuthority("standalone-" + sessionId),
+                new IndependentHostTurnAuthority("standalone-" + sessionId));
     }
 
     IndependentHostWireProtocol(
             String sessionId,
             RemoteSessionLedgerAuthority sessionLedger
     ) {
+        this(
+                sessionId,
+                sessionLedger,
+                new IndependentHostTurnAuthority(sessionLedger.worldId()));
+    }
+
+    IndependentHostWireProtocol(
+            String sessionId,
+            RemoteSessionLedgerAuthority sessionLedger,
+            IndependentHostTurnAuthority turnAuthority
+    ) {
         this.handshake = new SecureHandshakeStateMachine(sessionId);
         this.sessionLedger = Objects.requireNonNull(sessionLedger, "sessionLedger");
+        this.turnAuthority = Objects.requireNonNull(turnAuthority, "turnAuthority");
         this.manifest = new SecureHandshakeStateMachine.ModManifestRecord(
                 "mechanist-base-" + BuildIdentityAuthority.version(),
                 0L,
@@ -72,6 +90,7 @@ final class IndependentHostWireProtocol {
                 case "SESSION_STATUS" -> acceptSessionStatus(fields);
                 case "SESSION_COMMAND" -> acceptSessionCommand(fields);
                 case "SESSION_ROSTER" -> acceptSessionRoster(fields);
+                case "WORLD_COMMAND" -> acceptWorldCommand(fields);
                 case "PING" -> acceptPing(fields);
                 default -> deny("unknown protocol command " + command);
             };
@@ -113,6 +132,12 @@ final class IndependentHostWireProtocol {
         return sessionAttachment == null ? null : sessionLedger.snapshot(sessionAttachment);
     }
 
+    IndependentHostTurnAuthority.TurnSnapshot turnSnapshot() {
+        return sessionAttachment == null
+                ? null
+                : turnAuthority.snapshotForPlayer(sessionAttachment.playerId());
+    }
+
     RemoteSessionLedgerAuthority.SessionSnapshot noteRelayFrameAccepted(long sequence) {
         if (!relayAccessGranted()) {
             throw new IllegalStateException(
@@ -128,12 +153,16 @@ final class IndependentHostWireProtocol {
     void disconnect(String reason) {
         if (disconnected) return;
         disconnected = true;
+        if (sessionAttachment != null) {
+            turnAuthority.disconnectPlayer(sessionAttachment.playerId());
+        }
         sessionLedger.disconnect(sessionAttachment, reason);
         handshake.disconnect();
     }
 
     String auditSummary() {
         RemoteSessionLedgerAuthority.SessionSnapshot snapshot = sessionSnapshot();
+        IndependentHostTurnAuthority.TurnSnapshot turn = turnSnapshot();
         return "authority=" + VERSION
                 + " session=" + handshake.sessionId()
                 + " phase=" + handshake.phase()
@@ -146,7 +175,12 @@ final class IndependentHostWireProtocol {
                 + " hostedRoster=true"
                 + " rosterBroadcasts=true"
                 + " rosterVisibility=connected-only"
-                + " worldAuthority=false";
+                + " networkWaitAuthority=true"
+                + " playerTurn=" + (turn == null ? 0 : turn.playerTurn())
+                + " worldTurn=" + (turn == null ? 0 : turn.worldTurn())
+                + " movementAuthority=false"
+                + " mapAuthority=false"
+                + " gameplaySessionCertified=false";
     }
 
     private Result acceptIdentity(String[] fields) {
@@ -275,6 +309,38 @@ final class IndependentHostWireProtocol {
         requireCount(fields, 2, "SESSION_ROSTER");
         requireRelayAccess("hosted-session roster");
         return Result.responses(hostedRosterLines(sessionLedger.hostedSessionSnapshot()));
+    }
+
+    private Result acceptWorldCommand(String[] fields) {
+        requireCount(fields, 4, "WORLD_COMMAND");
+        requireRelayAccess("authoritative wait command");
+        long commandId = requireNonNegativeLong(fields[2], "world command id");
+        String command = requireToken(fields[3], "world command")
+                .toUpperCase(Locale.ROOT);
+        if (!"WAIT".equals(command)) {
+            throw new IllegalArgumentException(
+                    "world command " + command
+                            + " is unavailable; only authoritative wait is open");
+        }
+        IndependentHostTurnAuthority.TurnCommandResult result =
+                turnAuthority.applyCommand(
+                        sessionAttachment.playerId(),
+                        sessionAttachment.connectionGeneration(),
+                        commandId,
+                        new WaitCommand(sessionAttachment.playerId()));
+        IndependentHostTurnAuthority.TurnSnapshot snapshot = result.snapshot();
+        return Result.responses(line(
+                "WORLD_COMMAND_ACCEPTED",
+                Long.toString(result.commandId()),
+                result.command(),
+                Long.toString(snapshot.version()),
+                Long.toString(snapshot.connectionGeneration()),
+                Long.toString(snapshot.lastConnectionCommandId()),
+                Long.toString(snapshot.playerTurn()),
+                Long.toString(snapshot.worldTurn()),
+                Long.toString(snapshot.acceptedPlayerCommands()),
+                Long.toString(snapshot.acceptedWorldCommands()),
+                snapshot.lastEvent()));
     }
 
     private Result acceptPing(String[] fields) {
