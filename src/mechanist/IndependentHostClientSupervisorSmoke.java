@@ -179,10 +179,7 @@ final class IndependentHostClientSupervisorSmoke {
                     "client custody file does not contain the reusable token");
             require(!tokenStore.statusLine().contains(alphaToken),
                     "token-store status leaked the reusable token");
-            require(Files.list(clientStorage)
-                            .noneMatch(path -> path.getFileName()
-                                    .toString()
-                                    .contains(".tmp-")),
+            require(noTemporaryFiles(clientStorage),
                     "client token custody left a temporary file behind");
 
             Properties corrupted = new Properties();
@@ -331,6 +328,14 @@ final class IndependentHostClientSupervisorSmoke {
         }
     }
 
+    private static boolean noTemporaryFiles(Path root) throws Exception {
+        try (var files = Files.list(root)) {
+            return files.noneMatch(path -> path.getFileName()
+                    .toString()
+                    .contains(".tmp-"));
+        }
+    }
+
     private static void verifyNoWorldCommandApi() {
         for (Method method : IndependentHostClientSupervisor.class
                 .getDeclaredMethods()) {
@@ -349,18 +354,20 @@ final class IndependentHostClientSupervisorSmoke {
             ThrowingAction action,
             String expectedText
     ) throws Exception {
+        Throwable failure = null;
         try {
             action.run();
-            throw new AssertionError(
-                    "expected failure containing: " + expectedText);
         } catch (Throwable expected) {
-            String message = expected.getMessage() == null
-                    ? ""
-                    : expected.getMessage();
-            require(message.toLowerCase(Locale.ROOT).contains(
-                            expectedText.toLowerCase(Locale.ROOT)),
-                    "unexpected failure: " + message);
+            failure = expected;
         }
+        require(failure != null,
+                "expected failure containing: " + expectedText);
+        String message = failure.getMessage() == null
+                ? ""
+                : failure.getMessage();
+        require(message.toLowerCase(Locale.ROOT).contains(
+                        expectedText.toLowerCase(Locale.ROOT)),
+                "unexpected failure: " + message);
     }
 
     private static void deleteRecursively(Path root) {
