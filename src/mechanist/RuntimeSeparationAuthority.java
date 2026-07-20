@@ -20,6 +20,10 @@ final class RuntimeSeparationAuthority {
                 + " singlePlayerSaveResume=packaged-smoke-gated"
                 + " independentHostTransport=handshake-and-exact-bind-smoke-gated"
                 + " independentHostHandshake=client-driven-integrity-challenge"
+                + " independentHostSessionLedger=server-owned-process-local"
+                + " independentHostStablePlayerIdentity=implemented"
+                + " independentHostReconnect=resume-token-smoke-gated"
+                + " independentHostSessionSnapshots=immutable-monotonic"
                 + " independentHostAccess=relay-only"
                 + " independentHostWorldAuthority=not-implemented"
                 + " remoteGameplaySession=not-yet-certified"
@@ -37,8 +41,10 @@ final class RuntimeSeparationAuthority {
         out.add("Single-player mounts a supervised in-process internal host that routes world mutation through one authoritative world thread, local session identity, sector authority, and immutable snapshots.");
         out.add("Client shutdown closes the internal host, sector schedules, session state, and authoritative world executor before process exit.");
         out.add("The separately packaged headless server owns its own storage namespace and can bind an exact-address bounded relay transport.");
-        out.add("An independent relay client must now participate in identity, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge before receiving RELAY_ONLY access.");
-        out.add("Authenticated relay access permits bounded sequenced frame transport. It does not initialize a world snapshot, grant gameplay authority, mutate player state, or persist a remote world.");
+        out.add("An independent relay client must participate in identity, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge before receiving RELAY_ONLY access.");
+        out.add("After authentication, the host assigns a stable process-local player id and resume token. A disconnected client can recover the same session identity only with that token, while simultaneous duplicate attachment and invalid tokens are rejected.");
+        out.add("The host publishes immutable monotonic session snapshots containing connection generation, online state, accepted relay-frame totals, and per-connection sequence state. These session records survive socket reconnects but are not yet persisted across a server-process restart.");
+        out.add("Authenticated relay access permits bounded sequenced frame transport. It does not initialize a remote world snapshot, grant gameplay authority, mutate player inventory or position, or persist a hosted world.");
         out.add("A packaged client-to-independent-host authoritative gameplay session is therefore not certified and remains distinct from the local single-player host.");
         out.add("Shared runtime profiles carry mode, save/world identity, mod manifest path, and enabled mod tokens without activating external mod loading.");
         out.add("");
@@ -64,6 +70,12 @@ final class RuntimeSeparationAuthority {
         out.add("independentHostHandshake=client-driven-integrity-challenge");
         out.add("independentHostPreAuthenticationRelay=false");
         out.add("independentHostExactBind=required");
+        out.add("independentHostSessionLedger=server-owned-process-local");
+        out.add("independentHostStablePlayerIdentity=true");
+        out.add("independentHostResumeTokenContinuity=true");
+        out.add("independentHostDuplicateAttachment=false");
+        out.add("independentHostSessionSnapshots=immutable-monotonic");
+        out.add("independentHostSessionPersistenceAcrossProcessRestart=false");
         out.add("independentHostWorldAuthority=false");
         out.add("remoteGameplaySessionCertified=false");
         out.add("modResolution=false");
