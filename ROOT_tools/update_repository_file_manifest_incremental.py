@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Incremental generator for ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv.
+"""Stable incremental generator for ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv.
 
-The legacy PowerShell generator hashes every file on every run. This script
-keeps the same seven-column schema while reusing existing SHA-256 values when
-path, byte length, and second-granularity UTC modified time are unchanged.
+The manifest covers every non-.git file in the checkout. Existing SHA-256 values
+are reused immediately when path, size, and mtime match. On a clean checkout,
+where mtimes commonly change even though bytes do not, the file is rehashed and
+the prior recorded modified time is preserved when the digest is unchanged.
+This keeps the committed manifest deterministic instead of rewriting every row
+merely because the repository was checked out again.
 """
 
 from __future__ import annotations
@@ -12,12 +15,21 @@ import argparse
 import csv
 import datetime as dt
 import hashlib
+import json
 import os
 from pathlib import Path
 import sys
 import tempfile
 
-COLUMNS = ["relative_path", "file_kind", "text_or_binary", "extension", "bytes", "modified_utc", "sha256"]
+COLUMNS = [
+    "relative_path",
+    "file_kind",
+    "text_or_binary",
+    "extension",
+    "bytes",
+    "modified_utc",
+    "sha256",
+]
 BINARY_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp",
     ".mp3", ".wav", ".ogg", ".flac", ".m4a",
@@ -40,7 +52,11 @@ def clean(value: object) -> str:
 
 
 def modified_utc(path: Path) -> str:
-    return dt.datetime.fromtimestamp(path.stat().st_mtime, tz=dt.timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (
+        dt.datetime.fromtimestamp(path.stat().st_mtime, tz=dt.timezone.utc)
+        .replace(microsecond=0)
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
 
 
 def file_kind(relative_path: str, extension: str) -> str:
@@ -52,18 +68,24 @@ def file_kind(relative_path: str, extension: str) -> str:
         return "client_runtime_asset"
     if path.startswith("package_launcher/") and "/resources/assets/" in path:
         return "launcher_runtime_asset"
-    if path.startswith("root_docs/"):
-        return "documentation"
-    if path.startswith("root_tools/") or path.startswith("scripts/"):
-        return "tooling"
-    if path.startswith("src/"):
-        return "source_code"
     if path.startswith("package_client/"):
         return "client_package_file"
     if path.startswith("package_launcher/"):
         return "launcher_package_file"
     if path.startswith("package_installer/"):
         return "installer_package_file"
+    if path.startswith("root_docs/"):
+        return "documentation"
+    if path.startswith("root_tools/") or path.startswith("scripts/"):
+        return "tooling"
+    if path.startswith("root_build/"):
+        return "build_orchestration"
+    if path.startswith(".github/"):
+        return "continuous_integration"
+    if path.startswith("config/"):
+        return "build_configuration"
+    if path.startswith("src/"):
+        return "source_code"
     if ext in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg", ".webp"}:
         return "image"
     if ext in {".mp3", ".wav", ".ogg", ".flac", ".m4a"}:
@@ -83,12 +105,23 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def valid_sha256(value: str | None) -> bool:
+    text = (value or "").strip().lower()
+    return len(text) == 64 and all(char in "0123456789abcdef" for char in text)
+
+
 def load_existing(path: Path) -> dict[str, dict[str, str]]:
-    if not path.exists():
+    if not path.exists() or path.stat().st_size == 0:
         return {}
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
-        return {row.get("relative_path", ""): row for row in reader if row.get("relative_path")}
+        if reader.fieldnames != COLUMNS:
+            return {}
+        return {
+            row.get("relative_path", ""): row
+            for row in reader
+            if row.get("relative_path")
+        }
 
 
 def iter_files(root: Path, target: Path) -> list[Path]:
@@ -101,18 +134,27 @@ def iter_files(root: Path, target: Path) -> list[Path]:
                 continue
             if path.is_file():
                 files.append(path)
-    files.sort(key=lambda item: str(item.resolve()).lower())
+    files.sort(key=lambda item: item.resolve().as_posix().lower())
     return files
 
 
 def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=str(path.parent))
+    fd, temp_name = tempfile.mkstemp(
+        prefix=path.name + ".",
+        suffix=".tmp",
+        dir=str(path.parent),
+    )
     os.close(fd)
     temp_path = Path(temp_name)
     try:
         with temp_path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=COLUMNS, delimiter="\t", lineterminator="\n")
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=COLUMNS,
+                delimiter="\t",
+                lineterminator="\n",
+            )
             writer.writeheader()
             writer.writerows(rows)
         temp_path.replace(path)
@@ -122,9 +164,24 @@ def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Incrementally refresh ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv.")
-    parser.add_argument("--target", default="ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv", help="Manifest path relative to repo root.")
-    parser.add_argument("--force-hash", action="store_true", help="Ignore cached hashes and hash every file.")
+    parser = argparse.ArgumentParser(
+        description="Incrementally refresh ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv."
+    )
+    parser.add_argument(
+        "--target",
+        default="ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv",
+        help="Manifest path relative to repo root.",
+    )
+    parser.add_argument(
+        "--force-hash",
+        action="store_true",
+        help="Rehash every file while preserving stable recorded times for unchanged bytes.",
+    )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        help="Optional JSON generation report path relative to repo root.",
+    )
     return parser.parse_args(argv)
 
 
@@ -132,41 +189,78 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     root = repo_root()
     target = (root / args.target).resolve()
-    if not str(target).lower().startswith(str(root).lower()):
+    try:
+        target.relative_to(root)
+    except ValueError:
         print(f"Manifest target must stay inside the repository: {target}", file=sys.stderr)
         return 2
 
+    report_path = None
+    if args.report:
+        report_path = (root / args.report).resolve() if not args.report.is_absolute() else args.report.resolve()
+        try:
+            report_path.relative_to(root)
+        except ValueError:
+            print(f"Manifest report must stay inside the repository: {report_path}", file=sys.stderr)
+            return 2
+
     existing = load_existing(target)
     rows: list[dict[str, str]] = []
-    reused = 0
-    hashed = 0
+    reused_metadata = 0
+    rehashed_same = 0
+    hashed_changed = 0
     errors = 0
+    total_bytes = 0
+
     for path in iter_files(root, target):
         relative = posix_relative(path, root)
         stat = path.stat()
         ext_with_dot = path.suffix.lower()
         ext = ext_with_dot[1:]
-        modified = modified_utc(path)
+        current_modified = modified_utc(path)
         bytes_text = str(stat.st_size)
+        total_bytes += stat.st_size
         previous = existing.get(relative)
+        previous_sha = previous.get("sha256", "") if previous else ""
+        previous_modified = previous.get("modified_utc", "") if previous else ""
         sha = ""
-        if not args.force_hash and previous and previous.get("bytes") == bytes_text and previous.get("modified_utc") == modified:
-            sha = previous.get("sha256", "")
-            reused += 1
-        if not sha:
+        recorded_modified = current_modified
+
+        if (
+            not args.force_hash
+            and previous
+            and previous.get("bytes") == bytes_text
+            and previous_modified == current_modified
+            and valid_sha256(previous_sha)
+        ):
+            sha = previous_sha.lower()
+            recorded_modified = previous_modified
+            reused_metadata += 1
+        else:
             try:
                 sha = sha256_file(path)
-                hashed += 1
+                if (
+                    previous
+                    and previous.get("bytes") == bytes_text
+                    and valid_sha256(previous_sha)
+                    and sha.lower() == previous_sha.lower()
+                    and previous_modified
+                ):
+                    recorded_modified = previous_modified
+                    rehashed_same += 1
+                else:
+                    hashed_changed += 1
             except OSError as exc:
                 sha = "HASH_ERROR:" + clean(exc)
                 errors += 1
+
         rows.append({
             "relative_path": clean(relative),
             "file_kind": clean(file_kind(relative, ext_with_dot)),
             "text_or_binary": "binary" if ext_with_dot in BINARY_EXTENSIONS else "text_or_unknown",
             "extension": clean(ext),
             "bytes": bytes_text,
-            "modified_utc": clean(modified),
+            "modified_utc": clean(recorded_modified),
             "sha256": clean(sha),
         })
 
@@ -176,12 +270,28 @@ def main(argv: list[str]) -> int:
         "text_or_binary": "text_or_unknown",
         "extension": "tsv",
         "bytes": "GENERATED",
-        "modified_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "modified_utc": "GENERATED",
         "sha256": "SELF_GENERATED",
     })
     write_rows(target, rows)
-    print(f"Wrote {len(rows) - 1} indexed file rows to {target}")
-    print(f"Manifest hash reuse: reused={reused} hashed={hashed} errors={errors}")
+
+    report = {
+        "status": "generated" if errors == 0 else "hash-errors",
+        "target": posix_relative(target, root),
+        "indexedFiles": len(rows) - 1,
+        "totalBytes": total_bytes,
+        "existingRows": len(existing),
+        "metadataReused": reused_metadata,
+        "rehashedUnchanged": rehashed_same,
+        "hashedChangedOrNew": hashed_changed,
+        "hashErrors": errors,
+        "stableSelfRow": True,
+    }
+    rendered = json.dumps(report, indent=2, sort_keys=True)
+    print(rendered)
+    if report_path:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(rendered + "\n", encoding="utf-8")
     return 1 if errors else 0
 
 
