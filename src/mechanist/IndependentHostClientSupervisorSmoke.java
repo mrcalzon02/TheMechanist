@@ -31,6 +31,7 @@ final class IndependentHostClientSupervisorSmoke {
             String alphaPlayer;
             String alphaToken;
             long alphaHostedCommands;
+            long alphaWorldCommands;
 
             NativeTcpRelayServer firstHost = bindHost();
             IndependentHostClientSupervisor alpha =
@@ -51,6 +52,8 @@ final class IndependentHostClientSupervisorSmoke {
                 require(!alphaIdentity.resumed()
                                 && alphaIdentity.connectionGeneration() == 1L,
                         "first alpha connection incorrectly reported resume");
+                require("RELAY_ONLY+WAIT_CONTROL".equals(alphaIdentity.accessClass()),
+                        "client did not expose the narrow wait-control capability");
                 require(alpha.resumeTokenPersisted(),
                         "alpha resume token was not placed in client custody");
                 require(alpha.latestRoster() != null
@@ -82,6 +85,34 @@ final class IndependentHostClientSupervisorSmoke {
                         "available",
                         TIMEOUT);
 
+                IndependentHostClientSupervisor.WorldWaitAck firstWait =
+                        alpha.waitAuthoritativeTurn(TIMEOUT);
+                require(firstWait.commandId() == 0L
+                                && "WAIT".equals(firstWait.command())
+                                && firstWait.connectionGeneration() == 1L
+                                && firstWait.lastConnectionCommandId() == 0L
+                                && firstWait.playerTurn() == 1L
+                                && firstWait.worldTurn() == 1L
+                                && firstWait.acceptedPlayerCommands() == 1L
+                                && firstWait.acceptedWorldCommands() == 1L,
+                        "first supervised wait did not commit authoritative turn state");
+                require(alpha.latestWorldWait() == firstWait,
+                        "client did not retain its latest authoritative wait acknowledgement");
+                require(alpha.statusLine().contains("waitAuthority=true")
+                                && alpha.statusLine().contains("playerTurn=1")
+                                && alpha.statusLine().contains("worldTurn=1")
+                                && alpha.statusLine().contains("movementAuthority=false")
+                                && alpha.statusLine().contains("mapAuthority=false")
+                                && alpha.statusLine().contains("fullWorldAuthority=false"),
+                        "client status overclaimed or omitted the wait-only authority boundary");
+                NativeTcpRelayServer.TurnPathReadout firstTurns =
+                        firstHost.remoteTurnPersistence();
+                require(firstTurns.persistenceEnabled()
+                                && firstTurns.acceptedCommands() == 1L
+                                && firstTurns.worldTurn() == 1L
+                                && Files.isRegularFile(firstTurns.persistenceFile()),
+                        "live host did not persist the first authoritative wait");
+
                 long sentSequence = alpha.sendRelayPayload(
                         "client-supervisor-relay-frame");
                 require(sentSequence == 0L,
@@ -95,6 +126,7 @@ final class IndependentHostClientSupervisorSmoke {
                         "beta did not receive the supervised relay frame");
 
                 alphaHostedCommands = ready.acceptedHostedCommands();
+                alphaWorldCommands = firstWait.acceptedWorldCommands();
                 alpha.close();
                 waitForVisiblePlayers(beta, 1, TIMEOUT);
                 require(beta.latestRoster().entryFor(alphaPlayer) == null,
@@ -131,6 +163,19 @@ final class IndependentHostClientSupervisorSmoke {
                             false,
                             "away",
                             TIMEOUT);
+
+                    IndependentHostClientSupervisor.WorldWaitAck resumedWait =
+                            resumed.waitAuthoritativeTurn(TIMEOUT);
+                    require(resumedWait.commandId() == 0L
+                                    && resumedWait.connectionGeneration() == 2L
+                                    && resumedWait.lastConnectionCommandId() == 0L
+                                    && resumedWait.playerTurn() == 2L
+                                    && resumedWait.worldTurn() == 2L
+                                    && resumedWait.acceptedPlayerCommands() == 2L
+                                    && resumedWait.acceptedWorldCommands()
+                                    == alphaWorldCommands + 1L,
+                            "living-host resume lost authoritative wait continuity");
+                    alphaWorldCommands = resumedWait.acceptedWorldCommands();
                 }
                 waitForVisiblePlayers(beta, 1, TIMEOUT);
             } finally {
@@ -167,6 +212,24 @@ final class IndependentHostClientSupervisorSmoke {
                         "host restart did not preserve accounting and reset liveness");
                 require(restarted.resumeTokenPersisted(),
                         "restarted client did not update token custody metadata");
+                NativeTcpRelayServer.TurnPathReadout restoredTurns =
+                        restartedHost.remoteTurnPersistence();
+                require(restoredTurns.acceptedCommands() == alphaWorldCommands
+                                && restoredTurns.worldTurn() == 2L,
+                        "host restart did not restore authoritative turn accounting");
+
+                IndependentHostClientSupervisor.WorldWaitAck restartedWait =
+                        restarted.waitAuthoritativeTurn(TIMEOUT);
+                require(restartedWait.commandId() == 0L
+                                && restartedWait.connectionGeneration() == 3L
+                                && restartedWait.lastConnectionCommandId() == 0L
+                                && restartedWait.playerTurn() == 3L
+                                && restartedWait.worldTurn() == 3L
+                                && restartedWait.acceptedPlayerCommands() == 3L
+                                && restartedWait.acceptedWorldCommands()
+                                == alphaWorldCommands + 1L,
+                        "host restart resume did not continue authoritative wait state");
+                alphaWorldCommands = restartedWait.acceptedWorldCommands();
             } finally {
                 restartedHost.close();
             }
@@ -209,7 +272,9 @@ final class IndependentHostClientSupervisorSmoke {
                 denied.close();
             }
 
-            verifyNoWorldCommandApi();
+            verifyNoGenericWorldCommandApi();
+            require(alphaWorldCommands == 3L,
+                    "supervised authoritative wait accounting ended at the wrong value");
             require(IndependentHostClientSupervisor.VERSION
                             .startsWith("independent-host-client-supervisor-"),
                     "client supervisor version identity is missing");
@@ -222,14 +287,20 @@ final class IndependentHostClientSupervisorSmoke {
                     + " peerRosterBroadcasts=true"
                     + " hostedCommandSequencing=true"
                     + " relayDispatch=true"
+                    + " authoritativeWait=true"
+                    + " authoritativeWaitOrdering=true"
+                    + " authoritativeWaitLivingResume=true"
+                    + " authoritativeWaitHostRestartResume=true"
                     + " disconnectPrivacy=true"
                     + " livingHostResume=true"
                     + " hostRestartResume=true"
                     + " staleLivenessReset=true"
                     + " canonicalRosterClientAuthority=true"
                     + " corruptedLocalTokenRejected=true"
-                    + " worldCommandApi=false"
-                    + " worldAuthority=false");
+                    + " genericWorldCommandApi=false"
+                    + " movementAuthority=false"
+                    + " mapAuthority=false"
+                    + " fullWorldAuthority=false");
         } finally {
             if (previous == null) {
                 System.clearProperty("mechanist.storage.root");
@@ -336,7 +407,7 @@ final class IndependentHostClientSupervisorSmoke {
         }
     }
 
-    private static void verifyNoWorldCommandApi() {
+    private static void verifyNoGenericWorldCommandApi() {
         for (Method method : IndependentHostClientSupervisor.class
                 .getDeclaredMethods()) {
             String name = method.getName().toLowerCase(Locale.ROOT);
@@ -345,7 +416,7 @@ final class IndependentHostClientSupervisorSmoke {
                             && !name.contains("inventory")
                             && !name.contains("worldcommand")
                             && !name.contains("worldsnapshot"),
-                    "client supervisor exposed unfinished world API: "
+                    "client supervisor exposed unfinished generic world API: "
                             + method.getName());
         }
     }
