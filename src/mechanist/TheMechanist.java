@@ -33,18 +33,27 @@ public class TheMechanist {
             AppIconAuthority.applyTo(frame);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             GamePanel panel = new GamePanel(runtimeProfile);
+            SinglePlayerInternalHostSupervisor internalHost =
+                    SinglePlayerInternalHostSupervisor.mount(panel, runtimeProfile);
+            Runtime.getRuntime().addShutdownHook(new Thread(internalHost::close, "mechanist-internal-host-shutdown"));
+            DebugLog.audit("SINGLE_PLAYER_INTERNAL_HOST", internalHost.statusLine());
             WorldStartFlowAuthority.install(panel);
             BootMenuFlowAuthority.startBootSequence(panel, "application-entry");
             frame.setContentPane(panel);
             DisplayDensityAuthority.refreshSwingTree(frame);
             frame.addWindowListener(new WindowAdapter() {
-                @Override public void windowClosing(WindowEvent e) { panel.shutdownRuntime(); }
-                @Override public void windowClosed(WindowEvent e) { panel.shutdownRuntime(); }
+                @Override public void windowClosing(WindowEvent e) { shutdown(panel, internalHost); }
+                @Override public void windowClosed(WindowEvent e) { shutdown(panel, internalHost); }
             });
             WindowModeSurfaceAuthority.configureInitialFrame(frame, panel.options);
             frame.setVisible(true);
             WindowModeSurfaceAuthority.activateInitialFrame(frame, panel.options);
             panel.requestFocusInWindow();
         });
+    }
+
+    private static void shutdown(GamePanel panel, SinglePlayerInternalHostSupervisor internalHost) {
+        if (panel != null) panel.shutdownRuntime();
+        if (internalHost != null) internalHost.close();
     }
 }
