@@ -39,10 +39,12 @@ final class RuntimeSeparationAuthority {
                 + " independentHostRemoteLobby=player-facing-editable"
                 + " independentHostRemoteLobbyStorage=user-mutable-outside-install"
                 + " independentHostRemoteLobbyInternalHost=not-mounted"
+                + " independentHostTurnAuthority=headless-persistent-smoke-gated"
+                + " independentHostTurnCommand=wait-only-not-network-exposed"
                 + " independentHostClientWorldCommandApi=not-implemented"
-                + " independentHostWorldCommands=rejected"
+                + " independentHostNetworkWorldCommands=rejected"
                 + " independentHostAccess=relay-only"
-                + " independentHostWorldAuthority=not-implemented"
+                + " independentHostWorldAuthority=core-not-network-exposed"
                 + " remoteGameplaySession=not-yet-certified"
                 + " modManifest=declared-only"
                 + " hotRestart=not-yet-implemented";
@@ -64,11 +66,13 @@ final class RuntimeSeparationAuthority {
         out.add("The supervised client owns handshake progression, hosted-command and relay sequencing, canonical connected-only roster parsing, asynchronous control-frame dispatch, reconnect, and shutdown. It exposes no movement, combat, inventory, world-snapshot, or gameplay-command API.");
         out.add("Because the client must present the reusable resume token during reconnect, it stores that plaintext credential only in its protected mutable profile using required atomic replacement and owner-only permissions where supported. Status and diagnostic text never include the token.");
         out.add("REMOTE_CLIENT mode opens a dedicated player-facing lobby window with editable host, port, server key, and profile fields; readiness, presence, and typing controls; a connected-only roster; a bounded relay console; and interrogatable session status.");
-        out.add("The remote lobby writes mutable state outside the installation and never constructs GamePanel, the single-player internal host, or any remote world authority.");
+        out.add("The remote lobby writes mutable state outside the installation and never constructs GamePanel or the single-player internal host.");
+        out.add("A headless remote turn authority now reuses the same WorldCommandRequest and AuthoritativeWorldRuntime single-writer lane as desktop single-player. Its only open command is WaitCommand, with exact per-connection ordering, immutable snapshots, atomic persistence, clean-restart continuity, and corruption rejection.");
+        out.add("That turn authority is not yet connected to the independent-host wire protocol or lobby. It does not grant movement, map, interaction, combat, inventory, economy, teleport, or general gameplay authority.");
         out.add("The host owns a deliberately narrow pre-world lobby authority: ordered readiness, presence, and chat-state commands plus immutable deterministic roster snapshots. Stale readiness, presence, and typing state are reset when a connection or host process ends.");
         out.add("Authenticated peers receive authoritative roster control frames when another client joins, changes hosted-lobby state, disconnects, or resumes. These asynchronous MECH control frames are not SEQ relay payloads and do not consume or grant gameplay command sequence authority.");
         out.add("Clean host restart certification preserves player identity, advances connection generation, keeps immutable snapshot versions monotonic, preserves lifetime hosted-command accounting, and rejects corrupted or world-mismatched ledgers before binding.");
-        out.add("Authenticated relay access does not initialize a remote world snapshot, grant movement or combat authority, mutate inventory or position, process world simulation commands, or persist a hosted game world. Unsupported world verbs are rejected at the hosted-session boundary.");
+        out.add("Authenticated relay access still does not initialize or deliver a remote map snapshot, grant movement or combat authority, mutate inventory or position, or accept network world verbs. Unsupported world verbs remain rejected at the hosted-session boundary.");
         out.add("A packaged client-to-independent-host authoritative gameplay session is therefore not certified and remains distinct from the local single-player host.");
         out.add("Shared runtime profiles carry mode, save/world identity, mod manifest path, enabled mod tokens, and remote endpoint defaults without activating external mod loading.");
         out.add("");
@@ -132,11 +136,17 @@ final class RuntimeSeparationAuthority {
         out.add("independentHostRemoteLobbyMutableStorageOutsideInstall=true");
         out.add("independentHostRemoteLobbyGamePanelMounted=false");
         out.add("independentHostRemoteLobbyInternalHostMounted=false");
+        out.add("independentHostTurnAuthority=true");
+        out.add("independentHostTurnAuthorityPersistence=atomic");
+        out.add("independentHostTurnAuthorityCommand=wait-only");
+        out.add("independentHostTurnAuthorityNetworkExposed=false");
+        out.add("independentHostMovementAuthority=false");
+        out.add("independentHostMapAuthority=false");
         out.add("independentHostClientWorldCommandApi=false");
         out.add("independentHostHostedSessionStatePersistence=lifetime-accounting-only");
         out.add("independentHostStaleHostedLivenessRestored=false");
         out.add("independentHostUnsupportedWorldCommandsAccepted=false");
-        out.add("independentHostWorldAuthority=false");
+        out.add("independentHostWorldAuthorityNetworkExposed=false");
         out.add("remoteGameplaySessionCertified=false");
         out.add("modResolution=false");
         out.add("processRestartHandoff=false");
