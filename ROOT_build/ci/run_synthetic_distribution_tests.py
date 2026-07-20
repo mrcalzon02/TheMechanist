@@ -160,6 +160,20 @@ def main() -> int:
         [
             java,
             *profile_args,
+            "-Djava.awt.headless=true",
+            "-cp",
+            classpath(install, "client"),
+            "mechanist.IndependentHostTransportSessionSmoke",
+        ],
+        cwd=root,
+        env=env,
+        timeout=180,
+    )
+
+    run(
+        [
+            java,
+            *profile_args,
             "-cp",
             classpath(install, "server"),
             "mechanist.MechanistServerMain",
@@ -254,6 +268,9 @@ def main() -> int:
         "packagedGate3": True,
         "singlePlayerInternalHostLifecycle": True,
         "singlePlayerSaveResume": True,
+        "independentHostTransportSession": True,
+        "independentHostExactBind": True,
+        "independentHostGameplaySessionCertified": False,
         "serverOperation": True,
         "serverHostBind": True,
         "nativeInstallerPayloadStage": True,
