@@ -51,7 +51,8 @@ final class RemoteClientStartupSmoke {
                             && audit.contains("worldAuthority=false"),
                     "remote lobby audit overclaimed a world or local-host boundary");
             require(audit.contains("hostedCommands=ready,presence,chat-state")
-                            && audit.contains("relayConsole=true"),
+                            && audit.contains("relayConsole=true")
+                            && audit.contains("pendingConnectionCancellable=true"),
                     "remote lobby audit omitted its certified player-facing controls");
 
             Path expectedRoot = root.toAbsolutePath().normalize();
@@ -112,6 +113,7 @@ final class RemoteClientStartupSmoke {
                     + " gamePanelMounted=false"
                     + " hostedLobbyControls=true"
                     + " relayConsole=true"
+                    + " pendingConnectionCancellable=true"
                     + " invalidPortRejected=true"
                     + " worldCommandApi=false"
                     + " worldAuthority=false");
@@ -129,18 +131,20 @@ final class RemoteClientStartupSmoke {
             ThrowingAction action,
             String expectedText
     ) throws Exception {
+        Throwable failure = null;
         try {
             action.run();
-            throw new AssertionError(
-                    "expected failure containing: " + expectedText);
         } catch (Throwable expected) {
-            String message = expected.getMessage() == null
-                    ? ""
-                    : expected.getMessage();
-            require(message.toLowerCase(Locale.ROOT).contains(
-                            expectedText.toLowerCase(Locale.ROOT)),
-                    "unexpected failure: " + message);
+            failure = expected;
         }
+        require(failure != null,
+                "expected failure containing: " + expectedText);
+        String message = failure.getMessage() == null
+                ? ""
+                : failure.getMessage();
+        require(message.toLowerCase(Locale.ROOT).contains(
+                        expectedText.toLowerCase(Locale.ROOT)),
+                "unexpected failure: " + message);
     }
 
     private static void deleteRecursively(Path root) {
