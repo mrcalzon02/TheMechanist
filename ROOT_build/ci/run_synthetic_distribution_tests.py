@@ -139,6 +139,23 @@ def main() -> int:
         env=env,
         timeout=600,
     )
+
+    internal_host_storage = profile / "Internal Host Storage With Spaces"
+    run(
+        [
+            java,
+            *profile_args,
+            f"-Dmechanist.storage.root={internal_host_storage}",
+            "-Djava.awt.headless=true",
+            "-cp",
+            classpath(install, "client"),
+            "mechanist.SinglePlayerInternalHostLifecycleSmoke",
+        ],
+        cwd=root,
+        env=env,
+        timeout=900,
+    )
+
     run(
         [
             java,
@@ -235,6 +252,8 @@ def main() -> int:
         "returningProfile": len(after) >= len(before),
         "readOnlyInstall": True,
         "packagedGate3": True,
+        "singlePlayerInternalHostLifecycle": True,
+        "singlePlayerSaveResume": True,
         "serverOperation": True,
         "serverHostBind": True,
         "nativeInstallerPayloadStage": True,
