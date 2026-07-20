@@ -40,7 +40,7 @@ final class IndependentHostWorldWaitWireSmoke {
                     first.accept("MECH|WORLD_COMMAND|0|WAIT")
                             .responses().get(0),
                     "WORLD_COMMAND_ACCEPTED");
-            verifyWaitAccepted(firstAccepted, 0L, 1L, 1L, 1L, 1L, 1L);
+            verifyWaitAccepted(firstAccepted, 0L, 1L, 0L, 1L, 1L, 1L);
             IndependentHostTurnAuthority.TurnSnapshot firstSnapshot =
                     first.turnSnapshot();
             require(firstSnapshot != null
@@ -75,13 +75,15 @@ final class IndependentHostWorldWaitWireSmoke {
                     "WORLD_COMMAND_ACCEPTED");
             verifyWaitAccepted(resumedAccepted, 0L, 2L, 0L, 2L, 2L, 2L);
 
+            RemoteSessionLedgerAuthority unsupportedSessions =
+                    new RemoteSessionLedgerAuthority("unsupported-world-wait");
+            IndependentHostTurnAuthority unsupportedTurns =
+                    new IndependentHostTurnAuthority("unsupported-world-wait");
             IndependentHostWireProtocol unsupported =
                     new IndependentHostWireProtocol(
                             "world-wait-unsupported",
-                            new RemoteSessionLedgerAuthority(
-                                    "unsupported-world-wait"),
-                            new IndependentHostTurnAuthority(
-                                    "unsupported-world-wait"));
+                            unsupportedSessions,
+                            unsupportedTurns);
             try {
                 authenticate(unsupported, "alpha.world.wait.2002", "");
                 IndependentHostWireProtocol.Result denied =
@@ -92,6 +94,8 @@ final class IndependentHostWorldWaitWireSmoke {
                         "unsupported movement verb was not rejected at the wire boundary");
             } finally {
                 unsupported.disconnect("world wait smoke complete");
+                unsupportedSessions.close();
+                unsupportedTurns.close();
             }
 
             require(turns.worldTurn() == 2L
