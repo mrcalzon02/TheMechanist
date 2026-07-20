@@ -139,6 +139,12 @@ def write_launchers(root: pathlib.Path, platform_name: str) -> None:
                 '"%ROOT%packages\\client\\TheMechanist.jar;%ROOT%packages\\support\\lib\\*" '
                 "mechanist.TheMechanist %*\r\n"
             ),
+            "Run-Remote-Client.cmd": (
+                "@echo off\r\nsetlocal\r\nset ROOT=%~dp0\r\n"
+                '"%ROOT%runtime\\bin\\java.exe" -cp '
+                '"%ROOT%packages\\client\\TheMechanist.jar;%ROOT%packages\\support\\lib\\*" '
+                "mechanist.RemoteClientMain %*\r\n"
+            ),
             "Run-Server.cmd": (
                 "@echo off\r\nsetlocal\r\nset ROOT=%~dp0\r\n"
                 '"%ROOT%runtime\\bin\\java.exe" -cp '
@@ -157,6 +163,12 @@ def write_launchers(root: pathlib.Path, platform_name: str) -> None:
                 'exec "$ROOT/runtime/bin/java" -cp '
                 '"$ROOT/packages/client/TheMechanist.jar:$ROOT/packages/support/lib/*" '
                 'mechanist.TheMechanist "$@"\n'
+            ),
+            "run-remote-client.sh": (
+                '#!/usr/bin/env sh\nset -eu\nROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n'
+                'exec "$ROOT/runtime/bin/java" -cp '
+                '"$ROOT/packages/client/TheMechanist.jar:$ROOT/packages/support/lib/*" '
+                'mechanist.RemoteClientMain "$@"\n'
             ),
             "run-server.sh": (
                 '#!/usr/bin/env sh\nset -eu\nROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\n'
@@ -233,6 +245,7 @@ def write_launcher_compatibility_manifest(
             "sha256": client["sha256"],
             "size": client["size"],
             "main_class": "mechanist.TheMechanist",
+            "remote_main_class": "mechanist.RemoteClientMain",
             "launcher_main_class": "mechanist.launcher.ThinLauncherMain",
         },
         "server": {
@@ -279,6 +292,7 @@ def write_manifest(
         "commit": commit,
         "javaRelease": 17,
         "releaseHardened": release_hardened,
+        "remoteClientEntryPoint": "mechanist.RemoteClientMain",
         "artifacts": artifacts,
     }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -425,6 +439,7 @@ def main() -> int:
         "version": version,
         "platform": current_platform,
         "releaseHardened": release_hardened,
+        "remoteClientEntryPoint": "mechanist.RemoteClientMain",
         "playtestDocuments": [destination for _, destination in PLAYTEST_DOCS]
         + ["SERVER_README.md"],
     }
