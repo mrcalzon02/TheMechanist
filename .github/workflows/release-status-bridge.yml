@@ -1,0 +1,79 @@
+name: Release Status Bridge
+
+on:
+  workflow_run:
+    workflows:
+      - Java 17 Verify and Release
+      - Native Installer Alpha Gate
+    types:
+      - requested
+      - in_progress
+      - completed
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  publish-commit-status:
+    name: Publish readable commit status
+    if: ${{ github.event.workflow_run.event != 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Translate workflow result
+        uses: actions/github-script@v7
+        env:
+          EVENT_ACTION: ${{ github.event.action }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const action = process.env.EVENT_ACTION || '';
+            const workflow = process.env.WORKFLOW_NAME || '';
+            const conclusion = process.env.WORKFLOW_CONCLUSION || '';
+            const sha = process.env.WORKFLOW_HEAD_SHA || '';
+            const targetUrl = process.env.WORKFLOW_URL || '';
+
+            const contexts = {
+              'Java 17 Verify and Release': 'the-mechanist/java17-verification',
+              'Native Installer Alpha Gate': 'the-mechanist/native-alpha-gate',
+            };
+            const statusContext = contexts[workflow];
+            if (!statusContext) {
+              core.setFailed(`Unsupported workflow name: ${workflow}`);
+              return;
+            }
+            if (!/^[a-f0-9]{40}$/i.test(sha)) {
+              core.setFailed(`Invalid workflow head SHA: ${sha}`);
+              return;
+            }
+
+            let state = 'pending';
+            let description = `${workflow} is running`;
+            if (action === 'completed') {
+              if (conclusion === 'success') {
+                state = 'success';
+                description = `${workflow} passed`;
+              } else if (conclusion === 'failure' || conclusion === 'timed_out') {
+                state = 'failure';
+                description = `${workflow} failed: ${conclusion}`;
+              } else {
+                state = 'error';
+                description = `${workflow} ended: ${conclusion || 'unknown'}`;
+              }
+            }
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state,
+              context: statusContext,
+              description: description.substring(0, 140),
+              target_url: targetUrl,
+            });
+            core.info(`Published ${state} for ${sha} as ${statusContext}`);
