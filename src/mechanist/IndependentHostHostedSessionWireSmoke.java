@@ -3,7 +3,7 @@ package mechanist;
 import java.util.Arrays;
 import java.util.List;
 
-/** Verifies authenticated hosted-session commands, roster responses, and peer-broadcast classification. */
+/** Verifies authenticated hosted-session commands, connected-only roster responses, and peer-broadcast classification. */
 final class IndependentHostHostedSessionWireSmoke {
     public static void main(String[] args) throws Exception {
         RemoteSessionLedgerAuthority ledger =
@@ -112,7 +112,9 @@ final class IndependentHostHostedSessionWireSmoke {
         require(worldDenied.disconnect()
                         && worldDenied.reason().contains("world authority is closed"),
                 "world command was not rejected at the hosted-session boundary");
-        verifyRoster(worldDenied.broadcasts(), 2, 1, false);
+        verifyRoster(worldDenied.broadcasts(), 1, 1, false);
+        require(!containsPlayer(worldDenied.broadcasts(), resumedAccess.playerId),
+                "departure roster exposed an offline persisted resume identity");
         require(!ledger.hostedSessionSnapshot().worldAuthority(),
                 "hosted-session snapshot overclaimed world authority");
 
@@ -121,6 +123,8 @@ final class IndependentHostHostedSessionWireSmoke {
         System.out.println("IndependentHostHostedSessionWireSmoke PASS"
                 + " hostedCommands=true"
                 + " immutableRoster=true"
+                + " connectedOnlyRosterVisibility=true"
+                + " offlineResumeIdentityPrivate=true"
                 + " peerBroadcastClassification=true"
                 + " privateResponsesNotBroadcast=true"
                 + " departureRosterClassified=true"
@@ -192,6 +196,18 @@ final class IndependentHostHostedSessionWireSmoke {
         return new Handshake(challenge[2], challenge[3], challenge[4]);
     }
 
+    private static boolean containsPlayer(List<String> lines, String playerId) {
+        for (String line : lines) {
+            String[] fields = line.split("\\|", -1);
+            if (fields.length >= 3
+                    && "HOSTED_ROSTER_ENTRY".equals(fields[1])
+                    && playerId.equals(fields[2])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void verifyRoster(
             List<String> lines,
             int expectedTotal,
@@ -213,6 +229,8 @@ final class IndependentHostHostedSessionWireSmoke {
             require(entry.length == 10,
                     "invalid HOSTED_ROSTER_ENTRY field count: "
                             + Arrays.toString(entry));
+            require(Boolean.parseBoolean(entry[3]),
+                    "wire roster serialized an offline persisted session");
             require(previousPlayer.compareTo(entry[2]) < 0,
                     "hosted roster entries are not deterministically ordered");
             previousPlayer = entry[2];
