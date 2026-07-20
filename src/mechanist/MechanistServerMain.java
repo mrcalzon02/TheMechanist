@@ -15,12 +15,13 @@ import java.util.concurrent.CountDownLatch;
 
 /** Headless server executable entry point, save-path initializer, and optional host binder. */
 public final class MechanistServerMain {
-    static final String VERSION = "mechanist-server-main-0.9.10ib";
+    static final String VERSION = BuildIdentityAuthority.componentVersion("server");
 
     public static void main(String[] args) {
-        DebugLog.init("0.9.10ib-server");
+        DebugLog.init(BuildIdentityAuthority.debugBuildTag("server"));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> DebugLog.shutdown("server JVM shutdown hook executed."), "mechanist-server-log-shutdown"));
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> DebugLog.error("SERVER_UNHANDLED_THREAD", "Thread " + t.getName() + " threw outside guarded execution.", e));
+        DebugLog.audit("BUILD_IDENTITY", BuildIdentityAuthority.auditSummary());
         int exit = 0;
         ServerRuntime runtime = null;
         try {
@@ -70,6 +71,7 @@ final class ServerRuntime {
         Properties state = loadState();
         if (state.getProperty("server.id", "").isBlank()) state.setProperty("server.id", UUID.randomUUID().toString());
         state.setProperty("server.version", MechanistServerMain.VERSION);
+        state.setProperty("server.build", BuildIdentityAuthority.version());
         state.setProperty("server.updated", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         state.setProperty("server.saveFile", ServerRuntimePaths.serverStateFile().toString());
         state.setProperty("server.worldDir", ServerRuntimePaths.serverWorldDir().toString());
@@ -99,7 +101,7 @@ final class ServerRuntime {
         DebugLog.audit("SERVER_MULTIPLAYER_BINDING", MultiplayerHostBindingService.auditSummary());
         JvmRuntimeProfileAuthority.RuntimeConfig jvmProfile = JvmRuntimeProfileAuthority.effectiveServerProfile(JvmRuntimeProfileAuthority.load());
         DebugLog.audit("JVM_RUNTIME_PROFILE", JvmRuntimeProfileAuthority.auditSummary(jvmProfile));
-        DebugLog.audit("SERVER_RUNTIME_INIT", "args=" + Arrays.toString(args) + " file=" + ServerRuntimePaths.serverStateFile().toAbsolutePath());
+        DebugLog.audit("SERVER_RUNTIME_INIT", "build=" + BuildIdentityAuthority.version() + " args=" + Arrays.toString(args) + " file=" + ServerRuntimePaths.serverStateFile().toAbsolutePath());
         return new ServerRuntime(state, help, host && binding != null && binding.success(), hostOnce, binding, securityCore);
     }
 
@@ -123,7 +125,8 @@ final class ServerRuntime {
 
     String statusLine() {
         String hostLine = hostBinding == null ? " host=closed" : " host=" + hostBinding.compactLine();
-        return "The Mechanist server runtime is initialized. saveFile=" + state.getProperty("server.saveFile")
+        return "The Mechanist server runtime is initialized. build=" + BuildIdentityAuthority.version()
+                + " saveFile=" + state.getProperty("server.saveFile")
                 + " worldDir=" + state.getProperty("server.worldDir")
                 + " slotDir=" + state.getProperty("server.slotDir")
                 + " singlePlayerSaveDir=" + state.getProperty("singlePlayer.saveDir")
@@ -133,7 +136,8 @@ final class ServerRuntime {
     }
 
     String usageText() {
-        return "Usage: java -jar TheMechanistServer.jar [--status|--init|--help|--host|--host-once] [--world-name=NAME] [--seed=N] [--difficulty=TEXT] [--max-players=N] [--port=25500-25599] [--bind=::|0.0.0.0] [--setup=encoded] [--no-steam]\n"
+        return "The Mechanist server build " + BuildIdentityAuthority.version() + "\n"
+                + "Usage: java -jar TheMechanistServer.jar [--status|--init|--help|--host|--host-once] [--world-name=NAME] [--seed=N] [--difficulty=TEXT] [--max-players=N] [--port=25500-25599] [--bind=::|0.0.0.0] [--setup=encoded] [--no-steam]\n"
                 + "The server initializes the headless save namespace and can bind a blind encrypted-packet relay. It avoids system ports and Steam query ports.\n"
                 + "Server state: " + ServerRuntimePaths.serverStateFile() + "\n"
                 + "Server world definitions: " + ServerRuntimePaths.serverWorldDir() + "\n"
