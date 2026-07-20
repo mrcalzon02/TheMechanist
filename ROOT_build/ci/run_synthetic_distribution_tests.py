@@ -225,6 +225,20 @@ def main() -> int:
         [
             java,
             *profile_args,
+            "-Djava.awt.headless=true",
+            "-cp",
+            classpath(install, "client"),
+            "mechanist.IndependentHostPersistentSessionRestartSmoke",
+        ],
+        cwd=root,
+        env=env,
+        timeout=240,
+    )
+
+    run(
+        [
+            java,
+            *profile_args,
             "-cp",
             classpath(install, "server"),
             "mechanist.MechanistServerMain",
@@ -334,7 +348,10 @@ def main() -> int:
         "independentHostInvalidResumeTokenDenied": True,
         "independentHostImmutableSessionSnapshots": True,
         "independentHostLifetimeRelayAccounting": True,
-        "independentHostSessionPersistenceAcrossProcessRestart": False,
+        "independentHostAtomicSessionLedgerPersistence": True,
+        "independentHostResumeTokenHashOnlyPersistence": True,
+        "independentHostCorruptSessionLedgerRejected": True,
+        "independentHostSessionPersistenceAcrossProcessRestart": True,
         "independentHostRelayOnlyAccess": True,
         "independentHostPreAuthenticationDataDenied": True,
         "independentHostBadChallengeDenied": True,
