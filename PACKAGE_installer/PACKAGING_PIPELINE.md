@@ -1,138 +1,214 @@
 # The Mechanist — Installer Packaging Pipeline
 
-This guide belongs to the installer workspace. It describes how platform packages should be assembled around the current delivery model:
+This guide belongs to the installer workspace. It defines the current package path:
 
 ```text
 installer → thin launcher → client → server
 ```
 
-The installer should install the smallest durable launcher/orchestrator layer and its own runtime support. The launcher then owns package manifest verification, acquisition, update, rollback, and launch of the client package, server package, and required support libraries. The player should not need to download the full development repository to run the launcher.
+The full development repository is never a player runtime. Limited-alpha delivery begins with a verified canonical platform distribution, then native installers consume that distribution without rebuilding a competing client, server, dependency, runtime, or manifest tree.
 
-## Source build and runtime artifacts
+## Canonical release authority
 
-The normal development package path produces executable shaded jars:
+The canonical build and verification tools are:
+
+```text
+ROOT_build/ci/build_runnable_distribution.py
+ROOT_build/ci/verify_runnable_distribution.py
+ROOT_build/ci/run_synthetic_distribution_tests.py
+```
+
+The canonical distribution contains:
+
+```text
+manifests/runtime-manifest.json
+manifests/launcher-runtime-manifest.json
+launcher/MechanistLauncher.jar
+packages/client/TheMechanist.jar
+packages/server/TheMechanistServer.jar
+packages/support/lib/*.jar
+runtime/
+docs/
+platform launch scripts
+```
+
+`runtime-manifest.json` is the complete integrity ledger. It records the exact source commit, project version, platform, Java release, release-hardening state, every staged path, file size, role, and SHA-256 identity.
+
+`launcher-runtime-manifest.json` is the compatibility view consumed by the current thin launcher. It contains the verified client, server, and support-library package identities. The compatibility manifest is itself covered by the canonical integrity ledger.
+
+The launcher may verify, install, repair, roll back, and launch a package set. It must not clone the development repository or opportunistically download libraries while the game starts.
+
+## Development and distributable artifacts
+
+The ordinary Maven development path produces:
 
 ```text
 target/TheMechanist-all.jar
 target/TheMechanistServer-all.jar
 ```
 
-Build command:
+The distributable limited-alpha path requires the explicit `release-obfuscation` profile and produces:
+
+```text
+target/TheMechanist-obfuscated.jar
+target/TheMechanistServer-obfuscated.jar
+```
+
+A native installer or published prerelease must fail unless the canonical distribution reports:
+
+```text
+javaRelease = 17
+releaseHardened = true
+```
+
+Ordinary exact-head CI distributions may remain non-obfuscated development artifacts. They are verification outputs, not playtest releases.
+
+## Canonical portable build
+
+Linux or macOS shell:
 
 ```bash
-mvn -B -DskipTests package
+python3 ROOT_build/ci/build_runnable_distribution.py \
+  --repo . \
+  --release-hardened \
+  --output dist/releases
 ```
 
-ProGuard is isolated behind the explicit `release-obfuscation` profile while release hardening is still under development. Do not require ProGuard configuration or obfuscated jars for the ordinary development package path.
-
-## Launcher-managed package layout
-
-Packaging scripts stage a launcher-owned runtime layout rather than relying on the repository root:
-
-```text
-manifests/
-launcher/MechanistLauncher.jar
-packages/client/TheMechanist.jar
-packages/server/TheMechanistServer.jar
-packages/support/lib/*.jar
-runtime/
-```
-
-The platform runtime manifest records package identity, version, platform, paths, sizes, hashes, and main classes. The launcher must treat that manifest as the package identity source of truth.
-
-The same layout may be used as a local package seed for acquisition testing. The launcher reads `MECHANIST_LAUNCHER_PACKAGE_SEED_ROOT` or `mechanist.launcher.packageSeedRoot`, verifies the seed manifest and listed artifacts, copies them into the install root, and stores rollback backups under the launcher cache before replacement.
-
-Manifest compatibility is part of package identity. Current launcher verification accepts schema `2`, distribution model `installer-thin-launcher-client-server`, and the platform matching the running launcher, such as `windows-x64` or `linux-x64`.
-
-Required support libraries such as LWJGL, platform native LWJGL jars, controller bridges such as Jamepad or its successor, Netty when used by a launched package, and future support libraries must be staged into `packages/support/lib/` by the packaging/update/acquisition stage. Game launchers and the client runtime must not download support libraries opportunistically during game startup.
-
-## Remote Java 17 verification and GitHub Releases
-
-The remote development and release path is owned by:
-
-```text
-.github/workflows/java17-verify-and-release.yml
-ROOT_build/ci/build_runnable_distribution.py
-ROOT_build/ci/verify_runnable_distribution.py
-```
-
-Every push to `main` and every pull request targeting `main` runs the cross-platform Java 17 verification matrix on Linux and Windows. The workflow:
-
-1. Checks out the exact commit.
-2. Installs Temurin Java 17 and records the active toolchain.
-3. Rebuilds client and server shaded jars from source.
-4. Executes `Gate3PlayerFacingTextSmokeSuite`.
-5. Executes the focused packaged startup smoke.
-6. Starts the packaged headless server with `--help` under an isolated user-storage root.
-7. Builds the launcher.
-8. Stages the client, server, launcher, platform-matching runtime libraries, documentation, launch scripts, and a bundled Java 17 `jlink` runtime.
-9. Generates a schema-2 manifest covering every staged file with size and SHA-256 identity.
-10. Verifies all declared files, rejects undeclared files, validates JAR entry points, rejects classfiles newer than Java 17 major version 61, checks platform-native support libraries, and checks ZIP integrity.
-11. Runs Gate 3 and the server smoke again from the staged distribution using the bundled runtime.
-12. Uploads the runnable ZIP and machine-readable verification report as workflow artifacts.
-
-Ordinary `main` and pull-request runs build non-obfuscated development distributions for exact-head verification. Release publication uses the `release-obfuscation` Maven profile and must pass the same matrix before publication.
-
-A GitHub Release is created only by one of these explicit conditions:
-
-- Push a `v*` tag, such as `v0.9.10iz`.
-- Manually dispatch **Java 17 Verify and Release**, enable `publish_release`, and provide a valid `v`-prefixed release tag.
-
-The release job does not run until both Linux and Windows verification jobs succeed. It attaches both portable runnable ZIPs, both verification reports, and `SHA256SUMS.txt`. Existing releases with the same tag receive replacement assets through an explicit clobbering upload; ordinary `main` pushes never publish a release.
-
-Workflow publication permission is limited to the release job. Verification jobs have read-only repository contents permission.
-
-## Local package seed builder
-
-When Maven or private dependency authentication is unavailable, use the local Gate 4 seed builder to verify the manifest package chain from source:
+Windows PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\ROOT_tools\packaging\stage_local_package_seed.ps1 -Version gate4-local
+python .\ROOT_build\ci\build_runnable_distribution.py `
+  --repo . `
+  --release-hardened `
+  --output dist\releases
 ```
 
-The builder compiles client/server and launcher sources with `javac --release 17`, creates executable client, server, and launcher jars, stages them under `build/local-package-seed/`, writes the platform runtime manifest, and scans the staged jars for Java 17 classfile compatibility. Add `-IncludeAssets` when the local check needs a copied `packages/client/assets` tree.
+Verify the resulting platform directory and archive:
 
-## Gate 2 open authentication dependency
+```bash
+python3 ROOT_build/ci/verify_runnable_distribution.py \
+  dist/releases/TheMechanist-<version>-<platform> \
+  --archive dist/releases/TheMechanist-<version>-<platform>.zip \
+  --require-release-hardened
+```
 
-Gate 2 remains unfinished until publish-safe artifact authentication is defined and verified. The central project repository and any private Maven/GitHub Packages artifacts require explicit credentials outside source control, such as a local Maven `settings.xml` server entry or environment-backed token wiring. Do not hard-code credentials in this tree.
+The verifier checks complete manifest coverage, hashes, JAR entry points, Java 17 classfile major version 61, required native support libraries, launcher-manifest agreement, bundled runtime presence, unsafe paths, undeclared files, and ZIP integrity.
 
-Until that is in place, local package-seed verification and rollback smoke tests are valid, but remote acquisition/update readiness and full native package release readiness must remain marked open.
+## Native installer convergence
 
-## Native package scripts
+Native packaging no longer recompiles the game or constructs its own package manifest. These shared tools stage and verify the native application payload:
 
-Linux:
+```text
+ROOT_build/ci/stage_native_installer_payload.py
+ROOT_build/ci/verify_native_installer_image.py
+```
+
+The staging tool:
+
+1. Re-verifies the canonical distribution with release hardening required.
+2. Copies the verified launcher, client, server, support libraries, and documentation.
+3. Preserves the launcher-compatible runtime manifest.
+4. Records the source distribution, version, commit, platform, hardening state, canonical manifest hash, and artifact count.
+5. Supplies the canonical `runtime/` image to `jpackage` separately instead of duplicating it inside the application payload.
+
+The native-image verifier reopens the produced `jpackage` app image and checks the launcher, client, server, support-library hashes, Java 17 classfiles, bundled runtime, source-certification record, hardening identity, and absence of mutable user-storage directories inside the installed payload.
+
+### Linux
+
+Build from a new canonical release-hardened distribution:
 
 ```bash
 ./scripts/package/build-linux-installers.sh
 ```
 
-Windows:
+Build from an already verified canonical distribution:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package\build-windows-installers.ps1
+```bash
+./scripts/package/build-linux-installers.sh \
+  --distribution dist/releases/TheMechanist-<version>-linux-x64
 ```
 
-A quick Windows local-testing path may use existing client/server jars when the script supports it:
+Limit the requested package types when needed:
+
+```bash
+./scripts/package/build-linux-installers.sh \
+  --distribution dist/releases/TheMechanist-<version>-linux-x64 \
+  --package-types app-image,deb
+```
+
+The Linux path always produces and verifies a portable app image. DEB is produced when requested. RPM is produced only when `rpmbuild` is available.
+
+### Windows
+
+Build from a new canonical release-hardened distribution:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\package\build-windows-installers.ps1 -UseExistingJar
+powershell -ExecutionPolicy Bypass -File `
+  .\scripts\package\build-windows-installers.ps1
 ```
+
+Build from an already verified canonical distribution:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File `
+  .\scripts\package\build-windows-installers.ps1 `
+  -DistributionRoot .\dist\releases\TheMechanist-<version>-windows-x64
+```
+
+Build only the directly runnable app image:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File `
+  .\scripts\package\build-windows-installers.ps1 `
+  -DistributionRoot .\dist\releases\TheMechanist-<version>-windows-x64 `
+  -PackageTypes app-image
+```
+
+The Windows path always produces and verifies a portable app image. EXE and MSI require WiX Toolset 3.x. Use `-RequireNativeInstallers` when missing WiX must be treated as a hard failure rather than allowing app-image-only output.
+
+The project version may contain an alphabetic development suffix. Native package metadata uses the numeric version portion accepted by `jpackage`, while the full project version and exact commit remain preserved in filenames, manifests, verification reports, and installer README output.
+
+## User-storage boundary
+
+Installer-controlled application directories must remain immutable during ordinary operation. Saves, settings, profiles, logs, cache, active mods, archived mods, and exports belong under the governed user-storage roots, never inside Program Files, `/opt`, or the app-image payload.
+
+The native-image verifier rejects installer payloads that contain top-level mutable user-storage directories.
+
+## Remote verification and prerelease publication
+
+`.github/workflows/java17-verify-and-release.yml` owns the cross-platform Java 17 package matrix, Gate 3, synthetic extracted-install checks, final certification, and guarded prerelease publication.
+
+An ordinary push or pull request verifies development distributions. A limited-alpha prerelease is created only through an explicit manual workflow dispatch with `publish_prerelease=true` and a version-matching `v` tag value.
+
+Before any playtest link is distributed, the exact candidate run must show successful Linux x64 and Windows x64 build, package verification, packaged Gate 3, synthetic environment, standalone host bind, final certification, checksums, and prerelease publication.
+
+## Gate 2 authentication boundary
+
+Remote authenticated package acquisition remains open. The current launcher can verify installed packages, install from a verified local package seed, and restore a rollback. It does not yet provide a production-ready authenticated remote update service.
+
+For limited alpha, use either:
+
+- the complete verified portable distribution; or
+- a native installer composed from that complete verified distribution.
+
+Do not present inactive `main`, `testing`, or `dev` channel hooks as operational remote update services.
 
 ## Release checklist
 
-1. Ensure Java 17 JDK is installed and `JAVA_HOME` points to it.
-2. Read the active durable governing documents before code/package work.
-3. Run source compile or Maven package with Java 17 compatibility.
-4. Run targeted smoke tests for touched systems.
-5. Rebuild client and server jars from the corrected source tree.
-6. Stage client, server, launcher, support libraries, manifests, and the platform Java runtime into the launcher-managed package layout.
-7. Verify manifest hashes and complete file coverage, including platform LWJGL native jars when required.
-8. Scan shipped jars/class directories for Java 17 classfile compatibility.
-9. Run Gate 3 and client/server startup checks from the staged distribution.
-10. Build native installers on their native operating systems when installer publication is required.
-11. Verify checksums and zip/archive integrity.
-12. State honestly what was not manually tested.
+1. Freeze the exact candidate commit and project version.
+2. Build client and server from source with Java 17.
+3. Run the relevant focused smokes.
+4. Build the canonical release-hardened platform distribution.
+5. Verify complete manifest coverage, hashes, entry points, classfile major version 61, native support libraries, runtime, and archive integrity.
+6. Run packaged Gate 3, synthetic clean-profile tests, read-only-install checks, tamper rejection, and standalone host binding.
+7. Build native app images and installers only on their target operating systems.
+8. Reopen and verify each native app image.
+9. Verify SHA-256 checksum files.
+10. Test install, launch, repair, rollback, upgrade, uninstall, and preservation of user data.
+11. Test single-player internal-server lifecycle and independent-host client connection before claiming those capabilities.
+12. Attach known limitations, tester instructions, diagnostics guidance, verification reports, and checksums.
+13. State exactly what was not manually tested.
 
-## Current segmentation note
+## Current readiness limitation
 
-This guide has been moved under `installer/` as part of the workspace segmentation pass. The root-level `PACKAGING_PIPELINE.md` remains temporarily as a compatibility bridge until script/resource references and external notes are updated, then it should be removed or replaced with a pointer.
+The canonical portable and native composition paths are now aligned in source, but this does not by itself certify an alpha. The exact Windows and Linux native scripts still require successful execution on their target operating systems, and the internal single-player server lifecycle plus packaged independent-host client session remain release blockers.
