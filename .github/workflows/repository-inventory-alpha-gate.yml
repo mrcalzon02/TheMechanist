@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
           lfs: true
 
@@ -97,6 +97,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
+          REMOTE_MAIN=$(git rev-parse origin/main)
+          if [[ "$REMOTE_MAIN" != "$GITHUB_SHA" ]]; then
+            echo "Refusing stale inventory bootstrap: origin/main=$REMOTE_MAIN trigger=$GITHUB_SHA" >&2
+            exit 1
+          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv
@@ -136,7 +142,7 @@ jobs:
             --committed-manifest ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
             --clearance-registry ROOT_docs/RELEASE_CLEARANCE.tsv \
             --audit-report "$INVENTORY_DIR/release-inventory-report.json" \
-            --source-commit "$(git rev-parse HEAD)" \
+            --source-commit "$GITHUB_SHA" \
             --output "$INVENTORY_DIR/release-inventory-certificate.json"
 
       - name: Record inventory identities
@@ -154,7 +160,7 @@ jobs:
           fi
           sha256sum ROOT_docs/RELEASE_CLEARANCE.tsv \
             > "$INVENTORY_DIR/RELEASE_CLEARANCE.sha256"
-          git rev-parse HEAD > "$INVENTORY_DIR/source-commit.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$INVENTORY_DIR/source-commit.txt"
 
       - name: Enforce committed manifest match
         if: ${{ !inputs.update_committed_manifest && !(github.event_name == 'push' && steps.manifest_match.outputs.committed_empty == 'true') && steps.manifest_match.outputs.matches != 'true' }}
