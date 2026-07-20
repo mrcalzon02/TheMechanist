@@ -208,10 +208,43 @@ jobs:
           assert report['releaseHardened'] is True
           synthetic=json.load(open('dist/native-gate-releases/synthetic-${{ matrix.platform }}.json',encoding='utf-8'))
           assert synthetic['status']=='passed'
-          assert synthetic['singlePlayerInternalHostLifecycle'] is True
-          assert synthetic['singlePlayerSaveResume'] is True
-          assert synthetic['serverHostBind'] is True
-          assert synthetic['nativeInstallerPayloadStage'] is True
+          required_true=(
+              'alphaOperatingDocuments',
+              'launcherBundledPackageVerification',
+              'packagedGate3',
+              'singlePlayerInternalHostLifecycle',
+              'singlePlayerSaveResume',
+              'independentHostTransportSession',
+              'independentHostExactBind',
+              'independentHostClientDrivenHandshake',
+              'independentHostIntegrityChallenge',
+              'independentHostServerOwnedSessionLedger',
+              'independentHostStablePlayerIdentity',
+              'independentHostResumeTokenContinuity',
+              'independentHostDuplicateAttachmentDenied',
+              'independentHostInvalidResumeTokenDenied',
+              'independentHostImmutableSessionSnapshots',
+              'independentHostLifetimeRelayAccounting',
+              'independentHostRelayOnlyAccess',
+              'independentHostPreAuthenticationDataDenied',
+              'independentHostBadChallengeDenied',
+              'serverOperation',
+              'serverHostBind',
+              'nativeInstallerPayloadStage',
+              'tamperedManifestRejected',
+              'missingSupportRejected',
+          )
+          missing=[key for key in required_true if synthetic.get(key) is not True]
+          assert not missing, f'missing required native synthetic guarantees: {missing}'
+          required_false=(
+              'launcherRemoteAcquisitionAdvertised',
+              'independentHostSessionPersistenceAcrossProcessRestart',
+              'independentHostWorldAuthority',
+              'independentHostGameplaySessionCertified',
+          )
+          overclaimed=[key for key in required_false if synthetic.get(key) is not False]
+          assert not overclaimed, f'native candidate overclaimed unfinished capability: {overclaimed}'
+          assert synthetic['nativeInstallerPayloadStageRequired'] is True
           PY
 
       - uses: actions/upload-artifact@v4
