@@ -52,8 +52,9 @@ final class RemoteClientStartupSmoke {
                     "remote lobby audit overclaimed a world or local-host boundary");
             require(audit.contains("hostedCommands=ready,presence,chat-state")
                             && audit.contains("relayConsole=true")
-                            && audit.contains("pendingConnectionCancellable=true"),
-                    "remote lobby audit omitted its certified player-facing controls");
+                            && audit.contains("pendingConnectionCancellable=true")
+                            && audit.contains("failedSessionTeardown=single-transition"),
+                    "remote lobby audit omitted certified lifecycle or player controls");
 
             Path expectedRoot = root.toAbsolutePath().normalize();
             require(ClientMutableStorageAuthority.root().equals(expectedRoot),
@@ -114,6 +115,7 @@ final class RemoteClientStartupSmoke {
                     + " hostedLobbyControls=true"
                     + " relayConsole=true"
                     + " pendingConnectionCancellable=true"
+                    + " failedSessionTeardownSingleTransition=true"
                     + " invalidPortRejected=true"
                     + " worldCommandApi=false"
                     + " worldAuthority=false");
