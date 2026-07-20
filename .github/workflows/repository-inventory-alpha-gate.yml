@@ -1,0 +1,123 @@
+name: Repository Inventory Alpha Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_committed_manifest:
+        description: Regenerate and commit ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv on main
+        type: boolean
+        required: true
+        default: false
+      require_release_clearance:
+        description: Fail while any runtime candidate still requires licensing or necessity review
+        type: boolean
+        required: true
+        default: false
+
+concurrency:
+  group: repository-inventory-alpha
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  full-repository-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Capture committed inventory state
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ROOT_build/inventory-alpha
+          if [[ -f ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv ]]; then
+            cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv ROOT_build/inventory-alpha/committed-before.tsv
+          else
+            : > ROOT_build/inventory-alpha/committed-before.tsv
+          fi
+          git status --short
+
+      - name: Regenerate stable full-checkout manifest
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_tools/update_repository_file_manifest_incremental.py \
+            --target ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+            --force-hash \
+            --report ROOT_build/inventory-alpha/generation-report.json \
+            2>&1 | tee ROOT_build/inventory-alpha/generation.log
+
+      - name: Audit release ownership and clearance
+        shell: bash
+        env:
+          REQUIRE_CLEARANCE: ${{ inputs.require_release_clearance }}
+        run: |
+          set -o pipefail
+          EXTRA=()
+          if [[ "$REQUIRE_CLEARANCE" == 'true' ]]; then EXTRA+=(--require-clearance); fi
+          python ROOT_build/ci/audit_repository_release_inventory.py \
+            ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+            --ledger ROOT_build/inventory-alpha/release-ownership-ledger.tsv \
+            --report ROOT_build/inventory-alpha/release-inventory-report.json \
+            "${EXTRA[@]}" \
+            2>&1 | tee ROOT_build/inventory-alpha/audit.log
+
+      - name: Require committed manifest to match the full checkout
+        if: ${{ !inputs.update_committed_manifest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --exit-code -- ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv; then
+            echo 'The committed repository manifest is stale or empty.' >&2
+            echo 'Review the uploaded inventory artifact, then dispatch this workflow with update_committed_manifest=true.' >&2
+            exit 1
+          fi
+
+      - name: Commit regenerated manifest
+        if: ${{ inputs.update_committed_manifest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv
+          if git diff --cached --quiet; then
+            echo 'Committed repository manifest already matches the full checkout.'
+          else
+            git commit -m 'Regenerate governed repository file manifest [skip ci]'
+            git push origin HEAD:main
+          fi
+
+      - name: Record manifest identity
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv ]]; then
+            sha256sum ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv > ROOT_build/inventory-alpha/REPOSITORY_FILE_MANIFEST.sha256
+            wc -l ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv > ROOT_build/inventory-alpha/REPOSITORY_FILE_MANIFEST.lines.txt
+            du -h ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv > ROOT_build/inventory-alpha/REPOSITORY_FILE_MANIFEST.size.txt
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Repository-Inventory-Alpha
+          path: |
+            ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv
+            ROOT_build/inventory-alpha/**
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 6
