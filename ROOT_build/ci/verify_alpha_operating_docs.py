@@ -25,6 +25,9 @@ REQUIRED_DOCS = {
         "remote acquisition",
         "supervised in-process internal host",
         "bounded relay transport",
+        "sha-256 token hashes",
+        "clean server-process restart",
+        "remote world state",
         "redistribution",
     ),
     "docs/DIAGNOSTIC_COLLECTION.md": (
