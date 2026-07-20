@@ -45,10 +45,15 @@ final class RemoteClientStartupSmoke {
                     "ordinary client startup was incorrectly routed to the remote lobby");
 
             String audit = IndependentHostLobbyWindow.auditSummary(remote);
+            require(audit.contains("authoritativeWaitControl=true")
+                            && audit.contains("waitPersistence=server-owned"),
+                    "remote lobby audit omitted the wait-only authority control");
             require(audit.contains("gamePanelMounted=false")
                             && audit.contains("internalHostMounted=false")
-                            && audit.contains("worldCommandApi=false")
-                            && audit.contains("worldAuthority=false"),
+                            && audit.contains("genericWorldCommandApi=false")
+                            && audit.contains("movementAuthority=false")
+                            && audit.contains("mapAuthority=false")
+                            && audit.contains("fullWorldAuthority=false"),
                     "remote lobby audit overclaimed a world or local-host boundary");
             require(audit.contains("hostedCommands=ready,presence,chat-state")
                             && audit.contains("relayConsole=true")
@@ -71,6 +76,7 @@ final class RemoteClientStartupSmoke {
                             .contains("resumetoken="),
                     "client storage audit exposed a credential value");
 
+            boolean waitControlField = false;
             for (Field field : IndependentHostLobbyWindow.class.getDeclaredFields()) {
                 String type = field.getType().getName();
                 require(!type.endsWith("GamePanel")
@@ -78,7 +84,14 @@ final class RemoteClientStartupSmoke {
                                 && !type.endsWith("SinglePlayerSectorRuntimeBridge"),
                         "remote lobby mounted a local world authority field: "
                                 + field.getName());
+                if ("waitTurnButton".equals(field.getName())
+                        && "javax.swing.JButton".equals(type)) {
+                    waitControlField = true;
+                }
             }
+            require(waitControlField,
+                    "remote lobby does not expose its dedicated wait/advance-turn control");
+
             for (Method method : IndependentHostLobbyWindow.class.getDeclaredMethods()) {
                 String name = method.getName().toLowerCase(Locale.ROOT);
                 require(!name.contains("move")
@@ -86,7 +99,7 @@ final class RemoteClientStartupSmoke {
                                 && !name.contains("inventory")
                                 && !name.contains("worldcommand")
                                 && !name.contains("worldsnapshot"),
-                        "remote lobby exposed unfinished world API: "
+                        "remote lobby exposed unfinished generic world API: "
                                 + method.getName());
             }
 
@@ -114,11 +127,15 @@ final class RemoteClientStartupSmoke {
                     + " gamePanelMounted=false"
                     + " hostedLobbyControls=true"
                     + " relayConsole=true"
+                    + " authoritativeWaitControl=true"
+                    + " waitPersistence=server-owned"
                     + " pendingConnectionCancellable=true"
                     + " failedSessionTeardownSingleTransition=true"
                     + " invalidPortRejected=true"
-                    + " worldCommandApi=false"
-                    + " worldAuthority=false");
+                    + " genericWorldCommandApi=false"
+                    + " movementAuthority=false"
+                    + " mapAuthority=false"
+                    + " fullWorldAuthority=false");
         } finally {
             if (previous == null) {
                 System.clearProperty("mechanist.client.storage.root");
