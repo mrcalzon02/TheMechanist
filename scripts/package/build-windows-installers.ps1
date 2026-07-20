@@ -4,6 +4,7 @@ param(
     [string[]]$PackageTypes = @("app-image", "exe", "msi"),
     [string]$OutputDir,
     [string]$AppName = "The Mechanist",
+    [string]$RemoteLauncherName = "The Mechanist Remote Lobby",
     [string]$Vendor = "The Mechanist Project",
     [bool]$PerUserInstall = $true,
     [switch]$RequireNativeInstallers,
@@ -104,6 +105,9 @@ if ($Identity.platform -ne "windows-x64") {
 if ($Identity.releaseHardened -ne $true) {
     throw "Windows native packaging requires a release-hardened canonical distribution."
 }
+if ($Identity.remoteClientEntryPoint -ne "mechanist.RemoteClientMain") {
+    throw "Canonical distribution does not declare the governed remote-client entry."
+}
 $Version = [string]$Identity.version
 $versionMatch = [regex]::Match($Version, "\d+(?:\.\d+){0,2}")
 $NativeVersion = if ($versionMatch.Success) { $versionMatch.Value } else { "0.0.0" }
@@ -155,6 +159,17 @@ foreach ($candidate in @(
     }
 }
 
+$LauncherConfigDir = Join-Path $ProjectRoot "build\native-installer\windows\launchers"
+Remove-Item -LiteralPath $LauncherConfigDir -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $LauncherConfigDir | Out-Null
+$RemoteLauncherConfig = Join-Path $LauncherConfigDir "remote-client.properties"
+@(
+    "main-jar=packages/client/TheMechanist.jar",
+    "main-class=mechanist.RemoteClientMain",
+    "app-version=$NativeVersion",
+    "win-console=false"
+) | Set-Content -LiteralPath $RemoteLauncherConfig -Encoding ascii
+
 $NormalizedTypes = New-Object System.Collections.Generic.List[string]
 foreach ($type in $PackageTypes) {
     $normalized = Normalize-PackageType $type
@@ -184,7 +199,8 @@ $CommonArgs = @(
     "--runtime-image", $RuntimeImage,
     "--input", $PayloadDir,
     "--main-jar", "launcher/MechanistLauncher.jar",
-    "--main-class", "mechanist.launcher.MechanistLauncherApp"
+    "--main-class", "mechanist.launcher.MechanistLauncherApp",
+    "--add-launcher", "$RemoteLauncherName=$RemoteLauncherConfig"
 )
 if ($IconPath) { $CommonArgs += @("--icon", $IconPath) }
 if ($ResourceDir) { $CommonArgs += @("--resource-dir", $ResourceDir) }
@@ -220,6 +236,14 @@ function Build-AppImage {
     Invoke-JPackage "app-image" $AppImageDest
     if (-not (Test-Path -LiteralPath $AppImageRoot -PathType Container)) {
         throw "jpackage did not produce expected app image: $AppImageRoot"
+    }
+    $MainExecutable = Join-Path $AppImageRoot "$AppName.exe"
+    $RemoteExecutable = Join-Path $AppImageRoot "$RemoteLauncherName.exe"
+    if (-not (Test-Path -LiteralPath $MainExecutable -PathType Leaf)) {
+        throw "Native main launcher is missing: $MainExecutable"
+    }
+    if (-not (Test-Path -LiteralPath $RemoteExecutable -PathType Leaf)) {
+        throw "Native remote-lobby launcher is missing: $RemoteExecutable"
     }
     Invoke-Checked $Python @(
         $ImageVerifier,
@@ -269,18 +293,21 @@ Platform: windows-x64
 Release hardened: true
 Canonical source distribution: $DistributionRoot
 Distribution model: installer -> thin launcher -> client -> server
+Native launchers: $AppName.exe; $RemoteLauncherName.exe
 
 Every native output in this directory was composed from the verified canonical
 release staging tree. The native app image was reopened and checked against the
 launcher manifest after jpackage completed. Mutable saves, profiles, settings,
-logs, cache, mods, and exports remain outside the installed application payload.
+logs, cache, mods, exports, and resume-token custody remain outside the installed
+application payload.
 
 Recommended validation order:
 1. Verify SHA256SUMS.txt.
 2. Extract the native app-image ZIP and start The Mechanist.exe.
 3. Confirm launcher package verification succeeds.
-4. Run a single-player save/resume test.
-5. Run the independent host bind and packaged client connection tests.
+4. Start The Mechanist Remote Lobby.exe and verify the lobby-only boundary.
+5. Run a single-player save/resume test.
+6. Run the independent host bind and two-client connection tests.
 "@ | Set-Content -LiteralPath (Join-Path $OutputDir "WINDOWS_INSTALLERS_README.txt") -Encoding UTF8
 
 Write-Host "Windows native package convergence complete: $OutputDir"
