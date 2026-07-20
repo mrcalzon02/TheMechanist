@@ -14,6 +14,7 @@ on:
 permissions:
   contents: read
   statuses: write
+  issues: write
 
 jobs:
   publish-commit-status:
@@ -81,3 +82,19 @@ jobs:
               target_url: targetUrl,
             });
             core.info(`Published ${state} for ${sha} as ${statusContext}`);
+
+            if (action === 'completed') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: 47,
+                body: [
+                  `## Workflow result — ${workflow}`,
+                  '',
+                  `- Conclusion: **${conclusion || 'unknown'}**`,
+                  `- Commit: \`${sha}\``,
+                  `- Run: ${targetUrl}`,
+                  `- Status context: \`${statusContext}\``,
+                ].join('\n'),
+              });
+            }
