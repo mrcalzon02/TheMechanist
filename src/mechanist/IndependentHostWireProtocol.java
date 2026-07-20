@@ -9,27 +9,37 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Minimal authenticated wire exchange for the independent-host relay.
+ * Authenticated wire exchange for the independent-host relay and session ledger.
  *
- * This protocol proves that a client actually participates in identity,
- * manifest, acquisition, restart, and integrity phases before relay access is
- * granted. Access is explicitly RELAY_ONLY; no world snapshot or gameplay
- * authority is exposed by this class.
+ * Client identity, manifest acquisition, restart, and integrity must complete
+ * before a server-owned remote session is attached. Access remains RELAY_ONLY;
+ * the session ledger does not expose world snapshots or gameplay mutation.
  */
 final class IndependentHostWireProtocol {
-    static final String VERSION = "independent-host-wire-1";
+    static final String VERSION = "independent-host-wire-2";
     private static final String PREFIX = "MECH";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final SecureHandshakeStateMachine handshake;
     private final SecureHandshakeStateMachine.ModManifestRecord manifest;
     private final String manifestFingerprint;
+    private final RemoteSessionLedgerAuthority sessionLedger;
     private String profileIdentity = "";
+    private String requestedResumeToken = "";
+    private RemoteSessionLedgerAuthority.Attachment sessionAttachment;
     private boolean accessGranted;
     private boolean disconnected;
 
     IndependentHostWireProtocol(String sessionId) {
+        this(sessionId, new RemoteSessionLedgerAuthority("standalone-" + sessionId));
+    }
+
+    IndependentHostWireProtocol(
+            String sessionId,
+            RemoteSessionLedgerAuthority sessionLedger
+    ) {
         this.handshake = new SecureHandshakeStateMachine(sessionId);
+        this.sessionLedger = Objects.requireNonNull(sessionLedger, "sessionLedger");
         this.manifest = new SecureHandshakeStateMachine.ModManifestRecord(
                 "mechanist-base-" + BuildIdentityAuthority.version(),
                 0L,
@@ -39,16 +49,17 @@ final class IndependentHostWireProtocol {
     }
 
     String helloLine() {
-        return line("HELLO", VERSION, handshake.sessionId(), BuildIdentityAuthority.version(), "RELAY_ONLY");
+        return line("HELLO", VERSION, handshake.sessionId(),
+                BuildIdentityAuthority.version(), "RELAY_ONLY");
     }
 
     Result accept(String rawLine) {
         if (disconnected) return Result.disconnect("session already disconnected");
-        if (rawLine == null || rawLine.isBlank()) return disconnect("blank protocol frame");
-        if (rawLine.length() > 4096) return disconnect("protocol frame exceeded 4096 characters");
+        if (rawLine == null || rawLine.isBlank()) return deny("blank protocol frame");
+        if (rawLine.length() > 4096) return deny("protocol frame exceeded 4096 characters");
         String[] fields = rawLine.split("\\|", -1);
         if (fields.length < 2 || !PREFIX.equals(fields[0])) {
-            return disconnect("non-protocol frame arrived before relay access");
+            return deny("non-protocol frame arrived before relay access");
         }
         String command = fields[1].trim().toUpperCase(Locale.ROOT);
         try {
@@ -57,11 +68,12 @@ final class IndependentHostWireProtocol {
                 case "ACQUIRED" -> acceptAcquired(fields);
                 case "RESTARTED" -> acceptRestarted(fields);
                 case "CHALLENGE_RESPONSE" -> acceptChallengeResponse(fields);
-                case "PING" -> Result.responses(line("PONG", handshake.sessionId(), handshake.phase().name()));
-                default -> disconnect("unknown protocol command " + command);
+                case "SESSION_STATUS" -> acceptSessionStatus(fields);
+                case "PING" -> acceptPing(fields);
+                default -> deny("unknown protocol command " + command);
             };
         } catch (RuntimeException failure) {
-            return disconnect(failure.getMessage() == null
+            return deny(failure.getMessage() == null
                     ? failure.getClass().getSimpleName()
                     : failure.getMessage());
         }
@@ -69,6 +81,7 @@ final class IndependentHostWireProtocol {
 
     boolean relayAccessGranted() {
         return accessGranted
+                && sessionAttachment != null
                 && !disconnected
                 && handshake.phase() == SecureHandshakeStateMachine.Phase.ACCESS_GRANTED;
     }
@@ -89,25 +102,52 @@ final class IndependentHostWireProtocol {
         return manifestFingerprint;
     }
 
+    RemoteSessionLedgerAuthority.Attachment sessionAttachment() {
+        return sessionAttachment;
+    }
+
+    RemoteSessionLedgerAuthority.SessionSnapshot sessionSnapshot() {
+        return sessionAttachment == null ? null : sessionLedger.snapshot(sessionAttachment);
+    }
+
+    RemoteSessionLedgerAuthority.SessionSnapshot noteRelayFrameAccepted(long sequence) {
+        if (!relayAccessGranted()) {
+            throw new IllegalStateException("relay frame arrived before a server-owned session was attached");
+        }
+        return sessionLedger.noteRelayFrameAccepted(sessionAttachment, sequence);
+    }
+
     void disconnect() {
+        disconnect("transport closed");
+    }
+
+    void disconnect(String reason) {
         if (disconnected) return;
         disconnected = true;
+        sessionLedger.disconnect(sessionAttachment, reason);
         handshake.disconnect();
     }
 
     String auditSummary() {
+        RemoteSessionLedgerAuthority.SessionSnapshot snapshot = sessionSnapshot();
         return "authority=" + VERSION
                 + " session=" + handshake.sessionId()
                 + " phase=" + handshake.phase()
                 + " identity=" + (profileIdentity.isBlank() ? "unverified" : "verified")
                 + " relayAccess=" + relayAccessGranted()
+                + " player=" + (snapshot == null ? "none" : snapshot.playerId())
+                + " generation=" + (snapshot == null ? 0 : snapshot.connectionGeneration())
+                + " relayFrames=" + (snapshot == null ? 0 : snapshot.acceptedRelayFrames())
                 + " worldAuthority=false";
     }
 
     private Result acceptIdentity(String[] fields) {
         requirePhase(SecureHandshakeStateMachine.Phase.IDENTITY_VERIFICATION);
-        requireCount(fields, 3, "IDENTITY");
+        requireCountRange(fields, 3, 4, "IDENTITY");
         profileIdentity = requireOpaqueIdentity(fields[2]);
+        requestedResumeToken = fields.length == 4
+                ? requireResumeToken(fields[3])
+                : "";
         handshake.markIdentityVerified();
         handshake.beginManifestDelivery();
         handshake.deliverManifest(manifest);
@@ -158,6 +198,10 @@ final class IndependentHostWireProtocol {
         if (!handshake.verifyIntegrityChallengeResponse(digest)) {
             throw new IllegalArgumentException("integrity challenge response was rejected");
         }
+        sessionAttachment = sessionLedger.attach(
+                profileIdentity,
+                requestedResumeToken,
+                handshake.sessionId());
         handshake.beginLiveWorldInitialization();
         handshake.grantAccess();
         accessGranted = true;
@@ -166,7 +210,42 @@ final class IndependentHostWireProtocol {
                 "RELAY_ONLY",
                 handshake.sessionId(),
                 BuildIdentityAuthority.version(),
-                profileIdentity));
+                profileIdentity,
+                sessionAttachment.playerId(),
+                sessionAttachment.resumeToken(),
+                Long.toString(sessionAttachment.connectionGeneration()),
+                Long.toString(sessionAttachment.snapshotVersion()),
+                Boolean.toString(sessionAttachment.resumed())));
+    }
+
+    private Result acceptSessionStatus(String[] fields) {
+        requireCount(fields, 2, "SESSION_STATUS");
+        if (!relayAccessGranted()) {
+            throw new IllegalStateException("session status is unavailable before relay access");
+        }
+        return Result.responses(sessionSnapshotLine(sessionLedger.snapshot(sessionAttachment)));
+    }
+
+    private Result acceptPing(String[] fields) {
+        requireCount(fields, 2, "PING");
+        return Result.responses(line(
+                "PONG",
+                handshake.sessionId(),
+                handshake.phase().name(),
+                relayAccessGranted() ? "SESSION_ATTACHED" : "PRE_ACCESS"));
+    }
+
+    private String sessionSnapshotLine(RemoteSessionLedgerAuthority.SessionSnapshot snapshot) {
+        return line(
+                "SESSION_SNAPSHOT",
+                snapshot.playerId(),
+                snapshot.worldId(),
+                Long.toString(snapshot.version()),
+                Boolean.toString(snapshot.connected()),
+                Long.toString(snapshot.connectionGeneration()),
+                Long.toString(snapshot.acceptedRelayFrames()),
+                Long.toString(snapshot.lastConnectionSequence()),
+                snapshot.lastEvent());
     }
 
     private void requirePhase(SecureHandshakeStateMachine.Phase expected) {
@@ -176,14 +255,26 @@ final class IndependentHostWireProtocol {
         }
     }
 
-    private Result disconnect(String reason) {
-        disconnect();
-        return Result.disconnect(reason == null || reason.isBlank() ? "protocol rejected" : reason);
+    private Result deny(String reason) {
+        String use = reason == null || reason.isBlank() ? "protocol rejected" : reason;
+        disconnect(use);
+        return Result.disconnect(use);
     }
 
     private static void requireCount(String[] fields, int expected, String command) {
         if (fields.length != expected) {
             throw new IllegalArgumentException(command + " requires " + (expected - 2) + " value field(s)");
+        }
+    }
+
+    private static void requireCountRange(
+            String[] fields,
+            int minimum,
+            int maximum,
+            String command
+    ) {
+        if (fields.length < minimum || fields.length > maximum) {
+            throw new IllegalArgumentException(command + " has an invalid field count");
         }
     }
 
@@ -194,9 +285,18 @@ final class IndependentHostWireProtocol {
         }
         for (int i = 0; i < token.length(); i++) {
             char c = token.charAt(i);
-            if (!(Character.isLetterOrDigit(c) || c == '.' || c == '_' || c == ':' || c == '-')) {
+            if (!(Character.isLetterOrDigit(c) || c == '.' || c == '_'
+                    || c == ':' || c == '-')) {
                 throw new IllegalArgumentException("profile identity contains an unsafe character");
             }
+        }
+        return token;
+    }
+
+    private static String requireResumeToken(String value) {
+        String token = requireToken(value, "resume token").toLowerCase(Locale.ROOT);
+        if (!token.matches("[a-f0-9]{64}")) {
+            throw new IllegalArgumentException("resume token must be a 64-character hexadecimal token");
         }
         return token;
     }
@@ -244,7 +344,9 @@ final class IndependentHostWireProtocol {
                     .replace('\n', ' ')
                     .replace('\r', ' ')
                     .trim();
-            return text.isBlank() ? "protocol rejected" : text.substring(0, Math.min(256, text.length()));
+            return text.isBlank()
+                    ? "protocol rejected"
+                    : text.substring(0, Math.min(256, text.length()));
         }
     }
 }
