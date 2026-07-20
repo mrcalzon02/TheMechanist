@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'pom.xml'
+      - 'config/proguard/**'
       - 'PACKAGE_client/**'
       - 'PACKAGE_launcher/**'
       - 'PACKAGE_installer/**'
@@ -17,6 +18,7 @@ on:
     paths:
       - 'src/**'
       - 'pom.xml'
+      - 'config/proguard/**'
       - 'PACKAGE_client/**'
       - 'PACKAGE_launcher/**'
       - 'PACKAGE_installer/**'
@@ -65,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p native-gate-logs
+          mkdir -p native-gate-logs dist/native-gate-releases
           {
             java -version
             javac -version
@@ -75,6 +77,15 @@ jobs:
             echo "commit=$GITHUB_SHA"
             echo "platform=${{ matrix.platform }}"
           } 2>&1 | tee native-gate-logs/toolchain-${{ matrix.platform }}.log
+
+      - name: Verify release hardening policies
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/verify_proguard_configuration.py \
+            --repo . \
+            --report 'dist/native-gate-releases/proguard-policy-${{ matrix.platform }}.json' \
+            2>&1 | tee native-gate-logs/proguard-policy-${{ matrix.platform }}.log
 
       - name: Build hardened canonical distribution
         shell: bash
@@ -119,6 +130,18 @@ jobs:
             --verifier ROOT_build/ci/verify_runnable_distribution.py \
             --report 'dist/native-gate-releases/synthetic-${{ matrix.platform }}.json' \
             2>&1 | tee native-gate-logs/synthetic-${{ matrix.platform }}.log
+
+      - name: Verify packaged synthetic release contract
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/verify_synthetic_release_contract.py \
+            'dist/native-gate-releases/synthetic-${{ matrix.platform }}.json' \
+            --expected-platforms '${{ matrix.platform }}' \
+            --require-release-hardened \
+            --require-native-stage \
+            --report 'dist/native-gate-releases/synthetic-contract-${{ matrix.platform }}.json' \
+            2>&1 | tee native-gate-logs/synthetic-contract-${{ matrix.platform }}.log
 
       - name: Build Linux native app image
         if: runner.os == 'Linux'
@@ -206,78 +229,6 @@ jobs:
           assert report['status']=='verified'
           assert report['platform']=='${{ matrix.platform }}'
           assert report['releaseHardened'] is True
-          synthetic=json.load(open('dist/native-gate-releases/synthetic-${{ matrix.platform }}.json',encoding='utf-8'))
-          assert synthetic['status']=='passed'
-          required_true=(
-              'alphaOperatingDocuments',
-              'launcherBundledPackageVerification',
-              'packagedGate3',
-              'singlePlayerInternalHostLifecycle',
-              'singlePlayerSaveResume',
-              'independentHostTransportSession',
-              'independentHostExactBind',
-              'independentHostClientDrivenHandshake',
-              'independentHostIntegrityChallenge',
-              'independentHostServerOwnedSessionLedger',
-              'independentHostStablePlayerIdentity',
-              'independentHostResumeTokenContinuity',
-              'independentHostDuplicateAttachmentDenied',
-              'independentHostInvalidResumeTokenDenied',
-              'independentHostImmutableSessionSnapshots',
-              'independentHostLifetimeRelayAccounting',
-              'independentHostAtomicSessionLedgerPersistence',
-              'independentHostResumeTokenHashOnlyPersistence',
-              'independentHostCorruptSessionLedgerRejected',
-              'independentHostSessionPersistenceAcrossProcessRestart',
-              'independentHostHostedSessionCommands',
-              'independentHostHostedSessionCommandOrdering',
-              'independentHostHostedSessionRoster',
-              'independentHostHostedSessionCommandAccountingPersistence',
-              'independentHostStaleHostedLivenessReset',
-              'independentHostHostedRosterJoinBroadcast',
-              'independentHostHostedCommandPeerBroadcast',
-              'independentHostHostedDisconnectRosterBroadcast',
-              'independentHostHostedResumeRosterBroadcast',
-              'independentHostAsynchronousControlSeparatedFromRelay',
-              'independentHostCanonicalRosterClientAuthority',
-              'independentHostRosterConnectedOnlyVisibility',
-              'independentHostOfflineResumeIdentityPrivate',
-              'independentHostRosterMalformedFrameRejected',
-              'independentHostRosterMonotonicVersioning',
-              'independentHostRosterVisiblePlayerLimit',
-              'independentHostRosterWorldAuthorityRejected',
-              'independentHostSupervisedClient',
-              'independentHostClientHandshakeOwnership',
-              'independentHostClientAtomicResumeTokenCustody',
-              'independentHostClientResumeTokenPlaintextCustody',
-              'independentHostClientTokenDiagnosticsRedacted',
-              'independentHostClientHostedCommandSequencing',
-              'independentHostClientRelayDispatch',
-              'independentHostClientLivingHostResume',
-              'independentHostClientHostRestartResume',
-              'independentHostClientCorruptTokenRejected',
-              'independentHostUnsupportedWorldCommandsRejected',
-              'independentHostRelayOnlyAccess',
-              'independentHostPreAuthenticationDataDenied',
-              'independentHostBadChallengeDenied',
-              'serverOperation',
-              'serverHostBind',
-              'nativeInstallerPayloadStage',
-              'tamperedManifestRejected',
-              'missingSupportRejected',
-          )
-          missing=[key for key in required_true if synthetic.get(key) is not True]
-          assert not missing, f'missing required native synthetic guarantees: {missing}'
-          required_false=(
-              'launcherRemoteAcquisitionAdvertised',
-              'independentHostHostedSessionLivenessPersistence',
-              'independentHostClientWorldCommandApi',
-              'independentHostWorldAuthority',
-              'independentHostGameplaySessionCertified',
-          )
-          overclaimed=[key for key in required_false if synthetic.get(key) is not False]
-          assert not overclaimed, f'native candidate overclaimed unfinished capability: {overclaimed}'
-          assert synthetic['nativeInstallerPayloadStageRequired'] is True
           PY
 
       - uses: actions/upload-artifact@v4
@@ -286,8 +237,10 @@ jobs:
           name: Native-Alpha-${{ matrix.platform }}
           path: |
             dist/native-gate-installers/**
+            dist/native-gate-releases/proguard-policy-${{ matrix.platform }}.json
             dist/native-gate-releases/verification-${{ matrix.platform }}.json
             dist/native-gate-releases/synthetic-${{ matrix.platform }}.json
+            dist/native-gate-releases/synthetic-contract-${{ matrix.platform }}.json
             native-gate-logs/**
           if-no-files-found: warn
           retention-days: 30
