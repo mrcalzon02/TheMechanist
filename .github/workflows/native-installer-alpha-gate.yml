@@ -170,7 +170,7 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Launch Linux native image for fifteen seconds
+      - name: Launch Linux native main image for fifteen seconds
         if: runner.os == 'Linux'
         shell: bash
         run: |
@@ -178,28 +178,67 @@ jobs:
           IMAGE='dist/native-gate-installers/linux/app-image/The Mechanist'
           EXE="$IMAGE/bin/The Mechanist"
           test -x "$EXE"
-          PROFILE="$RUNNER_TEMP/Mechanist Native Image Profile"
+          PROFILE="$RUNNER_TEMP/Mechanist Native Main Profile"
           mkdir -p "$PROFILE"
           set +e
           HOME="$PROFILE" timeout 15s xvfb-run -a "$EXE" \
-            >native-gate-logs/native-launch-linux-x64.stdout.log \
-            2>native-gate-logs/native-launch-linux-x64.stderr.log
+            >native-gate-logs/native-main-linux-x64.stdout.log \
+            2>native-gate-logs/native-main-linux-x64.stderr.log
           CODE=$?
           set -e
           if [[ "$CODE" -ne 0 && "$CODE" -ne 124 ]]; then
-            cat native-gate-logs/native-launch-linux-x64.stdout.log || true
-            cat native-gate-logs/native-launch-linux-x64.stderr.log || true
+            cat native-gate-logs/native-main-linux-x64.stdout.log || true
+            cat native-gate-logs/native-main-linux-x64.stderr.log || true
             exit "$CODE"
           fi
 
-      - name: Launch Windows native image for twelve seconds
+      - name: Launch Linux native remote lobby for fifteen seconds
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE='dist/native-gate-installers/linux/app-image/The Mechanist'
+          EXE="$IMAGE/bin/The Mechanist Remote Lobby"
+          test -x "$EXE"
+          PROFILE="$RUNNER_TEMP/Mechanist Native Remote Lobby Profile"
+          mkdir -p "$PROFILE"
+          set +e
+          HOME="$PROFILE" timeout 15s xvfb-run -a "$EXE" \
+            >native-gate-logs/native-remote-lobby-linux-x64.stdout.log \
+            2>native-gate-logs/native-remote-lobby-linux-x64.stderr.log
+          CODE=$?
+          set -e
+          if [[ "$CODE" -ne 0 && "$CODE" -ne 124 ]]; then
+            cat native-gate-logs/native-remote-lobby-linux-x64.stdout.log || true
+            cat native-gate-logs/native-remote-lobby-linux-x64.stderr.log || true
+            exit "$CODE"
+          fi
+
+      - name: Launch Windows native main image for twelve seconds
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $exe = 'dist\native-gate-installers\windows\app-image\The Mechanist\The Mechanist.exe'
           if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Missing native image executable: $exe" }
-          $profile = "$env:RUNNER_TEMP\Mechanist Native Image Profile"
+          $profile = "$env:RUNNER_TEMP\Mechanist Native Main Profile"
+          New-Item -ItemType Directory -Force -Path $profile | Out-Null
+          $env:USERPROFILE = $profile
+          $env:APPDATA = "$profile\AppData\Roaming"
+          $env:LOCALAPPDATA = "$profile\AppData\Local"
+          $process = Start-Process -FilePath $exe -PassThru -WorkingDirectory $env:RUNNER_TEMP
+          Start-Sleep -Seconds 12
+          if ($process.HasExited -and $process.ExitCode -ne 0) { exit $process.ExitCode }
+          if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+
+      - name: Launch Windows native remote lobby for twelve seconds
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = 'dist\native-gate-installers\windows\app-image\The Mechanist\The Mechanist Remote Lobby.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Missing native remote-lobby executable: $exe" }
+          $profile = "$env:RUNNER_TEMP\Mechanist Native Remote Lobby Profile"
           New-Item -ItemType Directory -Force -Path $profile | Out-Null
           $env:USERPROFILE = $profile
           $env:APPDATA = "$profile\AppData\Roaming"
@@ -229,6 +268,9 @@ jobs:
           assert report['status']=='verified'
           assert report['platform']=='${{ matrix.platform }}'
           assert report['releaseHardened'] is True
+          assert report['remoteLobbyEntryPoint']=='mechanist.RemoteClientMain'
+          assert report['remoteLobbyNativeExecutable'] is True
+          assert report['remoteWorldAuthority'] is False
           PY
 
       - uses: actions/upload-artifact@v4
