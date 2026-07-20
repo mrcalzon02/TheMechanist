@@ -5,6 +5,7 @@ on:
     workflows:
       - Java 17 Verify and Release
       - Native Installer Alpha Gate
+      - Repository Inventory Alpha Gate
     types:
       - requested
       - in_progress
@@ -41,6 +42,7 @@ jobs:
             const contexts = {
               'Java 17 Verify and Release': 'the-mechanist/java17-verification',
               'Native Installer Alpha Gate': 'the-mechanist/native-alpha-gate',
+              'Repository Inventory Alpha Gate': 'the-mechanist/inventory-clearance',
             };
             const statusContext = contexts[workflow];
             if (!statusContext) {
@@ -54,7 +56,9 @@ jobs:
 
             let state = 'pending';
             let description = `${workflow} is running`;
-            if (action === 'completed') {
+            if (action === 'requested') {
+              description = `${workflow} was requested`;
+            } else if (action === 'completed') {
               if (conclusion === 'success') {
                 state = 'success';
                 description = `${workflow} passed`;
