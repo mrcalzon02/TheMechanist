@@ -1,6 +1,15 @@
 name: Repository Inventory Alpha Gate
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv'
+      - 'ROOT_docs/RELEASE_CLEARANCE.tsv'
+      - 'ROOT_build/ci/audit_repository_release_inventory.py'
+      - 'ROOT_build/ci/certify_release_inventory.py'
+      - 'ROOT_tools/update_repository_file_manifest_incremental.py'
+      - '.github/workflows/repository-inventory-alpha-gate.yml'
   workflow_dispatch:
     inputs:
       update_committed_manifest:
@@ -62,17 +71,20 @@ jobs:
             2>&1 | tee "$INVENTORY_DIR/generation.log"
           cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv "$INVENTORY_DIR/generated.tsv"
 
-      - name: Require committed manifest to match full checkout
+      - name: Compare committed manifest with full checkout
+        id: manifest_match
         if: ${{ !inputs.update_committed_manifest }}
         shell: bash
         run: |
           set -euo pipefail
-          if ! cmp -s "$INVENTORY_DIR/generated.tsv" "$INVENTORY_DIR/committed-before.tsv"; then
+          if cmp -s "$INVENTORY_DIR/generated.tsv" "$INVENTORY_DIR/committed-before.tsv"; then
+            echo 'matches=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matches=false' >> "$GITHUB_OUTPUT"
             echo 'The committed repository manifest is stale or empty.' >&2
             echo 'Review the uploaded generated manifest, then dispatch with update_committed_manifest=true.' >&2
             diff -u "$INVENTORY_DIR/committed-before.tsv" "$INVENTORY_DIR/generated.tsv" \
               > "$INVENTORY_DIR/manifest-diff.txt" || true
-            exit 1
           fi
 
       - name: Commit regenerated manifest
@@ -138,6 +150,13 @@ jobs:
           sha256sum ROOT_docs/RELEASE_CLEARANCE.tsv \
             > "$INVENTORY_DIR/RELEASE_CLEARANCE.sha256"
           git rev-parse HEAD > "$INVENTORY_DIR/source-commit.txt"
+
+      - name: Enforce committed manifest match
+        if: ${{ !inputs.update_committed_manifest && steps.manifest_match.outputs.matches != 'true' }}
+        shell: bash
+        run: |
+          echo 'The generated full-checkout manifest differs from the committed manifest.' >&2
+          exit 1
 
       - uses: actions/upload-artifact@v4
         if: always()
