@@ -49,6 +49,8 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report independent hosted-command ordering");
         require(separation.contains("independentHostHostedRoster=immutable-deterministic"),
                 "runtime separation must report immutable hosted rosters");
+        require(separation.contains("independentHostHostedRosterBroadcasts=authenticated-peer-control-frames"),
+                "runtime separation must report authenticated peer roster broadcasts");
         require(separation.contains("independentHostWorldCommands=rejected"),
                 "runtime separation must report explicit world-command rejection");
         require(separation.contains("independentHostWorldAuthority=not-implemented"),
