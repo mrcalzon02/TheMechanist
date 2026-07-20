@@ -21,14 +21,15 @@ public class TheMechanist {
         DisplayDensityAuthority.configureJvmDisplayPropertiesBeforeSwing();
         GameOptions startupOptions = GameOptions.load();
         SwingUtilities.invokeLater(() -> {
-            DebugLog.init("0.9.10kb");
+            DebugLog.init(BuildIdentityAuthority.debugBuildTag("client"));
             Runtime.getRuntime().addShutdownHook(new Thread(() -> DebugLog.shutdown("JVM shutdown hook executed."), "mechanist-log-shutdown"));
             Thread.setDefaultUncaughtExceptionHandler((t, e) -> DebugLog.error("UNHANDLED_THREAD", "Thread " + t.getName() + " threw outside guarded execution.", e));
-            DebugLog.log("The Mechanist booting.");
+            DebugLog.log("The Mechanist booting. " + BuildIdentityAuthority.auditSummary());
             RuntimeProfile runtimeProfile = RuntimeProfile.fromArgs(args);
+            DebugLog.audit("BUILD_IDENTITY", BuildIdentityAuthority.auditSummary());
             DebugLog.audit("RUNTIME_SEPARATION", RuntimeSeparationAuthority.auditSummary(runtimeProfile));
             DisplayDensityAuthority.applyGlobalSwingTextScale(startupOptions);
-            JFrame frame = new JFrame("The Mechanist 0.9.10kb");
+            JFrame frame = new JFrame(BuildIdentityAuthority.clientWindowTitle());
             AppIconAuthority.applyTo(frame);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             GamePanel panel = new GamePanel(runtimeProfile);
