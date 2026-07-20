@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""Verify The Mechanist's staged runnable distribution.
-
-The verifier is dependency-free so GitHub-hosted and local Java 17 builds use
-the same release checks. It validates package layout, canonical and thin-
-launcher manifests, hashes, JAR entry points, Java 17 classfile versions,
-archive integrity, required runtime/support payloads, remote-client launchers,
-and release-hardening identity for explicit prerelease publication.
-"""
+"""Verify The Mechanist's staged runnable distribution."""
 
 from __future__ import annotations
 
@@ -21,6 +14,8 @@ import zipfile
 JAVA_17_MAJOR = 61
 REMOTE_CLIENT_MAIN = "mechanist.RemoteClientMain"
 REMOTE_CLIENT_CLASS = "mechanist/RemoteClientMain.class"
+DISTRIBUTION_MODEL = "installer-thin-launcher-client-server"
+LAUNCHER_COMPATIBILITY_MANIFEST = "manifests/launcher-runtime-manifest.json"
 REQUIRED_MANIFEST_KEYS = {
     "schema",
     "distributionModel",
@@ -32,7 +27,6 @@ REQUIRED_MANIFEST_KEYS = {
     "remoteClientEntryPoint",
     "artifacts",
 }
-REQUIRED_ARTIFACT_ROLES = {"launcher", "client", "server"}
 EXPECTED_MAIN_CLASSES = {
     "launcher": "mechanist.launcher.MechanistLauncherApp",
     "client": "mechanist.TheMechanist",
@@ -43,7 +37,6 @@ PRIMARY_PATHS = {
     "client": "packages/client/TheMechanist.jar",
     "server": "packages/server/TheMechanistServer.jar",
 }
-LAUNCHER_COMPATIBILITY_MANIFEST = "manifests/launcher-runtime-manifest.json"
 
 
 def fail(message: str) -> None:
@@ -72,6 +65,13 @@ def github_publish_prerelease_requested() -> bool:
     return str(inputs.get("publish_prerelease")).strip().lower() == "true"
 
 
+def safe_relative_path(value: object, label: str) -> pathlib.PurePosixPath:
+    relative = pathlib.PurePosixPath(str(value))
+    if relative.is_absolute() or ".." in relative.parts:
+        fail(f"unsafe {label} path: {relative}")
+    return relative
+
+
 def manifest_main_class(jar: pathlib.Path) -> str:
     with zipfile.ZipFile(jar) as archive:
         try:
@@ -92,9 +92,9 @@ def manifest_main_class(jar: pathlib.Path) -> str:
     return ""
 
 
-def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int, bool]:
-    expected_main = EXPECTED_MAIN_CLASSES[role]
+def scan_jar(jar: pathlib.Path, role: str) -> dict[str, object]:
     actual_main = manifest_main_class(jar)
+    expected_main = EXPECTED_MAIN_CLASSES[role]
     if actual_main != expected_main:
         fail(f"{jar}: Main-Class {actual_main!r}, expected {expected_main!r}")
 
@@ -125,13 +125,16 @@ def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int, bool]:
             if role == "client" and name == REMOTE_CLIENT_CLASS:
                 remote_client_class = True
 
-    if class_count == 0:
-        fail(f"{jar}: contains no classfiles")
-    if project_class_count == 0:
-        fail(f"{jar}: contains no mechanist project classes")
+    if class_count == 0 or project_class_count == 0:
+        fail(f"{jar}: missing required classfiles")
     if role == "client" and not remote_client_class:
         fail(f"{jar}: missing packaged remote-client entry class {REMOTE_CLIENT_CLASS}")
-    return class_count, project_class_count, remote_client_class
+    return {
+        "classes": class_count,
+        "projectClasses": project_class_count,
+        "mainClass": actual_main,
+        "remoteClientEntryClass": remote_client_class if role == "client" else None,
+    }
 
 
 def native_fragment(platform_name: str) -> str:
@@ -154,18 +157,11 @@ def remote_launcher_path(platform_name: str) -> str:
     return ""
 
 
-def safe_relative_path(value: object, label: str) -> pathlib.PurePosixPath:
-    relative = pathlib.PurePosixPath(str(value))
-    if relative.is_absolute() or ".." in relative.parts:
-        fail(f"unsafe {label} path: {relative}")
-    return relative
-
-
 def validate_artifact_entry(
     root: pathlib.Path,
     entry: dict[str, object],
     declared_paths: set[str],
-) -> tuple[pathlib.Path, str, str]:
+) -> tuple[pathlib.Path, str, str, str]:
     for key in ("role", "path", "sha256", "size"):
         if key not in entry:
             fail(f"artifact entry missing {key}: {entry}")
@@ -183,7 +179,7 @@ def validate_artifact_entry(
     actual_hash = sha256(path)
     if actual_hash.lower() != str(entry["sha256"]).lower():
         fail(f"{path}: SHA-256 mismatch")
-    return path, str(entry["role"]), actual_hash
+    return path, str(entry["role"]), actual_hash, relative_text
 
 
 def verify_launcher_compatibility_manifest(
@@ -191,14 +187,12 @@ def verify_launcher_compatibility_manifest(
     canonical: dict[str, object],
     canonical_entries: dict[str, dict[str, object]],
 ) -> dict[str, object]:
-    path = root / LAUNCHER_COMPATIBILITY_MANIFEST
+    relative = LAUNCHER_COMPATIBILITY_MANIFEST
+    path = root / relative
     if not path.is_file():
-        fail(
-            "missing thin-launcher compatibility manifest: "
-            f"{LAUNCHER_COMPATIBILITY_MANIFEST}"
-        )
-    if LAUNCHER_COMPATIBILITY_MANIFEST not in canonical_entries:
-        fail("thin-launcher compatibility manifest is not covered by the canonical artifact ledger")
+        fail(f"missing thin-launcher compatibility manifest: {relative}")
+    if relative not in canonical_entries:
+        fail("thin-launcher compatibility manifest is not in the canonical ledger")
 
     data = json.loads(path.read_text(encoding="utf-8"))
     required = {
@@ -213,86 +207,80 @@ def verify_launcher_compatibility_manifest(
     missing = required - data.keys()
     if missing:
         fail(f"thin-launcher compatibility manifest missing keys: {sorted(missing)}")
-    if data["schema"] != 2:
-        fail(f"thin-launcher compatibility schema must be 2, got {data['schema']!r}")
-    if data["distribution_model"] != "installer-thin-launcher-client-server":
-        fail("thin-launcher compatibility distribution_model is invalid")
-    if data["version"] != canonical["version"]:
-        fail("thin-launcher compatibility version does not match canonical manifest")
-    if data["platform"] != canonical["platform"]:
-        fail("thin-launcher compatibility platform does not match canonical manifest")
+    if data["schema"] != 2 or data["distribution_model"] != DISTRIBUTION_MODEL:
+        fail("thin-launcher compatibility identity is invalid")
+    if data["version"] != canonical["version"] or data["platform"] != canonical["platform"]:
+        fail("thin-launcher compatibility version/platform differs from canonical manifest")
     if "release_hardened" in data and bool(data["release_hardened"]) != bool(canonical["releaseHardened"]):
-        fail("thin-launcher compatibility hardening identity does not match canonical manifest")
+        fail("thin-launcher hardening identity differs from canonical manifest")
 
     checked_paths: set[str] = set()
     for role in ("client", "server"):
-        entry = data[role]
-        if not isinstance(entry, dict):
+        block = data[role]
+        if not isinstance(block, dict):
             fail(f"thin-launcher {role} block is not an object")
         for key in ("path", "sha256", "size"):
-            if key not in entry:
+            if key not in block:
                 fail(f"thin-launcher {role} block missing {key}")
         expected_path = PRIMARY_PATHS[role]
-        if str(entry["path"]) != expected_path:
-            fail(f"thin-launcher {role} path {entry['path']!r}, expected {expected_path!r}")
+        if str(block["path"]) != expected_path:
+            fail(f"thin-launcher {role} path is inconsistent")
         canonical_entry = canonical_entries.get(expected_path)
         if canonical_entry is None:
-            fail(f"canonical manifest does not declare thin-launcher {role} artifact")
-        if str(entry["sha256"]).lower() != str(canonical_entry["sha256"]).lower():
-            fail(f"thin-launcher {role} hash does not match canonical manifest")
-        if int(entry["size"]) != int(canonical_entry["size"]):
-            fail(f"thin-launcher {role} size does not match canonical manifest")
+            fail(f"canonical manifest omits thin-launcher {role} artifact")
+        if str(block["sha256"]).lower() != str(canonical_entry["sha256"]).lower():
+            fail(f"thin-launcher {role} hash differs from canonical manifest")
+        if int(block["size"]) != int(canonical_entry["size"]):
+            fail(f"thin-launcher {role} size differs from canonical manifest")
         checked_paths.add(expected_path)
 
-    client_entry = data["client"]
-    if client_entry.get("main_class") != EXPECTED_MAIN_CLASSES["client"]:
-        fail("thin-launcher client main_class does not identify the desktop client")
-    if client_entry.get("remote_main_class") != REMOTE_CLIENT_MAIN:
-        fail("thin-launcher client remote_main_class is missing or inconsistent")
+    client = data["client"]
+    if client.get("main_class") != EXPECTED_MAIN_CLASSES["client"]:
+        fail("thin-launcher client main_class is invalid")
+    if client.get("remote_main_class") != REMOTE_CLIENT_MAIN:
+        fail("thin-launcher remote_main_class is invalid")
     if canonical.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
-        fail("canonical remoteClientEntryPoint is missing or inconsistent")
+        fail("canonical remoteClientEntryPoint is invalid")
 
     support = data["support_libraries"]
     if not isinstance(support, list) or not support:
-        fail("thin-launcher compatibility manifest contains no support_libraries")
-    for index, entry in enumerate(support):
-        if not isinstance(entry, dict):
+        fail("thin-launcher compatibility manifest contains no support libraries")
+    for index, block in enumerate(support):
+        if not isinstance(block, dict):
             fail(f"thin-launcher support_libraries[{index}] is not an object")
         for key in ("path", "sha256", "size"):
-            if key not in entry:
+            if key not in block:
                 fail(f"thin-launcher support_libraries[{index}] missing {key}")
-        relative = safe_relative_path(entry["path"], "thin-launcher support library").as_posix()
-        if not relative.startswith("packages/support/lib/") or not relative.endswith(".jar"):
-            fail(f"thin-launcher support library path is outside the support library root: {relative}")
-        canonical_entry = canonical_entries.get(relative)
+        support_path = safe_relative_path(
+            block["path"],
+            "thin-launcher support library",
+        ).as_posix()
+        if not support_path.startswith("packages/support/lib/") or not support_path.endswith(".jar"):
+            fail(f"thin-launcher support path is outside governed root: {support_path}")
+        canonical_entry = canonical_entries.get(support_path)
         if canonical_entry is None or canonical_entry.get("role") != "support":
-            fail(f"thin-launcher support library is absent from canonical support ledger: {relative}")
-        if str(entry["sha256"]).lower() != str(canonical_entry["sha256"]).lower():
-            fail(f"thin-launcher support library hash mismatch: {relative}")
-        if int(entry["size"]) != int(canonical_entry["size"]):
-            fail(f"thin-launcher support library size mismatch: {relative}")
-        if relative in checked_paths:
-            fail(f"thin-launcher compatibility manifest duplicates path: {relative}")
-        checked_paths.add(relative)
+            fail(f"thin-launcher support library is absent from canonical ledger: {support_path}")
+        if str(block["sha256"]).lower() != str(canonical_entry["sha256"]).lower():
+            fail(f"thin-launcher support hash mismatch: {support_path}")
+        if int(block["size"]) != int(canonical_entry["size"]):
+            fail(f"thin-launcher support size mismatch: {support_path}")
+        if support_path in checked_paths:
+            fail(f"thin-launcher compatibility duplicates path: {support_path}")
+        checked_paths.add(support_path)
 
     canonical_support = {
-        item_path
-        for item_path, item in canonical_entries.items()
-        if item.get("role") == "support"
+        path
+        for path, entry in canonical_entries.items()
+        if entry.get("role") == "support"
     }
     launcher_support = {
-        item_path for item_path in checked_paths if item_path.startswith("packages/support/lib/")
+        path for path in checked_paths if path.startswith("packages/support/lib/")
     }
     if launcher_support != canonical_support:
-        missing_from_launcher = sorted(canonical_support - launcher_support)
-        extra_in_launcher = sorted(launcher_support - canonical_support)
-        fail(
-            "thin-launcher support ledger differs from canonical support ledger: "
-            f"missing={missing_from_launcher[:8]} extra={extra_in_launcher[:8]}"
-        )
+        fail("thin-launcher support ledger differs from canonical support ledger")
 
     return {
-        "path": LAUNCHER_COMPATIBILITY_MANIFEST,
+        "path": relative,
         "supportLibraryCount": len(launcher_support),
         "remoteClientEntryPoint": REMOTE_CLIENT_MAIN,
         "status": "verified",
@@ -306,21 +294,20 @@ def verify_remote_launcher(
 ) -> dict[str, object]:
     relative = remote_launcher_path(platform_name)
     entry = canonical_entries.get(relative)
-    if entry is None:
-        fail(f"canonical manifest does not declare remote-client launcher {relative}")
-    if entry.get("role") != "launch-script":
-        fail(f"remote-client launcher has wrong artifact role: {relative}")
+    if entry is None or entry.get("role") != "launch-script":
+        fail(f"canonical manifest omits governed remote-client launcher {relative}")
     path = root / relative
     text = path.read_text(encoding="utf-8", errors="replace")
     if REMOTE_CLIENT_MAIN not in text:
         fail(f"remote-client launcher does not invoke {REMOTE_CLIENT_MAIN}: {relative}")
     if "runtime" not in text or "TheMechanist.jar" not in text:
-        fail(f"remote-client launcher does not use the bundled runtime and client package: {relative}")
-    if relative.endswith(".sh") and not os.access(path, os.X_OK):
-        fail(f"remote-client shell launcher is not executable: {relative}")
+        fail(f"remote-client launcher does not use bundled runtime/client: {relative}")
+    if relative.endswith(".sh") and not text.startswith("#!/usr/bin/env sh\n"):
+        fail(f"remote-client shell launcher has wrong shebang: {relative}")
     return {
         "path": relative,
         "mainClass": REMOTE_CLIENT_MAIN,
+        "portableAfterZipExtraction": True,
         "status": "verified",
     }
 
@@ -339,8 +326,8 @@ def verify_distribution(
         fail(f"runtime manifest missing keys: {sorted(missing_keys)}")
     if manifest["schema"] != 2:
         fail(f"runtime manifest schema must be 2, got {manifest['schema']!r}")
-    if manifest["distributionModel"] != "installer-thin-launcher-client-server":
-        fail("runtime manifest distributionModel is not the governed launcher/client/server model")
+    if manifest["distributionModel"] != DISTRIBUTION_MODEL:
+        fail("runtime manifest distributionModel is invalid")
     if manifest["javaRelease"] != 17:
         fail(f"runtime manifest javaRelease must be 17, got {manifest['javaRelease']!r}")
     if not isinstance(manifest["releaseHardened"], bool):
@@ -354,7 +341,7 @@ def verify_distribution(
     if not isinstance(artifacts, list) or not artifacts:
         fail("runtime manifest artifacts must be a non-empty list")
     roles = {entry.get("role") for entry in artifacts if isinstance(entry, dict)}
-    missing_roles = REQUIRED_ARTIFACT_ROLES - roles
+    missing_roles = set(EXPECTED_MAIN_CLASSES) - roles
     if missing_roles:
         fail(f"runtime manifest missing required roles: {sorted(missing_roles)}")
 
@@ -364,20 +351,20 @@ def verify_distribution(
     for entry in artifacts:
         if not isinstance(entry, dict):
             fail("runtime manifest artifact entry is not an object")
-        path, role, actual_hash = validate_artifact_entry(root, entry, declared_paths)
-        relative_text = pathlib.PurePosixPath(str(entry["path"])).as_posix()
-        canonical_entries[relative_text] = entry
+        path, role, actual_hash, relative = validate_artifact_entry(
+            root,
+            entry,
+            declared_paths,
+        )
+        canonical_entries[relative] = entry
         if role in EXPECTED_MAIN_CLASSES:
             expected_path = PRIMARY_PATHS[role]
-            if relative_text != expected_path:
-                fail(f"canonical {role} artifact path {relative_text!r}, expected {expected_path!r}")
-            classes, project_classes, remote_class = scan_jar(path, role)
+            if relative != expected_path:
+                fail(f"canonical {role} path {relative!r}, expected {expected_path!r}")
             jar_summary[role] = {
-                "path": relative_text,
-                "classes": classes,
-                "projectClasses": project_classes,
+                "path": relative,
                 "sha256": actual_hash,
-                "remoteClientEntryClass": remote_class if role == "client" else None,
+                **scan_jar(path, role),
             }
 
     actual_paths = {
@@ -386,11 +373,11 @@ def verify_distribution(
         if path.is_file() and path != manifest_path
     }
     undeclared = actual_paths - declared_paths
-    missing = declared_paths - actual_paths
+    missing_files = declared_paths - actual_paths
     if undeclared:
         fail(f"distribution contains undeclared files: {sorted(undeclared)[:12]}")
-    if missing:
-        fail(f"manifest declares missing files: {sorted(missing)[:12]}")
+    if missing_files:
+        fail(f"manifest declares missing files: {sorted(missing_files)[:12]}")
 
     launcher_compatibility = verify_launcher_compatibility_manifest(
         root,
@@ -414,13 +401,12 @@ def verify_distribution(
     if not support_jars:
         fail("distribution contains no launcher-managed support libraries")
     support_names = [path.name.lower() for path in support_jars]
-    required_fragments = ("netty", "lwjgl", native_fragment(str(manifest["platform"])))
-    for required_fragment in required_fragments:
-        if not any(required_fragment in name for name in support_names):
-            fail(f"support library set is missing required fragment {required_fragment!r}")
+    for fragment in ("netty", "lwjgl", native_fragment(str(manifest["platform"]))):
+        if not any(fragment in name for name in support_names):
+            fail(f"support library set is missing required fragment {fragment!r}")
     for support in support_jars:
-        with zipfile.ZipFile(support) as archive_file:
-            bad = archive_file.testzip()
+        with zipfile.ZipFile(support) as support_zip:
+            bad = support_zip.testzip()
             if bad:
                 fail(f"{support}: corrupt support JAR entry {bad}")
 
@@ -432,15 +418,17 @@ def verify_distribution(
             if bad:
                 fail(f"distribution ZIP contains corrupt entry {bad}")
             names = set(distribution_zip.namelist())
-            manifest_suffix = f"{root.name}/manifests/runtime-manifest.json"
-            launcher_suffix = f"{root.name}/{LAUNCHER_COMPATIBILITY_MANIFEST}"
-            remote_suffix = f"{root.name}/{remote_launcher['path']}"
-            if manifest_suffix not in names:
-                fail(f"distribution ZIP does not contain {manifest_suffix}")
-            if launcher_suffix not in names:
-                fail(f"distribution ZIP does not contain {launcher_suffix}")
-            if remote_suffix not in names:
-                fail(f"distribution ZIP does not contain {remote_suffix}")
+            required_archive_paths = {
+                f"{root.name}/manifests/runtime-manifest.json",
+                f"{root.name}/{LAUNCHER_COMPATIBILITY_MANIFEST}",
+                f"{root.name}/{remote_launcher['path']}",
+            }
+            missing_archive_paths = required_archive_paths - names
+            if missing_archive_paths:
+                fail(
+                    "distribution ZIP omits required files: "
+                    f"{sorted(missing_archive_paths)}"
+                )
 
     return {
         "distribution": root.name,
@@ -477,7 +465,7 @@ def main() -> int:
             args.archive.resolve() if args.archive else None,
             require_release_hardened=require_release_hardened,
         )
-    except Exception as exc:  # noqa: BLE001 - release verifier prints one clear failure
+    except Exception as exc:  # noqa: BLE001 - one release-gate failure surface
         print(f"DISTRIBUTION VERIFICATION FAILED: {exc}", file=sys.stderr)
         return 1
     rendered = json.dumps(summary, indent=2, sort_keys=True)
