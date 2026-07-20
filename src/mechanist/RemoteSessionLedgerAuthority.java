@@ -21,14 +21,23 @@ import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-/** Server-owned remote player identity, reconnect, persistence, and immutable session-state authority. */
+/**
+ * Authoritative remote-session identity, reconnect, persistence, hosted-lobby
+ * commands, and immutable session snapshot boundary.
+ *
+ * This class deliberately does not own gameplay or world mutation. It owns the
+ * authenticated remote roster and the small pre-world command vocabulary that
+ * can be applied safely before the independent host is connected to the game's
+ * existing single-writer world authority.
+ */
 final class RemoteSessionLedgerAuthority implements AutoCloseable {
-    static final String VERSION = "remote-session-ledger-2";
-    private static final String PERSISTENCE_SCHEMA = "1";
+    static final String VERSION = "remote-session-ledger-3";
+    private static final String PERSISTENCE_SCHEMA = "2";
     private static final int MAX_PERSISTED_SESSIONS = 10_000;
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -48,7 +57,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
     RemoteSessionLedgerAuthority(String worldId, Path persistenceFile) throws IOException {
         this.worldId = safeToken(worldId, "remote-world");
         this.persistenceFile = Objects.requireNonNull(persistenceFile, "persistenceFile")
-                .toAbsolutePath().normalize();
+                .toAbsolutePath()
+                .normalize();
         loadIfPresent();
     }
 
@@ -62,7 +72,7 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         String connection = safeToken(connectionId, "unknown-connection");
         String resume = Objects.requireNonNullElse(presentedResumeToken, "")
                 .trim()
-                .toLowerCase();
+                .toLowerCase(Locale.ROOT);
         MutableSession session = sessionsByProfile.get(profile);
         MutableSession previous = session == null ? null : session.copy();
         long previousVersion = snapshotVersion;
@@ -107,6 +117,10 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         session.connectedAtMillis = now;
         session.lastSeenMillis = now;
         session.lastConnectionSequence = -1L;
+        session.lastConnectionCommandId = -1L;
+        session.ready = false;
+        session.presence = "available";
+        session.chatState = "idle";
         session.lastEvent = resumed ? "session resumed" : "session created";
         snapshotVersion++;
         persistOrRollback(profile, previous, previousVersion);
@@ -136,6 +150,63 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         return snapshot(session);
     }
 
+    synchronized HostedSessionCommandResult applyHostedSessionCommand(
+            Attachment attachment,
+            long commandId,
+            String command,
+            String value
+    ) {
+        requireOpen();
+        MutableSession session = requireActive(attachment);
+        MutableSession previous = session.copy();
+        long previousVersion = snapshotVersion;
+        long expected = session.lastConnectionCommandId + 1L;
+        if (commandId != expected) {
+            throw new IllegalStateException(
+                    "hosted-session command sequence mismatch: incoming=" + commandId
+                            + " expected=" + expected);
+        }
+
+        String verb = safeCommand(command);
+        String normalizedValue;
+        switch (verb) {
+            case "READY" -> {
+                normalizedValue = normalizeBoolean(value, "ready state");
+                session.ready = Boolean.parseBoolean(normalizedValue);
+            }
+            case "PRESENCE" -> {
+                normalizedValue = normalizeEnum(
+                        value,
+                        "presence",
+                        List.of("available", "away", "busy"));
+                session.presence = normalizedValue;
+            }
+            case "CHAT_STATE" -> {
+                normalizedValue = normalizeEnum(
+                        value,
+                        "chat state",
+                        List.of("idle", "typing"));
+                session.chatState = normalizedValue;
+            }
+            default -> throw new IllegalArgumentException(
+                    "hosted-session command " + verb
+                            + " is unavailable; remote world authority is closed");
+        }
+
+        session.lastConnectionCommandId = commandId;
+        session.acceptedHostedCommands++;
+        session.lastSeenMillis = System.currentTimeMillis();
+        session.lastEvent = "hosted-session command " + verb.toLowerCase(Locale.ROOT);
+        snapshotVersion++;
+        persistOrRollback(session.profileIdentity, previous, previousVersion);
+        return new HostedSessionCommandResult(
+                commandId,
+                verb,
+                normalizedValue,
+                snapshot(session),
+                hostedSessionSnapshotInternal());
+    }
+
     synchronized SessionSnapshot snapshot(Attachment attachment) {
         requireOpen();
         MutableSession session = requireOwned(attachment);
@@ -147,6 +218,11 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         MutableSession session = sessionsByProfile.get(
                 safeToken(profileIdentity, "unknown-profile"));
         return session == null ? null : snapshot(session);
+    }
+
+    synchronized HostedSessionSnapshot hostedSessionSnapshot() {
+        requireOpen();
+        return hostedSessionSnapshotInternal();
     }
 
     synchronized void disconnect(Attachment attachment, String reason) {
@@ -166,6 +242,10 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         session.activeConnectionId = "";
         session.activeResumeToken = "";
         session.lastConnectionSequence = -1L;
+        session.lastConnectionCommandId = -1L;
+        session.ready = false;
+        session.presence = "offline";
+        session.chatState = "idle";
         session.lastSeenMillis = System.currentTimeMillis();
         session.lastEvent = "disconnected: " + safeEvent(reason);
         snapshotVersion++;
@@ -194,6 +274,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                 + (persistenceFile == null ? "disabled" : persistenceFile)
                 + " tokenStorage=sha256-only"
                 + " atomicMove=required"
+                + " hostedCommands=ready,presence,chat-state"
+                + " worldCommands=closed"
                 + " worldAuthority=false";
     }
 
@@ -263,9 +345,37 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                 session.connectionGeneration,
                 session.acceptedRelayFrames,
                 session.lastConnectionSequence,
+                session.acceptedHostedCommands,
+                session.lastConnectionCommandId,
+                session.ready,
+                effectivePresence(session),
+                session.chatState,
                 session.connectedAtMillis,
                 session.lastSeenMillis,
                 session.lastEvent);
+    }
+
+    private HostedSessionSnapshot hostedSessionSnapshotInternal() {
+        ArrayList<RosterEntry> roster = new ArrayList<>();
+        for (MutableSession session : sessionsByProfile.values()) {
+            roster.add(new RosterEntry(
+                    session.playerId,
+                    session.connected,
+                    session.connectionGeneration,
+                    session.ready,
+                    effectivePresence(session),
+                    session.chatState,
+                    session.acceptedHostedCommands,
+                    session.lastSeenMillis));
+        }
+        roster.sort(Comparator.comparing(RosterEntry::playerId));
+        return new HostedSessionSnapshot(
+                snapshotVersion,
+                worldId,
+                roster.size(),
+                activeSessionCount(),
+                List.copyOf(roster),
+                false);
     }
 
     private String playerIdFor(String profileIdentity) {
@@ -319,12 +429,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         int count = parseCount(properties.getProperty("session.count"));
         for (int index = 0; index < count; index++) {
             String prefix = "session." + index + ".";
-            String profile = requiredProperty(
-                    properties,
-                    prefix + "profile");
-            String playerId = requiredProperty(
-                    properties,
-                    prefix + "playerId");
+            String profile = requiredProperty(properties, prefix + "profile");
+            String playerId = requiredProperty(properties, prefix + "playerId");
             String expectedPlayerId = playerIdFor(profile);
             if (!expectedPlayerId.equals(playerId)) {
                 throw new IOException(
@@ -334,7 +440,7 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             String tokenHash = requiredProperty(
                     properties,
                     prefix + "resumeTokenSha256")
-                    .toLowerCase();
+                    .toLowerCase(Locale.ROOT);
             if (!tokenHash.matches("[a-f0-9]{64}")) {
                 throw new IOException(
                         "remote session resume-token hash is invalid for profile "
@@ -352,15 +458,17 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             session.connectionGeneration = Math.max(
                     1L,
                     parseLong(
-                            properties.getProperty(
-                                    prefix + "connectionGeneration"),
+                            properties.getProperty(prefix + "connectionGeneration"),
                             1L,
                             prefix + "connectionGeneration"));
             session.acceptedRelayFrames = parseLong(
-                    properties.getProperty(
-                            prefix + "acceptedRelayFrames"),
+                    properties.getProperty(prefix + "acceptedRelayFrames"),
                     0L,
                     prefix + "acceptedRelayFrames");
+            session.acceptedHostedCommands = parseLong(
+                    properties.getProperty(prefix + "acceptedHostedCommands"),
+                    0L,
+                    prefix + "acceptedHostedCommands");
             session.lastSeenMillis = parseLong(
                     properties.getProperty(prefix + "lastSeenMillis"),
                     0L,
@@ -369,9 +477,12 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             session.activeConnectionId = "";
             session.activeResumeToken = "";
             session.lastConnectionSequence = -1L;
+            session.lastConnectionCommandId = -1L;
+            session.ready = false;
+            session.presence = "offline";
+            session.chatState = "idle";
             session.connectedAtMillis = 0L;
-            session.lastEvent =
-                    "restored offline after server restart";
+            session.lastEvent = "restored offline after server restart";
             sessionsByProfile.put(profile, session);
         }
         snapshotVersion++;
@@ -393,22 +504,14 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         properties.setProperty(
                 "snapshotVersion",
                 Long.toString(snapshotVersion));
-        List<MutableSession> ordered = new ArrayList<>(
-                sessionsByProfile.values());
-        ordered.sort(Comparator.comparing(
-                session -> session.profileIdentity));
-        properties.setProperty(
-                "session.count",
-                Integer.toString(ordered.size()));
+        List<MutableSession> ordered = new ArrayList<>(sessionsByProfile.values());
+        ordered.sort(Comparator.comparing(session -> session.profileIdentity));
+        properties.setProperty("session.count", Integer.toString(ordered.size()));
         for (int index = 0; index < ordered.size(); index++) {
             MutableSession session = ordered.get(index);
             String prefix = "session." + index + ".";
-            properties.setProperty(
-                    prefix + "profile",
-                    session.profileIdentity);
-            properties.setProperty(
-                    prefix + "playerId",
-                    session.playerId);
+            properties.setProperty(prefix + "profile", session.profileIdentity);
+            properties.setProperty(prefix + "playerId", session.playerId);
             properties.setProperty(
                     prefix + "resumeTokenSha256",
                     session.resumeTokenHash);
@@ -419,6 +522,9 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                     prefix + "acceptedRelayFrames",
                     Long.toString(session.acceptedRelayFrames));
             properties.setProperty(
+                    prefix + "acceptedHostedCommands",
+                    Long.toString(session.acceptedHostedCommands));
+            properties.setProperty(
                     prefix + "lastSeenMillis",
                     Long.toString(session.lastSeenMillis));
             properties.setProperty(
@@ -427,9 +533,7 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         }
 
         Path temporary = parent.resolve(
-                persistenceFile.getFileName()
-                        + ".tmp-"
-                        + randomHex(8));
+                persistenceFile.getFileName() + ".tmp-" + randomHex(8));
         try {
             try (FileChannel channel = FileChannel.open(
                          temporary,
@@ -501,6 +605,46 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         }
     }
 
+    private static String normalizeBoolean(String value, String label) {
+        String normalized = Objects.requireNonNullElse(value, "")
+                .trim()
+                .toLowerCase(Locale.ROOT);
+        if (!"true".equals(normalized) && !"false".equals(normalized)) {
+            throw new IllegalArgumentException(label + " must be true or false");
+        }
+        return normalized;
+    }
+
+    private static String normalizeEnum(
+            String value,
+            String label,
+            List<String> allowed
+    ) {
+        String normalized = Objects.requireNonNullElse(value, "")
+                .trim()
+                .toLowerCase(Locale.ROOT);
+        if (!allowed.contains(normalized)) {
+            throw new IllegalArgumentException(
+                    label + " must be one of " + allowed);
+        }
+        return normalized;
+    }
+
+    private static String safeCommand(String value) {
+        String command = Objects.requireNonNullElse(value, "")
+                .trim()
+                .toUpperCase(Locale.ROOT);
+        if (!command.matches("[A-Z_]{2,32}")) {
+            throw new IllegalArgumentException(
+                    "hosted-session command name is invalid");
+        }
+        return command;
+    }
+
+    private static String effectivePresence(MutableSession session) {
+        return session.connected ? session.presence : "offline";
+    }
+
     private static void setOwnerOnlyPermissions(Path path) {
         try {
             Files.setPosixFilePermissions(
@@ -533,8 +677,7 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(
-                    digest.digest(
-                            value.getBytes(StandardCharsets.UTF_8)));
+                    digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception failure) {
             throw new IllegalStateException(
                     "SHA-256 is unavailable",
@@ -579,6 +722,10 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             session.activeConnectionId = "";
             session.activeResumeToken = "";
             session.lastConnectionSequence = -1L;
+            session.lastConnectionCommandId = -1L;
+            session.ready = false;
+            session.presence = "offline";
+            session.chatState = "idle";
             session.lastSeenMillis = System.currentTimeMillis();
             session.lastEvent = "server ledger closed";
         }
@@ -590,9 +737,7 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         } catch (IOException | RuntimeException failure) {
             sessionsByProfile.clear();
             for (MutableSession session : previous) {
-                sessionsByProfile.put(
-                        session.profileIdentity,
-                        session);
+                sessionsByProfile.put(session.profileIdentity, session);
             }
             snapshotVersion = previousVersion;
             if (failure instanceof IOException ioFailure) {
@@ -622,6 +767,11 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             long connectionGeneration,
             long acceptedRelayFrames,
             long lastConnectionSequence,
+            long acceptedHostedCommands,
+            long lastConnectionCommandId,
+            boolean ready,
+            String presence,
+            String chatState,
             long connectedAtMillis,
             long lastSeenMillis,
             String lastEvent
@@ -633,10 +783,47 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                     + " connected=" + connected
                     + " generation=" + connectionGeneration
                     + " relayFrames=" + acceptedRelayFrames
+                    + " hostedCommands=" + acceptedHostedCommands
                     + " lastSequence=" + lastConnectionSequence
+                    + " lastCommand=" + lastConnectionCommandId
+                    + " ready=" + ready
+                    + " presence=" + presence
+                    + " chatState=" + chatState
                     + " lastEvent=" + lastEvent;
         }
     }
+
+    record HostedSessionCommandResult(
+            long commandId,
+            String command,
+            String value,
+            SessionSnapshot playerSnapshot,
+            HostedSessionSnapshot hostedSnapshot
+    ) { }
+
+    record HostedSessionSnapshot(
+            long version,
+            String worldId,
+            int totalSessions,
+            int activeSessions,
+            List<RosterEntry> roster,
+            boolean worldAuthority
+    ) {
+        HostedSessionSnapshot {
+            roster = List.copyOf(Objects.requireNonNullElse(roster, List.of()));
+        }
+    }
+
+    record RosterEntry(
+            String playerId,
+            boolean connected,
+            long connectionGeneration,
+            boolean ready,
+            String presence,
+            String chatState,
+            long acceptedHostedCommands,
+            long lastSeenMillis
+    ) { }
 
     private static final class MutableSession {
         final String profileIdentity;
@@ -648,6 +835,11 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         long connectionGeneration = 1L;
         long acceptedRelayFrames;
         long lastConnectionSequence = -1L;
+        long acceptedHostedCommands;
+        long lastConnectionCommandId = -1L;
+        boolean ready;
+        String presence = "offline";
+        String chatState = "idle";
         long connectedAtMillis;
         long lastSeenMillis;
         String lastEvent = "session allocated at " + Instant.now();
@@ -673,6 +865,11 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             copy.connectionGeneration = connectionGeneration;
             copy.acceptedRelayFrames = acceptedRelayFrames;
             copy.lastConnectionSequence = lastConnectionSequence;
+            copy.acceptedHostedCommands = acceptedHostedCommands;
+            copy.lastConnectionCommandId = lastConnectionCommandId;
+            copy.ready = ready;
+            copy.presence = presence;
+            copy.chatState = chatState;
             copy.connectedAtMillis = connectedAtMillis;
             copy.lastSeenMillis = lastSeenMillis;
             copy.lastEvent = lastEvent;
