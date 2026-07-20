@@ -52,7 +52,7 @@ jobs:
       - name: Capture toolchain
         shell: bash
         run: |
-          mkdir -p ci-logs
+          mkdir -p ci-logs dist/releases
           {
             java -version
             javac -version
@@ -61,6 +61,40 @@ jobs:
             echo "commit=$GITHUB_SHA"
             echo "platform=${{ matrix.platform }}"
           } 2>&1 | tee ci-logs/toolchain-${{ matrix.platform }}.log
+      - name: Verify Python release tools parse
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m compileall -q ROOT_build/ci 2>&1 | tee ci-logs/python-syntax-${{ matrix.platform }}.log
+      - name: Verify Linux packaging shell syntax
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          bash -n scripts/package/build-linux-installers.sh 2>&1 | tee ci-logs/linux-package-syntax.log
+      - name: Verify Windows packaging PowerShell syntax
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/package/build-windows-installers.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+      - name: Verify release hardening policies
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/verify_proguard_configuration.py \
+            --repo . \
+            --report "dist/releases/proguard-policy-${{ matrix.platform }}.json" \
+            2>&1 | tee ci-logs/proguard-policy-${{ matrix.platform }}.log
       - name: Compile Java 17 client and server
         shell: bash
         run: |
@@ -91,7 +125,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python ROOT_build/ci/verify_runnable_distribution.py "${{ steps.package.outputs.distribution }}" --archive "${{ steps.package.outputs.archive }}" --report "dist/releases/verification-${{ matrix.platform }}.json" 2>&1 | tee ci-logs/verify-${{ matrix.platform }}.log
+          python ROOT_build/ci/verify_runnable_distribution.py \
+            "${{ steps.package.outputs.distribution }}" \
+            --archive "${{ steps.package.outputs.archive }}" \
+            --report "dist/releases/verification-${{ matrix.platform }}.json" \
+            2>&1 | tee ci-logs/verify-${{ matrix.platform }}.log
       - name: Upload package and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,6 +137,7 @@ jobs:
           name: TheMechanist-${{ matrix.platform }}
           path: |
             dist/releases/*.zip
+            dist/releases/proguard-policy-${{ matrix.platform }}.json
             dist/releases/verification-${{ matrix.platform }}.json
             ci-logs/*.log
           if-no-files-found: warn
@@ -197,7 +236,7 @@ jobs:
       - name: Install Xvfb
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb
-      - name: Run Linux GUI startup under Xvfb
+      - name: Run Linux main GUI startup under Xvfb
         if: runner.os == 'Linux'
         shell: bash
         run: |
@@ -210,7 +249,20 @@ jobs:
           CODE=$?
           set -e
           if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
-      - name: Run Windows GUI startup
+      - name: Run Linux remote lobby startup under Xvfb
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST='${{ steps.dist.outputs.root }}'
+          PROFILE="$RUNNER_TEMP/Mechanist Remote Lobby Profile"
+          mkdir -p "$PROFILE"
+          set +e
+          HOME="$PROFILE" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" -Duser.home="$PROFILE" -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.RemoteClientMain
+          CODE=$?
+          set -e
+          if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
+      - name: Run Windows main GUI startup
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -218,6 +270,18 @@ jobs:
           $profile="$env:RUNNER_TEMP\Mechanist GUI Profile"
           New-Item -ItemType Directory -Force -Path $profile | Out-Null
           $args=@("-Duser.home=$profile",'-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.TheMechanist')
+          $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList $args -PassThru -WorkingDirectory $env:RUNNER_TEMP
+          Start-Sleep -Seconds 12
+          if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+      - name: Run Windows remote lobby startup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist='${{ steps.dist.outputs.root }}'
+          $profile="$env:RUNNER_TEMP\Mechanist Remote Lobby Profile"
+          New-Item -ItemType Directory -Force -Path $profile | Out-Null
+          $args=@("-Duser.home=$profile",'-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.RemoteClientMain')
           $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList $args -PassThru -WorkingDirectory $env:RUNNER_TEMP
           Start-Sleep -Seconds 12
           if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
@@ -246,6 +310,9 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: actions/download-artifact@v4
         with:
           pattern: TheMechanist-*
@@ -256,6 +323,14 @@ jobs:
           pattern: Synthetic-*
           path: synthetic-assets
           merge-multiple: true
+      - name: Verify synthetic release contract
+        run: >-
+          python ROOT_build/ci/verify_synthetic_release_contract.py
+          synthetic-assets/synthetic-*.json
+          --expected-platforms linux-x64,windows-x64
+          --require-release-hardened
+          --require-native-stage
+          --report synthetic-assets/release-contract.json
       - name: Resolve identity
         id: identity
         shell: bash
@@ -266,17 +341,18 @@ jobs:
           VERSION=$(python - <<'PY'
           import glob,json,os
           reports=[json.load(open(p,encoding='utf-8')) for p in glob.glob('release-assets/verification-*.json')]
-          synthetic=[json.load(open(p,encoding='utf-8')) for p in glob.glob('synthetic-assets/synthetic-*.json')]
           versions={r['version'] for r in reports}
           commits={r['commit'] for r in reports}
           platforms={r['platform'] for r in reports}
           statuses={r['status'] for r in reports}
-          synthetic_statuses={r.get('status') for r in synthetic}
+          remote={r.get('remoteClientEntryPoint') for r in reports}
+          hardened={r.get('releaseHardened') for r in reports}
           if len(reports)!=2 or len(versions)!=1: raise SystemExit('expected exactly two matching verification reports')
           if commits!={os.environ['GITHUB_SHA']}: raise SystemExit(f'commit mismatch: {sorted(commits)}')
           if platforms!={'linux-x64','windows-x64'}: raise SystemExit(f'platform mismatch: {sorted(platforms)}')
           if statuses!={'verified'}: raise SystemExit(f'verification status mismatch: {sorted(statuses)}')
-          if len(synthetic)!=2 or synthetic_statuses!={'passed'}: raise SystemExit('both synthetic reports must pass')
+          if remote!={'mechanist.RemoteClientMain'}: raise SystemExit(f'remote entry mismatch: {sorted(remote)}')
+          if hardened!={True}: raise SystemExit(f'release hardening mismatch: {sorted(hardened)}')
           print(next(iter(versions)))
           PY
           )
@@ -289,6 +365,7 @@ jobs:
           python ROOT_build/ci/record_verified_release.py
           --history ROOT_docs/DEVELOPMENT_HISTORY.md
           --reports 'release-assets/verification-*.json'
+          --synthetic-reports 'synthetic-assets/synthetic-*.json'
           --commit '${{ github.sha }}'
           --run-url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       - name: Commit history
@@ -348,18 +425,21 @@ jobs:
             python -c "import zipfile; zipfile.ZipFile(r'$ARCHIVE').extractall(r'$DEST')"
             DIST="$DEST/$NAME"
             PLATFORM=$(python -c "import json; print(json.load(open(r'$DIST/manifests/runtime-manifest.json',encoding='utf-8'))['platform'])")
-            python ROOT_build/ci/verify_runnable_distribution.py "$DIST" --archive "$ARCHIVE" --report "final-certification/final-$PLATFORM.json"
-            python -c "import json,os; r=json.load(open(r'final-certification/final-$PLATFORM.json')); assert r['commit']==os.environ['SOURCE_SHA']; assert r['version']==os.environ['RELEASE_VERSION']; assert r['status']=='verified'"
+            python ROOT_build/ci/verify_runnable_distribution.py \
+              "$DIST" \
+              --archive "$ARCHIVE" \
+              --require-release-hardened \
+              --report "final-certification/final-$PLATFORM.json"
+            python -c "import json,os; r=json.load(open(r'final-certification/final-$PLATFORM.json')); assert r['commit']==os.environ['SOURCE_SHA']; assert r['version']==os.environ['RELEASE_VERSION']; assert r['status']=='verified'; assert r['releaseHardened'] is True; assert r['remoteClientEntryPoint']=='mechanist.RemoteClientMain'"
             ZIP_COUNT=$((ZIP_COUNT+1))
           done
           test "$ZIP_COUNT" -eq 2
-          python - <<'PY'
-          import glob,json
-          reports=[json.load(open(p,encoding='utf-8')) for p in glob.glob('synthetic-assets/synthetic-*.json')]
-          assert len(reports)==2
-          assert {r.get('status') for r in reports}=={'passed'}
-          assert all(r.get('packagedGate3') and r.get('serverOperation') and r.get('tamperedManifestRejected') and r.get('missingSupportRejected') for r in reports)
-          PY
+          python ROOT_build/ci/verify_synthetic_release_contract.py \
+            synthetic-assets/synthetic-*.json \
+            --expected-platforms linux-x64,windows-x64 \
+            --require-release-hardened \
+            --require-native-stage \
+            --report final-certification/final-synthetic-contract.json
           (cd release-assets && sha256sum TheMechanist-*.zip > SHA256SUMS.txt)
           echo "checksums=release-assets/SHA256SUMS.txt" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
@@ -401,8 +481,8 @@ jobs:
           TARGET: ${{ needs.record-history.outputs.history_sha }}
         run: |
           set -euo pipefail
-          mapfile -t ASSETS < <(find release-assets synthetic-assets certification-assets -type f \( -name '*.zip' -o -name 'verification-*.json' -o -name 'synthetic-*.json' -o -name 'final-*.json' -o -name 'SHA256SUMS.txt' \) | sort)
-          test ${#ASSETS[@]} -ge 9
+          mapfile -t ASSETS < <(find release-assets synthetic-assets certification-assets -type f \( -name '*.zip' -o -name 'verification-*.json' -o -name 'synthetic-*.json' -o -name 'final-*.json' -o -name 'release-contract.json' -o -name 'SHA256SUMS.txt' \) | sort)
+          test ${#ASSETS[@]} -ge 10
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --clobber
           else
