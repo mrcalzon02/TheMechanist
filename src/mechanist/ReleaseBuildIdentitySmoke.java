@@ -43,6 +43,14 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report host-restart reconnect continuity");
         require(separation.contains("independentHostSessionPersistence=atomic-hash-only"),
                 "runtime separation must report atomic hash-only session persistence");
+        require(separation.contains("independentHostHostedSessionCommands=ready-presence-chat-state"),
+                "runtime separation must report the narrow hosted-session command vocabulary");
+        require(separation.contains("independentHostHostedSessionCommandOrdering=per-connection-monotonic"),
+                "runtime separation must report independent hosted-command ordering");
+        require(separation.contains("independentHostHostedRoster=immutable-deterministic"),
+                "runtime separation must report immutable hosted rosters");
+        require(separation.contains("independentHostWorldCommands=rejected"),
+                "runtime separation must report explicit world-command rejection");
         require(separation.contains("independentHostWorldAuthority=not-implemented"),
                 "runtime separation must keep remote world authority closed");
         require(separation.contains("remoteGameplaySession=not-yet-certified"),
@@ -51,6 +59,7 @@ final class ReleaseBuildIdentitySmoke {
                 "internal-host authority must own shutdown");
 
         RemoteSessionLedgerAuthoritySmoke.main(args);
+        IndependentHostHostedSessionWireSmoke.main(args);
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
 
