@@ -15,7 +15,9 @@ final class RuntimeSeparationAuthority {
                 + " launcherPackageVerification=implemented"
                 + " client=active"
                 + " headlessServer=implemented"
-                + " singlePlayerInternalServer=not-yet-supervised"
+                + " singlePlayerInternalServer=supervised-in-process"
+                + " singlePlayerAuthority=single-writer-world-lane"
+                + " singlePlayerSaveResume=packaged-smoke-required"
                 + " remoteGameplaySession=not-yet-certified"
                 + " modManifest=declared-only"
                 + " hotRestart=not-yet-implemented";
@@ -25,11 +27,13 @@ final class RuntimeSeparationAuthority {
         RuntimeProfile p = profile == null ? RuntimeProfile.defaultProfile() : profile;
         ArrayList<String> out = new ArrayList<>();
         out.add("Runtime Separation Authority " + VERSION);
-        out.add("Purpose: report the current launcher, client, and server process boundaries without claiming unfinished session behavior.");
+        out.add("Purpose: report the current launcher, client, and server boundaries without claiming unfinished remote-session behavior.");
         out.add("The thin launcher verifies package manifests, applies package selections, prepares profile identity, and starts the client package.");
         out.add("The client owns Java2D rendering, input, panels, presentation state, and local UI feedback.");
-        out.add("The packaged headless server owns its separate server-storage namespace and can initialize or bind an independent host transport.");
-        out.add("Single-player does not yet supervise a separate internal server process, and a packaged client-to-independent-host gameplay session is not yet certified.");
+        out.add("Single-player mounts a supervised in-process internal host that routes world mutation through one authoritative world thread, local session identity, sector authority, and immutable snapshots.");
+        out.add("Client shutdown closes the internal host, sector schedules, session state, and authoritative world executor before process exit.");
+        out.add("The separately packaged headless server owns its own storage namespace and can initialize or bind an independent host transport.");
+        out.add("A packaged client-to-independent-host gameplay session is not yet certified and remains distinct from the local single-player host.");
         out.add("Shared runtime profiles carry mode, save/world identity, mod manifest path, and enabled mod tokens without activating external mod loading.");
         out.add("");
         out.addAll(p.lines());
@@ -45,8 +49,11 @@ final class RuntimeSeparationAuthority {
         out.add("runtimeProfileEnvelope=present");
         out.add("commandLineModeVocabulary=present");
         out.add("launcherOrchestration=package-verification-and-client-launch");
+        out.add("singlePlayerInternalServer=supervised-in-process");
+        out.add("singlePlayerWorldMutation=authoritative-single-writer");
+        out.add("singlePlayerSession=local-bound");
+        out.add("singlePlayerShutdown=supervised");
         out.add("headlessServer=packaged-and-bind-capable");
-        out.add("singlePlayerInternalServer=false");
         out.add("remoteGameplaySessionCertified=false");
         out.add("modResolution=false");
         out.add("processRestartHandoff=false");
