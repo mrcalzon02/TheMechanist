@@ -9,14 +9,15 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Authenticated wire exchange for the independent-host relay and session ledger.
+ * Authenticated wire exchange for the independent-host relay and hosted-session ledger.
  *
  * Client identity, manifest acquisition, restart, and integrity must complete
  * before a server-owned remote session is attached. Access remains RELAY_ONLY;
- * the session ledger does not expose world snapshots or gameplay mutation.
+ * readiness, presence, chat-state, and immutable roster snapshots are server
+ * authoritative, while gameplay and world mutation remain closed.
  */
 final class IndependentHostWireProtocol {
-    static final String VERSION = "independent-host-wire-2";
+    static final String VERSION = "independent-host-wire-3";
     private static final String PREFIX = "MECH";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -69,6 +70,8 @@ final class IndependentHostWireProtocol {
                 case "RESTARTED" -> acceptRestarted(fields);
                 case "CHALLENGE_RESPONSE" -> acceptChallengeResponse(fields);
                 case "SESSION_STATUS" -> acceptSessionStatus(fields);
+                case "SESSION_COMMAND" -> acceptSessionCommand(fields);
+                case "SESSION_ROSTER" -> acceptSessionRoster(fields);
                 case "PING" -> acceptPing(fields);
                 default -> deny("unknown protocol command " + command);
             };
@@ -112,7 +115,8 @@ final class IndependentHostWireProtocol {
 
     RemoteSessionLedgerAuthority.SessionSnapshot noteRelayFrameAccepted(long sequence) {
         if (!relayAccessGranted()) {
-            throw new IllegalStateException("relay frame arrived before a server-owned session was attached");
+            throw new IllegalStateException(
+                    "relay frame arrived before a server-owned session was attached");
         }
         return sessionLedger.noteRelayFrameAccepted(sessionAttachment, sequence);
     }
@@ -138,6 +142,8 @@ final class IndependentHostWireProtocol {
                 + " player=" + (snapshot == null ? "none" : snapshot.playerId())
                 + " generation=" + (snapshot == null ? 0 : snapshot.connectionGeneration())
                 + " relayFrames=" + (snapshot == null ? 0 : snapshot.acceptedRelayFrames())
+                + " hostedCommands=" + (snapshot == null ? 0 : snapshot.acceptedHostedCommands())
+                + " hostedRoster=true"
                 + " worldAuthority=false";
     }
 
@@ -163,9 +169,11 @@ final class IndependentHostWireProtocol {
     private Result acceptAcquired(String[] fields) {
         requirePhase(SecureHandshakeStateMachine.Phase.ACQUISITION_AND_SYNC);
         requireCount(fields, 3, "ACQUIRED");
-        String received = requireToken(fields[2], "manifest fingerprint").toLowerCase(Locale.ROOT);
+        String received = requireToken(fields[2], "manifest fingerprint")
+                .toLowerCase(Locale.ROOT);
         if (!manifestFingerprint.equals(received)) {
-            throw new IllegalArgumentException("client acquired fingerprint does not match the server manifest");
+            throw new IllegalArgumentException(
+                    "client acquired fingerprint does not match the server manifest");
         }
         handshake.markModFilesAcquired();
         handshake.markFolderLayoutVerified();
@@ -176,9 +184,11 @@ final class IndependentHostWireProtocol {
     private Result acceptRestarted(String[] fields) {
         requirePhase(SecureHandshakeStateMachine.Phase.CLIENT_HOT_RESTART);
         requireCount(fields, 3, "RESTARTED");
-        String mounted = requireToken(fields[2], "mounted fingerprint").toLowerCase(Locale.ROOT);
+        String mounted = requireToken(fields[2], "mounted fingerprint")
+                .toLowerCase(Locale.ROOT);
         if (!manifestFingerprint.equals(mounted)) {
-            throw new IllegalArgumentException("mounted fingerprint does not match the delivered manifest");
+            throw new IllegalArgumentException(
+                    "mounted fingerprint does not match the delivered manifest");
         }
         handshake.markClientHotRestartCompleted(mounted);
         String salt = randomHex(16);
@@ -194,9 +204,11 @@ final class IndependentHostWireProtocol {
     private Result acceptChallengeResponse(String[] fields) {
         requirePhase(SecureHandshakeStateMachine.Phase.INTEGRITY_CHALLENGE);
         requireCount(fields, 3, "CHALLENGE_RESPONSE");
-        String digest = requireToken(fields[2], "challenge response").toLowerCase(Locale.ROOT);
+        String digest = requireToken(fields[2], "challenge response")
+                .toLowerCase(Locale.ROOT);
         if (!handshake.verifyIntegrityChallengeResponse(digest)) {
-            throw new IllegalArgumentException("integrity challenge response was rejected");
+            throw new IllegalArgumentException(
+                    "integrity challenge response was rejected");
         }
         sessionAttachment = sessionLedger.attach(
                 profileIdentity,
@@ -220,10 +232,43 @@ final class IndependentHostWireProtocol {
 
     private Result acceptSessionStatus(String[] fields) {
         requireCount(fields, 2, "SESSION_STATUS");
-        if (!relayAccessGranted()) {
-            throw new IllegalStateException("session status is unavailable before relay access");
-        }
+        requireRelayAccess("session status");
         return Result.responses(sessionSnapshotLine(sessionLedger.snapshot(sessionAttachment)));
+    }
+
+    private Result acceptSessionCommand(String[] fields) {
+        requireCount(fields, 5, "SESSION_COMMAND");
+        requireRelayAccess("hosted-session commands");
+        long commandId = requireNonNegativeLong(fields[2], "hosted-session command id");
+        String command = requireToken(fields[3], "hosted-session command");
+        String value = requireToken(fields[4], "hosted-session command value");
+        RemoteSessionLedgerAuthority.HostedSessionCommandResult result =
+                sessionLedger.applyHostedSessionCommand(
+                        sessionAttachment,
+                        commandId,
+                        command,
+                        value);
+        ArrayList<String> responses = new ArrayList<>();
+        RemoteSessionLedgerAuthority.SessionSnapshot player = result.playerSnapshot();
+        responses.add(line(
+                "SESSION_COMMAND_ACCEPTED",
+                Long.toString(result.commandId()),
+                result.command(),
+                result.value(),
+                Long.toString(player.version()),
+                Boolean.toString(player.ready()),
+                player.presence(),
+                player.chatState(),
+                Long.toString(player.acceptedHostedCommands()),
+                Long.toString(player.lastConnectionCommandId())));
+        responses.addAll(hostedRosterLines(result.hostedSnapshot()));
+        return Result.responses(responses);
+    }
+
+    private Result acceptSessionRoster(String[] fields) {
+        requireCount(fields, 2, "SESSION_ROSTER");
+        requireRelayAccess("hosted-session roster");
+        return Result.responses(hostedRosterLines(sessionLedger.hostedSessionSnapshot()));
     }
 
     private Result acceptPing(String[] fields) {
@@ -235,7 +280,9 @@ final class IndependentHostWireProtocol {
                 relayAccessGranted() ? "SESSION_ATTACHED" : "PRE_ACCESS"));
     }
 
-    private String sessionSnapshotLine(RemoteSessionLedgerAuthority.SessionSnapshot snapshot) {
+    private String sessionSnapshotLine(
+            RemoteSessionLedgerAuthority.SessionSnapshot snapshot
+    ) {
         return line(
                 "SESSION_SNAPSHOT",
                 snapshot.playerId(),
@@ -248,22 +295,64 @@ final class IndependentHostWireProtocol {
                 snapshot.lastEvent());
     }
 
+    private List<String> hostedRosterLines(
+            RemoteSessionLedgerAuthority.HostedSessionSnapshot snapshot
+    ) {
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add(line(
+                "HOSTED_ROSTER_BEGIN",
+                Long.toString(snapshot.version()),
+                snapshot.worldId(),
+                Integer.toString(snapshot.totalSessions()),
+                Integer.toString(snapshot.activeSessions()),
+                Boolean.toString(snapshot.worldAuthority())));
+        for (RemoteSessionLedgerAuthority.RosterEntry entry : snapshot.roster()) {
+            lines.add(line(
+                    "HOSTED_ROSTER_ENTRY",
+                    entry.playerId(),
+                    Boolean.toString(entry.connected()),
+                    Long.toString(entry.connectionGeneration()),
+                    Boolean.toString(entry.ready()),
+                    entry.presence(),
+                    entry.chatState(),
+                    Long.toString(entry.acceptedHostedCommands()),
+                    Long.toString(entry.lastSeenMillis())));
+        }
+        lines.add(line("HOSTED_ROSTER_END", Long.toString(snapshot.version())));
+        return List.copyOf(lines);
+    }
+
+    private void requireRelayAccess(String capability) {
+        if (!relayAccessGranted()) {
+            throw new IllegalStateException(
+                    capability + " is unavailable before relay access");
+        }
+    }
+
     private void requirePhase(SecureHandshakeStateMachine.Phase expected) {
         if (handshake.phase() != expected) {
             throw new IllegalStateException(
-                    "command is invalid during " + handshake.phase() + "; expected " + expected);
+                    "command is invalid during " + handshake.phase()
+                            + "; expected " + expected);
         }
     }
 
     private Result deny(String reason) {
-        String use = reason == null || reason.isBlank() ? "protocol rejected" : reason;
+        String use = reason == null || reason.isBlank()
+                ? "protocol rejected"
+                : reason;
         disconnect(use);
         return Result.disconnect(use);
     }
 
-    private static void requireCount(String[] fields, int expected, String command) {
+    private static void requireCount(
+            String[] fields,
+            int expected,
+            String command
+    ) {
         if (fields.length != expected) {
-            throw new IllegalArgumentException(command + " requires " + (expected - 2) + " value field(s)");
+            throw new IllegalArgumentException(
+                    command + " requires " + (expected - 2) + " value field(s)");
         }
     }
 
@@ -274,39 +363,63 @@ final class IndependentHostWireProtocol {
             String command
     ) {
         if (fields.length < minimum || fields.length > maximum) {
-            throw new IllegalArgumentException(command + " has an invalid field count");
+            throw new IllegalArgumentException(
+                    command + " has an invalid field count");
+        }
+    }
+
+    private static long requireNonNegativeLong(String value, String label) {
+        String token = requireToken(value, label);
+        try {
+            long parsed = Long.parseLong(token);
+            if (parsed < 0L) throw new NumberFormatException("negative");
+            return parsed;
+        } catch (NumberFormatException failure) {
+            throw new IllegalArgumentException(
+                    label + " must be a non-negative integer");
         }
     }
 
     private static String requireOpaqueIdentity(String value) {
         String token = requireToken(value, "profile identity");
         if (token.length() < 8 || token.length() > 256) {
-            throw new IllegalArgumentException("profile identity must be 8-256 characters");
+            throw new IllegalArgumentException(
+                    "profile identity must be 8-256 characters");
         }
         for (int i = 0; i < token.length(); i++) {
             char c = token.charAt(i);
             if (!(Character.isLetterOrDigit(c) || c == '.' || c == '_'
                     || c == ':' || c == '-')) {
-                throw new IllegalArgumentException("profile identity contains an unsafe character");
+                throw new IllegalArgumentException(
+                        "profile identity contains an unsafe character");
             }
         }
         return token;
     }
 
     private static String requireResumeToken(String value) {
-        String token = requireToken(value, "resume token").toLowerCase(Locale.ROOT);
+        String token = requireToken(value, "resume token")
+                .toLowerCase(Locale.ROOT);
         if (!token.matches("[a-f0-9]{64}")) {
-            throw new IllegalArgumentException("resume token must be a 64-character hexadecimal token");
+            throw new IllegalArgumentException(
+                    "resume token must be a 64-character hexadecimal token");
         }
         return token;
     }
 
     private static String requireToken(String value, String label) {
         String token = Objects.requireNonNullElse(value, "").trim();
-        if (token.isBlank()) throw new IllegalArgumentException(label + " must not be blank");
-        if (token.length() > 4096) throw new IllegalArgumentException(label + " is too long");
-        if (token.indexOf('|') >= 0 || token.indexOf('\n') >= 0 || token.indexOf('\r') >= 0) {
-            throw new IllegalArgumentException(label + " contains a protocol separator");
+        if (token.isBlank()) {
+            throw new IllegalArgumentException(label + " must not be blank");
+        }
+        if (token.length() > 4096) {
+            throw new IllegalArgumentException(label + " is too long");
+        }
+        if (token.indexOf('|') >= 0
+                || token.indexOf('\n') >= 0
+                || token.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException(
+                    label + " contains a protocol separator");
         }
         return token;
     }
@@ -320,13 +433,16 @@ final class IndependentHostWireProtocol {
     private static String line(String... fields) {
         ArrayList<String> clean = new ArrayList<>(fields.length + 1);
         clean.add(PREFIX);
-        for (String field : fields) clean.add(requireToken(field, "protocol field"));
+        for (String field : fields) {
+            clean.add(requireToken(field, "protocol field"));
+        }
         return String.join("|", clean);
     }
 
     record Result(List<String> responses, boolean disconnect, String reason) {
         Result {
-            responses = List.copyOf(Objects.requireNonNullElse(responses, List.of()));
+            responses = List.copyOf(
+                    Objects.requireNonNullElse(responses, List.of()));
             reason = Objects.requireNonNullElse(reason, "");
         }
 
@@ -334,12 +450,21 @@ final class IndependentHostWireProtocol {
             return new Result(List.of(lines), false, "");
         }
 
+        static Result responses(List<String> lines) {
+            return new Result(lines, false, "");
+        }
+
         static Result disconnect(String reason) {
-            return new Result(List.of(line("DENIED", sanitizeReason(reason))), true, reason);
+            return new Result(
+                    List.of(line("DENIED", sanitizeReason(reason))),
+                    true,
+                    reason);
         }
 
         private static String sanitizeReason(String reason) {
-            String text = Objects.requireNonNullElse(reason, "protocol rejected")
+            String text = Objects.requireNonNullElse(
+                            reason,
+                            "protocol rejected")
                     .replace('|', '/')
                     .replace('\n', ' ')
                     .replace('\r', ' ')
