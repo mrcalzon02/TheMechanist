@@ -460,6 +460,7 @@ def main() -> int:
             "independentHostRemoteLobbyEditableConnection": True,
             "independentHostRemoteLobbyMutableStorageOutsideInstall": True,
             "independentHostRemoteLobbyPendingConnectionCancellable": True,
+            "independentHostRemoteLobbyFailedSessionTeardown": True,
             "independentHostRemoteLobbyGamePanelMounted": False,
             "independentHostRemoteLobbyInternalHostMounted": False,
             "independentHostRemoteLobbyWorldCommandApi": False,
