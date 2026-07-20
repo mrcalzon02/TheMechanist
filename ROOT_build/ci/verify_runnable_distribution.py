@@ -4,8 +4,8 @@
 The verifier is dependency-free so GitHub-hosted and local Java 17 builds use
 the same release checks. It validates package layout, canonical and thin-
 launcher manifests, hashes, JAR entry points, Java 17 classfile versions,
-archive integrity, required runtime/support payloads, and release-hardening
-identity for explicit prerelease publication.
+archive integrity, required runtime/support payloads, remote-client launchers,
+and release-hardening identity for explicit prerelease publication.
 """
 
 from __future__ import annotations
@@ -19,6 +19,8 @@ import sys
 import zipfile
 
 JAVA_17_MAJOR = 61
+REMOTE_CLIENT_MAIN = "mechanist.RemoteClientMain"
+REMOTE_CLIENT_CLASS = "mechanist/RemoteClientMain.class"
 REQUIRED_MANIFEST_KEYS = {
     "schema",
     "distributionModel",
@@ -27,6 +29,7 @@ REQUIRED_MANIFEST_KEYS = {
     "commit",
     "javaRelease",
     "releaseHardened",
+    "remoteClientEntryPoint",
     "artifacts",
 }
 REQUIRED_ARTIFACT_ROLES = {"launcher", "client", "server"}
@@ -89,7 +92,7 @@ def manifest_main_class(jar: pathlib.Path) -> str:
     return ""
 
 
-def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int]:
+def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int, bool]:
     expected_main = EXPECTED_MAIN_CLASSES[role]
     actual_main = manifest_main_class(jar)
     if actual_main != expected_main:
@@ -97,6 +100,7 @@ def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int]:
 
     class_count = 0
     project_class_count = 0
+    remote_client_class = False
     with zipfile.ZipFile(jar) as archive:
         bad_entry = archive.testzip()
         if bad_entry:
@@ -118,12 +122,16 @@ def scan_jar(jar: pathlib.Path, role: str) -> tuple[int, int]:
             class_count += 1
             if name.startswith("mechanist/"):
                 project_class_count += 1
+            if role == "client" and name == REMOTE_CLIENT_CLASS:
+                remote_client_class = True
 
     if class_count == 0:
         fail(f"{jar}: contains no classfiles")
     if project_class_count == 0:
         fail(f"{jar}: contains no mechanist project classes")
-    return class_count, project_class_count
+    if role == "client" and not remote_client_class:
+        fail(f"{jar}: missing packaged remote-client entry class {REMOTE_CLIENT_CLASS}")
+    return class_count, project_class_count, remote_client_class
 
 
 def native_fragment(platform_name: str) -> str:
@@ -134,6 +142,15 @@ def native_fragment(platform_name: str) -> str:
     if platform_name.startswith("macos-"):
         return "natives-macos"
     fail(f"unsupported manifest platform {platform_name!r}")
+    return ""
+
+
+def remote_launcher_path(platform_name: str) -> str:
+    if platform_name.startswith("windows-"):
+        return "Run-Remote-Client.cmd"
+    if platform_name.startswith("linux-") or platform_name.startswith("macos-"):
+        return "run-remote-client.sh"
+    fail(f"unsupported remote-client launcher platform {platform_name!r}")
     return ""
 
 
@@ -227,6 +244,14 @@ def verify_launcher_compatibility_manifest(
             fail(f"thin-launcher {role} size does not match canonical manifest")
         checked_paths.add(expected_path)
 
+    client_entry = data["client"]
+    if client_entry.get("main_class") != EXPECTED_MAIN_CLASSES["client"]:
+        fail("thin-launcher client main_class does not identify the desktop client")
+    if client_entry.get("remote_main_class") != REMOTE_CLIENT_MAIN:
+        fail("thin-launcher client remote_main_class is missing or inconsistent")
+    if canonical.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
+        fail("canonical remoteClientEntryPoint is missing or inconsistent")
+
     support = data["support_libraries"]
     if not isinstance(support, list) or not support:
         fail("thin-launcher compatibility manifest contains no support_libraries")
@@ -269,6 +294,33 @@ def verify_launcher_compatibility_manifest(
     return {
         "path": LAUNCHER_COMPATIBILITY_MANIFEST,
         "supportLibraryCount": len(launcher_support),
+        "remoteClientEntryPoint": REMOTE_CLIENT_MAIN,
+        "status": "verified",
+    }
+
+
+def verify_remote_launcher(
+    root: pathlib.Path,
+    platform_name: str,
+    canonical_entries: dict[str, dict[str, object]],
+) -> dict[str, object]:
+    relative = remote_launcher_path(platform_name)
+    entry = canonical_entries.get(relative)
+    if entry is None:
+        fail(f"canonical manifest does not declare remote-client launcher {relative}")
+    if entry.get("role") != "launch-script":
+        fail(f"remote-client launcher has wrong artifact role: {relative}")
+    path = root / relative
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if REMOTE_CLIENT_MAIN not in text:
+        fail(f"remote-client launcher does not invoke {REMOTE_CLIENT_MAIN}: {relative}")
+    if "runtime" not in text or "TheMechanist.jar" not in text:
+        fail(f"remote-client launcher does not use the bundled runtime and client package: {relative}")
+    if relative.endswith(".sh") and not os.access(path, os.X_OK):
+        fail(f"remote-client shell launcher is not executable: {relative}")
+    return {
+        "path": relative,
+        "mainClass": REMOTE_CLIENT_MAIN,
         "status": "verified",
     }
 
@@ -293,6 +345,8 @@ def verify_distribution(
         fail(f"runtime manifest javaRelease must be 17, got {manifest['javaRelease']!r}")
     if not isinstance(manifest["releaseHardened"], bool):
         fail("runtime manifest releaseHardened must be a boolean")
+    if manifest["remoteClientEntryPoint"] != REMOTE_CLIENT_MAIN:
+        fail("runtime manifest remoteClientEntryPoint is invalid")
     if require_release_hardened and not manifest["releaseHardened"]:
         fail("explicit prerelease publication requires releaseHardened=true")
 
@@ -317,12 +371,13 @@ def verify_distribution(
             expected_path = PRIMARY_PATHS[role]
             if relative_text != expected_path:
                 fail(f"canonical {role} artifact path {relative_text!r}, expected {expected_path!r}")
-            classes, project_classes = scan_jar(path, role)
+            classes, project_classes, remote_class = scan_jar(path, role)
             jar_summary[role] = {
                 "path": relative_text,
                 "classes": classes,
                 "projectClasses": project_classes,
                 "sha256": actual_hash,
+                "remoteClientEntryClass": remote_class if role == "client" else None,
             }
 
     actual_paths = {
@@ -340,6 +395,11 @@ def verify_distribution(
     launcher_compatibility = verify_launcher_compatibility_manifest(
         root,
         manifest,
+        canonical_entries,
+    )
+    remote_launcher = verify_remote_launcher(
+        root,
+        str(manifest["platform"]),
         canonical_entries,
     )
 
@@ -374,10 +434,13 @@ def verify_distribution(
             names = set(distribution_zip.namelist())
             manifest_suffix = f"{root.name}/manifests/runtime-manifest.json"
             launcher_suffix = f"{root.name}/{LAUNCHER_COMPATIBILITY_MANIFEST}"
+            remote_suffix = f"{root.name}/{remote_launcher['path']}"
             if manifest_suffix not in names:
                 fail(f"distribution ZIP does not contain {manifest_suffix}")
             if launcher_suffix not in names:
                 fail(f"distribution ZIP does not contain {launcher_suffix}")
+            if remote_suffix not in names:
+                fail(f"distribution ZIP does not contain {remote_suffix}")
 
     return {
         "distribution": root.name,
@@ -386,6 +449,8 @@ def verify_distribution(
         "commit": manifest["commit"],
         "javaRelease": manifest["javaRelease"],
         "releaseHardened": manifest["releaseHardened"],
+        "remoteClientEntryPoint": manifest["remoteClientEntryPoint"],
+        "remoteClientLauncher": remote_launcher,
         "artifactCount": len(artifacts),
         "supportJarCount": len(support_jars),
         "requiredNativeFragment": native_fragment(str(manifest["platform"])),
