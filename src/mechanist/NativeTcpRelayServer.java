@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Exact-bind, handshake-gated TCP relay used when verified Netty/Steam adapters are unavailable. */
+/** Exact-bind, handshake-gated TCP relay with a wait-only authoritative control lane. */
 final class NativeTcpRelayServer implements AutoCloseable {
     private static final int MAX_FRAME_BYTES = 64 * 1024;
 
@@ -39,6 +39,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
     private final Thread acceptThread;
     private final NetworkThrottlingManager throttlingManager = new NetworkThrottlingManager();
     private final RemoteSessionLedgerAuthority sessionLedger;
+    private final IndependentHostTurnAuthority turnAuthority;
 
     private NativeTcpRelayServer(
             ServerConfig config,
@@ -50,9 +51,27 @@ final class NativeTcpRelayServer implements AutoCloseable {
         this.bindAddress = bindAddress;
         this.boundPort = boundPort;
         this.serverChannel = serverChannel;
-        this.sessionLedger = new RemoteSessionLedgerAuthority(
-                config.worldId(),
-                ServerRuntimePaths.remoteSessionLedgerPath(config.worldId()));
+        RemoteSessionLedgerAuthority mountedLedger =
+                new RemoteSessionLedgerAuthority(
+                        config.worldId(),
+                        ServerRuntimePaths.remoteSessionLedgerPath(config.worldId()));
+        IndependentHostTurnAuthority mountedTurns;
+        try {
+            mountedTurns = new IndependentHostTurnAuthority(
+                    config.worldId(),
+                    ServerRuntimePaths.remoteTurnLedgerPath(config.worldId()));
+        } catch (RuntimeException failure) {
+            try {
+                mountedLedger.close();
+            } catch (IOException closeFailure) {
+                failure.addSuppressed(closeFailure);
+            }
+            throw new IOException(
+                    "Could not mount independent-host wait authority.",
+                    failure);
+        }
+        this.sessionLedger = mountedLedger;
+        this.turnAuthority = mountedTurns;
         ThreadFactory factory = runnable -> {
             Thread thread = new Thread(runnable, "mechanist-native-relay-client");
             thread.setDaemon(true);
@@ -146,6 +165,19 @@ final class NativeTcpRelayServer implements AutoCloseable {
                 sessionLedger.activeSessionCount());
     }
 
+    IndependentHostTurnAuthority.TurnSnapshot remoteTurnSnapshot(String playerId) {
+        return turnAuthority.snapshotForPlayer(playerId);
+    }
+
+    TurnPathReadout remoteTurnPersistence() {
+        return new TurnPathReadout(
+                turnAuthority.persistenceEnabled(),
+                turnAuthority.persistenceFile(),
+                turnAuthority.playerCount(),
+                turnAuthority.acceptedCommands(),
+                turnAuthority.worldTurn());
+    }
+
     boolean running() {
         return running.get();
     }
@@ -170,8 +202,11 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         + " maxPlayers=" + config.maxPlayers()
                         + " handshake=" + IndependentHostWireProtocol.VERSION
                         + " access=RELAY_ONLY"
+                        + " worldControl=WAIT_ONLY"
+                        + " movementAuthority=false"
                         + " rosterBroadcasts=authenticated-peers"
-                        + " ledger={" + sessionLedger.auditSummary() + "}");
+                        + " ledger={" + sessionLedger.auditSummary() + "}"
+                        + " turns={" + turnAuthority.auditSummary() + "}");
     }
 
     private void acceptLoop() {
@@ -269,6 +304,13 @@ final class NativeTcpRelayServer implements AutoCloseable {
         }
         workers.shutdownNow();
         try {
+            turnAuthority.close();
+        } catch (RuntimeException exception) {
+            failure = new IOException(
+                    "Could not close independent-host wait authority.",
+                    exception);
+        }
+        try {
             sessionLedger.close();
         } catch (IOException exception) {
             if (failure == null) failure = exception;
@@ -278,7 +320,8 @@ final class NativeTcpRelayServer implements AutoCloseable {
                 "NATIVE_RELAY_CLOSED",
                 "address=" + bindAddress
                         + " port=" + boundPort
-                        + " ledger={" + sessionLedger.auditSummary() + "}");
+                        + " ledger={" + sessionLedger.auditSummary() + "}"
+                        + " turns={" + turnAuthority.auditSummary() + "}");
         if (failure != null) throw failure;
     }
 
@@ -318,7 +361,10 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         closeQuietly();
                     });
             this.outboundBudget = throttlingManager.registerChannel(session);
-            this.protocol = new IndependentHostWireProtocol(session, sessionLedger);
+            this.protocol = new IndependentHostWireProtocol(
+                    session,
+                    sessionLedger,
+                    turnAuthority);
             this.out = new BufferedWriter(new OutputStreamWriter(
                     Channels.newOutputStream(channel), StandardCharsets.UTF_8));
             write(protocol.helloLine());
@@ -471,7 +517,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                                 Map.of(
                                         "transport", "native",
                                         "profile", protocol.profileIdentity(),
-                                        "access", "relay-only")));
+                                        "access", "relay-only-plus-wait-control")));
             } catch (NumberFormatException exception) {
                 return sequenceValidator.validate(
                         new PacketSequenceValidator.SequencedGamePacket(
@@ -495,7 +541,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
             } catch (RuntimeException failure) {
                 DebugLog.error(
                         "REMOTE_SESSION_PERSISTENCE",
-                        "Could not persist remote session disconnect; transport will still close.",
+                        "Could not persist remote session or turn disconnect; transport will still close.",
                         failure);
             }
         }
@@ -519,7 +565,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
 
     private static String safeProtocolReason(String reason) {
         String value = reason == null || reason.isBlank()
-                ? "session ledger rejected relay frame"
+                ? "session authority rejected relay frame"
                 : reason;
         value = value.replace('|', '/').replace('\n', ' ').replace('\r', ' ');
         return value.substring(0, Math.min(220, value.length()));
@@ -530,5 +576,13 @@ final class NativeTcpRelayServer implements AutoCloseable {
             java.nio.file.Path persistenceFile,
             int totalSessions,
             int activeSessions
+    ) { }
+
+    record TurnPathReadout(
+            boolean persistenceEnabled,
+            java.nio.file.Path persistenceFile,
+            int totalPlayers,
+            long acceptedCommands,
+            long worldTurn
     ) { }
 }
