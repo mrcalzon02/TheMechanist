@@ -3,7 +3,7 @@ package mechanist;
 import java.util.Arrays;
 import java.util.List;
 
-/** Verifies authenticated hosted-session commands and immutable roster wire responses. */
+/** Verifies authenticated hosted-session commands, roster responses, and peer-broadcast classification. */
 final class IndependentHostHostedSessionWireSmoke {
     public static void main(String[] args) throws Exception {
         RemoteSessionLedgerAuthority ledger =
@@ -25,7 +25,10 @@ final class IndependentHostHostedSessionWireSmoke {
                         && "true".equals(readyAccepted[4])
                         && "true".equals(readyAccepted[6]),
                 "READY command response did not report authoritative state");
-        verifyRoster(ready.responses().subList(1, ready.responses().size()), 1, 1, false);
+        List<String> readyRoster = ready.responses().subList(1, ready.responses().size());
+        verifyRoster(readyRoster, 1, 1, false);
+        require(ready.broadcasts().equals(readyRoster),
+                "READY command did not classify its immutable roster as a peer broadcast");
 
         IndependentHostWireProtocol.Result presence = alpha.accept(
                 "MECH|SESSION_COMMAND|1|PRESENCE|busy");
@@ -34,6 +37,9 @@ final class IndependentHostHostedSessionWireSmoke {
                 presence.responses().get(0), "SESSION_COMMAND_ACCEPTED");
         require("busy".equals(presenceAccepted[7]),
                 "PRESENCE command response did not report busy state");
+        require(presence.broadcasts().equals(
+                        presence.responses().subList(1, presence.responses().size())),
+                "PRESENCE command peer broadcast diverged from the direct roster");
 
         IndependentHostWireProtocol.Result chat = alpha.accept(
                 "MECH|SESSION_COMMAND|2|CHAT_STATE|typing");
@@ -44,18 +50,25 @@ final class IndependentHostHostedSessionWireSmoke {
                         && "3".equals(chatAccepted[9])
                         && "2".equals(chatAccepted[10]),
                 "CHAT_STATE command response lost hosted-command accounting");
+        require(chat.broadcasts().equals(
+                        chat.responses().subList(1, chat.responses().size())),
+                "CHAT_STATE peer broadcast diverged from the direct roster");
 
         IndependentHostWireProtocol.Result status = alpha.accept("MECH|SESSION_STATUS");
         String[] statusLine = requireCommand(
                 status.responses().get(0), "SESSION_SNAPSHOT");
         require(statusLine.length == 10,
                 "legacy SESSION_STATUS compatibility changed unexpectedly");
+        require(status.broadcasts().isEmpty(),
+                "private SESSION_STATUS response was incorrectly classified as a peer broadcast");
 
         IndependentHostWireProtocol beta =
                 new IndependentHostWireProtocol("wire-beta-one", ledger);
         authenticate(beta, "profile.beta.1002", "");
         IndependentHostWireProtocol.Result roster = beta.accept("MECH|SESSION_ROSTER");
         verifyRoster(roster.responses(), 2, 2, false);
+        require(roster.broadcasts().isEmpty(),
+                "explicit roster request was incorrectly rebroadcast to peers");
 
         IndependentHostWireProtocol duplicate =
                 new IndependentHostWireProtocol("wire-alpha-duplicate", ledger);
@@ -71,6 +84,8 @@ final class IndependentHostHostedSessionWireSmoke {
                         && duplicateDenied.reason().contains("already connected"),
                 "active duplicate session did not reach the ledger attachment denial: "
                         + duplicateDenied.reason());
+        require(duplicateDenied.broadcasts().isEmpty(),
+                "unattached duplicate denial incorrectly emitted a departure roster");
 
         alpha.disconnect("wire reconnect smoke");
         IndependentHostWireProtocol resumed =
@@ -97,6 +112,7 @@ final class IndependentHostHostedSessionWireSmoke {
         require(worldDenied.disconnect()
                         && worldDenied.reason().contains("world authority is closed"),
                 "world command was not rejected at the hosted-session boundary");
+        verifyRoster(worldDenied.broadcasts(), 2, 1, false);
         require(!ledger.hostedSessionSnapshot().worldAuthority(),
                 "hosted-session snapshot overclaimed world authority");
 
@@ -105,6 +121,9 @@ final class IndependentHostHostedSessionWireSmoke {
         System.out.println("IndependentHostHostedSessionWireSmoke PASS"
                 + " hostedCommands=true"
                 + " immutableRoster=true"
+                + " peerBroadcastClassification=true"
+                + " privateResponsesNotBroadcast=true"
+                + " departureRosterClassified=true"
                 + " duplicateAttachmentReachedLedger=true"
                 + " reconnectContinuity=true"
                 + " unsupportedWorldCommandsRejected=true"
@@ -132,6 +151,12 @@ final class IndependentHostHostedSessionWireSmoke {
                 "invalid ACCESS field count: " + Arrays.toString(access));
         require("RELAY_ONLY".equals(access[2]),
                 "hosted-session wire granted an unexpected access class");
+        require(!accessResult.broadcasts().isEmpty(),
+                "successful session attachment did not classify a peer roster broadcast");
+        String[] broadcastBegin = requireCommand(
+                accessResult.broadcasts().get(0), "HOSTED_ROSTER_BEGIN");
+        require(!Boolean.parseBoolean(broadcastBegin[6]),
+                "session attachment broadcast overclaimed world authority");
         return new Access(
                 access[6],
                 access[7],
