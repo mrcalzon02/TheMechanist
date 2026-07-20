@@ -17,7 +17,7 @@ import java.util.Objects;
  * authoritative, while gameplay and world mutation remain closed.
  */
 final class IndependentHostWireProtocol {
-    static final String VERSION = "independent-host-wire-4";
+    static final String VERSION = "independent-host-wire-5";
     private static final String PREFIX = "MECH";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -145,6 +145,7 @@ final class IndependentHostWireProtocol {
                 + " hostedCommands=" + (snapshot == null ? 0 : snapshot.acceptedHostedCommands())
                 + " hostedRoster=true"
                 + " rosterBroadcasts=true"
+                + " rosterVisibility=connected-only"
                 + " worldAuthority=false";
     }
 
@@ -303,15 +304,19 @@ final class IndependentHostWireProtocol {
     static List<String> hostedRosterLines(
             RemoteSessionLedgerAuthority.HostedSessionSnapshot snapshot
     ) {
+        List<RemoteSessionLedgerAuthority.RosterEntry> visibleRoster =
+                snapshot.roster().stream()
+                        .filter(RemoteSessionLedgerAuthority.RosterEntry::connected)
+                        .toList();
         ArrayList<String> lines = new ArrayList<>();
         lines.add(line(
                 "HOSTED_ROSTER_BEGIN",
                 Long.toString(snapshot.version()),
                 snapshot.worldId(),
-                Integer.toString(snapshot.totalSessions()),
-                Integer.toString(snapshot.activeSessions()),
+                Integer.toString(visibleRoster.size()),
+                Integer.toString(visibleRoster.size()),
                 Boolean.toString(snapshot.worldAuthority())));
-        for (RemoteSessionLedgerAuthority.RosterEntry entry : snapshot.roster()) {
+        for (RemoteSessionLedgerAuthority.RosterEntry entry : visibleRoster) {
             lines.add(line(
                     "HOSTED_ROSTER_ENTRY",
                     entry.playerId(),
