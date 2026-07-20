@@ -6,7 +6,7 @@ import java.nio.file.Path;
 
 /** Owns separated runtime save/world directories for desktop single-player and server worlds. */
 final class ServerRuntimePaths {
-    static final String VERSION = "server-runtime-paths-0.9.10ib";
+    static final String VERSION = "server-runtime-paths-0.9.10ic";
 
     enum SaveDomain { SINGLE_PLAYER, SERVER }
 
@@ -18,9 +18,14 @@ final class ServerRuntimePaths {
     static Path serverSlotDir() { return serverRoot().resolve("slots"); }
     static Path serverStateFile() { return serverRoot().resolve("server_state.properties"); }
     static Path remoteSessionDir() { return serverRoot().resolve("remote-sessions"); }
+    static Path remoteWorldAuthorityDir() { return serverRoot().resolve("remote-world-authority"); }
 
     static Path remoteSessionLedgerPath(String worldId) {
         return remoteSessionDir().resolve(cleanWorldId(worldId) + ".sessions.properties");
+    }
+
+    static Path remoteTurnLedgerPath(String worldId) {
+        return remoteWorldAuthorityDir().resolve(cleanWorldId(worldId) + ".turns.properties");
     }
 
     static Path saveRoot(SaveDomain domain) {
@@ -54,6 +59,7 @@ final class ServerRuntimePaths {
         Files.createDirectories(serverWorldDir());
         Files.createDirectories(serverSlotDir());
         Files.createDirectories(remoteSessionDir());
+        Files.createDirectories(remoteWorldAuthorityDir());
     }
 
     static String singlePlayerWorldReference(String worldId) {
@@ -71,7 +77,8 @@ final class ServerRuntimePaths {
                 + " server=" + serverRoot()
                 + " serverState=" + serverStateFile()
                 + " serverWorlds=" + serverWorldDir()
-                + " remoteSessions=" + remoteSessionDir();
+                + " remoteSessions=" + remoteSessionDir()
+                + " remoteWorldAuthority=" + remoteWorldAuthorityDir();
     }
 
     private static String cleanWorldId(String worldId) {
