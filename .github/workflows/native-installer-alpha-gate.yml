@@ -225,6 +225,10 @@ jobs:
               'independentHostInvalidResumeTokenDenied',
               'independentHostImmutableSessionSnapshots',
               'independentHostLifetimeRelayAccounting',
+              'independentHostAtomicSessionLedgerPersistence',
+              'independentHostResumeTokenHashOnlyPersistence',
+              'independentHostCorruptSessionLedgerRejected',
+              'independentHostSessionPersistenceAcrossProcessRestart',
               'independentHostRelayOnlyAccess',
               'independentHostPreAuthenticationDataDenied',
               'independentHostBadChallengeDenied',
@@ -238,7 +242,6 @@ jobs:
           assert not missing, f'missing required native synthetic guarantees: {missing}'
           required_false=(
               'launcherRemoteAcquisitionAdvertised',
-              'independentHostSessionPersistenceAcrossProcessRestart',
               'independentHostWorldAuthority',
               'independentHostGameplaySessionCertified',
           )
