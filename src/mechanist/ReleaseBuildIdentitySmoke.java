@@ -4,7 +4,7 @@ import java.util.Properties;
 
 /** Proves build identity resolution and release-facing runtime wording remain coherent. */
 final class ReleaseBuildIdentitySmoke {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Properties maven = new Properties();
         maven.setProperty("version", "3.4.5m");
 
@@ -37,10 +37,12 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must acknowledge the packaged headless server");
         require(separation.contains("singlePlayerInternalServer=supervised-in-process"),
                 "runtime separation must report the supervised local internal host");
-        require(separation.contains("independentHostSessionLedger=server-owned-process-local"),
-                "runtime separation must report the remote session ledger");
-        require(separation.contains("independentHostReconnect=resume-token-smoke-gated"),
-                "runtime separation must report reconnect continuity");
+        require(separation.contains("independentHostSessionLedger=server-owned-persistent"),
+                "runtime separation must report the persistent remote session ledger");
+        require(separation.contains("independentHostReconnect=resume-token-host-restart-smoke-gated"),
+                "runtime separation must report host-restart reconnect continuity");
+        require(separation.contains("independentHostSessionPersistence=atomic-hash-only"),
+                "runtime separation must report atomic hash-only session persistence");
         require(separation.contains("independentHostWorldAuthority=not-implemented"),
                 "runtime separation must keep remote world authority closed");
         require(separation.contains("remoteGameplaySession=not-yet-certified"),
