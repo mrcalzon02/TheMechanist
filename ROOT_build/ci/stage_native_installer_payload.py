@@ -109,7 +109,7 @@ def stage_payload(
 
     remote_launcher = platform_remote_launcher(platform_name)
     source_record = {
-        "schema": 2,
+        "schema": 3,
         "sourceDistribution": distribution.name,
         "version": summary["version"],
         "platform": platform_name,
@@ -126,7 +126,12 @@ def stage_payload(
             "canonical distribution runtime/ supplied to jpackage"
         ),
         "mutableStorageIncluded": False,
-        "remoteWorldAuthority": False,
+        "authenticatedWaitAuthority": True,
+        "waitCommand": "WAIT",
+        "movementAuthority": False,
+        "mapAuthority": False,
+        "fullRemoteWorldAuthority": False,
+        "remoteGameplayCertified": False,
     }
     source_record_path = (
         certification / "installer-source-verification.json"
@@ -161,7 +166,12 @@ def stage_payload(
         "portableRemoteClientLauncher": remote_launcher,
         "nativeRemoteClientLauncher": "The Mechanist Remote Lobby",
         "mutableStorageIncluded": False,
-        "remoteWorldAuthority": False,
+        "authenticatedWaitAuthority": True,
+        "waitCommand": "WAIT",
+        "movementAuthority": False,
+        "mapAuthority": False,
+        "fullRemoteWorldAuthority": False,
+        "remoteGameplayCertified": False,
     }
 
 
