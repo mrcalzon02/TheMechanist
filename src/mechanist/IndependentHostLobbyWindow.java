@@ -26,7 +26,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Objects;
@@ -43,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * GamePanel, SinglePlayerInternalHostSupervisor, or remote world authority.
  */
 final class IndependentHostLobbyWindow implements AutoCloseable {
-    static final String VERSION = "independent-host-lobby-window-1";
+    static final String VERSION = "independent-host-lobby-window-2";
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(12);
     private static final Duration COMMAND_TIMEOUT = Duration.ofSeconds(8);
 
@@ -114,6 +113,7 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                 + " rosterVisibility=connected-only"
                 + " hostedCommands=ready,presence,chat-state"
                 + " relayConsole=true"
+                + " pendingConnectionCancellable=true"
                 + " gamePanelMounted=false"
                 + " internalHostMounted=false"
                 + " worldCommandApi=false"
@@ -253,25 +253,32 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
 
     private void bindActions() {
         connectButton.addActionListener(event -> beginConnect());
-        disconnectButton.addActionListener(event -> disconnect("user requested disconnect"));
+        disconnectButton.addActionListener(event ->
+                disconnect("user requested disconnect"));
         refreshButton.addActionListener(event -> submitOperation(
                 "roster refresh",
                 client -> client.requestRosterRefresh(COMMAND_TIMEOUT)));
-        readyBox.addActionListener(event -> submitOperation(
-                "readiness update",
-                client -> client.setReady(readyBox.isSelected(), COMMAND_TIMEOUT)));
+        readyBox.addActionListener(event -> {
+            boolean ready = readyBox.isSelected();
+            submitOperation(
+                    "readiness update",
+                    client -> client.setReady(ready, COMMAND_TIMEOUT));
+        });
         presenceBox.addActionListener(event -> {
             if (supervisor == null) return;
-            String presence = Objects.toString(presenceBox.getSelectedItem(), "available");
+            String presence = Objects.toString(
+                    presenceBox.getSelectedItem(),
+                    "available");
             submitOperation(
                     "presence update",
                     client -> client.setPresence(presence, COMMAND_TIMEOUT));
         });
-        typingBox.addActionListener(event -> submitOperation(
-                "chat-state update",
-                client -> client.setChatState(
-                        typingBox.isSelected() ? "typing" : "idle",
-                        COMMAND_TIMEOUT)));
+        typingBox.addActionListener(event -> {
+            String chatState = typingBox.isSelected() ? "typing" : "idle";
+            submitOperation(
+                    "chat-state update",
+                    client -> client.setChatState(chatState, COMMAND_TIMEOUT));
+        });
         sendRelayButton.addActionListener(event -> sendRelay());
         relayField.addActionListener(event -> sendRelay());
     }
@@ -299,16 +306,22 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                         tokenStore,
                         request.serverKey(),
                         request.profileIdentity());
-                IndependentHostClientSupervisor.ConnectionIdentity identity =
-                        next.connect(request.host(), request.port(), CONNECT_TIMEOUT);
                 if (closed || connectionEpoch.get() != epoch) {
                     next.close();
                     return;
                 }
                 supervisor = next;
+                IndependentHostClientSupervisor.ConnectionIdentity identity =
+                        next.connect(request.host(), request.port(), CONNECT_TIMEOUT);
+                if (closed || connectionEpoch.get() != epoch
+                        || supervisor != next) {
+                    next.close();
+                    return;
+                }
                 IndependentHostClientSupervisor mounted = next;
                 SwingUtilities.invokeLater(() -> {
-                    if (closed || connectionEpoch.get() != epoch) {
+                    if (closed || connectionEpoch.get() != epoch
+                            || supervisor != mounted) {
                         mounted.close();
                         return;
                     }
@@ -321,8 +334,8 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                 });
             } catch (Throwable failure) {
                 if (next != null) next.close();
+                if (supervisor == next) supervisor = null;
                 if (connectionEpoch.get() == epoch && !closed) {
-                    supervisor = null;
                     SwingUtilities.invokeLater(() -> {
                         setConnectedControls(false);
                         showFailure("Connection failed", failure);
@@ -393,8 +406,12 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
             ClientOperation<T> operation
     ) {
         IndependentHostClientSupervisor mounted = supervisor;
-        if (mounted == null) {
-            appendEvent("Cannot perform " + label + ": no authenticated session.");
+        if (mounted == null
+                || (mounted.state() != IndependentHostClientSupervisor.State.AUTHENTICATED
+                && mounted.state()
+                != IndependentHostClientSupervisor.State.AUTHENTICATED_VOLATILE_TOKEN)) {
+            appendEvent("Cannot perform " + label
+                    + ": no authenticated session.");
             return;
         }
         ioExecutor.execute(() -> {
@@ -402,12 +419,15 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                 T result = operation.execute(mounted);
                 SwingUtilities.invokeLater(() -> {
                     appendEvent(label + " accepted"
-                            + (result == null ? "." : ": " + safeText(result.toString())));
+                            + (result == null
+                            ? "."
+                            : ": " + safeText(result.toString())));
                     refreshFromSupervisor();
                 });
             } catch (Throwable failure) {
                 SwingUtilities.invokeLater(() -> {
-                    appendEvent(label + " failed: " + safeText(failure.getMessage()));
+                    appendEvent(label + " failed: "
+                            + safeText(failure.getMessage()));
                     refreshFromSupervisor();
                 });
             }
@@ -423,7 +443,8 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
         rosterModel.clear();
         setConnectedControls(false);
         appendEvent(reason + ".");
-        statusArea.setText("Disconnected. " + ClientMutableStorageAuthority.auditSummary());
+        statusArea.setText("Disconnected. "
+                + ClientMutableStorageAuthority.auditSummary());
     }
 
     private void refreshFromSupervisor() {
@@ -432,7 +453,8 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
         if (mounted == null) return;
 
         statusArea.setText(mounted.statusLine()
-                + "\nmutableStorage=" + ClientMutableStorageAuthority.remoteClientRoot()
+                + "\nmutableStorage="
+                + ClientMutableStorageAuthority.remoteClientRoot()
                 + "\ncredentialDisclosure=resume token never rendered"
                 + "\ncapabilityBoundary=lobby-and-relay-only; worldAuthority=false");
 
@@ -450,10 +472,12 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                         + " | " + entry.presence()
                         + " | " + entry.chatState()
                         + " | generation " + entry.connectionGeneration()
-                        + " | hosted commands " + entry.acceptedHostedCommands();
+                        + " | hosted commands "
+                        + entry.acceptedHostedCommands();
                 rosterModel.addElement(row);
             }
-            appendEvent("Accepted authoritative roster version " + roster.version()
+            appendEvent("Accepted authoritative roster version "
+                    + roster.version()
                     + " for world " + roster.worldId()
                     + "; visible players=" + roster.visiblePlayers() + ".");
         }
@@ -463,7 +487,8 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                 IndependentHostClientSupervisor.RelayFrame relay =
                         mounted.pollRelay(Duration.ofNanos(1));
                 if (relay == null) break;
-                appendEvent("Peer relay [" + relay.sequence() + "]: " + relay.payload());
+                appendEvent("Peer relay [" + relay.sequence()
+                        + "]: " + relay.payload());
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
                 break;
@@ -485,7 +510,8 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
         serverKeyField.setEnabled(false);
         profileField.setEnabled(false);
         setLobbyControls(false);
-        statusArea.setText("Connecting. No world or local GamePanel has been mounted.");
+        statusArea.setText(
+                "Connecting. No world or local GamePanel has been mounted.");
     }
 
     private void setConnectedControls(boolean connected) {
@@ -508,16 +534,22 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
     }
 
     private void showFailure(String title, Throwable failure) {
-        String message = safeText(failure == null ? "unknown failure" : failure.getMessage());
+        String message = safeText(
+                failure == null ? "unknown failure" : failure.getMessage());
         appendEvent(title + ": " + message);
         statusArea.setText(title + ": " + message
                 + "\nThe session failed closed; no world authority was mounted.");
-        JOptionPane.showMessageDialog(
-                frame,
-                message,
-                title,
-                JOptionPane.ERROR_MESSAGE);
-        DebugLog.error("INDEPENDENT_HOST_LOBBY", title + ": " + message, failure);
+        if (!closed && frame.isDisplayable()) {
+            JOptionPane.showMessageDialog(
+                    frame,
+                    message,
+                    title,
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        DebugLog.error(
+                "INDEPENDENT_HOST_LOBBY",
+                title + ": " + message,
+                failure);
     }
 
     private void appendEvent(String text) {
@@ -531,8 +563,10 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
         return "authority=" + VERSION
                 + " closed=" + closed
                 + " connected=" + (mounted != null)
-                + " supervisor=" + (mounted == null ? "none" : mounted.statusLine())
-                + " storage=" + ClientMutableStorageAuthority.remoteClientRoot()
+                + " supervisor="
+                + (mounted == null ? "none" : mounted.statusLine())
+                + " storage="
+                + ClientMutableStorageAuthority.remoteClientRoot()
                 + " gamePanelMounted=false"
                 + " internalHostMounted=false"
                 + " worldAuthority=false";
