@@ -27,6 +27,10 @@ REQUIRED_DOCS = {
         "bounded relay transport",
         "sha-256 token hashes",
         "clean server-process restart",
+        "readiness, presence, and chat-state",
+        "monotonic command sequence",
+        "deterministically ordered hosted-session roster",
+        "unsupported world verbs are rejected",
         "remote world state",
         "redistribution",
     ),
@@ -84,6 +88,8 @@ def verify(root: pathlib.Path) -> dict[str, object]:
         "documents": checked,
         "documentCount": len(checked),
         "canonicalManifestCoverage": True,
+        "hostedSessionLimitationsCovered": True,
+        "remoteWorldAuthorityOverclaimPrevented": True,
     }
 
 
