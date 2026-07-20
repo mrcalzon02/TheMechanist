@@ -25,6 +25,11 @@ final class RuntimeSeparationAuthority {
                 + " independentHostReconnect=resume-token-host-restart-smoke-gated"
                 + " independentHostSessionSnapshots=immutable-monotonic"
                 + " independentHostSessionPersistence=atomic-hash-only"
+                + " independentHostHostedSessionCommands=ready-presence-chat-state"
+                + " independentHostHostedSessionCommandOrdering=per-connection-monotonic"
+                + " independentHostHostedRoster=immutable-deterministic"
+                + " independentHostHostedStatePersistence=lifetime-command-accounting"
+                + " independentHostWorldCommands=rejected"
                 + " independentHostAccess=relay-only"
                 + " independentHostWorldAuthority=not-implemented"
                 + " remoteGameplaySession=not-yet-certified"
@@ -44,9 +49,10 @@ final class RuntimeSeparationAuthority {
         out.add("The separately packaged headless server owns its own storage namespace and can bind an exact-address bounded relay transport.");
         out.add("An independent relay client must participate in identity, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge before receiving RELAY_ONLY access.");
         out.add("After authentication, the host assigns a stable player id and resume token. A disconnected client can recover the same session only with that token, while simultaneous duplicate attachment and invalid tokens are rejected.");
-        out.add("Remote session identity, connection generation, and lifetime relay accounting are stored atomically in the dedicated server namespace. Only SHA-256 resume-token hashes are written; restored sessions always begin offline and require the original client token.");
-        out.add("Clean host restart certification preserves player identity, advances connection generation, keeps immutable snapshot versions monotonic, and rejects corrupted or world-mismatched ledgers before binding.");
-        out.add("Authenticated relay access permits bounded sequenced frame transport. It does not initialize a remote world snapshot, grant gameplay authority, mutate player inventory or position, or persist a hosted world.");
+        out.add("Remote session identity, connection generation, lifetime relay accounting, and accepted hosted-session command counts are stored atomically in the dedicated server namespace. Only SHA-256 resume-token hashes are written; restored sessions always begin offline and require the original client token.");
+        out.add("The host now owns a deliberately narrow pre-world lobby authority: ordered readiness, presence, and chat-state commands plus immutable deterministic roster snapshots. Stale readiness, presence, and typing state are reset when a connection or host process ends.");
+        out.add("Clean host restart certification preserves player identity, advances connection generation, keeps immutable snapshot versions monotonic, preserves lifetime hosted-command accounting, and rejects corrupted or world-mismatched ledgers before binding.");
+        out.add("Authenticated relay access does not initialize a remote world snapshot, grant movement or combat authority, mutate inventory or position, process world simulation commands, or persist a hosted game world. Unsupported world verbs are rejected at the hosted-session boundary.");
         out.add("A packaged client-to-independent-host authoritative gameplay session is therefore not certified and remains distinct from the local single-player host.");
         out.add("Shared runtime profiles carry mode, save/world identity, mod manifest path, and enabled mod tokens without activating external mod loading.");
         out.add("");
@@ -81,6 +87,13 @@ final class RuntimeSeparationAuthority {
         out.add("independentHostResumeTokenStorage=sha256-only");
         out.add("independentHostCorruptLedgerBind=false");
         out.add("independentHostSessionPersistenceAcrossProcessRestart=true");
+        out.add("independentHostHostedSessionCommands=true");
+        out.add("independentHostHostedSessionCommandVocabulary=ready,presence,chat-state");
+        out.add("independentHostHostedSessionCommandOrdering=per-connection-monotonic");
+        out.add("independentHostHostedSessionRoster=immutable-deterministic");
+        out.add("independentHostHostedSessionStatePersistence=lifetime-accounting-only");
+        out.add("independentHostStaleHostedLivenessRestored=false");
+        out.add("independentHostUnsupportedWorldCommandsAccepted=false");
         out.add("independentHostWorldAuthority=false");
         out.add("remoteGameplaySessionCertified=false");
         out.add("modResolution=false");
