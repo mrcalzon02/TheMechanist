@@ -41,8 +41,8 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report the persistent remote session ledger");
         require(separation.contains("independentHostReconnect=resume-token-host-restart-smoke-gated"),
                 "runtime separation must report host-restart reconnect continuity");
-        require(separation.contains("independentHostSessionPersistence=atomic-hash-only"),
-                "runtime separation must report atomic hash-only session persistence");
+        require(separation.contains("independentHostServerTokenPersistence=atomic-sha256-only"),
+                "runtime separation must report hash-only server token persistence");
         require(separation.contains("independentHostHostedSessionCommands=ready-presence-chat-state"),
                 "runtime separation must report the narrow hosted-session command vocabulary");
         require(separation.contains("independentHostHostedSessionCommandOrdering=per-connection-monotonic"),
@@ -51,6 +51,18 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report immutable hosted rosters");
         require(separation.contains("independentHostHostedRosterBroadcasts=authenticated-peer-control-frames"),
                 "runtime separation must report authenticated peer roster broadcasts");
+        require(separation.contains("independentHostRosterClient=canonical-connected-only"),
+                "runtime separation must report canonical connected-only client rosters");
+        require(separation.contains("independentHostClientSupervisor=handshake-token-roster-command-relay"),
+                "runtime separation must report the supervised independent-host client");
+        require(separation.contains("independentHostClientTokenCustody=atomic-owner-only-plaintext"),
+                "runtime separation must distinguish protected client token custody");
+        require(separation.contains("independentHostClientTokenDiagnostics=redacted"),
+                "runtime separation must report token-redacted client diagnostics");
+        require(separation.contains("independentHostClientReconnect=host-restart-smoke-gated"),
+                "runtime separation must report supervised client reconnect certification");
+        require(separation.contains("independentHostClientWorldCommandApi=not-implemented"),
+                "runtime separation must keep the client world-command API closed");
         require(separation.contains("independentHostWorldCommands=rejected"),
                 "runtime separation must report explicit world-command rejection");
         require(separation.contains("independentHostWorldAuthority=not-implemented"),
