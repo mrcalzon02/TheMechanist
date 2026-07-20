@@ -33,6 +33,10 @@ REQUIRED_SYNTHETIC_TRUE = (
     "independentHostInvalidResumeTokenDenied",
     "independentHostImmutableSessionSnapshots",
     "independentHostLifetimeRelayAccounting",
+    "independentHostAtomicSessionLedgerPersistence",
+    "independentHostResumeTokenHashOnlyPersistence",
+    "independentHostCorruptSessionLedgerRejected",
+    "independentHostSessionPersistenceAcrossProcessRestart",
     "independentHostRelayOnlyAccess",
     "independentHostPreAuthenticationDataDenied",
     "independentHostBadChallengeDenied",
@@ -45,7 +49,6 @@ REQUIRED_SYNTHETIC_TRUE = (
 
 REQUIRED_SYNTHETIC_FALSE = (
     "launcherRemoteAcquisitionAdvertised",
-    "independentHostSessionPersistenceAcrossProcessRestart",
     "independentHostWorldAuthority",
     "independentHostGameplaySessionCertified",
 )
@@ -170,7 +173,7 @@ def main() -> int:
 
 Recorded the first-class remote release pipeline for the launcher -> client -> server distribution path. GitHub-hosted Linux x64 and Windows x64 jobs compiled the exact source tree with Java 17, rebuilt the client, server, and launcher packages, staged platform-specific support libraries and bundled Java runtimes, generated schema-2 SHA-256 manifests, and produced portable runnable ZIP distributions. Gate 3 ran only after both platform package jobs completed successfully, and final distribution certification revalidated archive integrity, manifest completeness, entry points, platform-native support libraries, and Java 17 classfile compatibility before release publication.
 
-Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; launcher and alpha operating documents were verified; supervised single-player host save/resume passed; independent-host identity, manifest, restart, integrity challenge, exact bind, server-owned process-local session ledger, stable remote player identity, token-gated reconnect continuity, duplicate/invalid-token denial, immutable session snapshots, and lifetime relay accounting passed; remote world authority and gameplay certification remained explicitly false; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
+Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; launcher and alpha operating documents were verified; supervised single-player host save/resume passed; independent-host identity, manifest, restart, integrity challenge, exact bind, server-owned persistent session ledger, stable remote player identity, token-gated reconnect continuity, duplicate/invalid-token denial, immutable session snapshots, lifetime relay accounting, atomic hash-only storage, clean host-restart continuity, and corrupt-ledger rejection passed; remote world authority and gameplay certification remained explicitly false; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
 
 <!-- {marker} -->
 """
