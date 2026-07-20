@@ -3,7 +3,7 @@ package mechanist;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Guards the package/smoke-test boot path against startup sound effects. */
+/** Guards the package/smoke-test boot path against startup sound effects and release authority regressions. */
 final class BootStartupAudioSilenceSmoke {
     public static void main(String[] args) throws Exception {
         GameOptions defaults = new GameOptions();
@@ -24,7 +24,9 @@ final class BootStartupAudioSilenceSmoke {
         }
 
         ReleaseBuildIdentitySmoke.main(args);
-        System.out.println("BootStartupAudioSilenceSmoke PASS startup sound effects disabled; intro music channel remains separate.");
+        RemoteSessionLedgerAuthoritySmoke.main(args);
+        IndependentHostHostedSessionWireSmoke.main(args);
+        System.out.println("BootStartupAudioSilenceSmoke PASS startup sound effects disabled; release identity, persistent remote sessions, hosted-session commands, immutable rosters, and closed world authority verified.");
     }
 
     private static void require(boolean condition, String message) {
