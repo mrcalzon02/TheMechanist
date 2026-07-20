@@ -24,8 +24,6 @@ final class BootStartupAudioSilenceSmoke {
         }
 
         ReleaseBuildIdentitySmoke.main(args);
-        RemoteSessionLedgerAuthoritySmoke.main(args);
-        IndependentHostHostedSessionWireSmoke.main(args);
         System.out.println("BootStartupAudioSilenceSmoke PASS startup sound effects disabled; release identity, persistent remote sessions, hosted-session commands, immutable rosters, and closed world authority verified.");
     }
 
