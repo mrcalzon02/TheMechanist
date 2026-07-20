@@ -12,13 +12,13 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Packaged independent-host transport, hosted-roster broadcast, and remote-session continuity smoke.
+ * Packaged independent-host transport, hosted-roster broadcast, privacy, and remote-session continuity smoke.
  *
  * This proves exact bind, client-driven authentication, server-owned session
  * identity, resume-token continuity, immutable session snapshots, asynchronous
- * hosted-roster control frames, sequencing, relay broadcast, denial paths,
- * close, and restart. World gameplay authority remains intentionally outside
- * this smoke.
+ * connected-only hosted-roster control frames, sequencing, relay broadcast,
+ * denial paths, close, and restart. World gameplay authority remains
+ * intentionally outside this smoke.
  */
 final class IndependentHostTransportSessionSmoke {
     private static final String LOOPBACK = "127.0.0.1";
@@ -112,13 +112,11 @@ final class IndependentHostTransportSessionSmoke {
 
                 sender.write("SEQ|0|replayed-transport-frame");
                 HostedRosterReadout replayDeparture = receiver.readRoster();
-                RosterEntryReadout senderOffline = replayDeparture.entryFor(sender.playerId);
-                require(replayDeparture.activeSessions == 1
-                                && senderOffline != null
-                                && !senderOffline.connected
-                                && !senderOffline.ready
-                                && "offline".equals(senderOffline.presence),
-                        "replay disconnect did not broadcast the authoritative offline roster");
+                require(replayDeparture.totalSessions == 1
+                                && replayDeparture.activeSessions == 1
+                                && replayDeparture.entryFor(sender.playerId) == null
+                                && replayDeparture.entryFor(receiver.playerId) != null,
+                        "replay disconnect did not remove the departed player from the public roster");
                 receiver.socket.setSoTimeout(700);
                 boolean replayBroadcast = false;
                 try {
@@ -130,6 +128,8 @@ final class IndependentHostTransportSessionSmoke {
                         "replayed sequence frame was broadcast to another client");
                 waitForAuthenticatedClients(relay, 1, 3_000L);
                 waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
+                require(relay.remoteSessionCount() == 2,
+                        "public roster removal deleted the private resumable session");
 
                 verifyInvalidResumeTokenDenied(relay.port(), SENDER_PROFILE);
                 waitForAuthenticatedClients(relay, 1, 3_000L);
@@ -153,7 +153,8 @@ final class IndependentHostTransportSessionSmoke {
 
                     HostedRosterReadout resumeRoster = receiver.readRoster();
                     RosterEntryReadout resumedEntry = resumeRoster.entryFor(resumed.playerId);
-                    require(resumeRoster.activeSessions == 2
+                    require(resumeRoster.totalSessions == 2
+                                    && resumeRoster.activeSessions == 2
                                     && resumedEntry != null
                                     && resumedEntry.connected
                                     && resumedEntry.connectionGeneration == 2L
@@ -188,16 +189,18 @@ final class IndependentHostTransportSessionSmoke {
                             "resumed snapshot version did not advance monotonically");
                 }
                 HostedRosterReadout resumeDeparture = receiver.readRoster();
-                require(resumeDeparture.activeSessions == 1
-                                && !resumeDeparture.entryFor(sender.playerId).connected,
-                        "resumed client close did not broadcast an offline roster");
+                require(resumeDeparture.totalSessions == 1
+                                && resumeDeparture.activeSessions == 1
+                                && resumeDeparture.entryFor(sender.playerId) == null
+                                && resumeDeparture.entryFor(receiver.playerId) != null,
+                        "resumed client close exposed its offline private identity in the public roster");
                 waitForAuthenticatedClients(relay, 1, 3_000L);
                 waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
             }
             waitForAuthenticatedClients(relay, 0, 3_000L);
             require(relay.remoteSessionCount() == 2
                             && relay.activeRemoteSessionCount() == 0,
-                    "closed clients were not retained as offline resumable sessions");
+                    "closed clients were not retained privately as offline resumable sessions");
         } finally {
             first.close();
         }
@@ -262,6 +265,8 @@ final class IndependentHostTransportSessionSmoke {
                 + " disconnectRosterBroadcast=true"
                 + " resumeRosterBroadcast=true"
                 + " asynchronousControlSeparatedFromRelay=true"
+                + " connectedOnlyRosterVisibility=true"
+                + " offlineResumeIdentityPrivate=true"
                 + " preAuthenticationDataDenied=true"
                 + " badChallengeDenied=true"
                 + " twoClientRelay=true"
@@ -703,6 +708,9 @@ final class IndependentHostTransportSessionSmoke {
                     "invalid HOSTED_ROSTER_BEGIN field count: "
                             + Arrays.toString(begin));
             int total = Integer.parseInt(begin[4]);
+            int active = Integer.parseInt(begin[5]);
+            require(total == active,
+                    "wire roster exposed sessions outside the living hosted lobby");
             ArrayList<RosterEntryReadout> entries = new ArrayList<>();
             String previousPlayer = "";
             for (int i = 0; i < total; i++) {
@@ -711,12 +719,14 @@ final class IndependentHostTransportSessionSmoke {
                 require(entry.length == 10,
                         "invalid HOSTED_ROSTER_ENTRY field count: "
                                 + Arrays.toString(entry));
+                require(Boolean.parseBoolean(entry[3]),
+                        "wire roster serialized an offline persisted session");
                 require(previousPlayer.compareTo(entry[2]) < 0,
                         "hosted roster broadcast is not deterministically ordered");
                 previousPlayer = entry[2];
                 entries.add(new RosterEntryReadout(
                         entry[2],
-                        Boolean.parseBoolean(entry[3]),
+                        true,
                         Long.parseLong(entry[4]),
                         Boolean.parseBoolean(entry[5]),
                         entry[6],
@@ -732,7 +742,7 @@ final class IndependentHostTransportSessionSmoke {
                     Long.parseLong(begin[2]),
                     begin[3],
                     total,
-                    Integer.parseInt(begin[5]),
+                    active,
                     Boolean.parseBoolean(begin[6]),
                     entries);
         }
