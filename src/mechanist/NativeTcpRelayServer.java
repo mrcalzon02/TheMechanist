@@ -1,11 +1,11 @@
 package mechanist;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class NativeTcpRelayServer implements AutoCloseable {
     private final ServerConfig config;
     private final String bindAddress;
+    private final int boundPort;
     private final ServerSocketChannel serverChannel;
     private final ExecutorService workers;
     private final List<ClientConnection> clients = Collections.synchronizedList(new ArrayList<>());
@@ -37,9 +38,10 @@ final class NativeTcpRelayServer implements AutoCloseable {
     private final Thread acceptThread;
     private final NetworkThrottlingManager throttlingManager = new NetworkThrottlingManager();
 
-    private NativeTcpRelayServer(ServerConfig config, String bindAddress, ServerSocketChannel serverChannel) {
+    private NativeTcpRelayServer(ServerConfig config, String bindAddress, int boundPort, ServerSocketChannel serverChannel) {
         this.config = config;
         this.bindAddress = bindAddress;
+        this.boundPort = boundPort;
         this.serverChannel = serverChannel;
         ThreadFactory factory = r -> {
             Thread t = new Thread(r, "mechanist-native-relay-client");
@@ -52,13 +54,32 @@ final class NativeTcpRelayServer implements AutoCloseable {
     }
 
     static NativeTcpRelayServer bind(ServerConfig config, boolean ipv6) throws IOException {
-        String address = ipv6 ? "::" : "0.0.0.0";
-        ServerSocketChannel channel = ServerSocketChannel.open(ipv6 ? java.net.StandardProtocolFamily.INET6 : java.net.StandardProtocolFamily.INET);
+        if (config == null) throw new IOException("Server configuration is required.");
+        String requested = config.boundAddress() == null || config.boundAddress().isBlank()
+                ? (ipv6 ? "::" : "0.0.0.0")
+                : config.boundAddress().trim();
+        InetAddress address = InetAddress.getByName(requested);
+        if (ipv6 && !(address instanceof Inet6Address)) {
+            throw new IOException("Requested IPv6 bind resolved to a non-IPv6 address: " + requested);
+        }
+        if (!ipv6 && !(address instanceof Inet4Address)) {
+            throw new IOException("Requested IPv4 bind resolved to a non-IPv4 address: " + requested);
+        }
+
+        ServerSocketChannel channel = ServerSocketChannel.open(
+                ipv6 ? java.net.StandardProtocolFamily.INET6 : java.net.StandardProtocolFamily.INET);
         try {
             channel.configureBlocking(true);
             channel.setOption(java.net.StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE);
-            channel.bind(new InetSocketAddress(InetAddress.getByName(address), config.port()));
-            NativeTcpRelayServer server = new NativeTcpRelayServer(config, address, channel);
+            channel.bind(new InetSocketAddress(address, config.port()));
+            InetSocketAddress local = (InetSocketAddress) channel.getLocalAddress();
+            String actualAddress = canonicalAddress(local.getAddress());
+            int actualPort = local.getPort();
+            MultiplayerProtocolState protocol = ipv6
+                    ? MultiplayerProtocolState.NATIVE_IPV6
+                    : MultiplayerProtocolState.NATIVE_IPV4;
+            ServerConfig boundConfig = config.withBinding(actualAddress, actualPort, protocol);
+            NativeTcpRelayServer server = new NativeTcpRelayServer(boundConfig, actualAddress, actualPort, channel);
             server.start();
             return server;
         } catch (IOException | RuntimeException ex) {
@@ -67,12 +88,17 @@ final class NativeTcpRelayServer implements AutoCloseable {
         }
     }
 
+    String boundAddress() { return bindAddress; }
+    int port() { return boundPort; }
+    int clientCount() { return clients.size(); }
+    boolean running() { return running.get(); }
+
     private void start() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try { close(); } catch (Exception ex) { DebugLog.error("NATIVE_RELAY_SHUTDOWN", "Shutdown hook could not close native relay.", ex); }
         }, "mechanist-native-relay-shutdown"));
         acceptThread.start();
-        DebugLog.audit("NATIVE_RELAY_BOUND", "world=" + config.worldName() + " address=" + bindAddress + " port=" + config.port() + " maxPlayers=" + config.maxPlayers());
+        DebugLog.audit("NATIVE_RELAY_BOUND", "world=" + config.worldName() + " address=" + bindAddress + " port=" + boundPort + " maxPlayers=" + config.maxPlayers());
     }
 
     private void acceptLoop() {
@@ -118,8 +144,15 @@ final class NativeTcpRelayServer implements AutoCloseable {
             clients.clear();
         }
         workers.shutdownNow();
-        DebugLog.audit("NATIVE_RELAY_CLOSED", "address=" + bindAddress + " port=" + config.port());
+        DebugLog.audit("NATIVE_RELAY_CLOSED", "address=" + bindAddress + " port=" + boundPort);
         if (failure != null) throw failure;
+    }
+
+    private static String canonicalAddress(InetAddress address) {
+        if (address == null) return "unknown";
+        if (address.isLoopbackAddress()) return address instanceof Inet6Address ? "::1" : "127.0.0.1";
+        if (address.isAnyLocalAddress()) return address instanceof Inet6Address ? "::" : "0.0.0.0";
+        return address.getHostAddress();
     }
 
     private final class ClientConnection implements Closeable {
@@ -208,7 +241,6 @@ final class NativeTcpRelayServer implements AutoCloseable {
                 closeQuietly();
             }
         }
-
 
         private String readBoundedLine(InputStream in) throws IOException {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream(256);
