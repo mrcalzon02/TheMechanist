@@ -26,12 +26,13 @@ import java.util.concurrent.atomic.AtomicReference;
  * Supervised independent-host client connection for the limited-alpha control plane.
  *
  * This is the single client authority for handshake progression, local resume-token
- * custody, hosted-command sequencing, canonical roster assembly, control/relay
- * dispatch, failure state, and orderly shutdown. It intentionally exposes no
- * movement, combat, inventory, world-snapshot, or gameplay-command API.
+ * custody, hosted-command sequencing, the wait-only authoritative world command,
+ * canonical roster assembly, control/relay dispatch, failure state, and orderly
+ * shutdown. It exposes no movement, map, combat, inventory, interaction,
+ * world-snapshot request, or generic gameplay-command API.
  */
 final class IndependentHostClientSupervisor implements AutoCloseable {
-    static final String VERSION = "independent-host-client-supervisor-2";
+    static final String VERSION = "independent-host-client-supervisor-3";
     private static final int MAX_RELAY_PAYLOAD_CHARS = 60 * 1024;
     private static final int MAX_RELAY_INBOX = 1024;
 
@@ -53,12 +54,16 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             new LinkedBlockingQueue<>(MAX_RELAY_INBOX);
     private final AtomicLong relaySequence = new AtomicLong();
     private final AtomicLong hostedCommandSequence = new AtomicLong();
+    private final AtomicLong worldCommandSequence = new AtomicLong();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicReference<PendingCommand> pendingCommand =
+            new AtomicReference<>();
+    private final AtomicReference<PendingWorldCommand> pendingWorldCommand =
             new AtomicReference<>();
     private final Object lifecycleLock = new Object();
     private final Object writeLock = new Object();
     private final Object commandLock = new Object();
+    private final Object worldCommandLock = new Object();
     private final Object rosterSignal = new Object();
 
     private volatile State state = State.NEW;
@@ -66,6 +71,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     private volatile Throwable failure;
     private volatile ConnectionIdentity identity;
     private volatile SessionSnapshot sessionSnapshot;
+    private volatile WorldWaitAck latestWorldWait;
     private volatile long rosterEvents;
     private volatile boolean resumeTokenPersisted;
     private volatile String tokenPersistenceFailure = "none";
@@ -133,7 +139,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             mountedReader.start();
 
             requestRosterRefresh(useTimeout);
-            lastEvent = "authenticated relay-only session mounted";
+            lastEvent = "authenticated relay session with wait-only world control mounted";
             return connected;
         } catch (Exception connectFailure) {
             fail(connectFailure, "connection or handshake failed");
@@ -229,6 +235,41 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
     }
 
+    WorldWaitAck waitAuthoritativeTurn(Duration timeout) throws Exception {
+        ensureAuthenticated();
+        Duration useTimeout = boundedTimeout(timeout);
+        synchronized (worldCommandLock) {
+            long commandId = worldCommandSequence.getAndIncrement();
+            PendingWorldCommand pending = new PendingWorldCommand(
+                    commandId,
+                    new CompletableFuture<>());
+            if (!pendingWorldCommand.compareAndSet(null, pending)) {
+                throw new IllegalStateException(
+                        "another authoritative wait command is awaiting acknowledgement");
+            }
+            try {
+                writeLine("MECH|WORLD_COMMAND|" + commandId + "|WAIT");
+                try {
+                    WorldWaitAck acknowledgement = pending.future().get(
+                            useTimeout.toMillis(),
+                            TimeUnit.MILLISECONDS);
+                    latestWorldWait = acknowledgement;
+                    lastEvent = "authoritative wait accepted at world turn "
+                            + acknowledgement.worldTurn();
+                    return acknowledgement;
+                } catch (java.util.concurrent.TimeoutException timedOut) {
+                    TimeoutException timeoutFailure = new TimeoutException(
+                            "timed out waiting for authoritative wait acknowledgement");
+                    fail(timeoutFailure, "authoritative wait acknowledgement timed out");
+                    closeTransportQuietly();
+                    throw timeoutFailure;
+                }
+            } finally {
+                pendingWorldCommand.compareAndSet(pending, null);
+            }
+        }
+    }
+
     long sendRelayPayload(String payload) throws IOException {
         ensureAuthenticated();
         String use = Objects.requireNonNullElse(payload, "");
@@ -297,6 +338,10 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         return sessionSnapshot;
     }
 
+    WorldWaitAck latestWorldWait() {
+        return latestWorldWait;
+    }
+
     ConnectionIdentity identity() {
         return identity;
     }
@@ -312,6 +357,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     String statusLine() {
         ConnectionIdentity current = identity;
         HostedRosterClientAuthority.Snapshot roster = rosterAuthority.latest();
+        WorldWaitAck wait = latestWorldWait;
         return "authority=" + VERSION
                 + " state=" + state
                 + " serverKey=" + serverKey
@@ -329,10 +375,16 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                         : roster.visiblePlayers())
                 + " relayInbox=" + relayInbox.size()
                 + " hostedCommandSequence=" + hostedCommandSequence.get()
+                + " worldCommandSequence=" + worldCommandSequence.get()
                 + " relaySequence=" + relaySequence.get()
+                + " playerTurn=" + (wait == null ? 0 : wait.playerTurn())
+                + " worldTurn=" + (wait == null ? 0 : wait.worldTurn())
+                + " waitAuthority=true"
+                + " movementAuthority=false"
+                + " mapAuthority=false"
                 + " lastEvent=" + lastEvent
                 + " tokenInDiagnostics=false"
-                + " worldAuthority=false";
+                + " fullWorldAuthority=false";
     }
 
     private void mountTokenCustody(ConnectionIdentity connected) {
@@ -363,7 +415,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
         if (!"RELAY_ONLY".equals(hello[5])) {
             throw new SecurityException(
-                    "server attempted to grant an unsupported access class");
+                    "server attempted to grant an unsupported transport access class");
         }
 
         String resumeToken = stored
@@ -418,7 +470,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         String[] access = requireCommand(accessLine, "ACCESS", 11);
         if (!"RELAY_ONLY".equals(access[2])) {
             throw new SecurityException(
-                    "server granted an unsupported access class");
+                    "server granted an unsupported transport access class");
         }
         if (!profileIdentity.equals(access[5])) {
             throw new SecurityException(
@@ -464,7 +516,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 generation,
                 snapshotVersion,
                 resumed,
-                "RELAY_ONLY");
+                "RELAY_ONLY+WAIT_CONTROL");
     }
 
     private void readLoop() {
@@ -491,6 +543,10 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 }
                 if (line.startsWith("MECH|SESSION_COMMAND_ACCEPTED|")) {
                     completePendingCommand(parseCommandAck(line));
+                    continue;
+                }
+                if (line.startsWith("MECH|WORLD_COMMAND_ACCEPTED|")) {
+                    completePendingWorldCommand(parseWorldWaitAck(line));
                     continue;
                 }
                 if (line.startsWith("MECH|SESSION_SNAPSHOT|")) {
@@ -528,13 +584,10 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             }
         } finally {
             running.set(false);
-            PendingCommand pending = pendingCommand.getAndSet(null);
-            if (pending != null && !pending.future().isDone()) {
-                pending.future().completeExceptionally(
-                        failure == null
-                                ? new IOException("client session closed")
-                                : failure);
-            }
+            failPendingOperations(
+                    failure == null
+                            ? new IOException("client session closed")
+                            : failure);
             synchronized (rosterSignal) {
                 rosterSignal.notifyAll();
             }
@@ -557,6 +610,28 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         pending.future().complete(acknowledgement);
     }
 
+    private void completePendingWorldCommand(WorldWaitAck acknowledgement)
+            throws IOException {
+        PendingWorldCommand pending = pendingWorldCommand.get();
+        if (pending == null) {
+            throw new IOException(
+                    "unsolicited authoritative wait acknowledgement");
+        }
+        if (acknowledgement.commandId() != pending.commandId()
+                || !"WAIT".equals(acknowledgement.command())) {
+            throw new IOException(
+                    "authoritative wait acknowledgement does not match its request");
+        }
+        ConnectionIdentity current = identity;
+        if (current == null
+                || acknowledgement.connectionGeneration()
+                != current.connectionGeneration()) {
+            throw new IOException(
+                    "authoritative wait acknowledgement used the wrong connection generation");
+        }
+        pending.future().complete(acknowledgement);
+    }
+
     private HostedCommandAck parseCommandAck(String line)
             throws IOException {
         String[] fields = requireCommand(
@@ -573,6 +648,37 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 fields[8],
                 nonNegativeLong(fields[9], "accepted hosted commands"),
                 nonNegativeLong(fields[10], "last connection command id"));
+    }
+
+    private WorldWaitAck parseWorldWaitAck(String line)
+            throws IOException {
+        String[] fields = requireCommand(
+                line,
+                "WORLD_COMMAND_ACCEPTED",
+                12);
+        if (!"WAIT".equals(fields[3])) {
+            throw new IOException(
+                    "server acknowledged an unsupported world command");
+        }
+        long commandId = nonNegativeLong(fields[2], "world command id");
+        long lastCommandId = nonNegativeLong(
+                fields[6],
+                "last world command id");
+        if (commandId != lastCommandId) {
+            throw new IOException(
+                    "world command acknowledgement sequence is inconsistent");
+        }
+        return new WorldWaitAck(
+                commandId,
+                fields[3],
+                nonNegativeLong(fields[4], "world snapshot version"),
+                positiveLong(fields[5], "connection generation"),
+                lastCommandId,
+                nonNegativeLong(fields[7], "player turn"),
+                nonNegativeLong(fields[8], "world turn"),
+                nonNegativeLong(fields[9], "accepted player world commands"),
+                nonNegativeLong(fields[10], "accepted global world commands"),
+                fields[11]);
     }
 
     private SessionSnapshot parseSessionSnapshot(String line)
@@ -703,6 +809,17 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
     }
 
+    private void failPendingOperations(Throwable cause) {
+        PendingCommand hosted = pendingCommand.getAndSet(null);
+        if (hosted != null && !hosted.future().isDone()) {
+            hosted.future().completeExceptionally(cause);
+        }
+        PendingWorldCommand world = pendingWorldCommand.getAndSet(null);
+        if (world != null && !world.future().isDone()) {
+            world.future().completeExceptionally(cause);
+        }
+    }
+
     @Override
     public void close() {
         Thread mountedReader;
@@ -722,11 +839,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 Thread.currentThread().interrupt();
             }
         }
-        PendingCommand pending = pendingCommand.getAndSet(null);
-        if (pending != null && !pending.future().isDone()) {
-            pending.future().completeExceptionally(
-                    new IOException("client supervisor closed"));
-        }
+        failPendingOperations(new IOException("client supervisor closed"));
         synchronized (rosterSignal) {
             rosterSignal.notifyAll();
         }
@@ -899,6 +1012,11 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             CompletableFuture<HostedCommandAck> future
     ) { }
 
+    private record PendingWorldCommand(
+            long commandId,
+            CompletableFuture<WorldWaitAck> future
+    ) { }
+
     record ConnectionIdentity(
             String serverKey,
             String profileIdentity,
@@ -920,6 +1038,19 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             String chatState,
             long acceptedHostedCommands,
             long lastConnectionCommandId
+    ) { }
+
+    record WorldWaitAck(
+            long commandId,
+            String command,
+            long snapshotVersion,
+            long connectionGeneration,
+            long lastConnectionCommandId,
+            long playerTurn,
+            long worldTurn,
+            long acceptedPlayerCommands,
+            long acceptedWorldCommands,
+            String lastEvent
     ) { }
 
     record SessionSnapshot(
