@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -61,7 +60,9 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         requireOpen();
         String profile = safeToken(profileIdentity, "unknown-profile");
         String connection = safeToken(connectionId, "unknown-connection");
-        String resume = Objects.requireNonNullElse(presentedResumeToken, "").trim().toLowerCase();
+        String resume = Objects.requireNonNullElse(presentedResumeToken, "")
+                .trim()
+                .toLowerCase();
         MutableSession session = sessionsByProfile.get(profile);
         MutableSession previous = session == null ? null : session.copy();
         long previousVersion = snapshotVersion;
@@ -69,7 +70,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
 
         if (session == null) {
             if (!resume.isBlank()) {
-                throw new SecurityException("resume token does not match any server-owned session");
+                throw new SecurityException(
+                        "resume token does not match any server-owned session");
             }
             String issuedToken = randomHex(32);
             session = new MutableSession(
@@ -80,12 +82,16 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             sessionsByProfile.put(profile, session);
         } else {
             if (resume.isBlank()
-                    || !constantTimeEquals(session.resumeTokenHash, sha256Hex(resume))) {
+                    || !constantTimeEquals(
+                    session.resumeTokenHash,
+                    sha256Hex(resume))) {
                 throw new SecurityException(
                         "a valid resume token is required for an existing profile session");
             }
-            if (session.connected && !connection.equals(session.activeConnectionId)) {
-                throw new IllegalStateException("profile session is already connected");
+            if (session.connected
+                    && !connection.equals(session.activeConnectionId)) {
+                throw new IllegalStateException(
+                        "profile session is already connected");
             }
             if (connection.equals(session.activeConnectionId)) {
                 return attachment(session, true);
@@ -146,10 +152,12 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
     synchronized void disconnect(Attachment attachment, String reason) {
         requireOpen();
         if (attachment == null) return;
-        MutableSession session = sessionsByProfile.get(attachment.profileIdentity());
+        MutableSession session = sessionsByProfile.get(
+                attachment.profileIdentity());
         if (session == null) return;
         if (!attachment.connectionId().equals(session.activeConnectionId)
-                || attachment.connectionGeneration() != session.connectionGeneration) {
+                || attachment.connectionGeneration()
+                != session.connectionGeneration) {
             return;
         }
         MutableSession previous = session.copy();
@@ -182,8 +190,10 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                 + " sessions=" + sessionsByProfile.size()
                 + " active=" + activeSessionCount()
                 + " snapshotVersion=" + snapshotVersion
-                + " persistence=" + (persistenceFile == null ? "disabled" : persistenceFile)
+                + " persistence="
+                + (persistenceFile == null ? "disabled" : persistenceFile)
                 + " tokenStorage=sha256-only"
+                + " atomicMove=required"
                 + " worldAuthority=false";
     }
 
@@ -201,11 +211,15 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
 
     private MutableSession requireOwned(Attachment attachment) {
         if (attachment == null) {
-            throw new IllegalStateException("remote session attachment is missing");
+            throw new IllegalStateException(
+                    "remote session attachment is missing");
         }
-        MutableSession session = sessionsByProfile.get(attachment.profileIdentity());
-        if (session == null || !session.playerId.equals(attachment.playerId())) {
-            throw new IllegalStateException("remote session attachment is stale or foreign");
+        MutableSession session = sessionsByProfile.get(
+                attachment.profileIdentity());
+        if (session == null
+                || !session.playerId.equals(attachment.playerId())) {
+            throw new IllegalStateException(
+                    "remote session attachment is stale or foreign");
         }
         return session;
     }
@@ -214,14 +228,18 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         MutableSession session = requireOwned(attachment);
         if (!session.connected
                 || !attachment.connectionId().equals(session.activeConnectionId)
-                || attachment.connectionGeneration() != session.connectionGeneration) {
+                || attachment.connectionGeneration()
+                != session.connectionGeneration) {
             throw new IllegalStateException(
                     "remote session attachment is not the active connection");
         }
         return session;
     }
 
-    private Attachment attachment(MutableSession session, boolean resumed) {
+    private Attachment attachment(
+            MutableSession session,
+            boolean resumed
+    ) {
         if (session.activeResumeToken.isBlank()) {
             throw new IllegalStateException(
                     "active remote session does not have a returnable resume token");
@@ -262,12 +280,13 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
     ) {
         try {
             persist();
-        } catch (IOException failure) {
+        } catch (IOException | RuntimeException failure) {
             snapshotVersion = previousVersion;
             if (previous == null) sessionsByProfile.remove(profile);
             else sessionsByProfile.put(profile, previous);
             throw new IllegalStateException(
-                    "remote session ledger could not persist atomically", failure);
+                    "remote session ledger could not persist atomically",
+                    failure);
         }
     }
 
@@ -275,7 +294,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         if (persistenceFile == null || !Files.exists(persistenceFile)) return;
         if (!Files.isRegularFile(persistenceFile)) {
             throw new IOException(
-                    "remote session ledger path is not a regular file: " + persistenceFile);
+                    "remote session ledger path is not a regular file: "
+                            + persistenceFile);
         }
         Properties properties = new Properties();
         try (InputStream input = Files.newInputStream(persistenceFile)) {
@@ -283,7 +303,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         }
         String schema = properties.getProperty("schema", "").trim();
         if (!PERSISTENCE_SCHEMA.equals(schema)) {
-            throw new IOException("unsupported remote session ledger schema: " + schema);
+            throw new IOException(
+                    "unsupported remote session ledger schema: " + schema);
         }
         String storedWorld = properties.getProperty("worldId", "").trim();
         if (!worldId.equals(storedWorld)) {
@@ -298,32 +319,46 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         int count = parseCount(properties.getProperty("session.count"));
         for (int index = 0; index < count; index++) {
             String prefix = "session." + index + ".";
-            String profile = requiredProperty(properties, prefix + "profile");
-            String playerId = requiredProperty(properties, prefix + "playerId");
+            String profile = requiredProperty(
+                    properties,
+                    prefix + "profile");
+            String playerId = requiredProperty(
+                    properties,
+                    prefix + "playerId");
             String expectedPlayerId = playerIdFor(profile);
             if (!expectedPlayerId.equals(playerId)) {
                 throw new IOException(
-                        "remote session player identity mismatch for profile " + profile);
+                        "remote session player identity mismatch for profile "
+                                + profile);
             }
             String tokenHash = requiredProperty(
-                    properties, prefix + "resumeTokenSha256").toLowerCase();
+                    properties,
+                    prefix + "resumeTokenSha256")
+                    .toLowerCase();
             if (!tokenHash.matches("[a-f0-9]{64}")) {
                 throw new IOException(
-                        "remote session resume-token hash is invalid for profile " + profile);
+                        "remote session resume-token hash is invalid for profile "
+                                + profile);
             }
             if (sessionsByProfile.containsKey(profile)) {
                 throw new IOException(
-                        "duplicate remote session profile in ledger: " + profile);
+                        "duplicate remote session profile in ledger: "
+                                + profile);
             }
-            MutableSession session = new MutableSession(profile, playerId, tokenHash);
+            MutableSession session = new MutableSession(
+                    profile,
+                    playerId,
+                    tokenHash);
             session.connectionGeneration = Math.max(
                     1L,
                     parseLong(
-                            properties.getProperty(prefix + "connectionGeneration"),
+                            properties.getProperty(
+                                    prefix + "connectionGeneration"),
                             1L,
                             prefix + "connectionGeneration"));
             session.acceptedRelayFrames = parseLong(
-                    properties.getProperty(prefix + "acceptedRelayFrames"),
+                    properties.getProperty(
+                            prefix + "acceptedRelayFrames"),
                     0L,
                     prefix + "acceptedRelayFrames");
             session.lastSeenMillis = parseLong(
@@ -335,7 +370,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             session.activeResumeToken = "";
             session.lastConnectionSequence = -1L;
             session.connectedAtMillis = 0L;
-            session.lastEvent = "restored offline after server restart";
+            session.lastEvent =
+                    "restored offline after server restart";
             sessionsByProfile.put(profile, session);
         }
         snapshotVersion++;
@@ -354,17 +390,28 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         Properties properties = new Properties();
         properties.setProperty("schema", PERSISTENCE_SCHEMA);
         properties.setProperty("worldId", worldId);
-        properties.setProperty("snapshotVersion", Long.toString(snapshotVersion));
-        List<MutableSession> ordered = new ArrayList<>(sessionsByProfile.values());
-        ordered.sort(Comparator.comparing(session -> session.profileIdentity));
-        properties.setProperty("session.count", Integer.toString(ordered.size()));
+        properties.setProperty(
+                "snapshotVersion",
+                Long.toString(snapshotVersion));
+        List<MutableSession> ordered = new ArrayList<>(
+                sessionsByProfile.values());
+        ordered.sort(Comparator.comparing(
+                session -> session.profileIdentity));
+        properties.setProperty(
+                "session.count",
+                Integer.toString(ordered.size()));
         for (int index = 0; index < ordered.size(); index++) {
             MutableSession session = ordered.get(index);
             String prefix = "session." + index + ".";
-            properties.setProperty(prefix + "profile", session.profileIdentity);
-            properties.setProperty(prefix + "playerId", session.playerId);
             properties.setProperty(
-                    prefix + "resumeTokenSha256", session.resumeTokenHash);
+                    prefix + "profile",
+                    session.profileIdentity);
+            properties.setProperty(
+                    prefix + "playerId",
+                    session.playerId);
+            properties.setProperty(
+                    prefix + "resumeTokenSha256",
+                    session.resumeTokenHash);
             properties.setProperty(
                     prefix + "connectionGeneration",
                     Long.toString(session.connectionGeneration));
@@ -374,11 +421,15 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             properties.setProperty(
                     prefix + "lastSeenMillis",
                     Long.toString(session.lastSeenMillis));
-            properties.setProperty(prefix + "lastEvent", safeEvent(session.lastEvent));
+            properties.setProperty(
+                    prefix + "lastEvent",
+                    safeEvent(session.lastEvent));
         }
 
         Path temporary = parent.resolve(
-                persistenceFile.getFileName() + ".tmp-" + randomHex(8));
+                persistenceFile.getFileName()
+                        + ".tmp-"
+                        + randomHex(8));
         try {
             try (FileChannel channel = FileChannel.open(
                          temporary,
@@ -386,25 +437,18 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
                          StandardOpenOption.WRITE);
                  OutputStream output = new BufferedOutputStream(
                          Channels.newOutputStream(channel))) {
+                setOwnerOnlyPermissions(temporary);
                 properties.store(
                         output,
                         "The Mechanist remote session ledger; resume tokens stored as SHA-256 only");
                 output.flush();
                 channel.force(true);
             }
-            setOwnerOnlyPermissions(temporary);
-            try {
-                Files.move(
-                        temporary,
-                        persistenceFile,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException unsupported) {
-                Files.move(
-                        temporary,
-                        persistenceFile,
-                        StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.move(
+                    temporary,
+                    persistenceFile,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
             setOwnerOnlyPermissions(persistenceFile);
         } finally {
             Files.deleteIfExists(temporary);
@@ -417,13 +461,15 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
     ) throws IOException {
         String value = properties.getProperty(key, "").trim();
         if (value.isBlank()) {
-            throw new IOException("remote session ledger is missing " + key);
+            throw new IOException(
+                    "remote session ledger is missing " + key);
         }
         if (value.length() > 4096
                 || value.indexOf('|') >= 0
                 || value.indexOf('\n') >= 0
                 || value.indexOf('\r') >= 0) {
-            throw new IOException("remote session ledger contains unsafe " + key);
+            throw new IOException(
+                    "remote session ledger contains unsafe " + key);
         }
         return value;
     }
@@ -450,7 +496,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
             return parsed;
         } catch (NumberFormatException failure) {
             throw new IOException(
-                    "remote session ledger contains invalid " + label, failure);
+                    "remote session ledger contains invalid " + label,
+                    failure);
         }
     }
 
@@ -466,7 +513,10 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         }
     }
 
-    private static boolean constantTimeEquals(String expected, String actual) {
+    private static boolean constantTimeEquals(
+            String expected,
+            String actual
+    ) {
         return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8),
                 Objects.requireNonNullElse(actual, "")
@@ -483,16 +533,21 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(
-                    digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+                    digest.digest(
+                            value.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception failure) {
-            throw new IllegalStateException("SHA-256 is unavailable", failure);
+            throw new IllegalStateException(
+                    "SHA-256 is unavailable",
+                    failure);
         }
     }
 
     private static String safeToken(String value, String fallback) {
         String token = Objects.requireNonNullElse(value, "").trim();
         if (token.isBlank()) token = fallback;
-        token = token.replace('|', '_').replace('\n', ' ').replace('\r', ' ');
+        token = token.replace('|', '_')
+                .replace('\n', ' ')
+                .replace('\r', ' ');
         return token.substring(0, Math.min(256, token.length()));
     }
 
@@ -509,7 +564,8 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
 
     private void requireOpen() {
         if (closed) {
-            throw new IllegalStateException("remote session ledger is closed");
+            throw new IllegalStateException(
+                    "remote session ledger is closed");
         }
     }
 
@@ -531,13 +587,20 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
         try {
             persist();
             closed = true;
-        } catch (IOException failure) {
+        } catch (IOException | RuntimeException failure) {
             sessionsByProfile.clear();
             for (MutableSession session : previous) {
-                sessionsByProfile.put(session.profileIdentity, session);
+                sessionsByProfile.put(
+                        session.profileIdentity,
+                        session);
             }
             snapshotVersion = previousVersion;
-            throw failure;
+            if (failure instanceof IOException ioFailure) {
+                throw ioFailure;
+            }
+            throw new IOException(
+                    "remote session ledger could not close atomically",
+                    failure);
         }
     }
 
@@ -601,7 +664,9 @@ final class RemoteSessionLedgerAuthority implements AutoCloseable {
 
         MutableSession copy() {
             MutableSession copy = new MutableSession(
-                    profileIdentity, playerId, resumeTokenHash);
+                    profileIdentity,
+                    playerId,
+                    resumeTokenHash);
             copy.activeResumeToken = activeResumeToken;
             copy.activeConnectionId = activeConnectionId;
             copy.connected = connected;
