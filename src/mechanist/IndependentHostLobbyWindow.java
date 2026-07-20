@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * GamePanel, SinglePlayerInternalHostSupervisor, or remote world authority.
  */
 final class IndependentHostLobbyWindow implements AutoCloseable {
-    static final String VERSION = "independent-host-lobby-window-2";
+    static final String VERSION = "independent-host-lobby-window-3";
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(12);
     private static final Duration COMMAND_TIMEOUT = Duration.ofSeconds(8);
 
@@ -114,6 +114,7 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
                 + " hostedCommands=ready,presence,chat-state"
                 + " relayConsole=true"
                 + " pendingConnectionCancellable=true"
+                + " failedSessionTeardown=single-transition"
                 + " gamePanelMounted=false"
                 + " internalHostMounted=false"
                 + " worldCommandApi=false"
@@ -495,10 +496,21 @@ final class IndependentHostLobbyWindow implements AutoCloseable {
             }
         }
 
-        IndependentHostClientSupervisor.State current = mounted.state();
-        if (current == IndependentHostClientSupervisor.State.FAILED) {
+        if (mounted.state() == IndependentHostClientSupervisor.State.FAILED
+                && supervisor == mounted) {
+            String failedStatus = mounted.statusLine();
+            connectionEpoch.incrementAndGet();
+            supervisor = null;
+            mounted.close();
+            renderedRosterVersion = -1L;
+            rosterModel.clear();
             setConnectedControls(false);
-            appendEvent("Session failed closed. Inspect status and reconnect explicitly.");
+            statusArea.setText(failedStatus
+                    + "\nSession failed closed and was torn down once."
+                    + "\nReconnect must be requested explicitly; worldAuthority=false.");
+            appendEvent(
+                    "Session failed closed and was torn down. Inspect status, "
+                    + "then reconnect explicitly.");
         }
     }
 
