@@ -38,6 +38,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final Thread acceptThread;
     private final NetworkThrottlingManager throttlingManager = new NetworkThrottlingManager();
+    private final RemoteSessionLedgerAuthority sessionLedger;
 
     private NativeTcpRelayServer(
             ServerConfig config,
@@ -49,6 +50,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
         this.bindAddress = bindAddress;
         this.boundPort = boundPort;
         this.serverChannel = serverChannel;
+        this.sessionLedger = new RemoteSessionLedgerAuthority(config.worldId());
         ThreadFactory factory = runnable -> {
             Thread thread = new Thread(runnable, "mechanist-native-relay-client");
             thread.setDaemon(true);
@@ -122,6 +124,18 @@ final class NativeTcpRelayServer implements AutoCloseable {
         }
     }
 
+    int remoteSessionCount() {
+        return sessionLedger.totalSessionCount();
+    }
+
+    int activeRemoteSessionCount() {
+        return sessionLedger.activeSessionCount();
+    }
+
+    RemoteSessionLedgerAuthority.SessionSnapshot remoteSessionSnapshot(String profileIdentity) {
+        return sessionLedger.snapshotForProfile(profileIdentity);
+    }
+
     boolean running() {
         return running.get();
     }
@@ -145,7 +159,8 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         + " port=" + boundPort
                         + " maxPlayers=" + config.maxPlayers()
                         + " handshake=" + IndependentHostWireProtocol.VERSION
-                        + " access=RELAY_ONLY");
+                        + " access=RELAY_ONLY"
+                        + " ledger={" + sessionLedger.auditSummary() + "}");
     }
 
     private void acceptLoop() {
@@ -218,7 +233,9 @@ final class NativeTcpRelayServer implements AutoCloseable {
         workers.shutdownNow();
         DebugLog.audit(
                 "NATIVE_RELAY_CLOSED",
-                "address=" + bindAddress + " port=" + boundPort);
+                "address=" + bindAddress
+                        + " port=" + boundPort
+                        + " ledger={" + sessionLedger.auditSummary() + "}");
         if (failure != null) throw failure;
     }
 
@@ -256,7 +273,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         closeQuietly();
                     });
             this.outboundBudget = throttlingManager.registerChannel(session);
-            this.protocol = new IndependentHostWireProtocol(session);
+            this.protocol = new IndependentHostWireProtocol(session, sessionLedger);
             this.out = new BufferedWriter(new OutputStreamWriter(
                     Channels.newOutputStream(channel), StandardCharsets.UTF_8));
             write(protocol.helloLine());
@@ -272,6 +289,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                     NetworkPacketPolicer.Decision decision = packetPolicer.inboundPacket();
                     if (!decision.allowed()) {
                         DebugLog.warn("NATIVE_RELAY_RATE", decision.reason());
+                        protocol.disconnect("inbound rate limit exceeded");
                         closeQuietly();
                         break;
                     }
@@ -290,17 +308,30 @@ final class NativeTcpRelayServer implements AutoCloseable {
 
                     if (!line.startsWith("SEQ|")) {
                         write("MECH|DENIED|relay frames require SEQ sequence headers");
+                        protocol.disconnect("relay frame omitted sequence header");
                         closeQuietly();
                         break;
                     }
                     PacketSequenceValidator.SequenceDecision sequenceDecision = validateSequence(line);
                     if (sequenceDecision.disconnect()) {
+                        protocol.disconnect(sequenceDecision.reason());
                         closeQuietly();
                         break;
                     }
                     if (sequenceDecision.state()
                             == PacketSequenceValidator.SequenceState.QUEUED_WAITING_FOR_GAP) {
                         continue;
+                    }
+                    try {
+                        RemoteSessionLedgerAuthority.SessionSnapshot snapshot =
+                                protocol.noteRelayFrameAccepted(
+                                        sequenceDecision.incomingSequenceId());
+                        DebugLog.audit("REMOTE_SESSION_RELAY_ACCEPTED", snapshot.compactLine());
+                    } catch (RuntimeException failure) {
+                        write("MECH|DENIED|" + safeProtocolReason(failure.getMessage()));
+                        protocol.disconnect(failure.getMessage());
+                        closeQuietly();
+                        break;
                     }
                     broadcast(line, this);
                 }
@@ -413,10 +444,18 @@ final class NativeTcpRelayServer implements AutoCloseable {
         @Override
         public void close() throws IOException {
             if (!open.getAndSet(false)) return;
-            protocol.disconnect();
+            protocol.disconnect("transport closed");
             outboundBudget.close();
             throttlingManager.unregisterChannel(outboundBudget.sessionId());
             channel.close();
         }
+    }
+
+    private static String safeProtocolReason(String reason) {
+        String value = reason == null || reason.isBlank()
+                ? "session ledger rejected relay frame"
+                : reason;
+        return value.replace('|', '/').replace('\n', ' ').replace('\r', ' ')
+                .substring(0, Math.min(220, value.length()));
     }
 }
