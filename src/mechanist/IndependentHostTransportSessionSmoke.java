@@ -7,15 +7,18 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Packaged independent-host transport and remote-session continuity smoke.
+ * Packaged independent-host transport, hosted-roster broadcast, and remote-session continuity smoke.
  *
  * This proves exact bind, client-driven authentication, server-owned session
- * identity, resume-token continuity, immutable session snapshots, sequencing,
- * relay broadcast, denial paths, close, and restart. World gameplay authority
- * remains intentionally outside this smoke.
+ * identity, resume-token continuity, immutable session snapshots, asynchronous
+ * hosted-roster control frames, sequencing, relay broadcast, denial paths,
+ * close, and restart. World gameplay authority remains intentionally outside
+ * this smoke.
  */
 final class IndependentHostTransportSessionSmoke {
     private static final String LOOPBACK = "127.0.0.1";
@@ -64,16 +67,36 @@ final class IndependentHostTransportSessionSmoke {
                                 && relay.activeRemoteSessionCount() == 2,
                         "relay ledger did not register two active server-owned sessions");
 
+                HostedRosterReadout joinRoster = sender.readRoster();
+                require(joinRoster.totalSessions == 2
+                                && joinRoster.activeSessions == 2
+                                && !joinRoster.worldAuthority,
+                        "peer join did not broadcast the authoritative two-player roster");
+                require(joinRoster.entryFor(sender.playerId) != null
+                                && joinRoster.entryFor(receiver.playerId) != null,
+                        "peer join roster omitted an authenticated player");
+
                 verifyActiveDuplicateDenied(
                         relay.port(), SENDER_PROFILE, sender.resumeToken);
                 waitForAuthenticatedClients(relay, 2, 3_000L);
 
+                HostedCommandReadout ready = sender.sessionCommand(
+                        0L, "READY", "true");
+                require(ready.ready
+                                && ready.acceptedHostedCommands == 1L
+                                && ready.lastConnectionCommandId == 0L,
+                        "sender READY command was not accepted authoritatively");
+                HostedRosterReadout readyBroadcast = receiver.readRoster();
+                RosterEntryReadout senderReady = readyBroadcast.entryFor(sender.playerId);
+                require(senderReady != null && senderReady.ready,
+                        "peer did not receive the sender readiness roster broadcast");
+
                 sender.write("SEQ|0|alpha-transport-frame");
-                require("SEQ|0|alpha-transport-frame".equals(receiver.read()),
+                require("SEQ|0|alpha-transport-frame".equals(receiver.readRelayFrame()),
                         "receiver did not obtain the first accepted relay frame");
 
                 sender.write("SEQ|1|beta-transport-frame");
-                require("SEQ|1|beta-transport-frame".equals(receiver.read()),
+                require("SEQ|1|beta-transport-frame".equals(receiver.readRelayFrame()),
                         "receiver did not obtain the second accepted relay frame");
 
                 SessionReadout beforeDisconnect = sender.sessionStatus();
@@ -87,11 +110,19 @@ final class IndependentHostTransportSessionSmoke {
                 require(sender.playerId.equals(beforeDisconnect.playerId),
                         "session snapshot changed the stable player id");
 
-                receiver.socket.setSoTimeout(700);
                 sender.write("SEQ|0|replayed-transport-frame");
+                HostedRosterReadout replayDeparture = receiver.readRoster();
+                RosterEntryReadout senderOffline = replayDeparture.entryFor(sender.playerId);
+                require(replayDeparture.activeSessions == 1
+                                && senderOffline != null
+                                && !senderOffline.connected
+                                && !senderOffline.ready
+                                && "offline".equals(senderOffline.presence),
+                        "replay disconnect did not broadcast the authoritative offline roster");
+                receiver.socket.setSoTimeout(700);
                 boolean replayBroadcast = false;
                 try {
-                    replayBroadcast = receiver.read() != null;
+                    replayBroadcast = receiver.readRelayFrame() != null;
                 } catch (SocketTimeoutException expected) {
                     replayBroadcast = false;
                 }
@@ -120,8 +151,28 @@ final class IndependentHostTransportSessionSmoke {
                                     && relay.activeRemoteSessionCount() == 2,
                             "resume created a duplicate session instead of restoring continuity");
 
+                    HostedRosterReadout resumeRoster = receiver.readRoster();
+                    RosterEntryReadout resumedEntry = resumeRoster.entryFor(resumed.playerId);
+                    require(resumeRoster.activeSessions == 2
+                                    && resumedEntry != null
+                                    && resumedEntry.connected
+                                    && resumedEntry.connectionGeneration == 2L
+                                    && !resumedEntry.ready
+                                    && "available".equals(resumedEntry.presence),
+                            "peer did not receive the authoritative resume roster");
+
+                    HostedCommandReadout resumedBusy = resumed.sessionCommand(
+                            0L, "PRESENCE", "busy");
+                    require("busy".equals(resumedBusy.presence)
+                                    && resumedBusy.acceptedHostedCommands == 2L,
+                            "resumed hosted command lost lifetime accounting");
+                    HostedRosterReadout busyBroadcast = receiver.readRoster();
+                    RosterEntryReadout busyEntry = busyBroadcast.entryFor(resumed.playerId);
+                    require(busyEntry != null && "busy".equals(busyEntry.presence),
+                            "peer did not receive the resumed presence broadcast");
+
                     resumed.write("SEQ|0|resumed-transport-frame");
-                    require("SEQ|0|resumed-transport-frame".equals(receiver.read()),
+                    require("SEQ|0|resumed-transport-frame".equals(receiver.readRelayFrame()),
                             "receiver did not obtain the resumed session frame");
                     SessionReadout afterResume = resumed.sessionStatus();
                     require(afterResume.connected,
@@ -136,6 +187,10 @@ final class IndependentHostTransportSessionSmoke {
                                     > beforeDisconnect.snapshotVersion,
                             "resumed snapshot version did not advance monotonically");
                 }
+                HostedRosterReadout resumeDeparture = receiver.readRoster();
+                require(resumeDeparture.activeSessions == 1
+                                && !resumeDeparture.entryFor(sender.playerId).connected,
+                        "resumed client close did not broadcast an offline roster");
                 waitForAuthenticatedClients(relay, 1, 3_000L);
                 waitForSessionConnected(relay, SENDER_PROFILE, false, 3_000L);
             }
@@ -166,7 +221,7 @@ final class IndependentHostTransportSessionSmoke {
                 require(client.relayOnlyAccess,
                         "client did not regain relay-only access after host restart");
                 require(client.connectionGeneration == 1L && !client.resumed,
-                        "fresh host restart did not create a fresh process-local session");
+                        "fresh host restart did not create a fresh world-specific session");
             }
         } finally {
             restarted.close();
@@ -202,6 +257,11 @@ final class IndependentHostTransportSessionSmoke {
                 + " invalidResumeTokenDenied=true"
                 + " immutableSessionSnapshots=true"
                 + " lifetimeRelayAccounting=true"
+                + " hostedRosterJoinBroadcast=true"
+                + " hostedCommandPeerBroadcast=true"
+                + " disconnectRosterBroadcast=true"
+                + " resumeRosterBroadcast=true"
+                + " asynchronousControlSeparatedFromRelay=true"
                 + " preAuthenticationDataDenied=true"
                 + " badChallengeDenied=true"
                 + " twoClientRelay=true"
@@ -434,6 +494,49 @@ final class IndependentHostTransportSessionSmoke {
             String lastEvent
     ) { }
 
+    private record HostedCommandReadout(
+            long commandId,
+            String command,
+            String value,
+            long snapshotVersion,
+            boolean ready,
+            String presence,
+            String chatState,
+            long acceptedHostedCommands,
+            long lastConnectionCommandId
+    ) { }
+
+    private record RosterEntryReadout(
+            String playerId,
+            boolean connected,
+            long connectionGeneration,
+            boolean ready,
+            String presence,
+            String chatState,
+            long acceptedHostedCommands,
+            long lastSeenMillis
+    ) { }
+
+    private record HostedRosterReadout(
+            long snapshotVersion,
+            String worldId,
+            int totalSessions,
+            int activeSessions,
+            boolean worldAuthority,
+            List<RosterEntryReadout> entries
+    ) {
+        HostedRosterReadout {
+            entries = List.copyOf(entries);
+        }
+
+        RosterEntryReadout entryFor(String playerId) {
+            for (RosterEntryReadout entry : entries) {
+                if (entry.playerId.equals(playerId)) return entry;
+            }
+            return null;
+        }
+    }
+
     private static final class ClientSession implements AutoCloseable {
         private final Socket socket;
         private final BufferedReader reader;
@@ -518,13 +621,25 @@ final class IndependentHostTransportSessionSmoke {
             writeLine(writer, line);
         }
 
-        String read() throws Exception {
-            return reader.readLine();
+        String readRelayFrame() throws Exception {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) return null;
+                if (line.startsWith("MECH|HOSTED_ROSTER_BEGIN|")) {
+                    consumeRoster(line);
+                    continue;
+                }
+                if (line.startsWith("MECH|")) {
+                    throw new AssertionError(
+                            "unexpected control frame while waiting for relay data: " + line);
+                }
+                return line;
+            }
         }
 
         SessionReadout sessionStatus() throws Exception {
             write("MECH|SESSION_STATUS");
-            String[] snapshot = requireCommand(reader.readLine(), "SESSION_SNAPSHOT");
+            String[] snapshot = readExpectedCommand("SESSION_SNAPSHOT");
             require(snapshot.length == 10,
                     "invalid SESSION_SNAPSHOT field count: "
                             + Arrays.toString(snapshot));
@@ -537,6 +652,89 @@ final class IndependentHostTransportSessionSmoke {
                     Long.parseLong(snapshot[7]),
                     Long.parseLong(snapshot[8]),
                     snapshot[9]);
+        }
+
+        HostedCommandReadout sessionCommand(
+                long commandId,
+                String command,
+                String value
+        ) throws Exception {
+            write("MECH|SESSION_COMMAND|" + commandId + "|" + command + "|" + value);
+            String[] accepted = readExpectedCommand("SESSION_COMMAND_ACCEPTED");
+            require(accepted.length == 11,
+                    "invalid SESSION_COMMAND_ACCEPTED field count: "
+                            + Arrays.toString(accepted));
+            readRoster();
+            return new HostedCommandReadout(
+                    Long.parseLong(accepted[2]),
+                    accepted[3],
+                    accepted[4],
+                    Long.parseLong(accepted[5]),
+                    Boolean.parseBoolean(accepted[6]),
+                    accepted[7],
+                    accepted[8],
+                    Long.parseLong(accepted[9]),
+                    Long.parseLong(accepted[10]));
+        }
+
+        HostedRosterReadout readRoster() throws Exception {
+            String line = reader.readLine();
+            require(line != null, "server closed before hosted roster broadcast");
+            require(line.startsWith("MECH|HOSTED_ROSTER_BEGIN|"),
+                    "expected hosted roster broadcast but received: " + line);
+            return consumeRoster(line);
+        }
+
+        private String[] readExpectedCommand(String command) throws Exception {
+            while (true) {
+                String line = reader.readLine();
+                require(line != null, "server closed before " + command + " response");
+                if (line.startsWith("MECH|HOSTED_ROSTER_BEGIN|")) {
+                    consumeRoster(line);
+                    continue;
+                }
+                return requireCommand(line, command);
+            }
+        }
+
+        private HostedRosterReadout consumeRoster(String beginLine) throws Exception {
+            String[] begin = requireCommand(beginLine, "HOSTED_ROSTER_BEGIN");
+            require(begin.length == 7,
+                    "invalid HOSTED_ROSTER_BEGIN field count: "
+                            + Arrays.toString(begin));
+            int total = Integer.parseInt(begin[4]);
+            ArrayList<RosterEntryReadout> entries = new ArrayList<>();
+            String previousPlayer = "";
+            for (int i = 0; i < total; i++) {
+                String[] entry = requireCommand(
+                        reader.readLine(), "HOSTED_ROSTER_ENTRY");
+                require(entry.length == 10,
+                        "invalid HOSTED_ROSTER_ENTRY field count: "
+                                + Arrays.toString(entry));
+                require(previousPlayer.compareTo(entry[2]) < 0,
+                        "hosted roster broadcast is not deterministically ordered");
+                previousPlayer = entry[2];
+                entries.add(new RosterEntryReadout(
+                        entry[2],
+                        Boolean.parseBoolean(entry[3]),
+                        Long.parseLong(entry[4]),
+                        Boolean.parseBoolean(entry[5]),
+                        entry[6],
+                        entry[7],
+                        Long.parseLong(entry[8]),
+                        Long.parseLong(entry[9])));
+            }
+            String[] end = requireCommand(
+                    reader.readLine(), "HOSTED_ROSTER_END");
+            require(begin[2].equals(end[2]),
+                    "hosted roster broadcast begin/end versions do not match");
+            return new HostedRosterReadout(
+                    Long.parseLong(begin[2]),
+                    begin[3],
+                    total,
+                    Integer.parseInt(begin[5]),
+                    Boolean.parseBoolean(begin[6]),
+                    entries);
         }
 
         @Override
