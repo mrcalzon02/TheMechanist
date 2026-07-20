@@ -3,7 +3,6 @@ package mechanist;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /** Owns separated runtime save/world directories for desktop single-player and server worlds. */
 final class ServerRuntimePaths {
@@ -18,6 +17,11 @@ final class ServerRuntimePaths {
     static Path serverWorldDir() { return serverRoot().resolve("worlds"); }
     static Path serverSlotDir() { return serverRoot().resolve("slots"); }
     static Path serverStateFile() { return serverRoot().resolve("server_state.properties"); }
+    static Path remoteSessionDir() { return serverRoot().resolve("remote-sessions"); }
+
+    static Path remoteSessionLedgerPath(String worldId) {
+        return remoteSessionDir().resolve(cleanWorldId(worldId) + ".sessions.properties");
+    }
 
     static Path saveRoot(SaveDomain domain) {
         return domain == SaveDomain.SERVER ? serverRoot() : singlePlayerRoot();
@@ -49,6 +53,7 @@ final class ServerRuntimePaths {
         Files.createDirectories(serverRoot());
         Files.createDirectories(serverWorldDir());
         Files.createDirectories(serverSlotDir());
+        Files.createDirectories(remoteSessionDir());
     }
 
     static String singlePlayerWorldReference(String worldId) {
@@ -60,12 +65,20 @@ final class ServerRuntimePaths {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " " + GameStorageManager.get().auditSummary() + " singlePlayer=" + singlePlayerRoot() + " server=" + serverRoot() + " serverState=" + serverStateFile() + " serverWorlds=" + serverWorldDir();
+        return "authority=" + VERSION
+                + " " + GameStorageManager.get().auditSummary()
+                + " singlePlayer=" + singlePlayerRoot()
+                + " server=" + serverRoot()
+                + " serverState=" + serverStateFile()
+                + " serverWorlds=" + serverWorldDir()
+                + " remoteSessions=" + remoteSessionDir();
     }
 
     private static String cleanWorldId(String worldId) {
         String id = worldId == null || worldId.isBlank() ? "unknown-world" : worldId.trim();
-        return id.replace('/', '_').replace('\\', '_');
+        String cleaned = id.replace('/', '_').replace('\\', '_');
+        cleaned = cleaned.replaceAll("[^A-Za-z0-9._-]", "_");
+        return cleaned.substring(0, Math.min(120, cleaned.length()));
     }
 
     private ServerRuntimePaths() { }
