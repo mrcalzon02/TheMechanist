@@ -170,6 +170,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         + " maxPlayers=" + config.maxPlayers()
                         + " handshake=" + IndependentHostWireProtocol.VERSION
                         + " access=RELAY_ONLY"
+                        + " rosterBroadcasts=authenticated-peers"
                         + " ledger={" + sessionLedger.auditSummary() + "}");
     }
 
@@ -218,12 +219,38 @@ final class NativeTcpRelayServer implements AutoCloseable {
 
     private void broadcast(String line, ClientConnection from) {
         if (line == null || line.length() > MAX_FRAME_BYTES) return;
+        broadcastLines(List.of(line), from);
+    }
+
+    private void broadcastLines(List<String> lines, ClientConnection from) {
+        if (lines == null || lines.isEmpty()) return;
+        List<ClientConnection> recipients;
         synchronized (clients) {
-            for (ClientConnection client : clients) {
-                if (client != from && client.protocol.relayAccessGranted()) {
+            recipients = clients.stream()
+                    .filter(client -> client != from)
+                    .filter(client -> client.protocol.relayAccessGranted())
+                    .toList();
+        }
+        for (ClientConnection client : recipients) {
+            for (String line : lines) {
+                if (line != null && line.length() <= MAX_FRAME_BYTES) {
                     client.write(line);
                 }
             }
+        }
+    }
+
+    private void broadcastHostedRoster(ClientConnection from) {
+        if (!running.get()) return;
+        try {
+            List<String> lines = IndependentHostWireProtocol.hostedRosterLines(
+                    sessionLedger.hostedSessionSnapshot());
+            broadcastLines(lines, from);
+        } catch (RuntimeException failure) {
+            DebugLog.error(
+                    "HOSTED_ROSTER_BROADCAST",
+                    "Could not publish the authoritative hosted-session roster.",
+                    failure);
         }
     }
 
@@ -274,6 +301,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
         private final IndependentHostWireProtocol protocol;
         private final PacketSequenceValidator sequenceValidator;
         private final AtomicBoolean open = new AtomicBoolean(true);
+        private final AtomicBoolean departureRosterPublished = new AtomicBoolean(false);
 
         ClientConnection(SocketChannel channel) throws IOException {
             this.channel = channel;
@@ -314,6 +342,10 @@ final class NativeTcpRelayServer implements AutoCloseable {
                     if (!protocol.relayAccessGranted() || line.startsWith("MECH|")) {
                         IndependentHostWireProtocol.Result result = protocol.accept(line);
                         for (String response : result.responses()) write(response);
+                        broadcastLines(result.broadcasts(), this);
+                        if (result.disconnect() && !result.broadcasts().isEmpty()) {
+                            departureRosterPublished.set(true);
+                        }
                         DebugLog.audit("NATIVE_RELAY_HANDSHAKE", protocol.auditSummary());
                         if (result.disconnect()) {
                             DebugLog.warn("NATIVE_RELAY_HANDSHAKE_DENIED", result.reason());
@@ -452,8 +484,14 @@ final class NativeTcpRelayServer implements AutoCloseable {
         }
 
         private void disconnectProtocol(String reason) {
+            boolean wasAuthenticated = protocol.relayAccessGranted();
             try {
                 protocol.disconnect(reason);
+                if (wasAuthenticated
+                        && running.get()
+                        && departureRosterPublished.compareAndSet(false, true)) {
+                    broadcastHostedRoster(this);
+                }
             } catch (RuntimeException failure) {
                 DebugLog.error(
                         "REMOTE_SESSION_PERSISTENCE",
