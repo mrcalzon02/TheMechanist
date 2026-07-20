@@ -25,6 +25,7 @@ FORBIDDEN_OPTIONS = (
     "-allowaccessmodification",
     "-repackageclasses",
     "-flattenpackagehierarchy",
+    "-printusage",
 )
 REQUIRED_ATTRIBUTES = (
     "Exceptions",
@@ -60,7 +61,11 @@ def option_present(lines: list[str], option: str) -> bool:
     return any(line == option or line.startswith(option + " ") for line in lines)
 
 
-def verify_policy(repo: pathlib.Path, role: str, relative: pathlib.PurePosixPath) -> dict[str, object]:
+def verify_policy(
+    repo: pathlib.Path,
+    role: str,
+    relative: pathlib.PurePosixPath,
+) -> dict[str, object]:
     path = repo.joinpath(*relative.parts)
     if not path.is_file():
         fail(f"missing {role} ProGuard policy: {relative.as_posix()}")
@@ -69,18 +74,30 @@ def verify_policy(repo: pathlib.Path, role: str, relative: pathlib.PurePosixPath
 
     for forbidden in FORBIDDEN_OPTIONS:
         if option_present(lines, forbidden):
-            fail(f"{relative}: forbidden or Java-17-unsafe option {forbidden}")
+            fail(f"{relative}: forbidden or policy-inconsistent option {forbidden}")
 
-    for required in ("-basedirectory", "-dontshrink", "-dontoptimize", "-useuniqueclassmembernames"):
+    for required in (
+        "-basedirectory",
+        "-dontshrink",
+        "-dontoptimize",
+        "-useuniqueclassmembernames",
+    ):
         if not option_present(lines, required):
             fail(f"{relative}: missing required option {required}")
 
     basedirectory = next(
-        (line.split(None, 1)[1].strip() for line in lines if line.startswith("-basedirectory ")),
+        (
+            line.split(None, 1)[1].strip()
+            for line in lines
+            if line.startswith("-basedirectory ")
+        ),
         "",
     )
     if basedirectory != "../../":
-        fail(f"{relative}: basedirectory must resolve config/proguard back to repository root")
+        fail(
+            f"{relative}: basedirectory must resolve config/proguard "
+            "back to repository root"
+        )
 
     attribute_line = next(
         (line for line in lines if line.startswith("-keepattributes ")),
@@ -94,7 +111,6 @@ def verify_policy(repo: pathlib.Path, role: str, relative: pathlib.PurePosixPath
     report_options = {
         "-printmapping": "mapping.txt",
         "-printseeds": "seeds.txt",
-        "-printusage": "usage.txt",
     }
     reports: dict[str, str] = {}
     for option, filename in report_options.items():
@@ -103,11 +119,9 @@ def verify_policy(repo: pathlib.Path, role: str, relative: pathlib.PurePosixPath
             for line in lines
             if line.startswith(option + " ")
         ]
-        if values != [expected_report_root + filename]:
-            fail(
-                f"{relative}: {option} must point exactly to "
-                f"{expected_report_root + filename}"
-            )
+        expected = expected_report_root + filename
+        if values != [expected]:
+            fail(f"{relative}: {option} must point exactly to {expected}")
         reports[option.removeprefix("-")] = values[0]
 
     if "-keepclasseswithmembers class * {" not in text:
@@ -135,17 +149,28 @@ def verify_policy(repo: pathlib.Path, role: str, relative: pathlib.PurePosixPath
             f"found {sorted(warning_lines)}"
         )
 
-    for namespace in ("io.netty.**", "org.lwjgl.**", "com.studiohartman.jamepad.**"):
+    for namespace in (
+        "io.netty.**",
+        "org.lwjgl.**",
+        "com.studiohartman.jamepad.**",
+    ):
         if f"-keep class {namespace} {{ *; }}" not in text:
-            fail(f"{relative}: reflected/native class preservation missing for {namespace}")
+            fail(
+                f"{relative}: reflected/native class preservation "
+                f"missing for {namespace}"
+            )
         if f"-keep interface {namespace} {{ *; }}" not in text:
-            fail(f"{relative}: reflected/native interface preservation missing for {namespace}")
+            fail(
+                f"{relative}: reflected/native interface preservation "
+                f"missing for {namespace}"
+            )
 
     return {
         "role": role,
         "path": relative.as_posix(),
         "stabilityMode": "obfuscate-only-no-shrink-no-optimize",
         "java17UnsafeOptionsAbsent": True,
+        "shrinkingOnlyOptionsAbsent": True,
         "stableMainClasses": list(REQUIRED_MAIN_CLASSES),
         "reports": reports,
         "narrowWarningSuppressions": sorted(warning_lines),
@@ -163,7 +188,10 @@ def verify(repo: pathlib.Path) -> dict[str, object]:
     for role, relative in POLICIES.items():
         expected_reference = "${project.basedir}/" + relative.as_posix()
         if expected_reference not in pom_text:
-            fail(f"pom.xml does not reference governed {role} policy {expected_reference}")
+            fail(
+                f"pom.xml does not reference governed {role} policy "
+                f"{expected_reference}"
+            )
         policies.append(verify_policy(repo, role, relative))
 
     forbidden_distribution_fragments = (
@@ -178,11 +206,15 @@ def verify(repo: pathlib.Path) -> dict[str, object]:
     builder_text = builder.read_text(encoding="utf-8")
     for fragment in forbidden_distribution_fragments:
         if re.search(
-            rf"copy_file\([^\n]*{re.escape(fragment)}|PLAYTEST_DOCS[^\n]*{re.escape(fragment)}",
+            rf"copy_file\([^\n]*{re.escape(fragment)}|"
+            rf"PLAYTEST_DOCS[^\n]*{re.escape(fragment)}",
             builder_text,
             re.IGNORECASE,
         ):
-            fail(f"portable builder appears to package protected ProGuard artifact {fragment}")
+            fail(
+                "portable builder appears to package protected ProGuard "
+                f"artifact {fragment}"
+            )
 
     return {
         "status": "verified",
