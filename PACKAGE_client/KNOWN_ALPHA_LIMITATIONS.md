@@ -30,20 +30,27 @@ This document describes current intentional limits. It is not a promise that eve
 
 - The headless executable can initialize separate server storage and bind an exact requested interface.
 - The native fallback is currently an authenticated bounded relay transport.
-- Before relay access, the client must complete identity submission, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge.
+- Before relay access, the supervised client must complete identity submission, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge.
 - Successful authentication grants only `RELAY_ONLY` access.
+- The supervised client owns handshake progression, resume-token custody, hosted-command and relay sequencing, canonical roster parsing, asynchronous control-frame dispatch, reconnect, and orderly shutdown.
+- The client exposes no movement, combat, inventory, world-snapshot, or gameplay-command API.
 - The host assigns a stable player ID and one server-issued resume token to each authenticated profile session.
 - A disconnected client can recover the same session only with the correct resume token. Invalid tokens and simultaneous duplicate attachment are rejected.
 - Immutable session snapshots report online state, connection generation, lifetime accepted relay-frame count, and the current connection sequence.
 - The host owns a deliberately narrow pre-world lobby authority. Authenticated clients may submit ordered readiness, presence, and chat-state commands and may request an immutable, deterministically ordered hosted-session roster.
+- Public hosted rosters contain only currently connected lobby members and are capped at 64 visible players. Offline identities retained for resume continuity remain private to the server.
+- The client roster authority rejects malformed, incomplete, backward-versioned, same-version-divergent, duplicate, out-of-order, offline-member, oversized, or world-authority-claiming roster groups.
 - Authenticated peers receive authoritative hosted-roster broadcasts when another client joins, changes readiness, presence, or chat-state, disconnects, or resumes.
 - Hosted-roster broadcasts are asynchronous `MECH` control frames. They are separate from `SEQ` relay payloads, do not consume relay sequence IDs, and do not grant gameplay command authority.
 - Hosted-session commands use a separate per-connection monotonic command sequence. Lifetime accepted-command accounting survives reconnect and a clean server-process restart.
 - Readiness, presence, and typing state describe only the living connection. They reset to not ready, offline, and idle when a client disconnects or when a ledger is restored after host restart.
-- Remote session ledgers are written atomically under the dedicated server save namespace. Reusable plaintext resume tokens are not stored; only SHA-256 token hashes are persisted.
+- Server-side remote session ledgers are written atomically under the dedicated server save namespace. Reusable plaintext resume tokens are not stored there; only SHA-256 token hashes are persisted.
+- The client must retain the reusable plaintext token to reconnect. It stores that credential only in the user's mutable profile namespace, using required atomic replacement and owner-only permissions where supported by the operating system.
+- Resume tokens are excluded from client status and diagnostic text. Testers should not copy, edit, publish, or attach the token-custody file to an ordinary defect report.
+- A missing, corrupted, wrong-profile, or wrong-server client token record fails closed. It does not silently create a replacement session for the same retained profile identity.
 - A clean server-process restart restores every known session offline. The original client token can then resume the same stable player identity, advance its connection generation, and preserve lifetime relay and hosted-command accounting.
-- Corrupted, unsupported-schema, or world-mismatched session ledgers fail closed and prevent that host world from binding until the ledger is repaired or deliberately removed.
-- Transport certification covers exact binding, denial of pre-authentication data, bad-challenge rejection, two-client authenticated connection, ordered frame relay, replay rejection, token-gated reconnect continuity, stale-attachment isolation, hosted-session command ordering, immutable roster delivery, authenticated peer roster broadcasts, separation of asynchronous control frames from relay data, clean host-restart continuity, hash-only persistence, corruption rejection, close, restart, and refusal to widen a failed explicit bind.
+- Corrupted, unsupported-schema, or world-mismatched server session ledgers fail closed and prevent that host world from binding until the ledger is repaired or deliberately removed.
+- Transport certification covers exact binding, denial of pre-authentication data, bad-challenge rejection, supervised client handshake ownership, protected client token custody, token-redacted diagnostics, two-client authenticated connection, ordered frame relay, replay rejection, token-gated reconnect continuity, stale-attachment isolation, hosted-session command ordering, canonical connected-only roster delivery, authenticated peer roster broadcasts, separation of asynchronous control frames from relay data, clean host-restart continuity, hash-only server persistence, corrupt client-token rejection, corrupt server-ledger rejection, close, restart, and refusal to widen a failed explicit bind.
 - The delivered base manifest currently represents the packaged base runtime rather than a complete remote mod-distribution service.
 - The independent host still does not initialize or own authoritative remote world state.
 - Movement, combat, inventory, position, world simulation, and hosted-world persistence commands are not accepted. Unsupported world verbs are rejected at the hosted-session boundary.
@@ -79,4 +86,4 @@ This document describes current intentional limits. It is not a promise that eve
 
 ## Support boundary
 
-The most useful reports include the exact generated diagnostic identity, reproduction steps, severity, and whether the problem occurs in a new save. Reports from modified packages may be retained locally but are not automatically treated as base-game defects.
+The most useful reports include the exact generated diagnostic identity, reproduction steps, severity, and whether the problem occurs in a new save. Reports from modified packages may be retained locally but are not automatically treated as base-game defects. Never attach or paste an independent-host resume-token custody file into an ordinary support report.
