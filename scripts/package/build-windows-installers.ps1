@@ -1,229 +1,286 @@
 [CmdletBinding()]
 param(
-    [string]$AppName = "The Mechanist Launcher",
-    [string]$AppVersion = "0.9.10ix",
-    [string]$Vendor = "The Mechanist Project",
+    [string]$DistributionRoot = $env:MECHANIST_DISTRIBUTION_ROOT,
     [string[]]$PackageTypes = @("app-image", "exe", "msi"),
+    [string]$OutputDir,
+    [string]$AppName = "The Mechanist",
+    [string]$Vendor = "The Mechanist Project",
     [bool]$PerUserInstall = $true,
-    [switch]$UseExistingJar,
     [switch]$RequireNativeInstallers,
-    [string]$InstallDirName = "TheMechanistLauncher",
+    [string]$InstallDirName = "TheMechanist",
     [string]$UpgradeUuid = "b7c10db2-4a4b-4bb2-9c13-93b6fb4d70df"
 )
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-$TargetDir = Join-Path $ProjectRoot "target"
-$DistDir = Join-Path $ProjectRoot "dist\installers\windows"
-$RuntimeDir = Join-Path $ProjectRoot "build\jlink\runtime-launcher-windows"
-$InputDir = Join-Path $ProjectRoot "build\package-input\windows-launcher"
-$AppImageDest = Join-Path $DistDir "app-image"
-$IconPath = Join-Path $ProjectRoot "client\assets\app\icons\the-mechanist.ico"
-$ModuleFile = Join-Path $ProjectRoot "packaging\jlink\client-modules.txt"
-$WindowsReadme = Join-Path $DistDir "WINDOWS_INSTALLERS_README.txt"
-$DependencyStageDir = Join-Path $TargetDir "package-runtime-deps"
-$ThinLauncherManifestDir = Join-Path $InputDir "manifests"
-$PackageCacheDir = Join-Path $InputDir "packages"
-$SupportLibDir = Join-Path $PackageCacheDir "support\lib"
-$ClientPackageDir = Join-Path $PackageCacheDir "client"
-$ServerPackageDir = Join-Path $PackageCacheDir "server"
-$LauncherPackageDir = Join-Path $PackageCacheDir "launcher"
-$LauncherJavaDir = Join-Path $ProjectRoot "launcher\java"
-$LauncherJarSource = Join-Path $LauncherJavaDir "target\mechanist-launcher-0.1.0.jar"
-$LauncherJar = Join-Path $LauncherPackageDir "MechanistLauncher.jar"
-$ClientAssetDir = Join-Path $ClientPackageDir "assets"
-$LauncherProfileSourceDir = Join-Path $ProjectRoot "launcher\profile-packages"
-$LauncherAssetStager = Join-Path $ProjectRoot "tools\launcher\stage_launcher_profile_assets.py"
-$PackagedLauncherJavaDir = Join-Path $ProjectRoot "PACKAGE_launcher\java"
-$PackagedLauncherProfileSourceDir = Join-Path $ProjectRoot "PACKAGE_launcher\profile-packages"
-if (-not (Test-Path -LiteralPath $LauncherJavaDir -PathType Container) -and (Test-Path -LiteralPath $PackagedLauncherJavaDir -PathType Container)) {
-    $LauncherJavaDir = $PackagedLauncherJavaDir
+if ([string]::IsNullOrWhiteSpace($OutputDir)) {
+    $OutputDir = Join-Path $ProjectRoot "dist\installers\windows"
 }
-if (-not (Test-Path -LiteralPath $LauncherProfileSourceDir -PathType Container) -and (Test-Path -LiteralPath $PackagedLauncherProfileSourceDir -PathType Container)) {
-    $LauncherProfileSourceDir = $PackagedLauncherProfileSourceDir
+
+function Require-Command([string]$Name) {
+    $command = Get-Command $Name -ErrorAction SilentlyContinue
+    if (-not $command) { throw "Required command '$Name' was not found on PATH." }
+    return $command.Source
 }
-$LauncherJarSource = Join-Path $LauncherJavaDir "target\mechanist-launcher-0.1.0.jar"
-$LwjglVersion = "3.4.1"
-$RequiredLwjglFiles = @(
-    "lwjgl-$LwjglVersion.jar",
-    "lwjgl-glfw-$LwjglVersion.jar",
-    "lwjgl-opengl-$LwjglVersion.jar",
-    "lwjgl-stb-$LwjglVersion.jar",
-    "lwjgl-$LwjglVersion-natives-windows.jar",
-    "lwjgl-glfw-$LwjglVersion-natives-windows.jar",
-    "lwjgl-opengl-$LwjglVersion-natives-windows.jar",
-    "lwjgl-stb-$LwjglVersion-natives-windows.jar"
+
+function Invoke-Checked {
+    param(
+        [string]$Command,
+        [string[]]$Arguments
+    )
+    Write-Host ("+ " + $Command + " " + ($Arguments -join " "))
+    & $Command @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Command failed with exit code $LASTEXITCODE`: $Command"
+    }
+}
+
+function Normalize-PackageType([string]$Type) {
+    switch ($Type.Trim().ToLowerInvariant()) {
+        "image" { return "app-image" }
+        "appimage" { return "app-image" }
+        "portable" { return "app-image" }
+        "app-image" { return "app-image" }
+        "exe" { return "exe" }
+        "msi" { return "msi" }
+        default { throw "Unsupported Windows package type '$Type'. Use app-image, exe, or msi." }
+    }
+}
+
+function Get-RelativePathPortable([string]$BasePath, [string]$ChildPath) {
+    $baseFull = [System.IO.Path]::GetFullPath($BasePath)
+    $childFull = [System.IO.Path]::GetFullPath($ChildPath)
+    if (-not $baseFull.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+        $baseFull += [System.IO.Path]::DirectorySeparatorChar
+    }
+    $baseUri = [System.Uri]::new($baseFull)
+    $childUri = [System.Uri]::new($childFull)
+    return [System.Uri]::UnescapeDataString(
+        $baseUri.MakeRelativeUri($childUri).ToString()
+    ).Replace("/", [System.IO.Path]::DirectorySeparatorChar)
+}
+
+$Python = Require-Command "python"
+$JPackage = Require-Command "jpackage"
+$Builder = Join-Path $ProjectRoot "ROOT_build\ci\build_runnable_distribution.py"
+$Verifier = Join-Path $ProjectRoot "ROOT_build\ci\verify_runnable_distribution.py"
+$Stager = Join-Path $ProjectRoot "ROOT_build\ci\stage_native_installer_payload.py"
+$ImageVerifier = Join-Path $ProjectRoot "ROOT_build\ci\verify_native_installer_image.py"
+
+foreach ($required in @($Builder, $Verifier, $Stager, $ImageVerifier)) {
+    if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
+        throw "Required release tool is missing: $required"
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($DistributionRoot)) {
+    Require-Command "mvn" | Out-Null
+    Require-Command "java" | Out-Null
+    $buildOutput = Join-Path $ProjectRoot "dist\releases-native"
+    Invoke-Checked $Python @(
+        $Builder,
+        "--repo", $ProjectRoot,
+        "--release-hardened",
+        "--output", $buildOutput
+    )
+    $candidate = Get-ChildItem -LiteralPath $buildOutput -Directory -Filter "TheMechanist-*-windows-*" |
+        Sort-Object Name |
+        Select-Object -Last 1
+    if (-not $candidate) {
+        throw "The canonical Windows distribution builder produced no windows-x64 directory."
+    }
+    $DistributionRoot = $candidate.FullName
+}
+
+$DistributionRoot = (Resolve-Path -LiteralPath $DistributionRoot).Path
+$ManifestPath = Join-Path $DistributionRoot "manifests\runtime-manifest.json"
+if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
+    throw "Canonical runtime manifest is missing: $ManifestPath"
+}
+$Identity = Get-Content -LiteralPath $ManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($Identity.platform -ne "windows-x64") {
+    throw "Windows native packaging requires windows-x64, found '$($Identity.platform)'."
+}
+if ($Identity.releaseHardened -ne $true) {
+    throw "Windows native packaging requires a release-hardened canonical distribution."
+}
+$Version = [string]$Identity.version
+$versionMatch = [regex]::Match($Version, "\d+(?:\.\d+){0,2}")
+$NativeVersion = if ($versionMatch.Success) { $versionMatch.Value } else { "0.0.0" }
+$Commit = [string]$Identity.commit
+
+Remove-Item -LiteralPath $OutputDir -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
+
+$PayloadDir = Join-Path $ProjectRoot "build\native-installer\windows\payload"
+Invoke-Checked $Python @(
+    $Verifier,
+    $DistributionRoot,
+    "--require-release-hardened",
+    "--report", (Join-Path $OutputDir "source-verification-windows-x64.json")
+)
+Invoke-Checked $Python @(
+    $Stager,
+    $DistributionRoot,
+    "--output", $PayloadDir,
+    "--expected-platform", "windows-x64",
+    "--report", (Join-Path $OutputDir "staging-windows-x64.json")
 )
 
-function Require-Command([string]$Name) { if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw "Required command '$Name' was not found on PATH." } }
-function Test-Command([string]$Name) { return [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
-function Normalize-PackageType([string]$Type) { $t = $Type.Trim().ToLowerInvariant(); switch ($t) { "image" { return "app-image" } "appimage" { return "app-image" } "portable" { return "app-image" } "app-image" { return "app-image" } "exe" { return "exe" } "msi" { return "msi" } default { throw "Unsupported Windows package type '$Type'. Use app-image, exe, or msi." } } }
-function Escape-Readme([string]$Value) { if ([string]::IsNullOrWhiteSpace($Value)) { return "(not produced)" }; return $Value }
-function Get-RelativePathPortable([string]$BasePath, [string]$ChildPath) { $baseFull = [System.IO.Path]::GetFullPath($BasePath); $childFull = [System.IO.Path]::GetFullPath($ChildPath); if (-not $baseFull.EndsWith([System.IO.Path]::DirectorySeparatorChar)) { $baseFull += [System.IO.Path]::DirectorySeparatorChar }; $baseUri = New-Object System.Uri($baseFull); $childUri = New-Object System.Uri($childFull); return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($childUri).ToString()).Replace("/", [System.IO.Path]::DirectorySeparatorChar) }
-function Test-ValidJar([string]$Path) { if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }; if ((Get-Item -LiteralPath $Path).Length -lt 128) { return $false }; $fs = [System.IO.File]::OpenRead($Path); try { $bytes = New-Object byte[] 4; $read = $fs.Read($bytes, 0, 4); return ($read -eq 4 -and $bytes[0] -eq 0x50 -and $bytes[1] -eq 0x4B -and $bytes[2] -eq 0x03 -and $bytes[3] -eq 0x04) } finally { if ($null -ne $fs) { $fs.Dispose() } } }
-function Get-Sha256([string]$Path) { return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant() }
-
-function Stage-RuntimeDependencies {
-    Require-Command mvn
-    Remove-Item -LiteralPath $DependencyStageDir -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $DependencyStageDir, $SupportLibDir | Out-Null
-    mvn -B -DincludeScope=runtime -Dmdep.copyPom=false "-DoutputDirectory=$DependencyStageDir" dependency:copy-dependencies
-    Copy-Item -LiteralPath (Join-Path $DependencyStageDir "*") -Destination $SupportLibDir -Recurse -Force
-    $missing = New-Object System.Collections.Generic.List[string]
-    foreach ($required in $RequiredLwjglFiles) {
-        $hits = @(Get-ChildItem -LiteralPath $SupportLibDir -Recurse -File -Filter $required -ErrorAction SilentlyContinue)
-        $valid = $false
-        foreach ($hit in $hits) { if (Test-ValidJar $hit.FullName) { $valid = $true; break } }
-        if (-not $valid) { $missing.Add($required) | Out-Null }
-    }
-    if ($missing.Count -gt 0) { throw "Packaged Windows LWJGL runtime is incomplete. Missing or invalid: $($missing -join ', ')" }
-    Write-Host "Launcher-managed Windows support libraries staged in $SupportLibDir"
+$RuntimeImage = Join-Path $DistributionRoot "runtime"
+$RuntimeJava = Join-Path $RuntimeImage "bin\java.exe"
+if (-not (Test-Path -LiteralPath $RuntimeJava -PathType Leaf)) {
+    throw "Canonical Windows runtime image is incomplete: $RuntimeImage"
 }
 
-function Stage-LauncherProfilePackages {
-    if (-not (Test-Path -LiteralPath $LauncherProfileSourceDir -PathType Container)) { throw "Missing launcher profile package source directory: $LauncherProfileSourceDir" }
-    $portraitSourceCandidates = @(
-        (Join-Path $ProjectRoot "PACKAGE_client\assets\graphics\packages\default_32\Protraits"),
-        (Join-Path $ProjectRoot "client\assets\graphics\packages\default_32\Protraits"),
-        (Join-Path $ProjectRoot "packages\client\assets\graphics\packages\default_32\Protraits")
+$IconPath = $null
+foreach ($candidate in @(
+    (Join-Path $ProjectRoot "PACKAGE_client\assets\app\icons\the-mechanist.ico"),
+    (Join-Path $ProjectRoot "client\assets\app\icons\the-mechanist.ico")
+)) {
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        $IconPath = $candidate
+        break
+    }
+}
+
+$ResourceDir = $null
+foreach ($candidate in @(
+    (Join-Path $ProjectRoot "PACKAGE_installer\windows\resources"),
+    (Join-Path $ProjectRoot "packaging\windows")
+)) {
+    if (Test-Path -LiteralPath $candidate -PathType Container) {
+        $ResourceDir = $candidate
+        break
+    }
+}
+
+$NormalizedTypes = New-Object System.Collections.Generic.List[string]
+foreach ($type in $PackageTypes) {
+    $normalized = Normalize-PackageType $type
+    if (-not $NormalizedTypes.Contains($normalized)) {
+        $NormalizedTypes.Add($normalized) | Out-Null
+    }
+}
+if ($NormalizedTypes.Count -eq 0) { $NormalizedTypes.Add("app-image") | Out-Null }
+
+$WixRequired = $NormalizedTypes.Contains("exe") -or $NormalizedTypes.Contains("msi")
+$WixAvailable = $true
+foreach ($tool in @("candle.exe", "light.exe")) {
+    if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
+        $WixAvailable = $false
+        Write-Warning "WiX Toolset executable '$tool' was not found. jpackage EXE/MSI generation requires WiX 3.x."
+    }
+}
+if ($WixRequired -and -not $WixAvailable -and $RequireNativeInstallers) {
+    throw "WiX Toolset 3.x is required because -RequireNativeInstallers was set."
+}
+
+$CommonArgs = @(
+    "--name", $AppName,
+    "--app-version", $NativeVersion,
+    "--vendor", $Vendor,
+    "--description", "The Mechanist limited-alpha launcher and verified package runtime",
+    "--runtime-image", $RuntimeImage,
+    "--input", $PayloadDir,
+    "--main-jar", "launcher/MechanistLauncher.jar",
+    "--main-class", "mechanist.launcher.MechanistLauncherApp"
+)
+if ($IconPath) { $CommonArgs += @("--icon", $IconPath) }
+if ($ResourceDir) { $CommonArgs += @("--resource-dir", $ResourceDir) }
+
+function Invoke-JPackage {
+    param(
+        [string]$Type,
+        [string]$Destination
     )
-    $portraitSource = $null
-    foreach ($candidate in $portraitSourceCandidates) {
-        if (Test-Path -LiteralPath $candidate -PathType Container) { $portraitSource = $candidate; break }
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    $arguments = @("--type", $Type) + $CommonArgs + @("--dest", $Destination)
+    if ($Type -in @("exe", "msi")) {
+        $arguments += @(
+            "--install-dir", $InstallDirName,
+            "--win-menu",
+            "--win-menu-group", "The Mechanist",
+            "--win-shortcut",
+            "--win-shortcut-prompt",
+            "--win-dir-chooser",
+            "--win-upgrade-uuid", $UpgradeUuid
+        )
+        if ($PerUserInstall) { $arguments += "--win-per-user-install" }
     }
-    if ($portraitSource -ne $null) {
-        $humanDest = Join-Path $LauncherProfileSourceDir "human-8x8\assets"
-        $specialDest = Join-Path $LauncherProfileSourceDir "special-portraits\assets"
-        New-Item -ItemType Directory -Force -Path $humanDest, $specialDest | Out-Null
-        $humans = @(Get-ChildItem -LiteralPath $portraitSource -File -Filter "Humans8x8_*.png" -ErrorAction SilentlyContinue)
-        $specials = @(Get-ChildItem -LiteralPath $portraitSource -File -Filter "Specialprofiles_*.png" -ErrorAction SilentlyContinue)
-        foreach ($file in $humans) { Copy-Item -LiteralPath $file.FullName -Destination $humanDest -Force }
-        foreach ($file in $specials) { Copy-Item -LiteralPath $file.FullName -Destination $specialDest -Force }
-        Write-Host "Launcher profile portrait payload staged: humans=$($humans.Count) specials=$($specials.Count) from $portraitSource"
-    } elseif (Test-Path -LiteralPath $LauncherAssetStager -PathType Leaf) {
-        Require-Command python
-        & python $LauncherAssetStager --project-root $ProjectRoot --asset-root client/assets --launcher-package-root $LauncherProfileSourceDir --allow-missing
-    } else {
-        Write-Warning "Launcher profile portrait payload source was not found; profile package manifests will be copied without PNG payload refresh."
-    }
-    $dest = Join-Path $LauncherPackageDir "profile-packages"
-    Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $LauncherPackageDir | Out-Null
-    Copy-Item -LiteralPath $LauncherProfileSourceDir -Destination $dest -Recurse -Force
-    Write-Host "Launcher profile packages staged in $dest"
+    Invoke-Checked $JPackage $arguments
 }
 
-function Stage-ClientRuntimeAssets {
-    $source = Join-Path $ProjectRoot "client\assets"
-    if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing client asset source directory: $source" }
-    Remove-Item -LiteralPath $ClientAssetDir -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Force -Path $ClientPackageDir | Out-Null
-    Copy-Item -LiteralPath $source -Destination $ClientPackageDir -Recurse -Force
-    Write-Host "Client runtime assets staged in $ClientAssetDir"
-    foreach ($name in @("config", "settings", "profiles", "modding")) {
-        $clientSource = Join-Path $ProjectRoot ("client\" + $name)
-        if (Test-Path -LiteralPath $clientSource) {
-            Remove-Item -LiteralPath (Join-Path $ClientPackageDir $name) -Recurse -Force -ErrorAction SilentlyContinue
-            Copy-Item -LiteralPath $clientSource -Destination $ClientPackageDir -Recurse -Force
+$AppImageDest = Join-Path $OutputDir "app-image"
+$AppImageRoot = Join-Path $AppImageDest $AppName
+$AppImageBuilt = $false
+
+function Build-AppImage {
+    Remove-Item -LiteralPath $AppImageDest -Recurse -Force -ErrorAction SilentlyContinue
+    Invoke-JPackage "app-image" $AppImageDest
+    if (-not (Test-Path -LiteralPath $AppImageRoot -PathType Container)) {
+        throw "jpackage did not produce expected app image: $AppImageRoot"
+    }
+    Invoke-Checked $Python @(
+        $ImageVerifier,
+        $AppImageRoot,
+        "--expected-platform", "windows-x64",
+        "--report", (Join-Path $OutputDir "native-image-verification-windows-x64.json")
+    )
+    $PortableZip = Join-Path $OutputDir "TheMechanist-$Version-windows-x64-native-app-image.zip"
+    Remove-Item -LiteralPath $PortableZip -Force -ErrorAction SilentlyContinue
+    Compress-Archive -LiteralPath $AppImageRoot -DestinationPath $PortableZip -CompressionLevel Optimal
+    $script:AppImageBuilt = $true
+}
+
+foreach ($type in $NormalizedTypes) {
+    switch ($type) {
+        "app-image" { Build-AppImage }
+        "exe" {
+            if ($WixAvailable) { Invoke-JPackage "exe" $OutputDir }
+            else { Write-Warning "EXE packaging skipped because WiX is unavailable." }
+        }
+        "msi" {
+            if ($WixAvailable) { Invoke-JPackage "msi" $OutputDir }
+            else { Write-Warning "MSI packaging skipped because WiX is unavailable." }
         }
     }
 }
+if (-not $AppImageBuilt) { Build-AppImage }
 
-function Write-ThinLauncherManifest {
-    param([string]$ClientJar, [string]$ServerJar)
-    New-Item -ItemType Directory -Force -Path $ThinLauncherManifestDir | Out-Null
-    $clientName = Split-Path -Leaf $ClientJar
-    $serverName = Split-Path -Leaf $ServerJar
-    $supportEntries = @(Get-ChildItem -LiteralPath $SupportLibDir -Recurse -File -Filter '*.jar' | Sort-Object FullName | ForEach-Object { $relative = (Get-RelativePathPortable $PackageCacheDir $_.FullName).Replace("\", "/"); "      {`"path`": `"$relative`", `"sha256`": `"$(Get-Sha256 $_.FullName)`", `"size`": $($_.Length)}" })
-    $supportJson = [string]::Join(",`n", $supportEntries)
-    @"
-{
-  "schema": 2,
-  "distribution_model": "installer-thin-launcher-client-server",
-  "version": "$AppVersion",
-  "platform": "windows-x64",
-  "launcher": {
-    "role": "installed-orchestrator",
-    "main_class": "mechanist.launcher.MechanistLauncherApp",
-    "profile_packages": "packages/launcher/profile-packages",
-    "owns": ["wrapper-detection", "fallback-profile-generation", "server-join-identity-bridge", "manifest-verification", "package-acquisition", "update", "rollback", "launch"]
-  },
-  "client": { "path": "packages/client/$clientName", "sha256": "$(Get-Sha256 $ClientJar)", "size": $((Get-Item -LiteralPath $ClientJar).Length), "main_class": "mechanist.TheMechanist", "launcher_main_class": "mechanist.launcher.ThinLauncherMain" },
-  "client_assets": { "root": "packages/client/assets", "layout": "client-owned loose runtime files" },
-  "server": { "path": "packages/server/$serverName", "sha256": "$(Get-Sha256 $ServerJar)", "size": $((Get-Item -LiteralPath $ServerJar).Length), "main_class": "mechanist.MechanistServerMain" },
-  "launcher_profile": { "fallback_human_portraits": "launcher-human-8x8-v1", "special_portraits": "launcher-special-portraits-v1", "special_name_detection": "launcher-special-name-detection-v1", "special_publish_status": "quarantined-until-cleared", "wrapper_detection": ["steam", "gog", "none"] },
-  "support_libraries": [
-$supportJson
-  ]
-}
-"@ | Set-Content -LiteralPath (Join-Path $ThinLauncherManifestDir "windows-runtime-manifest.json") -Encoding utf8
-}
+Get-ChildItem -LiteralPath $OutputDir -File -Recurse |
+    Where-Object { $_.Name -ne "SHA256SUMS.txt" } |
+    Sort-Object FullName |
+    Get-FileHash -Algorithm SHA256 |
+    ForEach-Object {
+        $relative = (Get-RelativePathPortable $OutputDir $_.Path).Replace("\", "/")
+        "$($_.Hash.ToLowerInvariant())  $relative"
+    } |
+    Set-Content -LiteralPath (Join-Path $OutputDir "SHA256SUMS.txt") -Encoding ascii
 
-Require-Command java; Require-Command javac; Require-Command jlink; Require-Command jpackage; Require-Command mvn
-if (-not $env:JAVA_HOME) { throw "JAVA_HOME is not set. Set JAVA_HOME to a Java 17 JDK before packaging." }
-$Jmods = Join-Path $env:JAVA_HOME "jmods"
-if (-not (Test-Path -LiteralPath $Jmods)) { throw "JAVA_HOME does not point to a full JDK with jmods: $env:JAVA_HOME" }
-if (-not (Test-Path -LiteralPath $ModuleFile)) { throw "Missing jlink module list: $ModuleFile" }
-$ClientModules = (Get-Content -LiteralPath $ModuleFile -Raw).Replace("`r", "").Replace("`n", "").Replace(" ", "")
-if ([string]::IsNullOrWhiteSpace($ClientModules)) { throw "Client module list was empty: $ModuleFile" }
-$normalizedTypes = New-Object System.Collections.Generic.List[string]
-foreach ($type in $PackageTypes) { $normal = Normalize-PackageType $type; if (-not $normalizedTypes.Contains($normal)) { $normalizedTypes.Add($normal) | Out-Null } }
-$WixRequired = $normalizedTypes.Contains("exe") -or $normalizedTypes.Contains("msi")
-$WixAvailable = $true
-foreach ($tool in @("candle.exe", "light.exe")) { if (-not (Test-Command $tool)) { $WixAvailable = $false; Write-Warning "WiX Toolset executable '$tool' was not found on PATH. jpackage EXE/MSI generation requires WiX 3.x on Windows." } }
-if ($WixRequired -and -not $WixAvailable -and $RequireNativeInstallers) { throw "WiX Toolset 3.x is required for EXE/MSI generation and -RequireNativeInstallers was set. Install WiX and retry." }
-Set-Location $ProjectRoot
-Remove-Item -LiteralPath $DistDir, $RuntimeDir, $InputDir -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $DistDir, $InputDir, $AppImageDest, $ClientPackageDir, $ServerPackageDir, $SupportLibDir, $LauncherPackageDir | Out-Null
-if (-not $UseExistingJar) { & (Join-Path $ProjectRoot "scripts\security\generate-sensitive-strings.ps1"); mvn -B -DskipTests package }
-Push-Location $LauncherJavaDir
-try { mvn -B -DskipTests package } finally { Pop-Location }
-$ClientJarSource = Join-Path $TargetDir "TheMechanist-all.jar"
-$ServerJarSource = Join-Path $TargetDir "TheMechanistServer-all.jar"
-$FallbackClientJar = Join-Path $ProjectRoot "TheMechanist.jar"
-$FallbackServerJar = Join-Path $ProjectRoot "TheMechanistServer.jar"
-if (-not (Test-Path -LiteralPath $ClientJarSource) -and $UseExistingJar -and (Test-Path -LiteralPath $FallbackClientJar)) { $ClientJarSource = $FallbackClientJar }
-if (-not (Test-Path -LiteralPath $ServerJarSource) -and $UseExistingJar -and (Test-Path -LiteralPath $FallbackServerJar)) { $ServerJarSource = $FallbackServerJar }
-if (-not (Test-Path -LiteralPath $ClientJarSource)) { throw "No packageable client jar was found. Expected $ClientJarSource, or use -UseExistingJar with $FallbackClientJar present." }
-if (-not (Test-Path -LiteralPath $ServerJarSource)) { throw "No packageable server jar was found. Expected $ServerJarSource, or use -UseExistingJar with $FallbackServerJar present." }
-if (-not (Test-Path -LiteralPath $LauncherJarSource)) { throw "No packageable launcher jar was found. Expected $LauncherJarSource." }
-$ClientJar = Join-Path $ClientPackageDir "TheMechanist.jar"
-$ServerJar = Join-Path $ServerPackageDir "TheMechanistServer.jar"
-Copy-Item -LiteralPath $ClientJarSource -Destination $ClientJar -Force
-Copy-Item -LiteralPath $ServerJarSource -Destination $ServerJar -Force
-Copy-Item -LiteralPath $LauncherJarSource -Destination $LauncherJar -Force
-Stage-RuntimeDependencies
-Stage-ClientRuntimeAssets
-Stage-LauncherProfilePackages
-Write-ThinLauncherManifest -ClientJar $ClientJar -ServerJar $ServerJar
-if (Test-Path -LiteralPath $IconPath) { Copy-Item -LiteralPath $IconPath -Destination (Join-Path $InputDir "the-mechanist.ico") -Force } else { Write-Warning "Windows icon was not found at $IconPath. Installer will be produced without a custom icon." }
-& jlink --module-path $Jmods --add-modules $ClientModules --output $RuntimeDir --strip-debug --no-man-pages --no-header-files --strip-native-commands --compress=2
-function Invoke-JPackage([string]$PackageType, [string]$Destination) { New-Item -ItemType Directory -Force -Path $Destination | Out-Null; $args = @("--type", $PackageType, "--name", $AppName, "--app-version", $AppVersion, "--vendor", $Vendor, "--description", "The Mechanist thin launcher and package orchestrator", "--runtime-image", $RuntimeDir, "--input", $InputDir, "--main-jar", "packages/launcher/MechanistLauncher.jar", "--main-class", "mechanist.launcher.MechanistLauncherApp", "--dest", $Destination, "--resource-dir", (Join-Path $ProjectRoot "packaging\windows")); if (Test-Path -LiteralPath $IconPath) { $args += @("--icon", $IconPath) }; if ($PackageType -eq "exe" -or $PackageType -eq "msi") { $args += @("--install-dir", $InstallDirName, "--win-menu", "--win-menu-group", "The Mechanist", "--win-shortcut", "--win-shortcut-prompt", "--win-dir-chooser", "--win-upgrade-uuid", $UpgradeUuid); if ($PerUserInstall) { $args += @("--win-per-user-install") } }; Write-Host "Running jpackage --type $PackageType ..."; & jpackage @args }
-$Produced = New-Object System.Collections.Generic.List[string]
-foreach ($type in $normalizedTypes) { if ($type -eq "app-image") { Invoke-JPackage "app-image" $AppImageDest; $imageRoot = Join-Path $AppImageDest $AppName; if (-not (Test-Path -LiteralPath $imageRoot)) { throw "jpackage app-image did not produce the expected application image folder: $imageRoot" }; $portableZip = Join-Path $DistDir ("TheMechanist_launcher_windows_portable_{0}.zip" -f $AppVersion); Remove-Item -LiteralPath $portableZip -Force -ErrorAction SilentlyContinue; Compress-Archive -LiteralPath $imageRoot -DestinationPath $portableZip -Force; $Produced.Add($portableZip) | Out-Null; $exePath = Join-Path $imageRoot ("{0}.exe" -f $AppName); if (Test-Path -LiteralPath $exePath) { $Produced.Add($exePath) | Out-Null } } elseif ($type -eq "exe" -or $type -eq "msi") { if (-not $WixAvailable) { Write-Warning "Skipping $type installer because WiX Toolset 3.x was not found. Portable app-image output remains usable for testing."; continue }; Invoke-JPackage $type $DistDir; Get-ChildItem -LiteralPath $DistDir -File -Filter "*.$type" | ForEach-Object { $Produced.Add($_.FullName) | Out-Null } } }
-Get-ChildItem -LiteralPath $DistDir -File -Recurse | Where-Object { $_.Name -ne "SHA256SUMS.txt" } | Sort-Object FullName | Get-FileHash -Algorithm SHA256 | ForEach-Object { $relative = (Get-RelativePathPortable $DistDir $_.Path).Replace("\", "/"); "$($_.Hash.ToLowerInvariant())  $relative" } | Set-Content -LiteralPath (Join-Path $DistDir "SHA256SUMS.txt") -Encoding ascii
-$portableLine = Escape-Readme ((Get-ChildItem -LiteralPath $DistDir -File -Filter "TheMechanist_launcher_windows_portable_*.zip" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName)
-$exeLine = Escape-Readme ((Get-ChildItem -LiteralPath $DistDir -File -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName)
-$msiLine = Escape-Readme ((Get-ChildItem -LiteralPath $DistDir -File -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName)
 @"
-The Mechanist Windows installer outputs
-======================================
+The Mechanist limited-alpha Windows outputs
+============================================
 
-Version: $AppVersion
+Version: $Version
+Native package version: $NativeVersion
+Commit: $Commit
+Platform: windows-x64
+Release hardened: true
+Canonical source distribution: $DistributionRoot
 Distribution model: installer -> thin launcher -> client -> server
-Launcher entrypoint: mechanist.launcher.MechanistLauncherApp
-Package identity manifest: manifests/windows-runtime-manifest.json
-Launcher-managed packages: packages/client, packages/server, packages/support/lib, packages/launcher/profile-packages
-Client runtime assets: packages/client/assets
-Wrapper detection: Steam/GOG/none, evaluated by thin launcher before client start
-Fallback profile generation: launcher-owned, hash-based
-Server join identity bridge: launcher-owned profile hash written before client start
-Launcher portrait/name packages: human 8x8, special portrait manifest, special name detection manifest; special mappings are quarantined until cleared
-LWJGL/support libraries: staged into packages/support/lib at package-build time
-Game-launch dependency downloads: forbidden
 
-Outputs:
-- Portable launcher app-image zip: $portableLine
-- EXE installer: $exeLine
-- MSI installer: $msiLine
-"@ | Set-Content -LiteralPath $WindowsReadme -Encoding utf8
+Every native output in this directory was composed from the verified canonical
+release staging tree. The native app image was reopened and checked against the
+launcher manifest after jpackage completed. Mutable saves, profiles, settings,
+logs, cache, mods, and exports remain outside the installed application payload.
+
+Recommended validation order:
+1. Verify SHA256SUMS.txt.
+2. Extract the native app-image ZIP and start The Mechanist.exe.
+3. Confirm launcher package verification succeeds.
+4. Run a single-player save/resume test.
+5. Run the independent host bind and packaged client connection tests.
+"@ | Set-Content -LiteralPath (Join-Path $OutputDir "WINDOWS_INSTALLERS_README.txt") -Encoding UTF8
+
+Write-Host "Windows native package convergence complete: $OutputDir"
