@@ -37,11 +37,18 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must acknowledge the packaged headless server");
         require(separation.contains("singlePlayerInternalServer=supervised-in-process"),
                 "runtime separation must report the supervised local internal host");
+        require(separation.contains("independentHostSessionLedger=server-owned-process-local"),
+                "runtime separation must report the remote session ledger");
+        require(separation.contains("independentHostReconnect=resume-token-smoke-gated"),
+                "runtime separation must report reconnect continuity");
+        require(separation.contains("independentHostWorldAuthority=not-implemented"),
+                "runtime separation must keep remote world authority closed");
         require(separation.contains("remoteGameplaySession=not-yet-certified"),
                 "runtime separation must not overclaim independent-host gameplay certification");
         require(SinglePlayerInternalHostSupervisor.auditSummary().contains("shutdown=supervised"),
                 "internal-host authority must own shutdown");
 
+        RemoteSessionLedgerAuthoritySmoke.main(args);
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
 
