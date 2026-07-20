@@ -25,14 +25,15 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Supervised independent-host client connection for the limited-alpha control plane.
  *
- * This authority owns handshake progression, local resume-token custody,
- * hosted-command sequencing, canonical roster assembly, asynchronous control
- * versus relay dispatch, and orderly shutdown. It intentionally exposes no
- * movement, combat, inventory, world-snapshot, or gameplay command API.
+ * This is the single client authority for handshake progression, local resume-token
+ * custody, hosted-command sequencing, canonical roster assembly, control/relay
+ * dispatch, failure state, and orderly shutdown. It intentionally exposes no
+ * movement, combat, inventory, world-snapshot, or gameplay-command API.
  */
 final class IndependentHostClientSupervisor implements AutoCloseable {
-    static final String VERSION = "independent-host-client-supervisor-1";
+    static final String VERSION = "independent-host-client-supervisor-2";
     private static final int MAX_RELAY_PAYLOAD_CHARS = 60 * 1024;
+    private static final int MAX_RELAY_INBOX = 1024;
 
     enum State {
         NEW,
@@ -49,12 +50,13 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     private final HostedRosterClientAuthority rosterAuthority =
             new HostedRosterClientAuthority();
     private final BlockingQueue<RelayFrame> relayInbox =
-            new LinkedBlockingQueue<>(1024);
+            new LinkedBlockingQueue<>(MAX_RELAY_INBOX);
     private final AtomicLong relaySequence = new AtomicLong();
     private final AtomicLong hostedCommandSequence = new AtomicLong();
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicReference<CompletableFuture<HostedCommandAck>> pendingCommand =
+    private final AtomicReference<PendingCommand> pendingCommand =
             new AtomicReference<>();
+    private final Object lifecycleLock = new Object();
     private final Object writeLock = new Object();
     private final Object commandLock = new Object();
     private final Object rosterSignal = new Object();
@@ -67,10 +69,10 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     private volatile long rosterEvents;
     private volatile boolean resumeTokenPersisted;
     private volatile String tokenPersistenceFailure = "none";
-    private Socket socket;
-    private BufferedReader reader;
-    private BufferedWriter writer;
-    private Thread readerThread;
+    private volatile Socket socket;
+    private volatile BufferedReader reader;
+    private volatile BufferedWriter writer;
+    private volatile Thread readerThread;
 
     IndependentHostClientSupervisor(
             IndependentHostResumeTokenStore tokenStore,
@@ -82,66 +84,65 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         this.profileIdentity = safeProfile(profileIdentity);
     }
 
-    synchronized ConnectionIdentity connect(
+    ConnectionIdentity connect(
             String host,
             int port,
             Duration timeout
     ) throws Exception {
-        if (state != State.NEW) {
-            throw new IllegalStateException(
-                    "client supervisor can connect only from NEW state; current="
-                            + state);
-        }
         String useHost = safeHost(host);
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("port must be between 1 and 65535");
         }
         Duration useTimeout = boundedTimeout(timeout);
-        state = State.CONNECTING;
-        lastEvent = "connecting to " + useHost + ":" + port;
-        Optional<IndependentHostResumeTokenStore.Record> stored =
-                tokenStore.load(serverKey, profileIdentity);
+        synchronized (lifecycleLock) {
+            if (state != State.NEW) {
+                throw new IllegalStateException(
+                        "client supervisor can connect only from NEW state; current="
+                                + state);
+            }
+            state = State.CONNECTING;
+            lastEvent = "connecting to " + useHost + ":" + port;
+        }
+
         try {
-            socket = new Socket();
+            Optional<IndependentHostResumeTokenStore.Record> stored =
+                    tokenStore.load(serverKey, profileIdentity);
+            Socket mountedSocket = new Socket();
+            socket = mountedSocket;
             int timeoutMillis = Math.toIntExact(useTimeout.toMillis());
-            socket.connect(new InetSocketAddress(useHost, port), timeoutMillis);
-            socket.setSoTimeout(timeoutMillis);
+            mountedSocket.connect(
+                    new InetSocketAddress(useHost, port),
+                    timeoutMillis);
+            mountedSocket.setSoTimeout(timeoutMillis);
             reader = new BufferedReader(new InputStreamReader(
-                    socket.getInputStream(), StandardCharsets.UTF_8));
+                    mountedSocket.getInputStream(), StandardCharsets.UTF_8));
             writer = new BufferedWriter(new OutputStreamWriter(
-                    socket.getOutputStream(), StandardCharsets.UTF_8));
+                    mountedSocket.getOutputStream(), StandardCharsets.UTF_8));
 
             ConnectionIdentity connected = completeHandshake(stored);
             identity = connected;
-            try {
-                tokenStore.save(
-                        serverKey,
-                        profileIdentity,
-                        connected.playerId(),
-                        connected.resumeToken(),
-                        connected.connectionGeneration());
-                resumeTokenPersisted = true;
-                state = State.AUTHENTICATED;
-            } catch (IOException custodyFailure) {
-                resumeTokenPersisted = false;
-                tokenPersistenceFailure = safeReason(custodyFailure.getMessage());
-                state = State.AUTHENTICATED_VOLATILE_TOKEN;
-            }
+            mountTokenCustody(connected);
 
-            socket.setSoTimeout(0);
+            mountedSocket.setSoTimeout(0);
             running.set(true);
-            readerThread = new Thread(
+            Thread mountedReader = new Thread(
                     this::readLoop,
                     "mechanist-independent-host-client-reader");
-            readerThread.setDaemon(true);
-            readerThread.start();
+            mountedReader.setDaemon(true);
+            readerThread = mountedReader;
+            mountedReader.start();
+
             requestRosterRefresh(useTimeout);
             lastEvent = "authenticated relay-only session mounted";
             return connected;
-        } catch (Throwable connectFailure) {
+        } catch (Exception connectFailure) {
             fail(connectFailure, "connection or handshake failed");
             closeTransportQuietly();
             throw connectFailure;
+        } catch (Error fatalFailure) {
+            fail(fatalFailure, "connection or handshake failed");
+            closeTransportQuietly();
+            throw fatalFailure;
         }
     }
 
@@ -155,23 +156,27 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
 
     HostedCommandAck setPresence(String presence, Duration timeout)
             throws Exception {
-        String value = enumToken(
-                presence,
-                "presence",
-                "available",
-                "away",
-                "busy");
-        return sendHostedCommand("PRESENCE", value, timeout);
+        return sendHostedCommand(
+                "PRESENCE",
+                enumToken(
+                        presence,
+                        "presence",
+                        "available",
+                        "away",
+                        "busy"),
+                timeout);
     }
 
     HostedCommandAck setChatState(String chatState, Duration timeout)
             throws Exception {
-        String value = enumToken(
-                chatState,
-                "chat state",
-                "idle",
-                "typing");
-        return sendHostedCommand("CHAT_STATE", value, timeout);
+        return sendHostedCommand(
+                "CHAT_STATE",
+                enumToken(
+                        chatState,
+                        "chat state",
+                        "idle",
+                        "typing"),
+                timeout);
     }
 
     HostedCommandAck sendHostedCommand(
@@ -188,10 +193,14 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 "chat_state").toUpperCase(Locale.ROOT);
         String useValue = safeControlValue(value);
         Duration useTimeout = boundedTimeout(timeout);
+
         synchronized (commandLock) {
             long commandId = hostedCommandSequence.getAndIncrement();
-            CompletableFuture<HostedCommandAck> future = new CompletableFuture<>();
-            if (!pendingCommand.compareAndSet(null, future)) {
+            PendingCommand pending = new PendingCommand(
+                    commandId,
+                    useCommand,
+                    new CompletableFuture<>());
+            if (!pendingCommand.compareAndSet(null, pending)) {
                 throw new IllegalStateException(
                         "another hosted command is already awaiting acknowledgement");
             }
@@ -200,24 +209,22 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                         + "|" + useCommand + "|" + useValue);
                 HostedCommandAck acknowledgement;
                 try {
-                    acknowledgement = future.get(
+                    acknowledgement = pending.future().get(
                             useTimeout.toMillis(),
                             TimeUnit.MILLISECONDS);
                 } catch (java.util.concurrent.TimeoutException timedOut) {
-                    throw new TimeoutException(
+                    TimeoutException timeoutFailure = new TimeoutException(
                             "timed out waiting for hosted-command acknowledgement");
-                }
-                if (acknowledgement.commandId() != commandId
-                        || !useCommand.equals(acknowledgement.command())) {
-                    throw new IllegalStateException(
-                            "hosted-command acknowledgement does not match its request");
+                    fail(timeoutFailure, "hosted-command acknowledgement timed out");
+                    closeTransportQuietly();
+                    throw timeoutFailure;
                 }
                 waitForRosterVersion(
                         acknowledgement.snapshotVersion(),
                         useTimeout);
                 return acknowledgement;
             } finally {
-                pendingCommand.compareAndSet(future, null);
+                pendingCommand.compareAndSet(pending, null);
             }
         }
     }
@@ -234,8 +241,14 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                     "relay payload is blank, oversized, multiline, or a control frame");
         }
         long sequence = relaySequence.getAndIncrement();
-        writeLine("SEQ|" + sequence + "|" + use);
-        return sequence;
+        try {
+            writeLine("SEQ|" + sequence + "|" + use);
+            return sequence;
+        } catch (IOException failure) {
+            fail(failure, "relay write failed");
+            closeTransportQuietly();
+            throw failure;
+        }
     }
 
     RelayFrame pollRelay(Duration timeout) throws InterruptedException {
@@ -248,7 +261,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     HostedRosterClientAuthority.Snapshot requestRosterRefresh(
             Duration timeout
     ) throws Exception {
-        ensureAuthenticatedOrConnectingReader();
+        ensureAuthenticated();
         Duration useTimeout = boundedTimeout(timeout);
         long before;
         synchronized (rosterSignal) {
@@ -259,12 +272,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 + TimeUnit.MILLISECONDS.toNanos(useTimeout.toMillis());
         synchronized (rosterSignal) {
             while (rosterEvents <= before) {
-                Throwable currentFailure = failure;
-                if (currentFailure != null) {
-                    throw new IOException(
-                            "independent-host reader failed",
-                            currentFailure);
-                }
+                throwIfReaderFailed("independent-host reader failed");
                 long remaining = deadline - System.nanoTime();
                 if (remaining <= 0L) {
                     throw new TimeoutException(
@@ -327,6 +335,24 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 + " worldAuthority=false";
     }
 
+    private void mountTokenCustody(ConnectionIdentity connected) {
+        try {
+            tokenStore.save(
+                    serverKey,
+                    profileIdentity,
+                    connected.playerId(),
+                    connected.resumeToken(),
+                    connected.connectionGeneration());
+            resumeTokenPersisted = true;
+            tokenPersistenceFailure = "none";
+            state = State.AUTHENTICATED;
+        } catch (IOException custodyFailure) {
+            resumeTokenPersisted = false;
+            tokenPersistenceFailure = safeReason(custodyFailure.getMessage());
+            state = State.AUTHENTICATED_VOLATILE_TOKEN;
+        }
+    }
+
     private ConnectionIdentity completeHandshake(
             Optional<IndependentHostResumeTokenStore.Record> stored
     ) throws Exception {
@@ -339,11 +365,13 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             throw new SecurityException(
                     "server attempted to grant an unsupported access class");
         }
+
         String resumeToken = stored
                 .map(IndependentHostResumeTokenStore.Record::resumeToken)
                 .orElse("");
         writeLine("MECH|IDENTITY|" + profileIdentity
                 + (resumeToken.isBlank() ? "" : "|" + resumeToken));
+
         String[] manifest = requireCommand(
                 readRequired("MANIFEST"),
                 "MANIFEST",
@@ -354,6 +382,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                     "server manifest fingerprint is not SHA-256");
         }
         writeLine("MECH|ACQUIRED|" + fingerprint);
+
         String[] restart = requireCommand(
                 readRequired("RESTART_REQUIRED"),
                 "RESTART_REQUIRED",
@@ -363,6 +392,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                     "server restart requirement changed the manifest fingerprint");
         }
         writeLine("MECH|RESTARTED|" + fingerprint);
+
         String[] challenge = requireCommand(
                 readRequired("CHALLENGE"),
                 "CHALLENGE",
@@ -377,6 +407,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 challenge[3],
                 challenge[4]);
         writeLine("MECH|CHALLENGE_RESPONSE|" + digest);
+
         String accessLine = readRequired("ACCESS");
         if (accessLine.startsWith("MECH|DENIED|")) {
             throw new SecurityException(
@@ -393,6 +424,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             throw new SecurityException(
                     "server returned a different profile identity");
         }
+
         String playerId = access[6];
         String issuedToken = access[7].toLowerCase(Locale.ROOT);
         if (!playerId.matches("remote-[a-f0-9]{20}")) {
@@ -408,6 +440,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 access[9],
                 "access snapshot version");
         boolean resumed = strictBoolean(access[10], "resumed flag");
+
         if (stored.isPresent()) {
             IndependentHostResumeTokenStore.Record previous = stored.get();
             if (!previous.playerId().equals(playerId)) {
@@ -422,6 +455,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             throw new SecurityException(
                     "server reported a resumed session without a local resume token");
         }
+
         return new ConnectionIdentity(
                 serverKey,
                 profileIdentity,
@@ -436,11 +470,15 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     private void readLoop() {
         try {
             String line;
-            while (running.get() && (line = reader.readLine()) != null) {
+            BufferedReader mountedReader = reader;
+            if (mountedReader == null) {
+                throw new IOException("independent-host reader is not mounted");
+            }
+            while (running.get() && (line = mountedReader.readLine()) != null) {
                 if (line.startsWith("MECH|HOSTED_ROSTER_BEGIN|")) {
                     HostedRosterClientAuthority.Snapshot roster =
                             HostedRosterStreamReader.read(
-                                    reader,
+                                    mountedReader,
                                     line,
                                     rosterAuthority);
                     synchronized (rosterSignal) {
@@ -452,14 +490,7 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                     continue;
                 }
                 if (line.startsWith("MECH|SESSION_COMMAND_ACCEPTED|")) {
-                    HostedCommandAck acknowledgement = parseCommandAck(line);
-                    CompletableFuture<HostedCommandAck> pending =
-                            pendingCommand.get();
-                    if (pending == null) {
-                        throw new IOException(
-                                "unsolicited hosted-command acknowledgement");
-                    }
-                    pending.complete(acknowledgement);
+                    completePendingCommand(parseCommandAck(line));
                     continue;
                 }
                 if (line.startsWith("MECH|SESSION_SNAPSHOT|")) {
@@ -497,10 +528,9 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
             }
         } finally {
             running.set(false);
-            CompletableFuture<HostedCommandAck> pending =
-                    pendingCommand.getAndSet(null);
-            if (pending != null && !pending.isDone()) {
-                pending.completeExceptionally(
+            PendingCommand pending = pendingCommand.getAndSet(null);
+            if (pending != null && !pending.future().isDone()) {
+                pending.future().completeExceptionally(
                         failure == null
                                 ? new IOException("client session closed")
                                 : failure);
@@ -512,9 +542,27 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
     }
 
+    private void completePendingCommand(HostedCommandAck acknowledgement)
+            throws IOException {
+        PendingCommand pending = pendingCommand.get();
+        if (pending == null) {
+            throw new IOException(
+                    "unsolicited hosted-command acknowledgement");
+        }
+        if (acknowledgement.commandId() != pending.commandId()
+                || !pending.command().equals(acknowledgement.command())) {
+            throw new IOException(
+                    "hosted-command acknowledgement does not match its request");
+        }
+        pending.future().complete(acknowledgement);
+    }
+
     private HostedCommandAck parseCommandAck(String line)
             throws IOException {
-        String[] fields = requireCommand(line, "SESSION_COMMAND_ACCEPTED", 11);
+        String[] fields = requireCommand(
+                line,
+                "SESSION_COMMAND_ACCEPTED",
+                11);
         return new HostedCommandAck(
                 nonNegativeLong(fields[2], "hosted command id"),
                 fields[3],
@@ -548,7 +596,8 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
         int second = line.indexOf('|', 4);
         if (second < 0) {
-            throw new IOException("relay frame is missing its payload separator");
+            throw new IOException(
+                    "relay frame is missing its payload separator");
         }
         long sequence = nonNegativeLong(
                 line.substring(4, second),
@@ -574,11 +623,8 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 HostedRosterClientAuthority.Snapshot roster =
                         rosterAuthority.latest();
                 if (roster != null && roster.version() >= minimumVersion) return;
-                if (failure != null) {
-                    throw new IOException(
-                            "client reader failed before roster confirmation",
-                            failure);
-                }
+                throwIfReaderFailed(
+                        "client reader failed before roster confirmation");
                 long remaining = deadline - System.nanoTime();
                 if (remaining <= 0L) {
                     throw new TimeoutException(
@@ -589,20 +635,40 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
     }
 
+    private void throwIfReaderFailed(String message) throws IOException {
+        Throwable currentFailure = failure;
+        if (currentFailure != null) {
+            throw new IOException(message, currentFailure);
+        }
+        if (!running.get()
+                && state != State.CONNECTING
+                && state != State.AUTHENTICATED
+                && state != State.AUTHENTICATED_VOLATILE_TOKEN) {
+            throw new IOException(
+                    "independent-host reader is not running");
+        }
+    }
+
     private void writeLine(String line) throws IOException {
-        BufferedWriter useWriter = writer;
-        if (useWriter == null) {
-            throw new IOException("independent-host writer is not mounted");
+        BufferedWriter mountedWriter = writer;
+        if (mountedWriter == null) {
+            throw new IOException(
+                    "independent-host writer is not mounted");
         }
         synchronized (writeLock) {
-            useWriter.write(line);
-            useWriter.newLine();
-            useWriter.flush();
+            mountedWriter.write(line);
+            mountedWriter.newLine();
+            mountedWriter.flush();
         }
     }
 
     private String readRequired(String expected) throws IOException {
-        String line = reader.readLine();
+        BufferedReader mountedReader = reader;
+        if (mountedReader == null) {
+            throw new IOException(
+                    "independent-host reader is not mounted");
+        }
+        String line = mountedReader.readLine();
         if (line == null) {
             throw new IOException("server closed before " + expected);
         }
@@ -610,11 +676,12 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
     }
 
     private void ensureAuthenticated() {
-        if (state != State.AUTHENTICATED
-                && state != State.AUTHENTICATED_VOLATILE_TOKEN) {
+        State current = state;
+        if (current != State.AUTHENTICATED
+                && current != State.AUTHENTICATED_VOLATILE_TOKEN) {
             throw new IllegalStateException(
                     "independent-host client is not authenticated; state="
-                            + state);
+                            + current);
         }
         if (!running.get()) {
             throw new IllegalStateException(
@@ -622,55 +689,54 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
         }
     }
 
-    private void ensureAuthenticatedOrConnectingReader() {
-        if (state != State.CONNECTING
-                && state != State.AUTHENTICATED
-                && state != State.AUTHENTICATED_VOLATILE_TOKEN) {
-            throw new IllegalStateException(
-                    "independent-host client cannot request a roster in state "
-                            + state);
+    private void fail(Throwable cause, String event) {
+        synchronized (lifecycleLock) {
+            if (state == State.CLOSED) return;
+            if (failure == null) failure = cause;
+            state = State.FAILED;
+            lastEvent = event + ": " + safeReason(
+                    cause == null ? "unknown" : cause.getMessage());
+            running.set(false);
         }
-        if (state != State.CONNECTING && !running.get()) {
-            throw new IllegalStateException(
-                    "independent-host reader is not running");
-        }
-    }
-
-    private synchronized void fail(Throwable cause, String event) {
-        failure = cause;
-        state = State.FAILED;
-        lastEvent = event + ": " + safeReason(
-                cause == null ? "unknown" : cause.getMessage());
-        running.set(false);
         synchronized (rosterSignal) {
             rosterSignal.notifyAll();
         }
     }
 
     @Override
-    public synchronized void close() {
-        if (state == State.CLOSED) return;
-        running.set(false);
+    public void close() {
+        Thread mountedReader;
+        synchronized (lifecycleLock) {
+            if (state == State.CLOSED) return;
+            state = State.CLOSED;
+            running.set(false);
+            lastEvent = "client supervisor closed";
+            mountedReader = readerThread;
+        }
         closeTransportQuietly();
-        Thread thread = readerThread;
-        if (thread != null && thread != Thread.currentThread()) {
-            thread.interrupt();
+        if (mountedReader != null && mountedReader != Thread.currentThread()) {
+            mountedReader.interrupt();
             try {
-                thread.join(2_000L);
+                mountedReader.join(2_000L);
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
             }
         }
-        state = State.CLOSED;
-        lastEvent = "client supervisor closed";
+        PendingCommand pending = pendingCommand.getAndSet(null);
+        if (pending != null && !pending.future().isDone()) {
+            pending.future().completeExceptionally(
+                    new IOException("client supervisor closed"));
+        }
         synchronized (rosterSignal) {
             rosterSignal.notifyAll();
         }
     }
 
     private void closeTransportQuietly() {
+        Socket mountedSocket = socket;
+        if (mountedSocket == null) return;
         try {
-            if (socket != null) socket.close();
+            mountedSocket.close();
         } catch (IOException ignored) {
         }
     }
@@ -826,6 +892,12 @@ final class IndependentHostClientSupervisor implements AutoCloseable {
                 ? "unspecified"
                 : reason.substring(0, Math.min(180, reason.length()));
     }
+
+    private record PendingCommand(
+            long commandId,
+            String command,
+            CompletableFuture<HostedCommandAck> future
+    ) { }
 
     record ConnectionIdentity(
             String serverKey,
