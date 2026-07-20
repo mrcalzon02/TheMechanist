@@ -61,12 +61,16 @@ final class ReleaseBuildIdentitySmoke {
                 "runtime separation must report token-redacted client diagnostics");
         require(separation.contains("independentHostClientReconnect=host-restart-smoke-gated"),
                 "runtime separation must report supervised client reconnect certification");
+        require(separation.contains("independentHostTurnAuthority=headless-persistent-smoke-gated"),
+                "runtime separation must report the shared headless turn authority");
+        require(separation.contains("independentHostTurnCommand=wait-only-not-network-exposed"),
+                "runtime separation must report the exact turn-authority boundary");
         require(separation.contains("independentHostClientWorldCommandApi=not-implemented"),
                 "runtime separation must keep the client world-command API closed");
-        require(separation.contains("independentHostWorldCommands=rejected"),
-                "runtime separation must report explicit world-command rejection");
-        require(separation.contains("independentHostWorldAuthority=not-implemented"),
-                "runtime separation must keep remote world authority closed");
+        require(separation.contains("independentHostNetworkWorldCommands=rejected"),
+                "runtime separation must report network world-command rejection");
+        require(separation.contains("independentHostWorldAuthority=core-not-network-exposed"),
+                "runtime separation must not overclaim network world authority");
         require(separation.contains("remoteGameplaySession=not-yet-certified"),
                 "runtime separation must not overclaim independent-host gameplay certification");
         require(SinglePlayerInternalHostSupervisor.auditSummary().contains("shutdown=supervised"),
@@ -75,6 +79,7 @@ final class ReleaseBuildIdentitySmoke {
         RemoteSessionLedgerAuthoritySmoke.main(args);
         HostedRosterClientAuthoritySmoke.main(args);
         IndependentHostHostedSessionWireSmoke.main(args);
+        IndependentHostTurnAuthoritySmoke.main(args);
         RemoteClientStartupSmoke.main(args);
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
