@@ -56,6 +56,52 @@ def make_read_only(root: pathlib.Path) -> None:
             pass
 
 
+def verify_native_stage(source: pathlib.Path, root: pathlib.Path, verifier: pathlib.Path) -> None:
+    manifest = json.loads(
+        (source / "manifests" / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    platform_name = str(manifest["platform"])
+    stager = verifier.parent / "stage_native_installer_payload.py"
+    if not stager.is_file():
+        raise RuntimeError(f"native installer stager is missing: {stager}")
+
+    staged = root / "Native Installer Payload With Spaces"
+    report = root / "native-installer-staging.json"
+    run(
+        [
+            sys.executable,
+            stager,
+            source,
+            "--output",
+            staged,
+            "--expected-platform",
+            platform_name,
+            "--report",
+            report,
+        ],
+        cwd=root,
+        timeout=600,
+    )
+    if (staged / "runtime").exists():
+        raise RuntimeError("native installer staging duplicated the canonical runtime")
+    required = (
+        staged / "launcher" / "MechanistLauncher.jar",
+        staged / "packages" / "client" / "TheMechanist.jar",
+        staged / "packages" / "server" / "TheMechanistServer.jar",
+        staged / "manifests" / "launcher-runtime-manifest.json",
+        staged / "certification" / "canonical-runtime-manifest.json",
+        staged / "certification" / "installer-source-verification.json",
+    )
+    missing = [str(path) for path in required if not path.is_file()]
+    if missing:
+        raise RuntimeError(f"native installer staging omitted required files: {missing}")
+    stage_summary = json.loads(report.read_text(encoding="utf-8"))
+    if stage_summary.get("releaseHardened") is not True:
+        raise RuntimeError("native installer staging did not preserve hardening identity")
+    if stage_summary.get("platform") != platform_name:
+        raise RuntimeError("native installer staging changed platform identity")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("distribution", type=pathlib.Path)
@@ -76,7 +122,10 @@ def main() -> int:
     java = java_bin(install)
     profile_args = java_profile_args(profile)
 
-    run([sys.executable, args.verifier.resolve(), install], env=env)
+    verifier = args.verifier.resolve()
+    run([sys.executable, verifier, install], env=env)
+    verify_native_stage(source, root, verifier)
+
     run(
         [
             java,
@@ -168,7 +217,7 @@ def main() -> int:
         json.dumps(data, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    run([sys.executable, args.verifier.resolve(), tampered], expect=1)
+    run([sys.executable, verifier, tampered], expect=1)
 
     missing = root / "Missing Support Library"
     shutil.copytree(source, missing)
@@ -176,7 +225,7 @@ def main() -> int:
     if not support:
         raise RuntimeError("no support library available for missing-library rejection test")
     support[0].unlink()
-    run([sys.executable, args.verifier.resolve(), missing], expect=1)
+    run([sys.executable, verifier, missing], expect=1)
 
     summary = {
         "status": "passed",
@@ -188,6 +237,7 @@ def main() -> int:
         "packagedGate3": True,
         "serverOperation": True,
         "serverHostBind": True,
+        "nativeInstallerPayloadStage": True,
         "tamperedManifestRejected": True,
         "missingSupportRejected": True,
     }
