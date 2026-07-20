@@ -11,22 +11,24 @@ final class ReflectiveNettyBindingService {
     private ReflectiveNettyBindingService() { }
 
     static HostBindingResult tryBind(ServerConfig config, boolean ipv6) {
-        String address = ipv6 ? "::" : "0.0.0.0";
+        String requested = config == null ? "" : config.boundAddress();
+        String address = requested == null || requested.isBlank() ? (ipv6 ? "::" : "0.0.0.0") : requested.trim();
         MultiplayerProtocolState protocol = ipv6 ? MultiplayerProtocolState.NETTY_IPV6 : MultiplayerProtocolState.NETTY_IPV4;
+        ServerConfig exact = config.withBinding(address, config.port(), protocol);
         NettyClasspathStatus status = probeClasspath();
         if (!status.nettyCorePresent()) {
-            return HostBindingResult.failure(config.withBinding(address, config.port(), protocol), protocol,
-                    "Netty classes are not on the runtime classpath; native Java NIO relay will be tried next.");
+            return HostBindingResult.failure(exact, protocol,
+                    "Netty classes are not on the runtime classpath; native Java NIO relay will be tried next for " + address + ".");
         }
         if (!status.nioServerSocketChannelPresent()) {
-            return HostBindingResult.failure(config.withBinding(address, config.port(), protocol), protocol,
-                    "Netty core is present but NioServerSocketChannel is unavailable.");
+            return HostBindingResult.failure(exact, protocol,
+                    "Netty core is present but NioServerSocketChannel is unavailable for " + address + ".");
         }
         // Do not synthesize a fake Netty server. Without a compiled ChannelInitializer/handler adapter
         // for the exact Netty version, binding reflectively would be brittle and unsafe. The fallback
         // relay remains real and closeable while preserving this optional seam.
-        return HostBindingResult.failure(config.withBinding(address, config.port(), protocol), protocol,
-                "Netty is visible, but no verified Mechanist Netty channel adapter is packaged in this build.");
+        return HostBindingResult.failure(exact, protocol,
+                "Netty is visible, but no verified Mechanist Netty channel adapter is packaged in this build for " + address + ".");
     }
 
     static NettyClasspathStatus probeClasspath() {
