@@ -32,10 +32,14 @@ This document describes current intentional limits. It is not a promise that eve
 - The native fallback is currently an authenticated bounded relay transport.
 - Before relay access, the client must complete identity submission, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge.
 - Successful authentication grants only `RELAY_ONLY` access.
-- Transport certification covers exact binding, denial of pre-authentication data, bad-challenge rejection, two-client authenticated connection, ordered frame relay, replay rejection, close, restart, and refusal to widen a failed explicit bind.
+- The host now assigns a stable process-local player ID and one server-issued resume token to each authenticated profile session.
+- A disconnected client can recover the same process-local session only with the correct resume token. Invalid tokens and simultaneous duplicate attachment are rejected.
+- Immutable session snapshots report online state, connection generation, lifetime accepted relay-frame count, and the current connection sequence.
+- Transport certification covers exact binding, denial of pre-authentication data, bad-challenge rejection, two-client authenticated connection, ordered frame relay, replay rejection, token-gated reconnect continuity, stale-attachment isolation, close, restart, and refusal to widen a failed explicit bind.
+- Session continuity currently survives socket disconnect and reconnect only while the server process remains alive. Resume tokens and ledger state are not persisted across a server-process restart.
 - The delivered base manifest currently represents the packaged base runtime rather than a complete remote mod-distribution service.
-- It does not yet initialize or own authoritative remote world state.
-- It does not yet process remote gameplay commands, player inventory, world persistence, disconnect continuity, or reconnect into a living hosted world.
+- The independent host still does not initialize or own authoritative remote world state.
+- It does not yet process remote gameplay commands, player position or inventory mutation, hosted-world persistence, or reconnect into a living authoritative world.
 - Public multiplayer, matchmaking, server browsing, and production account authentication are not open.
 - Netty and Steam integrations remain optional seams unless a candidate report explicitly proves a real adapter was initialized.
 
