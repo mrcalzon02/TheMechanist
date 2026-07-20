@@ -228,6 +228,20 @@ def main() -> int:
             "-Djava.awt.headless=true",
             "-cp",
             classpath(install, "client"),
+            "mechanist.IndependentHostHostedSessionWireSmoke",
+        ],
+        cwd=root,
+        env=env,
+        timeout=240,
+    )
+
+    run(
+        [
+            java,
+            *profile_args,
+            "-Djava.awt.headless=true",
+            "-cp",
+            classpath(install, "client"),
             "mechanist.IndependentHostPersistentSessionRestartSmoke",
         ],
         cwd=root,
@@ -352,6 +366,12 @@ def main() -> int:
         "independentHostResumeTokenHashOnlyPersistence": True,
         "independentHostCorruptSessionLedgerRejected": True,
         "independentHostSessionPersistenceAcrossProcessRestart": True,
+        "independentHostHostedSessionCommands": True,
+        "independentHostHostedSessionCommandOrdering": True,
+        "independentHostHostedSessionRoster": True,
+        "independentHostHostedSessionStatePersistence": True,
+        "independentHostStaleHostedLivenessReset": True,
+        "independentHostUnsupportedWorldCommandsRejected": True,
         "independentHostRelayOnlyAccess": True,
         "independentHostPreAuthenticationDataDenied": True,
         "independentHostBadChallengeDenied": True,
