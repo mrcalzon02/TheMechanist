@@ -9,15 +9,43 @@ import pathlib
 import sys
 
 REQUIRED_DOCS = {
-    "docs/EULA.md": ("eula",),
-    "docs/CLIENT_README.md": ("mechanist",),
-    "docs/RUN_INSTRUCTIONS.md": ("run",),
-    "docs/SERVER_README.md": ("server",),
+    "docs/EULA.md": (
+        "eula",
+        "authorized evaluator",
+        "resume-token custody files",
+        "formal legal review",
+    ),
+    "docs/CLIENT_README.md": (
+        "mechanist",
+        "mechanist.remoteclientmain",
+        "connected-only authoritative roster",
+        "remote world gameplay remains unavailable",
+    ),
+    "docs/RUN_INSTRUCTIONS.md": (
+        "run-the-mechanist",
+        "run-remote-client.cmd",
+        "run-remote-client.sh",
+        "mechanist.remoteclientmain",
+        "no remote world gameplay",
+    ),
+    "docs/SERVER_README.md": (
+        "headless server",
+        "exact requested address",
+        "sha-256 resume-token hashes",
+        "does not prove remote world gameplay",
+    ),
     "docs/LIMITED_ALPHA_PLAYTEST_GUIDE.md": (
         "limited alpha",
         "verify the candidate",
         "single-player",
-        "independent host",
+        "independent-host lobby start",
+        "mechanist.remoteclientmain",
+        "run-remote-client.cmd",
+        "run-remote-client.sh",
+        "two-tester sequence",
+        "credential protection",
+        "investor or backer evaluation",
+        "must not be presented as completed networked world gameplay",
         "save protection",
     ),
     "docs/KNOWN_ALPHA_LIMITATIONS.md": (
@@ -67,6 +95,8 @@ def verify(root: pathlib.Path) -> dict[str, object]:
     if not manifest_path.is_file():
         fail(f"canonical runtime manifest is missing: {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("remoteClientEntryPoint") != "mechanist.RemoteClientMain":
+        fail("canonical manifest does not declare mechanist.RemoteClientMain")
     entries = {
         str(entry.get("path")): entry
         for entry in manifest.get("artifacts", [])
@@ -86,11 +116,24 @@ def verify(root: pathlib.Path) -> dict[str, object]:
         text = path.read_text(encoding="utf-8", errors="replace").lower()
         for phrase in phrases:
             if phrase not in text:
-                fail(f"alpha operating document {relative} is missing required phrase {phrase!r}")
+                fail(
+                    f"alpha operating document {relative} "
+                    f"is missing required phrase {phrase!r}"
+                )
         checked.append(relative)
 
+    platform = str(manifest.get("platform", ""))
+    remote_launcher = (
+        "Run-Remote-Client.cmd"
+        if platform.startswith("windows-")
+        else "run-remote-client.sh"
+    )
+    launcher_entry = entries.get(remote_launcher)
+    if launcher_entry is None or launcher_entry.get("role") != "launch-script":
+        fail(f"canonical manifest omits documented remote launcher {remote_launcher}")
+
     windows_quick = root / "docs" / "WINDOWS_QUICK_START.md"
-    if str(manifest.get("platform", "")).startswith("windows-") and not windows_quick.is_file():
+    if platform.startswith("windows-") and not windows_quick.is_file():
         fail("Windows distribution is missing docs/WINDOWS_QUICK_START.md")
 
     return {
@@ -101,6 +144,10 @@ def verify(root: pathlib.Path) -> dict[str, object]:
         "documents": checked,
         "documentCount": len(checked),
         "canonicalManifestCoverage": True,
+        "remoteClientEntryDocumented": True,
+        "remoteClientLauncherDocumented": True,
+        "twoTesterProcedureCovered": True,
+        "investorEvaluationBoundaryCovered": True,
         "hostedSessionLimitationsCovered": True,
         "hostedRosterBroadcastLimitationsCovered": True,
         "asynchronousControlAndRelaySeparationCovered": True,
