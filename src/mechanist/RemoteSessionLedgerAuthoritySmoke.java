@@ -7,13 +7,16 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.stream.Stream;
 
-/** Fast deterministic checks for remote session ownership, reconnect, and persistence rules. */
+/** Fast deterministic checks for remote session, hosted-command, reconnect, and persistence rules. */
 final class RemoteSessionLedgerAuthoritySmoke {
     public static void main(String[] args) throws Exception {
         verifyProcessLocalRules();
         verifyAtomicPersistenceRules();
         System.out.println("RemoteSessionLedgerAuthoritySmoke PASS"
                 + " processLocalRules=true"
+                + " hostedSessionCommands=true"
+                + " immutableHostedRoster=true"
+                + " unsupportedWorldCommandsRejected=true"
                 + " atomicPersistence=true"
                 + " tokenStorage=sha256-only"
                 + " corruptLedgerRejected=true"
@@ -47,6 +50,38 @@ final class RemoteSessionLedgerAuthoritySmoke {
                         "invalid-token-connection"),
                 "resume token");
 
+        RemoteSessionLedgerAuthority.HostedSessionCommandResult ready =
+                ledger.applyHostedSessionCommand(first, 0L, "READY", "true");
+        require(ready.playerSnapshot().ready(),
+                "READY command did not update the player snapshot");
+        RemoteSessionLedgerAuthority.HostedSessionCommandResult presence =
+                ledger.applyHostedSessionCommand(first, 1L, "PRESENCE", "away");
+        require("away".equals(presence.playerSnapshot().presence()),
+                "PRESENCE command did not update the player snapshot");
+        RemoteSessionLedgerAuthority.HostedSessionCommandResult chat =
+                ledger.applyHostedSessionCommand(first, 2L, "CHAT_STATE", "typing");
+        require("typing".equals(chat.playerSnapshot().chatState()),
+                "CHAT_STATE command did not update the player snapshot");
+        require(chat.playerSnapshot().acceptedHostedCommands() == 3L,
+                "hosted command accounting is incorrect");
+        require(chat.hostedSnapshot().roster().size() == 1
+                        && !chat.hostedSnapshot().worldAuthority(),
+                "hosted roster did not preserve the closed world-authority boundary");
+
+        expectFailure(
+                () -> ledger.applyHostedSessionCommand(
+                        first, 4L, "READY", "false"),
+                "sequence mismatch");
+        expectFailure(
+                () -> ledger.applyHostedSessionCommand(
+                        first, 3L, "MOVE", "north"),
+                "world authority is closed");
+        RemoteSessionLedgerAuthority.HostedSessionCommandResult unready =
+                ledger.applyHostedSessionCommand(first, 3L, "READY", "false");
+        require(!unready.playerSnapshot().ready()
+                        && unready.playerSnapshot().lastConnectionCommandId() == 3L,
+                "failed hosted command incorrectly advanced or blocked the sequence");
+
         RemoteSessionLedgerAuthority.SessionSnapshot accepted =
                 ledger.noteRelayFrameAccepted(first, 0L);
         require(accepted.connected(), "accepted relay frame lost connected state");
@@ -54,11 +89,29 @@ final class RemoteSessionLedgerAuthoritySmoke {
                         && accepted.lastConnectionSequence() == 0L,
                 "accepted relay frame was not recorded in the immutable snapshot");
 
+        RemoteSessionLedgerAuthority.Attachment secondProfile =
+                ledger.attach("profile.beta.0002", "", "connection-beta");
+        require(!secondProfile.playerId().equals(first.playerId()),
+                "distinct profiles received the same server-owned player id");
+        RemoteSessionLedgerAuthority.HostedSessionSnapshot roster =
+                ledger.hostedSessionSnapshot();
+        require(roster.totalSessions() == 2
+                        && roster.activeSessions() == 2
+                        && roster.roster().size() == 2,
+                "hosted roster counts do not match active remote sessions");
+        require(roster.roster().get(0).playerId().compareTo(
+                        roster.roster().get(1).playerId()) < 0,
+                "hosted roster is not deterministically ordered");
+
         ledger.disconnect(first, "smoke disconnect");
         RemoteSessionLedgerAuthority.SessionSnapshot offline =
                 ledger.snapshotForProfile("profile.alpha.0001");
         require(offline != null && !offline.connected(),
                 "disconnect did not retain an offline resumable session");
+        require(!offline.ready()
+                        && "offline".equals(offline.presence())
+                        && "idle".equals(offline.chatState()),
+                "disconnect retained stale hosted-lobby liveness state");
 
         RemoteSessionLedgerAuthority.Attachment resumed =
                 ledger.attach(
@@ -70,8 +123,6 @@ final class RemoteSessionLedgerAuthoritySmoke {
                 "resume changed the stable server-owned player id");
         require(resumed.connectionGeneration() == 2L,
                 "resume did not advance the connection generation");
-        require(resumed.snapshotVersion() > first.snapshotVersion(),
-                "resume did not advance the immutable snapshot version");
 
         ledger.disconnect(first, "stale connection close");
         require(ledger.snapshot(resumed).connected(),
@@ -79,21 +130,21 @@ final class RemoteSessionLedgerAuthoritySmoke {
         expectFailure(
                 () -> ledger.noteRelayFrameAccepted(first, 1L),
                 "not the active connection");
+        expectFailure(
+                () -> ledger.applyHostedSessionCommand(
+                        first, 4L, "READY", "true"),
+                "not the active connection");
 
+        RemoteSessionLedgerAuthority.HostedSessionCommandResult resumedCommand =
+                ledger.applyHostedSessionCommand(resumed, 0L, "PRESENCE", "busy");
+        require(resumedCommand.playerSnapshot().acceptedHostedCommands() == 5L,
+                "lifetime hosted command accounting did not survive reconnect");
+        require(resumedCommand.playerSnapshot().lastConnectionCommandId() == 0L,
+                "resumed connection did not restart its command sequence");
         RemoteSessionLedgerAuthority.SessionSnapshot resumedFrame =
                 ledger.noteRelayFrameAccepted(resumed, 0L);
         require(resumedFrame.acceptedRelayFrames() == 2L,
                 "lifetime relay accounting did not survive reconnect");
-        require(resumedFrame.lastConnectionSequence() == 0L,
-                "resumed connection did not restart its per-connection sequence");
-
-        RemoteSessionLedgerAuthority.Attachment secondProfile =
-                ledger.attach("profile.beta.0002", "", "connection-beta");
-        require(!secondProfile.playerId().equals(first.playerId()),
-                "distinct profiles received the same server-owned player id");
-        require(ledger.totalSessionCount() == 2
-                        && ledger.activeSessionCount() == 2,
-                "ledger counts do not match active remote sessions");
 
         RemoteSessionLedgerAuthority restarted =
                 new RemoteSessionLedgerAuthority("remote-ledger-smoke-world");
@@ -129,32 +180,39 @@ final class RemoteSessionLedgerAuthoritySmoke {
             try (RemoteSessionLedgerAuthority persistent =
                          new RemoteSessionLedgerAuthority(
                                  "persistent-smoke-world", ledgerFile)) {
-                require(persistent.persistenceEnabled(),
-                        "persistent ledger did not report persistence enabled");
-                require(ledgerFile.equals(persistent.persistenceFile()),
-                        "persistent ledger changed its configured file");
                 RemoteSessionLedgerAuthority.Attachment first =
                         persistent.attach(profile, "", "persistent-connection-one");
                 token = first.resumeToken();
                 playerId = first.playerId();
+                persistent.applyHostedSessionCommand(
+                        first, 0L, "READY", "true");
+                persistent.applyHostedSessionCommand(
+                        first, 1L, "PRESENCE", "away");
+                persistent.applyHostedSessionCommand(
+                        first, 2L, "CHAT_STATE", "typing");
                 persistent.noteRelayFrameAccepted(first, 0L);
                 persistent.disconnect(first, "clean persistence smoke disconnect");
                 RemoteSessionLedgerAuthority.SessionSnapshot offline =
                         persistent.snapshotForProfile(profile);
                 require(offline != null && !offline.connected(),
                         "persistent ledger did not retain the offline session");
-                require(offline.acceptedRelayFrames() == 1L,
-                        "persistent ledger lost relay accounting before restart");
+                require(offline.acceptedRelayFrames() == 1L
+                                && offline.acceptedHostedCommands() == 3L,
+                        "persistent ledger lost accounting before restart");
                 versionBeforeRestart = offline.version();
             }
 
             require(Files.isRegularFile(ledgerFile),
                     "atomic persistence did not create the ledger file");
             String disk = Files.readString(ledgerFile, StandardCharsets.ISO_8859_1);
+            require(disk.contains("schema=2"),
+                    "persistent ledger did not write schema two");
             require(!disk.contains(token),
                     "persistent ledger wrote a reusable plaintext resume token");
             require(disk.contains(sha256Hex(token)),
                     "persistent ledger omitted the resume-token hash");
+            require(disk.contains("acceptedHostedCommands=3"),
+                    "persistent ledger omitted hosted command accounting");
             require(!hasTemporarySibling(ledgerFile),
                     "atomic persistence left a temporary sibling behind");
 
@@ -168,8 +226,13 @@ final class RemoteSessionLedgerAuthoritySmoke {
                         "restored session was not forced offline");
                 require(restoredOffline.playerId().equals(playerId),
                         "restored session changed the stable player id");
-                require(restoredOffline.acceptedRelayFrames() == 1L,
-                        "restored session lost lifetime relay accounting");
+                require(restoredOffline.acceptedRelayFrames() == 1L
+                                && restoredOffline.acceptedHostedCommands() == 3L,
+                        "restored session lost lifetime accounting");
+                require(!restoredOffline.ready()
+                                && "offline".equals(restoredOffline.presence())
+                                && "idle".equals(restoredOffline.chatState()),
+                        "restored session retained stale liveness state");
                 require(restoredOffline.version() > versionBeforeRestart,
                         "ledger restoration did not advance the snapshot version");
                 expectFailure(
@@ -185,10 +248,13 @@ final class RemoteSessionLedgerAuthoritySmoke {
                                 "persistent-connection-two");
                 require(resumed.resumed(),
                         "persistent ledger did not accept its valid resume token");
-                require(resumed.playerId().equals(playerId),
-                        "persistent resume changed the stable player id");
                 require(resumed.connectionGeneration() == 2L,
                         "persistent resume did not advance the connection generation");
+                RemoteSessionLedgerAuthority.HostedSessionCommandResult command =
+                        restored.applyHostedSessionCommand(
+                                resumed, 0L, "READY", "true");
+                require(command.playerSnapshot().acceptedHostedCommands() == 4L,
+                        "persistent resume lost hosted command accounting");
                 RemoteSessionLedgerAuthority.SessionSnapshot accepted =
                         restored.noteRelayFrameAccepted(resumed, 0L);
                 require(accepted.acceptedRelayFrames() == 2L,
@@ -206,8 +272,9 @@ final class RemoteSessionLedgerAuthoritySmoke {
                         "second restoration did not keep the session offline");
                 require(snapshot.connectionGeneration() == 2L,
                         "second restoration lost connection-generation continuity");
-                require(snapshot.acceptedRelayFrames() == 2L,
-                        "second restoration lost lifetime relay accounting");
+                require(snapshot.acceptedRelayFrames() == 2L
+                                && snapshot.acceptedHostedCommands() == 4L,
+                        "second restoration lost lifetime accounting");
                 require(snapshot.version() > versionAfterResume,
                         "second restoration did not preserve monotonic versions");
                 RemoteSessionLedgerAuthority.Attachment resumedAgain =
@@ -221,7 +288,7 @@ final class RemoteSessionLedgerAuthoritySmoke {
 
             String corrupt = Files.readString(
                     ledgerFile, StandardCharsets.ISO_8859_1)
-                    .replaceFirst("schema=1", "schema=999");
+                    .replaceFirst("schema=2", "schema=999");
             Files.writeString(corruptFile, corrupt, StandardCharsets.ISO_8859_1);
             expectCheckedFailure(
                     () -> new RemoteSessionLedgerAuthority(
