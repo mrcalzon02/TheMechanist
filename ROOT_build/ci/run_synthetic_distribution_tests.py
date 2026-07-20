@@ -102,6 +102,27 @@ def verify_native_stage(source: pathlib.Path, root: pathlib.Path, verifier: path
         raise RuntimeError("native installer staging changed platform identity")
 
 
+def verify_operating_docs(
+    install: pathlib.Path,
+    root: pathlib.Path,
+    verifier: pathlib.Path,
+) -> None:
+    docs_verifier = verifier.parent / "verify_alpha_operating_docs.py"
+    if not docs_verifier.is_file():
+        raise RuntimeError(f"alpha operating-document verifier is missing: {docs_verifier}")
+    run(
+        [
+            sys.executable,
+            docs_verifier,
+            install,
+            "--report",
+            root / "alpha-operating-docs.json",
+        ],
+        cwd=root,
+        timeout=180,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("distribution", type=pathlib.Path)
@@ -124,6 +145,7 @@ def main() -> int:
 
     verifier = args.verifier.resolve()
     run([sys.executable, verifier, install], env=env)
+    verify_operating_docs(install, root, verifier)
     verify_native_stage(source, root, verifier)
 
     run(
@@ -182,7 +204,7 @@ def main() -> int:
         ],
         cwd=root,
         env=env,
-        timeout=180,
+        timeout=240,
     )
 
     run(
@@ -280,6 +302,7 @@ def main() -> int:
         "isolatedProfile": True,
         "returningProfile": len(after) >= len(before),
         "readOnlyInstall": True,
+        "alphaOperatingDocuments": True,
         "launcherBundledPackageVerification": True,
         "launcherRemoteAcquisitionAdvertised": False,
         "packagedGate3": True,
@@ -287,6 +310,11 @@ def main() -> int:
         "singlePlayerSaveResume": True,
         "independentHostTransportSession": True,
         "independentHostExactBind": True,
+        "independentHostClientDrivenHandshake": True,
+        "independentHostIntegrityChallenge": True,
+        "independentHostRelayOnlyAccess": True,
+        "independentHostPreAuthenticationDataDenied": True,
+        "independentHostBadChallengeDenied": True,
         "independentHostGameplaySessionCertified": False,
         "serverOperation": True,
         "serverHostBind": True,
