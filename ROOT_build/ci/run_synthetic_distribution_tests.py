@@ -130,6 +130,21 @@ def main() -> int:
         [
             java,
             *profile_args,
+            f"-Dmechanist.launcher.installRoot={install}",
+            "-Djava.awt.headless=true",
+            "-cp",
+            install / "launcher" / "MechanistLauncher.jar",
+            "mechanist.launcher.LauncherBundledPackageVerificationSmoke",
+        ],
+        cwd=root,
+        env=env,
+        timeout=180,
+    )
+
+    run(
+        [
+            java,
+            *profile_args,
             "-Djava.awt.headless=true",
             "-cp",
             classpath(install, "client"),
@@ -265,6 +280,8 @@ def main() -> int:
         "isolatedProfile": True,
         "returningProfile": len(after) >= len(before),
         "readOnlyInstall": True,
+        "launcherBundledPackageVerification": True,
+        "launcherRemoteAcquisitionAdvertised": False,
         "packagedGate3": True,
         "singlePlayerInternalHostLifecycle": True,
         "singlePlayerSaveResume": True,
