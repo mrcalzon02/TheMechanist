@@ -4,8 +4,8 @@
 This builder is shared by GitHub Actions and local release verification. It
 compiles the client/server and launcher with Java 17, stages launcher-managed
 packages and runtime dependencies, creates a platform Java runtime with jlink,
-writes canonical and launcher-compatibility integrity manifests, and produces a
-ZIP suitable for workflow artifacts or an explicit GitHub prerelease.
+writes canonical and launcher-compatibility integrity manifests, includes the
+limited-alpha operating documentation, and produces a verified ZIP candidate.
 """
 
 from __future__ import annotations
@@ -25,6 +25,15 @@ RUNTIME_MODULES = (
     "java.base,java.desktop,java.logging,java.management,java.naming,"
     "java.net.http,java.prefs,java.sql,java.xml,jdk.crypto.ec,jdk.unsupported"
 )
+PLAYTEST_DOCS = (
+    ("EULA.md", "EULA.md"),
+    ("README.md", "CLIENT_README.md"),
+    ("RUN_INSTRUCTIONS.md", "RUN_INSTRUCTIONS.md"),
+    ("WINDOWS_QUICK_START.md", "WINDOWS_QUICK_START.md"),
+    ("LIMITED_ALPHA_PLAYTEST_GUIDE.md", "LIMITED_ALPHA_PLAYTEST_GUIDE.md"),
+    ("KNOWN_ALPHA_LIMITATIONS.md", "KNOWN_ALPHA_LIMITATIONS.md"),
+    ("DIAGNOSTIC_COLLECTION.md", "DIAGNOSTIC_COLLECTION.md"),
+)
 
 
 def run(command: list[str], cwd: pathlib.Path, env: dict[str, str] | None = None) -> None:
@@ -33,8 +42,7 @@ def run(command: list[str], cwd: pathlib.Path, env: dict[str, str] | None = None
 
 
 def executable(name: str) -> str:
-    suffix = ".exe" if os.name == "nt" else ""
-    return name + suffix
+    return name + (".exe" if os.name == "nt" else "")
 
 
 def maven_command() -> str:
@@ -50,15 +58,14 @@ def sha256(path: pathlib.Path) -> str:
 
 
 def project_version(repo: pathlib.Path) -> str:
-    command = [
-        maven_command(),
-        "-q",
-        "-DforceStdout",
-        "help:evaluate",
-        "-Dexpression=project.version",
-    ]
     result = subprocess.run(
-        command,
+        [
+            maven_command(),
+            "-q",
+            "-DforceStdout",
+            "help:evaluate",
+            "-Dexpression=project.version",
+        ],
         cwd=repo,
         check=True,
         text=True,
@@ -94,13 +101,10 @@ def native_classifier(platform_name: str) -> str:
 
 def dependency_matches_platform(path: pathlib.Path, platform_name: str) -> bool:
     name = path.name.lower()
-    if "natives-" not in name:
-        return True
-    return native_classifier(platform_name) in name
+    return "natives-" not in name or native_classifier(platform_name) in name
 
 
 def github_publish_prerelease_requested() -> bool:
-    """Return true only for an explicit publish-prerelease workflow dispatch."""
     if os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch":
         return False
     event_path = os.environ.get("GITHUB_EVENT_PATH")
@@ -111,8 +115,7 @@ def github_publish_prerelease_requested() -> bool:
     except (OSError, ValueError, TypeError):
         return False
     inputs = event.get("inputs") or {}
-    requested = inputs.get("publish_prerelease")
-    return str(requested).strip().lower() == "true"
+    return str(inputs.get("publish_prerelease")).strip().lower() == "true"
 
 
 def copy_file(source: pathlib.Path, destination: pathlib.Path) -> None:
@@ -208,12 +211,6 @@ def write_launcher_compatibility_manifest(
     platform_name: str,
     release_hardened: bool,
 ) -> pathlib.Path:
-    """Write the nested schema consumed by the current thin launcher.
-
-    The canonical runtime-manifest remains the complete file ledger. This
-    compatibility manifest is deliberately launcher-focused and is itself
-    covered by the canonical ledger.
-    """
     client = artifact_record(root, "packages/client/TheMechanist.jar", "client")
     server = artifact_record(root, "packages/server/TheMechanistServer.jar", "server")
     support: list[dict[str, object]] = []
@@ -268,14 +265,12 @@ def write_manifest(
         if not path.is_file() or path == manifest_path:
             continue
         relative = pathlib.PurePosixPath(path.relative_to(root).as_posix())
-        artifacts.append(
-            {
-                "role": artifact_role(relative),
-                "path": relative.as_posix(),
-                "size": path.stat().st_size,
-                "sha256": sha256(path),
-            }
-        )
+        artifacts.append({
+            "role": artifact_role(relative),
+            "path": relative.as_posix(),
+            "size": path.stat().st_size,
+            "sha256": sha256(path),
+        })
     payload = {
         "schema": 2,
         "distributionModel": "installer-thin-launcher-client-server",
@@ -373,6 +368,7 @@ def main() -> int:
     copy_file(client_source, distribution / "packages" / "client" / "TheMechanist.jar")
     copy_file(server_source, distribution / "packages" / "server" / "TheMechanistServer.jar")
     copy_file(launcher_candidates[-1], distribution / "launcher" / "MechanistLauncher.jar")
+
     support_target = distribution / "packages" / "support" / "lib"
     support_target.mkdir(parents=True, exist_ok=True)
     for dependency in sorted(dependencies.glob("*.jar")):
@@ -399,15 +395,13 @@ def main() -> int:
     )
 
     docs = distribution / "docs"
-    for source, name in (
-        (repo / "PACKAGE_client" / "EULA.md", "EULA.md"),
-        (repo / "PACKAGE_client" / "README.md", "CLIENT_README.md"),
-        (repo / "PACKAGE_client" / "RUN_INSTRUCTIONS.md", "RUN_INSTRUCTIONS.md"),
-        (repo / "PACKAGE_client" / "WINDOWS_QUICK_START.md", "WINDOWS_QUICK_START.md"),
-        (repo / "PACKAGE_client" / "server" / "README.md", "SERVER_README.md"),
-    ):
+    for source_name, destination_name in PLAYTEST_DOCS:
+        source = repo / "PACKAGE_client" / source_name
         if source.is_file():
-            copy_file(source, docs / name)
+            copy_file(source, docs / destination_name)
+    server_readme = repo / "PACKAGE_client" / "server" / "README.md"
+    if server_readme.is_file():
+        copy_file(server_readme, docs / "SERVER_README.md")
 
     write_launchers(distribution, current_platform)
     write_launcher_compatibility_manifest(
@@ -431,6 +425,8 @@ def main() -> int:
         "version": version,
         "platform": current_platform,
         "releaseHardened": release_hardened,
+        "playtestDocuments": [destination for _, destination in PLAYTEST_DOCS]
+        + ["SERVER_README.md"],
     }
     print(json.dumps(result, indent=2))
     if os.environ.get("GITHUB_OUTPUT"):
