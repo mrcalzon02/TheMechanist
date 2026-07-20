@@ -11,82 +11,13 @@ import os
 import pathlib
 import subprocess
 
+from verify_synthetic_release_contract import verify_reports
 
 READABLE_COMMIT_STATUS_CONTEXTS = (
     "the-mechanist/java17-verification",
     "the-mechanist/native-alpha-gate",
 )
-
-REQUIRED_SYNTHETIC_TRUE = (
-    "releaseHardened",
-    "pathWithSpaces",
-    "isolatedProfile",
-    "readOnlyInstall",
-    "alphaOperatingDocuments",
-    "launcherBundledPackageVerification",
-    "packagedGate3",
-    "singlePlayerInternalHostLifecycle",
-    "singlePlayerSaveResume",
-    "independentHostTransportSession",
-    "independentHostExactBind",
-    "independentHostClientDrivenHandshake",
-    "independentHostIntegrityChallenge",
-    "independentHostServerOwnedSessionLedger",
-    "independentHostStablePlayerIdentity",
-    "independentHostResumeTokenContinuity",
-    "independentHostDuplicateAttachmentDenied",
-    "independentHostInvalidResumeTokenDenied",
-    "independentHostImmutableSessionSnapshots",
-    "independentHostLifetimeRelayAccounting",
-    "independentHostAtomicSessionLedgerPersistence",
-    "independentHostResumeTokenHashOnlyPersistence",
-    "independentHostCorruptSessionLedgerRejected",
-    "independentHostSessionPersistenceAcrossProcessRestart",
-    "independentHostHostedSessionCommands",
-    "independentHostHostedSessionCommandOrdering",
-    "independentHostHostedSessionRoster",
-    "independentHostHostedSessionCommandAccountingPersistence",
-    "independentHostStaleHostedLivenessReset",
-    "independentHostHostedRosterJoinBroadcast",
-    "independentHostHostedCommandPeerBroadcast",
-    "independentHostHostedDisconnectRosterBroadcast",
-    "independentHostHostedResumeRosterBroadcast",
-    "independentHostAsynchronousControlSeparatedFromRelay",
-    "independentHostCanonicalRosterClientAuthority",
-    "independentHostRosterConnectedOnlyVisibility",
-    "independentHostOfflineResumeIdentityPrivate",
-    "independentHostRosterMalformedFrameRejected",
-    "independentHostRosterMonotonicVersioning",
-    "independentHostRosterVisiblePlayerLimit",
-    "independentHostRosterWorldAuthorityRejected",
-    "independentHostSupervisedClient",
-    "independentHostClientHandshakeOwnership",
-    "independentHostClientAtomicResumeTokenCustody",
-    "independentHostClientResumeTokenPlaintextCustody",
-    "independentHostClientTokenDiagnosticsRedacted",
-    "independentHostClientHostedCommandSequencing",
-    "independentHostClientRelayDispatch",
-    "independentHostClientLivingHostResume",
-    "independentHostClientHostRestartResume",
-    "independentHostClientCorruptTokenRejected",
-    "independentHostUnsupportedWorldCommandsRejected",
-    "independentHostRelayOnlyAccess",
-    "independentHostPreAuthenticationDataDenied",
-    "independentHostBadChallengeDenied",
-    "serverOperation",
-    "serverHostBind",
-    "nativeInstallerPayloadStage",
-    "tamperedManifestRejected",
-    "missingSupportRejected",
-)
-
-REQUIRED_SYNTHETIC_FALSE = (
-    "launcherRemoteAcquisitionAdvertised",
-    "independentHostHostedSessionLivenessPersistence",
-    "independentHostClientWorldCommandApi",
-    "independentHostWorldAuthority",
-    "independentHostGameplaySessionCertified",
-)
+RELEASE_PLATFORMS = {"linux-x64", "windows-x64"}
 
 
 def current_git_head() -> str:
@@ -100,10 +31,15 @@ def current_git_head() -> str:
     return result.stdout.strip()
 
 
-def load_reports(pattern: str, label: str) -> tuple[list[str], list[dict[str, object]]]:
+def load_reports(
+    pattern: str,
+    label: str,
+) -> tuple[list[str], list[dict[str, object]]]:
     paths = sorted(glob.glob(pattern, recursive=True))
     if len(paths) != 2:
-        raise SystemExit(f"Expected exactly two {label} reports; found {len(paths)}: {paths}")
+        raise SystemExit(
+            f"Expected exactly two {label} reports; found {len(paths)}: {paths}"
+        )
     reports = [
         json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
         for path in paths
@@ -111,43 +47,17 @@ def load_reports(pattern: str, label: str) -> tuple[list[str], list[dict[str, ob
     return paths, reports
 
 
-def synthetic_platform(report: dict[str, object]) -> str:
-    distribution = str(report.get("distribution", "")).lower()
-    if "windows-x64" in distribution:
-        return "windows-x64"
-    if "linux-x64" in distribution:
-        return "linux-x64"
-    return "unknown"
-
-
-def verify_synthetic_reports(pattern: str) -> None:
+def verify_synthetic_reports(pattern: str) -> dict[str, object]:
     paths, reports = load_reports(pattern, "synthetic")
-    statuses = {str(report.get("status", "")) for report in reports}
-    if statuses != {"passed"}:
-        raise SystemExit(f"Synthetic reports are not all passed: {statuses}")
-    platforms = {synthetic_platform(report) for report in reports}
-    if platforms != {"linux-x64", "windows-x64"}:
-        raise SystemExit(
-            "Synthetic reports do not identify exactly Linux and Windows x64: "
-            f"{sorted(platforms)} from {paths}"
+    try:
+        return verify_reports(
+            zip(paths, reports),
+            expected_platforms=RELEASE_PLATFORMS,
+            require_release_hardened=True,
+            require_native_stage=True,
         )
-
-    failures: list[str] = []
-    for path, report in zip(paths, reports):
-        for key in REQUIRED_SYNTHETIC_TRUE:
-            if report.get(key) is not True:
-                failures.append(f"{path}: expected {key}=true, found {report.get(key)!r}")
-        for key in REQUIRED_SYNTHETIC_FALSE:
-            if report.get(key) is not False:
-                failures.append(f"{path}: expected {key}=false, found {report.get(key)!r}")
-        if report.get("nativeInstallerPayloadStageRequired") is not True:
-            failures.append(
-                f"{path}: release candidate did not require native installer payload staging"
-            )
-    if failures:
-        raise SystemExit(
-            "Synthetic release contract failed:\n- " + "\n- ".join(failures)
-        )
+    except RuntimeError as failure:
+        raise SystemExit(str(failure)) from failure
 
 
 def main() -> int:
@@ -175,24 +85,42 @@ def main() -> int:
                 f"{head} does not equal verified source commit {args.commit}"
             )
 
-    report_paths, reports = load_reports(args.reports, "platform verification")
+    report_paths, reports = load_reports(
+        args.reports,
+        "platform verification",
+    )
     versions = {str(report.get("version", "")) for report in reports}
     commits = {str(report.get("commit", "")) for report in reports}
     platforms = {str(report.get("platform", "")) for report in reports}
     statuses = {str(report.get("status", "")) for report in reports}
+    remote_entries = {
+        str(report.get("remoteClientEntryPoint", ""))
+        for report in reports
+    }
     if len(versions) != 1 or "" in versions:
-        raise SystemExit(f"Verification reports disagree on version: {sorted(versions)}")
+        raise SystemExit(
+            f"Verification reports disagree on version: {sorted(versions)}"
+        )
     if commits != {args.commit}:
-        raise SystemExit(f"Verification reports do not identify {args.commit}: {sorted(commits)}")
-    if platforms != {"linux-x64", "windows-x64"}:
+        raise SystemExit(
+            f"Verification reports do not identify {args.commit}: {sorted(commits)}"
+        )
+    if platforms != RELEASE_PLATFORMS:
         raise SystemExit(
             "Verification reports must identify exactly both release platforms: "
             f"{sorted(platforms)} from {report_paths}"
         )
     if statuses != {"verified"}:
-        raise SystemExit(f"Verification reports are not all verified: {sorted(statuses)}")
+        raise SystemExit(
+            f"Verification reports are not all verified: {sorted(statuses)}"
+        )
+    if remote_entries != {"mechanist.RemoteClientMain"}:
+        raise SystemExit(
+            "Verification reports do not agree on the governed remote-client entry: "
+            f"{sorted(remote_entries)}"
+        )
 
-    verify_synthetic_reports(args.synthetic_reports)
+    synthetic_contract = verify_synthetic_reports(args.synthetic_reports)
 
     version = next(iter(versions))
     marker = f"verified-remote-release:{version}:{args.commit}"
@@ -202,14 +130,16 @@ def main() -> int:
         return 0
 
     date = dt.datetime.now(dt.timezone.utc).date().isoformat()
-    status_contexts = ", ".join(f"`{item}`" for item in READABLE_COMMIT_STATUS_CONTEXTS)
+    status_contexts = ", ".join(
+        f"`{item}`" for item in READABLE_COMMIT_STATUS_CONTEXTS
+    )
     entry = f"""
 
 ## Remote Release {version} - Java 17, Gate 3, and Runnable Distribution Certification
 
-Recorded the first-class remote release pipeline for the launcher -> client -> server distribution path. GitHub-hosted Linux x64 and Windows x64 jobs compiled the exact source tree with Java 17, rebuilt the client, server, and launcher packages, staged platform-specific support libraries and bundled Java runtimes, generated schema-2 SHA-256 manifests, and produced portable runnable ZIP distributions. Gate 3 ran only after both platform package jobs completed successfully, and final distribution certification revalidated archive integrity, manifest completeness, entry points, platform-native support libraries, and Java 17 classfile compatibility before release publication.
+Recorded the first-class remote release pipeline for the launcher -> client -> server distribution path. GitHub-hosted Linux x64 and Windows x64 jobs compiled the exact source tree with Java 17, rebuilt the client, server, and launcher packages, verified the conservative release-obfuscation policies, staged platform-specific support libraries and bundled Java runtimes, generated schema-2 SHA-256 manifests, and produced portable runnable ZIP distributions. Gate 3 ran only after both platform package jobs completed successfully, and final distribution certification revalidated archive integrity, manifest completeness, ordinary and remote entry points, platform-native support libraries, Java 17 classfile compatibility, and one-click remote-client launch scripts before release publication.
 
-Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; launcher and alpha operating documents were verified; supervised single-player host save/resume passed; independent-host identity, manifest, restart, integrity challenge, exact bind, server-owned persistent session ledger, stable remote player identity, token-gated reconnect continuity, duplicate/invalid-token denial, immutable session snapshots, lifetime relay accounting, atomic hash-only server storage, clean host-restart continuity, readiness/presence/chat-state command authority, independent hosted-command ordering, immutable hosted rosters, persisted hosted-command accounting, deliberate non-persistence and reset of hosted liveness state, authenticated peer roster broadcasts on join, command change, disconnect, and resume, separation of asynchronous MECH control frames from SEQ relay data, canonical connected-only client roster parsing, private offline resume identities, bounded roster visibility, supervised client handshake ownership, protected atomic plaintext resume-token custody on the client, redacted token diagnostics, hosted-command and relay sequencing, living-host and host-restart resume, corrupt local token rejection, explicit world-command rejection, and corrupt-ledger rejection passed; the supervised client exposed no world-command API; remote world authority and gameplay certification remained explicitly false; distribution verification reports returned `verified`; final release certification passed. Workflow-run conclusions were also published as readable commit statuses under {status_contexts}. Workflow evidence: {args.run_url}
+Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile and packaged synthetic certification passed; launcher and alpha operating documents were verified; supervised single-player save/resume passed; the exact-bind independent host passed authenticated handshake, persistent hash-only server session storage, stable identity, token-gated reconnect, deterministic connected-only rosters, hosted-lobby commands, peer control broadcasts, sequenced bounded relay, clean restart, and corruption rejection; the packaged `mechanist.RemoteClientMain` entry and platform launchers passed; the player-facing remote lobby exposed editable endpoint/profile settings, protected mutable client credential custody, cancellable supervised connection lifecycle, roster and relay controls, and interrogatable status without mounting `GamePanel` or the local internal host. The client retained no world-command API, and remote world authority and gameplay certification remained explicitly false. The shared synthetic contract verified `{synthetic_contract['requiredTrueCount']}` required true guarantees and `{synthetic_contract['requiredFalseCount']}` required false guarantees. Distribution reports returned `verified`; final release certification passed. Workflow-run conclusions were also published as readable commit statuses under {status_contexts}. Workflow evidence: {args.run_url}
 
 <!-- {marker} -->
 """
