@@ -59,12 +59,18 @@ final class IndependentHostHostedSessionWireSmoke {
 
         IndependentHostWireProtocol duplicate =
                 new IndependentHostWireProtocol("wire-alpha-duplicate", ledger);
-        beginHandshake(duplicate, "profile.alpha.1001", alphaAccess.resumeToken);
+        Handshake duplicateHandshake = beginHandshake(
+                duplicate, "profile.alpha.1001", alphaAccess.resumeToken);
+        String duplicateDigest = SecureHandshakeStateMachine.computeIntegrityDigest(
+                duplicateHandshake.salt,
+                duplicateHandshake.manifestFingerprint,
+                duplicateHandshake.mountedFingerprint);
         IndependentHostWireProtocol.Result duplicateDenied = duplicate.accept(
-                "MECH|CHALLENGE_RESPONSE|" + "0".repeat(64));
+                "MECH|CHALLENGE_RESPONSE|" + duplicateDigest);
         require(duplicateDenied.disconnect()
                         && duplicateDenied.reason().contains("already connected"),
-                "active duplicate session was not denied");
+                "active duplicate session did not reach the ledger attachment denial: "
+                        + duplicateDenied.reason());
 
         alpha.disconnect("wire reconnect smoke");
         IndependentHostWireProtocol resumed =
@@ -99,6 +105,7 @@ final class IndependentHostHostedSessionWireSmoke {
         System.out.println("IndependentHostHostedSessionWireSmoke PASS"
                 + " hostedCommands=true"
                 + " immutableRoster=true"
+                + " duplicateAttachmentReachedLedger=true"
                 + " reconnectContinuity=true"
                 + " unsupportedWorldCommandsRejected=true"
                 + " relayAccessOnly=true"
