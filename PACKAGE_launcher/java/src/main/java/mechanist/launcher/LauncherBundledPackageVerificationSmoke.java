@@ -32,8 +32,18 @@ public final class LauncherBundledPackageVerificationSmoke {
         require(!LauncherDistributionPolicy.sourceStatus(config).contains("Remote acquisition is disabled"),
                 "bundled distribution was not detected at the configured install root");
 
+        LauncherBuildIdentity.Identity build = LauncherBuildIdentity.read(config);
+        require(build.canonical(), "portable distribution must expose the canonical runtime manifest");
+        require(!"unknown".equals(build.version()), "packaged version identity is unknown");
+        require(!"unknown".equals(build.commit()), "packaged source commit identity is unknown");
+        require(!"unknown".equals(build.platform()), "packaged platform identity is unknown");
+        require(build.javaRelease() == 17, "packaged Java release identity is not 17");
+        require("installer-thin-launcher-client-server".equals(build.distributionModel()),
+                "packaged distribution model is not governed");
+
         System.out.println("LauncherBundledPackageVerificationSmoke PASS "
                 + LauncherDistributionPolicy.auditSummary(config)
+                + " build={" + build.compactLine() + "}"
                 + " manifest=" + identity.manifest()
                 + " supportLibraries=" + identity.supportLibraries().size());
     }
