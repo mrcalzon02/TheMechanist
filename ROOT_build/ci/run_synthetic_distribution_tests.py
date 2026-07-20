@@ -14,7 +14,12 @@ import tempfile
 
 def run(cmd, cwd=None, env=None, expect=0, timeout=180):
     print("+", " ".join(str(x) for x in cmd), flush=True)
-    completed = subprocess.run([str(x) for x in cmd], cwd=cwd, env=env, timeout=timeout)
+    completed = subprocess.run(
+        [str(x) for x in cmd],
+        cwd=cwd,
+        env=env,
+        timeout=timeout,
+    )
     if completed.returncode != expect:
         raise RuntimeError(
             f"command returned {completed.returncode}, expected {expect}: {cmd}"
@@ -56,7 +61,22 @@ def make_read_only(root: pathlib.Path) -> None:
             pass
 
 
-def verify_native_stage(source: pathlib.Path, root: pathlib.Path, verifier: pathlib.Path) -> bool:
+def remove_tree(root: pathlib.Path) -> None:
+    def repair_and_retry(function, path, _exc_info):
+        try:
+            os.chmod(path, stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
+            function(path)
+        except OSError:
+            pass
+
+    shutil.rmtree(root, ignore_errors=False, onerror=repair_and_retry)
+
+
+def verify_native_stage(
+    source: pathlib.Path,
+    root: pathlib.Path,
+    verifier: pathlib.Path,
+) -> bool:
     manifest = json.loads(
         (source / "manifests" / "runtime-manifest.json").read_text(encoding="utf-8")
     )
@@ -132,6 +152,32 @@ def verify_operating_docs(
     )
 
 
+def run_client_smoke(
+    java: pathlib.Path,
+    profile_args: list[str],
+    install: pathlib.Path,
+    root: pathlib.Path,
+    env: dict[str, str],
+    main_class: str,
+    timeout: int,
+    extra_args: list[str] | None = None,
+) -> None:
+    run(
+        [
+            java,
+            *profile_args,
+            *(extra_args or []),
+            "-Djava.awt.headless=true",
+            "-cp",
+            classpath(install, "client"),
+            main_class,
+        ],
+        cwd=root,
+        env=env,
+        timeout=timeout,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("distribution", type=pathlib.Path)
@@ -149,254 +195,244 @@ def main() -> int:
     release_hardened = canonical.get("releaseHardened") is True
 
     root = pathlib.Path(tempfile.mkdtemp(prefix="Mechanist Synthetic Path With Spaces "))
-    install = root / "Read Only Program Files" / source.name
-    shutil.copytree(source, install)
-    profile = root / "Synthetic User Profile With Spaces"
-    profile.mkdir(parents=True)
-    env = profile_env(profile)
-    java = java_bin(install)
-    profile_args = java_profile_args(profile)
+    try:
+        install = root / "Read Only Program Files" / source.name
+        shutil.copytree(source, install)
+        profile = root / "Synthetic User Profile With Spaces"
+        profile.mkdir(parents=True)
+        env = profile_env(profile)
+        java = java_bin(install)
+        profile_args = java_profile_args(profile)
 
-    verifier = args.verifier.resolve()
-    run([sys.executable, verifier, install], env=env)
-    verify_operating_docs(install, root, verifier)
-    native_stage_verified = verify_native_stage(source, root, verifier)
+        verifier = args.verifier.resolve()
+        run([sys.executable, verifier, install], env=env)
+        verify_operating_docs(install, root, verifier)
+        native_stage_verified = verify_native_stage(source, root, verifier)
 
-    run(
-        [
+        run(
+            [
+                java,
+                *profile_args,
+                f"-Dmechanist.launcher.installRoot={install}",
+                "-Djava.awt.headless=true",
+                "-cp",
+                install / "launcher" / "MechanistLauncher.jar",
+                "mechanist.launcher.LauncherBundledPackageVerificationSmoke",
+            ],
+            cwd=root,
+            env=env,
+            timeout=180,
+        )
+
+        run_client_smoke(
             java,
-            *profile_args,
-            f"-Dmechanist.launcher.installRoot={install}",
-            "-Djava.awt.headless=true",
-            "-cp",
-            install / "launcher" / "MechanistLauncher.jar",
-            "mechanist.launcher.LauncherBundledPackageVerificationSmoke",
-        ],
-        cwd=root,
-        env=env,
-        timeout=180,
-    )
-
-    run(
-        [
-            java,
-            *profile_args,
-            "-Djava.awt.headless=true",
-            "-cp",
-            classpath(install, "client"),
+            profile_args,
+            install,
+            root,
+            env,
             "mechanist.Gate3PlayerFacingTextSmokeSuite",
-        ],
-        cwd=root,
-        env=env,
-        timeout=600,
-    )
+            900,
+        )
 
-    internal_host_storage = profile / "Internal Host Storage With Spaces"
-    run(
-        [
+        internal_host_storage = profile / "Internal Host Storage With Spaces"
+        run_client_smoke(
             java,
-            *profile_args,
-            f"-Dmechanist.storage.root={internal_host_storage}",
-            "-Djava.awt.headless=true",
-            "-cp",
-            classpath(install, "client"),
+            profile_args,
+            install,
+            root,
+            env,
             "mechanist.SinglePlayerInternalHostLifecycleSmoke",
-        ],
-        cwd=root,
-        env=env,
-        timeout=900,
-    )
+            900,
+            [f"-Dmechanist.storage.root={internal_host_storage}"],
+        )
 
-    run(
-        [
-            java,
-            *profile_args,
-            "-Djava.awt.headless=true",
-            "-cp",
-            classpath(install, "client"),
+        for main_class in (
             "mechanist.IndependentHostTransportSessionSmoke",
-        ],
-        cwd=root,
-        env=env,
-        timeout=240,
-    )
-
-    run(
-        [
-            java,
-            *profile_args,
-            "-Djava.awt.headless=true",
-            "-cp",
-            classpath(install, "client"),
             "mechanist.IndependentHostHostedSessionWireSmoke",
-        ],
-        cwd=root,
-        env=env,
-        timeout=240,
-    )
-
-    run(
-        [
-            java,
-            *profile_args,
-            "-Djava.awt.headless=true",
-            "-cp",
-            classpath(install, "client"),
+            "mechanist.HostedRosterClientAuthoritySmoke",
+            "mechanist.IndependentHostClientSupervisorSmoke",
             "mechanist.IndependentHostPersistentSessionRestartSmoke",
-        ],
-        cwd=root,
-        env=env,
-        timeout=240,
-    )
+        ):
+            run_client_smoke(
+                java,
+                profile_args,
+                install,
+                root,
+                env,
+                main_class,
+                300,
+            )
 
-    run(
-        [
-            java,
-            *profile_args,
-            "-cp",
-            classpath(install, "server"),
-            "mechanist.MechanistServerMain",
-            "--help",
-        ],
-        cwd=root,
-        env=env,
-    )
-    run(
-        [
-            java,
-            *profile_args,
-            "-cp",
-            classpath(install, "server"),
-            "mechanist.MechanistServerMain",
-            "--host-once",
-            "--no-steam",
-            "--bind=127.0.0.1",
-        ],
-        cwd=root,
-        env=env,
-        timeout=60,
-    )
+        run(
+            [
+                java,
+                *profile_args,
+                "-cp",
+                classpath(install, "server"),
+                "mechanist.MechanistServerMain",
+                "--help",
+            ],
+            cwd=root,
+            env=env,
+        )
+        run(
+            [
+                java,
+                *profile_args,
+                "-cp",
+                classpath(install, "server"),
+                "mechanist.MechanistServerMain",
+                "--host-once",
+                "--no-steam",
+                "--bind=127.0.0.1",
+            ],
+            cwd=root,
+            env=env,
+            timeout=60,
+        )
 
-    before = sorted(str(path.relative_to(profile)) for path in profile.rglob("*"))
-    run(
-        [
-            java,
-            *profile_args,
-            "-cp",
-            classpath(install, "server"),
-            "mechanist.MechanistServerMain",
-            "--help",
-        ],
-        cwd=root,
-        env=env,
-    )
-    after = sorted(str(path.relative_to(profile)) for path in profile.rglob("*"))
-    if not after:
-        raise RuntimeError("synthetic profile remained empty after server initialization")
+        before = sorted(str(path.relative_to(profile)) for path in profile.rglob("*"))
+        run(
+            [
+                java,
+                *profile_args,
+                "-cp",
+                classpath(install, "server"),
+                "mechanist.MechanistServerMain",
+                "--help",
+            ],
+            cwd=root,
+            env=env,
+        )
+        after = sorted(str(path.relative_to(profile)) for path in profile.rglob("*"))
+        if not after:
+            raise RuntimeError("synthetic profile remained empty after server initialization")
 
-    make_read_only(install)
-    run(
-        [
-            java,
-            *profile_args,
-            "-cp",
-            classpath(install, "server"),
-            "mechanist.MechanistServerMain",
-            "--help",
-        ],
-        cwd=root,
-        env=env,
-    )
+        make_read_only(install)
+        run(
+            [
+                java,
+                *profile_args,
+                "-cp",
+                classpath(install, "server"),
+                "mechanist.MechanistServerMain",
+                "--help",
+            ],
+            cwd=root,
+            env=env,
+        )
 
-    tampered = root / "Tampered Distribution"
-    shutil.copytree(source, tampered)
-    manifest = tampered / "manifests" / "runtime-manifest.json"
-    data = json.loads(manifest.read_text(encoding="utf-8"))
-    declared = next(
-        (
-            entry
-            for entry in data.get("artifacts", [])
-            if entry.get("role") in {"client", "server", "launcher"}
-        ),
-        None,
-    )
-    if declared is None:
-        raise RuntimeError("manifest contains no primary artifact to tamper")
-    declared["sha256"] = "0" * 64
-    manifest.write_text(
-        json.dumps(data, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    run([sys.executable, verifier, tampered], expect=1)
+        tampered = root / "Tampered Distribution"
+        shutil.copytree(source, tampered)
+        manifest = tampered / "manifests" / "runtime-manifest.json"
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        declared = next(
+            (
+                entry
+                for entry in data.get("artifacts", [])
+                if entry.get("role") in {"client", "server", "launcher"}
+            ),
+            None,
+        )
+        if declared is None:
+            raise RuntimeError("manifest contains no primary artifact to tamper")
+        declared["sha256"] = "0" * 64
+        manifest.write_text(
+            json.dumps(data, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        run([sys.executable, verifier, tampered], expect=1)
 
-    missing = root / "Missing Support Library"
-    shutil.copytree(source, missing)
-    support = sorted((missing / "packages" / "support" / "lib").glob("*.jar"))
-    if not support:
-        raise RuntimeError("no support library available for missing-library rejection test")
-    support[0].unlink()
-    run([sys.executable, verifier, missing], expect=1)
+        missing = root / "Missing Support Library"
+        shutil.copytree(source, missing)
+        support = sorted((missing / "packages" / "support" / "lib").glob("*.jar"))
+        if not support:
+            raise RuntimeError("no support library available for missing-library rejection test")
+        support[0].unlink()
+        run([sys.executable, verifier, missing], expect=1)
 
-    summary = {
-        "status": "passed",
-        "distribution": source.name,
-        "releaseHardened": release_hardened,
-        "pathWithSpaces": True,
-        "isolatedProfile": True,
-        "returningProfile": len(after) >= len(before),
-        "readOnlyInstall": True,
-        "alphaOperatingDocuments": True,
-        "launcherBundledPackageVerification": True,
-        "launcherRemoteAcquisitionAdvertised": False,
-        "packagedGate3": True,
-        "singlePlayerInternalHostLifecycle": True,
-        "singlePlayerSaveResume": True,
-        "independentHostTransportSession": True,
-        "independentHostExactBind": True,
-        "independentHostClientDrivenHandshake": True,
-        "independentHostIntegrityChallenge": True,
-        "independentHostServerOwnedSessionLedger": True,
-        "independentHostStablePlayerIdentity": True,
-        "independentHostResumeTokenContinuity": True,
-        "independentHostDuplicateAttachmentDenied": True,
-        "independentHostInvalidResumeTokenDenied": True,
-        "independentHostImmutableSessionSnapshots": True,
-        "independentHostLifetimeRelayAccounting": True,
-        "independentHostAtomicSessionLedgerPersistence": True,
-        "independentHostResumeTokenHashOnlyPersistence": True,
-        "independentHostCorruptSessionLedgerRejected": True,
-        "independentHostSessionPersistenceAcrossProcessRestart": True,
-        "independentHostHostedSessionCommands": True,
-        "independentHostHostedSessionCommandOrdering": True,
-        "independentHostHostedSessionRoster": True,
-        "independentHostHostedSessionCommandAccountingPersistence": True,
-        "independentHostHostedSessionLivenessPersistence": False,
-        "independentHostStaleHostedLivenessReset": True,
-        "independentHostHostedRosterJoinBroadcast": True,
-        "independentHostHostedCommandPeerBroadcast": True,
-        "independentHostHostedDisconnectRosterBroadcast": True,
-        "independentHostHostedResumeRosterBroadcast": True,
-        "independentHostAsynchronousControlSeparatedFromRelay": True,
-        "independentHostUnsupportedWorldCommandsRejected": True,
-        "independentHostRelayOnlyAccess": True,
-        "independentHostPreAuthenticationDataDenied": True,
-        "independentHostBadChallengeDenied": True,
-        "independentHostWorldAuthority": False,
-        "independentHostGameplaySessionCertified": False,
-        "serverOperation": True,
-        "serverHostBind": True,
-        "nativeInstallerPayloadStage": native_stage_verified,
-        "nativeInstallerPayloadStageRequired": release_hardened,
-        "tamperedManifestRejected": True,
-        "missingSupportRejected": True,
-    }
-    rendered = json.dumps(summary, indent=2, sort_keys=True)
-    print(rendered)
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(rendered + "\n", encoding="utf-8")
-    shutil.rmtree(root, ignore_errors=True)
-    return 0
+        summary = {
+            "status": "passed",
+            "distribution": source.name,
+            "releaseHardened": release_hardened,
+            "pathWithSpaces": True,
+            "isolatedProfile": True,
+            "returningProfile": len(after) >= len(before),
+            "readOnlyInstall": True,
+            "alphaOperatingDocuments": True,
+            "launcherBundledPackageVerification": True,
+            "launcherRemoteAcquisitionAdvertised": False,
+            "packagedGate3": True,
+            "singlePlayerInternalHostLifecycle": True,
+            "singlePlayerSaveResume": True,
+            "independentHostTransportSession": True,
+            "independentHostExactBind": True,
+            "independentHostClientDrivenHandshake": True,
+            "independentHostIntegrityChallenge": True,
+            "independentHostServerOwnedSessionLedger": True,
+            "independentHostStablePlayerIdentity": True,
+            "independentHostResumeTokenContinuity": True,
+            "independentHostDuplicateAttachmentDenied": True,
+            "independentHostInvalidResumeTokenDenied": True,
+            "independentHostImmutableSessionSnapshots": True,
+            "independentHostLifetimeRelayAccounting": True,
+            "independentHostAtomicSessionLedgerPersistence": True,
+            "independentHostResumeTokenHashOnlyPersistence": True,
+            "independentHostCorruptSessionLedgerRejected": True,
+            "independentHostSessionPersistenceAcrossProcessRestart": True,
+            "independentHostHostedSessionCommands": True,
+            "independentHostHostedSessionCommandOrdering": True,
+            "independentHostHostedSessionRoster": True,
+            "independentHostHostedSessionCommandAccountingPersistence": True,
+            "independentHostHostedSessionLivenessPersistence": False,
+            "independentHostStaleHostedLivenessReset": True,
+            "independentHostHostedRosterJoinBroadcast": True,
+            "independentHostHostedCommandPeerBroadcast": True,
+            "independentHostHostedDisconnectRosterBroadcast": True,
+            "independentHostHostedResumeRosterBroadcast": True,
+            "independentHostAsynchronousControlSeparatedFromRelay": True,
+            "independentHostCanonicalRosterClientAuthority": True,
+            "independentHostRosterConnectedOnlyVisibility": True,
+            "independentHostOfflineResumeIdentityPrivate": True,
+            "independentHostRosterMalformedFrameRejected": True,
+            "independentHostRosterMonotonicVersioning": True,
+            "independentHostRosterVisiblePlayerLimit": True,
+            "independentHostRosterWorldAuthorityRejected": True,
+            "independentHostSupervisedClient": True,
+            "independentHostClientHandshakeOwnership": True,
+            "independentHostClientAtomicResumeTokenCustody": True,
+            "independentHostClientResumeTokenPlaintextCustody": True,
+            "independentHostClientTokenDiagnosticsRedacted": True,
+            "independentHostClientHostedCommandSequencing": True,
+            "independentHostClientRelayDispatch": True,
+            "independentHostClientLivingHostResume": True,
+            "independentHostClientHostRestartResume": True,
+            "independentHostClientCorruptTokenRejected": True,
+            "independentHostClientWorldCommandApi": False,
+            "independentHostUnsupportedWorldCommandsRejected": True,
+            "independentHostRelayOnlyAccess": True,
+            "independentHostPreAuthenticationDataDenied": True,
+            "independentHostBadChallengeDenied": True,
+            "independentHostWorldAuthority": False,
+            "independentHostGameplaySessionCertified": False,
+            "serverOperation": True,
+            "serverHostBind": True,
+            "nativeInstallerPayloadStage": native_stage_verified,
+            "nativeInstallerPayloadStageRequired": release_hardened,
+            "tamperedManifestRejected": True,
+            "missingSupportRejected": True,
+        }
+        rendered = json.dumps(summary, indent=2, sort_keys=True)
+        print(rendered)
+        if args.report:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(rendered + "\n", encoding="utf-8")
+        return 0
+    finally:
+        try:
+            remove_tree(root)
+        except OSError:
+            shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":
