@@ -1,8 +1,26 @@
 package mechanist;
 
-/** Fast deterministic checks for process-local remote session ownership and reconnect rules. */
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.stream.Stream;
+
+/** Fast deterministic checks for remote session ownership, reconnect, and persistence rules. */
 final class RemoteSessionLedgerAuthoritySmoke {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        verifyProcessLocalRules();
+        verifyAtomicPersistenceRules();
+        System.out.println("RemoteSessionLedgerAuthoritySmoke PASS"
+                + " processLocalRules=true"
+                + " atomicPersistence=true"
+                + " tokenStorage=sha256-only"
+                + " corruptLedgerRejected=true"
+                + " worldAuthority=false");
+    }
+
+    private static void verifyProcessLocalRules() throws Exception {
         RemoteSessionLedgerAuthority ledger =
                 new RemoteSessionLedgerAuthority("remote-ledger-smoke-world");
 
@@ -94,10 +112,157 @@ final class RemoteSessionLedgerAuthoritySmoke {
                 "deterministic profile player identity changed across host restart");
         require(freshAfterRestart.connectionGeneration() == 1L
                         && !freshAfterRestart.resumed(),
-                "process restart incorrectly retained reconnect state");
+                "nonpersistent ledger incorrectly retained reconnect state");
+        ledger.close();
+        restarted.close();
+    }
 
-        System.out.println("RemoteSessionLedgerAuthoritySmoke PASS "
-                + ledger.auditSummary());
+    private static void verifyAtomicPersistenceRules() throws Exception {
+        Path root = Files.createTempDirectory("mechanist-remote-ledger-smoke ");
+        Path ledgerFile = root.resolve("world alpha.sessions.properties");
+        Path corruptFile = root.resolve("corrupt.sessions.properties");
+        try {
+            String profile = "profile.persisted.0003";
+            String token;
+            String playerId;
+            long versionBeforeRestart;
+            try (RemoteSessionLedgerAuthority persistent =
+                         new RemoteSessionLedgerAuthority(
+                                 "persistent-smoke-world", ledgerFile)) {
+                require(persistent.persistenceEnabled(),
+                        "persistent ledger did not report persistence enabled");
+                require(ledgerFile.equals(persistent.persistenceFile()),
+                        "persistent ledger changed its configured file");
+                RemoteSessionLedgerAuthority.Attachment first =
+                        persistent.attach(profile, "", "persistent-connection-one");
+                token = first.resumeToken();
+                playerId = first.playerId();
+                persistent.noteRelayFrameAccepted(first, 0L);
+                persistent.disconnect(first, "clean persistence smoke disconnect");
+                RemoteSessionLedgerAuthority.SessionSnapshot offline =
+                        persistent.snapshotForProfile(profile);
+                require(offline != null && !offline.connected(),
+                        "persistent ledger did not retain the offline session");
+                require(offline.acceptedRelayFrames() == 1L,
+                        "persistent ledger lost relay accounting before restart");
+                versionBeforeRestart = offline.version();
+            }
+
+            require(Files.isRegularFile(ledgerFile),
+                    "atomic persistence did not create the ledger file");
+            String disk = Files.readString(ledgerFile, StandardCharsets.ISO_8859_1);
+            require(!disk.contains(token),
+                    "persistent ledger wrote a reusable plaintext resume token");
+            require(disk.contains(sha256Hex(token)),
+                    "persistent ledger omitted the resume-token hash");
+            require(!hasTemporarySibling(ledgerFile),
+                    "atomic persistence left a temporary sibling behind");
+
+            long versionAfterResume;
+            try (RemoteSessionLedgerAuthority restored =
+                         new RemoteSessionLedgerAuthority(
+                                 "persistent-smoke-world", ledgerFile)) {
+                RemoteSessionLedgerAuthority.SessionSnapshot restoredOffline =
+                        restored.snapshotForProfile(profile);
+                require(restoredOffline != null && !restoredOffline.connected(),
+                        "restored session was not forced offline");
+                require(restoredOffline.playerId().equals(playerId),
+                        "restored session changed the stable player id");
+                require(restoredOffline.acceptedRelayFrames() == 1L,
+                        "restored session lost lifetime relay accounting");
+                require(restoredOffline.version() > versionBeforeRestart,
+                        "ledger restoration did not advance the snapshot version");
+                expectFailure(
+                        () -> restored.attach(
+                                profile,
+                                "f".repeat(64),
+                                "persistent-invalid-token"),
+                        "resume token");
+                RemoteSessionLedgerAuthority.Attachment resumed =
+                        restored.attach(
+                                profile,
+                                token,
+                                "persistent-connection-two");
+                require(resumed.resumed(),
+                        "persistent ledger did not accept its valid resume token");
+                require(resumed.playerId().equals(playerId),
+                        "persistent resume changed the stable player id");
+                require(resumed.connectionGeneration() == 2L,
+                        "persistent resume did not advance the connection generation");
+                RemoteSessionLedgerAuthority.SessionSnapshot accepted =
+                        restored.noteRelayFrameAccepted(resumed, 0L);
+                require(accepted.acceptedRelayFrames() == 2L,
+                        "persistent resume lost lifetime relay accounting");
+                versionAfterResume = accepted.version();
+                restored.disconnect(resumed, "second clean disconnect");
+            }
+
+            try (RemoteSessionLedgerAuthority restoredAgain =
+                         new RemoteSessionLedgerAuthority(
+                                 "persistent-smoke-world", ledgerFile)) {
+                RemoteSessionLedgerAuthority.SessionSnapshot snapshot =
+                        restoredAgain.snapshotForProfile(profile);
+                require(snapshot != null && !snapshot.connected(),
+                        "second restoration did not keep the session offline");
+                require(snapshot.connectionGeneration() == 2L,
+                        "second restoration lost connection-generation continuity");
+                require(snapshot.acceptedRelayFrames() == 2L,
+                        "second restoration lost lifetime relay accounting");
+                require(snapshot.version() > versionAfterResume,
+                        "second restoration did not preserve monotonic versions");
+                RemoteSessionLedgerAuthority.Attachment resumedAgain =
+                        restoredAgain.attach(
+                                profile,
+                                token,
+                                "persistent-connection-three");
+                require(resumedAgain.connectionGeneration() == 3L,
+                        "second persistent resume did not advance generation");
+            }
+
+            String corrupt = Files.readString(
+                    ledgerFile, StandardCharsets.ISO_8859_1)
+                    .replaceFirst("schema=1", "schema=999");
+            Files.writeString(corruptFile, corrupt, StandardCharsets.ISO_8859_1);
+            expectCheckedFailure(
+                    () -> new RemoteSessionLedgerAuthority(
+                            "persistent-smoke-world", corruptFile),
+                    "unsupported");
+            expectCheckedFailure(
+                    () -> new RemoteSessionLedgerAuthority(
+                            "different-world", ledgerFile),
+                    "world mismatch");
+        } finally {
+            deleteRecursively(root);
+        }
+    }
+
+    private static boolean hasTemporarySibling(Path ledgerFile) throws Exception {
+        Path parent = ledgerFile.getParent();
+        if (parent == null || !Files.isDirectory(parent)) return false;
+        String prefix = ledgerFile.getFileName() + ".tmp-";
+        try (Stream<Path> paths = Files.list(parent)) {
+            return paths.anyMatch(path -> path.getFileName().toString().startsWith(prefix));
+        }
+    }
+
+    private static String sha256Hex(String value) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return HexFormat.of().formatHex(
+                digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static void deleteRecursively(Path root) throws Exception {
+        if (root == null || !Files.exists(root)) return;
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.sorted((a, b) -> b.getNameCount() - a.getNameCount())
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (Exception failure) {
+                            throw new RuntimeException(failure);
+                        }
+                    });
+        }
     }
 
     private static void expectFailure(Runnable action, String expectedText) {
@@ -111,8 +276,27 @@ final class RemoteSessionLedgerAuthoritySmoke {
         }
     }
 
+    private static void expectCheckedFailure(
+            ThrowingRunnable action,
+            String expectedText
+    ) {
+        try {
+            action.run();
+            throw new AssertionError("expected checked failure containing: " + expectedText);
+        } catch (Exception expected) {
+            String message = expected.getMessage() == null ? "" : expected.getMessage();
+            require(message.toLowerCase().contains(expectedText.toLowerCase()),
+                    "unexpected checked failure: " + message);
+        }
+    }
+
     private static void require(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);
+    }
+
+    @FunctionalInterface
+    private interface ThrowingRunnable {
+        void run() throws Exception;
     }
 
     private RemoteSessionLedgerAuthoritySmoke() { }
