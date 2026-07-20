@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify a jpackage app-image built from a canonical The Mechanist distribution."""
+"""Verify a jpackage app image built from one canonical Mechanist distribution."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import sys
 import zipfile
 
 from verify_runnable_distribution import (
+    DISTRIBUTION_MODEL,
     EXPECTED_MAIN_CLASSES,
     REMOTE_CLIENT_MAIN,
     manifest_main_class,
@@ -37,12 +38,11 @@ def sha256(path: pathlib.Path) -> str:
 
 
 def payload_root(image_root: pathlib.Path) -> pathlib.Path:
-    candidates = (
+    for candidate in (
         image_root / "app",
         image_root / "lib" / "app",
         image_root,
-    )
-    for candidate in candidates:
+    ):
         if (candidate / "manifests").is_dir() and (
             candidate / "packages"
         ).is_dir():
@@ -52,20 +52,14 @@ def payload_root(image_root: pathlib.Path) -> pathlib.Path:
 
 
 def runtime_root(image_root: pathlib.Path) -> pathlib.Path:
-    candidates = (
+    for candidate in (
         image_root / "runtime",
         image_root / "lib" / "runtime",
-    )
-    for candidate in candidates:
+    ):
         if candidate.is_dir():
             return candidate
     fail(f"could not locate jpackage runtime under {image_root}")
     return image_root
-
-
-def platform_java(image_root: pathlib.Path, platform_name: str) -> pathlib.Path:
-    executable = "java.exe" if platform_name.startswith("windows-") else "java"
-    return runtime_root(image_root) / "bin" / executable
 
 
 def native_launcher(
@@ -76,14 +70,6 @@ def native_launcher(
     if platform_name.startswith("windows-"):
         return image_root / f"{launcher_name}.exe"
     return image_root / "bin" / launcher_name
-
-
-def portable_remote_launcher(platform_name: str) -> str:
-    return (
-        "Run-Remote-Client.cmd"
-        if platform_name.startswith("windows-")
-        else "run-remote-client.sh"
-    )
 
 
 def verify_declared_artifact(
@@ -111,12 +97,7 @@ def verify_remote_launcher_configuration(
     image_root: pathlib.Path,
     payload: pathlib.Path,
 ) -> pathlib.Path:
-    candidates = sorted(
-        {
-            *image_root.rglob("*.cfg"),
-            *payload.rglob("*.cfg"),
-        }
-    )
+    candidates = sorted({*image_root.rglob("*.cfg"), *payload.rglob("*.cfg")})
     for path in candidates:
         text = path.read_text(encoding="utf-8", errors="replace")
         normalized = text.replace("\\", "/")
@@ -127,116 +108,14 @@ def verify_remote_launcher_configuration(
             return path
     fail(
         "jpackage image contains no launcher configuration connecting "
-        f"{REMOTE_LAUNCHER_NAME!r} to {REMOTE_CLIENT_MAIN} "
-        "and the verified client JAR"
+        f"{REMOTE_LAUNCHER_NAME!r} to {REMOTE_CLIENT_MAIN} and the verified client JAR"
     )
     return image_root
 
 
-def verify_source_certification(
-    payload: pathlib.Path,
-    manifest: dict[str, object],
-    platform_name: str,
-) -> dict[str, object]:
-    certification_root = payload / "certification"
-    source_path = certification_root / "installer-source-verification.json"
-    canonical_path = certification_root / "canonical-runtime-manifest.json"
-    if not source_path.is_file():
-        fail(f"missing installer source verification record: {source_path}")
-    if not canonical_path.is_file():
-        fail(f"missing certified canonical runtime manifest: {canonical_path}")
-
-    source = json.loads(source_path.read_text(encoding="utf-8"))
-    if source.get("schema") != 2:
-        fail("installer source verification schema must be 2")
-    for key in (
-        "sourceDistribution",
-        "version",
-        "platform",
-        "commit",
-        "javaRelease",
-        "canonicalManifestSha256",
-        "canonicalArtifactCount",
-        "launcherCompatibilityManifest",
-        "remoteClientEntryPoint",
-        "portableRemoteClientLauncher",
-        "nativeRemoteClientLauncher",
-        "runtimeImageSource",
-    ):
-        if source.get(key) in (None, ""):
-            fail(f"installer source verification record is missing {key}")
-    if source.get("releaseHardened") is not True:
-        fail("installer source verification record is not release hardened")
-    if source.get("javaRelease") != 17:
-        fail("installer source verification Java release must be 17")
-    if source.get("platform") != platform_name:
-        fail(
-            "installer source verification platform does not match "
-            "launcher manifest"
-        )
-    if source.get("version") != manifest.get("version"):
-        fail(
-            "installer source verification version does not match "
-            "launcher manifest"
-        )
-    if source.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
-        fail("installer source verification remote entry is invalid")
-    if source.get("portableRemoteClientLauncher") != portable_remote_launcher(
-        platform_name
-    ):
-        fail("installer source verification portable remote launcher is invalid")
-    if source.get("nativeRemoteClientLauncher") != REMOTE_LAUNCHER_NAME:
-        fail("installer source verification native remote launcher is invalid")
-    if source.get("mutableStorageIncluded") is not False:
-        fail("installer source verification must declare mutable storage absent")
-    if source.get("remoteWorldAuthority") is not False:
-        fail("installer source verification overclaims remote world authority")
-    if source.get("launcherCompatibilityManifest") != LAUNCHER_MANIFEST.as_posix():
-        fail("installer source verification launcher manifest path is invalid")
-
-    actual_canonical_hash = sha256(canonical_path)
-    if actual_canonical_hash.lower() != str(
-        source.get("canonicalManifestSha256", "")
-    ).lower():
-        fail("certified canonical runtime manifest hash does not match source record")
-
-    canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
-    if canonical.get("schema") != 2:
-        fail("certified canonical runtime manifest schema must be 2")
-    if canonical.get("version") != source.get("version"):
-        fail("certified canonical manifest version differs from source record")
-    if canonical.get("platform") != platform_name:
-        fail("certified canonical manifest platform differs from source record")
-    if canonical.get("commit") != source.get("commit"):
-        fail("certified canonical manifest commit differs from source record")
-    if canonical.get("javaRelease") != 17:
-        fail("certified canonical manifest Java release must be 17")
-    if canonical.get("releaseHardened") is not True:
-        fail("certified canonical manifest is not release hardened")
-    if canonical.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
-        fail("certified canonical manifest remote entry is invalid")
-    artifacts = canonical.get("artifacts")
-    if not isinstance(artifacts, list):
-        fail("certified canonical manifest artifacts must be a list")
-    if len(artifacts) != int(source.get("canonicalArtifactCount")):
-        fail("certified canonical artifact count differs from source record")
-
-    return {
-        "path": str(source_path),
-        "schema": 2,
-        "sourceDistribution": source.get("sourceDistribution"),
-        "commit": source.get("commit"),
-        "canonicalManifestSha256": actual_canonical_hash,
-        "canonicalArtifactCount": len(artifacts),
-        "remoteClientEntryPoint": REMOTE_CLIENT_MAIN,
-        "portableRemoteClientLauncher": source.get(
-            "portableRemoteClientLauncher"
-        ),
-        "nativeRemoteClientLauncher": REMOTE_LAUNCHER_NAME,
-        "mutableStorageIncluded": False,
-        "remoteWorldAuthority": False,
-        "status": "verified",
-    }
+def require_false(record: dict[str, object], key: str, label: str) -> None:
+    if record.get(key) is not False:
+        fail(f"{label} must declare {key}=false")
 
 
 def verify_image(
@@ -251,13 +130,8 @@ def verify_image(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     if manifest.get("schema") != 2:
-        fail(
-            f"launcher manifest schema must be 2, "
-            f"got {manifest.get('schema')!r}"
-        )
-    if manifest.get("distribution_model") != (
-        "installer-thin-launcher-client-server"
-    ):
+        fail(f"launcher manifest schema must be 2, got {manifest.get('schema')!r}")
+    if manifest.get("distribution_model") != DISTRIBUTION_MODEL:
         fail("launcher manifest distribution_model is invalid")
     platform_name = str(manifest.get("platform", ""))
     if expected_platform and platform_name != expected_platform:
@@ -309,10 +183,7 @@ def verify_image(
         relative = pathlib.PurePosixPath(
             path.relative_to(payload).as_posix()
         ).as_posix()
-        if (
-            not relative.startswith("packages/support/lib/")
-            or not relative.endswith(".jar")
-        ):
+        if not relative.startswith("packages/support/lib/") or not relative.endswith(".jar"):
             fail(f"support library is outside governed directory: {relative}")
         if relative in support_paths:
             fail(f"support library is declared twice: {relative}")
@@ -320,11 +191,11 @@ def verify_image(
         with zipfile.ZipFile(path) as archive:
             bad = archive.testzip()
             if bad:
-                fail(
-                    f"support library contains corrupt entry {bad}: {relative}"
-                )
+                fail(f"support library contains corrupt entry {bad}: {relative}")
 
-    java = platform_java(image_root, platform_name)
+    runtime = runtime_root(image_root)
+    java_name = "java.exe" if platform_name.startswith("windows-") else "java"
+    java = runtime / "bin" / java_name
     if not java.is_file():
         fail(f"jpackage runtime is missing Java executable: {java}")
 
@@ -362,19 +233,76 @@ def verify_image(
             f"{leaked}"
         )
 
-    source_certification = verify_source_certification(
-        payload,
-        manifest,
-        platform_name,
-    )
+    certification = payload / "certification"
+    source_path = certification / "installer-source-verification.json"
+    canonical_copy = certification / "canonical-runtime-manifest.json"
+    if not source_path.is_file():
+        fail(f"missing installer source verification record: {source_path}")
+    if not canonical_copy.is_file():
+        fail(f"missing canonical runtime-manifest copy: {canonical_copy}")
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+
+    if source.get("schema") != 3:
+        fail("installer source verification schema must be 3")
+    for key in (
+        "version",
+        "platform",
+        "commit",
+        "canonicalManifestSha256",
+        "canonicalArtifactCount",
+        "remoteClientEntryPoint",
+        "portableRemoteClientLauncher",
+        "nativeRemoteClientLauncher",
+    ):
+        if not source.get(key):
+            fail(f"installer source verification record is missing {key}")
+    if source.get("releaseHardened") is not True:
+        fail("installer source verification record is not release hardened")
+    if source.get("platform") != platform_name:
+        fail("installer source verification platform does not match launcher manifest")
+    if source.get("version") != manifest.get("version"):
+        fail("installer source verification version does not match launcher manifest")
+    if source.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
+        fail("installer source verification remote entry point is invalid")
+    if source.get("nativeRemoteClientLauncher") != REMOTE_LAUNCHER_NAME:
+        fail("installer source verification native remote launcher identity is invalid")
+    if source.get("authenticatedWaitAuthority") is not True:
+        fail("installer source verification did not certify authenticated wait authority")
+    if source.get("waitCommand") != "WAIT":
+        fail("installer source verification wait command is invalid")
+    for key in (
+        "movementAuthority",
+        "mapAuthority",
+        "fullRemoteWorldAuthority",
+        "remoteGameplayCertified",
+        "mutableStorageIncluded",
+    ):
+        require_false(source, key, "installer source verification")
+
+    canonical = json.loads(canonical_copy.read_text(encoding="utf-8"))
+    if sha256(canonical_copy) != source.get("canonicalManifestSha256"):
+        fail("installer source canonical-manifest hash is invalid")
+    if canonical.get("version") != source.get("version"):
+        fail("canonical source manifest version differs from source certificate")
+    if canonical.get("platform") != source.get("platform"):
+        fail("canonical source manifest platform differs from source certificate")
+    if canonical.get("commit") != source.get("commit"):
+        fail("canonical source manifest commit differs from source certificate")
+    if canonical.get("releaseHardened") is not True:
+        fail("canonical source manifest is not release hardened")
+    if canonical.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
+        fail("canonical source manifest remote entry point is invalid")
+    if len(canonical.get("artifacts", [])) != int(source["canonicalArtifactCount"]):
+        fail("canonical source artifact count differs from source certificate")
 
     return {
         "status": "verified",
         "image": image_root.name,
         "payload": str(payload),
-        "runtimeRoot": str(runtime_root(image_root)),
+        "runtimeRoot": str(runtime),
         "version": manifest.get("version"),
         "platform": platform_name,
+        "commit": source.get("commit"),
         "releaseHardened": True,
         "supportLibraryCount": len(support_paths),
         "runtimeJava": str(java),
@@ -383,9 +311,17 @@ def verify_image(
         "remoteLobbyLauncherConfig": str(remote_config),
         "remoteLobbyEntryPoint": REMOTE_CLIENT_MAIN,
         "remoteLobbyNativeExecutable": True,
+        "authenticatedWaitAuthority": True,
+        "waitCommand": "WAIT",
+        "movementAuthority": False,
+        "mapAuthority": False,
+        "fullRemoteWorldAuthority": False,
+        "remoteGameplayCertified": False,
+        "canonicalSourceManifest": str(canonical_copy),
+        "canonicalSourceManifestSha256": sha256(canonical_copy),
+        "canonicalSourceArtifactCount": len(canonical.get("artifacts", [])),
+        "installerSourceVerificationSchema": 3,
         "mutableStorageIncluded": False,
-        "remoteWorldAuthority": False,
-        "sourceCertification": source_certification,
         "jars": {
             "launcher": launcher_scan,
             "client": client_scan,
