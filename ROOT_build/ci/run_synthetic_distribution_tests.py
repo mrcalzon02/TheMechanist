@@ -56,10 +56,18 @@ def make_read_only(root: pathlib.Path) -> None:
             pass
 
 
-def verify_native_stage(source: pathlib.Path, root: pathlib.Path, verifier: pathlib.Path) -> None:
+def verify_native_stage(source: pathlib.Path, root: pathlib.Path, verifier: pathlib.Path) -> bool:
     manifest = json.loads(
         (source / "manifests" / "runtime-manifest.json").read_text(encoding="utf-8")
     )
+    if manifest.get("releaseHardened") is not True:
+        print(
+            "SKIP native installer staging: ordinary exact-head verification "
+            "distribution is not release hardened.",
+            flush=True,
+        )
+        return False
+
     platform_name = str(manifest["platform"])
     stager = verifier.parent / "stage_native_installer_payload.py"
     if not stager.is_file():
@@ -100,6 +108,7 @@ def verify_native_stage(source: pathlib.Path, root: pathlib.Path, verifier: path
         raise RuntimeError("native installer staging did not preserve hardening identity")
     if stage_summary.get("platform") != platform_name:
         raise RuntimeError("native installer staging changed platform identity")
+    return True
 
 
 def verify_operating_docs(
@@ -134,6 +143,11 @@ def main() -> int:
     if not source.is_dir():
         raise SystemExit(f"missing distribution: {source}")
 
+    canonical = json.loads(
+        (source / "manifests" / "runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    release_hardened = canonical.get("releaseHardened") is True
+
     root = pathlib.Path(tempfile.mkdtemp(prefix="Mechanist Synthetic Path With Spaces "))
     install = root / "Read Only Program Files" / source.name
     shutil.copytree(source, install)
@@ -146,7 +160,7 @@ def main() -> int:
     verifier = args.verifier.resolve()
     run([sys.executable, verifier, install], env=env)
     verify_operating_docs(install, root, verifier)
-    verify_native_stage(source, root, verifier)
+    native_stage_verified = verify_native_stage(source, root, verifier)
 
     run(
         [
@@ -298,6 +312,7 @@ def main() -> int:
     summary = {
         "status": "passed",
         "distribution": source.name,
+        "releaseHardened": release_hardened,
         "pathWithSpaces": True,
         "isolatedProfile": True,
         "returningProfile": len(after) >= len(before),
@@ -318,7 +333,8 @@ def main() -> int:
         "independentHostGameplaySessionCertified": False,
         "serverOperation": True,
         "serverHostBind": True,
-        "nativeInstallerPayloadStage": True,
+        "nativeInstallerPayloadStage": native_stage_verified,
+        "nativeInstallerPayloadStageRequired": release_hardened,
         "tamperedManifestRejected": True,
         "missingSupportRejected": True,
     }
