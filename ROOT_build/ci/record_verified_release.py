@@ -12,6 +12,45 @@ import pathlib
 import subprocess
 
 
+REQUIRED_SYNTHETIC_TRUE = (
+    "releaseHardened",
+    "pathWithSpaces",
+    "isolatedProfile",
+    "readOnlyInstall",
+    "alphaOperatingDocuments",
+    "launcherBundledPackageVerification",
+    "packagedGate3",
+    "singlePlayerInternalHostLifecycle",
+    "singlePlayerSaveResume",
+    "independentHostTransportSession",
+    "independentHostExactBind",
+    "independentHostClientDrivenHandshake",
+    "independentHostIntegrityChallenge",
+    "independentHostServerOwnedSessionLedger",
+    "independentHostStablePlayerIdentity",
+    "independentHostResumeTokenContinuity",
+    "independentHostDuplicateAttachmentDenied",
+    "independentHostInvalidResumeTokenDenied",
+    "independentHostImmutableSessionSnapshots",
+    "independentHostLifetimeRelayAccounting",
+    "independentHostRelayOnlyAccess",
+    "independentHostPreAuthenticationDataDenied",
+    "independentHostBadChallengeDenied",
+    "serverOperation",
+    "serverHostBind",
+    "nativeInstallerPayloadStage",
+    "tamperedManifestRejected",
+    "missingSupportRejected",
+)
+
+REQUIRED_SYNTHETIC_FALSE = (
+    "launcherRemoteAcquisitionAdvertised",
+    "independentHostSessionPersistenceAcrossProcessRestart",
+    "independentHostWorldAuthority",
+    "independentHostGameplaySessionCertified",
+)
+
+
 def current_git_head() -> str:
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -23,11 +62,69 @@ def current_git_head() -> str:
     return result.stdout.strip()
 
 
+def load_reports(pattern: str, label: str) -> tuple[list[str], list[dict[str, object]]]:
+    paths = sorted(glob.glob(pattern, recursive=True))
+    if len(paths) != 2:
+        raise SystemExit(f"Expected exactly two {label} reports; found {len(paths)}: {paths}")
+    reports = [
+        json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+        for path in paths
+    ]
+    return paths, reports
+
+
+def synthetic_platform(report: dict[str, object]) -> str:
+    distribution = str(report.get("distribution", "")).lower()
+    if "windows-x64" in distribution:
+        return "windows-x64"
+    if "linux-x64" in distribution:
+        return "linux-x64"
+    return "unknown"
+
+
+def verify_synthetic_reports(pattern: str) -> None:
+    paths, reports = load_reports(pattern, "synthetic")
+    statuses = {str(report.get("status", "")) for report in reports}
+    if statuses != {"passed"}:
+        raise SystemExit(f"Synthetic reports are not all passed: {statuses}")
+    platforms = {synthetic_platform(report) for report in reports}
+    if platforms != {"linux-x64", "windows-x64"}:
+        raise SystemExit(
+            "Synthetic reports do not identify exactly Linux and Windows x64: "
+            f"{sorted(platforms)} from {paths}"
+        )
+
+    failures: list[str] = []
+    for path, report in zip(paths, reports):
+        for key in REQUIRED_SYNTHETIC_TRUE:
+            if report.get(key) is not True:
+                failures.append(f"{path}: expected {key}=true, found {report.get(key)!r}")
+        for key in REQUIRED_SYNTHETIC_FALSE:
+            if report.get(key) is not False:
+                failures.append(f"{path}: expected {key}=false, found {report.get(key)!r}")
+        if report.get("nativeInstallerPayloadStageRequired") is not True:
+            failures.append(
+                f"{path}: release candidate did not require native installer payload staging"
+            )
+    if failures:
+        raise SystemExit(
+            "Synthetic release contract failed:\n- " + "\n- ".join(failures)
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--history", type=pathlib.Path, required=True)
-    parser.add_argument("--reports", required=True,
-                        help="Glob matching platform verification reports")
+    parser.add_argument(
+        "--reports",
+        required=True,
+        help="Glob matching platform verification reports",
+    )
+    parser.add_argument(
+        "--synthetic-reports",
+        default="synthetic-assets/synthetic-*.json",
+        help="Glob matching Linux and Windows packaged synthetic reports",
+    )
     parser.add_argument("--commit", required=True)
     parser.add_argument("--run-url", required=True)
     args = parser.parse_args()
@@ -40,11 +137,7 @@ def main() -> int:
                 f"{head} does not equal verified source commit {args.commit}"
             )
 
-    report_paths = sorted(glob.glob(args.reports, recursive=True))
-    if len(report_paths) < 2:
-        raise SystemExit(f"Expected Linux and Windows reports; found {len(report_paths)}")
-    reports = [json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
-               for path in report_paths]
+    report_paths, reports = load_reports(args.reports, "platform verification")
     versions = {str(report.get("version", "")) for report in reports}
     commits = {str(report.get("commit", "")) for report in reports}
     platforms = {str(report.get("platform", "")) for report in reports}
@@ -53,10 +146,15 @@ def main() -> int:
         raise SystemExit(f"Verification reports disagree on version: {sorted(versions)}")
     if commits != {args.commit}:
         raise SystemExit(f"Verification reports do not identify {args.commit}: {sorted(commits)}")
-    if not {"linux-x64", "windows-x64"}.issubset(platforms):
-        raise SystemExit(f"Verification reports lack both platforms: {sorted(platforms)}")
+    if platforms != {"linux-x64", "windows-x64"}:
+        raise SystemExit(
+            "Verification reports must identify exactly both release platforms: "
+            f"{sorted(platforms)} from {report_paths}"
+        )
     if statuses != {"verified"}:
         raise SystemExit(f"Verification reports are not all verified: {sorted(statuses)}")
+
+    verify_synthetic_reports(args.synthetic_reports)
 
     version = next(iter(versions))
     marker = f"verified-remote-release:{version}:{args.commit}"
@@ -72,7 +170,7 @@ def main() -> int:
 
 Recorded the first-class remote release pipeline for the launcher -> client -> server distribution path. GitHub-hosted Linux x64 and Windows x64 jobs compiled the exact source tree with Java 17, rebuilt the client, server, and launcher packages, staged platform-specific support libraries and bundled Java runtimes, generated schema-2 SHA-256 manifests, and produced portable runnable ZIP distributions. Gate 3 ran only after both platform package jobs completed successfully, and final distribution certification revalidated archive integrity, manifest completeness, entry points, platform-native support libraries, and Java 17 classfile compatibility before release publication.
 
-Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
+Verification date: `{date}`. Exact source commit `{args.commit}`; version `{version}`; platforms `linux-x64` and `windows-x64`; Java 17 compile passed; packaged client and headless server operation smokes passed; downstream Gate 3 passed; Linux and Windows synthetic environment certification passed; launcher and alpha operating documents were verified; supervised single-player host save/resume passed; independent-host identity, manifest, restart, integrity challenge, exact bind, server-owned process-local session ledger, stable remote player identity, token-gated reconnect continuity, duplicate/invalid-token denial, immutable session snapshots, and lifetime relay accounting passed; remote world authority and gameplay certification remained explicitly false; distribution verification reports returned `verified`; final release certification passed. Workflow evidence: {args.run_url}
 
 <!-- {marker} -->
 """
