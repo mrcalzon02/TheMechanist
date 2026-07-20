@@ -61,7 +61,9 @@ final class ReleaseBuildIdentitySmoke {
                 "internal-host authority must own shutdown");
 
         RemoteSessionLedgerAuthoritySmoke.main(args);
+        HostedRosterClientAuthoritySmoke.main(args);
         IndependentHostHostedSessionWireSmoke.main(args);
+        IndependentHostClientSupervisorSmoke.main(args);
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
 
