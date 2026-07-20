@@ -28,7 +28,7 @@ jobs:
   build-package:
     name: Build package (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 75
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -37,21 +37,26 @@ jobs:
             platform: linux-x64
           - os: windows-2022
             platform: windows-x64
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Capture toolchain
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ci-logs dist/releases
           {
             java -version
@@ -61,17 +66,23 @@ jobs:
             echo "commit=$GITHUB_SHA"
             echo "platform=${{ matrix.platform }}"
           } 2>&1 | tee ci-logs/toolchain-${{ matrix.platform }}.log
-      - name: Verify Python release tools parse
+
+      - name: Verify release source syntax and hardening policy
         shell: bash
         run: |
           set -o pipefail
-          python -m compileall -q ROOT_build/ci 2>&1 | tee ci-logs/python-syntax-${{ matrix.platform }}.log
+          python -m compileall -q ROOT_build/ci \
+            2>&1 | tee ci-logs/python-syntax-${{ matrix.platform }}.log
+          python ROOT_build/ci/verify_proguard_configuration.py \
+            --repo . \
+            --report "dist/releases/proguard-policy-${{ matrix.platform }}.json" \
+            2>&1 | tee ci-logs/proguard-policy-${{ matrix.platform }}.log
+
       - name: Verify Linux packaging shell syntax
         if: runner.os == 'Linux'
         shell: bash
-        run: |
-          set -o pipefail
-          bash -n scripts/package/build-linux-installers.sh 2>&1 | tee ci-logs/linux-package-syntax.log
+        run: bash -n scripts/package/build-linux-installers.sh
+
       - name: Verify Windows packaging PowerShell syntax
         if: runner.os == 'Windows'
         shell: pwsh
@@ -87,49 +98,71 @@ jobs:
             $errors | ForEach-Object { Write-Error $_.Message }
             exit 1
           }
-      - name: Verify release hardening policies
-        shell: bash
-        run: |
-          set -o pipefail
-          python ROOT_build/ci/verify_proguard_configuration.py \
-            --repo . \
-            --report "dist/releases/proguard-policy-${{ matrix.platform }}.json" \
-            2>&1 | tee ci-logs/proguard-policy-${{ matrix.platform }}.log
+
       - name: Compile Java 17 client and server
         shell: bash
         run: |
           set -o pipefail
-          mvn -B -DskipTests clean package 2>&1 | tee ci-logs/maven-${{ matrix.platform }}.log
+          mvn -B -DskipTests clean package \
+            2>&1 | tee ci-logs/maven-${{ matrix.platform }}.log
+
       - name: Run focused boot smoke
         shell: bash
         run: |
           set -o pipefail
-          java -Djava.awt.headless=true -cp target/TheMechanist-all.jar mechanist.BootStartupAudioSilenceSmoke 2>&1 | tee ci-logs/boot-${{ matrix.platform }}.log
+          java -Djava.awt.headless=true \
+            -cp target/TheMechanist-all.jar \
+            mechanist.BootStartupAudioSilenceSmoke \
+            2>&1 | tee ci-logs/boot-${{ matrix.platform }}.log
+
       - name: Run server operation smoke
         shell: bash
         run: |
           set -o pipefail
-          java -Duser.home="${{ runner.temp }}/mechanist-server-smoke" -jar target/TheMechanistServer-all.jar --help 2>&1 | tee ci-logs/server-${{ matrix.platform }}.log
+          java -Duser.home="${{ runner.temp }}/mechanist-server-smoke" \
+            -jar target/TheMechanistServer-all.jar --help \
+            2>&1 | tee ci-logs/server-${{ matrix.platform }}.log
+
       - name: Build portable distribution
         id: package
         shell: bash
+        env:
+          PUBLISH_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
         run: |
-          set -o pipefail
-          python ROOT_build/ci/build_runnable_distribution.py --repo . --commit "$GITHUB_SHA" --output dist/releases 2>&1 | tee ci-logs/package-${{ matrix.platform }}.log
+          set -euo pipefail
+          EXTRA=()
+          if [[ "$PUBLISH_PRERELEASE" == 'true' ]]; then
+            EXTRA+=(--release-hardened)
+          fi
+          python ROOT_build/ci/build_runnable_distribution.py \
+            --repo . \
+            --commit "$GITHUB_SHA" \
+            --output dist/releases \
+            "${EXTRA[@]}" \
+            2>&1 | tee ci-logs/package-${{ matrix.platform }}.log
           ARCHIVE=$(find dist/releases -maxdepth 1 -type f -name 'TheMechanist-*.zip' | head -n 1)
           DIST=$(find dist/releases -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
           test -n "$ARCHIVE" && test -n "$DIST"
           echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
           echo "distribution=$DIST" >> "$GITHUB_OUTPUT"
+
       - name: Verify distribution
         shell: bash
+        env:
+          PUBLISH_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
         run: |
-          set -o pipefail
+          set -euo pipefail
+          EXTRA=()
+          if [[ "$PUBLISH_PRERELEASE" == 'true' ]]; then
+            EXTRA+=(--require-release-hardened)
+          fi
           python ROOT_build/ci/verify_runnable_distribution.py \
             "${{ steps.package.outputs.distribution }}" \
             --archive "${{ steps.package.outputs.archive }}" \
             --report "dist/releases/verification-${{ matrix.platform }}.json" \
+            "${EXTRA[@]}" \
             2>&1 | tee ci-logs/verify-${{ matrix.platform }}.log
+
       - name: Upload package and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -157,11 +190,13 @@ jobs:
             platform: linux-x64
           - os: windows-2022
             platform: windows-x64
+
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: TheMechanist-${{ matrix.platform }}
           path: package
+
       - name: Extract package
         id: dist
         shell: bash
@@ -174,6 +209,7 @@ jobs:
           DIST=$(find extracted -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
           test -n "$DIST"
           echo "root=$DIST" >> "$GITHUB_OUTPUT"
+
       - name: Run packaged Gate 3 on Linux
         if: runner.os == 'Linux'
         shell: bash
@@ -182,7 +218,12 @@ jobs:
           DIST='${{ steps.dist.outputs.root }}'
           PROFILE="$RUNNER_TEMP/Mechanist Gate3 Profile"
           mkdir -p "$PROFILE"
-          "$DIST/runtime/bin/java" -Duser.home="$PROFILE" -Djava.awt.headless=true -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
+          "$DIST/runtime/bin/java" \
+            -Duser.home="$PROFILE" \
+            -Djava.awt.headless=true \
+            -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" \
+            mechanist.Gate3PlayerFacingTextSmokeSuite
+
       - name: Run packaged Gate 3 on Windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -190,14 +231,18 @@ jobs:
           $dist='${{ steps.dist.outputs.root }}'
           $profile="$env:RUNNER_TEMP\Mechanist Gate3 Profile"
           New-Item -ItemType Directory -Force -Path $profile | Out-Null
-          & "$dist/runtime/bin/java.exe" "-Duser.home=$profile" '-Djava.awt.headless=true' -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" mechanist.Gate3PlayerFacingTextSmokeSuite
+          & "$dist/runtime/bin/java.exe" `
+            "-Duser.home=$profile" `
+            '-Djava.awt.headless=true' `
+            -cp "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*" `
+            mechanist.Gate3PlayerFacingTextSmokeSuite
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   synthetic-environment:
     name: Synthetic environment (${{ matrix.platform }})
     needs: gate3
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
@@ -206,15 +251,19 @@ jobs:
             platform: linux-x64
           - os: windows-2022
             platform: windows-x64
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - uses: actions/download-artifact@v4
         with:
           name: TheMechanist-${{ matrix.platform }}
           path: package
+
       - name: Extract package
         id: dist
         shell: bash
@@ -227,15 +276,18 @@ jobs:
           DIST=$(find extracted -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*' | head -n 1)
           test -n "$DIST"
           echo "root=$DIST" >> "$GITHUB_OUTPUT"
+
       - name: Run synthetic distribution auditor
         run: >-
           python ROOT_build/ci/run_synthetic_distribution_tests.py
           "${{ steps.dist.outputs.root }}"
           --verifier ROOT_build/ci/verify_runnable_distribution.py
           --report synthetic-${{ matrix.platform }}.json
+
       - name: Install Xvfb
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb
+
       - name: Run Linux main GUI startup under Xvfb
         if: runner.os == 'Linux'
         shell: bash
@@ -245,10 +297,15 @@ jobs:
           PROFILE="$RUNNER_TEMP/Mechanist GUI Profile"
           mkdir -p "$PROFILE"
           set +e
-          HOME="$PROFILE" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" -Duser.home="$PROFILE" -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.TheMechanist
+          HOME="$PROFILE" timeout 15s xvfb-run -a \
+            "$DIST/runtime/bin/java" \
+            -Duser.home="$PROFILE" \
+            -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" \
+            mechanist.TheMechanist
           CODE=$?
           set -e
           if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
+
       - name: Run Linux remote lobby startup under Xvfb
         if: runner.os == 'Linux'
         shell: bash
@@ -258,10 +315,15 @@ jobs:
           PROFILE="$RUNNER_TEMP/Mechanist Remote Lobby Profile"
           mkdir -p "$PROFILE"
           set +e
-          HOME="$PROFILE" timeout 15s xvfb-run -a "$DIST/runtime/bin/java" -Duser.home="$PROFILE" -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" mechanist.RemoteClientMain
+          HOME="$PROFILE" timeout 15s xvfb-run -a \
+            "$DIST/runtime/bin/java" \
+            -Duser.home="$PROFILE" \
+            -cp "$DIST/packages/client/TheMechanist.jar:$DIST/packages/support/lib/*" \
+            mechanist.RemoteClientMain
           CODE=$?
           set -e
           if [[ "$CODE" -ne 124 && "$CODE" -ne 0 ]]; then exit "$CODE"; fi
+
       - name: Run Windows main GUI startup
         if: runner.os == 'Windows'
         shell: pwsh
@@ -269,11 +331,17 @@ jobs:
           $dist='${{ steps.dist.outputs.root }}'
           $profile="$env:RUNNER_TEMP\Mechanist GUI Profile"
           New-Item -ItemType Directory -Force -Path $profile | Out-Null
-          $args=@("-Duser.home=$profile",'-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.TheMechanist')
+          $args=@(
+            "-Duser.home=$profile",
+            '-cp',
+            "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",
+            'mechanist.TheMechanist'
+          )
           $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList $args -PassThru -WorkingDirectory $env:RUNNER_TEMP
           Start-Sleep -Seconds 12
           if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+
       - name: Run Windows remote lobby startup
         if: runner.os == 'Windows'
         shell: pwsh
@@ -281,11 +349,17 @@ jobs:
           $dist='${{ steps.dist.outputs.root }}'
           $profile="$env:RUNNER_TEMP\Mechanist Remote Lobby Profile"
           New-Item -ItemType Directory -Force -Path $profile | Out-Null
-          $args=@("-Duser.home=$profile",'-cp',"$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",'mechanist.RemoteClientMain')
+          $args=@(
+            "-Duser.home=$profile",
+            '-cp',
+            "$dist/packages/client/TheMechanist.jar;$dist/packages/support/lib/*",
+            'mechanist.RemoteClientMain'
+          )
           $p=Start-Process -FilePath "$dist/runtime/bin/java.exe" -ArgumentList $args -PassThru -WorkingDirectory $env:RUNNER_TEMP
           Start-Sleep -Seconds 12
           if ($p.HasExited -and $p.ExitCode -ne 0) { exit $p.ExitCode }
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -294,9 +368,71 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+  inventory-certification:
+    name: Exact inventory and clearance certification
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Regenerate and certify exact inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          INVENTORY_DIR="$RUNNER_TEMP/mechanist-release-inventory"
+          rm -rf "$INVENTORY_DIR"
+          mkdir -p "$INVENTORY_DIR"
+          cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv "$INVENTORY_DIR/committed.tsv"
+          python ROOT_tools/update_repository_file_manifest_incremental.py \
+            --target ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+            --force-hash \
+            2>&1 | tee "$INVENTORY_DIR/generation.log"
+          cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv "$INVENTORY_DIR/generated.tsv"
+          if ! cmp -s "$INVENTORY_DIR/generated.tsv" "$INVENTORY_DIR/committed.tsv"; then
+            diff -u "$INVENTORY_DIR/committed.tsv" "$INVENTORY_DIR/generated.tsv" \
+              > "$INVENTORY_DIR/manifest-diff.txt" || true
+            echo 'Committed repository inventory is stale for this exact source commit.' >&2
+            exit 1
+          fi
+          python ROOT_build/ci/audit_repository_release_inventory.py \
+            ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+            --clearance-registry ROOT_docs/RELEASE_CLEARANCE.tsv \
+            --ledger "$INVENTORY_DIR/release-ownership-ledger.tsv" \
+            --pending "$INVENTORY_DIR/RELEASE_CLEARANCE_PENDING.tsv" \
+            --report "$INVENTORY_DIR/release-inventory-report.json" \
+            --require-clearance \
+            2>&1 | tee "$INVENTORY_DIR/audit.log"
+          python ROOT_build/ci/certify_release_inventory.py \
+            --generated-manifest "$INVENTORY_DIR/generated.tsv" \
+            --committed-manifest "$INVENTORY_DIR/committed.tsv" \
+            --clearance-registry ROOT_docs/RELEASE_CLEARANCE.tsv \
+            --audit-report "$INVENTORY_DIR/release-inventory-report.json" \
+            --source-commit "$GITHUB_SHA" \
+            --output "$INVENTORY_DIR/release-inventory-certificate.json"
+          rm -rf release-inventory-artifacts
+          mkdir -p release-inventory-artifacts
+          cp "$INVENTORY_DIR"/* release-inventory-artifacts/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Release-Inventory-Certification
+          path: release-inventory-artifacts/**
+          if-no-files-found: error
+          retention-days: 90
+
   record-history:
     name: Record verified prerelease history
-    needs: synthetic-environment
+    needs: [synthetic-environment, inventory-certification]
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
     runs-on: ubuntu-24.04
     permissions:
@@ -305,24 +441,34 @@ jobs:
       history_sha: ${{ steps.commit.outputs.history_sha }}
       tag: ${{ steps.identity.outputs.tag }}
       version: ${{ steps.identity.outputs.version }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - uses: actions/download-artifact@v4
         with:
           pattern: TheMechanist-*
           path: release-assets
           merge-multiple: true
+
       - uses: actions/download-artifact@v4
         with:
           pattern: Synthetic-*
           path: synthetic-assets
           merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Release-Inventory-Certification
+          path: inventory-assets
+
       - name: Verify synthetic release contract
         run: >-
           python ROOT_build/ci/verify_synthetic_release_contract.py
@@ -331,6 +477,7 @@ jobs:
           --require-release-hardened
           --require-native-stage
           --report synthetic-assets/release-contract.json
+
       - name: Resolve identity
         id: identity
         shell: bash
@@ -360,14 +507,17 @@ jobs:
           test "$TAG" = "v$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
       - name: Record verified release
         run: >-
           python ROOT_build/ci/record_verified_release.py
           --history ROOT_docs/DEVELOPMENT_HISTORY.md
           --reports 'release-assets/verification-*.json'
           --synthetic-reports 'synthetic-assets/synthetic-*.json'
+          --inventory-certificate inventory-assets/release-inventory-certificate.json
           --commit '${{ github.sha }}'
           --run-url '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
       - name: Commit history
         id: commit
         shell: bash
@@ -384,29 +534,39 @@ jobs:
 
   release-certification:
     name: Final immutable distribution certification
-    needs: [record-history, synthetic-environment]
+    needs: [record-history, synthetic-environment, inventory-certification]
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_prerelease }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
       checksums: ${{ steps.certify.outputs.checksums }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.record-history.outputs.history_sha }}
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - uses: actions/download-artifact@v4
         with:
           pattern: TheMechanist-*
           path: release-assets
           merge-multiple: true
+
       - uses: actions/download-artifact@v4
         with:
           pattern: Synthetic-*
           path: synthetic-assets
           merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Release-Inventory-Certification
+          path: inventory-assets
+
       - name: Reopen and certify release artifacts
         id: certify
         shell: bash
@@ -440,8 +600,21 @@ jobs:
             --require-release-hardened \
             --require-native-stage \
             --report final-certification/final-synthetic-contract.json
+          python - <<'PY'
+          import json, os, pathlib
+          p=pathlib.Path('inventory-assets/release-inventory-certificate.json')
+          r=json.loads(p.read_text(encoding='utf-8'))
+          assert r['status']=='verified'
+          assert r['sourceCommit']==os.environ['SOURCE_SHA']
+          assert r['releaseReady'] is True
+          for key in ('clearancePendingCount','blockerCount','staleRegistryCount','protectedRuntimeDuplicateCount'):
+              assert r[key]==0, (key,r[key])
+          pathlib.Path('final-certification/final-inventory-certificate.json').write_text(
+              json.dumps(r,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          PY
           (cd release-assets && sha256sum TheMechanist-*.zip > SHA256SUMS.txt)
           echo "checksums=release-assets/SHA256SUMS.txt" >> "$GITHUB_OUTPUT"
+
       - uses: actions/upload-artifact@v4
         with:
           name: Release-Certification
@@ -458,21 +631,30 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+
     steps:
       - uses: actions/download-artifact@v4
         with:
           pattern: TheMechanist-*
           path: release-assets
           merge-multiple: true
+
       - uses: actions/download-artifact@v4
         with:
           pattern: Synthetic-*
           path: synthetic-assets
           merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Release-Inventory-Certification
+          path: inventory-assets
+
       - uses: actions/download-artifact@v4
         with:
           name: Release-Certification
           path: certification-assets
+
       - name: Publish release
         shell: bash
         env:
@@ -481,10 +663,24 @@ jobs:
           TARGET: ${{ needs.record-history.outputs.history_sha }}
         run: |
           set -euo pipefail
-          mapfile -t ASSETS < <(find release-assets synthetic-assets certification-assets -type f \( -name '*.zip' -o -name 'verification-*.json' -o -name 'synthetic-*.json' -o -name 'final-*.json' -o -name 'release-contract.json' -o -name 'SHA256SUMS.txt' \) | sort)
-          test ${#ASSETS[@]} -ge 10
+          mapfile -t ASSETS < <(find release-assets synthetic-assets inventory-assets certification-assets -type f \( \
+            -name '*.zip' -o \
+            -name 'verification-*.json' -o \
+            -name 'synthetic-*.json' -o \
+            -name 'final-*.json' -o \
+            -name 'release-contract.json' -o \
+            -name 'release-inventory-certificate.json' -o \
+            -name 'release-inventory-report.json' -o \
+            -name 'release-ownership-ledger.tsv' -o \
+            -name 'SHA256SUMS.txt' \
+          \) | sort)
+          test ${#ASSETS[@]} -ge 13
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --clobber
           else
-            gh release create "$TAG" "${ASSETS[@]}" --target "$TARGET" --title "The Mechanist $TAG" --generate-notes --prerelease
+            gh release create "$TAG" "${ASSETS[@]}" \
+              --target "$TARGET" \
+              --title "The Mechanist $TAG" \
+              --generate-notes \
+              --prerelease
           fi
