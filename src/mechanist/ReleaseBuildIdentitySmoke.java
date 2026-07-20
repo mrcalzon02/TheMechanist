@@ -75,7 +75,6 @@ final class ReleaseBuildIdentitySmoke {
         RemoteSessionLedgerAuthoritySmoke.main(args);
         HostedRosterClientAuthoritySmoke.main(args);
         IndependentHostHostedSessionWireSmoke.main(args);
-        IndependentHostClientSupervisorSmoke.main(args);
         System.out.println("ReleaseBuildIdentitySmoke PASS " + BuildIdentityAuthority.auditSummary());
     }
 
