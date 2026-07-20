@@ -1,14 +1,13 @@
 package mechanist;
 
 /**
- * Current runtime entry modes understood by the desktop shell.
- *
- * These identifiers are intentionally small and stable so command-line startup,
- * future launcher handoff, and test batches can agree on the same vocabulary.
+ * Stable runtime entry modes shared by command-line startup, launcher handoff,
+ * desktop execution, and verification batches.
  */
 enum ApplicationRuntimeMode {
     LAUNCHER,
     CLIENT,
+    REMOTE_CLIENT,
     LOCAL_SERVER,
     DEDICATED_SERVER,
     EDITOR,
