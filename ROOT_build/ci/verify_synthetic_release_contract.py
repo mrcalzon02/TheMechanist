@@ -69,6 +69,7 @@ REQUIRED_TRUE = (
     "independentHostRemoteLobbyEditableConnection",
     "independentHostRemoteLobbyMutableStorageOutsideInstall",
     "independentHostRemoteLobbyPendingConnectionCancellable",
+    "independentHostRemoteLobbyFailedSessionTeardown",
     "independentHostUnsupportedWorldCommandsRejected",
     "independentHostRelayOnlyAccess",
     "independentHostPreAuthenticationDataDenied",
