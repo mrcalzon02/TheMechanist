@@ -6,6 +6,7 @@ DISTRIBUTION_ROOT="${MECHANIST_DISTRIBUTION_ROOT:-}"
 PACKAGE_TYPES="app-image,deb,rpm"
 DIST_DIR="$PROJECT_ROOT/dist/installers/linux"
 APP_NAME="The Mechanist"
+REMOTE_LAUNCHER_NAME="The Mechanist Remote Lobby"
 VENDOR="The Mechanist Project"
 
 usage() {
@@ -90,14 +91,20 @@ print(version)
 print(native)
 print(data["platform"])
 print(data["commit"])
+print(data.get("remoteClientEntryPoint", ""))
 PY
 )
 VERSION="${IDENTITY[0]}"
 NATIVE_VERSION="${IDENTITY[1]}"
 PLATFORM="${IDENTITY[2]}"
 COMMIT="${IDENTITY[3]}"
+REMOTE_ENTRY="${IDENTITY[4]}"
 [[ "$PLATFORM" == "linux-x64" ]] || {
     echo "Linux native packaging requires linux-x64, found $PLATFORM." >&2
+    exit 4
+}
+[[ "$REMOTE_ENTRY" == "mechanist.RemoteClientMain" ]] || {
+    echo "Canonical distribution does not declare the governed remote-client entry." >&2
     exit 4
 }
 
@@ -140,6 +147,17 @@ for candidate in \
     fi
 done
 
+LAUNCHER_CONFIG_DIR="$PROJECT_ROOT/build/native-installer/linux/launchers"
+REMOTE_LAUNCHER_CONFIG="$LAUNCHER_CONFIG_DIR/remote-client.properties"
+rm -rf "$LAUNCHER_CONFIG_DIR"
+mkdir -p "$LAUNCHER_CONFIG_DIR"
+cat > "$REMOTE_LAUNCHER_CONFIG" <<EOF
+main-jar=packages/client/TheMechanist.jar
+main-class=mechanist.RemoteClientMain
+app-version=$NATIVE_VERSION
+linux-app-category=Game
+EOF
+
 IFS=',' read -r -a REQUESTED_TYPES <<< "$PACKAGE_TYPES"
 NORMALIZED_TYPES=()
 for raw in "${REQUESTED_TYPES[@]}"; do
@@ -161,6 +179,7 @@ COMMON_ARGS=(
     --input "$PAYLOAD_DIR"
     --main-jar "launcher/MechanistLauncher.jar"
     --main-class "mechanist.launcher.MechanistLauncherApp"
+    --add-launcher "$REMOTE_LAUNCHER_NAME=$REMOTE_LAUNCHER_CONFIG"
 )
 
 APP_IMAGE_DEST="$DIST_DIR/app-image"
@@ -177,6 +196,14 @@ build_app_image() {
         "${RESOURCE_ARGS[@]}"
     [[ -d "$APP_IMAGE_ROOT" ]] || {
         echo "jpackage did not produce expected image: $APP_IMAGE_ROOT" >&2
+        exit 6
+    }
+    [[ -x "$APP_IMAGE_ROOT/bin/$APP_NAME" ]] || {
+        echo "Native main launcher is missing: $APP_IMAGE_ROOT/bin/$APP_NAME" >&2
+        exit 6
+    }
+    [[ -x "$APP_IMAGE_ROOT/bin/$REMOTE_LAUNCHER_NAME" ]] || {
+        echo "Native remote-lobby launcher is missing: $APP_IMAGE_ROOT/bin/$REMOTE_LAUNCHER_NAME" >&2
         exit 6
     }
     python3 "$IMAGE_VERIFIER" "$APP_IMAGE_ROOT" \
@@ -239,18 +266,21 @@ Platform: $PLATFORM
 Release hardened: true
 Canonical source distribution: $DISTRIBUTION_ROOT
 Distribution model: installer -> thin launcher -> client -> server
+Native launchers: $APP_NAME; $REMOTE_LAUNCHER_NAME
 
 Every native output in this directory was composed from the verified canonical
 release staging tree. The native app image was reopened and checked against the
 launcher manifest after jpackage completed. Mutable saves, profiles, settings,
-logs, cache, mods, and exports remain outside the installed application payload.
+logs, cache, mods, exports, and resume-token custody remain outside the installed
+application payload.
 
 Recommended validation order:
 1. Verify SHA256SUMS.txt.
 2. Extract the native app-image archive and start The Mechanist.
 3. Confirm launcher package verification succeeds.
-4. Run a single-player save/resume test.
-5. Run the independent host bind and packaged client connection tests.
+4. Start The Mechanist Remote Lobby and verify the lobby-only boundary.
+5. Run a single-player save/resume test.
+6. Run the independent host bind and two-client connection tests.
 EOF
 
 echo "Linux native package convergence complete: $DIST_DIR"
