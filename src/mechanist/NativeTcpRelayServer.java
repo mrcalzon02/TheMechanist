@@ -45,12 +45,14 @@ final class NativeTcpRelayServer implements AutoCloseable {
             String bindAddress,
             int boundPort,
             ServerSocketChannel serverChannel
-    ) {
+    ) throws IOException {
         this.config = config;
         this.bindAddress = bindAddress;
         this.boundPort = boundPort;
         this.serverChannel = serverChannel;
-        this.sessionLedger = new RemoteSessionLedgerAuthority(config.worldId());
+        this.sessionLedger = new RemoteSessionLedgerAuthority(
+                config.worldId(),
+                ServerRuntimePaths.remoteSessionLedgerPath(config.worldId()));
         ThreadFactory factory = runnable -> {
             Thread thread = new Thread(runnable, "mechanist-native-relay-client");
             thread.setDaemon(true);
@@ -134,6 +136,14 @@ final class NativeTcpRelayServer implements AutoCloseable {
 
     RemoteSessionLedgerAuthority.SessionSnapshot remoteSessionSnapshot(String profileIdentity) {
         return sessionLedger.snapshotForProfile(profileIdentity);
+    }
+
+    PathReadout remoteSessionPersistence() {
+        return new PathReadout(
+                sessionLedger.persistenceEnabled(),
+                sessionLedger.persistenceFile(),
+                sessionLedger.totalSessionCount(),
+                sessionLedger.activeSessionCount());
     }
 
     boolean running() {
@@ -231,6 +241,12 @@ final class NativeTcpRelayServer implements AutoCloseable {
             clients.clear();
         }
         workers.shutdownNow();
+        try {
+            sessionLedger.close();
+        } catch (IOException exception) {
+            if (failure == null) failure = exception;
+            else failure.addSuppressed(exception);
+        }
         DebugLog.audit(
                 "NATIVE_RELAY_CLOSED",
                 "address=" + bindAddress
@@ -270,6 +286,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                     Duration.ofMillis(250),
                     reason -> {
                         DebugLog.warn("NATIVE_RELAY_SEQUENCE", reason);
+                        disconnectProtocol(reason);
                         closeQuietly();
                     });
             this.outboundBudget = throttlingManager.registerChannel(session);
@@ -289,7 +306,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                     NetworkPacketPolicer.Decision decision = packetPolicer.inboundPacket();
                     if (!decision.allowed()) {
                         DebugLog.warn("NATIVE_RELAY_RATE", decision.reason());
-                        protocol.disconnect("inbound rate limit exceeded");
+                        disconnectProtocol("inbound rate limit exceeded");
                         closeQuietly();
                         break;
                     }
@@ -308,13 +325,13 @@ final class NativeTcpRelayServer implements AutoCloseable {
 
                     if (!line.startsWith("SEQ|")) {
                         write("MECH|DENIED|relay frames require SEQ sequence headers");
-                        protocol.disconnect("relay frame omitted sequence header");
+                        disconnectProtocol("relay frame omitted sequence header");
                         closeQuietly();
                         break;
                     }
                     PacketSequenceValidator.SequenceDecision sequenceDecision = validateSequence(line);
                     if (sequenceDecision.disconnect()) {
-                        protocol.disconnect(sequenceDecision.reason());
+                        disconnectProtocol(sequenceDecision.reason());
                         closeQuietly();
                         break;
                     }
@@ -329,7 +346,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
                         DebugLog.audit("REMOTE_SESSION_RELAY_ACCEPTED", snapshot.compactLine());
                     } catch (RuntimeException failure) {
                         write("MECH|DENIED|" + safeProtocolReason(failure.getMessage()));
-                        protocol.disconnect(failure.getMessage());
+                        disconnectProtocol(failure.getMessage());
                         closeQuietly();
                         break;
                     }
@@ -434,6 +451,17 @@ final class NativeTcpRelayServer implements AutoCloseable {
             }
         }
 
+        private void disconnectProtocol(String reason) {
+            try {
+                protocol.disconnect(reason);
+            } catch (RuntimeException failure) {
+                DebugLog.error(
+                        "REMOTE_SESSION_PERSISTENCE",
+                        "Could not persist remote session disconnect; transport will still close.",
+                        failure);
+            }
+        }
+
         void closeQuietly() {
             try {
                 close();
@@ -444,7 +472,7 @@ final class NativeTcpRelayServer implements AutoCloseable {
         @Override
         public void close() throws IOException {
             if (!open.getAndSet(false)) return;
-            protocol.disconnect("transport closed");
+            disconnectProtocol("transport closed");
             outboundBudget.close();
             throttlingManager.unregisterChannel(outboundBudget.sessionId());
             channel.close();
@@ -455,7 +483,14 @@ final class NativeTcpRelayServer implements AutoCloseable {
         String value = reason == null || reason.isBlank()
                 ? "session ledger rejected relay frame"
                 : reason;
-        return value.replace('|', '/').replace('\n', ' ').replace('\r', ' ')
-                .substring(0, Math.min(220, value.length()));
+        value = value.replace('|', '/').replace('\n', ' ').replace('\r', ' ');
+        return value.substring(0, Math.min(220, value.length()));
     }
+
+    record PathReadout(
+            boolean persistenceEnabled,
+            java.nio.file.Path persistenceFile,
+            int totalSessions,
+            int activeSessions
+    ) { }
 }
