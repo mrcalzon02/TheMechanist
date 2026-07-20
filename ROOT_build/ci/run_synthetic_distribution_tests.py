@@ -72,6 +72,35 @@ def remove_tree(root: pathlib.Path) -> None:
     shutil.rmtree(root, ignore_errors=False, onerror=repair_and_retry)
 
 
+def verify_proguard_policy(
+    root: pathlib.Path,
+    distribution_verifier: pathlib.Path,
+) -> bool:
+    policy_verifier = distribution_verifier.parent / "verify_proguard_configuration.py"
+    if not policy_verifier.is_file():
+        raise RuntimeError(f"ProGuard policy verifier is missing: {policy_verifier}")
+    repo = distribution_verifier.parents[2]
+    report = root / "proguard-policy-verification.json"
+    run(
+        [
+            sys.executable,
+            policy_verifier,
+            "--repo",
+            repo,
+            "--report",
+            report,
+        ],
+        cwd=repo,
+        timeout=180,
+    )
+    summary = json.loads(report.read_text(encoding="utf-8"))
+    if summary.get("status") != "verified":
+        raise RuntimeError("ProGuard source policy did not return verified")
+    if summary.get("mappingArtifactsOutsideDistribution") is not True:
+        raise RuntimeError("ProGuard policy did not keep mapping artifacts outside distribution")
+    return True
+
+
 def verify_native_stage(
     source: pathlib.Path,
     root: pathlib.Path,
@@ -193,6 +222,9 @@ def main() -> int:
         (source / "manifests" / "runtime-manifest.json").read_text(encoding="utf-8")
     )
     release_hardened = canonical.get("releaseHardened") is True
+    remote_entry = str(canonical.get("remoteClientEntryPoint", ""))
+    if remote_entry != "mechanist.RemoteClientMain":
+        raise RuntimeError(f"unexpected remote client entry point: {remote_entry!r}")
 
     root = pathlib.Path(tempfile.mkdtemp(prefix="Mechanist Synthetic Path With Spaces "))
     try:
@@ -205,6 +237,7 @@ def main() -> int:
         profile_args = java_profile_args(profile)
 
         verifier = args.verifier.resolve()
+        proguard_policy_verified = verify_proguard_policy(root, verifier)
         run([sys.executable, verifier, install], env=env)
         verify_operating_docs(install, root, verifier)
         native_stage_verified = verify_native_stage(source, root, verifier)
@@ -247,6 +280,7 @@ def main() -> int:
         )
 
         for main_class in (
+            "mechanist.RemoteClientStartupSmoke",
             "mechanist.IndependentHostTransportSessionSmoke",
             "mechanist.IndependentHostHostedSessionWireSmoke",
             "mechanist.HostedRosterClientAuthoritySmoke",
@@ -351,6 +385,14 @@ def main() -> int:
         support[0].unlink()
         run([sys.executable, verifier, missing], expect=1)
 
+        remote_launcher = (
+            install / "Run-Remote-Client.cmd"
+            if str(canonical.get("platform", "")).startswith("windows-")
+            else install / "run-remote-client.sh"
+        )
+        if not remote_launcher.is_file():
+            raise RuntimeError(f"portable remote-client launcher is missing: {remote_launcher}")
+
         summary = {
             "status": "passed",
             "distribution": source.name,
@@ -359,10 +401,14 @@ def main() -> int:
             "isolatedProfile": True,
             "returningProfile": len(after) >= len(before),
             "readOnlyInstall": True,
+            "proguardPolicyVerified": proguard_policy_verified,
+            "proguardMappingArtifactsOutsideDistribution": True,
             "alphaOperatingDocuments": True,
             "launcherBundledPackageVerification": True,
             "launcherRemoteAcquisitionAdvertised": False,
             "packagedGate3": True,
+            "remoteClientEntryPoint": True,
+            "remoteClientPortableLauncher": True,
             "singlePlayerInternalHostLifecycle": True,
             "singlePlayerSaveResume": True,
             "independentHostTransportSession": True,
@@ -409,6 +455,14 @@ def main() -> int:
             "independentHostClientHostRestartResume": True,
             "independentHostClientCorruptTokenRejected": True,
             "independentHostClientWorldCommandApi": False,
+            "independentHostRemoteClientEntryPoint": True,
+            "independentHostRemoteLobbyWindow": True,
+            "independentHostRemoteLobbyEditableConnection": True,
+            "independentHostRemoteLobbyMutableStorageOutsideInstall": True,
+            "independentHostRemoteLobbyPendingConnectionCancellable": True,
+            "independentHostRemoteLobbyGamePanelMounted": False,
+            "independentHostRemoteLobbyInternalHostMounted": False,
+            "independentHostRemoteLobbyWorldCommandApi": False,
             "independentHostUnsupportedWorldCommandsRejected": True,
             "independentHostRelayOnlyAccess": True,
             "independentHostPreAuthenticationDataDenied": True,
