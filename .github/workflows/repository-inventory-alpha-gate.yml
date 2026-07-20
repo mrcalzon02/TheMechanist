@@ -9,7 +9,7 @@ on:
         required: true
         default: false
       require_release_clearance:
-        description: Fail while any runtime candidate still requires licensing or necessity review
+        description: Require every exact release asset/binary hash to be approved
         type: boolean
         required: true
         default: false
@@ -41,47 +41,37 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p ROOT_build/inventory-alpha
+          INVENTORY_DIR="$RUNNER_TEMP/mechanist-inventory-alpha"
+          rm -rf "$INVENTORY_DIR"
+          mkdir -p "$INVENTORY_DIR"
+          echo "INVENTORY_DIR=$INVENTORY_DIR" >> "$GITHUB_ENV"
           if [[ -f ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv ]]; then
-            cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv ROOT_build/inventory-alpha/committed-before.tsv
+            cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv "$INVENTORY_DIR/committed-before.tsv"
           else
-            : > ROOT_build/inventory-alpha/committed-before.tsv
+            : > "$INVENTORY_DIR/committed-before.tsv"
           fi
           git status --short
 
       - name: Regenerate stable full-checkout manifest
         shell: bash
         run: |
-          set -o pipefail
+          set -euo pipefail
           python ROOT_tools/update_repository_file_manifest_incremental.py \
             --target ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
             --force-hash \
-            --report ROOT_build/inventory-alpha/generation-report.json \
-            2>&1 | tee ROOT_build/inventory-alpha/generation.log
+            2>&1 | tee "$INVENTORY_DIR/generation.log"
+          cp ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv "$INVENTORY_DIR/generated.tsv"
 
-      - name: Audit release ownership and clearance
-        shell: bash
-        env:
-          REQUIRE_CLEARANCE: ${{ inputs.require_release_clearance }}
-        run: |
-          set -o pipefail
-          EXTRA=()
-          if [[ "$REQUIRE_CLEARANCE" == 'true' ]]; then EXTRA+=(--require-clearance); fi
-          python ROOT_build/ci/audit_repository_release_inventory.py \
-            ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
-            --ledger ROOT_build/inventory-alpha/release-ownership-ledger.tsv \
-            --report ROOT_build/inventory-alpha/release-inventory-report.json \
-            "${EXTRA[@]}" \
-            2>&1 | tee ROOT_build/inventory-alpha/audit.log
-
-      - name: Require committed manifest to match the full checkout
+      - name: Require committed manifest to match full checkout
         if: ${{ !inputs.update_committed_manifest }}
         shell: bash
         run: |
           set -euo pipefail
-          if ! git diff --exit-code -- ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv; then
+          if ! cmp -s "$INVENTORY_DIR/generated.tsv" "$INVENTORY_DIR/committed-before.tsv"; then
             echo 'The committed repository manifest is stale or empty.' >&2
-            echo 'Review the uploaded inventory artifact, then dispatch this workflow with update_committed_manifest=true.' >&2
+            echo 'Review the uploaded generated manifest, then dispatch with update_committed_manifest=true.' >&2
+            diff -u "$INVENTORY_DIR/committed-before.tsv" "$INVENTORY_DIR/generated.tsv" \
+              > "$INVENTORY_DIR/manifest-diff.txt" || true
             exit 1
           fi
 
@@ -100,24 +90,60 @@ jobs:
             git push origin HEAD:main
           fi
 
-      - name: Record manifest identity
+      - name: Audit exact release ownership and clearance
+        shell: bash
+        env:
+          REQUIRE_CLEARANCE: ${{ inputs.require_release_clearance }}
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if [[ "$REQUIRE_CLEARANCE" == 'true' ]]; then
+            EXTRA+=(--require-clearance)
+          fi
+          python ROOT_build/ci/audit_repository_release_inventory.py \
+            ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+            --clearance-registry ROOT_docs/RELEASE_CLEARANCE.tsv \
+            --ledger "$INVENTORY_DIR/release-ownership-ledger.tsv" \
+            --pending "$INVENTORY_DIR/RELEASE_CLEARANCE_PENDING.tsv" \
+            --report "$INVENTORY_DIR/release-inventory-report.json" \
+            "${EXTRA[@]}" \
+            2>&1 | tee "$INVENTORY_DIR/audit.log"
+
+      - name: Certify exact inventory and clearance
+        if: ${{ inputs.require_release_clearance }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python ROOT_build/ci/certify_release_inventory.py \
+            --generated-manifest "$INVENTORY_DIR/generated.tsv" \
+            --committed-manifest ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+            --clearance-registry ROOT_docs/RELEASE_CLEARANCE.tsv \
+            --audit-report "$INVENTORY_DIR/release-inventory-report.json" \
+            --source-commit "$(git rev-parse HEAD)" \
+            --output "$INVENTORY_DIR/release-inventory-certificate.json"
+
+      - name: Record inventory identities
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           if [[ -f ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv ]]; then
-            sha256sum ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv > ROOT_build/inventory-alpha/REPOSITORY_FILE_MANIFEST.sha256
-            wc -l ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv > ROOT_build/inventory-alpha/REPOSITORY_FILE_MANIFEST.lines.txt
-            du -h ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv > ROOT_build/inventory-alpha/REPOSITORY_FILE_MANIFEST.size.txt
+            sha256sum ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+              > "$INVENTORY_DIR/REPOSITORY_FILE_MANIFEST.sha256"
+            wc -l ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+              > "$INVENTORY_DIR/REPOSITORY_FILE_MANIFEST.lines.txt"
+            du -h ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv \
+              > "$INVENTORY_DIR/REPOSITORY_FILE_MANIFEST.size.txt"
           fi
+          sha256sum ROOT_docs/RELEASE_CLEARANCE.tsv \
+            > "$INVENTORY_DIR/RELEASE_CLEARANCE.sha256"
+          git rev-parse HEAD > "$INVENTORY_DIR/source-commit.txt"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Repository-Inventory-Alpha
-          path: |
-            ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv
-            ROOT_build/inventory-alpha/**
+          path: ${{ env.INVENTORY_DIR }}
           if-no-files-found: warn
           retention-days: 30
           compression-level: 6
