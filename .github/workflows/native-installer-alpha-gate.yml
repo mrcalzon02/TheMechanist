@@ -232,7 +232,7 @@ jobs:
               'independentHostHostedSessionCommands',
               'independentHostHostedSessionCommandOrdering',
               'independentHostHostedSessionRoster',
-              'independentHostHostedSessionStatePersistence',
+              'independentHostHostedSessionCommandAccountingPersistence',
               'independentHostStaleHostedLivenessReset',
               'independentHostUnsupportedWorldCommandsRejected',
               'independentHostRelayOnlyAccess',
@@ -248,6 +248,7 @@ jobs:
           assert not missing, f'missing required native synthetic guarantees: {missing}'
           required_false=(
               'launcherRemoteAcquisitionAdvertised',
+              'independentHostHostedSessionLivenessPersistence',
               'independentHostWorldAuthority',
               'independentHostGameplaySessionCertified',
           )
