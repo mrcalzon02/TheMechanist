@@ -32,11 +32,13 @@ This document describes current intentional limits. It is not a promise that eve
 - The native fallback is currently an authenticated bounded relay transport.
 - Before relay access, the client must complete identity submission, manifest delivery, acquisition confirmation, restart completion, and a server-issued integrity challenge.
 - Successful authentication grants only `RELAY_ONLY` access.
-- The host now assigns a stable process-local player ID and one server-issued resume token to each authenticated profile session.
-- A disconnected client can recover the same process-local session only with the correct resume token. Invalid tokens and simultaneous duplicate attachment are rejected.
+- The host assigns a stable player ID and one server-issued resume token to each authenticated profile session.
+- A disconnected client can recover the same session only with the correct resume token. Invalid tokens and simultaneous duplicate attachment are rejected.
 - Immutable session snapshots report online state, connection generation, lifetime accepted relay-frame count, and the current connection sequence.
-- Transport certification covers exact binding, denial of pre-authentication data, bad-challenge rejection, two-client authenticated connection, ordered frame relay, replay rejection, token-gated reconnect continuity, stale-attachment isolation, close, restart, and refusal to widen a failed explicit bind.
-- Session continuity currently survives socket disconnect and reconnect only while the server process remains alive. Resume tokens and ledger state are not persisted across a server-process restart.
+- Remote session ledgers are written atomically under the dedicated server save namespace. Reusable plaintext resume tokens are not stored; only SHA-256 token hashes are persisted.
+- A clean server-process restart restores every known session offline. The original client token can then resume the same stable player identity, advance its connection generation, and preserve lifetime relay accounting.
+- Corrupted, unsupported-schema, or world-mismatched session ledgers fail closed and prevent that host world from binding until the ledger is repaired or deliberately removed.
+- Transport certification covers exact binding, denial of pre-authentication data, bad-challenge rejection, two-client authenticated connection, ordered frame relay, replay rejection, token-gated reconnect continuity, stale-attachment isolation, clean host-restart continuity, hash-only persistence, corruption rejection, close, restart, and refusal to widen a failed explicit bind.
 - The delivered base manifest currently represents the packaged base runtime rather than a complete remote mod-distribution service.
 - The independent host still does not initialize or own authoritative remote world state.
 - It does not yet process remote gameplay commands, player position or inventory mutation, hosted-world persistence, or reconnect into a living authoritative world.
