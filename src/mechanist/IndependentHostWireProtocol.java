@@ -17,7 +17,7 @@ import java.util.Objects;
  * authoritative, while gameplay and world mutation remain closed.
  */
 final class IndependentHostWireProtocol {
-    static final String VERSION = "independent-host-wire-3";
+    static final String VERSION = "independent-host-wire-4";
     private static final String PREFIX = "MECH";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -144,6 +144,7 @@ final class IndependentHostWireProtocol {
                 + " relayFrames=" + (snapshot == null ? 0 : snapshot.acceptedRelayFrames())
                 + " hostedCommands=" + (snapshot == null ? 0 : snapshot.acceptedHostedCommands())
                 + " hostedRoster=true"
+                + " rosterBroadcasts=true"
                 + " worldAuthority=false";
     }
 
@@ -217,7 +218,7 @@ final class IndependentHostWireProtocol {
         handshake.beginLiveWorldInitialization();
         handshake.grantAccess();
         accessGranted = true;
-        return Result.responses(line(
+        String access = line(
                 "ACCESS",
                 "RELAY_ONLY",
                 handshake.sessionId(),
@@ -227,7 +228,10 @@ final class IndependentHostWireProtocol {
                 sessionAttachment.resumeToken(),
                 Long.toString(sessionAttachment.connectionGeneration()),
                 Long.toString(sessionAttachment.snapshotVersion()),
-                Boolean.toString(sessionAttachment.resumed())));
+                Boolean.toString(sessionAttachment.resumed()));
+        return Result.responsesAndBroadcasts(
+                List.of(access),
+                hostedRosterLines(sessionLedger.hostedSessionSnapshot()));
     }
 
     private Result acceptSessionStatus(String[] fields) {
@@ -248,9 +252,9 @@ final class IndependentHostWireProtocol {
                         commandId,
                         command,
                         value);
-        ArrayList<String> responses = new ArrayList<>();
+        ArrayList<String> direct = new ArrayList<>();
         RemoteSessionLedgerAuthority.SessionSnapshot player = result.playerSnapshot();
-        responses.add(line(
+        direct.add(line(
                 "SESSION_COMMAND_ACCEPTED",
                 Long.toString(result.commandId()),
                 result.command(),
@@ -261,8 +265,9 @@ final class IndependentHostWireProtocol {
                 player.chatState(),
                 Long.toString(player.acceptedHostedCommands()),
                 Long.toString(player.lastConnectionCommandId())));
-        responses.addAll(hostedRosterLines(result.hostedSnapshot()));
-        return Result.responses(responses);
+        List<String> roster = hostedRosterLines(result.hostedSnapshot());
+        direct.addAll(roster);
+        return Result.responsesAndBroadcasts(direct, roster);
     }
 
     private Result acceptSessionRoster(String[] fields) {
@@ -295,7 +300,7 @@ final class IndependentHostWireProtocol {
                 snapshot.lastEvent());
     }
 
-    private List<String> hostedRosterLines(
+    static List<String> hostedRosterLines(
             RemoteSessionLedgerAuthority.HostedSessionSnapshot snapshot
     ) {
         ArrayList<String> lines = new ArrayList<>();
@@ -341,8 +346,12 @@ final class IndependentHostWireProtocol {
         String use = reason == null || reason.isBlank()
                 ? "protocol rejected"
                 : reason;
+        boolean attached = relayAccessGranted();
         disconnect(use);
-        return Result.disconnect(use);
+        List<String> broadcasts = attached
+                ? hostedRosterLines(sessionLedger.hostedSessionSnapshot())
+                : List.of();
+        return Result.disconnect(use, broadcasts);
     }
 
     private static void requireCount(
@@ -439,24 +448,43 @@ final class IndependentHostWireProtocol {
         return String.join("|", clean);
     }
 
-    record Result(List<String> responses, boolean disconnect, String reason) {
+    record Result(
+            List<String> responses,
+            List<String> broadcasts,
+            boolean disconnect,
+            String reason
+    ) {
         Result {
             responses = List.copyOf(
                     Objects.requireNonNullElse(responses, List.of()));
+            broadcasts = List.copyOf(
+                    Objects.requireNonNullElse(broadcasts, List.of()));
             reason = Objects.requireNonNullElse(reason, "");
         }
 
         static Result responses(String... lines) {
-            return new Result(List.of(lines), false, "");
+            return new Result(List.of(lines), List.of(), false, "");
         }
 
         static Result responses(List<String> lines) {
-            return new Result(lines, false, "");
+            return new Result(lines, List.of(), false, "");
+        }
+
+        static Result responsesAndBroadcasts(
+                List<String> responses,
+                List<String> broadcasts
+        ) {
+            return new Result(responses, broadcasts, false, "");
         }
 
         static Result disconnect(String reason) {
+            return disconnect(reason, List.of());
+        }
+
+        static Result disconnect(String reason, List<String> broadcasts) {
             return new Result(
                     List.of(line("DENIED", sanitizeReason(reason))),
+                    broadcasts,
                     true,
                     reason);
         }
