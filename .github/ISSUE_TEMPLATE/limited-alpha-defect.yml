@@ -1,0 +1,175 @@
+name: Limited Alpha Defect
+description: Report a defect from an approved Windows or Linux limited-alpha candidate.
+title: "[Limited Alpha] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form only for an approved limited-alpha candidate. Do not attach or paste resume-token custody files, plaintext authentication material, private server addresses, unrelated logs, or personal documents. Review diagnostic reports and attachments before submission.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Choose the highest impact that accurately describes the defect.
+      options:
+        - Blocker — install, verify, launch, save, load, authenticate, or exit is impossible or unsafe
+        - Major — crash, corruption, exposure, reconnect failure, or major gameplay path failure
+        - Moderate — incorrect but recoverable behavior or a significant workaround is required
+        - Minor — limited functional problem with low progression or data risk
+        - Cosmetic — presentation issue without incorrect state
+    validations:
+      required: true
+
+  - type: input
+    id: candidate_version
+    attributes:
+      label: Candidate version
+      description: Copy the exact version from the launcher diagnostic report or canonical manifest.
+      placeholder: 0.1.x-alpha.y
+    validations:
+      required: true
+
+  - type: input
+    id: source_commit
+    attributes:
+      label: Exact source commit
+      description: Enter the 40-character commit identity reported by the candidate.
+      placeholder: 0123456789abcdef0123456789abcdef01234567
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform package
+      options:
+        - Windows x64 portable archive
+        - Windows x64 native app image
+        - Windows x64 EXE or MSI installer
+        - Linux x64 portable archive
+        - Linux x64 native app image
+        - Linux x64 DEB or RPM package
+    validations:
+      required: true
+
+  - type: input
+    id: operating_system
+    attributes:
+      label: Operating-system version
+      placeholder: Windows 11 24H2 or Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package_verification
+    attributes:
+      label: Package verification result
+      options:
+        - Verified successfully before reproduction
+        - Verification reported modified content
+        - Verification failed
+        - Launcher could not start, so verification was unavailable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modified_content
+    attributes:
+      label: Modified content status
+      description: Modified packages are separated from ordinary base-game triage.
+      options:
+        - No modified content detected
+        - Modified content detected and the defect also reproduces after restoring the verified package
+        - Modified content detected and not yet retested on the verified package
+        - Unknown because verification could not run
+    validations:
+      required: true
+
+  - type: dropdown
+    id: test_lane
+    attributes:
+      label: Test lane
+      options:
+        - Launcher or package verification
+        - Installation, repair, rollback, upgrade, or uninstall
+        - Single-player internal host
+        - Save, load, or persistence
+        - Independent-host bind or startup
+        - Remote lobby authentication, roster, reconnect, or relay
+        - Gameplay, interface, audio, rendering, or performance
+        - Diagnostics or crash reporting
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Defect summary
+      description: Describe the failure and its practical impact in a few sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Start from launch or installation and list every action needed to reproduce the defect.
+      placeholder: |
+        1. Verify the candidate.
+        2. Launch...
+        3. Select...
+        4. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: persistence_boundary
+    attributes:
+      label: Restart and persistence boundary
+      description: State whether the defect survives a clean restart, occurs in a new world or fresh remote profile, and whether an older candidate can still load the backup.
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic evidence
+      description: Paste the redacted diagnostic report identity and relevant bounded excerpts, or explain why collection was impossible. Never include a resume-token custody file or plaintext token.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Approved attachments
+      description: List screenshots, bounded logs, or privately approved save material. Do not attach unrelated files or credentials.
+
+  - type: checkboxes
+    id: privacy_review
+    attributes:
+      label: Safety and evidence checks
+      options:
+        - label: I reviewed every attachment and excerpt for personal information, private addresses, credentials, and unrelated content.
+          required: true
+        - label: I did not attach or paste a resume-token custody file, plaintext resume token, password, API key, cookie, or authorization header.
+          required: true
+        - label: I preserved an untouched backup before destructive save, migration, rollback, repair, or uninstall testing.
+          required: true
+        - label: I understand that relay connectivity is not proof of authoritative remote gameplay.
+          required: true
