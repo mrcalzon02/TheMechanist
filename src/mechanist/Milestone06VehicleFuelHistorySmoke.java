@@ -55,7 +55,7 @@ final class Milestone06VehicleFuelHistorySmoke {
 
     private static World world() {
         World world = new World(61016L, 12, 10);
-        world.zoneType = ZoneType.INDUSTRIAL_FLOOR;
+        world.zoneType = ZoneType.MECHANICUS_FORGE_CLOISTER;
         world.mapObjects.clear();
         for (int x = 0; x < world.w; x++) {
             for (int y = 0; y < world.h; y++) world.tiles[x][y] = '.';
