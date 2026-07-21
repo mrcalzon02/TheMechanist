@@ -17,7 +17,7 @@ import pathlib
 import shutil
 import sys
 
-from verify_limited_alpha_operations import (
+from verify_alpha_operating_docs import (
     verify_distribution as verify_playtest_distribution,
     verify_source as verify_playtest_source,
 )
