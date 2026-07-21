@@ -192,9 +192,9 @@ final class FactionMarketContractAuthority {
         ArrayList<MapObjectState> salvage = new ArrayList<>();
         ArrayList<MapObjectState> repair = new ArrayList<>();
         for (MapObjectState object : game.world.mapObjects) {
-            if (!VehicleRuntimeAuthority.isVehicle(object)
-                    || !VehicleRuntimeAuthority.factionOwns(object, faction)) continue;
+            if (!VehicleRuntimeAuthority.isVehicle(object)) continue;
             VehicleRuntimeAuthority.ensureInitialized(game.world, object);
+            if (!VehicleRuntimeAuthority.factionOwns(object, faction)) continue;
             VehicleRuntimeAuthority.Snapshot snapshot =
                     VehicleRuntimeAuthority.inspect(game.world, object);
             if (snapshot == null || "salvaged".equals(snapshot.condition())) continue;
