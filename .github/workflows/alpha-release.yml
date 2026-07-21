@@ -1,4 +1,5 @@
 name: Automatic Limited Alpha Release
+run-name: Limited Alpha Release ${{ github.sha }}
 
 on:
   push:
