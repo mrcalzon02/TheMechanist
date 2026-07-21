@@ -23,10 +23,11 @@ final class VehicleOperationFeedbackAuthority {
     record Feedback(String state, String soundCue, boolean headlights,
                     int headlightRange, String summary) { }
 
-    record AmbientState(boolean active, String soundCue, int distance,
-                        boolean degraded, String summary) {
+    record AmbientState(boolean active, boolean audible, String soundCue,
+                        int distance, int audibleRange, boolean degraded,
+                        String summary) {
         static AmbientState inactive(String summary) {
-            return new AmbientState(false, "", 0, false, summary);
+            return new AmbientState(false, false, "", 0, 0, false, summary);
         }
     }
 
@@ -87,8 +88,7 @@ final class VehicleOperationFeedbackAuthority {
         set(vehicle, "operationFeedback", "route-started");
         set(vehicle, "facingDx", Integer.toString(dx));
         set(vehicle, "facingDy", Integer.toString(dy));
-        if (playSound) {
-            playCue(game, vehicle, cue, nowMillis, "start");
+        if (playSound && playCue(game, vehicle, cue, nowMillis, "start")) {
             LAST_SOUND_AT.put(key + ":ambient", nowMillis);
         }
         prune(nowMillis);
@@ -180,6 +180,8 @@ final class VehicleOperationFeedbackAuthority {
         boolean degraded = power < 55 || mobility < 55;
         int distance = Math.max(1, Math.abs(game.playerX - vehicle.x)
                 + Math.abs(game.playerY - vehicle.y));
+        int audibleRange = ambientAudibleRange(vehicle);
+        boolean audible = distance <= audibleRange;
         long activeUntil = Math.max(session.activeUntilMillis(),
                 nowMillis + ACTIVE_FEEDBACK_MILLIS);
         long expires = Math.max(session.expiresAtMillis(),
@@ -189,11 +191,13 @@ final class VehicleOperationFeedbackAuthority {
                 session.steps(), session.fromX(), session.fromY(),
                 session.toX(), session.toY(), session.facingDx(),
                 session.facingDy(), cue, false));
-        if (playSound) playCue(game, vehicle, cue, nowMillis, "ambient");
-        return new AmbientState(true, cue, distance, degraded,
-                "Vehicle ambient audio is active at distance " + distance
-                        + " with " + cue
-                        + (degraded ? " degraded powertrain feedback." : " running feedback."));
+        if (playSound && audible) playCue(game, vehicle, cue, nowMillis, "ambient");
+        return new AmbientState(true, audible, cue, distance, audibleRange,
+                degraded, "Vehicle ambient audio is "
+                + (audible ? "audible" : "outside audible range")
+                + " at distance " + distance + "/" + audibleRange
+                + " with " + cue
+                + (degraded ? " degraded powertrain feedback." : " running feedback."));
     }
 
     static synchronized VisualState visualState(GamePanel game,
@@ -328,6 +332,21 @@ final class VehicleOperationFeedbackAuthority {
         };
     }
 
+    static int ambientAudibleRange(MapObjectState vehicle) {
+        if (vehicle == null) return 0;
+        int base = switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
+            case UTILITY_BIKE -> 12;
+            case CIVILIAN_CAR -> 16;
+            case CARGO_TRUCK -> 20;
+            case ARMORED_CAR -> 22;
+            case TANK -> 24;
+        };
+        int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
+        if (power < 35) base -= 4;
+        else if (power < 60) base -= 2;
+        return Math.max(6, base);
+    }
+
     static int headlightRange(MapObjectState vehicle) {
         if (vehicle == null) return 0;
         int base = switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
@@ -383,17 +402,21 @@ final class VehicleOperationFeedbackAuthority {
                 || ownerType.equals(VehicleRuntimeAuthority.OwnerType.SALVAGE.name());
     }
 
-    private static void playCue(GamePanel game, MapObjectState vehicle,
-                                String cue, long nowMillis, String phase) {
-        if (game == null || game.sounds == null || cue == null || cue.isBlank()) return;
+    private static boolean playCue(GamePanel game, MapObjectState vehicle,
+                                   String cue, long nowMillis, String phase) {
+        if (game == null || game.sounds == null || game.options == null
+                || !game.options.soundEnabled || game.options.volume <= 0
+                || cue == null || cue.isBlank()) return false;
+        int distance = Math.max(1, Math.abs(game.playerX - vehicle.x)
+                + Math.abs(game.playerY - vehicle.y));
+        if (distance > ambientAudibleRange(vehicle)) return false;
         String soundKey = key(vehicle) + ":" + phase;
         Long prior = LAST_SOUND_AT.get(soundKey);
         long cooldown = "ambient".equals(phase) ? AMBIENT_REFRESH_MILLIS : 300L;
-        if (prior != null && nowMillis - prior < cooldown) return;
+        if (prior != null && nowMillis - prior < cooldown) return false;
         LAST_SOUND_AT.put(soundKey, nowMillis);
-        int distance = Math.max(1, Math.abs(game.playerX - vehicle.x)
-                + Math.abs(game.playerY - vehicle.y));
         game.sounds.playDistantCue(cue, distance, game.options);
+        return true;
     }
 
     private static int[] normalizeFacing(int dx, int dy) {
