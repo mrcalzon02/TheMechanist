@@ -21,6 +21,7 @@ final class FactionMarketContractAuthority {
     private static final String FACTION = "MARKET:FACTION:";
     private static final String VEHICLE_REPAIR = "MARKET:VEHICLE_REPAIR:";
     private static final String VEHICLE_SALVAGE = "MARKET:VEHICLE_SALVAGE:";
+    private static final String VEHICLE_FUEL = "MARKET:VEHICLE_FUEL:";
 
     private FactionMarketContractAuthority() {}
 
@@ -124,6 +125,8 @@ final class FactionMarketContractAuthority {
             result = "Motor-pool repair materials were accepted for the named persistent vehicle work order.";
         } else if (target.startsWith(VEHICLE_SALVAGE)) {
             result = "Motor-pool salvage authorization was accepted for the named persistent vehicle work order.";
+        } else if (target.startsWith(VEHICLE_FUEL)) {
+            result = "Motor-pool fuel or power supplies were accepted for the named persistent vehicle work order.";
         } else {
             result = "The delivered stock entered " + contract.displayFactionName() + " internal market supply.";
         }
@@ -190,6 +193,7 @@ final class FactionMarketContractAuthority {
         if (game == null || game.world == null || game.world.mapObjects == null
                 || faction == null || faction == Faction.NONE) return null;
         ArrayList<MapObjectState> salvage = new ArrayList<>();
+        ArrayList<MapObjectState> fuel = new ArrayList<>();
         ArrayList<MapObjectState> repair = new ArrayList<>();
         for (MapObjectState object : game.world.mapObjects) {
             if (!VehicleRuntimeAuthority.isVehicle(object)) continue;
@@ -202,6 +206,13 @@ final class FactionMarketContractAuthority {
                     FactionVehicleDoctrineAuthority.assess(game, object, null, faction);
             if (assessment.salvageRecommended()) {
                 salvage.add(object);
+                continue;
+            }
+            VehicleFuelAuthority.Snapshot energy =
+                    VehicleFuelAuthority.inspect(game.world, object);
+            if (energy.capacity() > 0
+                    && energy.current() < Math.max(1, energy.capacity() / 4)) {
+                fuel.add(object);
             } else if (VehicleRuntimeAuthority.damaged(object)) {
                 repair.add(object);
             }
@@ -228,6 +239,29 @@ final class FactionMarketContractAuthority {
                     "salvage the seized vehicle wreck " + name
                             + " through its persistent vehicle record",
                     75 + Math.min(40, assessment.salvagePriority() / 4));
+        }
+        fuel.sort(Comparator
+                .comparingInt((MapObjectState object) -> {
+                    VehicleFuelAuthority.Snapshot energy =
+                            VehicleFuelAuthority.inspect(game.world, object);
+                    return energy.capacity() - energy.current();
+                }).reversed()
+                .thenComparing(object -> vehicleDisplayName(game, object))
+                .thenComparing(object -> safe(object.id)));
+        if (!fuel.isEmpty()) {
+            MapObjectState target = fuel.get(0);
+            VehicleFuelAuthority.Snapshot energy =
+                    VehicleFuelAuthority.inspect(game.world, target);
+            String name = vehicleDisplayName(game, target);
+            return new Candidate(catalogItem("Fuel canister", "Machine part"),
+                    VEHICLE_FUEL + safe(target.id),
+                    "empty or low vehicle fuel or power reserve for " + name,
+                    faction.label + " local motor pool / " + energy.current()
+                            + "/" + energy.capacity() + " "
+                            + energy.energyType() + " unit(s)",
+                    "refuel the low-energy vehicle " + name
+                            + " through its persistent fuel or power ledger",
+                    65 + Math.min(60, energy.capacity() - energy.current()));
         }
         repair.sort(Comparator
                 .comparingInt((MapObjectState object) ->
