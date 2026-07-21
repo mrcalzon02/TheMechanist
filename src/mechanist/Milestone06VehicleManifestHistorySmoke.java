@@ -146,6 +146,7 @@ final class Milestone06VehicleManifestHistorySmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06VehicleDashboardSmoke.main(args);
     }
 
     private static void requireBoundary(List<String> history,
