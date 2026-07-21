@@ -197,7 +197,21 @@ final class Milestone06FactionVehicleBalanceSmoke {
         clearCompetingContractSources(game);
         VehicleRuntimeAuthority.applyDamage(cargo,
                 VehicleRuntimeAuthority.Component.POWERPLANT,
-                60, game.turn, "contract smoke engine damage");
+                90, game.turn, "contract smoke engine damage");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "operationState", "disabled");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "roadObstacle", "true");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "fuelOrPowerLeak", "true");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "hazardState", "fuel leak");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "burnedOut", "true");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "lossOutcomeTags", "road obstruction~fuel leak~burned out");
+        cargo.stockState = MapObjectState.setStockFlag(cargo.stockState,
+                "lossHistory", "catastrophic logistics loss retained for audit");
         VehicleRuntimeAuthority.Snapshot damaged =
                 VehicleRuntimeAuthority.inspect(game.world, cargo);
         int powerplantBefore = damaged.components().get(
@@ -239,6 +253,8 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 VehicleRuntimeAuthority.inspect(game.world, cargo);
         int powerplantAfter = repaired.components().get(
                 VehicleRuntimeAuthority.Component.POWERPLANT);
+        String recoveredHistory = MapObjectState.stockValue(cargo.stockState,
+                "lossHistory");
         require(repairResult.success() && repair.completed
                         && powerplantAfter > powerplantBefore
                         && powerplantAfter <= 100
@@ -249,11 +265,30 @@ final class Milestone06FactionVehicleBalanceSmoke {
                         == standingBeforeRepair + repair.repReward,
                 "generated vehicle repair turn-in should atomically consume proof, repair the target, and preserve ordinary rewards: "
                         + repairResult.message());
+        require("parked".equals(MapObjectState.stockValue(
+                        cargo.stockState, "operationState"))
+                        && "false".equals(MapObjectState.stockValue(
+                        cargo.stockState, "roadObstacle"))
+                        && "false".equals(MapObjectState.stockValue(
+                        cargo.stockState, "fuelOrPowerLeak"))
+                        && "none".equals(MapObjectState.stockValue(
+                        cargo.stockState, "hazardState"))
+                        && "false".equals(MapObjectState.stockValue(
+                        cargo.stockState, "burnedOut"))
+                        && "recovered".equals(MapObjectState.stockValue(
+                        cargo.stockState, "lossRecoveryState"))
+                        && recoveredHistory.contains(
+                        "catastrophic logistics loss retained for audit")
+                        && recoveredHistory.contains(
+                        "active loss hazards cleared"),
+                "faction repair should clear active loss hazards while retaining historical loss records");
         require(repairResult.message().contains("Vehicle contract outcome:")
                         && repairResult.message().contains(damaged.model())
                         && repairResult.message().contains(
-                        "Motor-pool repair materials were accepted"),
-                "vehicle repair completion should explain both market and physical outcomes: "
+                        "Motor-pool repair materials were accepted")
+                        && repairResult.message().contains(
+                        "Critical systems returned to service"),
+                "vehicle repair completion should explain market, physical, and loss-recovery outcomes: "
                         + repairResult.message());
 
         MapObjectState salvageTarget = vehicle(game.world, 14, 8,
