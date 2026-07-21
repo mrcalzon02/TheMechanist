@@ -300,7 +300,9 @@ final class VehicleMaintenanceAuthority {
             cleared = true;
         }
         boolean historicalLoss = !value(vehicle, "lossOutcomeTags").isBlank();
-        if (cleared || historicalLoss) {
+        boolean unreconciledHistory = historicalLoss
+                && !"recovered".equals(value(vehicle, "lossRecoveryState"));
+        if (cleared || unreconciledHistory) {
             set(vehicle, "lossRecoveryState", "recovered");
             set(vehicle, "lossRecoveryTurn", Integer.toString(Math.max(0, turn)));
             append(vehicle, "lossHistory", "critical systems restored at turn "
