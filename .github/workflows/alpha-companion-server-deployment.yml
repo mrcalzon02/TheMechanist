@@ -149,7 +149,8 @@ jobs:
             --report 'dist\alpha-companion\deployment\companion-deployment-windows-x64.json' `
             *>&1 | Tee-Object -FilePath 'dist\alpha-companion\deployment\companion-deployment-windows-x64.log'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item -LiteralPath (Join-Path $work 'logs\*.log') -Destination 'dist\alpha-companion\deployment\logs' -Force
+          Get-ChildItem -LiteralPath (Join-Path $work 'logs') -File -Filter '*.log' |
+            Copy-Item -Destination 'dist\alpha-companion\deployment\logs' -Force
 
       - name: Verify companion authority boundaries
         shell: bash
@@ -191,7 +192,8 @@ jobs:
             dist/alpha-companion/canonical-${{ matrix.platform }}.json
             dist/alpha-companion/operations-${{ matrix.platform }}.json
             dist/alpha-companion-build-${{ matrix.platform }}.log
-            dist/alpha-companion/${{ runner.os == 'Linux' && 'linux-package.log' || 'windows-package.log' }}
+            dist/alpha-companion/linux-package.log
+            dist/alpha-companion/windows-package.log
           if-no-files-found: warn
           retention-days: 30
           compression-level: 0
