@@ -5,13 +5,14 @@
 
     <groupId>local.mechanist</groupId>
     <artifactId>mechanist-launcher</artifactId>
-    <version>0.1.0</version>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>The Mechanist Launcher</name>
     <description>Java 17 Swing launcher/updater for The Mechanist.</description>
 
     <properties>
+        <revision>0.0.0-local</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
