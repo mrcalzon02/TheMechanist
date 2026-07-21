@@ -76,13 +76,17 @@ final class Milestone06VehicleDashboardSmoke {
             requireContains(dashboard, "Dashboard Parcel", "cargo custody");
             requireContains(dashboard, "sector-7/dashboard-depot",
                     "strategic destination");
-            requireContains(dashboard, "vehicle/civilian_car",
-                    "Infopedia reference key");
+            requireContains(dashboard, "civilian car vehicle dossier",
+                    "Infopedia dossier title");
             requireContains(dashboard, "LOCAL TRANSIT CONTROL",
                     "existing transit controls");
             for (String line : dashboard) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
                         "vehicle dashboard leaked implementation text: " + line);
+                require(!line.contains(dashboardCar.id)
+                                && !line.contains("vehicle/civilian_car"),
+                        "ordinary dashboard exposed a raw vehicle or dossier identifier: "
+                                + line);
             }
 
             MapObjectState restored = copy(dashboardCar);
