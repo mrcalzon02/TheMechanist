@@ -9,9 +9,12 @@ import java.util.Locale;
 final class ContractTurnInAuthority {
     record TurnInResult(boolean success, String message, FactionContract contract) { }
 
+    private static final String VEHICLE_REPAIR_TARGET = "MARKET:VEHICLE_REPAIR:";
+    private static final String VEHICLE_SALVAGE_TARGET = "MARKET:VEHICLE_SALVAGE:";
+
     private enum VehicleContractMode {
-        REPAIR("repair", "a damaged faction vehicle"),
-        SALVAGE("salvage", "a seized or wrecked faction vehicle");
+        REPAIR("repair", "damaged faction vehicle"),
+        SALVAGE("salvage", "seized or wrecked faction vehicle");
 
         final String action;
         final String targetDescription;
@@ -226,6 +229,7 @@ final class ContractTurnInAuthority {
         if (game == null || game.world == null || game.world.mapObjects == null
                 || contract == null || mode == null) return null;
         Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
+        String explicitTargetId = explicitVehicleTargetId(contract, mode);
         String text = contractText(contract, "");
         ArrayList<MapObjectState> candidates = new ArrayList<>();
         for (MapObjectState object : game.world.mapObjects) {
@@ -233,23 +237,43 @@ final class ContractTurnInAuthority {
             VehicleRuntimeAuthority.ensureInitialized(game.world, object);
             VehicleRuntimeAuthority.Snapshot snapshot =
                     VehicleRuntimeAuthority.inspect(game.world, object);
-            if (snapshot == null || "salvaged".equals(snapshot.condition())) continue;
-            boolean eligible = mode == VehicleContractMode.REPAIR
-                    ? faction != Faction.NONE
-                    && VehicleRuntimeAuthority.factionOwns(object, faction)
-                    && VehicleRuntimeAuthority.damaged(object)
-                    : faction != Faction.NONE
-                    && VehicleRuntimeAuthority.factionOwns(object, faction)
-                    && (VehicleRuntimeAuthority.seized(object)
-                    || "wreck".equals(snapshot.condition()));
-            if (eligible) candidates.add(object);
+            if (!eligibleVehicleContractTarget(object, snapshot, faction, mode)) continue;
+            if (!explicitTargetId.isBlank()) {
+                if (explicitTargetId.equals(safe(object.id))) return object;
+                continue;
+            }
+            candidates.add(object);
         }
+        if (!explicitTargetId.isBlank()) return null;
         candidates.sort(Comparator
                 .comparingInt((MapObjectState object) -> vehicleContractScore(
                         game, object, text)).reversed()
                 .thenComparing(object -> vehicleDisplayName(game, object))
                 .thenComparing(object -> safe(object.id)));
         return candidates.isEmpty() ? null : candidates.get(0);
+    }
+
+    private static boolean eligibleVehicleContractTarget(
+            MapObjectState object, VehicleRuntimeAuthority.Snapshot snapshot,
+            Faction faction, VehicleContractMode mode) {
+        if (object == null || snapshot == null || faction == null
+                || faction == Faction.NONE
+                || "salvaged".equals(snapshot.condition())
+                || !VehicleRuntimeAuthority.factionOwns(object, faction)) return false;
+        if (mode == VehicleContractMode.REPAIR) {
+            return VehicleRuntimeAuthority.damaged(object);
+        }
+        return VehicleRuntimeAuthority.seized(object)
+                || "wreck".equals(snapshot.condition());
+    }
+
+    private static String explicitVehicleTargetId(
+            FactionContract contract, VehicleContractMode mode) {
+        if (contract == null || mode == null) return "";
+        String target = safe(contract.targetEntityId);
+        String prefix = mode == VehicleContractMode.REPAIR
+                ? VEHICLE_REPAIR_TARGET : VEHICLE_SALVAGE_TARGET;
+        return target.startsWith(prefix) ? target.substring(prefix.length()) : "";
     }
 
     private static int vehicleContractScore(GamePanel game, MapObjectState vehicle,
@@ -305,6 +329,7 @@ final class ContractTurnInAuthority {
                                        String deliveredItem) {
         if (contract == null) return safe(deliveredItem);
         return (safe(contract.type) + " " + safe(contract.targetName) + " "
+                + safe(contract.targetEntityId) + " "
                 + safe(contract.requiredTurnInItem) + " "
                 + safe(contract.description) + " " + safe(deliveredItem))
                 .toLowerCase(Locale.ROOT);
