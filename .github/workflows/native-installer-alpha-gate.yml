@@ -88,7 +88,7 @@ jobs:
           python ROOT_build/ci/verify_proguard_configuration.py \
             --repo . \
             --report native-gate-logs/proguard-policy-${{ matrix.platform }}.json
-          python ROOT_build/ci/verify_limited_alpha_operations.py \
+          python ROOT_build/ci/verify_alpha_operating_docs.py \
             --repo . \
             --report native-gate-logs/playtest-operations-source-${{ matrix.platform }}.json
 
@@ -130,7 +130,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python ROOT_build/ci/verify_limited_alpha_operations.py \
+          python ROOT_build/ci/verify_alpha_operating_docs.py \
             --repo . \
             --distribution '${{ steps.canonical.outputs.root }}' \
             --require-release-hardened \
