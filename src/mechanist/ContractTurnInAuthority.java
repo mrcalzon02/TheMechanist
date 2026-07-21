@@ -209,9 +209,14 @@ final class ContractTurnInAuthority {
         }
         Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
         VehicleRuntimeAuthority.Result result;
+        boolean recoveredLoss = false;
         if (mode == VehicleContractMode.REPAIR) {
             result = VehicleRuntimeAuthority.repairForFaction(vehicle, 35,
                     game.turn, faction, "contract " + safe(contract.id));
+            if (result.success()) {
+                recoveredLoss = VehicleMaintenanceAuthority.resolveLossRecovery(
+                        vehicle, game.turn, "faction contract " + safe(contract.id));
+            }
         } else {
             result = VehicleRuntimeAuthority.salvageForFaction(vehicle, faction,
                     game.turn, "contract " + safe(contract.id));
@@ -220,8 +225,11 @@ final class ContractTurnInAuthority {
             return new VehicleContractResult(true, false,
                     "Vehicle contract outcome was blocked: " + result.message());
         }
-        return new VehicleContractResult(true, result.changed(),
-                "Vehicle contract outcome: " + result.message());
+        return new VehicleContractResult(true, result.changed() || recoveredLoss,
+                "Vehicle contract outcome: " + result.message()
+                        + (recoveredLoss
+                        ? " Critical systems returned to service and active loss hazards were cleared."
+                        : ""));
     }
 
     private static MapObjectState selectVehicleContractTarget(
