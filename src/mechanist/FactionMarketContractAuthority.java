@@ -219,7 +219,7 @@ final class FactionMarketContractAuthority {
                     FactionVehicleDoctrineAuthority.assess(
                             game, target, null, faction);
             String name = vehicleDisplayName(game, target);
-            return new Candidate("Tool bundle",
+            return new Candidate(catalogItem("Tool bundle", "Machine part"),
                     VEHICLE_SALVAGE + safe(target.id),
                     "seized vehicle salvage backlog for " + name,
                     faction.label + " local motor pool / readiness "
@@ -241,7 +241,7 @@ final class FactionMarketContractAuthority {
                 VehicleRuntimeAuthority.inspect(game.world, target);
         String name = vehicleDisplayName(game, target);
         int deficit = Math.max(0, 100 - snapshot.integrity());
-        return new Candidate("Machine part",
+        return new Candidate(catalogItem("Machine part", "Construction supplies"),
                 VEHICLE_REPAIR + safe(target.id),
                 "damaged vehicle repair backlog for " + name,
                 faction.label + " local motor pool / integrity "
