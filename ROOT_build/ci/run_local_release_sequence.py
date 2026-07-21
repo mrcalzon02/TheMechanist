@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Run the local release gates in one authoritative sequence.
 
-This command coordinates the existing playtest-operations, Java, inventory,
-native, and evidence verifiers without duplicating their implementation. It
-stops at the first failed stage, preserves every stage report, and writes one
-top-level summary. It never commits, pushes, publishes, or updates release
-history.
+This command coordinates the existing source and packaged playtest-operations,
+Java, inventory, native, and evidence verifiers without duplicating their
+implementation. It stops at the first failed stage, preserves every stage
+report, and writes one top-level summary. It never commits, pushes, publishes,
+or updates release history.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ import traceback
 from typing import Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SCHEMA = 3
+SCHEMA = 4
 
 
 def utc_now() -> str:
@@ -132,19 +132,33 @@ def main() -> int:
         python = sys.executable
         commands: list[tuple[str, list[str]]] = [
             (
-                "playtest-operations",
+                "playtest-operations-source",
                 [
                     python,
                     "ROOT_build/ci/verify_limited_alpha_operations.py",
                     "--repo",
                     ".",
                     "--report",
-                    str(sequence_dir / "playtest-operations.json"),
+                    str(sequence_dir / "playtest-operations-source.json"),
                 ],
             ),
             (
                 "java",
                 [python, "ROOT_build/ci/run_local_java_release_gate.py", "--release-hardened"],
+            ),
+            (
+                "playtest-operations-package",
+                [
+                    python,
+                    "ROOT_build/ci/verify_limited_alpha_operations.py",
+                    "--repo",
+                    ".",
+                    "--distribution-search-root",
+                    "dist/local-java-gate/releases",
+                    "--require-release-hardened",
+                    "--report",
+                    str(sequence_dir / "playtest-operations-package.json"),
+                ],
             ),
             (
                 "inventory",
@@ -156,9 +170,9 @@ def main() -> int:
             ),
         ]
         if args.update_committed_manifest:
-            commands[2][1].append("--update-committed-manifest")
+            commands[3][1].append("--update-committed-manifest")
         if args.require_clearance:
-            commands[2][1].append("--require-release-clearance")
+            commands[3][1].append("--require-release-clearance")
 
         evidence_command = [python, "ROOT_build/ci/verify_local_release_evidence.py"]
         if args.require_clearance:
