@@ -204,10 +204,18 @@ final class VehicleFuelAuthority {
 
     private static void append(MapObjectState vehicle, String key,
                                String entry) {
+        ArrayList<String> entries = new ArrayList<>();
         String existing = value(vehicle, key);
-        String next = existing.isBlank() ? clean(entry, "")
-                : existing + "~" + clean(entry, "");
-        set(vehicle, key, next);
+        if (!existing.isBlank()) {
+            for (String token : existing.split("~")) {
+                String cleaned = clean(token, "");
+                if (!cleaned.isBlank()) entries.add(cleaned);
+            }
+        }
+        String cleanedEntry = clean(entry, "");
+        if (!cleanedEntry.isBlank()) entries.add(cleanedEntry);
+        while (entries.size() > 12) entries.remove(0);
+        set(vehicle, key, String.join("~", entries));
     }
 
     private static String value(MapObjectState vehicle, String key) {
