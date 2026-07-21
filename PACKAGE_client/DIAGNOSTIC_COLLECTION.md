@@ -20,6 +20,27 @@ A current report records:
 - Redacted install, save, settings, log, cache, and package-seed paths.
 - Recent bounded launcher and local log excerpts.
 
+A report without version, exact commit, platform, Java release, hardening state, and package-verification status is incomplete evidence. Do not infer those values from an archive name or screenshot when the candidate can report them directly.
+
+## Canonical limited-alpha report fields
+
+Every defect report should provide the same minimum evidence whether it is filed through the structured GitHub form or a private test channel:
+
+1. Severity: blocker, major, moderate, minor, or cosmetic.
+2. Candidate version and exact 40-character source commit.
+3. Platform package and operating-system version.
+4. Package verification result.
+5. Modified-content status and whether the defect reproduces after restoring the verified package.
+6. Test lane: launcher, installer, single-player host, persistence, independent host, remote lobby, gameplay, presentation, performance, or diagnostics.
+7. A concise defect summary.
+8. Reproduction steps beginning from installation or launch.
+9. Expected behavior.
+10. Actual behavior.
+11. Clean-restart, new-save, fresh-profile, and prior-candidate persistence results where applicable.
+12. The redacted diagnostic identity and only the bounded excerpts relevant to the failure.
+
+Do not submit a workflow artifact, development checkout, or locally modified package as though it were an approved candidate. Record that distinction explicitly.
+
 ## Before sharing
 
 Open the generated report and review it. Automatic redaction covers common token, password, secret, authorization, cookie, session-key, and API-key forms, plus the user home directory. It cannot recognize every private value.
@@ -33,9 +54,13 @@ Remove or replace:
 - Chat content or documents accidentally copied into logs.
 - Save data not approved for the test channel.
 
+Never attach, paste, rename for upload, or copy into an ordinary report an independent-host resume-token custody file. Never include a plaintext resume token, password, authorization header, API key, cookie, or session secret. The reusable client credential is not diagnostic evidence.
+
 ## Modified packages
 
 When modified content is detected, the launcher writes the report locally but does not automatically open a base-game issue draft. Preserve the report for comparison, restore the verified package, and reproduce the problem again before filing it as a base-game defect.
+
+A modified-content report must state whether the failure also occurs after package restoration. Until that comparison exists, classify it separately from verified base-game triage.
 
 ## Manual collection when the launcher cannot start
 
@@ -64,6 +89,7 @@ Record:
 - Whether the crash occurs with a fresh user profile.
 - Whether the process exits or remains running.
 - Whether the single-player internal host shuts down or leaves an orphan process/thread symptom.
+- Whether the same candidate reproduces after a clean machine restart.
 
 ## Save and persistence defects
 
@@ -76,12 +102,13 @@ Keep an untouched backup before further testing. Report:
 - Character identity, world identity, turn, and world time before save.
 - Whether a new save works.
 - Whether the original candidate can still load the backup.
+- Whether rollback, repair, upgrade, or uninstall changed mutable user data.
 
-Share saves only through the approved private test channel and only when requested.
+Share saves only through the approved private test channel and only when requested. Do not make a destructive migration attempt against the only copy of a world.
 
 ## Independent host defects
 
-Distinguish transport from gameplay authority.
+Distinguish transport, authenticated lobby authority, and remote gameplay authority.
 
 Transport evidence includes:
 
@@ -92,4 +119,25 @@ Transport evidence includes:
 - Sequence or frame rejection messages.
 - Close and restart behavior.
 
-Remote authoritative gameplay is not yet an open alpha capability. Do not describe relay connectivity as a successful game session.
+Authenticated lobby evidence includes:
+
+- Stable profile identity without exposing the reusable credential.
+- Connection generation before and after reconnect.
+- Connected-only roster membership and ordering.
+- Readiness, presence, and typing-state reset behavior.
+- Lifetime relay and hosted-command accounting across a clean host restart.
+
+Remote authoritative gameplay is not yet an open alpha capability. Do not describe relay connectivity, authentication, roster delivery, readiness changes, wait-command acceptance, or reconnect continuity as a successful game session. A report must state whether the observed behavior belongs to transport, lobby authority, or actual server-owned world authority.
+
+## Attachment boundary
+
+Appropriate attachments are limited to reviewed screenshots, bounded logs, generated diagnostic reports, supplied verification reports, and save material explicitly approved for the private test channel.
+
+Before submission, confirm all of the following:
+
+- The candidate identity is exact.
+- The package verification and modified-content state are stated.
+- Every attachment has been reviewed for personal or unrelated information.
+- No reusable credential or resume-token custody material is present.
+- A backup exists before destructive persistence or installer testing.
+- Relay or lobby evidence is not mislabeled as authoritative remote gameplay.
