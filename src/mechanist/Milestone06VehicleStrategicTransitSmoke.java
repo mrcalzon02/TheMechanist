@@ -196,6 +196,7 @@ final class Milestone06VehicleStrategicTransitSmoke {
         } finally {
             game.shutdownRuntime();
         }
+        Milestone06VehicleStrategicTransitHistorySmoke.main(args);
         Milestone06VehicleStrategicTransitCommitSmoke.main(args);
     }
 
