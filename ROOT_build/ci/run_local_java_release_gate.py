@@ -23,16 +23,20 @@ from typing import Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 STANDARDS = ROOT / "ROOT_docs" / "STANDARDS_AND_PRACTICES.md"
-REPORT_SCHEMA = 1
+REPORT_SCHEMA = 2
 
 
 class GateFailure(RuntimeError):
-    def __init__(self, step: str, command: Sequence[str], returncode: int):
+    def __init__(self, step_result: dict[str, object]):
+        command = [str(value) for value in step_result.get("command", [])]
+        returncode = int(step_result.get("returnCode", -1))
+        step = str(step_result.get("name", "unknown-step"))
         super().__init__(
             f"{step} failed with exit code {returncode}: {' '.join(command)}"
         )
+        self.step_result = step_result
         self.step = step
-        self.command = list(command)
+        self.command = command
         self.returncode = returncode
 
 
@@ -55,27 +59,39 @@ def run_step(
     name: str,
     command: Sequence[str],
     log_dir: pathlib.Path,
+    steps: list[dict[str, object]],
     env: dict[str, str] | None = None,
 ) -> dict[str, object]:
     log_path = log_dir / f"{name}.log"
     started = utc_now()
-    with log_path.open("w", encoding="utf-8", newline="\n") as log:
-        process = subprocess.Popen(
-            list(command),
-            cwd=ROOT,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        assert process.stdout is not None
-        for line in process.stdout:
-            print(line, end="")
-            log.write(line)
-        returncode = process.wait()
-    result = {
+    returncode = -1
+    launch_error: str | None = None
+    try:
+        with log_path.open("w", encoding="utf-8", newline="\n") as log:
+            try:
+                process = subprocess.Popen(
+                    list(command),
+                    cwd=ROOT,
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                )
+            except OSError as exc:
+                launch_error = str(exc)
+                log.write(f"process launch failed: {exc}\n")
+                raise
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log.write(line)
+            returncode = process.wait()
+    except OSError:
+        returncode = -1
+
+    result: dict[str, object] = {
         "name": name,
         "command": list(command),
         "startedAtUtc": started,
@@ -84,8 +100,11 @@ def run_step(
         "log": str(log_path.relative_to(ROOT)),
         "passed": returncode == 0,
     }
+    if launch_error is not None:
+        result["launchError"] = launch_error
+    steps.append(result)
     if returncode != 0:
-        raise GateFailure(name, command, returncode)
+        raise GateFailure(result)
     return result
 
 
@@ -163,6 +182,7 @@ def main() -> int:
         "releaseHardened": args.release_hardened,
         "steps": [],
     }
+    steps: list[dict[str, object]] = report["steps"]  # type: ignore[assignment]
 
     try:
         if not STANDARDS.is_file():
@@ -185,13 +205,13 @@ def main() -> int:
         require_tool("javac")
         require_tool("git")
 
-        steps: list[dict[str, object]] = report["steps"]  # type: ignore[assignment]
-        steps.append(run_step(
+        run_step(
             "python-syntax",
             [python, "-m", "compileall", "-q", "ROOT_build/ci"],
             log_dir,
-        ))
-        steps.append(run_step(
+            steps,
+        )
+        run_step(
             "proguard-policy",
             [
                 python,
@@ -202,19 +222,22 @@ def main() -> int:
                 str(output / "proguard-policy.json"),
             ],
             log_dir,
-        ))
+            steps,
+        )
         if platform_name == "linux-x64":
             bash = require_tool("bash")
-            steps.append(run_step(
+            run_step(
                 "linux-package-script-syntax",
                 [bash, "-n", "scripts/package/build-linux-installers.sh"],
                 log_dir,
-            ))
-        elif shutil.which("pwsh"):
-            steps.append(run_step(
+                steps,
+            )
+        else:
+            pwsh = require_tool("pwsh")
+            run_step(
                 "windows-package-script-syntax",
                 [
-                    "pwsh",
+                    pwsh,
                     "-NoProfile",
                     "-Command",
                     "$t=$null;$e=$null;"
@@ -224,14 +247,16 @@ def main() -> int:
                     "if($e.Count -gt 0){$e|%{Write-Error $_.Message};exit 1}",
                 ],
                 log_dir,
-            ))
+                steps,
+            )
 
-        steps.append(run_step(
+        run_step(
             "maven-java17-package",
             [mvn, "-B", "-DskipTests", "clean", "package"],
             log_dir,
-        ))
-        steps.append(run_step(
+            steps,
+        )
+        run_step(
             "boot-smoke",
             [
                 java,
@@ -241,13 +266,14 @@ def main() -> int:
                 "mechanist.BootStartupAudioSilenceSmoke",
             ],
             log_dir,
-        ))
+            steps,
+        )
 
         server_home = output / "server-home"
         server_home.mkdir(parents=True, exist_ok=True)
         server_env = os.environ.copy()
         server_env["MECHANIST_SERVER_HOME"] = str(server_home)
-        steps.append(run_step(
+        run_step(
             "server-operation-smoke",
             [
                 java,
@@ -257,8 +283,9 @@ def main() -> int:
                 "--help",
             ],
             log_dir,
+            steps,
             env=server_env,
-        ))
+        )
 
         build_command = [
             python,
@@ -272,11 +299,12 @@ def main() -> int:
         ]
         if args.release_hardened:
             build_command.append("--release-hardened")
-        steps.append(run_step(
+        run_step(
             "build-portable-distribution",
             build_command,
             log_dir,
-        ))
+            steps,
+        )
 
         distribution = find_one(
             release_dir,
@@ -302,11 +330,12 @@ def main() -> int:
         ]
         if args.release_hardened:
             verify_command.append("--require-release-hardened")
-        steps.append(run_step(
+        run_step(
             "verify-portable-distribution",
             verify_command,
             log_dir,
-        ))
+            steps,
+        )
 
         runtime_java = distribution / "runtime" / "bin" / (
             "java.exe" if platform_name == "windows-x64" else "java"
@@ -318,7 +347,7 @@ def main() -> int:
         ])
         gate_profile = output / "gate3-profile"
         gate_profile.mkdir(parents=True, exist_ok=True)
-        steps.append(run_step(
+        run_step(
             "packaged-gate3",
             [
                 str(runtime_java),
@@ -329,9 +358,10 @@ def main() -> int:
                 "mechanist.Gate3PlayerFacingTextSmokeSuite",
             ],
             log_dir,
-        ))
+            steps,
+        )
 
-        steps.append(run_step(
+        run_step(
             "synthetic-distribution",
             [
                 python,
@@ -343,7 +373,8 @@ def main() -> int:
                 str(synthetic_report),
             ],
             log_dir,
-        ))
+            steps,
+        )
 
         contract_command = [
             python,
@@ -357,11 +388,12 @@ def main() -> int:
         ]
         if args.release_hardened:
             contract_command.append("--require-release-hardened")
-        steps.append(run_step(
+        run_step(
             "synthetic-release-contract",
             contract_command,
             log_dir,
-        ))
+            steps,
+        )
 
         report["status"] = "passed"
         report["completedAtUtc"] = utc_now()
@@ -375,12 +407,14 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001 - one fail-closed gate surface
         report["status"] = "failed"
         report["completedAtUtc"] = utc_now()
+        report["stepCount"] = len(steps)
         report["errorType"] = type(exc).__name__
         report["error"] = str(exc)
         if isinstance(exc, GateFailure):
             report["failedStep"] = exc.step
             report["failedCommand"] = exc.command
             report["returnCode"] = exc.returncode
+            report["failedStepResult"] = exc.step_result
         report["traceback"] = traceback.format_exc()
         report_path.write_text(
             json.dumps(report, indent=2, sort_keys=True) + "\n",
