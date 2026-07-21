@@ -87,7 +87,10 @@ final class VehicleOperationFeedbackAuthority {
         set(vehicle, "operationFeedback", "route-started");
         set(vehicle, "facingDx", Integer.toString(dx));
         set(vehicle, "facingDy", Integer.toString(dy));
-        if (playSound) playCue(game, vehicle, cue, nowMillis, "start");
+        if (playSound) {
+            playCue(game, vehicle, cue, nowMillis, "start");
+            LAST_SOUND_AT.put(key + ":ambient", nowMillis);
+        }
         prune(nowMillis);
         int range = headlightRange(vehicle);
         boolean lights = component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS) > 0;
@@ -160,8 +163,13 @@ final class VehicleOperationFeedbackAuthority {
         }
         String operation = MapObjectState.stockValue(vehicle.stockState,
                 "operationState").toLowerCase(Locale.ROOT);
-        if (terminalOperationState(vehicle) || !operation.equals("running")) {
+        if (terminalOperationState(vehicle)) {
             removeTransientSession(vehicle);
+            return AmbientState.inactive(
+                    "Vehicle ambient audio stopped because the vehicle entered a terminal state.");
+        }
+        if (!operation.equals("running")) {
+            LAST_SOUND_AT.remove(vehicleKey + ":ambient");
             return AmbientState.inactive(
                     "Vehicle ambient audio stopped because the vehicle is not operating.");
         }
