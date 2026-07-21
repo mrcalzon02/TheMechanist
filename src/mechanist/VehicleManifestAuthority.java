@@ -8,6 +8,8 @@ import java.util.Set;
 
 /** Persistent driver, operational crew, passenger, and cargo custody manifests. */
 final class VehicleManifestAuthority {
+    private static final int HISTORY_LIMIT = 12;
+
     record CargoEntry(String label, String owner, int units) { }
 
     record Snapshot(String driver, List<String> crew, List<String> passengers,
@@ -433,9 +435,11 @@ final class VehicleManifestAuthority {
 
     private static void append(MapObjectState vehicle, String key,
                                String entry) {
-        String existing = value(vehicle, key);
-        set(vehicle, key, existing.isBlank() ? clean(entry, "")
-                : existing + "~" + clean(entry, ""));
+        ArrayList<String> entries = new ArrayList<>(tokens(value(vehicle, key)));
+        String cleanedEntry = clean(entry, "");
+        if (!cleanedEntry.isBlank()) entries.add(cleanedEntry);
+        while (entries.size() > HISTORY_LIMIT) entries.remove(0);
+        set(vehicle, key, String.join("~", entries));
     }
 
     private static String value(MapObjectState vehicle, String key) {
