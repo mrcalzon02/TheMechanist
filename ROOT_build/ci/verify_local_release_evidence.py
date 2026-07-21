@@ -17,7 +17,8 @@ import sys
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SCHEMA = 3
+SCHEMA = 4
+PLAYTEST_DOCUMENT_COUNT = 8
 
 
 def load_report(path: pathlib.Path, label: str) -> dict[str, Any]:
@@ -38,6 +39,35 @@ def require(data: dict[str, Any], key: str, expected: Any, label: str) -> None:
         raise RuntimeError(
             f"{label} report requires {key}={expected!r}, found {actual!r}"
         )
+
+
+def document_hashes(
+    records: object,
+    *,
+    label: str,
+    path_key: str,
+    require_role: bool,
+) -> dict[str, str]:
+    if not isinstance(records, list) or len(records) != PLAYTEST_DOCUMENT_COUNT:
+        raise RuntimeError(
+            f"{label} must contain exactly {PLAYTEST_DOCUMENT_COUNT} documents"
+        )
+    hashes: dict[str, str] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            raise RuntimeError(f"{label} contains a malformed document record")
+        path = record.get(path_key)
+        digest = record.get("sha256")
+        if not isinstance(path, str) or not path.startswith("docs/"):
+            raise RuntimeError(f"{label} contains an invalid document path: {path!r}")
+        if path in hashes:
+            raise RuntimeError(f"{label} repeats document path {path}")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise RuntimeError(f"{label} has invalid SHA-256 for {path}")
+        if require_role and record.get("role") != "documentation":
+            raise RuntimeError(f"{label} has wrong role for {path}")
+        hashes[path] = digest
+    return hashes
 
 
 def main() -> int:
@@ -101,32 +131,12 @@ def main() -> int:
             "verified",
             "playtest-operations source policy",
         )
-        documents = source_operations.get("documents")
-        if not isinstance(documents, list) or len(documents) != 8:
-            raise RuntimeError(
-                "playtest-operations report must verify exactly eight source documents"
-            )
-        source_hashes: dict[str, str] = {}
-        for record in documents:
-            if not isinstance(record, dict):
-                raise RuntimeError(
-                    "playtest-operations report contains a malformed source document record"
-                )
-            destination = record.get("destination")
-            digest = record.get("sha256")
-            if not isinstance(destination, str) or not destination.startswith("docs/"):
-                raise RuntimeError(
-                    "playtest-operations report contains an invalid package destination"
-                )
-            if destination in source_hashes:
-                raise RuntimeError(
-                    f"playtest-operations report repeats destination {destination}"
-                )
-            if not isinstance(digest, str) or len(digest) != 64:
-                raise RuntimeError(
-                    f"playtest-operations report has invalid SHA-256 for {destination}"
-                )
-            source_hashes[destination] = digest
+        source_hashes = document_hashes(
+            source_operations.get("documents"),
+            label="playtest-operations source policy",
+            path_key="destination",
+            require_role=False,
+        )
 
         issue_form = source_operations.get("issueForm")
         if not isinstance(issue_form, dict):
@@ -154,36 +164,12 @@ def main() -> int:
             "verified",
             "packaged playtest operations",
         )
-        packaged_documents = packaged_operations.get("documents")
-        if not isinstance(packaged_documents, list) or len(packaged_documents) != 8:
-            raise RuntimeError(
-                "packaged playtest operations must verify exactly eight documents"
-            )
-        packaged_hashes: dict[str, str] = {}
-        for record in packaged_documents:
-            if not isinstance(record, dict):
-                raise RuntimeError(
-                    "packaged playtest operations contain a malformed document record"
-                )
-            path = record.get("path")
-            digest = record.get("sha256")
-            if not isinstance(path, str) or path not in source_hashes:
-                raise RuntimeError(
-                    f"packaged playtest operations contain an unexpected document: {path!r}"
-                )
-            if path in packaged_hashes:
-                raise RuntimeError(
-                    f"packaged playtest operations repeat document {path}"
-                )
-            if digest != source_hashes[path]:
-                raise RuntimeError(
-                    f"packaged playtest document hash differs from source: {path}"
-                )
-            if record.get("role") != "documentation":
-                raise RuntimeError(
-                    f"packaged playtest document has wrong role: {path}"
-                )
-            packaged_hashes[path] = digest
+        packaged_hashes = document_hashes(
+            packaged_operations.get("documents"),
+            label="packaged playtest operations",
+            path_key="path",
+            require_role=True,
+        )
         if packaged_hashes != source_hashes:
             raise RuntimeError(
                 "packaged playtest document set does not exactly match governed source"
@@ -236,6 +222,67 @@ def main() -> int:
                 f"native platform {native.get('platform')!r} does not match Java platform {platform!r}"
             )
 
+        staging = native.get("stagingVerification")
+        if not isinstance(staging, dict):
+            raise RuntimeError("native gate report has no staging verification object")
+        if staging.get("commit") != commit or staging.get("platform") != platform:
+            raise RuntimeError(
+                "native staging verification identity does not match the Java candidate"
+            )
+        require(staging, "releaseHardened", True, "native staging verification")
+        require(
+            staging,
+            "playtestOperationsVerified",
+            True,
+            "native staging verification",
+        )
+        require(
+            staging,
+            "playtestDocumentCount",
+            PLAYTEST_DOCUMENT_COUNT,
+            "native staging verification",
+        )
+
+        image = native.get("imageVerification")
+        if not isinstance(image, dict):
+            raise RuntimeError("native gate report has no image verification object")
+        require(image, "status", "verified", "native image verification")
+        if image.get("commit") != commit or image.get("platform") != platform:
+            raise RuntimeError(
+                "native image verification identity does not match the Java candidate"
+            )
+        require(image, "releaseHardened", True, "native image verification")
+        require(
+            image,
+            "installerSourceVerificationSchema",
+            4,
+            "native image verification",
+        )
+        require(
+            image,
+            "playtestOperationsVerified",
+            True,
+            "native image verification",
+        )
+        require(
+            image,
+            "playtestDocumentCount",
+            PLAYTEST_DOCUMENT_COUNT,
+            "native image verification",
+        )
+        native_hashes = document_hashes(
+            image.get("playtestDocuments"),
+            label="native image verification",
+            path_key="path",
+            require_role=True,
+        )
+        if native_hashes != packaged_hashes:
+            raise RuntimeError(
+                "native image playtest documents differ from the canonical package"
+            )
+        require(image, "mutableStorageIncluded", False, "native image verification")
+        require(image, "remoteGameplayCertified", False, "native image verification")
+
         audit_status = inventory.get("auditStatus")
         if audit_status not in {"verified", "review-required"}:
             raise RuntimeError(f"inventory audit status is invalid: {audit_status!r}")
@@ -257,10 +304,13 @@ def main() -> int:
             "platform": platform,
             "releaseHardened": True,
             "playtestOperationsVerified": True,
-            "playtestSourceDocumentCount": len(documents),
-            "playtestPackagedDocumentCount": len(packaged_documents),
+            "playtestSourceDocumentCount": len(source_hashes),
+            "playtestPackagedDocumentCount": len(packaged_hashes),
+            "playtestNativeDocumentCount": len(native_hashes),
             "playtestPackagedIdentityVerified": True,
+            "playtestNativeIdentityVerified": True,
             "structuredIssueFormVerified": True,
+            "nativeInstallerSourceVerificationSchema": 4,
             "releaseClearanceRequired": args.require_clearance,
             "releaseClearanceVerified": inventory.get("releaseReady") is True,
             "installerCertificationClaimed": False,
