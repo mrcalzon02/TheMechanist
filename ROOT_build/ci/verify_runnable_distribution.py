@@ -72,7 +72,7 @@ def safe_relative_path(value: object, label: str) -> pathlib.PurePosixPath:
     return relative
 
 
-def manifest_main_class(jar: pathlib.Path) -> str:
+def manifest_attributes(jar: pathlib.Path) -> dict[str, str]:
     with zipfile.ZipFile(jar) as archive:
         try:
             raw = archive.read("META-INF/MANIFEST.MF").decode("utf-8", "replace")
@@ -85,18 +85,33 @@ def manifest_main_class(jar: pathlib.Path) -> str:
             unfolded[-1] += line[1:]
         else:
             unfolded.append(line)
+    attributes: dict[str, str] = {}
     for line in unfolded:
-        if line.lower().startswith("main-class:"):
-            return line.split(":", 1)[1].strip()
-    fail(f"{jar}: manifest has no Main-Class")
-    return ""
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        attributes[key.strip()] = value.strip()
+    return attributes
 
 
-def scan_jar(jar: pathlib.Path, role: str) -> dict[str, object]:
-    actual_main = manifest_main_class(jar)
+def scan_jar(
+    jar: pathlib.Path,
+    role: str,
+    expected_version: str,
+) -> dict[str, object]:
+    attributes = manifest_attributes(jar)
+    actual_main = attributes.get("Main-Class", "")
     expected_main = EXPECTED_MAIN_CLASSES[role]
     if actual_main != expected_main:
         fail(f"{jar}: Main-Class {actual_main!r}, expected {expected_main!r}")
+    actual_version = attributes.get("Implementation-Version", "")
+    if not actual_version:
+        fail(f"{jar}: manifest has no Implementation-Version")
+    if actual_version != expected_version:
+        fail(
+            f"{jar}: Implementation-Version {actual_version!r}, "
+            f"expected canonical version {expected_version!r}"
+        )
 
     class_count = 0
     project_class_count = 0
@@ -133,6 +148,7 @@ def scan_jar(jar: pathlib.Path, role: str) -> dict[str, object]:
         "classes": class_count,
         "projectClasses": project_class_count,
         "mainClass": actual_main,
+        "implementationVersion": actual_version,
         "remoteClientEntryClass": remote_client_class if role == "client" else None,
     }
 
@@ -348,6 +364,7 @@ def verify_distribution(
     declared_paths: set[str] = set()
     canonical_entries: dict[str, dict[str, object]] = {}
     jar_summary: dict[str, dict[str, object]] = {}
+    expected_version = str(manifest["version"])
     for entry in artifacts:
         if not isinstance(entry, dict):
             fail("runtime manifest artifact entry is not an object")
@@ -364,7 +381,7 @@ def verify_distribution(
             jar_summary[role] = {
                 "path": relative,
                 "sha256": actual_hash,
-                **scan_jar(path, role),
+                **scan_jar(path, role, expected_version),
             }
 
     actual_paths = {
@@ -437,6 +454,7 @@ def verify_distribution(
         "commit": manifest["commit"],
         "javaRelease": manifest["javaRelease"],
         "releaseHardened": manifest["releaseHardened"],
+        "versionAuthorityVerified": True,
         "remoteClientEntryPoint": manifest["remoteClientEntryPoint"],
         "remoteClientLauncher": remote_launcher,
         "artifactCount": len(artifacts),
