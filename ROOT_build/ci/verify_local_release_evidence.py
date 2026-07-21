@@ -19,6 +19,7 @@ from typing import Any
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SCHEMA = 4
 PLAYTEST_DOCUMENT_COUNT = 8
+RUNTIME_ROLES = {"launcher", "client", "server"}
 
 
 def load_report(path: pathlib.Path, label: str) -> dict[str, Any]:
@@ -68,6 +69,41 @@ def document_hashes(
             raise RuntimeError(f"{label} has wrong role for {path}")
         hashes[path] = digest
     return hashes
+
+
+def runtime_versions(java: dict[str, Any]) -> tuple[str, dict[str, str]]:
+    coherence = java.get("evidenceCoherence")
+    if not isinstance(coherence, dict):
+        raise RuntimeError("Java gate report has no evidence-coherence object")
+    require(coherence, "status", "verified", "Java evidence coherence")
+    require(
+        coherence,
+        "versionAuthorityVerified",
+        True,
+        "Java evidence coherence",
+    )
+    version = coherence.get("version")
+    if not isinstance(version, str) or not version.strip():
+        raise RuntimeError(
+            f"Java evidence-coherence version is invalid: {version!r}"
+        )
+    records = coherence.get("runtimeArtifactVersions")
+    if not isinstance(records, dict) or set(records) != RUNTIME_ROLES:
+        found = sorted(records) if isinstance(records, dict) else records
+        raise RuntimeError(
+            "Java runtime artifact roles mismatch: "
+            f"expected {sorted(RUNTIME_ROLES)}, found {found!r}"
+        )
+    versions: dict[str, str] = {}
+    for role in sorted(RUNTIME_ROLES):
+        actual = records.get(role)
+        if actual != version:
+            raise RuntimeError(
+                f"Java {role} runtime version mismatch: "
+                f"expected {version!r}, found {actual!r}"
+            )
+        versions[role] = str(actual)
+    return version, versions
 
 
 def main() -> int:
@@ -177,6 +213,7 @@ def main() -> int:
 
         require(java, "status", "passed", "Java gate")
         require(java, "releaseHardened", True, "Java gate")
+        version, artifact_versions = runtime_versions(java)
         require(inventory, "status", "passed", "inventory gate")
         require(native, "status", "passed", "native gate")
         require(native, "installerCertificationClaimed", False, "native gate")
@@ -302,7 +339,10 @@ def main() -> int:
             "status": "verified",
             "commit": commit,
             "platform": platform,
+            "version": version,
             "releaseHardened": True,
+            "versionAuthorityVerified": True,
+            "runtimeArtifactVersions": artifact_versions,
             "playtestOperationsVerified": True,
             "playtestSourceDocumentCount": len(source_hashes),
             "playtestPackagedDocumentCount": len(packaged_hashes),
