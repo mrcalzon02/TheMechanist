@@ -6,10 +6,17 @@ GitHub Actions monthly allotment was exhausted.
 
 STATUS: UNVALIDATED — NOT CERTIFIED
 
+The exact source candidate is the commit containing this notice. The canonical
+release-candidate record below identifies that final commit.
+
 No successful GitHub-hosted Windows MSI install/uninstall, Linux DEB
 install/purge, clean-machine launch, Java 17 package scan, installer lifecycle,
 companion-server join, client reconnect, inventory, native-image, or release
 clearance evidence is claimed for this candidate.
+
+No installer binary is certified by this notice. Any MSI, DEB, ZIP, app image,
+or other package built from this source must retain this warning and identify the
+exact source commit used.
 
 The companion-server implementation is limited to the authenticated lobby,
 connected-only roster, bounded relay, reconnect, and WAIT-control boundary.
