@@ -162,12 +162,9 @@ final class VehicleMaintenanceAuthority {
             after = Math.min(100, before + selected.repairAmount);
             setComponent(vehicle, worst, after);
         }
-        if (criticalComponentsOperational(vehicle)
-                && "disabled".equals(value(vehicle, "operationState"))) {
-            set(vehicle, "operationState", "parked");
-        }
         VehicleRuntimeAuthority.ensureInitialized(game.world, vehicle);
-        clearResolvedLossConsequences(vehicle, game.turn);
+        boolean recoveredLoss = resolveLossRecovery(vehicle, game.turn,
+                "player " + selected.label);
         append(vehicle, "repairHistory", selected.label + " / "
                 + (selected == Mode.FULL_REFURBISHMENT
                 ? "all component groups " + before + "->100 average"
@@ -198,7 +195,10 @@ final class VehicleMaintenanceAuthority {
                         + ", " + scriptCost + " script; Tool bundle "
                         + (selected.requiresToolBundle ? "required and retained" : "not required")
                         + "; labor scale " + selected.laborTurns + " turn(s). Condition is now "
-                        + value(vehicle, "condition") + ".",
+                        + value(vehicle, "condition") + "."
+                        + (recoveredLoss
+                        ? " Critical systems returned to service and active loss hazards were cleared."
+                        : ""),
                 vehicle);
     }
 
@@ -275,10 +275,14 @@ final class VehicleMaintenanceAuthority {
                 && component(vehicle, VehicleRuntimeAuthority.Component.MOBILITY) > 0;
     }
 
-    private static void clearResolvedLossConsequences(MapObjectState vehicle,
-                                                      int turn) {
-        if (!criticalComponentsOperational(vehicle)) return;
+    static boolean resolveLossRecovery(MapObjectState vehicle, int turn,
+                                       String source) {
+        if (!criticalComponentsOperational(vehicle)) return false;
         boolean cleared = false;
+        if ("disabled".equals(value(vehicle, "operationState"))) {
+            set(vehicle, "operationState", "parked");
+            cleared = true;
+        }
         if ("true".equals(value(vehicle, "roadObstacle"))) {
             set(vehicle, "roadObstacle", "false");
             cleared = true;
@@ -295,12 +299,16 @@ final class VehicleMaintenanceAuthority {
             vehicle.label = displayName(vehicle) + " / refurbished vehicle";
             cleared = true;
         }
-        if (cleared || !value(vehicle, "lossOutcomeTags").isBlank()) {
+        boolean historicalLoss = !value(vehicle, "lossOutcomeTags").isBlank();
+        if (cleared || historicalLoss) {
             set(vehicle, "lossRecoveryState", "recovered");
             set(vehicle, "lossRecoveryTurn", Integer.toString(Math.max(0, turn)));
             append(vehicle, "lossHistory", "critical systems restored at turn "
-                    + Math.max(0, turn) + "; active loss hazards cleared");
+                    + Math.max(0, turn) + "; active loss hazards cleared / "
+                    + clean(source, "vehicle maintenance"));
+            return true;
         }
+        return false;
     }
 
     private static int component(MapObjectState vehicle,
