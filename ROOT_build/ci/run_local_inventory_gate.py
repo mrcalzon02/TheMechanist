@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import difflib
+import hashlib
 import json
 import pathlib
 import shutil
@@ -23,32 +24,65 @@ from typing import Sequence
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "ROOT_docs" / "REPOSITORY_FILE_MANIFEST.tsv"
 CLEARANCE = ROOT / "ROOT_docs" / "RELEASE_CLEARANCE.tsv"
-SCHEMA = 1
+SCHEMA = 2
+EXPECTED_AUDIT_STATUSES = {"verified", "review-required"}
 
 
 def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def run(command: Sequence[str], log_path: pathlib.Path) -> None:
+def sha256(path: pathlib.Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def run(command: Sequence[str], log_path: pathlib.Path) -> dict[str, object]:
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("w", encoding="utf-8", newline="\n") as log:
-        process = subprocess.Popen(
-            list(command),
-            cwd=ROOT,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        assert process.stdout is not None
-        for line in process.stdout:
-            print(line, end="")
-            log.write(line)
-        code = process.wait()
-    if code != 0:
-        raise RuntimeError(f"command failed with exit code {code}: {' '.join(command)}")
+    started = utc_now()
+    result: dict[str, object] = {
+        "command": list(command),
+        "startedAtUtc": started,
+        "log": str(log_path.relative_to(ROOT)),
+        "passed": False,
+    }
+    try:
+        with log_path.open("w", encoding="utf-8", newline="\n") as log:
+            process = subprocess.Popen(
+                list(command),
+                cwd=ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log.write(line)
+            code = process.wait()
+        result["returnCode"] = code
+        result["completedAtUtc"] = utc_now()
+        result["passed"] = code == 0
+        if code != 0:
+            raise RuntimeError(
+                f"command failed with exit code {code}: {' '.join(command)}"
+            )
+        return result
+    except Exception:
+        result["completedAtUtc"] = utc_now()
+        result.setdefault("returnCode", None)
+        raise InventoryStepFailure(result) from None
+
+
+class InventoryStepFailure(RuntimeError):
+    def __init__(self, step: dict[str, object]):
+        super().__init__("inventory gate command failed")
+        self.step = step
 
 
 def git_head() -> str:
@@ -64,6 +98,11 @@ def git_head() -> str:
     if len(value) != 40:
         raise RuntimeError(f"invalid Git HEAD identity: {value!r}")
     return value
+
+
+def require_nonempty(path: pathlib.Path, label: str) -> None:
+    if not path.is_file() or path.stat().st_size == 0:
+        raise RuntimeError(f"{label} is missing or empty: {path}")
 
 
 def main() -> int:
@@ -102,13 +141,13 @@ def main() -> int:
         "startedAtUtc": utc_now(),
         "updateCommittedManifest": args.update_committed_manifest,
         "requireReleaseClearance": args.require_release_clearance,
+        "steps": [],
     }
 
     try:
+        require_nonempty(CLEARANCE, "clearance registry")
         if not MANIFEST.is_file():
             raise RuntimeError(f"missing governed manifest: {MANIFEST}")
-        if not CLEARANCE.is_file():
-            raise RuntimeError(f"missing clearance registry: {CLEARANCE}")
 
         commit = git_head()
         report["commit"] = commit
@@ -117,7 +156,8 @@ def main() -> int:
         shutil.copy2(MANIFEST, committed)
         shutil.copy2(MANIFEST, generated)
 
-        run(
+        steps: list[dict[str, object]] = report["steps"]  # type: ignore[assignment]
+        steps.append(run(
             [
                 sys.executable,
                 "ROOT_tools/update_repository_file_manifest_incremental.py",
@@ -126,13 +166,22 @@ def main() -> int:
                 "--force-hash",
             ],
             output / "generation.log",
-        )
+        ))
+
+        require_nonempty(generated, "generated repository manifest")
+        generated_lines = generated.read_text(encoding="utf-8-sig").splitlines()
+        if len(generated_lines) < 2:
+            raise RuntimeError(
+                "generated repository manifest contains no inventory rows"
+            )
 
         committed_text = committed.read_text(encoding="utf-8")
         generated_text = generated.read_text(encoding="utf-8")
         changed = committed_text != generated_text
         report["manifestChanged"] = changed
         report["generatedManifest"] = str(generated.relative_to(ROOT))
+        report["generatedManifestSha256"] = sha256(generated)
+        report["generatedLineCount"] = len(generated_lines)
 
         diff_path = output / "manifest-diff.txt"
         diff = "".join(
@@ -145,6 +194,9 @@ def main() -> int:
         )
         diff_path.write_text(diff, encoding="utf-8")
 
+        ledger_path = output / "release-ownership-ledger.tsv"
+        pending_path = output / "RELEASE_CLEARANCE_PENDING.tsv"
+        audit_report_path = output / "release-inventory-report.json"
         audit_command = [
             sys.executable,
             "ROOT_build/ci/audit_repository_release_inventory.py",
@@ -152,32 +204,81 @@ def main() -> int:
             "--clearance-registry",
             str(CLEARANCE),
             "--ledger",
-            str(output / "release-ownership-ledger.tsv"),
+            str(ledger_path),
             "--pending",
-            str(output / "RELEASE_CLEARANCE_PENDING.tsv"),
+            str(pending_path),
             "--report",
-            str(output / "release-inventory-report.json"),
+            str(audit_report_path),
         ]
         if args.require_release_clearance:
             audit_command.append("--require-clearance")
-        run(audit_command, output / "audit.log")
+        steps.append(run(audit_command, output / "audit.log"))
 
-        audit = json.loads((output / "release-inventory-report.json").read_text(encoding="utf-8"))
-        report["auditStatus"] = audit.get("status")
-        for key in (
-            "entryCount",
-            "releaseRelevantCount",
-            "clearancePendingCount",
-            "blockerCount",
-            "staleRegistryCount",
-            "protectedRuntimeDuplicateCount",
+        for path, label in (
+            (ledger_path, "release ownership ledger"),
+            (pending_path, "pending clearance registry"),
+            (audit_report_path, "release inventory audit report"),
         ):
-            if key in audit:
-                report[key] = audit[key]
+            require_nonempty(path, label)
+
+        audit = json.loads(audit_report_path.read_text(encoding="utf-8"))
+        audit_status = audit.get("status")
+        if audit_status not in EXPECTED_AUDIT_STATUSES:
+            raise RuntimeError(f"inventory audit status is not acceptable: {audit_status!r}")
+
+        row_count = audit.get("rowCount")
+        if not isinstance(row_count, int) or row_count < 100:
+            raise RuntimeError(
+                f"inventory audit rowCount is not credible: {row_count!r}"
+            )
+        if audit.get("blockerCount") != 0:
+            raise RuntimeError(
+                f"inventory audit retained blockers: {audit.get('blockerCount')!r}"
+            )
+        if audit.get("registryErrorCount") != 0:
+            raise RuntimeError(
+                "inventory audit retained clearance-registry errors: "
+                f"{audit.get('registryErrorCount')!r}"
+            )
+        if args.require_release_clearance:
+            if audit_status != "verified" or audit.get("releaseReady") is not True:
+                raise RuntimeError(
+                    "release clearance was required but the audit is not verified and release-ready"
+                )
+
+        report["auditStatus"] = audit_status
+        for key in (
+            "rowCount",
+            "inventoryRows",
+            "totalBytes",
+            "releaseCandidateRows",
+            "releaseCandidateBytes",
+            "clearanceRequiredCount",
+            "clearanceApprovedCount",
+            "clearancePendingCount",
+            "clearanceRejectedCount",
+            "registryEntryCount",
+            "registryErrorCount",
+            "staleRegistryCount",
+            "blockerCount",
+            "protectedRuntimeDuplicateCount",
+            "releaseReady",
+        ):
+            report[key] = audit.get(key)
+
+        report["evidence"] = {
+            "manifestDiff": str(diff_path.relative_to(ROOT)),
+            "ownershipLedger": str(ledger_path.relative_to(ROOT)),
+            "pendingClearance": str(pending_path.relative_to(ROOT)),
+            "auditReport": str(audit_report_path.relative_to(ROOT)),
+        }
 
         if args.update_committed_manifest:
             shutil.copy2(generated, MANIFEST)
+            if sha256(MANIFEST) != report["generatedManifestSha256"]:
+                raise RuntimeError("committed manifest hash differs after replacement")
             report["committedManifestUpdated"] = True
+            report["committedManifestSha256"] = sha256(MANIFEST)
         else:
             report["committedManifestUpdated"] = False
             if changed:
@@ -187,7 +288,10 @@ def main() -> int:
 
         report["status"] = "passed"
         report["completedAtUtc"] = utc_now()
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        report_path.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         print(f"LOCAL INVENTORY GATE PASSED: {report_path}")
         return 0
     except Exception as exc:  # noqa: BLE001 - single fail-closed diagnostic surface
@@ -195,8 +299,15 @@ def main() -> int:
         report["completedAtUtc"] = utc_now()
         report["errorType"] = type(exc).__name__
         report["error"] = str(exc)
+        if isinstance(exc, InventoryStepFailure):
+            report["failedStep"] = exc.step
+            steps = report["steps"]  # type: ignore[assignment]
+            steps.append(exc.step)
         report["traceback"] = traceback.format_exc()
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        report_path.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         print(f"LOCAL INVENTORY GATE FAILED: {exc}", file=sys.stderr)
         print(f"Report: {report_path}", file=sys.stderr)
         return 1
