@@ -23,6 +23,7 @@ LAUNCHER_MANIFEST = pathlib.PurePosixPath(
 )
 MAIN_LAUNCHER_NAME = "The Mechanist"
 REMOTE_LAUNCHER_NAME = "The Mechanist Remote Lobby"
+PLAYTEST_DOCUMENT_COUNT = 8
 
 
 def fail(message: str) -> None:
@@ -116,6 +117,89 @@ def verify_remote_launcher_configuration(
 def require_false(record: dict[str, object], key: str, label: str) -> None:
     if record.get(key) is not False:
         fail(f"{label} must declare {key}=false")
+
+
+def canonical_artifacts(
+    canonical: dict[str, object],
+) -> dict[str, dict[str, object]]:
+    entries = canonical.get("artifacts")
+    if not isinstance(entries, list):
+        fail("canonical source manifest has no artifact list")
+    artifacts: dict[str, dict[str, object]] = {}
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            fail(f"canonical source artifact {index} is not an object")
+        relative = entry.get("path")
+        if not isinstance(relative, str) or not relative:
+            fail(f"canonical source artifact {index} has no path")
+        if relative in artifacts:
+            fail(f"canonical source manifest repeats artifact path: {relative}")
+        artifacts[relative] = entry
+    return artifacts
+
+
+def verify_playtest_documents(
+    payload: pathlib.Path,
+    source: dict[str, object],
+    canonical: dict[str, object],
+) -> list[dict[str, object]]:
+    if source.get("playtestOperationsVerified") is not True:
+        fail("installer source verification did not verify playtest operations")
+    if source.get("playtestDocumentCount") != PLAYTEST_DOCUMENT_COUNT:
+        fail(
+            "installer source verification must declare exactly "
+            f"{PLAYTEST_DOCUMENT_COUNT} playtest documents"
+        )
+    declared = source.get("playtestDocuments")
+    if not isinstance(declared, list) or len(declared) != PLAYTEST_DOCUMENT_COUNT:
+        fail(
+            "installer source verification playtest document list is incomplete"
+        )
+    artifacts = canonical_artifacts(canonical)
+    verified: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for index, entry in enumerate(declared):
+        if not isinstance(entry, dict):
+            fail(f"playtestDocuments[{index}] is not an object")
+        relative = entry.get("path")
+        digest = entry.get("sha256")
+        size = entry.get("size")
+        if not isinstance(relative, str) or not relative.startswith("docs/"):
+            fail(f"playtestDocuments[{index}] has invalid path: {relative!r}")
+        pure = pathlib.PurePosixPath(relative)
+        if pure.is_absolute() or ".." in pure.parts:
+            fail(f"playtestDocuments[{index}] has unsafe path: {relative}")
+        if relative in seen:
+            fail(f"installer source verification repeats playtest document: {relative}")
+        if not isinstance(digest, str) or len(digest) != 64:
+            fail(f"playtestDocuments[{index}] has invalid SHA-256: {relative}")
+        if not isinstance(size, int) or size <= 0:
+            fail(f"playtestDocuments[{index}] has invalid size: {relative}")
+        path = payload.joinpath(*pure.parts)
+        if not path.is_file():
+            fail(f"native image is missing playtest document: {relative}")
+        if path.stat().st_size != size:
+            fail(f"native image playtest document size mismatch: {relative}")
+        actual = sha256(path)
+        if actual != digest:
+            fail(f"native image playtest document hash mismatch: {relative}")
+        canonical_entry = artifacts.get(relative)
+        if canonical_entry is None:
+            fail(f"canonical source manifest omits playtest document: {relative}")
+        if canonical_entry.get("role") != "documentation":
+            fail(f"canonical source manifest has wrong role for {relative}")
+        if canonical_entry.get("size") != size:
+            fail(f"canonical source manifest size differs for {relative}")
+        if canonical_entry.get("sha256") != digest:
+            fail(f"canonical source manifest hash differs for {relative}")
+        seen.add(relative)
+        verified.append({
+            "path": relative,
+            "size": size,
+            "sha256": digest,
+            "role": "documentation",
+        })
+    return verified
 
 
 def verify_image(
@@ -242,8 +326,8 @@ def verify_image(
         fail(f"missing canonical runtime-manifest copy: {canonical_copy}")
     source = json.loads(source_path.read_text(encoding="utf-8"))
 
-    if source.get("schema") != 3:
-        fail("installer source verification schema must be 3")
+    if source.get("schema") != 4:
+        fail("installer source verification schema must be 4")
     for key in (
         "version",
         "platform",
@@ -295,6 +379,8 @@ def verify_image(
     if len(canonical.get("artifacts", [])) != int(source["canonicalArtifactCount"]):
         fail("canonical source artifact count differs from source certificate")
 
+    playtest_documents = verify_playtest_documents(payload, source, canonical)
+
     return {
         "status": "verified",
         "image": image_root.name,
@@ -311,6 +397,9 @@ def verify_image(
         "remoteLobbyLauncherConfig": str(remote_config),
         "remoteLobbyEntryPoint": REMOTE_CLIENT_MAIN,
         "remoteLobbyNativeExecutable": True,
+        "playtestOperationsVerified": True,
+        "playtestDocumentCount": len(playtest_documents),
+        "playtestDocuments": playtest_documents,
         "authenticatedWaitAuthority": True,
         "waitCommand": "WAIT",
         "movementAuthority": False,
@@ -320,7 +409,7 @@ def verify_image(
         "canonicalSourceManifest": str(canonical_copy),
         "canonicalSourceManifestSha256": sha256(canonical_copy),
         "canonicalSourceArtifactCount": len(canonical.get("artifacts", [])),
-        "installerSourceVerificationSchema": 3,
+        "installerSourceVerificationSchema": 4,
         "mutableStorageIncluded": False,
         "jars": {
             "launcher": launcher_scan,
