@@ -12,12 +12,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import pathlib
+import platform as host_platform
 import sys
 import traceback
 from typing import Iterable
 
-SCHEMA = 1
+SCHEMA = 2
 
 SOURCE_DOCS = {
     "PACKAGE_client/EULA.md": "EULA.md",
@@ -112,6 +114,32 @@ def require_phrases(text: str, phrases: Iterable[str], label: str) -> None:
         raise RuntimeError(
             f"{label} is missing required alpha-operating content: {', '.join(missing)}"
         )
+
+
+def detect_platform() -> str:
+    machine = host_platform.machine().lower()
+    if machine not in {"x86_64", "amd64"}:
+        raise RuntimeError(f"unsupported limited-alpha architecture: {machine}")
+    if os.name == "nt":
+        return "windows-x64"
+    if sys.platform.startswith("linux"):
+        return "linux-x64"
+    raise RuntimeError(f"unsupported limited-alpha operating system: {sys.platform}")
+
+
+def find_distribution(search_root: pathlib.Path) -> pathlib.Path:
+    platform_name = detect_platform()
+    matches = sorted(
+        path.resolve()
+        for path in search_root.glob(f"TheMechanist-*-{platform_name}")
+        if path.is_dir()
+    )
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"expected exactly one {platform_name} canonical distribution under "
+            f"{search_root}; found {matches}"
+        )
+    return matches[0]
 
 
 def source_record(repo: pathlib.Path, relative: str, destination: str) -> dict[str, object]:
@@ -247,24 +275,33 @@ def write_report(path: pathlib.Path, report: dict[str, object]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=pathlib.Path, default=pathlib.Path.cwd())
-    parser.add_argument("--distribution", type=pathlib.Path)
+    distribution_group = parser.add_mutually_exclusive_group()
+    distribution_group.add_argument("--distribution", type=pathlib.Path)
+    distribution_group.add_argument("--distribution-search-root", type=pathlib.Path)
     parser.add_argument("--require-release-hardened", action="store_true")
     parser.add_argument("--report", type=pathlib.Path)
     args = parser.parse_args()
 
     repo = args.repo.resolve()
+    distribution_requested = (
+        args.distribution is not None or args.distribution_search_root is not None
+    )
     report: dict[str, object] = {
         "schema": SCHEMA,
         "status": "running",
         "repo": str(repo),
-        "distributionRequired": args.distribution is not None,
+        "distributionRequired": distribution_requested,
         "requireReleaseHardened": args.require_release_hardened,
     }
     try:
         source = verify_source(repo)
         report["source"] = source
-        if args.distribution is not None:
-            distribution = args.distribution.resolve()
+        if distribution_requested:
+            distribution = (
+                args.distribution.resolve()
+                if args.distribution is not None
+                else find_distribution(args.distribution_search_root.resolve())
+            )
             report["distribution"] = verify_distribution(
                 distribution,
                 source,
