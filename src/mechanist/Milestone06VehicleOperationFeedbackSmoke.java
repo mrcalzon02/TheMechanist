@@ -15,6 +15,7 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             game.playerY = 5;
             game.turn = 810;
             game.worldTurn = 810L;
+            game.options.soundEnabled = false;
             VehicleOperationFeedbackAuthority.clearTransientFeedback();
 
             MapObjectState car = vehicle(game.world, 6, 5,
@@ -35,6 +36,23 @@ final class Milestone06VehicleOperationFeedbackSmoke {
                             && "true".equals(MapObjectState.stockValue(
                             car.stockState, "headlightsActive")),
                     "vehicle start feedback should write truthful persistent operation flags");
+
+            VehicleOperationFeedbackAuthority.AmbientState ambient =
+                    VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, car, 1_100L, false);
+            require(ambient.active()
+                            && "ambient_machine".equals(ambient.soundCue())
+                            && ambient.distance() == 4
+                            && !ambient.degraded(),
+                    "running civilian car should expose distance-aware ambient audio: "
+                            + ambient.summary());
+            VehicleOperationFeedbackAuthority.AmbientState extendedAmbient =
+                    VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, car, 1_900L, false);
+            require(extendedAmbient.active()
+                            && VehicleOperationFeedbackAuthority.visualState(
+                            game, car, 1_900L).activelyOperating(),
+                    "ambient refresh should keep a loaded running session active beyond its initial pulse window");
 
             VehicleOperationFeedbackAuthority.VisualState active =
                     VehicleOperationFeedbackAuthority.visualState(game, car, 1_100L);
@@ -77,9 +95,15 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             VehicleRuntimeAuthority.applyDamage(car,
                     VehicleRuntimeAuthority.Component.POWERPLANT, 75,
                     game.turn, "feedback smoke damaged engine");
-            require("ambient_sparks".equals(
+            require("ambient_spark".equals(
                             VehicleOperationFeedbackAuthority.soundCue(car)),
-                    "severely damaged powerplant should select the degraded sound cue");
+                    "severely damaged powerplant should select the cataloged degraded sound cue");
+            VehicleOperationFeedbackAuthority.AmbientState damagedAmbient =
+                    VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, car, 1_950L, false);
+            require(damagedAmbient.active() && damagedAmbient.degraded()
+                            && "ambient_spark".equals(damagedAmbient.soundCue()),
+                    "damaged running vehicle should refresh the degraded ambient profile");
 
             VehicleOperationFeedbackAuthority.Feedback stopped =
                     VehicleOperationFeedbackAuthority.complete(game, car, 12,
@@ -92,6 +116,9 @@ final class Milestone06VehicleOperationFeedbackSmoke {
                             && "recently-parked".equals(MapObjectState.stockValue(
                             car.stockState, "operationFeedback")),
                     "completed operation should stop persistent running and headlight state");
+            require(!VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, car, 2_100L, false).active(),
+                    "parking must stop ambient running audio immediately");
             VehicleOperationFeedbackAuthority.VisualState arrival =
                     VehicleOperationFeedbackAuthority.visualState(game, car, 2_100L);
             require(arrival.visible() && arrival.recentlyParked()
@@ -109,12 +136,32 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             MapObjectState tank = vehicle(game.world, 10, 8,
                     AssetIntegrationDisciplineAuthority.PARKED_TANK,
                     63L);
+            game.world.mapObjects.add(bike);
+            game.world.mapObjects.add(tank);
             require(VehicleOperationFeedbackAuthority.headlightRange(tank)
                             > VehicleOperationFeedbackAuthority.headlightRange(bike),
                     "heavy vehicle headlights should project farther than bike lamps");
             require(!VehicleOperationFeedbackAuthority.soundCue(bike).equals(
                             VehicleOperationFeedbackAuthority.soundCue(tank)),
                     "light and heavy vehicle classes should not share one identical sound profile");
+
+            VehicleOperationFeedbackAuthority.begin(game, bike, 4,
+                    8, 8, 10, 8, 1, 0, 6_000L, false);
+            bike.stockState = MapObjectState.setStockFlag(bike.stockState,
+                    "operationState", "disabled");
+            require(!VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, bike, 6_100L, false).active(),
+                    "disabled operation state must terminate ambient audio ownership");
+
+            VehicleOperationFeedbackAuthority.begin(game, tank, 4,
+                    10, 8, 12, 8, 1, 0, 7_000L, false);
+            game.world.mapObjects.remove(tank);
+            require(!VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, tank, 7_100L, false).active(),
+                    "removing a vehicle from the loaded world must terminate ambient audio ownership");
+            require(VehicleOperationFeedbackAuthority.activeSessionCount(
+                            7_100L) == 0,
+                    "terminal and unloaded vehicles must not leave transient audio sessions behind");
 
             for (String line : VehicleTransitAuthority.inspectionLines(game, car)) {
                 require(!PlayerFacingText.containsLikelyLeak(line),
