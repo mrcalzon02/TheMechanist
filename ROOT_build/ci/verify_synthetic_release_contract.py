@@ -64,12 +64,17 @@ REQUIRED_TRUE = (
     "independentHostClientLivingHostResume",
     "independentHostClientHostRestartResume",
     "independentHostClientCorruptTokenRejected",
+    "independentHostClientAuthoritativeWait",
+    "independentHostClientWaitCommandSequencing",
+    "independentHostClientWaitLivingHostResume",
+    "independentHostClientWaitHostRestartResume",
     "independentHostRemoteClientEntryPoint",
     "independentHostRemoteLobbyWindow",
     "independentHostRemoteLobbyEditableConnection",
     "independentHostRemoteLobbyMutableStorageOutsideInstall",
     "independentHostRemoteLobbyPendingConnectionCancellable",
     "independentHostRemoteLobbyFailedSessionTeardown",
+    "independentHostRemoteLobbyWaitControl",
     "independentHostTurnAuthorityCore",
     "independentHostTurnAuthoritySharedCommandContract",
     "independentHostTurnAuthoritySingleWriter",
@@ -77,8 +82,17 @@ REQUIRED_TRUE = (
     "independentHostTurnAuthorityExactOrdering",
     "independentHostTurnAuthorityAtomicPersistence",
     "independentHostTurnAuthorityRestartContinuity",
+    "independentHostTurnAuthorityNetworkExposed",
+    "independentHostWorldWaitWireAuthority",
+    "independentHostWorldWaitPreAuthenticationDenied",
+    "independentHostWorldWaitOrdering",
+    "independentHostWorldWaitReplayRejected",
+    "independentHostWorldWaitReconnectContinuity",
+    "independentHostWorldWaitPersistenceAcrossHostRestart",
+    "independentHostWaitAuthorityNetworkExposed",
+    "independentHostAuthenticatedWaitControl",
     "independentHostUnsupportedWorldCommandsRejected",
-    "independentHostRelayOnlyAccess",
+    "independentHostRelayTransportOnly",
     "independentHostPreAuthenticationDataDenied",
     "independentHostBadChallengeDenied",
     "serverOperation",
@@ -90,14 +104,13 @@ REQUIRED_TRUE = (
 REQUIRED_FALSE = (
     "launcherRemoteAcquisitionAdvertised",
     "independentHostHostedSessionLivenessPersistence",
-    "independentHostClientWorldCommandApi",
-    "independentHostTurnAuthorityNetworkExposed",
+    "independentHostClientGenericWorldCommandApi",
     "independentHostMovementAuthority",
     "independentHostMapAuthority",
     "independentHostRemoteLobbyGamePanelMounted",
     "independentHostRemoteLobbyInternalHostMounted",
-    "independentHostRemoteLobbyWorldCommandApi",
-    "independentHostWorldAuthority",
+    "independentHostRemoteLobbyGenericWorldCommandApi",
+    "independentHostFullWorldAuthority",
     "independentHostGameplaySessionCertified",
 )
 
@@ -196,7 +209,6 @@ def main() -> int:
     parser.add_argument("--require-native-stage", action="store_true")
     parser.add_argument("--report", type=pathlib.Path)
     args = parser.parse_args()
-
     expected = None
     if args.expected_platforms:
         expected = {
