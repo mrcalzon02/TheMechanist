@@ -194,6 +194,7 @@ final class Milestone06FactionVehicleBalanceSmoke {
     private static void verifyVehicleContractOutcomes(
             GamePanel game, NpcFactionSite mechanist,
             MapObjectState cargo, MapObjectState previouslyCapturedTank) {
+        clearCompetingContractSources(game);
         VehicleRuntimeAuthority.applyDamage(cargo,
                 VehicleRuntimeAuthority.Component.POWERPLANT,
                 60, game.turn, "contract smoke engine damage");
@@ -202,14 +203,27 @@ final class Milestone06FactionVehicleBalanceSmoke {
         int powerplantBefore = damaged.components().get(
                 VehicleRuntimeAuthority.Component.POWERPLANT);
         String cargoName = damaged.manufacturer() + " " + damaged.model();
-
-        FactionContract repair = contract("CONTRACT-VEHICLE-REPAIR",
-                mechanist.faction,
-                "Repair the damaged vehicle engine on " + cargoName
-                        + " for the motor pool.",
-                "Motor pool vehicle machine part");
-        prepareContract(game, repair);
         NpcEntity representative = representative(mechanist.faction);
+
+        String generatedRepairOffer =
+                FactionMarketContractAuthority.representativeLine(
+                        game, representative);
+        require(generatedRepairOffer.contains("damaged vehicle repair backlog")
+                        && generatedRepairOffer.contains(damaged.model())
+                        && generatedRepairOffer.contains("Machine part"),
+                "live faction work should offer the most damaged retainable vehicle repair: "
+                        + generatedRepairOffer);
+        FactionMarketContractAuthority.WorkResult acceptedRepair =
+                FactionMarketContractAuthority.accept(game, representative);
+        FactionContract repair = acceptedRepair.contract();
+        require(acceptedRepair.success() && repair != null
+                        && "MARKET".equals(repair.type)
+                        && repair.targetEntityId.startsWith(
+                        "MARKET:VEHICLE_REPAIR:")
+                        && repair.targetEntityId.endsWith(cargo.id),
+                "accepted vehicle repair work should retain the exact persistent vehicle identity: "
+                        + acceptedRepair.message());
+        carryContractProof(game, repair);
         String repairPreview = ContractTurnInAuthority.representativeLine(
                 game, representative);
         require(repairPreview.contains("Vehicle outcome: completion will repair")
@@ -234,11 +248,13 @@ final class Milestone06FactionVehicleBalanceSmoke {
                         && game.factionStanding.getOrDefault(
                         mechanist.faction, 0)
                         == standingBeforeRepair + repair.repReward,
-                "vehicle repair turn-in should atomically consume proof, repair the target, and preserve ordinary rewards: "
+                "generated vehicle repair turn-in should atomically consume proof, repair the target, and preserve ordinary rewards: "
                         + repairResult.message());
         require(repairResult.message().contains("Vehicle contract outcome:")
-                        && repairResult.message().contains(damaged.model()),
-                "vehicle repair completion should explain the physical outcome: "
+                        && repairResult.message().contains(damaged.model())
+                        && repairResult.message().contains(
+                        "Motor-pool repair materials were accepted"),
+                "vehicle repair completion should explain both market and physical outcomes: "
                         + repairResult.message());
 
         MapObjectState salvageTarget = vehicle(game.world, 14, 8,
@@ -249,24 +265,49 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 mechanist.faction, game.turn,
                 "contract smoke capture").success(),
                 "salvage fixture should become a seized faction vehicle");
-        VehicleRuntimeAuthority.applyDamage(salvageTarget,
-                VehicleRuntimeAuthority.Component.FRAME,
-                75, game.turn, "contract smoke wreck damage");
+        for (VehicleRuntimeAuthority.Component component
+                : VehicleRuntimeAuthority.Component.values()) {
+            VehicleRuntimeAuthority.applyDamage(salvageTarget, component,
+                    100, game.turn,
+                    "contract smoke catastrophic wreck damage");
+        }
         VehicleRuntimeAuthority.Snapshot salvageBefore =
                 VehicleRuntimeAuthority.inspect(game.world, salvageTarget);
-        String salvageName = salvageBefore.manufacturer() + " "
-                + salvageBefore.model();
+        FactionVehicleDoctrineAuthority.VehicleAssessment salvageAssessment =
+                FactionVehicleDoctrineAuthority.assess(game, salvageTarget,
+                        null, mechanist.faction);
+        require(salvageAssessment.salvageRecommended(),
+                "catastrophic seized fixture should be doctrine-approved for salvage: "
+                        + salvageAssessment.reasons());
         String otherCapturedBefore = previouslyCapturedTank.stockState;
 
-        FactionContract salvage = contract("CONTRACT-VEHICLE-SALVAGE",
-                mechanist.faction,
-                "Salvage the seized vehicle wreck " + salvageName
-                        + " for the motor pool.",
-                "Vehicle salvage authorization");
-        prepareContract(game, salvage);
+        game.factionContracts.clear();
+        game.inventory.clear();
+        String generatedSalvageOffer =
+                FactionMarketContractAuthority.representativeLine(
+                        game, representative);
+        require(generatedSalvageOffer.contains(
+                        "seized vehicle salvage backlog")
+                        && generatedSalvageOffer.contains(
+                        salvageBefore.model())
+                        && generatedSalvageOffer.contains("Tool bundle"),
+                "live faction work should prioritize doctrine-approved vehicle salvage: "
+                        + generatedSalvageOffer);
+        FactionMarketContractAuthority.WorkResult acceptedSalvage =
+                FactionMarketContractAuthority.accept(game, representative);
+        FactionContract salvage = acceptedSalvage.contract();
+        require(acceptedSalvage.success() && salvage != null
+                        && salvage.targetEntityId.startsWith(
+                        "MARKET:VEHICLE_SALVAGE:")
+                        && salvage.targetEntityId.endsWith(
+                        salvageTarget.id),
+                "accepted vehicle salvage work should retain the exact persistent vehicle identity: "
+                        + acceptedSalvage.message());
+        carryContractProof(game, salvage);
         String salvagePreview = ContractTurnInAuthority.representativeLine(
                 game, representative);
-        require(salvagePreview.contains("Vehicle outcome: completion will salvage")
+        require(salvagePreview.contains(
+                        "Vehicle outcome: completion will salvage")
                         && salvagePreview.contains(salvageBefore.model()),
                 "vehicle salvage contract should select the named seized vehicle: "
                         + salvagePreview);
@@ -277,13 +318,19 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 VehicleRuntimeAuthority.inspect(game.world, salvageTarget);
         require(salvageResult.success() && salvage.completed
                         && "salvaged".equals(salvageAfter.condition())
-                        && otherCapturedBefore.equals(previouslyCapturedTank.stockState)
-                        && !game.inventory.contains(salvage.requiredTurnInItem),
-                "vehicle salvage contract should strip only the named target and consume one proof item: "
+                        && otherCapturedBefore.equals(
+                        previouslyCapturedTank.stockState)
+                        && !game.inventory.contains(
+                        salvage.requiredTurnInItem),
+                "generated vehicle salvage contract should strip only the named target and consume one proof item: "
                         + salvageResult.message());
-        require(salvageResult.message().contains("Vehicle contract outcome:")
-                        && salvageResult.message().contains(salvageBefore.model()),
-                "vehicle salvage completion should explain the physical outcome: "
+        require(salvageResult.message().contains(
+                        "Vehicle contract outcome:")
+                        && salvageResult.message().contains(
+                        salvageBefore.model())
+                        && salvageResult.message().contains(
+                        "Motor-pool salvage authorization was accepted"),
+                "vehicle salvage completion should explain both market and physical outcomes: "
                         + salvageResult.message());
 
         String cargoBeforeOrdinary = cargo.stockState;
@@ -302,10 +349,53 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 ContractTurnInAuthority.turnInFirst(game, representative);
         require(ordinaryResult.success() && ordinary.completed
                         && cargoBeforeOrdinary.equals(cargo.stockState)
-                        && salvageBeforeOrdinary.equals(salvageTarget.stockState)
+                        && salvageBeforeOrdinary.equals(
+                        salvageTarget.stockState)
                         && !ordinaryResult.message().contains(
                         "Vehicle contract outcome"),
                 "ordinary contract completion must leave vehicle state untouched");
+
+        String cargoBeforeMissing = cargo.stockState;
+        String tankBeforeMissing = previouslyCapturedTank.stockState;
+        FactionContract missingTarget = contract(
+                "CONTRACT-VEHICLE-MISSING-TARGET",
+                Faction.CIVIC_WARDENS,
+                "Repair the damaged vehicle engine for the civic motor pool.",
+                "Civic vehicle machine part");
+        prepareContract(game, missingTarget);
+        NpcEntity civicRepresentative = representative(
+                Faction.CIVIC_WARDENS);
+        ContractTurnInAuthority.TurnInResult missingResult =
+                ContractTurnInAuthority.turnInFirst(game,
+                        civicRepresentative);
+        require(!missingResult.success() && !missingTarget.completed
+                        && game.inventory.contains(
+                        missingTarget.requiredTurnInItem)
+                        && cargoBeforeMissing.equals(cargo.stockState)
+                        && tankBeforeMissing.equals(
+                        previouslyCapturedTank.stockState)
+                        && missingResult.message().contains(
+                        "no eligible local a damaged faction vehicle"),
+                "missing vehicle targets must block before proof consumption or unrelated mutation: "
+                        + missingResult.message());
+    }
+
+    private static void clearCompetingContractSources(GamePanel game) {
+        game.factionContracts.clear();
+        game.inventory.clear();
+        game.factionMarketPressure.clear();
+        game.world.topDownWorldEvents.clear();
+        game.world.shipmentRecords.clear();
+        game.world.replacementQueue.clear();
+        game.world.essentialSupplyReserves.clear();
+        game.world.rawMaterialSupplyReserves.clear();
+    }
+
+    private static void carryContractProof(GamePanel game,
+                                           FactionContract contract) {
+        game.inventory.clear();
+        game.inventory.add(contract.requiredTurnInItem);
+        satisfyContractProof(game, contract);
     }
 
     private static void prepareContract(GamePanel game,
@@ -314,6 +404,11 @@ final class Milestone06FactionVehicleBalanceSmoke {
         game.inventory.clear();
         game.factionContracts.add(contract);
         game.inventory.add(contract.requiredTurnInItem);
+        satisfyContractProof(game, contract);
+    }
+
+    private static void satisfyContractProof(GamePanel game,
+                                             FactionContract contract) {
         game.unlockedSkillNodes.addAll(
                 ContractObjectiveReadabilityAuthority.requiredCapabilityKeys(
                         contract));
