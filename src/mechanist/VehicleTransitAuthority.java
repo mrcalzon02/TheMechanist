@@ -20,7 +20,8 @@ import java.util.Objects;
 final class VehicleTransitAuthority {
     static final int MAX_LOCAL_ROUTE_STEPS = 48;
     static final int PARKING_SEARCH_RADIUS = 5;
-    private static final int HISTORY_LIMIT = 12;
+    private static final int DEPLOYMENT_HISTORY_LIMIT = 12;
+    private static final int VEHICLE_HISTORY_LIMIT = 8;
 
     record RoutePlan(boolean valid, List<Point> path, Point requestedTarget,
                      Point resolvedParking, String blocker, String summary) {
@@ -403,7 +404,9 @@ final class VehicleTransitAuthority {
         }
         String cleanedEntry = clean(entry, "");
         if (!cleanedEntry.isBlank()) entries.add(cleanedEntry);
-        while (entries.size() > HISTORY_LIMIT) entries.remove(0);
+        int limit = "vehicleHistory".equals(key)
+                ? VEHICLE_HISTORY_LIMIT : DEPLOYMENT_HISTORY_LIMIT;
+        while (entries.size() > limit) entries.remove(0);
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
                 key, String.join("~", entries).replace(';', ',').replace('|', '/'));
     }
