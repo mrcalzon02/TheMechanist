@@ -40,19 +40,13 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             VehicleOperationFeedbackAuthority.AmbientState ambient =
                     VehicleOperationFeedbackAuthority.refreshAmbientAudio(
                             game, car, 1_100L, false);
-            require(ambient.active()
+            require(ambient.active() && ambient.audible()
                             && "ambient_machine".equals(ambient.soundCue())
                             && ambient.distance() == 4
+                            && ambient.audibleRange() == 16
                             && !ambient.degraded(),
                     "running civilian car should expose distance-aware ambient audio: "
                             + ambient.summary());
-            VehicleOperationFeedbackAuthority.AmbientState extendedAmbient =
-                    VehicleOperationFeedbackAuthority.refreshAmbientAudio(
-                            game, car, 1_900L, false);
-            require(extendedAmbient.active()
-                            && VehicleOperationFeedbackAuthority.visualState(
-                            game, car, 1_900L).activelyOperating(),
-                    "ambient refresh should keep a loaded running session active beyond its initial pulse window");
 
             VehicleOperationFeedbackAuthority.VisualState active =
                     VehicleOperationFeedbackAuthority.visualState(game, car, 1_100L);
@@ -92,6 +86,14 @@ final class Milestone06VehicleOperationFeedbackSmoke {
                             && !hasPrefix(darkEmitters, "vehicle-headlight-"),
                     "destroyed lights must remove headlight emitters without hiding operation state");
 
+            VehicleOperationFeedbackAuthority.AmbientState extendedAmbient =
+                    VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, car, 1_900L, false);
+            require(extendedAmbient.active()
+                            && VehicleOperationFeedbackAuthority.visualState(
+                            game, car, 1_900L).activelyOperating(),
+                    "ambient refresh should keep a loaded running session active beyond its initial pulse window");
+
             VehicleRuntimeAuthority.applyDamage(car,
                     VehicleRuntimeAuthority.Component.POWERPLANT, 75,
                     game.turn, "feedback smoke damaged engine");
@@ -101,7 +103,9 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             VehicleOperationFeedbackAuthority.AmbientState damagedAmbient =
                     VehicleOperationFeedbackAuthority.refreshAmbientAudio(
                             game, car, 1_950L, false);
-            require(damagedAmbient.active() && damagedAmbient.degraded()
+            require(damagedAmbient.active() && damagedAmbient.audible()
+                            && damagedAmbient.degraded()
+                            && damagedAmbient.audibleRange() == 12
                             && "ambient_spark".equals(damagedAmbient.soundCue()),
                     "damaged running vehicle should refresh the degraded ambient profile");
 
@@ -123,7 +127,7 @@ final class Milestone06VehicleOperationFeedbackSmoke {
                     VehicleOperationFeedbackAuthority.visualState(game, car, 2_100L);
             require(arrival.visible() && arrival.recentlyParked()
                             && arrival.pulseAlpha() > 0,
-                    "atomic transit should retain a short bounded arrival pulse");
+                    "parking should stop audio without deleting the bounded arrival pulse");
             require(!VehicleOperationFeedbackAuthority.visualState(
                             game, car, 5_000L).visible()
                             && VehicleOperationFeedbackAuthority.activeSessionCount(
@@ -141,6 +145,9 @@ final class Milestone06VehicleOperationFeedbackSmoke {
             require(VehicleOperationFeedbackAuthority.headlightRange(tank)
                             > VehicleOperationFeedbackAuthority.headlightRange(bike),
                     "heavy vehicle headlights should project farther than bike lamps");
+            require(VehicleOperationFeedbackAuthority.ambientAudibleRange(tank)
+                            > VehicleOperationFeedbackAuthority.ambientAudibleRange(bike),
+                    "heavy vehicle ambient audio should carry farther than bike audio");
             require(!VehicleOperationFeedbackAuthority.soundCue(bike).equals(
                             VehicleOperationFeedbackAuthority.soundCue(tank)),
                     "light and heavy vehicle classes should not share one identical sound profile");
@@ -155,6 +162,16 @@ final class Milestone06VehicleOperationFeedbackSmoke {
 
             VehicleOperationFeedbackAuthority.begin(game, tank, 4,
                     10, 8, 12, 8, 1, 0, 7_000L, false);
+            tank.x = 23;
+            tank.y = 15;
+            VehicleOperationFeedbackAuthority.AmbientState distantTank =
+                    VehicleOperationFeedbackAuthority.refreshAmbientAudio(
+                            game, tank, 7_050L, false);
+            require(distantTank.active() && !distantTank.audible()
+                            && distantTank.distance() > distantTank.audibleRange()
+                            && VehicleOperationFeedbackAuthority.visualState(
+                            game, tank, 7_050L).activelyOperating(),
+                    "distant vehicle should retain truthful operation feedback without audible refresh");
             game.world.mapObjects.remove(tank);
             require(!VehicleOperationFeedbackAuthority.refreshAmbientAudio(
                             game, tank, 7_100L, false).active(),
