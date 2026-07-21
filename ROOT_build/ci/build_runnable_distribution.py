@@ -138,6 +138,45 @@ def copy_file(source: pathlib.Path, destination: pathlib.Path) -> None:
         raise RuntimeError(f"copied build artifact size mismatch: {destination}")
 
 
+def jar_implementation_version(path: pathlib.Path) -> str:
+    if not path.is_file() or path.stat().st_size <= 0:
+        raise RuntimeError(f"versioned JAR is missing or empty: {path}")
+    try:
+        with zipfile.ZipFile(path) as archive:
+            manifest = archive.read("META-INF/MANIFEST.MF").decode(
+                "utf-8", errors="strict"
+            )
+    except (KeyError, OSError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
+        raise RuntimeError(f"cannot read JAR manifest version: {path}") from exc
+
+    entries: dict[str, str] = {}
+    current_key: str | None = None
+    for raw_line in manifest.splitlines():
+        if raw_line.startswith(" ") and current_key is not None:
+            entries[current_key] += raw_line[1:]
+            continue
+        if ": " not in raw_line:
+            current_key = None
+            continue
+        key, value = raw_line.split(": ", 1)
+        entries[key] = value
+        current_key = key
+
+    version = entries.get("Implementation-Version", "").strip()
+    if not version:
+        raise RuntimeError(f"JAR has no Implementation-Version: {path}")
+    return version
+
+
+def require_jar_version(path: pathlib.Path, expected: str, role: str) -> str:
+    actual = jar_implementation_version(path)
+    if actual != expected:
+        raise RuntimeError(
+            f"{role} version mismatch: expected {expected}, found {actual} in {path}"
+        )
+    return actual
+
+
 def stage_playtest_documents(repo: pathlib.Path, distribution: pathlib.Path) -> list[str]:
     if len(PLAYTEST_DOCS) != PLAYTEST_DOCUMENT_COUNT:
         raise RuntimeError(
@@ -388,7 +427,14 @@ def main() -> int:
         root_package.insert(2, "-Prelease-obfuscation")
     run(root_package, repo)
     run(
-        [maven, "-B", "-DskipTests", "clean", "package"],
+        [
+            maven,
+            "-B",
+            "-DskipTests",
+            f"-Drevision={version}",
+            "clean",
+            "package",
+        ],
         repo / "PACKAGE_launcher" / "java",
     )
 
@@ -423,6 +469,13 @@ def main() -> int:
     ]
     if not launcher_candidates:
         raise RuntimeError("launcher Maven build did not produce a runnable JAR")
+    launcher_source = launcher_candidates[-1]
+
+    runtime_artifact_versions = {
+        "client": require_jar_version(client_source, version, "client"),
+        "server": require_jar_version(server_source, version, "server"),
+        "launcher": require_jar_version(launcher_source, version, "launcher"),
+    }
 
     copy_file(
         client_source,
@@ -433,7 +486,7 @@ def main() -> int:
         distribution / "packages" / "server" / "TheMechanistServer.jar",
     )
     copy_file(
-        launcher_candidates[-1],
+        launcher_source,
         distribution / "launcher" / "MechanistLauncher.jar",
     )
 
@@ -485,6 +538,8 @@ def main() -> int:
         "version": version,
         "platform": current_platform,
         "releaseHardened": release_hardened,
+        "versionAuthorityVerifiedAtBuild": True,
+        "runtimeArtifactVersions": runtime_artifact_versions,
         "remoteClientEntryPoint": "mechanist.RemoteClientMain",
         "playtestOperationsVerifiedAtBuild": True,
         "playtestDocumentCount": len(playtest_documents),
