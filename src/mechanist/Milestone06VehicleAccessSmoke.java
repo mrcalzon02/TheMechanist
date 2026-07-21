@@ -152,6 +152,7 @@ final class Milestone06VehicleAccessSmoke {
         }
         Milestone06VehicleStrategicTransitSmoke.main(args);
         Milestone06VehicleManifestSmoke.main(args);
+        Milestone06VehicleManifestHistorySmoke.main(args);
     }
 
     private static World world() {
