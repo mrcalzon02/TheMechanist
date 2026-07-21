@@ -233,6 +233,42 @@ def require_value(
         )
 
 
+def verify_runtime_versions(
+    verification: dict[str, object],
+    expected_version: str,
+) -> dict[str, str]:
+    require_value(
+        verification,
+        "versionAuthorityVerified",
+        True,
+        "distribution verification",
+    )
+    jars = verification.get("jars")
+    if not isinstance(jars, dict):
+        raise RuntimeError("distribution verification has no runtime JAR evidence")
+    expected_roles = {"launcher", "client", "server"}
+    if set(jars) != expected_roles:
+        raise RuntimeError(
+            "distribution verification runtime roles mismatch: "
+            f"expected {sorted(expected_roles)}, found {sorted(jars)}"
+        )
+    versions: dict[str, str] = {}
+    for role in sorted(expected_roles):
+        block = jars.get(role)
+        if not isinstance(block, dict):
+            raise RuntimeError(
+                f"distribution verification {role} JAR evidence is malformed"
+            )
+        actual = block.get("implementationVersion")
+        if actual != expected_version:
+            raise RuntimeError(
+                f"distribution verification {role} implementationVersion mismatch: "
+                f"expected {expected_version!r}, found {actual!r}"
+            )
+        versions[role] = str(actual)
+    return versions
+
+
 def verify_local_evidence_coherence(
     *,
     output: pathlib.Path,
@@ -261,6 +297,19 @@ def verify_local_evidence_coherence(
         require_value(source, "platform", platform_name, label)
         require_value(source, "javaRelease", 17, label)
         require_value(source, "releaseHardened", release_hardened, label)
+
+    version = manifest.get("version")
+    if not isinstance(version, str) or not version.strip():
+        raise RuntimeError(
+            f"canonical runtime manifest version is invalid: {version!r}"
+        )
+    require_value(
+        verification,
+        "version",
+        version,
+        "distribution verification",
+    )
+    runtime_versions = verify_runtime_versions(verification, version)
 
     require_value(verification, "status", "verified", "distribution verification")
     require_value(synthetic, "status", "passed", "synthetic distribution")
@@ -320,8 +369,11 @@ def verify_local_evidence_coherence(
         "status": "verified",
         "commit": commit,
         "platform": platform_name,
+        "version": version,
         "javaRelease": 17,
         "releaseHardened": release_hardened,
+        "versionAuthorityVerified": True,
+        "runtimeArtifactVersions": runtime_versions,
         "distribution": distribution.name,
         "reports": {
             "runtimeManifest": str(manifest_path.relative_to(ROOT)),
