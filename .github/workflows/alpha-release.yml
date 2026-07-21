@@ -1,26 +1,11 @@
-name: Automatic Limited Alpha Release
-run-name: Limited Alpha Release ${{ github.sha }}
+name: Manual Limited Alpha Validation and Release
+run-name: Manual Limited Alpha Validation ${{ github.sha }}
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'pom.xml'
-      - 'config/proguard/**'
-      - 'PACKAGE_client/**'
-      - 'PACKAGE_launcher/**'
-      - 'PACKAGE_installer/**'
-      - 'ROOT_build/ci/**'
-      - 'scripts/package/**'
-      - '.github/ISSUE_TEMPLATE/limited-alpha-defect.yml'
-      - '.github/workflows/alpha-installer-deployment.yml'
-      - '.github/workflows/alpha-companion-server-deployment.yml'
-      - '.github/workflows/alpha-release.yml'
   workflow_dispatch:
 
 concurrency:
-  group: automatic-limited-alpha-${{ github.ref }}
+  group: manual-limited-alpha-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
