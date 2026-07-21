@@ -5,7 +5,8 @@ This builder is shared by GitHub Actions and local release verification. It
 compiles the client/server and launcher with Java 17, stages launcher-managed
 packages and runtime dependencies, creates a platform Java runtime with jlink,
 writes canonical and launcher-compatibility integrity manifests, includes the
-limited-alpha operating documentation, and produces a verified ZIP candidate.
+governed limited-alpha operating documentation, and produces a verified ZIP
+candidate.
 """
 
 from __future__ import annotations
@@ -26,14 +27,22 @@ RUNTIME_MODULES = (
     "java.net.http,java.prefs,java.sql,java.xml,jdk.crypto.ec,jdk.unsupported"
 )
 PLAYTEST_DOCS = (
-    ("EULA.md", "EULA.md"),
-    ("README.md", "CLIENT_README.md"),
-    ("RUN_INSTRUCTIONS.md", "RUN_INSTRUCTIONS.md"),
-    ("WINDOWS_QUICK_START.md", "WINDOWS_QUICK_START.md"),
-    ("LIMITED_ALPHA_PLAYTEST_GUIDE.md", "LIMITED_ALPHA_PLAYTEST_GUIDE.md"),
-    ("KNOWN_ALPHA_LIMITATIONS.md", "KNOWN_ALPHA_LIMITATIONS.md"),
-    ("DIAGNOSTIC_COLLECTION.md", "DIAGNOSTIC_COLLECTION.md"),
+    ("PACKAGE_client/EULA.md", "EULA.md"),
+    ("PACKAGE_client/README.md", "CLIENT_README.md"),
+    ("PACKAGE_client/RUN_INSTRUCTIONS.md", "RUN_INSTRUCTIONS.md"),
+    ("PACKAGE_client/WINDOWS_QUICK_START.md", "WINDOWS_QUICK_START.md"),
+    (
+        "PACKAGE_client/LIMITED_ALPHA_PLAYTEST_GUIDE.md",
+        "LIMITED_ALPHA_PLAYTEST_GUIDE.md",
+    ),
+    (
+        "PACKAGE_client/KNOWN_ALPHA_LIMITATIONS.md",
+        "KNOWN_ALPHA_LIMITATIONS.md",
+    ),
+    ("PACKAGE_client/DIAGNOSTIC_COLLECTION.md", "DIAGNOSTIC_COLLECTION.md"),
+    ("PACKAGE_client/server/README.md", "SERVER_README.md"),
 )
+PLAYTEST_DOCUMENT_COUNT = 8
 
 
 def run(command: list[str], cwd: pathlib.Path, env: dict[str, str] | None = None) -> None:
@@ -79,7 +88,9 @@ def project_version(repo: pathlib.Path) -> str:
 
 def platform_id() -> str:
     machine = host_platform.machine().lower()
-    arch = "x64" if machine in {"x86_64", "amd64"} else machine.replace("aarch64", "arm64")
+    arch = "x64" if machine in {"x86_64", "amd64"} else machine.replace(
+        "aarch64", "arm64"
+    )
     if os.name == "nt":
         return f"windows-{arch}"
     if sys.platform.startswith("linux"):
@@ -119,10 +130,37 @@ def github_publish_prerelease_requested() -> bool:
 
 
 def copy_file(source: pathlib.Path, destination: pathlib.Path) -> None:
-    if not source.is_file():
-        raise RuntimeError(f"required build artifact missing: {source}")
+    if not source.is_file() or source.stat().st_size <= 0:
+        raise RuntimeError(f"required build artifact missing or empty: {source}")
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
+    if destination.stat().st_size != source.stat().st_size:
+        raise RuntimeError(f"copied build artifact size mismatch: {destination}")
+
+
+def stage_playtest_documents(repo: pathlib.Path, distribution: pathlib.Path) -> list[str]:
+    if len(PLAYTEST_DOCS) != PLAYTEST_DOCUMENT_COUNT:
+        raise RuntimeError(
+            f"builder must govern exactly {PLAYTEST_DOCUMENT_COUNT} tester documents"
+        )
+    docs = distribution / "docs"
+    destinations: list[str] = []
+    seen: set[str] = set()
+    for source_relative, destination_name in PLAYTEST_DOCS:
+        if destination_name in seen:
+            raise RuntimeError(
+                f"builder repeats tester-document destination: {destination_name}"
+            )
+        source = repo.joinpath(*pathlib.PurePosixPath(source_relative).parts)
+        destination = docs / destination_name
+        copy_file(source, destination)
+        if sha256(source) != sha256(destination):
+            raise RuntimeError(
+                f"tester document changed while staging: {source_relative}"
+            )
+        seen.add(destination_name)
+        destinations.append(destination_name)
+    return destinations
 
 
 def write_launchers(root: pathlib.Path, platform_name: str) -> None:
@@ -261,7 +299,10 @@ def write_launcher_compatibility_manifest(
     }
     path = root / "manifests" / "launcher-runtime-manifest.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     return path
 
 
@@ -368,10 +409,14 @@ def main() -> int:
         "TheMechanist-obfuscated.jar" if release_hardened else "TheMechanist-all.jar"
     )
     server_source = repo / "target" / (
-        "TheMechanistServer-obfuscated.jar" if release_hardened else "TheMechanistServer-all.jar"
+        "TheMechanistServer-obfuscated.jar"
+        if release_hardened
+        else "TheMechanistServer-all.jar"
     )
     launcher_candidates = sorted(
-        (repo / "PACKAGE_launcher" / "java" / "target").glob("mechanist-launcher-*.jar")
+        (repo / "PACKAGE_launcher" / "java" / "target").glob(
+            "mechanist-launcher-*.jar"
+        )
     )
     launcher_candidates = [
         path for path in launcher_candidates if not path.name.startswith("original-")
@@ -379,9 +424,18 @@ def main() -> int:
     if not launcher_candidates:
         raise RuntimeError("launcher Maven build did not produce a runnable JAR")
 
-    copy_file(client_source, distribution / "packages" / "client" / "TheMechanist.jar")
-    copy_file(server_source, distribution / "packages" / "server" / "TheMechanistServer.jar")
-    copy_file(launcher_candidates[-1], distribution / "launcher" / "MechanistLauncher.jar")
+    copy_file(
+        client_source,
+        distribution / "packages" / "client" / "TheMechanist.jar",
+    )
+    copy_file(
+        server_source,
+        distribution / "packages" / "server" / "TheMechanistServer.jar",
+    )
+    copy_file(
+        launcher_candidates[-1],
+        distribution / "launcher" / "MechanistLauncher.jar",
+    )
 
     support_target = distribution / "packages" / "support" / "lib"
     support_target.mkdir(parents=True, exist_ok=True)
@@ -408,15 +462,7 @@ def main() -> int:
         repo,
     )
 
-    docs = distribution / "docs"
-    for source_name, destination_name in PLAYTEST_DOCS:
-        source = repo / "PACKAGE_client" / source_name
-        if source.is_file():
-            copy_file(source, docs / destination_name)
-    server_readme = repo / "PACKAGE_client" / "server" / "README.md"
-    if server_readme.is_file():
-        copy_file(server_readme, docs / "SERVER_README.md")
-
+    playtest_documents = stage_playtest_documents(repo, distribution)
     write_launchers(distribution, current_platform)
     write_launcher_compatibility_manifest(
         distribution,
@@ -440,12 +486,15 @@ def main() -> int:
         "platform": current_platform,
         "releaseHardened": release_hardened,
         "remoteClientEntryPoint": "mechanist.RemoteClientMain",
-        "playtestDocuments": [destination for _, destination in PLAYTEST_DOCS]
-        + ["SERVER_README.md"],
+        "playtestOperationsVerifiedAtBuild": True,
+        "playtestDocumentCount": len(playtest_documents),
+        "playtestDocuments": playtest_documents,
     }
     print(json.dumps(result, indent=2))
     if os.environ.get("GITHUB_OUTPUT"):
-        with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+        with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open(
+            "a", encoding="utf-8"
+        ) as output:
             output.write(f"distribution={distribution}\n")
             output.write(f"archive={archive}\n")
             output.write(f"version={version}\n")
