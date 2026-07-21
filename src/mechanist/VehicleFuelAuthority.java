@@ -105,23 +105,33 @@ final class VehicleFuelAuthority {
             Snapshot snapshot = inspect(game.world, vehicle);
             return Result.blocked(snapshot.current(), access.summary());
         }
-        ensureInitialized(game.world, vehicle);
-        Snapshot before = inspect(game.world, vehicle);
-        int requested = Math.max(0, amount);
-        int accepted = Math.min(requested, before.capacity() - before.current());
-        if (accepted <= 0) {
-            return new Result(true, false, before.current(), before.current(), 0,
-                    "The vehicle fuel or power ledger is already full.");
+        return addAuthorized(game.world, vehicle, amount, game.turn,
+                clean(source, "authorized refueling"));
+    }
+
+    static Result refuelForFaction(World world, MapObjectState vehicle, int amount,
+                                   int turn, Faction faction, String source) {
+        if (world == null || vehicle == null
+                || !VehicleRuntimeAuthority.isVehicle(vehicle)) {
+            return Result.blocked(0,
+                    "Faction refueling requires a physical vehicle in the loaded zone.");
         }
-        int after = before.current() + accepted;
-        set(vehicle, "fuelOrPowerCurrent", Integer.toString(after));
-        append(vehicle, "fuelOrPowerHistory", "Added " + accepted
-                + " unit(s) at turn " + Math.max(0, game.turn) + " / "
-                + clean(source, "authorized refueling") + " / now "
-                + after + "/" + before.capacity());
-        return new Result(true, true, before.current(), after, accepted,
-                "VEHICLE ENERGY: added " + accepted + " unit(s); "
-                        + after + "/" + before.capacity() + " available.");
+        ensureInitialized(world, vehicle);
+        Snapshot before = inspect(world, vehicle);
+        if (faction == null || faction == Faction.NONE
+                || !VehicleRuntimeAuthority.factionOwns(vehicle, faction)) {
+            return Result.blocked(before.current(),
+                    "Faction refueling requires same-family motor-pool ownership.");
+        }
+        VehicleRuntimeAuthority.Snapshot runtime =
+                VehicleRuntimeAuthority.inspect(world, vehicle);
+        if (runtime == null || "salvaged".equals(runtime.condition())
+                || "dismantled".equals(runtime.operationState())) {
+            return Result.blocked(before.current(),
+                    "A stripped vehicle hulk cannot receive fuel or power support.");
+        }
+        return addAuthorized(world, vehicle, amount, turn,
+                faction.label + " / " + clean(source, "faction refueling"));
     }
 
     static List<String> inspectionLines(World world, MapObjectState vehicle) {
@@ -151,6 +161,28 @@ final class VehicleFuelAuthority {
             case ARMORED_CAR -> 36;
             case TANK -> 48;
         };
+    }
+
+    private static Result addAuthorized(World world, MapObjectState vehicle,
+                                        int amount, int turn, String source) {
+        ensureInitialized(world, vehicle);
+        Snapshot before = inspect(world, vehicle);
+        int requested = Math.max(0, amount);
+        int accepted = Math.min(requested,
+                before.capacity() - before.current());
+        if (accepted <= 0) {
+            return new Result(true, false, before.current(), before.current(), 0,
+                    "The vehicle fuel or power ledger is already full.");
+        }
+        int after = before.current() + accepted;
+        set(vehicle, "fuelOrPowerCurrent", Integer.toString(after));
+        append(vehicle, "fuelOrPowerHistory", "Added " + accepted
+                + " unit(s) at turn " + Math.max(0, turn) + " / "
+                + clean(source, "authorized refueling") + " / now "
+                + after + "/" + before.capacity());
+        return new Result(true, true, before.current(), after, accepted,
+                "VEHICLE ENERGY: added " + accepted + " unit(s); "
+                        + after + "/" + before.capacity() + " available.");
     }
 
     private static void clampLedger(MapObjectState vehicle) {
