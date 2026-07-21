@@ -12,6 +12,7 @@ on:
       - 'PACKAGE_installer/**'
       - 'ROOT_build/ci/**'
       - 'scripts/package/**'
+      - '.github/ISSUE_TEMPLATE/limited-alpha-defect.yml'
       - '.github/workflows/native-installer-alpha-gate.yml'
   pull_request:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'PACKAGE_installer/**'
       - 'ROOT_build/ci/**'
       - 'scripts/package/**'
+      - '.github/ISSUE_TEMPLATE/limited-alpha-defect.yml'
       - '.github/workflows/native-installer-alpha-gate.yml'
   workflow_dispatch:
 
@@ -86,6 +88,9 @@ jobs:
           python ROOT_build/ci/verify_proguard_configuration.py \
             --repo . \
             --report native-gate-logs/proguard-policy-${{ matrix.platform }}.json
+          python ROOT_build/ci/verify_limited_alpha_operations.py \
+            --repo . \
+            --report native-gate-logs/playtest-operations-source-${{ matrix.platform }}.json
 
       - name: Build hardened canonical distribution
         shell: bash
@@ -120,6 +125,17 @@ jobs:
             --require-release-hardened \
             --report 'dist/native-gate-releases/verification-${{ matrix.platform }}.json' \
             2>&1 | tee native-gate-logs/canonical-verify-${{ matrix.platform }}.log
+
+      - name: Verify packaged playtest operations
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/verify_limited_alpha_operations.py \
+            --repo . \
+            --distribution '${{ steps.canonical.outputs.root }}' \
+            --require-release-hardened \
+            --report 'native-gate-logs/playtest-operations-package-${{ matrix.platform }}.json' \
+            2>&1 | tee native-gate-logs/playtest-operations-package-${{ matrix.platform }}.log
 
       - name: Run packaged synthetic environment
         shell: bash
@@ -232,6 +248,8 @@ jobs:
           test -f "$ROOT/staging-${{ matrix.platform }}.json"
           test -f "$ROOT/native-image-verification-${{ matrix.platform }}.json"
           test -f "$ROOT/SHA256SUMS.txt"
+          test -f "native-gate-logs/playtest-operations-source-${{ matrix.platform }}.json"
+          test -f "native-gate-logs/playtest-operations-package-${{ matrix.platform }}.json"
           python - <<PY
           import json
           root=r'''$ROOT'''
@@ -249,6 +267,13 @@ jobs:
           assert report['remoteGameplayCertified'] is False
           assert report['installerSourceVerificationSchema']==3
           assert report['mutableStorageIncluded'] is False
+          source_ops=json.load(open('native-gate-logs/playtest-operations-source-${{ matrix.platform }}.json',encoding='utf-8'))
+          package_ops=json.load(open('native-gate-logs/playtest-operations-package-${{ matrix.platform }}.json',encoding='utf-8'))
+          assert source_ops['status']=='verified'
+          assert package_ops['status']=='verified'
+          assert package_ops['distribution']['platform']=='${{ matrix.platform }}'
+          assert package_ops['distribution']['releaseHardened'] is True
+          assert package_ops['distribution']['commit']=='${{ github.sha }}'
           synthetic=json.load(open('dist/native-gate-releases/synthetic-${{ matrix.platform }}.json',encoding='utf-8'))
           assert synthetic['status']=='passed'
           assert synthetic['authenticatedWaitAuthority'] if 'authenticatedWaitAuthority' in synthetic else synthetic['independentHostAuthenticatedWaitControl']
