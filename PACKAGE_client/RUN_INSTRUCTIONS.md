@@ -2,6 +2,8 @@
 
 Use only a complete verified limited-alpha package. Do not move individual JAR files away from their manifests, runtime, support libraries, or launch scripts.
 
+Every approved candidate includes its own verified Java 17 runtime. A separate system Java installation is not required and must not be substituted for the bundled runtime during certification.
+
 ## Portable package layout
 
 The extracted root contains:
