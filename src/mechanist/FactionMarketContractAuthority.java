@@ -193,6 +193,7 @@ final class FactionMarketContractAuthority {
         if (game == null || game.world == null || game.world.mapObjects == null
                 || faction == null || faction == Faction.NONE) return null;
         ArrayList<MapObjectState> salvage = new ArrayList<>();
+        ArrayList<MapObjectState> criticalRepair = new ArrayList<>();
         ArrayList<MapObjectState> fuel = new ArrayList<>();
         ArrayList<MapObjectState> repair = new ArrayList<>();
         for (MapObjectState object : game.world.mapObjects) {
@@ -208,12 +209,17 @@ final class FactionMarketContractAuthority {
                 salvage.add(object);
                 continue;
             }
+            boolean damaged = VehicleRuntimeAuthority.damaged(object);
+            if (damaged && criticalRepair(snapshot)) {
+                criticalRepair.add(object);
+                continue;
+            }
             VehicleFuelAuthority.Snapshot energy =
                     VehicleFuelAuthority.inspect(game.world, object);
             if (energy.capacity() > 0
                     && energy.current() < Math.max(1, energy.capacity() / 4)) {
                 fuel.add(object);
-            } else if (VehicleRuntimeAuthority.damaged(object)) {
+            } else if (damaged) {
                 repair.add(object);
             }
         }
@@ -239,6 +245,17 @@ final class FactionMarketContractAuthority {
                     "salvage the seized vehicle wreck " + name
                             + " through its persistent vehicle record",
                     75 + Math.min(40, assessment.salvagePriority() / 4));
+        }
+        criticalRepair.sort(Comparator
+                .comparingInt((MapObjectState object) ->
+                        FactionVehicleDoctrineAuthority.assess(
+                                game, object, null, faction).readiness())
+                .thenComparingInt(object -> VehicleRuntimeAuthority.inspect(
+                        game.world, object).integrity())
+                .thenComparing(object -> vehicleDisplayName(game, object))
+                .thenComparing(object -> safe(object.id)));
+        if (!criticalRepair.isEmpty()) {
+            return repairCandidate(game, faction, criticalRepair.get(0), true);
         }
         fuel.sort(Comparator
                 .comparingInt((MapObjectState object) -> {
@@ -269,20 +286,36 @@ final class FactionMarketContractAuthority {
                                 game.world, object).integrity())
                 .thenComparing(object -> vehicleDisplayName(game, object))
                 .thenComparing(object -> safe(object.id)));
-        if (repair.isEmpty()) return null;
-        MapObjectState target = repair.get(0);
+        return repair.isEmpty() ? null
+                : repairCandidate(game, faction, repair.get(0), false);
+    }
+
+    private static Candidate repairCandidate(GamePanel game, Faction faction,
+                                             MapObjectState target,
+                                             boolean critical) {
         VehicleRuntimeAuthority.Snapshot snapshot =
                 VehicleRuntimeAuthority.inspect(game.world, target);
         String name = vehicleDisplayName(game, target);
         int deficit = Math.max(0, 100 - snapshot.integrity());
         return new Candidate(catalogItem("Machine part", "Construction supplies"),
                 VEHICLE_REPAIR + safe(target.id),
-                "damaged vehicle repair backlog for " + name,
+                (critical ? "critical damaged vehicle repair backlog for "
+                        : "damaged vehicle repair backlog for ") + name,
                 faction.label + " local motor pool / integrity "
-                        + snapshot.integrity() + "%",
+                        + snapshot.integrity() + "% / condition "
+                        + safe(snapshot.condition()),
                 "repair the damaged vehicle " + name
                         + " through its persistent component record",
-                55 + Math.min(60, deficit));
+                (critical ? 75 : 55) + Math.min(60, deficit));
+    }
+
+    private static boolean criticalRepair(
+            VehicleRuntimeAuthority.Snapshot snapshot) {
+        if (snapshot == null) return false;
+        String condition = safe(snapshot.condition()).toLowerCase(Locale.ROOT);
+        String operation = safe(snapshot.operationState()).toLowerCase(Locale.ROOT);
+        return condition.equals("wreck") || condition.equals("disabled")
+                || condition.equals("damaged") || operation.equals("disabled");
     }
 
     private static String vehicleDisplayName(GamePanel game,
