@@ -20,7 +20,7 @@ on:
 
 concurrency:
   group: automatic-limited-alpha-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -148,7 +148,7 @@ jobs:
             release-output/alpha-release-candidate.json
             release-output/ALPHA_RELEASE_NOTES.md
             release-output/SOURCE_EVIDENCE_SHA256SUMS.txt
-            release-output/ALPHA_RELEASE_SHA256SUMS.txt
+            release-output/publish/ALPHA_RELEASE_SHA256SUMS.txt
             release-output/publish-files.txt
           if-no-files-found: error
           retention-days: 90
@@ -164,6 +164,12 @@ jobs:
           PUBLISH_FILES: ${{ steps.stage.outputs.publish_files }}
         run: |
           set -euo pipefail
+          git fetch origin main --no-tags
+          LATEST_MAIN=$(git rev-parse origin/main)
+          if [[ "$LATEST_MAIN" != "$GITHUB_SHA" ]]; then
+            echo "Candidate $GITHUB_SHA was superseded by main head $LATEST_MAIN; no release will be published."
+            exit 0
+          fi
           mapfile -t FILES < "$PUBLISH_FILES"
           if [[ ${#FILES[@]} -lt 8 ]]; then
             echo "Release staging produced too few assets: ${#FILES[@]}" >&2
