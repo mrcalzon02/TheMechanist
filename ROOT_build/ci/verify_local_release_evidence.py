@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Verify that local Java, inventory, and native gate evidence belongs together.
+"""Verify that local alpha-release gate evidence belongs together.
 
 This verifier is read-only. It does not build, package, update manifests, publish,
-or mutate release history. It prevents separate local gate reports from being
-mistaken for one coherent release candidate when their commit, platform,
-hardening, or status identities disagree.
+or mutate release history. It prevents separate playtest-operations, Java,
+inventory, and native gate reports from being mistaken for one coherent release
+candidate when their policy, commit, platform, hardening, or status identities
+disagree.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ import sys
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SCHEMA = 1
+SCHEMA = 2
 
 
 def load_report(path: pathlib.Path, label: str) -> dict[str, Any]:
@@ -41,6 +42,13 @@ def require(data: dict[str, Any], key: str, expected: Any, label: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--operations-report",
+        type=pathlib.Path,
+        default=(
+            ROOT / "dist" / "local-release-sequence" / "playtest-operations.json"
+        ),
+    )
     parser.add_argument(
         "--java-report",
         type=pathlib.Path,
@@ -73,9 +81,65 @@ def main() -> int:
     result: dict[str, Any] = {"schema": SCHEMA, "status": "failed"}
 
     try:
+        operations = load_report(
+            args.operations_report.resolve(), "playtest-operations gate"
+        )
         java = load_report(args.java_report.resolve(), "Java gate")
         inventory = load_report(args.inventory_report.resolve(), "inventory gate")
         native = load_report(args.native_report.resolve(), "native gate")
+
+        require(operations, "status", "verified", "playtest-operations gate")
+        source_operations = operations.get("source")
+        if not isinstance(source_operations, dict):
+            raise RuntimeError(
+                "playtest-operations report has no verified source-policy object"
+            )
+        require(
+            source_operations,
+            "status",
+            "verified",
+            "playtest-operations source policy",
+        )
+        documents = source_operations.get("documents")
+        if not isinstance(documents, list) or len(documents) != 8:
+            raise RuntimeError(
+                "playtest-operations report must verify exactly eight packaged documents"
+            )
+        destinations: set[str] = set()
+        for record in documents:
+            if not isinstance(record, dict):
+                raise RuntimeError(
+                    "playtest-operations report contains a malformed document record"
+                )
+            destination = record.get("destination")
+            digest = record.get("sha256")
+            if not isinstance(destination, str) or not destination.startswith("docs/"):
+                raise RuntimeError(
+                    "playtest-operations report contains an invalid package destination"
+                )
+            if destination in destinations:
+                raise RuntimeError(
+                    f"playtest-operations report repeats destination {destination}"
+                )
+            if not isinstance(digest, str) or len(digest) != 64:
+                raise RuntimeError(
+                    f"playtest-operations report has invalid SHA-256 for {destination}"
+                )
+            destinations.add(destination)
+        issue_form = source_operations.get("issueForm")
+        if not isinstance(issue_form, dict):
+            raise RuntimeError(
+                "playtest-operations report has no structured limited-alpha issue form"
+            )
+        if issue_form.get("path") != ".github/ISSUE_TEMPLATE/limited-alpha-defect.yml":
+            raise RuntimeError(
+                "playtest-operations report references the wrong limited-alpha issue form"
+            )
+        issue_digest = issue_form.get("sha256")
+        if not isinstance(issue_digest, str) or len(issue_digest) != 64:
+            raise RuntimeError(
+                "playtest-operations report has an invalid issue-form SHA-256"
+            )
 
         require(java, "status", "passed", "Java gate")
         require(java, "releaseHardened", True, "Java gate")
@@ -122,9 +186,13 @@ def main() -> int:
             "commit": commit,
             "platform": platform,
             "releaseHardened": True,
+            "playtestOperationsVerified": True,
+            "playtestDocumentCount": len(documents),
+            "structuredIssueFormVerified": True,
             "releaseClearanceRequired": args.require_clearance,
             "releaseClearanceVerified": inventory.get("releaseReady") is True,
             "installerCertificationClaimed": False,
+            "operationsReport": str(args.operations_report.resolve()),
             "javaReport": str(args.java_report.resolve()),
             "inventoryReport": str(args.inventory_report.resolve()),
             "nativeReport": str(args.native_report.resolve()),
