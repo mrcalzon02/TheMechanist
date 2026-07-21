@@ -69,7 +69,7 @@ final class Milestone06VehicleDashboardSmoke {
                     game, dashboardCar);
             requireContains(dashboard, "VEHICLE DASHBOARD", "dashboard title");
             requireContains(dashboard, "civilian car", "class identity");
-            requireContains(dashboard, "35%", "component damage");
+            requireContains(dashboard, "65%", "remaining component integrity");
             requireContains(dashboard, "18/24", "fuel ledger");
             requireContains(dashboard, "Dashboard Driver", "driver identity");
             requireContains(dashboard, "Dashboard Passenger", "passenger identity");
@@ -124,24 +124,24 @@ final class Milestone06VehicleDashboardSmoke {
             require(deployment.size() == 12,
                     "local deployment history should retain twelve entries: "
                             + deployment);
-            require(vehicleHistory.size() == 12,
-                    "local vehicle history should retain twelve entries: "
+            require(vehicleHistory.size() == 8,
+                    "local vehicle history should preserve its established eight-entry limit: "
                             + vehicleHistory);
             require(deployment.get(0).contains("turn 2003")
                             && deployment.get(deployment.size() - 1)
                             .contains("turn 2014"),
                     "deployment retention should preserve turns 2003 through 2014: "
                             + deployment);
-            require(vehicleHistory.get(0).contains("turn 2003")
+            require(vehicleHistory.get(0).contains("turn 2007")
                             && vehicleHistory.get(vehicleHistory.size() - 1)
                             .contains("turn 2014"),
-                    "vehicle retention should preserve turns 2003 through 2014: "
+                    "vehicle retention should preserve turns 2007 through 2014: "
                             + vehicleHistory);
             require(deployment.stream().noneMatch(line -> line.contains("turn 2001")
                             || line.contains("turn 2002"))
-                            && vehicleHistory.stream().noneMatch(line -> line.contains("turn 2001")
-                            || line.contains("turn 2002")),
-                    "old local-route records must retire at the twelve-entry boundary");
+                            && vehicleHistory.stream().noneMatch(line -> line.contains("turn 2006")
+                            || line.contains("turn 2001")),
+                    "old local-route records must retire at their authoritative boundaries");
 
             System.out.println("Milestone 06 vehicle dashboard smoke passed.");
         } finally {
