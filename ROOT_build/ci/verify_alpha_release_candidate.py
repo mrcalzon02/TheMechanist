@@ -73,6 +73,15 @@ def exact_pattern(root: pathlib.Path, pattern: str, label: str) -> pathlib.Path:
     return matches[0]
 
 
+def matching_files(root: pathlib.Path, name: str, count: int) -> list[pathlib.Path]:
+    matches = sorted(path for path in root.rglob(name) if path.is_file())
+    if len(matches) != count:
+        raise RuntimeError(
+            f"expected exactly {count} files named {name}, found {matches}"
+        )
+    return matches
+
+
 def load(path: pathlib.Path, label: str) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -104,6 +113,34 @@ def require_identity(
     version = data.get("version")
     if not isinstance(version, str) or not version.strip():
         raise RuntimeError(f"{label} has no candidate version")
+    return version.strip()
+
+
+def verify_operations(
+    path: pathlib.Path,
+    *,
+    platform: str,
+    commit: str,
+) -> str:
+    data = load(path, f"{platform} operating-document evidence")
+    require(data, "status", "verified", f"{platform} operating-document evidence")
+    distribution = data.get("distribution")
+    if not isinstance(distribution, dict):
+        raise RuntimeError(f"operating-document evidence has no distribution: {path}")
+    require(distribution, "status", "verified", f"{platform} packaged operations")
+    require(distribution, "platform", platform, f"{platform} packaged operations")
+    require(distribution, "commit", commit, f"{platform} packaged operations")
+    require(
+        distribution,
+        "releaseHardened",
+        True,
+        f"{platform} packaged operations",
+    )
+    require(distribution, "javaRelease", 17, f"{platform} packaged operations")
+    require(distribution, "documentCount", 8, f"{platform} packaged operations")
+    version = distribution.get("version")
+    if not isinstance(version, str) or not version.strip():
+        raise RuntimeError(f"operating-document evidence has no version: {path}")
     return version.strip()
 
 
@@ -147,6 +184,7 @@ def main() -> int:
         versions: set[str] = set()
         installer_reports: dict[str, pathlib.Path] = {}
         companion_reports: dict[str, pathlib.Path] = {}
+        operations_reports: dict[str, list[pathlib.Path]] = {}
         evidence: dict[str, object] = {}
 
         for platform in PLATFORMS:
@@ -181,9 +219,23 @@ def main() -> int:
             for key in COMPANION_FALSE:
                 require(companion, key, False, f"{platform} companion deployment")
             companion_reports[platform] = companion_path
+
+            operation_paths = matching_files(
+                root,
+                f"operations-{platform}.json",
+                2,
+            )
+            for operation_path in operation_paths:
+                versions.add(verify_operations(
+                    operation_path,
+                    platform=platform,
+                    commit=commit,
+                ))
+            operations_reports[platform] = operation_paths
             evidence[platform] = {
                 "installer": str(installer_path),
                 "companion": str(companion_path),
+                "operations": [str(path) for path in operation_paths],
             }
 
         if len(versions) != 1:
@@ -222,10 +274,7 @@ def main() -> int:
                 root,
                 f"native-image-verification-{platform}.json",
             ))
-            release_files.append(exact_file(
-                root,
-                f"operations-{platform}.json",
-            ))
+            release_files.extend(operations_reports[platform])
 
         tag = f"alpha-{safe_version}-{commit[:12]}"
         title = f"The Mechanist {version} Limited Alpha ({commit[:12]})"
@@ -261,8 +310,8 @@ def main() -> int:
         checksums_path.write_text("\n".join(checksum_lines) + "\n", encoding="utf-8")
         release_files.append(checksums_path)
 
-        notes_path.write_text(
-            f"""# The Mechanist {version} Limited Alpha\n\n"
+        notes = (
+            f"# The Mechanist {version} Limited Alpha\n\n"
             f"Exact source commit: `{commit}`\n\n"
             "This prerelease was created automatically only after the Windows and "
             "Linux installer-deployment gates and the Windows and Linux companion-"
@@ -287,9 +336,9 @@ def main() -> int:
             "lobby, relay, roster, reconnect, and WAIT-control boundary described in "
             "the packaged operating documents.\n\n"
             "Review the attached lifecycle, companion, native-image, operations, and "
-            "checksum evidence before installing.\n""",
-            encoding="utf-8",
+            "checksum evidence before installing.\n"
         )
+        notes_path.write_text(notes, encoding="utf-8")
         release_files.append(notes_path)
         release_files_path.write_text(
             "\n".join(str(path.resolve()) for path in release_files) + "\n",
