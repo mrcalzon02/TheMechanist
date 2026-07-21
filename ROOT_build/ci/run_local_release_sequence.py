@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Run the local release gates in one authoritative sequence.
 
-This command coordinates the existing Java, inventory, native, and evidence
-verifiers without duplicating their implementation. It stops at the first
-failed stage, preserves every stage report, and writes one top-level summary.
-It never commits, pushes, publishes, or updates release history.
+This command coordinates the existing playtest-operations, Java, inventory,
+native, and evidence verifiers without duplicating their implementation. It
+stops at the first failed stage, preserves every stage report, and writes one
+top-level summary. It never commits, pushes, publishes, or updates release
+history.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ import traceback
 from typing import Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SCHEMA = 2
+SCHEMA = 3
 
 
 def utc_now() -> str:
@@ -110,7 +111,8 @@ def main() -> int:
     args = parser.parse_args()
 
     report_path = args.report.resolve()
-    log_dir = ROOT / "dist" / "local-release-sequence" / "logs"
+    sequence_dir = ROOT / "dist" / "local-release-sequence"
+    log_dir = sequence_dir / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -130,6 +132,17 @@ def main() -> int:
         python = sys.executable
         commands: list[tuple[str, list[str]]] = [
             (
+                "playtest-operations",
+                [
+                    python,
+                    "ROOT_build/ci/verify_limited_alpha_operations.py",
+                    "--repo",
+                    ".",
+                    "--report",
+                    str(sequence_dir / "playtest-operations.json"),
+                ],
+            ),
+            (
                 "java",
                 [python, "ROOT_build/ci/run_local_java_release_gate.py", "--release-hardened"],
             ),
@@ -143,9 +156,9 @@ def main() -> int:
             ),
         ]
         if args.update_committed_manifest:
-            commands[1][1].append("--update-committed-manifest")
+            commands[2][1].append("--update-committed-manifest")
         if args.require_clearance:
-            commands[1][1].append("--require-release-clearance")
+            commands[2][1].append("--require-release-clearance")
 
         evidence_command = [python, "ROOT_build/ci/verify_local_release_evidence.py"]
         if args.require_clearance:
@@ -184,7 +197,6 @@ def main() -> int:
                     file=sys.stderr,
                 )
                 return 2
-
         report["status"] = "passed"
         report["completedAtUtc"] = utc_now()
         write_report(report_path, report)
