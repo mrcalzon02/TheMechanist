@@ -19,11 +19,12 @@ import shutil
 import subprocess
 import sys
 import traceback
+from collections.abc import Callable
 from typing import Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 STANDARDS = ROOT / "ROOT_docs" / "STANDARDS_AND_PRACTICES.md"
-REPORT_SCHEMA = 2
+REPORT_SCHEMA = 3
 
 
 class GateFailure(RuntimeError):
@@ -108,6 +109,39 @@ def run_step(
     return result
 
 
+def run_internal_check(
+    name: str,
+    check: Callable[[], dict[str, object]],
+    steps: list[dict[str, object]],
+) -> dict[str, object]:
+    started = utc_now()
+    try:
+        summary = check()
+    except Exception as exc:
+        result: dict[str, object] = {
+            "name": name,
+            "command": ["internal-evidence-check"],
+            "startedAtUtc": started,
+            "completedAtUtc": utc_now(),
+            "returnCode": 1,
+            "passed": False,
+            "error": str(exc),
+        }
+        steps.append(result)
+        raise GateFailure(result) from exc
+    result = {
+        "name": name,
+        "command": ["internal-evidence-check"],
+        "startedAtUtc": started,
+        "completedAtUtc": utc_now(),
+        "returnCode": 0,
+        "passed": True,
+        "summary": summary,
+    }
+    steps.append(result)
+    return summary
+
+
 def require_tool(name: str) -> str:
     path = shutil.which(name)
     if not path:
@@ -142,6 +176,131 @@ def find_one(root: pathlib.Path, pattern: str, kind: str) -> pathlib.Path:
             f"expected exactly one {kind} matching {pattern!r}; found {matches}"
         )
     return matches[0]
+
+
+def load_json_object(path: pathlib.Path, label: str) -> dict[str, object]:
+    if not path.is_file():
+        raise RuntimeError(f"{label} report is missing: {path}")
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError) as exc:
+        raise RuntimeError(f"{label} report is unreadable: {path}: {exc}") from exc
+    if not isinstance(loaded, dict):
+        raise RuntimeError(f"{label} report must contain one JSON object: {path}")
+    return loaded
+
+
+def require_value(
+    source: dict[str, object],
+    key: str,
+    expected: object,
+    label: str,
+) -> None:
+    actual = source.get(key)
+    if actual != expected:
+        raise RuntimeError(
+            f"{label} {key} mismatch: expected {expected!r}, found {actual!r}"
+        )
+
+
+def verify_local_evidence_coherence(
+    *,
+    output: pathlib.Path,
+    distribution: pathlib.Path,
+    commit: str,
+    platform_name: str,
+    release_hardened: bool,
+) -> dict[str, object]:
+    manifest_path = distribution / "manifests" / "runtime-manifest.json"
+    manifest = load_json_object(manifest_path, "canonical runtime manifest")
+    verification_path = output / "verification.json"
+    synthetic_path = output / "synthetic.json"
+    contract_path = output / "synthetic-contract.json"
+    proguard_path = output / "proguard-policy.json"
+
+    verification = load_json_object(verification_path, "distribution verification")
+    synthetic = load_json_object(synthetic_path, "synthetic distribution")
+    contract = load_json_object(contract_path, "synthetic release contract")
+    proguard = load_json_object(proguard_path, "ProGuard policy")
+
+    for source, label in (
+        (manifest, "canonical runtime manifest"),
+        (verification, "distribution verification"),
+    ):
+        require_value(source, "commit", commit, label)
+        require_value(source, "platform", platform_name, label)
+        require_value(source, "javaRelease", 17, label)
+        require_value(source, "releaseHardened", release_hardened, label)
+
+    require_value(verification, "status", "verified", "distribution verification")
+    require_value(synthetic, "status", "passed", "synthetic distribution")
+    require_value(
+        synthetic,
+        "distribution",
+        distribution.name,
+        "synthetic distribution",
+    )
+    require_value(
+        synthetic,
+        "releaseHardened",
+        release_hardened,
+        "synthetic distribution",
+    )
+    require_value(
+        synthetic,
+        "nativeInstallerPayloadStageRequired",
+        release_hardened,
+        "synthetic distribution",
+    )
+    require_value(
+        synthetic,
+        "nativeInstallerPayloadStage",
+        release_hardened,
+        "synthetic distribution",
+    )
+
+    require_value(contract, "status", "verified", "synthetic release contract")
+    require_value(
+        contract,
+        "platforms",
+        [platform_name],
+        "synthetic release contract",
+    )
+    require_value(
+        contract,
+        "releaseHardenedRequired",
+        release_hardened,
+        "synthetic release contract",
+    )
+    require_value(
+        contract,
+        "nativeInstallerStageRequired",
+        release_hardened,
+        "synthetic release contract",
+    )
+    require_value(proguard, "status", "verified", "ProGuard policy")
+    require_value(
+        proguard,
+        "mappingArtifactsOutsideDistribution",
+        True,
+        "ProGuard policy",
+    )
+
+    return {
+        "status": "verified",
+        "commit": commit,
+        "platform": platform_name,
+        "javaRelease": 17,
+        "releaseHardened": release_hardened,
+        "distribution": distribution.name,
+        "reports": {
+            "runtimeManifest": str(manifest_path.relative_to(ROOT)),
+            "distributionVerification": str(verification_path.relative_to(ROOT)),
+            "syntheticDistribution": str(synthetic_path.relative_to(ROOT)),
+            "syntheticReleaseContract": str(contract_path.relative_to(ROOT)),
+            "proguardPolicy": str(proguard_path.relative_to(ROOT)),
+        },
+    }
 
 
 def main() -> int:
@@ -382,18 +541,32 @@ def main() -> int:
             str(synthetic_report),
             "--expected-platforms",
             platform_name,
-            "--require-native-stage",
             "--report",
             str(contract_report),
         ]
         if args.release_hardened:
-            contract_command.append("--require-release-hardened")
+            contract_command.extend(
+                ["--require-release-hardened", "--require-native-stage"]
+            )
         run_step(
             "synthetic-release-contract",
             contract_command,
             log_dir,
             steps,
         )
+
+        evidence_summary = run_internal_check(
+            "evidence-coherence",
+            lambda: verify_local_evidence_coherence(
+                output=output,
+                distribution=distribution,
+                commit=commit,
+                platform_name=platform_name,
+                release_hardened=args.release_hardened,
+            ),
+            steps,
+        )
+        report["evidenceCoherence"] = evidence_summary
 
         report["status"] = "passed"
         report["completedAtUtc"] = utc_now()
