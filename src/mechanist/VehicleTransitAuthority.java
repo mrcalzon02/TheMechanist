@@ -20,6 +20,7 @@ import java.util.Objects;
 final class VehicleTransitAuthority {
     static final int MAX_LOCAL_ROUTE_STEPS = 48;
     static final int PARKING_SEARCH_RADIUS = 5;
+    private static final int HISTORY_LIMIT = 12;
 
     record RoutePlan(boolean valid, List<Point> path, Point requestedTarget,
                      Point resolvedParking, String blocker, String summary) {
@@ -215,12 +216,12 @@ final class VehicleTransitAuthority {
     }
 
     static List<String> inspectionLines(GamePanel game, MapObjectState vehicle) {
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add(VehicleRuntimeAuthority.inspectionLine(
-                game == null ? null : game.world, vehicle));
+        ArrayList<String> lines = new ArrayList<>(
+                VehicleInfopediaBridgeAuthority.liveDossier(game, vehicle));
+        lines.add("LOCAL TRANSIT CONTROL");
         lines.add("Transit rule: roads and marked parking carry movement; clear curb-adjacent sidewalks may receive automatic parking, but they are not through-routes.");
         lines.add("Route control: open the manual movement plan, place its cursor on the desired road or parking destination, then interact with a player-owned operational vehicle. Vehicle route range is validated independently from ordinary actor movement range.");
-        lines.add("Operation feedback: validated movement drives the same running state used by the bounded pulse, forward headlights, degraded-component feedback, and one-shot distance-aware engine cue.");
+        lines.add("Operation feedback: validated movement drives the same running state used by the bounded pulse, forward headlights, degraded-component feedback, and distance-limited ambient operating sound.");
         if (game != null && vehicle != null && VehicleRuntimeAuthority.playerOwns(game, vehicle)) {
             Point target = null;
             if (game.manualMovementPlanActive && game.lookCursorActive
@@ -392,11 +393,19 @@ final class VehicleTransitAuthority {
     }
 
     private static void append(MapObjectState vehicle, String key, String entry) {
+        ArrayList<String> entries = new ArrayList<>();
         String existing = MapObjectState.stockValue(vehicle.stockState, key);
-        String next = existing == null || existing.isBlank()
-                ? clean(entry, "") : existing + "~" + clean(entry, "");
+        if (existing != null && !existing.isBlank()) {
+            for (String token : existing.split("~")) {
+                String cleaned = clean(token, "");
+                if (!cleaned.isBlank()) entries.add(cleaned);
+            }
+        }
+        String cleanedEntry = clean(entry, "");
+        if (!cleanedEntry.isBlank()) entries.add(cleanedEntry);
+        while (entries.size() > HISTORY_LIMIT) entries.remove(0);
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                key, next.replace(';', ',').replace('|', '/'));
+                key, String.join("~", entries).replace(';', ',').replace('|', '/'));
     }
 
     private static void set(MapObjectState vehicle, String key, String value) {
