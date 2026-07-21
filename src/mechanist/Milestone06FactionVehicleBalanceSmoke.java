@@ -291,6 +291,8 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 "vehicle repair completion should explain market, physical, and loss-recovery outcomes: "
                         + repairResult.message());
 
+        verifyVehicleFuelContract(game, mechanist, cargo, representative);
+
         MapObjectState salvageTarget = vehicle(game.world, 14, 8,
                 AssetIntegrationDisciplineAuthority.PARKED_ARMORED_CAR,
                 Faction.IMPERIAL_GUARD, "captured patrol vehicle", 395L);
@@ -412,6 +414,82 @@ final class Milestone06FactionVehicleBalanceSmoke {
                         "no eligible local damaged faction vehicle"),
                 "missing vehicle targets must block before proof consumption or unrelated mutation: "
                         + missingResult.message());
+    }
+
+    private static void verifyVehicleFuelContract(
+            GamePanel game, NpcFactionSite mechanist, MapObjectState cargo,
+            NpcEntity representative) {
+        MapObjectState fuelTarget = vehicle(game.world, 18, 8,
+                AssetIntegrationDisciplineAuthority.PARKED_CARGO_TRUCK,
+                mechanist.faction, "low-energy reserve hauler", 396L);
+        game.world.mapObjects.add(fuelTarget);
+        VehicleFuelAuthority.ensureInitialized(game.world, fuelTarget);
+        fuelTarget.stockState = MapObjectState.setStockFlag(
+                fuelTarget.stockState, "fuelOrPowerCurrent", "0");
+        VehicleFuelAuthority.Snapshot fuelBefore =
+                VehicleFuelAuthority.inspect(game.world, fuelTarget);
+        String cargoBeforeFuel = cargo.stockState;
+
+        game.factionContracts.clear();
+        game.inventory.clear();
+        String offer = FactionMarketContractAuthority.representativeLine(
+                game, representative);
+        VehicleRuntimeAuthority.Snapshot targetRuntime =
+                VehicleRuntimeAuthority.inspect(game.world, fuelTarget);
+        require(offer.contains("empty or low vehicle fuel or power reserve")
+                        && offer.contains(targetRuntime.model()),
+                "live faction work should prioritize the largest critical vehicle energy deficit: "
+                        + offer);
+
+        FactionMarketContractAuthority.WorkResult accepted =
+                FactionMarketContractAuthority.accept(game, representative);
+        FactionContract contract = accepted.contract();
+        require(accepted.success() && contract != null
+                        && contract.targetEntityId.startsWith(
+                        "MARKET:VEHICLE_FUEL:")
+                        && contract.targetEntityId.endsWith(fuelTarget.id)
+                        && ItemCatalog.get(contract.requiredTurnInItem) != null,
+                "accepted fuel support work should bind the exact vehicle and require catalog-backed proof: "
+                        + accepted.message());
+        carryContractProof(game, contract);
+        String preview = ContractTurnInAuthority.representativeLine(
+                game, representative);
+        require(preview.contains("Vehicle outcome: completion will refuel")
+                        && preview.contains(targetRuntime.model()),
+                "fuel support turn-in should preview the exact persistent target: "
+                        + preview);
+
+        int scriptBefore = game.carriedScript;
+        int standingBefore = game.factionStanding.getOrDefault(
+                mechanist.faction, 0);
+        ContractTurnInAuthority.TurnInResult result =
+                ContractTurnInAuthority.turnInFirst(game, representative);
+        VehicleFuelAuthority.Snapshot fuelAfter =
+                VehicleFuelAuthority.inspect(game.world, fuelTarget);
+        String history = MapObjectState.stockValue(fuelTarget.stockState,
+                "fuelOrPowerHistory");
+        require(result.success() && contract.completed
+                        && fuelAfter.current() > fuelBefore.current()
+                        && fuelAfter.current() <= fuelAfter.capacity()
+                        && fuelAfter.current()
+                        == Math.min(fuelBefore.capacity(), 16)
+                        && !game.inventory.contains(
+                        contract.requiredTurnInItem)
+                        && game.carriedScript == scriptBefore + contract.payout
+                        && game.factionStanding.getOrDefault(
+                        mechanist.faction, 0)
+                        == standingBefore + contract.repReward
+                        && cargoBeforeFuel.equals(cargo.stockState),
+                "generated fuel support should atomically increase only the bound ledger and preserve ordinary rewards: "
+                        + result.message());
+        require(history.contains(contract.id)
+                        && history.contains(mechanist.faction.label)
+                        && result.message().contains(
+                        "Motor-pool fuel or power supplies were accepted")
+                        && result.message().contains(
+                        "Vehicle contract outcome: VEHICLE ENERGY: added"),
+                "fuel support should retain faction, contract, market, and ledger evidence: "
+                        + result.message() + " / " + history);
     }
 
     private static void clearCompetingContractSources(GamePanel game) {
