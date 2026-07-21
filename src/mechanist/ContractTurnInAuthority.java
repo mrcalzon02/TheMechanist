@@ -1,10 +1,33 @@
 package mechanist;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /** Owns atomic faction-contract proof validation, completion, and reward payout. */
 final class ContractTurnInAuthority {
     record TurnInResult(boolean success, String message, FactionContract contract) { }
+
+    private enum VehicleContractMode {
+        REPAIR("repair", "a damaged faction vehicle"),
+        SALVAGE("salvage", "a seized or wrecked faction vehicle");
+
+        final String action;
+        final String targetDescription;
+
+        VehicleContractMode(String action, String targetDescription) {
+            this.action = action;
+            this.targetDescription = targetDescription;
+        }
+    }
+
+    private record VehicleContractResult(boolean applies, boolean changed,
+                                         String summary) {
+        static VehicleContractResult none() {
+            return new VehicleContractResult(false, false, "");
+        }
+    }
 
     private ContractTurnInAuthority() { }
 
@@ -13,12 +36,14 @@ final class ContractTurnInAuthority {
         if (contract == null) return "Contract turn-in: no active contract belongs to this representative's faction.";
         String problem = turnInProblem(game, representative, contract);
         String blueprintPreview = ConstructionBlueprintContractRewardAuthority.preview(contract);
+        String vehiclePreview = vehicleContractPreview(game, contract);
+        String consequencePreview = appendPreview(blueprintPreview, vehiclePreview);
         return problem == null
                 ? "Contract turn-in ready: " + contract.displayType() + " for " + contract.payout
                         + " script and standing +" + contract.repReward + "."
-                        + (blueprintPreview.isBlank() ? "" : " " + blueprintPreview)
+                        + consequencePreview
                 : "Contract turn-in blocked: " + problem + "."
-                        + (blueprintPreview.isBlank() ? "" : " " + blueprintPreview);
+                        + consequencePreview;
     }
 
     static TurnInResult turnInFirst(GamePanel game, NpcEntity representative) {
@@ -38,6 +63,8 @@ final class ContractTurnInAuthority {
                 FactionMarketContractAuthority.complete(game, contract, deliveredItem);
         ConstructionBlueprintContractRewardAuthority.RewardResult blueprintResult =
                 ConstructionBlueprintContractRewardAuthority.apply(game, contract, deliveredItem);
+        VehicleContractResult vehicleResult =
+                applyVehicleContract(game, contract, deliveredItem);
         contract.completed = true;
         game.carriedScript = Math.max(0, game.carriedScript + Math.max(0, contract.payout));
         Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
@@ -50,7 +77,8 @@ final class ContractTurnInAuthority {
                 + contract.payout + " script and awarded standing +" + contract.repReward
                 + (contract.skillXpReward > 0 ? " and skill XP +" + contract.skillXpReward : "") + "."
                 + (marketResult.summary().isBlank() ? "" : " " + marketResult.summary())
-                + (blueprintResult.summary().isBlank() ? "" : " " + blueprintResult.summary());
+                + (blueprintResult.summary().isBlank() ? "" : " " + blueprintResult.summary())
+                + (vehicleResult.summary().isBlank() ? "" : " " + vehicleResult.summary());
         return new TurnInResult(true, message, contract);
     }
 
@@ -66,6 +94,8 @@ final class ContractTurnInAuthority {
         }
         String deliveryProblem = deliveryProblem(game, contract);
         if (deliveryProblem != null) return deliveryProblem;
+        String vehicleProblem = vehicleContractProblem(game, contract);
+        if (vehicleProblem != null) return vehicleProblem;
         String proof = ContractObjectiveReadabilityAuthority.proofProblem(contract,
                 game.unlockedSkillNodes, game.unlockedKnowledges);
         return proof.isBlank() ? null : proof;
@@ -136,6 +166,182 @@ final class ContractTurnInAuthority {
 
     private static boolean passedInspection(ItemProvenanceRecord provenance) {
         return provenance != null && "passed inspection".equalsIgnoreCase(provenance.defectState);
+    }
+
+    private static String vehicleContractProblem(GamePanel game, FactionContract contract) {
+        VehicleContractMode mode = vehicleContractMode(contractText(contract, ""));
+        if (mode == null) return null;
+        Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
+        if (faction == Faction.NONE) {
+            return "vehicle work requires an identified issuing faction";
+        }
+        if (selectVehicleContractTarget(game, contract, mode) == null) {
+            return "no eligible local " + mode.targetDescription
+                    + " remains linked to this contract";
+        }
+        return null;
+    }
+
+    private static String vehicleContractPreview(GamePanel game, FactionContract contract) {
+        VehicleContractMode mode = vehicleContractMode(contractText(contract, ""));
+        if (mode == null) return "";
+        MapObjectState vehicle = selectVehicleContractTarget(game, contract, mode);
+        if (vehicle == null) {
+            return "Vehicle outcome: " + mode.action
+                    + " is pending because no eligible local target is available.";
+        }
+        return "Vehicle outcome: completion will " + mode.action + " "
+                + vehicleDisplayName(game, vehicle) + " through its persistent vehicle record.";
+    }
+
+    private static VehicleContractResult applyVehicleContract(
+            GamePanel game, FactionContract contract, String deliveredItem) {
+        String text = contractText(contract, deliveredItem);
+        VehicleContractMode mode = vehicleContractMode(text);
+        if (mode == null) return VehicleContractResult.none();
+        MapObjectState vehicle = selectVehicleContractTarget(game, contract, mode);
+        if (vehicle == null) {
+            return new VehicleContractResult(true, false,
+                    "Vehicle contract outcome was not applied because the eligible local target disappeared before completion.");
+        }
+        Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
+        VehicleRuntimeAuthority.Result result;
+        if (mode == VehicleContractMode.REPAIR) {
+            result = VehicleRuntimeAuthority.repairForFaction(vehicle, 35,
+                    game.turn, faction, "contract " + safe(contract.id));
+        } else {
+            result = VehicleRuntimeAuthority.salvageForFaction(vehicle, faction,
+                    game.turn, "contract " + safe(contract.id));
+        }
+        if (!result.success()) {
+            return new VehicleContractResult(true, false,
+                    "Vehicle contract outcome was blocked: " + result.message());
+        }
+        return new VehicleContractResult(true, result.changed(),
+                "Vehicle contract outcome: " + result.message());
+    }
+
+    private static MapObjectState selectVehicleContractTarget(
+            GamePanel game, FactionContract contract, VehicleContractMode mode) {
+        if (game == null || game.world == null || game.world.mapObjects == null
+                || contract == null || mode == null) return null;
+        Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
+        String text = contractText(contract, "");
+        ArrayList<MapObjectState> candidates = new ArrayList<>();
+        for (MapObjectState object : game.world.mapObjects) {
+            if (!VehicleRuntimeAuthority.isVehicle(object)) continue;
+            VehicleRuntimeAuthority.ensureInitialized(game.world, object);
+            VehicleRuntimeAuthority.Snapshot snapshot =
+                    VehicleRuntimeAuthority.inspect(game.world, object);
+            if (snapshot == null || "salvaged".equals(snapshot.condition())) continue;
+            boolean eligible = mode == VehicleContractMode.REPAIR
+                    ? faction != Faction.NONE
+                    && VehicleRuntimeAuthority.factionOwns(object, faction)
+                    && VehicleRuntimeAuthority.damaged(object)
+                    : faction != Faction.NONE
+                    && VehicleRuntimeAuthority.factionOwns(object, faction)
+                    && (VehicleRuntimeAuthority.seized(object)
+                    || "wreck".equals(snapshot.condition()));
+            if (eligible) candidates.add(object);
+        }
+        candidates.sort(Comparator
+                .comparingInt((MapObjectState object) -> vehicleContractScore(
+                        game, object, text)).reversed()
+                .thenComparing(object -> vehicleDisplayName(game, object))
+                .thenComparing(object -> safe(object.id)));
+        return candidates.isEmpty() ? null : candidates.get(0);
+    }
+
+    private static int vehicleContractScore(GamePanel game, MapObjectState vehicle,
+                                            String text) {
+        VehicleRuntimeAuthority.Snapshot snapshot = VehicleRuntimeAuthority.inspect(
+                game == null ? null : game.world, vehicle);
+        if (snapshot == null) return Integer.MIN_VALUE;
+        String low = safe(text).toLowerCase(Locale.ROOT);
+        int score = 0;
+        score += textMatchScore(low, snapshot.manufacturer(), 90);
+        score += textMatchScore(low, snapshot.model(), 120);
+        score += textMatchScore(low, snapshot.variant(), 30);
+        score += textMatchScore(low, snapshot.vehicleClass().label, 75);
+        score += textMatchScore(low, snapshot.vehicleClass().role, 45);
+        score += textMatchScore(low, snapshot.ownerName(), 25);
+        String id = safe(vehicle.id).toLowerCase(Locale.ROOT);
+        if (!id.isBlank() && low.contains(id)) score += 200;
+        if (VehicleRuntimeAuthority.damaged(vehicle)) {
+            score += Math.max(0, 100 - snapshot.integrity());
+        }
+        return score;
+    }
+
+    private static int textMatchScore(String text, String value, int exactWeight) {
+        String candidate = safe(value).toLowerCase(Locale.ROOT);
+        if (candidate.isBlank()) return 0;
+        int score = text.contains(candidate) ? exactWeight : 0;
+        for (String token : candidate.split("[^a-z0-9]+")) {
+            if (token.length() >= 4 && text.contains(token)) score += 8;
+        }
+        return score;
+    }
+
+    private static VehicleContractMode vehicleContractMode(String text) {
+        String low = safe(text).toLowerCase(Locale.ROOT);
+        boolean vehicle = contains(low, "vehicle", "motor pool", "motor-pool",
+                "convoy", "cargo truck", "armored car", "civilian car",
+                "utility bike", "tank", "crawler", "hauler");
+        if (!vehicle) return null;
+        if (contains(low, "salvage", "strip", "wreck", "route clearing",
+                "clear the route", "scrap")) {
+            return VehicleContractMode.SALVAGE;
+        }
+        if (contains(low, "repair", "service", "restore", "overhaul",
+                "machine part", "engine", "powerplant", "transmission",
+                "wheel", "track", "headlight", "sensor", "armor patch")) {
+            return VehicleContractMode.REPAIR;
+        }
+        return null;
+    }
+
+    private static String contractText(FactionContract contract,
+                                       String deliveredItem) {
+        if (contract == null) return safe(deliveredItem);
+        return (safe(contract.type) + " " + safe(contract.targetName) + " "
+                + safe(contract.requiredTurnInItem) + " "
+                + safe(contract.description) + " " + safe(deliveredItem))
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private static String vehicleDisplayName(GamePanel game,
+                                             MapObjectState vehicle) {
+        VehicleRuntimeAuthority.Snapshot snapshot = VehicleRuntimeAuthority.inspect(
+                game == null ? null : game.world, vehicle);
+        if (snapshot == null) return "the selected vehicle";
+        return (clean(snapshot.manufacturer(), "") + " "
+                + clean(snapshot.model(), snapshot.vehicleClass().label)).trim();
+    }
+
+    private static String appendPreview(String first, String second) {
+        StringBuilder out = new StringBuilder();
+        if (first != null && !first.isBlank()) out.append(' ').append(first);
+        if (second != null && !second.isBlank()) out.append(' ').append(second);
+        return out.toString();
+    }
+
+    private static boolean contains(String text, String... terms) {
+        String low = safe(text).toLowerCase(Locale.ROOT);
+        for (String term : terms) {
+            if (term != null && !term.isBlank()
+                    && low.contains(term.toLowerCase(Locale.ROOT))) return true;
+        }
+        return false;
+    }
+
+    private static String clean(String value, String fallback) {
+        String text = value == null ? "" : value.trim().replaceAll("\\s+", " ");
+        return text.isBlank() ? fallback : text;
+    }
+
+    private static String safe(String value) {
+        return value == null ? "" : value.replace('|', '/');
     }
 
     private static boolean hasNamedItem(List<String> items, String wanted) {
