@@ -135,7 +135,7 @@ def main() -> int:
                 "playtest-operations-source",
                 [
                     python,
-                    "ROOT_build/ci/verify_limited_alpha_operations.py",
+                    "ROOT_build/ci/verify_alpha_operating_docs.py",
                     "--repo",
                     ".",
                     "--report",
@@ -150,7 +150,7 @@ def main() -> int:
                 "playtest-operations-package",
                 [
                     python,
-                    "ROOT_build/ci/verify_limited_alpha_operations.py",
+                    "ROOT_build/ci/verify_alpha_operating_docs.py",
                     "--repo",
                     ".",
                     "--distribution-search-root",
