@@ -2,10 +2,10 @@
 """Verify that local alpha-release gate evidence belongs together.
 
 This verifier is read-only. It does not build, package, update manifests, publish,
-or mutate release history. It prevents separate playtest-operations, Java,
-inventory, and native gate reports from being mistaken for one coherent release
-candidate when their policy, commit, platform, hardening, or status identities
-disagree.
+or mutate release history. It prevents separate packaged playtest-operations,
+Java, inventory, and native gate reports from being mistaken for one coherent
+release candidate when their policy, commit, platform, hardening, or status
+identities disagree.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import sys
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SCHEMA = 2
+SCHEMA = 3
 
 
 def load_report(path: pathlib.Path, label: str) -> dict[str, Any]:
@@ -46,7 +46,8 @@ def main() -> int:
         "--operations-report",
         type=pathlib.Path,
         default=(
-            ROOT / "dist" / "local-release-sequence" / "playtest-operations.json"
+            ROOT / "dist" / "local-release-sequence"
+            / "playtest-operations-package.json"
         ),
     )
     parser.add_argument(
@@ -82,7 +83,7 @@ def main() -> int:
 
     try:
         operations = load_report(
-            args.operations_report.resolve(), "playtest-operations gate"
+            args.operations_report.resolve(), "packaged playtest-operations gate"
         )
         java = load_report(args.java_report.resolve(), "Java gate")
         inventory = load_report(args.inventory_report.resolve(), "inventory gate")
@@ -103,13 +104,13 @@ def main() -> int:
         documents = source_operations.get("documents")
         if not isinstance(documents, list) or len(documents) != 8:
             raise RuntimeError(
-                "playtest-operations report must verify exactly eight packaged documents"
+                "playtest-operations report must verify exactly eight source documents"
             )
-        destinations: set[str] = set()
+        source_hashes: dict[str, str] = {}
         for record in documents:
             if not isinstance(record, dict):
                 raise RuntimeError(
-                    "playtest-operations report contains a malformed document record"
+                    "playtest-operations report contains a malformed source document record"
                 )
             destination = record.get("destination")
             digest = record.get("sha256")
@@ -117,7 +118,7 @@ def main() -> int:
                 raise RuntimeError(
                     "playtest-operations report contains an invalid package destination"
                 )
-            if destination in destinations:
+            if destination in source_hashes:
                 raise RuntimeError(
                     f"playtest-operations report repeats destination {destination}"
                 )
@@ -125,7 +126,8 @@ def main() -> int:
                 raise RuntimeError(
                     f"playtest-operations report has invalid SHA-256 for {destination}"
                 )
-            destinations.add(destination)
+            source_hashes[destination] = digest
+
         issue_form = source_operations.get("issueForm")
         if not isinstance(issue_form, dict):
             raise RuntimeError(
@@ -141,6 +143,52 @@ def main() -> int:
                 "playtest-operations report has an invalid issue-form SHA-256"
             )
 
+        packaged_operations = operations.get("distribution")
+        if not isinstance(packaged_operations, dict):
+            raise RuntimeError(
+                "playtest-operations report has no reopened packaged distribution object"
+            )
+        require(
+            packaged_operations,
+            "status",
+            "verified",
+            "packaged playtest operations",
+        )
+        packaged_documents = packaged_operations.get("documents")
+        if not isinstance(packaged_documents, list) or len(packaged_documents) != 8:
+            raise RuntimeError(
+                "packaged playtest operations must verify exactly eight documents"
+            )
+        packaged_hashes: dict[str, str] = {}
+        for record in packaged_documents:
+            if not isinstance(record, dict):
+                raise RuntimeError(
+                    "packaged playtest operations contain a malformed document record"
+                )
+            path = record.get("path")
+            digest = record.get("sha256")
+            if not isinstance(path, str) or path not in source_hashes:
+                raise RuntimeError(
+                    f"packaged playtest operations contain an unexpected document: {path!r}"
+                )
+            if path in packaged_hashes:
+                raise RuntimeError(
+                    f"packaged playtest operations repeat document {path}"
+                )
+            if digest != source_hashes[path]:
+                raise RuntimeError(
+                    f"packaged playtest document hash differs from source: {path}"
+                )
+            if record.get("role") != "documentation":
+                raise RuntimeError(
+                    f"packaged playtest document has wrong role: {path}"
+                )
+            packaged_hashes[path] = digest
+        if packaged_hashes != source_hashes:
+            raise RuntimeError(
+                "packaged playtest document set does not exactly match governed source"
+            )
+
         require(java, "status", "passed", "Java gate")
         require(java, "releaseHardened", True, "Java gate")
         require(inventory, "status", "passed", "inventory gate")
@@ -153,6 +201,28 @@ def main() -> int:
             raise RuntimeError(f"Java gate commit identity is invalid: {commit!r}")
         if platform not in {"linux-x64", "windows-x64"}:
             raise RuntimeError(f"Java gate platform identity is invalid: {platform!r}")
+        if packaged_operations.get("commit") != commit:
+            raise RuntimeError(
+                "packaged playtest operations commit does not match the Java candidate: "
+                f"{packaged_operations.get('commit')!r} != {commit!r}"
+            )
+        if packaged_operations.get("platform") != platform:
+            raise RuntimeError(
+                "packaged playtest operations platform does not match the Java candidate: "
+                f"{packaged_operations.get('platform')!r} != {platform!r}"
+            )
+        require(
+            packaged_operations,
+            "javaRelease",
+            17,
+            "packaged playtest operations",
+        )
+        require(
+            packaged_operations,
+            "releaseHardened",
+            True,
+            "packaged playtest operations",
+        )
         if inventory.get("commit") != commit:
             raise RuntimeError(
                 f"inventory commit {inventory.get('commit')!r} does not match Java commit {commit!r}"
@@ -187,7 +257,9 @@ def main() -> int:
             "platform": platform,
             "releaseHardened": True,
             "playtestOperationsVerified": True,
-            "playtestDocumentCount": len(documents),
+            "playtestSourceDocumentCount": len(documents),
+            "playtestPackagedDocumentCount": len(packaged_documents),
+            "playtestPackagedIdentityVerified": True,
             "structuredIssueFormVerified": True,
             "releaseClearanceRequired": args.require_clearance,
             "releaseClearanceVerified": inventory.get("releaseReady") is True,
