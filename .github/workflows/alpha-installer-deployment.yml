@@ -231,9 +231,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo dpkg -r '${{ steps.install_linux.outputs.package }}'
+          sudo dpkg -P '${{ steps.install_linux.outputs.package }}'
           if dpkg -s '${{ steps.install_linux.outputs.package }}' >/dev/null 2>&1; then
-            echo 'Linux package remains installed after dpkg removal.' >&2
+            echo 'Linux package remains registered after dpkg purge.' >&2
             exit 1
           fi
           python ROOT_build/ci/verify_installer_uninstall.py \
@@ -267,12 +267,8 @@ jobs:
         with:
           name: Alpha-Installer-Deployment-${{ matrix.platform }}
           path: |
-            dist/alpha-installer/${{ runner.os == 'Linux' && 'linux' || 'windows' }}/**
-            dist/alpha-installer/deployment/**
-            dist/alpha-installer/canonical-${{ matrix.platform }}.json
-            dist/alpha-installer/operations-${{ matrix.platform }}.json
+            dist/alpha-installer/**
             dist/alpha-installer-build-${{ matrix.platform }}.log
-            dist/alpha-installer/${{ runner.os == 'Linux' && 'linux-package.log' || 'windows-package.log' }}
           if-no-files-found: warn
           retention-days: 30
           compression-level: 0
