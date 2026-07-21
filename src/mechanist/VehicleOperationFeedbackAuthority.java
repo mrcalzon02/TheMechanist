@@ -11,16 +11,24 @@ import java.util.Map;
  * Bounded runtime feedback for truthful vehicle operation state.
  *
  * The persistent vehicle fixture remains authoritative. This class owns only
- * short-lived visual and one-shot audio feedback, so save/load cannot resurrect
- * an engine loop or leave a vehicle permanently marked as running.
+ * short-lived visual and audio feedback, so save/load cannot resurrect an
+ * engine loop or leave a vehicle permanently marked as running.
  */
 final class VehicleOperationFeedbackAuthority {
     static final long ACTIVE_FEEDBACK_MILLIS = 650L;
     static final long TRAILING_FEEDBACK_MILLIS = 1_650L;
+    static final long AMBIENT_REFRESH_MILLIS = 900L;
     private static final int MAX_SESSIONS = 64;
 
     record Feedback(String state, String soundCue, boolean headlights,
                     int headlightRange, String summary) { }
+
+    record AmbientState(boolean active, String soundCue, int distance,
+                        boolean degraded, String summary) {
+        static AmbientState inactive(String summary) {
+            return new AmbientState(false, "", 0, false, summary);
+        }
+    }
 
     record VisualState(boolean visible, boolean activelyOperating,
                        boolean recentlyParked, double pulseScale, int pulseAlpha,
@@ -114,6 +122,7 @@ final class VehicleOperationFeedbackAuthority {
         SESSIONS.put(key, new Session(key, nowMillis, activeUntil, expires,
                 Math.max(0, steps), fromX, fromY, toX, toY,
                 facing[0], facing[1], cue, true));
+        LAST_SOUND_AT.remove(key + ":ambient");
         set(vehicle, "operationState", "parked");
         set(vehicle, "headlightsActive", "false");
         set(vehicle, "operationFeedback", "recently-parked");
@@ -123,7 +132,60 @@ final class VehicleOperationFeedbackAuthority {
         prune(nowMillis);
         return new Feedback("parked", cue, false, headlightRange(vehicle),
                 "Vehicle parked after " + Math.max(0, steps)
-                        + " validated road step(s); its arrival pulse and one-shot sound tail are bounded and transient.");
+                        + " validated road step(s); its arrival pulse and sound tail are bounded and transient.");
+    }
+
+    static synchronized AmbientState refreshAmbientAudio(
+            GamePanel game, MapObjectState vehicle, long nowMillis) {
+        return refreshAmbientAudio(game, vehicle, nowMillis, true);
+    }
+
+    static synchronized AmbientState refreshAmbientAudio(
+            GamePanel game, MapObjectState vehicle, long nowMillis,
+            boolean playSound) {
+        prune(nowMillis);
+        if (game == null || game.world == null || vehicle == null
+                || !VehicleRuntimeAuthority.isVehicle(vehicle)
+                || game.world.mapObjects == null
+                || !game.world.mapObjects.contains(vehicle)) {
+            removeTransientSession(vehicle);
+            return AmbientState.inactive(
+                    "Vehicle ambient audio is inactive because no loaded physical vehicle owns the session.");
+        }
+        String vehicleKey = key(vehicle);
+        Session session = SESSIONS.get(vehicleKey);
+        if (session == null) {
+            return AmbientState.inactive(
+                    "Vehicle ambient audio is inactive because no operation session exists.");
+        }
+        String operation = MapObjectState.stockValue(vehicle.stockState,
+                "operationState").toLowerCase(Locale.ROOT);
+        if (terminalOperationState(vehicle) || !operation.equals("running")) {
+            removeTransientSession(vehicle);
+            return AmbientState.inactive(
+                    "Vehicle ambient audio stopped because the vehicle is not operating.");
+        }
+
+        String cue = soundCue(vehicle);
+        int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
+        int mobility = component(vehicle, VehicleRuntimeAuthority.Component.MOBILITY);
+        boolean degraded = power < 55 || mobility < 55;
+        int distance = Math.max(1, Math.abs(game.playerX - vehicle.x)
+                + Math.abs(game.playerY - vehicle.y));
+        long activeUntil = Math.max(session.activeUntilMillis(),
+                nowMillis + ACTIVE_FEEDBACK_MILLIS);
+        long expires = Math.max(session.expiresAtMillis(),
+                activeUntil + TRAILING_FEEDBACK_MILLIS);
+        SESSIONS.put(vehicleKey, new Session(vehicleKey,
+                session.startedAtMillis(), activeUntil, expires,
+                session.steps(), session.fromX(), session.fromY(),
+                session.toX(), session.toY(), session.facingDx(),
+                session.facingDy(), cue, false));
+        if (playSound) playCue(game, vehicle, cue, nowMillis, "ambient");
+        return new AmbientState(true, cue, distance, degraded,
+                "Vehicle ambient audio is active at distance " + distance
+                        + " with " + cue
+                        + (degraded ? " degraded powertrain feedback." : " running feedback."));
     }
 
     static synchronized VisualState visualState(GamePanel game,
@@ -139,7 +201,7 @@ final class VehicleOperationFeedbackAuthority {
             return VisualState.inactive();
         }
         if (terminalOperationState(vehicle)) {
-            SESSIONS.remove(vehicleKey);
+            removeTransientSession(vehicle);
             return VisualState.inactive();
         }
         boolean active = nowMillis <= session.activeUntilMillis();
@@ -201,6 +263,7 @@ final class VehicleOperationFeedbackAuthority {
             if (!VehicleRuntimeAuthority.isVehicle(vehicle)
                     || vehicle.x < minX || vehicle.y < minY
                     || vehicle.x > maxX || vehicle.y > maxY) continue;
+            refreshAmbientAudio(game, vehicle, nowMillis, true);
             VisualState state = visualState(game, vehicle, nowMillis);
             if (!state.visible()) continue;
             int pulseIntensity = clamp(8 + state.pulseAlpha() / 8, 10, 34);
@@ -249,7 +312,7 @@ final class VehicleOperationFeedbackAuthority {
     static String soundCue(MapObjectState vehicle) {
         if (vehicle == null) return "ambient_machine";
         int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
-        if (power < 35) return "ambient_sparks";
+        if (power < 35) return "ambient_spark";
         return switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
             case UTILITY_BIKE -> "ambient_pipe";
             case CIVILIAN_CAR -> "ambient_machine";
@@ -293,6 +356,12 @@ final class VehicleOperationFeedbackAuthority {
         LAST_SOUND_AT.clear();
     }
 
+    private static void removeTransientSession(MapObjectState vehicle) {
+        String vehicleKey = key(vehicle);
+        SESSIONS.remove(vehicleKey);
+        LAST_SOUND_AT.remove(vehicleKey + ":ambient");
+    }
+
     private static boolean terminalOperationState(MapObjectState vehicle) {
         String operation = MapObjectState.stockValue(vehicle.stockState,
                 "operationState").toLowerCase(Locale.ROOT);
@@ -311,7 +380,8 @@ final class VehicleOperationFeedbackAuthority {
         if (game == null || game.sounds == null || cue == null || cue.isBlank()) return;
         String soundKey = key(vehicle) + ":" + phase;
         Long prior = LAST_SOUND_AT.get(soundKey);
-        if (prior != null && nowMillis - prior < 300L) return;
+        long cooldown = "ambient".equals(phase) ? AMBIENT_REFRESH_MILLIS : 300L;
+        if (prior != null && nowMillis - prior < cooldown) return;
         LAST_SOUND_AT.put(soundKey, nowMillis);
         int distance = Math.max(1, Math.abs(game.playerX - vehicle.x)
                 + Math.abs(game.playerY - vehicle.y));
@@ -352,13 +422,18 @@ final class VehicleOperationFeedbackAuthority {
     private static synchronized void prune(long nowMillis) {
         Iterator<Map.Entry<String, Session>> iterator = SESSIONS.entrySet().iterator();
         while (iterator.hasNext()) {
-            if (nowMillis > iterator.next().getValue().expiresAtMillis()) iterator.remove();
+            Session session = iterator.next().getValue();
+            if (nowMillis > session.expiresAtMillis()) {
+                LAST_SOUND_AT.remove(session.vehicleKey() + ":ambient");
+                iterator.remove();
+            }
         }
         while (SESSIONS.size() > MAX_SESSIONS) {
             Iterator<String> keys = SESSIONS.keySet().iterator();
             if (!keys.hasNext()) break;
-            keys.next();
+            String removed = keys.next();
             keys.remove();
+            LAST_SOUND_AT.remove(removed + ":ambient");
         }
         Iterator<Map.Entry<String, Long>> soundIterator = LAST_SOUND_AT.entrySet().iterator();
         while (soundIterator.hasNext()) {
