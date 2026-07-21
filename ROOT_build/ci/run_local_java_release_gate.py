@@ -164,6 +164,36 @@ def git_head() -> str:
     return value
 
 
+def require_clean_worktree() -> dict[str, object]:
+    completed = subprocess.run(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    entries = [line for line in completed.stdout.splitlines() if line]
+    generated = [
+        line
+        for line in entries
+        if line == "?? dist/" or line.startswith("?? dist/")
+    ]
+    source_entries = [line for line in entries if line not in generated]
+    if source_entries:
+        preview = "; ".join(source_entries[:12])
+        raise RuntimeError(
+            "release gate requires a clean source worktree; "
+            f"found {len(source_entries)} source entries: {preview}"
+        )
+    return {
+        "status": "clean",
+        "sourceEntryCount": 0,
+        "ignoredGeneratedEntryCount": len(generated),
+        "ignoredGeneratedRoot": "dist/",
+    }
+
+
 def find_one(root: pathlib.Path, pattern: str, kind: str) -> pathlib.Path:
     matches = sorted(root.glob(pattern))
     matches = [
@@ -354,8 +384,10 @@ def main() -> int:
 
         platform_name = detect_platform()
         commit = git_head()
+        worktree = require_clean_worktree()
         report["platform"] = platform_name
         report["commit"] = commit
+        report["worktree"] = worktree
         report["standardsRead"] = str(STANDARDS.relative_to(ROOT))
 
         python = sys.executable
