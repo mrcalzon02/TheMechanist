@@ -3,7 +3,7 @@ package mechanist;
 import java.util.List;
 import java.util.Random;
 
-/** Focused smoke for vehicle balance-of-power, deterrence, and escalation. */
+/** Focused smoke for vehicle balance-of-power, deterrence, escalation, and contracts. */
 final class Milestone06FactionVehicleBalanceSmoke {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
@@ -182,12 +182,171 @@ final class Milestone06FactionVehicleBalanceSmoke {
                                 + line);
             }
 
-            System.out.println("Milestone 06 faction vehicle balance smoke passed.");
+            verifyVehicleContractOutcomes(game, mechanist, cargo, guardTank);
+            System.out.println("Milestone 06 faction vehicle balance and contract smoke passed.");
         } finally {
             game.shutdownRuntime();
         }
         Milestone06FactionVehicleRouteControlSmoke.main(args);
         Milestone06FactionVehicleStrategicRouteControlSmoke.main(args);
+    }
+
+    private static void verifyVehicleContractOutcomes(
+            GamePanel game, NpcFactionSite mechanist,
+            MapObjectState cargo, MapObjectState previouslyCapturedTank) {
+        VehicleRuntimeAuthority.applyDamage(cargo,
+                VehicleRuntimeAuthority.Component.POWERPLANT,
+                60, game.turn, "contract smoke engine damage");
+        VehicleRuntimeAuthority.Snapshot damaged =
+                VehicleRuntimeAuthority.inspect(game.world, cargo);
+        int powerplantBefore = damaged.components().get(
+                VehicleRuntimeAuthority.Component.POWERPLANT);
+        String cargoName = damaged.manufacturer() + " " + damaged.model();
+
+        FactionContract repair = contract("CONTRACT-VEHICLE-REPAIR",
+                mechanist.faction,
+                "Repair the damaged vehicle engine on " + cargoName
+                        + " for the motor pool.",
+                "Motor pool vehicle machine part");
+        prepareContract(game, repair);
+        NpcEntity representative = representative(mechanist.faction);
+        String repairPreview = ContractTurnInAuthority.representativeLine(
+                game, representative);
+        require(repairPreview.contains("Vehicle outcome: completion will repair")
+                        && repairPreview.contains(damaged.model()),
+                "vehicle repair contract should preview its exact persistent target: "
+                        + repairPreview);
+
+        int scriptBeforeRepair = game.carriedScript;
+        int standingBeforeRepair = game.factionStanding.getOrDefault(
+                mechanist.faction, 0);
+        ContractTurnInAuthority.TurnInResult repairResult =
+                ContractTurnInAuthority.turnInFirst(game, representative);
+        VehicleRuntimeAuthority.Snapshot repaired =
+                VehicleRuntimeAuthority.inspect(game.world, cargo);
+        int powerplantAfter = repaired.components().get(
+                VehicleRuntimeAuthority.Component.POWERPLANT);
+        require(repairResult.success() && repair.completed
+                        && powerplantAfter > powerplantBefore
+                        && powerplantAfter <= 100
+                        && !game.inventory.contains(repair.requiredTurnInItem)
+                        && game.carriedScript == scriptBeforeRepair + repair.payout
+                        && game.factionStanding.getOrDefault(
+                        mechanist.faction, 0)
+                        == standingBeforeRepair + repair.repReward,
+                "vehicle repair turn-in should atomically consume proof, repair the target, and preserve ordinary rewards: "
+                        + repairResult.message());
+        require(repairResult.message().contains("Vehicle contract outcome:")
+                        && repairResult.message().contains(damaged.model()),
+                "vehicle repair completion should explain the physical outcome: "
+                        + repairResult.message());
+
+        MapObjectState salvageTarget = vehicle(game.world, 14, 8,
+                AssetIntegrationDisciplineAuthority.PARKED_ARMORED_CAR,
+                Faction.IMPERIAL_GUARD, "captured patrol vehicle", 395L);
+        game.world.mapObjects.add(salvageTarget);
+        require(VehicleRuntimeAuthority.transferToFaction(salvageTarget,
+                mechanist.faction, game.turn,
+                "contract smoke capture").success(),
+                "salvage fixture should become a seized faction vehicle");
+        VehicleRuntimeAuthority.applyDamage(salvageTarget,
+                VehicleRuntimeAuthority.Component.FRAME,
+                75, game.turn, "contract smoke wreck damage");
+        VehicleRuntimeAuthority.Snapshot salvageBefore =
+                VehicleRuntimeAuthority.inspect(game.world, salvageTarget);
+        String salvageName = salvageBefore.manufacturer() + " "
+                + salvageBefore.model();
+        String otherCapturedBefore = previouslyCapturedTank.stockState;
+
+        FactionContract salvage = contract("CONTRACT-VEHICLE-SALVAGE",
+                mechanist.faction,
+                "Salvage the seized vehicle wreck " + salvageName
+                        + " for the motor pool.",
+                "Vehicle salvage authorization");
+        prepareContract(game, salvage);
+        String salvagePreview = ContractTurnInAuthority.representativeLine(
+                game, representative);
+        require(salvagePreview.contains("Vehicle outcome: completion will salvage")
+                        && salvagePreview.contains(salvageBefore.model()),
+                "vehicle salvage contract should select the named seized vehicle: "
+                        + salvagePreview);
+
+        ContractTurnInAuthority.TurnInResult salvageResult =
+                ContractTurnInAuthority.turnInFirst(game, representative);
+        VehicleRuntimeAuthority.Snapshot salvageAfter =
+                VehicleRuntimeAuthority.inspect(game.world, salvageTarget);
+        require(salvageResult.success() && salvage.completed
+                        && "salvaged".equals(salvageAfter.condition())
+                        && otherCapturedBefore.equals(previouslyCapturedTank.stockState)
+                        && !game.inventory.contains(salvage.requiredTurnInItem),
+                "vehicle salvage contract should strip only the named target and consume one proof item: "
+                        + salvageResult.message());
+        require(salvageResult.message().contains("Vehicle contract outcome:")
+                        && salvageResult.message().contains(salvageBefore.model()),
+                "vehicle salvage completion should explain the physical outcome: "
+                        + salvageResult.message());
+
+        String cargoBeforeOrdinary = cargo.stockState;
+        String salvageBeforeOrdinary = salvageTarget.stockState;
+        FactionContract ordinary = contract("CONTRACT-ORDINARY-EVIDENCE",
+                mechanist.faction,
+                "Return sealed evidence from a local investigation.",
+                "Sealed evidence parcel");
+        prepareContract(game, ordinary);
+        String ordinaryPreview = ContractTurnInAuthority.representativeLine(
+                game, representative);
+        require(!ordinaryPreview.contains("Vehicle outcome:"),
+                "ordinary contracts must not advertise vehicle mutations: "
+                        + ordinaryPreview);
+        ContractTurnInAuthority.TurnInResult ordinaryResult =
+                ContractTurnInAuthority.turnInFirst(game, representative);
+        require(ordinaryResult.success() && ordinary.completed
+                        && cargoBeforeOrdinary.equals(cargo.stockState)
+                        && salvageBeforeOrdinary.equals(salvageTarget.stockState)
+                        && !ordinaryResult.message().contains(
+                        "Vehicle contract outcome"),
+                "ordinary contract completion must leave vehicle state untouched");
+    }
+
+    private static void prepareContract(GamePanel game,
+                                        FactionContract contract) {
+        game.factionContracts.clear();
+        game.inventory.clear();
+        game.factionContracts.add(contract);
+        game.inventory.add(contract.requiredTurnInItem);
+        game.unlockedSkillNodes.addAll(
+                ContractObjectiveReadabilityAuthority.requiredCapabilityKeys(
+                        contract));
+        game.unlockedKnowledges.addAll(
+                ContractObjectiveReadabilityAuthority.requiredKnowledgeNames(
+                        contract));
+    }
+
+    private static FactionContract contract(String id, Faction faction,
+                                             String description,
+                                             String proofItem) {
+        FactionContract contract = new FactionContract();
+        contract.id = id;
+        contract.type = "FETCH";
+        contract.faction = faction;
+        contract.targetName = description;
+        contract.requiredTurnInItem = proofItem;
+        contract.description = description;
+        contract.payout = 95;
+        contract.repReward = 2;
+        contract.skillXpReward = 4;
+        contract.spawned = true;
+        return contract;
+    }
+
+    private static NpcEntity representative(Faction faction) {
+        NpcEntity representative = new NpcEntity();
+        representative.id = "VEHICLE-CONTRACT-REP-" + faction.name();
+        representative.name = faction.label + " Motor Pool Clerk";
+        representative.role = "Faction Representative";
+        representative.faction = faction;
+        representative.hp = 10;
+        return representative;
     }
 
     private static FactionStrategicPlan seizurePlan(String id,
