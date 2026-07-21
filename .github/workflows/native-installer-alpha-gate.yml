@@ -259,13 +259,16 @@ jobs:
           assert report['releaseHardened'] is True
           assert report['remoteLobbyNativeExecutable'] is True
           assert report['remoteLobbyEntryPoint']=='mechanist.RemoteClientMain'
+          assert report['playtestOperationsVerified'] is True
+          assert report['playtestDocumentCount']==8
+          assert len(report['playtestDocuments'])==8
           assert report['authenticatedWaitAuthority'] is True
           assert report['waitCommand']=='WAIT'
           assert report['movementAuthority'] is False
           assert report['mapAuthority'] is False
           assert report['fullRemoteWorldAuthority'] is False
           assert report['remoteGameplayCertified'] is False
-          assert report['installerSourceVerificationSchema']==3
+          assert report['installerSourceVerificationSchema']==4
           assert report['mutableStorageIncluded'] is False
           source_ops=json.load(open('native-gate-logs/playtest-operations-source-${{ matrix.platform }}.json',encoding='utf-8'))
           package_ops=json.load(open('native-gate-logs/playtest-operations-package-${{ matrix.platform }}.json',encoding='utf-8'))
@@ -274,6 +277,10 @@ jobs:
           assert package_ops['distribution']['platform']=='${{ matrix.platform }}'
           assert package_ops['distribution']['releaseHardened'] is True
           assert package_ops['distribution']['commit']=='${{ github.sha }}'
+          native_docs={entry['path']:entry['sha256'] for entry in report['playtestDocuments']}
+          package_docs={entry['path']:entry['sha256'] for entry in package_ops['distribution']['documents']}
+          assert native_docs==package_docs
+          assert all(entry['role']=='documentation' for entry in report['playtestDocuments'])
           synthetic=json.load(open('dist/native-gate-releases/synthetic-${{ matrix.platform }}.json',encoding='utf-8'))
           assert synthetic['status']=='passed'
           assert synthetic['authenticatedWaitAuthority'] if 'authenticatedWaitAuthority' in synthetic else synthetic['independentHostAuthenticatedWaitControl']
