@@ -3,16 +3,4 @@ name: Disabled Limited Alpha Validation and Release
 on:
   workflow_call:
 
-permissions:
-  contents: read
-
-jobs:
-  actions-disabled:
-    name: GitHub Actions quota exhausted
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Refuse execution
-        shell: bash
-        run: |
-          echo "GitHub Actions execution is intentionally disabled while the monthly allotment is exhausted." >&2
-          exit 1
+jobs: {}
