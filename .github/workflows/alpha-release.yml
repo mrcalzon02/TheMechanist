@@ -1,177 +1,18 @@
-name: Manual Limited Alpha Validation and Release
-run-name: Manual Limited Alpha Validation ${{ github.sha }}
+name: Disabled Limited Alpha Validation and Release
 
 on:
-  workflow_dispatch:
-
-concurrency:
-  group: manual-limited-alpha-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 permissions:
-  contents: write
-  actions: read
+  contents: read
 
 jobs:
-  installer-deployment:
-    name: Installer deployment gates
-    uses: ./.github/workflows/alpha-installer-deployment.yml
-
-  companion-server-deployment:
-    name: Companion server gates
-    uses: ./.github/workflows/alpha-companion-server-deployment.yml
-
-  publish-prerelease:
-    name: Verify and publish limited alpha
-    needs:
-      - installer-deployment
-      - companion-server-deployment
-    if: github.ref == 'refs/heads/main'
+  actions-disabled:
+    name: GitHub Actions quota exhausted
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: write
-      actions: read
-
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Download deployment evidence
-        uses: actions/download-artifact@v4
-        with:
-          pattern: Alpha-*
-          path: release-artifacts
-          merge-multiple: false
-
-      - name: Verify one exact alpha candidate
-        id: candidate
+      - name: Refuse execution
         shell: bash
         run: |
-          set -euo pipefail
-          python -m compileall -q ROOT_build/ci
-          mkdir -p release-output
-          python ROOT_build/ci/verify_alpha_release_candidate.py \
-            --artifact-root release-artifacts \
-            --expected-commit "$GITHUB_SHA" \
-            --report release-output/alpha-release-candidate.json \
-            --notes release-output/ALPHA_RELEASE_NOTES.md \
-            --checksums release-output/SOURCE_EVIDENCE_SHA256SUMS.txt \
-            --release-files release-output/release-files.txt \
-            --github-output "$GITHUB_OUTPUT"
-
-      - name: Stage collision-safe release assets
-        id: stage
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import os
-          import shutil
-
-          source_list = Path('${{ steps.candidate.outputs.release_files }}')
-          publish = Path('release-output/publish')
-          publish.mkdir(parents=True, exist_ok=True)
-          staged = []
-          used = set()
-          for raw in source_list.read_text(encoding='utf-8').splitlines():
-              if not raw.strip():
-                  continue
-              source = Path(raw).resolve()
-              if not source.is_file():
-                  raise SystemExit(f'release source is missing: {source}')
-              name = source.name
-              lowered = str(source).lower()
-              if name in used:
-                  if 'installer' in lowered:
-                      name = 'installer-' + name
-                  elif 'companion' in lowered:
-                      name = 'companion-' + name
-                  else:
-                      index = 2
-                      stem = source.stem
-                      suffix = ''.join(source.suffixes)
-                      while f'{stem}-{index}{suffix}' in used:
-                          index += 1
-                      name = f'{stem}-{index}{suffix}'
-              if name in used:
-                  raise SystemExit(f'could not assign unique release asset name: {source}')
-              destination = publish / name
-              shutil.copy2(source, destination)
-              used.add(name)
-              staged.append(destination)
-
-          checksum = publish / 'ALPHA_RELEASE_SHA256SUMS.txt'
-          lines = []
-          for path in sorted(staged, key=lambda item: item.name.lower()):
-              digest = hashlib.sha256(path.read_bytes()).hexdigest()
-              lines.append(f'{digest}  {path.name}')
-          checksum.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-          staged.append(checksum)
-
-          manifest = Path('release-output/publish-files.txt')
-          manifest.write_text(
-              '\n'.join(str(path.resolve()) for path in staged) + '\n',
-              encoding='utf-8',
-          )
-          output = Path(os.environ['GITHUB_OUTPUT'])
-          with output.open('a', encoding='utf-8') as stream:
-              stream.write(f'publish_files={manifest.resolve()}\n')
-          PY
-
-      - name: Upload consolidated release evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: Alpha-Release-Candidate-${{ github.sha }}
-          path: |
-            release-output/alpha-release-candidate.json
-            release-output/ALPHA_RELEASE_NOTES.md
-            release-output/SOURCE_EVIDENCE_SHA256SUMS.txt
-            release-output/publish/ALPHA_RELEASE_SHA256SUMS.txt
-            release-output/publish-files.txt
-          if-no-files-found: error
-          retention-days: 90
-          compression-level: 0
-
-      - name: Create or update commit-specific prerelease
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.candidate.outputs.tag }}
-          TITLE: ${{ steps.candidate.outputs.title }}
-          NOTES: ${{ steps.candidate.outputs.notes }}
-          PUBLISH_FILES: ${{ steps.stage.outputs.publish_files }}
-        run: |
-          set -euo pipefail
-          git fetch origin main --no-tags
-          LATEST_MAIN=$(git rev-parse origin/main)
-          if [[ "$LATEST_MAIN" != "$GITHUB_SHA" ]]; then
-            echo "Candidate $GITHUB_SHA was superseded by main head $LATEST_MAIN; no release will be published."
-            exit 0
-          fi
-          mapfile -t FILES < "$PUBLISH_FILES"
-          if [[ ${#FILES[@]} -lt 8 ]]; then
-            echo "Release staging produced too few assets: ${#FILES[@]}" >&2
-            exit 1
-          fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" \
-              --title "$TITLE" \
-              --notes-file "$NOTES" \
-              --prerelease
-            gh release upload "$TAG" "${FILES[@]}" --clobber
-          else
-            gh release create "$TAG" "${FILES[@]}" \
-              --target "$GITHUB_SHA" \
-              --title "$TITLE" \
-              --notes-file "$NOTES" \
-              --prerelease
-          fi
-          gh release view "$TAG" --json tagName,name,isPrerelease,url,targetCommitish
+          echo "GitHub Actions execution is intentionally disabled while the monthly allotment is exhausted." >&2
+          exit 1
