@@ -68,6 +68,7 @@ This document describes current intentional limits. It is not a promise that eve
 
 - The protected source-asset vault is not a runtime package.
 - Repository inventory, payload ownership, and redistribution clearance must be reviewed before an approved candidate is distributed.
+- Full asset and third-party binary redistribution clearance remains a release blocker until the governed inventory and clearance registry are complete.
 - An exact source-vault/runtime duplicate requires explicit transformation and redistribution review.
 - Optional graphics and audio tiers may fall back to lower tiers or silence when the selected payload is not present.
 
