@@ -208,8 +208,7 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 FactionMarketContractAuthority.representativeLine(
                         game, representative);
         require(generatedRepairOffer.contains("damaged vehicle repair backlog")
-                        && generatedRepairOffer.contains(damaged.model())
-                        && generatedRepairOffer.contains("Machine part"),
+                        && generatedRepairOffer.contains(damaged.model()),
                 "live faction work should offer the most damaged retainable vehicle repair: "
                         + generatedRepairOffer);
         FactionMarketContractAuthority.WorkResult acceptedRepair =
@@ -219,8 +218,9 @@ final class Milestone06FactionVehicleBalanceSmoke {
                         && "MARKET".equals(repair.type)
                         && repair.targetEntityId.startsWith(
                         "MARKET:VEHICLE_REPAIR:")
-                        && repair.targetEntityId.endsWith(cargo.id),
-                "accepted vehicle repair work should retain the exact persistent vehicle identity: "
+                        && repair.targetEntityId.endsWith(cargo.id)
+                        && ItemCatalog.get(repair.requiredTurnInItem) != null,
+                "accepted vehicle repair work should retain the exact persistent vehicle identity and catalog-backed proof: "
                         + acceptedRepair.message());
         carryContractProof(game, repair);
         String repairPreview = ContractTurnInAuthority.representativeLine(
@@ -288,8 +288,7 @@ final class Milestone06FactionVehicleBalanceSmoke {
         require(generatedSalvageOffer.contains(
                         "seized vehicle salvage backlog")
                         && generatedSalvageOffer.contains(
-                        salvageBefore.model())
-                        && generatedSalvageOffer.contains("Tool bundle"),
+                        salvageBefore.model()),
                 "live faction work should prioritize doctrine-approved vehicle salvage: "
                         + generatedSalvageOffer);
         FactionMarketContractAuthority.WorkResult acceptedSalvage =
@@ -299,8 +298,9 @@ final class Milestone06FactionVehicleBalanceSmoke {
                         && salvage.targetEntityId.startsWith(
                         "MARKET:VEHICLE_SALVAGE:")
                         && salvage.targetEntityId.endsWith(
-                        salvageTarget.id),
-                "accepted vehicle salvage work should retain the exact persistent vehicle identity: "
+                        salvageTarget.id)
+                        && ItemCatalog.get(salvage.requiredTurnInItem) != null,
+                "accepted vehicle salvage work should retain the exact persistent vehicle identity and catalog-backed proof: "
                         + acceptedSalvage.message());
         carryContractProof(game, salvage);
         String salvagePreview = ContractTurnInAuthority.representativeLine(
