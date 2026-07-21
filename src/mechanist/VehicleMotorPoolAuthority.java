@@ -11,6 +11,8 @@ import java.util.Locale;
  * condition, crew, fuel, and operation state.
  */
 final class VehicleMotorPoolAuthority {
+    private static final int HISTORY_LIMIT = 12;
+
     record Snapshot(boolean assigned, String siteKey, String siteName,
                     Faction faction, String role, String state,
                     boolean ownerAligned, boolean siteLocal,
@@ -447,9 +449,18 @@ final class VehicleMotorPoolAuthority {
 
     private static void append(MapObjectState vehicle, String key,
                                String entry) {
+        ArrayList<String> entries = new ArrayList<>();
         String existing = value(vehicle, key);
-        set(vehicle, key, existing.isBlank() ? clean(entry, "")
-                : existing + "~" + clean(entry, ""));
+        if (!existing.isBlank()) {
+            for (String token : existing.split("~")) {
+                String cleaned = clean(token, "");
+                if (!cleaned.isBlank()) entries.add(cleaned);
+            }
+        }
+        String cleanedEntry = clean(entry, "");
+        if (!cleanedEntry.isBlank()) entries.add(cleanedEntry);
+        while (entries.size() > HISTORY_LIMIT) entries.remove(0);
+        set(vehicle, key, String.join("~", entries));
     }
 
     private static String value(MapObjectState vehicle, String key) {
