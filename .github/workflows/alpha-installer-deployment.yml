@@ -2,7 +2,6 @@ name: Alpha Installer Deployment
 
 on:
   workflow_call:
-  workflow_dispatch:
 
 concurrency:
   group: alpha-installer-deployment-${{ github.ref }}
