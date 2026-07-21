@@ -32,3 +32,6 @@ keys, or other reusable credentials in reports.
 
 Canonical release-candidate record:
 https://github.com/mrcalzon02/TheMechanist/issues/48
+
+Canonical source archive endpoint:
+https://codeload.github.com/mrcalzon02/TheMechanist/zip/refs/heads/main
