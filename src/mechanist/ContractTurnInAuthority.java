@@ -11,10 +11,12 @@ final class ContractTurnInAuthority {
 
     private static final String VEHICLE_REPAIR_TARGET = "MARKET:VEHICLE_REPAIR:";
     private static final String VEHICLE_SALVAGE_TARGET = "MARKET:VEHICLE_SALVAGE:";
+    private static final String VEHICLE_FUEL_TARGET = "MARKET:VEHICLE_FUEL:";
 
     private enum VehicleContractMode {
         REPAIR("repair", "damaged faction vehicle"),
-        SALVAGE("salvage", "seized or wrecked faction vehicle");
+        SALVAGE("salvage", "seized or wrecked faction vehicle"),
+        REFUEL("refuel", "low-energy faction vehicle");
 
         final String action;
         final String targetDescription;
@@ -208,6 +210,18 @@ final class ContractTurnInAuthority {
                     "Vehicle contract outcome was not applied because the eligible local target disappeared before completion.");
         }
         Faction faction = contract.faction == null ? Faction.NONE : contract.faction;
+        if (mode == VehicleContractMode.REFUEL) {
+            VehicleFuelAuthority.Result fuel = VehicleFuelAuthority.refuelForFaction(
+                    game.world, vehicle, 16, game.turn, faction,
+                    "contract " + safe(contract.id));
+            if (!fuel.success()) {
+                return new VehicleContractResult(true, false,
+                        "Vehicle contract outcome was blocked: " + fuel.message());
+            }
+            return new VehicleContractResult(true, fuel.changed(),
+                    "Vehicle contract outcome: " + fuel.message());
+        }
+
         VehicleRuntimeAuthority.Result result;
         boolean recoveredLoss = false;
         if (mode == VehicleContractMode.REPAIR) {
@@ -245,7 +259,7 @@ final class ContractTurnInAuthority {
             VehicleRuntimeAuthority.ensureInitialized(game.world, object);
             VehicleRuntimeAuthority.Snapshot snapshot =
                     VehicleRuntimeAuthority.inspect(game.world, object);
-            if (!eligibleVehicleContractTarget(object, snapshot, faction, mode)) continue;
+            if (!eligibleVehicleContractTarget(game, object, snapshot, faction, mode)) continue;
             if (!explicitTargetId.isBlank()) {
                 if (explicitTargetId.equals(safe(object.id))) return object;
                 continue;
@@ -255,14 +269,15 @@ final class ContractTurnInAuthority {
         if (!explicitTargetId.isBlank()) return null;
         candidates.sort(Comparator
                 .comparingInt((MapObjectState object) -> vehicleContractScore(
-                        game, object, text)).reversed()
+                        game, object, text, mode)).reversed()
                 .thenComparing(object -> vehicleDisplayName(game, object))
                 .thenComparing(object -> safe(object.id)));
         return candidates.isEmpty() ? null : candidates.get(0);
     }
 
     private static boolean eligibleVehicleContractTarget(
-            MapObjectState object, VehicleRuntimeAuthority.Snapshot snapshot,
+            GamePanel game, MapObjectState object,
+            VehicleRuntimeAuthority.Snapshot snapshot,
             Faction faction, VehicleContractMode mode) {
         if (object == null || snapshot == null || faction == null
                 || faction == Faction.NONE
@@ -270,6 +285,11 @@ final class ContractTurnInAuthority {
                 || !VehicleRuntimeAuthority.factionOwns(object, faction)) return false;
         if (mode == VehicleContractMode.REPAIR) {
             return VehicleRuntimeAuthority.damaged(object);
+        }
+        if (mode == VehicleContractMode.REFUEL) {
+            VehicleFuelAuthority.Snapshot fuel = VehicleFuelAuthority.inspect(
+                    game == null ? null : game.world, object);
+            return fuel.capacity() > 0 && fuel.current() < fuel.capacity();
         }
         return VehicleRuntimeAuthority.seized(object)
                 || "wreck".equals(snapshot.condition());
@@ -279,13 +299,16 @@ final class ContractTurnInAuthority {
             FactionContract contract, VehicleContractMode mode) {
         if (contract == null || mode == null) return "";
         String target = safe(contract.targetEntityId);
-        String prefix = mode == VehicleContractMode.REPAIR
-                ? VEHICLE_REPAIR_TARGET : VEHICLE_SALVAGE_TARGET;
+        String prefix = switch (mode) {
+            case REPAIR -> VEHICLE_REPAIR_TARGET;
+            case SALVAGE -> VEHICLE_SALVAGE_TARGET;
+            case REFUEL -> VEHICLE_FUEL_TARGET;
+        };
         return target.startsWith(prefix) ? target.substring(prefix.length()) : "";
     }
 
     private static int vehicleContractScore(GamePanel game, MapObjectState vehicle,
-                                            String text) {
+                                            String text, VehicleContractMode mode) {
         VehicleRuntimeAuthority.Snapshot snapshot = VehicleRuntimeAuthority.inspect(
                 game == null ? null : game.world, vehicle);
         if (snapshot == null) return Integer.MIN_VALUE;
@@ -299,7 +322,11 @@ final class ContractTurnInAuthority {
         score += textMatchScore(low, snapshot.ownerName(), 25);
         String id = safe(vehicle.id).toLowerCase(Locale.ROOT);
         if (!id.isBlank() && low.contains(id)) score += 200;
-        if (VehicleRuntimeAuthority.damaged(vehicle)) {
+        if (mode == VehicleContractMode.REFUEL) {
+            VehicleFuelAuthority.Snapshot fuel = VehicleFuelAuthority.inspect(
+                    game == null ? null : game.world, vehicle);
+            score += Math.max(0, fuel.capacity() - fuel.current()) * 4;
+        } else if (VehicleRuntimeAuthority.damaged(vehicle)) {
             score += Math.max(0, 100 - snapshot.integrity());
         }
         return score;
@@ -321,6 +348,11 @@ final class ContractTurnInAuthority {
                 "convoy", "cargo truck", "armored car", "civilian car",
                 "utility bike", "tank", "crawler", "hauler");
         if (!vehicle) return null;
+        if (low.contains(VEHICLE_FUEL_TARGET.toLowerCase(Locale.ROOT))
+                || contains(low, "refuel", "fuel support", "fuel reserve",
+                "power support", "power reserve", "energy support")) {
+            return VehicleContractMode.REFUEL;
+        }
         if (contains(low, "salvage", "strip", "wreck", "route clearing",
                 "clear the route", "scrap")) {
             return VehicleContractMode.SALVAGE;
