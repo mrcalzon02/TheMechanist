@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Run the local release gates in one authoritative sequence.
+
+This command coordinates the existing Java, inventory, native, and evidence
+verifiers without duplicating their implementation. It stops at the first
+failed stage, preserves every stage report, and writes one top-level summary.
+It never commits, pushes, publishes, or updates release history.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import pathlib
+import subprocess
+import sys
+import traceback
+from typing import Sequence
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+SCHEMA = 1
+
+
+def utc_now() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def run_stage(name: str, command: Sequence[str], log_dir: pathlib.Path) -> dict[str, object]:
+    log_path = log_dir / f"{name}.log"
+    result: dict[str, object] = {
+        "name": name,
+        "command": list(command),
+        "startedAtUtc": utc_now(),
+        "log": str(log_path.relative_to(ROOT)),
+        "passed": False,
+    }
+    with log_path.open("w", encoding="utf-8", newline="\n") as log:
+        process = subprocess.Popen(
+            list(command),
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        assert process.stdout is not None
+        for line in process.stdout:
+            print(line, end="")
+            log.write(line)
+        code = process.wait()
+    result["completedAtUtc"] = utc_now()
+    result["returnCode"] = code
+    result["passed"] = code == 0
+    return result
+
+
+def git_head() -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    value = completed.stdout.strip()
+    if len(value) != 40:
+        raise RuntimeError(f"invalid Git HEAD identity: {value!r}")
+    return value
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--require-clearance",
+        action="store_true",
+        help="Require exact release clearance in the inventory and final evidence stages.",
+    )
+    parser.add_argument(
+        "--update-committed-manifest",
+        action="store_true",
+        help="Explicitly allow the inventory stage to replace the governed manifest.",
+    )
+    parser.add_argument(
+        "--report",
+        type=pathlib.Path,
+        default=ROOT / "dist" / "local-release-sequence-report.json",
+    )
+    args = parser.parse_args()
+
+    report_path = args.report.resolve()
+    log_dir = ROOT / "dist" / "local-release-sequence" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+
+    report: dict[str, object] = {
+        "schema": SCHEMA,
+        "status": "running",
+        "startedAtUtc": utc_now(),
+        "commit": git_head(),
+        "requireClearance": args.require_clearance,
+        "updateCommittedManifest": args.update_committed_manifest,
+        "stages": [],
+    }
+    stages: list[dict[str, object]] = report["stages"]  # type: ignore[assignment]
+
+    try:
+        python = sys.executable
+        commands: list[tuple[str, list[str]]] = [
+            (
+                "java",
+                [python, "ROOT_build/ci/run_local_java_release_gate.py", "--release-hardened"],
+            ),
+            (
+                "inventory",
+                [python, "ROOT_build/ci/run_local_inventory_gate.py"],
+            ),
+            (
+                "native",
+                [python, "ROOT_build/ci/run_local_native_gate.py"],
+            ),
+        ]
+        if args.update_committed_manifest:
+            commands[1][1].append("--update-committed-manifest")
+        if args.require_clearance:
+            commands[1][1].append("--require-release-clearance")
+
+        evidence_command = [python, "ROOT_build/ci/verify_local_release_evidence.py"]
+        if args.require_clearance:
+            evidence_command.append("--require-clearance")
+        commands.append(("evidence", evidence_command))
+
+        for name, command in commands:
+            result = run_stage(name, command, log_dir)
+            stages.append(result)
+            if not result["passed"]:
+                report["failedStage"] = name
+                report["failedStageResult"] = result
+                raise RuntimeError(f"local release sequence stopped at {name}")
+
+        report["status"] = "passed"
+        report["completedAtUtc"] = utc_now()
+        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        print(f"LOCAL RELEASE SEQUENCE PASSED: {report_path}")
+        return 0
+    except Exception as exc:  # noqa: BLE001
+        report["status"] = "failed"
+        report["completedAtUtc"] = utc_now()
+        report["errorType"] = type(exc).__name__
+        report["error"] = str(exc)
+        report["traceback"] = traceback.format_exc()
+        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        print(f"LOCAL RELEASE SEQUENCE FAILED: {exc}", file=sys.stderr)
+        print(f"Report: {report_path}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
