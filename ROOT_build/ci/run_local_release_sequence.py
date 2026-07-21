@@ -19,7 +19,7 @@ import traceback
 from typing import Sequence
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SCHEMA = 1
+SCHEMA = 2
 
 
 def utc_now() -> str:
@@ -80,6 +80,13 @@ def git_head() -> str:
     return value
 
 
+def write_report(path: pathlib.Path, report: dict[str, object]) -> None:
+    path.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -90,7 +97,10 @@ def main() -> int:
     parser.add_argument(
         "--update-committed-manifest",
         action="store_true",
-        help="Explicitly allow the inventory stage to replace the governed manifest.",
+        help=(
+            "Allow the inventory stage to replace the governed manifest, then stop "
+            "for mandatory review and commit before native or final evidence stages."
+        ),
     )
     parser.add_argument(
         "--report",
@@ -104,11 +114,12 @@ def main() -> int:
     log_dir.mkdir(parents=True, exist_ok=True)
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
+    initial_commit = git_head()
     report: dict[str, object] = {
         "schema": SCHEMA,
         "status": "running",
         "startedAtUtc": utc_now(),
-        "commit": git_head(),
+        "commit": initial_commit,
         "requireClearance": args.require_clearance,
         "updateCommittedManifest": args.update_committed_manifest,
         "stages": [],
@@ -149,9 +160,34 @@ def main() -> int:
                 report["failedStageResult"] = result
                 raise RuntimeError(f"local release sequence stopped at {name}")
 
+            current_commit = git_head()
+            if current_commit != initial_commit:
+                raise RuntimeError(
+                    f"repository HEAD changed during {name}: "
+                    f"{initial_commit} -> {current_commit}"
+                )
+
+            if name == "inventory" and args.update_committed_manifest:
+                report["status"] = "review-required"
+                report["completedAtUtc"] = utc_now()
+                report["stoppedAfterStage"] = "inventory"
+                report["manifestCommitRequired"] = True
+                report["nextAction"] = (
+                    "Review dist/local-inventory-gate/manifest-diff.txt, commit "
+                    "ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv directly to main, then "
+                    "rerun the sequence without --update-committed-manifest."
+                )
+                write_report(report_path, report)
+                print(
+                    "LOCAL RELEASE SEQUENCE STOPPED FOR MANIFEST REVIEW: "
+                    f"{report_path}",
+                    file=sys.stderr,
+                )
+                return 2
+
         report["status"] = "passed"
         report["completedAtUtc"] = utc_now()
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_report(report_path, report)
         print(f"LOCAL RELEASE SEQUENCE PASSED: {report_path}")
         return 0
     except Exception as exc:  # noqa: BLE001
@@ -160,7 +196,7 @@ def main() -> int:
         report["errorType"] = type(exc).__name__
         report["error"] = str(exc)
         report["traceback"] = traceback.format_exc()
-        report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_report(report_path, report)
         print(f"LOCAL RELEASE SEQUENCE FAILED: {exc}", file=sys.stderr)
         print(f"Report: {report_path}", file=sys.stderr)
         return 1
