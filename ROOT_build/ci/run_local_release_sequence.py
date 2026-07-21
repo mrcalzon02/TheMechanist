@@ -35,24 +35,33 @@ def run_stage(name: str, command: Sequence[str], log_dir: pathlib.Path) -> dict[
         "log": str(log_path.relative_to(ROOT)),
         "passed": False,
     }
+    return_code = -1
+    launch_error: str | None = None
     with log_path.open("w", encoding="utf-8", newline="\n") as log:
-        process = subprocess.Popen(
-            list(command),
-            cwd=ROOT,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        assert process.stdout is not None
-        for line in process.stdout:
-            print(line, end="")
-            log.write(line)
-        code = process.wait()
+        try:
+            process = subprocess.Popen(
+                list(command),
+                cwd=ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+        except OSError as exc:
+            launch_error = str(exc)
+            log.write(f"process launch failed: {exc}\n")
+        else:
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log.write(line)
+            return_code = process.wait()
     result["completedAtUtc"] = utc_now()
-    result["returnCode"] = code
-    result["passed"] = code == 0
+    result["returnCode"] = return_code
+    result["passed"] = return_code == 0
+    if launch_error is not None:
+        result["launchError"] = launch_error
     return result
 
 
