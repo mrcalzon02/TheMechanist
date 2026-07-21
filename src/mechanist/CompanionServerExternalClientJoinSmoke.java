@@ -178,7 +178,7 @@ public final class CompanionServerExternalClientJoinSmoke {
         HostedRosterClientAuthority.Snapshot roster = client.latestRoster();
         throw new IllegalStateException(
                 "timed out waiting for visiblePlayers=" + expected
-                        + " latest=" + (roster == null ? "none" : roster.statusLine()));
+                        + " latest=" + rosterSummary(roster));
     }
 
     private static void waitForRosterState(
@@ -203,7 +203,18 @@ public final class CompanionServerExternalClientJoinSmoke {
                 "timed out waiting for roster state player=" + playerId
                         + " ready=" + ready
                         + " presence=" + presence
-                        + " latest=" + (roster == null ? "none" : roster.statusLine()));
+                        + " latest=" + rosterSummary(roster));
+    }
+
+    private static String rosterSummary(
+            HostedRosterClientAuthority.Snapshot roster
+    ) {
+        return roster == null
+                ? "none"
+                : "version=" + roster.version()
+                + ",world=" + roster.worldId()
+                + ",visiblePlayers=" + roster.visiblePlayers()
+                + ",worldAuthority=" + roster.worldAuthority();
     }
 
     private static Map<String, String> options(String[] args) {
