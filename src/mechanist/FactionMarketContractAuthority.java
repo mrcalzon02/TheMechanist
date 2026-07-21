@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -17,6 +19,8 @@ final class FactionMarketContractAuthority {
     private static final String EVENT = "MARKET:EVENT:";
     private static final String DRAUGHT = "MARKET:DRAUGHT:";
     private static final String FACTION = "MARKET:FACTION:";
+    private static final String VEHICLE_REPAIR = "MARKET:VEHICLE_REPAIR:";
+    private static final String VEHICLE_SALVAGE = "MARKET:VEHICLE_SALVAGE:";
 
     private FactionMarketContractAuthority() {}
 
@@ -116,6 +120,10 @@ final class FactionMarketContractAuthority {
                 result = custody.itemName + " custody papers were renewed at " + custody.vaultLabel
                         + "; the protected draught remains not for sale.";
             } else result = "The named draught custody has moved; the permit entered the noble house archive.";
+        } else if (target.startsWith(VEHICLE_REPAIR)) {
+            result = "Motor-pool repair materials were accepted for the named persistent vehicle work order.";
+        } else if (target.startsWith(VEHICLE_SALVAGE)) {
+            result = "Motor-pool salvage authorization was accepted for the named persistent vehicle work order.";
         } else {
             result = "The delivered stock entered " + contract.displayFactionName() + " internal market supply.";
         }
@@ -166,6 +174,8 @@ final class FactionMarketContractAuthority {
                         "restore one exact unit to the finite material reserve", 45);
             }
         }
+        Candidate vehicle = vehicleCandidate(game, faction);
+        if (vehicle != null) return vehicle;
         Faction normalized = FactionInventoryStockAuthority.normalizeFaction(faction);
         int pressure = game.factionMarketPressure.getOrDefault(normalized, 0);
         if (pressure > 0) return new Candidate("Emergency rations", FACTION + faction.name(),
@@ -174,6 +184,85 @@ final class FactionMarketContractAuthority {
         Candidate draught = draughtCustodyCandidate(world, faction);
         if (draught != null) return draught;
         return identityCandidate(normalized, faction);
+    }
+
+    private static Candidate vehicleCandidate(GamePanel game, Faction faction) {
+        if (game == null || game.world == null || game.world.mapObjects == null
+                || faction == null || faction == Faction.NONE) return null;
+        ArrayList<MapObjectState> salvage = new ArrayList<>();
+        ArrayList<MapObjectState> repair = new ArrayList<>();
+        for (MapObjectState object : game.world.mapObjects) {
+            if (!VehicleRuntimeAuthority.isVehicle(object)
+                    || !VehicleRuntimeAuthority.factionOwns(object, faction)) continue;
+            VehicleRuntimeAuthority.ensureInitialized(game.world, object);
+            VehicleRuntimeAuthority.Snapshot snapshot =
+                    VehicleRuntimeAuthority.inspect(game.world, object);
+            if (snapshot == null || "salvaged".equals(snapshot.condition())) continue;
+            FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                    FactionVehicleDoctrineAuthority.assess(game, object, null, faction);
+            if (assessment.salvageRecommended()) {
+                salvage.add(object);
+            } else if (VehicleRuntimeAuthority.damaged(object)) {
+                repair.add(object);
+            }
+        }
+        salvage.sort(Comparator
+                .comparingInt((MapObjectState object) ->
+                        FactionVehicleDoctrineAuthority.assess(
+                                game, object, null, faction).salvagePriority())
+                .reversed()
+                .thenComparing(object -> vehicleDisplayName(game, object))
+                .thenComparing(object -> safe(object.id)));
+        if (!salvage.isEmpty()) {
+            MapObjectState target = salvage.get(0);
+            FactionVehicleDoctrineAuthority.VehicleAssessment assessment =
+                    FactionVehicleDoctrineAuthority.assess(
+                            game, target, null, faction);
+            String name = vehicleDisplayName(game, target);
+            return new Candidate("Tool bundle",
+                    VEHICLE_SALVAGE + safe(target.id),
+                    "seized vehicle salvage backlog for " + name,
+                    faction.label + " local motor pool / readiness "
+                            + assessment.readiness() + "% / doctrine fit "
+                            + assessment.doctrineFit() + "%",
+                    "salvage the seized vehicle wreck " + name
+                            + " through its persistent vehicle record",
+                    75 + Math.min(40, assessment.salvagePriority() / 4));
+        }
+        repair.sort(Comparator
+                .comparingInt((MapObjectState object) ->
+                        VehicleRuntimeAuthority.inspect(
+                                game.world, object).integrity())
+                .thenComparing(object -> vehicleDisplayName(game, object))
+                .thenComparing(object -> safe(object.id)));
+        if (repair.isEmpty()) return null;
+        MapObjectState target = repair.get(0);
+        VehicleRuntimeAuthority.Snapshot snapshot =
+                VehicleRuntimeAuthority.inspect(game.world, target);
+        String name = vehicleDisplayName(game, target);
+        int deficit = Math.max(0, 100 - snapshot.integrity());
+        return new Candidate("Machine part",
+                VEHICLE_REPAIR + safe(target.id),
+                "damaged vehicle repair backlog for " + name,
+                faction.label + " local motor pool / integrity "
+                        + snapshot.integrity() + "%",
+                "repair the damaged vehicle " + name
+                        + " through its persistent component record",
+                55 + Math.min(60, deficit));
+    }
+
+    private static String vehicleDisplayName(GamePanel game,
+                                             MapObjectState vehicle) {
+        VehicleRuntimeAuthority.Snapshot snapshot =
+                VehicleRuntimeAuthority.inspect(
+                        game == null ? null : game.world, vehicle);
+        if (snapshot == null) return "vehicle";
+        String manufacturer = safe(snapshot.manufacturer()).trim();
+        String model = safe(snapshot.model()).trim();
+        String fallback = snapshot.vehicleClass() == null
+                ? "vehicle" : snapshot.vehicleClass().label;
+        String combined = (manufacturer + " " + model).trim();
+        return combined.isBlank() ? fallback : combined;
     }
 
     private static Candidate draughtCustodyCandidate(World world, Faction faction) {
