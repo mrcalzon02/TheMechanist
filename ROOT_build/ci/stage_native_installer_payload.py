@@ -17,11 +17,16 @@ import pathlib
 import shutil
 import sys
 
+from verify_limited_alpha_operations import (
+    verify_distribution as verify_playtest_distribution,
+    verify_source as verify_playtest_source,
+)
 from verify_runnable_distribution import (
     REMOTE_CLIENT_MAIN,
     verify_distribution,
 )
 
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 LAUNCHER_MANIFEST = pathlib.PurePosixPath(
     "manifests/launcher-runtime-manifest.json"
 )
@@ -62,6 +67,49 @@ def platform_remote_launcher(platform_name: str) -> str:
     )
 
 
+def verify_staged_playtest_documents(
+    output: pathlib.Path,
+    playtest: dict[str, object],
+) -> list[dict[str, object]]:
+    records = playtest.get("documents")
+    if not isinstance(records, list) or len(records) != 8:
+        raise RuntimeError(
+            "native staging requires exactly eight verified playtest documents"
+        )
+    staged: list[dict[str, object]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            raise RuntimeError(
+                "native staging received a malformed playtest document record"
+            )
+        relative = record.get("path")
+        expected_hash = record.get("sha256")
+        if not isinstance(relative, str) or not relative.startswith("docs/"):
+            raise RuntimeError(
+                f"native staging received an invalid playtest path: {relative!r}"
+            )
+        if not isinstance(expected_hash, str) or len(expected_hash) != 64:
+            raise RuntimeError(
+                f"native staging received an invalid playtest hash: {relative}"
+            )
+        path = output.joinpath(*pathlib.PurePosixPath(relative).parts)
+        if not path.is_file():
+            raise RuntimeError(
+                f"native installer payload is missing playtest document: {relative}"
+            )
+        actual_hash = sha256(path)
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                f"native staged playtest document hash mismatch: {relative}"
+            )
+        staged.append({
+            "path": relative,
+            "size": path.stat().st_size,
+            "sha256": actual_hash,
+        })
+    return staged
+
+
 def stage_payload(
     distribution: pathlib.Path,
     output: pathlib.Path,
@@ -74,11 +122,25 @@ def stage_payload(
         archive=None,
         require_release_hardened=True,
     )
+    playtest_source = verify_playtest_source(ROOT)
+    playtest = verify_playtest_distribution(
+        distribution,
+        playtest_source,
+        True,
+    )
     platform_name = str(summary["platform"])
     if expected_platform and platform_name != expected_platform:
         raise RuntimeError(
             f"canonical distribution platform {platform_name!r}, "
             f"expected {expected_platform!r}"
+        )
+    if playtest.get("platform") != platform_name:
+        raise RuntimeError(
+            "playtest operations platform disagrees with canonical distribution"
+        )
+    if playtest.get("commit") != summary.get("commit"):
+        raise RuntimeError(
+            "playtest operations commit disagrees with canonical distribution"
         )
     if summary.get("remoteClientEntryPoint") != REMOTE_CLIENT_MAIN:
         raise RuntimeError(
@@ -96,6 +158,8 @@ def stage_payload(
     for name in COPY_FILES:
         copy_optional(distribution / name, output / name)
 
+    staged_playtest_documents = verify_staged_playtest_documents(output, playtest)
+
     active_manifest = output.joinpath(*LAUNCHER_MANIFEST.parts)
     active_manifest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(launcher_manifest, active_manifest)
@@ -109,7 +173,7 @@ def stage_payload(
 
     remote_launcher = platform_remote_launcher(platform_name)
     source_record = {
-        "schema": 3,
+        "schema": 4,
         "sourceDistribution": distribution.name,
         "version": summary["version"],
         "platform": platform_name,
@@ -126,6 +190,9 @@ def stage_payload(
             "canonical distribution runtime/ supplied to jpackage"
         ),
         "mutableStorageIncluded": False,
+        "playtestOperationsVerified": True,
+        "playtestDocumentCount": len(staged_playtest_documents),
+        "playtestDocuments": staged_playtest_documents,
         "authenticatedWaitAuthority": True,
         "waitCommand": "WAIT",
         "movementAuthority": False,
@@ -166,6 +233,8 @@ def stage_payload(
         "portableRemoteClientLauncher": remote_launcher,
         "nativeRemoteClientLauncher": "The Mechanist Remote Lobby",
         "mutableStorageIncluded": False,
+        "playtestOperationsVerified": True,
+        "playtestDocumentCount": len(staged_playtest_documents),
         "authenticatedWaitAuthority": True,
         "waitCommand": "WAIT",
         "movementAuthority": False,
