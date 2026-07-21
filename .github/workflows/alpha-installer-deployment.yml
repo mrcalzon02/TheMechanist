@@ -1,0 +1,278 @@
+name: Alpha Installer Deployment
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: alpha-installer-deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  installer-lifecycle:
+    name: Installer to running game (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Linux deployment tools
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y fakeroot xvfb
+
+      - name: Ensure Windows WiX 3 toolchain
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $candle = Get-Command candle.exe -ErrorAction SilentlyContinue
+          $light = Get-Command light.exe -ErrorAction SilentlyContinue
+          if (-not $candle -or -not $light) {
+            choco install wixtoolset --no-progress -y
+            $wix = Get-ChildItem 'C:\Program Files (x86)' -Directory -Filter 'WiX Toolset v3*' |
+              Sort-Object Name -Descending |
+              Select-Object -First 1
+            if (-not $wix) { throw 'WiX Toolset 3.x was not installed.' }
+            $bin = Join-Path $wix.FullName 'bin'
+            $bin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+            $env:PATH = "$bin;$env:PATH"
+          }
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            throw 'candle.exe remains unavailable after WiX setup.'
+          }
+          if (-not (Get-Command light.exe -ErrorAction SilentlyContinue)) {
+            throw 'light.exe remains unavailable after WiX setup.'
+          }
+
+      - name: Compile release tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q ROOT_build/ci
+
+      - name: Build hardened canonical distribution
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/build_runnable_distribution.py \
+            --repo . \
+            --commit "$GITHUB_SHA" \
+            --release-hardened \
+            --output dist/alpha-installer/releases \
+            2>&1 | tee "dist/alpha-installer-build-${{ matrix.platform }}.log"
+
+      - name: Resolve and verify canonical distribution
+        id: canonical
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST=$(find dist/alpha-installer/releases -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*-${{ matrix.platform }}' | head -n 1)
+          ARCHIVE=$(find dist/alpha-installer/releases -maxdepth 1 -type f -name 'TheMechanist-*-${{ matrix.platform }}.zip' | head -n 1)
+          test -n "$DIST"
+          test -n "$ARCHIVE"
+          python ROOT_build/ci/verify_runnable_distribution.py \
+            "$DIST" \
+            --archive "$ARCHIVE" \
+            --require-release-hardened \
+            --report "dist/alpha-installer/canonical-${{ matrix.platform }}.json"
+          python ROOT_build/ci/verify_alpha_operating_docs.py \
+            --repo . \
+            --distribution "$DIST" \
+            --require-release-hardened \
+            --report "dist/alpha-installer/operations-${{ matrix.platform }}.json"
+          echo "root=$DIST" >> "$GITHUB_OUTPUT"
+          echo "archive=$ARCHIVE" >> "$GITHUB_OUTPUT"
+
+      - name: Build Linux app image and DEB
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          ./scripts/package/build-linux-installers.sh \
+            --distribution '${{ steps.canonical.outputs.root }}' \
+            --package-types app-image,deb \
+            --output dist/alpha-installer/linux \
+            2>&1 | tee dist/alpha-installer/linux-package.log
+
+      - name: Build Windows app image and MSI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\scripts\package\build-windows-installers.ps1 `
+            -DistributionRoot '${{ steps.canonical.outputs.root }}' `
+            -PackageTypes @('app-image', 'msi') `
+            -OutputDir 'dist\alpha-installer\windows' `
+            -PerUserInstall $true `
+            -RequireNativeInstallers `
+            *>&1 | Tee-Object -FilePath 'dist\alpha-installer\windows-package.log'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Install Linux DEB
+        if: runner.os == 'Linux'
+        id: install_linux
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEB=$(find dist/alpha-installer/linux -maxdepth 1 -type f -name '*.deb' | head -n 1)
+          test -n "$DEB"
+          PACKAGE=$(dpkg-deb -f "$DEB" Package)
+          sudo dpkg -i "$DEB"
+          dpkg -s "$PACKAGE" >/dev/null
+          EXECUTABLE=$(find /opt/the-mechanist -type f -path '*/bin/The Mechanist' -print -quit)
+          test -n "$EXECUTABLE"
+          IMAGE=$(dirname "$(dirname "$EXECUTABLE")")
+          test -d "$IMAGE"
+          echo "installer=$DEB" >> "$GITHUB_OUTPUT"
+          echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Install Windows MSI
+        if: runner.os == 'Windows'
+        id: install_windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Get-ChildItem 'dist\alpha-installer\windows' -File -Filter '*.msi' |
+            Select-Object -First 1
+          if (-not $msi) { throw 'Windows packaging produced no MSI.' }
+          $arguments = @('/i', "`"$($msi.FullName)`"", '/qn', '/norestart')
+          $install = Start-Process msiexec.exe -ArgumentList $arguments -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "MSI install failed with exit $($install.ExitCode)."
+          }
+          $roots = @(
+            (Join-Path $env:LOCALAPPDATA 'TheMechanist'),
+            (Join-Path $env:LOCALAPPDATA 'Programs\TheMechanist'),
+            (Join-Path $env:ProgramFiles 'TheMechanist')
+          )
+          if (${env:ProgramFiles(x86)}) {
+            $roots += (Join-Path ${env:ProgramFiles(x86)} 'TheMechanist')
+          }
+          $executables = @()
+          foreach ($root in $roots) {
+            if (Test-Path -LiteralPath $root -PathType Container) {
+              $executables += Get-ChildItem -LiteralPath $root -File -Recurse -Filter 'The Mechanist.exe' -ErrorAction SilentlyContinue
+            }
+          }
+          $launcher = $executables |
+            Where-Object {
+              (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'app') -PathType Container) -or
+              (Test-Path -LiteralPath (Join-Path $_.Directory.FullName 'lib\app') -PathType Container)
+            } |
+            Select-Object -First 1
+          if (-not $launcher) {
+            throw "Could not locate the installed jpackage image under: $($roots -join ', ')"
+          }
+          "installer=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "image=$($launcher.Directory.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Run installed Linux launcher and game
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p dist/alpha-installer/deployment
+          PROFILE="$RUNNER_TEMP/Mechanist Installed Profile"
+          xvfb-run -a python ROOT_build/ci/run_installed_alpha_smoke.py \
+            '${{ steps.install_linux.outputs.image }}' \
+            --expected-platform linux-x64 \
+            --expected-commit "$GITHUB_SHA" \
+            --profile-root "$PROFILE" \
+            --report dist/alpha-installer/deployment/installer-deployment-linux-x64.json \
+            2>&1 | tee dist/alpha-installer/deployment/installer-deployment-linux-x64.log
+
+      - name: Run installed Windows launcher and game
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $profile = Join-Path $env:RUNNER_TEMP 'Mechanist Installed Profile'
+          New-Item -ItemType Directory -Force -Path 'dist\alpha-installer\deployment' | Out-Null
+          & python ROOT_build\ci\run_installed_alpha_smoke.py `
+            '${{ steps.install_windows.outputs.image }}' `
+            --expected-platform windows-x64 `
+            --expected-commit $env:GITHUB_SHA `
+            --profile-root $profile `
+            --report 'dist\alpha-installer\deployment\installer-deployment-windows-x64.json' `
+            *>&1 | Tee-Object -FilePath 'dist\alpha-installer\deployment\installer-deployment-windows-x64.log'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Uninstall Linux DEB and verify data survival
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo dpkg -r '${{ steps.install_linux.outputs.package }}'
+          if dpkg -s '${{ steps.install_linux.outputs.package }}' >/dev/null 2>&1; then
+            echo 'Linux package remains installed after dpkg removal.' >&2
+            exit 1
+          fi
+          python ROOT_build/ci/verify_installer_uninstall.py \
+            --deployment-report dist/alpha-installer/deployment/installer-deployment-linux-x64.json \
+            --installed-image '${{ steps.install_linux.outputs.image }}' \
+            --survival-marker "$RUNNER_TEMP/Mechanist Installed Profile/installer-uninstall-survival.marker" \
+            --report dist/alpha-installer/deployment/installer-lifecycle-linux-x64.json
+
+      - name: Uninstall Windows MSI and verify data survival
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = '${{ steps.install_windows.outputs.installer }}'
+          $arguments = @('/x', "`"$msi`"", '/qn', '/norestart')
+          $uninstall = Start-Process msiexec.exe -ArgumentList $arguments -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "MSI uninstall failed with exit $($uninstall.ExitCode)."
+          }
+          $profile = Join-Path $env:RUNNER_TEMP 'Mechanist Installed Profile'
+          & python ROOT_build\ci\verify_installer_uninstall.py `
+            --deployment-report 'dist\alpha-installer\deployment\installer-deployment-windows-x64.json' `
+            --installed-image '${{ steps.install_windows.outputs.image }}' `
+            --survival-marker (Join-Path $profile 'installer-uninstall-survival.marker') `
+            --report 'dist\alpha-installer\deployment\installer-lifecycle-windows-x64.json'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload installer deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alpha-Installer-Deployment-${{ matrix.platform }}
+          path: |
+            dist/alpha-installer/${{ runner.os == 'Linux' && 'linux' || 'windows' }}/**
+            dist/alpha-installer/deployment/**
+            dist/alpha-installer/canonical-${{ matrix.platform }}.json
+            dist/alpha-installer/operations-${{ matrix.platform }}.json
+            dist/alpha-installer-build-${{ matrix.platform }}.log
+            dist/alpha-installer/${{ runner.os == 'Linux' && 'linux-package.log' || 'windows-package.log' }}
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
