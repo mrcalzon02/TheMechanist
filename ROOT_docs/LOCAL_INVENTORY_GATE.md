@@ -4,6 +4,21 @@ Use this gate when GitHub Actions is unavailable or when the committed repositor
 
 The gate never commits or pushes. It writes all evidence under `dist/local-inventory-gate/` and the machine-readable summary to `dist/local-inventory-gate-report.json`.
 
+## Structural pass contract
+
+Before the governed manifest can be replaced, the gate now requires all of the following:
+
+- a non-empty generated TSV with a header and inventory rows;
+- at least 100 audited repository rows, matching the auditor's full-checkout credibility floor;
+- a successful generation command and successful audit command recorded in the report;
+- an audit status of `verified` or `review-required`;
+- zero structural blockers;
+- zero clearance-registry parse errors;
+- non-empty ownership-ledger, pending-clearance, and audit-report evidence;
+- an exact SHA-256 match after the generated manifest is copied into the governed path.
+
+The local summary uses the auditor's authoritative field names, including `rowCount`, `releaseCandidateRows`, `clearanceRequiredCount`, `registryErrorCount`, and `releaseReady`.
+
 ## 1. Review current state
 
 Linux:
@@ -43,7 +58,7 @@ Windows PowerShell:
 & .\ROOT_build\ci\run_local_inventory_gate.ps1 -UpdateCommittedManifest
 ```
 
-This replaces `ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv` with the exact generated manifest. Review the Git diff before committing.
+This replaces `ROOT_docs/REPOSITORY_FILE_MANIFEST.tsv` only after generation and the structural audit have passed. Review the Git diff before committing.
 
 ## 3. Require release clearance
 
@@ -61,7 +76,7 @@ Windows PowerShell:
 & .\ROOT_build\ci\run_local_inventory_gate.ps1 -RequireReleaseClearance
 ```
 
-The clearance mode fails closed when release-relevant entries remain pending, blocked, stale, or duplicated from protected runtime sources.
+Clearance mode additionally requires `status=verified` and `releaseReady=true`. It fails closed when release-relevant entries remain pending, blocked, stale, rejected, or duplicated from protected runtime sources.
 
 ## Evidence rule
 
