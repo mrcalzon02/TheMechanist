@@ -129,6 +129,7 @@ final class Milestone06VehicleOperationFeedbackSmoke {
         Milestone06VehicleFuelHistorySmoke.main(args);
         Milestone06VehicleContractPrioritySmoke.main(args);
         Milestone06VehicleAccessSmoke.main(args);
+        Milestone06VehicleMotorPoolHistorySmoke.main(args);
         Milestone06VehicleMotorPoolSmoke.main(args);
         Milestone06StructuralScaleCombatSmoke.main(args);
     }
