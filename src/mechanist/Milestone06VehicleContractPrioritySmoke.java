@@ -76,9 +76,8 @@ final class Milestone06VehicleContractPrioritySmoke {
         game.world.mapObjects.add(healthyLow);
         game.world.mapObjects.add(worn);
         setFuel(healthyLow, 0);
-        VehicleRuntimeAuthority.applyDamage(worn,
-                VehicleRuntimeAuthority.Component.LIGHTS, 20,
-                game.turn, "priority smoke ordinary wear");
+        applyUniformWear(worn, game.turn,
+                "priority smoke ordinary wear");
 
         VehicleRuntimeAuthority.Snapshot wornSnapshot =
                 VehicleRuntimeAuthority.inspect(game.world, worn);
@@ -112,12 +111,14 @@ final class Milestone06VehicleContractPrioritySmoke {
         MapObjectState worn = vehicle(game.world, 5, 8,
                 "worn maintenance backlog", 505L);
         game.world.mapObjects.add(worn);
-        VehicleRuntimeAuthority.applyDamage(worn,
-                VehicleRuntimeAuthority.Component.LIGHTS, 20,
-                game.turn, "priority smoke ordinary repair fallback");
+        applyUniformWear(worn, game.turn,
+                "priority smoke ordinary repair fallback");
 
         VehicleRuntimeAuthority.Snapshot wornSnapshot =
                 VehicleRuntimeAuthority.inspect(game.world, worn);
+        require("worn".equals(wornSnapshot.condition()),
+                "ordinary repair fallback fixture should be worn: "
+                        + wornSnapshot.condition());
         String offer = FactionMarketContractAuthority.representativeLine(
                 game, representative);
         require(offer.contains("damaged vehicle repair backlog")
@@ -147,6 +148,15 @@ final class Milestone06VehicleContractPrioritySmoke {
         game.world.replacementQueue.clear();
         game.world.essentialSupplyReserves.clear();
         game.world.rawMaterialSupplyReserves.clear();
+    }
+
+    private static void applyUniformWear(MapObjectState vehicle, int turn,
+                                         String source) {
+        for (VehicleRuntimeAuthority.Component component
+                : VehicleRuntimeAuthority.Component.values()) {
+            VehicleRuntimeAuthority.applyDamage(vehicle, component, 20,
+                    turn, source + " / " + component.name());
+        }
     }
 
     private static void setFuel(MapObjectState vehicle, int amount) {
