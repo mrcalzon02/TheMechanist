@@ -2,7 +2,6 @@ name: Alpha Companion Server Deployment
 
 on:
   workflow_call:
-  workflow_dispatch:
 
 concurrency:
   group: alpha-companion-server-${{ github.ref }}
