@@ -1,0 +1,197 @@
+name: Alpha Companion Server Deployment
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: alpha-companion-server-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  companion-server:
+    name: Companion server and client join (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: windows-2022
+            platform: windows-x64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile release tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q ROOT_build/ci
+
+      - name: Build hardened canonical distribution
+        shell: bash
+        run: |
+          set -o pipefail
+          python ROOT_build/ci/build_runnable_distribution.py \
+            --repo . \
+            --commit "$GITHUB_SHA" \
+            --release-hardened \
+            --output dist/alpha-companion/releases \
+            2>&1 | tee "dist/alpha-companion-build-${{ matrix.platform }}.log"
+
+      - name: Resolve and verify canonical distribution
+        id: canonical
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST=$(find dist/alpha-companion/releases -mindepth 1 -maxdepth 1 -type d -name 'TheMechanist-*-${{ matrix.platform }}' | head -n 1)
+          ARCHIVE=$(find dist/alpha-companion/releases -maxdepth 1 -type f -name 'TheMechanist-*-${{ matrix.platform }}.zip' | head -n 1)
+          test -n "$DIST"
+          test -n "$ARCHIVE"
+          python ROOT_build/ci/verify_runnable_distribution.py \
+            "$DIST" \
+            --archive "$ARCHIVE" \
+            --require-release-hardened \
+            --report "dist/alpha-companion/canonical-${{ matrix.platform }}.json"
+          python ROOT_build/ci/verify_alpha_operating_docs.py \
+            --repo . \
+            --distribution "$DIST" \
+            --require-release-hardened \
+            --report "dist/alpha-companion/operations-${{ matrix.platform }}.json"
+          echo "root=$DIST" >> "$GITHUB_OUTPUT"
+
+      - name: Build Linux native app image
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          ./scripts/package/build-linux-installers.sh \
+            --distribution '${{ steps.canonical.outputs.root }}' \
+            --package-types app-image \
+            --output dist/alpha-companion/linux \
+            2>&1 | tee dist/alpha-companion/linux-package.log
+
+      - name: Build Windows native app image
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & .\scripts\package\build-windows-installers.ps1 `
+            -DistributionRoot '${{ steps.canonical.outputs.root }}' `
+            -PackageTypes @('app-image') `
+            -OutputDir 'dist\alpha-companion\windows' `
+            *>&1 | Tee-Object -FilePath 'dist\alpha-companion\windows-package.log'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Resolve native app image
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ '${{ matrix.platform }}' == 'linux-x64' ]]; then
+            IMAGE='dist/alpha-companion/linux/app-image/The Mechanist'
+          else
+            IMAGE='dist/alpha-companion/windows/app-image/The Mechanist'
+          fi
+          test -d "$IMAGE"
+          python ROOT_build/ci/verify_native_installer_image.py \
+            "$IMAGE" \
+            --expected-platform '${{ matrix.platform }}' \
+            --report "dist/alpha-companion/native-image-${{ matrix.platform }}.json"
+          echo "root=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Run Linux companion server and packaged clients
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          WORK="$RUNNER_TEMP/Mechanist Companion Deployment"
+          mkdir -p dist/alpha-companion/deployment/logs
+          python ROOT_build/ci/run_companion_server_deployment_smoke.py \
+            '${{ steps.image.outputs.root }}' \
+            --expected-platform linux-x64 \
+            --expected-commit "$GITHUB_SHA" \
+            --work-root "$WORK" \
+            --report dist/alpha-companion/deployment/companion-deployment-linux-x64.json \
+            2>&1 | tee dist/alpha-companion/deployment/companion-deployment-linux-x64.log
+          cp "$WORK"/logs/*.log dist/alpha-companion/deployment/logs/
+
+      - name: Run Windows companion server and packaged clients
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $work = Join-Path $env:RUNNER_TEMP 'Mechanist Companion Deployment'
+          New-Item -ItemType Directory -Force -Path 'dist\alpha-companion\deployment\logs' | Out-Null
+          & python ROOT_build\ci\run_companion_server_deployment_smoke.py `
+            '${{ steps.image.outputs.root }}' `
+            --expected-platform windows-x64 `
+            --expected-commit $env:GITHUB_SHA `
+            --work-root $work `
+            --report 'dist\alpha-companion\deployment\companion-deployment-windows-x64.json' `
+            *>&1 | Tee-Object -FilePath 'dist\alpha-companion\deployment\companion-deployment-windows-x64.log'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item -LiteralPath (Join-Path $work 'logs\*.log') -Destination 'dist\alpha-companion\deployment\logs' -Force
+
+      - name: Verify companion authority boundaries
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          platform = '${{ matrix.platform }}'
+          path = Path(f'dist/alpha-companion/deployment/companion-deployment-{platform}.json')
+          report = json.loads(path.read_text(encoding='utf-8'))
+          assert report['status'] == 'passed'
+          assert report['platform'] == platform
+          assert report['commit'] == '${{ github.sha }}'
+          assert report['releaseHardened'] is True
+          assert report['exactLoopbackBind'] is True
+          assert report['externalServerProcess'] is True
+          assert report['externalServerRestart'] is True
+          assert report['packagedTwoClientJoin'] is True
+          assert report['packagedClientResumeAfterServerRestart'] is True
+          assert report['connectedOnlyRoster'] is True
+          assert report['readinessBroadcast'] is True
+          assert report['boundedRelay'] is True
+          assert report['authenticatedWaitAuthority'] is True
+          assert report['movementAuthority'] is False
+          assert report['mapAuthority'] is False
+          assert report['fullRemoteWorldAuthority'] is False
+          assert report['candidateTreeImmutable'] is True
+          assert report['mutableStorageOutsideCandidate'] is True
+          PY
+
+      - name: Upload companion deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alpha-Companion-Deployment-${{ matrix.platform }}
+          path: |
+            dist/alpha-companion/deployment/**
+            dist/alpha-companion/native-image-${{ matrix.platform }}.json
+            dist/alpha-companion/canonical-${{ matrix.platform }}.json
+            dist/alpha-companion/operations-${{ matrix.platform }}.json
+            dist/alpha-companion-build-${{ matrix.platform }}.log
+            dist/alpha-companion/${{ runner.os == 'Linux' && 'linux-package.log' || 'windows-package.log' }}
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
