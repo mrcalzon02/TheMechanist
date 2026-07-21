@@ -202,7 +202,6 @@ final class Milestone06FactionVehicleBalanceSmoke {
                 VehicleRuntimeAuthority.inspect(game.world, cargo);
         int powerplantBefore = damaged.components().get(
                 VehicleRuntimeAuthority.Component.POWERPLANT);
-        String cargoName = damaged.manufacturer() + " " + damaged.model();
         NpcEntity representative = representative(mechanist.faction);
 
         String generatedRepairOffer =
@@ -375,7 +374,7 @@ final class Milestone06FactionVehicleBalanceSmoke {
                         && tankBeforeMissing.equals(
                         previouslyCapturedTank.stockState)
                         && missingResult.message().contains(
-                        "no eligible local a damaged faction vehicle"),
+                        "no eligible local damaged faction vehicle"),
                 "missing vehicle targets must block before proof consumption or unrelated mutation: "
                         + missingResult.message());
     }
