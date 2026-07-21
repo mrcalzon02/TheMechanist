@@ -1,0 +1,27 @@
+THE MECHANIST 0.9.10iz — UNVALIDATED LIMITED ALPHA RELEASE CANDIDATE
+===================================================================
+
+This package is an unvalidated release candidate produced after the repository's
+GitHub Actions monthly allotment was exhausted.
+
+STATUS: UNVALIDATED — NOT CERTIFIED
+
+No successful GitHub-hosted Windows MSI install/uninstall, Linux DEB
+install/purge, clean-machine launch, Java 17 package scan, installer lifecycle,
+companion-server join, client reconnect, inventory, native-image, or release
+clearance evidence is claimed for this candidate.
+
+The companion-server implementation is limited to the authenticated lobby,
+connected-only roster, bounded relay, reconnect, and WAIT-control boundary.
+Remote movement, map, inventory, combat, and full remote-world authority are not
+certified.
+
+Install and test only with disposable or backed-up user data. Report the exact
+candidate commit, operating system, installer filename, reproduction steps,
+logs, and whether any package content was modified.
+
+Never include passwords, authentication cookies, reusable resume tokens, private
+keys, or other reusable credentials in reports.
+
+Canonical release-candidate record:
+https://github.com/mrcalzon02/TheMechanist/issues/48
