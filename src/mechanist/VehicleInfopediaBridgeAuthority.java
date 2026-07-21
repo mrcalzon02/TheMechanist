@@ -16,6 +16,10 @@ final class VehicleInfopediaBridgeAuthority {
         return "vehicle/" + safe.name().toLowerCase();
     }
 
+    static String title(VehicleRuntimeAuthority.VehicleClass definition) {
+        return safe(definition).label + " vehicle dossier";
+    }
+
     static String sourceLine(VehicleRuntimeAuthority.VehicleClass definition) {
         VehicleRuntimeAuthority.VehicleClass safe = safe(definition);
         return String.join(", ", safe.manufacturers)
@@ -42,8 +46,7 @@ final class VehicleInfopediaBridgeAuthority {
         for (VehicleRuntimeAuthority.VehicleClass definition
                 : VehicleRuntimeAuthority.catalog()) {
             dossiers.add(new ClassDossier(key(definition),
-                    definition.label + " vehicle dossier",
-                    List.copyOf(dossierLines(definition))));
+                    title(definition), List.copyOf(dossierLines(definition))));
         }
         dossiers.sort(Comparator.comparing(ClassDossier::title));
         return List.copyOf(dossiers);
@@ -53,7 +56,7 @@ final class VehicleInfopediaBridgeAuthority {
             VehicleRuntimeAuthority.VehicleClass definition) {
         VehicleRuntimeAuthority.VehicleClass safe = safe(definition);
         ArrayList<String> lines = new ArrayList<>();
-        lines.add(safe.label + " vehicle dossier");
+        lines.add(title(safe));
         lines.add("Role and scale: " + safe.role + "; durability "
                 + safe.durabilityTier + "; legal class " + safe.legalClass + ".");
         lines.add("Capacity: " + safe.seats + " seat(s), "
@@ -95,8 +98,8 @@ final class VehicleInfopediaBridgeAuthority {
         lines.add("Class: " + runtime.vehicleClass().label + " / "
                 + runtime.vehicleClass().role + " / " + runtime.legalClass()
                 + "; variant " + clean(runtime.variant(), "standard") + ".");
-        lines.add("Identity: " + clean(runtime.productionBatch(), "unrecorded batch")
-                + "; fixture " + clean(vehicle.id, "unrecorded") + ".");
+        lines.add("Production identity: "
+                + clean(runtime.productionBatch(), "unrecorded batch") + ".");
         lines.add("Custody: " + runtime.ownerType().name().toLowerCase()
                 + " / " + clean(runtime.ownerName(), "unrecorded owner")
                 + (runtime.ownerFaction() == null || runtime.ownerFaction() == Faction.NONE
@@ -133,8 +136,8 @@ final class VehicleInfopediaBridgeAuthority {
                 + " tile(s).");
         lines.add("Access summary: " + clean(runtime.accessSummary(),
                 "inspect individual operation, passenger, cargo, repair, refuel, deployment, and seizure permissions") + ".");
-        lines.add("Infopedia reference: " + key(runtime.vehicleClass())
-                + ". This live dashboard reflects the physical fixture and does not grant authority.");
+        lines.add("Infopedia reference: " + title(runtime.vehicleClass())
+                + ". This live dashboard reflects the physical vehicle and does not grant authority.");
         return List.copyOf(lines);
     }
 
