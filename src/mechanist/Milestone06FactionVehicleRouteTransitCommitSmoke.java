@@ -67,6 +67,7 @@ final class Milestone06FactionVehicleRouteTransitCommitSmoke {
             int suspicionBefore = game.suspicion;
             List<String> inventoryBefore = List.copyOf(game.inventory);
 
+            String destinationKey = Integer.toString(destination.locationKey());
             FactionStrategicPlan plan = new FactionStrategicPlan();
             plan.id = "STRAT-ROUTE-RESOLVED-COMMIT";
             plan.faction = Faction.MECHANICUS;
@@ -74,7 +75,7 @@ final class Milestone06FactionVehicleRouteTransitCommitSmoke {
             plan.phase = "PLANNING";
             plan.immediateGoal = "stockpile a strategic item";
             plan.scheme = "reinforce the destination checkpoint gate";
-            plan.targetRoom = destination.locationKey();
+            plan.targetRoom = destinationKey;
             plan.targetItem = "Fuel reserve";
             plan.secrecy = 60;
             plan.aggression = 55;
@@ -95,7 +96,7 @@ final class Milestone06FactionVehicleRouteTransitCommitSmoke {
                             staged).state())
                             && "reserved".equals(value(staged,
                             "strategicTransitState"))
-                            && destination.locationKey().equals(value(staged,
+                            && destinationKey.equals(value(staged,
                             "strategicTransitDestination"))
                             && site.stock < stockBeforeStage,
                     "planning should stage the armored vehicle for the exact resolved destination");
