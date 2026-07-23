@@ -279,7 +279,8 @@ final class VehicleStrategicTransitAuthority {
                 + request.destinationKey() + "|" + game.worldTurn).hashCode());
         set(vehicle, "strategicTransitState", "reserved");
         set(vehicle, "strategicTransitReservationId", id);
-        set(vehicle, "strategicTransitOrigin", game.world.locationKey());
+        set(vehicle, "strategicTransitOrigin",
+                Integer.toString(game.world.locationKey()));
         set(vehicle, "strategicTransitDestination",
                 request.destinationKey());
         set(vehicle, "strategicTransitDistance",
