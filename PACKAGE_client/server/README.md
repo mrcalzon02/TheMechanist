@@ -2,7 +2,7 @@
 
 The separately packaged server is an exact-address authenticated lobby and bounded relay host for the current limited-alpha line. It owns its own mutable storage namespace, persistent remote-session ledger, stable player identities, token-gated reconnect, hosted-lobby command accounting, and clean shutdown.
 
-It does **not** own an authoritative remote game world. It does not process movement, combat, inventory, character, map, position, simulation, or hosted-world persistence commands.
+It does not own an authoritative remote game world. It does not process movement, combat, inventory, character, map, position, simulation, or hosted-world persistence commands.
 
 ## Start and help
 
