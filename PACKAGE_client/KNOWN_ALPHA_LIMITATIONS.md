@@ -2,6 +2,15 @@
 
 This document describes current intentional limits. It is not a promise that every other feature is complete or defect-free.
 
+## Candidate classification without GitHub Actions
+
+- GitHub Actions availability is not required to create a local alpha package, but the absence of Actions evidence must remain visible.
+- Local Windows and Linux candidates must follow `ROOT_docs/LOCAL_RELEASE_SEQUENCE.md` on their own target operating systems.
+- A locally produced package is unvalidated until its target-platform Java 17 gate, canonical distribution checks, native app-image checks, checksum verification, and claimed installer lifecycle have actually been completed.
+- An unvalidated alpha may be distributed only when its release notes and download description plainly state which compilation, packaging, installation, launch, save/resume, server, uninstall, clearance, and signing checks were not performed.
+- Every distributed package must identify one exact version, source commit, platform, Java release, and release-hardening state and must include a fresh checksum ledger.
+- The absence of GitHub Actions does not authorize stale workflow artifacts, old binaries, raw development JARs, hand-edited reports, cross-platform jpackage claims, or reuse of evidence from another commit.
+
 ## Distribution
 
 - The initial target is Windows x64 and Linux x64.
