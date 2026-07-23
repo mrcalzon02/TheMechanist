@@ -63,10 +63,11 @@ final class VehicleStrategicTransitCommitAuthority {
         }
         String reservationId = value(vehicle, "strategicTransitReservationId");
         String expectedDestination = value(vehicle, "strategicTransitDestination");
+        String resolvedDestination = Integer.toString(destination.locationKey());
         if (!expectedDestination.isBlank()
-                && !expectedDestination.equals(destination.locationKey())) {
+                && !expectedDestination.equals(resolvedDestination)) {
             return Result.blocked(vehicle,
-                    "The loaded destination " + destination.locationKey()
+                    "The loaded destination " + resolvedDestination
                             + " does not match reserved destination "
                             + expectedDestination + ".");
         }
@@ -98,11 +99,12 @@ final class VehicleStrategicTransitCommitAuthority {
         String labelBefore = vehicle.label;
         boolean sourceContained = source.mapObjects.contains(vehicle);
         boolean destinationContained = destination.mapObjects.contains(vehicle);
+        String sourceKey = Integer.toString(source.locationKey());
+        String destinationKey = Integer.toString(destination.locationKey());
         try {
             set(vehicle, "strategicTransitState", "committing");
-            set(vehicle, "strategicTransitCommitSource", source.locationKey());
-            set(vehicle, "strategicTransitCommitDestination",
-                    destination.locationKey());
+            set(vehicle, "strategicTransitCommitSource", sourceKey);
+            set(vehicle, "strategicTransitCommitDestination", destinationKey);
             set(vehicle, "strategicTransitSourceX", Integer.toString(sourceX));
             set(vehicle, "strategicTransitSourceY", Integer.toString(sourceY));
             set(vehicle, "strategicTransitCommitX",
@@ -130,14 +132,13 @@ final class VehicleStrategicTransitCommitAuthority {
             set(vehicle, "strategicTransitState", "completed");
             set(vehicle, "strategicTransitCompletedTurn",
                     Long.toString(Math.max(0L, game.worldTurn)));
-            set(vehicle, "strategicTransitLastOrigin", source.locationKey());
-            set(vehicle, "strategicTransitLastDestination",
-                    destination.locationKey());
+            set(vehicle, "strategicTransitLastOrigin", sourceKey);
+            set(vehicle, "strategicTransitLastDestination", destinationKey);
             set(vehicle, "operationState", "parked");
             set(vehicle, "headlightsActive", "false");
             append(vehicle, "deploymentHistory", "Strategic transfer "
-                    + reservationId + " committed " + source.locationKey()
-                    + " -> " + destination.locationKey() + " / fuel "
+                    + reservationId + " committed " + sourceKey
+                    + " -> " + destinationKey + " / fuel "
                     + fuelRequired + " / destination " + vehicle.x + ","
                     + vehicle.y);
             append(vehicle, "vehicleHistory", "Strategic transit completed at turn "
@@ -145,8 +146,8 @@ final class VehicleStrategicTransitCommitAuthority {
             return new Result(Status.COMMITTED, true, true, fuelRequired,
                     reservationId,
                     "STRATEGIC TRANSIT COMMITTED: " + displayName(vehicle)
-                            + " moved from " + source.locationKey() + " to "
-                            + destination.locationKey() + " at " + vehicle.x
+                            + " moved from " + sourceKey + " to "
+                            + destinationKey + " at " + vehicle.x
                             + "," + vehicle.y + "; " + fuelRequired
                             + " fuel or power unit(s) were consumed.", vehicle);
         } catch (RuntimeException failure) {
