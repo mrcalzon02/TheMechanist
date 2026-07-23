@@ -154,7 +154,8 @@ final class FactionVehicleRouteTransitCommitAuthority {
             return Result.blocked(vehicle,
                     "The active route order belongs to a different motor pool.");
         }
-        String destinationKey = request.destinationWorld().locationKey();
+        String destinationKey = Integer.toString(
+                request.destinationWorld().locationKey());
         if (!destinationKey.equals(order.destinationKey())
                 || !destinationKey.equals(clean(plan.targetRoom, ""))
                 || !destinationKey.equals(value(vehicle,
