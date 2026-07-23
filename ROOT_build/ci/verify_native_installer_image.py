@@ -14,7 +14,6 @@ from verify_runnable_distribution import (
     DISTRIBUTION_MODEL,
     EXPECTED_MAIN_CLASSES,
     REMOTE_CLIENT_MAIN,
-    manifest_main_class,
     scan_jar,
 )
 
@@ -212,6 +211,9 @@ def verify_image(
     if not manifest_path.is_file():
         fail(f"missing launcher runtime manifest: {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_version = str(manifest.get("version", "")).strip()
+    if not expected_version:
+        fail("launcher manifest has no canonical version")
 
     if manifest.get("schema") != 2:
         fail(f"launcher manifest schema must be 2, got {manifest.get('schema')!r}")
@@ -234,9 +236,11 @@ def verify_image(
     launcher_jar = payload / "launcher" / "MechanistLauncher.jar"
     if not launcher_jar.is_file():
         fail(f"missing launcher jar: {launcher_jar}")
-    if manifest_main_class(launcher_jar) != EXPECTED_MAIN_CLASSES["launcher"]:
-        fail("launcher jar has the wrong Main-Class")
-    launcher_scan = scan_jar(launcher_jar, "launcher")
+    launcher_scan = scan_jar(
+        launcher_jar,
+        "launcher",
+        expected_version,
+    )
 
     client = manifest.get("client")
     server = manifest.get("server")
@@ -252,8 +256,8 @@ def verify_image(
 
     client_jar = verify_declared_artifact(payload, client, "client")
     server_jar = verify_declared_artifact(payload, server, "server")
-    client_scan = scan_jar(client_jar, "client")
-    server_scan = scan_jar(server_jar, "server")
+    client_scan = scan_jar(client_jar, "client", expected_version)
+    server_scan = scan_jar(server_jar, "server", expected_version)
 
     support_paths: set[str] = set()
     for index, entry in enumerate(support):
