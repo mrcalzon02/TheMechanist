@@ -5,7 +5,7 @@
 
     <groupId>local.mechanist</groupId>
     <artifactId>the-mechanist</artifactId>
-    <version>0.9.10iz</version>
+    <version>0.9.10iz-alpha.1</version>
     <packaging>jar</packaging>
 
     <name>The Mechanist</name>
