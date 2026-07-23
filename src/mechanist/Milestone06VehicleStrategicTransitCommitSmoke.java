@@ -221,7 +221,7 @@ final class Milestone06VehicleStrategicTransitCommitSmoke {
             World destination, int distance, int crew, int availableFuel,
             int requiredFuel) {
         return new VehicleStrategicTransitAuthority.Request(
-                destination.locationKey(),
+                Integer.toString(destination.locationKey()),
                 Set.of(VehicleStrategicTransitAuthority.Infrastructure.ROAD,
                         VehicleStrategicTransitAuthority.Infrastructure.GATE,
                         VehicleStrategicTransitAuthority.Infrastructure.CHECKPOINT,
@@ -242,9 +242,11 @@ final class Milestone06VehicleStrategicTransitCommitSmoke {
                 "strategicTransitReservationId", "INTERRUPTED-"
                         + Math.abs(vehicle.id.hashCode()));
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                "strategicTransitCommitSource", source.locationKey());
+                "strategicTransitCommitSource",
+                Integer.toString(source.locationKey()));
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
-                "strategicTransitCommitDestination", destination.locationKey());
+                "strategicTransitCommitDestination",
+                Integer.toString(destination.locationKey()));
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
                 "strategicTransitSourceX", Integer.toString(sourceX));
         vehicle.stockState = MapObjectState.setStockFlag(vehicle.stockState,
