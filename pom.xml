@@ -5,7 +5,7 @@
 
     <groupId>local.mechanist</groupId>
     <artifactId>the-mechanist</artifactId>
-    <version>0.9.10iz-alpha.3</version>
+    <version>0.9.10iz-alpha.4</version>
     <packaging>jar</packaging>
 
     <name>The Mechanist</name>
@@ -172,7 +172,7 @@
                         <version>${proguard.maven.plugin.version}</version>
                         <executions>
                             <execution><id>proguard-obfuscate-desktop-fat-jar</id><phase>package</phase><goals><goal>proguard</goal></goals><configuration><injar>TheMechanist-all.jar</injar><outjar>TheMechanist-obfuscated.jar</outjar><outputDirectory>${project.build.directory}</outputDirectory><proguardInclude>${project.basedir}/config/proguard/proguard-client.conf</proguardInclude><libs><lib>${java.home}/jmods/java.base.jmod</lib><lib>${java.home}/jmods/java.desktop.jmod</lib><lib>${java.home}/jmods/java.logging.jmod</lib><lib>${java.home}/jmods/java.management.jmod</lib><lib>${java.home}/jmods/java.naming.jmod</lib><lib>${java.home}/jmods/java.net.http.jmod</lib><lib>${java.home}/jmods/java.prefs.jmod</lib><lib>${java.home}/jmods/java.sql.jmod</lib><lib>${java.home}/jmods/java.xml.jmod</lib><lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib><lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib><lib>${java.home}/jmods/jdk.unsupported.jmod</lib></libs></configuration></execution>
-                            <execution><id>proguard-obfuscate-headless-server-fat-jar</id><phase>package</phase><goals><goal>proguard</goal></goals><configuration><injar>TheMechanistServer-all.jar</injar><outjar>TheMechanistServer-obfuscated.jar</outjar><outputDirectory>${project.build.directory}</outputDirectory><proguardInclude>${project.basedir}/config/proguard/proguard-server.conf</proguardInclude><libs><lib>${java.home}/jmods/java.base.jmod</lib><lib>${java.home}/jmods/java.logging.jmod</lib><lib>${java.home}/jmods/java.management.jmod</lib><lib>${java.home}/jmods/java.naming.jmod</lib><lib>${java.home}/jmods/java.net.http.jmod</lib><lib>${java.home}/jmods/java.sql.jmod</lib><lib>${java.home}/jmods/java.xml.jmod</lib><lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib><lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib><lib>${java.home}/jmods/jdk.unsupported.jmod</lib></libs></configuration></execution>
+                            <execution><id>proguard-obfuscate-headless-server-fat-jar</id><phase>package</phase><goals><goal>proguard</goal></goals><configuration><injar>TheMechanistServer-all.jar</injar><outjar>TheMechanistServer-obfuscated.jar</outjar><outputDirectory>${project.build.directory}</outputDirectory><proguardInclude>${project.basedir}/config/proguard/proguard-server.conf</proguardInclude><libs><lib>${java.home}/jmods/java.base.jmod</lib><lib>${java.home}/jmods/java.desktop.jmod</lib><lib>${java.home}/jmods/java.logging.jmod</lib><lib>${java.home}/jmods/java.management.jmod</lib><lib>${java.home}/jmods/java.naming.jmod</lib><lib>${java.home}/jmods/java.net.http.jmod</lib><lib>${java.home}/jmods/java.prefs.jmod</lib><lib>${java.home}/jmods/java.sql.jmod</lib><lib>${java.home}/jmods/java.xml.jmod</lib><lib>${java.home}/jmods/jdk.crypto.cryptoki.jmod</lib><lib>${java.home}/jmods/jdk.crypto.ec.jmod</lib><lib>${java.home}/jmods/jdk.unsupported.jmod</lib></libs></configuration></execution>
                         </executions>
                         <dependencies><dependency><groupId>com.guardsquare</groupId><artifactId>proguard-base</artifactId><version>${proguard.base.version}</version></dependency></dependencies>
                     </plugin>
