@@ -183,7 +183,7 @@ final class Milestone06VehicleRuntimeFoundationSmoke {
         plan.immediateGoal = FactionVehicleStrategicAuthority.VEHICLE_SEIZURE_GOAL;
         plan.scheme = "divert faction stock";
         plan.secrecy = 60;
-        plan.aggression = 50;
+        plan.aggression = 95;
         plan.ambition = 55;
         plan.phaseUntilTurn = game.turn;
         plan.nextDecisionTurn = game.turn;

@@ -1,0 +1,56 @@
+{
+  "archive": null,
+  "artifactCount": 207,
+  "commit": "785a04151036e50498d1a7269a63aa6f2f58b928",
+  "distribution": "TheMechanist-0.9.10iz-alpha.4-windows-x64",
+  "jars": {
+    "client": {
+      "classes": 6262,
+      "implementationVersion": "0.9.10iz-alpha.4",
+      "mainClass": "mechanist.TheMechanist",
+      "path": "packages/client/TheMechanist.jar",
+      "projectClasses": 2161,
+      "remoteClientEntryClass": true,
+      "sha256": "8d8ace3a6d1408030ee1d6f582ff0a638bb8109f090a45fabd5f751db5f90fb0"
+    },
+    "launcher": {
+      "classes": 29,
+      "implementationVersion": "0.9.10iz-alpha.4",
+      "mainClass": "mechanist.launcher.MechanistLauncherApp",
+      "path": "launcher/MechanistLauncher.jar",
+      "projectClasses": 29,
+      "remoteClientEntryClass": null,
+      "sha256": "a436a5adfc5d91eb1b70097ecee846f2386015942c3997666f6b7348f1ff2137"
+    },
+    "server": {
+      "classes": 6262,
+      "implementationVersion": "0.9.10iz-alpha.4",
+      "mainClass": "mechanist.MechanistServerMain",
+      "path": "packages/server/TheMechanistServer.jar",
+      "projectClasses": 2161,
+      "remoteClientEntryClass": null,
+      "sha256": "0d5d747abd029a83e13370343e01a34d3fc846e3aa5d9c9cce593403d852502a"
+    }
+  },
+  "javaRelease": 17,
+  "launcherCompatibility": {
+    "path": "manifests/launcher-runtime-manifest.json",
+    "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+    "status": "verified",
+    "supportLibraryCount": 44
+  },
+  "platform": "windows-x64",
+  "releaseHardened": true,
+  "remoteClientEntryPoint": "mechanist.RemoteClientMain",
+  "remoteClientLauncher": {
+    "mainClass": "mechanist.RemoteClientMain",
+    "path": "Run-Remote-Client.cmd",
+    "portableAfterZipExtraction": true,
+    "status": "verified"
+  },
+  "requiredNativeFragment": "natives-windows",
+  "status": "verified",
+  "supportJarCount": 44,
+  "version": "0.9.10iz-alpha.4",
+  "versionAuthorityVerified": true
+}

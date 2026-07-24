@@ -33,3 +33,7 @@ __pycache__/
 /lib/lwjgl/*.jar
 !/lib/lwjgl/README.md
 !/lib/lwjgl/lwjgl-runtime-manifest.txt
+/dist/installers/windows-alpha5/
+/dist/installers/*/app-image/
+/dist/local-java-gate/releases/
+/dist/local-release-tools/

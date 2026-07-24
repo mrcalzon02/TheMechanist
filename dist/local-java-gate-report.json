@@ -1,0 +1,218 @@
+{
+  "archive": "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64.zip",
+  "commit": "e59b3e1b036abe5ab59234769d1ac283eeb01545",
+  "completedAtUtc": "2026-07-22T04:03:46.200545Z",
+  "distribution": "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64",
+  "error": "synthetic-distribution failed with exit code 1: C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe ROOT_build/ci/run_synthetic_distribution_tests.py C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64 --verifier ROOT_build/ci/verify_runnable_distribution.py --report C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\synthetic.json",
+  "errorType": "GateFailure",
+  "failedCommand": [
+    "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+    "ROOT_build/ci/run_synthetic_distribution_tests.py",
+    "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64",
+    "--verifier",
+    "ROOT_build/ci/verify_runnable_distribution.py",
+    "--report",
+    "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\synthetic.json"
+  ],
+  "failedStep": "synthetic-distribution",
+  "failedStepResult": {
+    "command": [
+      "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+      "ROOT_build/ci/run_synthetic_distribution_tests.py",
+      "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64",
+      "--verifier",
+      "ROOT_build/ci/verify_runnable_distribution.py",
+      "--report",
+      "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\synthetic.json"
+    ],
+    "completedAtUtc": "2026-07-22T04:03:46.200434Z",
+    "log": "dist\\local-java-gate\\logs\\synthetic-distribution.log",
+    "name": "synthetic-distribution",
+    "passed": false,
+    "returnCode": 1,
+    "startedAtUtc": "2026-07-22T03:53:27.228545Z"
+  },
+  "platform": "windows-x64",
+  "releaseHardened": true,
+  "repository": "C:\\GITS\\The Mechanist\\TheMechanist",
+  "returnCode": 1,
+  "schema": 3,
+  "serverOperation": {
+    "isolatedStorageVerified": true,
+    "stateFile": "dist\\local-java-gate\\server-home\\saves\\server\\server_state.properties",
+    "storageRoot": "dist\\local-java-gate\\server-home"
+  },
+  "standardsRead": "ROOT_docs\\STANDARDS_AND_PRACTICES.md",
+  "startedAtUtc": "2026-07-22T03:38:03.139343Z",
+  "status": "failed",
+  "stepCount": 10,
+  "steps": [
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-m",
+        "compileall",
+        "-q",
+        "ROOT_build/ci"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:03.369488Z",
+      "log": "dist\\local-java-gate\\logs\\python-syntax.log",
+      "name": "python-syntax",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:03.275063Z"
+    },
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "ROOT_build/ci/verify_proguard_configuration.py",
+        "--repo",
+        ".",
+        "--report",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\proguard-policy.json"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:03.454161Z",
+      "log": "dist\\local-java-gate\\logs\\proguard-policy.log",
+      "name": "proguard-policy",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:03.369589Z"
+    },
+    {
+      "command": [
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-release-tools\\powershell-7.6.4\\pwsh.EXE",
+        "-NoProfile",
+        "-Command",
+        "$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'scripts/package/build-windows-installers.ps1'),[ref]$t,[ref]$e)|Out-Null;if($e.Count -gt 0){$e|%{Write-Error $_.Message};exit 1}"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:03.766527Z",
+      "log": "dist\\local-java-gate\\logs\\windows-package-script-syntax.log",
+      "name": "windows-package-script-syntax",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:03.454721Z"
+    },
+    {
+      "command": [
+        "C:\\Users\\Admin\\scoop\\apps\\maven\\current\\bin\\mvn.CMD",
+        "-B",
+        "-DskipTests",
+        "clean",
+        "package"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:53.694803Z",
+      "log": "dist\\local-java-gate\\logs\\maven-java17-package.log",
+      "name": "maven-java17-package",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:03.766691Z"
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Java\\jdk-17\\bin\\java.EXE",
+        "-Djava.awt.headless=true",
+        "-cp",
+        "target/TheMechanist-all.jar",
+        "mechanist.BootStartupAudioSilenceSmoke"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:55.128461Z",
+      "log": "dist\\local-java-gate\\logs\\boot-smoke.log",
+      "name": "boot-smoke",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:53.694964Z"
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Java\\jdk-17\\bin\\java.EXE",
+        "-Duser.home=C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\server-home",
+        "-jar",
+        "target/TheMechanistServer-all.jar",
+        "--help"
+      ],
+      "completedAtUtc": "2026-07-22T03:38:55.456519Z",
+      "log": "dist\\local-java-gate\\logs\\server-operation-smoke.log",
+      "name": "server-operation-smoke",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:55.130050Z"
+    },
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "ROOT_build/ci/build_runnable_distribution.py",
+        "--repo",
+        ".",
+        "--commit",
+        "e59b3e1b036abe5ab59234769d1ac283eeb01545",
+        "--output",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases",
+        "--release-hardened"
+      ],
+      "completedAtUtc": "2026-07-22T03:41:13.403140Z",
+      "log": "dist\\local-java-gate\\logs\\build-portable-distribution.log",
+      "name": "build-portable-distribution",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:38:55.456711Z"
+    },
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "ROOT_build/ci/verify_runnable_distribution.py",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64",
+        "--archive",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64.zip",
+        "--report",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\verification.json",
+        "--require-release-hardened"
+      ],
+      "completedAtUtc": "2026-07-22T03:41:19.362241Z",
+      "log": "dist\\local-java-gate\\logs\\verify-portable-distribution.log",
+      "name": "verify-portable-distribution",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:41:13.403745Z"
+    },
+    {
+      "command": [
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64\\runtime\\bin\\java.exe",
+        "-Duser.home=C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\gate3-profile",
+        "-Djava.awt.headless=true",
+        "-cp",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64\\packages\\client\\TheMechanist.jar;C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64\\packages\\support\\lib\\*",
+        "mechanist.Gate3PlayerFacingTextSmokeSuite"
+      ],
+      "completedAtUtc": "2026-07-22T03:53:27.228253Z",
+      "log": "dist\\local-java-gate\\logs\\packaged-gate3.log",
+      "name": "packaged-gate3",
+      "passed": true,
+      "returnCode": 0,
+      "startedAtUtc": "2026-07-22T03:41:19.362568Z"
+    },
+    {
+      "command": [
+        "C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "ROOT_build/ci/run_synthetic_distribution_tests.py",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64",
+        "--verifier",
+        "ROOT_build/ci/verify_runnable_distribution.py",
+        "--report",
+        "C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\synthetic.json"
+      ],
+      "completedAtUtc": "2026-07-22T04:03:46.200434Z",
+      "log": "dist\\local-java-gate\\logs\\synthetic-distribution.log",
+      "name": "synthetic-distribution",
+      "passed": false,
+      "returnCode": 1,
+      "startedAtUtc": "2026-07-22T03:53:27.228545Z"
+    }
+  ],
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\GITS\\The Mechanist\\TheMechanist\\ROOT_build\\ci\\run_local_java_release_gate.py\", line 620, in main\n    run_step(\n    ~~~~~~~~^\n        \"synthetic-distribution\",\n        ^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<10 lines>...\n        steps,\n        ^^^^^^\n    )\n    ^\n  File \"C:\\GITS\\The Mechanist\\TheMechanist\\ROOT_build\\ci\\run_local_java_release_gate.py\", line 108, in run_step\n    raise GateFailure(result)\nGateFailure: synthetic-distribution failed with exit code 1: C:\\Users\\Admin\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe ROOT_build/ci/run_synthetic_distribution_tests.py C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\releases\\TheMechanist-0.9.10iz-windows-x64 --verifier ROOT_build/ci/verify_runnable_distribution.py --report C:\\GITS\\The Mechanist\\TheMechanist\\dist\\local-java-gate\\synthetic.json\n",
+  "worktree": {
+    "ignoredGeneratedEntryCount": 1212,
+    "ignoredGeneratedRoot": "dist/",
+    "sourceEntryCount": 0,
+    "status": "clean"
+  }
+}

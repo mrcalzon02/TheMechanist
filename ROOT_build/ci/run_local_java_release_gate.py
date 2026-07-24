@@ -515,7 +515,7 @@ def main() -> int:
         server_home = output / "server-home"
         server_home.mkdir(parents=True, exist_ok=True)
         server_env = os.environ.copy()
-        server_env["MECHANIST_SERVER_HOME"] = str(server_home)
+        server_env["THE_MECHANIST_HOME"] = str(server_home)
         run_step(
             "server-operation-smoke",
             [
@@ -529,6 +529,19 @@ def main() -> int:
             steps,
             env=server_env,
         )
+        server_state = (
+            server_home / "saves" / "server" / "server_state.properties"
+        )
+        if not server_state.is_file() or server_state.stat().st_size == 0:
+            raise RuntimeError(
+                "server-operation-smoke did not initialize its isolated state file: "
+                f"{server_state}"
+            )
+        report["serverOperation"] = {
+            "isolatedStorageVerified": True,
+            "storageRoot": str(server_home.relative_to(ROOT)),
+            "stateFile": str(server_state.relative_to(ROOT)),
+        }
 
         build_command = [
             python,

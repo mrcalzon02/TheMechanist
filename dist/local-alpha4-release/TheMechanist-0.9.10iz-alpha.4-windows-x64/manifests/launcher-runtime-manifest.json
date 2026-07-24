@@ -1,0 +1,244 @@
+{
+  "client": {
+    "launcher_main_class": "mechanist.launcher.ThinLauncherMain",
+    "main_class": "mechanist.TheMechanist",
+    "path": "packages/client/TheMechanist.jar",
+    "remote_main_class": "mechanist.RemoteClientMain",
+    "sha256": "8d8ace3a6d1408030ee1d6f582ff0a638bb8109f090a45fabd5f751db5f90fb0",
+    "size": 553506267
+  },
+  "distribution_model": "installer-thin-launcher-client-server",
+  "java_release": 17,
+  "platform": "windows-x64",
+  "release_hardened": true,
+  "schema": 2,
+  "server": {
+    "main_class": "mechanist.MechanistServerMain",
+    "path": "packages/server/TheMechanistServer.jar",
+    "sha256": "0d5d747abd029a83e13370343e01a34d3fc846e3aa5d9c9cce593403d852502a",
+    "size": 553506274
+  },
+  "support_libraries": [
+    {
+      "path": "packages/support/lib/Jamepad-1.4.0.jar",
+      "sha256": "f23bcfc1d0ec830f9fc4a1447d52b6fed9558ca1ef9f556508bd6b6e2ecc953b",
+      "size": 16078
+    },
+    {
+      "path": "packages/support/lib/lwjgl-3.4.1-natives-windows.jar",
+      "sha256": "21872776b9be0a93c746d6f28797c12ac47a75e0f0188e5a4fad0c20c9a6a07e",
+      "size": 176521
+    },
+    {
+      "path": "packages/support/lib/lwjgl-3.4.1.jar",
+      "sha256": "9b1c3a3a078c2377219ecb8a2662730b3dece07c10592cf1d12f957286037b69",
+      "size": 1157957
+    },
+    {
+      "path": "packages/support/lib/lwjgl-glfw-3.4.1-natives-windows.jar",
+      "sha256": "20adab06c8f5bf1e3515a7e64db261cd83ca8131d674dc5f0af93b514deedac8",
+      "size": 173265
+    },
+    {
+      "path": "packages/support/lib/lwjgl-glfw-3.4.1.jar",
+      "sha256": "c2d93964f0a8b2a846708c7fb1b0a095e7d79dce8ea4c543969ffef508027190",
+      "size": 151893
+    },
+    {
+      "path": "packages/support/lib/lwjgl-opengl-3.4.1-natives-windows.jar",
+      "sha256": "e174a206709a91c89a840b5d935831bdb386f435ed224e570a0f15b063b4d9b4",
+      "size": 97635
+    },
+    {
+      "path": "packages/support/lib/lwjgl-opengl-3.4.1.jar",
+      "sha256": "a76b8fd9ff7428ae5e0f01b8f91a4e44debba87285048e965757742093418702",
+      "size": 937660
+    },
+    {
+      "path": "packages/support/lib/lwjgl-stb-3.4.1-natives-windows.jar",
+      "sha256": "f782d33034d90967e92d45633f4a5c11658802f083507d2323f78aede8752b04",
+      "size": 293099
+    },
+    {
+      "path": "packages/support/lib/lwjgl-stb-3.4.1.jar",
+      "sha256": "3d77b0a242b8a52788934356560191db910ed242ab23c521d55f030b4e867970",
+      "size": 142927
+    },
+    {
+      "path": "packages/support/lib/netty-all-4.1.111.Final.jar",
+      "sha256": "fbbbe8a4d965aa67428b5ad8e997d6b66ac83fe2dfc5ecde88b1d95ad8e2d5ac",
+      "size": 4545
+    },
+    {
+      "path": "packages/support/lib/netty-buffer-4.1.111.Final.jar",
+      "sha256": "7d94b609fb36afd88304c73922411d08f383f7945aa882b59a15219b5ecbfb76",
+      "size": 336397
+    },
+    {
+      "path": "packages/support/lib/netty-codec-4.1.111.Final.jar",
+      "sha256": "a63ac713f60ec0b8e2bb8182665d216662d1f474872ec5c368d25f15f544f4bc",
+      "size": 352122
+    },
+    {
+      "path": "packages/support/lib/netty-codec-dns-4.1.111.Final.jar",
+      "sha256": "60ab19f92b413db7e3b3e0c3d72b390aa0fb56d7ae0938f5cb5f0b87b6e095f0",
+      "size": 67106
+    },
+    {
+      "path": "packages/support/lib/netty-codec-haproxy-4.1.111.Final.jar",
+      "sha256": "cd3fa5bea2e495df4f717e35ff75b6ac9050b7da8343f62637473315a48cbb6b",
+      "size": 37788
+    },
+    {
+      "path": "packages/support/lib/netty-codec-http-4.1.111.Final.jar",
+      "sha256": "bf50c212caec876bb6fba85b74f18482da2d7824dd0766f1829ca9f93aa01a52",
+      "size": 667603
+    },
+    {
+      "path": "packages/support/lib/netty-codec-http2-4.1.111.Final.jar",
+      "sha256": "a9eb9b0627041f4891de92aa896499ae334cdf607dba0dcdfafd3516a7d0ecca",
+      "size": 490301
+    },
+    {
+      "path": "packages/support/lib/netty-codec-memcache-4.1.111.Final.jar",
+      "sha256": "5529c2b0a1db4a8d8eac317ef0b4109888b619c38377e42cb7ad77bfe9ae0d8f",
+      "size": 44735
+    },
+    {
+      "path": "packages/support/lib/netty-codec-mqtt-4.1.111.Final.jar",
+      "sha256": "3a4beade41c5ee0ae940ad460596d31d48786a807b7d09c9a5be60e2c6fee83b",
+      "size": 114075
+    },
+    {
+      "path": "packages/support/lib/netty-codec-redis-4.1.111.Final.jar",
+      "sha256": "9e652ba7caf4cf78f8bc9898ddc4d2c33553a77abb1a8a078f221cad189ab61b",
+      "size": 46014
+    },
+    {
+      "path": "packages/support/lib/netty-codec-smtp-4.1.111.Final.jar",
+      "sha256": "6a8ac5c68bf5344a44654fee2c372470e2c9fd4c4a39af7d58f7b567c4b58068",
+      "size": 21343
+    },
+    {
+      "path": "packages/support/lib/netty-codec-socks-4.1.111.Final.jar",
+      "sha256": "6e4c22dd0a5416ccce630aa37db1df11c22e1e3c68c72e1aa2206626568f522e",
+      "size": 121027
+    },
+    {
+      "path": "packages/support/lib/netty-codec-stomp-4.1.111.Final.jar",
+      "sha256": "17c66240cb293342d486a5dc97fa4ad38cc8c4dd6466c5ac770e61804672a251",
+      "size": 34634
+    },
+    {
+      "path": "packages/support/lib/netty-codec-xml-4.1.111.Final.jar",
+      "sha256": "85bd5cce60e1ee4f75befcd2f2f53754d07e71a160e238414144c174211770db",
+      "size": 19820
+    },
+    {
+      "path": "packages/support/lib/netty-common-4.1.111.Final.jar",
+      "sha256": "9ae12e9a89f59ce24fb233851fdd93e3c2dfaeb9fa02c60627cd67fa7561871d",
+      "size": 694402
+    },
+    {
+      "path": "packages/support/lib/netty-handler-4.1.111.Final.jar",
+      "sha256": "1a034672ca26c8be6245c8e8641b29785ed2c018617bb2dd7e07be39f7ea71fc",
+      "size": 570352
+    },
+    {
+      "path": "packages/support/lib/netty-handler-proxy-4.1.111.Final.jar",
+      "sha256": "3d00abae89eb2fb5bfb836acbee86fd5249ddeae71d7743a87a39fbc9ea41049",
+      "size": 25648
+    },
+    {
+      "path": "packages/support/lib/netty-handler-ssl-ocsp-4.1.111.Final.jar",
+      "sha256": "0cb6dee9797449f2a3b54f623855a462f0024faa5fa52fe108f17cf5267d68bd",
+      "size": 26832
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-4.1.111.Final.jar",
+      "sha256": "78e735746d1f98ca89793176359c97ad5bb6393ec63cd2962f30db43be090e1b",
+      "size": 37840
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-4.1.111.Final.jar",
+      "sha256": "b3f9fdaa473fb5fff307c007cc1840a411dace167bca05e1eb57fe19ebd57725",
+      "size": 181199
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-classes-macos-4.1.111.Final.jar",
+      "sha256": "495058891f85bbed3dafb368af1646379e92c25300c6fa1d4deed28b4a989869",
+      "size": 9142
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-native-macos-4.1.111.Final-osx-aarch_64.jar",
+      "sha256": "c491076d4b89bb410ce81c22a83e1e5ed1d05307b0f09935bae1c91d32ec6252",
+      "size": 19652
+    },
+    {
+      "path": "packages/support/lib/netty-resolver-dns-native-macos-4.1.111.Final-osx-x86_64.jar",
+      "sha256": "5c852c632a8463956025e85cd939063fc3cca7e247296278636749f71501445a",
+      "size": 19435
+    },
+    {
+      "path": "packages/support/lib/netty-transport-4.1.111.Final.jar",
+      "sha256": "49a3cc0b6d342340f0980f047026db74161c19ea2a07753a14b4d22ee0653aa5",
+      "size": 517953
+    },
+    {
+      "path": "packages/support/lib/netty-transport-classes-epoll-4.1.111.Final.jar",
+      "sha256": "d230d1680d1517c7d7b2e25ef6a9a87c22ebbcf264a0da8e807734f15b7c7cae",
+      "size": 147378
+    },
+    {
+      "path": "packages/support/lib/netty-transport-classes-kqueue-4.1.111.Final.jar",
+      "sha256": "605fda284a65c388e2235c56766b2d9938b3d4d1d724a4b17ba3fff0573c6eda",
+      "size": 108540
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-epoll-4.1.111.Final-linux-aarch_64.jar",
+      "sha256": "7c1a30b628088a2c6abfd6d2f9e7ae3d37eb2b03e9be74795ec5b95170b85426",
+      "size": 41363
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-epoll-4.1.111.Final-linux-riscv64.jar",
+      "sha256": "60b2ad14dcfcabda47640a481817b8d8b5e9a6c64fcd566de9d11443b674c610",
+      "size": 35797
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-epoll-4.1.111.Final-linux-x86_64.jar",
+      "sha256": "5e9201ad8617a8f72c99a6325c504620c715dc2e4826e36e4187f93eabc426f7",
+      "size": 39782
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-kqueue-4.1.111.Final-osx-aarch_64.jar",
+      "sha256": "4c619f1e24fa72fd8da08ebe93d1fafcfa10678fb0819be777588c7ff5bc3fb7",
+      "size": 25670
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-kqueue-4.1.111.Final-osx-x86_64.jar",
+      "sha256": "d04e7b845b9a895280abf6ef475ff1619cafb496448dd09f83f558d4834b0408",
+      "size": 25080
+    },
+    {
+      "path": "packages/support/lib/netty-transport-native-unix-common-4.1.111.Final.jar",
+      "sha256": "ec4bd4574ee1ec776a1b14139fb69982ddf7f5039a803082074a81f6604ecad2",
+      "size": 44093
+    },
+    {
+      "path": "packages/support/lib/netty-transport-rxtx-4.1.111.Final.jar",
+      "sha256": "2582ab9ef16d33d0b584b8d8f78e6d0da69d1ffa550847aa03a74d17822f3ab9",
+      "size": 18241
+    },
+    {
+      "path": "packages/support/lib/netty-transport-sctp-4.1.111.Final.jar",
+      "sha256": "6e74e0e3b820e8ef31e13f9aad12380ee1026be7dcd0391d6fb1e73e1ebbaf2d",
+      "size": 50811
+    },
+    {
+      "path": "packages/support/lib/netty-transport-udt-4.1.111.Final.jar",
+      "sha256": "21dee8d190811dce5bbda1e4c7704ad12265f03215f7ac0026f9bbac3116c45d",
+      "size": 32191
+    }
+  ],
+  "version": "0.9.10iz-alpha.4"
+}

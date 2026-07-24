@@ -41,6 +41,12 @@ public final class PortraitSemanticPartitionResolverSmoke {
         if (!ordinaryA.equals(ordinaryB)) {
             throw new AssertionError("ordinary partition selection was not deterministic");
         }
+        if (AssetManager.isMissingAssetIcon(
+                AssetManager.getAsset(ordinaryA, AssetType.PORTRAIT))) {
+            throw new AssertionError(
+                    "selected semantic portrait could not load from its active payload: "
+                            + ordinaryA);
+        }
 
         if (PortraitSemanticPartitionResolver.assetId(
                 root, registry, "administratum", "   ", false, false).isPresent()) {

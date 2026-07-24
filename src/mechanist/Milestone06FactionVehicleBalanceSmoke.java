@@ -40,7 +40,8 @@ final class Milestone06FactionVehicleBalanceSmoke {
 
             MapObjectState guardTank = vehicle(game.world, 10, 5,
                     AssetIntegrationDisciplineAuthority.PARKED_TANK,
-                    Faction.IMPERIAL_GUARD, "armored route defense", 302L);
+                    Faction.IMPERIAL_GUARD,
+                    "armored convoy route defense", 302L);
             staff(guardTank, "Commander Rusk", 6);
             game.world.mapObjects.add(guardTank);
 

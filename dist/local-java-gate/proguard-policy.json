@@ -1,0 +1,55 @@
+{
+  "javaRelease": 17,
+  "mappingArtifactsOutsideDistribution": true,
+  "optimization": false,
+  "policies": [
+    {
+      "java17UnsafeOptionsAbsent": true,
+      "mappingPackaged": false,
+      "narrowWarningSuppressions": [
+        "com.studiohartman.jamepad.**",
+        "io.netty.**",
+        "org.lwjgl.**"
+      ],
+      "path": "config/proguard/proguard-client.conf",
+      "reports": {
+        "printmapping": "target/proguard/client/mapping.txt",
+        "printseeds": "target/proguard/client/seeds.txt"
+      },
+      "role": "client",
+      "shrinkingOnlyOptionsAbsent": true,
+      "stabilityMode": "obfuscate-only-no-shrink-no-optimize",
+      "stableMainClasses": [
+        "mechanist.TheMechanist",
+        "mechanist.RemoteClientMain",
+        "mechanist.MechanistServerMain"
+      ]
+    },
+    {
+      "java17UnsafeOptionsAbsent": true,
+      "mappingPackaged": false,
+      "narrowWarningSuppressions": [
+        "com.studiohartman.jamepad.**",
+        "io.netty.**",
+        "org.lwjgl.**"
+      ],
+      "path": "config/proguard/proguard-server.conf",
+      "reports": {
+        "printmapping": "target/proguard/server/mapping.txt",
+        "printseeds": "target/proguard/server/seeds.txt"
+      },
+      "role": "server",
+      "shrinkingOnlyOptionsAbsent": true,
+      "stabilityMode": "obfuscate-only-no-shrink-no-optimize",
+      "stableMainClasses": [
+        "mechanist.TheMechanist",
+        "mechanist.RemoteClientMain",
+        "mechanist.MechanistServerMain"
+      ]
+    }
+  ],
+  "policyCount": 2,
+  "releaseObfuscation": true,
+  "shrinking": false,
+  "status": "verified"
+}
