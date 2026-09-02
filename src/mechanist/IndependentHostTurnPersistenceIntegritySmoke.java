@@ -1,5 +1,6 @@
 package mechanist;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -31,6 +32,18 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     "player accounting mismatch");
 
             writeLedger(persistence, 1L, 1L, 1L, 1L);
+            removeProperty(persistence, "worldTurn");
+            expectRestoreFailure(
+                    persistence,
+                    "missing worldTurn");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
+            removeProperty(persistence, "player.0.lastConnectionCommandId");
+            expectRestoreFailure(
+                    persistence,
+                    "missing player.0.lastConnectionCommandId");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -49,6 +62,8 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     "IndependentHostTurnPersistenceIntegritySmoke PASS"
                             + " worldAccountingMismatchRejected=true"
                             + " playerAccountingMismatchRejected=true"
+                            + " missingWorldAccountingRejected=true"
+                            + " missingPlayerSequenceRejected=true"
                             + " consistentAccountingRestored=true");
         } finally {
             deleteRecursively(root);
@@ -82,6 +97,25 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                 "authoritative wait accepted");
         properties.setProperty("player.0.event.count", "1");
         properties.setProperty("player.0.event.0", "wait");
+        storeProperties(persistence, properties);
+    }
+
+    private static void removeProperty(
+            Path persistence,
+            String key
+    ) throws Exception {
+        Properties properties = new Properties();
+        try (InputStream input = Files.newInputStream(persistence)) {
+            properties.load(input);
+        }
+        properties.remove(key);
+        storeProperties(persistence, properties);
+    }
+
+    private static void storeProperties(
+            Path persistence,
+            Properties properties
+    ) throws Exception {
         try (var output = Files.newOutputStream(persistence)) {
             properties.store(output, "remote turn integrity smoke");
         }
