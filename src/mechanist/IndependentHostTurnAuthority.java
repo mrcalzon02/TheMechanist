@@ -453,6 +453,21 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     properties.getProperty(
                             prefix + "lastEvent",
                             "restored after server restart"));
+            long eventCount = parseNonNegativeLong(
+                    properties.getProperty(prefix + "event.count"),
+                    prefix + "event.count");
+            if (eventCount > MAX_RECENT_EVENTS) {
+                throw new IOException(
+                        "independent-host turn ledger exceeds maximum recent event count "
+                                + MAX_RECENT_EVENTS
+                                + " for "
+                                + playerId);
+            }
+            for (int eventIndex = 0; eventIndex < eventCount; eventIndex++) {
+                state.events.addLast(safeEvent(requiredProperty(
+                        properties,
+                        prefix + "event." + eventIndex)));
+            }
             summedCommands += state.acceptedCommands;
             players.put(playerId, state);
         }
@@ -512,6 +527,16 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             properties.setProperty(
                     prefix + "lastEvent",
                     safeEvent(state.lastEvent));
+            properties.setProperty(
+                    prefix + "event.count",
+                    Integer.toString(state.events.size()));
+            int eventIndex = 0;
+            for (String event : state.events) {
+                properties.setProperty(
+                        prefix + "event." + eventIndex,
+                        safeEvent(event));
+                eventIndex++;
+            }
         }
 
         Path temporary = parent.resolve(
