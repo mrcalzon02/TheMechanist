@@ -44,6 +44,10 @@ The Milestone 06 implementation boundary currently includes:
 - A shared structural-scale combat authority for vehicles, machines, durable fixtures, doors, walls, and structural terrain that leaves actor combat on the established actor-combat lane rather than creating parallel combat state.
 - Structural attack previews and confirmations that account for weapon force, penetration, range, ammunition, target armor, and target integrity; below-scale attacks report readable ineffectiveness instead of inventing damage.
 - Structural impact persistence routed back into the owning vehicle component, `BaseObject` integrity, `MapObjectState` structural stock, or existing terrain-integrity ledger, with dirty-region mutation emitted only when authoritative damage actually changes state.
+- Vehicle operation feedback backed by the existing physical vehicle state, including bounded transient pulse/headlight feedback and distance-aware ambient operating sound that stops when the physical operation session ends.
+- Live vehicle dashboard and Infopedia dossier text built from existing runtime, fuel, manifest, motor-pool, transit, loss, access, and operation-feedback authorities rather than a parallel presentation ledger.
+- Bounded local-route and vehicle-history retention so player-facing inspection remains useful without unbounded save-state growth.
+- Vehicle-aware faction market contracts that distinguish fuel, ordinary repair, critical repair, salvage, and persistent target ownership instead of generating generic unbound maintenance work.
 
 Current validation registration includes the Milestone 06 vehicle runtime foundation, transit, operation-feedback, access, strategic-transit, loss, maintenance, manifest, and structural-scale combat smoke chains through `Gate3PlayerFacingTextSmokeSuite`.
 
@@ -58,6 +62,18 @@ Repository history shows that the structural-scale combat slice was implemented 
 - `4542c51707b35567aef6c0d5d32401e1e986b1ce` routed large-target combat controls through the structural authority while preserving the existing actor-combat lane.
 - `e25b924095c2af01a0a9bb296c7a13b053f41731` registered the structural-scale combat smoke into the existing Milestone 06 vehicle validation chain.
 - `f0f2c010838488f20265e09728b45b468a64d24f` hardened structural impact persistence and avoided dirty-region mutation for ineffective/no-change impacts.
+
+### Recovered post-reset vehicle presentation, history, and contract evidence
+
+Further repository reconciliation shows that several later Milestone 06 slices were also implemented after the continuity reset but were not represented in this active ledger. As above, this section records source and commit evidence already present on `main`; it is not a substitute for a fresh Java 17 runtime verification pass.
+
+- `e1f9e2e7dd744dc94f37a9ee21d2a2c908f0068b` extended `VehicleOperationFeedbackAuthority` with bounded ambient running-audio refresh tied to the loaded physical vehicle and the same authoritative operation session that drives visual feedback.
+- `ca67000d2ec227126d819b599ce0e1abb13c81fa` added focused proof for the ambient running-audio lifecycle, followed by `e2cbaf324aef3ce5fbf569c163a9684cbe7045ab` and `36f1ede0c7e8f92a94394c49534ba0f444469a34` to bound audible range and verify cleanup behavior.
+- `0803fcbd2939d27dac56b2a2e8b835ebbf92ecd7` added `VehicleInfopediaBridgeAuthority`, building class dossiers and live dashboards from the existing runtime, fuel, manifest, motor-pool, strategic-transit, loss, and feedback authorities.
+- `ca5ec25c9bfe1530ddc5828ed614a8e49e6ea8b8` routed vehicle inspection through that live dashboard and bounded local route-history retention instead of allowing indefinite stock-state growth.
+- `42d58d8fe1fcddeedd4cb3e3341af4964fdd85dc` and `8f3ff062f67677688c47fdae7783f8919a66fbae` added and registered focused dashboard/dossier and route-retention proof; later commits hardened history limits and removed raw dashboard identifiers from player-facing output.
+- `785049c9d62c6e376e53fb127c7d2b17c8ab08ad` updated `FactionMarketContractAuthority` so critical disabled/wrecked/damaged vehicles are prioritized ahead of ordinary repair work while preserving existing doctrine/readiness and persistent vehicle ownership data.
+- `b91c773f04aab2c83ed13bd53d201527a31e82b6` and `52e966cdb488383ef6c9d67d2fd5c1e5cc55a493` verified and registered the vehicle contract-priority behavior.
 
 ## Incremental development protocol
 
@@ -80,4 +96,6 @@ This ledger reset does not itself certify those workflows or publish a release. 
 
 ## Next work
 
-Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement the structural-scale combat boundary already present on `main`. Before choosing another gameplay expansion, reconcile the newer post-reset Milestone 06 commit boundary against the ordered phase requirements so the next implementation slice begins after already-completed work rather than duplicating it.
+Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, or vehicle contract-priority behavior already present on `main`.
+
+Before choosing the next gameplay expansion, continue reconciling the post-reset Milestone 06 commit boundary against the ordered phase requirements until the first genuinely incomplete dependency-valid requirement is identified. Prefer that implementation slice over adding another audit-only chain.
