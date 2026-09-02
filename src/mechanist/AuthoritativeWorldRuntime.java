@@ -220,7 +220,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             String reason,
             SectorSnapshot sectorSnapshot
     ) {
-        long version = worldVersion.incrementAndGet();
+        long version = worldVersion.get() + 1L;
         WorldSnapshot worldSnapshot =
                 source.worldSnapshot(version, sector);
         if (worldSnapshot == null) {
@@ -235,7 +235,6 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     UiStateSnapshot.empty(),
                     System.currentTimeMillis());
         }
-        latestWorldSnapshot.set(worldSnapshot);
         AuthoritativeWorldSnapshot snapshot =
                 source.authoritativeSnapshot(
                         version,
@@ -266,6 +265,8 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     sectorSnapshot,
                     System.currentTimeMillis());
         }
+        worldVersion.set(version);
+        latestWorldSnapshot.set(worldSnapshot);
         latestSnapshot.set(snapshot);
         if (version <= 3L || version % 50L == 0L) {
             DebugLog.audit(
