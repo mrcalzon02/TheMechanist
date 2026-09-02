@@ -59,6 +59,12 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     "missing player.0.event.count");
 
             writeLedger(persistence, 1L, 1L, 1L, 1L);
+            removeProperty(persistence, "player.0.lastEvent");
+            expectRestoreFailure(
+                    persistence,
+                    "missing player.0.lastEvent");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -81,6 +87,7 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                             + " missingPlayerSequenceRejected=true"
                             + " zeroConnectionGenerationRejected=true"
                             + " missingEventCountRejected=true"
+                            + " missingLastEventRejected=true"
                             + " consistentAccountingRestored=true");
         } finally {
             deleteRecursively(root);
