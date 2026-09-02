@@ -85,6 +85,18 @@ The same post-reset commit window contains explicit persistence-growth safeguard
 - `61c9126418e1388f9b954f7d72882cdb557dfda8` bounds persistent `VehicleStrategicTransitAuthority` history to 12 entries; `9828096e79e053ac25752503d0856a3e8913b854` and `abdd3c9ea9609958f808bad071245ee4db15f899` prove and register it.
 - `9b4e54e401b2317831e60840739c193aa45d1ec0` bounds persistent `VehicleManifestAuthority` histories to 12 entries; `52cf3cc2b1ace957cf73c42696ea1b83c2de6a39` and `3c7a9f0653fae4f1c28d850e3306999afaec5030` prove and register the manifest-history boundary.
 
+### Recovered 06.R headless world-command foundations
+
+The release-readiness lane already contains the first shared authoritative headless-world bridge. This reconciliation records those existing foundations so future work extends them into actual hosted-world gameplay rather than creating a second remote world model. It does **not** certify independent-host gameplay, world-map ownership, inventory, combat, or clean-machine release readiness.
+
+- `06c5a1d9f4226ae585398960fd7fb3ecc0c27b00` generalized `AuthoritativeWorldRuntime` so desktop single-player and headless server execution can share the same single-writer mutation lane through an injected immutable `SnapshotSource`.
+- `0a06a1f4ef07b051e180bc6d8867cf9a5cd8e36f` added `IndependentHostTurnAuthority`, connecting authenticated remote `WaitCommand` requests to the existing `WorldCommandRequest` and `AuthoritativeWorldRuntime` authorities with atomic persistence and fail-closed rejection of movement, interaction, combat, inventory, transitions, and admin commands that lack a real headless runtime owner.
+- `13fb27ff545d81d17f61422173789a6edccf20ca` added adversarial proof for exact command ordering, connection-generation reset, immutable snapshots, atomic persistence, clean restart continuity, and non-mutation when unsupported movement is rejected; that smoke explicitly leaves world-map authority and remote-gameplay certification false.
+- `66d80ba458559a422018afbbd637933e7c53f91a` added governed server storage paths for the remote turn ledger under the separated server runtime tree rather than mixing it with desktop single-player saves.
+- `23524d631611352871da9647006ab3d6233c316e` made hosted-wire smoke sessions share the turn-authority lifecycle and proves that lobby/session commands remain separate from world-command mutation.
+
+The next 06.R gameplay implementation must therefore bind the authenticated remote player/session and this existing headless command lane to the canonical server world/map/player persistence owners. Do not replace `AuthoritativeWorldRuntime`, create a second world snapshot authority, or treat the remote turn ledger as sufficient world-map/player/inventory persistence.
+
 ## Incremental development protocol
 
 Each new development run must:
@@ -106,6 +118,6 @@ This ledger reset does not itself certify those workflows or publish a release. 
 
 ## Next work
 
-Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, bounded fuel/motor-pool/strategic-transit/manifest histories, or vehicle contract-priority behavior already present on `main`.
+Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, bounded fuel/motor-pool/strategic-transit/manifest histories, vehicle contract-priority behavior, the shared headless `AuthoritativeWorldRuntime` snapshot seam, or the persisted independent-host `WAIT` command lane already present on `main`.
 
-Before choosing the next gameplay expansion, continue reconciling the post-reset Milestone 06 commit boundary against the ordered phase requirements until the first genuinely incomplete dependency-valid requirement is identified. Prefer that implementation slice over adding another audit-only chain.
+For 06.R, extend the existing authenticated remote session and `IndependentHostTurnAuthority` into the canonical server world/map/player persistence owners; do not create a second remote world or character ledger. For ordinary Milestone 06 gameplay, continue reconciling the post-reset commit boundary against the ordered phase requirements until the first genuinely incomplete dependency-valid requirement is identified. Prefer a concrete implementation slice over adding another audit-only chain.
