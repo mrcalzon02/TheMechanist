@@ -49,6 +49,8 @@ final class IndependentHostTurnAuthoritySmoke {
                 require(!Thread.currentThread().getName().equals(
                                 first.snapshot().mutationThread()),
                         "remote world mutation executed on the caller thread");
+                require(authority.stagingPlayerCount() == 1,
+                        "committed authoritative wait did not mount the remote player");
                 committedVersion = first.snapshot().version();
 
                 expectFailure(
@@ -60,6 +62,8 @@ final class IndependentHostTurnAuthoritySmoke {
                         "sequence mismatch");
                 require(authority.snapshotForPlayer(PLAYER_ID).playerTurn() == 1L,
                         "replayed command changed authoritative turn state");
+                require(authority.stagingPlayerCount() == 1,
+                        "replayed command detached the previously committed remote player");
 
                 expectFailure(
                         () -> authority.applyCommand(
@@ -74,6 +78,8 @@ final class IndependentHostTurnAuthoritySmoke {
                         "only authoritative wait is open");
                 require(authority.snapshotForPlayer(PLAYER_ID).playerTurn() == 1L,
                         "rejected movement changed authoritative turn state");
+                require(authority.stagingPlayerCount() == 1,
+                        "rejected movement detached the previously committed remote player");
 
                 IndependentHostTurnAuthority.TurnCommandResult resumed =
                         authority.applyCommand(
@@ -99,7 +105,11 @@ final class IndependentHostTurnAuthoritySmoke {
                         "stale connection generation");
                 require(authority.acceptedCommands() == 2L,
                         "rejected commands changed global accounting");
+                require(authority.stagingPlayerCount() == 1,
+                        "stale-generation rejection detached the committed remote player");
                 authority.disconnectPlayer(PLAYER_ID);
+                require(authority.stagingPlayerCount() == 0,
+                        "explicit disconnect did not release staging-sector membership");
                 require(authority.snapshotForPlayer(PLAYER_ID).playerTurn() == 2L,
                         "disconnect removed persisted authoritative state");
             }
@@ -145,6 +155,8 @@ final class IndependentHostTurnAuthoritySmoke {
                                 && after.snapshot().worldTurn() == 3L
                                 && after.snapshot().acceptedWorldCommands() == 3L,
                         "post-restart authoritative wait did not continue state");
+                require(restored.stagingPlayerCount() == 1,
+                        "post-restart authoritative wait did not mount the remote player");
             }
 
             String text = Files.readString(
@@ -183,6 +195,7 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " atomicPersistence=true"
                             + " cleanRestartContinuity=true"
                             + " unsupportedMovementRejected=true"
+                            + " precommitRollbackPreservesSector=true"
                             + " worldMapAuthority=false"
                             + " remoteGameplayCertified=false");
         } finally {
