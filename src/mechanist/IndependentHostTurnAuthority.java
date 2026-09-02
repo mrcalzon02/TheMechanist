@@ -464,7 +464,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             prefix + "lastEvent",
                             "restored after server restart"));
             long eventCount = parseNonNegativeLong(
-                    properties.getProperty(prefix + "event.count"),
+                    requiredProperty(properties, prefix + "event.count"),
                     prefix + "event.count");
             if (eventCount > MAX_RECENT_EVENTS) {
                 throw new IOException(
