@@ -82,6 +82,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     private final AtomicLong submissionsFromEdt = new AtomicLong(0L);
     private final AtomicLong rejected = new AtomicLong(0L);
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Object publicationLock = new Object();
 
     AuthoritativeWorldRuntime(String name) {
         String threadName = name == null || name.isBlank()
@@ -173,15 +174,21 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     }
 
     AuthoritativeWorldSnapshot latestSnapshot() {
-        return latestSnapshot.get();
+        synchronized (publicationLock) {
+            return latestSnapshot.get();
+        }
     }
 
     WorldSnapshot latestWorldSnapshot() {
-        return latestWorldSnapshot.get();
+        synchronized (publicationLock) {
+            return latestWorldSnapshot.get();
+        }
     }
 
     long worldVersion() {
-        return worldVersion.get();
+        synchronized (publicationLock) {
+            return worldVersion.get();
+        }
     }
 
     long submissionsFromEdt() {
@@ -189,19 +196,21 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     }
 
     String statusLine() {
-        AuthoritativeWorldSnapshot snapshot = latestSnapshot.get();
-        WorldSnapshot worldSnapshot = latestWorldSnapshot.get();
-        return "authority=" + VERSION
-                + " worldVersion=" + worldVersion.get()
-                + " submissions=" + submissions.get()
-                + " edtSubmissions=" + submissionsFromEdt.get()
-                + " rejected=" + rejected.get()
-                + " latest="
-                + (snapshot == null ? "none" : snapshot.compact())
-                + " worldSnapshot="
-                + (worldSnapshot == null
-                ? "none"
-                : worldSnapshot.compact());
+        synchronized (publicationLock) {
+            AuthoritativeWorldSnapshot snapshot = latestSnapshot.get();
+            WorldSnapshot worldSnapshot = latestWorldSnapshot.get();
+            return "authority=" + VERSION
+                    + " worldVersion=" + worldVersion.get()
+                    + " submissions=" + submissions.get()
+                    + " edtSubmissions=" + submissionsFromEdt.get()
+                    + " rejected=" + rejected.get()
+                    + " latest="
+                    + (snapshot == null ? "none" : snapshot.compact())
+                    + " worldSnapshot="
+                    + (worldSnapshot == null
+                    ? "none"
+                    : worldSnapshot.compact());
+        }
     }
 
     static String auditSummary() {
@@ -265,9 +274,11 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     sectorSnapshot,
                     System.currentTimeMillis());
         }
-        worldVersion.set(version);
-        latestWorldSnapshot.set(worldSnapshot);
-        latestSnapshot.set(snapshot);
+        synchronized (publicationLock) {
+            worldVersion.set(version);
+            latestWorldSnapshot.set(worldSnapshot);
+            latestSnapshot.set(snapshot);
+        }
         if (version <= 3L || version % 50L == 0L) {
             DebugLog.audit(
                     "AUTHORITATIVE_WORLD_SNAPSHOT",
