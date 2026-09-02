@@ -44,6 +44,15 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     "missing player.0.lastConnectionCommandId");
 
             writeLedger(persistence, 1L, 1L, 1L, 1L);
+            setProperty(
+                    persistence,
+                    "player.0.connectionGeneration",
+                    "0");
+            expectRestoreFailure(
+                    persistence,
+                    "invalid player.0.connectionGeneration");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -64,6 +73,7 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                             + " playerAccountingMismatchRejected=true"
                             + " missingWorldAccountingRejected=true"
                             + " missingPlayerSequenceRejected=true"
+                            + " zeroConnectionGenerationRejected=true"
                             + " consistentAccountingRestored=true");
         } finally {
             deleteRecursively(root);
@@ -109,6 +119,19 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
             properties.load(input);
         }
         properties.remove(key);
+        storeProperties(persistence, properties);
+    }
+
+    private static void setProperty(
+            Path persistence,
+            String key,
+            String value
+    ) throws Exception {
+        Properties properties = new Properties();
+        try (InputStream input = Files.newInputStream(persistence)) {
+            properties.load(input);
+        }
+        properties.setProperty(key, value);
         storeProperties(persistence, properties);
     }
 
