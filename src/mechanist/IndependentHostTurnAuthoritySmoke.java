@@ -166,6 +166,8 @@ final class IndependentHostTurnAuthoritySmoke {
                             && text.contains("acceptedCommands=3"),
                     "post-restart turn ledger did not persist the third command");
 
+            verifyPersistenceFailureRollback(root.resolve("Rollback Cases"));
+
             Properties corrupted = new Properties();
             try (var input = Files.newInputStream(persistence)) {
                 corrupted.load(input);
@@ -196,10 +198,70 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " cleanRestartContinuity=true"
                             + " unsupportedMovementRejected=true"
                             + " precommitRollbackPreservesSector=true"
+                            + " persistenceFailureRestoresSector=true"
+                            + " persistenceFailureRestoresUnboundState=true"
                             + " worldMapAuthority=false"
                             + " remoteGameplayCertified=false");
         } finally {
             deleteRecursively(root);
+        }
+    }
+
+    private static void verifyPersistenceFailureRollback(Path root) throws Exception {
+        Path mountedParent = root.resolve("Mounted Failure");
+        Path mountedPersistence = mountedParent.resolve("turns.properties");
+        try (IndependentHostTurnAuthority authority =
+                     new IndependentHostTurnAuthority(
+                             WORLD_ID + "-mounted-failure",
+                             mountedPersistence)) {
+            authority.applyCommand(
+                    PLAYER_ID,
+                    1L,
+                    0L,
+                    new WaitCommand(PLAYER_ID));
+            require(authority.stagingPlayerCount() == 1,
+                    "persistence rollback setup did not mount player");
+            Files.delete(mountedPersistence);
+            Files.delete(mountedParent);
+            Files.writeString(mountedParent, "block persistence parent");
+            expectFailure(
+                    () -> authority.applyCommand(
+                            PLAYER_ID,
+                            1L,
+                            1L,
+                            new WaitCommand(PLAYER_ID)),
+                    "could not commit atomically");
+            IndependentHostTurnAuthority.TurnSnapshot after =
+                    authority.snapshotForPlayer(PLAYER_ID);
+            require(after != null
+                            && after.playerTurn() == 1L
+                            && after.worldTurn() == 1L
+                            && authority.acceptedCommands() == 1L,
+                    "persistence failure did not restore prior turn/accounting state");
+            require(authority.stagingPlayerCount() == 1,
+                    "persistence failure did not restore prior mounted sector binding");
+        }
+
+        Path unboundParent = root.resolve("Unbound Failure");
+        Path unboundPersistence = unboundParent.resolve("turns.properties");
+        Files.createDirectories(root);
+        Files.writeString(unboundParent, "block persistence parent");
+        try (IndependentHostTurnAuthority authority =
+                     new IndependentHostTurnAuthority(
+                             WORLD_ID + "-unbound-failure",
+                             unboundPersistence)) {
+            expectFailure(
+                    () -> authority.applyCommand(
+                            PLAYER_ID,
+                            1L,
+                            0L,
+                            new WaitCommand(PLAYER_ID)),
+                    "could not commit atomically");
+            require(authority.snapshotForPlayer(PLAYER_ID) == null
+                            && authority.acceptedCommands() == 0L,
+                    "first-command persistence failure retained uncommitted player state");
+            require(authority.stagingPlayerCount() == 0,
+                    "first-command persistence failure retained sector membership");
         }
     }
 
