@@ -410,13 +410,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             + storedWorld);
         }
         worldTurn = parseNonNegativeLong(
-                properties.getProperty("worldTurn"),
+                requiredProperty(properties, "worldTurn"),
                 "worldTurn");
         acceptedCommands = parseNonNegativeLong(
-                properties.getProperty("acceptedCommands"),
+                requiredProperty(properties, "acceptedCommands"),
                 "acceptedCommands");
         int count = parsePlayerCount(
-                properties.getProperty("player.count"));
+                requiredProperty(properties, "player.count"));
         long summedCommands = 0L;
         for (int index = 0; index < count; index++) {
             String prefix = "player." + index + ".";
@@ -434,19 +434,22 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             state.connectionGeneration = Math.max(
                     1L,
                     parseNonNegativeLong(
-                            properties.getProperty(
+                            requiredProperty(
+                                    properties,
                                     prefix + "connectionGeneration"),
                             prefix + "connectionGeneration"));
             state.lastConnectionCommandId =
                     parseSignedSequence(
-                            properties.getProperty(
+                            requiredProperty(
+                                    properties,
                                     prefix + "lastConnectionCommandId"),
                             prefix + "lastConnectionCommandId");
             state.turn = parseNonNegativeLong(
-                    properties.getProperty(prefix + "turn"),
+                    requiredProperty(properties, prefix + "turn"),
                     prefix + "turn");
             state.acceptedCommands = parseNonNegativeLong(
-                    properties.getProperty(
+                    requiredProperty(
+                            properties,
                             prefix + "acceptedCommands"),
                     prefix + "acceptedCommands");
             if (state.turn != state.acceptedCommands) {
