@@ -169,41 +169,37 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     new HeadlessSnapshotSource(activeState);
             SectorKey priorSector =
                     sectorManager.currentSectorForPlayer(playerId);
+            boolean[] persistenceCommitted = {false};
+            AuthoritativeWorldSnapshot authoritative;
             try {
-                AuthoritativeWorldSnapshot authoritative =
-                        worldRuntime.submitAndJoin(
-                                snapshotSource,
-                                playerId,
-                                stagingSector,
-                                command.reason(),
-                                () -> {
-                                    sectorManager.playerEnteredSector(
-                                            playerId,
-                                            stagingSector);
-                                    command.apply(context);
-                                    activeState.lastConnectionCommandId =
-                                            commandId;
-                                    activeState.acceptedCommands++;
-                                    acceptedCommands++;
-                                    activeState.lastEvent =
-                                            "authoritative wait accepted";
-                                    try {
-                                        persist();
-                                    } catch (IOException failure) {
-                                        throw new UncheckedIOException(failure);
-                                    }
-                                    SectorSnapshot sector =
-                                            sectorManager.snapshot(stagingSector);
-                                    return sector == null
-                                            ? sectorManager.ensureSector(stagingSector)
-                                            : sector;
-                                });
-                TurnSnapshot snapshot = snapshot(activeState, authoritative);
-                return new TurnCommandResult(
-                        commandId,
-                        "WAIT",
-                        snapshot,
-                        authoritative);
+                authoritative = worldRuntime.submitAndJoin(
+                        snapshotSource,
+                        playerId,
+                        stagingSector,
+                        command.reason(),
+                        () -> {
+                            sectorManager.playerEnteredSector(
+                                    playerId,
+                                    stagingSector);
+                            command.apply(context);
+                            activeState.lastConnectionCommandId =
+                                    commandId;
+                            activeState.acceptedCommands++;
+                            acceptedCommands++;
+                            activeState.lastEvent =
+                                    "authoritative wait accepted";
+                            try {
+                                persist();
+                                persistenceCommitted[0] = true;
+                            } catch (IOException failure) {
+                                throw new UncheckedIOException(failure);
+                            }
+                            SectorSnapshot sector =
+                                    sectorManager.snapshot(stagingSector);
+                            return sector == null
+                                    ? sectorManager.ensureSector(stagingSector)
+                                    : sector;
+                        });
             } catch (RuntimeException failure) {
                 rollbackAfterCommitFailure(
                         playerId,
@@ -212,10 +208,23 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                         priorAcceptedCommands,
                         created,
                         priorSector);
+                if (persistenceCommitted[0]) {
+                    try {
+                        persist();
+                    } catch (IOException compensationFailure) {
+                        failure.addSuppressed(compensationFailure);
+                    }
+                }
                 throw new IllegalStateException(
                         "independent-host world command could not commit atomically",
                         failure);
             }
+            TurnSnapshot snapshot = snapshot(activeState, authoritative);
+            return new TurnCommandResult(
+                    commandId,
+                    "WAIT",
+                    snapshot,
+                    authoritative);
         }
     }
 
