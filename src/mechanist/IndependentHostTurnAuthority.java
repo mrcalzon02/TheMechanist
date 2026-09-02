@@ -459,10 +459,9 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                                 + " acceptedCommands="
                                 + state.acceptedCommands);
             }
-            state.lastEvent = safeEvent(
-                    properties.getProperty(
-                            prefix + "lastEvent",
-                            "restored after server restart"));
+            state.lastEvent = safeEvent(requiredProperty(
+                    properties,
+                    prefix + "lastEvent"));
             long eventCount = parseNonNegativeLong(
                     requiredProperty(properties, prefix + "event.count"),
                     prefix + "event.count");
