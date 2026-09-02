@@ -431,13 +431,11 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             }
             MutablePlayerState state =
                     new MutablePlayerState(playerId);
-            state.connectionGeneration = Math.max(
-                    1L,
-                    parseNonNegativeLong(
-                            requiredProperty(
-                                    properties,
-                                    prefix + "connectionGeneration"),
-                            prefix + "connectionGeneration"));
+            state.connectionGeneration = parsePositiveLong(
+                    requiredProperty(
+                            properties,
+                            prefix + "connectionGeneration"),
+                    prefix + "connectionGeneration");
             state.lastConnectionCommandId =
                     parseSignedSequence(
                             requiredProperty(
@@ -606,6 +604,19 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             + MAX_PERSISTED_PLAYERS);
         }
         return (int) parsed;
+    }
+
+    private static long parsePositiveLong(
+            String value,
+            String label
+    ) throws IOException {
+        long parsed = parseNonNegativeLong(value, label);
+        if (parsed < 1L) {
+            throw new IOException(
+                    "independent-host turn ledger contains invalid "
+                            + label);
+        }
+        return parsed;
     }
 
     private static long parseNonNegativeLong(
