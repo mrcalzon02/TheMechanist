@@ -449,6 +449,15 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     properties.getProperty(
                             prefix + "acceptedCommands"),
                     prefix + "acceptedCommands");
+            if (state.turn != state.acceptedCommands) {
+                throw new IOException(
+                        "independent-host turn player accounting mismatch for "
+                                + playerId
+                                + ": turn="
+                                + state.turn
+                                + " acceptedCommands="
+                                + state.acceptedCommands);
+            }
             state.lastEvent = safeEvent(
                     properties.getProperty(
                             prefix + "lastEvent",
@@ -476,6 +485,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     "independent-host turn command accounting mismatch: players="
                             + summedCommands
                             + " global="
+                            + acceptedCommands);
+        }
+        if (worldTurn != acceptedCommands) {
+            throw new IOException(
+                    "independent-host turn world accounting mismatch: worldTurn="
+                            + worldTurn
+                            + " acceptedCommands="
                             + acceptedCommands);
         }
         setOwnerOnlyPermissions(persistenceFile);
