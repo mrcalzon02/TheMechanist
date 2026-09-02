@@ -167,6 +167,8 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
 
             HeadlessSnapshotSource snapshotSource =
                     new HeadlessSnapshotSource(activeState);
+            SectorKey priorSector =
+                    sectorManager.currentSectorForPlayer(playerId);
             try {
                 AuthoritativeWorldSnapshot authoritative =
                         worldRuntime.submitAndJoin(
@@ -208,7 +210,8 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                         prior,
                         priorWorldTurn,
                         priorAcceptedCommands,
-                        created);
+                        created,
+                        priorSector);
                 throw new IllegalStateException(
                         "independent-host world command could not commit atomically",
                         failure);
@@ -321,10 +324,15 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             MutablePlayerState prior,
             long priorWorldTurn,
             long priorAcceptedCommands,
-            boolean created
+            boolean created,
+            SectorKey priorSector
     ) {
         try {
-            sectorManager.playerLeftCurrentSector(playerId);
+            if (priorSector == null) {
+                sectorManager.playerLeftCurrentSector(playerId);
+            } else {
+                sectorManager.playerEnteredSector(playerId, priorSector);
+            }
         } catch (RuntimeException ignored) {
         }
         rollbackState(
