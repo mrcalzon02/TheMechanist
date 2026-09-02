@@ -138,7 +138,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
 
             long expected = state.lastConnectionCommandId + 1L;
             if (commandId != expected) {
-                rollback(
+                rollbackState(
                         playerId,
                         prior,
                         priorWorldTurn,
@@ -156,7 +156,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     new HeadlessCommandContext(activeState);
             String rejection = command.rejectionReason(context);
             if (rejection != null && !rejection.isBlank()) {
-                rollback(
+                rollbackState(
                         playerId,
                         prior,
                         priorWorldTurn,
@@ -203,7 +203,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                         snapshot,
                         authoritative);
             } catch (RuntimeException failure) {
-                rollback(
+                rollbackAfterCommitFailure(
                         playerId,
                         prior,
                         priorWorldTurn,
@@ -253,6 +253,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         }
     }
 
+    int stagingPlayerCount() {
+        synchronized (commandLock) {
+            SectorSnapshot snapshot = sectorManager.snapshot(stagingSector);
+            return snapshot == null ? 0 : snapshot.players();
+        }
+    }
+
     Path persistenceFile() {
         return persistenceFile;
     }
@@ -293,7 +300,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         sectorManager.close();
     }
 
-    private void rollback(
+    private void rollbackState(
             String playerId,
             MutablePlayerState prior,
             long priorWorldTurn,
@@ -302,15 +309,30 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     ) {
         worldTurn = priorWorldTurn;
         acceptedCommands = priorAcceptedCommands;
-        try {
-            sectorManager.playerLeftCurrentSector(playerId);
-        } catch (RuntimeException ignored) {
-        }
         if (created || prior == null) {
             players.remove(playerId);
         } else {
             players.put(playerId, prior);
         }
+    }
+
+    private void rollbackAfterCommitFailure(
+            String playerId,
+            MutablePlayerState prior,
+            long priorWorldTurn,
+            long priorAcceptedCommands,
+            boolean created
+    ) {
+        try {
+            sectorManager.playerLeftCurrentSector(playerId);
+        } catch (RuntimeException ignored) {
+        }
+        rollbackState(
+                playerId,
+                prior,
+                priorWorldTurn,
+                priorAcceptedCommands,
+                created);
     }
 
     private TurnSnapshot snapshot(
