@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -24,6 +25,7 @@ final class IndependentHostTurnAuthoritySmoke {
                 "Server State").resolve("turns.properties");
         try {
             long committedVersion;
+            List<String> persistedActions;
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -95,6 +97,12 @@ final class IndependentHostTurnAuthoritySmoke {
                         "resumed authoritative wait did not advance persisted turns");
                 require(resumed.snapshot().version() > committedVersion,
                         "authoritative snapshot version did not advance");
+                persistedActions = List.copyOf(
+                        resumed.authoritativeSnapshot()
+                                .worldSnapshot()
+                                .recentActions());
+                require(!persistedActions.isEmpty(),
+                        "authoritative event history was empty before restart");
 
                 expectFailure(
                         () -> authority.applyCommand(
@@ -132,6 +140,10 @@ final class IndependentHostTurnAuthoritySmoke {
             require("2".equals(stored.getProperty("worldTurn"))
                             && "2".equals(stored.getProperty("acceptedCommands")),
                     "authoritative turn persistence lost committed accounting");
+            require(Integer.parseInt(stored.getProperty("player.0.event.count", "0"))
+                            == persistedActions.size()
+                            && stored.getProperty("player.0.event.0") != null,
+                    "authoritative event history was not written to persistence");
 
             try (IndependentHostTurnAuthority restored =
                          new IndependentHostTurnAuthority(
@@ -155,6 +167,16 @@ final class IndependentHostTurnAuthoritySmoke {
                                 && after.snapshot().worldTurn() == 3L
                                 && after.snapshot().acceptedWorldCommands() == 3L,
                         "post-restart authoritative wait did not continue state");
+                List<String> restoredActions =
+                        after.authoritativeSnapshot()
+                                .worldSnapshot()
+                                .recentActions();
+                require(restoredActions.size() > persistedActions.size()
+                                && restoredActions.subList(
+                                        0,
+                                        persistedActions.size())
+                                .equals(persistedActions),
+                        "authoritative event history did not survive restart in order");
                 require(restored.stagingPlayerCount() == 1,
                         "post-restart authoritative wait did not mount the remote player");
             }
@@ -196,6 +218,7 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " immutableSnapshots=true"
                             + " atomicPersistence=true"
                             + " cleanRestartContinuity=true"
+                            + " eventHistoryRestartContinuity=true"
                             + " unsupportedMovementRejected=true"
                             + " precommitRollbackPreservesSector=true"
                             + " persistenceFailureRestoresSector=true"
