@@ -53,6 +53,12 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     "invalid player.0.connectionGeneration");
 
             writeLedger(persistence, 1L, 1L, 1L, 1L);
+            removeProperty(persistence, "player.0.event.count");
+            expectRestoreFailure(
+                    persistence,
+                    "missing player.0.event.count");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -74,6 +80,7 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                             + " missingWorldAccountingRejected=true"
                             + " missingPlayerSequenceRejected=true"
                             + " zeroConnectionGenerationRejected=true"
+                            + " missingEventCountRejected=true"
                             + " consistentAccountingRestored=true");
         } finally {
             deleteRecursively(root);
