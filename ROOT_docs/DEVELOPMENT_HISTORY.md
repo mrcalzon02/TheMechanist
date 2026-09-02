@@ -47,6 +47,7 @@ The Milestone 06 implementation boundary currently includes:
 - Vehicle operation feedback backed by the existing physical vehicle state, including bounded transient pulse/headlight feedback and distance-aware ambient operating sound that stops when the physical operation session ends.
 - Live vehicle dashboard and Infopedia dossier text built from existing runtime, fuel, manifest, motor-pool, transit, loss, access, and operation-feedback authorities rather than a parallel presentation ledger.
 - Bounded local-route and vehicle-history retention so player-facing inspection remains useful without unbounded save-state growth.
+- Bounded fuel, motor-pool, strategic-transit, and manifest histories so repeated vehicle operations cannot grow those persistent string ledgers without limit.
 - Vehicle-aware faction market contracts that distinguish fuel, ordinary repair, critical repair, salvage, and persistent target ownership instead of generating generic unbound maintenance work.
 
 Current validation registration includes the Milestone 06 vehicle runtime foundation, transit, operation-feedback, access, strategic-transit, loss, maintenance, manifest, and structural-scale combat smoke chains through `Gate3PlayerFacingTextSmokeSuite`.
@@ -75,6 +76,15 @@ Further repository reconciliation shows that several later Milestone 06 slices w
 - `785049c9d62c6e376e53fb127c7d2b17c8ab08ad` updated `FactionMarketContractAuthority` so critical disabled/wrecked/damaged vehicles are prioritized ahead of ordinary repair work while preserving existing doctrine/readiness and persistent vehicle ownership data.
 - `b91c773f04aab2c83ed13bd53d201527a31e82b6` and `52e966cdb488383ef6c9d67d2fd5c1e5cc55a493` verified and registered the vehicle contract-priority behavior.
 
+### Recovered post-reset bounded persistence evidence
+
+The same post-reset commit window contains explicit persistence-growth safeguards that were not called out in the active ledger. These are existing source protections, not newly executed runtime proof in this reconciliation pass.
+
+- `68b974ae21b7a40b50871eaca7caf890bd1243f9` bounds `VehicleFuelAuthority` history strings to the newest 12 entries; `9e95b67b20cb6a201f3674f909f7fe64fbd33731` and `283e38d00de86a123e29f2df32d2aeae1e48d17c` provide the associated focused proof and registration.
+- `aab3c247d1e19a7839deafd5711a6fb65aa54bbc` applies the same 12-entry bound to persistent `VehicleMotorPoolAuthority` history; `b5533ba40ce81c05a41847ccd26d35609d455b89` and `a3d7106c444236cdbfe27002a2fbff8a19e3ba5c` prove and register that boundary.
+- `61c9126418e1388f9b954f7d72882cdb557dfda8` bounds persistent `VehicleStrategicTransitAuthority` history to 12 entries; `9828096e79e053ac25752503d0856a3e8913b854` and `abdd3c9ea9609958f808bad071245ee4db15f899` prove and register it.
+- `9b4e54e401b2317831e60840739c193aa45d1ec0` bounds persistent `VehicleManifestAuthority` histories to 12 entries; `52cf3cc2b1ace957cf73c42696ea1b83c2de6a39` and `3c7a9f0653fae4f1c28d850e3306999afaec5030` prove and register the manifest-history boundary.
+
 ## Incremental development protocol
 
 Each new development run must:
@@ -96,6 +106,6 @@ This ledger reset does not itself certify those workflows or publish a release. 
 
 ## Next work
 
-Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, or vehicle contract-priority behavior already present on `main`.
+Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, bounded fuel/motor-pool/strategic-transit/manifest histories, or vehicle contract-priority behavior already present on `main`.
 
 Before choosing the next gameplay expansion, continue reconciling the post-reset Milestone 06 commit boundary against the ordered phase requirements until the first genuinely incomplete dependency-valid requirement is identified. Prefer that implementation slice over adding another audit-only chain.
