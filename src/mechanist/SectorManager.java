@@ -107,6 +107,12 @@ final class SectorManager implements AutoCloseable {
         return playerEnteredSector(playerId, target);
     }
 
+    SectorKey currentSectorForPlayer(String playerId) {
+        requireOpen();
+        PlayerHandle player = PlayerHandle.of(playerId);
+        return playerSectorIndex.get(player.playerId());
+    }
+
     SectorSnapshot runLocalAuthoritativeTurn(String playerId, SectorKey sector, String reason, Runnable localTurnBody) {
         requireOpen();
         PlayerHandle player = PlayerHandle.of(playerId);
