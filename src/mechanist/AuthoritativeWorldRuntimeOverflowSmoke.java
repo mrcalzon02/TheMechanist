@@ -1,14 +1,19 @@
 package mechanist;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Ensures authoritative snapshot-version exhaustion fails before world mutation.
+ * Ensures authoritative snapshot-version exhaustion fails before world mutation
+ * and published world snapshots cannot retain caller mutation authority.
  */
 final class AuthoritativeWorldRuntimeOverflowSmoke {
     public static void main(String[] args) throws Exception {
+        verifyWorldSnapshotImmutability();
+
         AtomicInteger commits = new AtomicInteger();
         AuthoritativeWorldRuntime.SnapshotSource source =
                 new AuthoritativeWorldRuntime.SnapshotSource() {
@@ -82,11 +87,72 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
 
             System.out.println(
                     "AuthoritativeWorldRuntimeOverflowSmoke PASS"
+                            + " snapshotDetached=true"
+                            + " nullStateNormalized=true"
                             + " initialPublication=true"
                             + " exhaustionRejected=true"
                             + " mutationPrevented=true"
                             + " wrapPrevented=true");
         }
+    }
+
+    private static void verifyWorldSnapshotImmutability() {
+        ArrayList<String> actions = new ArrayList<>();
+        actions.add("committed action");
+        ArrayList<TileSnapshot> tiles = new ArrayList<>();
+        tiles.add(new TileSnapshot(
+                1,
+                2,
+                '.',
+                true,
+                true,
+                "floor",
+                "smoke",
+                "",
+                0,
+                "",
+                "",
+                "",
+                "",
+                "tile.smoke"));
+
+        WorldSnapshot snapshot = new WorldSnapshot(
+                7L,
+                null,
+                null,
+                tiles,
+                null,
+                null,
+                actions,
+                null,
+                1L);
+
+        actions.add("late mutation");
+        tiles.clear();
+
+        require(snapshot.player() != null,
+                "null player snapshot was not normalized");
+        require(snapshot.uiState() != null,
+                "null UI snapshot was not normalized");
+        require(snapshot.visibleNpcs().isEmpty(),
+                "null NPC collection was not normalized");
+        require(snapshot.visibleObjects().isEmpty(),
+                "null object collection was not normalized");
+        require(snapshot.recentActions().equals(List.of("committed action")),
+                "published action history retained caller mutation authority");
+        require(snapshot.visibleTiles().size() == 1,
+                "published tile view retained caller mutation authority");
+        require(snapshot.compact().contains("player=none@0,0"),
+                "normalized snapshot could not render a compact audit line");
+
+        boolean immutable = false;
+        try {
+            snapshot.recentActions().add("illegal mutation");
+        } catch (UnsupportedOperationException expected) {
+            immutable = true;
+        }
+        require(immutable,
+                "published action history remained externally mutable");
     }
 
     private static AtomicLong worldVersionCounter(
