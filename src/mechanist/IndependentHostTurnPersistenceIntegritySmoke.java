@@ -65,6 +65,24 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     "missing player.0.lastEvent");
 
             writeLedger(persistence, 1L, 1L, 1L, 1L);
+            setProperty(
+                    persistence,
+                    "worldTurn",
+                    Long.toString(Long.MAX_VALUE));
+            expectRestoreFailure(
+                    persistence,
+                    "exceeds incrementable range for worldTurn");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
+            setProperty(
+                    persistence,
+                    "player.0.lastConnectionCommandId",
+                    Long.toString(Long.MAX_VALUE));
+            expectRestoreFailure(
+                    persistence,
+                    "exceeds incrementable range for player.0.lastConnectionCommandId");
+
+            writeLedger(persistence, 1L, 1L, 1L, 1L);
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -88,6 +106,8 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                             + " zeroConnectionGenerationRejected=true"
                             + " missingEventCountRejected=true"
                             + " missingLastEventRejected=true"
+                            + " counterOverflowBoundaryRejected=true"
+                            + " sequenceOverflowBoundaryRejected=true"
                             + " consistentAccountingRestored=true");
         } finally {
             deleteRecursively(root);

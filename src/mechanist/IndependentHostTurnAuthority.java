@@ -38,6 +38,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     private static final String PERSISTENCE_SCHEMA = "1";
     private static final int MAX_PERSISTED_PLAYERS = 10_000;
     private static final int MAX_RECENT_EVENTS = 12;
+    private static final long MAX_INCREMENTABLE_COUNTER = Long.MAX_VALUE - 1L;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final String worldId;
@@ -101,6 +102,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                 throw new IllegalArgumentException(
                         "world command id must be non-negative");
             }
+            if (commandId > MAX_INCREMENTABLE_COUNTER) {
+                throw new IllegalArgumentException(
+                        "world command id exceeds supported sequence range");
+            }
             if (command == null) {
                 throw new IllegalArgumentException(
                         "world command is required");
@@ -150,6 +155,16 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                                 + " expected="
                                 + expected);
             }
+            if (!hasIncrementCapacity(state)) {
+                rollbackState(
+                        playerId,
+                        prior,
+                        priorWorldTurn,
+                        priorAcceptedCommands,
+                        created);
+                throw new IllegalStateException(
+                        "independent-host turn accounting exhausted supported range");
+            }
 
             MutablePlayerState activeState = state;
             HeadlessCommandContext context =
@@ -184,8 +199,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             command.apply(context);
                             activeState.lastConnectionCommandId =
                                     commandId;
-                            activeState.acceptedCommands++;
-                            acceptedCommands++;
+                            activeState.acceptedCommands = Math.incrementExact(
+                                    activeState.acceptedCommands);
+                            acceptedCommands = Math.incrementExact(
+                                    acceptedCommands);
                             activeState.lastEvent =
                                     "authoritative wait accepted";
                             try {
@@ -312,6 +329,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         sectorManager.close();
     }
 
+    private boolean hasIncrementCapacity(MutablePlayerState state) {
+        return state.turn < MAX_INCREMENTABLE_COUNTER
+                && worldTurn < MAX_INCREMENTABLE_COUNTER
+                && state.acceptedCommands < MAX_INCREMENTABLE_COUNTER
+                && acceptedCommands < MAX_INCREMENTABLE_COUNTER;
+    }
+
     private void rollbackState(
             String playerId,
             MutablePlayerState prior,
@@ -409,10 +433,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             + " but found "
                             + storedWorld);
         }
-        worldTurn = parseNonNegativeLong(
+        worldTurn = parseIncrementableNonNegativeLong(
                 requiredProperty(properties, "worldTurn"),
                 "worldTurn");
-        acceptedCommands = parseNonNegativeLong(
+        acceptedCommands = parseIncrementableNonNegativeLong(
                 requiredProperty(properties, "acceptedCommands"),
                 "acceptedCommands");
         int count = parsePlayerCount(
@@ -442,10 +466,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                                     properties,
                                     prefix + "lastConnectionCommandId"),
                             prefix + "lastConnectionCommandId");
-            state.turn = parseNonNegativeLong(
+            state.turn = parseIncrementableNonNegativeLong(
                     requiredProperty(properties, prefix + "turn"),
                     prefix + "turn");
-            state.acceptedCommands = parseNonNegativeLong(
+            state.acceptedCommands = parseIncrementableNonNegativeLong(
                     requiredProperty(
                             properties,
                             prefix + "acceptedCommands"),
@@ -477,7 +501,15 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                         properties,
                         prefix + "event." + eventIndex)));
             }
-            summedCommands += state.acceptedCommands;
+            try {
+                summedCommands = Math.addExact(
+                        summedCommands,
+                        state.acceptedCommands);
+            } catch (ArithmeticException overflow) {
+                throw new IOException(
+                        "independent-host turn command accounting overflow",
+                        overflow);
+            }
             players.put(playerId, state);
         }
         if (summedCommands != acceptedCommands) {
@@ -618,6 +650,19 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         return parsed;
     }
 
+    private static long parseIncrementableNonNegativeLong(
+            String value,
+            String label
+    ) throws IOException {
+        long parsed = parseNonNegativeLong(value, label);
+        if (parsed > MAX_INCREMENTABLE_COUNTER) {
+            throw new IOException(
+                    "independent-host turn ledger exceeds incrementable range for "
+                            + label);
+        }
+        return parsed;
+    }
+
     private static long parseNonNegativeLong(
             String value,
             String label
@@ -646,6 +691,11 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             long parsed = Long.parseLong(value.trim());
             if (parsed < -1L) {
                 throw new NumberFormatException("below -1");
+            }
+            if (parsed > MAX_INCREMENTABLE_COUNTER) {
+                throw new IOException(
+                        "independent-host turn ledger exceeds incrementable range for "
+                                + label);
             }
             return parsed;
         } catch (NumberFormatException failure) {
@@ -827,8 +877,8 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
 
         @Override
         public void waitOneTurn(String line) {
-            state.turn++;
-            worldTurn++;
+            state.turn = Math.incrementExact(state.turn);
+            worldTurn = Math.incrementExact(worldTurn);
             state.events.addLast(safeEvent(line));
             while (state.events.size() > MAX_RECENT_EVENTS) {
                 state.events.removeFirst();
