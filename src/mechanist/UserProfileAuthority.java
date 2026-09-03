@@ -113,15 +113,19 @@ final class UserProfileAuthority {
         return value != null && !value.trim().isEmpty() && !"none".equalsIgnoreCase(value.trim());
     }
 
-    private static String internalIdentifier(String salt) {
+    private static synchronized String internalIdentifier(String salt) {
         try {
-            Path dir = Paths.get("settings");
-            Files.createDirectories(dir);
-            Path seedFile = dir.resolve("profile.seed");
-            if (!Files.exists(seedFile)) {
-                Files.writeString(seedFile, UUID.randomUUID().toString() + "\n", StandardCharsets.UTF_8);
+            Path seedFile = GameStorageManager.get().resolveProfilePath("profile.seed");
+            String seed;
+            if (Files.exists(seedFile)) {
+                seed = Files.readString(seedFile, StandardCharsets.UTF_8).trim();
+            } else {
+                seed = migrateLegacySeed(seedFile);
             }
-            String seed = Files.readString(seedFile, StandardCharsets.UTF_8).trim();
+            if (seed.isBlank()) {
+                seed = UUID.randomUUID().toString();
+                Files.writeString(seedFile, seed + "\n", StandardCharsets.UTF_8);
+            }
             String material = seed + "|" + salt + "|" + System.getProperty("user.name", "user") + "|" + System.getProperty("os.name", "os");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] digest = md.digest(material.getBytes(StandardCharsets.UTF_8));
@@ -132,6 +136,20 @@ final class UserProfileAuthority {
             String fallback = UUID.nameUUIDFromBytes((salt + System.nanoTime()).getBytes(StandardCharsets.UTF_8)).toString().replace("-", "").toUpperCase(Locale.ROOT);
             return "MECH-" + fallback.substring(0, 16);
         }
+    }
+
+    private static String migrateLegacySeed(Path canonicalSeedFile) throws Exception {
+        Path legacySeedFile = Paths.get("settings").resolve("profile.seed").toAbsolutePath().normalize();
+        if (Files.isRegularFile(legacySeedFile)) {
+            String legacySeed = Files.readString(legacySeedFile, StandardCharsets.UTF_8).trim();
+            if (!legacySeed.isBlank()) {
+                Files.writeString(canonicalSeedFile, legacySeed + "\n", StandardCharsets.UTF_8);
+                return legacySeed;
+            }
+        }
+        String seed = UUID.randomUUID().toString();
+        Files.writeString(canonicalSeedFile, seed + "\n", StandardCharsets.UTF_8);
+        return seed;
     }
 
     private static String clean(String value, String fallback) {
