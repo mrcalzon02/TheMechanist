@@ -129,6 +129,11 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             boolean created = existing == null;
             MutablePlayerState state = existing;
             if (state == null) {
+                if (players.size() >= MAX_PERSISTED_PLAYERS) {
+                    throw new IllegalStateException(
+                            "independent-host turn authority reached maximum player count "
+                                    + MAX_PERSISTED_PLAYERS);
+                }
                 state = new MutablePlayerState(playerId);
                 state.connectionGeneration = connectionGeneration;
                 players.put(playerId, state);
