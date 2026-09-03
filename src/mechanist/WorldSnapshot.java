@@ -29,10 +29,23 @@ record WorldSnapshot(long version,
     }
 
     static WorldSnapshot fromGame(long version, GamePanel game, SectorKey sector) {
+        return fromGame(
+                version,
+                game,
+                sector,
+                SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID);
+    }
+
+    static WorldSnapshot fromGame(
+            long version,
+            GamePanel game,
+            SectorKey sector,
+            String playerId
+    ) {
         if (game == null) {
-            return new WorldSnapshot(version, sector, PlayerSnapshot.empty(), List.of(), List.of(), List.of(), List.of(), UiStateSnapshot.empty(), System.currentTimeMillis());
+            return new WorldSnapshot(version, sector, PlayerSnapshot.empty(playerId), List.of(), List.of(), List.of(), List.of(), UiStateSnapshot.empty(), System.currentTimeMillis());
         }
-        PlayerSnapshot player = PlayerSnapshot.fromGame(game);
+        PlayerSnapshot player = PlayerSnapshot.fromGame(game, playerId);
         ArrayList<TileSnapshot> tiles = new ArrayList<>();
         World w = game.world;
         if (w != null && w.tiles != null) {
@@ -123,16 +136,21 @@ record PlayerSnapshot(String id,
                       String facing,
                       String motionState,
                       String activeAction) {
-    static PlayerSnapshot empty() { return new PlayerSnapshot("none", "none", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "E", "stationary", "none"); }
+    static PlayerSnapshot empty() { return empty("none"); }
+    static PlayerSnapshot empty(String playerId) { return new PlayerSnapshot(cleanIdentity(playerId), "none", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "E", "stationary", "none"); }
     static PlayerSnapshot fromGame(GamePanel game) {
+        return fromGame(game, SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID);
+    }
+    static PlayerSnapshot fromGame(GamePanel game, String playerId) {
         String action = game.singlePlayerSectorBridge == null ? "none" : game.singlePlayerSectorBridge.activeActionDisplayLine();
         if (action == null || action.isBlank()) action = "none";
         String name = game.active == null ? "none" : game.active.name;
-        return new PlayerSnapshot(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, clean(name), game.playerX, game.playerY,
+        return new PlayerSnapshot(cleanIdentity(playerId), clean(name), game.playerX, game.playerY,
                 game.turn, game.worldTurn, game.food, game.water, game.sleepNeed, game.countMoney(), game.gangHeat, game.suspicion,
                 game.facingLabel(), game.activeMotionStateLabel(), clean(action));
     }
     String compact() { return id + "@" + x + "," + y + " turn=" + turn + " action=" + activeAction; }
+    private static String cleanIdentity(String s) { return s == null || s.isBlank() ? "unspecified" : s.replace('\n', ' ').replace('\r', ' ').trim(); }
     private static String clean(String s) { return s == null ? "" : s.replace('\n', ' ').trim(); }
 }
 
