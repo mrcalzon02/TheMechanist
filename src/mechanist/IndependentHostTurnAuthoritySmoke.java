@@ -17,6 +17,8 @@ final class IndependentHostTurnAuthoritySmoke {
             "independent-host-turn-smoke-world";
     private static final String PLAYER_ID =
             "remote-0123456789abcdefabcd";
+    private static final String SECOND_PLAYER_ID =
+            "remote-fedcba9876543210abcd";
 
     public static void main(String[] args) throws Exception {
         Path root = Files.createTempDirectory(
@@ -189,6 +191,9 @@ final class IndependentHostTurnAuthoritySmoke {
                     "post-restart turn ledger did not persist the third command");
 
             verifyPersistenceFailureRollback(root.resolve("Rollback Cases"));
+            verifyCrossPlayerSnapshotIsolation(
+                    root.resolve("Cross Player Snapshot")
+                            .resolve("turns.properties"));
 
             Properties corrupted = new Properties();
             try (var input = Files.newInputStream(persistence)) {
@@ -216,6 +221,7 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " exactCommandOrdering=true"
                             + " connectionGenerationReset=true"
                             + " immutableSnapshots=true"
+                            + " crossPlayerSnapshotIsolation=true"
                             + " atomicPersistence=true"
                             + " cleanRestartContinuity=true"
                             + " eventHistoryRestartContinuity=true"
@@ -227,6 +233,47 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " remoteGameplayCertified=false");
         } finally {
             deleteRecursively(root);
+        }
+    }
+
+    private static void verifyCrossPlayerSnapshotIsolation(
+            Path persistence
+    ) throws Exception {
+        try (IndependentHostTurnAuthority authority =
+                     new IndependentHostTurnAuthority(
+                             WORLD_ID + "-cross-player",
+                             persistence)) {
+            authority.applyCommand(
+                    PLAYER_ID,
+                    1L,
+                    0L,
+                    new WaitCommand(PLAYER_ID));
+            IndependentHostTurnAuthority.TurnCommandResult second =
+                    authority.applyCommand(
+                            SECOND_PLAYER_ID,
+                            1L,
+                            0L,
+                            new WaitCommand(SECOND_PLAYER_ID));
+            require(second.snapshot().worldSnapshot() != null
+                            && SECOND_PLAYER_ID.equals(
+                            second.snapshot().worldSnapshot().player().id()),
+                    "second player did not receive its own committed world snapshot");
+
+            IndependentHostTurnAuthority.TurnSnapshot firstAfterSecond =
+                    authority.snapshotForPlayer(PLAYER_ID);
+            require(firstAfterSecond != null
+                            && firstAfterSecond.playerTurn() == 1L
+                            && firstAfterSecond.worldSnapshot() == null
+                            && "none".equals(firstAfterSecond.mutationThread()),
+                    "first player inherited the second player's latest world snapshot");
+
+            IndependentHostTurnAuthority.TurnSnapshot secondAfterSecond =
+                    authority.snapshotForPlayer(SECOND_PLAYER_ID);
+            require(secondAfterSecond != null
+                            && secondAfterSecond.worldSnapshot() != null
+                            && SECOND_PLAYER_ID.equals(
+                            secondAfterSecond.worldSnapshot().player().id()),
+                    "latest player lost its own authoritative world snapshot");
         }
     }
 
