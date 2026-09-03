@@ -126,12 +126,24 @@ final class UserProfileAuthority {
                 seed = UUID.randomUUID().toString();
                 Files.writeString(seedFile, seed + "\n", StandardCharsets.UTF_8);
             }
+
+            Path identifierFile = GameStorageManager.get().resolveProfilePath(
+                    "profile-" + salt + ".identifier");
+            if (Files.isRegularFile(identifierFile)) {
+                String persisted = Files.readString(identifierFile, StandardCharsets.UTF_8).trim();
+                if (persisted.matches("MECH-[0-9A-F]{16}")) {
+                    return persisted;
+                }
+            }
+
             String material = seed + "|" + salt + "|" + System.getProperty("user.name", "user") + "|" + System.getProperty("os.name", "os");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] digest = md.digest(material.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder("MECH-");
             for (int i = 0; i < 8 && i < digest.length; i++) sb.append(String.format(Locale.ROOT, "%02X", digest[i]));
-            return sb.toString();
+            String identifier = sb.toString();
+            Files.writeString(identifierFile, identifier + "\n", StandardCharsets.UTF_8);
+            return identifier;
         } catch (Throwable t) {
             String fallback = UUID.nameUUIDFromBytes((salt + System.nanoTime()).getBytes(StandardCharsets.UTF_8)).toString().replace("-", "").toUpperCase(Locale.ROOT);
             return "MECH-" + fallback.substring(0, 16);
