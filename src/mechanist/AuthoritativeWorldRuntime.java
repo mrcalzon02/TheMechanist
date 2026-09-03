@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * commit and publishes snapshots only after the commit succeeds.
  */
 final class AuthoritativeWorldRuntime implements AutoCloseable {
-    static final String VERSION = "authoritative-world-runtime-0.9.10go";
+    static final String VERSION = "authoritative-world-runtime-0.9.10gp";
 
     interface MutationCommit {
         SectorSnapshot run();
@@ -227,6 +227,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                 + " snapshotSource=desktop-or-headless"
                 + " snapshot=atomic-reference"
                 + " immutableWorldSnapshot=published-after-commit"
+                + " snapshotIdentity=validated"
                 + " publicationFailure=fail-closed";
     }
 
@@ -273,6 +274,10 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                         UiStateSnapshot.empty(),
                         System.currentTimeMillis());
             }
+            validateWorldSnapshotIdentity(
+                    version,
+                    sector,
+                    candidateWorldSnapshot);
             worldSnapshot = candidateWorldSnapshot;
             AuthoritativeWorldSnapshot candidateSnapshot =
                     source.authoritativeSnapshot(
@@ -304,6 +309,11 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                         sectorSnapshot,
                         System.currentTimeMillis());
             }
+            validateAuthoritativeSnapshotIdentity(
+                    version,
+                    sector,
+                    worldSnapshot,
+                    candidateSnapshot);
             snapshot = candidateSnapshot;
         } catch (RuntimeException | Error failure) {
             publicationFailure.compareAndSet(
@@ -323,6 +333,56 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     snapshot.compact());
         }
         return snapshot;
+    }
+
+    private static void validateWorldSnapshotIdentity(
+            long version,
+            SectorKey sector,
+            WorldSnapshot snapshot
+    ) {
+        if (snapshot.version() != version) {
+            throw new IllegalStateException(
+                    "Snapshot source returned world version "
+                            + snapshot.version()
+                            + " for authoritative version " + version);
+        }
+        if (!Objects.equals(snapshot.currentSector(), sector)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned world sector "
+                            + (snapshot.currentSector() == null
+                            ? "none"
+                            : snapshot.currentSector().compact())
+                            + " for authoritative sector "
+                            + (sector == null ? "none" : sector.compact()));
+        }
+    }
+
+    private static void validateAuthoritativeSnapshotIdentity(
+            long version,
+            SectorKey sector,
+            WorldSnapshot worldSnapshot,
+            AuthoritativeWorldSnapshot snapshot
+    ) {
+        if (snapshot.version() != version) {
+            throw new IllegalStateException(
+                    "Snapshot source returned authoritative version "
+                            + snapshot.version()
+                            + " for authoritative version " + version);
+        }
+        if (!Objects.equals(snapshot.sector(), sector)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned authoritative sector "
+                            + (snapshot.sector() == null
+                            ? "none"
+                            : snapshot.sector().compact())
+                            + " for authoritative sector "
+                            + (sector == null ? "none" : sector.compact()));
+        }
+        if (snapshot.worldSnapshot() != worldSnapshot) {
+            throw new IllegalStateException(
+                    "Snapshot source detached authoritative snapshot from "
+                            + "the validated world snapshot instance");
+        }
     }
 
     static void assertNotSwingThreadForWorldMutation(String reason) {
