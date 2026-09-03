@@ -380,6 +380,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             MutablePlayerState state,
             AuthoritativeWorldSnapshot authoritative
     ) {
+        if (authoritative != null
+                && !state.playerId.equals(authoritative.playerId())) {
+            authoritative = null;
+        }
         WorldSnapshot worldSnapshot = authoritative == null
                 ? null
                 : authoritative.worldSnapshot();
