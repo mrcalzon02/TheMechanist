@@ -266,7 +266,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                 candidateWorldSnapshot = new WorldSnapshot(
                         version,
                         sector,
-                        PlayerSnapshot.empty(),
+                        emptyPlayerSnapshot(playerId),
                         java.util.List.of(),
                         java.util.List.of(),
                         java.util.List.of(),
@@ -276,6 +276,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             }
             validateWorldSnapshotIdentity(
                     version,
+                    playerId,
                     sector,
                     candidateWorldSnapshot);
             worldSnapshot = candidateWorldSnapshot;
@@ -338,6 +339,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
 
     private static void validateWorldSnapshotIdentity(
             long version,
+            String playerId,
             SectorKey sector,
             WorldSnapshot snapshot
     ) {
@@ -355,6 +357,14 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                             : snapshot.currentSector().compact())
                             + " for authoritative sector "
                             + (sector == null ? "none" : sector.compact()));
+        }
+        String expectedPlayerId = safe(playerId);
+        String snapshotPlayerId = safe(snapshot.player().id());
+        if (!Objects.equals(snapshotPlayerId, expectedPlayerId)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned world player "
+                            + snapshotPlayerId
+                            + " for submitted player " + expectedPlayerId);
         }
     }
 
@@ -392,6 +402,25 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     "Snapshot source detached authoritative snapshot from "
                             + "the validated world snapshot instance");
         }
+    }
+
+    private static PlayerSnapshot emptyPlayerSnapshot(String playerId) {
+        return new PlayerSnapshot(
+                safe(playerId),
+                "none",
+                0,
+                0,
+                0L,
+                0L,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                "E",
+                "stationary",
+                "none");
     }
 
     static void assertNotSwingThreadForWorldMutation(String reason) {
