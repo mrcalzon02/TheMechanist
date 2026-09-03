@@ -2,20 +2,39 @@ package mechanist;
 
 /**
  * Verifies that the authoritative runtime preserves the submitted authenticated
- * player identity through both runtime fallback and GamePanel-backed snapshot
- * construction paths.
+ * player identity through direct snapshot construction, runtime fallback, and
+ * GamePanel-backed snapshot construction paths.
  */
 final class AuthoritativeWorldRuntimeFallbackPlayerIdentitySmoke {
     public static void main(String[] args) {
+        verifyDirectSnapshotFactoryIdentity();
         verifyFallbackSnapshotIdentity();
         verifyPanelSnapshotIdentity();
 
         System.out.println(
                 "AuthoritativeWorldRuntimeFallbackPlayerIdentitySmoke PASS"
+                        + " directFactoryPlayerBound=true"
                         + " authenticatedPlayerBound=true"
                         + " worldPlayerBound=true"
                         + " panelPlayerBound=true"
                         + " canonicalSnapshotRetained=true");
+    }
+
+    private static void verifyDirectSnapshotFactoryIdentity() {
+        String authenticatedPlayer = "direct-authenticated-player";
+        WorldSnapshot snapshot = WorldSnapshot.fromGame(
+                7L,
+                null,
+                null,
+                authenticatedPlayer);
+        require(snapshot != null,
+                "direct snapshot factory did not return a snapshot");
+        require(snapshot.player() != null,
+                "direct snapshot factory did not create player state");
+        require(authenticatedPlayer.equals(snapshot.player().id()),
+                "direct snapshot factory relabeled or lost authenticated player identity");
+        require(snapshot.version() == 7L,
+                "direct snapshot factory changed requested world version");
     }
 
     private static void verifyFallbackSnapshotIdentity() {
