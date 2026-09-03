@@ -15,6 +15,9 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
             "independent-host-turn-integrity-smoke-world";
     private static final String PLAYER_ID =
             "remote-0123456789abcdefabcd";
+    private static final String CAPACITY_PLAYER_ID =
+            "remote-ffffffffffffffffffff";
+    private static final int MAX_PERSISTED_PLAYERS = 10_000;
 
     public static void main(String[] args) throws Exception {
         Path root = Files.createTempDirectory(
@@ -82,6 +85,43 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                     persistence,
                     "exceeds incrementable range for player.0.lastConnectionCommandId");
 
+            writeCapacityLedger(persistence, MAX_PERSISTED_PLAYERS);
+            try (IndependentHostTurnAuthority authority =
+                         new IndependentHostTurnAuthority(
+                                 WORLD_ID,
+                                 persistence)) {
+                require(authority.playerCount() == MAX_PERSISTED_PLAYERS,
+                        "capacity ledger did not restore to the governed player ceiling");
+                Throwable failure = null;
+                try {
+                    authority.applyCommand(
+                            CAPACITY_PLAYER_ID,
+                            1L,
+                            0L,
+                            new WaitCommand(CAPACITY_PLAYER_ID));
+                } catch (Throwable caught) {
+                    failure = caught;
+                }
+                require(failure != null,
+                        "new player was admitted beyond the persisted player ceiling");
+                require(allMessages(failure).toLowerCase(Locale.ROOT)
+                                .contains("maximum player count"),
+                        "unexpected capacity rejection: " + allMessages(failure));
+                require(authority.playerCount() == MAX_PERSISTED_PLAYERS
+                                && authority.worldTurn() == 0L
+                                && authority.acceptedCommands() == 0L,
+                        "capacity rejection mutated authoritative WAIT accounting");
+            }
+            try (IndependentHostTurnAuthority authority =
+                         new IndependentHostTurnAuthority(
+                                 WORLD_ID,
+                                 persistence)) {
+                require(authority.playerCount() == MAX_PERSISTED_PLAYERS
+                                && authority.worldTurn() == 0L
+                                && authority.acceptedCommands() == 0L,
+                        "capacity rejection left a ledger that could not restart cleanly");
+            }
+
             writeLedger(persistence, 1L, 1L, 1L, 1L);
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
@@ -108,6 +148,8 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                             + " missingLastEventRejected=true"
                             + " counterOverflowBoundaryRejected=true"
                             + " sequenceOverflowBoundaryRejected=true"
+                            + " playerCapacityOverflowRejected=true"
+                            + " capacityRejectionRestartSafe=true"
                             + " consistentAccountingRestored=true");
         } finally {
             deleteRecursively(root);
@@ -141,6 +183,35 @@ final class IndependentHostTurnPersistenceIntegritySmoke {
                 "authoritative wait accepted");
         properties.setProperty("player.0.event.count", "1");
         properties.setProperty("player.0.event.0", "wait");
+        storeProperties(persistence, properties);
+    }
+
+    private static void writeCapacityLedger(
+            Path persistence,
+            int playerCount
+    ) throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("schema", "1");
+        properties.setProperty("worldId", WORLD_ID);
+        properties.setProperty("worldTurn", "0");
+        properties.setProperty("acceptedCommands", "0");
+        properties.setProperty("player.count", Integer.toString(playerCount));
+        for (int index = 0; index < playerCount; index++) {
+            String prefix = "player." + index + ".";
+            String playerId = String.format(
+                    Locale.ROOT,
+                    "remote-%020x",
+                    index);
+            properties.setProperty(prefix + "playerId", playerId);
+            properties.setProperty(prefix + "connectionGeneration", "1");
+            properties.setProperty(prefix + "lastConnectionCommandId", "-1");
+            properties.setProperty(prefix + "turn", "0");
+            properties.setProperty(prefix + "acceptedCommands", "0");
+            properties.setProperty(
+                    prefix + "lastEvent",
+                    "no authoritative command accepted");
+            properties.setProperty(prefix + "event.count", "0");
+        }
         storeProperties(persistence, properties);
     }
 
