@@ -217,10 +217,18 @@ record UiStateSnapshot(String screen,
                        String serverAction) {
     static UiStateSnapshot empty() { return new UiStateSnapshot("none", "none", 0, 0, false, "none", 0, "none"); }
     static UiStateSnapshot fromGame(GamePanel game) {
-        String zone = game.world == null ? "none" : game.world.zoneType.label + " " + game.world.zoneCoordText();
+        if (game == null) return empty();
+        String zone = "none";
+        if (game.world != null) {
+            String zoneLabel = game.world.zoneType == null
+                    ? "none"
+                    : game.world.zoneType.label;
+            zone = zoneLabel + " " + game.world.zoneCoordText();
+        }
         String action = game.singlePlayerSectorBridge == null ? "none" : game.singlePlayerSectorBridge.activeActionDisplayLine();
         if (action == null || action.isBlank()) action = "none";
-        return new UiStateSnapshot(String.valueOf(game.screen), String.valueOf(game.panelMode), game.lookX, game.lookY, game.lookCursorActive, clean(zone), game.inventory.size(), clean(action));
+        int inventoryCount = game.inventory == null ? 0 : game.inventory.size();
+        return new UiStateSnapshot(String.valueOf(game.screen), String.valueOf(game.panelMode), game.lookX, game.lookY, game.lookCursorActive, clean(zone), inventoryCount, clean(action));
     }
     String compact() { return screen + "/" + panel + " look=" + lookX + "," + lookY + " action=" + serverAction; }
     private static String clean(String s) { return s == null ? "" : s.replace('\n', ' ').trim(); }
