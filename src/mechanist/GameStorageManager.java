@@ -295,12 +295,25 @@ final class GameStorageManager {
     }
 
     static void writeAtomic(Path tmp, Path target, byte[] data) throws IOException {
-        Files.createDirectories(target.getParent());
-        try (FileChannel channel = FileChannel.open(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
-            channel.write(ByteBuffer.wrap(data));
-            channel.force(true);
+        Objects.requireNonNull(tmp, "tmp");
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(data, "data");
+        Path parent = target.getParent();
+        if (parent == null) throw new IOException("Atomic write target must have a parent directory: " + target);
+        Path tempParent = tmp.getParent();
+        if (tempParent == null || !normalizeAbsolute(tempParent).equals(normalizeAbsolute(parent))) {
+            throw new IOException("Atomic write temporary file must share the target directory: " + tmp);
         }
-        atomicMove(tmp, target);
+        Files.createDirectories(parent);
+        try {
+            try (FileChannel channel = FileChannel.open(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
+                channel.write(ByteBuffer.wrap(data));
+                channel.force(true);
+            }
+            atomicMove(tmp, target);
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
     }
 
     private static Path atomicMove(Path source, Path target) throws IOException {
