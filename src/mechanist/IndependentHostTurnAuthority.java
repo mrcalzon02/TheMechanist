@@ -72,17 +72,22 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                 0,
                 "independent-host-staging-" + cleanForPath(this.worldId));
         this.sectorManager = new SectorManager();
-        this.worldRuntime = new AuthoritativeWorldRuntime(
-                "mechanist-independent-host-world-" + cleanForPath(this.worldId));
+        AuthoritativeWorldRuntime restoredRuntime = null;
         try {
             loadIfPresent();
+            restoredRuntime = new AuthoritativeWorldRuntime(
+                    "mechanist-independent-host-world-" + cleanForPath(this.worldId),
+                    worldTurn);
         } catch (IOException | RuntimeException failure) {
-            worldRuntime.close();
+            if (restoredRuntime != null) {
+                restoredRuntime.close();
+            }
             sectorManager.close();
             throw new IllegalStateException(
                     "independent-host turn authority could not restore persistence",
                     failure);
         }
+        this.worldRuntime = restoredRuntime;
     }
 
     TurnCommandResult applyCommand(
