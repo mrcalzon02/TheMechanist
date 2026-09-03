@@ -509,14 +509,14 @@ record AuthoritativeWorldSnapshot(
                     sectorSnapshot,
                     System.currentTimeMillis());
         }
-        String zone = game.world == null
+        String zone = game.world == null || game.world.zoneType == null
                 ? "none"
-                : game.world.zoneType.label
+                : safe(game.world.zoneType.label)
                 + " "
-                + game.world.zoneCoordText();
+                + safe(game.world.zoneCoordText());
         String activeName = game.active == null
                 ? "none"
-                : game.active.name;
+                : safe(game.active.name);
         String activeAction = game.singlePlayerSectorBridge == null
                 ? "none"
                 : game.singlePlayerSectorBridge.activeActionDisplayLine();
@@ -535,7 +535,7 @@ record AuthoritativeWorldSnapshot(
                 String.valueOf(game.screen),
                 zone,
                 game.countMoney(),
-                game.eventLog.size(),
+                game.eventLog == null ? 0 : game.eventLog.size(),
                 activeName,
                 safe(activeAction),
                 worldSnapshot,
