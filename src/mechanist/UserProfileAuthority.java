@@ -3,11 +3,9 @@ package mechanist;
 import java.awt.Desktop;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -180,12 +178,10 @@ final class UserProfileAuthority {
         if (parent != null) Files.createDirectories(parent);
         Path temp = target.resolveSibling(target.getFileName() + ".tmp-" + UUID.randomUUID());
         try {
-            Files.writeString(temp, value + "\n", StandardCharsets.UTF_8);
-            try {
-                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException unsupported) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            GameStorageManager.writeAtomic(
+                    temp,
+                    target,
+                    (value + "\n").getBytes(StandardCharsets.UTF_8));
         } finally {
             Files.deleteIfExists(temp);
         }
