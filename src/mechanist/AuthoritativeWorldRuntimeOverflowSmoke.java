@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 final class AuthoritativeWorldRuntimeOverflowSmoke {
     public static void main(String[] args) throws Exception {
         verifyWorldSnapshotImmutability();
+        verifyWorldSnapshotBounds();
         verifyPublicationFailureFailsClosed();
         verifySnapshotIdentityMismatchFailsClosed();
         verifyPlayerIdentityMismatchFailsClosed();
@@ -24,6 +25,7 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
                 "AuthoritativeWorldRuntimeOverflowSmoke PASS"
                         + " snapshotDetached=true"
                         + " nullStateNormalized=true"
+                        + " snapshotBoundsEnforced=true"
                         + " publicationFailureFailedClosed=true"
                         + " snapshotIdentityValidated=true"
                         + " playerIdentityValidated=true"
@@ -449,6 +451,70 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
         }
         require(immutable,
                 "published action history remained externally mutable");
+    }
+
+    private static void verifyWorldSnapshotBounds() {
+        ArrayList<String> excessiveActions = new ArrayList<>();
+        for (int index = 0; index <= WorldSnapshot.MAX_ACTIONS; index++) {
+            excessiveActions.add("action-" + index);
+        }
+        Throwable actionFailure = null;
+        try {
+            new WorldSnapshot(
+                    8L,
+                    null,
+                    PlayerSnapshot.empty(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    excessiveActions,
+                    UiStateSnapshot.empty(),
+                    1L);
+        } catch (Throwable caught) {
+            actionFailure = caught;
+        }
+        require(actionFailure != null
+                        && allMessages(actionFailure).contains(
+                        "exceeds maximum recent actions"),
+                "oversized recent action snapshot was accepted");
+
+        ArrayList<TileSnapshot> excessiveTiles = new ArrayList<>();
+        for (int index = 0; index <= WorldSnapshot.MAX_TILES; index++) {
+            excessiveTiles.add(new TileSnapshot(
+                    index,
+                    0,
+                    '.',
+                    true,
+                    false,
+                    "floor",
+                    "smoke",
+                    "",
+                    0,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "tile.smoke"));
+        }
+        Throwable tileFailure = null;
+        try {
+            new WorldSnapshot(
+                    9L,
+                    null,
+                    PlayerSnapshot.empty(),
+                    excessiveTiles,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    UiStateSnapshot.empty(),
+                    1L);
+        } catch (Throwable caught) {
+            tileFailure = caught;
+        }
+        require(tileFailure != null
+                        && allMessages(tileFailure).contains(
+                        "exceeds maximum visible tiles"),
+                "oversized visible tile snapshot was accepted");
     }
 
     private static AtomicLong worldVersionCounter(
