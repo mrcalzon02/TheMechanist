@@ -8,13 +8,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Ensures authoritative snapshot-version exhaustion fails before world mutation,
- * snapshot publication failures poison the runtime after mutation, and published
- * world snapshots cannot retain caller mutation authority.
+ * snapshot publication failures poison the runtime after mutation, incoherent
+ * snapshot identities fail closed, and published world snapshots cannot retain
+ * caller mutation authority.
  */
 final class AuthoritativeWorldRuntimeOverflowSmoke {
     public static void main(String[] args) throws Exception {
         verifyWorldSnapshotImmutability();
         verifyPublicationFailureFailsClosed();
+        verifySnapshotIdentityMismatchFailsClosed();
         verifyWorldVersionExhaustion();
 
         System.out.println(
@@ -22,6 +24,7 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
                         + " snapshotDetached=true"
                         + " nullStateNormalized=true"
                         + " publicationFailureFailedClosed=true"
+                        + " snapshotIdentityValidated=true"
                         + " lastGoodSnapshotPreserved=true"
                         + " exhaustionRejected=true"
                         + " mutationPrevented=true"
@@ -129,6 +132,90 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
                     "failed-closed rejection changed authoritative version");
             require(runtime.latestSnapshot() == first,
                     "failed-closed rejection replaced last good snapshot");
+        }
+    }
+
+    private static void verifySnapshotIdentityMismatchFailsClosed() {
+        AtomicInteger mutations = new AtomicInteger();
+        AuthoritativeWorldRuntime.SnapshotSource healthySource = nullSnapshotSource();
+        AuthoritativeWorldRuntime.SnapshotSource mismatchedSource =
+                new AuthoritativeWorldRuntime.SnapshotSource() {
+                    @Override
+                    public WorldSnapshot worldSnapshot(
+                            long version,
+                            SectorKey sector
+                    ) {
+                        return new WorldSnapshot(
+                                version + 1L,
+                                sector,
+                                PlayerSnapshot.empty(),
+                                List.of(),
+                                List.of(),
+                                List.of(),
+                                List.of(),
+                                UiStateSnapshot.empty(),
+                                System.currentTimeMillis());
+                    }
+
+                    @Override
+                    public AuthoritativeWorldSnapshot authoritativeSnapshot(
+                            long version,
+                            String playerId,
+                            SectorKey sector,
+                            String reason,
+                            SectorSnapshot sectorSnapshot,
+                            WorldSnapshot worldSnapshot,
+                            String mutationThread
+                    ) {
+                        return null;
+                    }
+                };
+
+        try (AuthoritativeWorldRuntime runtime =
+                     new AuthoritativeWorldRuntime(
+                             "mechanist-world-identity-mismatch-smoke")) {
+            AuthoritativeWorldSnapshot first = runtime.submitAndJoin(
+                    healthySource,
+                    "identity-smoke-player",
+                    null,
+                    "initial identity publication",
+                    () -> {
+                        mutations.incrementAndGet();
+                        return null;
+                    });
+            require(first.version() == 1L,
+                    "identity smoke did not establish version one");
+
+            Throwable mismatchFailure = null;
+            try {
+                runtime.submitAndJoin(
+                        mismatchedSource,
+                        "identity-smoke-player",
+                        null,
+                        "mismatched snapshot identity",
+                        () -> {
+                            mutations.incrementAndGet();
+                            return null;
+                        });
+            } catch (Throwable caught) {
+                mismatchFailure = caught;
+            }
+            require(mismatchFailure != null,
+                    "mismatched snapshot identity was accepted");
+            require(allMessages(mismatchFailure).contains(
+                            "Snapshot source returned world version 3 "
+                                    + "for authoritative version 2"),
+                    "unexpected snapshot identity failure: "
+                            + allMessages(mismatchFailure));
+            require(mutations.get() == 2,
+                    "identity mismatch did not occur after committed mutation");
+            require(runtime.worldVersion() == 1L,
+                    "identity mismatch advanced authoritative version");
+            require(runtime.latestSnapshot() == first,
+                    "identity mismatch replaced last good snapshot");
+            require(runtime.statusLine().contains(
+                            "publicationState=failed-closed"),
+                    "identity mismatch did not fail runtime closed");
         }
     }
 
