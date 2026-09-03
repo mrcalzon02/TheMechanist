@@ -1,16 +1,11 @@
 package mechanist;
 
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
@@ -605,29 +600,17 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                 persistenceFile.getFileName()
                         + ".tmp-"
                         + randomHex(8));
-        try {
-            try (FileChannel channel = FileChannel.open(
-                         temporary,
-                         StandardOpenOption.CREATE_NEW,
-                         StandardOpenOption.WRITE);
-                 OutputStream output = new BufferedOutputStream(
-                         Channels.newOutputStream(channel))) {
-                setOwnerOnlyPermissions(temporary);
-                properties.store(
-                        output,
-                        "The Mechanist independent-host authoritative wait/turn ledger");
-                output.flush();
-                channel.force(true);
-            }
-            Files.move(
-                    temporary,
-                    persistenceFile,
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING);
-            setOwnerOnlyPermissions(persistenceFile);
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        properties.store(
+                buffer,
+                "The Mechanist independent-host authoritative wait/turn ledger");
+        Files.createFile(temporary);
+        setOwnerOnlyPermissions(temporary);
+        GameStorageManager.writeAtomic(
+                temporary,
+                persistenceFile,
+                buffer.toByteArray());
+        setOwnerOnlyPermissions(persistenceFile);
     }
 
     private void requireOpen() {
