@@ -289,6 +289,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     System.currentTimeMillis());
         }
         synchronized (publicationLock) {
+            worldVersion.set(version);
             latestWorldSnapshot.set(worldSnapshot);
             latestSnapshot.set(snapshot);
         }
