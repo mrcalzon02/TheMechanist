@@ -44,8 +44,10 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                         long version,
                         SectorKey sector
                 ) {
-                    return bindPlayerIdentity(
-                            WorldSnapshot.fromGame(version, game, sector),
+                    return WorldSnapshot.fromGame(
+                            version,
+                            game,
+                            sector,
                             playerId);
                 }
 
@@ -404,44 +406,6 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     "Snapshot source detached authoritative snapshot from "
                             + "the validated world snapshot instance");
         }
-    }
-
-    private static WorldSnapshot bindPlayerIdentity(
-            WorldSnapshot snapshot,
-            String playerId
-    ) {
-        if (snapshot == null) return null;
-        String expectedPlayerId = safe(playerId);
-        PlayerSnapshot player = snapshot.player();
-        if (Objects.equals(safe(player.id()), expectedPlayerId)) {
-            return snapshot;
-        }
-        PlayerSnapshot reboundPlayer = new PlayerSnapshot(
-                expectedPlayerId,
-                player.name(),
-                player.x(),
-                player.y(),
-                player.turn(),
-                player.worldTurn(),
-                player.food(),
-                player.water(),
-                player.sleepNeed(),
-                player.carriedScript(),
-                player.heat(),
-                player.suspicion(),
-                player.facing(),
-                player.motionState(),
-                player.activeAction());
-        return new WorldSnapshot(
-                snapshot.version(),
-                snapshot.currentSector(),
-                reboundPlayer,
-                snapshot.visibleTiles(),
-                snapshot.visibleNpcs(),
-                snapshot.visibleObjects(),
-                snapshot.recentActions(),
-                snapshot.uiState(),
-                snapshot.committedAtMillis());
     }
 
     private static PlayerSnapshot emptyPlayerSnapshot(String playerId) {
