@@ -311,6 +311,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             }
             validateAuthoritativeSnapshotIdentity(
                     version,
+                    playerId,
                     sector,
                     worldSnapshot,
                     candidateSnapshot);
@@ -359,6 +360,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
 
     private static void validateAuthoritativeSnapshotIdentity(
             long version,
+            String playerId,
             SectorKey sector,
             WorldSnapshot worldSnapshot,
             AuthoritativeWorldSnapshot snapshot
@@ -368,6 +370,13 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     "Snapshot source returned authoritative version "
                             + snapshot.version()
                             + " for authoritative version " + version);
+        }
+        String expectedPlayerId = safe(playerId);
+        if (!Objects.equals(snapshot.playerId(), expectedPlayerId)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned authoritative player "
+                            + safe(snapshot.playerId())
+                            + " for submitted player " + expectedPlayerId);
         }
         if (!Objects.equals(snapshot.sector(), sector)) {
             throw new IllegalStateException(
