@@ -14,16 +14,17 @@ record WorldSnapshot(long version,
                      UiStateSnapshot uiState,
                      long committedAtMillis) {
     static final int TILE_RADIUS = 12;
+    static final int MAX_TILES = (TILE_RADIUS * 2 + 1) * (TILE_RADIUS * 2 + 1);
     static final int MAX_NPCS = 80;
     static final int MAX_OBJECTS = 120;
     static final int MAX_ACTIONS = 12;
 
     WorldSnapshot {
         player = player == null ? PlayerSnapshot.empty() : player;
-        visibleTiles = visibleTiles == null ? List.of() : List.copyOf(visibleTiles);
-        visibleNpcs = visibleNpcs == null ? List.of() : List.copyOf(visibleNpcs);
-        visibleObjects = visibleObjects == null ? List.of() : List.copyOf(visibleObjects);
-        recentActions = recentActions == null ? List.of() : List.copyOf(recentActions);
+        visibleTiles = checkedCopy(visibleTiles, MAX_TILES, "visible tiles");
+        visibleNpcs = checkedCopy(visibleNpcs, MAX_NPCS, "visible NPCs");
+        visibleObjects = checkedCopy(visibleObjects, MAX_OBJECTS, "visible objects");
+        recentActions = checkedCopy(recentActions, MAX_ACTIONS, "recent actions");
         uiState = uiState == null ? UiStateSnapshot.empty() : uiState;
     }
 
@@ -92,6 +93,16 @@ record WorldSnapshot(long version,
                 + " npcs=" + visibleNpcs.size()
                 + " objects=" + visibleObjects.size()
                 + " ui=" + uiState.compact();
+    }
+
+    private static <T> List<T> checkedCopy(List<T> values, int maximum, String label) {
+        if (values == null) return List.of();
+        if (values.size() > maximum) {
+            throw new IllegalArgumentException(
+                    "WorldSnapshot exceeds maximum " + label + ": "
+                            + values.size() + " > " + maximum);
+        }
+        return List.copyOf(values);
     }
 
     private static String clean(String s) { return s == null ? "" : s.replace('\n', ' ').trim(); }
