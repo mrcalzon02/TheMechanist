@@ -132,6 +132,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
         }
         Thread owner = ownerThread.get();
         if (owner != null && Thread.currentThread() == owner) {
+            requirePublicationCapacity();
             SectorSnapshot sectorSnapshot = commit.run();
             return publishSnapshot(
                     source,
@@ -143,6 +144,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
         CompletableFuture<AuthoritativeWorldSnapshot> future =
                 CompletableFuture.supplyAsync(() -> {
                     assertNotSwingThreadForWorldMutation(reason);
+                    requirePublicationCapacity();
                     SectorSnapshot sectorSnapshot = commit.run();
                     return publishSnapshot(
                             source,
@@ -222,6 +224,15 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                 + " immutableWorldSnapshot=published-after-commit";
     }
 
+    private void requirePublicationCapacity() {
+        synchronized (publicationLock) {
+            if (worldVersion.get() == Long.MAX_VALUE) {
+                throw new IllegalStateException(
+                        "AuthoritativeWorldRuntime world version exhausted supported range");
+            }
+        }
+    }
+
     private AuthoritativeWorldSnapshot publishSnapshot(
             SnapshotSource source,
             String playerId,
@@ -229,7 +240,10 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             String reason,
             SectorSnapshot sectorSnapshot
     ) {
-        long version = worldVersion.get() + 1L;
+        final long version;
+        synchronized (publicationLock) {
+            version = Math.incrementExact(worldVersion.get());
+        }
         WorldSnapshot worldSnapshot =
                 source.worldSnapshot(version, sector);
         if (worldSnapshot == null) {
@@ -275,7 +289,6 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     System.currentTimeMillis());
         }
         synchronized (publicationLock) {
-            worldVersion.set(version);
             latestWorldSnapshot.set(worldSnapshot);
             latestSnapshot.set(snapshot);
         }
