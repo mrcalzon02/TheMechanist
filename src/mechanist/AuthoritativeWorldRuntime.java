@@ -91,6 +91,18 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     private final Object publicationLock = new Object();
 
     AuthoritativeWorldRuntime(String name) {
+        this(name, 0L);
+    }
+
+    AuthoritativeWorldRuntime(
+            String name,
+            long initialWorldVersion
+    ) {
+        if (initialWorldVersion < 0L) {
+            throw new IllegalArgumentException(
+                    "initial authoritative world version must be non-negative");
+        }
+        worldVersion.set(initialWorldVersion);
         String threadName = name == null || name.isBlank()
                 ? "mechanist-authoritative-world"
                 : name.trim();
