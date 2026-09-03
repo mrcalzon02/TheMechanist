@@ -7,22 +7,39 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Ensures authoritative snapshot-version exhaustion fails before world mutation
- * and published world snapshots cannot retain caller mutation authority.
+ * Ensures authoritative snapshot-version exhaustion fails before world mutation,
+ * snapshot publication failures poison the runtime after mutation, and published
+ * world snapshots cannot retain caller mutation authority.
  */
 final class AuthoritativeWorldRuntimeOverflowSmoke {
     public static void main(String[] args) throws Exception {
         verifyWorldSnapshotImmutability();
+        verifyPublicationFailureFailsClosed();
+        verifyWorldVersionExhaustion();
 
-        AtomicInteger commits = new AtomicInteger();
-        AuthoritativeWorldRuntime.SnapshotSource source =
+        System.out.println(
+                "AuthoritativeWorldRuntimeOverflowSmoke PASS"
+                        + " snapshotDetached=true"
+                        + " nullStateNormalized=true"
+                        + " publicationFailureFailedClosed=true"
+                        + " lastGoodSnapshotPreserved=true"
+                        + " exhaustionRejected=true"
+                        + " mutationPrevented=true"
+                        + " wrapPrevented=true");
+    }
+
+    private static void verifyPublicationFailureFailsClosed() {
+        AtomicInteger mutations = new AtomicInteger();
+        AuthoritativeWorldRuntime.SnapshotSource healthySource = nullSnapshotSource();
+        AuthoritativeWorldRuntime.SnapshotSource failingSource =
                 new AuthoritativeWorldRuntime.SnapshotSource() {
                     @Override
                     public WorldSnapshot worldSnapshot(
                             long version,
                             SectorKey sector
                     ) {
-                        return null;
+                        throw new IllegalStateException(
+                                "forced snapshot construction failure");
                     }
 
                     @Override
@@ -38,6 +55,86 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
                         return null;
                     }
                 };
+
+        try (AuthoritativeWorldRuntime runtime =
+                     new AuthoritativeWorldRuntime(
+                             "mechanist-world-publication-failure-smoke")) {
+            AuthoritativeWorldSnapshot first = runtime.submitAndJoin(
+                    healthySource,
+                    "publication-smoke-player",
+                    null,
+                    "initial publication",
+                    () -> {
+                        mutations.incrementAndGet();
+                        return null;
+                    });
+            require(first.version() == 1L,
+                    "initial publication did not establish version one");
+            require(mutations.get() == 1,
+                    "initial mutation did not execute exactly once");
+
+            Throwable publicationFailure = null;
+            try {
+                runtime.submitAndJoin(
+                        failingSource,
+                        "publication-smoke-player",
+                        null,
+                        "forced publication failure",
+                        () -> {
+                            mutations.incrementAndGet();
+                            return null;
+                        });
+            } catch (Throwable caught) {
+                publicationFailure = caught;
+            }
+            require(publicationFailure != null,
+                    "snapshot construction failure was not surfaced");
+            require(allMessages(publicationFailure).contains(
+                            "forced snapshot construction failure"),
+                    "unexpected snapshot construction failure: "
+                            + allMessages(publicationFailure));
+            require(mutations.get() == 2,
+                    "mutation did not execute before forced publication failure");
+            require(runtime.worldVersion() == 1L,
+                    "failed publication advanced authoritative world version");
+            require(runtime.latestSnapshot() == first,
+                    "failed publication replaced the last good snapshot");
+            require(runtime.statusLine().contains(
+                            "publicationState=failed-closed"),
+                    "runtime did not report failed-closed publication state");
+
+            Throwable closedFailure = null;
+            try {
+                runtime.submitAndJoin(
+                        healthySource,
+                        "publication-smoke-player",
+                        null,
+                        "submission after publication failure",
+                        () -> {
+                            mutations.incrementAndGet();
+                            return null;
+                        });
+            } catch (Throwable caught) {
+                closedFailure = caught;
+            }
+            require(closedFailure != null,
+                    "runtime accepted mutation after publication failure");
+            require(allMessages(closedFailure).contains(
+                            "runtime is failed closed"),
+                    "unexpected failed-closed rejection: "
+                            + allMessages(closedFailure));
+            require(mutations.get() == 2,
+                    "mutation executed after runtime failed closed");
+            require(runtime.worldVersion() == 1L,
+                    "failed-closed rejection changed authoritative version");
+            require(runtime.latestSnapshot() == first,
+                    "failed-closed rejection replaced last good snapshot");
+        }
+    }
+
+    private static void verifyWorldVersionExhaustion() throws Exception {
+        AtomicInteger commits = new AtomicInteger();
+        AuthoritativeWorldRuntime.SnapshotSource source = nullSnapshotSource();
 
         try (AuthoritativeWorldRuntime runtime =
                      new AuthoritativeWorldRuntime(
@@ -84,16 +181,32 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
                     "world mutation executed after version exhaustion");
             require(runtime.worldVersion() == Long.MAX_VALUE,
                     "exhausted version wrapped or changed");
-
-            System.out.println(
-                    "AuthoritativeWorldRuntimeOverflowSmoke PASS"
-                            + " snapshotDetached=true"
-                            + " nullStateNormalized=true"
-                            + " initialPublication=true"
-                            + " exhaustionRejected=true"
-                            + " mutationPrevented=true"
-                            + " wrapPrevented=true");
         }
+    }
+
+    private static AuthoritativeWorldRuntime.SnapshotSource nullSnapshotSource() {
+        return new AuthoritativeWorldRuntime.SnapshotSource() {
+            @Override
+            public WorldSnapshot worldSnapshot(
+                    long version,
+                    SectorKey sector
+            ) {
+                return null;
+            }
+
+            @Override
+            public AuthoritativeWorldSnapshot authoritativeSnapshot(
+                    long version,
+                    String playerId,
+                    SectorKey sector,
+                    String reason,
+                    SectorSnapshot sectorSnapshot,
+                    WorldSnapshot worldSnapshot,
+                    String mutationThread
+            ) {
+                return null;
+            }
+        };
     }
 
     private static void verifyWorldSnapshotImmutability() {
