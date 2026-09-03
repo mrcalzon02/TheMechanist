@@ -17,6 +17,7 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
         verifyWorldSnapshotImmutability();
         verifyPublicationFailureFailsClosed();
         verifySnapshotIdentityMismatchFailsClosed();
+        verifyPlayerIdentityMismatchFailsClosed();
         verifyWorldVersionExhaustion();
 
         System.out.println(
@@ -25,6 +26,7 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
                         + " nullStateNormalized=true"
                         + " publicationFailureFailedClosed=true"
                         + " snapshotIdentityValidated=true"
+                        + " playerIdentityValidated=true"
                         + " lastGoodSnapshotPreserved=true"
                         + " exhaustionRejected=true"
                         + " mutationPrevented=true"
@@ -216,6 +218,100 @@ final class AuthoritativeWorldRuntimeOverflowSmoke {
             require(runtime.statusLine().contains(
                             "publicationState=failed-closed"),
                     "identity mismatch did not fail runtime closed");
+        }
+    }
+
+    private static void verifyPlayerIdentityMismatchFailsClosed() {
+        AtomicInteger mutations = new AtomicInteger();
+        AuthoritativeWorldRuntime.SnapshotSource healthySource = nullSnapshotSource();
+        AuthoritativeWorldRuntime.SnapshotSource mismatchedPlayerSource =
+                new AuthoritativeWorldRuntime.SnapshotSource() {
+                    @Override
+                    public WorldSnapshot worldSnapshot(
+                            long version,
+                            SectorKey sector
+                    ) {
+                        return null;
+                    }
+
+                    @Override
+                    public AuthoritativeWorldSnapshot authoritativeSnapshot(
+                            long version,
+                            String playerId,
+                            SectorKey sector,
+                            String reason,
+                            SectorSnapshot sectorSnapshot,
+                            WorldSnapshot worldSnapshot,
+                            String mutationThread
+                    ) {
+                        return new AuthoritativeWorldSnapshot(
+                                version,
+                                "different-authenticated-player",
+                                sector,
+                                reason,
+                                0L,
+                                0L,
+                                0,
+                                0,
+                                "none",
+                                "none",
+                                0,
+                                0,
+                                "none",
+                                "none",
+                                worldSnapshot,
+                                mutationThread,
+                                sectorSnapshot,
+                                System.currentTimeMillis());
+                    }
+                };
+
+        try (AuthoritativeWorldRuntime runtime =
+                     new AuthoritativeWorldRuntime(
+                             "mechanist-player-identity-mismatch-smoke")) {
+            AuthoritativeWorldSnapshot first = runtime.submitAndJoin(
+                    healthySource,
+                    "authenticated-player",
+                    null,
+                    "initial player identity publication",
+                    () -> {
+                        mutations.incrementAndGet();
+                        return null;
+                    });
+            require(first.version() == 1L,
+                    "player identity smoke did not establish version one");
+
+            Throwable mismatchFailure = null;
+            try {
+                runtime.submitAndJoin(
+                        mismatchedPlayerSource,
+                        "authenticated-player",
+                        null,
+                        "mismatched player identity",
+                        () -> {
+                            mutations.incrementAndGet();
+                            return null;
+                        });
+            } catch (Throwable caught) {
+                mismatchFailure = caught;
+            }
+            require(mismatchFailure != null,
+                    "mismatched authoritative player identity was accepted");
+            require(allMessages(mismatchFailure).contains(
+                            "Snapshot source returned authoritative player "
+                                    + "different-authenticated-player for submitted player "
+                                    + "authenticated-player"),
+                    "unexpected player identity failure: "
+                            + allMessages(mismatchFailure));
+            require(mutations.get() == 2,
+                    "player identity mismatch did not follow committed mutation");
+            require(runtime.worldVersion() == 1L,
+                    "player identity mismatch advanced authoritative version");
+            require(runtime.latestSnapshot() == first,
+                    "player identity mismatch replaced last good snapshot");
+            require(runtime.statusLine().contains(
+                            "publicationState=failed-closed"),
+                    "player identity mismatch did not fail runtime closed");
         }
     }
 
