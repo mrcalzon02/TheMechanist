@@ -294,7 +294,7 @@ final class GameStorageManager {
         return normalized;
     }
 
-    private static void writeAtomic(Path tmp, Path target, byte[] data) throws IOException {
+    static void writeAtomic(Path tmp, Path target, byte[] data) throws IOException {
         Files.createDirectories(target.getParent());
         try (FileChannel channel = FileChannel.open(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
             channel.write(ByteBuffer.wrap(data));
