@@ -3,9 +3,11 @@ package mechanist;
 import java.awt.Desktop;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,7 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 final class UserProfileAuthority {
-    static final String VERSION = "profile-authority-0.9.10fd";
+    static final String VERSION = "profile-authority-0.9.10fe";
     private static final Map<String, String> SESSION_FALLBACK_IDENTIFIERS = new HashMap<>();
 
     static final class Profile {
@@ -126,7 +128,7 @@ final class UserProfileAuthority {
             }
             if (seed.isBlank()) {
                 seed = UUID.randomUUID().toString();
-                Files.writeString(seedFile, seed + "\n", StandardCharsets.UTF_8);
+                writeIdentityFile(seedFile, seed);
             }
 
             Path identifierFile = GameStorageManager.get().resolveProfilePath(
@@ -144,7 +146,7 @@ final class UserProfileAuthority {
             StringBuilder sb = new StringBuilder("MECH-");
             for (int i = 0; i < 8 && i < digest.length; i++) sb.append(String.format(Locale.ROOT, "%02X", digest[i]));
             String identifier = sb.toString();
-            Files.writeString(identifierFile, identifier + "\n", StandardCharsets.UTF_8);
+            writeIdentityFile(identifierFile, identifier);
             return identifier;
         } catch (Throwable t) {
             String fallbackSalt = clean(salt, "local-profile");
@@ -164,13 +166,29 @@ final class UserProfileAuthority {
         if (Files.isRegularFile(legacySeedFile)) {
             String legacySeed = Files.readString(legacySeedFile, StandardCharsets.UTF_8).trim();
             if (!legacySeed.isBlank()) {
-                Files.writeString(canonicalSeedFile, legacySeed + "\n", StandardCharsets.UTF_8);
+                writeIdentityFile(canonicalSeedFile, legacySeed);
                 return legacySeed;
             }
         }
         String seed = UUID.randomUUID().toString();
-        Files.writeString(canonicalSeedFile, seed + "\n", StandardCharsets.UTF_8);
+        writeIdentityFile(canonicalSeedFile, seed);
         return seed;
+    }
+
+    private static void writeIdentityFile(Path target, String value) throws Exception {
+        Path parent = target.getParent();
+        if (parent != null) Files.createDirectories(parent);
+        Path temp = target.resolveSibling(target.getFileName() + ".tmp-" + UUID.randomUUID());
+        try {
+            Files.writeString(temp, value + "\n", StandardCharsets.UTF_8);
+            try {
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException unsupported) {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
     }
 
     private static String clean(String value, String fallback) {
