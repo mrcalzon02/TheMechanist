@@ -18,6 +18,15 @@ record WorldSnapshot(long version,
     static final int MAX_OBJECTS = 120;
     static final int MAX_ACTIONS = 12;
 
+    WorldSnapshot {
+        player = player == null ? PlayerSnapshot.empty() : player;
+        visibleTiles = visibleTiles == null ? List.of() : List.copyOf(visibleTiles);
+        visibleNpcs = visibleNpcs == null ? List.of() : List.copyOf(visibleNpcs);
+        visibleObjects = visibleObjects == null ? List.of() : List.copyOf(visibleObjects);
+        recentActions = recentActions == null ? List.of() : List.copyOf(recentActions);
+        uiState = uiState == null ? UiStateSnapshot.empty() : uiState;
+    }
+
     static WorldSnapshot fromGame(long version, GamePanel game, SectorKey sector) {
         if (game == null) {
             return new WorldSnapshot(version, sector, PlayerSnapshot.empty(), List.of(), List.of(), List.of(), List.of(), UiStateSnapshot.empty(), System.currentTimeMillis());
