@@ -8,13 +8,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 final class UserProfileAuthority {
-    static final String VERSION = "profile-authority-0.9.10fc";
+    static final String VERSION = "profile-authority-0.9.10fd";
+    private static final Map<String, String> SESSION_FALLBACK_IDENTIFIERS = new HashMap<>();
 
     static final class Profile {
         final String provider;
@@ -145,8 +147,15 @@ final class UserProfileAuthority {
             Files.writeString(identifierFile, identifier + "\n", StandardCharsets.UTF_8);
             return identifier;
         } catch (Throwable t) {
-            String fallback = UUID.nameUUIDFromBytes((salt + System.nanoTime()).getBytes(StandardCharsets.UTF_8)).toString().replace("-", "").toUpperCase(Locale.ROOT);
-            return "MECH-" + fallback.substring(0, 16);
+            String fallbackSalt = clean(salt, "local-profile");
+            String existing = SESSION_FALLBACK_IDENTIFIERS.get(fallbackSalt);
+            if (existing != null) return existing;
+
+            String generated = UUID.randomUUID().toString().replace("-", "").toUpperCase(Locale.ROOT);
+            String fallback = "MECH-" + generated.substring(0, 16);
+            SESSION_FALLBACK_IDENTIFIERS.put(fallbackSalt, fallback);
+            DebugLog.warn("PROFILE_IDENTITY", "Canonical profile identity storage is unavailable; using a session-stable fallback for " + fallbackSalt + ": " + t.getMessage());
+            return fallback;
         }
     }
 
