@@ -27,6 +27,7 @@ final class IndependentHostTurnAuthoritySmoke {
                 "Server State").resolve("turns.properties");
         try {
             long committedVersion;
+            long preRestartVersion;
             List<String> persistedActions;
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
@@ -99,6 +100,7 @@ final class IndependentHostTurnAuthoritySmoke {
                         "resumed authoritative wait did not advance persisted turns");
                 require(resumed.snapshot().version() > committedVersion,
                         "authoritative snapshot version did not advance");
+                preRestartVersion = resumed.snapshot().version();
                 persistedActions = List.copyOf(
                         resumed.authoritativeSnapshot()
                                 .worldSnapshot()
@@ -158,6 +160,8 @@ final class IndependentHostTurnAuthoritySmoke {
                                 && before.worldTurn() == 2L
                                 && before.acceptedPlayerCommands() == 2L,
                         "authoritative turn state did not survive clean restart");
+                require(before.version() == preRestartVersion,
+                        "authoritative snapshot version regressed during clean restart");
 
                 IndependentHostTurnAuthority.TurnCommandResult after =
                         restored.applyCommand(
@@ -169,6 +173,8 @@ final class IndependentHostTurnAuthoritySmoke {
                                 && after.snapshot().worldTurn() == 3L
                                 && after.snapshot().acceptedWorldCommands() == 3L,
                         "post-restart authoritative wait did not continue state");
+                require(after.snapshot().version() == preRestartVersion + 1L,
+                        "post-restart authoritative snapshot version was not monotonic");
                 List<String> restoredActions =
                         after.authoritativeSnapshot()
                                 .worldSnapshot()
@@ -224,6 +230,7 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " crossPlayerSnapshotIsolation=true"
                             + " atomicPersistence=true"
                             + " cleanRestartContinuity=true"
+                            + " authoritativeVersionRestartContinuity=true"
                             + " eventHistoryRestartContinuity=true"
                             + " unsupportedMovementRejected=true"
                             + " precommitRollbackPreservesSector=true"
