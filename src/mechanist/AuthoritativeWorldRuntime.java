@@ -37,14 +37,16 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                 WorldSnapshot worldSnapshot,
                 String mutationThread);
 
-        static SnapshotSource fromGamePanel(GamePanel game) {
+        static SnapshotSource fromGamePanel(GamePanel game, String playerId) {
             return new SnapshotSource() {
                 @Override
                 public WorldSnapshot worldSnapshot(
                         long version,
                         SectorKey sector
                 ) {
-                    return WorldSnapshot.fromGame(version, game, sector);
+                    return bindPlayerIdentity(
+                            WorldSnapshot.fromGame(version, game, sector),
+                            playerId);
                 }
 
                 @Override
@@ -107,7 +109,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             MutationCommit commit
     ) {
         return submitAndJoin(
-                SnapshotSource.fromGamePanel(game),
+                SnapshotSource.fromGamePanel(game, playerId),
                 playerId,
                 sector,
                 reason,
@@ -402,6 +404,44 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                     "Snapshot source detached authoritative snapshot from "
                             + "the validated world snapshot instance");
         }
+    }
+
+    private static WorldSnapshot bindPlayerIdentity(
+            WorldSnapshot snapshot,
+            String playerId
+    ) {
+        if (snapshot == null) return null;
+        String expectedPlayerId = safe(playerId);
+        PlayerSnapshot player = snapshot.player();
+        if (Objects.equals(safe(player.id()), expectedPlayerId)) {
+            return snapshot;
+        }
+        PlayerSnapshot reboundPlayer = new PlayerSnapshot(
+                expectedPlayerId,
+                player.name(),
+                player.x(),
+                player.y(),
+                player.turn(),
+                player.worldTurn(),
+                player.food(),
+                player.water(),
+                player.sleepNeed(),
+                player.carriedScript(),
+                player.heat(),
+                player.suspicion(),
+                player.facing(),
+                player.motionState(),
+                player.activeAction());
+        return new WorldSnapshot(
+                snapshot.version(),
+                snapshot.currentSector(),
+                reboundPlayer,
+                snapshot.visibleTiles(),
+                snapshot.visibleNpcs(),
+                snapshot.visibleObjects(),
+                snapshot.recentActions(),
+                snapshot.uiState(),
+                snapshot.committedAtMillis());
     }
 
     private static PlayerSnapshot emptyPlayerSnapshot(String playerId) {
