@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.9-floor-type-association";
+    static final String VERSION = "semantic-render-asset-resolver-0.10-door-type-association";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -229,7 +229,7 @@ final class SemanticRenderAssetResolver {
     private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON; }
     private static boolean tradeGoodIcon(AssetMetadata asset) { return itemIcon(asset) || asset.type() == AssetType.OBJECT; }
     private static boolean dataDeviceIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.UI_ICON; }
-    private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE || asset.type() == AssetType.FLOOR_TILE || asset.type() == AssetType.CORRIDOR_TILE; }
+    private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
     private static boolean themed(String text, String... needles) { return contains(text, needles); }
     private static boolean notUiIcon(String text) { return !themed(text, "system inventory", "item icon", "ui icon", "system control", "interface control"); }
