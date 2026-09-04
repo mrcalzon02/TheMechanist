@@ -307,7 +307,10 @@ final class GameStorageManager {
         Files.createDirectories(parent);
         try {
             try (FileChannel channel = FileChannel.open(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
-                channel.write(ByteBuffer.wrap(data));
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                while (buffer.hasRemaining()) {
+                    channel.write(buffer);
+                }
                 channel.force(true);
             }
             atomicMove(tmp, target);
