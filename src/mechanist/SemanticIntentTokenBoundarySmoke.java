@@ -15,6 +15,14 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireNoItem("taxes ledger");
         requireObject("outdoor market counter", SemanticRenderAssetResolver.RenderIntent.MARKET_COUNTER);
 
+        requireItem("reserve rifles", SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
+        requireItem("field repair kits", SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
+        requireItem("ceremonial knives", SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
+        requireObject("sealed cargo doors", SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED);
+        requireObject("backup generators", SemanticRenderAssetResolver.RenderIntent.GENERATOR_MACHINE);
+        requireObject("market counters", SemanticRenderAssetResolver.RenderIntent.MARKET_COUNTER);
+        requireNoItem("taxes ledgers");
+
         System.out.println("SemanticIntentTokenBoundarySmoke PASS " + SemanticRenderIntentAuthority.VERSION);
     }
 
