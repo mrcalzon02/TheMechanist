@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * commit and publishes snapshots only after the commit succeeds.
  */
 final class AuthoritativeWorldRuntime implements AutoCloseable {
-    static final String VERSION = "authoritative-world-runtime-0.9.10gn";
+    static final String VERSION = "authoritative-world-runtime-0.9.10gp";
 
     interface MutationCommit {
         SectorSnapshot run();
@@ -37,14 +37,18 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                 WorldSnapshot worldSnapshot,
                 String mutationThread);
 
-        static SnapshotSource fromGamePanel(GamePanel game) {
+        static SnapshotSource fromGamePanel(GamePanel game, String playerId) {
             return new SnapshotSource() {
                 @Override
                 public WorldSnapshot worldSnapshot(
                         long version,
                         SectorKey sector
                 ) {
-                    return WorldSnapshot.fromGame(version, game, sector);
+                    return WorldSnapshot.fromGame(
+                            version,
+                            game,
+                            sector,
+                            playerId);
                 }
 
                 @Override
@@ -77,13 +81,28 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     private final AtomicReference<WorldSnapshot> latestWorldSnapshot =
             new AtomicReference<>();
     private final AtomicReference<Thread> ownerThread = new AtomicReference<>();
+    private final AtomicReference<String> publicationFailure =
+            new AtomicReference<>();
     private final AtomicLong worldVersion = new AtomicLong(0L);
     private final AtomicLong submissions = new AtomicLong(0L);
     private final AtomicLong submissionsFromEdt = new AtomicLong(0L);
     private final AtomicLong rejected = new AtomicLong(0L);
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Object publicationLock = new Object();
 
     AuthoritativeWorldRuntime(String name) {
+        this(name, 0L);
+    }
+
+    AuthoritativeWorldRuntime(
+            String name,
+            long initialWorldVersion
+    ) {
+        if (initialWorldVersion < 0L) {
+            throw new IllegalArgumentException(
+                    "initial authoritative world version must be non-negative");
+        }
+        worldVersion.set(initialWorldVersion);
         String threadName = name == null || name.isBlank()
                 ? "mechanist-authoritative-world"
                 : name.trim();
@@ -104,7 +123,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             MutationCommit commit
     ) {
         return submitAndJoin(
-                SnapshotSource.fromGamePanel(game),
+                SnapshotSource.fromGamePanel(game, playerId),
                 playerId,
                 sector,
                 reason,
@@ -131,6 +150,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
         }
         Thread owner = ownerThread.get();
         if (owner != null && Thread.currentThread() == owner) {
+            requirePublicationCapacity();
             SectorSnapshot sectorSnapshot = commit.run();
             return publishSnapshot(
                     source,
@@ -142,6 +162,7 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
         CompletableFuture<AuthoritativeWorldSnapshot> future =
                 CompletableFuture.supplyAsync(() -> {
                     assertNotSwingThreadForWorldMutation(reason);
+                    requirePublicationCapacity();
                     SectorSnapshot sectorSnapshot = commit.run();
                     return publishSnapshot(
                             source,
@@ -173,15 +194,21 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     }
 
     AuthoritativeWorldSnapshot latestSnapshot() {
-        return latestSnapshot.get();
+        synchronized (publicationLock) {
+            return latestSnapshot.get();
+        }
     }
 
     WorldSnapshot latestWorldSnapshot() {
-        return latestWorldSnapshot.get();
+        synchronized (publicationLock) {
+            return latestWorldSnapshot.get();
+        }
     }
 
     long worldVersion() {
-        return worldVersion.get();
+        synchronized (publicationLock) {
+            return worldVersion.get();
+        }
     }
 
     long submissionsFromEdt() {
@@ -189,19 +216,24 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
     }
 
     String statusLine() {
-        AuthoritativeWorldSnapshot snapshot = latestSnapshot.get();
-        WorldSnapshot worldSnapshot = latestWorldSnapshot.get();
-        return "authority=" + VERSION
-                + " worldVersion=" + worldVersion.get()
-                + " submissions=" + submissions.get()
-                + " edtSubmissions=" + submissionsFromEdt.get()
-                + " rejected=" + rejected.get()
-                + " latest="
-                + (snapshot == null ? "none" : snapshot.compact())
-                + " worldSnapshot="
-                + (worldSnapshot == null
-                ? "none"
-                : worldSnapshot.compact());
+        synchronized (publicationLock) {
+            AuthoritativeWorldSnapshot snapshot = latestSnapshot.get();
+            WorldSnapshot worldSnapshot = latestWorldSnapshot.get();
+            String failure = publicationFailure.get();
+            return "authority=" + VERSION
+                    + " worldVersion=" + worldVersion.get()
+                    + " submissions=" + submissions.get()
+                    + " edtSubmissions=" + submissionsFromEdt.get()
+                    + " rejected=" + rejected.get()
+                    + " publicationState="
+                    + (failure == null ? "healthy" : "failed-closed")
+                    + " latest="
+                    + (snapshot == null ? "none" : snapshot.compact())
+                    + " worldSnapshot="
+                    + (worldSnapshot == null
+                    ? "none"
+                    : worldSnapshot.compact());
+        }
     }
 
     static String auditSummary() {
@@ -210,7 +242,24 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
                 + " mutationThread=not-swing"
                 + " snapshotSource=desktop-or-headless"
                 + " snapshot=atomic-reference"
-                + " immutableWorldSnapshot=published-after-commit";
+                + " immutableWorldSnapshot=published-after-commit"
+                + " snapshotIdentity=validated"
+                + " publicationFailure=fail-closed";
+    }
+
+    private void requirePublicationCapacity() {
+        synchronized (publicationLock) {
+            String failure = publicationFailure.get();
+            if (failure != null) {
+                throw new IllegalStateException(
+                        "AuthoritativeWorldRuntime publication failed after mutation; "
+                                + "runtime is failed closed: " + failure);
+            }
+            if (worldVersion.get() == Long.MAX_VALUE) {
+                throw new IllegalStateException(
+                        "AuthoritativeWorldRuntime world version exhausted supported range");
+            }
+        }
     }
 
     private AuthoritativeWorldSnapshot publishSnapshot(
@@ -220,59 +269,174 @@ final class AuthoritativeWorldRuntime implements AutoCloseable {
             String reason,
             SectorSnapshot sectorSnapshot
     ) {
-        long version = worldVersion.incrementAndGet();
-        WorldSnapshot worldSnapshot =
-                source.worldSnapshot(version, sector);
-        if (worldSnapshot == null) {
-            worldSnapshot = new WorldSnapshot(
-                    version,
-                    sector,
-                    PlayerSnapshot.empty(),
-                    java.util.List.of(),
-                    java.util.List.of(),
-                    java.util.List.of(),
-                    java.util.List.of(),
-                    UiStateSnapshot.empty(),
-                    System.currentTimeMillis());
-        }
-        latestWorldSnapshot.set(worldSnapshot);
-        AuthoritativeWorldSnapshot snapshot =
-                source.authoritativeSnapshot(
+        final long version;
+        final WorldSnapshot worldSnapshot;
+        final AuthoritativeWorldSnapshot snapshot;
+        try {
+            synchronized (publicationLock) {
+                version = Math.incrementExact(worldVersion.get());
+            }
+            WorldSnapshot candidateWorldSnapshot =
+                    source.worldSnapshot(version, sector);
+            if (candidateWorldSnapshot == null) {
+                candidateWorldSnapshot = new WorldSnapshot(
                         version,
-                        playerId,
                         sector,
-                        reason,
-                        sectorSnapshot,
-                        worldSnapshot,
-                        Thread.currentThread().getName());
-        if (snapshot == null) {
-            snapshot = new AuthoritativeWorldSnapshot(
+                        emptyPlayerSnapshot(playerId),
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        java.util.List.of(),
+                        UiStateSnapshot.empty(),
+                        System.currentTimeMillis());
+            }
+            validateWorldSnapshotIdentity(
                     version,
-                    safe(playerId),
+                    playerId,
                     sector,
-                    safe(reason),
-                    0L,
-                    0L,
-                    0,
-                    0,
-                    "none",
-                    "none",
-                    0,
-                    0,
-                    "none",
-                    "none",
+                    candidateWorldSnapshot);
+            worldSnapshot = candidateWorldSnapshot;
+            AuthoritativeWorldSnapshot candidateSnapshot =
+                    source.authoritativeSnapshot(
+                            version,
+                            playerId,
+                            sector,
+                            reason,
+                            sectorSnapshot,
+                            worldSnapshot,
+                            Thread.currentThread().getName());
+            if (candidateSnapshot == null) {
+                candidateSnapshot = new AuthoritativeWorldSnapshot(
+                        version,
+                        safe(playerId),
+                        sector,
+                        safe(reason),
+                        0L,
+                        0L,
+                        0,
+                        0,
+                        "none",
+                        "none",
+                        0,
+                        0,
+                        "none",
+                        "none",
+                        worldSnapshot,
+                        Thread.currentThread().getName(),
+                        sectorSnapshot,
+                        System.currentTimeMillis());
+            }
+            validateAuthoritativeSnapshotIdentity(
+                    version,
+                    playerId,
+                    sector,
                     worldSnapshot,
-                    Thread.currentThread().getName(),
-                    sectorSnapshot,
-                    System.currentTimeMillis());
+                    candidateSnapshot);
+            snapshot = candidateSnapshot;
+        } catch (RuntimeException | Error failure) {
+            publicationFailure.compareAndSet(
+                    null,
+                    failure.getClass().getSimpleName()
+                            + ": " + safe(failure.getMessage()));
+            throw failure;
         }
-        latestSnapshot.set(snapshot);
+        synchronized (publicationLock) {
+            worldVersion.set(version);
+            latestWorldSnapshot.set(worldSnapshot);
+            latestSnapshot.set(snapshot);
+        }
         if (version <= 3L || version % 50L == 0L) {
             DebugLog.audit(
                     "AUTHORITATIVE_WORLD_SNAPSHOT",
                     snapshot.compact());
         }
         return snapshot;
+    }
+
+    private static void validateWorldSnapshotIdentity(
+            long version,
+            String playerId,
+            SectorKey sector,
+            WorldSnapshot snapshot
+    ) {
+        if (snapshot.version() != version) {
+            throw new IllegalStateException(
+                    "Snapshot source returned world version "
+                            + snapshot.version()
+                            + " for authoritative version " + version);
+        }
+        if (!Objects.equals(snapshot.currentSector(), sector)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned world sector "
+                            + (snapshot.currentSector() == null
+                            ? "none"
+                            : snapshot.currentSector().compact())
+                            + " for authoritative sector "
+                            + (sector == null ? "none" : sector.compact()));
+        }
+        String expectedPlayerId = safe(playerId);
+        String snapshotPlayerId = safe(snapshot.player().id());
+        if (!Objects.equals(snapshotPlayerId, expectedPlayerId)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned world player "
+                            + snapshotPlayerId
+                            + " for submitted player " + expectedPlayerId);
+        }
+    }
+
+    private static void validateAuthoritativeSnapshotIdentity(
+            long version,
+            String playerId,
+            SectorKey sector,
+            WorldSnapshot worldSnapshot,
+            AuthoritativeWorldSnapshot snapshot
+    ) {
+        if (snapshot.version() != version) {
+            throw new IllegalStateException(
+                    "Snapshot source returned authoritative version "
+                            + snapshot.version()
+                            + " for authoritative version " + version);
+        }
+        String expectedPlayerId = safe(playerId);
+        if (!Objects.equals(snapshot.playerId(), expectedPlayerId)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned authoritative player "
+                            + safe(snapshot.playerId())
+                            + " for submitted player " + expectedPlayerId);
+        }
+        if (!Objects.equals(snapshot.sector(), sector)) {
+            throw new IllegalStateException(
+                    "Snapshot source returned authoritative sector "
+                            + (snapshot.sector() == null
+                            ? "none"
+                            : snapshot.sector().compact())
+                            + " for authoritative sector "
+                            + (sector == null ? "none" : sector.compact()));
+        }
+        if (snapshot.worldSnapshot() != worldSnapshot) {
+            throw new IllegalStateException(
+                    "Snapshot source detached authoritative snapshot from "
+                            + "the validated world snapshot instance");
+        }
+    }
+
+    private static PlayerSnapshot emptyPlayerSnapshot(String playerId) {
+        return new PlayerSnapshot(
+                safe(playerId),
+                "none",
+                0,
+                0,
+                0L,
+                0L,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                "E",
+                "stationary",
+                "none");
     }
 
     static void assertNotSwingThreadForWorldMutation(String reason) {
@@ -357,14 +521,14 @@ record AuthoritativeWorldSnapshot(
                     sectorSnapshot,
                     System.currentTimeMillis());
         }
-        String zone = game.world == null
+        String zone = game.world == null || game.world.zoneType == null
                 ? "none"
-                : game.world.zoneType.label
+                : safe(game.world.zoneType.label)
                 + " "
-                + game.world.zoneCoordText();
+                + safe(game.world.zoneCoordText());
         String activeName = game.active == null
                 ? "none"
-                : game.active.name;
+                : safe(game.active.name);
         String activeAction = game.singlePlayerSectorBridge == null
                 ? "none"
                 : game.singlePlayerSectorBridge.activeActionDisplayLine();
@@ -383,7 +547,7 @@ record AuthoritativeWorldSnapshot(
                 String.valueOf(game.screen),
                 zone,
                 game.countMoney(),
-                game.eventLog.size(),
+                game.eventLog == null ? 0 : game.eventLog.size(),
                 activeName,
                 safe(activeAction),
                 worldSnapshot,

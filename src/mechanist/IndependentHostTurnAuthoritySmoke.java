@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -16,6 +17,8 @@ final class IndependentHostTurnAuthoritySmoke {
             "independent-host-turn-smoke-world";
     private static final String PLAYER_ID =
             "remote-0123456789abcdefabcd";
+    private static final String SECOND_PLAYER_ID =
+            "remote-fedcba9876543210abcd";
 
     public static void main(String[] args) throws Exception {
         Path root = Files.createTempDirectory(
@@ -24,6 +27,8 @@ final class IndependentHostTurnAuthoritySmoke {
                 "Server State").resolve("turns.properties");
         try {
             long committedVersion;
+            long preRestartVersion;
+            List<String> persistedActions;
             try (IndependentHostTurnAuthority authority =
                          new IndependentHostTurnAuthority(
                                  WORLD_ID,
@@ -49,6 +54,8 @@ final class IndependentHostTurnAuthoritySmoke {
                 require(!Thread.currentThread().getName().equals(
                                 first.snapshot().mutationThread()),
                         "remote world mutation executed on the caller thread");
+                require(authority.stagingPlayerCount() == 1,
+                        "committed authoritative wait did not mount the remote player");
                 committedVersion = first.snapshot().version();
 
                 expectFailure(
@@ -60,6 +67,8 @@ final class IndependentHostTurnAuthoritySmoke {
                         "sequence mismatch");
                 require(authority.snapshotForPlayer(PLAYER_ID).playerTurn() == 1L,
                         "replayed command changed authoritative turn state");
+                require(authority.stagingPlayerCount() == 1,
+                        "replayed command detached the previously committed remote player");
 
                 expectFailure(
                         () -> authority.applyCommand(
@@ -74,6 +83,8 @@ final class IndependentHostTurnAuthoritySmoke {
                         "only authoritative wait is open");
                 require(authority.snapshotForPlayer(PLAYER_ID).playerTurn() == 1L,
                         "rejected movement changed authoritative turn state");
+                require(authority.stagingPlayerCount() == 1,
+                        "rejected movement detached the previously committed remote player");
 
                 IndependentHostTurnAuthority.TurnCommandResult resumed =
                         authority.applyCommand(
@@ -89,6 +100,13 @@ final class IndependentHostTurnAuthoritySmoke {
                         "resumed authoritative wait did not advance persisted turns");
                 require(resumed.snapshot().version() > committedVersion,
                         "authoritative snapshot version did not advance");
+                preRestartVersion = resumed.snapshot().version();
+                persistedActions = List.copyOf(
+                        resumed.authoritativeSnapshot()
+                                .worldSnapshot()
+                                .recentActions());
+                require(!persistedActions.isEmpty(),
+                        "authoritative event history was empty before restart");
 
                 expectFailure(
                         () -> authority.applyCommand(
@@ -99,7 +117,11 @@ final class IndependentHostTurnAuthoritySmoke {
                         "stale connection generation");
                 require(authority.acceptedCommands() == 2L,
                         "rejected commands changed global accounting");
+                require(authority.stagingPlayerCount() == 1,
+                        "stale-generation rejection detached the committed remote player");
                 authority.disconnectPlayer(PLAYER_ID);
+                require(authority.stagingPlayerCount() == 0,
+                        "explicit disconnect did not release staging-sector membership");
                 require(authority.snapshotForPlayer(PLAYER_ID).playerTurn() == 2L,
                         "disconnect removed persisted authoritative state");
             }
@@ -122,6 +144,10 @@ final class IndependentHostTurnAuthoritySmoke {
             require("2".equals(stored.getProperty("worldTurn"))
                             && "2".equals(stored.getProperty("acceptedCommands")),
                     "authoritative turn persistence lost committed accounting");
+            require(Integer.parseInt(stored.getProperty("player.0.event.count", "0"))
+                            == persistedActions.size()
+                            && stored.getProperty("player.0.event.0") != null,
+                    "authoritative event history was not written to persistence");
 
             try (IndependentHostTurnAuthority restored =
                          new IndependentHostTurnAuthority(
@@ -134,6 +160,8 @@ final class IndependentHostTurnAuthoritySmoke {
                                 && before.worldTurn() == 2L
                                 && before.acceptedPlayerCommands() == 2L,
                         "authoritative turn state did not survive clean restart");
+                require(before.version() == preRestartVersion,
+                        "authoritative snapshot version regressed during clean restart");
 
                 IndependentHostTurnAuthority.TurnCommandResult after =
                         restored.applyCommand(
@@ -145,6 +173,20 @@ final class IndependentHostTurnAuthoritySmoke {
                                 && after.snapshot().worldTurn() == 3L
                                 && after.snapshot().acceptedWorldCommands() == 3L,
                         "post-restart authoritative wait did not continue state");
+                require(after.snapshot().version() == preRestartVersion + 1L,
+                        "post-restart authoritative snapshot version was not monotonic");
+                List<String> restoredActions =
+                        after.authoritativeSnapshot()
+                                .worldSnapshot()
+                                .recentActions();
+                require(restoredActions.size() > persistedActions.size()
+                                && restoredActions.subList(
+                                        0,
+                                        persistedActions.size())
+                                .equals(persistedActions),
+                        "authoritative event history did not survive restart in order");
+                require(restored.stagingPlayerCount() == 1,
+                        "post-restart authoritative wait did not mount the remote player");
             }
 
             String text = Files.readString(
@@ -153,6 +195,11 @@ final class IndependentHostTurnAuthoritySmoke {
             require(text.contains("worldTurn=3")
                             && text.contains("acceptedCommands=3"),
                     "post-restart turn ledger did not persist the third command");
+
+            verifyPersistenceFailureRollback(root.resolve("Rollback Cases"));
+            verifyCrossPlayerSnapshotIsolation(
+                    root.resolve("Cross Player Snapshot")
+                            .resolve("turns.properties"));
 
             Properties corrupted = new Properties();
             try (var input = Files.newInputStream(persistence)) {
@@ -180,13 +227,118 @@ final class IndependentHostTurnAuthoritySmoke {
                             + " exactCommandOrdering=true"
                             + " connectionGenerationReset=true"
                             + " immutableSnapshots=true"
+                            + " crossPlayerSnapshotIsolation=true"
                             + " atomicPersistence=true"
                             + " cleanRestartContinuity=true"
+                            + " authoritativeVersionRestartContinuity=true"
+                            + " eventHistoryRestartContinuity=true"
                             + " unsupportedMovementRejected=true"
+                            + " precommitRollbackPreservesSector=true"
+                            + " persistenceFailureRestoresSector=true"
+                            + " persistenceFailureRestoresUnboundState=true"
                             + " worldMapAuthority=false"
                             + " remoteGameplayCertified=false");
         } finally {
             deleteRecursively(root);
+        }
+    }
+
+    private static void verifyCrossPlayerSnapshotIsolation(
+            Path persistence
+    ) throws Exception {
+        try (IndependentHostTurnAuthority authority =
+                     new IndependentHostTurnAuthority(
+                             WORLD_ID + "-cross-player",
+                             persistence)) {
+            authority.applyCommand(
+                    PLAYER_ID,
+                    1L,
+                    0L,
+                    new WaitCommand(PLAYER_ID));
+            IndependentHostTurnAuthority.TurnCommandResult second =
+                    authority.applyCommand(
+                            SECOND_PLAYER_ID,
+                            1L,
+                            0L,
+                            new WaitCommand(SECOND_PLAYER_ID));
+            require(second.snapshot().worldSnapshot() != null
+                            && SECOND_PLAYER_ID.equals(
+                            second.snapshot().worldSnapshot().player().id()),
+                    "second player did not receive its own committed world snapshot");
+
+            IndependentHostTurnAuthority.TurnSnapshot firstAfterSecond =
+                    authority.snapshotForPlayer(PLAYER_ID);
+            require(firstAfterSecond != null
+                            && firstAfterSecond.playerTurn() == 1L
+                            && firstAfterSecond.worldSnapshot() == null
+                            && "none".equals(firstAfterSecond.mutationThread()),
+                    "first player inherited the second player's latest world snapshot");
+
+            IndependentHostTurnAuthority.TurnSnapshot secondAfterSecond =
+                    authority.snapshotForPlayer(SECOND_PLAYER_ID);
+            require(secondAfterSecond != null
+                            && secondAfterSecond.worldSnapshot() != null
+                            && SECOND_PLAYER_ID.equals(
+                            secondAfterSecond.worldSnapshot().player().id()),
+                    "latest player lost its own authoritative world snapshot");
+        }
+    }
+
+    private static void verifyPersistenceFailureRollback(Path root) throws Exception {
+        Path mountedParent = root.resolve("Mounted Failure");
+        Path mountedPersistence = mountedParent.resolve("turns.properties");
+        try (IndependentHostTurnAuthority authority =
+                     new IndependentHostTurnAuthority(
+                             WORLD_ID + "-mounted-failure",
+                             mountedPersistence)) {
+            authority.applyCommand(
+                    PLAYER_ID,
+                    1L,
+                    0L,
+                    new WaitCommand(PLAYER_ID));
+            require(authority.stagingPlayerCount() == 1,
+                    "persistence rollback setup did not mount player");
+            Files.delete(mountedPersistence);
+            Files.delete(mountedParent);
+            Files.writeString(mountedParent, "block persistence parent");
+            expectFailure(
+                    () -> authority.applyCommand(
+                            PLAYER_ID,
+                            1L,
+                            1L,
+                            new WaitCommand(PLAYER_ID)),
+                    "could not commit atomically");
+            IndependentHostTurnAuthority.TurnSnapshot after =
+                    authority.snapshotForPlayer(PLAYER_ID);
+            require(after != null
+                            && after.playerTurn() == 1L
+                            && after.worldTurn() == 1L
+                            && authority.acceptedCommands() == 1L,
+                    "persistence failure did not restore prior turn/accounting state");
+            require(authority.stagingPlayerCount() == 1,
+                    "persistence failure did not restore prior mounted sector binding");
+        }
+
+        Path unboundParent = root.resolve("Unbound Failure");
+        Path unboundPersistence = unboundParent.resolve("turns.properties");
+        Files.createDirectories(root);
+        Files.writeString(unboundParent, "block persistence parent");
+        try (IndependentHostTurnAuthority authority =
+                     new IndependentHostTurnAuthority(
+                             WORLD_ID + "-unbound-failure",
+                             unboundPersistence)) {
+            expectFailure(
+                    () -> authority.applyCommand(
+                            PLAYER_ID,
+                            1L,
+                            0L,
+                            new WaitCommand(PLAYER_ID)),
+                    "could not commit atomically");
+            require(authority.snapshotForPlayer(PLAYER_ID) == null
+                            && authority.acceptedCommands() == 0L,
+                    "first-command persistence failure retained uncommitted player state");
+            require(authority.stagingPlayerCount() == 0,
+                    "first-command persistence failure retained sector membership");
         }
     }
 

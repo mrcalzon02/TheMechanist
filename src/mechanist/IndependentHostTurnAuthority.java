@@ -1,16 +1,11 @@
 package mechanist;
 
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.SecureRandom;
 import java.util.ArrayDeque;
@@ -38,6 +33,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     private static final String PERSISTENCE_SCHEMA = "1";
     private static final int MAX_PERSISTED_PLAYERS = 10_000;
     private static final int MAX_RECENT_EVENTS = 12;
+    private static final long MAX_INCREMENTABLE_COUNTER = Long.MAX_VALUE - 1L;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final String worldId;
@@ -71,17 +67,22 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                 0,
                 "independent-host-staging-" + cleanForPath(this.worldId));
         this.sectorManager = new SectorManager();
-        this.worldRuntime = new AuthoritativeWorldRuntime(
-                "mechanist-independent-host-world-" + cleanForPath(this.worldId));
+        AuthoritativeWorldRuntime restoredRuntime = null;
         try {
             loadIfPresent();
+            restoredRuntime = new AuthoritativeWorldRuntime(
+                    "mechanist-independent-host-world-" + cleanForPath(this.worldId),
+                    worldTurn);
         } catch (IOException | RuntimeException failure) {
-            worldRuntime.close();
+            if (restoredRuntime != null) {
+                restoredRuntime.close();
+            }
             sectorManager.close();
             throw new IllegalStateException(
                     "independent-host turn authority could not restore persistence",
                     failure);
         }
+        this.worldRuntime = restoredRuntime;
     }
 
     TurnCommandResult applyCommand(
@@ -100,6 +101,10 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             if (commandId < 0L) {
                 throw new IllegalArgumentException(
                         "world command id must be non-negative");
+            }
+            if (commandId > MAX_INCREMENTABLE_COUNTER) {
+                throw new IllegalArgumentException(
+                        "world command id exceeds supported sequence range");
             }
             if (command == null) {
                 throw new IllegalArgumentException(
@@ -124,6 +129,11 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             boolean created = existing == null;
             MutablePlayerState state = existing;
             if (state == null) {
+                if (players.size() >= MAX_PERSISTED_PLAYERS) {
+                    throw new IllegalStateException(
+                            "independent-host turn authority reached maximum player count "
+                                    + MAX_PERSISTED_PLAYERS);
+                }
                 state = new MutablePlayerState(playerId);
                 state.connectionGeneration = connectionGeneration;
                 players.put(playerId, state);
@@ -138,7 +148,7 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
 
             long expected = state.lastConnectionCommandId + 1L;
             if (commandId != expected) {
-                rollback(
+                rollbackState(
                         playerId,
                         prior,
                         priorWorldTurn,
@@ -150,13 +160,23 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                                 + " expected="
                                 + expected);
             }
+            if (!hasIncrementCapacity(state)) {
+                rollbackState(
+                        playerId,
+                        prior,
+                        priorWorldTurn,
+                        priorAcceptedCommands,
+                        created);
+                throw new IllegalStateException(
+                        "independent-host turn accounting exhausted supported range");
+            }
 
             MutablePlayerState activeState = state;
             HeadlessCommandContext context =
                     new HeadlessCommandContext(activeState);
             String rejection = command.rejectionReason(context);
             if (rejection != null && !rejection.isBlank()) {
-                rollback(
+                rollbackState(
                         playerId,
                         prior,
                         priorWorldTurn,
@@ -167,52 +187,66 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
 
             HeadlessSnapshotSource snapshotSource =
                     new HeadlessSnapshotSource(activeState);
+            SectorKey priorSector =
+                    sectorManager.currentSectorForPlayer(playerId);
+            boolean[] persistenceCommitted = {false};
+            AuthoritativeWorldSnapshot authoritative;
             try {
-                AuthoritativeWorldSnapshot authoritative =
-                        worldRuntime.submitAndJoin(
-                                snapshotSource,
-                                playerId,
-                                stagingSector,
-                                command.reason(),
-                                () -> {
-                                    sectorManager.playerEnteredSector(
-                                            playerId,
-                                            stagingSector);
-                                    command.apply(context);
-                                    activeState.lastConnectionCommandId =
-                                            commandId;
-                                    activeState.acceptedCommands++;
-                                    acceptedCommands++;
-                                    activeState.lastEvent =
-                                            "authoritative wait accepted";
-                                    try {
-                                        persist();
-                                    } catch (IOException failure) {
-                                        throw new UncheckedIOException(failure);
-                                    }
-                                    SectorSnapshot sector =
-                                            sectorManager.snapshot(stagingSector);
-                                    return sector == null
-                                            ? sectorManager.ensureSector(stagingSector)
-                                            : sector;
-                                });
-                TurnSnapshot snapshot = snapshot(activeState, authoritative);
-                return new TurnCommandResult(
-                        commandId,
-                        "WAIT",
-                        snapshot,
-                        authoritative);
+                authoritative = worldRuntime.submitAndJoin(
+                        snapshotSource,
+                        playerId,
+                        stagingSector,
+                        command.reason(),
+                        () -> {
+                            sectorManager.playerEnteredSector(
+                                    playerId,
+                                    stagingSector);
+                            command.apply(context);
+                            activeState.lastConnectionCommandId =
+                                    commandId;
+                            activeState.acceptedCommands = Math.incrementExact(
+                                    activeState.acceptedCommands);
+                            acceptedCommands = Math.incrementExact(
+                                    acceptedCommands);
+                            activeState.lastEvent =
+                                    "authoritative wait accepted";
+                            try {
+                                persist();
+                                persistenceCommitted[0] = true;
+                            } catch (IOException failure) {
+                                throw new UncheckedIOException(failure);
+                            }
+                            SectorSnapshot sector =
+                                    sectorManager.snapshot(stagingSector);
+                            return sector == null
+                                    ? sectorManager.ensureSector(stagingSector)
+                                    : sector;
+                        });
             } catch (RuntimeException failure) {
-                rollback(
+                rollbackAfterCommitFailure(
                         playerId,
                         prior,
                         priorWorldTurn,
                         priorAcceptedCommands,
-                        created);
+                        created,
+                        priorSector);
+                if (persistenceCommitted[0]) {
+                    try {
+                        persist();
+                    } catch (IOException compensationFailure) {
+                        failure.addSuppressed(compensationFailure);
+                    }
+                }
                 throw new IllegalStateException(
                         "independent-host world command could not commit atomically",
                         failure);
             }
+            TurnSnapshot snapshot = snapshot(activeState, authoritative);
+            return new TurnCommandResult(
+                    commandId,
+                    "WAIT",
+                    snapshot,
+                    authoritative);
         }
     }
 
@@ -250,6 +284,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     int playerCount() {
         synchronized (commandLock) {
             return players.size();
+        }
+    }
+
+    int stagingPlayerCount() {
+        synchronized (commandLock) {
+            SectorSnapshot snapshot = sectorManager.snapshot(stagingSector);
+            return snapshot == null ? 0 : snapshot.players();
         }
     }
 
@@ -293,7 +334,14 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         sectorManager.close();
     }
 
-    private void rollback(
+    private boolean hasIncrementCapacity(MutablePlayerState state) {
+        return state.turn < MAX_INCREMENTABLE_COUNTER
+                && worldTurn < MAX_INCREMENTABLE_COUNTER
+                && state.acceptedCommands < MAX_INCREMENTABLE_COUNTER
+                && acceptedCommands < MAX_INCREMENTABLE_COUNTER;
+    }
+
+    private void rollbackState(
             String playerId,
             MutablePlayerState prior,
             long priorWorldTurn,
@@ -302,10 +350,6 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
     ) {
         worldTurn = priorWorldTurn;
         acceptedCommands = priorAcceptedCommands;
-        try {
-            sectorManager.playerLeftCurrentSector(playerId);
-        } catch (RuntimeException ignored) {
-        }
         if (created || prior == null) {
             players.remove(playerId);
         } else {
@@ -313,10 +357,38 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
         }
     }
 
+    private void rollbackAfterCommitFailure(
+            String playerId,
+            MutablePlayerState prior,
+            long priorWorldTurn,
+            long priorAcceptedCommands,
+            boolean created,
+            SectorKey priorSector
+    ) {
+        try {
+            if (priorSector == null) {
+                sectorManager.playerLeftCurrentSector(playerId);
+            } else {
+                sectorManager.playerEnteredSector(playerId, priorSector);
+            }
+        } catch (RuntimeException ignored) {
+        }
+        rollbackState(
+                playerId,
+                prior,
+                priorWorldTurn,
+                priorAcceptedCommands,
+                created);
+    }
+
     private TurnSnapshot snapshot(
             MutablePlayerState state,
             AuthoritativeWorldSnapshot authoritative
     ) {
+        if (authoritative != null
+                && !state.playerId.equals(authoritative.playerId())) {
+            authoritative = null;
+        }
         WorldSnapshot worldSnapshot = authoritative == null
                 ? null
                 : authoritative.worldSnapshot();
@@ -370,14 +442,14 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             + " but found "
                             + storedWorld);
         }
-        worldTurn = parseNonNegativeLong(
-                properties.getProperty("worldTurn"),
+        worldTurn = parseIncrementableNonNegativeLong(
+                requiredProperty(properties, "worldTurn"),
                 "worldTurn");
-        acceptedCommands = parseNonNegativeLong(
-                properties.getProperty("acceptedCommands"),
+        acceptedCommands = parseIncrementableNonNegativeLong(
+                requiredProperty(properties, "acceptedCommands"),
                 "acceptedCommands");
         int count = parsePlayerCount(
-                properties.getProperty("player.count"));
+                requiredProperty(properties, "player.count"));
         long summedCommands = 0L;
         for (int index = 0; index < count; index++) {
             String prefix = "player." + index + ".";
@@ -392,29 +464,61 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             }
             MutablePlayerState state =
                     new MutablePlayerState(playerId);
-            state.connectionGeneration = Math.max(
-                    1L,
-                    parseNonNegativeLong(
-                            properties.getProperty(
-                                    prefix + "connectionGeneration"),
-                            prefix + "connectionGeneration"));
+            state.connectionGeneration = parsePositiveLong(
+                    requiredProperty(
+                            properties,
+                            prefix + "connectionGeneration"),
+                    prefix + "connectionGeneration");
             state.lastConnectionCommandId =
                     parseSignedSequence(
-                            properties.getProperty(
+                            requiredProperty(
+                                    properties,
                                     prefix + "lastConnectionCommandId"),
                             prefix + "lastConnectionCommandId");
-            state.turn = parseNonNegativeLong(
-                    properties.getProperty(prefix + "turn"),
+            state.turn = parseIncrementableNonNegativeLong(
+                    requiredProperty(properties, prefix + "turn"),
                     prefix + "turn");
-            state.acceptedCommands = parseNonNegativeLong(
-                    properties.getProperty(
+            state.acceptedCommands = parseIncrementableNonNegativeLong(
+                    requiredProperty(
+                            properties,
                             prefix + "acceptedCommands"),
                     prefix + "acceptedCommands");
-            state.lastEvent = safeEvent(
-                    properties.getProperty(
-                            prefix + "lastEvent",
-                            "restored after server restart"));
-            summedCommands += state.acceptedCommands;
+            if (state.turn != state.acceptedCommands) {
+                throw new IOException(
+                        "independent-host turn player accounting mismatch for "
+                                + playerId
+                                + ": turn="
+                                + state.turn
+                                + " acceptedCommands="
+                                + state.acceptedCommands);
+            }
+            state.lastEvent = safeEvent(requiredProperty(
+                    properties,
+                    prefix + "lastEvent"));
+            long eventCount = parseNonNegativeLong(
+                    requiredProperty(properties, prefix + "event.count"),
+                    prefix + "event.count");
+            if (eventCount > MAX_RECENT_EVENTS) {
+                throw new IOException(
+                        "independent-host turn ledger exceeds maximum recent event count "
+                                + MAX_RECENT_EVENTS
+                                + " for "
+                                + playerId);
+            }
+            for (int eventIndex = 0; eventIndex < eventCount; eventIndex++) {
+                state.events.addLast(safeEvent(requiredProperty(
+                        properties,
+                        prefix + "event." + eventIndex)));
+            }
+            try {
+                summedCommands = Math.addExact(
+                        summedCommands,
+                        state.acceptedCommands);
+            } catch (ArithmeticException overflow) {
+                throw new IOException(
+                        "independent-host turn command accounting overflow",
+                        overflow);
+            }
             players.put(playerId, state);
         }
         if (summedCommands != acceptedCommands) {
@@ -422,6 +526,13 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                     "independent-host turn command accounting mismatch: players="
                             + summedCommands
                             + " global="
+                            + acceptedCommands);
+        }
+        if (worldTurn != acceptedCommands) {
+            throw new IOException(
+                    "independent-host turn world accounting mismatch: worldTurn="
+                            + worldTurn
+                            + " acceptedCommands="
                             + acceptedCommands);
         }
         setOwnerOnlyPermissions(persistenceFile);
@@ -473,35 +584,33 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             properties.setProperty(
                     prefix + "lastEvent",
                     safeEvent(state.lastEvent));
+            properties.setProperty(
+                    prefix + "event.count",
+                    Integer.toString(state.events.size()));
+            int eventIndex = 0;
+            for (String event : state.events) {
+                properties.setProperty(
+                        prefix + "event." + eventIndex,
+                        safeEvent(event));
+                eventIndex++;
+            }
         }
 
         Path temporary = parent.resolve(
                 persistenceFile.getFileName()
                         + ".tmp-"
                         + randomHex(8));
-        try {
-            try (FileChannel channel = FileChannel.open(
-                         temporary,
-                         StandardOpenOption.CREATE_NEW,
-                         StandardOpenOption.WRITE);
-                 OutputStream output = new BufferedOutputStream(
-                         Channels.newOutputStream(channel))) {
-                setOwnerOnlyPermissions(temporary);
-                properties.store(
-                        output,
-                        "The Mechanist independent-host authoritative wait/turn ledger");
-                output.flush();
-                channel.force(true);
-            }
-            Files.move(
-                    temporary,
-                    persistenceFile,
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING);
-            setOwnerOnlyPermissions(persistenceFile);
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        properties.store(
+                buffer,
+                "The Mechanist independent-host authoritative wait/turn ledger");
+        Files.createFile(temporary);
+        setOwnerOnlyPermissions(temporary);
+        GameStorageManager.writeAtomic(
+                temporary,
+                persistenceFile,
+                buffer.toByteArray());
+        setOwnerOnlyPermissions(persistenceFile);
     }
 
     private void requireOpen() {
@@ -523,6 +632,32 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
                             + MAX_PERSISTED_PLAYERS);
         }
         return (int) parsed;
+    }
+
+    private static long parsePositiveLong(
+            String value,
+            String label
+    ) throws IOException {
+        long parsed = parseNonNegativeLong(value, label);
+        if (parsed < 1L) {
+            throw new IOException(
+                    "independent-host turn ledger contains invalid "
+                            + label);
+        }
+        return parsed;
+    }
+
+    private static long parseIncrementableNonNegativeLong(
+            String value,
+            String label
+    ) throws IOException {
+        long parsed = parseNonNegativeLong(value, label);
+        if (parsed > MAX_INCREMENTABLE_COUNTER) {
+            throw new IOException(
+                    "independent-host turn ledger exceeds incrementable range for "
+                            + label);
+        }
+        return parsed;
     }
 
     private static long parseNonNegativeLong(
@@ -553,6 +688,11 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
             long parsed = Long.parseLong(value.trim());
             if (parsed < -1L) {
                 throw new NumberFormatException("below -1");
+            }
+            if (parsed > MAX_INCREMENTABLE_COUNTER) {
+                throw new IOException(
+                        "independent-host turn ledger exceeds incrementable range for "
+                                + label);
             }
             return parsed;
         } catch (NumberFormatException failure) {
@@ -734,8 +874,8 @@ final class IndependentHostTurnAuthority implements AutoCloseable {
 
         @Override
         public void waitOneTurn(String line) {
-            state.turn++;
-            worldTurn++;
+            state.turn = Math.incrementExact(state.turn);
+            worldTurn = Math.incrementExact(worldTurn);
             state.events.addLast(safeEvent(line));
             while (state.events.size() > MAX_RECENT_EVENTS) {
                 state.events.removeFirst();

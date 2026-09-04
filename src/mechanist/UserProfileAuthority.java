@@ -8,13 +8,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 final class UserProfileAuthority {
-    static final String VERSION = "profile-authority-0.9.10fc";
+    static final String VERSION = "profile-authority-0.9.10fe";
+    private static final Map<String, String> SESSION_FALLBACK_IDENTIFIERS = new HashMap<>();
 
     static final class Profile {
         final String provider;
@@ -113,24 +115,75 @@ final class UserProfileAuthority {
         return value != null && !value.trim().isEmpty() && !"none".equalsIgnoreCase(value.trim());
     }
 
-    private static String internalIdentifier(String salt) {
+    private static synchronized String internalIdentifier(String salt) {
         try {
-            Path dir = Paths.get("settings");
-            Files.createDirectories(dir);
-            Path seedFile = dir.resolve("profile.seed");
-            if (!Files.exists(seedFile)) {
-                Files.writeString(seedFile, UUID.randomUUID().toString() + "\n", StandardCharsets.UTF_8);
+            Path seedFile = GameStorageManager.get().resolveProfilePath("profile.seed");
+            String seed;
+            if (Files.exists(seedFile)) {
+                seed = Files.readString(seedFile, StandardCharsets.UTF_8).trim();
+            } else {
+                seed = migrateLegacySeed(seedFile);
             }
-            String seed = Files.readString(seedFile, StandardCharsets.UTF_8).trim();
+            if (seed.isBlank()) {
+                seed = UUID.randomUUID().toString();
+                writeIdentityFile(seedFile, seed);
+            }
+
+            Path identifierFile = GameStorageManager.get().resolveProfilePath(
+                    "profile-" + salt + ".identifier");
+            if (Files.isRegularFile(identifierFile)) {
+                String persisted = Files.readString(identifierFile, StandardCharsets.UTF_8).trim();
+                if (persisted.matches("MECH-[0-9A-F]{16}")) {
+                    return persisted;
+                }
+            }
+
             String material = seed + "|" + salt + "|" + System.getProperty("user.name", "user") + "|" + System.getProperty("os.name", "os");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] digest = md.digest(material.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder("MECH-");
             for (int i = 0; i < 8 && i < digest.length; i++) sb.append(String.format(Locale.ROOT, "%02X", digest[i]));
-            return sb.toString();
+            String identifier = sb.toString();
+            writeIdentityFile(identifierFile, identifier);
+            return identifier;
         } catch (Throwable t) {
-            String fallback = UUID.nameUUIDFromBytes((salt + System.nanoTime()).getBytes(StandardCharsets.UTF_8)).toString().replace("-", "").toUpperCase(Locale.ROOT);
-            return "MECH-" + fallback.substring(0, 16);
+            String fallbackSalt = clean(salt, "local-profile");
+            String existing = SESSION_FALLBACK_IDENTIFIERS.get(fallbackSalt);
+            if (existing != null) return existing;
+
+            String generated = UUID.randomUUID().toString().replace("-", "").toUpperCase(Locale.ROOT);
+            String fallback = "MECH-" + generated.substring(0, 16);
+            SESSION_FALLBACK_IDENTIFIERS.put(fallbackSalt, fallback);
+            DebugLog.warn("PROFILE_IDENTITY", "Canonical profile identity storage is unavailable; using a session-stable fallback for " + fallbackSalt + ": " + t.getMessage());
+            return fallback;
+        }
+    }
+
+    private static String migrateLegacySeed(Path canonicalSeedFile) throws Exception {
+        Path legacySeedFile = Paths.get("settings").resolve("profile.seed").toAbsolutePath().normalize();
+        if (Files.isRegularFile(legacySeedFile)) {
+            String legacySeed = Files.readString(legacySeedFile, StandardCharsets.UTF_8).trim();
+            if (!legacySeed.isBlank()) {
+                writeIdentityFile(canonicalSeedFile, legacySeed);
+                return legacySeed;
+            }
+        }
+        String seed = UUID.randomUUID().toString();
+        writeIdentityFile(canonicalSeedFile, seed);
+        return seed;
+    }
+
+    private static void writeIdentityFile(Path target, String value) throws Exception {
+        Path parent = target.getParent();
+        if (parent != null) Files.createDirectories(parent);
+        Path temp = target.resolveSibling(target.getFileName() + ".tmp-" + UUID.randomUUID());
+        try {
+            GameStorageManager.writeAtomic(
+                    temp,
+                    target,
+                    (value + "\n").getBytes(StandardCharsets.UTF_8));
+        } finally {
+            Files.deleteIfExists(temp);
         }
     }
 

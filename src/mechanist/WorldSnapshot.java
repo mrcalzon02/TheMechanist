@@ -14,15 +14,38 @@ record WorldSnapshot(long version,
                      UiStateSnapshot uiState,
                      long committedAtMillis) {
     static final int TILE_RADIUS = 12;
+    static final int MAX_TILES = (TILE_RADIUS * 2 + 1) * (TILE_RADIUS * 2 + 1);
     static final int MAX_NPCS = 80;
     static final int MAX_OBJECTS = 120;
     static final int MAX_ACTIONS = 12;
 
+    WorldSnapshot {
+        player = player == null ? PlayerSnapshot.empty() : player;
+        visibleTiles = checkedCopy(visibleTiles, MAX_TILES, "visible tiles");
+        visibleNpcs = checkedCopy(visibleNpcs, MAX_NPCS, "visible NPCs");
+        visibleObjects = checkedCopy(visibleObjects, MAX_OBJECTS, "visible objects");
+        recentActions = checkedCopy(recentActions, MAX_ACTIONS, "recent actions");
+        uiState = uiState == null ? UiStateSnapshot.empty() : uiState;
+    }
+
     static WorldSnapshot fromGame(long version, GamePanel game, SectorKey sector) {
+        return fromGame(
+                version,
+                game,
+                sector,
+                SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID);
+    }
+
+    static WorldSnapshot fromGame(
+            long version,
+            GamePanel game,
+            SectorKey sector,
+            String playerId
+    ) {
         if (game == null) {
-            return new WorldSnapshot(version, sector, PlayerSnapshot.empty(), List.of(), List.of(), List.of(), List.of(), UiStateSnapshot.empty(), System.currentTimeMillis());
+            return new WorldSnapshot(version, sector, PlayerSnapshot.empty(playerId), List.of(), List.of(), List.of(), List.of(), UiStateSnapshot.empty(), System.currentTimeMillis());
         }
-        PlayerSnapshot player = PlayerSnapshot.fromGame(game);
+        PlayerSnapshot player = PlayerSnapshot.fromGame(game, playerId);
         ArrayList<TileSnapshot> tiles = new ArrayList<>();
         World w = game.world;
         if (w != null && w.tiles != null) {
@@ -85,6 +108,16 @@ record WorldSnapshot(long version,
                 + " ui=" + uiState.compact();
     }
 
+    private static <T> List<T> checkedCopy(List<T> values, int maximum, String label) {
+        if (values == null) return List.of();
+        if (values.size() > maximum) {
+            throw new IllegalArgumentException(
+                    "WorldSnapshot exceeds maximum " + label + ": "
+                            + values.size() + " > " + maximum);
+        }
+        return List.copyOf(values);
+    }
+
     private static String clean(String s) { return s == null ? "" : s.replace('\n', ' ').trim(); }
 }
 
@@ -103,16 +136,21 @@ record PlayerSnapshot(String id,
                       String facing,
                       String motionState,
                       String activeAction) {
-    static PlayerSnapshot empty() { return new PlayerSnapshot("none", "none", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "E", "stationary", "none"); }
+    static PlayerSnapshot empty() { return empty("none"); }
+    static PlayerSnapshot empty(String playerId) { return new PlayerSnapshot(cleanIdentity(playerId), "none", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "E", "stationary", "none"); }
     static PlayerSnapshot fromGame(GamePanel game) {
+        return fromGame(game, SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID);
+    }
+    static PlayerSnapshot fromGame(GamePanel game, String playerId) {
         String action = game.singlePlayerSectorBridge == null ? "none" : game.singlePlayerSectorBridge.activeActionDisplayLine();
         if (action == null || action.isBlank()) action = "none";
         String name = game.active == null ? "none" : game.active.name;
-        return new PlayerSnapshot(SinglePlayerSectorRuntimeBridge.LOCAL_PLAYER_ID, clean(name), game.playerX, game.playerY,
+        return new PlayerSnapshot(cleanIdentity(playerId), clean(name), game.playerX, game.playerY,
                 game.turn, game.worldTurn, game.food, game.water, game.sleepNeed, game.countMoney(), game.gangHeat, game.suspicion,
                 game.facingLabel(), game.activeMotionStateLabel(), clean(action));
     }
     String compact() { return id + "@" + x + "," + y + " turn=" + turn + " action=" + activeAction; }
+    private static String cleanIdentity(String s) { return s == null || s.isBlank() ? "unspecified" : s.replace('\n', ' ').replace('\r', ' ').trim(); }
     private static String clean(String s) { return s == null ? "" : s.replace('\n', ' ').trim(); }
 }
 
@@ -179,10 +217,18 @@ record UiStateSnapshot(String screen,
                        String serverAction) {
     static UiStateSnapshot empty() { return new UiStateSnapshot("none", "none", 0, 0, false, "none", 0, "none"); }
     static UiStateSnapshot fromGame(GamePanel game) {
-        String zone = game.world == null ? "none" : game.world.zoneType.label + " " + game.world.zoneCoordText();
+        if (game == null) return empty();
+        String zone = "none";
+        if (game.world != null) {
+            String zoneLabel = game.world.zoneType == null
+                    ? "none"
+                    : game.world.zoneType.label;
+            zone = zoneLabel + " " + game.world.zoneCoordText();
+        }
         String action = game.singlePlayerSectorBridge == null ? "none" : game.singlePlayerSectorBridge.activeActionDisplayLine();
         if (action == null || action.isBlank()) action = "none";
-        return new UiStateSnapshot(String.valueOf(game.screen), String.valueOf(game.panelMode), game.lookX, game.lookY, game.lookCursorActive, clean(zone), game.inventory.size(), clean(action));
+        int inventoryCount = game.inventory == null ? 0 : game.inventory.size();
+        return new UiStateSnapshot(String.valueOf(game.screen), String.valueOf(game.panelMode), game.lookX, game.lookY, game.lookCursorActive, clean(zone), inventoryCount, clean(action));
     }
     String compact() { return screen + "/" + panel + " look=" + lookX + "," + lookY + " action=" + serverAction; }
     private static String clean(String s) { return s == null ? "" : s.replace('\n', ' ').trim(); }
