@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.10-door-type-association";
+    static final String VERSION = "semantic-render-asset-resolver-0.11-furniture-type-association";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -150,13 +150,13 @@ final class SemanticRenderAssetResolver {
             case SECURITY_CAMERA_FIXTURE -> infrastructureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
             case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && themed(haystack, "closed", "shut") && !themed(haystack, "open") && !generic(haystack);
             case DOOR_OPEN -> doorType(asset) && themed(haystack, "door") && themed(haystack, "open", "opened") && !themed(haystack, "closed", "shut") && !generic(haystack);
-            case WORKSHOP_TABLE -> fixtureOrObject(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
-            case DINING_TABLE -> fixtureOrObject(asset) && themed(haystack, "dining table", "mess table", "kitchen table");
-            case MEDICAL_TABLE -> fixtureOrObject(asset) && themed(haystack, "medical table", "operating table", "surgery table");
-            case SHRINE_ALTAR -> fixtureOrObject(asset) && themed(haystack, "altar", "shrine");
-            case MARKET_COUNTER -> fixtureOrObject(asset) && themed(haystack, "market counter", "shop counter", "stall counter");
-            case ADMINISTRATIVE_DESK -> fixtureOrObject(asset) && themed(haystack, "administrative desk", "office desk", "records desk");
-            case INTERROGATION_DESK -> fixtureOrObject(asset) && themed(haystack, "interrogation desk", "security desk");
+            case WORKSHOP_TABLE -> furnitureType(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
+            case DINING_TABLE -> furnitureType(asset) && themed(haystack, "dining table", "mess table", "kitchen table");
+            case MEDICAL_TABLE -> furnitureType(asset) && themed(haystack, "medical table", "operating table", "surgery table");
+            case SHRINE_ALTAR -> furnitureType(asset) && themed(haystack, "altar", "shrine");
+            case MARKET_COUNTER -> furnitureType(asset) && themed(haystack, "market counter", "shop counter", "stall counter");
+            case ADMINISTRATIVE_DESK -> furnitureType(asset) && themed(haystack, "administrative desk", "office desk", "records desk");
+            case INTERROGATION_DESK -> furnitureType(asset) && themed(haystack, "interrogation desk", "security desk");
             case TOOLBOX_CONTAINER -> containerType(asset) && themed(haystack, "toolbox", "tool box");
             case MEDICAL_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "medical cabinet", "medicine cabinet", "clinic cabinet");
             case WEAPONS_LOCKER_CONTAINER -> containerType(asset) && themed(haystack, "weapons locker", "weapon locker", "armory locker");
@@ -221,6 +221,7 @@ final class SemanticRenderAssetResolver {
     private static boolean isFloor(AssetMetadata asset) { return asset.type() == AssetType.FLOOR_TILE; }
     private static boolean isWall(AssetMetadata asset) { return asset.type() == AssetType.WALL_TILE; }
     private static boolean fixtureOrObject(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT || asset.type() == AssetType.MACHINE; }
+    private static boolean furnitureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
     private static boolean infrastructureType(AssetMetadata asset) { return fixtureOrObject(asset); }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON || asset.type() == AssetType.ARMOR_ICON; }
