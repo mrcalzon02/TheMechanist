@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.4-canonical-stable-variety";
+    static final String VERSION = "semantic-render-intent-authority-0.5-token-boundary-matching";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -199,7 +199,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true";
     }
 
     private static String normalizeItem(String raw) {
@@ -221,9 +221,10 @@ final class SemanticRenderIntentAuthority {
     }
 
     private static boolean contains(String text, String... needles) {
+        String paddedText = " " + text + " ";
         for (String needle : needles) {
             String normalized = normalize(needle);
-            if (!normalized.isBlank() && text.contains(normalized)) return true;
+            if (!normalized.isBlank() && paddedText.contains(" " + normalized + " ")) return true;
         }
         return false;
     }
