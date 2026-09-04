@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.11-furniture-type-association";
+    static final String VERSION = "semantic-render-asset-resolver-0.12-item-icon-type-association";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -224,7 +224,7 @@ final class SemanticRenderAssetResolver {
     private static boolean furnitureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
     private static boolean infrastructureType(AssetMetadata asset) { return fixtureOrObject(asset); }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
-    private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON || asset.type() == AssetType.ARMOR_ICON; }
+    private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "weapon")); }
     private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "armor", "armour", "clothing")); }
     private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.WEAPON_ICON; }
