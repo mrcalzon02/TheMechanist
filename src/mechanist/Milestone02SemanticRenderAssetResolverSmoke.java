@@ -71,6 +71,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         reject(asset("NEG-0007", AssetType.UI_ICON, "Traffic Light Button", "assets/ui/traffic_light.png", "system control ui icon traffic light"), SemanticRenderAssetResolver.RenderIntent.TRAFFIC_LIGHT_FIXTURE, "traffic-light resolver accepted UI control icon");
         reject(asset("NEG-0008", AssetType.FIXTURE, "Sewer Water Pipe", "assets/infrastructure/sewer_water_pipe.png", "sewer waste sludge water pipe"), SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE, "water-pipe resolver accepted sewer-contaminated pipe");
         reject(asset("NEG-0009", AssetType.ITEM_ICON, "Camera Icon", "assets/ui/camera.png", "system inventory item icon security camera"), SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE, "security-camera resolver accepted item icon");
+        reject(asset("NEG-0010", AssetType.ITEM_ICON, "Medical Cabinet Icon", "assets/items/medical_cabinet.png", "medical cabinet medicine cabinet clinic cabinet item icon"), SemanticRenderAssetResolver.RenderIntent.MEDICAL_CABINET_CONTAINER, "container resolver accepted inventory item icon as world container art");
 
         AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
                 "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
