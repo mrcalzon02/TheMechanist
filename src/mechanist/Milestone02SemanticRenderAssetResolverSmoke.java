@@ -62,6 +62,10 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON, "ITE-0007");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON, "ITE-0008");
 
+        assertStableVariant(registry, SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, 0L, "GEN-0001");
+        assertStableVariant(registry, SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, 1L, "GEN-0003");
+        assertStableVariant(registry, SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, 1L, "GEN-0003");
+
         reject(asset("NEG-0001", AssetType.ITEM_ICON, "System Inventory Light", "assets/ui/system_light.png", "system inventory icon light"), SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE, "streetlight resolver accepted system inventory icon");
         reject(asset("NEG-0002", AssetType.FLOOR_TILE, "Sewer Floor", "assets/sewer/floor.png", "sewer floor"), SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, "generic floor resolver accepted sewer floor tile");
         reject(asset("NEG-0003", AssetType.FLOOR_TILE, "Generic Floor", "assets/generic/floor.png", "generic main floor"), SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR, "sewer floor resolver accepted generic floor tile");
@@ -109,6 +113,12 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " resolved " + resolution.asset.id() + " instead of " + expectedId);
     }
 
+    private static void assertStableVariant(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent, long key, String expectedId) {
+        SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent, key);
+        if (!resolution.found()) throw new AssertionError(intent + " stable variant did not resolve: " + resolution.reason);
+        if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " stable variant key " + key + " resolved " + resolution.asset.id() + " instead of " + expectedId);
+    }
+
     private static void reject(AssetMetadata asset, SemanticRenderAssetResolver.RenderIntent intent, String message) {
         if (SemanticRenderAssetResolver.canUse(asset, intent)) throw new AssertionError(message);
     }
@@ -122,6 +132,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("SEM-0001", AssetType.FLOOR_TILE, "Sewer Floor Wet Utility Tunnel", "assets/tiles/sewer/floor_wet.png", "sewer floor wet utility tunnel tile"));
         put(entries, asset("SEM-0002", AssetType.WALL_TILE, "Sewer Wall Brick Drain", "assets/tiles/sewer/wall_brick.png", "sewer wall brick drain utility tunnel tile"));
         put(entries, asset("GEN-0001", AssetType.FLOOR_TILE, "Generic Floor Plain", "assets/tiles/generic/floor_plain.png", "generic main floor tile"));
+        put(entries, asset("GEN-0003", AssetType.FLOOR_TILE, "Generic Floor Ribbed", "assets/tiles/generic/floor_ribbed.png", "generic main floor tile"));
         put(entries, asset("GEN-0002", AssetType.WALL_TILE, "Generic Wall Plain", "assets/tiles/generic/wall_plain.png", "generic main wall tile"));
         put(entries, asset("IND-0001", AssetType.FLOOR_TILE, "Industrial Machine Shop Floor", "assets/tiles/industrial/floor_machine_shop.png", "industrial factory machine shop floor tile"));
         put(entries, asset("IND-0002", AssetType.WALL_TILE, "Industrial Factory Wall", "assets/tiles/industrial/wall_factory.png", "industrial factory wall tile"));
