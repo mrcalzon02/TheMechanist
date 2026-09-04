@@ -95,12 +95,23 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata systemButton = asset("CEL-0004", AssetType.UI_ICON,
                 "System Button", "assets/system/button_r01c01.png",
                 "system control interface control rondel button");
+        AssetMetadata combatKnife = asset("CEL-0005", AssetType.WEAPON_ICON,
+                "Combat Knife", "assets/items/weapons_knife_r01c01.png",
+                "combat knife melee equipment");
+        AssetMetadata inventoryKnife = asset("CEL-0006", AssetType.ITEM_ICON,
+                "Kitchen Knife", "assets/items/kitchen_knife.png",
+                "kitchen knife utensil inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
                 "tool resolver rejected a weapon-atlas cell explicitly described as a tool");
         reject(ordinaryRifle, SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON,
                 "tool resolver accepted an ordinary rifle without tool semantics");
+        require(SemanticRenderAssetResolver.canUse(combatKnife,
+                SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON),
+                "weapon resolver rejected a correctly typed combat knife because metadata lacked a generic weapon synonym");
+        reject(inventoryKnife, SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON,
+                "weapon resolver accepted a generic item-icon knife without explicit weapon typing");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
