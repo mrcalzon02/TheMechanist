@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.12-item-icon-type-association";
+    static final String VERSION = "semantic-render-asset-resolver-0.13-infrastructure-type-association";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -139,15 +139,15 @@ final class SemanticRenderAssetResolver {
             case WAREHOUSE_FLOOR -> isFloor(asset) && themed(haystack, "warehouse", "storage", "cargo", "loading") && !themed(haystack, "sewer");
             case NOBLE_FLOOR -> isFloor(asset) && themed(haystack, "noble", "luxury", "estate", "manor") && !themed(haystack, "sewer");
             case SLUM_FLOOR -> isFloor(asset) && themed(haystack, "slum", "shanty", "tenement", "scrap") && !themed(haystack, "sewer");
-            case STREETLIGHT_FIXTURE -> infrastructureType(asset) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp") && notUiIcon(haystack);
-            case TRAFFIC_LIGHT_FIXTURE -> infrastructureType(asset) && themed(haystack, "traffic light", "signal light", "crossing signal") && notUiIcon(haystack);
-            case GENERATOR_MACHINE -> fixtureOrObject(asset) && themed(haystack, "generator", "power generator", "genset") && notUiIcon(haystack);
-            case TRANSFORMER_MACHINE -> fixtureOrObject(asset) && themed(haystack, "transformer", "power transformer", "electrical transformer") && notUiIcon(haystack);
-            case JUNCTION_BOX_FIXTURE -> infrastructureType(asset) && themed(haystack, "junction box", "electrical box", "power box") && notUiIcon(haystack);
-            case VENTILATION_UNIT_FIXTURE -> infrastructureType(asset) && themed(haystack, "ventilation unit", "vent unit", "air handler", "exhaust fan") && notUiIcon(haystack);
-            case WATER_PIPE_FIXTURE -> infrastructureType(asset) && themed(haystack, "water pipe", "fresh water pipe", "water main") && !themed(haystack, "sewer", "waste", "sludge") && notUiIcon(haystack);
-            case SEWER_PIPE_FIXTURE -> infrastructureType(asset) && themed(haystack, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe") && notUiIcon(haystack);
-            case SECURITY_CAMERA_FIXTURE -> infrastructureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
+            case STREETLIGHT_FIXTURE -> fixtureType(asset) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp") && notUiIcon(haystack);
+            case TRAFFIC_LIGHT_FIXTURE -> fixtureType(asset) && themed(haystack, "traffic light", "signal light", "crossing signal") && notUiIcon(haystack);
+            case GENERATOR_MACHINE -> machineType(asset) && themed(haystack, "generator", "power generator", "genset") && notUiIcon(haystack);
+            case TRANSFORMER_MACHINE -> machineType(asset) && themed(haystack, "transformer", "power transformer", "electrical transformer") && notUiIcon(haystack);
+            case JUNCTION_BOX_FIXTURE -> fixtureType(asset) && themed(haystack, "junction box", "electrical box", "power box") && notUiIcon(haystack);
+            case VENTILATION_UNIT_FIXTURE -> equipmentType(asset) && themed(haystack, "ventilation unit", "vent unit", "air handler", "exhaust fan") && notUiIcon(haystack);
+            case WATER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "water pipe", "fresh water pipe", "water main") && !themed(haystack, "sewer", "waste", "sludge") && notUiIcon(haystack);
+            case SEWER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe") && notUiIcon(haystack);
+            case SECURITY_CAMERA_FIXTURE -> fixtureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
             case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door") && themed(haystack, "closed", "shut") && !themed(haystack, "open") && !generic(haystack);
             case DOOR_OPEN -> doorType(asset) && themed(haystack, "door") && themed(haystack, "open", "opened") && !themed(haystack, "closed", "shut") && !generic(haystack);
             case WORKSHOP_TABLE -> furnitureType(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
@@ -222,7 +222,9 @@ final class SemanticRenderAssetResolver {
     private static boolean isWall(AssetMetadata asset) { return asset.type() == AssetType.WALL_TILE; }
     private static boolean fixtureOrObject(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT || asset.type() == AssetType.MACHINE; }
     private static boolean furnitureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
-    private static boolean infrastructureType(AssetMetadata asset) { return fixtureOrObject(asset); }
+    private static boolean fixtureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE; }
+    private static boolean machineType(AssetMetadata asset) { return asset.type() == AssetType.MACHINE; }
+    private static boolean equipmentType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.MACHINE; }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "weapon")); }
