@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.15-stable-top-cohort-variety";
+    static final String VERSION = "semantic-render-asset-resolver-0.17-weapon-metadata-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -188,7 +188,11 @@ final class SemanticRenderAssetResolver {
             case CARGO_CONTAINER -> containerType(asset) && themed(haystack, "cargo container", "crate", "shipping container");
             case FILING_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "filing cabinet", "records cabinet", "file cabinet");
             case REFRIGERATED_STORAGE_CONTAINER -> containerType(asset) && themed(haystack, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker");
-            case WEAPON_ITEM_ICON -> weaponIcon(asset) && themed(haystack, "weapon", "gun", "blade", "ammo");
+            case WEAPON_ITEM_ICON -> weaponIcon(asset) && themed(haystack,
+                    "weapon", "gun", "blade", "ammo", "ammunition",
+                    "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet",
+                    "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter",
+                    "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon");
             case ARMOR_ITEM_ICON -> armorIcon(asset) && themed(haystack, "armor", "armour", "helmet", "clothing");
             case TOOL_ITEM_ICON -> toolIcon(asset) && themed(haystack, "tool", "wrench", "repair", "fabrication", "shovel", "spade", "cutter", "drill", "maintenance kit", "maintenance tools");
             case MEDICAL_ITEM_ICON -> itemIcon(asset) && themed(haystack, "medical", "medkit", "bandage", "suture", "medicine");
@@ -258,11 +262,46 @@ final class SemanticRenderAssetResolver {
     private static boolean dataDeviceIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || asset.type() == AssetType.UI_ICON; }
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
-    private static boolean themed(String text, String... needles) { return contains(text, needles); }
+    private static boolean themed(String text, String... needles) { return semanticContains(text, needles); }
     private static boolean notUiIcon(String text) { return !themed(text, "system inventory", "item icon", "ui icon", "system control", "interface control"); }
 
     private static String haystack(AssetMetadata asset) {
         return normalize(asset.id() + " " + asset.name() + " " + asset.pathOrUri() + " " + asset.type().displayName() + " " + asset.semanticDescription());
+    }
+
+    private static boolean semanticContains(String text, String... needles) {
+        String[] textTokens = semanticNormalize(text).split(" ");
+        for (String needle : needles) {
+            String normalized = semanticNormalize(needle);
+            if (normalized.isBlank()) continue;
+            String[] needleTokens = normalized.split(" ");
+            for (int start = 0; start + needleTokens.length <= textTokens.length; start++) {
+                boolean matches = true;
+                for (int offset = 0; offset < needleTokens.length; offset++) {
+                    String actual = textTokens[start + offset];
+                    String expected = needleTokens[offset];
+                    if (!actual.equals(expected)
+                            && !(offset == needleTokens.length - 1 && regularPlural(actual, expected))) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean regularPlural(String actual, String singular) {
+        if (singular.length() < 3) return false;
+        return actual.equals(singular + "s") || actual.equals(singular + "es");
+    }
+
+    private static String semanticNormalize(String value) {
+        return normalize(value)
+                .replaceAll("[^a-z0-9]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private static boolean contains(String text, String... needles) {

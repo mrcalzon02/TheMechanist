@@ -62,6 +62,10 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON, "ITE-0007");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON, "ITE-0008");
 
+        assertStableVariant(registry, SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, 0L, "GEN-0001");
+        assertStableVariant(registry, SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, 1L, "GEN-0003");
+        assertStableVariant(registry, SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, 1L, "GEN-0003");
+
         reject(asset("NEG-0001", AssetType.ITEM_ICON, "System Inventory Light", "assets/ui/system_light.png", "system inventory icon light"), SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE, "streetlight resolver accepted system inventory icon");
         reject(asset("NEG-0002", AssetType.FLOOR_TILE, "Sewer Floor", "assets/sewer/floor.png", "sewer floor"), SemanticRenderAssetResolver.RenderIntent.GENERIC_FLOOR, "generic floor resolver accepted sewer floor tile");
         reject(asset("NEG-0003", AssetType.FLOOR_TILE, "Generic Floor", "assets/generic/floor.png", "generic main floor"), SemanticRenderAssetResolver.RenderIntent.SEWER_FLOOR, "sewer floor resolver accepted generic floor tile");
@@ -75,6 +79,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         reject(asset("NEG-0011", AssetType.ROAD_TILE, "Market Access Road", "assets/roads/market_access.png", "market commercial access road tile"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "market floor resolver accepted road art as interior floor art");
         reject(asset("NEG-0012", AssetType.SIDEWALK_TILE, "Habitation Sidewalk", "assets/sidewalks/habitation.png", "habitation residential sidewalk tile"), SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR, "habitation floor resolver accepted sidewalk art as interior floor art");
         reject(asset("NEG-0013", AssetType.CORRIDOR_TILE, "Transit Corridor", "assets/corridors/transit.png", "transit station corridor rail tile"), SemanticRenderAssetResolver.RenderIntent.TRANSIT_FLOOR, "transit floor resolver accepted corridor art as floor art");
+        reject(asset("NEG-0014", AssetType.ITEM_ICON, "Department Archive", "assets/items/department_archive.png", "department inventory archive icon"), SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON, "industrial component resolver accepted department because it contains the letters part");
+        reject(asset("NEG-0015", AssetType.ITEM_ICON, "Database Archive", "assets/items/database_archive.png", "database archive inventory icon"), SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON, "data-device resolver accepted database because it begins with the letters data");
+        reject(asset("NEG-0016", AssetType.FLOOR_TILE, "Marketplace Floor", "assets/tiles/commercial/marketplace.png", "marketplace commercial floor tile"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "market floor resolver accepted marketplace as the standalone market semantic");
 
         AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
                 "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
@@ -88,12 +95,23 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata systemButton = asset("CEL-0004", AssetType.UI_ICON,
                 "System Button", "assets/system/button_r01c01.png",
                 "system control interface control rondel button");
+        AssetMetadata combatKnife = asset("CEL-0005", AssetType.WEAPON_ICON,
+                "Combat Knife", "assets/items/weapons_knife_r01c01.png",
+                "combat knife melee equipment");
+        AssetMetadata inventoryKnife = asset("CEL-0006", AssetType.ITEM_ICON,
+                "Kitchen Knife", "assets/items/kitchen_knife.png",
+                "kitchen knife utensil inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
                 "tool resolver rejected a weapon-atlas cell explicitly described as a tool");
         reject(ordinaryRifle, SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON,
                 "tool resolver accepted an ordinary rifle without tool semantics");
+        require(SemanticRenderAssetResolver.canUse(combatKnife,
+                SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON),
+                "weapon resolver rejected a correctly typed combat knife because metadata lacked a generic weapon synonym");
+        reject(inventoryKnife, SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON,
+                "weapon resolver accepted a generic item-icon knife without explicit weapon typing");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
@@ -109,6 +127,12 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " resolved " + resolution.asset.id() + " instead of " + expectedId);
     }
 
+    private static void assertStableVariant(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent, long key, String expectedId) {
+        SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent, key);
+        if (!resolution.found()) throw new AssertionError(intent + " stable variant did not resolve: " + resolution.reason);
+        if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " stable variant key " + key + " resolved " + resolution.asset.id() + " instead of " + expectedId);
+    }
+
     private static void reject(AssetMetadata asset, SemanticRenderAssetResolver.RenderIntent intent, String message) {
         if (SemanticRenderAssetResolver.canUse(asset, intent)) throw new AssertionError(message);
     }
@@ -122,6 +146,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("SEM-0001", AssetType.FLOOR_TILE, "Sewer Floor Wet Utility Tunnel", "assets/tiles/sewer/floor_wet.png", "sewer floor wet utility tunnel tile"));
         put(entries, asset("SEM-0002", AssetType.WALL_TILE, "Sewer Wall Brick Drain", "assets/tiles/sewer/wall_brick.png", "sewer wall brick drain utility tunnel tile"));
         put(entries, asset("GEN-0001", AssetType.FLOOR_TILE, "Generic Floor Plain", "assets/tiles/generic/floor_plain.png", "generic main floor tile"));
+        put(entries, asset("GEN-0003", AssetType.FLOOR_TILE, "Generic Floor Ribbed", "assets/tiles/generic/floor_ribbed.png", "generic main floor tile"));
         put(entries, asset("GEN-0002", AssetType.WALL_TILE, "Generic Wall Plain", "assets/tiles/generic/wall_plain.png", "generic main wall tile"));
         put(entries, asset("IND-0001", AssetType.FLOOR_TILE, "Industrial Machine Shop Floor", "assets/tiles/industrial/floor_machine_shop.png", "industrial factory machine shop floor tile"));
         put(entries, asset("IND-0002", AssetType.WALL_TILE, "Industrial Factory Wall", "assets/tiles/industrial/wall_factory.png", "industrial factory wall tile"));

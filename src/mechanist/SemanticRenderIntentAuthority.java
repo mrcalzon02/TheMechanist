@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.2-infrastructure";
+    static final String VERSION = "semantic-render-intent-authority-0.6-token-boundary-plurals";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -23,7 +23,7 @@ final class SemanticRenderIntentAuthority {
         String text = normalizeItem(rawName);
         if (text.isBlank()) return Optional.empty();
 
-        if (contains(text, "knife", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
+        if (contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
                 "spear", "polearm", "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
                 "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon", "ammo", "ammunition")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
@@ -156,16 +156,32 @@ final class SemanticRenderIntentAuthority {
         return resolveItemFamily(AssetManager.registry(), rawName);
     }
 
+    static Optional<String> resolveItemFamily(String rawName, long stableVariantKey) {
+        return resolveItemFamily(AssetManager.registry(), rawName, stableVariantKey);
+    }
+
     static Optional<String> resolveItemFamily(AssetRegistry registry, String rawName) {
         return itemIntent(rawName).flatMap(intent -> resolve(registry, intent));
+    }
+
+    static Optional<String> resolveItemFamily(AssetRegistry registry, String rawName, long stableVariantKey) {
+        return itemIntent(rawName).flatMap(intent -> resolve(registry, intent, stableVariantKey));
     }
 
     static Optional<String> resolveObjectFamily(String rawText) {
         return resolveObjectFamily(AssetManager.registry(), rawText);
     }
 
+    static Optional<String> resolveObjectFamily(String rawText, long stableVariantKey) {
+        return resolveObjectFamily(AssetManager.registry(), rawText, stableVariantKey);
+    }
+
     static Optional<String> resolveObjectFamily(AssetRegistry registry, String rawText) {
         return objectIntent(rawText).flatMap(intent -> resolve(registry, intent));
+    }
+
+    static Optional<String> resolveObjectFamily(AssetRegistry registry, String rawText, long stableVariantKey) {
+        return objectIntent(rawText).flatMap(intent -> resolve(registry, intent, stableVariantKey));
     }
 
     static Optional<String> resolve(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent) {
@@ -174,8 +190,16 @@ final class SemanticRenderIntentAuthority {
         return resolution.found() ? Optional.of(resolution.asset.id()) : Optional.empty();
     }
 
+    static Optional<String> resolve(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent,
+                                    long stableVariantKey) {
+        if (intent == null) return Optional.empty();
+        SemanticRenderAssetResolver.Resolution resolution =
+                SemanticRenderAssetResolver.resolve(registry, intent, stableVariantKey);
+        return resolution.found() ? Optional.of(resolution.asset.id()) : Optional.empty();
+    }
+
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true";
     }
 
     private static String normalizeItem(String raw) {
@@ -197,10 +221,31 @@ final class SemanticRenderIntentAuthority {
     }
 
     private static boolean contains(String text, String... needles) {
+        String[] textTokens = text.split(" ");
         for (String needle : needles) {
             String normalized = normalize(needle);
-            if (!normalized.isBlank() && text.contains(normalized)) return true;
+            if (normalized.isBlank()) continue;
+            String[] needleTokens = normalized.split(" ");
+            for (int start = 0; start + needleTokens.length <= textTokens.length; start++) {
+                if (matchesPhrase(textTokens, start, needleTokens)) return true;
+            }
         }
         return false;
+    }
+
+    private static boolean matchesPhrase(String[] textTokens, int start, String[] needleTokens) {
+        for (int offset = 0; offset < needleTokens.length; offset++) {
+            String actual = textTokens[start + offset];
+            String expected = needleTokens[offset];
+            if (actual.equals(expected)) continue;
+            if (offset == needleTokens.length - 1 && regularPlural(actual, expected)) continue;
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean regularPlural(String actual, String singular) {
+        if (singular.length() < 3) return false;
+        return actual.equals(singular + "s") || actual.equals(singular + "es");
     }
 }
