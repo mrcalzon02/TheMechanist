@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.2-infrastructure";
+    static final String VERSION = "semantic-render-intent-authority-0.3-stable-variety";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -160,6 +160,10 @@ final class SemanticRenderIntentAuthority {
         return itemIntent(rawName).flatMap(intent -> resolve(registry, intent));
     }
 
+    static Optional<String> resolveItemFamily(AssetRegistry registry, String rawName, long stableVariantKey) {
+        return itemIntent(rawName).flatMap(intent -> resolve(registry, intent, stableVariantKey));
+    }
+
     static Optional<String> resolveObjectFamily(String rawText) {
         return resolveObjectFamily(AssetManager.registry(), rawText);
     }
@@ -168,14 +172,26 @@ final class SemanticRenderIntentAuthority {
         return objectIntent(rawText).flatMap(intent -> resolve(registry, intent));
     }
 
+    static Optional<String> resolveObjectFamily(AssetRegistry registry, String rawText, long stableVariantKey) {
+        return objectIntent(rawText).flatMap(intent -> resolve(registry, intent, stableVariantKey));
+    }
+
     static Optional<String> resolve(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent) {
         if (intent == null) return Optional.empty();
         SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent);
         return resolution.found() ? Optional.of(resolution.asset.id()) : Optional.empty();
     }
 
+    static Optional<String> resolve(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent,
+                                    long stableVariantKey) {
+        if (intent == null) return Optional.empty();
+        SemanticRenderAssetResolver.Resolution resolution =
+                SemanticRenderAssetResolver.resolve(registry, intent, stableVariantKey);
+        return resolution.found() ? Optional.of(resolution.asset.id()) : Optional.empty();
+    }
+
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true";
     }
 
     private static String normalizeItem(String raw) {
