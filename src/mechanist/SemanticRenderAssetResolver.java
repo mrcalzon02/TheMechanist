@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.8-container-association";
+    static final String VERSION = "semantic-render-asset-resolver-0.9-floor-type-association";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -218,7 +218,7 @@ final class SemanticRenderAssetResolver {
         return score;
     }
 
-    private static boolean isFloor(AssetMetadata asset) { return asset.type() == AssetType.FLOOR_TILE || asset.type() == AssetType.ROAD_TILE || asset.type() == AssetType.SIDEWALK_TILE || asset.type() == AssetType.CORRIDOR_TILE; }
+    private static boolean isFloor(AssetMetadata asset) { return asset.type() == AssetType.FLOOR_TILE; }
     private static boolean isWall(AssetMetadata asset) { return asset.type() == AssetType.WALL_TILE; }
     private static boolean fixtureOrObject(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT || asset.type() == AssetType.MACHINE; }
     private static boolean infrastructureType(AssetMetadata asset) { return fixtureOrObject(asset); }

@@ -72,6 +72,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         reject(asset("NEG-0008", AssetType.FIXTURE, "Sewer Water Pipe", "assets/infrastructure/sewer_water_pipe.png", "sewer waste sludge water pipe"), SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE, "water-pipe resolver accepted sewer-contaminated pipe");
         reject(asset("NEG-0009", AssetType.ITEM_ICON, "Camera Icon", "assets/ui/camera.png", "system inventory item icon security camera"), SemanticRenderAssetResolver.RenderIntent.SECURITY_CAMERA_FIXTURE, "security-camera resolver accepted item icon");
         reject(asset("NEG-0010", AssetType.ITEM_ICON, "Medical Cabinet Icon", "assets/items/medical_cabinet.png", "medical cabinet medicine cabinet clinic cabinet item icon"), SemanticRenderAssetResolver.RenderIntent.MEDICAL_CABINET_CONTAINER, "container resolver accepted inventory item icon as world container art");
+        reject(asset("NEG-0011", AssetType.ROAD_TILE, "Market Access Road", "assets/roads/market_access.png", "market commercial access road tile"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "market floor resolver accepted road art as interior floor art");
+        reject(asset("NEG-0012", AssetType.SIDEWALK_TILE, "Habitation Sidewalk", "assets/sidewalks/habitation.png", "habitation residential sidewalk tile"), SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR, "habitation floor resolver accepted sidewalk art as interior floor art");
+        reject(asset("NEG-0013", AssetType.CORRIDOR_TILE, "Transit Corridor", "assets/corridors/transit.png", "transit station corridor rail tile"), SemanticRenderAssetResolver.RenderIntent.TRANSIT_FLOOR, "transit floor resolver accepted corridor art as floor art");
 
         AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
                 "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
