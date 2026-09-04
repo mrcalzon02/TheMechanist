@@ -79,6 +79,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         reject(asset("NEG-0011", AssetType.ROAD_TILE, "Market Access Road", "assets/roads/market_access.png", "market commercial access road tile"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "market floor resolver accepted road art as interior floor art");
         reject(asset("NEG-0012", AssetType.SIDEWALK_TILE, "Habitation Sidewalk", "assets/sidewalks/habitation.png", "habitation residential sidewalk tile"), SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR, "habitation floor resolver accepted sidewalk art as interior floor art");
         reject(asset("NEG-0013", AssetType.CORRIDOR_TILE, "Transit Corridor", "assets/corridors/transit.png", "transit station corridor rail tile"), SemanticRenderAssetResolver.RenderIntent.TRANSIT_FLOOR, "transit floor resolver accepted corridor art as floor art");
+        reject(asset("NEG-0014", AssetType.ITEM_ICON, "Department Archive", "assets/items/department_archive.png", "department inventory archive icon"), SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON, "industrial component resolver accepted department because it contains the letters part");
+        reject(asset("NEG-0015", AssetType.ITEM_ICON, "Database Archive", "assets/items/database_archive.png", "database archive inventory icon"), SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON, "data-device resolver accepted database because it begins with the letters data");
+        reject(asset("NEG-0016", AssetType.FLOOR_TILE, "Marketplace Floor", "assets/tiles/commercial/marketplace.png", "marketplace commercial floor tile"), SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "market floor resolver accepted marketplace as the standalone market semantic");
 
         AssetMetadata atlasTool = asset("CEL-0001", AssetType.WEAPON_ICON,
                 "Entrenching Shovel", "assets/items/weapons_1_r03c05.png",
