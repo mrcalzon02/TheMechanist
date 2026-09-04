@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.3-stable-variety";
+    static final String VERSION = "semantic-render-intent-authority-0.4-canonical-stable-variety";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -156,6 +156,10 @@ final class SemanticRenderIntentAuthority {
         return resolveItemFamily(AssetManager.registry(), rawName);
     }
 
+    static Optional<String> resolveItemFamily(String rawName, long stableVariantKey) {
+        return resolveItemFamily(AssetManager.registry(), rawName, stableVariantKey);
+    }
+
     static Optional<String> resolveItemFamily(AssetRegistry registry, String rawName) {
         return itemIntent(rawName).flatMap(intent -> resolve(registry, intent));
     }
@@ -166,6 +170,10 @@ final class SemanticRenderIntentAuthority {
 
     static Optional<String> resolveObjectFamily(String rawText) {
         return resolveObjectFamily(AssetManager.registry(), rawText);
+    }
+
+    static Optional<String> resolveObjectFamily(String rawText, long stableVariantKey) {
+        return resolveObjectFamily(AssetManager.registry(), rawText, stableVariantKey);
     }
 
     static Optional<String> resolveObjectFamily(AssetRegistry registry, String rawText) {
@@ -191,7 +199,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true";
     }
 
     private static String normalizeItem(String raw) {
