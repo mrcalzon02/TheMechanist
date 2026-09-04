@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.14-tool-weapon-bridge-association";
+    static final String VERSION = "semantic-render-asset-resolver-0.15-stable-top-cohort-variety";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -112,8 +112,32 @@ final class SemanticRenderAssetResolver {
         return Resolution.found(intent, candidates.get(0), "Matched indexed semantic asset for " + intent + ".");
     }
 
+    static Resolution resolve(AssetRegistry registry, RenderIntent intent, long stableVariantKey) {
+        AssetRegistry safe = registry == null ? AssetRegistry.empty() : registry;
+        List<AssetMetadata> candidates = candidatesFor(safe, intent);
+        if (candidates.isEmpty()) {
+            return Resolution.missing(intent, "No semantic asset matched " + intent + ". Renderer must use explicit missing-art fallback, not unrelated art.");
+        }
+
+        int topPriority = priority(candidates.get(0), intent);
+        int topCount = 1;
+        while (topCount < candidates.size() && priority(candidates.get(topCount), intent) == topPriority) {
+            topCount++;
+        }
+        int variantIndex = Math.floorMod(Long.hashCode(stableVariantKey), topCount);
+        return Resolution.found(
+                intent,
+                candidates.get(variantIndex),
+                "Matched stable variant " + (variantIndex + 1) + "/" + topCount + " from top-priority semantic assets for " + intent + ".");
+    }
+
     static Optional<AssetMetadata> optional(AssetRegistry registry, RenderIntent intent) {
         Resolution resolution = resolve(registry, intent);
+        return resolution.found() ? Optional.of(resolution.asset) : Optional.empty();
+    }
+
+    static Optional<AssetMetadata> optional(AssetRegistry registry, RenderIntent intent, long stableVariantKey) {
+        Resolution resolution = resolve(registry, intent, stableVariantKey);
         return resolution.found() ? Optional.of(resolution.asset) : Optional.empty();
     }
 
