@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.22-religious-metadata-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.23-data-device-metadata-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -212,7 +212,11 @@ final class SemanticRenderAssetResolver {
             case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack,
                     "religious", "relic", "prayer", "holy object", "devotional",
                     "icon of faith", "religious object", "rosary", "censer");
-            case DATA_DEVICE_ITEM_ICON -> dataDeviceIcon(asset) && themed(haystack, "data", "device", "datapad", "terminal", "chip", "knowledge device", "knowledge devices", "skill device") && !themed(haystack, "system control", "system button", "interface control", "rondel");
+            case DATA_DEVICE_ITEM_ICON -> dataDeviceIcon(asset) && themed(haystack,
+                    "data", "device", "datapad", "data pad", "data device", "data slate", "dataslate",
+                    "terminal", "cogitator", "chip", "knowledge device", "knowledge devices",
+                    "skill device", "memory core")
+                    && !themed(haystack, "system control", "system button", "interface control", "rondel");
         };
     }
 
