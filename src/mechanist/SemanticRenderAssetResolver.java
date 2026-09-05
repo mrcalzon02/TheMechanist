@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.19-medical-metadata-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.20-drug-metadata-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -200,7 +200,9 @@ final class SemanticRenderAssetResolver {
             case MEDICAL_ITEM_ICON -> itemIcon(asset) && themed(haystack,
                     "medical", "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic",
                     "tourniquet", "splint", "first aid", "trauma kit");
-            case DRUG_ITEM_ICON -> itemIcon(asset) && themed(haystack, "drug", "narcotic", "stimulant", "dose");
+            case DRUG_ITEM_ICON -> itemIcon(asset) && themed(haystack,
+                    "drug", "narcotic", "stimulant", "dose", "injector", "opiate",
+                    "sedative", "combat stim", "painkiller");
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "food", "ration", "meal", "water");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
             case TRADE_GOOD_ITEM_ICON -> tradeGoodIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter", "cargo", "merchandise", "wares") && !themed(haystack, "junk", "scrap heap", "debris");
