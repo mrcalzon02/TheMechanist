@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.35-trade-good-boundary";
+    static final String VERSION = "semantic-render-asset-resolver-0.36-tool-item-boundary";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -198,8 +198,7 @@ final class SemanticRenderAssetResolver {
                     "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls");
             case TOOL_ITEM_ICON -> toolIcon(asset) && themed(haystack,
                     "tool", "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw",
-                    "repair kit", "maintenance kit", "fabrication kit", "maintenance tools",
-                    "repair", "fabrication");
+                    "repair kit", "maintenance kit", "fabrication kit", "maintenance tools");
             case MEDICAL_ITEM_ICON -> itemIcon(asset) && themed(haystack,
                     "medical", "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic",
                     "tourniquet", "splint", "first aid", "trauma kit");
