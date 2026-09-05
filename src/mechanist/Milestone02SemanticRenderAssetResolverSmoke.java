@@ -212,7 +212,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
     private static AssetRegistry testRegistry() throws Exception {
         Map<String, AssetMetadata> entries = new LinkedHashMap<>();
         put(entries, asset("SEM-0001", AssetType.FLOOR_TILE, "Sewer Floor Wet Utility Tunnel", "assets/tiles/sewer/floor_wet.png", "sewer floor wet utility tunnel tile"));
-        put(entries, asset("SEM-0002", AssetType.WALL_TILE, "Sewer Wall Brick Drain", "assets/sewer/wall_brick.png", "sewer wall brick drain utility tunnel tile"));
+        put(entries, asset("SEM-0002", AssetType.WALL_TILE, "Sewer Wall Brick Drain", "assets/tiles/sewer/wall_brick.png", "sewer wall brick drain utility tunnel tile"));
         put(entries, asset("GEN-0001", AssetType.FLOOR_TILE, "Generic Floor Plain", "assets/tiles/generic/floor_plain.png", "generic main floor tile"));
         put(entries, asset("GEN-0003", AssetType.FLOOR_TILE, "Generic Floor Ribbed", "assets/tiles/generic/floor_ribbed.png", "generic main floor tile"));
         put(entries, asset("GEN-0002", AssetType.WALL_TILE, "Generic Wall Plain", "assets/tiles/generic/wall_plain.png", "generic main wall tile"));
@@ -223,7 +223,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("MRK-0001", AssetType.FLOOR_TILE, "Market Bazaar Floor", "assets/tiles/market/floor_bazaar.png", "market bazaar shop commercial floor tile"));
         put(entries, asset("MRK-0002", AssetType.WALL_TILE, "Market Shop Wall", "assets/tiles/market/wall_shop.png", "market shop commercial wall tile"));
         put(entries, asset("MED-0001", AssetType.FLOOR_TILE, "Medical Clinic Floor", "assets/tiles/medical/floor_clinic.png", "medical clinic hospital surgery floor tile"));
-        put(entries, asset("SEC-0001", AssetType.FLOOR_TILE, "Security Checkpoint Floor", "assets/tiles/security/floor_checkpoint.png", "security checkpoint prison floor tile"));
+        put(entries, asset("SEC-0001", AssetType.FLOOR_TILE, "Security Checkpoint Floor", "assets/tiles/security/checkpoint.png", "security checkpoint prison floor tile"));
         put(entries, asset("ADM-0001", AssetType.FLOOR_TILE, "Administrative Office Floor", "assets/tiles/admin/floor_office.png", "administrative office records bureau floor tile"));
         put(entries, asset("REL-0001", AssetType.FLOOR_TILE, "Religious Shrine Floor", "assets/tiles/religious/floor_shrine.png", "religious shrine chapel altar floor tile"));
         put(entries, asset("TRN-0001", AssetType.FLOOR_TILE, "Transit Station Platform Floor", "assets/tiles/transit/floor_platform.png", "transit station platform rail floor tile"));
