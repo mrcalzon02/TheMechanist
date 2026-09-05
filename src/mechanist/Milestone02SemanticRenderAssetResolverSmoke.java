@@ -19,7 +19,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_WALL, "IND-0002");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR, "HAB-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.HABITATION_WALL, "HAB-0002");
-        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "MRK-0001");
+        assertFound(registry, SemanticRenderRenderAssetResolver.RenderIntent.MARKET_FLOOR, "MRK-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MARKET_WALL, "MRK-0002");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MEDICAL_FLOOR, "MED-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.SECURITY_FLOOR, "SEC-0001");
@@ -107,6 +107,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata inventoryVest = asset("CEL-0008", AssetType.ITEM_ICON,
                 "Utility Vest", "assets/items/utility_vest.png",
                 "utility vest inventory item");
+        AssetMetadata fieldAntiseptic = asset("CEL-0009", AssetType.ITEM_ICON,
+                "Field Antiseptic", "assets/items/field_antiseptic.png",
+                "antiseptic treatment supply inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -123,6 +126,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
                 "armor resolver rejected a correctly typed flak vest because metadata lacked a generic armor synonym");
         reject(inventoryVest, SemanticRenderAssetResolver.RenderIntent.ARMOR_ITEM_ICON,
                 "armor resolver accepted a generic item-icon vest without explicit armor typing");
+        require(SemanticRenderAssetResolver.canUse(fieldAntiseptic,
+                SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON),
+                "medical resolver rejected an antiseptic item classified as medical by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
