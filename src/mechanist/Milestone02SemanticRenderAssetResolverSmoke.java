@@ -128,6 +128,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata luxuryExportGood = asset("CEL-0015", AssetType.ITEM_ICON,
                 "Noble Export Lot", "assets/items/noble_export_lot.png",
                 "luxury good export good inventory item");
+        AssetMetadata authoredLamppost = asset("CEL-0016", AssetType.FIXTURE,
+                "Civic Lamppost", "assets/infrastructure/civic_lamppost.png",
+                "lamppost fixture");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -165,6 +168,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(luxuryExportGood,
                 SemanticRenderAssetResolver.RenderIntent.TRADE_GOOD_ITEM_ICON),
                 "trade-good resolver rejected a luxury/export good classified as trade goods by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(authoredLamppost,
+                SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE),
+                "streetlight resolver rejected a lamppost classified as a streetlight fixture by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
@@ -205,7 +211,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("HAB-0001", AssetType.FLOOR_TILE, "Habitation Apartment Floor", "assets/tiles/habitation/floor_apartment.png", "habitation apartment residential floor tile"));
         put(entries, asset("HAB-0002", AssetType.WALL_TILE, "Habitation Apartment Wall", "assets/tiles/habitation/wall_apartment.png", "habitation apartment residential wall tile"));
         put(entries, asset("MRK-0001", AssetType.FLOOR_TILE, "Market Bazaar Floor", "assets/tiles/market/floor_bazaar.png", "market bazaar shop commercial floor tile"));
-        put(entries, asset("MRK-0002", AssetType.WALL_TILE, "Market Shop Wall", "assets/tiles/market/wall_shop.png", "market shop commercial wall tile"));
+        put(entries, asset("MRK-0002", AssetType.WALL_TILE, "Market Shop Wall", "assets/tiles/market/wall_shop.png", "market shop commercial floor tile"));
         put(entries, asset("MED-0001", AssetType.FLOOR_TILE, "Medical Clinic Floor", "assets/tiles/medical/floor_clinic.png", "medical clinic hospital surgery floor tile"));
         put(entries, asset("SEC-0001", AssetType.FLOOR_TILE, "Security Checkpoint Floor", "assets/tiles/security/floor_checkpoint.png", "security checkpoint prison floor tile"));
         put(entries, asset("ADM-0001", AssetType.FLOOR_TILE, "Administrative Office Floor", "assets/tiles/admin/floor_office.png", "administrative office records bureau floor tile"));
