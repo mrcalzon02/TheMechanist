@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.31-cargo-crate-boundary";
+    static final String VERSION = "semantic-render-asset-resolver-0.32-industrial-component-boundary";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -209,7 +209,9 @@ final class SemanticRenderAssetResolver {
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack,
                     "food", "ration", "meal", "water", "canteen", "bottle", "flask",
                     "drink", "provisions", "nutrient");
-            case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
+            case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack,
+                    "component", "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit",
+                    "scrap plate", "construction supplies", "reagent");
             case TRADE_GOOD_ITEM_ICON -> tradeGoodIcon(asset) && themed(haystack,
                     "trade good", "goods", "commodity", "barter", "cargo", "merchandise", "wares",
                     "luxury good", "cargo lot", "export good", "import good")
