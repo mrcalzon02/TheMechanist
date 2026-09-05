@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.21-tool-metadata-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.22-religious-metadata-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -209,7 +209,9 @@ final class SemanticRenderAssetResolver {
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack, "food", "ration", "meal", "water");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
             case TRADE_GOOD_ITEM_ICON -> tradeGoodIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter", "cargo", "merchandise", "wares") && !themed(haystack, "junk", "scrap heap", "debris");
-            case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "religious", "relic", "prayer", "holy object", "devotional");
+            case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack,
+                    "religious", "relic", "prayer", "holy object", "devotional",
+                    "icon of faith", "religious object", "rosary", "censer");
             case DATA_DEVICE_ITEM_ICON -> dataDeviceIcon(asset) && themed(haystack, "data", "device", "datapad", "terminal", "chip", "knowledge device", "knowledge devices", "skill device") && !themed(haystack, "system control", "system button", "interface control", "rondel");
         };
     }
