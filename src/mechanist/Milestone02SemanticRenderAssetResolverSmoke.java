@@ -223,7 +223,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         put(entries, asset("MRK-0001", AssetType.FLOOR_TILE, "Market Bazaar Floor", "assets/tiles/market/floor_bazaar.png", "market bazaar shop commercial floor tile"));
         put(entries, asset("MRK-0002", AssetType.WALL_TILE, "Market Shop Wall", "assets/tiles/market/wall_shop.png", "market shop commercial wall tile"));
         put(entries, asset("MED-0001", AssetType.FLOOR_TILE, "Medical Clinic Floor", "assets/tiles/medical/floor_clinic.png", "medical clinic hospital surgery floor tile"));
-        put(entries, asset("SEC-0001", AssetType.FLOOR_TILE, "Security Checkpoint Floor", "assets/tiles/security/checkpoint.png", "security checkpoint prison floor tile"));
+        put(entries, asset("SEC-0001", AssetType.FLOOR_TILE, "Security Checkpoint Floor", "assets/tiles/security/floor_checkpoint.png", "security checkpoint prison floor tile"));
         put(entries, asset("ADM-0001", AssetType.FLOOR_TILE, "Administrative Office Floor", "assets/tiles/admin/floor_office.png", "administrative office records bureau floor tile"));
         put(entries, asset("REL-0001", AssetType.FLOOR_TILE, "Religious Shrine Floor", "assets/tiles/religious/floor_shrine.png", "religious shrine chapel altar floor tile"));
         put(entries, asset("TRN-0001", AssetType.FLOOR_TILE, "Transit Station Platform Floor", "assets/tiles/transit/floor_platform.png", "transit station platform rail floor tile"));
