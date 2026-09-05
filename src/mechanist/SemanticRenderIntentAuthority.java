@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.6-token-boundary-plurals";
+    static final String VERSION = "semantic-render-intent-authority-0.7-maintenance-tools-coverage";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -41,7 +41,7 @@ final class SemanticRenderIntentAuthority {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON);
         }
         if (contains(text, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill",
-                "saw", "tool", "repair kit", "maintenance kit", "fabrication kit")) {
+                "saw", "tool", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
         }
         if (contains(text, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
