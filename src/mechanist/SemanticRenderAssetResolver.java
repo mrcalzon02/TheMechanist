@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.28-clothing-cabinet-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.29-armoury-locker-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -183,7 +183,7 @@ final class SemanticRenderAssetResolver {
             case INTERROGATION_DESK -> furnitureType(asset) && themed(haystack, "interrogation desk", "security interview desk", "security desk");
             case TOOLBOX_CONTAINER -> containerType(asset) && themed(haystack, "toolbox", "tool box");
             case MEDICAL_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "medical cabinet", "medicine cabinet", "clinic cabinet");
-            case WEAPONS_LOCKER_CONTAINER -> containerType(asset) && themed(haystack, "weapons locker", "weapon locker", "armory locker");
+            case WEAPONS_LOCKER_CONTAINER -> containerType(asset) && themed(haystack, "weapons locker", "weapon locker", "armory locker", "armoury locker");
             case WARDROBE_CONTAINER -> containerType(asset) && themed(haystack, "wardrobe", "clothes cabinet", "clothing cabinet");
             case CARGO_CONTAINER -> containerType(asset) && themed(haystack, "cargo container", "crate", "shipping container");
             case FILING_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "filing cabinet", "records cabinet", "file cabinet");
