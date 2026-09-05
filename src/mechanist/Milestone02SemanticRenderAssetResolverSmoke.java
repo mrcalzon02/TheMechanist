@@ -113,12 +113,18 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata combatStimInjector = asset("CEL-0010", AssetType.ITEM_ICON,
                 "Combat Stim Injector", "assets/items/combat_stim_injector.png",
                 "combat stim injector inventory item");
+        AssetMetadata workshopHammer = asset("CEL-0011", AssetType.ITEM_ICON,
+                "Workshop Hammer", "assets/items/workshop_hammer.png",
+                "hammer inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
                 "tool resolver rejected a weapon-atlas cell explicitly described as a tool");
         reject(ordinaryRifle, SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON,
                 "tool resolver accepted an ordinary rifle without tool semantics");
+        require(SemanticRenderAssetResolver.canUse(workshopHammer,
+                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
+                "tool resolver rejected a hammer classified as a tool by the intent authority");
         require(SemanticRenderAssetResolver.canUse(combatKnife,
                 SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON),
                 "weapon resolver rejected a correctly typed combat knife because metadata lacked a generic weapon synonym");
