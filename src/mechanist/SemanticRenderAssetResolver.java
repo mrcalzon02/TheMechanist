@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.32-industrial-component-boundary";
+    static final String VERSION = "semantic-render-asset-resolver-0.33-data-device-boundary";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -220,7 +220,7 @@ final class SemanticRenderAssetResolver {
                     "religious", "relic", "prayer", "holy object", "devotional",
                     "icon of faith", "religious object", "rosary", "censer");
             case DATA_DEVICE_ITEM_ICON -> dataDeviceIcon(asset) && themed(haystack,
-                    "data", "device", "datapad", "data pad", "data device", "data slate", "dataslate",
+                    "datapad", "data pad", "data device", "data slate", "dataslate",
                     "terminal", "cogitator", "chip", "knowledge device", "knowledge devices",
                     "skill device", "memory core")
                     && !themed(haystack, "system control", "system button", "interface control", "rondel");
