@@ -125,6 +125,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata fieldCanteen = asset("CEL-0014", AssetType.ITEM_ICON,
                 "Field Canteen", "assets/items/field_canteen.png",
                 "canteen hydration vessel inventory item");
+        AssetMetadata luxuryExportGood = asset("CEL-0015", AssetType.ITEM_ICON,
+                "Noble Export Lot", "assets/items/noble_export_lot.png",
+                "luxury good export good inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -159,6 +162,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(fieldCanteen,
                 SemanticRenderAssetResolver.RenderIntent.FOOD_ITEM_ICON),
                 "food resolver rejected a canteen classified as food/drink by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(luxuryExportGood,
+                SemanticRenderAssetResolver.RenderIntent.TRADE_GOOD_ITEM_ICON),
+                "trade-good resolver rejected a luxury/export good classified as trade goods by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
