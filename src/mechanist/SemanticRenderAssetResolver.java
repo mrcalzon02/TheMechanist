@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.25-trade-good-metadata-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.26-lamppost-fixture-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -163,7 +163,7 @@ final class SemanticRenderAssetResolver {
             case WAREHOUSE_FLOOR -> isFloor(asset) && themed(haystack, "warehouse", "storage", "cargo", "loading") && !themed(haystack, "sewer");
             case NOBLE_FLOOR -> isFloor(asset) && themed(haystack, "noble", "luxury", "estate", "manor") && !themed(haystack, "sewer");
             case SLUM_FLOOR -> isFloor(asset) && themed(haystack, "slum", "shanty", "tenement", "scrap") && !themed(haystack, "sewer");
-            case STREETLIGHT_FIXTURE -> fixtureType(asset) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp") && notUiIcon(haystack);
+            case STREETLIGHT_FIXTURE -> fixtureType(asset) && themed(haystack, "streetlight", "street light", "lamp post", "street lamp", "lamppost") && notUiIcon(haystack);
             case TRAFFIC_LIGHT_FIXTURE -> fixtureType(asset) && themed(haystack, "traffic light", "signal light", "crossing signal") && notUiIcon(haystack);
             case GENERATOR_MACHINE -> machineType(asset) && themed(haystack, "generator", "power generator", "genset") && notUiIcon(haystack);
             case TRANSFORMER_MACHINE -> machineType(asset) && themed(haystack, "transformer", "power transformer", "electrical transformer") && notUiIcon(haystack);
