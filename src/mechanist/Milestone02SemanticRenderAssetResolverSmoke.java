@@ -19,7 +19,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_WALL, "IND-0002");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.HABITATION_FLOOR, "HAB-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.HABITATION_WALL, "HAB-0002");
-        assertFound(registry, SemanticRenderRenderAssetResolver.RenderIntent.MARKET_FLOOR, "MRK-0001");
+        assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MARKET_FLOOR, "MRK-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MARKET_WALL, "MRK-0002");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.MEDICAL_FLOOR, "MED-0001");
         assertFound(registry, SemanticRenderAssetResolver.RenderIntent.SECURITY_FLOOR, "SEC-0001");
