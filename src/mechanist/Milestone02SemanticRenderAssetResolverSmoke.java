@@ -181,6 +181,10 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
                         asset("CEL-0018", AssetType.OBJECT, "Hab Clothing Cabinet", "assets/containers/hab_clothing_cabinet.png", "clothing cabinet storage"),
                         SemanticRenderAssetResolver.RenderIntent.WARDROBE_CONTAINER),
                 "wardrobe resolver rejected a clothing cabinet classified by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(
+                        asset("CEL-0019", AssetType.OBJECT, "PDF Armoury Locker", "assets/containers/pdf_armoury_locker.png", "armoury locker secure storage"),
+                        SemanticRenderAssetResolver.RenderIntent.WEAPONS_LOCKER_CONTAINER),
+                "weapons-locker resolver rejected an armoury locker classified by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
