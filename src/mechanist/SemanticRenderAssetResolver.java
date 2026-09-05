@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.37-medical-item-boundary";
+    static final String VERSION = "semantic-render-asset-resolver-0.38-weapon-item-boundary";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -189,7 +189,7 @@ final class SemanticRenderAssetResolver {
             case FILING_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "filing cabinet", "records cabinet", "file cabinet");
             case REFRIGERATED_STORAGE_CONTAINER -> containerType(asset) && themed(haystack, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker");
             case WEAPON_ITEM_ICON -> weaponIcon(asset) && themed(haystack,
-                    "weapon", "gun", "blade", "ammo", "ammunition",
+                    "gun", "blade", "ammo", "ammunition",
                     "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet",
                     "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter",
                     "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon");
