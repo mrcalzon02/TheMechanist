@@ -116,6 +116,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata workshopHammer = asset("CEL-0011", AssetType.ITEM_ICON,
                 "Workshop Hammer", "assets/items/workshop_hammer.png",
                 "hammer inventory item");
+        AssetMetadata devotionalRosary = asset("CEL-0012", AssetType.ITEM_ICON,
+                "Pilgrim Rosary", "assets/items/pilgrim_rosary.png",
+                "rosary inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -141,6 +144,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(combatStimInjector,
                 SemanticRenderAssetResolver.RenderIntent.DRUG_ITEM_ICON),
                 "drug resolver rejected a combat-stim injector classified as a drug by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(devotionalRosary,
+                SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON),
+                "religious-object resolver rejected a rosary classified as religious by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
