@@ -122,6 +122,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata fieldDataSlate = asset("CEL-0013", AssetType.ITEM_ICON,
                 "Field Data Slate", "assets/items/field_data_slate.png",
                 "data slate memory core inventory item");
+        AssetMetadata fieldCanteen = asset("CEL-0014", AssetType.ITEM_ICON,
+                "Field Canteen", "assets/items/field_canteen.png",
+                "canteen hydration vessel inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -153,6 +156,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(fieldDataSlate,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected a data slate classified as a data device by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(fieldCanteen,
+                SemanticRenderAssetResolver.RenderIntent.FOOD_ITEM_ICON),
+                "food resolver rejected a canteen classified as food/drink by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
@@ -167,7 +173,6 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         if (!resolution.found()) throw new AssertionError(intent + " did not resolve: " + resolution.reason);
         if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " resolved " + resolution.asset.id() + " instead of " + expectedId);
     }
-
     private static void assertStableVariant(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent, long key, String expectedId) {
         SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent, key);
         if (!resolution.found()) throw new AssertionError(intent + " stable variant did not resolve: " + resolution.reason);
