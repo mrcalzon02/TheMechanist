@@ -110,6 +110,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata fieldAntiseptic = asset("CEL-0009", AssetType.ITEM_ICON,
                 "Field Antiseptic", "assets/items/field_antiseptic.png",
                 "antiseptic treatment supply inventory item");
+        AssetMetadata combatStimInjector = asset("CEL-0010", AssetType.ITEM_ICON,
+                "Combat Stim Injector", "assets/items/combat_stim_injector.png",
+                "combat stim injector inventory item");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -129,6 +132,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(fieldAntiseptic,
                 SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON),
                 "medical resolver rejected an antiseptic item classified as medical by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(combatStimInjector,
+                SemanticRenderAssetResolver.RenderIntent.DRUG_ITEM_ICON),
+                "drug resolver rejected a combat-stim injector classified as a drug by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
