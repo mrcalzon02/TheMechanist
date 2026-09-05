@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.33-data-device-boundary";
+    static final String VERSION = "semantic-render-asset-resolver-0.34-interrogation-desk-boundary";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -180,7 +180,7 @@ final class SemanticRenderAssetResolver {
             case SHRINE_ALTAR -> furnitureType(asset) && themed(haystack, "altar", "shrine");
             case MARKET_COUNTER -> furnitureType(asset) && themed(haystack, "market counter", "shop counter", "stall counter", "trader counter");
             case ADMINISTRATIVE_DESK -> furnitureType(asset) && themed(haystack, "administrative desk", "office desk", "records desk");
-            case INTERROGATION_DESK -> furnitureType(asset) && themed(haystack, "interrogation desk", "security interview desk", "security desk");
+            case INTERROGATION_DESK -> furnitureType(asset) && themed(haystack, "interrogation desk", "security interview desk");
             case TOOLBOX_CONTAINER -> containerType(asset) && themed(haystack, "toolbox", "tool box");
             case MEDICAL_CABINET_CONTAINER -> containerType(asset) && themed(haystack, "medical cabinet", "medicine cabinet", "clinic cabinet");
             case WEAPONS_LOCKER_CONTAINER -> containerType(asset) && themed(haystack, "weapons locker", "weapon locker", "armory locker", "armoury locker");
