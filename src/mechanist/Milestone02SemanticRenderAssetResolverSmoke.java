@@ -131,6 +131,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata authoredLamppost = asset("CEL-0016", AssetType.FIXTURE,
                 "Civic Lamppost", "assets/infrastructure/civic_lamppost.png",
                 "lamppost fixture");
+        AssetMetadata securityInterviewDesk = asset("CEL-0017", AssetType.OBJECT,
+                "Security Interview Desk", "assets/furniture/security_interview_desk.png",
+                "security interview desk furniture");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
@@ -171,6 +174,9 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(authoredLamppost,
                 SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE),
                 "streetlight resolver rejected a lamppost classified as a streetlight fixture by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(securityInterviewDesk,
+                SemanticRenderAssetResolver.RenderIntent.INTERROGATION_DESK),
+                "interrogation-desk resolver rejected a security interview desk classified by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
