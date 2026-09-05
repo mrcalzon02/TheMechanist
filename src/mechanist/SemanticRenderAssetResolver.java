@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.17-weapon-metadata-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.18-armor-metadata-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -193,7 +193,9 @@ final class SemanticRenderAssetResolver {
                     "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet",
                     "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter",
                     "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon");
-            case ARMOR_ITEM_ICON -> armorIcon(asset) && themed(haystack, "armor", "armour", "helmet", "clothing");
+            case ARMOR_ITEM_ICON -> armorIcon(asset) && themed(haystack,
+                    "armor", "armour", "helmet", "helm", "vest", "carapace", "flak",
+                    "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls");
             case TOOL_ITEM_ICON -> toolIcon(asset) && themed(haystack, "tool", "wrench", "repair", "fabrication", "shovel", "spade", "cutter", "drill", "maintenance kit", "maintenance tools");
             case MEDICAL_ITEM_ICON -> itemIcon(asset) && themed(haystack, "medical", "medkit", "bandage", "suture", "medicine");
             case DRUG_ITEM_ICON -> itemIcon(asset) && themed(haystack, "drug", "narcotic", "stimulant", "dose");
