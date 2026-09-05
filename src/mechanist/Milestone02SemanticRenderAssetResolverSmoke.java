@@ -177,6 +177,10 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         require(SemanticRenderAssetResolver.canUse(securityInterviewDesk,
                 SemanticRenderAssetResolver.RenderIntent.INTERROGATION_DESK),
                 "interrogation-desk resolver rejected a security interview desk classified by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(
+                        asset("CEL-0018", AssetType.OBJECT, "Hab Clothing Cabinet", "assets/containers/hab_clothing_cabinet.png", "clothing cabinet storage"),
+                        SemanticRenderAssetResolver.RenderIntent.WARDROBE_CONTAINER),
+                "wardrobe resolver rejected a clothing cabinet classified by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
@@ -208,7 +212,7 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
     private static AssetRegistry testRegistry() throws Exception {
         Map<String, AssetMetadata> entries = new LinkedHashMap<>();
         put(entries, asset("SEM-0001", AssetType.FLOOR_TILE, "Sewer Floor Wet Utility Tunnel", "assets/tiles/sewer/floor_wet.png", "sewer floor wet utility tunnel tile"));
-        put(entries, asset("SEM-0002", AssetType.WALL_TILE, "Sewer Wall Brick Drain", "assets/tiles/sewer/wall_brick.png", "sewer wall brick drain utility tunnel tile"));
+        put(entries, asset("SEM-0002", AssetType.WALL_TILE, "Sewer Wall Brick Drain", "assets/sewer/wall_brick.png", "sewer wall brick drain utility tunnel tile"));
         put(entries, asset("GEN-0001", AssetType.FLOOR_TILE, "Generic Floor Plain", "assets/tiles/generic/floor_plain.png", "generic main floor tile"));
         put(entries, asset("GEN-0003", AssetType.FLOOR_TILE, "Generic Floor Ribbed", "assets/tiles/generic/floor_ribbed.png", "generic main floor tile"));
         put(entries, asset("GEN-0002", AssetType.WALL_TILE, "Generic Wall Plain", "assets/tiles/generic/wall_plain.png", "generic main wall tile"));
