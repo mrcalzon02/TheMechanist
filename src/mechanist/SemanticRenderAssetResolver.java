@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.24-food-metadata-coverage";
+    static final String VERSION = "semantic-render-asset-resolver-0.25-trade-good-metadata-coverage";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -210,7 +210,10 @@ final class SemanticRenderAssetResolver {
                     "food", "ration", "meal", "water", "canteen", "bottle", "flask",
                     "drink", "provisions", "nutrient");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack, "component", "part", "industrial", "machine part");
-            case TRADE_GOOD_ITEM_ICON -> tradeGoodIcon(asset) && themed(haystack, "trade good", "goods", "commodity", "barter", "cargo", "merchandise", "wares") && !themed(haystack, "junk", "scrap heap", "debris");
+            case TRADE_GOOD_ITEM_ICON -> tradeGoodIcon(asset) && themed(haystack,
+                    "trade good", "goods", "commodity", "barter", "cargo", "merchandise", "wares",
+                    "luxury good", "cargo lot", "export good", "import good")
+                    && !themed(haystack, "junk", "scrap heap", "debris");
             case RELIGIOUS_OBJECT_ITEM_ICON -> itemIcon(asset) && themed(haystack,
                     "religious", "relic", "prayer", "holy object", "devotional",
                     "icon of faith", "religious object", "rosary", "censer");
