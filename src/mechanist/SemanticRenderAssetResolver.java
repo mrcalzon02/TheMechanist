@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.61-wall-floor-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.62-token-aware-priority-matching";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -369,12 +369,7 @@ final class SemanticRenderAssetResolver {
     }
 
     private static boolean contains(String text, String... needles) {
-        String h = normalize(text);
-        for (String needle : needles) {
-            String n = normalize(needle);
-            if (!n.isBlank() && h.contains(n)) return true;
-        }
-        return false;
+        return semanticContains(text, needles);
     }
 
     private static String normalize(String value) {
