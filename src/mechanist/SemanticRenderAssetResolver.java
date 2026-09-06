@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.59-item-icon-family-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.60-themed-floor-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -252,6 +252,17 @@ final class SemanticRenderAssetResolver {
         if (asset.name() != null && contains(asset.name(), normalize(intent.name()))) score += 5;
         if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
+        if (intent == RenderIntent.INDUSTRIAL_FLOOR && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
+        if (intent == RenderIntent.HABITATION_FLOOR && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
+        if (intent == RenderIntent.MARKET_FLOOR && contains(h, "market", "bazaar", "commercial", "retail")) score += 10;
+        if (intent == RenderIntent.MEDICAL_FLOOR && contains(h, "medical", "clinic", "hospital", "surgery")) score += 10;
+        if (intent == RenderIntent.SECURITY_FLOOR && contains(h, "security", "checkpoint", "prison", "brig")) score += 10;
+        if (intent == RenderIntent.ADMINISTRATIVE_FLOOR && contains(h, "administrative", "office", "records", "bureau")) score += 10;
+        if (intent == RenderIntent.RELIGIOUS_FLOOR && contains(h, "religious", "shrine", "chapel", "altar")) score += 10;
+        if (intent == RenderIntent.TRANSIT_FLOOR && contains(h, "transit", "station", "platform", "rail")) score += 10;
+        if (intent == RenderIntent.WAREHOUSE_FLOOR && contains(h, "warehouse", "storage", "cargo", "loading")) score += 10;
+        if (intent == RenderIntent.NOBLE_FLOOR && contains(h, "noble", "luxury", "estate", "manor")) score += 10;
+        if (intent == RenderIntent.SLUM_FLOOR && contains(h, "slum", "shanty", "tenement", "scrap")) score += 10;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
         if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
         if (intent == RenderIntent.GENERATOR_MACHINE && contains(h, "generator", "power generator", "genset")) score += 10;
