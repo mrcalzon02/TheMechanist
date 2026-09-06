@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.58-utility-family-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.59-item-icon-family-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -275,8 +275,15 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.CARGO_CONTAINER && contains(h, "cargo container", "shipping container", "cargo crate", "freight crate")) score += 10;
         if (intent == RenderIntent.FILING_CABINET_CONTAINER && contains(h, "filing cabinet", "records cabinet", "file cabinet")) score += 10;
         if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) score += 10;
-        if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit")) score += 10;
+        if (intent == RenderIntent.WEAPON_ITEM_ICON && contains(h, "gun", "blade", "ammo", "ammunition", "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet", "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter", "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) score += 10;
+        if (intent == RenderIntent.ARMOR_ITEM_ICON && contains(h, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak", "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) score += 10;
+        if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "tool", "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) score += 10;
+        if (intent == RenderIntent.MEDICAL_ITEM_ICON && contains(h, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
+        if (intent == RenderIntent.DRUG_ITEM_ICON && contains(h, "drug", "narcotic", "stimulant", "dose", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
+        if (intent == RenderIntent.FOOD_ITEM_ICON && contains(h, "food", "ration", "meal", "water", "canteen", "bottle", "flask", "drink", "provisions", "nutrient")) score += 10;
+        if (intent == RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON && contains(h, "component", "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit", "scrap plate", "construction supplies", "reagent")) score += 10;
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "trade good", "commodity", "barter", "merchandise", "wares", "luxury good", "cargo lot", "export good", "import good")) score += 10;
+        if (intent == RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON && contains(h, "relic", "prayer", "holy object", "devotional", "icon of faith", "religious object", "rosary", "censer")) score += 10;
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON && contains(h, "datapad", "data pad", "data device", "data slate", "dataslate", "terminal", "cogitator", "chip", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
         if (intent == RenderIntent.DOOR_OPEN || intent == RenderIntent.DOOR_CLOSED) {
             if (contains(h, "variant")) score += 3;
