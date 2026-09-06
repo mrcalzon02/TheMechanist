@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.57-furniture-family-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.58-utility-family-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -254,6 +254,12 @@ final class SemanticRenderAssetResolver {
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
         if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
+        if (intent == RenderIntent.GENERATOR_MACHINE && contains(h, "generator", "power generator", "genset")) score += 10;
+        if (intent == RenderIntent.TRANSFORMER_MACHINE && contains(h, "transformer", "power transformer", "electrical transformer")) score += 10;
+        if (intent == RenderIntent.JUNCTION_BOX_FIXTURE && contains(h, "junction box", "electrical box", "power box")) score += 10;
+        if (intent == RenderIntent.VENTILATION_UNIT_FIXTURE && contains(h, "ventilation unit", "vent unit", "air handler", "exhaust fan")) score += 10;
+        if (intent == RenderIntent.WATER_PIPE_FIXTURE && contains(h, "water pipe", "fresh water pipe", "water main")) score += 10;
+        if (intent == RenderIntent.SEWER_PIPE_FIXTURE && contains(h, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe")) score += 10;
         if (intent == RenderIntent.SECURITY_CAMERA_FIXTURE && contains(h, "security camera", "surveillance camera", "cctv")) score += 10;
         if (intent == RenderIntent.WORKSHOP_TABLE && contains(h, "workshop table", "workbench", "fabrication table")) score += 10;
         if (intent == RenderIntent.DINING_TABLE && contains(h, "dining table", "mess table", "kitchen table")) score += 10;
