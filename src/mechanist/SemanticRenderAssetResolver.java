@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.50-streetlight-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.51-traffic-light-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -253,7 +253,7 @@ final class SemanticRenderAssetResolver {
         if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
-        if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light")) score += 10;
+        if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
         if (intent == RenderIntent.SECURITY_CAMERA_FIXTURE && contains(h, "security camera", "surveillance camera")) score += 10;
         if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage")) score += 10;
         if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit")) score += 10;
