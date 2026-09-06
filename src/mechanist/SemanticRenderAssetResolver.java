@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.60-themed-floor-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.61-wall-floor-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -252,9 +252,15 @@ final class SemanticRenderAssetResolver {
         if (asset.name() != null && contains(asset.name(), normalize(intent.name()))) score += 5;
         if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
         if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
+        if ((intent == RenderIntent.SEWER_FLOOR || intent == RenderIntent.SEWER_WALL) && contains(h, "sewer", "sump", "drain", "utility tunnel")) score += 10;
+        if (intent == RenderIntent.GENERIC_FLOOR && contains(h, "generic", "plain", "main floor", "default")) score += 10;
+        if (intent == RenderIntent.GENERIC_WALL && contains(h, "generic", "plain", "main wall", "default")) score += 10;
         if (intent == RenderIntent.INDUSTRIAL_FLOOR && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
+        if (intent == RenderIntent.INDUSTRIAL_WALL && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
         if (intent == RenderIntent.HABITATION_FLOOR && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
+        if (intent == RenderIntent.HABITATION_WALL && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
         if (intent == RenderIntent.MARKET_FLOOR && contains(h, "market", "bazaar", "commercial", "retail")) score += 10;
+        if (intent == RenderIntent.MARKET_WALL && contains(h, "market", "bazaar", "commercial", "retail")) score += 10;
         if (intent == RenderIntent.MEDICAL_FLOOR && contains(h, "medical", "clinic", "hospital", "surgery")) score += 10;
         if (intent == RenderIntent.SECURITY_FLOOR && contains(h, "security", "checkpoint", "prison", "brig")) score += 10;
         if (intent == RenderIntent.ADMINISTRATIVE_FLOOR && contains(h, "administrative", "office", "records", "bureau")) score += 10;
