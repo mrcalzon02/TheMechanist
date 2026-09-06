@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.44-weapon-item-variety";
+    static final String VERSION = "semantic-render-asset-resolver-0.45-armor-item-variety";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -277,7 +277,7 @@ final class SemanticRenderAssetResolver {
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || itemIcon(asset); }
-    private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON || (asset.type() == AssetType.ITEM_ICON && themed(haystack(asset), "armor", "armour", "clothing")); }
+    private static boolean armorIcon(AssetMetadata asset) { return asset.type() == AssetType.ARMOR_ICON || itemIcon(asset); }
     private static boolean toolIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON || (asset.type() == AssetType.WEAPON_ICON && themed(haystack(asset), "tool weapon", "powered tool", "maintenance tool")); }
     private static boolean tradeGoodIcon(AssetMetadata asset) { return itemIcon(asset); }
     private static boolean dataDeviceIcon(AssetMetadata asset) { return itemIcon(asset); }
