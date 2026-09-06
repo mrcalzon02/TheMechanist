@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.46-tool-item-variety";
+    static final String VERSION = "semantic-render-asset-resolver-0.47-tool-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -256,7 +256,7 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light")) score += 10;
         if (intent == RenderIntent.SECURITY_CAMERA_FIXTURE && contains(h, "security camera", "surveillance camera")) score += 10;
         if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage")) score += 10;
-        if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "cell rule", "tool weapon", "powered tool", "maintenance tools")) score += 10;
+        if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit")) score += 10;
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "objects goods", "/goods_", "trade goods", "commodity")) score += 10;
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON && contains(h, "knowledge devices", "data device", "datapad")) score += 10;
         if (intent == RenderIntent.DOOR_OPEN || intent == RenderIntent.DOOR_CLOSED) {
