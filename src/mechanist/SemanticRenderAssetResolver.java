@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.40-door-family-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.41-door-state-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -172,8 +172,8 @@ final class SemanticRenderAssetResolver {
             case WATER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "water pipe", "fresh water pipe", "water main") && !themed(haystack, "sewer", "waste", "sludge") && notUiIcon(haystack);
             case SEWER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe") && notUiIcon(haystack);
             case SECURITY_CAMERA_FIXTURE -> fixtureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
-            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "closed", "shut") && !themed(haystack, "open") && !generic(haystack);
-            case DOOR_OPEN -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "open", "opened") && !themed(haystack, "closed", "shut") && !generic(haystack);
+            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "closed", "shut") && !themed(haystack, "open", "unsealed") && !generic(haystack);
+            case DOOR_OPEN -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "open", "opened", "unsealed") && !themed(haystack, "closed", "shut") && !generic(haystack);
             case WORKSHOP_TABLE -> furnitureType(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
             case DINING_TABLE -> furnitureType(asset) && themed(haystack, "dining table", "mess table", "kitchen table");
             case MEDICAL_TABLE -> furnitureType(asset) && themed(haystack, "medical table", "operating table", "surgery table");
