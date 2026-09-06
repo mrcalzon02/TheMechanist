@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.52-security-camera-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.53-refrigerated-storage-priority-alignment";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -255,7 +255,7 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
         if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
         if (intent == RenderIntent.SECURITY_CAMERA_FIXTURE && contains(h, "security camera", "surveillance camera", "cctv")) score += 10;
-        if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage")) score += 10;
+        if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) score += 10;
         if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit")) score += 10;
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "trade good", "commodity", "barter", "merchandise", "wares", "luxury good", "cargo lot", "export good", "import good")) score += 10;
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON && contains(h, "datapad", "data pad", "data device", "data slate", "dataslate", "terminal", "cogitator", "chip", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
