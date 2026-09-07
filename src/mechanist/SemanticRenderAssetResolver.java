@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.77-noble-floor-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.78-medical-floor-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -263,7 +263,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "market", "bazaar")) score += 10;
             else if (contains(h, "commercial", "retail")) score += 4;
         }
-        if (intent == RenderIntent.MEDICAL_FLOOR && contains(h, "medical", "clinic", "hospital", "surgery")) score += 10;
+        if (intent == RenderIntent.MEDICAL_FLOOR) {
+            if (contains(h, "medical", "clinic", "hospital")) score += 10;
+            else if (contains(h, "surgery")) score += 4;
+        }
         if (intent == RenderIntent.SECURITY_FLOOR && contains(h, "security", "checkpoint", "prison", "brig")) score += 10;
         if (intent == RenderIntent.ADMINISTRATIVE_FLOOR) {
             if (contains(h, "administrative", "bureau")) score += 10;
