@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.82-ventilation-unit-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.83-pipe-fixture-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -304,8 +304,14 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "ventilation unit", "vent unit", "air handler")) score += 10;
             else if (contains(h, "exhaust fan")) score += 4;
         }
-        if (intent == RenderIntent.WATER_PIPE_FIXTURE && contains(h, "water pipe", "fresh water pipe", "water main")) score += 10;
-        if (intent == RenderIntent.SEWER_PIPE_FIXTURE && contains(h, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe")) score += 10;
+        if (intent == RenderIntent.WATER_PIPE_FIXTURE) {
+            if (contains(h, "water pipe", "fresh water pipe")) score += 10;
+            else if (contains(h, "water main")) score += 4;
+        }
+        if (intent == RenderIntent.SEWER_PIPE_FIXTURE) {
+            if (contains(h, "sewer pipe")) score += 10;
+            else if (contains(h, "waste pipe", "drain pipe", "sludge pipe")) score += 4;
+        }
         if (intent == RenderIntent.SECURITY_CAMERA_FIXTURE && contains(h, "security camera", "surveillance camera", "cctv")) score += 10;
         if (intent == RenderIntent.WORKSHOP_TABLE && contains(h, "workshop table", "workbench", "fabrication table")) score += 10;
         if (intent == RenderIntent.DINING_TABLE && contains(h, "dining table", "mess table", "kitchen table")) score += 10;
