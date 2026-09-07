@@ -101,17 +101,90 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         AssetMetadata inventoryKnife = asset("CEL-0006", AssetType.ITEM_ICON,
                 "Kitchen Knife", "assets/items/kitchen_knife.png",
                 "kitchen knife utensil inventory item");
+        AssetMetadata flakVest = asset("CEL-0007", AssetType.ARMOR_ICON,
+                "Flak Vest", "assets/items/armor_flak_vest_r01c01.png",
+                "flak vest protective equipment");
+        AssetMetadata inventoryVest = asset("CEL-0008", AssetType.ITEM_ICON,
+                "Utility Vest", "assets/items/utility_vest.png",
+                "utility vest inventory item");
+        AssetMetadata fieldAntiseptic = asset("CEL-0009", AssetType.ITEM_ICON,
+                "Field Antiseptic", "assets/items/field_antiseptic.png",
+                "antiseptic treatment supply inventory item");
+        AssetMetadata combatStimInjector = asset("CEL-0010", AssetType.ITEM_ICON,
+                "Combat Stim Injector", "assets/items/combat_stim_injector.png",
+                "combat stim injector inventory item");
+        AssetMetadata workshopHammer = asset("CEL-0011", AssetType.ITEM_ICON,
+                "Workshop Hammer", "assets/items/workshop_hammer.png",
+                "hammer inventory item");
+        AssetMetadata devotionalRosary = asset("CEL-0012", AssetType.ITEM_ICON,
+                "Pilgrim Rosary", "assets/items/pilgrim_rosary.png",
+                "rosary inventory item");
+        AssetMetadata fieldDataSlate = asset("CEL-0013", AssetType.ITEM_ICON,
+                "Field Data Slate", "assets/items/field_data_slate.png",
+                "data slate memory core inventory item");
+        AssetMetadata fieldCanteen = asset("CEL-0014", AssetType.ITEM_ICON,
+                "Field Canteen", "assets/items/field_canteen.png",
+                "canteen hydration vessel inventory item");
+        AssetMetadata luxuryExportGood = asset("CEL-0015", AssetType.ITEM_ICON,
+                "Noble Export Lot", "assets/items/noble_export_lot.png",
+                "luxury good export good inventory item");
+        AssetMetadata authoredLamppost = asset("CEL-0016", AssetType.FIXTURE,
+                "Civic Lamppost", "assets/infrastructure/civic_lamppost.png",
+                "lamppost fixture");
+        AssetMetadata securityInterviewDesk = asset("CEL-0017", AssetType.OBJECT,
+                "Security Interview Desk", "assets/furniture/security_interview_desk.png",
+                "security interview desk furniture");
 
         require(SemanticRenderAssetResolver.canUse(atlasTool,
                 SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
                 "tool resolver rejected a weapon-atlas cell explicitly described as a tool");
         reject(ordinaryRifle, SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON,
                 "tool resolver accepted an ordinary rifle without tool semantics");
+        require(SemanticRenderAssetResolver.canUse(workshopHammer,
+                SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON),
+                "tool resolver rejected a hammer classified as a tool by the intent authority");
         require(SemanticRenderAssetResolver.canUse(combatKnife,
                 SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON),
                 "weapon resolver rejected a correctly typed combat knife because metadata lacked a generic weapon synonym");
         reject(inventoryKnife, SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON,
                 "weapon resolver accepted a generic item-icon knife without explicit weapon typing");
+        require(SemanticRenderAssetResolver.canUse(flakVest,
+                SemanticRenderAssetResolver.RenderIntent.ARMOR_ITEM_ICON),
+                "armor resolver rejected a correctly typed flak vest because metadata lacked a generic armor synonym");
+        reject(inventoryVest, SemanticRenderAssetResolver.RenderIntent.ARMOR_ITEM_ICON,
+                "armor resolver accepted a generic item-icon vest without explicit armor typing");
+        require(SemanticRenderAssetResolver.canUse(fieldAntiseptic,
+                SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON),
+                "medical resolver rejected an antiseptic item classified as medical by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(combatStimInjector,
+                SemanticRenderAssetResolver.RenderIntent.DRUG_ITEM_ICON),
+                "drug resolver rejected a combat-stim injector classified as a drug by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(devotionalRosary,
+                SemanticRenderAssetResolver.RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON),
+                "religious-object resolver rejected a rosary classified as religious by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(fieldDataSlate,
+                SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
+                "data-device resolver rejected a data slate classified as a data device by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(fieldCanteen,
+                SemanticRenderAssetResolver.RenderIntent.FOOD_ITEM_ICON),
+                "food resolver rejected a canteen classified as food/drink by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(luxuryExportGood,
+                SemanticRenderAssetResolver.RenderIntent.TRADE_GOOD_ITEM_ICON),
+                "trade-good resolver rejected a luxury/export good classified as trade goods by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(authoredLamppost,
+                SemanticRenderAssetResolver.RenderIntent.STREETLIGHT_FIXTURE),
+                "streetlight resolver rejected a lamppost classified as a streetlight fixture by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(securityInterviewDesk,
+                SemanticRenderAssetResolver.RenderIntent.INTERROGATION_DESK),
+                "interrogation-desk resolver rejected a security interview desk classified by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(
+                        asset("CEL-0018", AssetType.OBJECT, "Hab Clothing Cabinet", "assets/containers/hab_clothing_cabinet.png", "clothing cabinet storage"),
+                        SemanticRenderAssetResolver.RenderIntent.WARDROBE_CONTAINER),
+                "wardrobe resolver rejected a clothing cabinet classified by the intent authority");
+        require(SemanticRenderAssetResolver.canUse(
+                        asset("CEL-0019", AssetType.OBJECT, "PDF Armoury Locker", "assets/containers/pdf_armoury_locker.png", "armoury locker secure storage"),
+                        SemanticRenderAssetResolver.RenderIntent.WEAPONS_LOCKER_CONTAINER),
+                "weapons-locker resolver rejected an armoury locker classified by the intent authority");
         require(SemanticRenderAssetResolver.canUse(knowledgeDevice,
                 SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON),
                 "data-device resolver rejected the UI-typed Knowledge_devices family");
@@ -126,7 +199,6 @@ public final class Milestone02SemanticRenderAssetResolverSmoke {
         if (!resolution.found()) throw new AssertionError(intent + " did not resolve: " + resolution.reason);
         if (!expectedId.equals(resolution.asset.id())) throw new AssertionError(intent + " resolved " + resolution.asset.id() + " instead of " + expectedId);
     }
-
     private static void assertStableVariant(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent, long key, String expectedId) {
         SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent, key);
         if (!resolution.found()) throw new AssertionError(intent + " stable variant did not resolve: " + resolution.reason);
