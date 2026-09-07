@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.85-workshop-table-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.86-dining-table-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -320,7 +320,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "workshop table")) score += 10;
             else if (contains(h, "workbench", "fabrication table")) score += 4;
         }
-        if (intent == RenderIntent.DINING_TABLE && contains(h, "dining table", "mess table", "kitchen table")) score += 10;
+        if (intent == RenderIntent.DINING_TABLE) {
+            if (contains(h, "dining table")) score += 10;
+            else if (contains(h, "mess table", "kitchen table")) score += 4;
+        }
         if (intent == RenderIntent.MEDICAL_TABLE && contains(h, "medical table", "operating table", "surgery table")) score += 10;
         if (intent == RenderIntent.SHRINE_ALTAR) {
             if (contains(h, "altar")) score += 10;
