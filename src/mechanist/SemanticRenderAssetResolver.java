@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.80-shrine-altar-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.81-junction-box-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -296,7 +296,10 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
         if (intent == RenderIntent.GENERATOR_MACHINE && contains(h, "generator", "power generator", "genset")) score += 10;
         if (intent == RenderIntent.TRANSFORMER_MACHINE && contains(h, "transformer", "power transformer", "electrical transformer")) score += 10;
-        if (intent == RenderIntent.JUNCTION_BOX_FIXTURE && contains(h, "junction box", "electrical box", "power box")) score += 10;
+        if (intent == RenderIntent.JUNCTION_BOX_FIXTURE) {
+            if (contains(h, "junction box")) score += 10;
+            else if (contains(h, "electrical box", "power box")) score += 4;
+        }
         if (intent == RenderIntent.VENTILATION_UNIT_FIXTURE && contains(h, "ventilation unit", "vent unit", "air handler", "exhaust fan")) score += 10;
         if (intent == RenderIntent.WATER_PIPE_FIXTURE && contains(h, "water pipe", "fresh water pipe", "water main")) score += 10;
         if (intent == RenderIntent.SEWER_PIPE_FIXTURE && contains(h, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe")) score += 10;
