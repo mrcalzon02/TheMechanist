@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.84-security-camera-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.85-workshop-table-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -316,7 +316,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "security camera")) score += 10;
             else if (contains(h, "surveillance camera", "cctv")) score += 4;
         }
-        if (intent == RenderIntent.WORKSHOP_TABLE && contains(h, "workshop table", "workbench", "fabrication table")) score += 10;
+        if (intent == RenderIntent.WORKSHOP_TABLE) {
+            if (contains(h, "workshop table")) score += 10;
+            else if (contains(h, "workbench", "fabrication table")) score += 4;
+        }
         if (intent == RenderIntent.DINING_TABLE && contains(h, "dining table", "mess table", "kitchen table")) score += 10;
         if (intent == RenderIntent.MEDICAL_TABLE && contains(h, "medical table", "operating table", "surgery table")) score += 10;
         if (intent == RenderIntent.SHRINE_ALTAR) {
