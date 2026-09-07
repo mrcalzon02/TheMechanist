@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.63-door-state-priority-alignment";
+    static final String VERSION = "semantic-render-asset-resolver-0.64-family-priority-variant-pool";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -248,10 +248,6 @@ final class SemanticRenderAssetResolver {
     private static int priority(AssetMetadata asset, RenderIntent intent) {
         String h = haystack(asset);
         int score = 0;
-        if (contains(h, normalize(intent.name()))) score += 8;
-        if (asset.name() != null && contains(asset.name(), normalize(intent.name()))) score += 5;
-        if (asset.semanticDescription() != null && contains(asset.semanticDescription(), normalize(intent.name()))) score += 4;
-        if (asset.pathOrUri() != null && contains(asset.pathOrUri(), normalize(intent.name()))) score += 2;
         if ((intent == RenderIntent.SEWER_FLOOR || intent == RenderIntent.SEWER_WALL) && contains(h, "sewer", "sump", "drain", "utility tunnel")) score += 10;
         if (intent == RenderIntent.GENERIC_FLOOR && contains(h, "generic", "plain", "main floor", "default")) score += 10;
         if (intent == RenderIntent.GENERIC_WALL && contains(h, "generic", "plain", "main wall", "default")) score += 10;
