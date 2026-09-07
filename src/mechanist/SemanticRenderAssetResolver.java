@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.72-religious-object-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.73-floor-context-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -261,8 +261,14 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.SECURITY_FLOOR && contains(h, "security", "checkpoint", "prison", "brig")) score += 10;
         if (intent == RenderIntent.ADMINISTRATIVE_FLOOR && contains(h, "administrative", "office", "records", "bureau")) score += 10;
         if (intent == RenderIntent.RELIGIOUS_FLOOR && contains(h, "religious", "shrine", "chapel", "altar")) score += 10;
-        if (intent == RenderIntent.TRANSIT_FLOOR && contains(h, "transit", "station", "platform", "rail")) score += 10;
-        if (intent == RenderIntent.WAREHOUSE_FLOOR && contains(h, "warehouse", "storage", "cargo", "loading")) score += 10;
+        if (intent == RenderIntent.TRANSIT_FLOOR) {
+            if (contains(h, "transit", "platform", "rail")) score += 10;
+            else if (contains(h, "station")) score += 4;
+        }
+        if (intent == RenderIntent.WAREHOUSE_FLOOR) {
+            if (contains(h, "warehouse", "cargo", "loading")) score += 10;
+            else if (contains(h, "storage")) score += 4;
+        }
         if (intent == RenderIntent.NOBLE_FLOOR && contains(h, "noble", "luxury", "estate", "manor")) score += 10;
         if (intent == RenderIntent.SLUM_FLOOR && contains(h, "slum", "shanty", "tenement", "scrap")) score += 10;
         if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
