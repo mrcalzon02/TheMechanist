@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.70-drug-item-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.71-trade-good-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -307,7 +307,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit", "scrap plate", "construction supplies")) score += 10;
             else if (contains(h, "component", "reagent")) score += 4;
         }
-        if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "trade good", "commodity", "barter", "merchandise", "wares", "luxury good", "cargo lot", "export good", "import good")) score += 10;
+        if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON) {
+            if (contains(h, "trade good", "commodity", "barter", "luxury good", "cargo lot", "export good", "import good")) score += 10;
+            else if (contains(h, "merchandise", "wares")) score += 4;
+        }
         if (intent == RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON && contains(h, "relic", "prayer", "holy object", "devotional", "icon of faith", "religious object", "rosary", "censer")) score += 10;
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON) {
             if (contains(h, "datapad", "data pad", "data device", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
