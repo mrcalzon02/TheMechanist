@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.67-data-device-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.68-tool-item-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -290,7 +290,10 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) score += 10;
         if (intent == RenderIntent.WEAPON_ITEM_ICON && contains(h, "gun", "blade", "ammo", "ammunition", "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet", "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter", "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) score += 10;
         if (intent == RenderIntent.ARMOR_ITEM_ICON && contains(h, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak", "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) score += 10;
-        if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "tool", "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) score += 10;
+        if (intent == RenderIntent.TOOL_ITEM_ICON) {
+            if (contains(h, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) score += 10;
+            else if (contains(h, "tool")) score += 4;
+        }
         if (intent == RenderIntent.MEDICAL_ITEM_ICON && contains(h, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
         if (intent == RenderIntent.DRUG_ITEM_ICON && contains(h, "drug", "narcotic", "stimulant", "dose", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
         if (intent == RenderIntent.FOOD_ITEM_ICON && contains(h, "food", "ration", "meal", "water", "canteen", "flask", "drink", "provisions", "nutrient")) score += 10;
