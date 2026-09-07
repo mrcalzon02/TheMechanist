@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.68-tool-item-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.69-food-water-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -296,7 +296,10 @@ final class SemanticRenderAssetResolver {
         }
         if (intent == RenderIntent.MEDICAL_ITEM_ICON && contains(h, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
         if (intent == RenderIntent.DRUG_ITEM_ICON && contains(h, "drug", "narcotic", "stimulant", "dose", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
-        if (intent == RenderIntent.FOOD_ITEM_ICON && contains(h, "food", "ration", "meal", "water", "canteen", "flask", "drink", "provisions", "nutrient")) score += 10;
+        if (intent == RenderIntent.FOOD_ITEM_ICON) {
+            if (contains(h, "food", "ration", "meal", "canteen", "flask", "drink", "provisions", "nutrient")) score += 10;
+            else if (contains(h, "water")) score += 4;
+        }
         if (intent == RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON) {
             if (contains(h, "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit", "scrap plate", "construction supplies")) score += 10;
             else if (contains(h, "component", "reagent")) score += 4;
