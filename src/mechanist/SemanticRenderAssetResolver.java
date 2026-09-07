@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.64-family-priority-variant-pool";
+    static final String VERSION = "semantic-render-asset-resolver-0.65-food-icon-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -206,7 +206,7 @@ final class SemanticRenderAssetResolver {
                     "drug", "narcotic", "stimulant", "dose", "injector", "opiate",
                     "sedative", "combat stim", "painkiller");
             case FOOD_ITEM_ICON -> itemIcon(asset) && themed(haystack,
-                    "food", "ration", "meal", "water", "canteen", "bottle", "flask",
+                    "food", "ration", "meal", "water", "canteen", "flask",
                     "drink", "provisions", "nutrient");
             case INDUSTRIAL_COMPONENT_ITEM_ICON -> itemIcon(asset) && themed(haystack,
                     "component", "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit",
@@ -293,7 +293,7 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.TOOL_ITEM_ICON && contains(h, "tool", "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) score += 10;
         if (intent == RenderIntent.MEDICAL_ITEM_ICON && contains(h, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
         if (intent == RenderIntent.DRUG_ITEM_ICON && contains(h, "drug", "narcotic", "stimulant", "dose", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
-        if (intent == RenderIntent.FOOD_ITEM_ICON && contains(h, "food", "ration", "meal", "water", "canteen", "bottle", "flask", "drink", "provisions", "nutrient")) score += 10;
+        if (intent == RenderIntent.FOOD_ITEM_ICON && contains(h, "food", "ration", "meal", "water", "canteen", "flask", "drink", "provisions", "nutrient")) score += 10;
         if (intent == RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON && contains(h, "component", "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit", "scrap plate", "construction supplies", "reagent")) score += 10;
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON && contains(h, "trade good", "commodity", "barter", "merchandise", "wares", "luxury good", "cargo lot", "export good", "import good")) score += 10;
         if (intent == RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON && contains(h, "relic", "prayer", "holy object", "devotional", "icon of faith", "religious object", "rosary", "censer")) score += 10;
