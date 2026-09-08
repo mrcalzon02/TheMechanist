@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.05-security-floor-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.06-habitation-surface-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -253,8 +253,14 @@ final class SemanticRenderAssetResolver {
         if (intent == RenderIntent.GENERIC_WALL && contains(h, "generic", "plain", "main wall", "default")) score += 10;
         if (intent == RenderIntent.INDUSTRIAL_FLOOR && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
         if (intent == RenderIntent.INDUSTRIAL_WALL && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
-        if (intent == RenderIntent.HABITATION_FLOOR && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
-        if (intent == RenderIntent.HABITATION_WALL && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
+        if (intent == RenderIntent.HABITATION_FLOOR) {
+            if (contains(h, "habitation", "hab")) score += 10;
+            else if (contains(h, "apartment", "residential")) score += 4;
+        }
+        if (intent == RenderIntent.HABITATION_WALL) {
+            if (contains(h, "habitation", "hab")) score += 10;
+            else if (contains(h, "apartment", "residential")) score += 4;
+        }
         if (intent == RenderIntent.MARKET_FLOOR) {
             if (contains(h, "market", "bazaar")) score += 10;
             else if (contains(h, "commercial", "retail")) score += 4;
