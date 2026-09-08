@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.07-industrial-surface-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.08-sewer-surface-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -248,7 +248,10 @@ final class SemanticRenderAssetResolver {
     private static int priority(AssetMetadata asset, RenderIntent intent) {
         String h = haystack(asset);
         int score = 0;
-        if ((intent == RenderIntent.SEWER_FLOOR || intent == RenderIntent.SEWER_WALL) && contains(h, "sewer", "sump", "drain", "utility tunnel")) score += 10;
+        if (intent == RenderIntent.SEWER_FLOOR || intent == RenderIntent.SEWER_WALL) {
+            if (contains(h, "sewer", "sump")) score += 10;
+            else if (contains(h, "drain", "utility tunnel")) score += 4;
+        }
         if (intent == RenderIntent.GENERIC_FLOOR && contains(h, "generic", "plain", "main floor", "default")) score += 10;
         if (intent == RenderIntent.GENERIC_WALL && contains(h, "generic", "plain", "main wall", "default")) score += 10;
         if (intent == RenderIntent.INDUSTRIAL_FLOOR) {
