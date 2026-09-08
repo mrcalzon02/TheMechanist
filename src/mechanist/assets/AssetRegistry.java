@@ -385,7 +385,7 @@ public final class AssetRegistry {
         if (containsAny(text, "corpse", "decay", "dead")) return AssetType.CORPSE_DECAY;
         if (containsAny(text, "weapon", "weapons", "ammo", "firearm", "blade")) return AssetType.WEAPON_ICON;
         if (containsAny(text, "armor", "armors", "clothing", "helmet")) return AssetType.ARMOR_ICON;
-        if (containsAny(text, "item", "items", "pickup", "inventory")) return AssetType.ITEM_ICON;
+        if ("items".equalsIgnoreCase(category) || containsAny(tags == null ? "" : tags.toLowerCase(Locale.ROOT), "pickup")) return AssetType.ITEM_ICON;
         if (containsAny(text, "system", "ui", "interface", "rondel", "knowledge", "skill", "icon")) return AssetType.UI_ICON;
         if (containsAny(text, "machine", "machinery", "vehicle", "automotive", "vending", "emergency_machines")) return AssetType.MACHINE;
         if (containsAny(text, "door", "defense", "fixture", "counter", "table", "station")) return AssetType.FIXTURE;
