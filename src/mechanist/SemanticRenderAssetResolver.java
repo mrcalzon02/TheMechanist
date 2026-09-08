@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.02-industrial-component-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.08-sewer-surface-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -248,13 +248,28 @@ final class SemanticRenderAssetResolver {
     private static int priority(AssetMetadata asset, RenderIntent intent) {
         String h = haystack(asset);
         int score = 0;
-        if ((intent == RenderIntent.SEWER_FLOOR || intent == RenderIntent.SEWER_WALL) && contains(h, "sewer", "sump", "drain", "utility tunnel")) score += 10;
+        if (intent == RenderIntent.SEWER_FLOOR || intent == RenderIntent.SEWER_WALL) {
+            if (contains(h, "sewer", "sump")) score += 10;
+            else if (contains(h, "drain", "utility tunnel")) score += 4;
+        }
         if (intent == RenderIntent.GENERIC_FLOOR && contains(h, "generic", "plain", "main floor", "default")) score += 10;
         if (intent == RenderIntent.GENERIC_WALL && contains(h, "generic", "plain", "main wall", "default")) score += 10;
-        if (intent == RenderIntent.INDUSTRIAL_FLOOR && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
-        if (intent == RenderIntent.INDUSTRIAL_WALL && contains(h, "industrial", "factory", "machine shop", "workshop")) score += 10;
-        if (intent == RenderIntent.HABITATION_FLOOR && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
-        if (intent == RenderIntent.HABITATION_WALL && contains(h, "habitation", "hab", "apartment", "residential")) score += 10;
+        if (intent == RenderIntent.INDUSTRIAL_FLOOR) {
+            if (contains(h, "industrial", "factory")) score += 10;
+            else if (contains(h, "machine shop", "workshop")) score += 4;
+        }
+        if (intent == RenderIntent.INDUSTRIAL_WALL) {
+            if (contains(h, "industrial", "factory")) score += 10;
+            else if (contains(h, "machine shop", "workshop")) score += 4;
+        }
+        if (intent == RenderIntent.HABITATION_FLOOR) {
+            if (contains(h, "habitation", "hab")) score += 10;
+            else if (contains(h, "apartment", "residential")) score += 4;
+        }
+        if (intent == RenderIntent.HABITATION_WALL) {
+            if (contains(h, "habitation", "hab")) score += 10;
+            else if (contains(h, "apartment", "residential")) score += 4;
+        }
         if (intent == RenderIntent.MARKET_FLOOR) {
             if (contains(h, "market", "bazaar")) score += 10;
             else if (contains(h, "commercial", "retail")) score += 4;
@@ -267,7 +282,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "medical", "clinic", "hospital")) score += 10;
             else if (contains(h, "surgery")) score += 4;
         }
-        if (intent == RenderIntent.SECURITY_FLOOR && contains(h, "security", "checkpoint", "prison", "brig")) score += 10;
+        if (intent == RenderIntent.SECURITY_FLOOR) {
+            if (contains(h, "security", "checkpoint")) score += 10;
+            else if (contains(h, "prison", "brig")) score += 4;
+        }
         if (intent == RenderIntent.ADMINISTRATIVE_FLOOR) {
             if (contains(h, "administrative", "bureau")) score += 10;
             else if (contains(h, "office", "records")) score += 4;
@@ -398,16 +416,16 @@ final class SemanticRenderAssetResolver {
             else if (contains(h, "component", "construction supplies", "reagent")) score += 4;
         }
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON) {
-            if (contains(h, "trade good", "commodity", "barter", "luxury good", "cargo lot", "export good", "import good")) score += 10;
-            else if (contains(h, "merchandise", "wares")) score += 4;
+            if (contains(h, "trade good", "luxury good", "cargo lot", "export good", "import good")) score += 10;
+            else if (contains(h, "commodity", "barter", "merchandise", "wares")) score += 4;
         }
         if (intent == RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON) {
             if (contains(h, "relic", "holy object", "devotional", "icon of faith", "religious object", "rosary", "censer")) score += 10;
             else if (contains(h, "prayer")) score += 4;
         }
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON) {
-            if (contains(h, "datapad", "data pad", "data device", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
-            else if (contains(h, "terminal", "chip")) score += 4;
+            if (contains(h, "datapad", "data pad", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
+            else if (contains(h, "data device", "terminal", "chip")) score += 4;
         }
         if (intent == RenderIntent.DOOR_CLOSED && contains(h, "closed", "shut")) score += 10;
         if (intent == RenderIntent.DOOR_OPEN && contains(h, "open", "opened", "unsealed")) score += 10;
