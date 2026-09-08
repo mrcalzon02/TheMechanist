@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.08-sewer-surface-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.09-generic-surface-exclusion";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -147,8 +147,8 @@ final class SemanticRenderAssetResolver {
         return switch (intent) {
             case SEWER_FLOOR -> isFloor(asset) && themed(haystack, "sewer", "sump", "drain", "utility tunnel") && !generic(haystack);
             case SEWER_WALL -> isWall(asset) && themed(haystack, "sewer", "sump", "drain", "utility tunnel") && !generic(haystack);
-            case GENERIC_FLOOR -> isFloor(asset) && generic(haystack) && !themed(haystack, "sewer", "sump");
-            case GENERIC_WALL -> isWall(asset) && generic(haystack) && !themed(haystack, "sewer", "sump");
+            case GENERIC_FLOOR -> isFloor(asset) && generic(haystack) && !specializedSurface(haystack);
+            case GENERIC_WALL -> isWall(asset) && generic(haystack) && !specializedSurface(haystack);
             case INDUSTRIAL_FLOOR -> isFloor(asset) && themed(haystack, "industrial", "factory", "machine shop", "workshop") && !themed(haystack, "sewer");
             case INDUSTRIAL_WALL -> isWall(asset) && themed(haystack, "industrial", "factory", "machine shop", "workshop") && !themed(haystack, "sewer");
             case HABITATION_FLOOR -> isFloor(asset) && themed(haystack, "habitation", "hab", "apartment", "residential") && !themed(haystack, "sewer");
@@ -448,6 +448,21 @@ final class SemanticRenderAssetResolver {
     private static boolean dataDeviceIcon(AssetMetadata asset) { return itemIcon(asset); }
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
+    private static boolean specializedSurface(String text) {
+        return themed(text,
+                "sewer", "sump", "drain", "utility tunnel",
+                "industrial", "factory", "machine shop", "workshop",
+                "habitation", "hab", "apartment", "residential",
+                "market", "bazaar", "commercial", "retail",
+                "medical", "clinic", "hospital", "surgery",
+                "security", "checkpoint", "prison", "brig",
+                "administrative", "office", "records", "bureau",
+                "religious", "shrine", "chapel", "altar",
+                "transit", "station", "platform", "rail",
+                "warehouse", "storage", "cargo", "loading",
+                "noble", "luxury", "estate", "manor",
+                "slum", "shanty", "tenement", "scrap");
+    }
     private static boolean themed(String text, String... needles) { return semanticContains(text, needles); }
     private static boolean notUiIcon(String text) { return !themed(text, "system inventory", "item icon", "ui icon", "system control", "interface control"); }
 
