@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.09-generic-surface-exclusion";
+    static final String VERSION = "semantic-render-asset-resolver-1.10-door-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -427,8 +427,14 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "datapad", "data pad", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
             else if (contains(h, "data device", "terminal", "chip")) score += 4;
         }
-        if (intent == RenderIntent.DOOR_CLOSED && contains(h, "closed", "shut")) score += 10;
-        if (intent == RenderIntent.DOOR_OPEN && contains(h, "open", "opened", "unsealed")) score += 10;
+        if (intent == RenderIntent.DOOR_CLOSED && contains(h, "closed", "shut")) {
+            if (contains(h, "door")) score += 10;
+            else if (contains(h, "hatch", "bulkhead")) score += 4;
+        }
+        if (intent == RenderIntent.DOOR_OPEN && contains(h, "open", "opened", "unsealed")) {
+            if (contains(h, "door")) score += 10;
+            else if (contains(h, "hatch", "bulkhead")) score += 4;
+        }
         return score;
     }
 
