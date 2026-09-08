@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.91-medical-cabinet-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.92-weapons-locker-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -349,7 +349,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "medical cabinet")) score += 10;
             else if (contains(h, "medicine cabinet", "clinic cabinet")) score += 4;
         }
-        if (intent == RenderIntent.WEAPONS_LOCKER_CONTAINER && contains(h, "weapons locker", "weapon locker", "armory locker", "armoury locker")) score += 10;
+        if (intent == RenderIntent.WEAPONS_LOCKER_CONTAINER) {
+            if (contains(h, "weapons locker", "weapon locker")) score += 10;
+            else if (contains(h, "armory locker", "armoury locker")) score += 4;
+        }
         if (intent == RenderIntent.WARDROBE_CONTAINER && contains(h, "wardrobe", "clothes cabinet", "clothing cabinet")) score += 10;
         if (intent == RenderIntent.CARGO_CONTAINER && contains(h, "cargo container", "shipping container", "cargo crate", "freight crate")) score += 10;
         if (intent == RenderIntent.FILING_CABINET_CONTAINER && contains(h, "filing cabinet", "records cabinet", "file cabinet")) score += 10;
