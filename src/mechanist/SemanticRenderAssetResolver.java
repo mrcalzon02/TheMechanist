@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.87-medical-table-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.88-market-counter-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -332,7 +332,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "altar")) score += 10;
             else if (contains(h, "shrine")) score += 4;
         }
-        if (intent == RenderIntent.MARKET_COUNTER && contains(h, "market counter", "shop counter", "stall counter", "trader counter")) score += 10;
+        if (intent == RenderIntent.MARKET_COUNTER) {
+            if (contains(h, "market counter")) score += 10;
+            else if (contains(h, "shop counter", "stall counter", "trader counter")) score += 4;
+        }
         if (intent == RenderIntent.ADMINISTRATIVE_DESK && contains(h, "administrative desk", "office desk", "records desk")) score += 10;
         if (intent == RenderIntent.INTERROGATION_DESK && contains(h, "interrogation desk", "security interview desk")) score += 10;
         if (intent == RenderIntent.TOOLBOX_CONTAINER && contains(h, "toolbox", "tool box")) score += 10;
