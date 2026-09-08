@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.98-armor-icon-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.99-drug-icon-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -383,8 +383,8 @@ final class SemanticRenderAssetResolver {
         }
         if (intent == RenderIntent.MEDICAL_ITEM_ICON && contains(h, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
         if (intent == RenderIntent.DRUG_ITEM_ICON) {
-            if (contains(h, "drug", "narcotic", "stimulant", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
-            else if (contains(h, "dose")) score += 4;
+            if (contains(h, "stimulant", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
+            else if (contains(h, "drug", "narcotic", "dose")) score += 4;
         }
         if (intent == RenderIntent.FOOD_ITEM_ICON) {
             if (contains(h, "food", "ration", "meal", "canteen", "flask", "drink", "provisions", "nutrient")) score += 10;
