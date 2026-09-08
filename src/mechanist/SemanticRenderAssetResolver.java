@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.02-industrial-component-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.03-trade-good-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -398,8 +398,8 @@ final class SemanticRenderAssetResolver {
             else if (contains(h, "component", "construction supplies", "reagent")) score += 4;
         }
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON) {
-            if (contains(h, "trade good", "commodity", "barter", "luxury good", "cargo lot", "export good", "import good")) score += 10;
-            else if (contains(h, "merchandise", "wares")) score += 4;
+            if (contains(h, "trade good", "luxury good", "cargo lot", "export good", "import good")) score += 10;
+            else if (contains(h, "commodity", "barter", "merchandise", "wares")) score += 4;
         }
         if (intent == RenderIntent.RELIGIOUS_OBJECT_ITEM_ICON) {
             if (contains(h, "relic", "holy object", "devotional", "icon of faith", "religious object", "rosary", "censer")) score += 10;
