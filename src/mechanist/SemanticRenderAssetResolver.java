@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.94-cargo-container-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-0.95-filing-cabinet-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -361,7 +361,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "cargo container")) score += 10;
             else if (contains(h, "shipping container", "cargo crate", "freight crate")) score += 4;
         }
-        if (intent == RenderIntent.FILING_CABINET_CONTAINER && contains(h, "filing cabinet", "records cabinet", "file cabinet")) score += 10;
+        if (intent == RenderIntent.FILING_CABINET_CONTAINER) {
+            if (contains(h, "filing cabinet")) score += 10;
+            else if (contains(h, "records cabinet", "file cabinet")) score += 4;
+        }
         if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) score += 10;
         if (intent == RenderIntent.WEAPON_ITEM_ICON && contains(h, "gun", "blade", "ammo", "ammunition", "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet", "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter", "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) score += 10;
         if (intent == RenderIntent.ARMOR_ITEM_ICON && contains(h, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak", "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) score += 10;
