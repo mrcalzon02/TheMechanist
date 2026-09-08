@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-0.84-security-camera-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.02-industrial-component-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -316,41 +316,86 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "security camera")) score += 10;
             else if (contains(h, "surveillance camera", "cctv")) score += 4;
         }
-        if (intent == RenderIntent.WORKSHOP_TABLE && contains(h, "workshop table", "workbench", "fabrication table")) score += 10;
-        if (intent == RenderIntent.DINING_TABLE && contains(h, "dining table", "mess table", "kitchen table")) score += 10;
-        if (intent == RenderIntent.MEDICAL_TABLE && contains(h, "medical table", "operating table", "surgery table")) score += 10;
+        if (intent == RenderIntent.WORKSHOP_TABLE) {
+            if (contains(h, "workshop table")) score += 10;
+            else if (contains(h, "workbench", "fabrication table")) score += 4;
+        }
+        if (intent == RenderIntent.DINING_TABLE) {
+            if (contains(h, "dining table")) score += 10;
+            else if (contains(h, "mess table", "kitchen table")) score += 4;
+        }
+        if (intent == RenderIntent.MEDICAL_TABLE) {
+            if (contains(h, "medical table")) score += 10;
+            else if (contains(h, "operating table", "surgery table")) score += 4;
+        }
         if (intent == RenderIntent.SHRINE_ALTAR) {
             if (contains(h, "altar")) score += 10;
             else if (contains(h, "shrine")) score += 4;
         }
-        if (intent == RenderIntent.MARKET_COUNTER && contains(h, "market counter", "shop counter", "stall counter", "trader counter")) score += 10;
-        if (intent == RenderIntent.ADMINISTRATIVE_DESK && contains(h, "administrative desk", "office desk", "records desk")) score += 10;
-        if (intent == RenderIntent.INTERROGATION_DESK && contains(h, "interrogation desk", "security interview desk")) score += 10;
+        if (intent == RenderIntent.MARKET_COUNTER) {
+            if (contains(h, "market counter")) score += 10;
+            else if (contains(h, "shop counter", "stall counter", "trader counter")) score += 4;
+        }
+        if (intent == RenderIntent.ADMINISTRATIVE_DESK) {
+            if (contains(h, "administrative desk")) score += 10;
+            else if (contains(h, "office desk", "records desk")) score += 4;
+        }
+        if (intent == RenderIntent.INTERROGATION_DESK) {
+            if (contains(h, "interrogation desk")) score += 10;
+            else if (contains(h, "security interview desk")) score += 4;
+        }
         if (intent == RenderIntent.TOOLBOX_CONTAINER && contains(h, "toolbox", "tool box")) score += 10;
-        if (intent == RenderIntent.MEDICAL_CABINET_CONTAINER && contains(h, "medical cabinet", "medicine cabinet", "clinic cabinet")) score += 10;
-        if (intent == RenderIntent.WEAPONS_LOCKER_CONTAINER && contains(h, "weapons locker", "weapon locker", "armory locker", "armoury locker")) score += 10;
-        if (intent == RenderIntent.WARDROBE_CONTAINER && contains(h, "wardrobe", "clothes cabinet", "clothing cabinet")) score += 10;
-        if (intent == RenderIntent.CARGO_CONTAINER && contains(h, "cargo container", "shipping container", "cargo crate", "freight crate")) score += 10;
-        if (intent == RenderIntent.FILING_CABINET_CONTAINER && contains(h, "filing cabinet", "records cabinet", "file cabinet")) score += 10;
-        if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER && contains(h, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) score += 10;
-        if (intent == RenderIntent.WEAPON_ITEM_ICON && contains(h, "gun", "blade", "ammo", "ammunition", "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet", "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter", "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) score += 10;
-        if (intent == RenderIntent.ARMOR_ITEM_ICON && contains(h, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak", "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) score += 10;
+        if (intent == RenderIntent.MEDICAL_CABINET_CONTAINER) {
+            if (contains(h, "medical cabinet")) score += 10;
+            else if (contains(h, "medicine cabinet", "clinic cabinet")) score += 4;
+        }
+        if (intent == RenderIntent.WEAPONS_LOCKER_CONTAINER) {
+            if (contains(h, "weapons locker", "weapon locker")) score += 10;
+            else if (contains(h, "armory locker", "armoury locker")) score += 4;
+        }
+        if (intent == RenderIntent.WARDROBE_CONTAINER) {
+            if (contains(h, "wardrobe")) score += 10;
+            else if (contains(h, "clothes cabinet", "clothing cabinet")) score += 4;
+        }
+        if (intent == RenderIntent.CARGO_CONTAINER) {
+            if (contains(h, "cargo container")) score += 10;
+            else if (contains(h, "shipping container", "cargo crate", "freight crate")) score += 4;
+        }
+        if (intent == RenderIntent.FILING_CABINET_CONTAINER) {
+            if (contains(h, "filing cabinet")) score += 10;
+            else if (contains(h, "records cabinet", "file cabinet")) score += 4;
+        }
+        if (intent == RenderIntent.REFRIGERATED_STORAGE_CONTAINER) {
+            if (contains(h, "refrigerated storage")) score += 10;
+            else if (contains(h, "cold storage", "freezer", "refrigerator", "chiller locker")) score += 4;
+        }
+        if (intent == RenderIntent.WEAPON_ITEM_ICON) {
+            if (contains(h, "knife", "knives", "shiv", "dagger", "sword", "axe", "hatchet", "spear", "polearm", "pistol", "rifle", "carbine", "shotgun", "bolter", "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) score += 10;
+            else if (contains(h, "gun", "blade", "ammo", "ammunition")) score += 4;
+        }
+        if (intent == RenderIntent.ARMOR_ITEM_ICON) {
+            if (contains(h, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak")) score += 10;
+            else if (contains(h, "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) score += 4;
+        }
         if (intent == RenderIntent.TOOL_ITEM_ICON) {
             if (contains(h, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill", "saw", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) score += 10;
             else if (contains(h, "tool")) score += 4;
         }
-        if (intent == RenderIntent.MEDICAL_ITEM_ICON && contains(h, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
+        if (intent == RenderIntent.MEDICAL_ITEM_ICON) {
+            if (contains(h, "medkit", "medical kit", "bandage", "suture", "antiseptic", "tourniquet", "splint", "first aid", "trauma kit")) score += 10;
+            else if (contains(h, "medicine")) score += 4;
+        }
         if (intent == RenderIntent.DRUG_ITEM_ICON) {
-            if (contains(h, "drug", "narcotic", "stimulant", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
-            else if (contains(h, "dose")) score += 4;
+            if (contains(h, "stimulant", "injector", "opiate", "sedative", "combat stim", "painkiller")) score += 10;
+            else if (contains(h, "drug", "narcotic", "dose")) score += 4;
         }
         if (intent == RenderIntent.FOOD_ITEM_ICON) {
-            if (contains(h, "food", "ration", "meal", "canteen", "flask", "drink", "provisions", "nutrient")) score += 10;
-            else if (contains(h, "water")) score += 4;
+            if (contains(h, "ration", "meal", "canteen", "flask", "drink")) score += 10;
+            else if (contains(h, "food", "water", "provisions", "nutrient")) score += 4;
         }
         if (intent == RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON) {
-            if (contains(h, "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit", "scrap plate", "construction supplies")) score += 10;
-            else if (contains(h, "component", "reagent")) score += 4;
+            if (contains(h, "machine part", "industrial part", "bearing", "fastener", "rivet", "circuit", "scrap plate")) score += 10;
+            else if (contains(h, "component", "construction supplies", "reagent")) score += 4;
         }
         if (intent == RenderIntent.TRADE_GOOD_ITEM_ICON) {
             if (contains(h, "trade good", "commodity", "barter", "luxury good", "cargo lot", "export good", "import good")) score += 10;
