@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.03-trade-good-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.04-data-device-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -406,8 +406,8 @@ final class SemanticRenderAssetResolver {
             else if (contains(h, "prayer")) score += 4;
         }
         if (intent == RenderIntent.DATA_DEVICE_ITEM_ICON) {
-            if (contains(h, "datapad", "data pad", "data device", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
-            else if (contains(h, "terminal", "chip")) score += 4;
+            if (contains(h, "datapad", "data pad", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
+            else if (contains(h, "data device", "terminal", "chip")) score += 4;
         }
         if (intent == RenderIntent.DOOR_CLOSED && contains(h, "closed", "shut")) score += 10;
         if (intent == RenderIntent.DOOR_OPEN && contains(h, "open", "opened", "unsealed")) score += 10;
