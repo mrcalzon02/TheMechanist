@@ -380,7 +380,7 @@ public final class AssetRegistry {
         if ("document".equals(explicitType)) return AssetType.ITEM_ICON;
         if ("doors".equalsIgnoreCase(category)) return AssetType.FIXTURE;
         if ("objects".equalsIgnoreCase(category) && "objects".equalsIgnoreCase(sourceGroup)) return AssetType.OBJECT;
-        if ("defenses".equalsIgnoreCase(category) && "defenses".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
+        if ("defenses".equalsIgnoreCase(category)) return AssetType.FIXTURE;
         if ("system".equalsIgnoreCase(category) && "system".equalsIgnoreCase(sourceGroup)) return AssetType.UI_ICON;
         if ("faction".equalsIgnoreCase(category) && "faction".equalsIgnoreCase(sourceGroup)) return AssetType.UI_ICON;
         String text = (category + " " + sourceGroup + " " + sourceAtlas + " " + contentType + " " + tags).toLowerCase(Locale.ROOT);
