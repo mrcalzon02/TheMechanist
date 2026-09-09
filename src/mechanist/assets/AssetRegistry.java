@@ -377,7 +377,7 @@ public final class AssetRegistry {
         if (containsAny(explicitType, "infrastructure_fixture", "fixture")) return AssetType.FIXTURE;
         if ("weapon".equals(explicitType)) return AssetType.WEAPON_ICON;
         if ("wearable".equals(explicitType) || "armor".equals(explicitType)) return AssetType.ARMOR_ICON;
-        if ("document".equals(explicitType)) return AssetType.ITEM_ICON;
+        if ("document".equals(explicitType) && !("objects".equalsIgnoreCase(category) && "objects".equalsIgnoreCase(sourceGroup))) return AssetType.ITEM_ICON;
         if ("doors".equalsIgnoreCase(category)) return AssetType.FIXTURE;
         if ("objects".equalsIgnoreCase(category) && "objects".equalsIgnoreCase(sourceGroup)) return AssetType.OBJECT;
         if ("defenses".equalsIgnoreCase(category)) return AssetType.FIXTURE;
