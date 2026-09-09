@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.15-object-fixture-compatibility";
+    static final String VERSION = "semantic-render-asset-resolver-1.16-ventilation-object-compatibility";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -456,7 +456,7 @@ final class SemanticRenderAssetResolver {
     private static boolean furnitureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
     private static boolean fixtureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
     private static boolean machineType(AssetMetadata asset) { return asset.type() == AssetType.MACHINE; }
-    private static boolean equipmentType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.MACHINE; }
+    private static boolean equipmentType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.MACHINE || asset.type() == AssetType.OBJECT; }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || itemIcon(asset); }
