@@ -375,6 +375,7 @@ public final class AssetRegistry {
     private static AssetType compiledAssetType(String category, String sourceGroup, String sourceAtlas, String contentType, String tags) {
         String explicitType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         if (containsAny(explicitType, "infrastructure_fixture", "fixture")) return AssetType.FIXTURE;
+        if ("doors".equalsIgnoreCase(category) && "doors".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
         String text = (category + " " + sourceGroup + " " + sourceAtlas + " " + contentType + " " + tags).toLowerCase(Locale.ROOT);
         if (containsAny(text, "streetlight", "street light", "lamp post", "street lamp", "lamppost", "traffic light", "signal light", "crossing signal")) return AssetType.FIXTURE;
         if (containsAny(text, "road", "street", "vehicle_path")) return AssetType.ROAD_TILE;
