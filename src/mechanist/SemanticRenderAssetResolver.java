@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.12-transformer-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.13-streetlight-specificity";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -310,7 +310,10 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "slum", "shanty", "tenement")) score += 10;
             else if (contains(h, "scrap")) score += 4;
         }
-        if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
+        if (intent == RenderIntent.STREETLIGHT_FIXTURE) {
+            if (contains(h, "streetlight", "street light")) score += 10;
+            else if (contains(h, "lamp post", "street lamp", "lamppost")) score += 4;
+        }
         if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
         if (intent == RenderIntent.GENERATOR_MACHINE) {
             if (contains(h, "generator", "power generator")) score += 10;
