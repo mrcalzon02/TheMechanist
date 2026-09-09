@@ -375,6 +375,9 @@ public final class AssetRegistry {
     private static AssetType compiledAssetType(String category, String sourceGroup, String sourceAtlas, String contentType, String tags) {
         String explicitType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         if (containsAny(explicitType, "infrastructure_fixture", "fixture")) return AssetType.FIXTURE;
+        if ("weapon".equals(explicitType)) return AssetType.WEAPON_ICON;
+        if ("wearable".equals(explicitType) || "armor".equals(explicitType)) return AssetType.ARMOR_ICON;
+        if ("document".equals(explicitType)) return AssetType.ITEM_ICON;
         if ("doors".equalsIgnoreCase(category) && "doors".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
         if ("objects".equalsIgnoreCase(category) && "objects".equalsIgnoreCase(sourceGroup)) return AssetType.OBJECT;
         if ("defenses".equalsIgnoreCase(category) && "defenses".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
