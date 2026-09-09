@@ -300,12 +300,13 @@ public final class AssetRegistry {
 
     public static List<Path> extensionRegistryFiles(Path projectRoot) throws IOException {
         Path root = projectRoot == null ? Paths.get("").toAbsolutePath().normalize() : projectRoot.toAbsolutePath().normalize();
-        List<Path> extensionRoots = List.of(
-                root.resolve("PACKAGE_client/assets/artpacks").normalize(),
-                root.resolve("PACKAGE_launcher/profile-packages").normalize()
+        List<String> extensionRoots = List.of(
+                root.resolve("PACKAGE_client/assets/artpacks").normalize().toString(),
+                root.resolve("PACKAGE_launcher/profile-packages").normalize().toString()
         );
         ArrayList<Path> out = new ArrayList<>();
-        for (Path extensionRoot : extensionRoots) {
+        for (String extensionRootString : extensionRoots) {
+            Path extensionRoot = Paths.get(extensionRootString);
             if (!Files.isDirectory(extensionRoot)) continue;
             try (var stream = Files.list(extensionRoot)) {
                 stream.filter(Files::isDirectory)
@@ -376,6 +377,7 @@ public final class AssetRegistry {
         String explicitType = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
         if (containsAny(explicitType, "infrastructure_fixture", "fixture")) return AssetType.FIXTURE;
         String text = (category + " " + sourceGroup + " " + sourceAtlas + " " + contentType + " " + tags).toLowerCase(Locale.ROOT);
+        if (containsAny(text, "streetlight", "street light", "lamp post", "street lamp", "lamppost", "traffic light", "signal light", "crossing signal")) return AssetType.FIXTURE;
         if (containsAny(text, "road", "street", "vehicle_path")) return AssetType.ROAD_TILE;
         if (containsAny(text, "sidewalk", "pavement")) return AssetType.SIDEWALK_TILE;
         if (containsAny(text, "corridor", "walkway")) return AssetType.CORRIDOR_TILE;
