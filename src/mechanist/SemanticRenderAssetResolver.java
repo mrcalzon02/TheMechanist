@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.17-machine-object-compatibility";
+    static final String VERSION = "semantic-render-asset-resolver-1.18-closed-door-unmarked-default";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -172,7 +172,7 @@ final class SemanticRenderAssetResolver {
             case WATER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "water pipe", "fresh water pipe", "water main") && !themed(haystack, "sewer", "waste", "sludge") && notUiIcon(haystack);
             case SEWER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe") && notUiIcon(haystack);
             case SECURITY_CAMERA_FIXTURE -> fixtureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
-            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "closed", "shut") && !themed(haystack, "open", "unsealed") && !generic(haystack);
+            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && !themed(haystack, "open", "opened", "unsealed") && !generic(haystack);
             case DOOR_OPEN -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "open", "opened", "unsealed") && !themed(haystack, "closed", "shut") && !generic(haystack);
             case WORKSHOP_TABLE -> furnitureType(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
             case DINING_TABLE -> furnitureType(asset) && themed(haystack, "dining table", "mess table", "kitchen table");
@@ -439,7 +439,7 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "datapad", "data pad", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
             else if (contains(h, "data device", "terminal", "chip")) score += 4;
         }
-        if (intent == RenderIntent.DOOR_CLOSED && contains(h, "closed", "shut")) {
+        if (intent == RenderIntent.DOOR_CLOSED && !contains(h, "open", "opened", "unsealed")) {
             if (contains(h, "door")) score += 10;
             else if (contains(h, "hatch", "bulkhead")) score += 4;
         }
