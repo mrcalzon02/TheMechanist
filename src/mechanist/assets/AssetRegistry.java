@@ -381,6 +381,7 @@ public final class AssetRegistry {
         if (containsAny(text, "sidewalk", "pavement")) return AssetType.SIDEWALK_TILE;
         if (containsAny(text, "corridor", "walkway")) return AssetType.CORRIDOR_TILE;
         if (containsAny(text, "floor", "floors", "ground", "void")) return AssetType.FLOOR_TILE;
+        if (containsAny(text, "door", "doors", "hatch")) return AssetType.FIXTURE;
         if (containsAny(text, "wall", "walls", "bulkhead")) return AssetType.WALL_TILE;
         if (containsAny(text, "portrait", "protrait", "profile", "human", "cultist", "ganger", "noble", "servitor", "clerk", "cleric")) return AssetType.PORTRAIT;
         if (containsAny(text, "corpse", "decay", "dead")) return AssetType.CORPSE_DECAY;
@@ -389,7 +390,7 @@ public final class AssetRegistry {
         if ("items".equalsIgnoreCase(category) || containsAny(tags == null ? "" : tags.toLowerCase(Locale.ROOT), "pickup")) return AssetType.ITEM_ICON;
         if (containsAny(text, "system", "ui", "interface", "rondel", "knowledge", "skill", "icon")) return AssetType.UI_ICON;
         if (containsAny(text, "machine", "machinery", "vehicle", "automotive", "vending", "emergency_machines")) return AssetType.MACHINE;
-        if (containsAny(text, "door", "defense", "fixture", "counter", "table", "station")) return AssetType.FIXTURE;
+        if (containsAny(text, "defense", "fixture", "counter", "table", "station")) return AssetType.FIXTURE;
         if (containsAny(text, "item", "items", "implant", "drug", "narcotic", "reagent", "goods", "loot", "relic", "journal", "paper")) return AssetType.ITEM_ICON;
         if (containsAny(text, "object", "objects", "decor", "furniture", "prop")) return AssetType.OBJECT;
         return AssetType.OBJECT;
