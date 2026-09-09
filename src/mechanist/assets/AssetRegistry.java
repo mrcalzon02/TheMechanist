@@ -382,6 +382,7 @@ public final class AssetRegistry {
         if ("objects".equalsIgnoreCase(category) && "objects".equalsIgnoreCase(sourceGroup)) return AssetType.OBJECT;
         if ("defenses".equalsIgnoreCase(category) && "defenses".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
         if ("system".equalsIgnoreCase(category) && "system".equalsIgnoreCase(sourceGroup)) return AssetType.UI_ICON;
+        if ("faction".equalsIgnoreCase(category) && "faction".equalsIgnoreCase(sourceGroup)) return AssetType.UI_ICON;
         String text = (category + " " + sourceGroup + " " + sourceAtlas + " " + contentType + " " + tags).toLowerCase(Locale.ROOT);
         if (containsAny(text, "streetlight", "street light", "lamp post", "street lamp", "lamppost", "traffic light", "signal light", "crossing signal")) return AssetType.FIXTURE;
         if (containsAny(text, "road", "street", "vehicle_path")) return AssetType.ROAD_TILE;
