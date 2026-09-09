@@ -300,13 +300,12 @@ public final class AssetRegistry {
 
     public static List<Path> extensionRegistryFiles(Path projectRoot) throws IOException {
         Path root = projectRoot == null ? Paths.get("").toAbsolutePath().normalize() : projectRoot.toAbsolutePath().normalize();
-        List<String> extensionRoots = List.of(
-                root.resolve("PACKAGE_client/assets/artpacks").normalize().toString(),
-                root.resolve("PACKAGE_launcher/profile-packages").normalize().toString()
+        List<Path> extensionRoots = List.of(
+                root.resolve("PACKAGE_client/assets/artpacks").normalize(),
+                root.resolve("PACKAGE_launcher/profile-packages").normalize()
         );
         ArrayList<Path> out = new ArrayList<>();
-        for (String extensionRootString : extensionRoots) {
-            Path extensionRoot = Paths.get(extensionRootString);
+        for (Path extensionRoot : extensionRoots) {
             if (!Files.isDirectory(extensionRoot)) continue;
             try (var stream = Files.list(extensionRoot)) {
                 stream.filter(Files::isDirectory)
