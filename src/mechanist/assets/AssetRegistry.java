@@ -378,7 +378,7 @@ public final class AssetRegistry {
         if ("weapon".equals(explicitType)) return AssetType.WEAPON_ICON;
         if ("wearable".equals(explicitType) || "armor".equals(explicitType)) return AssetType.ARMOR_ICON;
         if ("document".equals(explicitType)) return AssetType.ITEM_ICON;
-        if ("doors".equalsIgnoreCase(category) && "doors".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
+        if ("doors".equalsIgnoreCase(category)) return AssetType.FIXTURE;
         if ("objects".equalsIgnoreCase(category) && "objects".equalsIgnoreCase(sourceGroup)) return AssetType.OBJECT;
         if ("defenses".equalsIgnoreCase(category) && "defenses".equalsIgnoreCase(sourceGroup)) return AssetType.FIXTURE;
         if ("system".equalsIgnoreCase(category) && "system".equalsIgnoreCase(sourceGroup)) return AssetType.UI_ICON;
