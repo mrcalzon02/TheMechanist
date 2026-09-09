@@ -381,8 +381,8 @@ public final class AssetRegistry {
         if (containsAny(text, "sidewalk", "pavement")) return AssetType.SIDEWALK_TILE;
         if (containsAny(text, "corridor", "walkway")) return AssetType.CORRIDOR_TILE;
         if (containsAny(text, "floor", "floors", "ground", "void")) return AssetType.FLOOR_TILE;
-        if (containsAny(text, "door", "doors", "hatch")) return AssetType.FIXTURE;
         if (containsAny(text, "wall", "walls", "bulkhead")) return AssetType.WALL_TILE;
+        if (containsAny(text, "door", "doors", "hatch")) return AssetType.FIXTURE;
         if (containsAny(text, "portrait", "protrait", "profile", "human", "cultist", "ganger", "noble", "servitor", "clerk", "cleric")) return AssetType.PORTRAIT;
         if (containsAny(text, "corpse", "decay", "dead")) return AssetType.CORPSE_DECAY;
         if (containsAny(text, "weapon", "weapons", "ammo", "firearm", "blade")) return AssetType.WEAPON_ICON;
