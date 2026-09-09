@@ -20,7 +20,7 @@ import java.util.Optional;
  * and refuses known-bad cross-theme fallbacks.
  */
 final class SemanticRenderAssetResolver {
-    static final String VERSION = "semantic-render-asset-resolver-1.08-sewer-surface-specificity";
+    static final String VERSION = "semantic-render-asset-resolver-1.18-closed-door-unmarked-default";
 
     enum RenderIntent {
         SEWER_FLOOR,
@@ -147,8 +147,8 @@ final class SemanticRenderAssetResolver {
         return switch (intent) {
             case SEWER_FLOOR -> isFloor(asset) && themed(haystack, "sewer", "sump", "drain", "utility tunnel") && !generic(haystack);
             case SEWER_WALL -> isWall(asset) && themed(haystack, "sewer", "sump", "drain", "utility tunnel") && !generic(haystack);
-            case GENERIC_FLOOR -> isFloor(asset) && generic(haystack) && !themed(haystack, "sewer", "sump");
-            case GENERIC_WALL -> isWall(asset) && generic(haystack) && !themed(haystack, "sewer", "sump");
+            case GENERIC_FLOOR -> isFloor(asset) && generic(haystack) && !specializedSurface(haystack);
+            case GENERIC_WALL -> isWall(asset) && generic(haystack) && !specializedSurface(haystack);
             case INDUSTRIAL_FLOOR -> isFloor(asset) && themed(haystack, "industrial", "factory", "machine shop", "workshop") && !themed(haystack, "sewer");
             case INDUSTRIAL_WALL -> isWall(asset) && themed(haystack, "industrial", "factory", "machine shop", "workshop") && !themed(haystack, "sewer");
             case HABITATION_FLOOR -> isFloor(asset) && themed(haystack, "habitation", "hab", "apartment", "residential") && !themed(haystack, "sewer");
@@ -172,7 +172,7 @@ final class SemanticRenderAssetResolver {
             case WATER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "water pipe", "fresh water pipe", "water main") && !themed(haystack, "sewer", "waste", "sludge") && notUiIcon(haystack);
             case SEWER_PIPE_FIXTURE -> fixtureType(asset) && themed(haystack, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe") && notUiIcon(haystack);
             case SECURITY_CAMERA_FIXTURE -> fixtureType(asset) && themed(haystack, "security camera", "surveillance camera", "cctv") && notUiIcon(haystack);
-            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "closed", "shut") && !themed(haystack, "open", "unsealed") && !generic(haystack);
+            case DOOR_CLOSED -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && !themed(haystack, "open", "opened", "unsealed") && !generic(haystack);
             case DOOR_OPEN -> doorType(asset) && themed(haystack, "door", "hatch", "bulkhead") && themed(haystack, "open", "opened", "unsealed") && !themed(haystack, "closed", "shut") && !generic(haystack);
             case WORKSHOP_TABLE -> furnitureType(asset) && themed(haystack, "workshop table", "workbench", "fabrication table");
             case DINING_TABLE -> furnitureType(asset) && themed(haystack, "dining table", "mess table", "kitchen table");
@@ -310,10 +310,22 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "slum", "shanty", "tenement")) score += 10;
             else if (contains(h, "scrap")) score += 4;
         }
-        if (intent == RenderIntent.STREETLIGHT_FIXTURE && contains(h, "streetlight", "street light", "lamp post", "street lamp", "lamppost")) score += 10;
-        if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE && contains(h, "traffic light", "signal light", "crossing signal")) score += 10;
-        if (intent == RenderIntent.GENERATOR_MACHINE && contains(h, "generator", "power generator", "genset")) score += 10;
-        if (intent == RenderIntent.TRANSFORMER_MACHINE && contains(h, "transformer", "power transformer", "electrical transformer")) score += 10;
+        if (intent == RenderIntent.STREETLIGHT_FIXTURE) {
+            if (contains(h, "streetlight", "street light")) score += 10;
+            else if (contains(h, "lamp post", "street lamp", "lamppost")) score += 4;
+        }
+        if (intent == RenderIntent.TRAFFIC_LIGHT_FIXTURE) {
+            if (contains(h, "traffic light")) score += 10;
+            else if (contains(h, "signal light", "crossing signal")) score += 4;
+        }
+        if (intent == RenderIntent.GENERATOR_MACHINE) {
+            if (contains(h, "generator", "power generator")) score += 10;
+            else if (contains(h, "genset")) score += 4;
+        }
+        if (intent == RenderIntent.TRANSFORMER_MACHINE) {
+            if (contains(h, "power transformer", "electrical transformer")) score += 10;
+            else if (contains(h, "transformer")) score += 4;
+        }
         if (intent == RenderIntent.JUNCTION_BOX_FIXTURE) {
             if (contains(h, "junction box")) score += 10;
             else if (contains(h, "electrical box", "power box")) score += 4;
@@ -427,8 +439,14 @@ final class SemanticRenderAssetResolver {
             if (contains(h, "datapad", "data pad", "data slate", "dataslate", "cogitator", "knowledge device", "knowledge devices", "skill device", "memory core")) score += 10;
             else if (contains(h, "data device", "terminal", "chip")) score += 4;
         }
-        if (intent == RenderIntent.DOOR_CLOSED && contains(h, "closed", "shut")) score += 10;
-        if (intent == RenderIntent.DOOR_OPEN && contains(h, "open", "opened", "unsealed")) score += 10;
+        if (intent == RenderIntent.DOOR_CLOSED && !contains(h, "open", "opened", "unsealed")) {
+            if (contains(h, "door")) score += 10;
+            else if (contains(h, "hatch", "bulkhead")) score += 4;
+        }
+        if (intent == RenderIntent.DOOR_OPEN && contains(h, "open", "opened", "unsealed")) {
+            if (contains(h, "door")) score += 10;
+            else if (contains(h, "hatch", "bulkhead")) score += 4;
+        }
         return score;
     }
 
@@ -436,9 +454,9 @@ final class SemanticRenderAssetResolver {
     private static boolean isWall(AssetMetadata asset) { return asset.type() == AssetType.WALL_TILE; }
     private static boolean fixtureOrObject(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT || asset.type() == AssetType.MACHINE; }
     private static boolean furnitureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
-    private static boolean fixtureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE; }
-    private static boolean machineType(AssetMetadata asset) { return asset.type() == AssetType.MACHINE; }
-    private static boolean equipmentType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.MACHINE; }
+    private static boolean fixtureType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.OBJECT; }
+    private static boolean machineType(AssetMetadata asset) { return asset.type() == AssetType.MACHINE || asset.type() == AssetType.OBJECT; }
+    private static boolean equipmentType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.MACHINE || asset.type() == AssetType.OBJECT; }
     private static boolean containerType(AssetMetadata asset) { return asset.type() == AssetType.OBJECT || asset.type() == AssetType.FIXTURE; }
     private static boolean itemIcon(AssetMetadata asset) { return asset.type() == AssetType.ITEM_ICON; }
     private static boolean weaponIcon(AssetMetadata asset) { return asset.type() == AssetType.WEAPON_ICON || itemIcon(asset); }
@@ -448,6 +466,21 @@ final class SemanticRenderAssetResolver {
     private static boolean dataDeviceIcon(AssetMetadata asset) { return itemIcon(asset); }
     private static boolean doorType(AssetMetadata asset) { return asset.type() == AssetType.FIXTURE || asset.type() == AssetType.WALL_TILE; }
     private static boolean generic(String text) { return themed(text, "generic", "plain", "main floor", "main wall", "default"); }
+    private static boolean specializedSurface(String text) {
+        return themed(text,
+                "sewer", "sump", "drain", "utility tunnel",
+                "industrial", "factory", "machine shop", "workshop",
+                "habitation", "hab", "apartment", "residential",
+                "market", "bazaar", "commercial", "retail",
+                "medical", "clinic", "hospital", "surgery",
+                "security", "checkpoint", "prison", "brig",
+                "administrative", "office", "records", "bureau",
+                "religious", "shrine", "chapel", "altar",
+                "transit", "station", "platform", "rail",
+                "warehouse", "storage", "cargo", "loading",
+                "noble", "luxury", "estate", "manor",
+                "slum", "shanty", "tenement", "scrap");
+    }
     private static boolean themed(String text, String... needles) { return semanticContains(text, needles); }
     private static boolean notUiIcon(String text) { return !themed(text, "system inventory", "item icon", "ui icon", "system control", "interface control"); }
 
