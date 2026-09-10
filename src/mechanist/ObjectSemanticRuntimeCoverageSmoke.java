@@ -109,13 +109,37 @@ public final class ObjectSemanticRuntimeCoverageSmoke {
             throw new AssertionError("editor object structural-tile exclusion missing from semantic audit summary");
         }
 
+        var streetlight = ObjectSemanticAssetAuthority.runtimeAssetIdForLightSemantic("streetlight");
+        if (streetlight.isEmpty()) {
+            throw new AssertionError("recognized streetlight semantic intent escaped light-family validation");
+        }
+        if (!ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(streetlight.get())) {
+            var lightMetadata = AssetManager.metadata(streetlight.get())
+                    .orElseThrow(() -> new AssertionError("light semantic resolution escaped registry: " + streetlight.get()));
+            if (lightMetadata.type() != AssetType.FIXTURE
+                    && lightMetadata.type() != AssetType.OBJECT
+                    && lightMetadata.type() != AssetType.MACHINE) {
+                throw new AssertionError("light semantic intent admitted non-light family: "
+                        + streetlight.get() + " / " + lightMetadata.type());
+            }
+        }
+
+        var structuralLightIntent = ObjectSemanticAssetAuthority.runtimeAssetIdForLightSemantic("sealed bulkhead door");
+        if (structuralLightIntent.isEmpty()
+                || !ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(structuralLightIntent.get())) {
+            throw new AssertionError("light semantic boundary admitted structural door art: " + structuralLightIntent);
+        }
+        if (!ObjectSemanticAssetAuthority.auditSummary().contains("lightStructuralTiles=false")) {
+            throw new AssertionError("light structural-tile exclusion missing from semantic audit summary");
+        }
+
         System.out.println("ObjectSemanticRuntimeCoverageSmoke PASS registry=" + AssetManager.registry().size()
                 + " representativeResolved=" + resolved + " mapObjectTypes=" + mapObjectTypes.size()
                 + " semanticIntentCases=" + semanticIntentCases
                 + " structuralIntentCandidates=" + structuralIntentCandidates
                 + " allowedIntentResolutions=" + allowedIntentResolutions
-                + " structuralTilesExcluded=true editorObjectStructuralTilesExcluded=true authority="
-                + ObjectSemanticAssetAuthority.VERSION);
+                + " structuralTilesExcluded=true editorObjectStructuralTilesExcluded=true"
+                + " lightStructuralTilesExcluded=true authority=" + ObjectSemanticAssetAuthority.VERSION);
     }
     private ObjectSemanticRuntimeCoverageSmoke() {}
 }
