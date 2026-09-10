@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10ki-map-object-intent-runtime-coverage";
+    static final String VERSION = "0.9.10kj-editor-object-family-boundary";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -36,6 +36,7 @@ final class ObjectSemanticAssetAuthority {
     private static final Set<AssetType> MAP_OBJECT_ASSET_TYPES = Set.of(
             AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
             AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON);
+    private static final Set<AssetType> EDITOR_OBJECT_ASSET_TYPES = MAP_OBJECT_ASSET_TYPES;
 
     static {
         // Core construction recipes and base objects.
@@ -201,19 +202,26 @@ final class ObjectSemanticAssetAuthority {
         if (cat.contains("wall")) return TileSemanticAssetAuthority.assetIdForAlias("wall_bulkhead");
         String semantic = cat + " " + normalize(item);
 
-        Optional<String> exact = runtimeExactForNames(item);
+        Optional<String> exact = runtimeExactForNames(EDITOR_OBJECT_ASSET_TYPES, item);
         if (exact.isPresent()) return exact;
 
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
                 SemanticRenderIntentAuthority.objectIntent(semantic);
         if (intent.isPresent()) {
-            return Optional.of(SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get())
-                    .orElse(MISSING_RECOGNIZED_OBJECT_ID));
+            Optional<String> resolved = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+            if (resolved.isEmpty()) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+            Optional<AssetMetadata> metadata = AssetManager.metadata(resolved.get());
+            if (metadata.isEmpty() || !EDITOR_OBJECT_ASSET_TYPES.contains(metadata.get().type())) {
+                return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+            }
+            return resolved;
         }
 
-        return SemanticAssetHintResolver.resolve(assetHintForEditorPalette(category, item), semantic,
-                Set.of(AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
-                        AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON));
+        String authoredHint = assetHintForEditorPalette(category, item);
+        Optional<String> resolved = SemanticAssetHintResolver.resolve(authoredHint, semantic, EDITOR_OBJECT_ASSET_TYPES);
+        if (resolved.isPresent()) return resolved;
+        if (!"ITEM-G01".equals(authoredHint)) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+        return Optional.empty();
     }
 
     private static String assetHintForEditorPalette(String category, String item) {
@@ -329,7 +337,8 @@ final class ObjectSemanticAssetAuthority {
         return "objectSemanticAssetAuthority version=" + VERSION + " exactMappings=" + EXACT.size()
                 + " domains=construction+base-objects+map-fixtures+traps+lights+editor-palettes"
                 + " activeRegistryValidated=true authoredFirst=true strictFamilyFallback=true"
-                + " recognizedFamiliesFailClosed=true typedMissing=true mapObjectStructuralTiles=false";
+                + " recognizedFamiliesFailClosed=true typedMissing=true mapObjectStructuralTiles=false"
+                + " editorObjectStructuralTiles=false";
     }
 
     static Map<String, String> auditExactMappings() {
