@@ -158,6 +158,32 @@
       "tags": ["creche", "child", "civilian", "nursery", "furniture"]
     },
     {
+      "group": "BULKHEAD",
+      "match": "Bulkhead_walls+doors",
+      "cells": {
+        "r01c02": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
+        "r01c05": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
+        "r02c04": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
+        "r03c02": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
+        "r04c03": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
+        "r04c04": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
+        "r05c03": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]}
+      }
+    },
+    {
+      "group": "BULKHEAD",
+      "match": "Bulkhead_walls+doors-open",
+      "cells": {
+        "r01c02": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]},
+        "r01c05": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]},
+        "r02c04": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]},
+        "r03c02": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]},
+        "r04c03": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]},
+        "r04c04": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]},
+        "r05c03": {"description": "Open bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "open"]}
+      }
+    },
+    {
       "group": "Roads",
       "match": "Road_infrastructure",
       "cells": {
