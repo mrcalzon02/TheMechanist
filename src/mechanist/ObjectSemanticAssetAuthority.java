@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10kg-map-object-family-separation";
+    static final String VERSION = "0.9.10kh-map-object-intent-family-validation";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -166,8 +166,13 @@ final class ObjectSemanticAssetAuthority {
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
                 SemanticRenderIntentAuthority.objectIntent(semantic);
         if (intent.isPresent()) {
-            return Optional.of(SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get())
-                    .orElse(MISSING_RECOGNIZED_OBJECT_ID));
+            Optional<String> resolved = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+            if (resolved.isEmpty()) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+            Optional<AssetMetadata> metadata = AssetManager.metadata(resolved.get());
+            if (metadata.isEmpty() || !MAP_OBJECT_ASSET_TYPES.contains(metadata.get().type())) {
+                return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+            }
+            return resolved;
         }
 
         String authoredHint = assetIdForMapObject(object);
