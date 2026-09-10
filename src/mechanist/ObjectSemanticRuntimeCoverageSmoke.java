@@ -90,12 +90,32 @@ public final class ObjectSemanticRuntimeCoverageSmoke {
         var floor = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("floor", "bare underhive floor");
         var wall = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("wall", "bulkhead wall");
         if (floor.isEmpty() || wall.isEmpty()) throw new AssertionError("editor floor/wall semantic resolution missing");
+
+        var editorObject = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("objects", "pillar");
+        if (editorObject.isEmpty()) {
+            throw new AssertionError("non-structural editor category escaped semantic family validation");
+        }
+        if (!ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(editorObject.get())) {
+            var editorMetadata = AssetManager.metadata(editorObject.get())
+                    .orElseThrow(() -> new AssertionError("editor object resolution escaped registry: " + editorObject.get()));
+            if (editorMetadata.type() == AssetType.WALL_TILE
+                    || editorMetadata.type() == AssetType.FLOOR_TILE
+                    || editorMetadata.type() == AssetType.CORRIDOR_TILE) {
+                throw new AssertionError("non-structural editor category admitted structural tile: "
+                        + editorObject.get() + " / " + editorMetadata.type());
+            }
+        }
+        if (!ObjectSemanticAssetAuthority.auditSummary().contains("editorObjectStructuralTiles=false")) {
+            throw new AssertionError("editor object structural-tile exclusion missing from semantic audit summary");
+        }
+
         System.out.println("ObjectSemanticRuntimeCoverageSmoke PASS registry=" + AssetManager.registry().size()
                 + " representativeResolved=" + resolved + " mapObjectTypes=" + mapObjectTypes.size()
                 + " semanticIntentCases=" + semanticIntentCases
                 + " structuralIntentCandidates=" + structuralIntentCandidates
                 + " allowedIntentResolutions=" + allowedIntentResolutions
-                + " structuralTilesExcluded=true authority=" + ObjectSemanticAssetAuthority.VERSION);
+                + " structuralTilesExcluded=true editorObjectStructuralTilesExcluded=true authority="
+                + ObjectSemanticAssetAuthority.VERSION);
     }
     private ObjectSemanticRuntimeCoverageSmoke() {}
 }
