@@ -23,6 +23,11 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireObject("market counters", SemanticRenderAssetResolver.RenderIntent.MARKET_COUNTER);
         requireNoItem("taxes ledgers");
 
+        requireNoObject("bulkhead light fixture");
+        requireNoObject("hatch light switch");
+        requireNoObject("door motion sensor");
+        requireObject("sealed bulkhead door", SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED);
+
         System.out.println("SemanticIntentTokenBoundarySmoke PASS " + SemanticRenderIntentAuthority.VERSION);
     }
 
@@ -45,6 +50,12 @@ public final class SemanticIntentTokenBoundarySmoke {
                 .orElseThrow(() -> new AssertionError("missing object intent for: " + text));
         if (actual != expected) {
             throw new AssertionError("object intent for '" + text + "' was " + actual + ", expected " + expected);
+        }
+    }
+
+    private static void requireNoObject(String text) {
+        if (SemanticRenderIntentAuthority.objectIntent(text).isPresent()) {
+            throw new AssertionError("unexpected object intent for: " + text);
         }
     }
 }
