@@ -160,6 +160,7 @@
     {
       "group": "BULKHEAD",
       "match": "Bulkhead_walls+doors",
+      "exclude_matches": ["Bulkhead_walls+doors-open"],
       "cells": {
         "r01c02": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},
         "r01c05": {"description": "Closed bulkhead door state.", "content_type": "fixture", "tags": ["door", "bulkhead_door", "closed"]},

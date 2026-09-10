@@ -361,10 +361,15 @@ def descriptor_for(config: dict[str, Any], group: str, atlas_name: str, row: int
 
     for rule in config.get("atlas_rules", []):
         match = rule.get("match", "")
+        exclude_matches = rule.get("exclude_matches", [])
+        if isinstance(exclude_matches, str):
+            exclude_matches = [exclude_matches]
         rule_group = rule.get("group")
         if rule_group and normalize_category(str(rule_group)) != group_key:
             continue
         if match and slug(match) not in atlas_key:
+            continue
+        if any(slug(str(excluded)) in atlas_key for excluded in exclude_matches):
             continue
 
         result["descriptor_tags"].extend(rule.get("tags", []))

@@ -194,8 +194,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -207,12 +207,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -341,8 +342,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -354,12 +355,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -537,8 +539,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -550,12 +552,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "low_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -684,8 +687,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -697,12 +700,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -978,8 +982,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -991,12 +995,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -1027,8 +1032,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -1040,12 +1045,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -1223,8 +1229,8 @@
         "doors",
         "open"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Open bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -1236,12 +1242,13 @@
         "entry",
         "open",
         "structure",
+        "bulkhead_door",
         "color_black",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -1416,8 +1423,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -1428,12 +1435,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -1557,8 +1566,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -1569,12 +1578,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -1745,8 +1756,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -1757,12 +1768,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -1886,8 +1899,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -1898,12 +1911,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -2168,8 +2183,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -2180,12 +2195,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -2215,8 +2232,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -2227,12 +2244,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -2403,8 +2422,8 @@
         "walls",
         "doors"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Closed bulkhead door state.",
+      "content_type": "fixture",
       "content_tags": [
         "bulkhead",
         "wall",
@@ -2415,12 +2434,14 @@
         "door",
         "entry",
         "structure",
+        "bulkhead_door",
+        "closed",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -105053,8 +105074,8 @@
         "road",
         "infrastructure"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Four-arm streetlight fixture on a sidewalk mounting base.",
+      "content_type": "infrastructure_fixture",
       "content_tags": [
         "roads",
         "road",
@@ -105062,12 +105083,18 @@
         "infrastructure",
         "vehicle_path",
         "surface",
+        "streetlight",
+        "street_light",
+        "street_lamp",
+        "lamp_post",
+        "fixture",
+        "sidewalk",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
@@ -105097,8 +105124,8 @@
         "road",
         "infrastructure"
       ],
-      "description": "",
-      "content_type": "",
+      "description": "Double-arm streetlight fixture on a sidewalk mounting base.",
+      "content_type": "infrastructure_fixture",
       "content_tags": [
         "roads",
         "road",
@@ -105106,12 +105133,18 @@
         "infrastructure",
         "vehicle_path",
         "surface",
+        "streetlight",
+        "street_light",
+        "street_lamp",
+        "lamp_post",
+        "fixture",
+        "sidewalk",
         "color_dark_gray",
         "filled",
         "dark",
         "medium_detail"
       ],
-      "descriptor_source": "derived",
+      "descriptor_source": "cell_rule",
       "visual_traits": {
         "width": 256,
         "height": 256,
