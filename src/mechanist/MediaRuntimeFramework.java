@@ -197,7 +197,7 @@ class ImageCache {
         String sliceBase = base + "cogitator_frame_0536/slices_384/";
         String[] keys = {
             "corner_top_left", "corner_top_right", "corner_bottom_left", "corner_bottom_right",
-            "top_rail_left_mid", "bottom_rail_left_mid", "left_column_mid", "right_column_mid",
+            "top_rail_left_mid", "bottom_rail_left_mid", "left_column_mid", "right_column_mid", 
             "inner_bezel_t", "inner_bezel_b", "inner_bezel_l", "inner_bezel_r", "inner_display_center"
         };
         for (String k : keys) load(k, sliceBase + k + ".png");
@@ -206,7 +206,6 @@ class ImageCache {
             BufferedImage img = read(String.format(Locale.US, "%s%02d.png", medallionBase, i));
             if (img != null) bootFrames.add(img);
         }
-        // Fallback only: the red gear is no longer the intended spinner.
         BufferedImage emblem = read(base + "rough-assets/source_sheets_cleaned/medallion_spin_sheet.png");
         if (emblem != null && bootFrames.isEmpty()) cache.put("mechanical_skull_gear_emblem", emblem);
         if (importedPortraitsEnabled(options)) loadImportedPortraitSheets();
@@ -230,7 +229,6 @@ class ImageCache {
         if (!loadDefaultProfilePortraitCells()) {
             loadExplicitPlayerHumanPortraitPool(ArtPackManager.resolveQualityCellsRoot(artRootPath, portraitQuality) + "/Protraits");
         }
-        // Button authority: use the imported Tech Priests GUI controls folder.
         load("button_normal", base + "controls/normal/03_rect_button_off.png");
         load("button_hover", base + "controls/normal/04_rect_button_on.png");
         load("button_disabled", base + "controls/disabled/03_rect_button_off.png");
@@ -285,7 +283,6 @@ class ImageCache {
                 if (name.contains("baseline-human") || name.contains("baseline_human") || name.contains("base-human") || name.contains("base_human")) {
                     playerHumanPortraitCells.add(img);
                 } else {
-                    // NPC-only until source sheet slicing is verified.
                     npcPortraitCells.add(img);
                 }
             } catch (Exception ex) {
@@ -433,11 +430,6 @@ class ImageCache {
     }
 
     void loadExplicitPlayerHumanPortraitPool(String protraitsRootPath) {
-        // PLAYER PROFILE/CHARACTER PORTRAIT AUTHORITY:
-        // Do not promote every entity/faction portrait folder into the player pool.
-        // The player-human/profile pool is loaded only from explicit human/profile buckets.
-        // The administratum bucket is the packaged ordinary-human fallback only when no
-        // baseline_human/player_human/profile_human folder exists in the art pack.
         if (protraitsRootPath == null) return;
         File root = new File(protraitsRootPath);
         if (!root.isDirectory()) return;
@@ -448,10 +440,7 @@ class ImageCache {
         };
         boolean loaded = false;
         for (String key : preferred) loaded |= addPortraitDirectoryToPlayerPool(new File(root, key));
-        if (!loaded) {
-            // Ordinary human fallback. This is still a single named folder, not the whole entity bin.
-            loaded = addPortraitDirectoryToPlayerPool(new File(root, "administratum"));
-        }
+        if (!loaded) loaded = addPortraitDirectoryToPlayerPool(new File(root, "administratum"));
         DebugLog.audit("PLAYER_HUMAN_PORTRAIT_POOL", "explicitFolderLoaded=" + loaded + " count=" + playerHumanPortraitCells.size());
     }
 
@@ -475,10 +464,6 @@ class ImageCache {
     boolean isPlayerHumanPortraitDirectory(String key) {
         if (key == null) return false;
         String k = key.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "_");
-        // Player creation is restricted to an explicit baseline/base-human bucket only.
-        // Faction folders such as administratum, gangers, nobles, PDF, Arbites,
-        // Mechanicus, pets, beasts, mutants, and cultists are NPC/faction authority
-        // pools and must never be silently promoted into the player pool.
         return k.equals("baseline_human") || k.equals("base_human") || k.equals("player_baseline_human") || k.equals("normal_human") || k.equals("humans_base");
     }
 
@@ -527,8 +512,15 @@ class ImageCache {
         DebugLog.audit("ART_QUALITY", "Reloaded art cache root=" + artRootPath + " quality=" + (options == null ? "low_32" : options.artQualityFolder()) + " tileGlyphs=" + tileArt.getRegistry().loadedCount() + " semantic=" + tileArt.getRegistry().semanticCount() + " npcPortraitCells=" + npcPortraitCells.size() + " nameLockedProfilePortraits=" + nameLockedProfilePortraits.size());
     }
     BufferedImage getPortrait(int sheetIndex, int portraitIndex) {
-        // PLAYER CHARACTER/PROFILE DEFAULTS ARE LOCKED TO THE PLAYER-HUMAN POOL ONLY.
-        // Never fall through into NPC faction buckets or name_locked celebrity portraits.
+        // The persistent portrait index resolves through the active semantic registry first.
+        // The existing player-human cells, baseline sheet, and generated portrait remain
+        // compatibility fallbacks. NPC and name-locked partitions are never consulted here.
+        Optional<String> semanticId = PortraitSemanticIdentityResolver.playerAssetId(
+                Path.of("."), AssetManager.registry(), portraitIndex);
+        if (semanticId.isPresent()) {
+            BufferedImage semantic = getSemanticAssetImage(semanticId.get());
+            if (semantic != null) return semantic;
+        }
         if (!playerHumanPortraitCells.isEmpty()) return playerHumanPortraitCells.get(Math.floorMod(portraitIndex, playerHumanPortraitCells.size()));
         BufferedImage legacy = getLegacyPlayerHumanPortrait(portraitIndex);
         if (legacy != null) return legacy;
@@ -593,9 +585,7 @@ class ImageCache {
 
     BufferedImage getLegacyPlayerHumanPortrait(int portraitIndex) {
         if (portraitSheets.isEmpty()) return null;
-        BufferedImage sheet = null;
-        if (portraitSheets.size() > 1) sheet = portraitSheets.get(1);
-        else sheet = portraitSheets.get(0);
+        BufferedImage sheet = portraitSheets.size() > 1 ? portraitSheets.get(1) : portraitSheets.get(0);
         if (sheet == null) return null;
         int cellW = 128, cellH = 128;
         int cols = Math.max(1, sheet.getWidth()/cellW);
@@ -642,9 +632,7 @@ class ImageCache {
         if (f == Faction.HERETIC) return firstPortraitRangeContaining("heretics", "cultists");
         if (fn.startsWith("ganger") || f == Faction.BANDIT) return firstPortraitRangeContaining("gangers");
         if (fn.startsWith("noble") || f == Faction.NOBLE) return firstPortraitRangeContaining("nobles");
-        if (fn.startsWith("hiver") || f == Faction.HIVER || f == Faction.SCAVENGER || f == Faction.NONE) {
-            return selectedPortraitRange(npc, "administratum", "gangers", "servants_butlers_and_chefs");
-        }
+        if (fn.startsWith("hiver") || f == Faction.HIVER || f == Faction.SCAVENGER || f == Faction.NONE) return selectedPortraitRange(npc, "administratum", "gangers", "servants_butlers_and_chefs");
         return selectedPortraitRange(npc, "administratum", "nobles", "gangers");
     }
 
@@ -668,10 +656,6 @@ class ImageCache {
             String k = key.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "_");
             int[] exact = npcPortraitRanges.get(k);
             if (exact != null) return exact;
-            // Hard folder authority: do not use substring matching here.
-            // A request for pets must not accidentally match every folder with
-            // the letters p/e/t, and a missing faction bucket must fail closed
-            // rather than searching the whole portrait bin.
         }
         return null;
     }
@@ -684,25 +668,18 @@ class ImageCache {
     }
 
     BufferedImage getNpcPortrait(int portraitIndex) {
-        // Generic NPC fallback is deliberately conservative and celebrity-safe.
-        // Name-locked portraits must never leak onto ordinary entities. Only an
-        // NPC carrying nameLockedProfileKey, created by the noble-zone seeding rule,
-        // may draw from the name_locked partition.
         int[] neutral = firstPortraitRangeContaining("administratum");
         if (neutral != null && neutral[1] > neutral[0] && !npcPortraitCells.isEmpty()) return npcPortraitCells.get(neutral[0] + Math.floorMod(portraitIndex, neutral[1]-neutral[0]));
         return generatedPlayerHumanFallbackPortrait(portraitIndex);
     }
-        ArrayList<String> loadIntroCrawlLines() {
+
+    ArrayList<String> loadIntroCrawlLines() {
         ArrayList<String> lines = new ArrayList<>();
         Path p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
         if (artRootPath != null && artRootPath.replace('\\', '/').startsWith("assets/")) {
             p = Paths.get("packages", "client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
-            if (!Files.exists(p)) {
-                p = Paths.get("client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
-            }
-            if (!Files.exists(p)) {
-                p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
-            }
+            if (!Files.exists(p)) p = Paths.get("client", artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
+            if (!Files.exists(p)) p = Paths.get(artRootPath, "source", "new game Intro crawl text", "Text crawl.txt");
         }
         try {
             if (Files.exists(p)) {
@@ -757,12 +734,8 @@ class ImageCache {
         if (cached != null) return cached;
         ImageIcon icon = AssetManager.getAsset(id);
         BufferedImage img = null;
-        if (icon != null && !AssetManager.isMissingAssetIcon(icon)) {
-            img = imageIconToBufferedImage(icon);
-        }
-        if (img == null) {
-            img = tileArt.getRegistry().getSemantic(id);
-        }
+        if (icon != null && !AssetManager.isMissingAssetIcon(icon)) img = imageIconToBufferedImage(icon);
+        if (img == null) img = tileArt.getRegistry().getSemantic(id);
         if (img != null) semanticAssetImageCache.put(id, img);
         return img;
     }
