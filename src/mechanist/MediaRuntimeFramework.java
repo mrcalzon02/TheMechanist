@@ -527,8 +527,15 @@ class ImageCache {
         DebugLog.audit("ART_QUALITY", "Reloaded art cache root=" + artRootPath + " quality=" + (options == null ? "low_32" : options.artQualityFolder()) + " tileGlyphs=" + tileArt.getRegistry().loadedCount() + " semantic=" + tileArt.getRegistry().semanticCount() + " npcPortraitCells=" + npcPortraitCells.size() + " nameLockedProfilePortraits=" + nameLockedProfilePortraits.size());
     }
     BufferedImage getPortrait(int sheetIndex, int portraitIndex) {
-        // PLAYER CHARACTER/PROFILE DEFAULTS ARE LOCKED TO THE PLAYER-HUMAN POOL ONLY.
-        // Never fall through into NPC faction buckets or name_locked celebrity portraits.
+        // The persistent portrait index resolves through the active semantic registry first.
+        // The existing player-human cells, baseline sheet, and generated portrait remain
+        // compatibility fallbacks. NPC and name-locked partitions are never consulted here.
+        Optional<String> semanticId = PortraitSemanticIdentityResolver.playerAssetId(
+                Path.of("."), AssetManager.registry(), portraitIndex);
+        if (semanticId.isPresent()) {
+            BufferedImage semantic = getSemanticAssetImage(semanticId.get());
+            if (semantic != null) return semantic;
+        }
         if (!playerHumanPortraitCells.isEmpty()) return playerHumanPortraitCells.get(Math.floorMod(portraitIndex, playerHumanPortraitCells.size()));
         BufferedImage legacy = getLegacyPlayerHumanPortrait(portraitIndex);
         if (legacy != null) return legacy;
