@@ -474,6 +474,21 @@ public final class AssetRegistry {
         if ("weapon".equals(explicitType)) return AssetType.WEAPON_ICON;
         if ("wearable".equals(explicitType) || "armor".equals(explicitType)) return AssetType.ARMOR_ICON;
         if ("document".equals(explicitType) && !"objects".equalsIgnoreCase(category)) return AssetType.ITEM_ICON;
+        if ("wall_tile".equals(explicitType)) return AssetType.WALL_TILE;
+        if ("floor_tile".equals(explicitType) || "void_tile".equals(explicitType)) return AssetType.FLOOR_TILE;
+        if ("road_tile".equals(explicitType)) return AssetType.ROAD_TILE;
+        if ("corridor_tile".equals(explicitType)) return AssetType.CORRIDOR_TILE;
+        if ("portrait".equals(explicitType)) return AssetType.PORTRAIT;
+        if ("ui_icon".equals(explicitType)) return AssetType.UI_ICON;
+        if ("machine".equals(explicitType) || "vehicle".equals(explicitType)) return AssetType.MACHINE;
+        if ("item".equals(explicitType) || "implant".equals(explicitType)
+                || "trade_good".equals(explicitType) || "industrial_component".equals(explicitType)
+                || "data_device".equals(explicitType)) return AssetType.ITEM_ICON;
+        if ("corpse_decay".equals(explicitType)) return AssetType.CORPSE_DECAY;
+        if ("internal".equals(explicitType) || "placeholder".equals(explicitType)) return AssetType.INTERNAL;
+        if ("object".equals(explicitType) || "prop".equals(explicitType)
+                || "civilian_prop".equals(explicitType) || "military_prop".equals(explicitType)
+                || "relic".equals(explicitType) || "rail_prop".equals(explicitType)) return AssetType.OBJECT;
         if ("doors".equalsIgnoreCase(category)) return AssetType.FIXTURE;
         if ("objects".equalsIgnoreCase(category)) return AssetType.OBJECT;
         if ("defenses".equalsIgnoreCase(category)) return AssetType.FIXTURE;
@@ -553,8 +568,8 @@ public final class AssetRegistry {
             out.append("Compiled ").append(category == null || category.isBlank() ? "asset" : category.trim()).append(" asset");
             if (sourceGroup != null && !sourceGroup.isBlank()) out.append(" from ").append(sourceGroup.trim());
             if (sourceAtlas != null && !sourceAtlas.isBlank()) out.append(" / ").append(sourceAtlas.trim());
-            if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
         }
+        if (tags != null && !tags.isBlank()) out.append(". Tags: ").append(tags.trim());
         if ("doors-c".equalsIgnoreCase(sourceAtlas)) out.append(". Semantic state: closed door.");
         if ("doors-o".equalsIgnoreCase(sourceAtlas)) out.append(". Semantic state: open door.");
         return out.toString();
