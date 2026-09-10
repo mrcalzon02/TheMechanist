@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10kj-editor-object-family-boundary";
+    static final String VERSION = "0.9.10kk-light-family-boundary";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -37,6 +37,8 @@ final class ObjectSemanticAssetAuthority {
             AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
             AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON);
     private static final Set<AssetType> EDITOR_OBJECT_ASSET_TYPES = MAP_OBJECT_ASSET_TYPES;
+    private static final Set<AssetType> LIGHT_ASSET_TYPES = Set.of(
+            AssetType.FIXTURE, AssetType.OBJECT, AssetType.MACHINE);
 
     static {
         // Core construction recipes and base objects.
@@ -240,14 +242,23 @@ final class ObjectSemanticAssetAuthority {
     static Optional<String> runtimeAssetIdForLight(ZoneLightSourceRecord light) {
         String semantic = light == null ? "light fixture" : normalize(
                 light.profile + " " + light.colorName + " " + light.groupId + " light fixture");
+        Optional<String> semanticIntentAsset = runtimeAssetIdForLightSemantic(semantic);
+        if (semanticIntentAsset.isPresent()) return semanticIntentAsset;
+        return SemanticAssetHintResolver.resolve(assetHintForLight(light), semantic, LIGHT_ASSET_TYPES);
+    }
+
+    static Optional<String> runtimeAssetIdForLightSemantic(String semantic) {
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
                 SemanticRenderIntentAuthority.objectIntent(semantic);
-        if (intent.isPresent()) {
-            return Optional.of(SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get())
-                    .orElse(MISSING_RECOGNIZED_OBJECT_ID));
+        if (intent.isEmpty()) return Optional.empty();
+
+        Optional<String> resolved = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+        if (resolved.isEmpty()) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+        Optional<AssetMetadata> metadata = AssetManager.metadata(resolved.get());
+        if (metadata.isEmpty() || !LIGHT_ASSET_TYPES.contains(metadata.get().type())) {
+            return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
         }
-        return SemanticAssetHintResolver.resolve(assetHintForLight(light), semantic,
-                Set.of(AssetType.FIXTURE, AssetType.OBJECT, AssetType.MACHINE));
+        return resolved;
     }
 
     private static String assetHintForLight(ZoneLightSourceRecord light) {
@@ -338,7 +349,7 @@ final class ObjectSemanticAssetAuthority {
                 + " domains=construction+base-objects+map-fixtures+traps+lights+editor-palettes"
                 + " activeRegistryValidated=true authoredFirst=true strictFamilyFallback=true"
                 + " recognizedFamiliesFailClosed=true typedMissing=true mapObjectStructuralTiles=false"
-                + " editorObjectStructuralTiles=false";
+                + " editorObjectStructuralTiles=false lightStructuralTiles=false";
     }
 
     static Map<String, String> auditExactMappings() {
