@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10kh-map-object-intent-family-validation";
+    static final String VERSION = "0.9.10ki-map-object-intent-runtime-coverage";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -163,21 +163,26 @@ final class ObjectSemanticAssetAuthority {
         Optional<String> exact = runtimeExactForNames(MAP_OBJECT_ASSET_TYPES, label, type, stock);
         if (exact.isPresent()) return exact;
 
-        Optional<SemanticRenderAssetResolver.RenderIntent> intent =
-                SemanticRenderIntentAuthority.objectIntent(semantic);
-        if (intent.isPresent()) {
-            Optional<String> resolved = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
-            if (resolved.isEmpty()) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
-            Optional<AssetMetadata> metadata = AssetManager.metadata(resolved.get());
-            if (metadata.isEmpty() || !MAP_OBJECT_ASSET_TYPES.contains(metadata.get().type())) {
-                return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
-            }
-            return resolved;
-        }
+        Optional<String> semanticIntentAsset = runtimeAssetIdForMapObjectSemantic(semantic);
+        if (semanticIntentAsset.isPresent()) return semanticIntentAsset;
 
         String authoredHint = assetIdForMapObject(object);
         if ("ITEM-G01".equals(authoredHint)) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
         return SemanticAssetHintResolver.resolve(authoredHint, semantic, MAP_OBJECT_ASSET_TYPES);
+    }
+
+    static Optional<String> runtimeAssetIdForMapObjectSemantic(String semantic) {
+        Optional<SemanticRenderAssetResolver.RenderIntent> intent =
+                SemanticRenderIntentAuthority.objectIntent(semantic);
+        if (intent.isEmpty()) return Optional.empty();
+
+        Optional<String> resolved = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+        if (resolved.isEmpty()) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+        Optional<AssetMetadata> metadata = AssetManager.metadata(resolved.get());
+        if (metadata.isEmpty() || !MAP_OBJECT_ASSET_TYPES.contains(metadata.get().type())) {
+            return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+        }
+        return resolved;
     }
 
     static BufferedImage imageForMapObject(MapObjectState object) {

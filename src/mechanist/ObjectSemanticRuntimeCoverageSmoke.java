@@ -43,11 +43,58 @@ public final class ObjectSemanticRuntimeCoverageSmoke {
             throw new AssertionError("map object structural-tile exclusion missing from semantic audit summary");
         }
 
+        int semanticIntentCases = 0;
+        int structuralIntentCandidates = 0;
+        int allowedIntentResolutions = 0;
+        for (String semantic : List.of("bulkhead door", "sealed hatch", "reinforced door", "security bulkhead hatch")) {
+            var intent = SemanticRenderIntentAuthority.objectIntent(semantic);
+            if (intent.isEmpty()) continue;
+            semanticIntentCases++;
+
+            var rawResolved = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get());
+            AssetType rawType = rawResolved.flatMap(AssetManager::metadata)
+                    .map(metadata -> metadata.type())
+                    .orElse(null);
+            boolean rawStructural = rawType == AssetType.WALL_TILE
+                    || rawType == AssetType.FLOOR_TILE
+                    || rawType == AssetType.CORRIDOR_TILE;
+            if (rawStructural) structuralIntentCandidates++;
+
+            var mapResolved = ObjectSemanticAssetAuthority.runtimeAssetIdForMapObjectSemantic(semantic);
+            if (mapResolved.isEmpty()) {
+                throw new AssertionError("recognized map-object semantic intent escaped validation: " + semantic);
+            }
+            String id = mapResolved.get();
+            if (rawStructural) {
+                if (!ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(id)) {
+                    throw new AssertionError("map-object semantic intent admitted structural tile: "
+                            + semantic + " -> " + id + " / " + rawType);
+                }
+                continue;
+            }
+            if (ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(id)) continue;
+
+            var metadata = AssetManager.metadata(id)
+                    .orElseThrow(() -> new AssertionError("map-object semantic intent escaped registry: "
+                            + semantic + " -> " + id));
+            allowedIntentResolutions++;
+            if (!mapObjectTypes.contains(metadata.type())) {
+                throw new AssertionError("map-object semantic intent admitted non-object type: "
+                        + semantic + " -> " + id + " / " + metadata.type());
+            }
+        }
+        if (semanticIntentCases == 0) {
+            throw new AssertionError("no door/hatch map-object semantic intent was recognized");
+        }
+
         var floor = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("floor", "bare underhive floor");
         var wall = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("wall", "bulkhead wall");
         if (floor.isEmpty() || wall.isEmpty()) throw new AssertionError("editor floor/wall semantic resolution missing");
         System.out.println("ObjectSemanticRuntimeCoverageSmoke PASS registry=" + AssetManager.registry().size()
                 + " representativeResolved=" + resolved + " mapObjectTypes=" + mapObjectTypes.size()
+                + " semanticIntentCases=" + semanticIntentCases
+                + " structuralIntentCandidates=" + structuralIntentCandidates
+                + " allowedIntentResolutions=" + allowedIntentResolutions
                 + " structuralTilesExcluded=true authority=" + ObjectSemanticAssetAuthority.VERSION);
     }
     private ObjectSemanticRuntimeCoverageSmoke() {}
