@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10kf-map-object-typed-missing";
+    static final String VERSION = "0.9.10kg-map-object-family-separation";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -33,6 +33,9 @@ final class ObjectSemanticAssetAuthority {
             AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
             AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON,
             AssetType.WALL_TILE, AssetType.FLOOR_TILE, AssetType.CORRIDOR_TILE);
+    private static final Set<AssetType> MAP_OBJECT_ASSET_TYPES = Set.of(
+            AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE,
+            AssetType.ITEM_ICON, AssetType.WEAPON_ICON, AssetType.ARMOR_ICON);
 
     static {
         // Core construction recipes and base objects.
@@ -157,7 +160,7 @@ final class ObjectSemanticAssetAuthority {
         String stock = object.stockState == null ? "" : object.stockState;
         String semantic = label + " " + type + " " + stock;
 
-        Optional<String> exact = runtimeExactForNames(label, type, stock);
+        Optional<String> exact = runtimeExactForNames(MAP_OBJECT_ASSET_TYPES, label, type, stock);
         if (exact.isPresent()) return exact;
 
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
@@ -169,7 +172,7 @@ final class ObjectSemanticAssetAuthority {
 
         String authoredHint = assetIdForMapObject(object);
         if ("ITEM-G01".equals(authoredHint)) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
-        return SemanticAssetHintResolver.resolve(authoredHint, semantic, OBJECT_ASSET_TYPES);
+        return SemanticAssetHintResolver.resolve(authoredHint, semantic, MAP_OBJECT_ASSET_TYPES);
     }
 
     static BufferedImage imageForMapObject(MapObjectState object) {
@@ -289,11 +292,15 @@ final class ObjectSemanticAssetAuthority {
     }
 
     private static Optional<String> runtimeExactForNames(String... names) {
+        return runtimeExactForNames(OBJECT_ASSET_TYPES, names);
+    }
+
+    private static Optional<String> runtimeExactForNames(Set<AssetType> allowedTypes, String... names) {
         if (names == null) return Optional.empty();
         for (String name : names) {
             String hint = EXACT.get(normalize(name));
             if (hint == null || hint.isBlank() || "ITEM-G01".equals(hint)) continue;
-            Optional<String> resolved = SemanticAssetHintResolver.resolve(hint, normalize(name), OBJECT_ASSET_TYPES);
+            Optional<String> resolved = SemanticAssetHintResolver.resolve(hint, normalize(name), allowedTypes);
             if (resolved.isPresent()) return resolved;
         }
         return Optional.empty();
@@ -312,7 +319,7 @@ final class ObjectSemanticAssetAuthority {
         return "objectSemanticAssetAuthority version=" + VERSION + " exactMappings=" + EXACT.size()
                 + " domains=construction+base-objects+map-fixtures+traps+lights+editor-palettes"
                 + " activeRegistryValidated=true authoredFirst=true strictFamilyFallback=true"
-                + " recognizedFamiliesFailClosed=true typedMissing=true";
+                + " recognizedFamiliesFailClosed=true typedMissing=true mapObjectStructuralTiles=false";
     }
 
     static Map<String, String> auditExactMappings() {
