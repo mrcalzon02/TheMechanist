@@ -25,7 +25,7 @@ import java.util.Set;
  * record.
  */
 final class ObjectSemanticAssetAuthority {
-    static final String VERSION = "0.9.10ke-fail-closed-families";
+    static final String VERSION = "0.9.10kf-map-object-typed-missing";
     static final String MISSING_RECOGNIZED_OBJECT_ID = "MISSING-SEMANTIC-OBJECT";
 
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
@@ -167,7 +167,9 @@ final class ObjectSemanticAssetAuthority {
                     .orElse(MISSING_RECOGNIZED_OBJECT_ID));
         }
 
-        return SemanticAssetHintResolver.resolve(assetIdForMapObject(object), semantic, OBJECT_ASSET_TYPES);
+        String authoredHint = assetIdForMapObject(object);
+        if ("ITEM-G01".equals(authoredHint)) return Optional.of(MISSING_RECOGNIZED_OBJECT_ID);
+        return SemanticAssetHintResolver.resolve(authoredHint, semantic, OBJECT_ASSET_TYPES);
     }
 
     static BufferedImage imageForMapObject(MapObjectState object) {
