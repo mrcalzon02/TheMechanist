@@ -133,13 +133,45 @@ public final class ObjectSemanticRuntimeCoverageSmoke {
             throw new AssertionError("light structural-tile exclusion missing from semantic audit summary");
         }
 
+        var streetlightIntent = SemanticRenderIntentAuthority.objectIntent("streetlight")
+                .orElseThrow(() -> new AssertionError("streetlight intent missing for stable-variety coverage"));
+        for (long variantKey : List.of(0L, 1L, 2L, 17L, 65537L)) {
+            var expected = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), streetlightIntent, variantKey);
+            var actual = ObjectSemanticAssetAuthority.runtimeAssetIdForLightSemantic("streetlight", variantKey);
+            if (actual.isEmpty()) {
+                throw new AssertionError("stable light variant path escaped recognized semantic intent for key " + variantKey);
+            }
+            String expectedId = expected.orElse(ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID);
+            if (!expectedId.equals(actual.get())) {
+                throw new AssertionError("light stable variant key was not forwarded to semantic resolver: key="
+                        + variantKey + " expected=" + expectedId + " actual=" + actual.get());
+            }
+        }
+
+        long alphaKey = ObjectSemanticAssetAuthority.stableLightVariantKey(
+                "streetlight amber group-alpha light fixture");
+        long alphaRepeatKey = ObjectSemanticAssetAuthority.stableLightVariantKey(
+                "streetlight amber group-alpha light fixture");
+        long betaKey = ObjectSemanticAssetAuthority.stableLightVariantKey(
+                "streetlight amber group-beta light fixture");
+        if (alphaKey != alphaRepeatKey) {
+            throw new AssertionError("stable light semantic identity produced a non-deterministic variant key");
+        }
+        if (alphaKey == betaKey) {
+            throw new AssertionError("distinct representative light semantic identities collapsed to one variant key");
+        }
+        if (!ObjectSemanticAssetAuthority.auditSummary().contains("lightStableVariety=true")) {
+            throw new AssertionError("stable light variety missing from semantic audit summary");
+        }
+
         System.out.println("ObjectSemanticRuntimeCoverageSmoke PASS registry=" + AssetManager.registry().size()
                 + " representativeResolved=" + resolved + " mapObjectTypes=" + mapObjectTypes.size()
                 + " semanticIntentCases=" + semanticIntentCases
                 + " structuralIntentCandidates=" + structuralIntentCandidates
                 + " allowedIntentResolutions=" + allowedIntentResolutions
                 + " structuralTilesExcluded=true editorObjectStructuralTilesExcluded=true"
-                + " lightStructuralTilesExcluded=true authority=" + ObjectSemanticAssetAuthority.VERSION);
+                + " lightStructuralTilesExcluded=true lightStableVarietyCovered=true"
+                + " authority=" + ObjectSemanticAssetAuthority.VERSION);
     }
     private ObjectSemanticRuntimeCoverageSmoke() {}
 }
