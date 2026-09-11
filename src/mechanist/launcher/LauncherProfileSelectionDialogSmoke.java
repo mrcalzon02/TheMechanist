@@ -1,5 +1,6 @@
 package mechanist.launcher;
 
+import java.awt.Dimension;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -19,6 +20,10 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "profile chooser must not expose the machine-derived internal profile id");
         require(!LauncherProfileSelectionDialog.profilePresentation(profile).contains(profile.profileId()),
                 "player-facing profile presentation must hide the raw fallback profile key");
+
+        Dimension previewSize = LauncherProfileSelectionDialog.portraitPreviewSize();
+        require(previewSize.width == 144 && previewSize.height == 144,
+                "portrait preview must keep a stable square footprint even when art is unavailable");
 
         require("human8x8-63".equals(
                 LauncherProfileSelectionDialog.stepPortraitId("human8x8-00", -1)),
@@ -72,6 +77,7 @@ public final class LauncherProfileSelectionDialogSmoke {
 
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
+                + " previewFootprint=true"
                 + " wrap=true"
                 + " partition=true"
                 + " presentation=true"

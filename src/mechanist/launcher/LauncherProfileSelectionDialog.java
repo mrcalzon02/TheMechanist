@@ -1,6 +1,7 @@
 package mechanist.launcher;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
@@ -27,6 +28,7 @@ import javax.swing.SwingConstants;
  */
 public final class LauncherProfileSelectionDialog {
     private static final int PREVIEW_SIZE = 128;
+    private static final int PREVIEW_FRAME_PADDING = 16;
 
     static LauncherFallbackProfileAuthority.LauncherProfile choose(
             Path appHome,
@@ -40,12 +42,17 @@ public final class LauncherProfileSelectionDialog {
         profileLabel.setBorder(BorderFactory.createTitledBorder("Profile"));
         JLabel portraitPreview = new JLabel("", SwingConstants.CENTER);
         portraitPreview.setBorder(BorderFactory.createEtchedBorder());
+        portraitPreview.setPreferredSize(portraitPreviewSize());
+        portraitPreview.setMinimumSize(portraitPreviewSize());
+        portraitPreview.getAccessibleContext().setAccessibleName("Selected character portrait preview");
         JLabel portraitLabel = new JLabel("", SwingConstants.CENTER);
         portraitLabel.setFont(portraitLabel.getFont().deriveFont(Font.BOLD, 18f));
         portraitLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
         JButton previous = new JButton("< Previous portrait");
         JButton next = new JButton("Next portrait >");
+        previous.setToolTipText("Show the previous character portrait");
+        next.setToolTipText("Show the next character portrait");
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
             portraitLabel.setText(portraitPresentation(portraitId));
@@ -94,6 +101,11 @@ public final class LauncherProfileSelectionDialog {
 
     static String profilePresentation(LauncherFallbackProfileAuthority.LauncherProfile profile) {
         return profile == null ? "Profile unavailable" : "Local profile";
+    }
+
+    static Dimension portraitPreviewSize() {
+        int side = PREVIEW_SIZE + PREVIEW_FRAME_PADDING;
+        return new Dimension(side, side);
     }
 
     static String stepPortraitId(String current, int delta) {
