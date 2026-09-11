@@ -25,7 +25,7 @@ import java.awt.event.MouseEvent;
  * identity without creating a second character/profile selection model.
  */
 final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispatcher {
-    static final String VERSION = "character-creation-portrait-selection-1.1-visible-controls";
+    static final String VERSION = "character-creation-portrait-selection-1.2-semantic-index-wrap";
     static final String CLIENT_PROPERTY = "mechanist.characterCreationPortraitSelectionAuthority";
     static final String CONTROLS_PROPERTY = "mechanist.characterCreationPortraitSelectionControls";
 
@@ -92,16 +92,15 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
 
         candidate.portraitIndex = shiftedPortraitIndex(candidate.portraitIndex, direction);
         panel.active = candidate;
-        updateStartFlowStatus(panel, candidate.portraitIndex);
+        updateStartFlowStatus(panel);
         panel.repaint();
         return true;
     }
 
     static int shiftedPortraitIndex(int current, int direction) {
-        int safe = Math.max(0, current);
-        if (direction > 0) return safe == Integer.MAX_VALUE ? 0 : safe + 1;
-        if (direction < 0) return safe == 0 ? Integer.MAX_VALUE : safe - 1;
-        return safe;
+        if (direction > 0) return current == Integer.MAX_VALUE ? Integer.MIN_VALUE : current + 1;
+        if (direction < 0) return current == Integer.MIN_VALUE ? Integer.MAX_VALUE : current - 1;
+        return current;
     }
 
     static Rectangle portraitRectForSheet(Rectangle sheet) {
@@ -129,10 +128,10 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
         return 0;
     }
 
-    private static void updateStartFlowStatus(GamePanel panel, int portraitIndex) {
+    private static void updateStartFlowStatus(GamePanel panel) {
         Object value = panel.getClientProperty(WorldStartFlowAuthority.WorldStartFlowOverlay.CLIENT_PROPERTY);
         if (value instanceof WorldStartFlowAuthority.WorldStartFlowOverlay overlay) {
-            overlay.status = "Portrait profile " + (portraitIndex + 1L) + " selected. Use [ and ] or the portrait arrows to browse.";
+            overlay.status = "Portrait selection changed. Use [ and ] or the portrait arrows to browse.";
         }
     }
 
@@ -189,7 +188,7 @@ final class CharacterCreationPortraitSelectionAuthority implements KeyEventDispa
                 Rectangle portrait = portraitRect();
                 drawControl(g, previousControlRect(portrait), "<");
                 drawControl(g, nextControlRect(portrait), ">");
-                String label = "Portrait " + (candidate.portraitIndex + 1L);
+                String label = "Portrait";
                 g.setFont(panel.smallFont.deriveFont(Font.BOLD, Math.max(10f, panel.smallFont.getSize2D())));
                 int textW = g.getFontMetrics().stringWidth(label);
                 int labelW = Math.min(portrait.width - 16, textW + 14);
