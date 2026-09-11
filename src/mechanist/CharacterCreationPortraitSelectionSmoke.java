@@ -21,11 +21,17 @@ public final class CharacterCreationPortraitSelectionSmoke {
         if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(41, -1) != 40) {
             throw new AssertionError("portrait backward selection did not preserve existing identity ordering");
         }
-        if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(0, -1) != Integer.MAX_VALUE) {
-            throw new AssertionError("portrait backward selection did not wrap without producing a negative identity");
+        if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(0, -1) != -1) {
+            throw new AssertionError("portrait backward selection did not preserve semantic negative-index wrap");
         }
-        if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(Integer.MAX_VALUE, 1) != 0) {
-            throw new AssertionError("portrait forward selection did not wrap safely");
+        if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(-1, 1) != 0) {
+            throw new AssertionError("portrait forward selection did not return from semantic negative-index wrap");
+        }
+        if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(Integer.MAX_VALUE, 1) != Integer.MIN_VALUE) {
+            throw new AssertionError("portrait forward selection did not preserve signed index continuity at overflow");
+        }
+        if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(Integer.MIN_VALUE, -1) != Integer.MAX_VALUE) {
+            throw new AssertionError("portrait backward selection did not preserve signed index continuity at overflow");
         }
 
         Rectangle sheet = new Rectangle(100, 80, 420, 540);
@@ -56,7 +62,7 @@ public final class CharacterCreationPortraitSelectionSmoke {
 
         System.out.println("CharacterCreationPortraitSelectionSmoke PASS authority="
                 + CharacterCreationPortraitSelectionAuthority.VERSION
-                + " keys=[/] persistentIndex=true visibleControls=true");
+                + " keys=[/] persistentIndex=true semanticWrap=true visibleControls=true");
     }
 
     private CharacterCreationPortraitSelectionSmoke() {}
