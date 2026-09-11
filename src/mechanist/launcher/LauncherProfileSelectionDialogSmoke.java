@@ -1,9 +1,10 @@
 package mechanist.launcher;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class LauncherProfileSelectionDialogSmoke {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         require("human8x8-63".equals(
                 LauncherProfileSelectionDialog.stepPortraitId("human8x8-00", -1)),
                 "previous portrait should wrap to the final human portrait");
@@ -36,11 +37,30 @@ public final class LauncherProfileSelectionDialogSmoke {
         require(LauncherProfileSelectionDialog.portraitAssetPath(root, "enemy-17") == null,
                 "non-human ids must not resolve into launcher human portrait assets");
 
+        Path temp = Files.createTempDirectory("mechanist-launcher-profile-home-");
+        Path packagedRoot = temp.resolve("installed");
+        Path portraitAssets = packagedRoot.resolve("profile-packages/human-8x8/assets");
+        Files.createDirectories(portraitAssets);
+        Path clientDir = packagedRoot.resolve("packages/client");
+        Files.createDirectories(clientDir);
+        Path clientJar = clientDir.resolve("TheMechanist-client.jar");
+        Files.writeString(clientJar, "smoke");
+        Path unrelatedWorking = temp.resolve("elsewhere");
+        Files.createDirectories(unrelatedWorking);
+
+        require(packagedRoot.toAbsolutePath().normalize().equals(
+                ThinLauncherMain.selectAppHome(packagedRoot, clientJar)),
+                "packaged launcher working root should remain the asset home");
+        require(packagedRoot.toAbsolutePath().normalize().equals(
+                ThinLauncherMain.selectAppHome(unrelatedWorking, clientJar)),
+                "thin launcher should climb from the client jar to the packaged portrait root");
+
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " wrap=true"
                 + " partition=true"
                 + " presentation=true"
-                + " previewAssetMapping=true");
+                + " previewAssetMapping=true"
+                + " packagedAssetHome=true");
     }
 
     private static void require(boolean condition, String message) {
