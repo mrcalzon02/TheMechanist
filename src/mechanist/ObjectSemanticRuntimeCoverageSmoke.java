@@ -90,12 +90,88 @@ public final class ObjectSemanticRuntimeCoverageSmoke {
         var floor = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("floor", "bare underhive floor");
         var wall = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("wall", "bulkhead wall");
         if (floor.isEmpty() || wall.isEmpty()) throw new AssertionError("editor floor/wall semantic resolution missing");
+
+        var editorObject = ObjectSemanticAssetAuthority.runtimeAssetIdForEditorPalette("objects", "pillar");
+        if (editorObject.isEmpty()) {
+            throw new AssertionError("non-structural editor category escaped semantic family validation");
+        }
+        if (!ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(editorObject.get())) {
+            var editorMetadata = AssetManager.metadata(editorObject.get())
+                    .orElseThrow(() -> new AssertionError("editor object resolution escaped registry: " + editorObject.get()));
+            if (editorMetadata.type() == AssetType.WALL_TILE
+                    || editorMetadata.type() == AssetType.FLOOR_TILE
+                    || editorMetadata.type() == AssetType.CORRIDOR_TILE) {
+                throw new AssertionError("non-structural editor category admitted structural tile: "
+                        + editorObject.get() + " / " + editorMetadata.type());
+            }
+        }
+        if (!ObjectSemanticAssetAuthority.auditSummary().contains("editorObjectStructuralTiles=false")) {
+            throw new AssertionError("editor object structural-tile exclusion missing from semantic audit summary");
+        }
+
+        var streetlight = ObjectSemanticAssetAuthority.runtimeAssetIdForLightSemantic("streetlight");
+        if (streetlight.isEmpty()) {
+            throw new AssertionError("recognized streetlight semantic intent escaped light-family validation");
+        }
+        if (!ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(streetlight.get())) {
+            var lightMetadata = AssetManager.metadata(streetlight.get())
+                    .orElseThrow(() -> new AssertionError("light semantic resolution escaped registry: " + streetlight.get()));
+            if (lightMetadata.type() != AssetType.FIXTURE
+                    && lightMetadata.type() != AssetType.OBJECT
+                    && lightMetadata.type() != AssetType.MACHINE) {
+                throw new AssertionError("light semantic intent admitted non-light family: "
+                        + streetlight.get() + " / " + lightMetadata.type());
+            }
+        }
+
+        var structuralLightIntent = ObjectSemanticAssetAuthority.runtimeAssetIdForLightSemantic("sealed bulkhead door");
+        if (structuralLightIntent.isEmpty()
+                || !ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID.equals(structuralLightIntent.get())) {
+            throw new AssertionError("light semantic boundary admitted structural door art: " + structuralLightIntent);
+        }
+        if (!ObjectSemanticAssetAuthority.auditSummary().contains("lightStructuralTiles=false")) {
+            throw new AssertionError("light structural-tile exclusion missing from semantic audit summary");
+        }
+
+        var streetlightIntent = SemanticRenderIntentAuthority.objectIntent("streetlight")
+                .orElseThrow(() -> new AssertionError("streetlight intent missing for stable-variety coverage"));
+        for (long variantKey : List.of(0L, 1L, 2L, 17L, 65537L)) {
+            var expected = SemanticRenderIntentAuthority.resolve(AssetManager.registry(), streetlightIntent, variantKey);
+            var actual = ObjectSemanticAssetAuthority.runtimeAssetIdForLightSemantic("streetlight", variantKey);
+            if (actual.isEmpty()) {
+                throw new AssertionError("stable light variant path escaped recognized semantic intent for key " + variantKey);
+            }
+            String expectedId = expected.orElse(ObjectSemanticAssetAuthority.MISSING_RECOGNIZED_OBJECT_ID);
+            if (!expectedId.equals(actual.get())) {
+                throw new AssertionError("light stable variant key was not forwarded to semantic resolver: key="
+                        + variantKey + " expected=" + expectedId + " actual=" + actual.get());
+            }
+        }
+
+        long alphaKey = ObjectSemanticAssetAuthority.stableLightVariantKey(
+                "streetlight amber group-alpha light fixture");
+        long alphaRepeatKey = ObjectSemanticAssetAuthority.stableLightVariantKey(
+                "streetlight amber group-alpha light fixture");
+        long betaKey = ObjectSemanticAssetAuthority.stableLightVariantKey(
+                "streetlight amber group-beta light fixture");
+        if (alphaKey != alphaRepeatKey) {
+            throw new AssertionError("stable light semantic identity produced a non-deterministic variant key");
+        }
+        if (alphaKey == betaKey) {
+            throw new AssertionError("distinct representative light semantic identities collapsed to one variant key");
+        }
+        if (!ObjectSemanticAssetAuthority.auditSummary().contains("lightStableVariety=true")) {
+            throw new AssertionError("stable light variety missing from semantic audit summary");
+        }
+
         System.out.println("ObjectSemanticRuntimeCoverageSmoke PASS registry=" + AssetManager.registry().size()
                 + " representativeResolved=" + resolved + " mapObjectTypes=" + mapObjectTypes.size()
                 + " semanticIntentCases=" + semanticIntentCases
                 + " structuralIntentCandidates=" + structuralIntentCandidates
                 + " allowedIntentResolutions=" + allowedIntentResolutions
-                + " structuralTilesExcluded=true authority=" + ObjectSemanticAssetAuthority.VERSION);
+                + " structuralTilesExcluded=true editorObjectStructuralTilesExcluded=true"
+                + " lightStructuralTilesExcluded=true lightStableVarietyCovered=true"
+                + " authority=" + ObjectSemanticAssetAuthority.VERSION);
     }
     private ObjectSemanticRuntimeCoverageSmoke() {}
 }

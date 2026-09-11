@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.7-maintenance-tools-coverage";
+    static final String VERSION = "semantic-render-intent-authority-0.8-light-fixture-door-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -70,6 +70,15 @@ final class SemanticRenderIntentAuthority {
     static Optional<SemanticRenderAssetResolver.RenderIntent> objectIntent(String rawText) {
         String text = normalize(rawText);
         if (text.isBlank()) return Optional.empty();
+
+        // A light mounted on or associated with a bulkhead/hatch remains a light fixture.
+        // Leave these generic light semantics unclassified so the owning light authority
+        // can use its dedicated fixture/switch/sensor hint instead of collapsing them
+        // into the broader door/hatch/bulkhead intent.
+        if (contains(text, "light fixture", "light switch", "motion sensor")
+                && contains(text, "door", "hatch", "bulkhead")) {
+            return Optional.empty();
+        }
 
         if (contains(text, "door", "hatch", "bulkhead")) {
             if (contains(text, "open", "opened", "unsealed")) {
@@ -199,7 +208,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
