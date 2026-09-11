@@ -27,7 +27,7 @@ public final class ThinLauncherMain {
 
         LauncherWrapperDetector.WrapperEnvironment wrapper = LauncherWrapperDetector.detect(appHome);
         LauncherFallbackProfileAuthority.LauncherProfile profile = LauncherFallbackProfileAuthority.ensureFallbackProfile(appHome, userRoot, wrapper);
-        profile = LauncherProfileSelectionDialog.choose(profile);
+        profile = LauncherProfileSelectionDialog.choose(appHome, profile);
         if (profile == null) {
             System.out.println("The Mechanist launch cancelled from profile selection");
             return;
