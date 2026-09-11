@@ -24,6 +24,8 @@ public final class LauncherFallbackProfileAuthority {
     public static final String SPECIAL_NAME_PACKAGE = "launcher-special-name-detection-v1";
     public static final String LEGACY_CELEBRITY_PORTRAIT_PACKAGE = "launcher-celebrity-portraits-v1";
     public static final String LEGACY_CELEBRITY_NAME_PACKAGE = "launcher-celebrity-name-detection-v1";
+    private static final String HUMAN_8X8_ID_PREFIX = "human8x8-";
+    private static final int HUMAN_8X8_PORTRAIT_COUNT = 64;
 
     public record LauncherProfile(
             String profileId,
@@ -52,8 +54,8 @@ public final class LauncherFallbackProfileAuthority {
                 + "|" + wrapper.gogGameId();
         String profileHash = sha256(machineSeed);
         String profileId = "fallback-" + profileHash.substring(0, 16);
-        int portraitOrdinal = Math.floorMod(profileHash.hashCode(), 64);
-        String portraitId = String.format(Locale.ROOT, "human8x8-%02d", portraitOrdinal);
+        int portraitOrdinal = Math.floorMod(profileHash.hashCode(), HUMAN_8X8_PORTRAIT_COUNT);
+        String defaultPortraitId = String.format(Locale.ROOT, HUMAN_8X8_ID_PREFIX + "%02d", portraitOrdinal);
 
         Path file = root.resolve(profileId + ".properties");
         Properties p = new Properties();
@@ -64,6 +66,7 @@ public final class LauncherFallbackProfileAuthority {
                 p.clear();
             }
         }
+        String portraitId = resolvePortraitId(p, defaultPortraitId);
         p.setProperty("schema", "2");
         p.setProperty("owner", "thin-launcher");
         p.setProperty("profile.id", profileId);
@@ -95,6 +98,32 @@ public final class LauncherFallbackProfileAuthority {
                 SPECIAL_NAME_PACKAGE,
                 file
         );
+    }
+
+    static String resolvePortraitId(Properties profile, String defaultPortraitId) {
+        if (profile != null && HUMAN_8X8_PACKAGE.equals(profile.getProperty("portrait.package", "").trim())) {
+            String storedPortraitId = profile.getProperty("portrait.id", "").trim();
+            if (isValidHumanPortraitId(storedPortraitId)) {
+                return storedPortraitId;
+            }
+        }
+        return defaultPortraitId;
+    }
+
+    static boolean isValidHumanPortraitId(String portraitId) {
+        if (portraitId == null
+                || !portraitId.startsWith(HUMAN_8X8_ID_PREFIX)
+                || portraitId.length() != HUMAN_8X8_ID_PREFIX.length() + 2) {
+            return false;
+        }
+        int offset = HUMAN_8X8_ID_PREFIX.length();
+        char tens = portraitId.charAt(offset);
+        char ones = portraitId.charAt(offset + 1);
+        if (!Character.isDigit(tens) || !Character.isDigit(ones)) {
+            return false;
+        }
+        int ordinal = (tens - '0') * 10 + (ones - '0');
+        return ordinal >= 0 && ordinal < HUMAN_8X8_PORTRAIT_COUNT;
     }
 
     public static Path defaultUserRoot() {
