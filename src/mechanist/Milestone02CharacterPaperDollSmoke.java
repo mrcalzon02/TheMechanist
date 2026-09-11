@@ -35,6 +35,18 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("blank medical selection must not highlight a body region");
         }
 
+        Rectangle renderedBounds = new Rectangle(8, 8, 284, 444);
+        Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(renderedBounds);
+        CharacterPaperDollAuthority.RegionView renderedArm = CharacterPaperDollAuthority.regions(candidate, interactive).stream()
+                .filter(region -> region.bodyPartName().equals("L Lower Arm"))
+                .findFirst().orElseThrow(() -> new AssertionError("rendered left lower arm missing from paper doll"));
+        int centerX = renderedArm.bounds().x + renderedArm.bounds().width / 2;
+        int centerY = renderedArm.bounds().y + renderedArm.bounds().height / 2;
+        String hit = CharacterEquipmentAndMedicalAuthority.bodyPartAt(candidate, renderedBounds, centerX, centerY);
+        if (!"L Lower Arm".equals(hit)) {
+            throw new AssertionError("paper-doll click geometry diverged from rendered region: " + hit);
+        }
+
         BufferedImage unselected = render(candidate, null);
         BufferedImage selected = render(candidate, "L Lower Arm");
         int changedPixels = changedPixels(unselected, selected);
@@ -54,7 +66,7 @@ public final class Milestone02CharacterPaperDollSmoke {
         }
 
         System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
-                + " selectedPixels=" + changedPixels);
+                + " selectedPixels=" + changedPixels + " hit=" + hit);
     }
 
     private static BufferedImage render(Candidate candidate, String selectedBodyPart) {
