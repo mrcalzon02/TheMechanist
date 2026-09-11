@@ -21,300 +21,113 @@ final class CharacterEquipmentAndMedicalAuthority {
     static final String VERSION = "character-equipment-medical-0.2";
 
     enum CharacterTab {
-        OVERVIEW("Overview"),
-        EQUIPMENT("Equipment"),
-        MEDICAL("Medical"),
-        SKILLS("Skills");
-
+        OVERVIEW("Overview"), EQUIPMENT("Equipment"), MEDICAL("Medical"), SKILLS("Skills");
         private final String label;
-
         CharacterTab(String label) { this.label = label; }
         String label() { return label; }
-
-        static CharacterTab at(int index) {
-            CharacterTab[] values = values();
-            return values[Math.max(0, Math.min(index, values.length - 1))];
-        }
+        static CharacterTab at(int index) { CharacterTab[] values = values(); return values[Math.max(0, Math.min(index, values.length - 1))]; }
     }
 
     enum EquipmentSlot {
-        HEADGEAR("Headgear", "Head"),
-        UNDERCLOTHES("Underclothes", "Torso"),
-        CLOTHES("Clothes / Body", "Torso"),
-        GLOVES("Gloves", "Hands"),
-        BOOTS("Boots", "Feet"),
-        BACKPACK("Backpack", "Back"),
-        LEFT_RING("Left Ring", "Left Hand"),
-        RIGHT_RING("Right Ring", "Right Hand"),
-        ACCESSORY_ONE("Accessory 1", "General"),
-        ACCESSORY_TWO("Accessory 2", "General"),
-        LEFT_HAND("Left Hand", "Left Hand"),
-        RIGHT_HAND("Right Hand", "Right Hand");
-
-        private final String label;
-        private final String bodyRegion;
-
-        EquipmentSlot(String label, String bodyRegion) {
-            this.label = label;
-            this.bodyRegion = bodyRegion;
-        }
-
-        String label() { return label; }
-        String bodyRegion() { return bodyRegion; }
-
-        static EquipmentSlot at(int index) {
-            EquipmentSlot[] values = values();
-            return values[Math.max(0, Math.min(index, values.length - 1))];
-        }
+        HEADGEAR("Headgear", "Head"), UNDERCLOTHES("Underclothes", "Torso"), CLOTHES("Clothes / Body", "Torso"),
+        GLOVES("Gloves", "Hands"), BOOTS("Boots", "Feet"), BACKPACK("Backpack", "Back"), LEFT_RING("Left Ring", "Left Hand"),
+        RIGHT_RING("Right Ring", "Right Hand"), ACCESSORY_ONE("Accessory 1", "General"), ACCESSORY_TWO("Accessory 2", "General"),
+        LEFT_HAND("Left Hand", "Left Hand"), RIGHT_HAND("Right Hand", "Right Hand");
+        private final String label; private final String bodyRegion;
+        EquipmentSlot(String label, String bodyRegion) { this.label = label; this.bodyRegion = bodyRegion; }
+        String label() { return label; } String bodyRegion() { return bodyRegion; }
+        static EquipmentSlot at(int index) { EquipmentSlot[] values = values(); return values[Math.max(0, Math.min(index, values.length - 1))]; }
     }
 
     enum MedicalLayer {
-        MUTATION("Mutation"),
-        MODIFICATION("Modification"),
-        CYBERNETIC("Cybernetic");
-
-        private final String label;
-        MedicalLayer(String label) { this.label = label; }
-        String label() { return label; }
-
-        static MedicalLayer at(int index) {
-            MedicalLayer[] values = values();
-            return values[Math.max(0, Math.min(index, values.length - 1))];
-        }
+        MUTATION("Mutation"), MODIFICATION("Modification"), CYBERNETIC("Cybernetic");
+        private final String label; MedicalLayer(String label) { this.label = label; } String label() { return label; }
+        static MedicalLayer at(int index) { MedicalLayer[] values = values(); return values[Math.max(0, Math.min(index, values.length - 1))]; }
     }
 
-    record EquipmentView(EquipmentSlot slot, String itemName, boolean empty) {
-        String label(boolean selected) {
-            return (selected ? "> " : "  ") + slot.label() + ": " + itemName;
-        }
-    }
-
+    record EquipmentView(EquipmentSlot slot, String itemName, boolean empty) { String label(boolean selected) { return (selected ? "> " : "  ") + slot.label() + ": " + itemName; } }
     record MedicalSlotKey(String bodyPartName, MedicalLayer layer) {
-        MedicalSlotKey {
-            bodyPartName = bodyPartName == null || bodyPartName.isBlank() ? "Unknown Region" : bodyPartName;
-            layer = layer == null ? MedicalLayer.MODIFICATION : layer;
-        }
-
-        String storageKey() { return bodyPartName + "|" + layer.name(); }
-        String label() { return bodyPartName + " — " + layer.label(); }
+        MedicalSlotKey { bodyPartName = bodyPartName == null || bodyPartName.isBlank() ? "Unknown Region" : bodyPartName; layer = layer == null ? MedicalLayer.MODIFICATION : layer; }
+        String storageKey() { return bodyPartName + "|" + layer.name(); } String label() { return bodyPartName + " — " + layer.label(); }
     }
-
-    record MedicalView(MedicalSlotKey key, String installedName, boolean empty) {
-        String label(boolean selected) {
-            return (selected ? "> " : "  ") + key.layer().label() + ": " + installedName;
-        }
-    }
+    record MedicalView(MedicalSlotKey key, String installedName, boolean empty) { String label(boolean selected) { return (selected ? "> " : "  ") + key.layer().label() + ": " + installedName; } }
 
     private CharacterEquipmentAndMedicalAuthority() {}
 
-    static List<EquipmentView> equipmentViews(Map<EquipmentSlot, String> extraSlots,
-                                               String leftHand,
-                                               String rightHand,
-                                               Clothing clothing) {
-        EnumMap<EquipmentSlot, String> values = new EnumMap<>(EquipmentSlot.class);
-        if (extraSlots != null) values.putAll(extraSlots);
-        values.put(EquipmentSlot.LEFT_HAND, normalizeLegacyHand(leftHand));
-        values.put(EquipmentSlot.RIGHT_HAND, normalizeLegacyHand(rightHand));
-        values.put(EquipmentSlot.CLOTHES, clothing == null ? "Empty" : safe(clothing.name));
-
-        ArrayList<EquipmentView> views = new ArrayList<>();
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            String item = safe(values.get(slot));
-            boolean empty = item.equals("Empty");
-            views.add(new EquipmentView(slot, item, empty));
-        }
+    static List<EquipmentView> equipmentViews(Map<EquipmentSlot, String> extraSlots, String leftHand, String rightHand, Clothing clothing) {
+        EnumMap<EquipmentSlot, String> values = new EnumMap<>(EquipmentSlot.class); if (extraSlots != null) values.putAll(extraSlots);
+        values.put(EquipmentSlot.LEFT_HAND, normalizeLegacyHand(leftHand)); values.put(EquipmentSlot.RIGHT_HAND, normalizeLegacyHand(rightHand));
+        values.put(EquipmentSlot.CLOTHES, clothing == null ? "Empty" : safe(clothing.name)); ArrayList<EquipmentView> views = new ArrayList<>();
+        for (EquipmentSlot slot : EquipmentSlot.values()) { String item = safe(values.get(slot)); views.add(new EquipmentView(slot, item, item.equals("Empty"))); }
         return List.copyOf(views);
     }
 
-    static EquipmentView selectedEquipment(int selectedIndex,
-                                           Map<EquipmentSlot, String> extraSlots,
-                                           String leftHand,
-                                           String rightHand,
-                                           Clothing clothing) {
-        EquipmentSlot slot = EquipmentSlot.at(selectedIndex);
-        return equipmentViews(extraSlots, leftHand, rightHand, clothing).stream()
-                .filter(view -> view.slot() == slot)
-                .findFirst()
-                .orElse(new EquipmentView(slot, "Empty", true));
+    static EquipmentView selectedEquipment(int selectedIndex, Map<EquipmentSlot, String> extraSlots, String leftHand, String rightHand, Clothing clothing) {
+        EquipmentSlot slot = EquipmentSlot.at(selectedIndex); return equipmentViews(extraSlots, leftHand, rightHand, clothing).stream().filter(view -> view.slot() == slot).findFirst().orElse(new EquipmentView(slot, "Empty", true));
     }
 
     static boolean canEquip(String itemName, EquipmentSlot slot) {
-        if (itemName == null || itemName.isBlank() || slot == null) return false;
-        ItemDef definition = ItemCatalog.get(itemName);
-        String item = (itemName + " "
-      + (definition == null ? "" : definition.category) + " "
-      + (definition == null ? "" : definition.description)).toLowerCase(Locale.ROOT);
+        if (itemName == null || itemName.isBlank() || slot == null) return false; ItemDef definition = ItemCatalog.get(itemName);
+        String item = (itemName + " " + (definition == null ? "" : definition.category) + " " + (definition == null ? "" : definition.description)).toLowerCase(Locale.ROOT);
         return switch (slot) {
-            case LEFT_HAND, RIGHT_HAND -> true;
-            case HEADGEAR -> contains(item, "hat", "helmet", "hood", "cap", "mask", "headgear", "goggles");
+            case LEFT_HAND, RIGHT_HAND -> true; case HEADGEAR -> contains(item, "hat", "helmet", "hood", "cap", "mask", "headgear", "goggles");
             case UNDERCLOTHES -> contains(item, "underclothes", "undersuit", "shirt", "tunic", "vest", "underwear");
             case CLOTHES -> contains(item, "coat", "clothes", "clothing", "armor", "armour", "robes", "uniform", "workwear", "rags", "colors");
-            case GLOVES -> contains(item, "glove", "gauntlet", "handwrap", "mitt");
-            case BOOTS -> contains(item, "boot", "shoe", "greave", "sandal");
-            case BACKPACK -> contains(item, "backpack", "rucksack", "pack", "satchel", "haversack");
-            case LEFT_RING, RIGHT_RING -> contains(item, "ring", "band", "signet");
+            case GLOVES -> contains(item, "glove", "gauntlet", "handwrap", "mitt"); case BOOTS -> contains(item, "boot", "shoe", "greave", "sandal");
+            case BACKPACK -> contains(item, "backpack", "rucksack", "pack", "satchel", "haversack"); case LEFT_RING, RIGHT_RING -> contains(item, "ring", "band", "signet");
             case ACCESSORY_ONE, ACCESSORY_TWO -> contains(item, "accessory", "amulet", "necklace", "badge", "charm", "trinket", "medallion", "brooch", "belt", "scarf");
         };
     }
 
-    static List<String> compatibilityHints(EquipmentSlot slot) {
-        if (slot == null) return List.of();
-        return switch (slot) {
-            case HEADGEAR -> List.of("helmets", "hats", "hoods", "masks", "goggles");
-            case UNDERCLOTHES -> List.of("undersuits", "shirts", "tunics", "vests");
-            case CLOTHES -> List.of("clothing", "uniforms", "coats", "robes", "armor");
-            case GLOVES -> List.of("gloves", "gauntlets", "hand wraps");
-            case BOOTS -> List.of("boots", "shoes", "greaves");
-            case BACKPACK -> List.of("backpacks", "rucksacks", "satchels");
-            case LEFT_RING, RIGHT_RING -> List.of("rings", "signets", "bands");
-            case ACCESSORY_ONE, ACCESSORY_TWO -> List.of("amulets", "badges", "charms", "belts", "trinkets");
-            case LEFT_HAND, RIGHT_HAND -> List.of("weapons", "tools", "carried hand items");
-        };
+    static List<String> compatibilityHints(EquipmentSlot slot) { if (slot == null) return List.of(); return switch (slot) {
+        case HEADGEAR -> List.of("helmets", "hats", "hoods", "masks", "goggles"); case UNDERCLOTHES -> List.of("undersuits", "shirts", "tunics", "vests");
+        case CLOTHES -> List.of("clothing", "uniforms", "coats", "robes", "armor"); case GLOVES -> List.of("gloves", "gauntlets", "hand wraps");
+        case BOOTS -> List.of("boots", "shoes", "greaves"); case BACKPACK -> List.of("backpacks", "rucksacks", "satchels");
+        case LEFT_RING, RIGHT_RING -> List.of("rings", "signets", "bands"); case ACCESSORY_ONE, ACCESSORY_TWO -> List.of("amulets", "badges", "charms", "belts", "trinkets");
+        case LEFT_HAND, RIGHT_HAND -> List.of("weapons", "tools", "carried hand items"); };
     }
 
-    static List<String> bodyPartNames(Candidate candidate) {
-        if (candidate == null || candidate.body == null || candidate.body.isEmpty()) return List.of();
-        return candidate.body.values().stream()
-                .filter(part -> part != null && part.name != null && !part.name.isBlank())
-                .map(part -> part.name)
-                .toList();
-    }
+    static List<String> bodyPartNames(Candidate candidate) { if (candidate == null || candidate.body == null || candidate.body.isEmpty()) return List.of(); return candidate.body.values().stream().filter(part -> part != null && part.name != null && !part.name.isBlank()).map(part -> part.name).toList(); }
 
-    static List<MedicalView> medicalViews(Candidate candidate,
-                                          String selectedBodyPart,
-                                          Map<String, String> installed) {
-        String bodyPart = selectedBodyPart;
-        List<String> parts = bodyPartNames(candidate);
-        if ((bodyPart == null || bodyPart.isBlank()) && !parts.isEmpty()) bodyPart = parts.get(0);
-        if (bodyPart == null || bodyPart.isBlank()) bodyPart = "Unknown Region";
-
-        ArrayList<MedicalView> result = new ArrayList<>();
-        for (MedicalLayer layer : MedicalLayer.values()) {
-            MedicalSlotKey key = new MedicalSlotKey(bodyPart, layer);
-            String value = installed == null ? null : installed.get(key.storageKey());
-            String safeValue = safe(value);
-            result.add(new MedicalView(key, safeValue, safeValue.equals("Empty")));
-        }
+    static List<MedicalView> medicalViews(Candidate candidate, String selectedBodyPart, Map<String, String> installed) {
+        String bodyPart = selectedBodyPart; List<String> parts = bodyPartNames(candidate); if ((bodyPart == null || bodyPart.isBlank()) && !parts.isEmpty()) bodyPart = parts.get(0);
+        if (bodyPart == null || bodyPart.isBlank()) bodyPart = "Unknown Region"; ArrayList<MedicalView> result = new ArrayList<>();
+        for (MedicalLayer layer : MedicalLayer.values()) { MedicalSlotKey key = new MedicalSlotKey(bodyPart, layer); String safeValue = safe(installed == null ? null : installed.get(key.storageKey())); result.add(new MedicalView(key, safeValue, safeValue.equals("Empty"))); }
         return List.copyOf(result);
     }
 
-    static List<String> medicalReadinessLines(Candidate candidate,
-                                              String selectedBodyPart,
-                                              Map<String, String> installed) {
-        ArrayList<String> lines = new ArrayList<>();
-        String part = selectedBodyPart == null || selectedBodyPart.isBlank() ? "No region selected" : selectedBodyPart;
-        lines.add("Selected body region: " + part + ".");
-        lines.add("Mutation, modification, and cybernetic layers are reserved independently.");
-        lines.add("No surgery, compatibility, rejection, power, or maintenance mechanics are active yet.");
-        lines.add("Future systems can bind directly through MedicalSlotKey.storageKey().");
-        lines.add("Cybernetic records reserve isolated, direct-interface hardware; no wireless control path is assumed.");
-        int installedCount = 0;
-        if (installed != null) for (String value : installed.values()) if (!safe(value).equals("Empty")) installedCount++;
-        lines.add("Installed placeholder records: " + installedCount + ".");
-        if (candidate == null || candidate.body == null || candidate.body.isEmpty()) lines.add("Character body map unavailable.");
-        return List.copyOf(lines);
+    static List<String> medicalReadinessLines(Candidate candidate, String selectedBodyPart, Map<String, String> installed) {
+        ArrayList<String> lines = new ArrayList<>(); String part = selectedBodyPart == null || selectedBodyPart.isBlank() ? "No region selected" : selectedBodyPart;
+        lines.add("Selected body region: " + part + "."); lines.add("Mutation, modification, and cybernetic layers are reserved independently.");
+        lines.add("No surgery, compatibility, rejection, power, or maintenance mechanics are active yet."); lines.add("Future systems can bind directly through MedicalSlotKey.storageKey().");
+        lines.add("Cybernetic records reserve isolated, direct-interface hardware; no wireless control path is assumed."); int installedCount = 0;
+        if (installed != null) for (String value : installed.values()) if (!safe(value).equals("Empty")) installedCount++; lines.add("Installed placeholder records: " + installedCount + ".");
+        if (candidate == null || candidate.body == null || candidate.body.isEmpty()) lines.add("Character body map unavailable."); return List.copyOf(lines);
     }
 
     static String bodyPartAt(Candidate candidate, Rectangle bounds, int x, int y) {
-        for (CharacterPaperDollAuthority.RegionView region : CharacterPaperDollAuthority.regions(candidate, bounds)) {
-            if (region.bounds().contains(x, y)) return region.bodyPartName();
-        }
+        Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(bounds);
+        for (CharacterPaperDollAuthority.RegionView region : CharacterPaperDollAuthority.regions(candidate, interactive)) if (region.bounds().contains(x, y)) return region.bodyPartName();
         return null;
     }
 
-    static void clearLegacyBackedSlot(Map<EquipmentSlot, String> extraSlots, EquipmentSlot slot) {
-        if (extraSlots == null || slot == null) return;
-        if (slot != EquipmentSlot.LEFT_HAND && slot != EquipmentSlot.RIGHT_HAND && slot != EquipmentSlot.CLOTHES) {
-            extraSlots.remove(slot);
-        }
+    static void clearLegacyBackedSlot(Map<EquipmentSlot, String> extraSlots, EquipmentSlot slot) { if (extraSlots == null || slot == null) return; if (slot != EquipmentSlot.LEFT_HAND && slot != EquipmentSlot.RIGHT_HAND && slot != EquipmentSlot.CLOTHES) extraSlots.remove(slot); }
+    static int carryCapacityBonus(Map<EquipmentSlot, String> extraSlots) { if (extraSlots == null) return 0; String backpack = safe(extraSlots.get(EquipmentSlot.BACKPACK)).toLowerCase(Locale.ROOT); if (backpack.equals("empty")) return 0; if (contains(backpack, "expedition", "heavy", "frame pack")) return 12; if (contains(backpack, "rucksack", "haversack")) return 10; if (contains(backpack, "backpack")) return 8; if (contains(backpack, "satchel")) return 4; return 6; }
+    static void installMedicalRecord(Map<String, String> installed, String bodyPartName, MedicalLayer layer, String installedName) { if (installed == null) return; MedicalSlotKey key = new MedicalSlotKey(bodyPartName, layer); if (installedName == null || installedName.isBlank()) installed.remove(key.storageKey()); else installed.put(key.storageKey(), installedName); }
+    static String medicalRecord(Map<String, String> installed, String bodyPartName, MedicalLayer layer) { if (installed == null) return "Empty"; return safe(installed.get(new MedicalSlotKey(bodyPartName, layer).storageKey())); }
+
+    static void writeState(Properties properties, Map<EquipmentSlot, String> equipment, Map<String, String> medical) {
+        if (properties == null) return; if (equipment != null) for (Map.Entry<EquipmentSlot, String> entry : equipment.entrySet()) if (entry.getKey() != null && entry.getValue() != null && !entry.getValue().isBlank()) properties.setProperty("character.equipment." + entry.getKey().name(), entry.getValue());
+        if (medical != null) { int index = 0; for (Map.Entry<String, String> entry : medical.entrySet()) { if (entry.getKey() == null || entry.getKey().isBlank() || entry.getValue() == null || entry.getValue().isBlank()) continue; properties.setProperty("character.medical." + index + ".key", entry.getKey()); properties.setProperty("character.medical." + index + ".value", entry.getValue()); index++; } properties.setProperty("character.medical.count", Integer.toString(index)); }
     }
 
-    static int carryCapacityBonus(Map<EquipmentSlot, String> extraSlots) {
-        if (extraSlots == null) return 0;
-        String backpack = safe(extraSlots.get(EquipmentSlot.BACKPACK)).toLowerCase(Locale.ROOT);
-        if (backpack.equals("empty")) return 0;
-        if (contains(backpack, "expedition", "heavy", "frame pack")) return 12;
-        if (contains(backpack, "rucksack", "haversack")) return 10;
-        if (contains(backpack, "backpack")) return 8;
-        if (contains(backpack, "satchel")) return 4;
-        return 6;
+    static void readState(Properties properties, Map<EquipmentSlot, String> equipment, Map<String, String> medical) {
+        if (properties == null) return; if (equipment != null) { equipment.clear(); for (EquipmentSlot slot : EquipmentSlot.values()) { if (slot == EquipmentSlot.LEFT_HAND || slot == EquipmentSlot.RIGHT_HAND || slot == EquipmentSlot.CLOTHES) continue; String value = properties.getProperty("character.equipment." + slot.name()); if (value != null && !value.isBlank()) equipment.put(slot, value); } }
+        if (medical != null) { medical.clear(); int count; try { count = Math.max(0, Integer.parseInt(properties.getProperty("character.medical.count", "0"))); } catch (NumberFormatException ignored) { count = 0; }
+            for (int i = 0; i < count; i++) { String key = properties.getProperty("character.medical." + i + ".key"); String value = properties.getProperty("character.medical." + i + ".value"); if (key != null && !key.isBlank() && value != null && !value.isBlank()) medical.put(key, value); } }
     }
 
-    static void installMedicalRecord(Map<String, String> installed, String bodyPartName,
-                                     MedicalLayer layer, String installedName) {
-        if (installed == null) return;
-        MedicalSlotKey key = new MedicalSlotKey(bodyPartName, layer);
-        if (installedName == null || installedName.isBlank()) installed.remove(key.storageKey());
-        else installed.put(key.storageKey(), installedName);
-    }
-
-    static String medicalRecord(Map<String, String> installed, String bodyPartName, MedicalLayer layer) {
-        if (installed == null) return "Empty";
-        return safe(installed.get(new MedicalSlotKey(bodyPartName, layer).storageKey()));
-    }
-
-    static void writeState(Properties properties, Map<EquipmentSlot, String> equipment,
-                           Map<String, String> medical) {
-        if (properties == null) return;
-        if (equipment != null) {
-            for (Map.Entry<EquipmentSlot, String> entry : equipment.entrySet()) {
-                if (entry.getKey() == null || entry.getValue() == null || entry.getValue().isBlank()) continue;
-                properties.setProperty("character.equipment." + entry.getKey().name(), entry.getValue());
-            }
-        }
-        if (medical != null) {
-            int index = 0;
-            for (Map.Entry<String, String> entry : medical.entrySet()) {
-                if (entry.getKey() == null || entry.getKey().isBlank()
-                        || entry.getValue() == null || entry.getValue().isBlank()) continue;
-                properties.setProperty("character.medical." + index + ".key", entry.getKey());
-                properties.setProperty("character.medical." + index + ".value", entry.getValue());
-                index++;
-            }
-            properties.setProperty("character.medical.count", Integer.toString(index));
-        }
-    }
-
-    static void readState(Properties properties, Map<EquipmentSlot, String> equipment,
-                          Map<String, String> medical) {
-        if (properties == null) return;
-        if (equipment != null) {
-            equipment.clear();
-            for (EquipmentSlot slot : EquipmentSlot.values()) {
-                if (slot == EquipmentSlot.LEFT_HAND || slot == EquipmentSlot.RIGHT_HAND
-                        || slot == EquipmentSlot.CLOTHES) continue;
-                String value = properties.getProperty("character.equipment." + slot.name());
-                if (value != null && !value.isBlank()) equipment.put(slot, value);
-            }
-        }
-        if (medical != null) {
-            medical.clear();
-            int count;
-            try {
-                count = Math.max(0, Integer.parseInt(properties.getProperty("character.medical.count", "0")));
-            } catch (NumberFormatException ignored) {
-                count = 0;
-            }
-            for (int i = 0; i < count; i++) {
-                String key = properties.getProperty("character.medical." + i + ".key");
-                String value = properties.getProperty("character.medical." + i + ".value");
-                if (key != null && !key.isBlank() && value != null && !value.isBlank()) medical.put(key, value);
-            }
-        }
-    }
-
-    private static boolean contains(String value, String... needles) {
-        for (String needle : needles) if (value.contains(needle)) return true;
-        return false;
-    }
-
-    private static String normalizeLegacyHand(String item) {
-        if (item == null || item.isBlank()) return "Empty";
-        String upper = item.toUpperCase(Locale.ROOT);
-        return upper.contains("EMPTY") ? "Empty" : item;
-    }
-
-    private static String safe(String value) {
-        return value == null || value.isBlank() ? "Empty" : value;
-    }
+    private static boolean contains(String value, String... needles) { for (String needle : needles) if (value.contains(needle)) return true; return false; }
+    private static String normalizeLegacyHand(String item) { if (item == null || item.isBlank()) return "Empty"; String upper = item.toUpperCase(Locale.ROOT); return upper.contains("EMPTY") ? "Empty" : item; }
+    private static String safe(String value) { return value == null || value.isBlank() ? "Empty" : value; }
 }
