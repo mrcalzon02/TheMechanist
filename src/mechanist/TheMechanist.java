@@ -56,6 +56,7 @@ public class TheMechanist {
                     internalHost::close,
                     "mechanist-internal-host-shutdown"));
             DebugLog.audit("SINGLE_PLAYER_INTERNAL_HOST", internalHost.statusLine());
+            CharacterCreationPortraitSelectionAuthority.installBeforeWorldStartFlow(panel);
             WorldStartFlowAuthority.install(panel);
             BootMenuFlowAuthority.startBootSequence(panel, "application-entry");
             frame.setContentPane(panel);
