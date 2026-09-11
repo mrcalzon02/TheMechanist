@@ -37,6 +37,7 @@ public final class LauncherProfileSelectionDialog {
         AtomicReference<String> selectedPortrait = new AtomicReference<>(profile.portraitId());
 
         JLabel profileLabel = new JLabel(profilePresentation(profile), SwingConstants.CENTER);
+        profileLabel.setBorder(BorderFactory.createTitledBorder("Profile"));
         JLabel portraitPreview = new JLabel("", SwingConstants.CENTER);
         portraitPreview.setBorder(BorderFactory.createEtchedBorder());
         JLabel portraitLabel = new JLabel("", SwingConstants.CENTER);
@@ -62,19 +63,20 @@ public final class LauncherProfileSelectionDialog {
         });
         refresh.run();
 
-        JPanel portraitPanel = new JPanel(new BorderLayout(0, 4));
-        portraitPanel.add(portraitPreview, BorderLayout.CENTER);
-        portraitPanel.add(portraitLabel, BorderLayout.SOUTH);
-
         JPanel navigation = new JPanel(new GridLayout(1, 2, 8, 0));
         navigation.add(previous);
         navigation.add(next);
+
+        JPanel portraitPanel = new JPanel(new BorderLayout(0, 4));
+        portraitPanel.setBorder(BorderFactory.createTitledBorder("Character portrait"));
+        portraitPanel.add(portraitPreview, BorderLayout.CENTER);
+        portraitPanel.add(portraitLabel, BorderLayout.NORTH);
+        portraitPanel.add(navigation, BorderLayout.SOUTH);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         panel.add(profileLabel, BorderLayout.NORTH);
         panel.add(portraitPanel, BorderLayout.CENTER);
-        panel.add(navigation, BorderLayout.SOUTH);
 
         int result = JOptionPane.showConfirmDialog(
                 null,
