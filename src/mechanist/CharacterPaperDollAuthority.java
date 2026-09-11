@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.2-selection-outline";
+    static final String VERSION = "character-paper-doll-0.3-hit-geometry";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -97,7 +97,6 @@ final class CharacterPaperDollAuthority {
             result.add(view(part, template.label(), scale(bounds, template)));
         }
 
-        // Preserve unusual body plans instead of silently hiding their tracked regions.
         if (!unmatched.isEmpty()) {
             int index = 0;
             int columns = 2;
@@ -114,6 +113,12 @@ final class CharacterPaperDollAuthority {
             }
         }
         return List.copyOf(result);
+    }
+
+    static Rectangle interactiveBounds(Rectangle bounds) {
+        if (bounds == null) return null;
+        return new Rectangle(bounds.x + 8, bounds.y + 28,
+                Math.max(80, bounds.width - 16), Math.max(120, bounds.height - 36));
     }
 
     static List<String> regionReadouts(Candidate candidate, Rectangle bounds) {
@@ -150,8 +155,7 @@ final class CharacterPaperDollAuthority {
         g.setColor(new Color(225, 205, 140));
         g.drawString("BODY CONDITION", bounds.x + 10, bounds.y + 20);
 
-        Rectangle doll = new Rectangle(bounds.x + 8, bounds.y + 28,
-                Math.max(80, bounds.width - 16), Math.max(120, bounds.height - 36));
+        Rectangle doll = interactiveBounds(bounds);
         List<RegionView> regions = regions(candidate, doll);
         if (regions.isEmpty()) {
             g.setColor(new Color(170, 170, 155));
