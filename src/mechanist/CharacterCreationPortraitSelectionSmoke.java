@@ -1,5 +1,7 @@
 package mechanist;
 
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 
 public final class CharacterCreationPortraitSelectionSmoke {
@@ -25,8 +27,36 @@ public final class CharacterCreationPortraitSelectionSmoke {
         if (CharacterCreationPortraitSelectionAuthority.shiftedPortraitIndex(Integer.MAX_VALUE, 1) != 0) {
             throw new AssertionError("portrait forward selection did not wrap safely");
         }
+
+        Rectangle sheet = new Rectangle(100, 80, 420, 540);
+        Rectangle portrait = CharacterCreationPortraitSelectionAuthority.portraitRectForSheet(sheet);
+        Rectangle previous = CharacterCreationPortraitSelectionAuthority.previousControlRect(portrait);
+        Rectangle next = CharacterCreationPortraitSelectionAuthority.nextControlRect(portrait);
+        if (!portrait.contains(previous) || !portrait.contains(next)) {
+            throw new AssertionError("visible portrait controls escaped the portrait frame");
+        }
+        if (previous.intersects(next)) {
+            throw new AssertionError("visible portrait controls overlap each other");
+        }
+        if (previous.getCenterX() >= portrait.getCenterX() || next.getCenterX() <= portrait.getCenterX()) {
+            throw new AssertionError("portrait controls are not clearly delineated left/right");
+        }
+        if (CharacterCreationPortraitSelectionAuthority.portraitControlDirection(portrait,
+                new Point((int) previous.getCenterX(), (int) previous.getCenterY())) != -1) {
+            throw new AssertionError("previous portrait mouse control does not resolve to -1");
+        }
+        if (CharacterCreationPortraitSelectionAuthority.portraitControlDirection(portrait,
+                new Point((int) next.getCenterX(), (int) next.getCenterY())) != 1) {
+            throw new AssertionError("next portrait mouse control does not resolve to +1");
+        }
+        if (CharacterCreationPortraitSelectionAuthority.portraitControlDirection(portrait,
+                new Point((int) portrait.getCenterX(), (int) portrait.getCenterY())) != 0) {
+            throw new AssertionError("portrait image body was incorrectly turned into a mouse control");
+        }
+
         System.out.println("CharacterCreationPortraitSelectionSmoke PASS authority="
-                + CharacterCreationPortraitSelectionAuthority.VERSION + " keys=[/] persistentIndex=true");
+                + CharacterCreationPortraitSelectionAuthority.VERSION
+                + " keys=[/] persistentIndex=true visibleControls=true");
     }
 
     private CharacterCreationPortraitSelectionSmoke() {}
