@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.3-hit-geometry";
+    static final String VERSION = "character-paper-doll-0.4-region-identity";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -173,7 +173,7 @@ final class CharacterPaperDollAuthority {
             if (selectedBodyPartMatches(region, selectedBodyPart)) {
                 drawSelectionBrackets(g, r);
             }
-            drawCentered(g, r, region.currentHealth() + "/" + region.maximumHealth());
+            drawRegionIdentity(g, r, region);
         }
         g.setStroke(new BasicStroke(1.0f));
     }
@@ -182,6 +182,11 @@ final class CharacterPaperDollAuthority {
         if (region == null || selectedBodyPart == null || selectedBodyPart.isBlank()) return false;
         String selected = normalize(selectedBodyPart);
         return !selected.isBlank() && selected.equals(normalize(region.bodyPartName()));
+    }
+
+    static String regionIdentityLabel(RegionView region) {
+        if (region == null || region.shortLabel() == null) return "";
+        return region.shortLabel().trim();
     }
 
     static String statusFor(double ratio, boolean destroyed) {
@@ -273,6 +278,26 @@ final class CharacterPaperDollAuthority {
         g.drawLine(left, bottom, left + arm, bottom);
         g.drawLine(right, bottom - arm, right, bottom);
         g.drawLine(right - arm, bottom, right, bottom);
+    }
+
+    private static void drawRegionIdentity(Graphics2D g, Rectangle r, RegionView region) {
+        String health = region.currentHealth() + "/" + region.maximumHealth();
+        String label = regionIdentityLabel(region);
+        FontMetrics fm = g.getFontMetrics();
+        int availableWidth = Math.max(1, r.width - 4);
+        if (!label.isBlank() && r.height >= fm.getHeight() * 2 + 2 && fm.stringWidth(label) <= availableWidth) {
+            drawCenteredLine(g, r, label, r.y + fm.getAscent() + 2);
+            drawCenteredLine(g, r, health, r.y + r.height - fm.getDescent() - 2);
+            return;
+        }
+        drawCentered(g, r, health);
+    }
+
+    private static void drawCenteredLine(Graphics2D g, Rectangle r, String text, int baselineY) {
+        FontMetrics fm = g.getFontMetrics();
+        String value = text == null ? "" : text;
+        int x = r.x + Math.max(2, (r.width - fm.stringWidth(value)) / 2);
+        g.drawString(value, x, baselineY);
     }
 
     private static void drawCentered(Graphics2D g, Rectangle r, String text) {
