@@ -5,6 +5,21 @@ import java.nio.file.Path;
 
 public final class LauncherProfileSelectionDialogSmoke {
     public static void main(String[] args) throws Exception {
+        LauncherFallbackProfileAuthority.LauncherProfile profile =
+                new LauncherFallbackProfileAuthority.LauncherProfile(
+                        "fallback-0123456789abcdef",
+                        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                        LauncherFallbackProfileAuthority.HUMAN_8X8_PACKAGE,
+                        "human8x8-17",
+                        LauncherFallbackProfileAuthority.SPECIAL_PORTRAIT_PACKAGE,
+                        LauncherFallbackProfileAuthority.SPECIAL_NAME_PACKAGE,
+                        Path.of("profile.properties")
+                );
+        require("Local profile".equals(LauncherProfileSelectionDialog.profilePresentation(profile)),
+                "profile chooser must not expose the machine-derived internal profile id");
+        require(!LauncherProfileSelectionDialog.profilePresentation(profile).contains(profile.profileId()),
+                "player-facing profile presentation must hide the raw fallback profile key");
+
         require("human8x8-63".equals(
                 LauncherProfileSelectionDialog.stepPortraitId("human8x8-00", -1)),
                 "previous portrait should wrap to the final human portrait");
@@ -56,6 +71,7 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "thin launcher should climb from the client jar to the packaged portrait root");
 
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
+                + " profileIdentityHidden=true"
                 + " wrap=true"
                 + " partition=true"
                 + " presentation=true"
