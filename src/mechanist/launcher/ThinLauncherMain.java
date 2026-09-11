@@ -27,6 +27,12 @@ public final class ThinLauncherMain {
 
         LauncherWrapperDetector.WrapperEnvironment wrapper = LauncherWrapperDetector.detect(appHome);
         LauncherFallbackProfileAuthority.LauncherProfile profile = LauncherFallbackProfileAuthority.ensureFallbackProfile(appHome, userRoot, wrapper);
+        profile = LauncherProfileSelectionDialog.choose(profile);
+        if (profile == null) {
+            System.out.println("The Mechanist launch cancelled from profile selection");
+            return;
+        }
+
         Path contextFile = writeLaunchContext(appHome, userRoot, wrapper, profile);
         LauncherServerJoinIdentityBridge.JoinIdentityRecord joinIdentity =
                 LauncherServerJoinIdentityBridge.write(userRoot, contextFile, wrapper, profile);
@@ -42,6 +48,7 @@ public final class ThinLauncherMain {
         System.out.println("user.root=" + userRoot.toAbsolutePath().normalize());
         System.out.println("wrapper.kind=" + wrapper.kind());
         System.out.println("profile.id=" + profile.profileId());
+        System.out.println("profile.portrait=" + profile.portraitId());
         System.out.println("launch.context=" + contextFile.toAbsolutePath().normalize());
         System.out.println("join.identity=" + joinIdentity.primaryFile().toAbsolutePath().normalize());
 
