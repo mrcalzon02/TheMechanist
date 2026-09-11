@@ -65,8 +65,37 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("equipment selection did not clamp safely");
         }
 
+        assertEquipmentRegion("Head", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR);
+        assertEquipmentRegion("left hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_HAND);
+        assertEquipmentRegion("R Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.RIGHT_HAND);
+        assertEquipmentRegion("Chest", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
+        assertEquipmentRegion("L Foot", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS);
+        if (MouseLateUiController.equipmentSlotForBodyPart("L Lower Arm") != null) {
+            throw new AssertionError("ambiguous arm region must not silently select an unrelated equipment slot");
+        }
+
+        Rectangle equipmentBounds = MouseLateUiController.characterEquipmentPaperDollBounds(1600, 900);
+        Rectangle medicalBounds = MouseLateUiController.characterMedicalPaperDollBounds(1600, 900);
+        if (equipmentBounds.width >= medicalBounds.width) {
+            throw new AssertionError("equipment and medical paper-doll geometry no longer matches their render contracts");
+        }
+        if (equipmentBounds.x != medicalBounds.x || equipmentBounds.y != medicalBounds.y
+                || equipmentBounds.height != medicalBounds.height) {
+            throw new AssertionError("character tab paper-doll origins diverged across equipment and medical surfaces");
+        }
+
         System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
                 + " selectedPixels=" + changedPixels + " hit=" + hit);
+    }
+
+    private static void assertEquipmentRegion(String bodyPart,
+                                              CharacterEquipmentAndMedicalAuthority.EquipmentSlot expected) {
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot actual =
+                MouseLateUiController.equipmentSlotForBodyPart(bodyPart);
+        if (actual != expected) {
+            throw new AssertionError("equipment body-region association failed for " + bodyPart
+                    + ": expected " + expected + " but got " + actual);
+        }
     }
 
     private static BufferedImage render(Candidate candidate, String selectedBodyPart) {

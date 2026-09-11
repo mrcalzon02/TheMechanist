@@ -8,6 +8,7 @@ final class MouseLateUiController {
             panel.requestFocusInWindow();
             return true;
         }
+        if (handleCharacterEquipmentPaperDollClick(panel, mx, my)) return true;
         if (handleCharacterMedicalPaperDollClick(panel, mx, my)) return true;
         if (panel.findScrollRegion(mx, my) != null) {
             panel.handleScrollbarClick(mx, my);
@@ -36,6 +37,51 @@ final class MouseLateUiController {
         return false;
     }
 
+    static boolean handleCharacterEquipmentPaperDollClick(GamePanel panel, int mx, int my) {
+        if (panel == null || panel.active == null) return false;
+        boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
+                || panel.panelMode == GamePanel.PanelMode.CHARACTER;
+        if (!characterSurface
+                || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
+                != CharacterEquipmentAndMedicalAuthority.CharacterTab.EQUIPMENT) return false;
+
+        java.awt.Rectangle doll = characterEquipmentPaperDollBounds(panel.getWidth(), panel.getHeight());
+        String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot = equipmentSlotForBodyPart(bodyPart);
+        if (slot == null) return false;
+
+        panel.selectedCharacterEquipmentSlot = slot.ordinal();
+        panel.sounds.play("button", panel.options);
+        panel.requestFocusInWindow();
+        panel.repaint();
+        return true;
+    }
+
+    static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
+        String normalized = bodyPart == null ? "" : bodyPart.toLowerCase(java.util.Locale.ROOT)
+                .replace("left", "l").replace("right", "r")
+                .replace('-', ' ').replace('_', ' ').replaceAll("\\s+", " ").trim();
+        if (normalized.isBlank()) return null;
+        if (normalized.equals("head") || normalized.contains(" head")) {
+            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR;
+        }
+        if (normalized.contains("l hand")) {
+            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_HAND;
+        }
+        if (normalized.contains("r hand")) {
+            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.RIGHT_HAND;
+        }
+        if (normalized.contains("foot") || normalized.contains("feet")) {
+            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS;
+        }
+        if (normalized.contains("chest") || normalized.contains("abdomen")
+                || normalized.contains("pelvis") || normalized.contains("torso")
+                || normalized.equals("body")) {
+            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES;
+        }
+        return null;
+    }
+
     static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
         if (panel == null || panel.active == null) return false;
         boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
@@ -55,7 +101,19 @@ final class MouseLateUiController {
         return true;
     }
 
+    static java.awt.Rectangle characterEquipmentPaperDollBounds(int width, int height) {
+        java.awt.Rectangle content = characterTabContentBounds(width, height);
+        int dollWidth = Math.max(230, Math.min(310, content.width * 27 / 100));
+        return new java.awt.Rectangle(content.x, content.y, dollWidth, content.height);
+    }
+
     static java.awt.Rectangle characterMedicalPaperDollBounds(int width, int height) {
+        java.awt.Rectangle content = characterTabContentBounds(width, height);
+        int dollWidth = Math.max(250, Math.min(330, content.width * 34 / 100));
+        return new java.awt.Rectangle(content.x, content.y, dollWidth, content.height);
+    }
+
+    private static java.awt.Rectangle characterTabContentBounds(int width, int height) {
         int panelWidth = Math.max(820, Math.min(width - 48, (int)Math.round(width * 0.90)));
         int panelHeight = Math.max(560, Math.min(height - 92, (int)Math.round(height * 0.84)));
         int panelX = Math.max(18, (width - panelWidth) / 2);
@@ -68,8 +126,7 @@ final class MouseLateUiController {
 
         int contentY = bodyY + 40;
         int contentHeight = Math.max(120, bodyHeight - 40);
-        int dollWidth = Math.max(250, Math.min(330, bodyWidth * 34 / 100));
-        return new java.awt.Rectangle(bodyX, contentY, dollWidth, contentHeight);
+        return new java.awt.Rectangle(bodyX, contentY, bodyWidth, contentHeight);
     }
 
     static boolean handleCharacterNameClick(GamePanel panel, int mx, int my) {
