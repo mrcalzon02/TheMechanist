@@ -1,6 +1,8 @@
 package mechanist;
 
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Random;
 
@@ -23,6 +25,22 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (arm.currentHealth() <= 0 || arm.maximumHealth() <= arm.currentHealth()) {
             throw new AssertionError("limb hit-point readout was not preserved: " + arm.readout());
         }
+        if (!CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "left-lower_arm")) {
+            throw new AssertionError("selected medical body part did not map back to the paper-doll region");
+        }
+        if (CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "R Lower Arm")) {
+            throw new AssertionError("unselected body part was incorrectly treated as selected");
+        }
+        if (CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "")) {
+            throw new AssertionError("blank medical selection must not highlight a body region");
+        }
+
+        BufferedImage unselected = render(candidate, null);
+        BufferedImage selected = render(candidate, "L Lower Arm");
+        int changedPixels = changedPixels(unselected, selected);
+        if (changedPixels < 20) {
+            throw new AssertionError("selected body region produced no meaningful paper-doll visual delineation: " + changedPixels);
+        }
 
         List<CharacterPaperDollAuthority.EquipmentView> equipment = CharacterPaperDollAuthority.equipment(
                 "Stub pistol", "Knife", Clothing.scavengerRags());
@@ -35,7 +53,29 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("equipment selection did not clamp safely");
         }
 
-        System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION);
+        System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
+                + " selectedPixels=" + changedPixels);
+    }
+
+    private static BufferedImage render(Candidate candidate, String selectedBodyPart) {
+        BufferedImage image = new BufferedImage(300, 460, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        try {
+            CharacterPaperDollAuthority.paint(g, new Rectangle(8, 8, 284, 444), candidate, null, selectedBodyPart);
+        } finally {
+            g.dispose();
+        }
+        return image;
+    }
+
+    private static int changedPixels(BufferedImage first, BufferedImage second) {
+        int changed = 0;
+        for (int y = 0; y < first.getHeight(); y++) {
+            for (int x = 0; x < first.getWidth(); x++) {
+                if (first.getRGB(x, y) != second.getRGB(x, y)) changed++;
+            }
+        }
+        return changed;
     }
 
     private Milestone02CharacterPaperDollSmoke() {}

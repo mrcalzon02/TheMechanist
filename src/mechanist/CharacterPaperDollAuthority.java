@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.1";
+    static final String VERSION = "character-paper-doll-0.2-selection-outline";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -166,9 +166,18 @@ final class CharacterPaperDollAuthority {
             g.setColor(new Color(235, 225, 188, 190));
             g.setStroke(new BasicStroke(region.destroyed() ? 2.2f : 1.0f));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 5, 5);
+            if (selectedBodyPartMatches(region, selectedBodyPart)) {
+                drawSelectionBrackets(g, r);
+            }
             drawCentered(g, r, region.currentHealth() + "/" + region.maximumHealth());
         }
         g.setStroke(new BasicStroke(1.0f));
+    }
+
+    static boolean selectedBodyPartMatches(RegionView region, String selectedBodyPart) {
+        if (region == null || selectedBodyPart == null || selectedBodyPart.isBlank()) return false;
+        String selected = normalize(selectedBodyPart);
+        return !selected.isBlank() && selected.equals(normalize(region.bodyPartName()));
     }
 
     static String statusFor(double ratio, boolean destroyed) {
@@ -240,6 +249,26 @@ final class CharacterPaperDollAuthority {
         if (ratio < 0.75) return new Color(195, 139, 49);
         if (ratio < 0.95) return new Color(132, 151, 70);
         return new Color(70, 145, 91);
+    }
+
+    private static void drawSelectionBrackets(Graphics2D g, Rectangle r) {
+        int offset = 3;
+        int arm = Math.max(5, Math.min(9, Math.min(r.width, r.height) / 3));
+        int left = r.x - offset;
+        int top = r.y - offset;
+        int right = r.x + r.width + offset;
+        int bottom = r.y + r.height + offset;
+
+        g.setColor(new Color(255, 225, 128));
+        g.setStroke(new BasicStroke(2.8f));
+        g.drawLine(left, top, left + arm, top);
+        g.drawLine(left, top, left, top + arm);
+        g.drawLine(right - arm, top, right, top);
+        g.drawLine(right, top, right, top + arm);
+        g.drawLine(left, bottom - arm, left, bottom);
+        g.drawLine(left, bottom, left + arm, bottom);
+        g.drawLine(right, bottom - arm, right, bottom);
+        g.drawLine(right - arm, bottom, right, bottom);
     }
 
     private static void drawCentered(Graphics2D g, Rectangle r, String text) {
