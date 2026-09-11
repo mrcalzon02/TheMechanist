@@ -102,17 +102,40 @@ public final class ThinLauncherMain {
     }
 
     private static Path detectAppHome() {
+        Path working = Path.of(".").toAbsolutePath().normalize();
+        Path codeSource = null;
         try {
-            File codeSource = new File(ThinLauncherMain.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            Path path = codeSource.toPath().toAbsolutePath().normalize();
-            if (Files.isRegularFile(path)) {
-                Path parent = path.getParent();
-                return parent == null ? Path.of(".").toAbsolutePath().normalize() : parent;
-            }
-            return path;
-        } catch (URISyntaxException | RuntimeException ex) {
-            return Path.of(".").toAbsolutePath().normalize();
+            File source = new File(ThinLauncherMain.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            codeSource = source.toPath().toAbsolutePath().normalize();
+        } catch (URISyntaxException | RuntimeException ignored) {
+            // The packaged working directory remains the authoritative fallback.
         }
+        return selectAppHome(working, codeSource);
+    }
+
+    static Path selectAppHome(Path working, Path codeSource) {
+        Path normalizedWorking = working == null
+                ? Path.of(".").toAbsolutePath().normalize()
+                : working.toAbsolutePath().normalize();
+        if (hasPackagedProfileAssets(normalizedWorking)) return normalizedWorking;
+
+        if (codeSource != null) {
+            Path normalizedSource = codeSource.toAbsolutePath().normalize();
+            Path cursor = Files.isRegularFile(normalizedSource) ? normalizedSource.getParent() : normalizedSource;
+            Path originalSourceHome = cursor;
+            for (int depth = 0; cursor != null && depth < 8; depth++, cursor = cursor.getParent()) {
+                if (hasPackagedProfileAssets(cursor)) return cursor;
+            }
+            if (originalSourceHome != null) return originalSourceHome;
+        }
+        return normalizedWorking;
+    }
+
+    private static boolean hasPackagedProfileAssets(Path root) {
+        if (root == null) return false;
+        return Files.isDirectory(root.resolve("profile-packages")
+                .resolve("human-8x8")
+                .resolve("assets"));
     }
 
     private ThinLauncherMain() {}
