@@ -8,6 +8,7 @@ final class MouseLateUiController {
             panel.requestFocusInWindow();
             return true;
         }
+        if (handleCharacterMedicalPaperDollClick(panel, mx, my)) return true;
         if (panel.findScrollRegion(mx, my) != null) {
             panel.handleScrollbarClick(mx, my);
             panel.repaint();
@@ -33,6 +34,42 @@ final class MouseLateUiController {
         }
         panel.requestFocusInWindow();
         return false;
+    }
+
+    static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
+        if (panel == null || panel.active == null) return false;
+        boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
+                || panel.panelMode == GamePanel.PanelMode.CHARACTER;
+        if (!characterSurface
+                || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
+                != CharacterEquipmentAndMedicalAuthority.CharacterTab.MEDICAL) return false;
+
+        java.awt.Rectangle doll = characterMedicalPaperDollBounds(panel.getWidth(), panel.getHeight());
+        String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
+        if (bodyPart == null || bodyPart.isBlank()) return false;
+
+        panel.selectCharacterMedicalBodyPart(bodyPart);
+        panel.sounds.play("button", panel.options);
+        panel.requestFocusInWindow();
+        panel.repaint();
+        return true;
+    }
+
+    static java.awt.Rectangle characterMedicalPaperDollBounds(int width, int height) {
+        int panelWidth = Math.max(820, Math.min(width - 48, (int)Math.round(width * 0.90)));
+        int panelHeight = Math.max(560, Math.min(height - 92, (int)Math.round(height * 0.84)));
+        int panelX = Math.max(18, (width - panelWidth) / 2);
+        int panelY = Math.max(46, (height - panelHeight) / 2);
+
+        int bodyX = panelX + 18;
+        int bodyY = panelY + 54;
+        int bodyWidth = panelWidth - 36;
+        int bodyHeight = panelHeight - 112;
+
+        int contentY = bodyY + 40;
+        int contentHeight = Math.max(120, bodyHeight - 40);
+        int dollWidth = Math.max(250, Math.min(330, bodyWidth * 34 / 100));
+        return new java.awt.Rectangle(bodyX, contentY, dollWidth, contentHeight);
     }
 
     static boolean handleCharacterNameClick(GamePanel panel, int mx, int my) {
