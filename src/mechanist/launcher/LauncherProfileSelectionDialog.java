@@ -36,7 +36,7 @@ public final class LauncherProfileSelectionDialog {
 
         AtomicReference<String> selectedPortrait = new AtomicReference<>(profile.portraitId());
 
-        JLabel profileLabel = new JLabel("Profile: " + profile.profileId(), SwingConstants.CENTER);
+        JLabel profileLabel = new JLabel(profilePresentation(profile), SwingConstants.CENTER);
         JLabel portraitPreview = new JLabel("", SwingConstants.CENTER);
         portraitPreview.setBorder(BorderFactory.createEtchedBorder());
         JLabel portraitLabel = new JLabel("", SwingConstants.CENTER);
@@ -88,6 +88,10 @@ public final class LauncherProfileSelectionDialog {
         String selected = selectedPortrait.get();
         if (selected.equals(profile.portraitId())) return profile;
         return LauncherFallbackProfileAuthority.selectHumanPortrait(profile, selected);
+    }
+
+    static String profilePresentation(LauncherFallbackProfileAuthority.LauncherProfile profile) {
+        return profile == null ? "Profile unavailable" : "Local profile";
     }
 
     static String stepPortraitId(String current, int delta) {
