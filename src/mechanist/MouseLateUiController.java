@@ -48,7 +48,7 @@ final class MouseLateUiController {
         String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
         if (bodyPart == null || bodyPart.isBlank()) return false;
 
-        panel.selectCharacterMedicalBodyPart(bodyPart);
+        panel.selectedCharacterMedicalBodyPart = bodyPart;
         panel.sounds.play("button", panel.options);
         panel.requestFocusInWindow();
         panel.repaint();
