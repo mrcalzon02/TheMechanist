@@ -35,7 +35,7 @@ import java.util.Random;
  * Existing .mechworld definitions go directly from World Picker to Character Creation.
  */
 final class WorldStartFlowAuthority {
-    static final String VERSION = "world-start-flow-authority-0.9.10la";
+    static final String VERSION = "world-start-flow-authority-0.9.10lb";
 
     enum Stage { CLOSED, WORLD_PICKER, WORLD_GENERATION, CHARACTER_CREATION }
 
@@ -569,7 +569,7 @@ final class WorldStartFlowAuthority {
             drawCharacterRangeBar(g, characterRangeBarRect());
             drawButton(g, buttonRect(0), "Start Run", true);
             drawButton(g, buttonRect(1), "Back", false);
-            drawFooter(g, MenuTextAuthority.text("menu.character_generation.footer", "Left/Right cycles candidate or job. J/K cycles jobs. R rerolls. E edits name. G starts run. Esc returns."));
+            drawFooter(g, MenuTextAuthority.text("menu.character_generation.footer", "Left/Right cycles candidate or job. [ / ] changes portrait. J/K cycles jobs. R rerolls. E edits name. G starts run. Esc returns."));
         }
 
         void drawCharacterRoster(Graphics2D g, Rectangle r) {
@@ -606,7 +606,7 @@ final class WorldStartFlowAuthority {
             panel.characterNameEditRect = new Rectangle(nameX, nameY, nameW, 30);
             drawNameEditor(g, c);
             int metaY = panel.characterNameEditRect.y + 50;
-            drawCompactLine(g, "Candidate " + (panel.candidateIndex + 1) + "/" + Math.max(1, panel.candidates.size()) + " / Portrait " + c.portraitIndex, nameX, metaY, nameW, muted());
+            drawCompactLine(g, "Candidate " + (panel.candidateIndex + 1) + "/" + Math.max(1, panel.candidates.size()) + " / Portrait selected", nameX, metaY, nameW, muted());
             drawCompactLine(g, "Age " + c.ageYears + " years / " + safe(c.ageBand), nameX, metaY + 18, nameW, muted());
 
             int statsY = Math.max(portraitRect.y + portraitRect.height + 16, metaY + 38);
