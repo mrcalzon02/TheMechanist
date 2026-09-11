@@ -25,6 +25,10 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (arm.currentHealth() <= 0 || arm.maximumHealth() <= arm.currentHealth()) {
             throw new AssertionError("limb hit-point readout was not preserved: " + arm.readout());
         }
+        if (!"L Lower Arm".equals(CharacterPaperDollAuthority.regionIdentityLabel(arm))) {
+            throw new AssertionError("paper-doll region identity label was not preserved: "
+                    + CharacterPaperDollAuthority.regionIdentityLabel(arm));
+        }
         if (!CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "left-lower_arm")) {
             throw new AssertionError("selected medical body part did not map back to the paper-doll region");
         }
