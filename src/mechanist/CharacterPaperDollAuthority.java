@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.5-multi-region-selection";
+    static final String VERSION = "character-paper-doll-0.6-compact-region-identity";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -203,6 +203,32 @@ final class CharacterPaperDollAuthority {
         return region.shortLabel().trim();
     }
 
+    static String compactRegionIdentityLabel(RegionView region) {
+        String normalized = normalize(regionIdentityLabel(region));
+        return switch (normalized) {
+            case "head" -> "HD";
+            case "chest" -> "CH";
+            case "abdomen" -> "AB";
+            case "pelvis" -> "PV";
+            case "l upper arm" -> "LUA";
+            case "l lower arm" -> "LLA";
+            case "l hand" -> "LH";
+            case "r upper arm" -> "RUA";
+            case "r lower arm" -> "RLA";
+            case "r hand" -> "RH";
+            case "l upper leg" -> "LUL";
+            case "l lower leg" -> "LLL";
+            case "l foot" -> "LF";
+            case "r upper leg" -> "RUL";
+            case "r lower leg" -> "RLL";
+            case "r foot" -> "RF";
+            default -> {
+                String identity = regionIdentityLabel(region);
+                yield identity.length() <= 4 ? identity : compactLabel(identity).substring(0, Math.min(4, compactLabel(identity).length()));
+            }
+        };
+    }
+
     static String statusFor(double ratio, boolean destroyed) {
         if (destroyed || ratio <= 0.0) return "Disabled";
         if (ratio < 0.25) return "Critical";
@@ -297,11 +323,30 @@ final class CharacterPaperDollAuthority {
     private static void drawRegionIdentity(Graphics2D g, Rectangle r, RegionView region) {
         String health = region.currentHealth() + "/" + region.maximumHealth();
         String label = regionIdentityLabel(region);
+        String compact = compactRegionIdentityLabel(region);
+        String current = Integer.toString(region.currentHealth());
         FontMetrics fm = g.getFontMetrics();
         int availableWidth = Math.max(1, r.width - 4);
-        if (!label.isBlank() && r.height >= fm.getHeight() * 2 + 2 && fm.stringWidth(label) <= availableWidth) {
+        boolean twoLines = r.height >= fm.getHeight() * 2 + 2;
+        if (!label.isBlank() && twoLines && fm.stringWidth(label) <= availableWidth) {
             drawCenteredLine(g, r, label, r.y + fm.getAscent() + 2);
-            drawCenteredLine(g, r, health, r.y + r.height - fm.getDescent() - 2);
+            drawCenteredLine(g, r, fm.stringWidth(health) <= availableWidth ? health : current,
+                    r.y + r.height - fm.getDescent() - 2);
+            return;
+        }
+        if (!compact.isBlank() && twoLines && fm.stringWidth(compact) <= availableWidth) {
+            drawCenteredLine(g, r, compact, r.y + fm.getAscent() + 2);
+            drawCenteredLine(g, r, fm.stringWidth(health) <= availableWidth ? health : current,
+                    r.y + r.height - fm.getDescent() - 2);
+            return;
+        }
+        String combined = compact + " " + current;
+        if (!compact.isBlank() && fm.stringWidth(combined) <= availableWidth) {
+            drawCentered(g, r, combined);
+            return;
+        }
+        if (!compact.isBlank() && fm.stringWidth(compact) <= availableWidth) {
+            drawCentered(g, r, compact);
             return;
         }
         drawCentered(g, r, health);
