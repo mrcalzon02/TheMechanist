@@ -48,6 +48,14 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "")) {
             throw new AssertionError("blank medical selection must not highlight a body region");
         }
+        CharacterPaperDollAuthority.RegionView torsoAlias = new CharacterPaperDollAuthority.RegionView(
+                "Torso", "Chest", new Rectangle(0, 0, 40, 40), 1.0, 10, 10, "Healthy", false);
+        if (!CharacterPaperDollAuthority.selectedBodyPartMatches(torsoAlias, "Chest")) {
+            throw new AssertionError("canonical chest selection did not match a torso-backed rendered region");
+        }
+        if (CharacterPaperDollAuthority.selectedBodyPartMatches(torsoAlias, "Abdomen")) {
+            throw new AssertionError("canonical region alias matching leaked to an unrelated rendered region");
+        }
 
         Rectangle renderedBounds = new Rectangle(8, 8, 284, 444);
         Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(renderedBounds);
