@@ -10,6 +10,7 @@ final class MouseLateUiController {
         }
         if (handleCharacterEquipmentPaperDollClick(panel, mx, my)) return true;
         if (handleCharacterMedicalPaperDollClick(panel, mx, my)) return true;
+        if (handleCharacterNameClick(panel, mx, my)) return true;
         if (panel.findScrollRegion(mx, my) != null) {
             panel.handleScrollbarClick(mx, my);
             panel.repaint();
@@ -21,7 +22,6 @@ final class MouseLateUiController {
             return true;
         }
         if (OptionsDropdownMouseController.handleOptionsDropdownClick(panel, mx, my)) return true;
-        if (handleCharacterNameClick(panel, mx, my)) return true;
         for (int i = panel.buttons.size() - 1; i >= 0; i--) {
             ButtonBox button = panel.buttons.get(i);
             if (UiModalButtonController.buttonIsModalInteractive(panel, button) && button.contains(mx, my)) {
