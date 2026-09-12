@@ -117,6 +117,7 @@ public final class Milestone02CharacterPaperDollSmoke {
         assertPreferredEquipmentRegion("R Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.GLOVES);
         assertPreferredEquipmentRegion("L Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_RING);
         assertPreferredEquipmentRegion("Chest", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
+        assertPreferredEquipmentRegion("Torso", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.UNDERCLOTHES);
         assertPreferredEquipmentRegion("R Foot", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS);
         if (MouseLateUiController.equipmentSlotForBodyPart("L Hand", 999)
                 != CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_HAND) {
