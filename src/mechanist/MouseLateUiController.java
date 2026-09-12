@@ -47,7 +47,8 @@ final class MouseLateUiController {
 
         java.awt.Rectangle doll = characterEquipmentPaperDollBounds(panel.getWidth(), panel.getHeight());
         String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
-        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot = equipmentSlotForBodyPart(bodyPart);
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot = equipmentSlotForBodyPart(
+                bodyPart, panel.selectedCharacterEquipmentSlot);
         if (slot == null) return false;
 
         panel.selectedCharacterEquipmentSlot = slot.ordinal();
@@ -59,6 +60,20 @@ final class MouseLateUiController {
 
     static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
         return CharacterEquipmentAndMedicalAuthority.equipmentSlotForBodyPart(bodyPart);
+    }
+
+    static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart,
+                                                                                          int preferredSelection) {
+        if (bodyPart != null && !bodyPart.isBlank()) {
+            CharacterEquipmentAndMedicalAuthority.EquipmentSlot[] slots =
+                    CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values();
+            if (preferredSelection >= 0 && preferredSelection < slots.length) {
+                for (String region : CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(preferredSelection)) {
+                    if (region.equalsIgnoreCase(bodyPart)) return slots[preferredSelection];
+                }
+            }
+        }
+        return equipmentSlotForBodyPart(bodyPart);
     }
 
     static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
