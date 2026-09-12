@@ -212,12 +212,22 @@ final class CharacterEquipmentAndMedicalAuthority {
                 .toList();
     }
 
+    static String medicalBodyPartSelection(Candidate candidate, String selectedBodyPart) {
+        List<String> parts = bodyPartNames(candidate);
+        if (parts.isEmpty()) return null;
+        String selected = normalizeBodyRegion(selectedBodyPart);
+        if (!selected.isBlank()) {
+            for (String part : parts) {
+                if (normalizeBodyRegion(part).equals(selected)) return part;
+            }
+        }
+        return parts.get(0);
+    }
+
     static List<MedicalView> medicalViews(Candidate candidate,
                                           String selectedBodyPart,
                                           Map<String, String> installed) {
-        String bodyPart = selectedBodyPart;
-        List<String> parts = bodyPartNames(candidate);
-        if ((bodyPart == null || bodyPart.isBlank()) && !parts.isEmpty()) bodyPart = parts.get(0);
+        String bodyPart = medicalBodyPartSelection(candidate, selectedBodyPart);
         if (bodyPart == null || bodyPart.isBlank()) bodyPart = "Unknown Region";
 
         ArrayList<MedicalView> result = new ArrayList<>();
@@ -234,7 +244,8 @@ final class CharacterEquipmentAndMedicalAuthority {
                                               String selectedBodyPart,
                                               Map<String, String> installed) {
         ArrayList<String> lines = new ArrayList<>();
-        String part = selectedBodyPart == null || selectedBodyPart.isBlank() ? "No region selected" : selectedBodyPart;
+        String resolvedPart = medicalBodyPartSelection(candidate, selectedBodyPart);
+        String part = resolvedPart == null || resolvedPart.isBlank() ? "No region selected" : resolvedPart;
         lines.add("Selected body region: " + part + ".");
         lines.add("Mutation, modification, and cybernetic layers are reserved independently.");
         lines.add("No surgery, compatibility, rejection, power, or maintenance mechanics are active yet.");
