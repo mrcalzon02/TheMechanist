@@ -56,6 +56,12 @@ public final class LauncherProfileSelectionDialogSmoke {
         require("Portrait unavailable".equals(
                 LauncherProfileSelectionDialog.portraitPresentation("enemy-17")),
                 "non-human portrait ids must not cross the launcher profile partition");
+        require("Selected portrait 18 of 64".equals(
+                LauncherProfileSelectionDialog.portraitAccessibilityDescription("human8x8-17", true)),
+                "accessible portrait state must identify the currently selected portrait");
+        require("Selected portrait unavailable; image unavailable".equals(
+                LauncherProfileSelectionDialog.portraitAccessibilityDescription("enemy-17", false)),
+                "accessible portrait state must expose unavailable image association without leaking a raw portrait id");
 
         Path root = Path.of("launcher-root");
         require(root.resolve("profile-packages/human-8x8/assets/Humans8x8_r01c01_32px.png").equals(
@@ -109,6 +115,7 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " unavailableRecovery=true"
                 + " partition=true"
                 + " presentation=true"
+                + " accessibilitySelection=true"
                 + " previewAssetMapping=true"
                 + " packagedAssetHome=true"
                 + " completeAssetRoot=true");
