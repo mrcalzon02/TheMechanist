@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.7-narrow-label-preservation";
+    static final String VERSION = "character-paper-doll-0.8-canonical-selection-aliases";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -187,7 +187,9 @@ final class CharacterPaperDollAuthority {
     static boolean selectedBodyPartMatches(RegionView region, String selectedBodyPart) {
         if (region == null || selectedBodyPart == null || selectedBodyPart.isBlank()) return false;
         String selected = normalize(selectedBodyPart);
-        return !selected.isBlank() && selected.equals(normalize(region.bodyPartName()));
+        if (selected.isBlank()) return false;
+        return selected.equals(normalize(region.bodyPartName()))
+                || selected.equals(normalize(region.shortLabel()));
     }
 
     static boolean selectedBodyPartMatchesAny(RegionView region, List<String> selectedBodyParts) {
