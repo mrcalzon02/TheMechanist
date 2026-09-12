@@ -117,7 +117,8 @@ final class MouseLateUiController {
             return true;
         }
         if (panel.characterNameEditActive) {
-            Candidate candidate = panel.candidates.isEmpty() ? null : panel.candidates.get(panel.candidateIndex);
+            Candidate candidate = panel.candidateIndex >= 0 && panel.candidateIndex < panel.candidates.size()
+                    ? panel.candidates.get(panel.candidateIndex) : null;
             if (candidate != null) {
                 candidate.name = CharacterCreationAuthority.sanitizePlayerName(candidate.name, panel.rng);
                 panel.refreshNameLockedCandidateState(candidate);
