@@ -75,8 +75,7 @@ public final class LauncherProfileSelectionDialogSmoke {
 
         Path temp = Files.createTempDirectory("mechanist-launcher-profile-home-");
         Path packagedRoot = temp.resolve("installed");
-        Path portraitAssets = packagedRoot.resolve("profile-packages/human-8x8/assets");
-        Files.createDirectories(portraitAssets);
+        writeCompletePortraitPackage(packagedRoot);
         Path clientDir = packagedRoot.resolve("packages/client");
         Files.createDirectories(clientDir);
         Path clientJar = clientDir.resolve("TheMechanist-client.jar");
@@ -91,6 +90,17 @@ public final class LauncherProfileSelectionDialogSmoke {
                 ThinLauncherMain.selectAppHome(unrelatedWorking, clientJar)),
                 "thin launcher should climb from the client jar to the packaged portrait root");
 
+        Path incompleteWorking = temp.resolve("incomplete");
+        Path firstIncompleteAsset = LauncherProfileSelectionDialog.portraitAssetPath(
+                incompleteWorking,
+                LauncherFallbackProfileAuthority.humanPortraitId(0)
+        );
+        Files.createDirectories(firstIncompleteAsset.getParent());
+        Files.writeString(firstIncompleteAsset, "smoke");
+        require(packagedRoot.toAbsolutePath().normalize().equals(
+                ThinLauncherMain.selectAppHome(incompleteWorking, clientJar)),
+                "thin launcher must reject incomplete portrait roots and recover the complete packaged asset home");
+
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
@@ -100,7 +110,19 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " partition=true"
                 + " presentation=true"
                 + " previewAssetMapping=true"
-                + " packagedAssetHome=true");
+                + " packagedAssetHome=true"
+                + " completeAssetRoot=true");
+    }
+
+    private static void writeCompletePortraitPackage(Path root) throws Exception {
+        for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
+            Path asset = LauncherProfileSelectionDialog.portraitAssetPath(
+                    root,
+                    LauncherFallbackProfileAuthority.humanPortraitId(ordinal)
+            );
+            Files.createDirectories(asset.getParent());
+            Files.writeString(asset, "smoke");
+        }
     }
 
     private static void require(boolean condition, String message) {
