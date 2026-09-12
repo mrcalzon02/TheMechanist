@@ -40,7 +40,7 @@ final class MouseLateUiController {
     static boolean handleCharacterEquipmentPaperDollClick(GamePanel panel, int mx, int my) {
         if (panel == null || panel.active == null || panel.newGameSetupActive) return false;
         boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
-                || panel.panelMode == GamePanel.PanelMode.CHARACTER;
+                || (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.CHARACTER);
         if (!characterSurface
                 || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
                 != CharacterEquipmentAndMedicalAuthority.CharacterTab.EQUIPMENT) return false;
@@ -64,7 +64,7 @@ final class MouseLateUiController {
     static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
         if (panel == null || panel.active == null || panel.newGameSetupActive) return false;
         boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
-                || panel.panelMode == GamePanel.PanelMode.CHARACTER;
+                || (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.CHARACTER);
         if (!characterSurface
                 || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
                 != CharacterEquipmentAndMedicalAuthority.CharacterTab.MEDICAL) return false;
