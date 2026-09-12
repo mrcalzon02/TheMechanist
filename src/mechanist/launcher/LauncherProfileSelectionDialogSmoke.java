@@ -25,6 +25,16 @@ public final class LauncherProfileSelectionDialogSmoke {
         require(previewSize.width == 144 && previewSize.height == 144,
                 "portrait preview must keep a stable square footprint even when art is unavailable");
 
+        require("human8x8-17".equals(
+                LauncherProfileSelectionDialog.initialPortraitId("human8x8-17")),
+                "valid saved portrait should remain selected when the chooser opens");
+        require("human8x8-00".equals(
+                LauncherProfileSelectionDialog.initialPortraitId("enemy-17")),
+                "unavailable saved portrait should recover to the first human portrait when the chooser opens");
+        require("human8x8-00".equals(
+                LauncherProfileSelectionDialog.initialPortraitId(null)),
+                "missing saved portrait should recover to the first human portrait when the chooser opens");
+
         require("human8x8-63".equals(
                 LauncherProfileSelectionDialog.stepPortraitId("human8x8-00", -1)),
                 "previous portrait should wrap to the final human portrait");
@@ -84,6 +94,7 @@ public final class LauncherProfileSelectionDialogSmoke {
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
+                + " initialSelectionRecovery=true"
                 + " wrap=true"
                 + " unavailableRecovery=true"
                 + " partition=true"
