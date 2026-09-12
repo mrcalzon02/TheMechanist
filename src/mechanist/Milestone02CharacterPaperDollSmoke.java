@@ -33,6 +33,12 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("narrow paper-doll region lost compact semantic identity: "
                     + CharacterPaperDollAuthority.compactRegionIdentityLabel(arm));
         }
+        if (!"LLA".equals(CharacterPaperDollAuthority.narrowOverflowFallback("LLA"))) {
+            throw new AssertionError("narrow semantic label degraded during overflow fallback");
+        }
+        if (!"7".equals(CharacterPaperDollAuthority.narrowOverflowFallback("7/10"))) {
+            throw new AssertionError("narrow health fallback did not preserve current hit points");
+        }
         if (!CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "left-lower_arm")) {
             throw new AssertionError("selected medical body part did not map back to the paper-doll region");
         }
