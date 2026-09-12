@@ -118,6 +118,16 @@ public final class Milestone02CharacterPaperDollSmoke {
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK).isEmpty()) {
             throw new AssertionError("backpack must not invent a visible body-region association");
         }
+        assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES,
+                "Chest / Abdomen / Pelvis");
+        assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.GLOVES,
+                "L Hand / R Hand");
+        assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS,
+                "L Foot / R Foot");
+        assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK,
+                "No direct paper-doll region");
+        assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.ACCESSORY_ONE,
+                "No direct paper-doll region");
 
         Rectangle equipmentBounds = MouseLateUiController.characterEquipmentPaperDollBounds(1600, 900);
         Rectangle medicalBounds = MouseLateUiController.characterMedicalPaperDollBounds(1600, 900);
@@ -150,6 +160,14 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (!actual.equals(List.of(expected))) {
             throw new AssertionError("equipment slot region association failed for " + slot
                     + ": expected " + List.of(expected) + " but got " + actual);
+        }
+    }
+
+    private static void assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot,
+                                                   String expected) {
+        if (!expected.equals(slot.bodyRegion())) {
+            throw new AssertionError("equipment slot visible region label diverged for " + slot
+                    + ": expected " + expected + " but got " + slot.bodyRegion());
         }
     }
 
