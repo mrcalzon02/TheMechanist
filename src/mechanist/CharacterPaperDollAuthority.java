@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.6-compact-region-identity";
+    static final String VERSION = "character-paper-doll-0.7-narrow-label-preservation";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -229,6 +229,16 @@ final class CharacterPaperDollAuthority {
         };
     }
 
+    static String narrowOverflowFallback(String value) {
+        if (value == null || value.isBlank()) return "";
+        int slash = value.indexOf('/');
+        if (slash > 0) {
+            try { return Integer.toString(Integer.parseInt(value.substring(0, slash))); }
+            catch (RuntimeException ignored) { return value; }
+        }
+        return value;
+    }
+
     static String statusFor(double ratio, boolean destroyed) {
         if (destroyed || ratio <= 0.0) return "Disabled";
         if (ratio < 0.25) return "Critical";
@@ -360,12 +370,21 @@ final class CharacterPaperDollAuthority {
     }
 
     private static void drawCentered(Graphics2D g, Rectangle r, String text) {
+        Font original = g.getFont();
         FontMetrics fm = g.getFontMetrics();
-        String value = text == null ? "" : text;
-        if (fm.stringWidth(value) > r.width - 4) value = Integer.toString(extractCurrent(value));
+        String value = narrowOverflowFallback(text);
+        if (fm.stringWidth(value) > r.width - 4 && !value.isBlank()) {
+            float size = original.getSize2D();
+            while (size > 7f && fm.stringWidth(value) > r.width - 4) {
+                size -= 1f;
+                g.setFont(original.deriveFont(size));
+                fm = g.getFontMetrics();
+            }
+        }
         int x = r.x + Math.max(2, (r.width - fm.stringWidth(value)) / 2);
         int y = r.y + (r.height + fm.getAscent() - fm.getDescent()) / 2;
         g.drawString(value, x, y);
+        g.setFont(original);
     }
 
     private static int extractCurrent(String value) {
