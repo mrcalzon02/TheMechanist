@@ -18,7 +18,7 @@ import java.util.Properties;
  * the character screen again.
  */
 final class CharacterEquipmentAndMedicalAuthority {
-    static final String VERSION = "character-equipment-medical-0.3-body-association";
+    static final String VERSION = "character-equipment-medical-0.4-selection-regions";
 
     enum CharacterTab {
         OVERVIEW("Overview"),
@@ -162,6 +162,10 @@ final class CharacterEquipmentAndMedicalAuthority {
             case RIGHT_RING, RIGHT_HAND -> List.of("R Hand");
             case BACKPACK, ACCESSORY_ONE, ACCESSORY_TWO -> List.of();
         };
+    }
+
+    static List<String> bodyRegionsForEquipmentSelection(int selectedIndex) {
+        return bodyRegionsForEquipmentSlot(EquipmentSlot.at(selectedIndex));
     }
 
     static boolean canEquip(String itemName, EquipmentSlot slot) {
