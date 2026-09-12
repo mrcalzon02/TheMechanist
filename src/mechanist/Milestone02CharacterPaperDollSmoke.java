@@ -74,8 +74,22 @@ public final class Milestone02CharacterPaperDollSmoke {
         assertEquipmentRegion("R Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.RIGHT_HAND);
         assertEquipmentRegion("Chest", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
         assertEquipmentRegion("L Foot", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS);
-        if (MouseLateUiController.equipmentSlotForBodyPart("L Lower Arm") != null) {
+        if (CharacterEquipmentAndMedicalAuthority.equipmentSlotForBodyPart("L Lower Arm") != null) {
             throw new AssertionError("ambiguous arm region must not silently select an unrelated equipment slot");
+        }
+
+        assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR, "Head");
+        assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES,
+                "Chest", "Abdomen", "Pelvis");
+        assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.GLOVES,
+                "L Hand", "R Hand");
+        assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS,
+                "L Foot", "R Foot");
+        assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_HAND, "L Hand");
+        assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.RIGHT_HAND, "R Hand");
+        if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK).isEmpty()) {
+            throw new AssertionError("backpack must not invent a visible body-region association");
         }
 
         Rectangle equipmentBounds = MouseLateUiController.characterEquipmentPaperDollBounds(1600, 900);
@@ -89,6 +103,7 @@ public final class Milestone02CharacterPaperDollSmoke {
         }
 
         System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
+                + " equipment=" + CharacterEquipmentAndMedicalAuthority.VERSION
                 + " selectedPixels=" + changedPixels + " hit=" + hit);
     }
 
@@ -99,6 +114,15 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (actual != expected) {
             throw new AssertionError("equipment body-region association failed for " + bodyPart
                     + ": expected " + expected + " but got " + actual);
+        }
+    }
+
+    private static void assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot,
+                                                   String... expected) {
+        List<String> actual = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(slot);
+        if (!actual.equals(List.of(expected))) {
+            throw new AssertionError("equipment slot region association failed for " + slot
+                    + ": expected " + List.of(expected) + " but got " + actual);
         }
     }
 
