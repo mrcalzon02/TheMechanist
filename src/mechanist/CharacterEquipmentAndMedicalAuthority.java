@@ -18,7 +18,7 @@ import java.util.Properties;
  * the character screen again.
  */
 final class CharacterEquipmentAndMedicalAuthority {
-    static final String VERSION = "character-equipment-medical-0.4-selection-regions";
+    static final String VERSION = "character-equipment-medical-0.5-region-readability";
 
     enum CharacterTab {
         OVERVIEW("Overview"),
@@ -39,17 +39,17 @@ final class CharacterEquipmentAndMedicalAuthority {
 
     enum EquipmentSlot {
         HEADGEAR("Headgear", "Head"),
-        UNDERCLOTHES("Underclothes", "Torso"),
-        CLOTHES("Clothes / Body", "Torso"),
-        GLOVES("Gloves", "Hands"),
-        BOOTS("Boots", "Feet"),
-        BACKPACK("Backpack", "Back"),
-        LEFT_RING("Left Ring", "Left Hand"),
-        RIGHT_RING("Right Ring", "Right Hand"),
-        ACCESSORY_ONE("Accessory 1", "General"),
-        ACCESSORY_TWO("Accessory 2", "General"),
-        LEFT_HAND("Left Hand", "Left Hand"),
-        RIGHT_HAND("Right Hand", "Right Hand");
+        UNDERCLOTHES("Underclothes", "Chest / Abdomen / Pelvis"),
+        CLOTHES("Clothes / Body", "Chest / Abdomen / Pelvis"),
+        GLOVES("Gloves", "L Hand / R Hand"),
+        BOOTS("Boots", "L Foot / R Foot"),
+        BACKPACK("Backpack", "No direct paper-doll region"),
+        LEFT_RING("Left Ring", "L Hand"),
+        RIGHT_RING("Right Ring", "R Hand"),
+        ACCESSORY_ONE("Accessory 1", "No direct paper-doll region"),
+        ACCESSORY_TWO("Accessory 2", "No direct paper-doll region"),
+        LEFT_HAND("Left Hand", "L Hand"),
+        RIGHT_HAND("Right Hand", "R Hand");
 
         private final String label;
         private final String bodyRegion;
