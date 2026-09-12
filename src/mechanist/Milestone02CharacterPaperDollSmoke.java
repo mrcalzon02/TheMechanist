@@ -29,6 +29,10 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("paper-doll region identity label was not preserved: "
                     + CharacterPaperDollAuthority.regionIdentityLabel(arm));
         }
+        if (!"LLA".equals(CharacterPaperDollAuthority.compactRegionIdentityLabel(arm))) {
+            throw new AssertionError("narrow paper-doll region lost compact semantic identity: "
+                    + CharacterPaperDollAuthority.compactRegionIdentityLabel(arm));
+        }
         if (!CharacterPaperDollAuthority.selectedBodyPartMatches(arm, "left-lower_arm")) {
             throw new AssertionError("selected medical body part did not map back to the paper-doll region");
         }
