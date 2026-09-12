@@ -31,7 +31,9 @@ final class UiModalButtonController {
 
     static void activateSelectedButton(GamePanel panel) {
         if (panel.buttons.isEmpty()) return;
-        if (panel.selectedButton < 0 || panel.selectedButton >= panel.buttons.size()) return;
+        if (panel.selectedButton < 0 || panel.selectedButton >= panel.buttons.size()) {
+            panel.selectedButton = Math.max(0, Math.min(panel.selectedButton, panel.buttons.size() - 1));
+        }
         ButtonBox button = panel.buttons.get(panel.selectedButton);
         if (!buttonIsModalInteractive(panel, button)) {
             panel.sounds.play("panelClose", panel.options);
