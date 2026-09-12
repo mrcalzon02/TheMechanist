@@ -59,6 +59,8 @@ public final class LauncherProfileSelectionDialog {
             ImageIcon icon = portraitIcon(appHome, portraitId);
             portraitPreview.setIcon(icon);
             portraitPreview.setText(icon == null ? "Portrait image unavailable" : "");
+            portraitPreview.getAccessibleContext().setAccessibleDescription(
+                    portraitAccessibilityDescription(portraitId, icon != null));
         };
         previous.addActionListener(event -> {
             selectedPortrait.set(stepPortraitId(selectedPortrait.get(), -1));
@@ -129,6 +131,13 @@ public final class LauncherProfileSelectionDialog {
         if (ordinal < 0) return "Portrait unavailable";
         return "Portrait " + (ordinal + 1) + " of "
                 + LauncherFallbackProfileAuthority.humanPortraitCount();
+    }
+
+    static String portraitAccessibilityDescription(String portraitId, boolean imageAvailable) {
+        String presentation = portraitPresentation(portraitId);
+        return imageAvailable
+                ? "Selected " + presentation.toLowerCase(Locale.ROOT)
+                : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
     }
 
     static Path portraitAssetPath(Path appHome, String portraitId) {
