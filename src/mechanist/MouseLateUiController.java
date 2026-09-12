@@ -58,28 +58,7 @@ final class MouseLateUiController {
     }
 
     static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
-        String normalized = bodyPart == null ? "" : bodyPart.toLowerCase(java.util.Locale.ROOT)
-                .replace("left", "l").replace("right", "r")
-                .replace('-', ' ').replace('_', ' ').replaceAll("\\s+", " ").trim();
-        if (normalized.isBlank()) return null;
-        if (normalized.equals("head") || normalized.contains(" head")) {
-            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR;
-        }
-        if (normalized.contains("l hand")) {
-            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_HAND;
-        }
-        if (normalized.contains("r hand")) {
-            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.RIGHT_HAND;
-        }
-        if (normalized.contains("foot") || normalized.contains("feet")) {
-            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS;
-        }
-        if (normalized.contains("chest") || normalized.contains("abdomen")
-                || normalized.contains("pelvis") || normalized.contains("torso")
-                || normalized.equals("body")) {
-            return CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES;
-        }
-        return null;
+        return CharacterEquipmentAndMedicalAuthority.equipmentSlotForBodyPart(bodyPart);
     }
 
     static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
