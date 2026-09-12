@@ -34,6 +34,12 @@ public final class LauncherProfileSelectionDialogSmoke {
         require("human8x8-18".equals(
                 LauncherProfileSelectionDialog.stepPortraitId("human8x8-17", 1)),
                 "next portrait should advance deterministically");
+        require("human8x8-00".equals(
+                LauncherProfileSelectionDialog.stepPortraitId("enemy-17", 1)),
+                "next from an unavailable portrait should recover at the first human portrait");
+        require("human8x8-63".equals(
+                LauncherProfileSelectionDialog.stepPortraitId("enemy-17", -1)),
+                "previous from an unavailable portrait should recover at the final human portrait");
         require("Portrait 18 of 64".equals(
                 LauncherProfileSelectionDialog.portraitPresentation("human8x8-17")),
                 "presentation should use player-facing ordinal rather than raw semantic id");
@@ -79,6 +85,7 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
                 + " wrap=true"
+                + " unavailableRecovery=true"
                 + " partition=true"
                 + " presentation=true"
                 + " previewAssetMapping=true"
