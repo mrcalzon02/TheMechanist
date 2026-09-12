@@ -5,8 +5,7 @@ final class MenuNavigationRuntime {
 
     static void returnToMainMenu(GamePanel panel, String reason) {
         if (panel == null) return;
-        panel.screen = GamePanel.Screen.MENU;
-        panel.panelMode = GamePanel.PanelMode.NONE;
+        panel.setScreen(GamePanel.Screen.MENU);
         panel.selectedButton = 0;
         panel.lookCursorActive = false;
         panel.interactCursorActive = false;
