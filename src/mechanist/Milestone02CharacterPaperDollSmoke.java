@@ -58,6 +58,23 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("selected body region produced no meaningful paper-doll visual delineation: " + changedPixels);
         }
 
+        List<String> clothesRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
+        for (String expectedRegion : clothesRegions) {
+            CharacterPaperDollAuthority.RegionView region = CharacterPaperDollAuthority.regions(candidate, interactive).stream()
+                    .filter(view -> view.bodyPartName().equals(expectedRegion))
+                    .findFirst().orElseThrow(() -> new AssertionError("equipment-associated body region missing: " + expectedRegion));
+            if (!CharacterPaperDollAuthority.selectedBodyPartMatchesAny(region, clothesRegions)) {
+                throw new AssertionError("multi-region selection did not include equipment-associated body region: " + expectedRegion);
+            }
+        }
+        BufferedImage clothesSelected = renderRegions(candidate, clothesRegions);
+        int clothesChangedPixels = changedPixels(unselected, clothesSelected);
+        if (clothesChangedPixels <= changedPixels) {
+            throw new AssertionError("multi-region equipment selection did not delineate more than one body region: "
+                    + clothesChangedPixels + " versus single-region " + changedPixels);
+        }
+
         List<CharacterPaperDollAuthority.EquipmentView> equipment = CharacterPaperDollAuthority.equipment(
                 "Stub pistol", "Knife", Clothing.scavengerRags());
         if (equipment.size() != 3) throw new AssertionError("expected left hand, right hand, and body slots");
@@ -104,7 +121,7 @@ public final class Milestone02CharacterPaperDollSmoke {
 
         System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
                 + " equipment=" + CharacterEquipmentAndMedicalAuthority.VERSION
-                + " selectedPixels=" + changedPixels + " hit=" + hit);
+                + " selectedPixels=" + changedPixels + " clothesPixels=" + clothesChangedPixels + " hit=" + hit);
     }
 
     private static void assertEquipmentRegion(String bodyPart,
@@ -131,6 +148,18 @@ public final class Milestone02CharacterPaperDollSmoke {
         Graphics2D g = image.createGraphics();
         try {
             CharacterPaperDollAuthority.paint(g, new Rectangle(8, 8, 284, 444), candidate, null, selectedBodyPart);
+        } finally {
+            g.dispose();
+        }
+        return image;
+    }
+
+    private static BufferedImage renderRegions(Candidate candidate, List<String> selectedBodyParts) {
+        BufferedImage image = new BufferedImage(300, 460, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        try {
+            CharacterPaperDollAuthority.paintSelectedRegions(
+                    g, new Rectangle(8, 8, 284, 444), candidate, null, selectedBodyParts);
         } finally {
             g.dispose();
         }
