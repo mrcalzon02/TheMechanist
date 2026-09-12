@@ -36,7 +36,7 @@ public final class LauncherProfileSelectionDialog {
     ) throws IOException {
         if (profile == null || GraphicsEnvironment.isHeadless()) return profile;
 
-        AtomicReference<String> selectedPortrait = new AtomicReference<>(profile.portraitId());
+        AtomicReference<String> selectedPortrait = new AtomicReference<>(initialPortraitId(profile.portraitId()));
 
         JLabel profileLabel = new JLabel(profilePresentation(profile), SwingConstants.CENTER);
         profileLabel.setBorder(BorderFactory.createTitledBorder("Profile"));
@@ -106,6 +106,12 @@ public final class LauncherProfileSelectionDialog {
     static Dimension portraitPreviewSize() {
         int side = PREVIEW_SIZE + PREVIEW_FRAME_PADDING;
         return new Dimension(side, side);
+    }
+
+    static String initialPortraitId(String current) {
+        return LauncherFallbackProfileAuthority.isValidHumanPortraitId(current)
+                ? current
+                : LauncherFallbackProfileAuthority.humanPortraitId(0);
     }
 
     static String stepPortraitId(String current, int delta) {
