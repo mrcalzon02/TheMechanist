@@ -18,7 +18,7 @@ import java.util.Properties;
  * the character screen again.
  */
 final class CharacterEquipmentAndMedicalAuthority {
-    static final String VERSION = "character-equipment-medical-0.2";
+    static final String VERSION = "character-equipment-medical-0.3-body-association";
 
     enum CharacterTab {
         OVERVIEW("Overview"),
@@ -136,6 +136,32 @@ final class CharacterEquipmentAndMedicalAuthority {
                 .filter(view -> view.slot() == slot)
                 .findFirst()
                 .orElse(new EquipmentView(slot, "Empty", true));
+    }
+
+    static EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
+        String normalized = normalizeBodyRegion(bodyPart);
+        if (normalized.isBlank()) return null;
+        if (normalized.equals("head") || normalized.contains(" head")) return EquipmentSlot.HEADGEAR;
+        if (normalized.contains("l hand")) return EquipmentSlot.LEFT_HAND;
+        if (normalized.contains("r hand")) return EquipmentSlot.RIGHT_HAND;
+        if (normalized.contains("foot") || normalized.contains("feet")) return EquipmentSlot.BOOTS;
+        if (normalized.contains("chest") || normalized.contains("abdomen")
+                || normalized.contains("pelvis") || normalized.contains("torso")
+                || normalized.equals("body")) return EquipmentSlot.CLOTHES;
+        return null;
+    }
+
+    static List<String> bodyRegionsForEquipmentSlot(EquipmentSlot slot) {
+        if (slot == null) return List.of();
+        return switch (slot) {
+            case HEADGEAR -> List.of("Head");
+            case UNDERCLOTHES, CLOTHES -> List.of("Chest", "Abdomen", "Pelvis");
+            case GLOVES -> List.of("L Hand", "R Hand");
+            case BOOTS -> List.of("L Foot", "R Foot");
+            case LEFT_RING, LEFT_HAND -> List.of("L Hand");
+            case RIGHT_RING, RIGHT_HAND -> List.of("R Hand");
+            case BACKPACK, ACCESSORY_ONE, ACCESSORY_TWO -> List.of();
+        };
     }
 
     static boolean canEquip(String itemName, EquipmentSlot slot) {
@@ -302,6 +328,12 @@ final class CharacterEquipmentAndMedicalAuthority {
                 if (key != null && !key.isBlank() && value != null && !value.isBlank()) medical.put(key, value);
             }
         }
+    }
+
+    private static String normalizeBodyRegion(String bodyPart) {
+        return bodyPart == null ? "" : bodyPart.toLowerCase(Locale.ROOT)
+                .replace("left", "l").replace("right", "r")
+                .replace('-', ' ').replace('_', ' ').replaceAll("\\s+", " ").trim();
     }
 
     private static boolean contains(String value, String... needles) {
