@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.4-region-identity";
+    static final String VERSION = "character-paper-doll-0.5-multi-region-selection";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -140,10 +140,16 @@ final class CharacterPaperDollAuthority {
     }
 
     static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font) {
-        paint(g, bounds, candidate, font, null);
+        paintSelectedRegions(g, bounds, candidate, font, List.of());
     }
 
     static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font, String selectedBodyPart) {
+        paintSelectedRegions(g, bounds, candidate, font,
+                selectedBodyPart == null || selectedBodyPart.isBlank() ? List.of() : List.of(selectedBodyPart));
+    }
+
+    static void paintSelectedRegions(Graphics2D g, Rectangle bounds, Candidate candidate, Font font,
+                                     List<String> selectedBodyParts) {
         if (g == null || bounds == null) return;
         g.setColor(new Color(8, 10, 10, 230));
         g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, 8);
@@ -170,7 +176,7 @@ final class CharacterPaperDollAuthority {
             g.setColor(new Color(235, 225, 188, 190));
             g.setStroke(new BasicStroke(region.destroyed() ? 2.2f : 1.0f));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 5, 5);
-            if (selectedBodyPartMatches(region, selectedBodyPart)) {
+            if (selectedBodyPartMatchesAny(region, selectedBodyParts)) {
                 drawSelectionBrackets(g, r);
             }
             drawRegionIdentity(g, r, region);
@@ -182,6 +188,14 @@ final class CharacterPaperDollAuthority {
         if (region == null || selectedBodyPart == null || selectedBodyPart.isBlank()) return false;
         String selected = normalize(selectedBodyPart);
         return !selected.isBlank() && selected.equals(normalize(region.bodyPartName()));
+    }
+
+    static boolean selectedBodyPartMatchesAny(RegionView region, List<String> selectedBodyParts) {
+        if (region == null || selectedBodyParts == null || selectedBodyParts.isEmpty()) return false;
+        for (String selectedBodyPart : selectedBodyParts) {
+            if (selectedBodyPartMatches(region, selectedBodyPart)) return true;
+        }
+        return false;
     }
 
     static String regionIdentityLabel(RegionView region) {
