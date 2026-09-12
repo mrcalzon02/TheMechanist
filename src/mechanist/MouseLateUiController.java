@@ -109,7 +109,7 @@ final class MouseLateUiController {
     }
 
     static boolean handleCharacterNameClick(GamePanel panel, int mx, int my) {
-        if (panel.screen != GamePanel.Screen.CHARACTER) return false;
+        if (panel == null || !panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER) return false;
         if (panel.characterNameEditRect.contains(mx, my)) {
             panel.characterNameEditActive = true;
             panel.requestFocusInWindow();
