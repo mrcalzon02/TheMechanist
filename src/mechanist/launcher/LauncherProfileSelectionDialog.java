@@ -110,7 +110,11 @@ public final class LauncherProfileSelectionDialog {
 
     static String stepPortraitId(String current, int delta) {
         int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(current);
-        if (ordinal < 0) ordinal = 0;
+        if (ordinal < 0) {
+            return LauncherFallbackProfileAuthority.humanPortraitId(
+                    delta < 0 ? LauncherFallbackProfileAuthority.humanPortraitCount() - 1 : 0
+            );
+        }
         return LauncherFallbackProfileAuthority.humanPortraitId(ordinal + delta);
     }
 
