@@ -69,11 +69,19 @@ final class MouseLateUiController {
                     CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values();
             if (preferredSelection >= 0 && preferredSelection < slots.length) {
                 for (String region : CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(preferredSelection)) {
-                    if (region.equalsIgnoreCase(bodyPart)) return slots[preferredSelection];
+                    if (sameEquipmentRegionAssociation(bodyPart, region)) return slots[preferredSelection];
                 }
             }
         }
         return equipmentSlotForBodyPart(bodyPart);
+    }
+
+    private static boolean sameEquipmentRegionAssociation(String bodyPart, String region) {
+        if (bodyPart == null || region == null) return false;
+        if (region.equalsIgnoreCase(bodyPart)) return true;
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot bodySlot = equipmentSlotForBodyPart(bodyPart);
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot regionSlot = equipmentSlotForBodyPart(region);
+        return bodySlot != null && bodySlot == regionSlot;
     }
 
     static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
