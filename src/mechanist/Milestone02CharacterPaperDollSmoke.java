@@ -105,6 +105,16 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("ambiguous arm region must not silently select an unrelated equipment slot");
         }
 
+        assertPreferredEquipmentRegion("L Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.GLOVES);
+        assertPreferredEquipmentRegion("R Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.GLOVES);
+        assertPreferredEquipmentRegion("L Hand", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_RING);
+        assertPreferredEquipmentRegion("Chest", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES);
+        assertPreferredEquipmentRegion("R Foot", CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BOOTS);
+        if (MouseLateUiController.equipmentSlotForBodyPart("L Hand", 999)
+                != CharacterEquipmentAndMedicalAuthority.EquipmentSlot.LEFT_HAND) {
+            throw new AssertionError("stale preferred equipment selection did not fall back to canonical body-region mapping");
+        }
+
         assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR, "Head");
         assertEquipmentSlotRegions(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES,
                 "Chest", "Abdomen", "Pelvis");
@@ -162,6 +172,16 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (actual != expected) {
             throw new AssertionError("equipment body-region association failed for " + bodyPart
                     + ": expected " + expected + " but got " + actual);
+        }
+    }
+
+    private static void assertPreferredEquipmentRegion(String bodyPart,
+                                                       CharacterEquipmentAndMedicalAuthority.EquipmentSlot preferred) {
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot actual =
+                MouseLateUiController.equipmentSlotForBodyPart(bodyPart, preferred.ordinal());
+        if (actual != preferred) {
+            throw new AssertionError("paper-doll click lost preferred equipment association for " + bodyPart
+                    + ": expected " + preferred + " but got " + actual);
         }
     }
 
