@@ -11,6 +11,11 @@ final class UiModalButtonController {
         if (panel.screen == GamePanel.Screen.SECTOR_AUDIT && panel.auditZoneDropdownOpen) {
             return panel.isZoneAuditDropdownButton(button) || (button.label != null && button.label.startsWith("ZONE:"));
         }
+        if (panel.newGameSetupActive && panel.screen == GamePanel.Screen.CHARACTER
+                && button.label != null && button.label.trim().equalsIgnoreCase("Edit Name")
+                && (panel.candidateIndex < 0 || panel.candidateIndex >= panel.candidates.size())) {
+            return false;
+        }
         return true;
     }
 
