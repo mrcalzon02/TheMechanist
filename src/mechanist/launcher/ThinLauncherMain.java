@@ -133,9 +133,14 @@ public final class ThinLauncherMain {
 
     private static boolean hasPackagedProfileAssets(Path root) {
         if (root == null) return false;
-        return Files.isDirectory(root.resolve("profile-packages")
-                .resolve("human-8x8")
-                .resolve("assets"));
+        for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
+            Path asset = LauncherProfileSelectionDialog.portraitAssetPath(
+                    root,
+                    LauncherFallbackProfileAuthority.humanPortraitId(ordinal)
+            );
+            if (asset == null || !Files.isRegularFile(asset)) return false;
+        }
+        return true;
     }
 
     private ThinLauncherMain() {}
