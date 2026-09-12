@@ -57,6 +57,33 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("canonical region alias matching leaked to an unrelated rendered region");
         }
 
+        String normalizedMedicalSelection = CharacterEquipmentAndMedicalAuthority.medicalBodyPartSelection(
+                candidate, "left-lower_arm");
+        if (!"L Lower Arm".equals(normalizedMedicalSelection)) {
+            throw new AssertionError("normalized medical selection did not preserve the active body region: "
+                    + normalizedMedicalSelection);
+        }
+        String firstMedicalRegion = CharacterEquipmentAndMedicalAuthority.bodyPartNames(candidate).get(0);
+        String staleMedicalSelection = CharacterEquipmentAndMedicalAuthority.medicalBodyPartSelection(
+                candidate, "Body Part From Previous Character");
+        if (!firstMedicalRegion.equals(staleMedicalSelection)) {
+            throw new AssertionError("stale medical selection was not reconciled to the active character body: "
+                    + staleMedicalSelection);
+        }
+        for (CharacterEquipmentAndMedicalAuthority.MedicalView view
+                : CharacterEquipmentAndMedicalAuthority.medicalViews(
+                        candidate, "Body Part From Previous Character", java.util.Map.of())) {
+            if (!firstMedicalRegion.equals(view.key().bodyPartName())) {
+                throw new AssertionError("medical view retained a body region absent from the active character: "
+                        + view.key().bodyPartName());
+            }
+        }
+        List<String> staleReadiness = CharacterEquipmentAndMedicalAuthority.medicalReadinessLines(
+                candidate, "Body Part From Previous Character", java.util.Map.of());
+        if (staleReadiness.isEmpty() || !staleReadiness.get(0).equals("Selected body region: " + firstMedicalRegion + ".")) {
+            throw new AssertionError("medical readiness exposed stale body-region identity: " + staleReadiness);
+        }
+
         Rectangle renderedBounds = new Rectangle(8, 8, 284, 444);
         Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(renderedBounds);
         CharacterPaperDollAuthority.RegionView renderedArm = CharacterPaperDollAuthority.regions(candidate, interactive).stream()
