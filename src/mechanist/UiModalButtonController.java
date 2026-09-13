@@ -41,9 +41,17 @@ final class UiModalButtonController {
             panel.sounds.play("panelClose", panel.options);
             return;
         }
+        reconcileCharacterSetupSelection(panel, button);
         panel.sounds.play("button", panel.options);
         if (MenuNavigationRuntime.interceptMainMenuButton(panel, button, "keyboard/button selection")) return;
         panel.runGuarded("BUTTON", "activate selected button " + button.label, button.action);
+    }
+
+    static void reconcileCharacterSetupSelection(GamePanel panel, ButtonBox button) {
+        if (panel == null || button == null || button.label == null) return;
+        if (!panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER) return;
+        if (!button.label.trim().equalsIgnoreCase("Reroll") || panel.candidates.isEmpty()) return;
+        panel.candidateIndex = Math.max(0, Math.min(panel.candidateIndex, panel.candidates.size() - 1));
     }
 
     private static int recoverBoundarySelectionIndex(GamePanel panel, boolean fromEnd) {
