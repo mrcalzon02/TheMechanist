@@ -12,9 +12,11 @@ final class UiModalButtonController {
             return panel.isZoneAuditDropdownButton(button) || (button.label != null && button.label.startsWith("ZONE:"));
         }
         if (panel.newGameSetupActive && panel.screen == GamePanel.Screen.CHARACTER
-                && button.label != null && button.label.trim().equalsIgnoreCase("Edit Name")
-                && panel.candidates.isEmpty()) {
-            return false;
+                && button.label != null && panel.candidates.isEmpty()) {
+            String normalizedLabel = button.label.trim();
+            if (normalizedLabel.equalsIgnoreCase("Edit Name") || normalizedLabel.equalsIgnoreCase("Reroll")) {
+                return false;
+            }
         }
         return true;
     }
