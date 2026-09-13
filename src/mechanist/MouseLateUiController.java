@@ -66,12 +66,10 @@ final class MouseLateUiController {
     static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart,
                                                                                           int preferredSelection) {
         if (bodyPart != null && !bodyPart.isBlank()) {
-            CharacterEquipmentAndMedicalAuthority.EquipmentSlot[] slots =
-                    CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values();
-            if (preferredSelection >= 0 && preferredSelection < slots.length) {
-                for (String region : CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(preferredSelection)) {
-                    if (sameEquipmentRegionAssociation(bodyPart, region)) return slots[preferredSelection];
-                }
+            CharacterEquipmentAndMedicalAuthority.EquipmentSlot preferredSlot =
+                    CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(preferredSelection);
+            for (String region : CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(preferredSlot)) {
+                if (sameEquipmentRegionAssociation(bodyPart, region)) return preferredSlot;
             }
         }
         return equipmentSlotForBodyPart(bodyPart);
