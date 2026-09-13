@@ -35,6 +35,8 @@ final class UiModalButtonController {
             panel.selectedButton = recoverBoundarySelectionIndex(panel, false);
         } else if (panel.selectedButton >= panel.buttons.size()) {
             panel.selectedButton = recoverBoundarySelectionIndex(panel, true);
+        } else if (!buttonIsModalInteractive(panel, panel.buttons.get(panel.selectedButton))) {
+            panel.selectedButton = recoverNearestInteractiveSelectionIndex(panel, panel.selectedButton);
         }
         ButtonBox button = panel.buttons.get(panel.selectedButton);
         if (!buttonIsModalInteractive(panel, button)) {
@@ -52,6 +54,16 @@ final class UiModalButtonController {
         if (!panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER) return;
         if (!button.label.trim().equalsIgnoreCase("Reroll") || panel.candidates.isEmpty()) return;
         panel.candidateIndex = Math.max(0, Math.min(panel.candidateIndex, panel.candidates.size() - 1));
+    }
+
+    private static int recoverNearestInteractiveSelectionIndex(GamePanel panel, int selectedIndex) {
+        for (int distance = 1; distance < panel.buttons.size(); distance++) {
+            int next = selectedIndex + distance;
+            if (next < panel.buttons.size() && buttonIsModalInteractive(panel, panel.buttons.get(next))) return next;
+            int previous = selectedIndex - distance;
+            if (previous >= 0 && buttonIsModalInteractive(panel, panel.buttons.get(previous))) return previous;
+        }
+        return selectedIndex;
     }
 
     private static int recoverBoundarySelectionIndex(GamePanel panel, boolean fromEnd) {
