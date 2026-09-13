@@ -53,9 +53,10 @@ final class UiModalButtonController {
 
     static void reconcileCharacterSetupSelection(GamePanel panel, ButtonBox button) {
         if (panel == null || button == null || button.label == null) return;
-        if (!panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER) return;
-        if (!button.label.trim().equalsIgnoreCase("Reroll") || panel.candidates.isEmpty()) return;
-        panel.candidateIndex = Math.max(0, Math.min(panel.candidateIndex, panel.candidates.size() - 1));
+        if (!panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER || panel.candidates.isEmpty()) return;
+        String normalizedLabel = button.label.trim();
+        if (!normalizedLabel.equalsIgnoreCase("Reroll") && !normalizedLabel.equalsIgnoreCase("Edit Name")) return;
+        panel.selectedNewGameCandidate();
     }
 
     private static int recoverNearestInteractiveSelectionIndex(GamePanel panel, int selectedIndex) {
