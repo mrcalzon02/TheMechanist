@@ -83,8 +83,15 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "non-human ids must not resolve into launcher human portrait assets");
 
         Path temp = Files.createTempDirectory("mechanist-launcher-profile-home-");
+        Path missingRoot = temp.resolve("missing");
+        require(LauncherProfileSelectionDialog.availablePortraitCount(missingRoot) == 0,
+                "profile chooser must detect a portrait package with no usable images");
+
         Path packagedRoot = temp.resolve("installed");
         writeCompletePortraitPackage(packagedRoot);
+        require(LauncherProfileSelectionDialog.availablePortraitCount(packagedRoot)
+                        == LauncherFallbackProfileAuthority.humanPortraitCount(),
+                "complete portrait package must expose the full human selection set");
         Path clientDir = packagedRoot.resolve("packages/client");
         Files.createDirectories(clientDir);
         Path clientJar = clientDir.resolve("TheMechanist-client.jar");
@@ -120,6 +127,9 @@ public final class LauncherProfileSelectionDialogSmoke {
                 LauncherFallbackProfileAuthority.humanPortraitId(17)
         );
         Files.writeString(unreadableAsset, "not a png image");
+        require(LauncherProfileSelectionDialog.availablePortraitCount(unreadableWorking)
+                        == LauncherFallbackProfileAuthority.humanPortraitCount() - 1,
+                "corrupted portrait package must expose only decodable selections");
         require(packagedRoot.toAbsolutePath().normalize().equals(
                 ThinLauncherMain.selectAppHome(unreadableWorking, clientJar)),
                 "thin launcher must reject portrait roots whose expected files cannot be decoded as images");
@@ -153,6 +163,7 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " packagedAssetHome=true"
                 + " completeAssetRoot=true"
                 + " readableAssetRoot=true"
+                + " portraitPackageAvailability=true"
                 + " confirmationAvailability=true"
                 + " availableNavigation=true");
     }
