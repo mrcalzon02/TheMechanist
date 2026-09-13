@@ -31,8 +31,10 @@ final class UiModalButtonController {
 
     static void activateSelectedButton(GamePanel panel) {
         if (panel.buttons.isEmpty()) return;
-        if (panel.selectedButton < 0 || panel.selectedButton >= panel.buttons.size()) {
-            panel.selectedButton = Math.max(0, Math.min(panel.selectedButton, panel.buttons.size() - 1));
+        if (panel.selectedButton < 0) {
+            panel.selectedButton = recoverBoundarySelectionIndex(panel, false);
+        } else if (panel.selectedButton >= panel.buttons.size()) {
+            panel.selectedButton = recoverBoundarySelectionIndex(panel, true);
         }
         ButtonBox button = panel.buttons.get(panel.selectedButton);
         if (!buttonIsModalInteractive(panel, button)) {
@@ -42,5 +44,14 @@ final class UiModalButtonController {
         panel.sounds.play("button", panel.options);
         if (MenuNavigationRuntime.interceptMainMenuButton(panel, button, "keyboard/button selection")) return;
         panel.runGuarded("BUTTON", "activate selected button " + button.label, button.action);
+    }
+
+    private static int recoverBoundarySelectionIndex(GamePanel panel, boolean fromEnd) {
+        int boundaryIndex = fromEnd ? panel.buttons.size() - 1 : 0;
+        int step = fromEnd ? -1 : 1;
+        for (int i = boundaryIndex; i >= 0 && i < panel.buttons.size(); i += step) {
+            if (buttonIsModalInteractive(panel, panel.buttons.get(i))) return i;
+        }
+        return boundaryIndex;
     }
 }
