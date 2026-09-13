@@ -4,6 +4,7 @@ final class MouseLateUiController {
     private MouseLateUiController() {}
 
     static boolean handleLateUiClick(GamePanel panel, int mx, int my) {
+        reconcileCharacterEquipmentSelection(panel);
         if (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.INVENTORY && panel.handleInventoryStackPanelClick(mx, my)) {
             panel.requestFocusInWindow();
             return true;
@@ -46,6 +47,7 @@ final class MouseLateUiController {
                 || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
                 != CharacterEquipmentAndMedicalAuthority.CharacterTab.EQUIPMENT) return false;
 
+        reconcileCharacterEquipmentSelection(panel);
         java.awt.Rectangle doll = characterEquipmentPaperDollBounds(panel.getWidth(), panel.getHeight());
         String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
         CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot = equipmentSlotForBodyPart(
@@ -57,6 +59,17 @@ final class MouseLateUiController {
         panel.requestFocusInWindow();
         panel.repaint();
         return true;
+    }
+
+    static void reconcileCharacterEquipmentSelection(GamePanel panel) {
+        if (panel == null || panel.newGameSetupActive) return;
+        boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
+                || (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.CHARACTER);
+        if (!characterSurface
+                || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
+                != CharacterEquipmentAndMedicalAuthority.CharacterTab.EQUIPMENT) return;
+        panel.selectedCharacterEquipmentSlot =
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.at(panel.selectedCharacterEquipmentSlot).ordinal();
     }
 
     static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
