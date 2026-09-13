@@ -36,6 +36,17 @@ public final class LauncherProfileSelectionDialog {
     ) throws IOException {
         if (profile == null || GraphicsEnvironment.isHeadless()) return profile;
 
+        if (availablePortraitCount(appHome) == 0) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "No usable character portrait images were found in the launcher profile package. "
+                            + "Repair or reinstall the game files, then try again.",
+                    "The Mechanist - Profile",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return null;
+        }
+
         AtomicReference<String> selectedPortrait = new AtomicReference<>(
                 initialAvailablePortraitId(appHome, profile.portraitId()));
 
@@ -161,6 +172,16 @@ public final class LauncherProfileSelectionDialog {
             if (portraitAvailable(appHome, candidate)) return candidate;
         }
         return initialPortraitId(current);
+    }
+
+    static int availablePortraitCount(Path appHome) {
+        int count = 0;
+        for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
+            if (portraitAvailable(appHome, LauncherFallbackProfileAuthority.humanPortraitId(ordinal))) {
+                count++;
+            }
+        }
+        return count;
     }
 
     static String portraitPresentation(String portraitId) {
