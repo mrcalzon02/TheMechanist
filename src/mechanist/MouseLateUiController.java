@@ -8,6 +8,9 @@ final class MouseLateUiController {
             panel.requestFocusInWindow();
             return true;
         }
+        if (handleCharacterEquipmentPaperDollClick(panel, mx, my)) return true;
+        if (handleCharacterMedicalPaperDollClick(panel, mx, my)) return true;
+        if (handleCharacterNameClick(panel, mx, my)) return true;
         if (panel.findScrollRegion(mx, my) != null) {
             panel.handleScrollbarClick(mx, my);
             panel.repaint();
@@ -19,7 +22,6 @@ final class MouseLateUiController {
             return true;
         }
         if (OptionsDropdownMouseController.handleOptionsDropdownClick(panel, mx, my)) return true;
-        if (handleCharacterNameClick(panel, mx, my)) return true;
         for (int i = panel.buttons.size() - 1; i >= 0; i--) {
             ButtonBox button = panel.buttons.get(i);
             if (UiModalButtonController.buttonIsModalInteractive(panel, button) && button.contains(mx, my)) {
@@ -35,16 +37,115 @@ final class MouseLateUiController {
         return false;
     }
 
+    static boolean handleCharacterEquipmentPaperDollClick(GamePanel panel, int mx, int my) {
+        if (panel == null || panel.active == null || panel.newGameSetupActive) return false;
+        boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
+                || (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.CHARACTER);
+        if (!characterSurface
+                || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
+                != CharacterEquipmentAndMedicalAuthority.CharacterTab.EQUIPMENT) return false;
+
+        java.awt.Rectangle doll = characterEquipmentPaperDollBounds(panel.getWidth(), panel.getHeight());
+        String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot slot = equipmentSlotForBodyPart(
+                bodyPart, panel.selectedCharacterEquipmentSlot);
+        if (slot == null) return false;
+
+        panel.selectedCharacterEquipmentSlot = slot.ordinal();
+        panel.sounds.play("button", panel.options);
+        panel.requestFocusInWindow();
+        panel.repaint();
+        return true;
+    }
+
+    static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
+        return CharacterEquipmentAndMedicalAuthority.equipmentSlotForBodyPart(bodyPart);
+    }
+
+    static CharacterEquipmentAndMedicalAuthority.EquipmentSlot equipmentSlotForBodyPart(String bodyPart,
+                                                                                          int preferredSelection) {
+        if (bodyPart != null && !bodyPart.isBlank()) {
+            CharacterEquipmentAndMedicalAuthority.EquipmentSlot[] slots =
+                    CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values();
+            if (preferredSelection >= 0 && preferredSelection < slots.length) {
+                for (String region : CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(preferredSelection)) {
+                    if (sameEquipmentRegionAssociation(bodyPart, region)) return slots[preferredSelection];
+                }
+            }
+        }
+        return equipmentSlotForBodyPart(bodyPart);
+    }
+
+    private static boolean sameEquipmentRegionAssociation(String bodyPart, String region) {
+        if (bodyPart == null || region == null) return false;
+        if (region.equalsIgnoreCase(bodyPart)) return true;
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot bodySlot = equipmentSlotForBodyPart(bodyPart);
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot regionSlot = equipmentSlotForBodyPart(region);
+        return bodySlot != null && bodySlot == regionSlot;
+    }
+
+    static boolean handleCharacterMedicalPaperDollClick(GamePanel panel, int mx, int my) {
+        if (panel == null || panel.active == null || panel.newGameSetupActive) return false;
+        boolean characterSurface = panel.screen == GamePanel.Screen.CHARACTER
+                || (panel.screen == GamePanel.Screen.PANEL && panel.panelMode == GamePanel.PanelMode.CHARACTER);
+        if (!characterSurface
+                || CharacterEquipmentAndMedicalAuthority.CharacterTab.at(panel.characterTab)
+                != CharacterEquipmentAndMedicalAuthority.CharacterTab.MEDICAL) return false;
+
+        java.awt.Rectangle doll = characterMedicalPaperDollBounds(panel.getWidth(), panel.getHeight());
+        String bodyPart = CharacterEquipmentAndMedicalAuthority.bodyPartAt(panel.active, doll, mx, my);
+        if (bodyPart == null || bodyPart.isBlank()) return false;
+
+        panel.selectedCharacterMedicalBodyPart = bodyPart;
+        panel.sounds.play("button", panel.options);
+        panel.requestFocusInWindow();
+        panel.repaint();
+        return true;
+    }
+
+    static java.awt.Rectangle characterEquipmentPaperDollBounds(int width, int height) {
+        java.awt.Rectangle content = characterTabContentBounds(width, height);
+        int dollWidth = Math.max(230, Math.min(310, content.width * 27 / 100));
+        return new java.awt.Rectangle(content.x, content.y, dollWidth, content.height);
+    }
+
+    static java.awt.Rectangle characterMedicalPaperDollBounds(int width, int height) {
+        java.awt.Rectangle content = characterTabContentBounds(width, height);
+        int dollWidth = Math.max(250, Math.min(330, content.width * 34 / 100));
+        return new java.awt.Rectangle(content.x, content.y, dollWidth, content.height);
+    }
+
+    private static java.awt.Rectangle characterTabContentBounds(int width, int height) {
+        int panelWidth = Math.max(820, Math.min(width - 48, (int)Math.round(width * 0.90)));
+        int panelHeight = Math.max(560, Math.min(height - 92, (int)Math.round(height * 0.84)));
+        int panelX = Math.max(18, (width - panelWidth) / 2);
+        int panelY = Math.max(46, (height - panelHeight) / 2);
+
+        int bodyX = panelX + 18;
+        int bodyY = panelY + 54;
+        int bodyWidth = panelWidth - 36;
+        int bodyHeight = panelHeight - 112;
+
+        int contentY = bodyY + 40;
+        int contentHeight = Math.max(120, bodyHeight - 40);
+        return new java.awt.Rectangle(bodyX, contentY, bodyWidth, contentHeight);
+    }
+
     static boolean handleCharacterNameClick(GamePanel panel, int mx, int my) {
-        if (panel.screen != GamePanel.Screen.CHARACTER) return false;
+        if (panel == null || !panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER || panel.characterNameEditRect == null) return false;
         if (panel.characterNameEditRect.contains(mx, my)) {
+            if (panel.candidateIndex < 0 || panel.candidateIndex >= panel.candidates.size()) {
+                panel.characterNameEditActive = false;
+                return false;
+            }
             panel.characterNameEditActive = true;
             panel.requestFocusInWindow();
             panel.repaint();
             return true;
         }
         if (panel.characterNameEditActive) {
-            Candidate candidate = panel.candidates.isEmpty() ? null : panel.candidates.get(panel.candidateIndex);
+            Candidate candidate = panel.candidateIndex >= 0 && panel.candidateIndex < panel.candidates.size()
+                    ? panel.candidates.get(panel.candidateIndex) : null;
             if (candidate != null) {
                 candidate.name = CharacterCreationAuthority.sanitizePlayerName(candidate.name, panel.rng);
                 panel.refreshNameLockedCandidateState(candidate);

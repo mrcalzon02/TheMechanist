@@ -23,7 +23,7 @@ import java.util.Map;
  * source of truth.
  */
 final class CharacterPaperDollAuthority {
-    static final String VERSION = "character-paper-doll-0.1";
+    static final String VERSION = "character-paper-doll-0.8-canonical-selection-aliases";
 
     enum EquipmentSlot {
         LEFT_HAND("Left Hand"),
@@ -97,7 +97,6 @@ final class CharacterPaperDollAuthority {
             result.add(view(part, template.label(), scale(bounds, template)));
         }
 
-        // Preserve unusual body plans instead of silently hiding their tracked regions.
         if (!unmatched.isEmpty()) {
             int index = 0;
             int columns = 2;
@@ -114,6 +113,12 @@ final class CharacterPaperDollAuthority {
             }
         }
         return List.copyOf(result);
+    }
+
+    static Rectangle interactiveBounds(Rectangle bounds) {
+        if (bounds == null) return null;
+        return new Rectangle(bounds.x + 8, bounds.y + 28,
+                Math.max(80, bounds.width - 16), Math.max(120, bounds.height - 36));
     }
 
     static List<String> regionReadouts(Candidate candidate, Rectangle bounds) {
@@ -135,10 +140,16 @@ final class CharacterPaperDollAuthority {
     }
 
     static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font) {
-        paint(g, bounds, candidate, font, null);
+        paintSelectedRegions(g, bounds, candidate, font, List.of());
     }
 
     static void paint(Graphics2D g, Rectangle bounds, Candidate candidate, Font font, String selectedBodyPart) {
+        paintSelectedRegions(g, bounds, candidate, font,
+                selectedBodyPart == null || selectedBodyPart.isBlank() ? List.of() : List.of(selectedBodyPart));
+    }
+
+    static void paintSelectedRegions(Graphics2D g, Rectangle bounds, Candidate candidate, Font font,
+                                     List<String> selectedBodyParts) {
         if (g == null || bounds == null) return;
         g.setColor(new Color(8, 10, 10, 230));
         g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 8, 8);
@@ -150,8 +161,7 @@ final class CharacterPaperDollAuthority {
         g.setColor(new Color(225, 205, 140));
         g.drawString("BODY CONDITION", bounds.x + 10, bounds.y + 20);
 
-        Rectangle doll = new Rectangle(bounds.x + 8, bounds.y + 28,
-                Math.max(80, bounds.width - 16), Math.max(120, bounds.height - 36));
+        Rectangle doll = interactiveBounds(bounds);
         List<RegionView> regions = regions(candidate, doll);
         if (regions.isEmpty()) {
             g.setColor(new Color(170, 170, 155));
@@ -166,9 +176,69 @@ final class CharacterPaperDollAuthority {
             g.setColor(new Color(235, 225, 188, 190));
             g.setStroke(new BasicStroke(region.destroyed() ? 2.2f : 1.0f));
             g.drawRoundRect(r.x, r.y, r.width, r.height, 5, 5);
-            drawCentered(g, r, region.currentHealth() + "/" + region.maximumHealth());
+            if (selectedBodyPartMatchesAny(region, selectedBodyParts)) {
+                drawSelectionBrackets(g, r);
+            }
+            drawRegionIdentity(g, r, region);
         }
         g.setStroke(new BasicStroke(1.0f));
+    }
+
+    static boolean selectedBodyPartMatches(RegionView region, String selectedBodyPart) {
+        if (region == null || selectedBodyPart == null || selectedBodyPart.isBlank()) return false;
+        String selected = normalize(selectedBodyPart);
+        if (selected.isBlank()) return false;
+        return selected.equals(normalize(region.bodyPartName()))
+                || selected.equals(normalize(region.shortLabel()));
+    }
+
+    static boolean selectedBodyPartMatchesAny(RegionView region, List<String> selectedBodyParts) {
+        if (region == null || selectedBodyParts == null || selectedBodyParts.isEmpty()) return false;
+        for (String selectedBodyPart : selectedBodyParts) {
+            if (selectedBodyPartMatches(region, selectedBodyPart)) return true;
+        }
+        return false;
+    }
+
+    static String regionIdentityLabel(RegionView region) {
+        if (region == null || region.shortLabel() == null) return "";
+        return region.shortLabel().trim();
+    }
+
+    static String compactRegionIdentityLabel(RegionView region) {
+        String normalized = normalize(regionIdentityLabel(region));
+        return switch (normalized) {
+            case "head" -> "HD";
+            case "chest" -> "CH";
+            case "abdomen" -> "AB";
+            case "pelvis" -> "PV";
+            case "l upper arm" -> "LUA";
+            case "l lower arm" -> "LLA";
+            case "l hand" -> "LH";
+            case "r upper arm" -> "RUA";
+            case "r lower arm" -> "RLA";
+            case "r hand" -> "RH";
+            case "l upper leg" -> "LUL";
+            case "l lower leg" -> "LLL";
+            case "l foot" -> "LF";
+            case "r upper leg" -> "RUL";
+            case "r lower leg" -> "RLL";
+            case "r foot" -> "RF";
+            default -> {
+                String identity = regionIdentityLabel(region);
+                yield identity.length() <= 4 ? identity : compactLabel(identity).substring(0, Math.min(4, compactLabel(identity).length()));
+            }
+        };
+    }
+
+    static String narrowOverflowFallback(String value) {
+        if (value == null || value.isBlank()) return "";
+        int slash = value.indexOf('/');
+        if (slash > 0) {
+            try { return Integer.toString(Integer.parseInt(value.substring(0, slash))); }
+            catch (RuntimeException ignored) { return value; }
+        }
+        return value;
     }
 
     static String statusFor(double ratio, boolean destroyed) {
@@ -242,13 +312,81 @@ final class CharacterPaperDollAuthority {
         return new Color(70, 145, 91);
     }
 
-    private static void drawCentered(Graphics2D g, Rectangle r, String text) {
+    private static void drawSelectionBrackets(Graphics2D g, Rectangle r) {
+        int offset = 3;
+        int arm = Math.max(5, Math.min(9, Math.min(r.width, r.height) / 3));
+        int left = r.x - offset;
+        int top = r.y - offset;
+        int right = r.x + r.width + offset;
+        int bottom = r.y + r.height + offset;
+
+        g.setColor(new Color(255, 225, 128));
+        g.setStroke(new BasicStroke(2.8f));
+        g.drawLine(left, top, left + arm, top);
+        g.drawLine(left, top, left, top + arm);
+        g.drawLine(right - arm, top, right, top);
+        g.drawLine(right, top, right, top + arm);
+        g.drawLine(left, bottom - arm, left, bottom);
+        g.drawLine(left, bottom, left + arm, bottom);
+        g.drawLine(right, bottom - arm, right, bottom);
+        g.drawLine(right - arm, bottom, right, bottom);
+    }
+
+    private static void drawRegionIdentity(Graphics2D g, Rectangle r, RegionView region) {
+        String health = region.currentHealth() + "/" + region.maximumHealth();
+        String label = regionIdentityLabel(region);
+        String compact = compactRegionIdentityLabel(region);
+        String current = Integer.toString(region.currentHealth());
+        FontMetrics fm = g.getFontMetrics();
+        int availableWidth = Math.max(1, r.width - 4);
+        boolean twoLines = r.height >= fm.getHeight() * 2 + 2;
+        if (!label.isBlank() && twoLines && fm.stringWidth(label) <= availableWidth) {
+            drawCenteredLine(g, r, label, r.y + fm.getAscent() + 2);
+            drawCenteredLine(g, r, fm.stringWidth(health) <= availableWidth ? health : current,
+                    r.y + r.height - fm.getDescent() - 2);
+            return;
+        }
+        if (!compact.isBlank() && twoLines && fm.stringWidth(compact) <= availableWidth) {
+            drawCenteredLine(g, r, compact, r.y + fm.getAscent() + 2);
+            drawCenteredLine(g, r, fm.stringWidth(health) <= availableWidth ? health : current,
+                    r.y + r.height - fm.getDescent() - 2);
+            return;
+        }
+        String combined = compact + " " + current;
+        if (!compact.isBlank() && fm.stringWidth(combined) <= availableWidth) {
+            drawCentered(g, r, combined);
+            return;
+        }
+        if (!compact.isBlank() && fm.stringWidth(compact) <= availableWidth) {
+            drawCentered(g, r, compact);
+            return;
+        }
+        drawCentered(g, r, health);
+    }
+
+    private static void drawCenteredLine(Graphics2D g, Rectangle r, String text, int baselineY) {
         FontMetrics fm = g.getFontMetrics();
         String value = text == null ? "" : text;
-        if (fm.stringWidth(value) > r.width - 4) value = Integer.toString(extractCurrent(value));
+        int x = r.x + Math.max(2, (r.width - fm.stringWidth(value)) / 2);
+        g.drawString(value, x, baselineY);
+    }
+
+    private static void drawCentered(Graphics2D g, Rectangle r, String text) {
+        Font original = g.getFont();
+        FontMetrics fm = g.getFontMetrics();
+        String value = narrowOverflowFallback(text);
+        if (fm.stringWidth(value) > r.width - 4 && !value.isBlank()) {
+            float size = original.getSize2D();
+            while (size > 7f && fm.stringWidth(value) > r.width - 4) {
+                size -= 1f;
+                g.setFont(original.deriveFont(size));
+                fm = g.getFontMetrics();
+            }
+        }
         int x = r.x + Math.max(2, (r.width - fm.stringWidth(value)) / 2);
         int y = r.y + (r.height + fm.getAscent() - fm.getDescent()) / 2;
         g.drawString(value, x, y);
+        g.setFont(original);
     }
 
     private static int extractCurrent(String value) {

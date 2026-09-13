@@ -18,7 +18,7 @@ import java.util.Properties;
  * the character screen again.
  */
 final class CharacterEquipmentAndMedicalAuthority {
-    static final String VERSION = "character-equipment-medical-0.2";
+    static final String VERSION = "character-equipment-medical-0.6-selection-bounds";
 
     enum CharacterTab {
         OVERVIEW("Overview"),
@@ -39,17 +39,17 @@ final class CharacterEquipmentAndMedicalAuthority {
 
     enum EquipmentSlot {
         HEADGEAR("Headgear", "Head"),
-        UNDERCLOTHES("Underclothes", "Torso"),
-        CLOTHES("Clothes / Body", "Torso"),
-        GLOVES("Gloves", "Hands"),
-        BOOTS("Boots", "Feet"),
-        BACKPACK("Backpack", "Back"),
-        LEFT_RING("Left Ring", "Left Hand"),
-        RIGHT_RING("Right Ring", "Right Hand"),
-        ACCESSORY_ONE("Accessory 1", "General"),
-        ACCESSORY_TWO("Accessory 2", "General"),
-        LEFT_HAND("Left Hand", "Left Hand"),
-        RIGHT_HAND("Right Hand", "Right Hand");
+        UNDERCLOTHES("Underclothes", "Chest / Abdomen / Pelvis"),
+        CLOTHES("Clothes / Body", "Chest / Abdomen / Pelvis"),
+        GLOVES("Gloves", "L Hand / R Hand"),
+        BOOTS("Boots", "L Foot / R Foot"),
+        BACKPACK("Backpack", "No direct paper-doll region"),
+        LEFT_RING("Left Ring", "L Hand"),
+        RIGHT_RING("Right Ring", "R Hand"),
+        ACCESSORY_ONE("Accessory 1", "No direct paper-doll region"),
+        ACCESSORY_TWO("Accessory 2", "No direct paper-doll region"),
+        LEFT_HAND("Left Hand", "L Hand"),
+        RIGHT_HAND("Right Hand", "R Hand");
 
         private final String label;
         private final String bodyRegion;
@@ -138,6 +138,38 @@ final class CharacterEquipmentAndMedicalAuthority {
                 .orElse(new EquipmentView(slot, "Empty", true));
     }
 
+    static EquipmentSlot equipmentSlotForBodyPart(String bodyPart) {
+        String normalized = normalizeBodyRegion(bodyPart);
+        if (normalized.isBlank()) return null;
+        if (normalized.equals("head") || normalized.contains(" head")) return EquipmentSlot.HEADGEAR;
+        if (normalized.contains("l hand")) return EquipmentSlot.LEFT_HAND;
+        if (normalized.contains("r hand")) return EquipmentSlot.RIGHT_HAND;
+        if (normalized.contains("foot") || normalized.contains("feet")) return EquipmentSlot.BOOTS;
+        if (normalized.contains("chest") || normalized.contains("abdomen")
+                || normalized.contains("pelvis") || normalized.contains("torso")
+                || normalized.equals("body")) return EquipmentSlot.CLOTHES;
+        return null;
+    }
+
+    static List<String> bodyRegionsForEquipmentSlot(EquipmentSlot slot) {
+        if (slot == null) return List.of();
+        return switch (slot) {
+            case HEADGEAR -> List.of("Head");
+            case UNDERCLOTHES, CLOTHES -> List.of("Chest", "Abdomen", "Pelvis");
+            case GLOVES -> List.of("L Hand", "R Hand");
+            case BOOTS -> List.of("L Foot", "R Foot");
+            case LEFT_RING, LEFT_HAND -> List.of("L Hand");
+            case RIGHT_RING, RIGHT_HAND -> List.of("R Hand");
+            case BACKPACK, ACCESSORY_ONE, ACCESSORY_TWO -> List.of();
+        };
+    }
+
+    static List<String> bodyRegionsForEquipmentSelection(int selectedIndex) {
+        EquipmentSlot[] slots = EquipmentSlot.values();
+        if (selectedIndex < 0 || selectedIndex >= slots.length) return List.of();
+        return bodyRegionsForEquipmentSlot(slots[selectedIndex]);
+    }
+
     static boolean canEquip(String itemName, EquipmentSlot slot) {
         if (itemName == null || itemName.isBlank() || slot == null) return false;
         ItemDef definition = ItemCatalog.get(itemName);
@@ -180,12 +212,22 @@ final class CharacterEquipmentAndMedicalAuthority {
                 .toList();
     }
 
+    static String medicalBodyPartSelection(Candidate candidate, String selectedBodyPart) {
+        List<String> parts = bodyPartNames(candidate);
+        if (parts.isEmpty()) return null;
+        String selected = normalizeBodyRegion(selectedBodyPart);
+        if (!selected.isBlank()) {
+            for (String part : parts) {
+                if (normalizeBodyRegion(part).equals(selected)) return part;
+            }
+        }
+        return parts.get(0);
+    }
+
     static List<MedicalView> medicalViews(Candidate candidate,
                                           String selectedBodyPart,
                                           Map<String, String> installed) {
-        String bodyPart = selectedBodyPart;
-        List<String> parts = bodyPartNames(candidate);
-        if ((bodyPart == null || bodyPart.isBlank()) && !parts.isEmpty()) bodyPart = parts.get(0);
+        String bodyPart = medicalBodyPartSelection(candidate, selectedBodyPart);
         if (bodyPart == null || bodyPart.isBlank()) bodyPart = "Unknown Region";
 
         ArrayList<MedicalView> result = new ArrayList<>();
@@ -202,7 +244,8 @@ final class CharacterEquipmentAndMedicalAuthority {
                                               String selectedBodyPart,
                                               Map<String, String> installed) {
         ArrayList<String> lines = new ArrayList<>();
-        String part = selectedBodyPart == null || selectedBodyPart.isBlank() ? "No region selected" : selectedBodyPart;
+        String resolvedPart = medicalBodyPartSelection(candidate, selectedBodyPart);
+        String part = resolvedPart == null || resolvedPart.isBlank() ? "No region selected" : resolvedPart;
         lines.add("Selected body region: " + part + ".");
         lines.add("Mutation, modification, and cybernetic layers are reserved independently.");
         lines.add("No surgery, compatibility, rejection, power, or maintenance mechanics are active yet.");
@@ -216,7 +259,8 @@ final class CharacterEquipmentAndMedicalAuthority {
     }
 
     static String bodyPartAt(Candidate candidate, Rectangle bounds, int x, int y) {
-        for (CharacterPaperDollAuthority.RegionView region : CharacterPaperDollAuthority.regions(candidate, bounds)) {
+        Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(bounds);
+        for (CharacterPaperDollAuthority.RegionView region : CharacterPaperDollAuthority.regions(candidate, interactive)) {
             if (region.bounds().contains(x, y)) return region.bodyPartName();
         }
         return null;
@@ -257,6 +301,11 @@ final class CharacterEquipmentAndMedicalAuthority {
                            Map<String, String> medical) {
         if (properties == null) return;
         if (equipment != null) {
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (slot == EquipmentSlot.LEFT_HAND || slot == EquipmentSlot.RIGHT_HAND
+                        || slot == EquipmentSlot.CLOTHES) continue;
+                properties.remove("character.equipment." + slot.name());
+            }
             for (Map.Entry<EquipmentSlot, String> entry : equipment.entrySet()) {
                 if (entry.getKey() == null || entry.getValue() == null || entry.getValue().isBlank()) continue;
                 properties.setProperty("character.equipment." + entry.getKey().name(), entry.getValue());
@@ -301,6 +350,12 @@ final class CharacterEquipmentAndMedicalAuthority {
                 if (key != null && !key.isBlank() && value != null && !value.isBlank()) medical.put(key, value);
             }
         }
+    }
+
+    private static String normalizeBodyRegion(String bodyPart) {
+        return bodyPart == null ? "" : bodyPart.toLowerCase(Locale.ROOT)
+                .replace("left", "l").replace("right", "r")
+                .replace('-', ' ').replace('_', ' ').replaceAll("\\s+", " ").trim();
     }
 
     private static boolean contains(String value, String... needles) {

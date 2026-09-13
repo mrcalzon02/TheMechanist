@@ -1,6 +1,7 @@
 package mechanist.launcher;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
@@ -27,6 +28,7 @@ import javax.swing.SwingConstants;
  */
 public final class LauncherProfileSelectionDialog {
     private static final int PREVIEW_SIZE = 128;
+    private static final int PREVIEW_FRAME_PADDING = 16;
 
     static LauncherFallbackProfileAuthority.LauncherProfile choose(
             Path appHome,
@@ -34,23 +36,31 @@ public final class LauncherProfileSelectionDialog {
     ) throws IOException {
         if (profile == null || GraphicsEnvironment.isHeadless()) return profile;
 
-        AtomicReference<String> selectedPortrait = new AtomicReference<>(profile.portraitId());
+        AtomicReference<String> selectedPortrait = new AtomicReference<>(initialPortraitId(profile.portraitId()));
 
-        JLabel profileLabel = new JLabel("Profile: " + profile.profileId(), SwingConstants.CENTER);
+        JLabel profileLabel = new JLabel(profilePresentation(profile), SwingConstants.CENTER);
+        profileLabel.setBorder(BorderFactory.createTitledBorder("Profile"));
         JLabel portraitPreview = new JLabel("", SwingConstants.CENTER);
         portraitPreview.setBorder(BorderFactory.createEtchedBorder());
+        portraitPreview.setPreferredSize(portraitPreviewSize());
+        portraitPreview.setMinimumSize(portraitPreviewSize());
+        portraitPreview.getAccessibleContext().setAccessibleName("Selected character portrait preview");
         JLabel portraitLabel = new JLabel("", SwingConstants.CENTER);
         portraitLabel.setFont(portraitLabel.getFont().deriveFont(Font.BOLD, 18f));
         portraitLabel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
         JButton previous = new JButton("< Previous portrait");
         JButton next = new JButton("Next portrait >");
+        previous.setToolTipText("Show the previous character portrait");
+        next.setToolTipText("Show the next character portrait");
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
             portraitLabel.setText(portraitPresentation(portraitId));
             ImageIcon icon = portraitIcon(appHome, portraitId);
             portraitPreview.setIcon(icon);
             portraitPreview.setText(icon == null ? "Portrait image unavailable" : "");
+            portraitPreview.getAccessibleContext().setAccessibleDescription(
+                    portraitAccessibilityDescription(portraitId, icon != null));
         };
         previous.addActionListener(event -> {
             selectedPortrait.set(stepPortraitId(selectedPortrait.get(), -1));
@@ -62,19 +72,20 @@ public final class LauncherProfileSelectionDialog {
         });
         refresh.run();
 
-        JPanel portraitPanel = new JPanel(new BorderLayout(0, 4));
-        portraitPanel.add(portraitPreview, BorderLayout.CENTER);
-        portraitPanel.add(portraitLabel, BorderLayout.SOUTH);
-
         JPanel navigation = new JPanel(new GridLayout(1, 2, 8, 0));
         navigation.add(previous);
         navigation.add(next);
+
+        JPanel portraitPanel = new JPanel(new BorderLayout(0, 4));
+        portraitPanel.setBorder(BorderFactory.createTitledBorder("Character portrait"));
+        portraitPanel.add(portraitPreview, BorderLayout.CENTER);
+        portraitPanel.add(portraitLabel, BorderLayout.NORTH);
+        portraitPanel.add(navigation, BorderLayout.SOUTH);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         panel.add(profileLabel, BorderLayout.NORTH);
         panel.add(portraitPanel, BorderLayout.CENTER);
-        panel.add(navigation, BorderLayout.SOUTH);
 
         int result = JOptionPane.showConfirmDialog(
                 null,
@@ -90,9 +101,28 @@ public final class LauncherProfileSelectionDialog {
         return LauncherFallbackProfileAuthority.selectHumanPortrait(profile, selected);
     }
 
+    static String profilePresentation(LauncherFallbackProfileAuthority.LauncherProfile profile) {
+        return profile == null ? "Profile unavailable" : "Local profile";
+    }
+
+    static Dimension portraitPreviewSize() {
+        int side = PREVIEW_SIZE + PREVIEW_FRAME_PADDING;
+        return new Dimension(side, side);
+    }
+
+    static String initialPortraitId(String current) {
+        return LauncherFallbackProfileAuthority.isValidHumanPortraitId(current)
+                ? current
+                : LauncherFallbackProfileAuthority.humanPortraitId(0);
+    }
+
     static String stepPortraitId(String current, int delta) {
         int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(current);
-        if (ordinal < 0) ordinal = 0;
+        if (ordinal < 0) {
+            return LauncherFallbackProfileAuthority.humanPortraitId(
+                    delta < 0 ? LauncherFallbackProfileAuthority.humanPortraitCount() - 1 : 0
+            );
+        }
         return LauncherFallbackProfileAuthority.humanPortraitId(ordinal + delta);
     }
 
@@ -101,6 +131,13 @@ public final class LauncherProfileSelectionDialog {
         if (ordinal < 0) return "Portrait unavailable";
         return "Portrait " + (ordinal + 1) + " of "
                 + LauncherFallbackProfileAuthority.humanPortraitCount();
+    }
+
+    static String portraitAccessibilityDescription(String portraitId, boolean imageAvailable) {
+        String presentation = portraitPresentation(portraitId);
+        return imageAvailable
+                ? "Selected " + presentation.toLowerCase(Locale.ROOT)
+                : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
     }
 
     static Path portraitAssetPath(Path appHome, String portraitId) {

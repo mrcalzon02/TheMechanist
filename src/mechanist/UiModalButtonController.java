@@ -11,6 +11,11 @@ final class UiModalButtonController {
         if (panel.screen == GamePanel.Screen.SECTOR_AUDIT && panel.auditZoneDropdownOpen) {
             return panel.isZoneAuditDropdownButton(button) || (button.label != null && button.label.startsWith("ZONE:"));
         }
+        if (panel.newGameSetupActive && panel.screen == GamePanel.Screen.CHARACTER
+                && button.label != null && button.label.trim().equalsIgnoreCase("Edit Name")
+                && (panel.candidateIndex < 0 || panel.candidateIndex >= panel.candidates.size())) {
+            return false;
+        }
         return true;
     }
 
@@ -26,7 +31,11 @@ final class UiModalButtonController {
 
     static void activateSelectedButton(GamePanel panel) {
         if (panel.buttons.isEmpty()) return;
-        if (panel.selectedButton < 0 || panel.selectedButton >= panel.buttons.size()) return;
+        if (panel.selectedButton < 0) {
+            panel.selectedButton = recoverBoundarySelectionIndex(panel, false);
+        } else if (panel.selectedButton >= panel.buttons.size()) {
+            panel.selectedButton = recoverBoundarySelectionIndex(panel, true);
+        }
         ButtonBox button = panel.buttons.get(panel.selectedButton);
         if (!buttonIsModalInteractive(panel, button)) {
             panel.sounds.play("panelClose", panel.options);
@@ -35,5 +44,14 @@ final class UiModalButtonController {
         panel.sounds.play("button", panel.options);
         if (MenuNavigationRuntime.interceptMainMenuButton(panel, button, "keyboard/button selection")) return;
         panel.runGuarded("BUTTON", "activate selected button " + button.label, button.action);
+    }
+
+    private static int recoverBoundarySelectionIndex(GamePanel panel, boolean fromEnd) {
+        int boundaryIndex = fromEnd ? panel.buttons.size() - 1 : 0;
+        int step = fromEnd ? -1 : 1;
+        for (int i = boundaryIndex; i >= 0 && i < panel.buttons.size(); i += step) {
+            if (buttonIsModalInteractive(panel, panel.buttons.get(i))) return i;
+        }
+        return boundaryIndex;
     }
 }
