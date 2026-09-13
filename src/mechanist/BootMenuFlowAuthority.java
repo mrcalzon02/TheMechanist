@@ -39,12 +39,7 @@ final class BootMenuFlowAuthority {
         if (panel == null || panel.screen != GamePanel.Screen.BOOT) return;
         String safeReason = safe(reason);
         try {
-            panel.setScreen(GamePanel.Screen.MENU);
-            panel.panelMode = GamePanel.PanelMode.NONE;
-            panel.selectedButton = 0;
-            panel.newGameSetupActive = false;
-            panel.characterNameEditActive = false;
-            panel.graphicsDropdown = -1;
+            MenuNavigationRuntime.prepareMainMenuState(panel);
             panel.logEvent("Boot sequence finished: " + safeReason + ".");
             DebugLog.audit("BOOT_MENU_FLOW", "finish authority=" + VERSION + " reason=" + safeReason + " screen=" + panel.screen);
             panel.repaint();

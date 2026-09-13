@@ -3,17 +3,26 @@ package mechanist;
 final class MenuNavigationRuntime {
     private MenuNavigationRuntime() {}
 
-    static void returnToMainMenu(GamePanel panel, String reason) {
+    static void prepareMainMenuState(GamePanel panel) {
         if (panel == null) return;
         panel.setScreen(GamePanel.Screen.MENU);
+        panel.panelMode = GamePanel.PanelMode.NONE;
         panel.selectedButton = 0;
         panel.lookCursorActive = false;
         panel.interactCursorActive = false;
         panel.combatCursorActive = false;
         MovementPlanningFocusResetAuthority.reset(panel, "main menu");
         panel.buildPlacementActive = false;
+        panel.newGameSetupActive = false;
         panel.characterNameEditActive = false;
+        panel.graphicsDropdown = -1;
+        panel.auditZoneDropdownOpen = false;
         panel.activeScrollTag = "";
+    }
+
+    static void returnToMainMenu(GamePanel panel, String reason) {
+        if (panel == null) return;
+        prepareMainMenuState(panel);
         panel.logEvent("Returned to main menu" + (reason == null || reason.isBlank() ? "." : ": " + reason + "."));
         panel.repaint();
         panel.requestFocusInWindow();
