@@ -117,8 +117,13 @@ final class CharacterPaperDollAuthority {
 
     static Rectangle interactiveBounds(Rectangle bounds) {
         if (bounds == null) return null;
-        return new Rectangle(bounds.x + 8, bounds.y + 28,
-                Math.max(80, bounds.width - 16), Math.max(120, bounds.height - 36));
+        int leftInset = Math.min(8, Math.max(0, (bounds.width - 1) / 2));
+        int topInset = Math.min(28, Math.max(0, bounds.height - 1));
+        int rightInset = Math.min(8, Math.max(0, bounds.width - leftInset - 1));
+        int bottomInset = Math.min(8, Math.max(0, bounds.height - topInset - 1));
+        return new Rectangle(bounds.x + leftInset, bounds.y + topInset,
+                Math.max(1, bounds.width - leftInset - rightInset),
+                Math.max(1, bounds.height - topInset - bottomInset));
     }
 
     static List<String> regionReadouts(Candidate candidate, Rectangle bounds) {
