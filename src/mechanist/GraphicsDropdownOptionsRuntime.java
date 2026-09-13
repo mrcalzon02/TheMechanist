@@ -40,32 +40,42 @@ final class GraphicsDropdownOptionsRuntime {
         else if (panel.graphicsDropdown == 5) addRenderQualityDropdownButtons(panel, inner, rowH);
     }
 
+    static int visibleDropdownRows(java.awt.Rectangle inner, int rowH, int available) {
+        if (inner == null || inner.height <= 0 || rowH <= 0 || available <= 0) return 0;
+        return Math.min(available, inner.height / rowH);
+    }
+
     static void addWindowModeDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
         String[] modes = {"Windowed", "Borderless Windowed", "Exclusive Fullscreen"};
-        for (int i = 0; i < modes.length; i++) { final int idx = i; panel.buttons.add(new ButtonBox(modes[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Select " + modes[i] + " window mode.", () -> setWindowMode(panel, idx))); }
+        int visible = visibleDropdownRows(inner, rowH, modes.length);
+        for (int i = 0; i < visible; i++) { final int idx = i; panel.buttons.add(new ButtonBox(modes[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Select " + modes[i] + " window mode.", () -> setWindowMode(panel, idx))); }
     }
 
     static void addResolutionDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
         int available = DisplayResolutionAuthority.choiceCount();
-        int visible = Math.max(1, Math.min(available, inner.height / Math.max(1, rowH)));
+        int visible = visibleDropdownRows(inner, rowH, available);
         int start = Math.max(0, Math.min(Math.max(0, available - visible), panel.options.resolutionIndex - visible / 2));
         for (int row = 0; row < visible; row++) { final int idx = start + row; String prefix = idx == panel.options.resolutionIndex ? "> " : ""; panel.buttons.add(new ButtonBox(prefix + DisplayResolutionAuthority.modeLabel(idx), inner.x, inner.y + row * rowH, inner.width, rowH - 2, "Select detected/safe resolution " + DisplayResolutionAuthority.modeLabel(idx) + ".", () -> setResolutionIndex(panel, idx))); }
     }
 
     static void addTargetFpsDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
-        for (int i = 0; i < GameOptions.TARGET_FPS_LABELS.length; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.TARGET_FPS_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use target frame pacing " + GameOptions.TARGET_FPS_LABELS[i] + ".", () -> setTargetFpsIndex(panel, idx))); }
+        int visible = visibleDropdownRows(inner, rowH, GameOptions.TARGET_FPS_LABELS.length);
+        for (int i = 0; i < visible; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.TARGET_FPS_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use target frame pacing " + GameOptions.TARGET_FPS_LABELS[i] + ".", () -> setTargetFpsIndex(panel, idx))); }
     }
 
     static void addRenderQualityDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
-        for (int i = 0; i < GameOptions.RENDER_QUALITY_LABELS.length; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.RENDER_QUALITY_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use render quality profile " + GameOptions.RENDER_QUALITY_LABELS[i] + ".", () -> setRenderQualityIndex(panel, idx))); }
+        int visible = visibleDropdownRows(inner, rowH, GameOptions.RENDER_QUALITY_LABELS.length);
+        for (int i = 0; i < visible; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.RENDER_QUALITY_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use render quality profile " + GameOptions.RENDER_QUALITY_LABELS[i] + ".", () -> setRenderQualityIndex(panel, idx))); }
     }
 
     static void addDownscaleDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
-        for (int i = 0; i < GameOptions.DOWNSCALE_LABELS.length; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.DOWNSCALE_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use internal render scale " + GameOptions.DOWNSCALE_LABELS[i] + ".", () -> setDownscaleIndex(panel, idx))); }
+        int visible = visibleDropdownRows(inner, rowH, GameOptions.DOWNSCALE_LABELS.length);
+        for (int i = 0; i < visible; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.DOWNSCALE_LABELS[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Use internal render scale " + GameOptions.DOWNSCALE_LABELS[i] + ".", () -> setDownscaleIndex(panel, idx))); }
     }
 
     static void addThemeDropdownButtons(GamePanel panel, java.awt.Rectangle inner, int rowH) {
-        for (int i = 0; i < GameOptions.PALETTE_NAMES.length; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.PALETTE_NAMES[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Select option.", () -> setColorPreset(panel, idx))); }
+        int visible = visibleDropdownRows(inner, rowH, GameOptions.PALETTE_NAMES.length);
+        for (int i = 0; i < visible; i++) { final int idx = i; panel.buttons.add(new ButtonBox(GameOptions.PALETTE_NAMES[i], inner.x, inner.y + i * rowH, inner.width, rowH - 2, "Select option.", () -> setColorPreset(panel, idx))); }
     }
 
     static void setWindowMode(GamePanel panel, int mode) { panel.logEvent(OptionsBoundaryAuthority.setWindowMode(panel.options, mode)); panel.graphicsDropdown = -1; panel.repaint(); }
