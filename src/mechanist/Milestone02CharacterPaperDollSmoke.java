@@ -186,6 +186,28 @@ public final class Milestone02CharacterPaperDollSmoke {
         assertEquipmentRegionLabel(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.ACCESSORY_ONE,
                 "No direct paper-doll region");
 
+        java.util.Properties persistedEquipment = new java.util.Properties();
+        persistedEquipment.setProperty("character.equipment.BACKPACK", "Stale Pack");
+        java.util.EnumMap<CharacterEquipmentAndMedicalAuthority.EquipmentSlot, String> currentEquipment =
+                new java.util.EnumMap<>(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.class);
+        currentEquipment.put(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR, "Test Helmet");
+        CharacterEquipmentAndMedicalAuthority.writeState(persistedEquipment, currentEquipment, null);
+        if (persistedEquipment.containsKey("character.equipment.BACKPACK")) {
+            throw new AssertionError("cleared equipment slot remained persisted and could reappear after reload");
+        }
+        if (!"Test Helmet".equals(persistedEquipment.getProperty("character.equipment.HEADGEAR"))) {
+            throw new AssertionError("active equipment slot was lost while clearing stale persistence");
+        }
+        java.util.EnumMap<CharacterEquipmentAndMedicalAuthority.EquipmentSlot, String> restoredEquipment =
+                new java.util.EnumMap<>(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.class);
+        CharacterEquipmentAndMedicalAuthority.readState(persistedEquipment, restoredEquipment, null);
+        if (restoredEquipment.containsKey(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK)) {
+            throw new AssertionError("cleared equipment slot reappeared after persistence round trip");
+        }
+        if (!"Test Helmet".equals(restoredEquipment.get(CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR))) {
+            throw new AssertionError("active equipment slot did not survive persistence round trip");
+        }
+
         Rectangle equipmentBounds = MouseLateUiController.characterEquipmentPaperDollBounds(1600, 900);
         Rectangle medicalBounds = MouseLateUiController.characterMedicalPaperDollBounds(1600, 900);
         if (equipmentBounds.width >= medicalBounds.width) {
