@@ -36,7 +36,8 @@ public final class LauncherProfileSelectionDialog {
     ) throws IOException {
         if (profile == null || GraphicsEnvironment.isHeadless()) return profile;
 
-        AtomicReference<String> selectedPortrait = new AtomicReference<>(initialPortraitId(profile.portraitId()));
+        AtomicReference<String> selectedPortrait = new AtomicReference<>(
+                initialAvailablePortraitId(appHome, profile.portraitId()));
 
         JLabel profileLabel = new JLabel(profilePresentation(profile), SwingConstants.CENTER);
         profileLabel.setBorder(BorderFactory.createTitledBorder("Profile"));
@@ -63,11 +64,11 @@ public final class LauncherProfileSelectionDialog {
                     portraitAccessibilityDescription(portraitId, icon != null));
         };
         previous.addActionListener(event -> {
-            selectedPortrait.set(stepPortraitId(selectedPortrait.get(), -1));
+            selectedPortrait.set(stepAvailablePortraitId(appHome, selectedPortrait.get(), -1));
             refresh.run();
         });
         next.addActionListener(event -> {
-            selectedPortrait.set(stepPortraitId(selectedPortrait.get(), 1));
+            selectedPortrait.set(stepAvailablePortraitId(appHome, selectedPortrait.get(), 1));
             refresh.run();
         });
         refresh.run();
@@ -128,6 +129,19 @@ public final class LauncherProfileSelectionDialog {
                 : LauncherFallbackProfileAuthority.humanPortraitId(0);
     }
 
+    static String initialAvailablePortraitId(Path appHome, String current) {
+        String initial = initialPortraitId(current);
+        if (portraitAvailable(appHome, initial)) return initial;
+        if (LauncherFallbackProfileAuthority.isValidHumanPortraitId(current)) {
+            return stepAvailablePortraitId(appHome, current, 1);
+        }
+        for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
+            String candidate = LauncherFallbackProfileAuthority.humanPortraitId(ordinal);
+            if (portraitAvailable(appHome, candidate)) return candidate;
+        }
+        return initial;
+    }
+
     static String stepPortraitId(String current, int delta) {
         int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(current);
         if (ordinal < 0) {
@@ -136,6 +150,17 @@ public final class LauncherProfileSelectionDialog {
             );
         }
         return LauncherFallbackProfileAuthority.humanPortraitId(ordinal + delta);
+    }
+
+    static String stepAvailablePortraitId(Path appHome, String current, int delta) {
+        int direction = delta < 0 ? -1 : 1;
+        int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(current);
+        int base = ordinal >= 0 ? ordinal : (direction < 0 ? 0 : -1);
+        for (int step = 1; step <= LauncherFallbackProfileAuthority.humanPortraitCount(); step++) {
+            String candidate = LauncherFallbackProfileAuthority.humanPortraitId(base + direction * step);
+            if (portraitAvailable(appHome, candidate)) return candidate;
+        }
+        return initialPortraitId(current);
     }
 
     static String portraitPresentation(String portraitId) {

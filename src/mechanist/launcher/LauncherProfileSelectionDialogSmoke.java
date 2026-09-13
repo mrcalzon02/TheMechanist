@@ -98,6 +98,9 @@ public final class LauncherProfileSelectionDialogSmoke {
         require(packagedRoot.toAbsolutePath().normalize().equals(
                 ThinLauncherMain.selectAppHome(unrelatedWorking, clientJar)),
                 "thin launcher should climb from the client jar to the packaged portrait root");
+        require("human8x8-17".equals(
+                LauncherProfileSelectionDialog.initialAvailablePortraitId(packagedRoot, "human8x8-17")),
+                "available saved portrait should remain the visible initial selection");
 
         Path incompleteWorking = temp.resolve("incomplete");
         Path firstIncompleteAsset = LauncherProfileSelectionDialog.portraitAssetPath(
@@ -127,6 +130,15 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "profile confirmation must reject a selected portrait whose image cannot be decoded");
         require(!LauncherProfileSelectionDialog.portraitAvailable(packagedRoot, "enemy-17"),
                 "profile confirmation must reject portrait ids outside the human launcher partition");
+        require("human8x8-18".equals(
+                LauncherProfileSelectionDialog.initialAvailablePortraitId(unreadableWorking, "human8x8-17")),
+                "profile chooser must recover a corrupted persisted portrait to the next decodable portrait");
+        require("human8x8-18".equals(
+                LauncherProfileSelectionDialog.stepAvailablePortraitId(unreadableWorking, "human8x8-16", 1)),
+                "next portrait navigation must skip a corrupted portrait asset");
+        require("human8x8-16".equals(
+                LauncherProfileSelectionDialog.stepAvailablePortraitId(unreadableWorking, "human8x8-18", -1)),
+                "previous portrait navigation must skip a corrupted portrait asset");
 
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
@@ -141,7 +153,8 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " packagedAssetHome=true"
                 + " completeAssetRoot=true"
                 + " readableAssetRoot=true"
-                + " confirmationAvailability=true");
+                + " confirmationAvailability=true"
+                + " availableNavigation=true");
     }
 
     private static void writeCompletePortraitPackage(Path root) throws Exception {
