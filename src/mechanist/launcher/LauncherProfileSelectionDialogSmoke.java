@@ -1,8 +1,11 @@
 package mechanist.launcher;
 
 import java.awt.Dimension;
+import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import javax.imageio.ImageIO;
 
 public final class LauncherProfileSelectionDialogSmoke {
     public static void main(String[] args) throws Exception {
@@ -107,6 +110,17 @@ public final class LauncherProfileSelectionDialogSmoke {
                 ThinLauncherMain.selectAppHome(incompleteWorking, clientJar)),
                 "thin launcher must reject incomplete portrait roots and recover the complete packaged asset home");
 
+        Path unreadableWorking = temp.resolve("unreadable");
+        writeCompletePortraitPackage(unreadableWorking);
+        Path unreadableAsset = LauncherProfileSelectionDialog.portraitAssetPath(
+                unreadableWorking,
+                LauncherFallbackProfileAuthority.humanPortraitId(17)
+        );
+        Files.writeString(unreadableAsset, "not a png image");
+        require(packagedRoot.toAbsolutePath().normalize().equals(
+                ThinLauncherMain.selectAppHome(unreadableWorking, clientJar)),
+                "thin launcher must reject portrait roots whose expected files cannot be decoded as images");
+
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
@@ -118,17 +132,20 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " accessibilitySelection=true"
                 + " previewAssetMapping=true"
                 + " packagedAssetHome=true"
-                + " completeAssetRoot=true");
+                + " completeAssetRoot=true"
+                + " readableAssetRoot=true");
     }
 
     private static void writeCompletePortraitPackage(Path root) throws Exception {
+        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
             Path asset = LauncherProfileSelectionDialog.portraitAssetPath(
                     root,
                     LauncherFallbackProfileAuthority.humanPortraitId(ordinal)
             );
             Files.createDirectories(asset.getParent());
-            Files.writeString(asset, "smoke");
+            require(ImageIO.write(image, "png", asset.toFile()),
+                    "smoke fixture could not encode launcher portrait PNG");
         }
     }
 
