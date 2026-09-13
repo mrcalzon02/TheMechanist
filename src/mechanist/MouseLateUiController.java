@@ -117,21 +117,26 @@ final class MouseLateUiController {
     }
 
     private static java.awt.Rectangle characterTabContentBounds(int width, int height) {
-        int availablePanelWidth = Math.max(1, width - 36);
-        int availablePanelHeight = Math.max(1, height - 92);
-        int preferredPanelWidth = Math.max(820, Math.min(Math.max(1, width - 48), (int)Math.round(width * 0.90)));
-        int preferredPanelHeight = Math.max(560, Math.min(Math.max(1, height - 92), (int)Math.round(height * 0.84)));
+        int safeWidth = Math.max(1, width);
+        int safeHeight = Math.max(1, height);
+        int availablePanelWidth = Math.max(1, safeWidth - 36);
+        int availablePanelHeight = Math.max(1, safeHeight - 92);
+        int preferredPanelWidth = Math.max(820, Math.min(Math.max(1, safeWidth - 48), (int)Math.round(safeWidth * 0.90)));
+        int preferredPanelHeight = Math.max(560, Math.min(Math.max(1, safeHeight - 92), (int)Math.round(safeHeight * 0.84)));
         int panelWidth = Math.min(availablePanelWidth, preferredPanelWidth);
         int panelHeight = Math.min(availablePanelHeight, preferredPanelHeight);
-        int panelX = Math.max(18, (width - panelWidth) / 2);
-        int panelY = Math.max(46, (height - panelHeight) / 2);
+        int panelX = Math.max(0, (safeWidth - panelWidth) / 2);
+        int panelY = Math.max(0, (safeHeight - panelHeight) / 2);
 
-        int bodyX = panelX + 18;
-        int bodyY = panelY + 54;
-        int bodyWidth = Math.max(1, panelWidth - 36);
-        int bodyHeight = Math.max(1, panelHeight - 112);
+        int horizontalInset = Math.min(18, Math.max(0, (panelWidth - 1) / 2));
+        int topInset = Math.min(54, Math.max(0, panelHeight - 1));
+        int bottomInset = Math.min(58, Math.max(0, panelHeight - topInset - 1));
+        int bodyX = panelX + horizontalInset;
+        int bodyY = panelY + topInset;
+        int bodyWidth = Math.max(1, panelWidth - horizontalInset * 2);
+        int bodyHeight = Math.max(1, panelHeight - topInset - bottomInset);
 
-        int headerHeight = Math.min(40, bodyHeight);
+        int headerHeight = Math.min(40, Math.max(0, bodyHeight - 1));
         int contentY = bodyY + headerHeight;
         int contentHeight = Math.max(1, bodyHeight - headerHeight);
         return new java.awt.Rectangle(bodyX, contentY, bodyWidth, contentHeight);
