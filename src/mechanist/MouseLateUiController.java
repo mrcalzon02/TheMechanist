@@ -26,6 +26,7 @@ final class MouseLateUiController {
             ButtonBox button = panel.buttons.get(i);
             if (UiModalButtonController.buttonIsModalInteractive(panel, button) && button.contains(mx, my)) {
                 panel.selectedButton = i;
+                UiModalButtonController.reconcileCharacterSetupSelection(panel, button);
                 panel.sounds.play("button", panel.options);
                 if (MenuNavigationRuntime.interceptMainMenuButton(panel, button, "mouse click")) return true;
                 panel.runGuarded("MOUSE", "click button " + button.label, button.action);
