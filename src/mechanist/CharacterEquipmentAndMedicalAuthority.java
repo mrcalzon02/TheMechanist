@@ -301,6 +301,11 @@ final class CharacterEquipmentAndMedicalAuthority {
                            Map<String, String> medical) {
         if (properties == null) return;
         if (equipment != null) {
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                if (slot == EquipmentSlot.LEFT_HAND || slot == EquipmentSlot.RIGHT_HAND
+                        || slot == EquipmentSlot.CLOTHES) continue;
+                properties.remove("character.equipment." + slot.name());
+            }
             for (Map.Entry<EquipmentSlot, String> entry : equipment.entrySet()) {
                 if (entry.getKey() == null || entry.getValue() == null || entry.getValue().isBlank()) continue;
                 properties.setProperty("character.equipment." + entry.getKey().name(), entry.getValue());
