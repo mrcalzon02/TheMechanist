@@ -7,7 +7,7 @@ final class CharacterNameKeyController {
 
     static boolean handleCharacterNameEditKey(GamePanel panel, int code) {
         if (panel.screen != GamePanel.Screen.CHARACTER || !panel.characterNameEditActive) return false;
-        Candidate candidate = panel.candidates.isEmpty() ? null : panel.candidates.get(panel.candidateIndex);
+        Candidate candidate = panel.candidates.isEmpty() ? null : panel.selectedNewGameCandidate();
         if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER) {
             if (candidate != null) {
                 candidate.name = CharacterCreationAuthority.sanitizePlayerName(candidate.name, panel.rng);
@@ -39,7 +39,7 @@ final class CharacterNameKeyController {
     static boolean handleCharacterNameEditTyped(GamePanel panel, char ch) {
         if (panel.screen != GamePanel.Screen.CHARACTER || !panel.characterNameEditActive) return false;
         if (Character.isISOControl(ch)) return false;
-        Candidate candidate = panel.candidates.isEmpty() ? null : panel.candidates.get(panel.candidateIndex);
+        Candidate candidate = panel.candidates.isEmpty() ? null : panel.selectedNewGameCandidate();
         if (candidate == null) return true;
         if (candidate.name == null) candidate.name = "";
         if (candidate.name.length() >= 32) return true;
