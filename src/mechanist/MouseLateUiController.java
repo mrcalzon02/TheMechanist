@@ -134,18 +134,22 @@ final class MouseLateUiController {
     static boolean handleCharacterNameClick(GamePanel panel, int mx, int my) {
         if (panel == null || !panel.newGameSetupActive || panel.screen != GamePanel.Screen.CHARACTER || panel.characterNameEditRect == null) return false;
         if (panel.characterNameEditRect.contains(mx, my)) {
-            if (panel.candidateIndex < 0 || panel.candidateIndex >= panel.candidates.size()) {
+            if (panel.candidates.isEmpty()) {
                 panel.characterNameEditActive = false;
                 return false;
             }
+            panel.candidateIndex = Math.max(0, Math.min(panel.candidateIndex, panel.candidates.size() - 1));
             panel.characterNameEditActive = true;
             panel.requestFocusInWindow();
             panel.repaint();
             return true;
         }
         if (panel.characterNameEditActive) {
-            Candidate candidate = panel.candidateIndex >= 0 && panel.candidateIndex < panel.candidates.size()
-                    ? panel.candidates.get(panel.candidateIndex) : null;
+            Candidate candidate = null;
+            if (!panel.candidates.isEmpty()) {
+                panel.candidateIndex = Math.max(0, Math.min(panel.candidateIndex, panel.candidates.size() - 1));
+                candidate = panel.candidates.get(panel.candidateIndex);
+            }
             if (candidate != null) {
                 candidate.name = CharacterCreationAuthority.sanitizePlayerName(candidate.name, panel.rng);
                 panel.refreshNameLockedCandidateState(candidate);
