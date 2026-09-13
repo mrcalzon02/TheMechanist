@@ -13,7 +13,7 @@ final class UiModalButtonController {
         }
         if (panel.newGameSetupActive && panel.screen == GamePanel.Screen.CHARACTER
                 && button.label != null && button.label.trim().equalsIgnoreCase("Edit Name")
-                && (panel.candidateIndex < 0 || panel.candidateIndex >= panel.candidates.size())) {
+                && panel.candidates.isEmpty()) {
             return false;
         }
         return true;
