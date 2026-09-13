@@ -87,18 +87,30 @@ public final class LauncherProfileSelectionDialog {
         panel.add(profileLabel, BorderLayout.NORTH);
         panel.add(portraitPanel, BorderLayout.CENTER);
 
-        int result = JOptionPane.showConfirmDialog(
-                null,
-                panel,
-                "The Mechanist - Profile",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
-        if (result != JOptionPane.OK_OPTION) return null;
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(
+                    null,
+                    panel,
+                    "The Mechanist - Profile",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+            if (result != JOptionPane.OK_OPTION) return null;
 
-        String selected = selectedPortrait.get();
-        if (selected.equals(profile.portraitId())) return profile;
-        return LauncherFallbackProfileAuthority.selectHumanPortrait(profile, selected);
+            String selected = selectedPortrait.get();
+            if (!portraitAvailable(appHome, selected)) {
+                refresh.run();
+                JOptionPane.showMessageDialog(
+                        null,
+                        "The selected portrait image is unavailable. Choose another portrait or cancel.",
+                        "The Mechanist - Profile",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                continue;
+            }
+            if (selected.equals(profile.portraitId())) return profile;
+            return LauncherFallbackProfileAuthority.selectHumanPortrait(profile, selected);
+        }
     }
 
     static String profilePresentation(LauncherFallbackProfileAuthority.LauncherProfile profile) {
@@ -157,6 +169,10 @@ public final class LauncherProfileSelectionDialog {
                 .resolve("assets")
                 .resolve(filename)
                 .normalize();
+    }
+
+    static boolean portraitAvailable(Path appHome, String portraitId) {
+        return portraitIcon(appHome, portraitId) != null;
     }
 
     static ImageIcon portraitIcon(Path appHome, String portraitId) {

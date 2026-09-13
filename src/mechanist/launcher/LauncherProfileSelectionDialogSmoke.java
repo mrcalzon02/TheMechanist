@@ -121,6 +121,13 @@ public final class LauncherProfileSelectionDialogSmoke {
                 ThinLauncherMain.selectAppHome(unreadableWorking, clientJar)),
                 "thin launcher must reject portrait roots whose expected files cannot be decoded as images");
 
+        require(LauncherProfileSelectionDialog.portraitAvailable(packagedRoot, "human8x8-17"),
+                "profile confirmation must accept a decodable selected human portrait");
+        require(!LauncherProfileSelectionDialog.portraitAvailable(unreadableWorking, "human8x8-17"),
+                "profile confirmation must reject a selected portrait whose image cannot be decoded");
+        require(!LauncherProfileSelectionDialog.portraitAvailable(packagedRoot, "enemy-17"),
+                "profile confirmation must reject portrait ids outside the human launcher partition");
+
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
@@ -133,7 +140,8 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " previewAssetMapping=true"
                 + " packagedAssetHome=true"
                 + " completeAssetRoot=true"
-                + " readableAssetRoot=true");
+                + " readableAssetRoot=true"
+                + " confirmationAvailability=true");
     }
 
     private static void writeCompletePortraitPackage(Path root) throws Exception {
