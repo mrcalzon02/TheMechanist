@@ -218,6 +218,9 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("character tab paper-doll origins diverged across equipment and medical surfaces");
         }
 
+        assertContainedRegions(candidate, new Rectangle(3, 4, 24, 32));
+        assertContainedRegions(candidate, new Rectangle(9, 11, 1, 1));
+
         System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
                 + " equipment=" + CharacterEquipmentAndMedicalAuthority.VERSION
                 + " selectedPixels=" + changedPixels + " clothesPixels=" + clothesChangedPixels + " hit=" + hit);
@@ -257,6 +260,18 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (!expected.equals(slot.bodyRegion())) {
             throw new AssertionError("equipment slot visible region label diverged for " + slot
                     + ": expected " + expected + " but got " + slot.bodyRegion());
+        }
+    }
+
+    private static void assertContainedRegions(Candidate candidate, Rectangle paperDollBounds) {
+        Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(paperDollBounds);
+        for (CharacterPaperDollAuthority.RegionView region
+                : CharacterPaperDollAuthority.regions(candidate, interactive)) {
+            if (region.bounds().width <= 0 || region.bounds().height <= 0
+                    || !interactive.contains(region.bounds())) {
+                throw new AssertionError("paper-doll region escaped constrained interaction bounds: region="
+                        + region.bounds() + " interactive=" + interactive);
+            }
         }
     }
 
