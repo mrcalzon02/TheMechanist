@@ -99,14 +99,16 @@ final class CharacterPaperDollAuthority {
 
         if (!unmatched.isEmpty()) {
             int index = 0;
-            int columns = 2;
-            int cellWidth = Math.max(36, bounds.width / columns);
-            int cellHeight = Math.max(18, Math.min(30, bounds.height / Math.max(1, (unmatched.size() + 1) / 2)));
+            int columns = Math.min(2, Math.max(1, bounds.width));
+            int rows = Math.max(1, (unmatched.size() + columns - 1) / columns);
+            int cellWidth = Math.max(1, bounds.width / columns);
+            int cellHeight = Math.max(1, bounds.height / rows);
             for (BodyPart part : unmatched.values()) {
                 int col = index % columns;
                 int row = index / columns;
-                Rectangle r = new Rectangle(bounds.x + col * cellWidth,
-                        Math.max(bounds.y, bounds.y + bounds.height - (row + 1) * cellHeight),
+                Rectangle r = containedRectangle(bounds,
+                        bounds.x + col * cellWidth,
+                        bounds.y + Math.max(0, bounds.height - (row + 1) * cellHeight),
                         Math.max(20, cellWidth - 3), Math.max(14, cellHeight - 3));
                 result.add(view(part, compactLabel(part.name), r));
                 index++;
@@ -300,12 +302,20 @@ final class CharacterPaperDollAuthority {
     }
 
     private static Rectangle scale(Rectangle bounds, Template template) {
-        return new Rectangle(
-                bounds.x + (int)Math.round(bounds.width * template.x()),
-                bounds.y + (int)Math.round(bounds.height * template.y()),
-                Math.max(18, (int)Math.round(bounds.width * template.width())),
-                Math.max(12, (int)Math.round(bounds.height * template.height()))
-        );
+        int x = bounds.x + (int)Math.round(bounds.width * template.x());
+        int y = bounds.y + (int)Math.round(bounds.height * template.y());
+        int width = Math.max(18, (int)Math.round(bounds.width * template.width()));
+        int height = Math.max(12, (int)Math.round(bounds.height * template.height()));
+        return containedRectangle(bounds, x, y, width, height);
+    }
+
+    private static Rectangle containedRectangle(Rectangle bounds, int x, int y,
+                                                int preferredWidth, int preferredHeight) {
+        int localX = Math.max(0, Math.min(x - bounds.x, Math.max(0, bounds.width - 1)));
+        int localY = Math.max(0, Math.min(y - bounds.y, Math.max(0, bounds.height - 1)));
+        int width = Math.max(1, Math.min(preferredWidth, bounds.width - localX));
+        int height = Math.max(1, Math.min(preferredHeight, bounds.height - localY));
+        return new Rectangle(bounds.x + localX, bounds.y + localY, width, height);
     }
 
     private static Color colorFor(double ratio, boolean destroyed) {
