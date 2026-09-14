@@ -164,12 +164,18 @@ public final class Milestone02CharacterPaperDollSmoke {
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK).isEmpty()) {
             throw new AssertionError("backpack must not invent a visible body-region association");
         }
-        if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(-1).isEmpty()) {
-            throw new AssertionError("negative equipment selection must not highlight a paper-doll region");
+        List<String> firstSlotRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR);
+        if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(-1).equals(firstSlotRegions)) {
+            throw new AssertionError("negative equipment selection did not reconcile to the first visible slot");
         }
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot lastSlot =
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values()[
+                        CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length - 1];
+        List<String> lastSlotRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(lastSlot);
         if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(
-                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length).isEmpty()) {
-            throw new AssertionError("stale equipment selection must not highlight a paper-doll region");
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length).equals(lastSlotRegions)) {
+            throw new AssertionError("stale equipment selection did not reconcile to the last visible slot");
         }
         if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES.ordinal()).equals(clothesRegions)) {
