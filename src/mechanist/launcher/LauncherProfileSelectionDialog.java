@@ -36,7 +36,8 @@ public final class LauncherProfileSelectionDialog {
     ) throws IOException {
         if (profile == null || GraphicsEnvironment.isHeadless()) return profile;
 
-        if (availablePortraitCount(appHome) == 0) {
+        int availablePortraits = availablePortraitCount(appHome);
+        if (availablePortraits == 0) {
             JOptionPane.showMessageDialog(
                     null,
                     "No usable character portrait images were found in the launcher profile package. "
@@ -65,6 +66,9 @@ public final class LauncherProfileSelectionDialog {
         JButton next = new JButton("Next portrait >");
         previous.setToolTipText("Show the previous character portrait");
         next.setToolTipText("Show the next character portrait");
+        boolean navigationEnabled = portraitNavigationEnabled(availablePortraits);
+        previous.setEnabled(navigationEnabled);
+        next.setEnabled(navigationEnabled);
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
             portraitLabel.setText(portraitPresentation(portraitId));
@@ -132,6 +136,10 @@ public final class LauncherProfileSelectionDialog {
     static Dimension portraitPreviewSize() {
         int side = PREVIEW_SIZE + PREVIEW_FRAME_PADDING;
         return new Dimension(side, side);
+    }
+
+    static boolean portraitNavigationEnabled(int availablePortraits) {
+        return availablePortraits > 1;
     }
 
     static String initialPortraitId(String current) {
