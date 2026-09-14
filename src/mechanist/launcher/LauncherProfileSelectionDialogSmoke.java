@@ -27,6 +27,12 @@ public final class LauncherProfileSelectionDialogSmoke {
         Dimension previewSize = LauncherProfileSelectionDialog.portraitPreviewSize();
         require(previewSize.width == 144 && previewSize.height == 144,
                 "portrait preview must keep a stable square footprint even when art is unavailable");
+        require(!LauncherProfileSelectionDialog.portraitNavigationEnabled(0),
+                "portrait navigation must remain disabled when the package has no usable portraits");
+        require(!LauncherProfileSelectionDialog.portraitNavigationEnabled(1),
+                "portrait navigation must be disabled when only one usable portrait exists");
+        require(LauncherProfileSelectionDialog.portraitNavigationEnabled(2),
+                "portrait navigation must be enabled when another usable portrait exists");
 
         require("human8x8-17".equals(
                 LauncherProfileSelectionDialog.initialPortraitId("human8x8-17")),
@@ -56,12 +62,27 @@ public final class LauncherProfileSelectionDialogSmoke {
         require("Portrait 18 of 64".equals(
                 LauncherProfileSelectionDialog.portraitPresentation("human8x8-17")),
                 "presentation should use player-facing ordinal rather than raw semantic id");
+        require("Portrait 18 of 64 · 1 usable installed".equals(
+                LauncherProfileSelectionDialog.portraitPresentation("human8x8-17", 1)),
+                "filtered presentation without a resolved navigation position must still expose usable count");
+        require("Portrait 18 of 64 · installed choice 1 of 1".equals(
+                LauncherProfileSelectionDialog.portraitPresentation("human8x8-17", 1, 1)),
+                "filtered presentation with a resolved position must distinguish navigable index from catalog index");
+        require("Portrait 18 of 64".equals(
+                LauncherProfileSelectionDialog.portraitPresentation("human8x8-17", 64)),
+                "complete portrait packages should retain the compact catalog presentation");
         require("Portrait unavailable".equals(
                 LauncherProfileSelectionDialog.portraitPresentation("enemy-17")),
                 "non-human portrait ids must not cross the launcher profile partition");
         require("Selected portrait 18 of 64".equals(
                 LauncherProfileSelectionDialog.portraitAccessibilityDescription("human8x8-17", true)),
                 "accessible portrait state must identify the currently selected portrait");
+        require("Selected portrait 18 of 64 · 1 usable installed".equals(
+                LauncherProfileSelectionDialog.portraitAccessibilityDescription("human8x8-17", true, 1)),
+                "accessible filtered state without a resolved navigation position must expose the usable installed count");
+        require("Selected portrait 18 of 64 · installed choice 1 of 1".equals(
+                LauncherProfileSelectionDialog.portraitAccessibilityDescription("human8x8-17", true, 1, 1)),
+                "accessible filtered state must expose the selected position inside the installed navigation set");
         require("Selected portrait unavailable; image unavailable".equals(
                 LauncherProfileSelectionDialog.portraitAccessibilityDescription("enemy-17", false)),
                 "accessible portrait state must expose unavailable image association without leaking a raw portrait id");
@@ -83,8 +104,19 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "non-human ids must not resolve into launcher human portrait assets");
 
         Path temp = Files.createTempDirectory("mechanist-launcher-profile-home-");
+        Path missingRoot = temp.resolve("missing");
+        require(LauncherProfileSelectionDialog.availablePortraitCount(missingRoot) == 0,
+                "profile chooser must detect a portrait package with no usable images");
+        require(LauncherProfileSelectionDialog.availablePortraitPosition(missingRoot, "human8x8-17") == 0,
+                "unavailable portraits must not receive a navigable installed position");
+
         Path packagedRoot = temp.resolve("installed");
         writeCompletePortraitPackage(packagedRoot);
+        require(LauncherProfileSelectionDialog.availablePortraitCount(packagedRoot)
+                        == LauncherFallbackProfileAuthority.humanPortraitCount(),
+                "complete portrait package must expose the full human selection set");
+        require(LauncherProfileSelectionDialog.availablePortraitPosition(packagedRoot, "human8x8-17") == 18,
+                "complete portrait package navigation position must match the stable catalog position");
         Path clientDir = packagedRoot.resolve("packages/client");
         Files.createDirectories(clientDir);
         Path clientJar = clientDir.resolve("TheMechanist-client.jar");
@@ -98,6 +130,9 @@ public final class LauncherProfileSelectionDialogSmoke {
         require(packagedRoot.toAbsolutePath().normalize().equals(
                 ThinLauncherMain.selectAppHome(unrelatedWorking, clientJar)),
                 "thin launcher should climb from the client jar to the packaged portrait root");
+        require("human8x8-17".equals(
+                LauncherProfileSelectionDialog.initialAvailablePortraitId(packagedRoot, "human8x8-17")),
+                "available saved portrait should remain the visible initial selection");
 
         Path incompleteWorking = temp.resolve("incomplete");
         Path firstIncompleteAsset = LauncherProfileSelectionDialog.portraitAssetPath(
@@ -117,23 +152,56 @@ public final class LauncherProfileSelectionDialogSmoke {
                 LauncherFallbackProfileAuthority.humanPortraitId(17)
         );
         Files.writeString(unreadableAsset, "not a png image");
+        require(LauncherProfileSelectionDialog.availablePortraitCount(unreadableWorking)
+                        == LauncherFallbackProfileAuthority.humanPortraitCount() - 1,
+                "corrupted portrait package must expose only decodable selections");
+        require(LauncherProfileSelectionDialog.availablePortraitPosition(unreadableWorking, "human8x8-18") == 18,
+                "partial package navigation position must close the gap left by a corrupted earlier portrait");
+        require("Portrait 19 of 64 · installed choice 18 of 63".equals(
+                LauncherProfileSelectionDialog.portraitPresentation(
+                        "human8x8-18",
+                        LauncherProfileSelectionDialog.availablePortraitCount(unreadableWorking),
+                        LauncherProfileSelectionDialog.availablePortraitPosition(unreadableWorking, "human8x8-18"))),
+                "partial package presentation must expose both catalog identity and actual navigation position");
         require(packagedRoot.toAbsolutePath().normalize().equals(
                 ThinLauncherMain.selectAppHome(unreadableWorking, clientJar)),
                 "thin launcher must reject portrait roots whose expected files cannot be decoded as images");
 
+        require(LauncherProfileSelectionDialog.portraitAvailable(packagedRoot, "human8x8-17"),
+                "profile confirmation must accept a decodable selected human portrait");
+        require(!LauncherProfileSelectionDialog.portraitAvailable(unreadableWorking, "human8x8-17"),
+                "profile confirmation must reject a selected portrait whose image cannot be decoded");
+        require(!LauncherProfileSelectionDialog.portraitAvailable(packagedRoot, "enemy-17"),
+                "profile confirmation must reject portrait ids outside the human launcher partition");
+        require("human8x8-18".equals(
+                LauncherProfileSelectionDialog.initialAvailablePortraitId(unreadableWorking, "human8x8-17")),
+                "profile chooser must recover a corrupted persisted portrait to the next decodable portrait");
+        require("human8x8-18".equals(
+                LauncherProfileSelectionDialog.stepAvailablePortraitId(unreadableWorking, "human8x8-16", 1)),
+                "next portrait navigation must skip a corrupted portrait asset");
+        require("human8x8-16".equals(
+                LauncherProfileSelectionDialog.stepAvailablePortraitId(unreadableWorking, "human8x8-18", -1)),
+                "previous portrait navigation must skip a corrupted portrait asset");
+
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
+                + " navigationAvailability=true"
                 + " initialSelectionRecovery=true"
                 + " wrap=true"
                 + " unavailableRecovery=true"
                 + " partition=true"
                 + " presentation=true"
+                + " filteredAvailabilityPresentation=true"
+                + " filteredNavigationPosition=true"
                 + " accessibilitySelection=true"
                 + " previewAssetMapping=true"
                 + " packagedAssetHome=true"
                 + " completeAssetRoot=true"
-                + " readableAssetRoot=true");
+                + " readableAssetRoot=true"
+                + " portraitPackageAvailability=true"
+                + " confirmationAvailability=true"
+                + " availableNavigation=true");
     }
 
     private static void writeCompletePortraitPackage(Path root) throws Exception {

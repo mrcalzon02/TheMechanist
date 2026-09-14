@@ -164,12 +164,18 @@ public final class Milestone02CharacterPaperDollSmoke {
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.BACKPACK).isEmpty()) {
             throw new AssertionError("backpack must not invent a visible body-region association");
         }
-        if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(-1).isEmpty()) {
-            throw new AssertionError("negative equipment selection must not highlight a paper-doll region");
+        List<String> firstSlotRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.HEADGEAR);
+        if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(-1).equals(firstSlotRegions)) {
+            throw new AssertionError("negative equipment selection did not reconcile to the first visible slot");
         }
+        CharacterEquipmentAndMedicalAuthority.EquipmentSlot lastSlot =
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values()[
+                        CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length - 1];
+        List<String> lastSlotRegions = CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSlot(lastSlot);
         if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(
-                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length).isEmpty()) {
-            throw new AssertionError("stale equipment selection must not highlight a paper-doll region");
+                CharacterEquipmentAndMedicalAuthority.EquipmentSlot.values().length).equals(lastSlotRegions)) {
+            throw new AssertionError("stale equipment selection did not reconcile to the last visible slot");
         }
         if (!CharacterEquipmentAndMedicalAuthority.bodyRegionsForEquipmentSelection(
                 CharacterEquipmentAndMedicalAuthority.EquipmentSlot.CLOTHES.ordinal()).equals(clothesRegions)) {
@@ -218,6 +224,9 @@ public final class Milestone02CharacterPaperDollSmoke {
             throw new AssertionError("character tab paper-doll origins diverged across equipment and medical surfaces");
         }
 
+        assertContainedRegions(candidate, new Rectangle(3, 4, 24, 32));
+        assertContainedRegions(candidate, new Rectangle(9, 11, 1, 1));
+
         System.out.println("Milestone02CharacterPaperDollSmoke PASS " + CharacterPaperDollAuthority.VERSION
                 + " equipment=" + CharacterEquipmentAndMedicalAuthority.VERSION
                 + " selectedPixels=" + changedPixels + " clothesPixels=" + clothesChangedPixels + " hit=" + hit);
@@ -257,6 +266,18 @@ public final class Milestone02CharacterPaperDollSmoke {
         if (!expected.equals(slot.bodyRegion())) {
             throw new AssertionError("equipment slot visible region label diverged for " + slot
                     + ": expected " + expected + " but got " + slot.bodyRegion());
+        }
+    }
+
+    private static void assertContainedRegions(Candidate candidate, Rectangle paperDollBounds) {
+        Rectangle interactive = CharacterPaperDollAuthority.interactiveBounds(paperDollBounds);
+        for (CharacterPaperDollAuthority.RegionView region
+                : CharacterPaperDollAuthority.regions(candidate, interactive)) {
+            if (region.bounds().width <= 0 || region.bounds().height <= 0
+                    || !interactive.contains(region.bounds())) {
+                throw new AssertionError("paper-doll region escaped constrained interaction bounds: region="
+                        + region.bounds() + " interactive=" + interactive);
+            }
         }
     }
 

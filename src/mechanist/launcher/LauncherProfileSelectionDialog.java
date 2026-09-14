@@ -36,7 +36,20 @@ public final class LauncherProfileSelectionDialog {
     ) throws IOException {
         if (profile == null || GraphicsEnvironment.isHeadless()) return profile;
 
-        AtomicReference<String> selectedPortrait = new AtomicReference<>(initialPortraitId(profile.portraitId()));
+        int availablePortraits = availablePortraitCount(appHome);
+        if (availablePortraits == 0) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "No usable character portrait images were found in the launcher profile package. "
+                            + "Repair or reinstall the game files, then try again.",
+                    "The Mechanist - Profile",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return null;
+        }
+
+        AtomicReference<String> selectedPortrait = new AtomicReference<>(
+                initialAvailablePortraitId(appHome, profile.portraitId()));
 
         JLabel profileLabel = new JLabel(profilePresentation(profile), SwingConstants.CENTER);
         profileLabel.setBorder(BorderFactory.createTitledBorder("Profile"));
@@ -53,21 +66,29 @@ public final class LauncherProfileSelectionDialog {
         JButton next = new JButton("Next portrait >");
         previous.setToolTipText("Show the previous character portrait");
         next.setToolTipText("Show the next character portrait");
+        boolean navigationEnabled = portraitNavigationEnabled(availablePortraits);
+        previous.setEnabled(navigationEnabled);
+        next.setEnabled(navigationEnabled);
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
-            portraitLabel.setText(portraitPresentation(portraitId));
+            int availablePosition = availablePortraitPosition(appHome, portraitId);
+            portraitLabel.setText(portraitPresentation(portraitId, availablePortraits, availablePosition));
             ImageIcon icon = portraitIcon(appHome, portraitId);
             portraitPreview.setIcon(icon);
             portraitPreview.setText(icon == null ? "Portrait image unavailable" : "");
             portraitPreview.getAccessibleContext().setAccessibleDescription(
-                    portraitAccessibilityDescription(portraitId, icon != null));
+                    portraitAccessibilityDescription(
+                            portraitId,
+                            icon != null,
+                            availablePortraits,
+                            availablePosition));
         };
         previous.addActionListener(event -> {
-            selectedPortrait.set(stepPortraitId(selectedPortrait.get(), -1));
+            selectedPortrait.set(stepAvailablePortraitId(appHome, selectedPortrait.get(), -1));
             refresh.run();
         });
         next.addActionListener(event -> {
-            selectedPortrait.set(stepPortraitId(selectedPortrait.get(), 1));
+            selectedPortrait.set(stepAvailablePortraitId(appHome, selectedPortrait.get(), 1));
             refresh.run();
         });
         refresh.run();
@@ -87,18 +108,30 @@ public final class LauncherProfileSelectionDialog {
         panel.add(profileLabel, BorderLayout.NORTH);
         panel.add(portraitPanel, BorderLayout.CENTER);
 
-        int result = JOptionPane.showConfirmDialog(
-                null,
-                panel,
-                "The Mechanist - Profile",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
-        if (result != JOptionPane.OK_OPTION) return null;
+        while (true) {
+            int result = JOptionPane.showConfirmDialog(
+                    null,
+                    panel,
+                    "The Mechanist - Profile",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+            if (result != JOptionPane.OK_OPTION) return null;
 
-        String selected = selectedPortrait.get();
-        if (selected.equals(profile.portraitId())) return profile;
-        return LauncherFallbackProfileAuthority.selectHumanPortrait(profile, selected);
+            String selected = selectedPortrait.get();
+            if (!portraitAvailable(appHome, selected)) {
+                refresh.run();
+                JOptionPane.showMessageDialog(
+                        null,
+                        "The selected portrait image is unavailable. Choose another portrait or cancel.",
+                        "The Mechanist - Profile",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                continue;
+            }
+            if (selected.equals(profile.portraitId())) return profile;
+            return LauncherFallbackProfileAuthority.selectHumanPortrait(profile, selected);
+        }
     }
 
     static String profilePresentation(LauncherFallbackProfileAuthority.LauncherProfile profile) {
@@ -110,10 +143,27 @@ public final class LauncherProfileSelectionDialog {
         return new Dimension(side, side);
     }
 
+    static boolean portraitNavigationEnabled(int availablePortraits) {
+        return availablePortraits > 1;
+    }
+
     static String initialPortraitId(String current) {
         return LauncherFallbackProfileAuthority.isValidHumanPortraitId(current)
                 ? current
                 : LauncherFallbackProfileAuthority.humanPortraitId(0);
+    }
+
+    static String initialAvailablePortraitId(Path appHome, String current) {
+        String initial = initialPortraitId(current);
+        if (portraitAvailable(appHome, initial)) return initial;
+        if (LauncherFallbackProfileAuthority.isValidHumanPortraitId(current)) {
+            return stepAvailablePortraitId(appHome, current, 1);
+        }
+        for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
+            String candidate = LauncherFallbackProfileAuthority.humanPortraitId(ordinal);
+            if (portraitAvailable(appHome, candidate)) return candidate;
+        }
+        return initial;
     }
 
     static String stepPortraitId(String current, int delta) {
@@ -126,6 +176,38 @@ public final class LauncherProfileSelectionDialog {
         return LauncherFallbackProfileAuthority.humanPortraitId(ordinal + delta);
     }
 
+    static String stepAvailablePortraitId(Path appHome, String current, int delta) {
+        int direction = delta < 0 ? -1 : 1;
+        int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(current);
+        int base = ordinal >= 0 ? ordinal : (direction < 0 ? 0 : -1);
+        for (int step = 1; step <= LauncherFallbackProfileAuthority.humanPortraitCount(); step++) {
+            String candidate = LauncherFallbackProfileAuthority.humanPortraitId(base + direction * step);
+            if (portraitAvailable(appHome, candidate)) return candidate;
+        }
+        return initialPortraitId(current);
+    }
+
+    static int availablePortraitCount(Path appHome) {
+        int count = 0;
+        for (int ordinal = 0; ordinal < LauncherFallbackProfileAuthority.humanPortraitCount(); ordinal++) {
+            if (portraitAvailable(appHome, LauncherFallbackProfileAuthority.humanPortraitId(ordinal))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    static int availablePortraitPosition(Path appHome, String portraitId) {
+        int selectedOrdinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId);
+        if (selectedOrdinal < 0 || !portraitAvailable(appHome, portraitId)) return 0;
+        int position = 0;
+        for (int ordinal = 0; ordinal <= selectedOrdinal; ordinal++) {
+            String candidate = LauncherFallbackProfileAuthority.humanPortraitId(ordinal);
+            if (portraitAvailable(appHome, candidate)) position++;
+        }
+        return position;
+    }
+
     static String portraitPresentation(String portraitId) {
         int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId);
         if (ordinal < 0) return "Portrait unavailable";
@@ -133,8 +215,40 @@ public final class LauncherProfileSelectionDialog {
                 + LauncherFallbackProfileAuthority.humanPortraitCount();
     }
 
+    static String portraitPresentation(String portraitId, int availablePortraits) {
+        return portraitPresentation(portraitId, availablePortraits, 0);
+    }
+
+    static String portraitPresentation(String portraitId, int availablePortraits, int availablePosition) {
+        String base = portraitPresentation(portraitId);
+        int total = LauncherFallbackProfileAuthority.humanPortraitCount();
+        if (LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId) < 0
+                || availablePortraits >= total) return base;
+        int usable = Math.max(0, Math.min(availablePortraits, total));
+        if (availablePosition > 0 && availablePosition <= usable) {
+            return base + " · installed choice " + availablePosition + " of " + usable;
+        }
+        return base + " · " + usable + " usable installed";
+    }
+
     static String portraitAccessibilityDescription(String portraitId, boolean imageAvailable) {
         String presentation = portraitPresentation(portraitId);
+        return imageAvailable
+                ? "Selected " + presentation.toLowerCase(Locale.ROOT)
+                : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
+    }
+
+    static String portraitAccessibilityDescription(String portraitId,
+                                                   boolean imageAvailable,
+                                                   int availablePortraits) {
+        return portraitAccessibilityDescription(portraitId, imageAvailable, availablePortraits, 0);
+    }
+
+    static String portraitAccessibilityDescription(String portraitId,
+                                                   boolean imageAvailable,
+                                                   int availablePortraits,
+                                                   int availablePosition) {
+        String presentation = portraitPresentation(portraitId, availablePortraits, availablePosition);
         return imageAvailable
                 ? "Selected " + presentation.toLowerCase(Locale.ROOT)
                 : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
@@ -157,6 +271,10 @@ public final class LauncherProfileSelectionDialog {
                 .resolve("assets")
                 .resolve(filename)
                 .normalize();
+    }
+
+    static boolean portraitAvailable(Path appHome, String portraitId) {
+        return portraitIcon(appHome, portraitId) != null;
     }
 
     static ImageIcon portraitIcon(Path appHome, String portraitId) {

@@ -18,7 +18,7 @@ import java.util.Properties;
  * the character screen again.
  */
 final class CharacterEquipmentAndMedicalAuthority {
-    static final String VERSION = "character-equipment-medical-0.6-selection-bounds";
+    static final String VERSION = "character-equipment-medical-0.7-selection-reconcile";
 
     enum CharacterTab {
         OVERVIEW("Overview"),
@@ -165,9 +165,7 @@ final class CharacterEquipmentAndMedicalAuthority {
     }
 
     static List<String> bodyRegionsForEquipmentSelection(int selectedIndex) {
-        EquipmentSlot[] slots = EquipmentSlot.values();
-        if (selectedIndex < 0 || selectedIndex >= slots.length) return List.of();
-        return bodyRegionsForEquipmentSlot(slots[selectedIndex]);
+        return bodyRegionsForEquipmentSlot(EquipmentSlot.at(selectedIndex));
     }
 
     static boolean canEquip(String itemName, EquipmentSlot slot) {
