@@ -71,12 +71,17 @@ public final class LauncherProfileSelectionDialog {
         next.setEnabled(navigationEnabled);
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
-            portraitLabel.setText(portraitPresentation(portraitId, availablePortraits));
+            int availablePosition = availablePortraitPosition(appHome, portraitId);
+            portraitLabel.setText(portraitPresentation(portraitId, availablePortraits, availablePosition));
             ImageIcon icon = portraitIcon(appHome, portraitId);
             portraitPreview.setIcon(icon);
             portraitPreview.setText(icon == null ? "Portrait image unavailable" : "");
             portraitPreview.getAccessibleContext().setAccessibleDescription(
-                    portraitAccessibilityDescription(portraitId, icon != null, availablePortraits));
+                    portraitAccessibilityDescription(
+                            portraitId,
+                            icon != null,
+                            availablePortraits,
+                            availablePosition));
         };
         previous.addActionListener(event -> {
             selectedPortrait.set(stepAvailablePortraitId(appHome, selectedPortrait.get(), -1));
@@ -192,6 +197,17 @@ public final class LauncherProfileSelectionDialog {
         return count;
     }
 
+    static int availablePortraitPosition(Path appHome, String portraitId) {
+        int selectedOrdinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId);
+        if (selectedOrdinal < 0 || !portraitAvailable(appHome, portraitId)) return 0;
+        int position = 0;
+        for (int ordinal = 0; ordinal <= selectedOrdinal; ordinal++) {
+            String candidate = LauncherFallbackProfileAuthority.humanPortraitId(ordinal);
+            if (portraitAvailable(appHome, candidate)) position++;
+        }
+        return position;
+    }
+
     static String portraitPresentation(String portraitId) {
         int ordinal = LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId);
         if (ordinal < 0) return "Portrait unavailable";
@@ -200,11 +216,18 @@ public final class LauncherProfileSelectionDialog {
     }
 
     static String portraitPresentation(String portraitId, int availablePortraits) {
+        return portraitPresentation(portraitId, availablePortraits, 0);
+    }
+
+    static String portraitPresentation(String portraitId, int availablePortraits, int availablePosition) {
         String base = portraitPresentation(portraitId);
         int total = LauncherFallbackProfileAuthority.humanPortraitCount();
         if (LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId) < 0
                 || availablePortraits >= total) return base;
         int usable = Math.max(0, Math.min(availablePortraits, total));
+        if (availablePosition > 0 && availablePosition <= usable) {
+            return base + " · installed choice " + availablePosition + " of " + usable;
+        }
         return base + " · " + usable + " usable installed";
     }
 
@@ -218,7 +241,14 @@ public final class LauncherProfileSelectionDialog {
     static String portraitAccessibilityDescription(String portraitId,
                                                    boolean imageAvailable,
                                                    int availablePortraits) {
-        String presentation = portraitPresentation(portraitId, availablePortraits);
+        return portraitAccessibilityDescription(portraitId, imageAvailable, availablePortraits, 0);
+    }
+
+    static String portraitAccessibilityDescription(String portraitId,
+                                                   boolean imageAvailable,
+                                                   int availablePortraits,
+                                                   int availablePosition) {
+        String presentation = portraitPresentation(portraitId, availablePortraits, availablePosition);
         return imageAvailable
                 ? "Selected " + presentation.toLowerCase(Locale.ROOT)
                 : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
