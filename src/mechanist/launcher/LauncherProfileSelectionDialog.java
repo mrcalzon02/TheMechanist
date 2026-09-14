@@ -71,12 +71,12 @@ public final class LauncherProfileSelectionDialog {
         next.setEnabled(navigationEnabled);
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
-            portraitLabel.setText(portraitPresentation(portraitId));
+            portraitLabel.setText(portraitPresentation(portraitId, availablePortraits));
             ImageIcon icon = portraitIcon(appHome, portraitId);
             portraitPreview.setIcon(icon);
             portraitPreview.setText(icon == null ? "Portrait image unavailable" : "");
             portraitPreview.getAccessibleContext().setAccessibleDescription(
-                    portraitAccessibilityDescription(portraitId, icon != null));
+                    portraitAccessibilityDescription(portraitId, icon != null, availablePortraits));
         };
         previous.addActionListener(event -> {
             selectedPortrait.set(stepAvailablePortraitId(appHome, selectedPortrait.get(), -1));
@@ -199,8 +199,26 @@ public final class LauncherProfileSelectionDialog {
                 + LauncherFallbackProfileAuthority.humanPortraitCount();
     }
 
+    static String portraitPresentation(String portraitId, int availablePortraits) {
+        String base = portraitPresentation(portraitId);
+        int total = LauncherFallbackProfileAuthority.humanPortraitCount();
+        if (LauncherFallbackProfileAuthority.humanPortraitOrdinal(portraitId) < 0
+                || availablePortraits >= total) return base;
+        int usable = Math.max(0, Math.min(availablePortraits, total));
+        return base + " · " + usable + " usable installed";
+    }
+
     static String portraitAccessibilityDescription(String portraitId, boolean imageAvailable) {
         String presentation = portraitPresentation(portraitId);
+        return imageAvailable
+                ? "Selected " + presentation.toLowerCase(Locale.ROOT)
+                : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
+    }
+
+    static String portraitAccessibilityDescription(String portraitId,
+                                                   boolean imageAvailable,
+                                                   int availablePortraits) {
+        String presentation = portraitPresentation(portraitId, availablePortraits);
         return imageAvailable
                 ? "Selected " + presentation.toLowerCase(Locale.ROOT)
                 : "Selected " + presentation.toLowerCase(Locale.ROOT) + "; image unavailable";
