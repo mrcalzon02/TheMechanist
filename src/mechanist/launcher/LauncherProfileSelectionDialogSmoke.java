@@ -64,7 +64,10 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "presentation should use player-facing ordinal rather than raw semantic id");
         require("Portrait 18 of 64 · 1 usable installed".equals(
                 LauncherProfileSelectionDialog.portraitPresentation("human8x8-17", 1)),
-                "filtered presentation must distinguish catalog position from the usable installed portrait set");
+                "filtered presentation without a resolved navigation position must still expose usable count");
+        require("Portrait 18 of 64 · installed choice 1 of 1".equals(
+                LauncherProfileSelectionDialog.portraitPresentation("human8x8-17", 1, 1)),
+                "filtered presentation with a resolved position must distinguish navigable index from catalog index");
         require("Portrait 18 of 64".equals(
                 LauncherProfileSelectionDialog.portraitPresentation("human8x8-17", 64)),
                 "complete portrait packages should retain the compact catalog presentation");
@@ -76,7 +79,10 @@ public final class LauncherProfileSelectionDialogSmoke {
                 "accessible portrait state must identify the currently selected portrait");
         require("Selected portrait 18 of 64 · 1 usable installed".equals(
                 LauncherProfileSelectionDialog.portraitAccessibilityDescription("human8x8-17", true, 1)),
-                "accessible filtered state must expose the usable installed portrait count");
+                "accessible filtered state without a resolved navigation position must expose the usable installed count");
+        require("Selected portrait 18 of 64 · installed choice 1 of 1".equals(
+                LauncherProfileSelectionDialog.portraitAccessibilityDescription("human8x8-17", true, 1, 1)),
+                "accessible filtered state must expose the selected position inside the installed navigation set");
         require("Selected portrait unavailable; image unavailable".equals(
                 LauncherProfileSelectionDialog.portraitAccessibilityDescription("enemy-17", false)),
                 "accessible portrait state must expose unavailable image association without leaking a raw portrait id");
@@ -101,12 +107,16 @@ public final class LauncherProfileSelectionDialogSmoke {
         Path missingRoot = temp.resolve("missing");
         require(LauncherProfileSelectionDialog.availablePortraitCount(missingRoot) == 0,
                 "profile chooser must detect a portrait package with no usable images");
+        require(LauncherProfileSelectionDialog.availablePortraitPosition(missingRoot, "human8x8-17") == 0,
+                "unavailable portraits must not receive a navigable installed position");
 
         Path packagedRoot = temp.resolve("installed");
         writeCompletePortraitPackage(packagedRoot);
         require(LauncherProfileSelectionDialog.availablePortraitCount(packagedRoot)
                         == LauncherFallbackProfileAuthority.humanPortraitCount(),
                 "complete portrait package must expose the full human selection set");
+        require(LauncherProfileSelectionDialog.availablePortraitPosition(packagedRoot, "human8x8-17") == 18,
+                "complete portrait package navigation position must match the stable catalog position");
         Path clientDir = packagedRoot.resolve("packages/client");
         Files.createDirectories(clientDir);
         Path clientJar = clientDir.resolve("TheMechanist-client.jar");
@@ -145,10 +155,14 @@ public final class LauncherProfileSelectionDialogSmoke {
         require(LauncherProfileSelectionDialog.availablePortraitCount(unreadableWorking)
                         == LauncherFallbackProfileAuthority.humanPortraitCount() - 1,
                 "corrupted portrait package must expose only decodable selections");
-        require("Portrait 19 of 64 · 63 usable installed".equals(
-                LauncherProfileSelectionDialog.portraitPresentation("human8x8-18",
-                        LauncherProfileSelectionDialog.availablePortraitCount(unreadableWorking))),
-                "partial package presentation must expose the filtered usable set alongside the catalog index");
+        require(LauncherProfileSelectionDialog.availablePortraitPosition(unreadableWorking, "human8x8-18") == 18,
+                "partial package navigation position must close the gap left by a corrupted earlier portrait");
+        require("Portrait 19 of 64 · installed choice 18 of 63".equals(
+                LauncherProfileSelectionDialog.portraitPresentation(
+                        "human8x8-18",
+                        LauncherProfileSelectionDialog.availablePortraitCount(unreadableWorking),
+                        LauncherProfileSelectionDialog.availablePortraitPosition(unreadableWorking, "human8x8-18"))),
+                "partial package presentation must expose both catalog identity and actual navigation position");
         require(packagedRoot.toAbsolutePath().normalize().equals(
                 ThinLauncherMain.selectAppHome(unreadableWorking, clientJar)),
                 "thin launcher must reject portrait roots whose expected files cannot be decoded as images");
@@ -179,6 +193,7 @@ public final class LauncherProfileSelectionDialogSmoke {
                 + " partition=true"
                 + " presentation=true"
                 + " filteredAvailabilityPresentation=true"
+                + " filteredNavigationPosition=true"
                 + " accessibilitySelection=true"
                 + " previewAssetMapping=true"
                 + " packagedAssetHome=true"
