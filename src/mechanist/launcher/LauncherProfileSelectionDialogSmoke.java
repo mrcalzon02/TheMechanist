@@ -27,6 +27,12 @@ public final class LauncherProfileSelectionDialogSmoke {
         Dimension previewSize = LauncherProfileSelectionDialog.portraitPreviewSize();
         require(previewSize.width == 144 && previewSize.height == 144,
                 "portrait preview must keep a stable square footprint even when art is unavailable");
+        require(!LauncherProfileSelectionDialog.portraitNavigationEnabled(0),
+                "portrait navigation must remain disabled when the package has no usable portraits");
+        require(!LauncherProfileSelectionDialog.portraitNavigationEnabled(1),
+                "portrait navigation must be disabled when only one usable portrait exists");
+        require(LauncherProfileSelectionDialog.portraitNavigationEnabled(2),
+                "portrait navigation must be enabled when another usable portrait exists");
 
         require("human8x8-17".equals(
                 LauncherProfileSelectionDialog.initialPortraitId("human8x8-17")),
@@ -153,6 +159,7 @@ public final class LauncherProfileSelectionDialogSmoke {
         System.out.println("LauncherProfileSelectionDialogSmoke PASS"
                 + " profileIdentityHidden=true"
                 + " previewFootprint=true"
+                + " navigationAvailability=true"
                 + " initialSelectionRecovery=true"
                 + " wrap=true"
                 + " unavailableRecovery=true"
