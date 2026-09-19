@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 final class UserProfileAuthority {
-    static final String VERSION = "profile-authority-0.9.10fe";
+    static final String VERSION = "profile-authority-0.9.10ff";
     static final String LAUNCHER_PORTRAIT_PROPERTY = "mechanist.launcher.profilePortrait";
     private static final String HUMAN_PORTRAIT_PREFIX = "human8x8-";
     private static final int HUMAN_PORTRAIT_COUNT = 64;
@@ -37,7 +37,9 @@ final class UserProfileAuthority {
         }
 
         String compactLabel() {
-            return provider.toUpperCase(Locale.ROOT) + " // " + displayName;
+            String portraitId = launcherPortraitId();
+            String base = provider.toUpperCase(Locale.ROOT) + " // " + displayName;
+            return "not supplied".equals(portraitId) ? base : base + " // " + portraitId;
         }
 
         String shortId() {
