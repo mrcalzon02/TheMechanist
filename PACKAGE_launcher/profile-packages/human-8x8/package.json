@@ -31,7 +31,8 @@
   "allowed_scope": [
     "fallback-profile-generation",
     "thin-launcher-identity-preview",
-    "pre-client-profile-repair"
+    "pre-client-profile-repair",
+    "selected-profile-client-display"
   ],
   "forbidden_scope": [
     "full-client-random-portrait-pool",
