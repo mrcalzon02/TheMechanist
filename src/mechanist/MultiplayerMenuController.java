@@ -16,7 +16,7 @@ import java.util.UUID;
 
 /** Swing-safe model/controller for the launcher multiplayer menu. */
 final class MultiplayerMenuController implements AutoCloseable {
-    static final String VERSION = "multiplayer-menu-controller-0.9.10ht";
+    static final String VERSION = "multiplayer-menu-controller-0.9.10hu";
     private static final int MAX_HISTORY = 12;
     private static final int MAX_FAVORITES = 24;
     private final ArrayList<ConnectionHistoryItem> history = new ArrayList<>();
@@ -158,8 +158,11 @@ final class MultiplayerMenuController implements AutoCloseable {
     private void load() {
         Properties p = new Properties();
         Path file = settingsFile();
-        if (Files.exists(file)) {
-            try (InputStream in = Files.newInputStream(file)) { p.load(in); }
+        Path legacy = legacySettingsFile();
+        boolean migrateLegacy = !Files.exists(file) && Files.exists(legacy);
+        Path source = migrateLegacy ? legacy : file;
+        if (Files.exists(source)) {
+            try (InputStream in = Files.newInputStream(source)) { p.load(in); }
             catch (IOException ex) { DebugLog.warn("MULTIPLAYER_MENU", "Could not load multiplayer settings: " + ex.getMessage()); }
         }
         directInput = p.getProperty("direct.input", directInput);
@@ -179,6 +182,7 @@ final class MultiplayerMenuController implements AutoCloseable {
                         p.getProperty("favorite." + i + ".created", Instant.now().toString())));
             }
         }
+        if (migrateLegacy) save();
     }
 
     void save() {
@@ -202,14 +206,20 @@ final class MultiplayerMenuController implements AutoCloseable {
             p.setProperty("favorite." + i + ".created", f.createdIso());
         }
         try {
-            Files.createDirectories(settingsFile().getParent());
-            try (OutputStream out = Files.newOutputStream(settingsFile())) { p.store(out, "The Mechanist multiplayer menu state"); }
+            Path file = settingsFile();
+            Files.createDirectories(file.getParent());
+            try (OutputStream out = Files.newOutputStream(file)) { p.store(out, "The Mechanist multiplayer menu state"); }
         } catch (IOException ex) {
             DebugLog.warn("MULTIPLAYER_MENU", "Could not save multiplayer settings: " + ex.getMessage());
         }
     }
 
-    private static Path settingsFile() { return Paths.get("settings", "multiplayer_servers.properties"); }
+    private static Path settingsFile() {
+        try { return GameStorageManager.get().resolveSavePath("data", "settings", "multiplayer_servers.properties"); }
+        catch (IOException ex) { throw new IllegalStateException("Could not resolve multiplayer settings storage", ex); }
+    }
+
+    private static Path legacySettingsFile() { return Paths.get("settings", "multiplayer_servers.properties"); }
 
     private static int parseSmallCount(String raw, int cap) {
         try { return Math.max(0, Math.min(cap, Integer.parseInt(raw == null ? "0" : raw.trim()))); }
