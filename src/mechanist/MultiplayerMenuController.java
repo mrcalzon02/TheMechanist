@@ -16,7 +16,7 @@ import java.util.UUID;
 
 /** Swing-safe model/controller for the launcher multiplayer menu. */
 final class MultiplayerMenuController implements AutoCloseable {
-    static final String VERSION = "multiplayer-menu-controller-0.9.10hs";
+    static final String VERSION = "multiplayer-menu-controller-0.9.10ht";
     private static final int MAX_HISTORY = 12;
     private static final int MAX_FAVORITES = 24;
     private final ArrayList<ConnectionHistoryItem> history = new ArrayList<>();
@@ -32,7 +32,8 @@ final class MultiplayerMenuController implements AutoCloseable {
 
     void activate(UserProfileAuthority.Profile profile) {
         SteamNetworkingBridge.SteamEnvironment steam = SteamNetworkingBridge.detect();
-        status = "Multiplayer surface active. Steam=" + steam.steamLaunchEnvironment() + " wrapper=" + steam.wrapperAvailable()
+        String profileLabel = profile == null ? "profile unavailable" : profile.compactLabel();
+        status = "Multiplayer surface active for " + profileLabel + ". Steam=" + steam.steamLaunchEnvironment() + " wrapper=" + steam.wrapperAvailable()
                 + "; direct TCP supports IPv4 and bracketed IPv6 addresses.";
     }
 
