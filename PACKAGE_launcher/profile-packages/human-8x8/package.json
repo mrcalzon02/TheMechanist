@@ -28,6 +28,7 @@
     "identity_to_asset_rule": "human8x8-NN -> row=(NN/8)+1, column=(NN%8)+1 -> Humans8x8_r%02dc%02d_32px.png"
   },
   "selection_rule": "profile.hash modulo 64",
+  "missing_asset_policy": "visible-missing-portrait-no-cross-category-substitution",
   "allowed_scope": [
     "fallback-profile-generation",
     "thin-launcher-identity-preview",
