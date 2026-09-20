@@ -15,8 +15,9 @@ import java.util.Map;
 import java.util.UUID;
 
 final class UserProfileAuthority {
-    static final String VERSION = "profile-authority-0.9.10ff";
+    static final String VERSION = "profile-authority-0.9.10fg";
     static final String LAUNCHER_PORTRAIT_PROPERTY = "mechanist.launcher.profilePortrait";
+    static final String LAUNCHER_APP_HOME_PROPERTY = "mechanist.launcher.appHome";
     private static final String HUMAN_PORTRAIT_PREFIX = "human8x8-";
     private static final int HUMAN_PORTRAIT_COUNT = 64;
     private static final Map<String, String> SESSION_FALLBACK_IDENTIFIERS = new HashMap<>();
@@ -91,6 +92,31 @@ final class UserProfileAuthority {
         if (!Character.isDigit(tens) || !Character.isDigit(ones)) return "not supplied";
         int ordinal = (tens - '0') * 10 + (ones - '0');
         return ordinal >= 0 && ordinal < HUMAN_PORTRAIT_COUNT ? portraitId : "not supplied";
+    }
+
+    static Path launcherPortraitAssetPath() {
+        String portraitId = launcherPortraitId();
+        if ("not supplied".equals(portraitId)) return null;
+        String appHomeValue = System.getProperty(LAUNCHER_APP_HOME_PROPERTY, "").trim();
+        if (appHomeValue.isEmpty()) return null;
+
+        int ordinal = Integer.parseInt(portraitId.substring(HUMAN_PORTRAIT_PREFIX.length()));
+        int row = ordinal / 8 + 1;
+        int column = ordinal % 8 + 1;
+        String filename = String.format(Locale.ROOT, "Humans8x8_r%02dc%02d_32px.png", row, column);
+        try {
+            Path appHome = Paths.get(appHomeValue).toAbsolutePath().normalize();
+            Path portraitRoot = appHome.resolve("profile-packages")
+                    .resolve("human-8x8")
+                    .resolve("assets")
+                    .normalize();
+            Path asset = portraitRoot.resolve(filename).normalize();
+            if (!asset.startsWith(portraitRoot) || !Files.isRegularFile(asset)) return null;
+            return asset;
+        } catch (RuntimeException ex) {
+            DebugLog.warn("PROFILE_PORTRAIT", "Launcher portrait asset path is invalid: " + ex.getMessage());
+            return null;
+        }
     }
 
     static String openProfile(Profile profile) {
