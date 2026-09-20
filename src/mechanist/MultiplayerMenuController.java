@@ -16,7 +16,7 @@ import java.util.UUID;
 
 /** Swing-safe model/controller for the launcher multiplayer menu. */
 final class MultiplayerMenuController implements AutoCloseable {
-    static final String VERSION = "multiplayer-menu-controller-0.9.10hu";
+    static final String VERSION = "multiplayer-menu-controller-0.9.10hv";
     private static final int MAX_HISTORY = 12;
     private static final int MAX_FAVORITES = 24;
     private final ArrayList<ConnectionHistoryItem> history = new ArrayList<>();
@@ -208,7 +208,14 @@ final class MultiplayerMenuController implements AutoCloseable {
         try {
             Path file = settingsFile();
             Files.createDirectories(file.getParent());
-            try (OutputStream out = Files.newOutputStream(file)) { p.store(out, "The Mechanist multiplayer menu state"); }
+            Path temp = file.resolveSibling(file.getFileName() + ".tmp-" + UUID.randomUUID());
+            try {
+                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                p.store(buffer, "The Mechanist multiplayer menu state");
+                GameStorageManager.writeAtomic(temp, file, buffer.toByteArray());
+            } finally {
+                Files.deleteIfExists(temp);
+            }
         } catch (IOException ex) {
             DebugLog.warn("MULTIPLAYER_MENU", "Could not save multiplayer settings: " + ex.getMessage());
         }
