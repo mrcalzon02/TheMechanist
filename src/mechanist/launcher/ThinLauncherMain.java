@@ -38,9 +38,11 @@ public final class ThinLauncherMain {
                 LauncherServerJoinIdentityBridge.write(userRoot, contextFile, wrapper, profile);
 
         System.setProperty("mechanist.launcher.context", contextFile.toAbsolutePath().normalize().toString());
+        System.setProperty("mechanist.launcher.appHome", appHome.toAbsolutePath().normalize().toString());
         System.setProperty("mechanist.launcher.wrapper", wrapper.kind().name());
         System.setProperty("mechanist.launcher.profile", profile.profileId());
         System.setProperty("mechanist.launcher.profileHash", profile.profileHash());
+        System.setProperty("mechanist.launcher.profilePortrait", joinIdentity.portraitId());
         System.setProperty("mechanist.launcher.joinIdentity", joinIdentity.primaryFile().toAbsolutePath().normalize().toString());
 
         System.out.println("The Mechanist thin launcher context prepared");

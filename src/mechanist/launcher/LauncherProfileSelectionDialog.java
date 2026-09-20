@@ -71,8 +71,15 @@ public final class LauncherProfileSelectionDialog {
         next.setEnabled(navigationEnabled);
         Runnable refresh = () -> {
             String portraitId = selectedPortrait.get();
+            int currentAvailablePortraits = availablePortraitCount(appHome);
+            boolean currentNavigationEnabled = portraitNavigationEnabled(currentAvailablePortraits);
+            previous.setEnabled(currentNavigationEnabled);
+            next.setEnabled(currentNavigationEnabled);
             int availablePosition = availablePortraitPosition(appHome, portraitId);
-            portraitLabel.setText(portraitPresentation(portraitId, availablePortraits, availablePosition));
+            portraitLabel.setText(portraitPresentation(
+                    portraitId,
+                    currentAvailablePortraits,
+                    availablePosition));
             ImageIcon icon = portraitIcon(appHome, portraitId);
             portraitPreview.setIcon(icon);
             portraitPreview.setText(icon == null ? "Portrait image unavailable" : "");
@@ -80,7 +87,7 @@ public final class LauncherProfileSelectionDialog {
                     portraitAccessibilityDescription(
                             portraitId,
                             icon != null,
-                            availablePortraits,
+                            currentAvailablePortraits,
                             availablePosition));
         };
         previous.addActionListener(event -> {
@@ -120,13 +127,27 @@ public final class LauncherProfileSelectionDialog {
 
             String selected = selectedPortrait.get();
             if (!portraitAvailable(appHome, selected)) {
-                refresh.run();
-                JOptionPane.showMessageDialog(
-                        null,
-                        "The selected portrait image is unavailable. Choose another portrait or cancel.",
-                        "The Mechanist - Profile",
-                        JOptionPane.WARNING_MESSAGE
-                );
+                String recovered = initialAvailablePortraitId(appHome, selected);
+                if (!selected.equals(recovered) && portraitAvailable(appHome, recovered)) {
+                    selectedPortrait.set(recovered);
+                    refresh.run();
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "The selected portrait image became unavailable. "
+                                    + "Selection moved to the next usable portrait.",
+                            "The Mechanist - Profile",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                } else {
+                    refresh.run();
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "No usable character portrait images remain available. "
+                                    + "Repair or reinstall the game files, then try again.",
+                            "The Mechanist - Profile",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
                 continue;
             }
             if (selected.equals(profile.portraitId())) return profile;

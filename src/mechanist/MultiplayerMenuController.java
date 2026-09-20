@@ -3,7 +3,6 @@ package mechanist;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,7 +15,7 @@ import java.util.UUID;
 
 /** Swing-safe model/controller for the launcher multiplayer menu. */
 final class MultiplayerMenuController implements AutoCloseable {
-    static final String VERSION = "multiplayer-menu-controller-0.9.10hs";
+    static final String VERSION = "multiplayer-menu-controller-0.9.10hv";
     private static final int MAX_HISTORY = 12;
     private static final int MAX_FAVORITES = 24;
     private final ArrayList<ConnectionHistoryItem> history = new ArrayList<>();
@@ -32,7 +31,8 @@ final class MultiplayerMenuController implements AutoCloseable {
 
     void activate(UserProfileAuthority.Profile profile) {
         SteamNetworkingBridge.SteamEnvironment steam = SteamNetworkingBridge.detect();
-        status = "Multiplayer surface active. Steam=" + steam.steamLaunchEnvironment() + " wrapper=" + steam.wrapperAvailable()
+        String profileLabel = profile == null ? "profile unavailable" : profile.compactLabel();
+        status = "Multiplayer surface active for " + profileLabel + ". Steam=" + steam.steamLaunchEnvironment() + " wrapper=" + steam.wrapperAvailable()
                 + "; direct TCP supports IPv4 and bracketed IPv6 addresses.";
     }
 
@@ -157,8 +157,11 @@ final class MultiplayerMenuController implements AutoCloseable {
     private void load() {
         Properties p = new Properties();
         Path file = settingsFile();
-        if (Files.exists(file)) {
-            try (InputStream in = Files.newInputStream(file)) { p.load(in); }
+        Path legacy = legacySettingsFile();
+        boolean migrateLegacy = !Files.exists(file) && Files.exists(legacy);
+        Path source = migrateLegacy ? legacy : file;
+        if (Files.exists(source)) {
+            try (InputStream in = Files.newInputStream(source)) { p.load(in); }
             catch (IOException ex) { DebugLog.warn("MULTIPLAYER_MENU", "Could not load multiplayer settings: " + ex.getMessage()); }
         }
         directInput = p.getProperty("direct.input", directInput);
@@ -178,6 +181,7 @@ final class MultiplayerMenuController implements AutoCloseable {
                         p.getProperty("favorite." + i + ".created", Instant.now().toString())));
             }
         }
+        if (migrateLegacy) save();
     }
 
     void save() {
@@ -201,14 +205,27 @@ final class MultiplayerMenuController implements AutoCloseable {
             p.setProperty("favorite." + i + ".created", f.createdIso());
         }
         try {
-            Files.createDirectories(settingsFile().getParent());
-            try (OutputStream out = Files.newOutputStream(settingsFile())) { p.store(out, "The Mechanist multiplayer menu state"); }
+            Path file = settingsFile();
+            Files.createDirectories(file.getParent());
+            Path temp = file.resolveSibling(file.getFileName() + ".tmp-" + UUID.randomUUID());
+            try {
+                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                p.store(buffer, "The Mechanist multiplayer menu state");
+                GameStorageManager.writeAtomic(temp, file, buffer.toByteArray());
+            } finally {
+                Files.deleteIfExists(temp);
+            }
         } catch (IOException ex) {
             DebugLog.warn("MULTIPLAYER_MENU", "Could not save multiplayer settings: " + ex.getMessage());
         }
     }
 
-    private static Path settingsFile() { return Paths.get("settings", "multiplayer_servers.properties"); }
+    private static Path settingsFile() {
+        try { return GameStorageManager.get().resolveSavePath("data", "settings", "multiplayer_servers.properties"); }
+        catch (IOException ex) { throw new IllegalStateException("Could not resolve multiplayer settings storage", ex); }
+    }
+
+    private static Path legacySettingsFile() { return Paths.get("settings", "multiplayer_servers.properties"); }
 
     private static int parseSmallCount(String raw, int cap) {
         try { return Math.max(0, Math.min(cap, Integer.parseInt(raw == null ? "0" : raw.trim()))); }

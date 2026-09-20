@@ -15,7 +15,11 @@ import java.util.Map;
 import java.util.UUID;
 
 final class UserProfileAuthority {
-    static final String VERSION = "profile-authority-0.9.10fe";
+    static final String VERSION = "profile-authority-0.9.10fg";
+    static final String LAUNCHER_PORTRAIT_PROPERTY = "mechanist.launcher.profilePortrait";
+    static final String LAUNCHER_APP_HOME_PROPERTY = "mechanist.launcher.appHome";
+    private static final String HUMAN_PORTRAIT_PREFIX = "human8x8-";
+    private static final int HUMAN_PORTRAIT_COUNT = 64;
     private static final Map<String, String> SESSION_FALLBACK_IDENTIFIERS = new HashMap<>();
 
     static final class Profile {
@@ -34,7 +38,9 @@ final class UserProfileAuthority {
         }
 
         String compactLabel() {
-            return provider.toUpperCase(Locale.ROOT) + " // " + displayName;
+            String portraitId = launcherPortraitId();
+            String base = provider.toUpperCase(Locale.ROOT) + " // " + displayName;
+            return "not supplied".equals(portraitId) ? base : base + " // " + portraitId;
         }
 
         String shortId() {
@@ -46,6 +52,7 @@ final class UserProfileAuthority {
             out.add("Profile provider: " + provider);
             out.add("Display name: " + displayName);
             out.add("Identifier: " + identifier);
+            out.add("Portrait identity: " + launcherPortraitId());
             out.add("Wrapper detected: " + wrapperDetected);
             out.add("External link: " + (externalUri.isEmpty() ? "internal profile only" : externalUri));
             return out;
@@ -73,6 +80,45 @@ final class UserProfileAuthority {
         return new Profile("Internal", "Operator " + id.substring(Math.max(0, id.length() - 8)), id, "", false);
     }
 
+    static String launcherPortraitId() {
+        String portraitId = System.getProperty(LAUNCHER_PORTRAIT_PROPERTY, "").trim();
+        if (!portraitId.startsWith(HUMAN_PORTRAIT_PREFIX)
+                || portraitId.length() != HUMAN_PORTRAIT_PREFIX.length() + 2) {
+            return "not supplied";
+        }
+        int offset = HUMAN_PORTRAIT_PREFIX.length();
+        char tens = portraitId.charAt(offset);
+        char ones = portraitId.charAt(offset + 1);
+        if (!Character.isDigit(tens) || !Character.isDigit(ones)) return "not supplied";
+        int ordinal = (tens - '0') * 10 + (ones - '0');
+        return ordinal >= 0 && ordinal < HUMAN_PORTRAIT_COUNT ? portraitId : "not supplied";
+    }
+
+    static Path launcherPortraitAssetPath() {
+        String portraitId = launcherPortraitId();
+        if ("not supplied".equals(portraitId)) return null;
+        String appHomeValue = System.getProperty(LAUNCHER_APP_HOME_PROPERTY, "").trim();
+        if (appHomeValue.isEmpty()) return null;
+
+        int ordinal = Integer.parseInt(portraitId.substring(HUMAN_PORTRAIT_PREFIX.length()));
+        int row = ordinal / 8 + 1;
+        int column = ordinal % 8 + 1;
+        String filename = String.format(Locale.ROOT, "Humans8x8_r%02dc%02d_32px.png", row, column);
+        try {
+            Path appHome = Paths.get(appHomeValue).toAbsolutePath().normalize();
+            Path portraitRoot = appHome.resolve("profile-packages")
+                    .resolve("human-8x8")
+                    .resolve("assets")
+                    .normalize();
+            Path asset = portraitRoot.resolve(filename).normalize();
+            if (!asset.startsWith(portraitRoot) || !Files.isRegularFile(asset)) return null;
+            return asset;
+        } catch (RuntimeException ex) {
+            DebugLog.warn("PROFILE_PORTRAIT", "Launcher portrait asset path is invalid: " + ex.getMessage());
+            return null;
+        }
+    }
+
     static String openProfile(Profile profile) {
         Profile p = profile == null ? detect() : profile;
         if (p.externalUri != null && !p.externalUri.isBlank()) {
@@ -91,7 +137,8 @@ final class UserProfileAuthority {
 
     static String auditSummary(Profile profile) {
         Profile p = profile == null ? detect() : profile;
-        return "authority=" + VERSION + " provider=" + p.provider + " wrapperDetected=" + p.wrapperDetected + " id=" + p.shortId();
+        return "authority=" + VERSION + " provider=" + p.provider + " wrapperDetected=" + p.wrapperDetected
+                + " id=" + p.shortId() + " portrait=" + launcherPortraitId();
     }
 
     private static boolean containsKeyToken(Map<String, String> env, String token) {

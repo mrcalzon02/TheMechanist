@@ -7,6 +7,8 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.nio.file.Path;
+import javax.imageio.ImageIO;
 
 final class MainMenuSurfacePainter implements ScreenPainter {
     private static final String[] ROUTE_KEYS = {
@@ -19,6 +21,8 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             "menu.main.route.tools",
             "menu.main.route.exit"
     };
+    private static Path cachedProfilePortraitPath;
+    private static BufferedImage cachedProfilePortrait;
 
     @Override
     public void paint(Graphics2D g, GamePanel panel) {
@@ -107,8 +111,13 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         }
         
         java.util.List<String> shellLines = panel.launcherShell.displayLines(panel.launcherRuntime, panel.userProfile);
-        int panelW = Math.min(W - 220, 245);
-        int panelH = Math.max(22, Math.min(26, H / 24));
+        String portraitId = UserProfileAuthority.launcherPortraitId();
+        Path portraitPath = UserProfileAuthority.launcherPortraitAssetPath();
+        BufferedImage profilePortrait = loadProfilePortrait(portraitPath);
+        boolean portraitExpected = !"not supplied".equals(portraitId);
+        int portraitSize = portraitExpected ? Math.max(40, Math.min(52, H / 15)) : 0;
+        int panelW = Math.min(W - 220, portraitExpected ? 315 : 245);
+        int panelH = portraitExpected ? Math.max(58, portraitSize + 12) : Math.max(22, Math.min(26, H / 24));
         int panelX = (W - panelW) / 2;
         int panelY = Math.max(8, Math.min(H - panelH - 10, buttonFrame.y - panelH - 10));
         
@@ -117,18 +126,58 @@ final class MainMenuSurfacePainter implements ScreenPainter {
         g.setColor(new Color(130, 105, 55, 150));
         g.drawRoundRect(panelX, panelY, panelW, panelH, 9, 9);
         panel.stampUiFrameId(g, "F", "launcher-runtime-compact", panelX, panelY, panelW, panelH);
+
+        int textLeft = panelX + 10;
+        int textRight = panelX + panelW - 10;
+        if (portraitExpected) {
+            int portraitX = panelX + 8;
+            int portraitY = panelY + (panelH - portraitSize) / 2;
+            if (profilePortrait != null) {
+                g.drawImage(profilePortrait, portraitX, portraitY, portraitSize, portraitSize, null);
+                g.setColor(new Color(160, 132, 70, 190));
+                g.drawRect(portraitX, portraitY, portraitSize, portraitSize);
+            } else {
+                g.setColor(new Color(62, 24, 24, 220));
+                g.fillRect(portraitX, portraitY, portraitSize, portraitSize);
+                g.setColor(new Color(220, 145, 120));
+                g.drawRect(portraitX, portraitY, portraitSize, portraitSize);
+                g.setFont(panel.smallFont.deriveFont(Font.BOLD, 8f));
+                g.drawString("PORTRAIT", portraitX + 3, portraitY + portraitSize / 2 - 2);
+                g.drawString("MISSING", portraitX + 5, portraitY + portraitSize / 2 + 9);
+            }
+            textLeft = portraitX + portraitSize + 10;
+        }
         
         g.setFont(panel.smallFont.deriveFont(Math.max(7f, Math.min(8.5f, panel.smallFont.getSize2D() - 4f))));
         FontMetrics fm = g.getFontMetrics();
         int lineY = panelY + 14;
         int maxLines = Math.max(1, (panelH - 8) / Math.max(10, fm.getHeight()));
+        int textWidth = Math.max(80, textRight - textLeft);
+        int textCenter = textLeft + textWidth / 2;
         
         for (int i = 0; i < shellLines.size() && i < maxLines; i++) {
             g.setColor(i == 0 ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_DIM));
-            panel.center(g, GuiLayoutApi.fitLabel(shellLines.get(i), fm, panelW - 20), cx, lineY);
+            panel.center(g, GuiLayoutApi.fitLabel(shellLines.get(i), fm, textWidth), textCenter, lineY);
             lineY += Math.max(10, fm.getHeight());
         }
         g.setFont(panel.smallFont);
+    }
+
+    private static BufferedImage loadProfilePortrait(Path portraitPath) {
+        if (portraitPath == null) {
+            cachedProfilePortraitPath = null;
+            cachedProfilePortrait = null;
+            return null;
+        }
+        if (portraitPath.equals(cachedProfilePortraitPath)) return cachedProfilePortrait;
+        cachedProfilePortraitPath = portraitPath;
+        try {
+            cachedProfilePortrait = ImageIO.read(portraitPath.toFile());
+        } catch (Exception ex) {
+            cachedProfilePortrait = null;
+            DebugLog.warn("PROFILE_PORTRAIT", "Could not decode selected launcher portrait: " + ex.getMessage());
+        }
+        return cachedProfilePortrait;
     }
 
     private static void drawCover(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {

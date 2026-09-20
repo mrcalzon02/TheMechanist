@@ -20,7 +20,8 @@ public final class LauncherServerJoinIdentityBridge {
             Path primaryFile,
             Path profileMirrorFile,
             String profileId,
-            String profileHash
+            String profileHash,
+            String portraitId
     ) {}
 
     public static JoinIdentityRecord write(
@@ -73,7 +74,7 @@ public final class LauncherServerJoinIdentityBridge {
         try (var out = Files.newOutputStream(mirror)) {
             p.store(out, "The Mechanist launcher server-join identity bridge mirror");
         }
-        return new JoinIdentityRecord(primary, mirror, profile.profileId(), profile.profileHash());
+        return new JoinIdentityRecord(primary, mirror, profile.profileId(), profile.profileHash(), profile.portraitId());
     }
 
     private static String normalize(Path path) {
