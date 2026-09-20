@@ -22,7 +22,10 @@
     "columns": 8,
     "rows": 8,
     "expected_entries": 64,
-    "source_cell_order": "row-major"
+    "source_cell_order": "row-major",
+    "entry_ordinal_base": 0,
+    "asset_coordinate_base": 1,
+    "identity_to_asset_rule": "human8x8-NN -> row=(NN/8)+1, column=(NN%8)+1 -> Humans8x8_r%02dc%02d_32px.png"
   },
   "selection_rule": "profile.hash modulo 64",
   "allowed_scope": [
