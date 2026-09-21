@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.8-light-fixture-door-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.9-bottle-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -56,7 +56,7 @@ final class SemanticRenderIntentAuthority {
                 "cogitator", "chip", "knowledge device", "skill device", "memory core")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON);
         }
-        if (contains(text, "food", "ration", "meal", "water", "canteen", "bottle", "flask",
+        if (contains(text, "food", "ration", "meal", "water", "canteen", "flask",
                 "drink", "provisions", "nutrient")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.FOOD_ITEM_ICON);
         }
@@ -208,7 +208,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
