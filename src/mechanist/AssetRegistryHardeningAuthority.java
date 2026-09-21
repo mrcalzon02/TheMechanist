@@ -148,9 +148,14 @@ public final class AssetRegistryHardeningAuthority {
         }
         for (String item : List.of("Scrap knife", "Bolter", "Water Barrel", "Sleeping Cot", "Scavenger rags", "Arbites armor", "PDF Armor", "Newspaper")) {
             String id = ItemSemanticAssetAuthority.semanticAssetIdForItemName(item);
-            if (safe.find(id).isEmpty()) {
+            Optional<AssetMetadata> metadata = safe.find(id);
+            if (metadata.isEmpty()) {
                 missingItemMappings++;
                 errors.add("Item semantic mapping points at missing asset: " + item + " -> " + id);
+            } else if (!ItemSemanticAssetAuthority.isCompatibleAssetType(metadata.get().type())) {
+                missingItemMappings++;
+                errors.add("Item semantic mapping points at wrong asset family: " + item + " -> " + id
+                        + " type=" + metadata.get().type());
             }
         }
 
