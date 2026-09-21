@@ -131,6 +131,10 @@ public final class AssetRegistryHardeningAuthority {
                 errors.add("Tile alias " + alias + " maps to missing asset ID " + id);
             } else if (!isMigratedType(metadata.get().type())) {
                 errors.add("Tile alias " + alias + " maps to non-migrated type " + metadata.get().type() + " id=" + id);
+            } else if (TileSemanticAssetAuthority.assetIdForAlias(alias).isEmpty()) {
+                missingTileAliasMetadata++;
+                errors.add("Tile alias " + alias + " maps to an asset incompatible with its runtime semantic family: "
+                        + id + " type=" + metadata.get().type());
             }
         }
         for (String required : List.of("road_north_south", "road_sidewalk", "floor_exterior_maintenance_corridor_north_south", "wall_bulkhead", "door_double")) {
