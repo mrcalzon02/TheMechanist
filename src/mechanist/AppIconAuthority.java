@@ -4,6 +4,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import java.awt.Image;
 import java.awt.Taskbar;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,7 +63,8 @@ public final class AppIconAuthority {
         if (!file.isFile()) file = new File(filePath);
         if (file.isFile()) {
             try {
-                return ImageIO.read(file);
+                BufferedImage image = ImageIO.read(file);
+                if (isExpectedIcon(image, size, filePath)) return image;
             } catch (IOException ioe) {
                 DebugLog.warn("APP_ICON", "Could not read application icon file " + filePath + ": " + ioe.getMessage());
             }
@@ -70,11 +72,28 @@ public final class AppIconAuthority {
 
         String resourcePath = String.format(RESOURCE_PATTERN, size);
         try (InputStream in = AppIconAuthority.class.getResourceAsStream(resourcePath)) {
-            if (in != null) return ImageIO.read(in);
+            if (in != null) {
+                BufferedImage image = ImageIO.read(in);
+                if (isExpectedIcon(image, size, resourcePath)) return image;
+            }
         } catch (IOException ioe) {
             DebugLog.warn("APP_ICON", "Could not read bundled application icon resource " + resourcePath + ": " + ioe.getMessage());
         }
         return null;
+    }
+
+    private static boolean isExpectedIcon(BufferedImage image, int expectedSize, String source) {
+        if (image == null) {
+            DebugLog.warn("APP_ICON", "Application icon is not a decodable image: " + source);
+            return false;
+        }
+        if (image.getWidth() != expectedSize || image.getHeight() != expectedSize) {
+            DebugLog.warn("APP_ICON", "Application icon has unexpected dimensions "
+                    + image.getWidth() + "x" + image.getHeight() + "; expected "
+                    + expectedSize + "x" + expectedSize + ": " + source);
+            return false;
+        }
+        return true;
     }
 
     private static void applyTaskbarIcon(Image image) {
