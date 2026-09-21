@@ -141,9 +141,15 @@ public final class AssetRegistryHardeningAuthority {
         }
 
         for (Map.Entry<String, String> entry : ObjectSemanticAssetAuthority.auditExactMappings().entrySet()) {
-            if (safe.find(entry.getValue()).isEmpty()) {
+            Optional<AssetMetadata> metadata = safe.find(entry.getValue());
+            if (metadata.isEmpty()) {
                 missingObjectMappings++;
                 errors.add("Object semantic mapping points at missing asset: " + entry.getKey() + " -> " + entry.getValue());
+            } else if (ObjectSemanticAssetAuthority.runtimeAssetIdForName(entry.getKey())
+                    .filter(entry.getValue()::equals).isEmpty()) {
+                missingObjectMappings++;
+                errors.add("Object semantic mapping is incompatible with its runtime asset family: "
+                        + entry.getKey() + " -> " + entry.getValue() + " type=" + metadata.get().type());
             }
         }
         for (String item : List.of("Scrap knife", "Bolter", "Water Barrel", "Sleeping Cot", "Scavenger rags", "Arbites armor", "PDF Armor", "Newspaper")) {
