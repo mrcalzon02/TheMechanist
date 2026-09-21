@@ -1,6 +1,7 @@
 package mechanist;
 
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
 
@@ -11,6 +12,7 @@ import javax.imageio.ImageIO;
  */
 final class LauncherPortraitAssetLoader {
     private static Path cachedPath;
+    private static long cachedLastModifiedMillis = Long.MIN_VALUE;
     private static BufferedImage cachedImage;
 
     private LauncherPortraitAssetLoader() {}
@@ -18,13 +20,15 @@ final class LauncherPortraitAssetLoader {
     static synchronized BufferedImage selectedProfilePortrait() {
         Path portraitPath = UserProfileAuthority.launcherPortraitAssetPath();
         if (portraitPath == null) {
-            cachedPath = null;
-            cachedImage = null;
+            clearCache();
             return null;
         }
-        if (portraitPath.equals(cachedPath)) return cachedImage;
+
+        long lastModifiedMillis = lastModifiedMillis(portraitPath);
+        if (portraitPath.equals(cachedPath) && lastModifiedMillis == cachedLastModifiedMillis) return cachedImage;
 
         cachedPath = portraitPath;
+        cachedLastModifiedMillis = lastModifiedMillis;
         try {
             cachedImage = ImageIO.read(portraitPath.toFile());
         } catch (Exception ex) {
@@ -32,5 +36,19 @@ final class LauncherPortraitAssetLoader {
             DebugLog.warn("PROFILE_PORTRAIT", "Could not decode selected launcher portrait: " + ex.getMessage());
         }
         return cachedImage;
+    }
+
+    private static long lastModifiedMillis(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toMillis();
+        } catch (Exception ex) {
+            return Long.MIN_VALUE;
+        }
+    }
+
+    private static void clearCache() {
+        cachedPath = null;
+        cachedLastModifiedMillis = Long.MIN_VALUE;
+        cachedImage = null;
     }
 }
