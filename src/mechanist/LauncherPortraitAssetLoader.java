@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
  * UI painters consume only the decoded image result and never filesystem paths.
  */
 final class LauncherPortraitAssetLoader {
+    private static final int EXPECTED_PORTRAIT_SIZE = 32;
     private static Path cachedPath;
     private static long cachedLastModifiedMillis = Long.MIN_VALUE;
     private static long cachedSizeBytes = Long.MIN_VALUE;
@@ -37,9 +38,17 @@ final class LauncherPortraitAssetLoader {
         cachedLastModifiedMillis = lastModifiedMillis;
         cachedSizeBytes = sizeBytes;
         try {
-            cachedImage = ImageIO.read(portraitPath.toFile());
-            if (cachedImage == null) {
+            BufferedImage decoded = ImageIO.read(portraitPath.toFile());
+            if (decoded == null) {
+                cachedImage = null;
                 DebugLog.warn("PROFILE_PORTRAIT", "Selected launcher portrait is not a decodable image: " + portraitPath.getFileName());
+            } else if (decoded.getWidth() != EXPECTED_PORTRAIT_SIZE || decoded.getHeight() != EXPECTED_PORTRAIT_SIZE) {
+                cachedImage = null;
+                DebugLog.warn("PROFILE_PORTRAIT", "Selected launcher portrait has unexpected dimensions "
+                        + decoded.getWidth() + "x" + decoded.getHeight() + "; expected "
+                        + EXPECTED_PORTRAIT_SIZE + "x" + EXPECTED_PORTRAIT_SIZE + ": " + portraitPath.getFileName());
+            } else {
+                cachedImage = decoded;
             }
         } catch (Exception ex) {
             cachedImage = null;
