@@ -7,8 +7,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
-import java.nio.file.Path;
-import javax.imageio.ImageIO;
 
 final class MainMenuSurfacePainter implements ScreenPainter {
     private static final String[] ROUTE_KEYS = {
@@ -21,8 +19,6 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             "menu.main.route.tools",
             "menu.main.route.exit"
     };
-    private static Path cachedProfilePortraitPath;
-    private static BufferedImage cachedProfilePortrait;
 
     @Override
     public void paint(Graphics2D g, GamePanel panel) {
@@ -35,14 +31,14 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             g.setColor(new Color(0, 0, 0, 88));
             g.fillRect(0, 0, W, H);
         }
-        
+
         BufferedImage title = panel.images.get("title_mechanist_rebase");
         if (title == null) title = panel.images.get("title_mechanist");
         int cx = W / 2;
         int titleTop = panel.mainMenuTitleTop(H);
         int drawnTitleBottom = titleTop + 112;
         Rectangle buttonFrame = panel.mainMenuButtonFrameRect();
-        
+
         if (title != null) {
             Dimension titleSize = panel.mainMenuTitleDrawSize(title, W, H);
             int tw = titleSize.width;
@@ -55,7 +51,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             g.setColor(new Color(200, 184, 132));
             panel.center(g, MenuTextAuthority.text("menu.main.title", "THE MECHANIST"), cx, titleTop + 68);
         }
-        
+
         BufferedImage subtitle = panel.images.get("subtitle_rebase");
         if (subtitle != null) {
             Dimension subSize = panel.mainMenuSubtitleDrawSize(subtitle, W, H);
@@ -71,7 +67,7 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             g.drawImage(subtitle, cx - sw / 2, sy, sw, sh, null);
             panel.stampUiFrameId(g, "I", "subtitle", cx - sw / 2, sy, sw, sh);
         }
-        
+
         g.setColor(new Color(0, 0, 0, 172));
         g.fillRoundRect(buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, 14, 14);
         panel.drawSlicedFrame(g, buttonFrame.x, buttonFrame.y, buttonFrame.width, buttonFrame.height, "inner");
@@ -109,18 +105,17 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             g.setColor(selected ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_MAIN));
             g.drawString(GuiLayoutApi.fitLabel(label, routeFm, textW), textX, r.y + (r.height + routeFm.getAscent() - routeFm.getDescent()) / 2);
         }
-        
+
         java.util.List<String> shellLines = panel.launcherShell.displayLines(panel.launcherRuntime, panel.userProfile);
         String portraitId = UserProfileAuthority.launcherPortraitId();
-        Path portraitPath = UserProfileAuthority.launcherPortraitAssetPath();
-        BufferedImage profilePortrait = loadProfilePortrait(portraitPath);
+        BufferedImage profilePortrait = LauncherPortraitAssetLoader.selectedProfilePortrait();
         boolean portraitExpected = !"not supplied".equals(portraitId);
         int portraitSize = portraitExpected ? Math.max(40, Math.min(52, H / 15)) : 0;
         int panelW = Math.min(W - 220, portraitExpected ? 315 : 245);
         int panelH = portraitExpected ? Math.max(58, portraitSize + 12) : Math.max(22, Math.min(26, H / 24));
         int panelX = (W - panelW) / 2;
         int panelY = Math.max(8, Math.min(H - panelH - 10, buttonFrame.y - panelH - 10));
-        
+
         g.setColor(new Color(0, 0, 0, 150));
         g.fillRoundRect(panelX, panelY, panelW, panelH, 9, 9);
         g.setColor(new Color(130, 105, 55, 150));
@@ -147,37 +142,20 @@ final class MainMenuSurfacePainter implements ScreenPainter {
             }
             textLeft = portraitX + portraitSize + 10;
         }
-        
+
         g.setFont(panel.smallFont.deriveFont(Math.max(7f, Math.min(8.5f, panel.smallFont.getSize2D() - 4f))));
         FontMetrics fm = g.getFontMetrics();
         int lineY = panelY + 14;
         int maxLines = Math.max(1, (panelH - 8) / Math.max(10, fm.getHeight()));
         int textWidth = Math.max(80, textRight - textLeft);
         int textCenter = textLeft + textWidth / 2;
-        
+
         for (int i = 0; i < shellLines.size() && i < maxLines; i++) {
             g.setColor(i == 0 ? panel.optionColor(GameOptions.TEXT_HIGHLIGHT) : panel.optionColor(GameOptions.TEXT_DIM));
             panel.center(g, GuiLayoutApi.fitLabel(shellLines.get(i), fm, textWidth), textCenter, lineY);
             lineY += Math.max(10, fm.getHeight());
         }
         g.setFont(panel.smallFont);
-    }
-
-    private static BufferedImage loadProfilePortrait(Path portraitPath) {
-        if (portraitPath == null) {
-            cachedProfilePortraitPath = null;
-            cachedProfilePortrait = null;
-            return null;
-        }
-        if (portraitPath.equals(cachedProfilePortraitPath)) return cachedProfilePortrait;
-        cachedProfilePortraitPath = portraitPath;
-        try {
-            cachedProfilePortrait = ImageIO.read(portraitPath.toFile());
-        } catch (Exception ex) {
-            cachedProfilePortrait = null;
-            DebugLog.warn("PROFILE_PORTRAIT", "Could not decode selected launcher portrait: " + ex.getMessage());
-        }
-        return cachedProfilePortrait;
     }
 
     private static void drawCover(Graphics2D g, BufferedImage img, int x, int y, int w, int h) {
