@@ -149,6 +149,10 @@ final class ItemSemanticAssetAuthority {
         return runtimeAssetIdForItemName(rawName).flatMap(AssetManager::metadata);
     }
 
+    static boolean isCompatibleAssetType(AssetType type) {
+        return type != null && ITEM_ASSET_TYPES.contains(type);
+    }
+
     static String semanticSummaryForItemName(String rawName) {
         String hint = semanticAssetIdForItemName(rawName);
         Optional<AssetMetadata> meta = metadataForItemName(rawName);

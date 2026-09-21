@@ -131,6 +131,10 @@ public final class AssetRegistryHardeningAuthority {
                 errors.add("Tile alias " + alias + " maps to missing asset ID " + id);
             } else if (!isMigratedType(metadata.get().type())) {
                 errors.add("Tile alias " + alias + " maps to non-migrated type " + metadata.get().type() + " id=" + id);
+            } else if (TileSemanticAssetAuthority.assetIdForAlias(alias).isEmpty()) {
+                missingTileAliasMetadata++;
+                errors.add("Tile alias " + alias + " maps to an asset incompatible with its runtime semantic family: "
+                        + id + " type=" + metadata.get().type());
             }
         }
         for (String required : List.of("road_north_south", "road_sidewalk", "floor_exterior_maintenance_corridor_north_south", "wall_bulkhead", "door_double")) {
@@ -141,16 +145,27 @@ public final class AssetRegistryHardeningAuthority {
         }
 
         for (Map.Entry<String, String> entry : ObjectSemanticAssetAuthority.auditExactMappings().entrySet()) {
-            if (safe.find(entry.getValue()).isEmpty()) {
+            Optional<AssetMetadata> metadata = safe.find(entry.getValue());
+            if (metadata.isEmpty()) {
                 missingObjectMappings++;
                 errors.add("Object semantic mapping points at missing asset: " + entry.getKey() + " -> " + entry.getValue());
+            } else if (ObjectSemanticAssetAuthority.runtimeAssetIdForName(entry.getKey())
+                    .filter(entry.getValue()::equals).isEmpty()) {
+                missingObjectMappings++;
+                errors.add("Object semantic mapping is incompatible with its runtime asset family: "
+                        + entry.getKey() + " -> " + entry.getValue() + " type=" + metadata.get().type());
             }
         }
         for (String item : List.of("Scrap knife", "Bolter", "Water Barrel", "Sleeping Cot", "Scavenger rags", "Arbites armor", "PDF Armor", "Newspaper")) {
             String id = ItemSemanticAssetAuthority.semanticAssetIdForItemName(item);
-            if (safe.find(id).isEmpty()) {
+            Optional<AssetMetadata> metadata = safe.find(id);
+            if (metadata.isEmpty()) {
                 missingItemMappings++;
                 errors.add("Item semantic mapping points at missing asset: " + item + " -> " + id);
+            } else if (!ItemSemanticAssetAuthority.isCompatibleAssetType(metadata.get().type())) {
+                missingItemMappings++;
+                errors.add("Item semantic mapping points at wrong asset family: " + item + " -> " + id
+                        + " type=" + metadata.get().type());
             }
         }
 
