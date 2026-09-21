@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.9-bottle-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.9-bulkhead-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -80,7 +80,13 @@ final class SemanticRenderIntentAuthority {
             return Optional.empty();
         }
 
-        if (contains(text, "door", "hatch", "bulkhead")) {
+        // "Bulkhead" is also structural-wall vocabulary. Do not turn an explicitly
+        // structural bulkhead panel/partition/wall into door art merely because the
+        // generic bulkhead token is present. Explicit door/hatch wording still wins.
+        boolean structuralBulkhead = contains(text, "bulkhead")
+                && contains(text, "wall", "panel", "partition")
+                && !contains(text, "door", "hatch");
+        if (!structuralBulkhead && contains(text, "door", "hatch", "bulkhead")) {
             if (contains(text, "open", "opened", "unsealed")) {
                 return Optional.of(SemanticRenderAssetResolver.RenderIntent.DOOR_OPEN);
             }
@@ -208,7 +214,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
