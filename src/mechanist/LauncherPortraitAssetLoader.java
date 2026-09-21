@@ -13,6 +13,7 @@ import javax.imageio.ImageIO;
 final class LauncherPortraitAssetLoader {
     private static Path cachedPath;
     private static long cachedLastModifiedMillis = Long.MIN_VALUE;
+    private static long cachedSizeBytes = Long.MIN_VALUE;
     private static BufferedImage cachedImage;
 
     private LauncherPortraitAssetLoader() {}
@@ -25,12 +26,21 @@ final class LauncherPortraitAssetLoader {
         }
 
         long lastModifiedMillis = lastModifiedMillis(portraitPath);
-        if (portraitPath.equals(cachedPath) && lastModifiedMillis == cachedLastModifiedMillis) return cachedImage;
+        long sizeBytes = sizeBytes(portraitPath);
+        if (portraitPath.equals(cachedPath)
+                && lastModifiedMillis == cachedLastModifiedMillis
+                && sizeBytes == cachedSizeBytes) {
+            return cachedImage;
+        }
 
         cachedPath = portraitPath;
         cachedLastModifiedMillis = lastModifiedMillis;
+        cachedSizeBytes = sizeBytes;
         try {
             cachedImage = ImageIO.read(portraitPath.toFile());
+            if (cachedImage == null) {
+                DebugLog.warn("PROFILE_PORTRAIT", "Selected launcher portrait is not a decodable image: " + portraitPath.getFileName());
+            }
         } catch (Exception ex) {
             cachedImage = null;
             DebugLog.warn("PROFILE_PORTRAIT", "Could not decode selected launcher portrait: " + ex.getMessage());
@@ -46,9 +56,18 @@ final class LauncherPortraitAssetLoader {
         }
     }
 
+    private static long sizeBytes(Path path) {
+        try {
+            return Files.size(path);
+        } catch (Exception ex) {
+            return Long.MIN_VALUE;
+        }
+    }
+
     private static void clearCache() {
         cachedPath = null;
         cachedLastModifiedMillis = Long.MIN_VALUE;
+        cachedSizeBytes = Long.MIN_VALUE;
         cachedImage = null;
     }
 }
