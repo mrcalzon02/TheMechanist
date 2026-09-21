@@ -171,10 +171,19 @@ public final class AssetRegistryHardeningAuthority {
             if (metadata.isEmpty()) {
                 missingItemMappings++;
                 errors.add("Item semantic mapping points at missing asset: " + item + " -> " + id);
-            } else if (!ItemSemanticAssetAuthority.isCompatibleAssetType(metadata.get().type())) {
-                missingItemMappings++;
-                errors.add("Item semantic mapping points at wrong asset family: " + item + " -> " + id
-                        + " type=" + metadata.get().type());
+            } else {
+                Optional<SemanticRenderAssetResolver.RenderIntent> intent =
+                        SemanticRenderIntentAuthority.itemIntent(item);
+                if (intent.isPresent() && !SemanticRenderAssetResolver.canUse(metadata.get(), intent.get())) {
+                    missingItemMappings++;
+                    errors.add("Item semantic mapping conflicts with its classified semantic intent: "
+                            + item + " -> " + id + " type=" + metadata.get().type()
+                            + " intent=" + intent.get());
+                } else if (!ItemSemanticAssetAuthority.isCompatibleAssetType(metadata.get().type())) {
+                    missingItemMappings++;
+                    errors.add("Item semantic mapping points at wrong asset family: " + item + " -> " + id
+                            + " type=" + metadata.get().type());
+                }
             }
         }
 
