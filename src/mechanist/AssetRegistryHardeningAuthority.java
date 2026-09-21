@@ -149,11 +149,20 @@ public final class AssetRegistryHardeningAuthority {
             if (metadata.isEmpty()) {
                 missingObjectMappings++;
                 errors.add("Object semantic mapping points at missing asset: " + entry.getKey() + " -> " + entry.getValue());
-            } else if (ObjectSemanticAssetAuthority.runtimeAssetIdForName(entry.getKey())
-                    .filter(entry.getValue()::equals).isEmpty()) {
-                missingObjectMappings++;
-                errors.add("Object semantic mapping is incompatible with its runtime asset family: "
-                        + entry.getKey() + " -> " + entry.getValue() + " type=" + metadata.get().type());
+            } else {
+                Optional<SemanticRenderAssetResolver.RenderIntent> intent =
+                        SemanticRenderIntentAuthority.objectIntent(entry.getKey());
+                if (intent.isPresent() && !SemanticRenderAssetResolver.canUse(metadata.get(), intent.get())) {
+                    missingObjectMappings++;
+                    errors.add("Object semantic mapping conflicts with its classified semantic intent: "
+                            + entry.getKey() + " -> " + entry.getValue() + " type=" + metadata.get().type()
+                            + " intent=" + intent.get());
+                } else if (ObjectSemanticAssetAuthority.runtimeAssetIdForName(entry.getKey())
+                        .filter(entry.getValue()::equals).isEmpty()) {
+                    missingObjectMappings++;
+                    errors.add("Object semantic mapping is incompatible with its runtime asset family: "
+                            + entry.getKey() + " -> " + entry.getValue() + " type=" + metadata.get().type());
+                }
             }
         }
         for (String item : List.of("Scrap knife", "Bolter", "Water Barrel", "Sleeping Cot", "Scavenger rags", "Arbites armor", "PDF Armor", "Newspaper")) {
