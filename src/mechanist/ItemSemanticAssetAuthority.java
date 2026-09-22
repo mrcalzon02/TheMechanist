@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.13-tool-identity-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.14-portable-drink-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -120,9 +120,8 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "paper", "pamphlet", "book", "ledger", "journal", "manual", "dossier", "map", "scroll", "slate", "permit", "signet")) return "ITEM-N01";
         // Broad carried-item names must not fabricate a specific world-fixture identity.
         // Exact authored fixture names above retain their physical object art; ambiguous
-        // water, sleeping, and container vocabulary falls through to typed family/generic
-        // resolution instead of becoming a barrel, cot, or shelf by substring alone.
-        if (containsAny(name, "canteen", "flask", "thermos")) return "OBJ-WB01";
+        // water, sleeping, container, and portable drink vocabulary falls through to
+        // typed family/generic resolution instead of becoming a barrel, cot, or shelf.
 
         // Carry the recognized-family state into legacy image callers. The unknown ID is
         // intentionally absent from the registry so AssetManager returns a typed missing icon.
@@ -172,7 +171,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
