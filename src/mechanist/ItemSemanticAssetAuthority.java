@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.11-physical-fixture-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.12-machine-identity-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -41,6 +41,15 @@ final class ItemSemanticAssetAuthority {
         map("guard cot", "DOM-0102");
         map("military cot", "DOM-0102");
         map("bunk bed", "DOM-0105");
+
+        // Physical machine art belongs to explicit machine identities. Machine words
+        // embedded in carried parts/material names must not turn those items into the
+        // complete world machine by substring alone.
+        map("condenser", "MACH-C01");
+        map("assembler", "MACH-A01");
+        map("boiler", "MACH-B01");
+        map("forge", "MACH-F01");
+        map("smelter", "MACH-F01");
 
         map("scrap knife", "WEAP-K01");
         map("rusty knife", "WEAP-K01");
@@ -114,10 +123,6 @@ final class ItemSemanticAssetAuthority {
         // water, sleeping, and container vocabulary falls through to typed family/generic
         // resolution instead of becoming a barrel, cot, or shelf by substring alone.
         if (containsAny(name, "canteen", "flask", "thermos")) return "OBJ-WB01";
-        if (containsAny(name, "condenser")) return "MACH-C01";
-        if (containsAny(name, "assembler")) return "MACH-A01";
-        if (containsAny(name, "boiler")) return "MACH-B01";
-        if (containsAny(name, "forge", "smelter")) return "MACH-F01";
 
         // Carry the recognized-family state into legacy image callers. The unknown ID is
         // intentionally absent from the registry so AssetManager returns a typed missing icon.
@@ -167,7 +172,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
