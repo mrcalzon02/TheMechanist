@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.14-portable-drink-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.15-medical-blade-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -99,7 +99,10 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "stubcarbine", "stub carbine")) return "WP3-0105";
         if (containsAny(name, "shotgun")) return "WP3-0101";
 
-        if (containsAny(name, "knife", "shiv", "dagger", "scalpel")) return "WEAP-K01";
+        // Medical cutting tools must not inherit combat-knife art solely from a blade noun.
+        // The intent authority does not classify scalpels as weapons, so let them continue
+        // through typed/generic resolution instead of fabricating a weapon identity.
+        if (containsAny(name, "knife", "shiv", "dagger")) return "WEAP-K01";
         if (containsAny(name, "bolter", "bolt pistol")) return "WEAP-B01";
         if (containsAny(name, "lasgun", "laspistol", "hellgun", "hot shot", "hot-shot", "lascannon")) return "WP2-0202";
         if (containsAny(name, "rifle", "carbine", "autogun", "stub gun")) return "WP3-0104";
@@ -171,7 +174,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
