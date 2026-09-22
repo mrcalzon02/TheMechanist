@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.19-faction-armor-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.20-role-clothing-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -114,11 +114,10 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "spear", "polearm")) return "WP1-0402";
 
         if (containsAny(name, "scavenger rags", "scavenger wraps")) return "WP3-0302";
-        // Faction names do not imply equipment type. Exact authored Arbites armor/clothing
-        // identities above retain their art; other Arbites items continue through their
-        // actual weapon/armor/item semantics instead of becoming armor by affiliation.
+        // Faction and role names do not imply equipment type. Exact authored Arbites and
+        // servant clothing identities above retain their art; affiliated items continue
+        // through their actual weapon/armor/item semantics instead of becoming clothing.
         if (containsAny(name, "pdf armor", "guard armor")) return "WP3-0304";
-        if (containsAny(name, "servant")) return "WP3-0305";
         if (containsAny(name, "armor", "armour", "flak", "carapace", "vest", "leathers", "helmet", "helm")) return "ARMR-A01";
         if (containsAny(name, "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls", "leathers")) return "WP3-0302";
 
@@ -177,7 +176,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
