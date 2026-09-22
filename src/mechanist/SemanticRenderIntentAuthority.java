@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.11-tool-blade-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.12-medical-scalpel-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -38,7 +38,7 @@ final class SemanticRenderIntentAuthority {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.DRUG_ITEM_ICON);
         }
         if (contains(text, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic",
-                "tourniquet", "splint", "first aid", "trauma kit")) {
+                "tourniquet", "splint", "first aid", "trauma kit", "scalpel")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON);
         }
         if (toolBlade || contains(text, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill",
@@ -209,7 +209,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
