@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.20-role-clothing-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.21-guard-armor-identity-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -75,6 +75,7 @@ final class ItemSemanticAssetAuthority {
         map("arbites armor", "ARMR-A01");
         map("arbites patrol coat", "ARMR-A01");
         map("pdf armor", "WP3-0304");
+        map("guard armor", "WP3-0304");
         map("servant clothing", "WP3-0305");
     }
 
@@ -114,10 +115,9 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "spear", "polearm")) return "WP1-0402";
 
         if (containsAny(name, "scavenger rags", "scavenger wraps")) return "WP3-0302";
-        // Faction and role names do not imply equipment type. Exact authored Arbites and
-        // servant clothing identities above retain their art; affiliated items continue
-        // through their actual weapon/armor/item semantics instead of becoming clothing.
-        if (containsAny(name, "pdf armor", "guard armor")) return "WP3-0304";
+        // Faction and role names do not imply equipment type. Exact authored Arbites,
+        // Guard/PDF armor, and servant clothing identities above retain their art;
+        // affiliated compound items continue through their actual item semantics.
         if (containsAny(name, "armor", "armour", "flak", "carapace", "vest", "leathers", "helmet", "helm")) return "ARMR-A01";
         if (containsAny(name, "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls", "leathers")) return "WP3-0302";
 
@@ -176,7 +176,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
