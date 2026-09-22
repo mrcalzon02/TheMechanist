@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.16-tool-blade-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.17-token-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -175,7 +175,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
@@ -193,7 +193,18 @@ final class ItemSemanticAssetAuthority {
 
     private static boolean containsAny(String text, String... needles) {
         for (String needle : needles) {
-            if (needle != null && !needle.isBlank() && text.contains(needle.toLowerCase(Locale.ROOT))) return true;
+            if (needle == null || needle.isBlank()) continue;
+            String normalizedNeedle = normalizedItemName(needle);
+            int from = 0;
+            while (from <= text.length() - normalizedNeedle.length()) {
+                int at = text.indexOf(normalizedNeedle, from);
+                if (at < 0) break;
+                int end = at + normalizedNeedle.length();
+                boolean leftBoundary = at == 0 || !Character.isLetterOrDigit(text.charAt(at - 1));
+                boolean rightBoundary = end == text.length() || !Character.isLetterOrDigit(text.charAt(end));
+                if (leftBoundary && rightBoundary) return true;
+                from = at + 1;
+            }
         }
         return false;
     }
