@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.15-medical-blade-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.16-tool-blade-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -108,7 +108,8 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "rifle", "carbine", "autogun", "stub gun")) return "WP3-0104";
         if (containsAny(name, "revolver", "pistol", "handgun")) return "WP2-0105";
         if (containsAny(name, "maul", "club", "baton", "mace")) return "WP1-0202";
-        if (containsAny(name, "sword", "blade", "chainblade", "chainsword")) return "WP1-0204";
+        boolean toolBlade = containsAny(name, "saw blade", "cutter blade", "tool blade");
+        if (!toolBlade && containsAny(name, "sword", "blade", "chainblade", "chainsword")) return "WP1-0204";
         if (containsAny(name, "axe", "hatchet")) return "WP1-0205";
         if (containsAny(name, "spear", "polearm")) return "WP1-0402";
 
@@ -174,7 +175,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
