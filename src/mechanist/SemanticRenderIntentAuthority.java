@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.14-ammunition-compound-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.15-armor-plate-component-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -38,6 +38,10 @@ final class SemanticRenderIntentAuthority {
                 "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
         }
+        // Vehicle/industrial armor plates are components, not wearable armor.
+        if (contains(text, "armor plate", "armour plate")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        }
         if (contains(text, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak",
                 "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.ARMOR_ITEM_ICON);
@@ -55,7 +59,7 @@ final class SemanticRenderIntentAuthority {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
         }
         if (contains(text, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
-                "scrap plate", "construction supplies", "reagent", "industrial part")) {
+                "scrap plate", "armor plate", "armour plate", "construction supplies", "reagent", "industrial part")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         }
         if (contains(text, "relic", "prayer", "devotional", "holy object", "icon of faith",
@@ -218,7 +222,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
