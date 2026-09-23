@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.13-ammunition-weapon-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.14-ammunition-compound-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -24,8 +24,12 @@ final class SemanticRenderIntentAuthority {
         if (text.isBlank()) return Optional.empty();
 
         // Ammunition is associated with weapons but is not itself a complete weapon.
-        // Keep it out of WEAPON_ITEM_ICON until a dedicated ammunition family exists.
-        if (contains(text, "ammo", "ammunition")) {
+        // Keep ammunition compounds out of WEAPON_ITEM_ICON until a dedicated family exists.
+        boolean weaponNamedMagazine = contains(text, "magazine", "magazines")
+                && contains(text, "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
+                "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon");
+        if (contains(text, "ammo", "ammunition", "cartridge", "cartridges", "shell", "shells", "round", "rounds")
+                || weaponNamedMagazine) {
             return Optional.empty();
         }
         boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
@@ -214,7 +218,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionWeaponBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
