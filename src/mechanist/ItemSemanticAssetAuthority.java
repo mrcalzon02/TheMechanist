@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.29-vehicle-component-compound-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.30-vehicle-component-schema-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -90,7 +90,10 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
                 "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
                 "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
-                "replacement assembly", "construction supplies", "reagent", "industrial part")) {
+                "replacement assembly", "chassis", "vehicle frame", "rider station", "engine", "powerplant",
+                "transmission", "wheel", "wheels", "track", "tracks", "suspension", "vehicle hull", "turret",
+                "vehicle optics", "door assembly", "hatch assembly", "external fitting", "external fittings",
+                "construction supplies", "reagent", "industrial part")) {
             return MISSING_RECOGNIZED_ITEM_ID;
         }
         // Ammunition associated with a named weapon is not the complete weapon. Until a
@@ -164,7 +167,10 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(semanticName, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
                 "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
                 "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
-                "replacement assembly", "construction supplies", "reagent", "industrial part")) {
+                "replacement assembly", "chassis", "vehicle frame", "rider station", "engine", "powerplant",
+                "transmission", "wheel", "wheels", "track", "tracks", "suspension", "vehicle hull", "turret",
+                "vehicle optics", "door assembly", "hatch assembly", "external fitting", "external fittings",
+                "construction supplies", "reagent", "industrial part")) {
             return Optional.of(SemanticRenderIntentAuthority.resolve(
                     AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON)
                     .orElse(MISSING_RECOGNIZED_ITEM_ID));
@@ -206,7 +212,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true ammunitionEquipmentBoundary=true ammunitionCompoundBoundary=true equipmentDocumentBoundary=true completeDocumentVocabularyBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true ammunitionEquipmentBoundary=true ammunitionCompoundBoundary=true equipmentDocumentBoundary=true completeDocumentVocabularyBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
