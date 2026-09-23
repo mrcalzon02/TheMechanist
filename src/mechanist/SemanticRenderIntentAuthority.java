@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.12-medical-scalpel-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.17-vehicle-component-schema-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -23,10 +23,31 @@ final class SemanticRenderIntentAuthority {
         String text = normalizeItem(rawName);
         if (text.isBlank()) return Optional.empty();
 
+        // Ammunition is associated with weapons but is not itself a complete weapon.
+        // Keep ammunition compounds out of WEAPON_ITEM_ICON until a dedicated family exists.
+        boolean weaponNamedMagazine = contains(text, "magazine", "magazines")
+                && contains(text, "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
+                "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon");
+        if (contains(text, "ammo", "ammunition", "cartridge", "cartridges", "shell", "shells", "round", "rounds")
+                || weaponNamedMagazine) {
+            return Optional.empty();
+        }
+        // Milestone 06 vehicle/factory outputs remain components even when their names contain
+        // a complete weapon or other object family (for example, "heavy bolter weapon mount").
+        // Ambiguous everyday nouns remain contextual: frame/door/hatch/optics are consumed only
+        // through explicit vehicle/component compounds rather than globally.
+        if (contains(text, "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
+                "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
+                "replacement assembly", "chassis", "vehicle frame", "rider station", "engine",
+                "powerplant", "transmission", "wheel", "wheels", "track", "tracks", "suspension",
+                "vehicle hull", "turret", "vehicle optics", "door assembly", "hatch assembly",
+                "external fitting")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        }
         boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
         if (!toolBlade && contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
                 "spear", "polearm", "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
-                "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon", "ammo", "ammunition")) {
+                "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
         }
         if (contains(text, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak",
@@ -46,7 +67,12 @@ final class SemanticRenderIntentAuthority {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
         }
         if (contains(text, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
-                "scrap plate", "construction supplies", "reagent", "industrial part")) {
+                "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
+                "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
+                "replacement assembly", "chassis", "vehicle frame", "rider station", "engine", "powerplant",
+                "transmission", "wheel", "wheels", "track", "tracks", "suspension", "vehicle hull", "turret",
+                "vehicle optics", "door assembly", "hatch assembly", "external fitting",
+                "construction supplies", "reagent", "industrial part")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         }
         if (contains(text, "relic", "prayer", "devotional", "holy object", "icon of faith",
@@ -209,7 +235,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
