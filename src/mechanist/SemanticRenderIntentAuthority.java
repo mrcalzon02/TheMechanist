@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.12-medical-scalpel-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.13-equipment-kit-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -24,7 +24,11 @@ final class SemanticRenderIntentAuthority {
         if (text.isBlank()) return Optional.empty();
 
         boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
-        if (!toolBlade && contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
+        boolean equipmentKit = contains(text, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools");
+        if (toolBlade || equipmentKit) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
+        }
+        if (contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
                 "spear", "polearm", "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
                 "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon", "ammo", "ammunition")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
@@ -41,8 +45,8 @@ final class SemanticRenderIntentAuthority {
                 "tourniquet", "splint", "first aid", "trauma kit", "scalpel")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON);
         }
-        if (toolBlade || contains(text, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill",
-                "saw", "tool", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
+        if (contains(text, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill",
+                "saw", "tool")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
         }
         if (contains(text, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
@@ -100,116 +104,38 @@ final class SemanticRenderIntentAuthority {
         if (contains(text, "junction box", "electrical box", "power box")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.JUNCTION_BOX_FIXTURE);
         }
-        if (contains(text, "ventilation unit", "vent unit", "air handler", "exhaust fan")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.VENTILATION_UNIT_FIXTURE);
+        if (contains(text, "terminal", "console", "cogitator")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TERMINAL_FIXTURE);
         }
-        if (contains(text, "sewer pipe", "waste pipe", "drain pipe", "sludge pipe")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.SEWER_PIPE_FIXTURE);
+        if (contains(text, "machine", "generator", "fabricator", "assembler", "smelter", "forge", "boiler", "condenser")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.MACHINE_FIXTURE);
         }
-        if (contains(text, "water pipe", "fresh water pipe", "water main")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.WATER_PIPE_FIXTURE);
+        if (contains(text, "bed", "cot", "bunk")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.BED_FIXTURE);
         }
-        if (contains(text, "transformer", "power transformer", "electrical transformer")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TRANSFORMER_MACHINE);
+        if (contains(text, "shelf", "rack", "storage shelf")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.SHELF_FIXTURE);
         }
-        if (contains(text, "generator", "power generator", "genset")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.GENERATOR_MACHINE);
+        if (contains(text, "water barrel", "water storage fixture", "water dispenser")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.WATER_FIXTURE);
         }
-
-        if (contains(text, "toolbox", "tool box")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOLBOX_CONTAINER);
+        if (contains(text, "table", "desk", "workbench")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.TABLE_FIXTURE);
         }
-        if (contains(text, "medical cabinet", "medicine cabinet", "clinic cabinet")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_CABINET_CONTAINER);
-        }
-        if (contains(text, "weapons locker", "weapon locker", "armory locker", "armoury locker")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPONS_LOCKER_CONTAINER);
-        }
-        if (contains(text, "wardrobe", "clothes cabinet", "clothing cabinet")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.WARDROBE_CONTAINER);
-        }
-        if (contains(text, "filing cabinet", "file cabinet", "records cabinet")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.FILING_CABINET_CONTAINER);
-        }
-        if (contains(text, "refrigerated storage", "cold storage", "freezer", "refrigerator", "chiller locker")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.REFRIGERATED_STORAGE_CONTAINER);
-        }
-        if (contains(text, "cargo container", "shipping container", "cargo crate", "freight crate")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.CARGO_CONTAINER);
-        }
-
-        if (contains(text, "medical table", "operating table", "surgery table")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_TABLE);
-        }
-        if (contains(text, "workshop table", "workbench", "fabrication table")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.WORKSHOP_TABLE);
-        }
-        if (contains(text, "dining table", "mess table", "kitchen table")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.DINING_TABLE);
-        }
-        if (contains(text, "altar", "shrine")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.SHRINE_ALTAR);
-        }
-        if (contains(text, "market counter", "shop counter", "stall counter", "trader counter")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.MARKET_COUNTER);
-        }
-        if (contains(text, "interrogation desk", "security interview desk")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.INTERROGATION_DESK);
-        }
-        if (contains(text, "administrative desk", "office desk", "records desk")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.ADMINISTRATIVE_DESK);
+        if (contains(text, "container", "crate", "chest", "locker")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.CONTAINER_FIXTURE);
         }
         return Optional.empty();
     }
 
-    static Optional<String> resolveItemFamily(String rawName) {
-        return resolveItemFamily(AssetManager.registry(), rawName);
-    }
-
-    static Optional<String> resolveItemFamily(String rawName, long stableVariantKey) {
-        return resolveItemFamily(AssetManager.registry(), rawName, stableVariantKey);
-    }
-
-    static Optional<String> resolveItemFamily(AssetRegistry registry, String rawName) {
-        return itemIntent(rawName).flatMap(intent -> resolve(registry, intent));
-    }
-
-    static Optional<String> resolveItemFamily(AssetRegistry registry, String rawName, long stableVariantKey) {
-        return itemIntent(rawName).flatMap(intent -> resolve(registry, intent, stableVariantKey));
-    }
-
-    static Optional<String> resolveObjectFamily(String rawText) {
-        return resolveObjectFamily(AssetManager.registry(), rawText);
-    }
-
-    static Optional<String> resolveObjectFamily(String rawText, long stableVariantKey) {
-        return resolveObjectFamily(AssetManager.registry(), rawText, stableVariantKey);
-    }
-
-    static Optional<String> resolveObjectFamily(AssetRegistry registry, String rawText) {
-        return objectIntent(rawText).flatMap(intent -> resolve(registry, intent));
-    }
-
-    static Optional<String> resolveObjectFamily(AssetRegistry registry, String rawText, long stableVariantKey) {
-        return objectIntent(rawText).flatMap(intent -> resolve(registry, intent, stableVariantKey));
-    }
-
     static Optional<String> resolve(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent) {
-        if (intent == null) return Optional.empty();
-        SemanticRenderAssetResolver.Resolution resolution = SemanticRenderAssetResolver.resolve(registry, intent);
-        return resolution.found() ? Optional.of(resolution.asset.id()) : Optional.empty();
-    }
-
-    static Optional<String> resolve(AssetRegistry registry, SemanticRenderAssetResolver.RenderIntent intent,
-                                    long stableVariantKey) {
-        if (intent == null) return Optional.empty();
-        SemanticRenderAssetResolver.Resolution resolution =
-                SemanticRenderAssetResolver.resolve(registry, intent, stableVariantKey);
-        return resolution.found() ? Optional.of(resolution.asset.id()) : Optional.empty();
+        return SemanticRenderAssetResolver.resolve(registry, intent);
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true";
+        return "authority=" + VERSION
+                + " registryFirst=true strictTypedFallback=true"
+                + " waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true equipmentKitBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
@@ -219,43 +145,31 @@ final class SemanticRenderIntentAuthority {
 
     private static String normalize(String raw) {
         if (raw == null) return "";
-        return raw.toLowerCase(Locale.ROOT)
+        String text = raw.toLowerCase(Locale.ROOT)
                 .replace('‑', '-')
                 .replace('–', '-')
                 .replace('—', '-')
-                .replace('_', ' ')
-                .replace('-', ' ')
-                .replaceAll("[^a-z0-9+./ ]+", " ")
+                .replaceAll("[^a-z0-9+./ -]+", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
+        return text;
     }
 
-    private static boolean contains(String text, String... needles) {
-        String[] textTokens = text.split(" ");
-        for (String needle : needles) {
-            String normalized = normalize(needle);
-            if (normalized.isBlank()) continue;
-            String[] needleTokens = normalized.split(" ");
-            for (int start = 0; start + needleTokens.length <= textTokens.length; start++) {
-                if (matchesPhrase(textTokens, start, needleTokens)) return true;
+    private static boolean contains(String text, String... terms) {
+        for (String term : terms) {
+            if (term == null || term.isBlank()) continue;
+            String normalizedTerm = normalize(term);
+            int from = 0;
+            while (from <= text.length() - normalizedTerm.length()) {
+                int at = text.indexOf(normalizedTerm, from);
+                if (at < 0) break;
+                int end = at + normalizedTerm.length();
+                boolean leftBoundary = at == 0 || !Character.isLetterOrDigit(text.charAt(at - 1));
+                boolean rightBoundary = end == text.length() || !Character.isLetterOrDigit(text.charAt(end));
+                if (leftBoundary && rightBoundary) return true;
+                from = at + 1;
             }
         }
         return false;
-    }
-
-    private static boolean matchesPhrase(String[] textTokens, int start, String[] needleTokens) {
-        for (int offset = 0; offset < needleTokens.length; offset++) {
-            String actual = textTokens[start + offset];
-            String expected = needleTokens[offset];
-            if (actual.equals(expected)) continue;
-            if (offset == needleTokens.length - 1 && regularPlural(actual, expected)) continue;
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean regularPlural(String actual, String singular) {
-        if (singular.length() < 3) return false;
-        return actual.equals(singular + "s") || actual.equals(singular + "es");
     }
 }
