@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.23-equipment-component-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.24-equipment-document-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -90,6 +90,13 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
                 "scrap plate", "construction supplies", "reagent", "industrial part")) {
             return MISSING_RECOGNIZED_ITEM_ID;
+        }
+        // Documentation about a weapon, machine, armor set, or other equipment is still
+        // documentation. Resolve that physical item before embedded equipment nouns can
+        // fabricate the complete object artwork.
+        if (containsAny(name, "schematic", "blueprint", "manual", "dossier", "pamphlet", "ledger",
+                "journal", "permit", "scroll")) {
+            return "ITEM-N01";
         }
 
         if (containsAny(name, "heavy bolter")) return "WP3-0201";
@@ -178,7 +185,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true equipmentDocumentBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
