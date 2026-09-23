@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.15-armor-plate-component-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.16-vehicle-component-compound-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -32,15 +32,18 @@ final class SemanticRenderIntentAuthority {
                 || weaponNamedMagazine) {
             return Optional.empty();
         }
+        // Milestone 06 vehicle/factory outputs remain components even when their names contain
+        // a complete weapon or other object family (for example, "heavy bolter weapon mount").
+        if (contains(text, "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
+                "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
+                "replacement assembly")) {
+            return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        }
         boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
         if (!toolBlade && contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
                 "spear", "polearm", "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
                 "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
-        }
-        // Vehicle/industrial armor plates are components, not wearable armor.
-        if (contains(text, "armor plate", "armour plate")) {
-            return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         }
         if (contains(text, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak",
                 "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls")) {
@@ -59,7 +62,9 @@ final class SemanticRenderIntentAuthority {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
         }
         if (contains(text, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
-                "scrap plate", "armor plate", "armour plate", "construction supplies", "reagent", "industrial part")) {
+                "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
+                "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
+                "replacement assembly", "construction supplies", "reagent", "industrial part")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         }
         if (contains(text, "relic", "prayer", "devotional", "holy object", "icon of faith",
@@ -222,7 +227,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
