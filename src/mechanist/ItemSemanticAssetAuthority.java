@@ -84,8 +84,6 @@ final class ItemSemanticAssetAuthority {
         String exact = EXACT.get(name);
         if (exact != null) return exact;
 
-        // Compound equipment kits are tools even when their target equipment name is a
-        // weapon or armor family. Do not fabricate the complete target object's art.
         if (containsAny(name, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
             return MISSING_RECOGNIZED_ITEM_ID;
         }
@@ -132,6 +130,12 @@ final class ItemSemanticAssetAuthority {
         if (!"ITEM-G01".equals(hint) && !MISSING_RECOGNIZED_ITEM_ID.equals(hint)) {
             Optional<String> authored = SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
             if (authored.isPresent()) return authored;
+        }
+
+        if (containsAny(semanticName, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
+            return Optional.of(SemanticRenderIntentAuthority.resolve(
+                    AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)
+                    .orElse(MISSING_RECOGNIZED_ITEM_ID));
         }
 
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
