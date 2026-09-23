@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.22-equipment-kit-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.23-equipment-component-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -87,6 +87,10 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
             return MISSING_RECOGNIZED_ITEM_ID;
         }
+        if (containsAny(name, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
+                "scrap plate", "construction supplies", "reagent", "industrial part")) {
+            return MISSING_RECOGNIZED_ITEM_ID;
+        }
 
         if (containsAny(name, "heavy bolter")) return "WP3-0201";
         if (containsAny(name, "heavy flamer")) return "WP3-0202";
@@ -137,6 +141,12 @@ final class ItemSemanticAssetAuthority {
                     AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)
                     .orElse(MISSING_RECOGNIZED_ITEM_ID));
         }
+        if (containsAny(semanticName, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
+                "scrap plate", "construction supplies", "reagent", "industrial part")) {
+            return Optional.of(SemanticRenderIntentAuthority.resolve(
+                    AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON)
+                    .orElse(MISSING_RECOGNIZED_ITEM_ID));
+        }
 
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
                 SemanticRenderIntentAuthority.itemIntent(rawName);
@@ -168,7 +178,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
