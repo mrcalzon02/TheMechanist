@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.21-guard-armor-identity-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.22-equipment-kit-boundary";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -28,7 +28,6 @@ final class ItemSemanticAssetAuthority {
             AssetType.OBJECT, AssetType.FIXTURE, AssetType.MACHINE);
 
     static {
-        // High-error exact names from the reconciliation crosswalk.
         map("water barrel", "OBJ-WB01");
         map("domestic water storage fixture", "OBJ-WB01");
         map("water dispenser", "OBJ-WD01");
@@ -42,9 +41,6 @@ final class ItemSemanticAssetAuthority {
         map("military cot", "DOM-0102");
         map("bunk bed", "DOM-0105");
 
-        // Physical machine art belongs to explicit machine identities. Machine words
-        // embedded in carried parts/material names must not turn those items into the
-        // complete world machine by substring alone.
         map("condenser", "MACH-C01");
         map("assembler", "MACH-A01");
         map("boiler", "MACH-B01");
@@ -88,7 +84,12 @@ final class ItemSemanticAssetAuthority {
         String exact = EXACT.get(name);
         if (exact != null) return exact;
 
-        // Specific high-error and weapon-family classifiers must run before broad buckets.
+        // Compound equipment kits are tools even when their target equipment name is a
+        // weapon or armor family. Do not fabricate the complete target object's art.
+        if (containsAny(name, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
+            return MISSING_RECOGNIZED_ITEM_ID;
+        }
+
         if (containsAny(name, "heavy bolter")) return "WP3-0201";
         if (containsAny(name, "heavy flamer")) return "WP3-0202";
         if (containsAny(name, "multi melta", "multi-melta")) return "WP3-0203";
@@ -100,9 +101,6 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "stubcarbine", "stub carbine")) return "WP3-0105";
         if (containsAny(name, "shotgun")) return "WP3-0101";
 
-        // Medical cutting tools must not inherit combat-knife art solely from a blade noun.
-        // The intent authority does not classify scalpels as weapons, so let them continue
-        // through typed/generic resolution instead of fabricating a weapon identity.
         if (containsAny(name, "knife", "shiv", "dagger")) return "WEAP-K01";
         if (containsAny(name, "bolter", "bolt pistol")) return "WEAP-B01";
         if (containsAny(name, "lasgun", "laspistol", "hellgun", "hot shot", "hot-shot", "lascannon")) return "WP2-0202";
@@ -115,21 +113,12 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "spear", "polearm")) return "WP1-0402";
 
         if (containsAny(name, "scavenger rags", "scavenger wraps")) return "WP3-0302";
-        // Faction and role names do not imply equipment type. Exact authored Arbites,
-        // Guard/PDF armor, and servant clothing identities above retain their art;
-        // affiliated compound items continue through their actual item semantics.
         if (containsAny(name, "armor", "armour", "flak", "carapace", "vest", "leathers", "helmet", "helm")) return "ARMR-A01";
         if (containsAny(name, "clothing", "coat", "robe", "uniform", "rags", "coverall", "workwear", "overalls", "leathers")) return "WP3-0302";
 
         if (containsAny(name, "newspaper")) return "ITEM-N01";
         if (containsAny(name, "paper", "pamphlet", "book", "ledger", "journal", "manual", "dossier", "map", "scroll", "slate", "permit")) return "ITEM-N01";
-        // Broad carried-item names must not fabricate a specific world-fixture identity.
-        // Exact authored fixture names above retain their physical object art; ambiguous
-        // water, sleeping, container, and portable drink vocabulary falls through to
-        // typed family/generic resolution instead of becoming a barrel, cot, or shelf.
 
-        // Carry the recognized-family state into legacy image callers. The unknown ID is
-        // intentionally absent from the registry so AssetManager returns a typed missing icon.
         if (SemanticRenderIntentAuthority.itemIntent(rawName).isPresent()) {
             return MISSING_RECOGNIZED_ITEM_ID;
         }
@@ -140,7 +129,6 @@ final class ItemSemanticAssetAuthority {
         String hint = semanticAssetIdForItemName(rawName);
         String semanticName = normalizedItemName(rawName);
 
-        // Preserve exact and structured authored identities whenever the active registry can satisfy them.
         if (!"ITEM-G01".equals(hint) && !MISSING_RECOGNIZED_ITEM_ID.equals(hint)) {
             Optional<String> authored = SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES);
             if (authored.isPresent()) return authored;
@@ -176,7 +164,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 
