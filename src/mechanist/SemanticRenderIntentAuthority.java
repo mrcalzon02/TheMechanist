@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.9-bottle-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.12-medical-scalpel-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -23,7 +23,8 @@ final class SemanticRenderIntentAuthority {
         String text = normalizeItem(rawName);
         if (text.isBlank()) return Optional.empty();
 
-        if (contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
+        boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
+        if (!toolBlade && contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
                 "spear", "polearm", "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
                 "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon", "ammo", "ammunition")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
@@ -37,10 +38,10 @@ final class SemanticRenderIntentAuthority {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.DRUG_ITEM_ICON);
         }
         if (contains(text, "medkit", "medical kit", "bandage", "suture", "medicine", "antiseptic",
-                "tourniquet", "splint", "first aid", "trauma kit")) {
+                "tourniquet", "splint", "first aid", "trauma kit", "scalpel")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.MEDICAL_ITEM_ICON);
         }
-        if (contains(text, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill",
+        if (toolBlade || contains(text, "wrench", "spanner", "hammer", "shovel", "spade", "cutter", "drill",
                 "saw", "tool", "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON);
         }
@@ -56,7 +57,8 @@ final class SemanticRenderIntentAuthority {
                 "cogitator", "chip", "knowledge device", "skill device", "memory core")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.DATA_DEVICE_ITEM_ICON);
         }
-        if (contains(text, "food", "ration", "meal", "water", "canteen", "flask",
+        boolean fixedWaterFixture = contains(text, "water barrel", "water storage fixture", "water dispenser");
+        if (!fixedWaterFixture && contains(text, "food", "ration", "meal", "water", "canteen", "flask",
                 "drink", "provisions", "nutrient")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.FOOD_ITEM_ICON);
         }
@@ -71,16 +73,15 @@ final class SemanticRenderIntentAuthority {
         String text = normalize(rawText);
         if (text.isBlank()) return Optional.empty();
 
-        // A light mounted on or associated with a bulkhead/hatch remains a light fixture.
-        // Leave these generic light semantics unclassified so the owning light authority
-        // can use its dedicated fixture/switch/sensor hint instead of collapsing them
-        // into the broader door/hatch/bulkhead intent.
         if (contains(text, "light fixture", "light switch", "motion sensor")
                 && contains(text, "door", "hatch", "bulkhead")) {
             return Optional.empty();
         }
 
-        if (contains(text, "door", "hatch", "bulkhead")) {
+        boolean structuralBulkhead = contains(text, "bulkhead")
+                && contains(text, "wall", "panel", "partition")
+                && !contains(text, "door", "hatch");
+        if (!structuralBulkhead && contains(text, "door", "hatch", "bulkhead")) {
             if (contains(text, "open", "opened", "unsealed")) {
                 return Optional.of(SemanticRenderAssetResolver.RenderIntent.DOOR_OPEN);
             }
@@ -208,7 +209,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
