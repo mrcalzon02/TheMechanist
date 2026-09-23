@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.12-medical-scalpel-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.13-ammunition-weapon-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -23,10 +23,15 @@ final class SemanticRenderIntentAuthority {
         String text = normalizeItem(rawName);
         if (text.isBlank()) return Optional.empty();
 
+        // Ammunition is associated with weapons but is not itself a complete weapon.
+        // Keep it out of WEAPON_ITEM_ICON until a dedicated ammunition family exists.
+        if (contains(text, "ammo", "ammunition")) {
+            return Optional.empty();
+        }
         boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
         if (!toolBlade && contains(text, "knife", "knives", "shiv", "dagger", "sword", "blade", "axe", "hatchet",
                 "spear", "polearm", "gun", "pistol", "rifle", "carbine", "shotgun", "bolter",
-                "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon", "ammo", "ammunition")) {
+                "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.WEAPON_ITEM_ICON);
         }
         if (contains(text, "armor", "armour", "helmet", "helm", "vest", "carapace", "flak",
@@ -209,7 +214,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionWeaponBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
