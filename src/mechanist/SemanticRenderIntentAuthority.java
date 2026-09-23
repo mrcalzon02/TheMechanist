@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.16-vehicle-component-compound-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.17-vehicle-component-schema-boundary";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -34,9 +34,14 @@ final class SemanticRenderIntentAuthority {
         }
         // Milestone 06 vehicle/factory outputs remain components even when their names contain
         // a complete weapon or other object family (for example, "heavy bolter weapon mount").
+        // Ambiguous everyday nouns remain contextual: frame/door/hatch/optics are consumed only
+        // through explicit vehicle/component compounds rather than globally.
         if (contains(text, "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
                 "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
-                "replacement assembly")) {
+                "replacement assembly", "chassis", "vehicle frame", "rider station", "engine",
+                "powerplant", "transmission", "wheel", "wheels", "track", "tracks", "suspension",
+                "vehicle hull", "turret", "vehicle optics", "door assembly", "hatch assembly",
+                "external fitting")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         }
         boolean toolBlade = contains(text, "saw blade", "cutter blade", "tool blade");
@@ -64,7 +69,10 @@ final class SemanticRenderIntentAuthority {
         if (contains(text, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
                 "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
                 "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
-                "replacement assembly", "construction supplies", "reagent", "industrial part")) {
+                "replacement assembly", "chassis", "vehicle frame", "rider station", "engine", "powerplant",
+                "transmission", "wheel", "wheels", "track", "tracks", "suspension", "vehicle hull", "turret",
+                "vehicle optics", "door assembly", "hatch assembly", "external fitting",
+                "construction supplies", "reagent", "industrial part")) {
             return Optional.of(SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         }
         if (contains(text, "relic", "prayer", "devotional", "holy object", "icon of faith",
@@ -227,7 +235,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
