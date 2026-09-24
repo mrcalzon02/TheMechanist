@@ -52,6 +52,13 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireItem("external fitting", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         requireItem("replacement assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
 
+        // Equipment documentation must stay on the authored document path rather than
+        // inheriting physical component artwork from the equipment noun it describes.
+        requireDocumentHint("engine repair manual");
+        requireDocumentHint("turret maintenance manual");
+        requireDocumentHint("transmission schematic");
+        requireDocumentHint("powerplant blueprint");
+
         // Ambiguous everyday nouns stay contextual instead of consuming unrelated items.
         requireNoItem("picture frame");
         requireNoItem("reading optics");
@@ -75,6 +82,13 @@ public final class SemanticIntentTokenBoundarySmoke {
     private static void requireNoItem(String text) {
         if (SemanticRenderIntentAuthority.itemIntent(text).isPresent()) {
             throw new AssertionError("unexpected item intent for: " + text);
+        }
+    }
+
+    private static void requireDocumentHint(String text) {
+        String actual = ItemSemanticAssetAuthority.semanticAssetIdForItemName(text);
+        if (!"ITEM-N01".equals(actual)) {
+            throw new AssertionError("document hint for '" + text + "' was " + actual + ", expected ITEM-N01");
         }
     }
 
