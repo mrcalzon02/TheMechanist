@@ -33,9 +33,29 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireItem("heavy bolter weapon mount", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         requireItem("replacement armor plate", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         requireItem("civilian vehicle chassis", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("armored vehicle frame", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("bike rider station", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("cargo truck engine", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("auxiliary powerplant", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement transmission", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("road wheel", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement tracks", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         requireItem("tracked suspension assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("armored vehicle hull", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("tank turret", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         requireItem("forward vehicle optics", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("headlight unit", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("auxiliary power system", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("cargo bed", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("crew compartment", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
         requireItem("crew hatch assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("external fitting", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+
+        // Ambiguous everyday nouns stay contextual instead of consuming unrelated items.
+        requireNoItem("picture frame");
+        requireNoItem("reading optics");
+        requireNoItem("wooden hatch");
 
         // Ammunition remains associated with weapons but is not complete weapon art.
         requireNoItem("heavy bolter ammunition");
