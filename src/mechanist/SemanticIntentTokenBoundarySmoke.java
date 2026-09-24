@@ -28,6 +28,19 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireNoObject("door motion sensor");
         requireObject("sealed bulkhead door", SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED);
 
+        // Milestone 06 vehicle parts must remain component artwork even when a
+        // compound also names a complete weapon, worn armor, or generic object.
+        requireItem("heavy bolter weapon mount", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement armor plate", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("civilian vehicle chassis", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("tracked suspension assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("forward vehicle optics", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("crew hatch assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+
+        // Ammunition remains associated with weapons but is not complete weapon art.
+        requireNoItem("heavy bolter ammunition");
+        requireNoItem("rifle magazine");
+
         System.out.println("SemanticIntentTokenBoundarySmoke PASS " + SemanticRenderIntentAuthority.VERSION);
     }
 
