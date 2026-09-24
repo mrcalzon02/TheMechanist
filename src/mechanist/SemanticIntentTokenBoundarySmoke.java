@@ -58,6 +58,10 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireDocumentHint("turret maintenance manual");
         requireDocumentHint("transmission schematic");
         requireDocumentHint("powerplant blueprint");
+        requireNoItem("engine repair manual");
+        requireNoItem("turret maintenance manual");
+        requireNoItem("transmission schematic");
+        requireNoItem("powerplant blueprint");
 
         // Ambiguous everyday nouns stay contextual instead of consuming unrelated items.
         requireNoItem("picture frame");
