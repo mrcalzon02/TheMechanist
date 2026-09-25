@@ -2,6 +2,7 @@ package mechanist;
 
 import java.util.LinkedHashMap;
 import java.util.Random;
+import java.util.Properties;
 
 /** Economy initialization ownership shell for staged world-generation extraction. */
 final class ZoneEconomyInitializationManager {
@@ -32,6 +33,27 @@ final class ZoneEconomyInitializationManager {
         int locationKey = WorldEconomyInitializationAuthority.locationKey(world);
         Faction faction = FactionInventoryStockAuthority.factionForZone(world.zoneType);
         return stateFor(world).summary(locationKey, faction);
+    }
+
+    static void writePersistence(World world, Properties p) {
+        if (world == null || p == null) return;
+        stateFor(world).writePersistence(p, "world.economy.");
+    }
+
+    static boolean readPersistence(World world, Properties p) {
+        if (world == null) return false;
+        String key = hiveKey(world);
+        if (p == null || p.getProperty("world.economy.version") == null) {
+            STATES_BY_HIVE.remove(key);
+            return false;
+        }
+        EconomyRuntimeState restored = new EconomyRuntimeState();
+        if (!restored.readPersistence(p, "world.economy.")) {
+            STATES_BY_HIVE.remove(key);
+            return false;
+        }
+        STATES_BY_HIVE.put(key, restored);
+        return true;
     }
 
     static String auditSummary() {
