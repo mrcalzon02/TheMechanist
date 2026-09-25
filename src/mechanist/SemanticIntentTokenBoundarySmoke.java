@@ -28,6 +28,50 @@ public final class SemanticIntentTokenBoundarySmoke {
         requireNoObject("door motion sensor");
         requireObject("sealed bulkhead door", SemanticRenderAssetResolver.RenderIntent.DOOR_CLOSED);
 
+        // Milestone 06 vehicle parts must remain component artwork even when a
+        // compound also names a complete weapon, worn armor, or generic object.
+        requireItem("heavy bolter weapon mount", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement armor plate", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("civilian vehicle chassis", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("armored vehicle frame", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("bike rider station", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("cargo truck engine", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("auxiliary powerplant", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement transmission", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("road wheel", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement tracks", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("tracked suspension assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("armored vehicle hull", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("tank turret", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("forward vehicle optics", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("headlight unit", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("auxiliary power system", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("cargo bed", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("crew compartment", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("crew hatch assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("external fitting", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+        requireItem("replacement assembly", SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON);
+
+        // Equipment documentation must stay on the authored document path rather than
+        // inheriting physical component artwork from the equipment noun it describes.
+        requireDocumentHint("engine repair manual");
+        requireDocumentHint("turret maintenance manual");
+        requireDocumentHint("transmission schematic");
+        requireDocumentHint("powerplant blueprint");
+        requireNoItem("engine repair manual");
+        requireNoItem("turret maintenance manual");
+        requireNoItem("transmission schematic");
+        requireNoItem("powerplant blueprint");
+
+        // Ambiguous everyday nouns stay contextual instead of consuming unrelated items.
+        requireNoItem("picture frame");
+        requireNoItem("reading optics");
+        requireNoItem("wooden hatch");
+
+        // Ammunition remains associated with weapons but is not complete weapon art.
+        requireNoItem("heavy bolter ammunition");
+        requireNoItem("rifle magazine");
+
         System.out.println("SemanticIntentTokenBoundarySmoke PASS " + SemanticRenderIntentAuthority.VERSION);
     }
 
@@ -42,6 +86,13 @@ public final class SemanticIntentTokenBoundarySmoke {
     private static void requireNoItem(String text) {
         if (SemanticRenderIntentAuthority.itemIntent(text).isPresent()) {
             throw new AssertionError("unexpected item intent for: " + text);
+        }
+    }
+
+    private static void requireDocumentHint(String text) {
+        String actual = ItemSemanticAssetAuthority.semanticAssetIdForItemName(text);
+        if (!"ITEM-N01".equals(actual)) {
+            throw new AssertionError("document hint for '" + text + "' was " + actual + ", expected ITEM-N01");
         }
     }
 

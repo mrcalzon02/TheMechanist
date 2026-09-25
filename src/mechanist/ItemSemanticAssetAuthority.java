@@ -20,7 +20,7 @@ import java.util.Set;
  * while later stages add durable assetId fields to every catalog/fixture/tile entry.
  */
 final class ItemSemanticAssetAuthority {
-    static final String VERSION = "item-semantic-asset-authority-0.9.30-vehicle-component-schema-boundary";
+    static final String VERSION = "item-semantic-asset-authority-0.9.32-equipment-document-precedence";
     static final String MISSING_RECOGNIZED_ITEM_ID = "MISSING-SEMANTIC-ITEM";
     private static final Map<String, String> EXACT = new LinkedHashMap<>();
     private static final Set<AssetType> ITEM_ASSET_TYPES = Set.of(
@@ -87,6 +87,13 @@ final class ItemSemanticAssetAuthority {
         if (containsAny(name, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
             return MISSING_RECOGNIZED_ITEM_ID;
         }
+        // Documentation about a component, weapon, machine, armor set, or other equipment is
+        // still documentation. Resolve the complete document vocabulary before embedded
+        // Milestone 06 component nouns can fabricate physical component artwork.
+        if (containsAny(name, "schematic", "blueprint", "manual", "dossier", "pamphlet", "ledger",
+                "journal", "permit", "scroll", "paper", "book", "map", "slate")) {
+            return "ITEM-N01";
+        }
         if (containsAny(name, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
                 "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
                 "lamp unit", "power system", "cargo bed", "crew compartment", "repair part",
@@ -106,13 +113,6 @@ final class ItemSemanticAssetAuthority {
                 "gun", "pistol", "rifle", "carbine", "shotgun", "bolter", "flamer", "melta",
                 "stubber", "autocannon", "lasgun", "lascannon"))) {
             return MISSING_RECOGNIZED_ITEM_ID;
-        }
-        // Documentation about a weapon, machine, armor set, or other equipment is still
-        // documentation. Resolve every document vocabulary already recognized below before
-        // embedded equipment nouns can fabricate the complete object artwork.
-        if (containsAny(name, "schematic", "blueprint", "manual", "dossier", "pamphlet", "ledger",
-                "journal", "permit", "scroll", "paper", "book", "map", "slate")) {
-            return "ITEM-N01";
         }
 
         if (containsAny(name, "heavy bolter")) return "WP3-0201";
@@ -161,8 +161,16 @@ final class ItemSemanticAssetAuthority {
 
         if (containsAny(semanticName, "repair kit", "maintenance kit", "fabrication kit", "maintenance tools")) {
             return Optional.of(SemanticRenderIntentAuthority.resolve(
-                    AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON)
-                    .orElse(MISSING_RECOGNIZED_ITEM_ID));
+                    AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.TOOL_ITEM_ICON,
+                    semanticName.hashCode()).orElse(MISSING_RECOGNIZED_ITEM_ID));
+        }
+        // Keep equipment documentation on the authored/document path before physical
+        // component-family fallback. The hint resolver above gets first chance at ITEM-N01;
+        // if that authored hint is unavailable, do not reinterpret the document as hardware.
+        if (containsAny(semanticName, "schematic", "blueprint", "manual", "dossier", "pamphlet", "ledger",
+                "journal", "permit", "scroll", "paper", "book", "map", "slate")) {
+            return SemanticAssetHintResolver.resolve(hint, semanticName, ITEM_ASSET_TYPES)
+                    .or(() -> Optional.of(MISSING_RECOGNIZED_ITEM_ID));
         }
         if (containsAny(semanticName, "machine part", "component", "bearing", "fastener", "rivet", "circuit",
                 "scrap plate", "armor plate", "armour plate", "weapon mount", "sensor", "headlight unit",
@@ -172,8 +180,8 @@ final class ItemSemanticAssetAuthority {
                 "vehicle optics", "door assembly", "hatch assembly", "external fitting", "external fittings",
                 "construction supplies", "reagent", "industrial part")) {
             return Optional.of(SemanticRenderIntentAuthority.resolve(
-                    AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON)
-                    .orElse(MISSING_RECOGNIZED_ITEM_ID));
+                    AssetManager.registry(), SemanticRenderAssetResolver.RenderIntent.INDUSTRIAL_COMPONENT_ITEM_ICON,
+                    semanticName.hashCode()).orElse(MISSING_RECOGNIZED_ITEM_ID));
         }
         if (containsAny(semanticName, "ammo", "ammunition", "cartridge", "cartridges", "shell", "shells", "round", "rounds")
                 || (containsAny(semanticName, "magazine", "magazines") && containsAny(semanticName,
@@ -185,7 +193,8 @@ final class ItemSemanticAssetAuthority {
         Optional<SemanticRenderAssetResolver.RenderIntent> intent =
                 SemanticRenderIntentAuthority.itemIntent(rawName);
         if (intent.isPresent()) {
-            return Optional.of(SemanticRenderIntentAuthority.resolve(AssetManager.registry(), intent.get())
+            return Optional.of(SemanticRenderIntentAuthority.resolve(
+                    AssetManager.registry(), intent.get(), semanticName.hashCode())
                     .orElse(MISSING_RECOGNIZED_ITEM_ID));
         }
 
@@ -212,7 +221,7 @@ final class ItemSemanticAssetAuthority {
     static String auditSummary() {
         return "authority=" + VERSION + " exactMappings=" + EXACT.size()
                 + " authoredFirst=true strictFamilyFallback=true recognizedFamiliesFailClosed=true"
-                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true ammunitionEquipmentBoundary=true ammunitionCompoundBoundary=true equipmentDocumentBoundary=true completeDocumentVocabularyBoundary=true"
+                + " genericBottleWaterFixtureBoundary=true physicalFixtureBoundary=true machineIdentityBoundary=true toolIdentityBoundary=true portableDrinkBoundary=true medicalBladeBoundary=true toolBladeBoundary=true tokenBoundaryMatching=true signetDocumentBoundary=true factionArmorBoundary=true roleClothingBoundary=true guardArmorIdentityBoundary=true equipmentKitBoundary=true equipmentComponentBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true ammunitionEquipmentBoundary=true ammunitionCompoundBoundary=true equipmentDocumentBoundary=true completeDocumentVocabularyBoundary=true componentDocumentPrecedence=true stableFamilyVariety=true"
                 + " typedMissingFallbackId=" + MISSING_RECOGNIZED_ITEM_ID + " activeRegistryValidated=true";
     }
 

@@ -15,7 +15,7 @@ import java.util.Optional;
  * in the active registry.
  */
 final class SemanticRenderIntentAuthority {
-    static final String VERSION = "semantic-render-intent-authority-0.17-vehicle-component-schema-boundary";
+    static final String VERSION = "semantic-render-intent-authority-0.18-document-precedence";
 
     private SemanticRenderIntentAuthority() { }
 
@@ -30,6 +30,12 @@ final class SemanticRenderIntentAuthority {
                 "flamer", "melta", "stubber", "autocannon", "lasgun", "lascannon");
         if (contains(text, "ammo", "ammunition", "cartridge", "cartridges", "shell", "shells", "round", "rounds")
                 || weaponNamedMagazine) {
+            return Optional.empty();
+        }
+        // Documentation about equipment is not the physical component, weapon, machine, or armor it describes.
+        // ItemSemanticAssetAuthority owns authored document hints; this shared fallback must stay out of its way.
+        if (contains(text, "schematic", "blueprint", "manual", "dossier", "pamphlet", "ledger",
+                "journal", "permit", "scroll", "paper", "book", "map", "slate")) {
             return Optional.empty();
         }
         // Milestone 06 vehicle/factory outputs remain components even when their names contain
@@ -235,7 +241,7 @@ final class SemanticRenderIntentAuthority {
     }
 
     static String auditSummary() {
-        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true";
+        return "authority=" + VERSION + " lanes=item+object authoredHintsRemainFirst=true strictFamilyFallback=true stableVariety=true canonicalRegistryStableVariety=true tokenBoundaryMatching=true pluralBoundaryMatching=true lightFixtureDoorBoundary=true bottleBoundary=true bulkheadStructuralBoundary=true waterFixtureBoundary=true toolBladeBoundary=true medicalScalpelBoundary=true ammunitionCompoundBoundary=true documentPrecedence=true armorPlateComponentBoundary=true vehicleComponentCompoundBoundary=true vehicleComponentSchemaBoundary=true";
     }
 
     private static String normalizeItem(String raw) {
