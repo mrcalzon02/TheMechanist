@@ -43,6 +43,19 @@ final class PriceIndexControlAuthority {
         updateIndex(balance.item, balance.produced, balance.externalDemand, externalSupply, interFactionTradeVolume);
     }
 
+    LinkedHashMap<String, Double> snapshot() {
+        return new LinkedHashMap<>(indexByItem);
+    }
+
+    void restore(Map<String, Double> saved) {
+        indexByItem.clear();
+        if (saved == null) return;
+        for (Map.Entry<String, Double> e : saved.entrySet()) {
+            if (e.getKey() == null || e.getKey().isBlank() || e.getValue() == null || !Double.isFinite(e.getValue())) continue;
+            indexByItem.put(e.getKey(), clamp(e.getValue(), 0.45, 2.75));
+        }
+    }
+
     String summary() {
         if (indexByItem.isEmpty()) return "No price indexes tracked";
         StringBuilder sb = new StringBuilder();

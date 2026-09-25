@@ -360,6 +360,7 @@ class Persistence {
         put(p,"world.nextTopDownWorldEventCheckTurn",Long.toString(w.nextTopDownWorldEventCheckTurn)); put(p,"world.topDownWorldEventGenerationCount",Integer.toString(w.topDownWorldEventGenerationCount));
         ArrayList<String> factionHappiness=new ArrayList<>(); for(Map.Entry<Faction,Integer> e:w.factionHappinessBoost.entrySet()) factionHappiness.add(e.getKey().name()+":"+Math.max(0,e.getValue())); put(p,"world.factionHappinessBoost",encList(factionHappiness));
         ArrayList<String> roomFaction=new ArrayList<>(); for(Faction f:w.roomFactions) roomFaction.add(f.name()); put(p,"world.roomFactions",encList(roomFaction));
+        ZoneEconomyInitializationManager.writePersistence(w, p);
     }
     static void readWorldState(World w, Properties p) {
         if (w == null) return;
@@ -391,6 +392,7 @@ class Persistence {
         w.nextTopDownWorldEventCheckTurn=getLong(p,"world.nextTopDownWorldEventCheckTurn",0L); w.topDownWorldEventGenerationCount=getInt(p,"world.topDownWorldEventGenerationCount",w.topDownWorldEvents.size());
         WorldEventFacilityMutationAuthority.restorePersistedState(w);
         w.factionHappinessBoost.clear(); readFactionMap(p.getProperty("world.factionHappinessBoost",""), w.factionHappinessBoost);
+        ZoneEconomyInitializationManager.readPersistence(w, p);
     }
     static void readFactionMap(String text, EnumMap<Faction,Integer> map) { for(String s: decList(text)) { String[] a=s.split(":",2); if(a.length==2) try{ map.put(Faction.valueOf(a[0]),Integer.parseInt(a[1])); }catch(Exception ignored){} } }
     static void put(Properties p,String k,String v){ if(v!=null) p.setProperty(k,v); }
