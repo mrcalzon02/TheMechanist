@@ -20,6 +20,67 @@ final class VehicleOperationFeedbackAuthority {
     static final long AMBIENT_REFRESH_MILLIS = 900L;
     private static final int MAX_SESSIONS = 64;
 
+    /**
+     * Data-owned presentation profile for one vehicle class.
+     *
+     * Runtime state still belongs to the physical vehicle; this profile only owns
+     * the tunable operation-feedback presentation values consumed by pulse,
+     * headlight, and ambient-audio rendering.
+     */
+    record FeedbackProfile(
+            String soundCue,
+            int audibleRange,
+            int headlightRange,
+            int headlightIntensity,
+            long pulsePeriodMillis,
+            double activePulseAmplitude,
+            double tailPulseAmplitude,
+            int activePulseAlpha,
+            int tailPulseAlpha
+    ) {
+        FeedbackProfile {
+            soundCue = soundCue == null || soundCue.isBlank()
+                    ? "ambient_machine"
+                    : soundCue;
+            audibleRange = Math.max(1, audibleRange);
+            headlightRange = Math.max(1, headlightRange);
+            headlightIntensity = clamp(headlightIntensity, 1, 48);
+            pulsePeriodMillis = Math.max(120L, pulsePeriodMillis);
+            activePulseAmplitude = Math.max(0.0, Math.min(0.35, activePulseAmplitude));
+            tailPulseAmplitude = Math.max(0.0, Math.min(activePulseAmplitude, tailPulseAmplitude));
+            activePulseAlpha = clamp(activePulseAlpha, 24, 240);
+            tailPulseAlpha = clamp(tailPulseAlpha, 16, activePulseAlpha);
+        }
+
+        String auditLine(VehicleRuntimeAuthority.VehicleClass vehicleClass) {
+            return "class=" + vehicleClass.name()
+                    + " sound=" + soundCue
+                    + " audibleRange=" + audibleRange
+                    + " headlight=" + headlightRange + "@" + headlightIntensity
+                    + " pulse=" + pulsePeriodMillis + "ms/"
+                    + activePulseAmplitude + "/" + tailPulseAmplitude
+                    + " alpha=" + activePulseAlpha + "/" + tailPulseAlpha;
+        }
+    }
+
+    private static final Map<VehicleRuntimeAuthority.VehicleClass, FeedbackProfile>
+            FEEDBACK_PROFILES = Map.of(
+            VehicleRuntimeAuthority.VehicleClass.UTILITY_BIKE,
+            new FeedbackProfile("ambient_pipe", 12, 2, 24,
+                    720L, 0.12, 0.06, 190, 120),
+            VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR,
+            new FeedbackProfile("ambient_machine", 16, 3, 30,
+                    720L, 0.12, 0.06, 190, 120),
+            VehicleRuntimeAuthority.VehicleClass.CARGO_TRUCK,
+            new FeedbackProfile("ambient_press", 20, 4, 34,
+                    720L, 0.12, 0.06, 190, 120),
+            VehicleRuntimeAuthority.VehicleClass.ARMORED_CAR,
+            new FeedbackProfile("ambient_press", 22, 4, 36,
+                    720L, 0.12, 0.06, 190, 120),
+            VehicleRuntimeAuthority.VehicleClass.TANK,
+            new FeedbackProfile("ambient_press", 24, 5, 40,
+                    720L, 0.12, 0.06, 190, 120));
+
     record Feedback(String state, String soundCue, boolean headlights,
                     int headlightRange, String summary) { }
 
@@ -218,13 +279,18 @@ final class VehicleOperationFeedbackAuthority {
         }
         boolean active = nowMillis <= session.activeUntilMillis();
         boolean recent = session.completed() && nowMillis <= session.expiresAtMillis();
+        FeedbackProfile profile = profileFor(vehicle);
         double elapsed = Math.max(0L, nowMillis - session.startedAtMillis());
-        double phase = (elapsed % 720L) / 720.0 * Math.PI * 2.0;
-        double pulseScale = 1.0 + Math.sin(phase) * (active ? 0.12 : 0.06);
+        double phase = (elapsed % profile.pulsePeriodMillis())
+                / (double) profile.pulsePeriodMillis() * Math.PI * 2.0;
+        double pulseScale = 1.0 + Math.sin(phase)
+                * (active ? profile.activePulseAmplitude() : profile.tailPulseAmplitude());
         double remaining = Math.max(0.0,
                 (session.expiresAtMillis() - nowMillis)
                         / (double)Math.max(1L, session.expiresAtMillis() - session.startedAtMillis()));
-        int alpha = clamp((int)Math.round((active ? 190 : 120) * Math.max(0.22, remaining)), 24, 210);
+        int alpha = clamp((int)Math.round(
+                (active ? profile.activePulseAlpha() : profile.tailPulseAlpha())
+                        * Math.max(0.22, remaining)), 24, 240);
         int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
         int mobility = component(vehicle, VehicleRuntimeAuthority.Component.MOBILITY);
         int lights = component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS);
@@ -321,26 +387,38 @@ final class VehicleOperationFeedbackAuthority {
                 x, y, 1, Math.max(4, intensity), new Color(228, 208, 154), degraded));
     }
 
+    static FeedbackProfile profileFor(MapObjectState vehicle) {
+        VehicleRuntimeAuthority.VehicleClass vehicleClass =
+                vehicle == null
+                        ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR
+                        : VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        FeedbackProfile profile = FEEDBACK_PROFILES.get(vehicleClass);
+        if (profile == null) {
+            throw new IllegalStateException(
+                    "Vehicle operation feedback profile is missing for "
+                            + vehicleClass.name());
+        }
+        return profile;
+    }
+
+    static String profileAuditSummary(MapObjectState vehicle) {
+        VehicleRuntimeAuthority.VehicleClass vehicleClass =
+                vehicle == null
+                        ? VehicleRuntimeAuthority.VehicleClass.CIVILIAN_CAR
+                        : VehicleRuntimeAuthority.vehicleClass(vehicle.type);
+        return profileFor(vehicle).auditLine(vehicleClass);
+    }
+
     static String soundCue(MapObjectState vehicle) {
-        if (vehicle == null) return "ambient_machine";
+        if (vehicle == null) return profileFor(null).soundCue();
         int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
         if (power < 35) return "ambient_spark";
-        return switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
-            case UTILITY_BIKE -> "ambient_pipe";
-            case CIVILIAN_CAR -> "ambient_machine";
-            case CARGO_TRUCK, ARMORED_CAR, TANK -> "ambient_press";
-        };
+        return profileFor(vehicle).soundCue();
     }
 
     static int ambientAudibleRange(MapObjectState vehicle) {
         if (vehicle == null) return 0;
-        int base = switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
-            case UTILITY_BIKE -> 12;
-            case CIVILIAN_CAR -> 16;
-            case CARGO_TRUCK -> 20;
-            case ARMORED_CAR -> 22;
-            case TANK -> 24;
-        };
+        int base = profileFor(vehicle).audibleRange();
         int power = component(vehicle, VehicleRuntimeAuthority.Component.POWERPLANT);
         if (power < 35) base -= 4;
         else if (power < 60) base -= 2;
@@ -349,12 +427,7 @@ final class VehicleOperationFeedbackAuthority {
 
     static int headlightRange(MapObjectState vehicle) {
         if (vehicle == null) return 0;
-        int base = switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
-            case UTILITY_BIKE -> 2;
-            case CIVILIAN_CAR -> 3;
-            case CARGO_TRUCK, ARMORED_CAR -> 4;
-            case TANK -> 5;
-        };
+        int base = profileFor(vehicle).headlightRange();
         int lights = component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS);
         if (lights <= 0) return 0;
         if (lights < 40) base--;
@@ -362,14 +435,9 @@ final class VehicleOperationFeedbackAuthority {
     }
 
     static int headlightIntensity(MapObjectState vehicle) {
+        if (vehicle == null) return 0;
         int lights = component(vehicle, VehicleRuntimeAuthority.Component.LIGHTS);
-        int base = switch (VehicleRuntimeAuthority.vehicleClass(vehicle.type)) {
-            case UTILITY_BIKE -> 24;
-            case CIVILIAN_CAR -> 30;
-            case CARGO_TRUCK -> 34;
-            case ARMORED_CAR -> 36;
-            case TANK -> 40;
-        };
+        int base = profileFor(vehicle).headlightIntensity();
         return clamp(base * Math.max(0, lights) / 100, 0, 48);
     }
 
