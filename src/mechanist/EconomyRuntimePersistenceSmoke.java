@@ -47,7 +47,28 @@ final class EconomyRuntimePersistenceSmoke {
         after.writePersistence(second, "world.economy.");
         require(saved.getProperty("world.economy.lastExpansionTick").equals(second.getProperty("world.economy.lastExpansionTick")),
                 "expansion tick persistence was not stable");
-        System.out.println("EconomyRuntimePersistenceSmoke OK keys=" + saved.size());
+
+        // Legacy saves predate the economy persistence marker. Loading one into a
+        // long-lived process must evict any economy state already cached under the
+        // same hive key rather than leaking the previous world's simulation state.
+        World legacyWorld = new World(9191L, 8, 8);
+        legacyWorld.hiveName = "economy-legacy-reset-smoke";
+        EconomyRuntimeState cached = ZoneEconomyInitializationManager.stateFor(legacyWorld);
+        cached.factionPopulation.add(faction, 99);
+        cached.factionStock.add(faction, "Machine part", 33);
+        require(cached.factionPopulation.count(faction) == 99, "legacy reset precondition population was not cached");
+        require(cached.factionStock.count(faction, "Machine part") == 33, "legacy reset precondition stock was not cached");
+
+        Properties legacy = new Properties();
+        require(!ZoneEconomyInitializationManager.readPersistence(legacyWorld, legacy),
+                "markerless legacy properties should not report economy restoration");
+        EconomyRuntimeState reset = ZoneEconomyInitializationManager.stateFor(legacyWorld);
+        require(reset.factionPopulation.count(faction) == 0,
+                "markerless legacy load retained stale faction population");
+        require(reset.factionStock.count(faction, "Machine part") == 0,
+                "markerless legacy load retained stale faction stock");
+
+        System.out.println("EconomyRuntimePersistenceSmoke OK keys=" + saved.size() + " legacyReset=true");
     }
 
     private static void require(boolean condition, String message) {
