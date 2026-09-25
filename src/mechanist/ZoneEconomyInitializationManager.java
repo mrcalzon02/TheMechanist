@@ -41,10 +41,18 @@ final class ZoneEconomyInitializationManager {
     }
 
     static boolean readPersistence(World world, Properties p) {
-        if (world == null || p == null || p.getProperty("world.economy.version") == null) return false;
+        if (world == null) return false;
+        String key = hiveKey(world);
+        if (p == null || p.getProperty("world.economy.version") == null) {
+            STATES_BY_HIVE.remove(key);
+            return false;
+        }
         EconomyRuntimeState restored = new EconomyRuntimeState();
-        if (!restored.readPersistence(p, "world.economy.")) return false;
-        STATES_BY_HIVE.put(hiveKey(world), restored);
+        if (!restored.readPersistence(p, "world.economy.")) {
+            STATES_BY_HIVE.remove(key);
+            return false;
+        }
+        STATES_BY_HIVE.put(key, restored);
         return true;
     }
 
