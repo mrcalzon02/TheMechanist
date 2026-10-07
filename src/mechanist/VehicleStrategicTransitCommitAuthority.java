@@ -180,6 +180,19 @@ final class VehicleStrategicTransitCommitAuthority {
             return Result.blocked(vehicle,
                     "Interrupted transit recovery requires the vehicle and both candidate worlds.");
         }
+        // Recovery may be called after a partial world transition. Only the
+        // persisted transfer provenance may authorize a placement or fuel change.
+        String recordedSource = value(vehicle, "strategicTransitCommitSource");
+        String recordedDestination = value(vehicle, "strategicTransitCommitDestination");
+        String sourceKey = Integer.toString(source.locationKey());
+        String destinationKey = Integer.toString(destination.locationKey());
+        if (source == destination || sourceKey.equals(destinationKey)
+                || recordedSource.isBlank() || recordedDestination.isBlank()
+                || !sourceKey.equals(recordedSource)
+                || !destinationKey.equals(recordedDestination)) {
+            return Result.blocked(vehicle,
+                    "Interrupted transit recovery requires the recorded source and destination worlds.");
+        }
         String state = value(vehicle, "strategicTransitState");
         if (!"committing".equals(state)) {
             return Result.blocked(vehicle,

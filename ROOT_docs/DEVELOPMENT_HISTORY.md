@@ -128,3 +128,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - The strategic debit writes remaining fuel, reservation release, and a persistent matching debit receipt together. Interrupted destination recovery accepts a matching receipt without charging twice; ambiguous zero-reservation recovery refuses mutation.
 - The existing fuel-history and strategic-transfer smokes now cover overdraw, premature or mismatched commits, duplicate debit, interrupted post-debit recovery, and missing-receipt refusal. The strategic transit chain is registered directly in Gate 3.
 - Full Java 17 compilation, Maven, Gate 3 execution, native packaging, and in-game verification must be recorded separately when run; this entry does not certify a release.
+
+### Milestone 06 interrupted-transfer world identity validation (2026-10-08)
+
+- Interrupted strategic-transit recovery now verifies the caller's source and destination against the vehicle's persisted transfer-world keys before changing placement, reservations, or fuel. Identical logical worlds and absent provenance fail closed with readable refusal.
+- The existing strategic transit smoke adds wrong-source, wrong-destination, swapped-world, same-world, same-logical-world, and missing-provenance non-mutation cases while retaining the successful duplicate-placement recovery path.
+- Source anchors and repository readback are the available verification for this change; full Java 17 compilation, Maven, Gate 3 execution, and in-game tests are still required before runtime certification.

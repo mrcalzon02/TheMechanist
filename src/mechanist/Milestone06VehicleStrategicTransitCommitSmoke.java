@@ -119,6 +119,47 @@ final class Milestone06VehicleStrategicTransitCommitSmoke {
             destination.mapObjects.add(duplicateRecovery);
             duplicateRecovery.x = 18;
             duplicateRecovery.y = 5;
+            String beforeWorldRefusal = duplicateRecovery.stockState;
+            World wrongSource = world(61033L, 3, 1, 1);
+            World wrongDestination = world(61034L, 4, 1, 1);
+            World sameLogicalSource = world(61035L, 1, 1, 1);
+            VehicleStrategicTransitCommitAuthority.Result wrongOrigin =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, duplicateRecovery, wrongSource, destination);
+            VehicleStrategicTransitCommitAuthority.Result wrongTarget =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, duplicateRecovery, source, wrongDestination);
+            VehicleStrategicTransitCommitAuthority.Result swappedWorlds =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, duplicateRecovery, destination, source);
+            VehicleStrategicTransitCommitAuthority.Result sameWorld =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, duplicateRecovery, source, source);
+            VehicleStrategicTransitCommitAuthority.Result sameLogicalWorld =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, duplicateRecovery, sameLogicalSource, source);
+            require(!wrongOrigin.success() && !wrongOrigin.changed()
+                            && !wrongTarget.success() && !wrongTarget.changed()
+                            && !swappedWorlds.success() && !swappedWorlds.changed()
+                            && !sameWorld.success() && !sameWorld.changed()
+                            && !sameLogicalWorld.success() && !sameLogicalWorld.changed()
+                            && beforeWorldRefusal.equals(duplicateRecovery.stockState)
+                            && source.mapObjects.contains(duplicateRecovery)
+                            && destination.mapObjects.contains(duplicateRecovery)
+                            && duplicateRecovery.x == 18 && duplicateRecovery.y == 5,
+                    "wrong, swapped, or identical worlds must not mutate interrupted transit");
+            duplicateRecovery.stockState = MapObjectState.setStockFlag(
+                    duplicateRecovery.stockState, "strategicTransitCommitSource", "");
+            String missingOriginStock = duplicateRecovery.stockState;
+            VehicleStrategicTransitCommitAuthority.Result missingOrigin =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, duplicateRecovery, source, destination);
+            require(!missingOrigin.success() && !missingOrigin.changed()
+                            && missingOriginStock.equals(duplicateRecovery.stockState)
+                            && source.mapObjects.contains(duplicateRecovery)
+                            && destination.mapObjects.contains(duplicateRecovery),
+                    "missing persisted source identity must refuse recovery without mutation");
+            duplicateRecovery.stockState = beforeWorldRefusal;
             VehicleStrategicTransitCommitAuthority.Result recoveredDuplicate =
                     VehicleStrategicTransitCommitAuthority.recoverInterrupted(
                             game, duplicateRecovery, source, destination);
