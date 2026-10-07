@@ -152,6 +152,34 @@ final class Milestone06VehicleOperationFeedbackSmoke {
                             VehicleOperationFeedbackAuthority.soundCue(tank)),
                     "light and heavy vehicle classes should not share one identical sound profile");
 
+            VehicleOperationFeedbackAuthority.FeedbackProfile bikeProfile =
+                    VehicleOperationFeedbackAuthority.profileFor(bike);
+            VehicleOperationFeedbackAuthority.FeedbackProfile tankProfile =
+                    VehicleOperationFeedbackAuthority.profileFor(tank);
+            require(bikeProfile.audibleRange() == 12
+                            && bikeProfile.headlightRange() == 2
+                            && bikeProfile.headlightIntensity() == 24
+                            && "ambient_pipe".equals(bikeProfile.soundCue()),
+                    "utility-bike feedback tuning should come from the data-owned profile");
+            require(tankProfile.audibleRange() == 24
+                            && tankProfile.headlightRange() == 5
+                            && tankProfile.headlightIntensity() == 40
+                            && "ambient_press".equals(tankProfile.soundCue()),
+                    "tank feedback tuning should come from the data-owned profile");
+            for (VehicleRuntimeAuthority.VehicleClass vehicleClass :
+                    VehicleRuntimeAuthority.VehicleClass.values()) {
+                MapObjectState sample = vehicle(game.world, 12, 10,
+                        vehicleClass.type, 70L + vehicleClass.ordinal());
+                VehicleOperationFeedbackAuthority.FeedbackProfile profile =
+                        VehicleOperationFeedbackAuthority.profileFor(sample);
+                require(profile.pulsePeriodMillis() >= 120L
+                                && profile.activePulseAmplitude() >= profile.tailPulseAmplitude()
+                                && profile.activePulseAlpha() >= profile.tailPulseAlpha()
+                                && !VehicleOperationFeedbackAuthority.profileAuditSummary(sample).isBlank(),
+                        "every vehicle class should have one bounded auditable feedback profile: "
+                                + vehicleClass.name());
+            }
+
             VehicleOperationFeedbackAuthority.begin(game, bike, 4,
                     8, 8, 10, 8, 1, 0, 6_000L, false);
             bike.stockState = MapObjectState.setStockFlag(bike.stockState,

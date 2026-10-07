@@ -2,9 +2,15 @@ package mechanist;
 
 import java.util.Properties;
 
-/** Round-trip guard for the extracted economy authority at the save boundary. */
+/** Round-trip and legacy-reset guard for the extracted economy authority at the save boundary. */
 final class EconomyRuntimePersistenceSmoke {
     public static void main(String[] args) {
+        roundTripState();
+        markerlessLegacyLoadClearsCachedState();
+        System.out.println("EconomyRuntimePersistenceSmoke OK");
+    }
+
+    private static void roundTripState() {
         EconomyRuntimeState before = new EconomyRuntimeState();
         Faction faction = Faction.SCAVENGER;
         int location = 4107;
@@ -47,7 +53,31 @@ final class EconomyRuntimePersistenceSmoke {
         after.writePersistence(second, "world.economy.");
         require(saved.getProperty("world.economy.lastExpansionTick").equals(second.getProperty("world.economy.lastExpansionTick")),
                 "expansion tick persistence was not stable");
-        System.out.println("EconomyRuntimePersistenceSmoke OK keys=" + saved.size());
+        require(saved.size() == second.size(), "round-trip property count changed");
+    }
+
+    private static void markerlessLegacyLoadClearsCachedState() {
+        World world = new World(731L, 8, 8);
+        world.hiveName = "legacy-reset-smoke";
+
+        EconomyRuntimeState cached = ZoneEconomyInitializationManager.stateFor(world);
+        cached.factionPopulation.add(Faction.SCAVENGER, 23);
+        cached.factionStock.add(Faction.SCAVENGER, "Machine part", 11);
+        cached.setLastSummary("stale state that must not cross a legacy load");
+
+        Properties legacy = new Properties();
+        legacy.setProperty("save.version", "legacy-save-without-economy-marker");
+
+        require(!ZoneEconomyInitializationManager.readPersistence(world, legacy),
+                "markerless legacy save was incorrectly reported as restored");
+        EconomyRuntimeState after = ZoneEconomyInitializationManager.stateFor(world);
+        require(after != cached, "markerless legacy load retained the cached economy state object");
+        require(after.factionPopulation.count(Faction.SCAVENGER) == 0,
+                "markerless legacy load retained cached faction population");
+        require(after.factionStock.count(Faction.SCAVENGER, "Machine part") == 0,
+                "markerless legacy load retained cached faction stock");
+        require(!after.lastSummary().contains("stale state"),
+                "markerless legacy load retained cached economy summary");
     }
 
     private static void require(boolean condition, String message) {
