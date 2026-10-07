@@ -61,6 +61,39 @@ final class Milestone02InputConflictRecoverySmoke {
         require(!manager.getBinding(InputDevice.KEYBOARD, "inventory").orElseThrow().token().equals(customInventory), "reset should remove custom inventory token");
 
         manager.resetAllToDefaults();
+
+        InputRegistry registry = new InputRegistry();
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, 0.75f);
+        require(registry.consumePressed(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "first analog movement press should produce an edge");
+        require(!registry.consumePressed(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "held analog movement must not repeat an edge");
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, 0.0f);
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, 0.8f);
+        require(registry.consumePressed(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "analog release and repress between reads must rearm the edge");
+
+        registry.setDigital(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, true);
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, 0.0f);
+        require(!registry.consumePressed(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "releasing analog must not rearm while digital remains held");
+        registry.setDigital(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, false);
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, 1.0f);
+        require(registry.consumePressed(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "releasing the last active channel must rearm a new press");
+
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, Float.NaN);
+        require(!registry.isActiveFromSource(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "invalid axis values must not remain active");
+        registry.setAnalog(InputSource.GAMEPAD, InputAction.MOVE_RIGHT, Float.POSITIVE_INFINITY);
+        require(!registry.isActiveFromSource(InputAction.MOVE_RIGHT, InputSource.GAMEPAD),
+                "infinite axis values must be neutralized");
+        registry.setDigital(InputSource.KEYBOARD, InputAction.CONFIRM, true);
+        require(registry.consumePressed(InputAction.CONFIRM, InputSource.KEYBOARD),
+                "keyboard presses must remain independent of gamepad input");
+        registry.clearSource(InputSource.GAMEPAD);
+        require(registry.isActiveFromSource(InputAction.CONFIRM, InputSource.KEYBOARD),
+                "gamepad disconnection must not clear keyboard input");
     }
 
     private static void require(boolean condition, String message) {

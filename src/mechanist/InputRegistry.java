@@ -27,11 +27,13 @@ final class InputRegistry {
 
     synchronized void setDigital(InputSource source, InputAction action, boolean active) {
         digital.get(action).put(source, active);
-        if (!active) consumedDown.get(action).put(source, Boolean.FALSE);
+        if (!isActiveFromSourceLocked(action, source)) consumedDown.get(action).put(source, Boolean.FALSE);
     }
 
     synchronized void setAnalog(InputSource source, InputAction action, float value) {
-        analog.get(action).put(source, Math.max(-1.0f, Math.min(1.0f, value)));
+        float bounded = Float.isFinite(value) ? Math.max(-1.0f, Math.min(1.0f, value)) : 0.0f;
+        analog.get(action).put(source, bounded);
+        if (!isActiveFromSourceLocked(action, source)) consumedDown.get(action).put(source, Boolean.FALSE);
     }
 
     synchronized boolean isActive(InputAction action) {
