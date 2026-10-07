@@ -145,6 +145,8 @@ final class Gate3PlayerFacingTextSmokeSuite {
         VehicleEconomyFrontageSmoke.main(args);
         Milestone06VehicleRuntimeFoundationSmoke.main(args);
         Milestone06VehicleTransitSmoke.main(args);
+        Milestone06VehicleFuelHistorySmoke.main(args);
+        Milestone06VehicleStrategicTransitSmoke.main(args);
         Milestone06VehicleOperationFeedbackSmoke.main(args);
         Milestone05BlueprintContractRewardSmoke.main(args);
         Milestone05BlueprintInfopediaBridgeSmoke.main(args);

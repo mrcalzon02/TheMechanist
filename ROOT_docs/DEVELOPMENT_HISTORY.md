@@ -121,3 +121,10 @@ This ledger reset does not itself certify those workflows or publish a release. 
 Resolve the next incomplete Milestone 06 requirement from the dedicated milestone documentation and the implemented vehicle authority boundary. Do not infer the next task from archived history ordering, and do not reimplement structural-scale combat, operation feedback, ambient vehicle audio, live vehicle dashboard/Infopedia integration, bounded route-history retention, bounded fuel/motor-pool/strategic-transit/manifest histories, vehicle contract-priority behavior, the shared headless `AuthoritativeWorldRuntime` snapshot seam, or the persisted independent-host `WAIT` command lane already present on `main`.
 
 For 06.R, extend the existing authenticated remote session and `IndependentHostTurnAuthority` into the canonical server world/map/player persistence owners; do not create a second remote world or character ledger. For ordinary Milestone 06 gameplay, continue reconciling the post-reset commit boundary against the ordered phase requirements until the first genuinely incomplete dependency-valid requirement is identified. Prefer a concrete implementation slice over adding another audit-only chain.
+
+### Milestone 06 vehicle fuel-reservation integrity (2026-10-07)
+
+- Ordinary committed vehicle operations now preserve fuel or power reserved for strategic transit; the transfer commit owner alone may spend an exact active reservation.
+- The strategic debit writes remaining fuel, reservation release, and a persistent matching debit receipt together. Interrupted destination recovery accepts a matching receipt without charging twice; ambiguous zero-reservation recovery refuses mutation.
+- The existing fuel-history and strategic-transfer smokes now cover overdraw, premature or mismatched commits, duplicate debit, interrupted post-debit recovery, and missing-receipt refusal. The strategic transit chain is registered directly in Gate 3.
+- Full Java 17 compilation, Maven, Gate 3 execution, native packaging, and in-game verification must be recorded separately when run; this entry does not certify a release.

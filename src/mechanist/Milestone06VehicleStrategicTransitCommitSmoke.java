@@ -159,6 +159,107 @@ final class Milestone06VehicleStrategicTransitCommitSmoke {
                             == destinationFuelBefore - 4,
                     "destination-only recovery should complete transfer and commit reserved energy");
 
+            // Crash recovery after the fuel debit must not charge twice.
+            MapObjectState debitedRecovery = vehicle(source, 15, 5, 137L,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, "player-owned");
+            source.mapObjects.add(debitedRecovery);
+            VehicleFuelAuthority.ensureInitialized(source, debitedRecovery);
+            int debitBefore = VehicleFuelAuthority.inspect(source, debitedRecovery).current();
+            markInterrupted(debitedRecovery, source, destination,
+                    15, 5, 24, 5, 4);
+            source.mapObjects.remove(debitedRecovery);
+            debitedRecovery.x = 24;
+            debitedRecovery.y = 5;
+            destination.mapObjects.add(debitedRecovery);
+            VehicleFuelAuthority.Result debit =
+                    VehicleFuelAuthority.consumeStrategicReservation(
+                            destination, debitedRecovery, 4, game.turn,
+                            "simulated pre-finalization debit");
+            require(debit.success() && debit.changed(),
+                    "interrupted transfer fixture must have a committed debit");
+            VehicleStrategicTransitCommitAuthority.Result alreadyDebited =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, debitedRecovery, source, destination);
+            require(alreadyDebited.success() && alreadyDebited.fuelConsumed() == 0
+                            && destination.mapObjects.contains(debitedRecovery)
+                            && !source.mapObjects.contains(debitedRecovery)
+                            && "completed".equals(MapObjectState.stockValue(
+                            debitedRecovery.stockState, "strategicTransitState"))
+                            && VehicleFuelAuthority.inspect(destination,
+                            debitedRecovery).current() == debitBefore - 4,
+                    "recovery after debit must finalize without charging fuel again");
+
+            // A missing reservation without a matching debit receipt is ambiguous.
+            // Contradictory active reservation plus paid receipt must fail closed.
+            String paidStock = debitedRecovery.stockState;
+            debitedRecovery.stockState = MapObjectState.setStockFlag(
+                    debitedRecovery.stockState, "strategicTransitState", "committing");
+            debitedRecovery.stockState = MapObjectState.setStockFlag(
+                    debitedRecovery.stockState, "strategicTransitFuelReserved", "4");
+            String contradictoryStock = debitedRecovery.stockState;
+            VehicleStrategicTransitCommitAuthority.Result contradictory =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, debitedRecovery, source, destination);
+            require(!contradictory.success() && !contradictory.changed()
+                            && contradictoryStock.equals(debitedRecovery.stockState)
+                            && destination.mapObjects.contains(debitedRecovery),
+                    "a matching debit receipt and active reservation must not charge twice");
+            debitedRecovery.stockState = paidStock;
+
+            // Duplicate placement after debit must not restore unpaid transit.
+            debitedRecovery.stockState = MapObjectState.setStockFlag(
+                    debitedRecovery.stockState, "strategicTransitState", "committing");
+            source.mapObjects.add(debitedRecovery);
+            String duplicatePaidStock = debitedRecovery.stockState;
+            VehicleStrategicTransitCommitAuthority.Result duplicatePaid =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, debitedRecovery, source, destination);
+            require(!duplicatePaid.success() && !duplicatePaid.changed()
+                            && duplicatePaidStock.equals(debitedRecovery.stockState)
+                            && source.mapObjects.contains(debitedRecovery)
+                            && destination.mapObjects.contains(debitedRecovery),
+                    "paid duplicate placement must refuse rollback without mutation");
+            source.mapObjects.remove(debitedRecovery);
+            debitedRecovery.stockState = paidStock;
+
+            MapObjectState sourcePaid = vehicle(source, 19, 5, 139L,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, "player-owned");
+            source.mapObjects.add(sourcePaid);
+            VehicleFuelAuthority.ensureInitialized(source, sourcePaid);
+            markInterrupted(sourcePaid, source, destination, 19, 5, 24, 5, 4);
+            require(VehicleFuelAuthority.consumeStrategicReservation(
+                    source, sourcePaid, 4, game.turn, "source debit fixture").success(),
+                    "source-only paid fixture must carry a matching receipt");
+            String sourcePaidStock = sourcePaid.stockState;
+            VehicleStrategicTransitCommitAuthority.Result paidAtSource =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, sourcePaid, source, destination);
+            require(!paidAtSource.success() && !paidAtSource.changed()
+                            && sourcePaidStock.equals(sourcePaid.stockState)
+                            && source.mapObjects.contains(sourcePaid)
+                            && !destination.mapObjects.contains(sourcePaid),
+                    "source-only paid recovery must refuse to restore an unpaid reservation");
+
+            MapObjectState unmarkedRecovery = vehicle(source, 17, 5, 138L,
+                    VehicleRuntimeAuthority.OwnerType.PLAYER, "player-owned");
+            source.mapObjects.add(unmarkedRecovery);
+            VehicleFuelAuthority.ensureInitialized(source, unmarkedRecovery);
+            markInterrupted(unmarkedRecovery, source, destination,
+                    17, 5, 26, 5, 0);
+            source.mapObjects.remove(unmarkedRecovery);
+            unmarkedRecovery.x = 26;
+            unmarkedRecovery.y = 5;
+            destination.mapObjects.add(unmarkedRecovery);
+            String unmarkedStock = unmarkedRecovery.stockState;
+            VehicleStrategicTransitCommitAuthority.Result unmarked =
+                    VehicleStrategicTransitCommitAuthority.recoverInterrupted(
+                            game, unmarkedRecovery, source, destination);
+            require(!unmarked.success() && !unmarked.changed()
+                            && unmarkedStock.equals(unmarkedRecovery.stockState)
+                            && destination.mapObjects.contains(unmarkedRecovery)
+                            && !source.mapObjects.contains(unmarkedRecovery),
+                    "missing debit receipt must refuse ambiguous recovery without mutation");
+
             MapObjectState failedRecovery = vehicle(source, 11, 5, 135L,
                     VehicleRuntimeAuthority.OwnerType.PLAYER, "player-owned");
             source.mapObjects.add(failedRecovery);
