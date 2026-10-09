@@ -149,3 +149,10 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - The hosted-session wire smoke now proves durable canonical character creation and reconnect reuse of the same character identity. Server runtime state also records the canonical server-world reference plus remote session and turn-ledger paths for one coherent host identity surface.
 - This is a character-persistence integration slice only: canonical hosted world/map position mutation, inventory ownership, broader gameplay commands, and full remote gameplay certification remain open.
 - Repository source/readback verification is required for this slice; full Java 17 compilation and packaged release-gate execution remain separately required.
+
+### 06.R canonical character persistence failure propagation (2026-10-09)
+
+- The canonical `CharacterSaveManager` no longer reports success for failed asynchronous loads/creates/saves. All asynchronous paths now reuse the strict identity-checked loader or propagate the underlying I/O failure through the returned future instead of silently returning a fresh character or completing a failed save.
+- Strict loads now classify malformed persisted character records as I/O failures and preserve the original file for diagnosis. Synchronous strict loads and saves share one manager lock to prevent concurrent profile read/write and temporary-file collisions; atomic saves write the full buffer before commit.
+- `CharacterSaveManagerRegressionSmoke` exercises saved position, skills, inventory-like starting items, and reputation round trips; corrupt-record non-overwrite; and failed async save/create/load visibility. It is registered in the existing Gate 3 smoke suite.
+- Commit and file readback have been verified on `main`; Java 17 compilation, smoke execution, full release gates, and target-machine certification have **not** been run or claimed. Independent-host world/map position and inventory authority remain the next 06.R integration dependency.
