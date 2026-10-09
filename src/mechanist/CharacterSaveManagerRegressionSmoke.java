@@ -57,6 +57,45 @@ final class CharacterSaveManagerRegressionSmoke {
             check(malformed.equals(Files.readString(corruptPath)),
                     "corrupt character was silently replaced by defaults");
 
+            // Corrupt scalar state previously loaded as defaults, silently
+            // resetting position/health and potentially stranding a reconnect.
+            String[][] invalidScalarRecords = {
+                    {"missing-x", valid.replace("  \"x\": 0.0,\n", "")},
+                    {"invalid-y", valid.replace("\"y\": 0.0", "\"y\": broken")},
+                    {"non-finite-z", valid.replace("\"z\": 0.0", "\"z\": NaN")},
+                    {"out-of-range-health", valid.replace("\"health\": 100", "\"health\": 101")},
+                    {"missing-zone", valid.replace("  \"zoneId\": \"origin-zone\",\n", "")},
+                    {"bad-timestamp", valid.replace("\"updatedAt\": \"", "\"updatedAt\": \"broken-")},
+                    {"blank-identity", valid.replace(
+                            "\"identityKey\": \"" + corrupt.storageKey() + "\"",
+                            "\"identityKey\": \"\"")},
+                    {"truncated-envelope", valid.substring(0, valid.length() - 1)}
+            };
+            for (String[] fixture : invalidScalarRecords) {
+                check(!fixture[1].equals(valid),
+                        "scalar corruption fixture was not constructed: " + fixture[0]);
+                Files.writeString(corruptPath, fixture[1], StandardCharsets.UTF_8);
+                try {
+                    manager.loadOrCreateStrict(corrupt, "Test");
+                    throw new AssertionError(
+                            "corrupt saved scalar was accepted: " + fixture[0]);
+                } catch (IOException expected) {
+                    check(expected.getCause() instanceof IllegalArgumentException,
+                            "corrupt scalar did not preserve the parse cause: " + fixture[0]);
+                }
+                check(fixture[1].equals(Files.readString(corruptPath)),
+                        "corrupt scalar was overwritten: " + fixture[0]);
+            }
+            try {
+                new CharacterStateRecord(
+                        fresh.identityKey(), fresh.characterName(),
+                        Double.POSITIVE_INFINITY, 0, 0, fresh.zoneId(), 100,
+                        List.of(), List.of(), Map.of(), fresh.updatedAt());
+                throw new AssertionError("non-finite character position was accepted");
+            } catch (IllegalArgumentException expected) {
+                // Invalid coordinates must not be serialized.
+            }
+
             PlayerIdentity blocked =
                     PlayerIdentity.fallbackFromCredential("character-blocked-profile");
             Path blockedFile = manager.profilePath(blocked);
@@ -72,6 +111,8 @@ final class CharacterSaveManagerRegressionSmoke {
             System.out.println("CharacterSaveManagerRegressionSmoke PASS"
                     + " progressRoundTrip=true"
                     + " corruptRecordFailClosed=true"
+                    + " corruptScalarFailClosed=true"
+                    + " nonFinitePositionRejected=true"
                     + " asyncFailuresVisible=true");
         } finally {
             try (var files = Files.walk(root)) {

@@ -23,6 +23,9 @@ record CharacterStateRecord(
 ) {
     CharacterStateRecord {
         if (identityKey == null || identityKey.isBlank()) throw new IllegalArgumentException("identityKey is required");
+        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) {
+            throw new IllegalArgumentException("character position must contain finite coordinates");
+        }
         characterName = characterName == null || characterName.isBlank() ? "Unnamed Citizen" : characterName.trim();
         zoneId = zoneId == null || zoneId.isBlank() ? "origin-zone" : zoneId.trim();
         health = Math.max(0, Math.min(100, health));
@@ -53,21 +56,66 @@ record CharacterStateRecord(
     }
 
     static CharacterStateRecord fromJson(String json) {
+        if (json == null || !json.strip().startsWith("{")
+                || !json.strip().endsWith("}")) {
+            throw new IllegalArgumentException("invalid canonical character JSON envelope");
+        }
         Map<String, String> values = SimpleJson.object(json);
-        String identity = values.getOrDefault("identityKey", "unknown");
-        String name = values.getOrDefault("characterName", "Unnamed Citizen");
-        double x = SimpleJson.doubleValue(values.get("x"), 0);
-        double y = SimpleJson.doubleValue(values.get("y"), 0);
-        double z = SimpleJson.doubleValue(values.get("z"), 0);
-        String zone = values.getOrDefault("zoneId", "origin-zone");
-        int health = SimpleJson.intValue(values.get("health"), 100);
-        Instant updated = SimpleJson.instantValue(values.get("updatedAt"), Instant.now());
+        // These fields have always been written by toJson. Missing or damaged
+        // position/health/identity data must never silently reset on reconnect.
+        String identity = requiredSavedText(values, "identityKey");
+        String name = requiredSavedText(values, "characterName");
+        double x = requiredSavedCoordinate(values, "x");
+        double y = requiredSavedCoordinate(values, "y");
+        double z = requiredSavedCoordinate(values, "z");
+        String zone = requiredSavedText(values, "zoneId");
+        int health = requiredSavedHealth(values);
+        Instant updated = requiredSavedTimestamp(values);
         return new CharacterStateRecord(
                 identity, name, x, y, z, zone, health,
                 parseStringList(values.get("selectedSkills"), List.of()),
                 parseStringList(values.get("startingItems"), List.of("ration-pack", "work-clothes")),
                 parseIntegerMap(values.get("factionReputation"), Map.of("civic-authority", 0)),
                 updated);
+    }
+
+    private static String requiredSavedText(Map<String, String> values, String field) {
+        String value = values.get(field);
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("missing or blank saved character " + field);
+        }
+        return value;
+    }
+
+    private static double requiredSavedCoordinate(Map<String, String> values, String field) {
+        String raw = requiredSavedText(values, field);
+        try {
+            double coordinate = Double.parseDouble(raw);
+            if (Double.isFinite(coordinate)) return coordinate;
+        } catch (NumberFormatException invalid) {
+            throw new IllegalArgumentException("invalid saved character " + field, invalid);
+        }
+        throw new IllegalArgumentException("non-finite saved character " + field);
+    }
+
+    private static int requiredSavedHealth(Map<String, String> values) {
+        String raw = requiredSavedText(values, "health");
+        try {
+            int health = Integer.parseInt(raw);
+            if (health >= 0 && health <= 100) return health;
+        } catch (NumberFormatException invalid) {
+            throw new IllegalArgumentException("invalid saved character health", invalid);
+        }
+        throw new IllegalArgumentException("out-of-range saved character health");
+    }
+
+    private static Instant requiredSavedTimestamp(Map<String, String> values) {
+        String raw = requiredSavedText(values, "updatedAt");
+        try {
+            return Instant.parse(raw);
+        } catch (java.time.format.DateTimeParseException invalid) {
+            throw new IllegalArgumentException("invalid saved character updatedAt", invalid);
+        }
     }
 
     private static List<String> parseStringList(String raw, List<String> fallback) {
