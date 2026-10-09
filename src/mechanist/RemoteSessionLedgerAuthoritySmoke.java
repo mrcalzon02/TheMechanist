@@ -12,7 +12,9 @@ final class RemoteSessionLedgerAuthoritySmoke {
     public static void main(String[] args) throws Exception {
         verifyProcessLocalRules();
         verifyAtomicPersistenceRules();
+        verifyAttachmentPrerequisiteRules();
         System.out.println("RemoteSessionLedgerAuthoritySmoke PASS"
+                + " precommitCharacterBinding=true"
                 + " processLocalRules=true"
                 + " hostedSessionCommands=true"
                 + " immutableHostedRoster=true"
@@ -21,6 +23,47 @@ final class RemoteSessionLedgerAuthoritySmoke {
                 + " tokenStorage=sha256-only"
                 + " corruptLedgerRejected=true"
                 + " worldAuthority=false");
+    }
+
+    private static void verifyAttachmentPrerequisiteRules() throws Exception {
+        try (RemoteSessionLedgerAuthority ledger =
+                     new RemoteSessionLedgerAuthority("prerequisite-world")) {
+            String profile = "profile.precommit.0004";
+            Runnable unavailable = () -> {
+                throw new IllegalStateException("canonical character unavailable");
+            };
+            expectFailure(
+                    () -> ledger.attach(profile, "", "failed-first", unavailable),
+                    "canonical character unavailable");
+            require(ledger.totalSessionCount() == 0
+                            && ledger.snapshotForProfile(profile) == null,
+                    "failed first binding minted an undisclosed resume token");
+
+            RemoteSessionLedgerAuthority.Attachment first =
+                    ledger.attach(profile, "", "valid-first", () -> { });
+            require(!first.resumed() && first.connectionGeneration() == 1L,
+                    "retry after failed first binding was not a new session");
+            ledger.disconnect(first, "test resume");
+            RemoteSessionLedgerAuthority.SessionSnapshot before =
+                    ledger.snapshotForProfile(profile);
+            expectFailure(
+                    () -> ledger.attach(
+                            profile, first.resumeToken(), "failed-resume", unavailable),
+                    "canonical character unavailable");
+            RemoteSessionLedgerAuthority.SessionSnapshot after =
+                    ledger.snapshotForProfile(profile);
+            require(!after.connected()
+                            && after.version() == before.version()
+                            && after.connectionGeneration() == before.connectionGeneration(),
+                    "failed resumed binding changed persisted session state");
+
+            RemoteSessionLedgerAuthority.Attachment resumed =
+                    ledger.attach(profile, first.resumeToken(), "valid-resume");
+            require(resumed.resumed()
+                            && resumed.connectionGeneration() == 2L
+                            && resumed.playerId().equals(first.playerId()),
+                    "valid token did not survive failed character binding");
+        }
     }
 
     private static void verifyProcessLocalRules() throws Exception {

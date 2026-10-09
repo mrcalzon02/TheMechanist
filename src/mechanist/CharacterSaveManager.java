@@ -1,10 +1,13 @@
 package mechanist;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -35,14 +38,11 @@ final class CharacterSaveManager implements AutoCloseable {
         Objects.requireNonNull(identity, "identity");
         return CompletableFuture.supplyAsync(() -> {
             try {
-                Path file = profilePath(identity);
-                if (Files.exists(file)) return CharacterStateRecord.fromJson(Files.readString(file, StandardCharsets.UTF_8));
-                CharacterStateRecord fresh = CharacterStateRecord.fresh(identity, requestedName);
-                atomicSaveSync(fresh);
-                return fresh;
+                return loadOrCreateStrict(identity, requestedName);
             } catch (IOException ex) {
-                DebugLog.error("CHARACTER_LOAD", "Could not load/create character for " + identity.storageKey(), ex);
-                return CharacterStateRecord.fresh(identity, requestedName);
+                DebugLog.error("CHARACTER_LOAD",
+                        "Could not load/create character for " + identity.storageKey(), ex);
+                throw new UncheckedIOException(ex);
             }
         }, ioExecutor);
     }
@@ -51,20 +51,36 @@ final class CharacterSaveManager implements AutoCloseable {
         Objects.requireNonNull(record, "record");
         return CompletableFuture.runAsync(() -> {
             try { atomicSaveSync(record); }
-            catch (IOException ex) { DebugLog.error("CHARACTER_SAVE", "Could not persist character " + record.identityKey(), ex); }
+            catch (IOException ex) {
+                DebugLog.error("CHARACTER_SAVE",
+                        "Could not persist character " + record.identityKey(), ex);
+                throw new UncheckedIOException(ex);
+            }
         }, ioExecutor);
     }
 
-    CharacterStateRecord loadOrCreateStrict(
+    synchronized CharacterStateRecord loadOrCreateStrict(
             PlayerIdentity identity,
             String requestedName
     ) throws IOException {
         Objects.requireNonNull(identity, "identity");
         Path file = profilePath(identity);
         CharacterStateRecord record;
-        if (Files.exists(file)) {
-            record = CharacterStateRecord.fromJson(
-                    Files.readString(file, StandardCharsets.UTF_8));
+        if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
+            if (Files.isSymbolicLink(file)) {
+                throw new IOException("symbolic-link character record denied for "
+                        + identity.storageKey());
+            }
+            try (FileChannel channel = FileChannel.open(
+                    file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
+                record = CharacterStateRecord.fromJson(
+                        new String(Channels.newInputStream(channel).readAllBytes(),
+                                StandardCharsets.UTF_8));
+            } catch (RuntimeException invalid) {
+                throw new IOException(
+                        "invalid persisted character record for " + identity.storageKey(),
+                        invalid);
+            }
             if (!identity.storageKey().equals(record.identityKey())) {
                 throw new IOException(
                         "character identity mismatch for " + identity.storageKey());
@@ -73,7 +89,7 @@ final class CharacterSaveManager implements AutoCloseable {
             record = CharacterStateRecord.fresh(identity, requestedName);
             atomicSaveSync(record);
         }
-        if (!Files.isRegularFile(file)) {
+        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
             throw new IOException(
                     "canonical character record was not persisted for "
                             + identity.storageKey());
@@ -81,13 +97,20 @@ final class CharacterSaveManager implements AutoCloseable {
         return record;
     }
 
-    void atomicSaveSync(CharacterStateRecord record) throws IOException {
+    synchronized void atomicSaveSync(CharacterStateRecord record) throws IOException {
         CharacterStateRecord stamped = new CharacterStateRecord(record.identityKey(), record.characterName(), record.x(), record.y(), record.z(), record.zoneId(), record.health(), record.selectedSkills(), record.startingItems(), record.factionReputation(), Instant.now());
         Path finalPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".dat");
         Path tmpPath = profileGuard.resolveInside(safeFileName(stamped.identityKey()) + ".tmp");
+        // Both save paths are restricted to ordinary files.
+        if (Files.isSymbolicLink(finalPath) || Files.isSymbolicLink(tmpPath)) {
+            throw new IOException("symbolic-link character save path denied");
+        }
         byte[] data = stamped.toJson().getBytes(StandardCharsets.UTF_8);
-        try (FileChannel channel = FileChannel.open(tmpPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
-            channel.write(ByteBuffer.wrap(data));
+        try (FileChannel channel = FileChannel.open(tmpPath,
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
+            ByteBuffer bytes = ByteBuffer.wrap(data);
+            while (bytes.hasRemaining()) channel.write(bytes);
             channel.force(true);
         }
         try {
