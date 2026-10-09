@@ -146,6 +146,7 @@ final class CharacterSaveManagerRegressionSmoke {
             expectAsyncIoFailure(manager.loadOrCreate(blocked, "Blocked"));
             check(!Files.exists(blockedFile),
                     "failed persistence produced a misleading canonical character file");
+            boolean hardLinkChecked = verifyHardLinkProtection(manager, root);
             boolean symlinkChecked = verifySymlinkProtection(manager, root);
             System.out.println("CharacterSaveManagerRegressionSmoke PASS"
                     + " progressRoundTrip=true"
@@ -154,6 +155,7 @@ final class CharacterSaveManagerRegressionSmoke {
                     + " strictStructureFailClosed=true"
                     + " nonFinitePositionRejected=true"
                     + " asyncFailuresVisible=true"
+                    + " hardLinkProtection=" + (hardLinkChecked ? "verified" : "unsupported")
                     + " symlinkProtection=" + (symlinkChecked ? "verified" : "unsupported"));
         } finally {
             try (var files = Files.walk(root)) {
@@ -161,6 +163,38 @@ final class CharacterSaveManagerRegressionSmoke {
                     Files.deleteIfExists(path);
                 }
             }
+        }
+    }
+
+    /** A hard link is not a symlink; existing .tmp paths must never be truncated. */
+    private static boolean verifyHardLinkProtection(
+            CharacterSaveManager manager, Path root) throws Exception {
+        Path outside = Files.createTempFile(
+                root.getParent(), "mechanist-hardlink-outside-", ".dat");
+        Path temp = null;
+        try {
+            Files.writeString(outside, "sentinel", StandardCharsets.UTF_8);
+            PlayerIdentity linked = PlayerIdentity.fallbackFromCredential("hardlinked-temp");
+            Path destination = manager.profilePath(linked);
+            temp = destination.resolveSibling(
+                    destination.getFileName().toString().replace(".dat", ".tmp"));
+            try {
+                Files.createLink(temp, outside);
+            } catch (UnsupportedOperationException
+                    | java.nio.file.FileSystemException
+                    | SecurityException unavailable) {
+                return false;
+            }
+            expectAsyncIoFailure(manager.saveAsync(
+                    CharacterStateRecord.fresh(linked, "Hardlinked Temp")));
+            check(!Files.exists(destination),
+                    "hard-linked temporary path produced a character save");
+            check("sentinel".equals(Files.readString(outside)),
+                    "hard-linked temporary path truncated another file");
+            return true;
+        } finally {
+            if (temp != null) Files.deleteIfExists(temp);
+            Files.deleteIfExists(outside);
         }
     }
 

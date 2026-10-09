@@ -179,3 +179,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Canonical character restoration now uses a schema-aware strict top-level reader rather than the shared permissive flat JSON extractor. Duplicate saved identity/health keys, wrong JSON scalar types, invalid number tokens, unknown fields, malformed nested collections, and trailing object content fail closed without overwriting the saved profile.
 - The existing CharacterSaveManagerRegressionSmoke adds eight structural-corruption cases alongside the prior scalar, async failure, and symbolic-link checks. The nested string/list/reputation parsers and legacy optional-field defaults remain the same.
 - An isolated parser probe compiled with Java --release 17 and passed valid escaped-string/numeric/nested-value parsing plus seven malformed-record refusals. Full source compilation, the registered regression smoke, Gate 3, packaging, and clean-machine evidence remain unexecuted; no remote world/map or inventory authority is claimed.
+
+### 06.R character temporary-file hard-link protection (2026-10-10)
+
+- Canonical character saves now open the existing fixed temporary filename with exclusive `CREATE_NEW` rather than truncating it. This prevents a pre-existing hard link at that path from truncating a different file; an orphaned temporary file blocks a new save explicitly instead of being silently reused.
+- The registered `CharacterSaveManagerRegressionSmoke` now attempts a real temporary-path hard-link attack, requires asynchronous failure, and verifies that the external sentinel and canonical destination remain unchanged. Hard-link-unsupported filesystems report that coverage as unsupported.
+- An isolated Java `--release 17` file-channel probe passed the exclusive-create hard-link refusal and fresh-file write paths. Full project compilation, registered smoke execution, and release certification remain outstanding.
