@@ -162,3 +162,9 @@ For 06.R, extend the existing authenticated remote session and `IndependentHostT
 - Remote session attachment now validates existing resume credentials and duplicate connections before canonical character binding, and commits session identity only after character binding succeeds. Failed first-time character storage no longer strands a profile behind an undisclosed token; failed resumed binding does not advance its generation.
 - `IndependentHostWireProtocol` uses this prerequisite on the existing `CharacterSaveManager`. `RemoteSessionLedgerAuthoritySmoke` adds failure, retry, non-mutation, and resume continuity coverage.
 - Repository readback verifies source integration only. Java 17 compilation, smoke execution, and release certification are not claimed. World/map position and inventory authority remain open.
+
+### 06.R strict character scalar-state restoration (2026-10-10)
+
+- Canonical `CharacterStateRecord.fromJson` now refuses missing or malformed saved identity, position, zone, health, and timestamp fields instead of silently resetting world position or health. Construction also rejects non-finite coordinates.
+- The existing Gate 3 `CharacterSaveManagerRegressionSmoke` covers eight scalar-corruption fixtures, preserves damaged files on strict-load refusal, and rejects non-finite position before serialization. Legacy optional skills/items/reputation collections retain their compatibility defaults.
+- Verified remote source commit: `c63e8603d7e95e32ca8998992df6225d44ead547`. Java 17 compilation and actual smoke execution remain unverified; remote movement and canonical hosted world/inventory mutation are not opened by this repair.
